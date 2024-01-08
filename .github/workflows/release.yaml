@@ -21,7 +21,7 @@ jobs:
         run: |
           hack/build/ci/prepare-build-variables.sh
       - name: Docker metadata
-        uses: docker/metadata-action@9dc751fe249ad99385a2583ee0d084c400eee04e # v5.4.0
+        uses: docker/metadata-action@dbef88086f6cef02e264edb7dbf63250c17cef6c # v5.5.0
         id: meta
         with:
           images: dynatrace/dynatrace-operator
@@ -311,8 +311,10 @@ jobs:
         run: |
           make manifests/crd/release CHART_VERSION="${VERSION_WITHOUT_PREFIX}"
 
-          make manifests/kubernetes IMAGE="docker.io/dynatrace/dynatrace-operator" TAG="${VERSION}"
-          make manifests/openshift IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}"
+          make manifests/kubernetes/olm IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}"
+          make manifests/kubernetes IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}"
+          make manifests/openshift/olm IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}"
+          make manifests/openshift IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}"
       - name: Rename manifests if pre-release
         if: ${{ contains(github.ref, '-rc.') }}
         run: |
