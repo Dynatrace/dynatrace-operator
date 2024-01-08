@@ -174,7 +174,6 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 		EnforcementMode:     dynakube.FeatureEnforcementMode(),
 		ReadOnlyCSIDriver:   dynakube.FeatureReadOnlyCsiVolume(),
 		CSIMode:             dynakube.NeedsCSIDriver(),
-		OneAgentVersion:     dynakube.CodeModulesVersion(),
 	}, nil
 }
 

@@ -24,6 +24,7 @@ func TestNewEnv(t *testing.T) {
 		assert.NotEmpty(t, env.InstallerFlavor)
 		assert.NotEmpty(t, env.InstallerTech)
 		assert.NotEmpty(t, env.InstallPath)
+		assert.NotEmpty(t, env.InstallVersion)
 		assert.Len(t, env.Containers, 5)
 
 		assert.NotEmpty(t, env.K8NodeName)
@@ -50,6 +51,7 @@ func TestNewEnv(t *testing.T) {
 		assert.Equal(t, failPhrase, env.FailurePolicy)
 		assert.NotEmpty(t, env.InstallerFlavor) // set to what is defined in arch.Flavor
 		assert.Empty(t, env.InstallerTech)
+		assert.Empty(t, env.InstallVersion)
 		assert.Empty(t, env.InstallPath)
 		assert.Empty(t, env.Containers)
 
@@ -92,6 +94,7 @@ func TestNewEnv(t *testing.T) {
 		assert.Equal(t, failPhrase, env.FailurePolicy)
 		assert.NotEmpty(t, env.InstallerFlavor)
 		assert.NotEmpty(t, env.InstallerTech)
+		assert.NotEmpty(t, env.InstallVersion)
 		assert.NotEmpty(t, env.InstallPath)
 		assert.Len(t, env.Containers, 5)
 

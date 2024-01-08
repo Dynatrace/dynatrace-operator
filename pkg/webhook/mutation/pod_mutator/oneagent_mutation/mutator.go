@@ -59,7 +59,7 @@ func (mutator *OneAgentPodMutator) Mutate(ctx context.Context, request *dtwebhoo
 		return err
 	}
 
-	installerInfo := getInstallerInfo(request.Pod)
+	installerInfo := getInstallerInfo(request.Pod, request.DynaKube)
 	mutator.addVolumes(request.Pod, request.DynaKube)
 	mutator.configureInitContainer(request, installerInfo)
 	mutator.setContainerCount(request.InstallContainer, len(request.Pod.Spec.Containers))

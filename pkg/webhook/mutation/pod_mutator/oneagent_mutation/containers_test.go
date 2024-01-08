@@ -36,6 +36,16 @@ func TestConfigureInitContainer(t *testing.T) {
 		require.Len(t, request.InstallContainer.Env, expectedBaseInitContainerEnvCount)
 		assert.Len(t, request.InstallContainer.VolumeMounts, 2)
 	})
+	t.Run("add envs and volume mounts (readonly-csi)", func(t *testing.T) {
+		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
+		request := createTestMutationRequest(getTestReadOnlyCSIDynakube(), nil, getTestNamespace(nil))
+		installerInfo := getTestInstallerInfo()
+
+		mutator.configureInitContainer(request, installerInfo)
+
+		require.Len(t, request.InstallContainer.Env, expectedBaseInitContainerEnvCount)
+		assert.Len(t, request.InstallContainer.VolumeMounts, 3)
+	})
 }
 
 type mutateUserContainerTestCase struct {

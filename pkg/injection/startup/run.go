@@ -46,8 +46,8 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 			return nil, err
 		}
 		targetVersion := url.VersionLatest
-		if secretConfig.OneAgentVersion != "" {
-			targetVersion = secretConfig.OneAgentVersion
+		if env.InstallVersion != "" {
+			targetVersion = env.InstallVersion
 		}
 		oneAgentInstaller = url.NewUrlInstaller(
 			fs,

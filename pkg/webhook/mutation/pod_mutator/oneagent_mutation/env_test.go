@@ -96,7 +96,8 @@ func TestAddInstallerInitEnvs(t *testing.T) {
 		assert.Equal(t, installerInfo.technologies, container.Env[1].Value)
 		assert.Equal(t, installerInfo.installPath, container.Env[2].Value)
 		assert.Equal(t, installerInfo.installerURL, container.Env[3].Value)
-		assert.Equal(t, "true", container.Env[4].Value)
+		assert.Equal(t, installerInfo.version, container.Env[4].Value)
+		assert.Equal(t, "true", container.Env[5].Value)
 	})
 }
 

@@ -27,6 +27,7 @@ type environment struct {
 	InstallerUrl  string `json:"installerUrl"`
 
 	InstallerFlavor string          `json:"installerFlavor"`
+	InstallVersion  string          `json:"installVersion"`
 	InstallerTech   []string        `json:"installerTech"`
 	InstallPath     string          `json:"installPath"`
 	Containers      []containerInfo `json:"containers"`
@@ -110,6 +111,7 @@ func (env *environment) getDataIngestFieldSetters() []func() error {
 func (env *environment) setOptionalFields() {
 	env.addInstallerUrl()
 	env.addInstallerFlavor()
+	env.addInstallVersion()
 }
 
 func (env *environment) setMutationTypeFields() {
@@ -263,6 +265,11 @@ func (env *environment) addWorkloadName() error {
 func (env *environment) addInstallerUrl() {
 	url, _ := checkEnvVar(consts.AgentInstallerUrlEnv)
 	env.InstallerUrl = url
+}
+
+func (env *environment) addInstallVersion() {
+	version, _ := checkEnvVar(consts.AgentInstallerVersionEnv)
+	env.InstallVersion = version
 }
 
 func (env *environment) addOneAgentInjected() {
