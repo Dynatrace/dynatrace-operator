@@ -5,7 +5,12 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"sort"
+	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -15,9 +20,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
 )
 
 const testOperatorNamespace = "dynatrace"
@@ -90,13 +98,50 @@ func TestManifestCollector_Success(t *testing.T) {
 			TypeMeta:   typeMeta("EdgeConnect"),
 			ObjectMeta: objectMeta("edgeconnect1"),
 		},
+		&admissionregistrationv1.MutatingWebhookConfiguration{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "admissionregistration.k8s.io/v1",
+				Kind:       "MutatingWebhookConfiguration",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "dynatrace-webhook",
+			},
+		},
+		&admissionregistrationv1.ValidatingWebhookConfiguration{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "admissionregistration.k8s.io/v1",
+				Kind:       "ValidatingWebhookConfiguration",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "dynatrace-webhook",
+			},
+		},
+		&v1.CustomResourceDefinition{
+			TypeMeta: typeMeta("CustomResourceDefinition"),
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "dynakubes.dynatrace.com",
+			},
+		},
+		&v1.CustomResourceDefinition{
+			TypeMeta: typeMeta("CustomResourceDefinition"),
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "edgeconnects.dynatrace.com",
+			},
+		},
 	)
 
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
+	apiResourceLists := getResourceLists()
+
+	server := createFakeServer(t, apiResourceLists[0], apiResourceLists[1])
+
+	defer server.Close()
+	rc := &rest.Config{Host: server.URL}
+
 	ctx := context.TODO()
-	require.NoError(t, newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt).Do())
+	require.NoError(t, newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, *rc).Do())
 	assertNoErrorOnClose(t, supportArchive)
 
 	expectedFiles := []string{
@@ -108,9 +153,16 @@ func TestManifestCollector_Success(t *testing.T) {
 		fmt.Sprintf("%s/daemonset/daemonset1%s", testOperatorNamespace, manifestExtension),
 		fmt.Sprintf("%s/dynakube/dynakube1%s", testOperatorNamespace, manifestExtension),
 		fmt.Sprintf("%s/edgeconnect/edgeconnect1%s", testOperatorNamespace, manifestExtension),
+		fmt.Sprintf("%s/mutatingwebhookconfiguration%s", "webhook_configurations", manifestExtension),
+		fmt.Sprintf("%s/validatingwebhookconfiguration%s", "webhook_configurations", manifestExtension),
 	}
 
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
+
+	crds := []string{zipReader.File[9].Name, zipReader.File[10].Name}
+	sort.Strings(crds)
+	expectedFiles = append(expectedFiles, strings.Split(crds[0], "manifests/")[1])
+	expectedFiles = append(expectedFiles, strings.Split(crds[1], "manifests/")[1])
 
 	for i, expectedFile := range expectedFiles {
 		t.Run("expected "+expectedFile, func(t *testing.T) {
@@ -131,7 +183,7 @@ func TestManifestCollector_NoManifestsAvailable(t *testing.T) {
 
 	ctx := context.TODO()
 
-	err := newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt).Do()
+	err := newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, rest.Config{}).Do()
 	require.NoError(t, err)
 	assertNoErrorOnClose(t, supportArchive)
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
@@ -168,6 +220,36 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 			TypeMeta:   typeMeta("EdgeConnect"),
 			ObjectMeta: objectMeta("edgeconnect1"),
 		},
+		&admissionregistrationv1.MutatingWebhookConfiguration{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "admissionregistration.k8s.io/v1",
+				Kind:       "MutatingWebhookConfiguration",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "dynatrace-webhook",
+			},
+		},
+		&admissionregistrationv1.ValidatingWebhookConfiguration{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "admissionregistration.k8s.io/v1",
+				Kind:       "ValidatingWebhookConfiguration",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "dynatrace-webhook",
+			},
+		},
+		&v1.CustomResourceDefinition{
+			TypeMeta: typeMeta("CustomResourceDefinition"),
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "dynakubes.dynatrace.com",
+			},
+		},
+		&v1.CustomResourceDefinition{
+			TypeMeta: typeMeta("CustomResourceDefinition"),
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "edgeconnects.dynatrace.com",
+			},
+		},
 	)
 
 	ctx := context.TODO()
@@ -175,12 +257,19 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
-	collector := newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt)
+	apiResourceLists := getResourceLists()
+
+	server := createFakeServer(t, apiResourceLists[0], apiResourceLists[1])
+
+	defer server.Close()
+	rc := &rest.Config{Host: server.URL}
+
+	collector := newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, *rc)
 	require.NoError(t, collector.Do())
 	assertNoErrorOnClose(t, supportArchive)
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
 	require.NoError(t, err)
-	require.Len(t, zipReader.File, 4)
+	require.Len(t, zipReader.File, 8)
 	assert.Equal(t, expectedFilename(fmt.Sprintf("injected_namespaces/namespace-some-app-namespace%s", manifestExtension)), zipReader.File[0].Name)
 
 	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/statefulset/statefulset1%s", testOperatorNamespace, manifestExtension)), zipReader.File[1].Name)
@@ -188,6 +277,16 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/dynakube/dynakube1%s", testOperatorNamespace, manifestExtension)), zipReader.File[2].Name)
 
 	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/edgeconnect/edgeconnect1%s", testOperatorNamespace, manifestExtension)), zipReader.File[3].Name)
+
+	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/mutatingwebhookconfiguration%s", "webhook_configurations", manifestExtension)), zipReader.File[4].Name)
+
+	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/validatingwebhookconfiguration%s", "webhook_configurations", manifestExtension)), zipReader.File[5].Name)
+
+	crds := []string{zipReader.File[6].Name, zipReader.File[7].Name}
+	sort.Strings(crds)
+	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/customresourcedefinition-dynakube%s", "crds", manifestExtension)), crds[0])
+
+	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/customresourcedefinition-edgeconnect%s", "crds", manifestExtension)), crds[1])
 }
 
 func typeMeta(kind string) metav1.TypeMeta {
@@ -209,4 +308,59 @@ func objectMeta(name string) metav1.ObjectMeta {
 
 func expectedFilename(objname string) string {
 	return fmt.Sprintf("%s/%s", ManifestsDirectoryName, objname)
+}
+
+func getResourceLists() []metav1.APIResourceList {
+	dk := metav1.APIResourceList{
+		GroupVersion: crdNameSuffix + "/" + "v1beta1",
+		APIResources: []metav1.APIResource{
+			{Version: "v1beta1", Group: crdNameSuffix, Name: "dynakubes", Namespaced: true, Kind: "DynaKube"},
+		},
+	}
+	ec := metav1.APIResourceList{
+		GroupVersion: crdNameSuffix + "/" + "v1alpha1",
+		APIResources: []metav1.APIResource{
+			{Version: "v1alpha1", Group: crdNameSuffix, Name: "edgeconnects", Namespaced: true, Kind: "EdgeConnect"},
+		},
+	}
+	return []metav1.APIResourceList{
+		dk,
+		ec,
+	}
+}
+
+func createFakeServer(t *testing.T, dk metav1.APIResourceList, ec metav1.APIResourceList) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		var list any
+		switch req.URL.Path {
+		case "/apis":
+			list = &metav1.APIGroupList{
+				Groups: []metav1.APIGroup{
+					{
+						Name: "dynatrace.com",
+						Versions: []metav1.GroupVersionForDiscovery{
+							{GroupVersion: "dynatrace.com/v1beta1", Version: "v1beta1"},
+							{GroupVersion: "dynatrace.com/v1alpha1", Version: "v1alpha1"},
+						},
+					},
+				},
+			}
+		case "/apis/dynatrace.com/v1beta1":
+			list = &dk
+		case "/apis/dynatrace.com/v1alpha1":
+			list = &ec
+		default:
+			t.Logf("unexpected request: %s", req.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		output, err := json.Marshal(list)
+		if err != nil {
+			t.Errorf("unexpected encoding error: %v", err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(output)
+	}))
 }
