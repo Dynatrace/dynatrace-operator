@@ -9,6 +9,8 @@ import (
 )
 
 const oneagentEnableVolumeStorageEnvVarName = "ONEAGENT_ENABLE_VOLUME_STORAGE"
+const oneagentInstallerScriptUrlEnvVarName = "ONEAGENT_INSTALLER_SCRIPT_URL"
+const oneagentInstallerTokenEnvVarName = "ONEAGENT_INSTALLER_TOKEN"
 
 var log = logger.Factory.GetLogger("dynakube-validation")
 
@@ -45,6 +47,7 @@ var warnings = []validator{
 	syntheticPreviewWarning,
 	deprecatedFeatureFlagWillBeDeleted,
 	deprecatedFeatureFlagMovedCRDField,
+	unsupportedOneAgentImage,
 }
 
 func SetLogger(logger logr.Logger) {
