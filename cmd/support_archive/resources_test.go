@@ -333,6 +333,12 @@ func createFakeServer(t *testing.T, dk metav1.APIResourceList, ec metav1.APIReso
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		var list any
 		switch req.URL.Path {
+		case "/api":
+			list = &metav1.APIVersions{
+				Versions: []string{
+					"v1",
+				},
+			}
 		case "/apis":
 			list = &metav1.APIGroupList{
 				Groups: []metav1.APIGroup{
