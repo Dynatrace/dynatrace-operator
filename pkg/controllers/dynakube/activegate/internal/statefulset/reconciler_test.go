@@ -64,7 +64,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 
 	capability.NewRoutingCapability(instance)
 
-	r := NewReconciler(clt, clt, scheme.Scheme, instance, capability.NewRoutingCapability(instance))
+	r := NewReconciler(clt, clt, scheme.Scheme, instance, capability.NewRoutingCapability(instance)).(*Reconciler)
 	r.dynakube.Annotations = map[string]string{}
 	require.NotNil(t, r)
 	require.NotNil(t, r.client)

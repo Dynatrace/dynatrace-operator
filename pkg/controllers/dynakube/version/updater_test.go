@@ -39,8 +39,7 @@ func TestRun(t *testing.T) {
 		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: testImage.Tag}, nil)
 
 		target := &status.VersionStatus{}
-		versionReconciler := Reconciler{
-			dynakube:       &dynatracev1beta1.DynaKube{},
+		versionReconciler := reconciler{
 			timeProvider:   timeProvider,
 			registryClient: &mockImageGetter,
 		}
@@ -56,8 +55,7 @@ func TestRun(t *testing.T) {
 		target := &status.VersionStatus{}
 		mockImageGetter := registryMock.MockImageGetter{}
 		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{}, fmt.Errorf("BOOM"))
-		versionReconciler := Reconciler{
-			dynakube:       &dynatracev1beta1.DynaKube{},
+		versionReconciler := reconciler{
 			timeProvider:   timeProvider,
 			registryClient: &mockImageGetter,
 		}
@@ -69,8 +67,7 @@ func TestRun(t *testing.T) {
 	})
 	t.Run("autoUpdate disabled, runs if status is empty or source changes", func(t *testing.T) {
 		target := &status.VersionStatus{}
-		versionReconciler := Reconciler{
-			dynakube:       &dynatracev1beta1.DynaKube{},
+		versionReconciler := reconciler{
 			timeProvider:   timeProvider,
 			registryClient: &registryMock.MockImageGetter{},
 		}
@@ -111,8 +108,7 @@ func TestRun(t *testing.T) {
 		mockImageGetter := registryMock.MockImageGetter{}
 		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: testImage.Tag}, nil)
 
-		versionReconciler := Reconciler{
-			dynakube:       enablePublicRegistry(&dynatracev1beta1.DynaKube{}),
+		versionReconciler := reconciler{
 			timeProvider:   timeProvider,
 			registryClient: &mockImageGetter,
 		}
@@ -136,8 +132,7 @@ func TestRun(t *testing.T) {
 		target := &status.VersionStatus{
 			Source: status.TenantRegistryVersionSource,
 		}
-		versionReconciler := Reconciler{
-			dynakube:       enablePublicRegistry(&dynatracev1beta1.DynaKube{}),
+		versionReconciler := reconciler{
 			timeProvider:   timeProvider,
 			registryClient: &mockImageGetter,
 		}
@@ -160,8 +155,7 @@ func TestRun(t *testing.T) {
 		target := &status.VersionStatus{
 			Source: status.TenantRegistryVersionSource,
 		}
-		versionReconciler := Reconciler{
-			dynakube:       enablePublicRegistry(newClassicFullStackDynakube()),
+		versionReconciler := reconciler{
 			timeProvider:   timeProvider,
 			registryClient: &mockImageGetter,
 		}
@@ -184,8 +178,7 @@ func TestRun(t *testing.T) {
 		target := &status.VersionStatus{
 			Source: status.TenantRegistryVersionSource,
 		}
-		versionReconciler := Reconciler{
-			dynakube:       enablePublicRegistry(newClassicFullStackDynakube()),
+		versionReconciler := reconciler{
 			timeProvider:   timeProvider,
 			registryClient: &mockImageGetter,
 		}

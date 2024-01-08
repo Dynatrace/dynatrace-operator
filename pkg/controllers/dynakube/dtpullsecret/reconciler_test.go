@@ -27,7 +27,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL:   testApiUrl,
+				OneAgent: dynatracev1beta1.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}},
 			},
 		}
 		fakeClient := fake.NewClient()
@@ -72,7 +73,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL:   testApiUrl,
+				OneAgent: dynatracev1beta1.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}},
 			},
 		}
 		fakeClient := fake.NewClient()
@@ -104,7 +106,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL:   testApiUrl,
+				OneAgent: dynatracev1beta1.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}},
 			},
 		}
 		fakeClient := fake.NewClient()
