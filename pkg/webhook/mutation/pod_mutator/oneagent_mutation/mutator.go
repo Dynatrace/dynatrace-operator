@@ -3,7 +3,6 @@ package oneagent_mutation
 import (
 	"context"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
@@ -103,11 +102,4 @@ func containerIsInjected(container *corev1.Container) bool {
 		}
 	}
 	return false
-}
-
-func getVolumeMode(dynakube dynatracev1beta1.DynaKube) string {
-	if dynakube.NeedsCSIDriver() {
-		return string(consts.AgentCsiMode)
-	}
-	return string(consts.AgentInstallerMode)
 }

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
@@ -13,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var expectedBaseInitContainerEnvCount = getInstallerInfoFieldCount() + 3 // volumeMode + oneagent-injected + is-readonly-csi
+var expectedBaseInitContainerEnvCount = getInstallerInfoFieldCount() + 1 // +1 = oneagent-injected
 
 func TestConfigureInitContainer(t *testing.T) {
 	t.Run("add envs and volume mounts (no-csi)", func(t *testing.T) {
@@ -25,9 +24,6 @@ func TestConfigureInitContainer(t *testing.T) {
 
 		require.Len(t, request.InstallContainer.Env, expectedBaseInitContainerEnvCount)
 		assert.Len(t, request.InstallContainer.VolumeMounts, 2)
-		envvar := env.FindEnvVar(request.InstallContainer.Env, consts.AgentInstallModeEnv)
-		require.NotNil(t, envvar)
-		assert.Equal(t, string(consts.AgentInstallerMode), envvar.Value)
 	})
 
 	t.Run("add envs and volume mounts (csi)", func(t *testing.T) {
@@ -39,11 +35,7 @@ func TestConfigureInitContainer(t *testing.T) {
 
 		require.Len(t, request.InstallContainer.Env, expectedBaseInitContainerEnvCount)
 		assert.Len(t, request.InstallContainer.VolumeMounts, 2)
-		envvar := env.FindEnvVar(request.InstallContainer.Env, consts.AgentInstallModeEnv)
-		require.NotNil(t, envvar)
-		assert.Equal(t, string(consts.AgentCsiMode), envvar.Value)
 	})
-
 	t.Run("add envs and volume mounts (readonly-csi)", func(t *testing.T) {
 		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
 		request := createTestMutationRequest(getTestReadOnlyCSIDynakube(), nil, getTestNamespace(nil))
@@ -53,13 +45,6 @@ func TestConfigureInitContainer(t *testing.T) {
 
 		require.Len(t, request.InstallContainer.Env, expectedBaseInitContainerEnvCount)
 		assert.Len(t, request.InstallContainer.VolumeMounts, 3)
-		envvar := env.FindEnvVar(request.InstallContainer.Env, consts.AgentInstallModeEnv)
-		require.NotNil(t, envvar)
-		assert.Equal(t, string(consts.AgentCsiMode), envvar.Value)
-
-		readOnlyEnvvar := env.FindEnvVar(request.InstallContainer.Env, consts.AgentReadonlyCSI)
-		require.NotNil(t, readOnlyEnvvar)
-		assert.Equal(t, "true", readOnlyEnvvar.Value)
 	})
 }
 

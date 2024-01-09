@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/stretchr/testify/assert"
@@ -91,26 +90,14 @@ func TestAddInstallerInitEnvs(t *testing.T) {
 	t.Run("Add installer init env", func(t *testing.T) {
 		container := &corev1.Container{}
 		installerInfo := getTestInstallerInfo()
-		addInstallerInitEnvs(container, installerInfo, *getTestCSIDynakube())
+		addInstallerInitEnvs(container, installerInfo)
 		require.Len(t, container.Env, expectedBaseInitContainerEnvCount)
 		assert.Equal(t, installerInfo.flavor, container.Env[0].Value)
 		assert.Equal(t, installerInfo.technologies, container.Env[1].Value)
 		assert.Equal(t, installerInfo.installPath, container.Env[2].Value)
 		assert.Equal(t, installerInfo.installerURL, container.Env[3].Value)
 		assert.Equal(t, installerInfo.version, container.Env[4].Value)
-		assert.Equal(t, string(consts.AgentCsiMode), container.Env[5].Value)
-		assert.Equal(t, "false", container.Env[6].Value)
-		assert.Equal(t, "true", container.Env[7].Value)
-	})
-
-	t.Run("Add readonly installer init env", func(t *testing.T) {
-		container := &corev1.Container{}
-		installerInfo := getTestInstallerInfo()
-		addInstallerInitEnvs(container, installerInfo, *getTestReadOnlyCSIDynakube())
-		require.Len(t, container.Env, expectedBaseInitContainerEnvCount)
-		env := env.FindEnvVar(container.Env, consts.AgentReadonlyCSI)
-		require.NotNil(t, env)
-		env.Value = "true"
+		assert.Equal(t, "true", container.Env[5].Value)
 	})
 }
 

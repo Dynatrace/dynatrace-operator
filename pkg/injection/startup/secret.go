@@ -32,6 +32,8 @@ type SecretConfig struct {
 	HostGroup           string            `json:"hostGroup"`
 	InitialConnectRetry int               `json:"initialConnectRetry"`
 	EnforcementMode     bool              `json:"enforcementMode"`
+	CSIMode             bool              `json:"csiMode"`
+	ReadOnlyCSIDriver   bool              `json:"readOnlyCSIDriver"`
 
 	// For the enrichment
 	ClusterID string `json:"clusterID"`
