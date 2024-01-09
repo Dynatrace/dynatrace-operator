@@ -18,6 +18,8 @@ const (
 The conflicting Dynakube: %s
 `
 	errorVolumeStorageReadOnlyModeConflict = `The DynaKube's specification specifies a read-only host file system and OneAgent has volume storage enabled.`
+
+	warningOneAgentInstallerEnvVars = `Environment variables ONEAGENT_INSTALLER_SCRIPT_URL and ONEAGENT_INSTALLER_TOKEN are only relevant for an unsupported image type. Please make sure you are using a supported image.`
 )
 
 func conflictingOneAgentConfiguration(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
@@ -91,6 +93,14 @@ func hasOneAgentVolumeStorageEnabled(dynakube *dynatracev1beta1.DynaKube) (isEna
 	isSet = envVar != nil
 	isEnabled = isSet && envVar.Value == "true"
 	return
+}
+
+func unsupportedOneAgentImage(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+	if env.FindEnvVar(dynakube.GetOneAgentEnvironment(), oneagentInstallerScriptUrlEnvVarName) != nil ||
+		env.FindEnvVar(dynakube.GetOneAgentEnvironment(), oneagentInstallerTokenEnvVarName) != nil {
+		return warningOneAgentInstallerEnvVars
+	}
+	return ""
 }
 
 func conflictingOneAgentVolumeStorageSettings(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
