@@ -79,15 +79,6 @@ func TestInjected(t *testing.T) {
 	})
 }
 
-func TestGetVolumeMode(t *testing.T) {
-	t.Run("should return csi volume mode", func(t *testing.T) {
-		assert.Equal(t, string(consts.AgentCsiMode), getVolumeMode(*getTestCSIDynakube()))
-	})
-	t.Run("should return empty volume mode", func(t *testing.T) {
-		assert.Equal(t, string(consts.AgentInstallerMode), getVolumeMode(*getTestDynakube()))
-	})
-}
-
 func TestEnsureInitSecret(t *testing.T) {
 	t.Run("shouldn't create init secret if already there", func(t *testing.T) {
 		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
@@ -159,7 +150,7 @@ func TestMutate(t *testing.T) {
 
 			assert.Len(t, request.Pod.Annotations, initialAnnotationsLen+1) // +1 == injected-annotation
 
-			assert.Len(t, request.InstallContainer.Env, 1+expectedBaseInitContainerEnvCount+(initialContainersLen*2)) // +1 == installer mode
+			assert.Len(t, request.InstallContainer.Env, 1+expectedBaseInitContainerEnvCount+(initialContainersLen*2))
 			assert.Len(t, request.InstallContainer.VolumeMounts, testCase.expectedAdditionalInitVolumeMountCount)
 		})
 	}

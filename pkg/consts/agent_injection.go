@@ -13,10 +13,6 @@ const (
 
 	AgentCurlOptionsFileName = "curl_options.conf"
 
-	AgentInstallerMode InstallMode = "installer"
-	AgentCsiMode       InstallMode = "provisioned"
-
-	AgentInstallModeEnv      = "MODE"
 	AgentInstallerUrlEnv     = "INSTALLER_URL"
 	AgentInstallerFlavorEnv  = "FLAVOR"
 	AgentInstallerTechEnv    = "TECHNOLOGIES"
