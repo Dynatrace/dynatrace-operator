@@ -90,7 +90,7 @@ func TestAddInstallerInitEnvs(t *testing.T) {
 	t.Run("Add installer init env", func(t *testing.T) {
 		container := &corev1.Container{}
 		installerInfo := getTestInstallerInfo()
-		addInstallerInitEnvs(container, installerInfo, *getTestCSIDynakube())
+		addInstallerInitEnvs(container, installerInfo)
 		require.Len(t, container.Env, expectedBaseInitContainerEnvCount)
 		assert.Equal(t, installerInfo.flavor, container.Env[0].Value)
 		assert.Equal(t, installerInfo.technologies, container.Env[1].Value)
