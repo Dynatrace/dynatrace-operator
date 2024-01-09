@@ -7,6 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -155,6 +156,13 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 		return nil, errors.WithStack(err)
 	}
 
+	oneAgentNoProxy := ""
+
+	if dynakube.NeedsActiveGate() {
+		multiCap := capability.NewMultiCapability(dynakube)
+		oneAgentNoProxy = capability.BuildDNSEntryPointWithoutEnvVars(dynakube.Name, dynakube.Namespace, multiCap)
+	}
+
 	return &startup.SecretConfig{
 		ApiUrl:              dynakube.Spec.APIURL,
 		ApiToken:            getAPIToken(tokens),
@@ -162,6 +170,7 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 		TenantUUID:          dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID,
 		Proxy:               proxy,
 		NoProxy:             dynakube.FeatureNoProxy(),
+		OneAgentNoProxy:     oneAgentNoProxy,
 		NetworkZone:         dynakube.Spec.NetworkZone,
 		TrustedCAs:          string(trustedCAs),
 		SkipCertCheck:       dynakube.Spec.SkipCertCheck,

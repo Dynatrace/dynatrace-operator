@@ -151,6 +151,10 @@ func (runner *Runner) getProcessModuleConfig() (*dtclient.ProcessModuleConfig, e
 	if runner.config.Proxy != "" {
 		processModuleConfig = processModuleConfig.AddProxy(runner.config.Proxy)
 	}
+
+	if runner.config.OneAgentNoProxy != "" {
+		processModuleConfig = processModuleConfig.AddNoProxy(runner.config.OneAgentNoProxy)
+	}
 	return processModuleConfig, nil
 }
 

@@ -307,6 +307,25 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		require.True(t, ok)
 		assert.Equal(t, proxy, value)
 	})
+
+	t.Run("add proxy to process module config", func(t *testing.T) {
+		const oneAgentNoProxy = "dummy-no-proxy"
+		runner := createMockedRunner(t)
+		runner.config.OneAgentNoProxy = oneAgentNoProxy
+		runner.dtclient.(*mockedclient.Client).
+			On("GetProcessModuleConfig", uint(0)).
+			Return(getTestProcessModuleConfig(), nil)
+
+		config, err := runner.getProcessModuleConfig()
+		require.NoError(t, err)
+		require.NotNil(t, config)
+
+		generalSection, ok := config.ToMap()["general"]
+		require.True(t, ok)
+		value, ok := generalSection["noProxy"]
+		require.True(t, ok)
+		assert.Equal(t, oneAgentNoProxy, value)
+	})
 }
 
 func TestCreateContainerConfigurationsFiles(t *testing.T) {

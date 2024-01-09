@@ -118,6 +118,11 @@ func (pmc *ProcessModuleConfig) AddProxy(proxy string) *ProcessModuleConfig {
 	return pmc.Add(property)
 }
 
+func (pmc *ProcessModuleConfig) AddNoProxy(noProxy string) *ProcessModuleConfig {
+	property := ProcessModuleProperty{Section: generalSectionName, Key: "noProxy", Value: noProxy}
+	return pmc.Add(property)
+}
+
 func (pmc ProcessModuleConfig) ToMap() ConfMap {
 	sections := map[string]map[string]string{}
 	for _, prop := range pmc.Properties {

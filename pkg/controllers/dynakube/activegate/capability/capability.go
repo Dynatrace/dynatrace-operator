@@ -1,6 +1,7 @@
 package capability
 
 import (
+	"fmt"
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
@@ -205,4 +206,40 @@ func BuildProxySecretName(dynakubeName string) string {
 
 func BuildServiceName(dynakubeName string, module string) string {
 	return dynakubeName + "-" + module
+}
+
+// BuildServiceHostName converts the name returned by BuildServiceName
+// into the variable name which Kubernetes uses to reference the associated service.
+// For more information see: https://kubernetes.io/docs/concepts/services-networking/service/
+func BuildServiceHostName(dynakubeName string, module string) string {
+	serviceName := BuildServiceNameUnderscore(dynakubeName, module)
+	return fmt.Sprintf("$(%s_SERVICE_HOST):$(%s_SERVICE_PORT)", serviceName, serviceName)
+}
+
+// BuildServiceDomainName builds service domain name
+func BuildServiceDomainName(dynakubeName string, namespaceName string, module string) string {
+	return fmt.Sprintf("%s.%s:$(%s_SERVICE_PORT)", BuildServiceName(dynakubeName, module), namespaceName, BuildServiceNameUnderscore(dynakubeName, module))
+}
+
+// BuildServiceNameUnderscore converts result of BuildServiceName by replacing dashes with underscores
+// to make it env variable compatible because it's only special symbol it supports
+func BuildServiceNameUnderscore(dynakubeName string, module string) string {
+	return strings.ReplaceAll(
+		strings.ToUpper(
+			BuildServiceName(dynakubeName, module)),
+		"-", "_")
+}
+
+// BuildDNSEntryPoint for give capability
+func BuildDNSEntryPoint(dynakubeName, dynakubeNamespace string, capability Capability) string {
+	if capability.ShortName() == consts.MultiActiveGateName && strings.Contains(capability.ArgName(), dynatracev1beta1.RoutingCapability.ArgumentName) ||
+		capability.ShortName() == dynatracev1beta1.RoutingCapability.ShortName {
+		return fmt.Sprintf("https://%s/communication,https://%s/communication", BuildServiceHostName(dynakubeName, capability.ShortName()), BuildServiceDomainName(dynakubeName, dynakubeNamespace, capability.ShortName()))
+	}
+	return fmt.Sprintf("https://%s/communication", BuildServiceHostName(dynakubeName, capability.ShortName()))
+}
+
+// BuildDNSEntryPointWithoutEnvVars for give capability
+func BuildDNSEntryPointWithoutEnvVars(dynakubeName, dynakubeNamespace string, capability Capability) string {
+	return fmt.Sprintf("%s.%s", BuildServiceName(dynakubeName, capability.ShortName()), dynakubeNamespace)
 }

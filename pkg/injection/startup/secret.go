@@ -21,6 +21,9 @@ type SecretConfig struct {
 	TrustedCAs    string `json:"trustedCAs"`
 	SkipCertCheck bool   `json:"skipCertCheck"`
 
+	// oneAgent
+	OneAgentNoProxy string `json:"oneAgentNoProxy"`
+
 	// For the injection
 	TenantUUID          string            `json:"tenantUUID"`
 	HasHost             bool              `json:"hasHost"`
