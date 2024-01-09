@@ -334,7 +334,7 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 		tlsSecret := createTestTlsSecret(dynakube, tlsValue)
 		expectedSecretConfig.TlsCert = tlsValue
 		// since we have ActiveGate we add it by default as noProxy
-		expectedSecretConfig.OneAgentNoProxy = "https://$(DYNAKUBE_TEST_ACTIVEGATE_SERVICE_HOST):$(DYNAKUBE_TEST_ACTIVEGATE_SERVICE_PORT)/communication,https://dynakube-test-activegate.dynatrace-test:443/communication"
+		expectedSecretConfig.OneAgentNoProxy = "dynakube-test-activegate.dynatrace-test"
 
 		testNamespace := createTestInjectedNamespace(dynakube, "test")
 		clt := fake.NewClientWithIndex(testNamespace, apiTokenSecret.DeepCopy(), getKubeNamespace().DeepCopy(), tlsSecret)
