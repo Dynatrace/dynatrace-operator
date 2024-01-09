@@ -61,7 +61,8 @@ jobs:
     strategy:
       matrix:
         platform: [amd64, arm64, ppc64le]
-        registry: [gcr, dockerhub, amazon-ecr]
+#        registry: [gcr, dockerhub, amazon-ecr]
+        registry: [quay]
         include:
         - registry: gcr
           url: gcr.io
@@ -76,6 +77,10 @@ jobs:
         - registry: amazon-ecr
           url: public.ecr.aws
           repository: ECR_REPOSITORY
+        - registry: quay
+          url: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -105,54 +110,54 @@ jobs:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ matrix.url }}
           repository: ${{ secrets[matrix.repository] }}
-      - name: Get image digest
-        id: digest
-        env:
-          IMAGE: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}
-        run: |
-          hack/build/ci/get-image-digest.sh
-      - name: Sign image for ${{matrix.registry}}
-        uses: ./.github/actions/sign-image
-        with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}@${{steps.digest.outputs.digest}}
-          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          signing-password: ${{ secrets.COSIGN_PASSWORD }}
+#      - name: Get image digest
+#        id: digest
+#        env:
+#          IMAGE: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}
+#        run: |
+#          hack/build/ci/get-image-digest.sh
+#      - name: Sign image for ${{matrix.registry}}
+#        uses: ./.github/actions/sign-image
+#        with:
+#          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}@${{steps.digest.outputs.digest}}
+#          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+#          signing-password: ${{ secrets.COSIGN_PASSWORD }}
 
-  push-rhcc:
-    name: Push amd64 image to RHCC
-    if: ${{ !contains(github.ref, '-rc') }}
-    environment: Release
-    needs: [prepare, build]
-    runs-on: ubuntu-latest
-    env:
-      SCAN_REGISTRY: "quay.io"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - name: Login to Registry
-        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
-        with:
-          registry: ${{ env.SCAN_REGISTRY }}
-          username: ${{ secrets.RHCC_USERNAME }}
-          password: ${{ secrets.RHCC_PASSWORD }}
-      - name: Push amd64 image to scan registry
-        uses: ./.github/actions/upload-image
-        with:
-          platform: "amd64"
-          labels: ${{ needs.prepare.outputs.labels }}
-          version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ env.SCAN_REGISTRY }}
-          repository: ${{ secrets.RHCC_REPOSITORY }}
-          skip-platform-suffix: true
-      - name: Run preflight
-        uses: ./.github/actions/preflight
-        with:
-          version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ env.SCAN_REGISTRY }}
-          repository: ${{ secrets.RHCC_REPOSITORY }}
-          report-name: "preflight.json"
-          redhat-project-id: ${{ secrets.REDHAT_PROJECT_ID }}
-          pyxis-api-token: ${{ secrets.PYXIS_API_TOKEN }}
+#  push-rhcc:
+#    name: Push amd64 image to RHCC
+#    if: ${{ !contains(github.ref, '-rc') }}
+#    environment: Release
+#    needs: [prepare, build]
+#    runs-on: ubuntu-latest
+#    env:
+#      SCAN_REGISTRY: "quay.io"
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+#      - name: Login to Registry
+#        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
+#        with:
+#          registry: ${{ env.SCAN_REGISTRY }}
+#          username: ${{ secrets.RHCC_USERNAME }}
+#          password: ${{ secrets.RHCC_PASSWORD }}
+#      - name: Push amd64 image to scan registry
+#        uses: ./.github/actions/upload-image
+#        with:
+#          platform: "amd64"
+#          labels: ${{ needs.prepare.outputs.labels }}
+#          version: ${{ needs.prepare.outputs.version }}
+#          registry: ${{ env.SCAN_REGISTRY }}
+#          repository: ${{ secrets.RHCC_REPOSITORY }}
+#          skip-platform-suffix: true
+#      - name: Run preflight
+#        uses: ./.github/actions/preflight
+#        with:
+#          version: ${{ needs.prepare.outputs.version }}
+#          registry: ${{ env.SCAN_REGISTRY }}
+#          repository: ${{ secrets.RHCC_REPOSITORY }}
+#          report-name: "preflight.json"
+#          redhat-project-id: ${{ secrets.REDHAT_PROJECT_ID }}
+#          pyxis-api-token: ${{ secrets.PYXIS_API_TOKEN }}
 
   manifest:
     name: Create Docker manifests
@@ -165,7 +170,8 @@ jobs:
       digest: ${{ steps.create-manifests.outputs.digest }}
     strategy:
       matrix:
-        registry: [gcr, dockerhub, amazon-ecr]
+#        registry: [gcr, dockerhub, amazon-ecr]
+        registry: [quay]
         include:
           - registry: gcr
             url: gcr.io
@@ -180,6 +186,10 @@ jobs:
           - registry: amazon-ecr
             url: public.ecr.aws
             repository: ECR_REPOSITORY
+          - registry: quay
+            url: quay.io
+            username: ${{ secrets.QUAY_USERNAME }}
+            password: ${{ secrets.QUAY_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -209,77 +219,78 @@ jobs:
           registry: ${{ matrix.url }}
           repository: ${{ secrets[matrix.repository] }}
           combined: true
-      - name: Sign images for ${{matrix.registry}}
-        uses: ./.github/actions/sign-image
-        with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ steps.create-manifests.outputs.digest }}
-          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          signing-password: ${{ secrets.COSIGN_PASSWORD }}
+#      - name: Sign images for ${{matrix.registry}}
+#        uses: ./.github/actions/sign-image
+#        with:
+#          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ steps.create-manifests.outputs.digest }}
+#          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+#          signing-password: ${{ secrets.COSIGN_PASSWORD }}
 
-  attach-sbom:
-    name: Attach sbom
-    environment: Release
-    needs: [ prepare, push, manifest ]
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-    strategy:
-      matrix:
-        registry: [gcr, dockerhub, amazon-ecr]
-        include:
-          - registry: gcr
-            url: gcr.io
-            repository: GCR_REPOSITORY
-            username: GCR_USERNAME
-            password: GCR_JSON_KEY
-          - registry: dockerhub
-            url: docker.io
-            repository: DOCKERHUB_REPOSITORY
-            username: DOCKERHUB_USERNAME
-            password: DOCKERHUB_PASSWORD
-          - registry: amazon-ecr
-            url: public.ecr.aws
-            repository: ECR_REPOSITORY
-    steps:
-      - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - name: Login to Registry
-        if: ${{ matrix.registry != 'amazon-ecr' }}
-        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
-        with:
-          registry: ${{ matrix.url }}
-          username: ${{ secrets[matrix.username] }}
-          password: ${{ secrets[matrix.password] }}
-      - name: Configure aws credentials
-        if: ${{ matrix.registry == 'amazon-ecr' }}
-        uses: aws-actions/configure-aws-credentials@010d0da01d0b5a38af31e9c3470dbfdabdecca3a # v4.0.1
-        with:
-          role-to-assume: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
-          aws-region: us-east-1
-      - name: Login to Amazon ECR
-        if: ${{ matrix.registry == 'amazon-ecr' }}
-        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
-        with:
-          registry-type: public
-      - name: Create sbom for ${{matrix.registry}}
-        id: sbom
-        uses: aquasecurity/trivy-action@d43c1f16c00cfd3978dde6c07f4bbcf9eb6993ca # 0.16.1
-        with:
-          image-ref: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.manifest.outputs.digest }}
-          format: 'cyclonedx'
-          output: 'result.json'
-          skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
-      - name: Upload sbom to ${{matrix.registry}}
-        uses: ./.github/actions/upload-sbom
-        with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.manifest.outputs.digest }}
-          sbom: 'result.json'
-          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          signing-password: ${{ secrets.COSIGN_PASSWORD }}
+#  attach-sbom:
+#    name: Attach sbom
+#    environment: Release
+#    needs: [ prepare, push, manifest ]
+#    runs-on: ubuntu-latest
+#    permissions:
+#      id-token: write
+#    strategy:
+#      matrix:
+#        registry: [gcr, dockerhub, amazon-ecr]
+#        include:
+#          - registry: gcr
+#            url: gcr.io
+#            repository: GCR_REPOSITORY
+#            username: GCR_USERNAME
+#            password: GCR_JSON_KEY
+#          - registry: dockerhub
+#            url: docker.io
+#            repository: DOCKERHUB_REPOSITORY
+#            username: DOCKERHUB_USERNAME
+#            password: DOCKERHUB_PASSWORD
+#          - registry: amazon-ecr
+#            url: public.ecr.aws
+#            repository: ECR_REPOSITORY
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+#      - name: Login to Registry
+#        if: ${{ matrix.registry != 'amazon-ecr' }}
+#        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
+#        with:
+#          registry: ${{ matrix.url }}
+#          username: ${{ secrets[matrix.username] }}
+#          password: ${{ secrets[matrix.password] }}
+#      - name: Configure aws credentials
+#        if: ${{ matrix.registry == 'amazon-ecr' }}
+#        uses: aws-actions/configure-aws-credentials@010d0da01d0b5a38af31e9c3470dbfdabdecca3a # v4.0.1
+#        with:
+#          role-to-assume: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
+#          aws-region: us-east-1
+#      - name: Login to Amazon ECR
+#        if: ${{ matrix.registry == 'amazon-ecr' }}
+#        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
+#        with:
+#          registry-type: public
+#      - name: Create sbom for ${{matrix.registry}}
+#        id: sbom
+#        uses: aquasecurity/trivy-action@d43c1f16c00cfd3978dde6c07f4bbcf9eb6993ca # 0.16.1
+#        with:
+#          image-ref: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.manifest.outputs.digest }}
+#          format: 'cyclonedx'
+#          output: 'result.json'
+#          skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
+#      - name: Upload sbom to ${{matrix.registry}}
+#        uses: ./.github/actions/upload-sbom
+#        with:
+#          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.manifest.outputs.digest }}
+#          sbom: 'result.json'
+#          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+#          signing-password: ${{ secrets.COSIGN_PASSWORD }}
 
   release:
     name: Create release
-    needs: [prepare, build, attach-sbom]
+#    needs: [prepare, build, attach-sbom, manifest]
+    needs: [prepare, build, manifest]
     environment: Release
     permissions:
       contents: write
@@ -311,38 +322,41 @@ jobs:
         run: |
           make manifests/crd/release CHART_VERSION="${VERSION_WITHOUT_PREFIX}"
 
-          make manifests/kubernetes/olm IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}"
-          make manifests/kubernetes IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}"
-          make manifests/openshift/olm IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}"
-          make manifests/openshift IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}"
+          make manifests/kubernetes/olm IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.manifest.output.digest}}"
+          make manifests/kubernetes IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.manifest.output.digest}}"
+          make manifests/openshift/olm IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.manifest.output.digest}}"
+          make manifests/openshift IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.manifest.output.digest}}"
       - name: Rename manifests if pre-release
         if: ${{ contains(github.ref, '-rc.') }}
         run: |
+          cp config/deploy/kubernetes/kubernetes-all.yaml config/kubernetes.yaml
+          cp config/deploy/openshift/openshift-all.yaml config/openshift.yaml
+
           mv config/deploy/kubernetes/kubernetes-all.yaml config/deploy/kubernetes/kubernetes.yaml
           mv config/deploy/openshift/openshift-all.yaml config/deploy/openshift/openshift.yaml
-      - name: Build helm packages
-        uses: ./.github/actions/build-helm
-        with:
-          version_without_prefix: ${{ needs.prepare.outputs.version_without_prefix }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          secring: ${{ secrets.HELM_SECRING }}
-          passphrase: ${{ secrets.HELM_PASSPHRASE }}
-          output-dir: "./helm-pkg"
-      - name: Upload and sign helm package to dockerhub
-        uses: ./.github/actions/upload-helm
-        with:
-          registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
-          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          version: ${{ needs.prepare.outputs.version }}
-          version-without-prefix: ${{ needs.prepare.outputs.version_without_prefix }}
-          cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          cosign-password: ${{ secrets.COSIGN_PASSWORD }}
-      - name: Prepare cosign.pub artifact
-        env:
-          COSIGN_PUBLIC_KEY: ${{ secrets.COSIGN_PUBLIC_KEY }}
-        run: |
-          mkdir -p tmp
-          echo ${COSIGN_PUBLIC_KEY} | base64 -d > tmp/cosign.pub
+#      - name: Build helm packages
+#        uses: ./.github/actions/build-helm
+#        with:
+#          version_without_prefix: ${{ needs.prepare.outputs.version_without_prefix }}
+#          github-token: ${{ secrets.GITHUB_TOKEN }}
+#          secring: ${{ secrets.HELM_SECRING }}
+#          passphrase: ${{ secrets.HELM_PASSPHRASE }}
+#          output-dir: "./helm-pkg"
+#      - name: Upload and sign helm package to dockerhub
+#        uses: ./.github/actions/upload-helm
+#        with:
+#          registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
+#          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+#          version: ${{ needs.prepare.outputs.version }}
+#          version-without-prefix: ${{ needs.prepare.outputs.version_without_prefix }}
+#          cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+#          cosign-password: ${{ secrets.COSIGN_PASSWORD }}
+#      - name: Prepare cosign.pub artifact
+#        env:
+#          COSIGN_PUBLIC_KEY: ${{ secrets.COSIGN_PUBLIC_KEY }}
+#        run: |
+#          mkdir -p tmp
+#          echo ${COSIGN_PUBLIC_KEY} | base64 -d > tmp/cosign.pub
       - name: Create pre-release
         uses: softprops/action-gh-release@v1
         if: ${{ contains(github.ref, '-rc.') }}
@@ -370,19 +384,19 @@ jobs:
             config/deploy/kubernetes/gke-autopilot.yaml
             config/deploy/openshift/openshift.yaml
             config/deploy/openshift/openshift-csi.yaml
-            helm-pkg/dynatrace-operator-${{ needs.prepare.outputs.version_without_prefix }}.tgz
-            helm-pkg/dynatrace-operator-${{ needs.prepare.outputs.version_without_prefix }}.tgz.prov
+#            helm-pkg/dynatrace-operator-${{ needs.prepare.outputs.version_without_prefix }}.tgz
+#            helm-pkg/dynatrace-operator-${{ needs.prepare.outputs.version_without_prefix }}.tgz.prov
           token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: false
           draft: true
           fail_on_unmatched_files: true
-      - name: Update index helm file
-        if: ${{ !contains(github.ref, '-rc.') }}
-        env:
-          VERSION_WITHOUT_PREFIX: ${{ needs.prepare.outputs.version_without_prefix }}
-        run: |
-          echo "Updating Helm repo index"
-          hack/build/ci/generate-new-helm-index-yaml.sh "helm-pkg" ${{ needs.prepare.outputs.version_without_prefix }}
+#      - name: Update index helm file
+#        if: ${{ !contains(github.ref, '-rc.') }}
+#        env:
+#          VERSION_WITHOUT_PREFIX: ${{ needs.prepare.outputs.version_without_prefix }}
+#        run: |
+#          echo "Updating Helm repo index"
+#          hack/build/ci/generate-new-helm-index-yaml.sh "helm-pkg" ${{ needs.prepare.outputs.version_without_prefix }}
       - name: Create pull request for adding helm index to main branch
         if: ${{ !contains(github.ref, '-rc.') }}
         uses: peter-evans/create-pull-request@v5
@@ -394,6 +408,8 @@ jobs:
           add-paths: |
             ./config/helm/repos/stable/index.yaml
             ./config/helm/repos/stable/index.yaml.previous
+            ./config/kubernetes.yaml
+            ./config/openshift.yaml
           title: '[Automatic] Update index for ${{ github.ref }} release'
           commit-message: Update index.yaml
           committer: GitHub <noreply@github.com>
