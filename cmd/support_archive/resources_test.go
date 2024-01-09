@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"sort"
-	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -155,19 +154,25 @@ func TestManifestCollector_Success(t *testing.T) {
 		fmt.Sprintf("%s/edgeconnect/edgeconnect1%s", testOperatorNamespace, manifestExtension),
 		fmt.Sprintf("%s/mutatingwebhookconfiguration%s", "webhook_configurations", manifestExtension),
 		fmt.Sprintf("%s/validatingwebhookconfiguration%s", "webhook_configurations", manifestExtension),
+		fmt.Sprintf("%s/customresourcedefinition-dynakube%s", "crds", manifestExtension),
+		fmt.Sprintf("%s/customresourcedefinition-edgeconnect%s", "crds", manifestExtension),
 	}
+
+	sort.Strings(expectedFiles)
 
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
 
-	crds := []string{zipReader.File[9].Name, zipReader.File[10].Name}
-	sort.Strings(crds)
-	expectedFiles = append(expectedFiles, strings.Split(crds[0], "manifests/")[1])
-	expectedFiles = append(expectedFiles, strings.Split(crds[1], "manifests/")[1])
+	actualFileName := make([]string, len(zipReader.File))
+
+	for i, file := range zipReader.File {
+		actualFileName[i] = file.Name
+	}
+	sort.Strings(actualFileName)
 
 	for i, expectedFile := range expectedFiles {
 		t.Run("expected "+expectedFile, func(t *testing.T) {
 			require.NoError(t, err)
-			assert.Equal(t, expectedFilename(expectedFile), zipReader.File[i].Name)
+			assert.Equal(t, expectedFilename(expectedFile), actualFileName[i])
 		})
 	}
 }
