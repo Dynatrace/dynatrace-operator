@@ -65,7 +65,7 @@ func addVersionDetectionEnvs(container *corev1.Container, labelMapping VersionLa
 	}
 }
 
-func addInstallerInitEnvs(initContainer *corev1.Container, installer installerInfo, dynakube dynatracev1beta1.DynaKube) {
+func addInstallerInitEnvs(initContainer *corev1.Container, installer installerInfo) {
 	initContainer.Env = append(initContainer.Env,
 		corev1.EnvVar{Name: consts.AgentInstallerFlavorEnv, Value: installer.flavor},
 		corev1.EnvVar{Name: consts.AgentInstallerTechEnv, Value: installer.technologies},
