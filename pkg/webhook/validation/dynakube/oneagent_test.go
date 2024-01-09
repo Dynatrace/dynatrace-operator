@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -278,4 +279,69 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 			},
 		}, &defaultCSIDaemonSet)
 	})
+}
+
+func createDynakube(oaEnvVar ...string) *dynatracev1beta1.DynaKube {
+	envVars := make([]corev1.EnvVar, 0)
+	for i := 0; i < len(oaEnvVar); i += 2 {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  oaEnvVar[i],
+			Value: oaEnvVar[i+1],
+		})
+	}
+	return &dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dynakube",
+			Namespace: testNamespace,
+		},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: testApiUrl,
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+					HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+						Env: envVars,
+					},
+				},
+			},
+		},
+	}
+}
+
+func TestUnsupportedOneAgentImage(t *testing.T) {
+	type unsupportedOneAgentImageTests struct {
+		testName        string
+		envVars         []string
+		allowedWarnings int
+	}
+	testcases := []unsupportedOneAgentImageTests{
+		{
+			testName:        "ONEAGENT_INSTALLER_SCRIPT_URL",
+			envVars:         []string{"ONEAGENT_INSTALLER_SCRIPT_URL", "foobar"},
+			allowedWarnings: 1,
+		},
+		{
+			testName:        "ONEAGENT_INSTALLER_TOKEN",
+			envVars:         []string{"ONEAGENT_INSTALLER_TOKEN", "foobar"},
+			allowedWarnings: 1,
+		},
+		{
+			testName:        "ONEAGENT_INSTALLER_SCRIPT_URL",
+			envVars:         []string{"ONEAGENT_INSTALLER_SCRIPT_URL", "foobar", "ONEAGENT_INSTALLER_TOKEN", "foobar"},
+			allowedWarnings: 1,
+		},
+		{
+			testName:        "no env vars",
+			envVars:         []string{},
+			allowedWarnings: 0,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.testName, func(t *testing.T) {
+			assertAllowedResponseWithWarnings(t,
+				tc.allowedWarnings,
+				createDynakube(tc.envVars...),
+				&defaultCSIDaemonSet)
+		})
+	}
 }
