@@ -16,6 +16,7 @@ Install the Dynatrace Operator via Helm by running the following commands.
 > [official help page](https://www.dynatrace.com/support/help/shortlink/k8s-helm)
 
 #### For versions older than 0.15.0
+
 Add `dynatrace` helm repository:
 
 ```console
@@ -35,7 +36,6 @@ Install `dynatrace-operator` helm chart using the OCI repository and create the 
 ```console
 helm install dynatrace-operator oci://docker.io/dynatrace/dynatrace-operator  -n dynatrace --create-namespace --atomic
 ```
-
 
 ## Uninstall chart
 
