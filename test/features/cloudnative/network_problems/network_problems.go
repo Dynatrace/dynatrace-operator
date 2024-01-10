@@ -3,23 +3,26 @@
 package network_problems
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"path"
+	"strings"
 	"testing"
+	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -83,6 +86,9 @@ func restrictCSI(builder *features.FeatureBuilder) {
 func checkForDummyVolume(sampleApp *sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
+		clientset, err := kubernetes.NewForConfig(resources.GetConfig())
+		require.NoError(t, err)
+
 		pods := sampleApp.GetPods(ctx, t, resources)
 
 		for _, podItem := range pods.Items {
@@ -90,11 +96,17 @@ func checkForDummyVolume(sampleApp *sample.App) features.Func {
 			require.NotNil(t, podItem.Spec)
 			require.NotEmpty(t, podItem.Spec.InitContainers)
 
-			listCommand := shell.ListDirectory(webhook.DefaultInstallPath)
-			result, err := pod.Exec(ctx, resources, podItem, sampleApp.ContainerName(), listCommand...)
+			err = wait.For(func(ctx context.Context) (done bool, err error) {
+				logStream, err := clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &corev1.PodLogOptions{
+					Container: sampleApp.ContainerName(),
+				}).Stream(ctx)
+				require.NoError(t, err)
+				buffer := new(bytes.Buffer)
+				_, err = io.Copy(buffer, logStream)
+				return strings.Contains(buffer.String(), ldPreloadError), err
+			}, wait.WithTimeout(2*time.Minute))
 
 			require.NoError(t, err)
-			assert.Contains(t, result.StdErr.String(), ldPreloadError)
 		}
 		return ctx
 	}
