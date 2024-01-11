@@ -21,6 +21,9 @@ type SecretConfig struct {
 	TrustedCAs    string `json:"trustedCAs"`
 	SkipCertCheck bool   `json:"skipCertCheck"`
 
+	// oneAgent
+	OneAgentNoProxy string `json:"oneAgentNoProxy"`
+
 	// For the injection
 	TenantUUID          string            `json:"tenantUUID"`
 	HasHost             bool              `json:"hasHost"`
@@ -29,6 +32,8 @@ type SecretConfig struct {
 	HostGroup           string            `json:"hostGroup"`
 	InitialConnectRetry int               `json:"initialConnectRetry"`
 	EnforcementMode     bool              `json:"enforcementMode"`
+	CSIMode             bool              `json:"csiMode"`
+	ReadOnlyCSIDriver   bool              `json:"readOnlyCSIDriver"`
 
 	// For the enrichment
 	ClusterID string `json:"clusterID"`

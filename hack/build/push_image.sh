@@ -12,4 +12,11 @@ image=${1}
 tag=${2}
 
 out_image="${image}:${tag}"
-docker push "${out_image}"
+
+if ! command -v docker 2>/dev/null; then
+  CONTAINER_CMD=podman
+else
+  CONTAINER_CMD=docker
+fi
+
+${CONTAINER_CMD} push "${out_image}"

@@ -19,7 +19,7 @@ The conflicting Dynakube: %s
 `
 	errorVolumeStorageReadOnlyModeConflict = `The DynaKube's specification specifies a read-only host file system and OneAgent has volume storage enabled.`
 
-	warningIneffectiveFeatureFlag = `Feature flag %s has no effect in classic full stack mode.`
+	warningOneAgentInstallerEnvVars = `Environment variables ONEAGENT_INSTALLER_SCRIPT_URL and ONEAGENT_INSTALLER_TOKEN are only relevant for an unsupported image type. Please make sure you are using a supported image.`
 )
 
 func conflictingOneAgentConfiguration(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
@@ -39,13 +39,6 @@ func conflictingOneAgentConfiguration(_ context.Context, dv *dynakubeValidator, 
 	if counter > 1 {
 		log.Info("requested dynakube has conflicting one agent configuration", "name", dynakube.Name, "namespace", dynakube.Namespace)
 		return errorConflictingOneagentMode
-	}
-	return ""
-}
-
-func conflictingReadOnlyFilesystemAndMultipleOsAgentsOnNode(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	if dynakube.FeatureDisableReadOnlyOneAgent() && dynakube.FeatureEnableMultipleOsAgentsOnNode() {
-		return "Multiple OsAgents require readonly host filesystem"
 	}
 	return ""
 }
@@ -102,26 +95,18 @@ func hasOneAgentVolumeStorageEnabled(dynakube *dynatracev1beta1.DynaKube) (isEna
 	return
 }
 
+func unsupportedOneAgentImage(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+	if env.FindEnvVar(dynakube.GetOneAgentEnvironment(), oneagentInstallerScriptUrlEnvVarName) != nil ||
+		env.FindEnvVar(dynakube.GetOneAgentEnvironment(), oneagentInstallerTokenEnvVarName) != nil {
+		return warningOneAgentInstallerEnvVars
+	}
+	return ""
+}
+
 func conflictingOneAgentVolumeStorageSettings(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	volumeStorageEnabled, volumeStorageSet := hasOneAgentVolumeStorageEnabled(dynakube)
 	if dynakube.NeedsReadOnlyOneAgents() && volumeStorageSet && !volumeStorageEnabled {
 		return errorVolumeStorageReadOnlyModeConflict
 	}
 	return ""
-}
-
-func ineffectiveReadOnlyHostFsFeatureFlag(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	if dynakube.ClassicFullStackMode() {
-		if _, hasOneAgentReadOnlyFeatureFlag := dynakube.Annotations[dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent]; hasOneAgentReadOnlyFeatureFlag {
-			return readonlyHostFsFlagWarning(dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent)
-		}
-		if _, hasOneAgentReadOnlyFeatureFlag := dynakube.Annotations[dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent]; hasOneAgentReadOnlyFeatureFlag {
-			return readonlyHostFsFlagWarning(dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent)
-		}
-	}
-	return ""
-}
-
-func readonlyHostFsFlagWarning(featureFlag string) string {
-	return fmt.Sprintf(warningIneffectiveFeatureFlag, featureFlag)
 }

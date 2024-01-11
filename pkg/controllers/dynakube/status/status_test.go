@@ -25,7 +25,7 @@ func TestSetDynakubeStatus(t *testing.T) {
 				UID:  testUUID,
 			},
 		})
-		err := SetDynakubeStatus(context.Background(), instance, clt)
+		err := SetKubeSystemUUIDInStatus(context.Background(), instance, clt)
 
 		assert.NoError(t, err)
 		assert.Equal(t, testUUID, instance.Status.KubeSystemUUID)
@@ -34,7 +34,7 @@ func TestSetDynakubeStatus(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{}
 		clt := fake.NewClient()
 
-		err := SetDynakubeStatus(context.Background(), instance, clt)
+		err := SetKubeSystemUUIDInStatus(context.Background(), instance, clt)
 		assert.EqualError(t, err, "namespaces \"kube-system\" not found")
 	})
 }

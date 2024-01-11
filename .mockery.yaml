@@ -24,6 +24,16 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version:
     interfaces:
       StatusUpdater:
+      Reconciler:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers:
+    interfaces:
+      Reconciler:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio:
+    interfaces:
+      Reconciler:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo:
+    interfaces:
+      Reconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer:
     interfaces:
       Installer:

@@ -9,6 +9,8 @@ import (
 )
 
 const oneagentEnableVolumeStorageEnvVarName = "ONEAGENT_ENABLE_VOLUME_STORAGE"
+const oneagentInstallerScriptUrlEnvVarName = "ONEAGENT_INSTALLER_SCRIPT_URL"
+const oneagentInstallerTokenEnvVarName = "ONEAGENT_INSTALLER_TOKEN"
 
 var log = logger.Factory.GetLogger("dynakube-validation")
 
@@ -28,29 +30,24 @@ var validators = []validator{
 	conflictingOneAgentConfiguration,
 	conflictingNodeSelector,
 	conflictingNamespaceSelector,
-	conflictingReadOnlyFilesystemAndMultipleOsAgentsOnNode,
 	noResourcesAvailable,
 	imageFieldSetWithoutCSIFlag,
 	conflictingOneAgentVolumeStorageSettings,
 	invalidSyntheticNodeType,
 	nameViolatesDNS1035,
 	nameTooLong,
-	namespaceSelectorMatchLabelsViolateLabelSpec,
+	namespaceSelectorViolateLabelSpec,
 }
 
 var warnings = []validator{
 	deprecatedFeatureFlagFormat,
 	missingActiveGateMemoryLimit,
 	deprecatedFeatureFlagDisableActiveGateUpdates,
-	deprecatedFeatureFlagDisableActiveGateRawImage,
-	deprecatedFeatureFlagDisableHostsRequests,
-	deprecatedFeatureFlagDisableReadOnlyAgent,
-	deprecatedFeatureFlagDisableWebhookReinvocationPolicy,
 	deprecatedFeatureFlagDisableMetadataEnrichment,
-	ineffectiveReadOnlyHostFsFeatureFlag,
 	syntheticPreviewWarning,
 	deprecatedFeatureFlagWillBeDeleted,
 	deprecatedFeatureFlagMovedCRDField,
+	unsupportedOneAgentImage,
 }
 
 func SetLogger(logger logr.Logger) {

@@ -9,7 +9,7 @@ BUNDLE_DEFAULT_CHANNEL="${4:-}"
 if [ -z "$OLM_IMAGE" ]; then
   OLM_IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}"
   if [ "${PLATFORM}" == "kubernetes" ]; then
-    OLM_IMAGE="docker.io/dynatrace/dynatrace-operator:v${VERSION}"
+    OLM_IMAGE="public.ecr.aws/dynatrace/dynatrace-operator:v${VERSION}"
   fi
 fi
 echo "OLM image: ${OLM_IMAGE}"
@@ -40,7 +40,7 @@ if [ -n "${BUNDLE_DEFAULT_CHANNEL}" ]; then
     SDK_PARAMS+=("${BUNDLE_DEFAULT_CHANNEL}")
 fi
 
-"${OPERATOR_SDK}" generate kustomize manifests -q --apis-dir ./src/api/
+"${OPERATOR_SDK}" generate kustomize manifests -q --apis-dir ./pkg/api/
 (cd "config/deploy/${PLATFORM}" && ${KUSTOMIZE} edit set image quay.io/dynatrace/dynatrace-operator:snapshot="${OLM_IMAGE}")
 "${KUSTOMIZE}" build "config/olm/${PLATFORM}" | "${OPERATOR_SDK}" generate bundle --overwrite --version "${VERSION}" "${SDK_PARAMS[@]}"
 "${OPERATOR_SDK}" bundle validate ./bundle

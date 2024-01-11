@@ -76,6 +76,31 @@ func TestArguments(t *testing.T) {
 		}
 		assert.Equal(t, expectedDefaultArguments, arguments)
 	})
+	t.Run("when injected arguments are provided then they take precedence", func(t *testing.T) {
+		args := []string{
+			"--set-app-log-content-access=true",
+			"--set-host-id-source=lustiglustig",
+			"--set-host-group=APP_LUSTIG_PETER",
+			"--set-server=https://hyper.super.com:9999",
+		}
+		builder := builderInfo{
+			dynakube:       &dynatracev1beta1.DynaKube{},
+			hostInjectSpec: &dynatracev1beta1.HostInjectSpec{Args: args},
+		}
+
+		arguments := builder.arguments()
+
+		expectedDefaultArguments := []string{
+			"--set-app-log-content-access=true",
+			"--set-host-group=APP_LUSTIG_PETER",
+			"--set-host-id-source=lustiglustig",
+			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+			"--set-proxy=",
+			"--set-server=https://hyper.super.com:9999",
+			"--set-tenant=$(DT_TENANT)",
+		}
+		assert.Equal(t, expectedDefaultArguments, arguments)
+	})
 }
 
 func TestPodSpec_Arguments(t *testing.T) {
@@ -132,19 +157,32 @@ func TestPodSpec_Arguments(t *testing.T) {
 		podSpecs = dsInfo.podSpec()
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-network-zone="+testValue)
 	})
-	t.Run(`has webhook injection arg`, func(t *testing.T) {
+	t.Run(`has webhook injection arg classic fullstack`, func(t *testing.T) {
 		daemonset, _ := dsInfo.BuildDaemonSet()
 		podSpecs = daemonset.Spec.Template.Spec
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-id-source=auto")
+	})
+	t.Run(`has webhook injection arg host monitoring`, func(t *testing.T) {
+		hostMonInstance := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					HostMonitoring: &dynatracev1beta1.HostInjectSpec{
+						Args: []string{testKey, testValue, testUID},
+					},
+				},
+			},
+		}
+
+		hostMonInjectSpec := hostMonInstance.Spec.OneAgent.HostMonitoring
 
 		dsInfo := HostMonitoring{
 			builderInfo{
-				dynakube:       instance,
-				hostInjectSpec: hostInjectSpecs,
+				dynakube:       hostMonInstance,
+				hostInjectSpec: hostMonInjectSpec,
 				clusterID:      testClusterID,
 			},
 		}
-		daemonset, _ = dsInfo.BuildDaemonSet()
+		daemonset, _ := dsInfo.BuildDaemonSet()
 		podSpecs := daemonset.Spec.Template.Spec
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-id-source=k8s-node-name")
 	})

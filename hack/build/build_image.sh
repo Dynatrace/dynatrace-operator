@@ -19,7 +19,14 @@ out_image="${image}:${tag}"
 
 # directory required by docker copy command
 mkdir -p third_party_licenses
-docker build . -f ./Dockerfile -t "${out_image}" \
+
+if ! command -v docker 2>/dev/null; then
+  CONTAINER_CMD=podman
+else
+  CONTAINER_CMD=docker
+fi
+
+${CONTAINER_CMD} build . -f ./Dockerfile -t "${out_image}" \
   --build-arg "GO_LINKER_ARGS=${go_linker_args}" \
   --build-arg "GO_BUILD_TAGS=${go_build_tags}" \
   --label "quay.expires-after=14d"

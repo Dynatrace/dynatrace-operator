@@ -26,6 +26,7 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csigc "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/gc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -225,6 +226,11 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 			return nil, false, err
 		}
 		latestProcessModuleConfig.AddProxy(proxy)
+
+		if dk.NeedsActiveGate() {
+			multiCap := capability.NewMultiCapability(dk)
+			latestProcessModuleConfig.AddNoProxy(capability.BuildDNSEntryPointWithoutEnvVars(dk.Name, dk.Namespace, multiCap))
+		}
 	}
 
 	if dk.CodeModulesImage() != "" {

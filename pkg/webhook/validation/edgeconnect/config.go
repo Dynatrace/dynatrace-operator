@@ -14,4 +14,5 @@ type validator func(ctx context.Context, dv *edgeconnectValidator, edgeConnect *
 var validators = []validator{
 	isInvalidApiServer,
 	nameTooLong,
+	checkHostPatternsValue,
 }

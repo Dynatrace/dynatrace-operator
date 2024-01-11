@@ -193,7 +193,8 @@ func TestRun(t *testing.T) {
 
 	t.Run("no install, just config generation", func(t *testing.T) {
 		runner.fs = prepReadOnlyCSIFilesystem(t, afero.NewMemMapFs())
-		runner.env.Mode = consts.AgentCsiMode
+		runner.config.CSIMode = true
+		runner.config.ReadOnlyCSIDriver = true
 
 		err := runner.Run()
 
@@ -207,7 +208,7 @@ func TestRun(t *testing.T) {
 			On("InstallAgent", consts.AgentBinDirMount).
 			Return(true, nil)
 		runner.fs = prepReadOnlyCSIFilesystem(t, afero.NewMemMapFs())
-		runner.env.Mode = consts.AgentInstallerMode
+		runner.config.CSIMode = false
 		runner.fs.Create(filepath.Join(consts.AgentBinDirMount, "agent/conf/ruxitagentproc.conf"))
 
 		err := runner.Run()
@@ -227,7 +228,7 @@ func TestConfigureInstallation(t *testing.T) {
 		runner.fs = prepReadOnlyCSIFilesystem(t, afero.NewMemMapFs())
 		runner.env.OneAgentInjected = true
 		runner.env.DataIngestInjected = true
-		runner.env.IsReadOnlyCSI = true
+		runner.config.ReadOnlyCSIDriver = true
 
 		err := runner.configureInstallation()
 
@@ -240,7 +241,7 @@ func TestConfigureInstallation(t *testing.T) {
 		runner.fs = afero.NewMemMapFs()
 		runner.env.OneAgentInjected = true
 		runner.env.DataIngestInjected = false
-		runner.env.IsReadOnlyCSI = false
+		runner.config.ReadOnlyCSIDriver = false
 
 		err := runner.configureInstallation()
 
@@ -252,7 +253,7 @@ func TestConfigureInstallation(t *testing.T) {
 		runner.fs = prepReadOnlyCSIFilesystem(t, afero.NewMemMapFs())
 		runner.env.OneAgentInjected = true
 		runner.env.DataIngestInjected = false
-		runner.env.IsReadOnlyCSI = true
+		runner.config.ReadOnlyCSIDriver = true
 
 		err := runner.configureInstallation()
 
@@ -265,7 +266,7 @@ func TestConfigureInstallation(t *testing.T) {
 		runner.fs = afero.NewMemMapFs()
 		runner.env.OneAgentInjected = false
 		runner.env.DataIngestInjected = true
-		runner.env.IsReadOnlyCSI = false
+		runner.config.ReadOnlyCSIDriver = false
 
 		err := runner.configureInstallation()
 
@@ -305,6 +306,25 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		value, ok := generalSection["proxy"]
 		require.True(t, ok)
 		assert.Equal(t, proxy, value)
+	})
+
+	t.Run("add proxy to process module config", func(t *testing.T) {
+		const oneAgentNoProxy = "dummy-no-proxy"
+		runner := createMockedRunner(t)
+		runner.config.OneAgentNoProxy = oneAgentNoProxy
+		runner.dtclient.(*mockedclient.Client).
+			On("GetProcessModuleConfig", uint(0)).
+			Return(getTestProcessModuleConfig(), nil)
+
+		config, err := runner.getProcessModuleConfig()
+		require.NoError(t, err)
+		require.NotNil(t, config)
+
+		generalSection, ok := config.ToMap()["general"]
+		require.True(t, ok)
+		value, ok := generalSection["noProxy"]
+		require.True(t, ok)
+		assert.Equal(t, oneAgentNoProxy, value)
 	})
 }
 
@@ -467,6 +487,7 @@ func createTestRunner(t *testing.T) *Runner {
 
 func createMockedRunner(t *testing.T) *Runner {
 	runner := createTestRunner(t)
+	runner.config.ClusterID = "TEST_K8S_CLUSTER_ID"
 	runner.installer = mockedinstaller.NewInstaller(t)
 	runner.dtclient = mockedclient.NewClient(t)
 	return runner

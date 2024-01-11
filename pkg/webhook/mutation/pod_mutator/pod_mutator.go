@@ -150,7 +150,7 @@ func (webhook *podMutatorWebhook) handlePodMutation(ctx context.Context, mutatio
 	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
 	defer span.End()
 
-	mutationRequest.InstallContainer = createInstallInitContainerBase(webhook.webhookImage, webhook.clusterID, mutationRequest.Pod, mutationRequest.DynaKube)
+	mutationRequest.InstallContainer = createInstallInitContainerBase(webhook.webhookImage, mutationRequest.Pod, mutationRequest.DynaKube)
 	isMutated := false
 	for _, mutator := range webhook.mutators {
 		if !mutator.Enabled(mutationRequest.BaseRequest) {
@@ -177,10 +177,6 @@ func (webhook *podMutatorWebhook) handlePodReinvocation(ctx context.Context, mut
 	defer span.End()
 
 	var needsUpdate bool
-
-	if mutationRequest.DynaKube.FeatureDisableWebhookReinvocationPolicy() {
-		return false
-	}
 
 	reinvocationRequest := mutationRequest.ToReinvocationRequest()
 	for _, mutator := range webhook.mutators {

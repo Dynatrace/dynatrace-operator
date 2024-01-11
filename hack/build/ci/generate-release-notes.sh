@@ -2,11 +2,12 @@
 
 tag=${GITHUB_REF_NAME:-<tag>}
 tag_without_prerelease=${tag%%-*}
+tag_without_leading_v=${tag:1}
 output_file=${OUTPUT_FILE:-CHANGELOG.md}
 pre_release=${PRE_RELEASE:-false}
 
 pre_release_warning="> ⚠️ This is a pre-release, which has no official support by Dynatrace. If you run into issues with this specific release, please open a Github Issue!
-> 
+>
 > Release notes for ${tag_without_prerelease} will be published in our official documentation.
 "
 
@@ -40,8 +41,18 @@ default_notes="### Installation
 
 For information on how to install the [latest dynatrace-operator](https://github.com/Dynatrace/dynatrace-operator/releases/latest) please visit our [official Documentation](https://docs.dynatrace.com/docs/setup-and-configuration/setup-on-k8s/installation).
 
+
+#### Helm (recommended)
+\`\`\`sh
+helm upgrade dynatrace-operator oci://public.ecr.aws/dynatrace/dynatrace-operator \
+  --version ${tag_without_leading_v} \
+  --create-namespace --namespace dynatrace \
+  --install \
+  --atomic
+\`\`\`
+
 <details>
-  <summary>Upgrade/Install instructions</summary>
+  <summary>Other upgrade/install instructions</summary>
 
 #### Kubernetes
 \`\`\`sh

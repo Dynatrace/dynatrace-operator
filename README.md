@@ -5,6 +5,7 @@
 [![codecov](https://codecov.io/gh/Dynatrace/dynatrace-operator/parse/branch/main/graph/badge.svg)](https://codecov.io/gh/Dynatrace/dynatrace-operator)
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/Dynatrace/dynatrace-operator?color=blue&sort=semver)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Dynatrace/dynatrace-operator)](https://goreportcard.com/report/github.com/Dynatrace/dynatrace-operator?dummy=unused)
+[![Releases](https://img.shields.io/github/downloads/Dynatrace/dynatrace-operator/total.svg)](https://github.com/Dynatrace/dynatrace-operator/releases)
 
 The Dynatrace Operator supports rollout and lifecycle management of various Dynatrace components in Kubernetes and OpenShift.
 

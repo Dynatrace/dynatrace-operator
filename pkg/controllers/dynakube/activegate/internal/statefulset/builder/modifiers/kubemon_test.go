@@ -59,7 +59,6 @@ func TestKubernetesMonitoringModify(t *testing.T) {
 	t.Run("successfully modified with readonly feature flag", func(t *testing.T) {
 		dynakube := getBaseDynakube()
 		setKubernetesMonitoringUsage(&dynakube, true)
-		setReadOnlyUsage(&dynakube, true)
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		mod := NewKubernetesMonitoringModifier(dynakube, multiCapability)
 		builder := createBuilderForTesting()

@@ -84,7 +84,7 @@ func (runner *Runner) Run() (resultedError error) {
 			return err
 		}
 
-		if runner.env.Mode == consts.AgentInstallerMode {
+		if !runner.config.CSIMode {
 			if err := runner.installOneAgent(); err != nil {
 				return err
 			}
@@ -151,6 +151,10 @@ func (runner *Runner) getProcessModuleConfig() (*dtclient.ProcessModuleConfig, e
 	if runner.config.Proxy != "" {
 		processModuleConfig = processModuleConfig.AddProxy(runner.config.Proxy)
 	}
+
+	if runner.config.OneAgentNoProxy != "" {
+		processModuleConfig = processModuleConfig.AddNoProxy(runner.config.OneAgentNoProxy)
+	}
 	return processModuleConfig, nil
 }
 
@@ -195,7 +199,7 @@ func (runner *Runner) configureOneAgent() error {
 			return err
 		}
 	}
-	if runner.env.IsReadOnlyCSI {
+	if runner.config.ReadOnlyCSIDriver {
 		log.Info("readOnly CSI detected, copying agent conf to empty-dir")
 		err := copyFolder(runner.fs, getReadOnlyAgentConfMountPath(), consts.AgentConfInitDirMount)
 		if err != nil {

@@ -11,7 +11,7 @@ import (
 )
 
 func (mutator *OneAgentPodMutator) configureInitContainer(request *dtwebhook.MutationRequest, installer installerInfo) {
-	addInstallerInitEnvs(request.InstallContainer, installer, request.DynaKube)
+	addInstallerInitEnvs(request.InstallContainer, installer)
 	addInitVolumeMounts(request.InstallContainer, request.DynaKube)
 }
 
