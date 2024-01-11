@@ -2,7 +2,7 @@ suite: test clusterrole for the csi driver
 templates:
   - Common/csi/clusterrole-csi.yaml
 tests:
-  - it: should exist 2 by default (1 by node)
+  - it: should exist 2 by default
     asserts:
       - hasDocuments:
           count: 2
