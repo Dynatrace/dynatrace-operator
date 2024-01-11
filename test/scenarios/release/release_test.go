@@ -20,7 +20,7 @@ func TestMain(m *testing.M) {
 	testEnv = env.NewWithConfig(cfg)
 	testEnv.Setup(
 		tenant.CreateOtelSecret(operator.DefaultNamespace),
-		operator.InstallViaHelm("0.14.1", true, operator.DefaultNamespace), // TODO: Make the version not hard-coded, but always use the previous version. Using git is not an option because pipeline does not pull the whole git repo.
+		operator.InstallViaHelm("0.15.0", true, operator.DefaultNamespace), // TODO: Make the version not hard-coded, but always use the previous version. Using git is not an option because pipeline does not pull the whole git repo.
 	)
 	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
 	if !cfg.FailFast() {
