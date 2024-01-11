@@ -315,8 +315,7 @@ jobs:
           make manifests/kubernetes IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.manifest.outputs.digest}}"
           make manifests/openshift/olm IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.manifest.outputs.digest}}"
           make manifests/openshift IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.manifest.outputs.digest}}"
-      - name: Rename manifests if pre-release
-        if: ${{ contains(github.ref, '-rc.') }}
+      - name: Rename manifests
         run: |
           mv config/deploy/kubernetes/kubernetes-all.yaml config/deploy/kubernetes/kubernetes.yaml
           mv config/deploy/openshift/openshift-all.yaml config/deploy/openshift/openshift.yaml
@@ -366,10 +365,8 @@ jobs:
             tmp/cosign.pub
             config/deploy/dynatrace-operator-crd.yaml
             config/deploy/kubernetes/kubernetes.yaml
-            config/deploy/kubernetes/kubernetes-csi.yaml
             config/deploy/kubernetes/gke-autopilot.yaml
             config/deploy/openshift/openshift.yaml
-            config/deploy/openshift/openshift-csi.yaml
             helm-pkg/dynatrace-operator-${{ needs.prepare.outputs.version_without_prefix }}.tgz
             helm-pkg/dynatrace-operator-${{ needs.prepare.outputs.version_without_prefix }}.tgz.prov
           token: ${{ secrets.GITHUB_TOKEN }}
