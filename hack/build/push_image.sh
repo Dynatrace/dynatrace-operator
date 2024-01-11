@@ -13,10 +13,10 @@ tag=${2}
 
 out_image="${image}:${tag}"
 
-if ! command -v docker
-  CONTAINER_CMD=docker
-then
+if ! command -v docker 2>/dev/null; then
   CONTAINER_CMD=podman
+else
+  CONTAINER_CMD=docker
 fi
 
 ${CONTAINER_CMD} push "${out_image}"
