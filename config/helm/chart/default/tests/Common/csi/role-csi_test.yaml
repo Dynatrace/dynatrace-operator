@@ -2,10 +2,10 @@ suite: test role for the csi driver
 templates:
   - Common/csi/role-csi.yaml
 tests:
-  - it: should not exist by default
+  - it: should exist 2 by default (1 by node)
     asserts:
       - hasDocuments:
-          count: 0
+          count: 2
 
   - it: Role should be built correctly with CSI enabled
     documentIndex: 0

@@ -90,7 +90,7 @@ webhook:
     timeoutSeconds: 2
 
 csidriver:
-  enabled: false
+  enabled: true
   nodeSelector: {}
   kubeletPath: "/var/lib/kubelet"
   existingPriorityClassName: "" # if defined, use this priorityclass instead of creating a new one
