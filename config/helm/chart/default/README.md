@@ -15,6 +15,8 @@ Install the Dynatrace Operator via Helm by running the following commands.
 > For instructions on how to install the dynatrace-operator on Openshift, head to the
 > [official help page](https://www.dynatrace.com/support/help/shortlink/k8s-helm)
 
+#### For versions older than 0.15.0
+
 Add `dynatrace` helm repository:
 
 ```console
@@ -25,6 +27,14 @@ Install `dynatrace-operator` helm chart and create the corresponding `dynatrace`
 
 ```console
 helm install dynatrace-operator dynatrace/dynatrace-operator -n dynatrace --create-namespace --atomic
+```
+
+#### For versions 0.15.0 and after
+
+Install `dynatrace-operator` helm chart using the OCI repository and create the corresponding `dynatrace` namespace:
+
+```console
+helm install dynatrace-operator oci://docker.io/dynatrace/dynatrace-operator  -n dynatrace --create-namespace --atomic
 ```
 
 ## Uninstall chart
