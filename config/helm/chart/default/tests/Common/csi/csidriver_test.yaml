@@ -2,7 +2,7 @@ suite: test csi driver resource
 templates:
   - Common/csi/csidriver.yaml
 tests:
-  - it: should exist 1 by default (1 by node)
+  - it: should exist 1 by default
     set:
       platform: kubernetes
     asserts:
