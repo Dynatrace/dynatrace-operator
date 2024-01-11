@@ -1,6 +1,7 @@
 package daemonset
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -15,7 +16,16 @@ const defaultArgumentPriority = 1
 func (dsInfo *builderInfo) arguments() []string {
 	argMap := prioritymap.New(prioritymap.WithSeparator(prioritymap.DefaultSeparator), prioritymap.WithPriority(defaultArgumentPriority))
 
-	dsInfo.appendProxyArg(argMap)
+	// is this the right spot to make that request? or pass it down to config?
+	// alternatively we could hide OpenFeature behind a facade in DynaKube as we currently treat feature flags
+	passProxyAsParam, err := dsInfo.oneAgentVersionManager.OfClient.BooleanValue(context.TODO(), "proxy-as-param", true, dsInfo.oneAgentVersionManager.GetContextForVersion(dsInfo.dynakube.OneAgentVersion()))
+	if err != nil {
+		// handle error
+	}
+	if passProxyAsParam {
+		dsInfo.appendProxyArg(argMap)
+	}
+
 	dsInfo.appendNetworkZoneArg(argMap)
 
 	appendOperatorVersionArg(argMap)

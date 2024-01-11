@@ -3,6 +3,7 @@ package daemonset
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -53,45 +54,49 @@ type ClassicFullStack struct {
 }
 
 type builderInfo struct {
-	dynakube       *dynatracev1beta1.DynaKube
-	hostInjectSpec *dynatracev1beta1.HostInjectSpec
-	clusterID      string
-	deploymentType string
+	dynakube               *dynatracev1beta1.DynaKube
+	hostInjectSpec         *dynatracev1beta1.HostInjectSpec
+	oneAgentVersionManager *oneagent.VersionManager
+	clusterID              string
+	deploymentType         string
 }
 
 type Builder interface {
 	BuildDaemonSet() (*appsv1.DaemonSet, error)
 }
 
-func NewHostMonitoring(instance *dynatracev1beta1.DynaKube, clusterId string) Builder {
+func NewHostMonitoring(instance *dynatracev1beta1.DynaKube, clusterId string, oneAgentVersionManager *oneagent.VersionManager) Builder {
 	return &HostMonitoring{
 		builderInfo{
-			dynakube:       instance,
-			hostInjectSpec: instance.Spec.OneAgent.HostMonitoring,
-			clusterID:      clusterId,
-			deploymentType: deploymentmetadata.HostMonitoringDeploymentType,
+			dynakube:               instance,
+			hostInjectSpec:         instance.Spec.OneAgent.HostMonitoring,
+			oneAgentVersionManager: oneAgentVersionManager,
+			clusterID:              clusterId,
+			deploymentType:         deploymentmetadata.HostMonitoringDeploymentType,
 		},
 	}
 }
 
-func NewCloudNativeFullStack(instance *dynatracev1beta1.DynaKube, clusterId string) Builder {
+func NewCloudNativeFullStack(instance *dynatracev1beta1.DynaKube, clusterId string, oneAgentVersionManager *oneagent.VersionManager) Builder {
 	return &HostMonitoring{
 		builderInfo{
-			dynakube:       instance,
-			hostInjectSpec: &instance.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
-			clusterID:      clusterId,
-			deploymentType: deploymentmetadata.CloudNativeDeploymentType,
+			dynakube:               instance,
+			hostInjectSpec:         &instance.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
+			oneAgentVersionManager: oneAgentVersionManager,
+			clusterID:              clusterId,
+			deploymentType:         deploymentmetadata.CloudNativeDeploymentType,
 		},
 	}
 }
 
-func NewClassicFullStack(instance *dynatracev1beta1.DynaKube, clusterId string) Builder {
+func NewClassicFullStack(instance *dynatracev1beta1.DynaKube, clusterId string, oneAgentVersionManager *oneagent.VersionManager) Builder {
 	return &ClassicFullStack{
 		builderInfo{
-			dynakube:       instance,
-			hostInjectSpec: instance.Spec.OneAgent.ClassicFullStack,
-			clusterID:      clusterId,
-			deploymentType: deploymentmetadata.ClassicFullStackDeploymentType,
+			dynakube:               instance,
+			hostInjectSpec:         instance.Spec.OneAgent.ClassicFullStack,
+			oneAgentVersionManager: oneAgentVersionManager,
+			clusterID:              clusterId,
+			deploymentType:         deploymentmetadata.ClassicFullStackDeploymentType,
 		},
 	}
 }
@@ -174,6 +179,7 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 	resources := dsInfo.resources()
 	dnsPolicy := dsInfo.dnsPolicy()
+
 	arguments := dsInfo.arguments()
 	environmentVariables := dsInfo.environmentVariables()
 	volumeMounts := dsInfo.volumeMounts()

@@ -43,7 +43,7 @@ func TestUseImmutableImage(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := NewClassicFullStack(&instance, testClusterID)
+		dsInfo := NewClassicFullStack(&instance, testClusterID, nil)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -83,7 +83,7 @@ func TestLabels(t *testing.T) {
 			labels.AppCreatedByLabel: instance.Name,
 			labels.AppManagedByLabel: version.AppName,
 		}
-		dsInfo := NewClassicFullStack(&instance, testClusterID)
+		dsInfo := NewClassicFullStack(&instance, testClusterID, nil)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -116,7 +116,7 @@ func TestLabels(t *testing.T) {
 			labels.AppManagedByLabel: version.AppName,
 		}
 
-		dsInfo := NewClassicFullStack(&instance, testClusterID)
+		dsInfo := NewClassicFullStack(&instance, testClusterID, nil)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -138,7 +138,7 @@ func TestCustomPullSecret(t *testing.T) {
 			CustomPullSecret: testName,
 		},
 	}
-	dsInfo := NewClassicFullStack(&instance, testClusterID)
+	dsInfo := NewClassicFullStack(&instance, testClusterID, nil)
 	ds, err := dsInfo.BuildDaemonSet()
 	require.NoError(t, err)
 
@@ -158,7 +158,7 @@ func TestResources(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := NewClassicFullStack(&instance, testClusterID)
+		dsInfo := NewClassicFullStack(&instance, testClusterID, nil)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -195,7 +195,7 @@ func TestResources(t *testing.T) {
 			},
 		}
 
-		dsInfo := NewClassicFullStack(&instance, testClusterID)
+		dsInfo := NewClassicFullStack(&instance, testClusterID, nil)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -257,7 +257,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := NewHostMonitoring(&instance, testClusterID)
+		dsInfo := NewHostMonitoring(&instance, testClusterID, nil)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -287,7 +287,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := NewHostMonitoring(&instance, testClusterID)
+		dsInfo := NewHostMonitoring(&instance, testClusterID, nil)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -318,7 +318,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := NewClassicFullStack(&instance, testClusterID)
+		dsInfo := NewClassicFullStack(&instance, testClusterID, nil)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -350,7 +350,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := NewClassicFullStack(&instance, testClusterID)
+		dsInfo := NewClassicFullStack(&instance, testClusterID, nil)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -384,7 +384,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := NewClassicFullStack(&instance, testClusterID)
+		dsInfo := NewClassicFullStack(&instance, testClusterID, nil)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -689,7 +689,7 @@ func TestAnnotations(t *testing.T) {
 			annotationUnprivileged:            annotationUnprivilegedValue,
 		}
 
-		builder := NewCloudNativeFullStack(&dynakube, testClusterID)
+		builder := NewCloudNativeFullStack(&dynakube, testClusterID, nil)
 		daemonset, err := builder.BuildDaemonSet()
 
 		assert.NoError(t, err)
@@ -709,7 +709,7 @@ func TestAnnotations(t *testing.T) {
 			annotationUnprivileged:            annotationUnprivilegedValue,
 		}
 
-		builder := NewHostMonitoring(&dynakube, testClusterID)
+		builder := NewHostMonitoring(&dynakube, testClusterID, nil)
 		daemonset, err := builder.BuildDaemonSet()
 
 		assert.NoError(t, err)
@@ -729,7 +729,7 @@ func TestAnnotations(t *testing.T) {
 			annotationUnprivileged:            annotationUnprivilegedValue,
 		}
 
-		builder := NewClassicFullStack(&dynakube, testClusterID)
+		builder := NewClassicFullStack(&dynakube, testClusterID, nil)
 		daemonset, err := builder.BuildDaemonSet()
 
 		assert.NoError(t, err)
@@ -756,7 +756,7 @@ func TestAnnotations(t *testing.T) {
 			testKey:                           testName,
 		}
 
-		builder := NewCloudNativeFullStack(&dynakube, testClusterID)
+		builder := NewCloudNativeFullStack(&dynakube, testClusterID, nil)
 		daemonset, err := builder.BuildDaemonSet()
 
 		assert.NoError(t, err)
@@ -781,7 +781,7 @@ func TestAnnotations(t *testing.T) {
 			testKey:                           testName,
 		}
 
-		builder := NewHostMonitoring(&dynakube, testClusterID)
+		builder := NewHostMonitoring(&dynakube, testClusterID, nil)
 		daemonset, err := builder.BuildDaemonSet()
 
 		assert.NoError(t, err)
@@ -806,7 +806,7 @@ func TestAnnotations(t *testing.T) {
 			testKey:                           testName,
 		}
 
-		builder := NewClassicFullStack(&dynakube, testClusterID)
+		builder := NewClassicFullStack(&dynakube, testClusterID, nil)
 		daemonset, err := builder.BuildDaemonSet()
 
 		assert.NoError(t, err)

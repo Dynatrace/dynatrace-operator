@@ -204,7 +204,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	t.Run("reconileImp Instances set, if autoUpdate is true", func(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Status.OneAgent.Version = oldComponentVersion
-		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
+		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID, nil)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -238,7 +238,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 			"--set-server=https://hyper.super.com:9999",
 		}
 		dk.Spec.OneAgent.ClassicFullStack.Args = args
-		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
+		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID, nil)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -262,7 +262,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 			"--set-server=https://hyper.super.com:9999",
 		}
 		dk.Spec.OneAgent.ClassicFullStack.Args = args
-		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
+		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID, nil)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -283,7 +283,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		autoUpdate := false
 		dk.Spec.OneAgent.ClassicFullStack.AutoUpdate = &autoUpdate
 		dk.Status.OneAgent.Version = oldComponentVersion
-		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
+		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID, nil)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 

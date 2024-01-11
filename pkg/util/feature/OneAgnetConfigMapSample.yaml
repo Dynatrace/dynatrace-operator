@@ -10,10 +10,11 @@ data:
   oneagent-v1.properties: |
     param1=1
     param2=sampletext
+    proxy-as-param=true
   oneagent-v2.properties: |
     param1=2
     param2=text
-
+    proxy-as-param=false
 
 ---
 #perator pod snippet to mount ConfigMap
