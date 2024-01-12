@@ -171,7 +171,6 @@ func (webhook *podMutatorWebhook) handlePodMutation(ctx context.Context, mutatio
 	addInitContainerToPod(mutationRequest.Pod, mutationRequest.InstallContainer)
 	webhook.recorder.sendPodInjectEvent()
 	setDynatraceInjectedAnnotation(mutationRequest)
-
 	return nil
 }
 
