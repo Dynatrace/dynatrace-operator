@@ -12,7 +12,7 @@ const (
 )
 
 func NewOneAgentVersionManager(kube *dynakube.DynaKube) *VersionManager {
-	err := openfeature.SetProvider(feature.NewConfigMapFeatureProvider())
+	err := openfeature.SetProvider(feature.NewConfigMapFeatureProvider(nil))
 	if err != nil {
 		// handle error
 	}
