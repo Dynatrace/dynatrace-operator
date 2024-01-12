@@ -45,6 +45,7 @@ const (
 	probeDefaultSuccessThreshold = int32(1)
 )
 
+// OpenFeature research relevant
 type HostMonitoring struct {
 	builderInfo
 }

@@ -9,9 +9,12 @@ import (
 )
 
 const (
+	ErrorFlagNotFound = "flag not found"
+
 	OneAgentVersionMappingKey = "OneAgentVersionMappingKey"
 )
 
+// OpenFeature research relevant
 func ReadConfigMapAndCreateFeatureProvider(ctx context.Context, apiReader client.Reader) (*ConfigMapFeatureProvider, error) {
 	configMap, err := ReadConfigMap(ctx, apiReader)
 	if err != nil {
@@ -43,6 +46,7 @@ type ConfigMapFeatureProvider struct {
 
 var _ openfeature.FeatureProvider = ConfigMapFeatureProvider{}
 
+// REQUIRED as per spec
 func (k ConfigMapFeatureProvider) Metadata() openfeature.Metadata {
 	// return information about supported OneAgent versions, release date, OneAgent ConfigMap version
 	return openfeature.Metadata{
@@ -52,7 +56,6 @@ func (k ConfigMapFeatureProvider) Metadata() openfeature.Metadata {
 
 // REQUIRED functionality: boolean, int, string and object
 // imho nice basic provider can be found at https://github.com/open-feature/go-sdk-contrib/blob/main/providers/from-env/pkg/provider.go
-
 func (k ConfigMapFeatureProvider) BooleanEvaluation(ctx context.Context, flagKey string, defaultValue bool, evalCtx openfeature.FlattenedContext) openfeature.BoolResolutionDetail {
 	res := k.resolveFlag(flagKey, defaultValue, evalCtx)
 	v, ok := res.Value.(bool)
@@ -138,19 +141,11 @@ func (k ConfigMapFeatureProvider) ObjectEvaluation(ctx context.Context, flagKey 
 	return k.resolveFlag(flagKey, defaultValue, evalCtx)
 }
 
+// REQUIRED as per spec, but not the actual implementation of the hooking mechanism as I interpret it...
+// why we might want to implement it: logging and tracing...
 func (k ConfigMapFeatureProvider) Hooks() []openfeature.Hook {
-	// OPTIONAL: while the method has to be there, according to spec a hook mechanism implementation is not mandatory
-	// why we might want to implement it: logging and tracing...
 	return []openfeature.Hook{}
 }
-
-const (
-	ReasonStatic = "static"
-
-	ErrorTypeMismatch = "type mismatch"
-	ErrorParse        = "parse error"
-	ErrorFlagNotFound = "flag not found"
-)
 
 func (p *ConfigMapFeatureProvider) resolveFlag(flagKey string, defaultValue any, evalCtx openfeature.FlattenedContext) openfeature.InterfaceResolutionDetail {
 	// fetch the stored flag from environment variables

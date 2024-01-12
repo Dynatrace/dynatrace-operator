@@ -1,8 +1,6 @@
 package oneagent
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/feature"
 	"github.com/open-feature/go-sdk/openfeature"
 )
 
@@ -11,8 +9,9 @@ const (
 	MaxOneAgentVersionSupported = "1.4.5" // maximum version supported by this operator installer
 )
 
-func NewOneAgentVersionManager(kube *dynakube.DynaKube) *VersionManager {
-	err := openfeature.SetProvider(feature.NewConfigMapFeatureProvider(nil))
+func NewOneAgentVersionManager(provider openfeature.FeatureProvider) *VersionManager {
+
+	err := openfeature.SetProvider(provider)
 	if err != nil {
 		// handle error
 	}
