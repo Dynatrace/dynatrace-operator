@@ -5,10 +5,11 @@ import (
 )
 
 const (
-	injectEvent          = "Inject"
-	updatePodEvent       = "UpdatePod"
-	IncompatibleCRDEvent = "IncompatibleCRDPresent"
-	missingDynakubeEvent = "MissingDynakube"
+	injectEvent               = "Inject"
+	updatePodEvent            = "UpdatePod"
+	IncompatibleCRDEvent      = "IncompatibleCRDPresent"
+	missingDynakubeEvent      = "MissingDynakube"
+	injectionConfigVolumeName = "injection-config"
 
 	defaultUser   int64 = 1001
 	defaultGroup  int64 = 1001

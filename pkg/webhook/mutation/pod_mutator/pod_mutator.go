@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"net/http/httptrace"
 	"os"
 
@@ -166,9 +167,11 @@ func (webhook *podMutatorWebhook) handlePodMutation(ctx context.Context, mutatio
 		return nil
 	}
 
+	addInjectionConfigVolumeToPod(mutationRequest.Pod)
 	addInitContainerToPod(mutationRequest.Pod, mutationRequest.InstallContainer)
 	webhook.recorder.sendPodInjectEvent()
 	setDynatraceInjectedAnnotation(mutationRequest)
+
 	return nil
 }
 
@@ -217,4 +220,17 @@ func silentErrorResponse(ctx context.Context, pod *corev1.Pod, err error) admiss
 	log.Error(err, "failed to inject into pod", "podName", podName)
 	rsp.Result.Message = fmt.Sprintf("Failed to inject into pod: %s because %s", podName, err.Error())
 	return rsp
+}
+
+func addInjectionConfigVolumeToPod(pod *corev1.Pod) {
+	pod.Spec.Volumes = append(pod.Spec.Volumes,
+		corev1.Volume{
+			Name: injectionConfigVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: consts.AgentInitSecretName,
+				},
+			},
+		},
+	)
 }

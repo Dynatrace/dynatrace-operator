@@ -19,9 +19,8 @@ const (
 	releaseStageEnv        = "DT_RELEASE_STAGE"
 	releaseBuildVersionEnv = "DT_RELEASE_BUILD_VERSION"
 
-	OneAgentBinVolumeName     = "oneagent-bin"
-	oneAgentShareVolumeName   = "oneagent-share"
-	injectionConfigVolumeName = "injection-config"
+	OneAgentBinVolumeName   = "oneagent-bin"
+	oneAgentShareVolumeName = "oneagent-share"
 
 	oneAgentCustomKeysPath = "/var/lib/dynatrace/oneagent/agent/customkeys"
 	customCertFileName     = "custom.pem"

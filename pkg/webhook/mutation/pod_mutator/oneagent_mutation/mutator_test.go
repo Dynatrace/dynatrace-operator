@@ -104,25 +104,25 @@ func TestMutate(t *testing.T) {
 			name:                                   "basic, should mutate the pod and init container in the request",
 			dynakube:                               *getTestDynakube(),
 			expectedAdditionalEnvCount:             2, // 1 deployment-metadata + 1 preload
-			expectedAdditionalVolumeCount:          3, // bin, share, injection-config
+			expectedAdditionalVolumeCount:          2, // bin, share, injection-config
 			expectedAdditionalVolumeMountCount:     3, // 3 oneagent mounts(preload,bin,conf)
-			expectedAdditionalInitVolumeMountCount: 3, // bin, share, injection-config
+			expectedAdditionalInitVolumeMountCount: 2, // bin, share
 		},
 		{
 			name:                                   "everything turned on, should mutate the pod and init container in the request",
 			dynakube:                               *getTestComplexDynakube(),
 			expectedAdditionalEnvCount:             5, // 1 deployment-metadata + 1 network-zone + 1 preload + 2 version-detection
-			expectedAdditionalVolumeCount:          3, // bin, share, injection-config
+			expectedAdditionalVolumeCount:          2, // bin, share
 			expectedAdditionalVolumeMountCount:     5, // 3 oneagent mounts(preload,bin,conf) + 1 cert mount + 1 curl-options
-			expectedAdditionalInitVolumeMountCount: 3, // bin, share, injection-config
+			expectedAdditionalInitVolumeMountCount: 2, // bin, share
 		},
 		{
 			name:                                   "basic + readonly-csi, should mutate the pod and init container in the request",
 			dynakube:                               *getTestReadOnlyCSIDynakube(),
 			expectedAdditionalEnvCount:             2, // 1 deployment-metadata + 1 preload
-			expectedAdditionalVolumeCount:          6, // bin, share, injection-config +  agent-conf, data-storage, agent-log
+			expectedAdditionalVolumeCount:          5, // bin, share +  agent-conf, data-storage, agent-log
 			expectedAdditionalVolumeMountCount:     6, // 3 oneagent mounts(preload,bin,conf) +3 oneagent mounts for readonly csi (agent-conf,data-storage,agent-log)
-			expectedAdditionalInitVolumeMountCount: 4, // bin, share, injection-config, agent-conf
+			expectedAdditionalInitVolumeMountCount: 3, // bin, share, agent-conf
 		},
 	}
 

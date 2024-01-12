@@ -30,6 +30,9 @@ func createInstallInitContainerBase(webhookImage string, pod *corev1.Pod, dynaku
 		},
 		SecurityContext: securityContextForInitContainer(pod, dynakube),
 		Resources:       initContainerResources(dynakube),
+		VolumeMounts: []corev1.VolumeMount{
+			{Name: injectionConfigVolumeName, MountPath: consts.AgentConfigDirMount},
+		},
 	}
 }
 

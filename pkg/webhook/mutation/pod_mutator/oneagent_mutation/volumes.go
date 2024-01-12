@@ -14,7 +14,6 @@ import (
 )
 
 func (mutator *OneAgentPodMutator) addVolumes(pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) {
-	addInjectionConfigVolume(pod)
 	addOneAgentVolumes(pod, dynakube)
 	if dynakube.FeatureReadOnlyCsiVolume() {
 		addVolumesForReadOnlyCSI(pod)
@@ -86,25 +85,6 @@ func addCurlOptionsVolumeMount(container *corev1.Container) {
 		MountPath: filepath.Join(oneAgentCustomKeysPath, consts.AgentCurlOptionsFileName),
 		SubPath:   consts.AgentCurlOptionsFileName,
 	})
-}
-
-func addInjectionConfigVolume(pod *corev1.Pod) {
-	pod.Spec.Volumes = append(pod.Spec.Volumes,
-		corev1.Volume{
-			Name: injectionConfigVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: consts.AgentInitSecretName,
-				},
-			},
-		},
-	)
-}
-
-func addInjectionConfigVolumeMount(container *corev1.Container) {
-	container.VolumeMounts = append(container.VolumeMounts,
-		corev1.VolumeMount{Name: injectionConfigVolumeName, MountPath: consts.AgentConfigDirMount},
-	)
 }
 
 func addOneAgentVolumes(pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) {

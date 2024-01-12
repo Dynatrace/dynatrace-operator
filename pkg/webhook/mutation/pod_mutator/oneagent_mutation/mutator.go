@@ -64,7 +64,6 @@ func (mutator *OneAgentPodMutator) Mutate(ctx context.Context, request *dtwebhoo
 	mutator.configureInitContainer(request, installerInfo)
 	mutator.setContainerCount(request.InstallContainer, len(request.Pod.Spec.Containers))
 	mutator.mutateUserContainers(request)
-	addInjectionConfigVolumeMount(request.InstallContainer)
 	setInjectedAnnotation(request.Pod)
 	return nil
 }
