@@ -65,7 +65,7 @@ func TestNewRunner(t *testing.T) {
 		assert.NotNil(t, runner.fs)
 		assert.NotNil(t, runner.env)
 		assert.Nil(t, runner.dtclient)
-		assert.Nil(t, runner.config)
+		assert.NotNil(t, runner.config)
 		assert.Nil(t, runner.installer)
 		assert.Empty(t, runner.hostTenant)
 	})
