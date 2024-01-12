@@ -3,6 +3,7 @@ package oneagent
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/feature"
 	"os"
 	"reflect"
 	"strconv"
@@ -33,6 +34,7 @@ const (
 	oldDsName             = "classic"
 )
 
+// OpenFeature research relevant!
 // NewOneAgentReconciler initializes a new ReconcileOneAgent instance
 func NewOneAgentReconciler( //nolint:revive // maximum number of return results per function exceeded; max 3 but got 4
 	client client.Client,
@@ -50,10 +52,11 @@ func NewOneAgentReconciler( //nolint:revive // maximum number of return results 
 type Reconciler struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client    client.Client
-	apiReader client.Reader
-	scheme    *runtime.Scheme
-	clusterID string
+	client                 client.Client
+	apiReader              client.Reader
+	oneAgentVersionManager *VersionManager
+	scheme                 *runtime.Scheme
+	clusterID              string
 }
 
 // Reconcile reads that state of the cluster for a OneAgent object and makes changes based on the state read
@@ -62,7 +65,16 @@ type Reconciler struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *Reconciler) Reconcile(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+	provider, err := feature.ReadConfigMapAndCreateFeatureProvider(ctx, r.apiReader)
+	if err != nil {
+		return err
+	}
+	r.oneAgentVersionManager = NewOneAgentVersionManager(provider)
+
 	log.Info("reconciling OneAgent")
+	if err := r.verifyOneAgentVersion(dynakube); err != nil {
+		return err
+	}
 
 	if !dynakube.IsOneAgentCommunicationRouteClear() {
 		log.Info("OneAgent were not yet able to communicate with tenant, no direct route or ready ActiveGate available, postponing OneAgent deployment")
@@ -74,7 +86,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dynakube *dynatracev1beta1.D
 	}
 	log.Info("At least one ActiveGate is operational, deploying OneAgent")
 
-	err := r.createOneAgentTenantConnectionInfoConfigMap(ctx, dynakube)
+	err = r.createOneAgentTenantConnectionInfoConfigMap(ctx, dynakube)
 	if err != nil {
 		return err
 	}
@@ -105,6 +117,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, dynakube *dynatracev1beta1.D
 	}
 
 	log.Info("reconciled " + deploymentmetadata.GetOneAgentDeploymentType(*dynakube))
+	return nil
+}
+
+func (r *Reconciler) verifyOneAgentVersion(dynakube *dynatracev1beta1.DynaKube) error {
+	if !r.oneAgentVersionManager.IsOneAgentVersionSupported(dynakube.OneAgentVersion()) {
+		// create and log version not supported error here
+	}
 	return nil
 }
 
@@ -197,11 +216,11 @@ func (r *Reconciler) buildDesiredDaemonSet(dynakube *dynatracev1beta1.DynaKube) 
 
 	switch {
 	case dynakube.ClassicFullStackMode():
-		ds, err = daemonset.NewClassicFullStack(dynakube, r.clusterID).BuildDaemonSet()
+		ds, err = daemonset.NewClassicFullStack(dynakube, r.clusterID, r.oneAgentVersionManager).BuildDaemonSet()
 	case dynakube.HostMonitoringMode():
-		ds, err = daemonset.NewHostMonitoring(dynakube, r.clusterID).BuildDaemonSet()
+		ds, err = daemonset.NewHostMonitoring(dynakube, r.clusterID, r.oneAgentVersionManager).BuildDaemonSet()
 	case dynakube.CloudNativeFullstackMode():
-		ds, err = daemonset.NewCloudNativeFullStack(dynakube, r.clusterID).BuildDaemonSet()
+		ds, err = daemonset.NewCloudNativeFullStack(dynakube, r.clusterID, r.oneAgentVersionManager).BuildDaemonSet()
 	}
 	if err != nil {
 		return nil, err

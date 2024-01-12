@@ -1,0 +1,37 @@
+# OpenFeature research relevant
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: operator-oneagent-features
+data:
+
+#EvaluationContext: per OneAgent version a file mount?
+#     |
+#<----+----->
+  oneagent-v1.properties: |
+    param1=1
+    param2=sampletext
+    proxy-as-param=true
+  oneagent-v2.properties: |
+    param1=2
+    param2=text
+    proxy-as-param=false
+
+---
+#perator pod snippet to mount ConfigMap
+volumeMounts:
+  - name: oneagent-features
+    mountPath: "/supported-oneagent-versions"
+    readOnly: true
+volumes:
+  # You set volumes at the Pod level, then mount them into containers inside that Pod
+  - name: config
+    configMap:
+      # Provide the name of the ConfigMap you want to mount.
+      name: oneagent-features
+      # An array of keys from the ConfigMap to create as files
+      items:
+        - key: "oneagent-v1.properties"
+          path: "oneagent-v1.properties"
+        - key: "oneagent-v2.properties"
+          path: "oneagent-v2.properties"

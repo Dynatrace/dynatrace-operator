@@ -12,10 +12,20 @@ const argumentPrefix = "--"
 const customArgumentPriority = 2
 const defaultArgumentPriority = 1
 
+// OpenFeature research relevant!
 func (dsInfo *builderInfo) arguments() []string {
 	argMap := prioritymap.New(prioritymap.WithSeparator(prioritymap.DefaultSeparator), prioritymap.WithPriority(defaultArgumentPriority))
 
-	dsInfo.appendProxyArg(argMap)
+	// is this the right spot to make that request? or pass it down to config?
+	// alternatively we could hide OpenFeature behind a facade in DynaKube as we currently treat feature flags
+	passProxyAsParam, err := dsInfo.oneAgentVersionManager.ShouldUseProxyAsParam(dsInfo.dynakube.OneAgentVersion())
+	if err != nil {
+		// handle error
+	}
+	if passProxyAsParam {
+		dsInfo.appendProxyArg(argMap)
+	}
+
 	dsInfo.appendNetworkZoneArg(argMap)
 
 	appendOperatorVersionArg(argMap)
