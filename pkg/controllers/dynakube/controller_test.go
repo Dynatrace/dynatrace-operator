@@ -13,8 +13,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
@@ -25,6 +27,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	mocks2 "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	fakecontainer "github.com/google/go-containerregistry/pkg/v1/fake"
 	"github.com/pkg/errors"
@@ -384,6 +387,7 @@ func createTestOneAgentConnectionInfo() dtclient.OneAgentConnectionInfo {
 	}
 }
 
+// TODO: (re)move test to OneAgent reconciler tests -> just test if oneagent reconciler gets called
 func TestMonitoringModesDynakube_Reconcile(t *testing.T) {
 	deploymentModes := map[string]dynatracev1beta1.OneAgentSpec{
 		"hostMonitoring":        {HostMonitoring: &dynatracev1beta1.HostInjectSpec{AutoUpdate: address.Of(false)}},
@@ -768,11 +772,12 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 		}
 
 		controller := &Controller{
-			client:                 fakeClient,
-			apiReader:              fakeClient,
-			scheme:                 scheme.Scheme,
-			dynatraceClientBuilder: mockDtcBuilder,
-			registryClientBuilder:  createFakeRegistryClientBuilder(),
+			client:                               fakeClient,
+			apiReader:                            fakeClient,
+			scheme:                               scheme.Scheme,
+			dynatraceClientBuilder:               mockDtcBuilder,
+			registryClientBuilder:                createFakeRegistryClientBuilder(),
+			demploymentMetadataReconcilerBuilder: createFakeDeploymentMetadataReconcilerBuild(),
 		}
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
@@ -1039,15 +1044,24 @@ func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatra
 	}
 
 	controller := &Controller{
-		client:                 fakeClient,
-		apiReader:              fakeClient,
-		registryClientBuilder:  createFakeRegistryClientBuilder(),
-		scheme:                 scheme.Scheme,
-		dynatraceClientBuilder: mockDtcBuilder,
-		fs:                     afero.Afero{Fs: afero.NewMemMapFs()},
+		client:                               fakeClient,
+		apiReader:                            fakeClient,
+		registryClientBuilder:                createFakeRegistryClientBuilder(),
+		demploymentMetadataReconcilerBuilder: createFakeDeploymentMetadataReconcilerBuild(),
+		scheme:                               scheme.Scheme,
+		dynatraceClientBuilder:               mockDtcBuilder,
+		fs:                                   afero.Afero{Fs: afero.NewMemMapFs()},
 	}
 
 	return controller
+}
+
+func createFakeDeploymentMetadataReconcilerBuild() deploymentmetadata.ReconcilerBuilder {
+	mockReconciler := &mocks2.Reconciler{}
+	mockReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(nil)
+	return func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube dynatracev1beta1.DynaKube, clusterID string) controllers.Reconciler {
+		return mockReconciler
+	}
 }
 
 // generateStatefulSetForTesting prepares an ActiveGate StatefulSet after a Reconciliation of the Dynakube with a specific feature enabled
