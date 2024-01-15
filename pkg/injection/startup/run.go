@@ -32,14 +32,15 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 		return nil, err
 	}
 
-	secretConfig, err := newSecretConfigViaFs(fs)
-	if err != nil {
-		return nil, err
-	}
-
+	var secretConfig *SecretConfig
 	var client dtclient.Client
 	var oneAgentInstaller installer.Installer
 	if env.OneAgentInjected {
+		secretConfig, err = newSecretConfigViaFs(fs)
+		if err != nil {
+			return nil, err
+		}
+
 		client, err = newDTClientBuilder(secretConfig).createClient()
 		if err != nil {
 			return nil, err

@@ -37,6 +37,7 @@ type environment struct {
 	K8PodUID      string `json:"k8BasePodUID"`
 	K8BasePodName string `json:"k8BasePodName"`
 	K8Namespace   string `json:"k8Namespace"`
+	K8ClusterID   string `json:"k8ClusterID"`
 
 	WorkloadKind string `json:"workloadKind"`
 	WorkloadName string `json:"workloadName"`
@@ -88,6 +89,7 @@ func (env *environment) getCommonFieldSetters() []func() error {
 		env.addK8PodName,
 		env.addK8PodUID,
 		env.addK8Namespace,
+		env.addK8ClusterID,
 	}
 }
 
@@ -280,6 +282,15 @@ func (env *environment) addOneAgentInjected() {
 func (env *environment) addDataIngestInjected() {
 	dataIngestInjected, _ := checkEnvVar(consts.EnrichmentInjectedEnv)
 	env.DataIngestInjected = dataIngestInjected == trueStatement
+}
+
+func (env *environment) addK8ClusterID() error {
+	clusterID, err := checkEnvVar(consts.K8sClusterIDEnv)
+	if err != nil {
+		return err
+	}
+	env.K8ClusterID = clusterID
+	return nil
 }
 
 func checkEnvVar(envvar string) (string, error) {
