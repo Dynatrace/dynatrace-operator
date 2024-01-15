@@ -87,14 +87,16 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 type Controller struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the api-server
-	client                 client.Client
-	apiReader              client.Reader
-	scheme                 *runtime.Scheme
-	fs                     afero.Afero
-	dynatraceClientBuilder dynatraceclient.Builder
-	istioClientBuilder     istio.ClientBuilder
-	registryClientBuilder  registry.ClientBuilder
-
+	client                               client.Client
+	apiReader                            client.Reader
+	scheme                               *runtime.Scheme
+	fs                                   afero.Afero
+	dynatraceClientBuilder               dynatraceclient.Builder
+	istioClientBuilder                   istio.ClientBuilder
+	registryClientBuilder                registry.ClientBuilder
+	demploymentMetadataReconcilerBuilder deploymentmetadata.ReconcilerBuilder
+	// TODO: istio reconciler builder; is it necessary as istioClient gets injected into the istio reconciler
+	//
 	config            *rest.Config
 	operatorNamespace string
 	clusterID         string
@@ -211,9 +213,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 	}
 
 	log.Info("start reconciling deployment meta data")
-	err = deploymentmetadata.NewReconciler(
-		controller.client, controller.apiReader, controller.scheme, *dynakube, controller.clusterID).
-		Reconcile(ctx)
+	err = controller.demploymentMetadataReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, *dynakube, controller.clusterID).Reconcile(ctx)
 	if err != nil {
 		return err
 	}
