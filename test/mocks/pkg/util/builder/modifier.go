@@ -21,6 +21,10 @@ func (_m *Modifier[T]) EXPECT() *Modifier_Expecter[T] {
 func (_m *Modifier[T]) Enabled() bool {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for Enabled")
+	}
+
 	var r0 bool
 	if rf, ok := ret.Get(0).(func() bool); ok {
 		r0 = rf()
@@ -61,6 +65,10 @@ func (_c *Modifier_Enabled_Call[T]) RunAndReturn(run func() bool) *Modifier_Enab
 // Modify provides a mock function with given fields: _a0
 func (_m *Modifier[T]) Modify(_a0 *T) error {
 	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Modify")
+	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(*T) error); ok {

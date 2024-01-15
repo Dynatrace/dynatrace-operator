@@ -6,6 +6,7 @@ import (
 	io "io"
 
 	dynatrace "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -25,6 +26,10 @@ func (_m *Client) EXPECT() *Client_Expecter {
 // CreateOrUpdateKubernetesAppSetting provides a mock function with given fields: scope
 func (_m *Client) CreateOrUpdateKubernetesAppSetting(scope string) (string, error) {
 	ret := _m.Called(scope)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateOrUpdateKubernetesAppSetting")
+	}
 
 	var r0 string
 	var r1 error
@@ -77,6 +82,10 @@ func (_c *Client_CreateOrUpdateKubernetesAppSetting_Call) RunAndReturn(run func(
 // CreateOrUpdateKubernetesSetting provides a mock function with given fields: name, kubeSystemUUID, scope
 func (_m *Client) CreateOrUpdateKubernetesSetting(name string, kubeSystemUUID string, scope string) (string, error) {
 	ret := _m.Called(name, kubeSystemUUID, scope)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateOrUpdateKubernetesSetting")
+	}
 
 	var r0 string
 	var r1 error
@@ -132,6 +141,10 @@ func (_c *Client_CreateOrUpdateKubernetesSetting_Call) RunAndReturn(run func(str
 func (_m *Client) GetActiveGateAuthToken(dynakubeName string) (*dynatrace.ActiveGateAuthTokenInfo, error) {
 	ret := _m.Called(dynakubeName)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetActiveGateAuthToken")
+	}
+
 	var r0 *dynatrace.ActiveGateAuthTokenInfo
 	var r1 error
 	if rf, ok := ret.Get(0).(func(string) (*dynatrace.ActiveGateAuthTokenInfo, error)); ok {
@@ -186,6 +199,10 @@ func (_c *Client_GetActiveGateAuthToken_Call) RunAndReturn(run func(string) (*dy
 func (_m *Client) GetActiveGateConnectionInfo() (dynatrace.ActiveGateConnectionInfo, error) {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetActiveGateConnectionInfo")
+	}
+
 	var r0 dynatrace.ActiveGateConnectionInfo
 	var r1 error
 	if rf, ok := ret.Get(0).(func() (dynatrace.ActiveGateConnectionInfo, error)); ok {
@@ -237,6 +254,10 @@ func (_c *Client_GetActiveGateConnectionInfo_Call) RunAndReturn(run func() (dyna
 func (_m *Client) GetAgent(os string, installerType string, flavor string, arch string, version string, technologies []string, skipMetadata bool, writer io.Writer) error {
 	ret := _m.Called(os, installerType, flavor, arch, version, technologies, skipMetadata, writer)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetAgent")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string, string, string, string, string, []string, bool, io.Writer) error); ok {
 		r0 = rf(os, installerType, flavor, arch, version, technologies, skipMetadata, writer)
@@ -285,6 +306,10 @@ func (_c *Client_GetAgent_Call) RunAndReturn(run func(string, string, string, st
 // GetAgentVersions provides a mock function with given fields: os, installerType, flavor, arch
 func (_m *Client) GetAgentVersions(os string, installerType string, flavor string, arch string) ([]string, error) {
 	ret := _m.Called(os, installerType, flavor, arch)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetAgentVersions")
+	}
 
 	var r0 []string
 	var r1 error
@@ -343,6 +368,10 @@ func (_c *Client_GetAgentVersions_Call) RunAndReturn(run func(string, string, st
 func (_m *Client) GetAgentViaInstallerUrl(url string, writer io.Writer) error {
 	ret := _m.Called(url, writer)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetAgentViaInstallerUrl")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string, io.Writer) error); ok {
 		r0 = rf(url, writer)
@@ -385,6 +414,10 @@ func (_c *Client_GetAgentViaInstallerUrl_Call) RunAndReturn(run func(string, io.
 // GetCommunicationHostForClient provides a mock function with given fields:
 func (_m *Client) GetCommunicationHostForClient() (dynatrace.CommunicationHost, error) {
 	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetCommunicationHostForClient")
+	}
 
 	var r0 dynatrace.CommunicationHost
 	var r1 error
@@ -437,6 +470,10 @@ func (_c *Client_GetCommunicationHostForClient_Call) RunAndReturn(run func() (dy
 func (_m *Client) GetEntityIDForIP(ip string) (string, error) {
 	ret := _m.Called(ip)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetEntityIDForIP")
+	}
+
 	var r0 string
 	var r1 error
 	if rf, ok := ret.Get(0).(func(string) (string, error)); ok {
@@ -488,6 +525,10 @@ func (_c *Client_GetEntityIDForIP_Call) RunAndReturn(run func(string) (string, e
 // GetLatestActiveGateImage provides a mock function with given fields:
 func (_m *Client) GetLatestActiveGateImage() (*dynatrace.LatestImageInfo, error) {
 	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetLatestActiveGateImage")
+	}
 
 	var r0 *dynatrace.LatestImageInfo
 	var r1 error
@@ -542,6 +583,10 @@ func (_c *Client_GetLatestActiveGateImage_Call) RunAndReturn(run func() (*dynatr
 func (_m *Client) GetLatestAgent(os string, installerType string, flavor string, arch string, technologies []string, skipMetadata bool, writer io.Writer) error {
 	ret := _m.Called(os, installerType, flavor, arch, technologies, skipMetadata, writer)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetLatestAgent")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string, string, string, string, []string, bool, io.Writer) error); ok {
 		r0 = rf(os, installerType, flavor, arch, technologies, skipMetadata, writer)
@@ -589,6 +634,10 @@ func (_c *Client_GetLatestAgent_Call) RunAndReturn(run func(string, string, stri
 // GetLatestAgentVersion provides a mock function with given fields: os, installerType
 func (_m *Client) GetLatestAgentVersion(os string, installerType string) (string, error) {
 	ret := _m.Called(os, installerType)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetLatestAgentVersion")
+	}
 
 	var r0 string
 	var r1 error
@@ -643,6 +692,10 @@ func (_c *Client_GetLatestAgentVersion_Call) RunAndReturn(run func(string, strin
 func (_m *Client) GetLatestCodeModulesImage() (*dynatrace.LatestImageInfo, error) {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetLatestCodeModulesImage")
+	}
+
 	var r0 *dynatrace.LatestImageInfo
 	var r1 error
 	if rf, ok := ret.Get(0).(func() (*dynatrace.LatestImageInfo, error)); ok {
@@ -696,6 +749,10 @@ func (_c *Client_GetLatestCodeModulesImage_Call) RunAndReturn(run func() (*dynat
 func (_m *Client) GetLatestOneAgentImage() (*dynatrace.LatestImageInfo, error) {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetLatestOneAgentImage")
+	}
+
 	var r0 *dynatrace.LatestImageInfo
 	var r1 error
 	if rf, ok := ret.Get(0).(func() (*dynatrace.LatestImageInfo, error)); ok {
@@ -748,6 +805,10 @@ func (_c *Client_GetLatestOneAgentImage_Call) RunAndReturn(run func() (*dynatrac
 // GetMonitoredEntitiesForKubeSystemUUID provides a mock function with given fields: kubeSystemUUID
 func (_m *Client) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID string) ([]dynatrace.MonitoredEntity, error) {
 	ret := _m.Called(kubeSystemUUID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetMonitoredEntitiesForKubeSystemUUID")
+	}
 
 	var r0 []dynatrace.MonitoredEntity
 	var r1 error
@@ -803,6 +864,10 @@ func (_c *Client_GetMonitoredEntitiesForKubeSystemUUID_Call) RunAndReturn(run fu
 func (_m *Client) GetOneAgentConnectionInfo() (dynatrace.OneAgentConnectionInfo, error) {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetOneAgentConnectionInfo")
+	}
+
 	var r0 dynatrace.OneAgentConnectionInfo
 	var r1 error
 	if rf, ok := ret.Get(0).(func() (dynatrace.OneAgentConnectionInfo, error)); ok {
@@ -853,6 +918,10 @@ func (_c *Client_GetOneAgentConnectionInfo_Call) RunAndReturn(run func() (dynatr
 // GetProcessModuleConfig provides a mock function with given fields: prevRevision
 func (_m *Client) GetProcessModuleConfig(prevRevision uint) (*dynatrace.ProcessModuleConfig, error) {
 	ret := _m.Called(prevRevision)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetProcessModuleConfig")
+	}
 
 	var r0 *dynatrace.ProcessModuleConfig
 	var r1 error
@@ -908,6 +977,10 @@ func (_c *Client_GetProcessModuleConfig_Call) RunAndReturn(run func(uint) (*dyna
 func (_m *Client) GetSettingsForMonitoredEntities(monitoredEntities []dynatrace.MonitoredEntity, schemaId string) (dynatrace.GetSettingsResponse, error) {
 	ret := _m.Called(monitoredEntities, schemaId)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetSettingsForMonitoredEntities")
+	}
+
 	var r0 dynatrace.GetSettingsResponse
 	var r1 error
 	if rf, ok := ret.Get(0).(func([]dynatrace.MonitoredEntity, string) (dynatrace.GetSettingsResponse, error)); ok {
@@ -960,6 +1033,10 @@ func (_c *Client_GetSettingsForMonitoredEntities_Call) RunAndReturn(run func([]d
 // GetTokenScopes provides a mock function with given fields: token
 func (_m *Client) GetTokenScopes(token string) (dynatrace.TokenScopes, error) {
 	ret := _m.Called(token)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTokenScopes")
+	}
 
 	var r0 dynatrace.TokenScopes
 	var r1 error
@@ -1014,6 +1091,10 @@ func (_c *Client_GetTokenScopes_Call) RunAndReturn(run func(string) (dynatrace.T
 // SendEvent provides a mock function with given fields: eventData
 func (_m *Client) SendEvent(eventData *dynatrace.EventData) error {
 	ret := _m.Called(eventData)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SendEvent")
+	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(*dynatrace.EventData) error); ok {
