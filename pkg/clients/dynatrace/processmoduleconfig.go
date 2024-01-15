@@ -11,7 +11,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-const generalSectionName = "general"
+const (
+	generalSectionName = "general"
+	hostGroupParamName = "hostgroup"
+)
 
 type ProcessModuleConfig struct {
 	Revision   uint                    `json:"revision"`
@@ -171,6 +174,9 @@ func (dtc *dynatraceClient) createProcessModuleConfigRequest(prevRevision uint) 
 	}
 	query := req.URL.Query()
 	query.Add("revision", strconv.FormatUint(uint64(prevRevision), 10))
+	if dtc.hostGroup != "" {
+		query.Add(hostGroupParamName, dtc.hostGroup)
+	}
 	req.URL.RawQuery = query.Encode()
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", dtc.paasToken))

@@ -35,6 +35,8 @@ type dynatraceClient struct {
 
 	networkZone string
 
+	hostGroup string
+
 	httpClient *http.Client
 
 	hostCache map[string]hostInfo
