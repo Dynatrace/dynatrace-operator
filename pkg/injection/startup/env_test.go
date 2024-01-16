@@ -32,6 +32,7 @@ func TestNewEnv(t *testing.T) {
 		assert.NotEmpty(t, env.K8PodUID)
 		assert.NotEmpty(t, env.K8BasePodName)
 		assert.NotEmpty(t, env.K8Namespace)
+		assert.NotEmpty(t, env.K8ClusterID)
 
 		assert.NotEmpty(t, env.WorkloadKind)
 		assert.NotEmpty(t, env.WorkloadName)
@@ -61,6 +62,7 @@ func TestNewEnv(t *testing.T) {
 		assert.NotEmpty(t, env.K8PodUID)
 		assert.NotEmpty(t, env.K8Namespace)
 
+		assert.NotEmpty(t, env.K8ClusterID)
 		assert.NotEmpty(t, env.WorkloadKind)
 		assert.NotEmpty(t, env.WorkloadName)
 
@@ -76,6 +78,7 @@ func TestNewEnv(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, env)
 
+		assert.NotEmpty(t, env.K8ClusterID)
 		assert.Empty(t, env.WorkloadKind)
 		assert.Empty(t, env.WorkloadName)
 
@@ -104,6 +107,7 @@ func TestNewEnv(t *testing.T) {
 		assert.NotEmpty(t, env.K8BasePodName)
 		assert.NotEmpty(t, env.K8Namespace)
 
+		assert.NotEmpty(t, env.K8ClusterID)
 		assert.Empty(t, env.WorkloadKind)
 		assert.Empty(t, env.WorkloadName)
 
@@ -157,6 +161,7 @@ func prepOneAgentTestEnv(t *testing.T) func() {
 		consts.K8sBasePodNameEnv,
 		consts.K8sNamespaceEnv,
 		consts.AgentInstallPathEnv,
+		consts.K8sClusterIDEnv,
 	}
 	for i := 1; i <= 5; i++ {
 		envs = append(envs, fmt.Sprintf(consts.AgentContainerNameEnvTemplate, i))
@@ -189,6 +194,7 @@ func prepDataIngestTestEnv(t *testing.T, isUnknownWorkload bool) func() {
 	envs := []string{
 		consts.EnrichmentWorkloadKindEnv,
 		consts.EnrichmentWorkloadNameEnv,
+		consts.K8sClusterIDEnv,
 		consts.K8sPodNameEnv,
 		consts.K8sPodUIDEnv,
 		consts.K8sNamespaceEnv,

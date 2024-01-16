@@ -12,12 +12,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -109,17 +107,12 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 
 // generate gets the necessary info the create the init secret data
 func (g *InitGenerator) generate(ctx context.Context, dk *dynatracev1beta1.DynaKube) (map[string][]byte, error) {
-	kubeSystemUID, err := kubesystem.GetUID(ctx, g.apiReader)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
 	hostMonitoringNodes, err := g.getHostMonitoringNodes(dk)
 	if err != nil {
 		return nil, err
 	}
 
-	secretConfig, err := g.createSecretConfigForDynaKube(ctx, dk, kubeSystemUID, hostMonitoringNodes)
+	secretConfig, err := g.createSecretConfigForDynaKube(ctx, dk, hostMonitoringNodes)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +124,7 @@ func (g *InitGenerator) generate(ctx context.Context, dk *dynatracev1beta1.DynaK
 	return data, nil
 }
 
-func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, kubeSystemUID types.UID, hostMonitoringNodes map[string]string) (*startup.SecretConfig, error) {
+func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, hostMonitoringNodes map[string]string) (*startup.SecretConfig, error) {
 	var tokens corev1.Secret
 	if err := g.client.Get(ctx, client.ObjectKey{Name: dynakube.Tokens(), Namespace: g.namespace}, &tokens); err != nil {
 		return nil, errors.WithMessage(err, "failed to query tokens")
@@ -178,7 +171,6 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 		MonitoringNodes:     hostMonitoringNodes,
 		TlsCert:             tlsCert,
 		HostGroup:           dynakube.HostGroup(),
-		ClusterID:           string(kubeSystemUID),
 		InitialConnectRetry: dynakube.FeatureAgentInitialConnectRetry(),
 		EnforcementMode:     dynakube.FeatureEnforcementMode(),
 		ReadOnlyCSIDriver:   dynakube.FeatureReadOnlyCsiVolume(),

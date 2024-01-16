@@ -19,8 +19,9 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		pod.Spec.Containers[0].SecurityContext.RunAsUser = nil
 		pod.Spec.Containers[0].SecurityContext.RunAsGroup = nil
 		webhookImage := "test-image"
+		clusterID := "id"
 
-		initContainer := createInstallInitContainerBase(webhookImage, pod, *dynakube)
+		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
 
 		require.NotNil(t, initContainer)
 		assert.Equal(t, initContainer.Image, webhookImage)
@@ -53,8 +54,9 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		pod.Spec.Containers[0].SecurityContext.RunAsUser = nil
 		pod.Spec.Containers[0].SecurityContext.RunAsGroup = testUser
 		webhookImage := "test-image"
+		clusterID := "id"
 
-		initContainer := createInstallInitContainerBase(webhookImage, pod, *dynakube)
+		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
 
 		require.NotNil(t, initContainer.SecurityContext.RunAsNonRoot)
 		assert.True(t, *initContainer.SecurityContext.RunAsNonRoot)
@@ -76,9 +78,9 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		pod.Spec.Containers[0].SecurityContext.RunAsUser = testUser
 		pod.Spec.Containers[0].SecurityContext.RunAsGroup = testUser
 		webhookImage := "test-image"
+		clusterID := "id"
 
-		initContainer := createInstallInitContainerBase(webhookImage, pod, *dynakube)
-
+		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
 		require.NotNil(t, initContainer.SecurityContext.RunAsNonRoot)
 		assert.True(t, *initContainer.SecurityContext.RunAsNonRoot)
 
@@ -97,8 +99,9 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		pod.Spec.SecurityContext.RunAsUser = testUser
 		pod.Spec.SecurityContext.RunAsGroup = testUser
 		webhookImage := "test-image"
+		clusterID := "id"
 
-		initContainer := createInstallInitContainerBase(webhookImage, pod, *dynakube)
+		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
 
 		require.NotNil(t, initContainer.SecurityContext.RunAsNonRoot)
 		assert.True(t, *initContainer.SecurityContext.RunAsNonRoot)
@@ -115,8 +118,9 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		pod.Spec.Containers[0].SecurityContext.RunAsUser = address.Of(rootUserGroup)
 		pod.Spec.Containers[0].SecurityContext.RunAsGroup = address.Of(rootUserGroup)
 		webhookImage := "test-image"
+		clusterID := "id"
 
-		initContainer := createInstallInitContainerBase(webhookImage, pod, *dynakube)
+		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
 
 		assert.NotNil(t, initContainer.SecurityContext.RunAsNonRoot)
 		assert.False(t, *initContainer.SecurityContext.RunAsNonRoot)
@@ -132,8 +136,9 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		dynakube.Annotations = map[string]string{dynatracev1beta1.AnnotationInjectionFailurePolicy: "fail"}
 		pod := getTestPod()
 		webhookImage := "test-image"
+		clusterID := "id"
 
-		initContainer := createInstallInitContainerBase(webhookImage, pod, *dynakube)
+		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
 
 		assert.True(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
 		assert.False(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
@@ -143,8 +148,9 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		dynakube.Annotations = map[string]string{dynatracev1beta1.AnnotationInjectionFailurePolicy: "test"}
 		pod := getTestPod()
 		webhookImage := "test-image"
+		clusterID := "id"
 
-		initContainer := createInstallInitContainerBase(webhookImage, pod, *dynakube)
+		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
 
 		assert.False(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
 		assert.True(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
@@ -154,8 +160,9 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		dynakube.Annotations = map[string]string{dynatracev1beta1.AnnotationInjectionFailurePolicy: "silent"}
 		pod := getTestPod()
 		webhookImage := "test-image"
+		clusterID := "id"
 
-		initContainer := createInstallInitContainerBase(webhookImage, pod, *dynakube)
+		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
 
 		assert.False(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
 		assert.True(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
@@ -167,8 +174,9 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		pod.Annotations = map[string]string{}
 		pod.Annotations[dtwebhook.AnnotationFailurePolicy] = "fail"
 		webhookImage := "test-image"
+		clusterID := "id"
 
-		initContainer := createInstallInitContainerBase(webhookImage, pod, *dynakube)
+		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
 
 		assert.True(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
 		assert.False(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
@@ -180,8 +188,9 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		pod.Annotations = map[string]string{}
 		pod.Annotations[dtwebhook.AnnotationFailurePolicy] = "silent"
 		webhookImage := "test-image"
+		clusterID := "id"
 
-		initContainer := createInstallInitContainerBase(webhookImage, pod, *dynakube)
+		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
 
 		assert.False(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
 		assert.True(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
@@ -192,8 +201,9 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 		webhookImage := "test-image"
+		clusterID := "id"
 
-		initContainer := createInstallInitContainerBase(webhookImage, pod, *dynakube)
+		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
 
 		assert.True(t, initContainer.SecurityContext.SeccompProfile.Type == corev1.SeccompProfileTypeRuntimeDefault)
 	})
