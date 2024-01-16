@@ -14,17 +14,19 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
-	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry/mocks"
+	mockregistry "github.com/Dynatrace/dynatrace-operator/pkg/oci/registry/mocks"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
-	"github.com/Dynatrace/dynatrace-operator/pkg/version"
+	semversion "github.com/Dynatrace/dynatrace-operator/pkg/version"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	mocks2 "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
@@ -315,11 +317,14 @@ func TestReconcileComponents(t *testing.T) {
 		dynakube := dynakubeBase.DeepCopy()
 		fakeClient := fake.NewClientWithIndex(dynakube)
 		controller := &Controller{
-			client:                fakeClient,
-			apiReader:             fakeClient,
-			scheme:                scheme.Scheme,
-			fs:                    afero.Afero{Fs: afero.NewMemMapFs()},
-			registryClientBuilder: createFakeRegistryClientBuilder(),
+			client:                          fakeClient,
+			apiReader:                       fakeClient,
+			scheme:                          scheme.Scheme,
+			fs:                              afero.Afero{Fs: afero.NewMemMapFs()},
+			registryClientBuilder:           createFakeRegistryClientBuilder(),
+			versionReconcilerBuilder:        version.NewReconciler,
+			connectioninfoReconcilerBuilder: connectioninfo.NewReconciler,
+			activegateReconcilerBuilder:     activegate.NewReconciler,
 		}
 		mockedDtc := mockedclient.NewClient(t)
 		mockedDtc.On("GetActiveGateConnectionInfo").Return(dtclient.ActiveGateConnectionInfo{}, errors.New("BOOM"))
@@ -336,11 +341,14 @@ func TestReconcileComponents(t *testing.T) {
 		dynakube := dynakubeBase.DeepCopy()
 		fakeClient := fake.NewClientWithIndex(dynakube)
 		controller := &Controller{
-			client:                fakeClient,
-			apiReader:             fakeClient,
-			scheme:                scheme.Scheme,
-			fs:                    afero.Afero{Fs: afero.NewMemMapFs()},
-			registryClientBuilder: createFakeRegistryClientBuilder(),
+			client:                          fakeClient,
+			apiReader:                       fakeClient,
+			scheme:                          scheme.Scheme,
+			fs:                              afero.Afero{Fs: afero.NewMemMapFs()},
+			registryClientBuilder:           createFakeRegistryClientBuilder(),
+			versionReconcilerBuilder:        version.NewReconciler,
+			connectioninfoReconcilerBuilder: connectioninfo.NewReconciler,
+			activegateReconcilerBuilder:     activegate.NewReconciler,
 		}
 		mockedDtc := mockedclient.NewClient(t)
 		mockedDtc.On("GetActiveGateConnectionInfo").Return(dtclient.ActiveGateConnectionInfo{}, errors.New("BOOM"))
@@ -355,11 +363,14 @@ func TestReconcileComponents(t *testing.T) {
 		dynakube := dynakubeBase.DeepCopy()
 		fakeClient := fake.NewClientWithIndex(dynakube)
 		controller := &Controller{
-			client:                fakeClient,
-			apiReader:             fakeClient,
-			scheme:                scheme.Scheme,
-			fs:                    afero.Afero{Fs: afero.NewMemMapFs()},
-			registryClientBuilder: createFakeRegistryClientBuilder(),
+			client:                          fakeClient,
+			apiReader:                       fakeClient,
+			scheme:                          scheme.Scheme,
+			fs:                              afero.Afero{Fs: afero.NewMemMapFs()},
+			registryClientBuilder:           createFakeRegistryClientBuilder(),
+			versionReconcilerBuilder:        version.NewReconciler,
+			connectioninfoReconcilerBuilder: connectioninfo.NewReconciler,
+			activegateReconcilerBuilder:     activegate.NewReconciler,
 		}
 		mockedDtc := mockedclient.NewClient(t)
 		mockedDtc.On("GetActiveGateConnectionInfo").Return(dtclient.ActiveGateConnectionInfo{}, errors.New("BOOM"))
@@ -371,6 +382,17 @@ func TestReconcileComponents(t *testing.T) {
 		assert.Len(t, strings.Split(err.Error(), "\n"), 2) // ActiveGate, OneAgent connection info error
 	})
 }
+
+// TODO: refactor or remove
+// func createFakeVersionReconcilerBuilder() version.ReconcilerBuilder {
+// 	mockReconciler := mockversion.Reconciler{}
+// 	mockReconciler.On("ReconcileCodeModules", mock.Anything, mock.Anything).Return(errors.New("BOOM"))
+// 	mockReconciler.On("ReconcileOneAgent", mock.Anything, mock.Anything).Return(errors.New("BOOM"))
+// 	mockReconciler.On("ReconcileActiveGate", mock.Anything, mock.Anything).Return(errors.New("BOOM"))
+// 	return func(apiReader client.Reader, dtClient dtclient.Client, registryClient registry.ImageGetter, fs afero.Afero, timeProvider *timeprovider.Provider) version.Reconciler {
+// 		return &mockReconciler
+// 	}
+// }
 
 func createTestOneAgentConnectionInfo() dtclient.OneAgentConnectionInfo {
 	return dtclient.OneAgentConnectionInfo{
@@ -778,6 +800,9 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 			dynatraceClientBuilder:               mockDtcBuilder,
 			registryClientBuilder:                createFakeRegistryClientBuilder(),
 			demploymentMetadataReconcilerBuilder: createFakeDeploymentMetadataReconcilerBuild(),
+			versionReconcilerBuilder:             version.NewReconciler,
+			connectioninfoReconcilerBuilder:      connectioninfo.NewReconciler,
+			activegateReconcilerBuilder:          activegate.NewReconciler,
 		}
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
@@ -995,7 +1020,7 @@ func createDTMockClient(t *testing.T, paasTokenScopes, apiTokenScopes dtclient.T
 }
 
 func createFakeRegistryClientBuilder() func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
-	fakeRegistryClient := &mocks.MockImageGetter{}
+	fakeRegistryClient := &mockregistry.MockImageGetter{}
 	fakeImage := &fakecontainer.FakeImage{}
 	fakeImage.ConfigFileStub = func() (*containerv1.ConfigFile, error) {
 		return &containerv1.ConfigFile{}, nil
@@ -1048,6 +1073,9 @@ func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatra
 		apiReader:                            fakeClient,
 		registryClientBuilder:                createFakeRegistryClientBuilder(),
 		demploymentMetadataReconcilerBuilder: createFakeDeploymentMetadataReconcilerBuild(),
+		versionReconcilerBuilder:             version.NewReconciler,
+		connectioninfoReconcilerBuilder:      connectioninfo.NewReconciler,
+		activegateReconcilerBuilder:          activegate.NewReconciler,
 		scheme:                               scheme.Scheme,
 		dynatraceClientBuilder:               mockDtcBuilder,
 		fs:                                   afero.Afero{Fs: afero.NewMemMapFs()},
@@ -1071,11 +1099,11 @@ func generateStatefulSetForTesting(name, namespace, feature, kubeSystemUUID stri
 		labels.AppVersionLabel:   testComponentVersion,
 		labels.AppComponentLabel: feature,
 		labels.AppCreatedByLabel: name,
-		labels.AppManagedByLabel: version.AppName,
+		labels.AppManagedByLabel: semversion.AppName,
 	}
 	expectedMatchLabels := map[string]string{
 		labels.AppNameLabel:      labels.ActiveGateComponentLabel,
-		labels.AppManagedByLabel: version.AppName,
+		labels.AppManagedByLabel: semversion.AppName,
 		labels.AppCreatedByLabel: name,
 	}
 	return &appsv1.StatefulSet{
