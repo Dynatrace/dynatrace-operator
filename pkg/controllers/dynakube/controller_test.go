@@ -26,10 +26,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	semversion "github.com/Dynatrace/dynatrace-operator/pkg/version"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	mocks2 "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
+	mockconnectioninfo "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/connectioninfo"
+	mockversion "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	fakecontainer "github.com/google/go-containerregistry/pkg/v1/fake"
 	"github.com/pkg/errors"
@@ -362,25 +365,41 @@ func TestReconcileComponents(t *testing.T) {
 	t.Run("exit early in case of error for oneagent conncection info", func(t *testing.T) {
 		dynakube := dynakubeBase.DeepCopy()
 		fakeClient := fake.NewClientWithIndex(dynakube)
+		mockConnectionInfoReconciler := mockconnectioninfo.Reconciler{}
+		mockConnectionInfoReconciler.On("ReconcileActiveGate", context.Background(), dynakube).Return(errors.New("BOOM"))
+		mockVersionReconciler := mockversion.Reconciler{}
+		mockConnectionInfoReconciler.On("ReconcileOneAgent", context.Background(), dynakube).Return(errors.New("BOOM"))
+
 		controller := &Controller{
 			client:                          fakeClient,
 			apiReader:                       fakeClient,
 			scheme:                          scheme.Scheme,
 			fs:                              afero.Afero{Fs: afero.NewMemMapFs()},
 			registryClientBuilder:           createFakeRegistryClientBuilder(),
-			versionReconcilerBuilder:        version.NewReconciler,
-			connectioninfoReconcilerBuilder: connectioninfo.NewReconciler,
-			activegateReconcilerBuilder:     activegate.NewReconciler,
+			versionReconcilerBuilder:        createVersionReconcilerBuilder(&mockVersionReconciler),
+			connectioninfoReconcilerBuilder: createConnectionInfoReconcilerBuilder(&mockConnectionInfoReconciler),
 		}
 		mockedDtc := mockedclient.NewClient(t)
-		mockedDtc.On("GetActiveGateConnectionInfo").Return(dtclient.ActiveGateConnectionInfo{}, errors.New("BOOM"))
-		mockedDtc.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{}, errors.New("BOOM"))
+		// mockedDtc.On("GetActiveGateConnectionInfo").Return(dtclient.ActiveGateConnectionInfo{}, errors.New("BOOM"))
+		// mockedDtc.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{}, errors.New("BOOM"))
 		err := controller.reconcileComponents(ctx, mockedDtc, nil, dynakube)
 
 		require.Error(t, err)
 		// goerrors.Join concats errors with \n
 		assert.Len(t, strings.Split(err.Error(), "\n"), 2) // ActiveGate, OneAgent connection info error
 	})
+}
+
+func createConnectionInfoReconcilerBuilder(m *mockconnectioninfo.Reconciler) connectioninfo.ReconcilerBuilder {
+	return func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client) connectioninfo.Reconciler {
+		return m
+	}
+}
+
+func createVersionReconcilerBuilder(reconciler *mockversion.Reconciler) version.ReconcilerBuilder {
+	return func(apiReader client.Reader, dtClient dtclient.Client, registryClient registry.ImageGetter, fs afero.Afero, timeProvider *timeprovider.Provider) version.Reconciler {
+		return reconciler
+	}
 }
 
 // TODO: refactor or remove
