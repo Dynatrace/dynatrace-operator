@@ -10,6 +10,7 @@ import (
 	dynatracestatus "github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
@@ -60,16 +61,20 @@ func NewController(mgr manager.Manager, clusterID string) *Controller {
 
 func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, scheme *runtime.Scheme, config *rest.Config, clusterID string) *Controller { //nolint:revive
 	return &Controller{
-		client:                 kubeClient,
-		apiReader:              apiReader,
-		scheme:                 scheme,
-		fs:                     afero.Afero{Fs: afero.NewOsFs()},
-		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
-		istioClientBuilder:     istio.NewClient,
-		registryClientBuilder:  registry.NewClient,
-		config:                 config,
-		operatorNamespace:      os.Getenv(env.PodNamespace),
-		clusterID:              clusterID,
+		client:                               kubeClient,
+		apiReader:                            apiReader,
+		scheme:                               scheme,
+		fs:                                   afero.Afero{Fs: afero.NewOsFs()},
+		dynatraceClientBuilder:               dynatraceclient.NewBuilder(apiReader),
+		istioClientBuilder:                   istio.NewClient,
+		registryClientBuilder:                registry.NewClient,
+		demploymentMetadataReconcilerBuilder: deploymentmetadata.NewReconciler,
+		versionReconcilerBuilder:             version.NewReconciler,
+		connectioninfoReconcilerBuilder:      connectioninfo.NewReconciler,
+		activegateReconcilerBuilder:          activegate.NewReconciler,
+		config:                               config,
+		operatorNamespace:                    os.Getenv(env.PodNamespace),
+		clusterID:                            clusterID,
 	}
 }
 
@@ -95,11 +100,12 @@ type Controller struct {
 	istioClientBuilder                   istio.ClientBuilder
 	registryClientBuilder                registry.ClientBuilder
 	demploymentMetadataReconcilerBuilder deploymentmetadata.ReconcilerBuilder
-	// TODO: istio reconciler builder; is it necessary as istioClient gets injected into the istio reconciler
-	//
-	config            *rest.Config
-	operatorNamespace string
-	clusterID         string
+	versionReconcilerBuilder             version.ReconcilerBuilder
+	connectioninfoReconcilerBuilder      connectioninfo.ReconcilerBuilder
+	activegateReconcilerBuilder          activegate.ReconcilerBuilder
+	config                               *rest.Config
+	operatorNamespace                    string
+	clusterID                            string
 
 	requeueAfter time.Duration
 }
@@ -292,8 +298,8 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		return err
 	}
 
-	versionReconciler := version.NewReconciler(controller.apiReader, dynatraceClient, registryClient, controller.fs, timeprovider.New().Freeze())
-	connectionInfoReconciler := connectioninfo.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynatraceClient)
+	versionReconciler := controller.versionReconcilerBuilder(controller.apiReader, dynatraceClient, registryClient, controller.fs, timeprovider.New().Freeze())
+	connectionInfoReconciler := controller.connectioninfoReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient)
 
 	componentErrors := []error{}
 
