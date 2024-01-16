@@ -983,6 +983,8 @@ func createDTMockClient(t *testing.T, paasTokenScopes, apiTokenScopes dtclient.T
 	mockClient.On("CreateOrUpdateKubernetesSetting", testName, testUID, mock.AnythingOfType("string")).
 		Return(testObjectID, nil).Maybe()
 	mockClient.On("GetActiveGateConnectionInfo").Return(dtclient.ActiveGateConnectionInfo{}, nil).Maybe()
+	mockClient.On("GetProcessModuleConfig", mock.AnythingOfType("uint")).
+		Return(&dtclient.ProcessModuleConfig{}, nil).Maybe()
 
 	return mockClient
 }
