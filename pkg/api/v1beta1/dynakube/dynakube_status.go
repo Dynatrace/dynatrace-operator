@@ -50,8 +50,6 @@ type DynaKubeStatus struct { // nolint:revive
 type DynatraceApiStatus struct {
 	// Time of the last token request
 	LastTokenScopeRequest metav1.Time `json:"lastTokenScopeRequest,omitempty"`
-
-	LastProcessModuleConfigUpdate metav1.Time `json:"lastProcessModuleConfigUpdate,omitempty"`
 }
 
 func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time, timeout time.Duration) string {
@@ -116,6 +114,9 @@ type OneAgentStatus struct {
 
 	// Time of the last instance status update
 	LastInstanceStatusUpdate *metav1.Time `json:"lastInstanceStatusUpdate,omitempty"`
+
+	// Time of the last process module config update
+	LastProcessModuleConfigUpdate *metav1.Time `json:"lastProcessModuleConfigUpdate,omitempty"`
 
 	// Information about OneAgent's connections
 	ConnectionInfoStatus OneAgentConnectionInfoStatus `json:"connectionInfoStatus,omitempty"`

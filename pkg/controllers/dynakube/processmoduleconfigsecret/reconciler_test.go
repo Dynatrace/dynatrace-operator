@@ -38,7 +38,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		checkSecretForValue(t, mockK8sClient, "\"revision\":0")
-		require.True(t, dynakube.Status.DynatraceApi.LastProcessModuleConfigUpdate.Time == mockTime.Now().Time)
+		require.True(t, dynakube.Status.OneAgent.LastProcessModuleConfigUpdate.Time == mockTime.Now().Time)
 
 		// update should be blocked by timeout
 		mockTime.Set(timeprovider.Now())
@@ -46,7 +46,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = reconciler.Reconcile(context.TODO())
 		require.NoError(t, err)
 		checkSecretForValue(t, mockK8sClient, "\"revision\":0")
-		require.True(t, dynakube.Status.DynatraceApi.LastProcessModuleConfigUpdate.Time != mockTime.Now().Time)
+		require.True(t, dynakube.Status.OneAgent.LastProcessModuleConfigUpdate.Time != mockTime.Now().Time)
 
 		// go forward in time => should update again
 		futureTime := metav1.NewTime(time.Now().Add(time.Hour))
@@ -55,7 +55,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = reconciler.Reconcile(context.TODO())
 		require.NoError(t, err)
 		checkSecretForValue(t, mockK8sClient, "\"revision\":1")
-		require.True(t, dynakube.Status.DynatraceApi.LastProcessModuleConfigUpdate.Time == futureTime.Time)
+		require.True(t, dynakube.Status.OneAgent.LastProcessModuleConfigUpdate.Time == futureTime.Time)
 	})
 	t.Run("Only runs when required", func(t *testing.T) {
 		dynakube := createDynakube(dynatracev1beta1.OneAgentSpec{

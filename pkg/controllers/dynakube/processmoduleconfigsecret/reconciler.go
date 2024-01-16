@@ -87,7 +87,7 @@ func (r *Reconciler) getOrCreateSecretIfNotExists(ctx context.Context) (*corev1.
 			return nil, err
 		}
 
-		r.dynakube.Status.DynatraceApi.LastProcessModuleConfigUpdate = *r.timeProvider.Now()
+		r.dynakube.Status.OneAgent.LastProcessModuleConfigUpdate = r.timeProvider.Now()
 		return newSecret, nil
 	}
 	return &config, nil
@@ -103,13 +103,15 @@ func (r *Reconciler) updateSecret(ctx context.Context, oldSecret *corev1.Secret)
 		return err
 	}
 
-	r.dynakube.Status.DynatraceApi.LastProcessModuleConfigUpdate = *r.timeProvider.Now()
+	r.dynakube.Status.OneAgent.LastProcessModuleConfigUpdate = r.timeProvider.Now()
 	return nil
 }
 
 func (r *Reconciler) updateSecretIfOutdated(ctx context.Context, oldSecret *corev1.Secret) error {
-	if r.timeProvider.IsOutdated(&r.dynakube.Status.DynatraceApi.LastProcessModuleConfigUpdate, DefaultMinRequestThreshold) {
+	if r.timeProvider.IsOutdated(r.dynakube.Status.OneAgent.LastProcessModuleConfigUpdate, DefaultMinRequestThreshold) {
 		return r.updateSecret(ctx, oldSecret)
+	} else {
+		log.Info("skipping updating process module config due to min request threshold")
 	}
 	return nil
 }
