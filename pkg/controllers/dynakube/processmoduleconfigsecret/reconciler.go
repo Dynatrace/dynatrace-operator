@@ -3,7 +3,6 @@ package processmoduleconfigsecret
 import (
 	"context"
 	"encoding/json"
-	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -18,7 +17,6 @@ import (
 
 const (
 	PullSecretSuffix             = "-pmc-secret"
-	DefaultMinRequestThreshold   = 15 * time.Minute
 	SecretKeyProcessModuleConfig = "ruxitagentproc.conf"
 )
 
@@ -108,7 +106,7 @@ func (r *Reconciler) updateSecret(ctx context.Context, oldSecret *corev1.Secret)
 }
 
 func (r *Reconciler) updateSecretIfOutdated(ctx context.Context, oldSecret *corev1.Secret) error {
-	if r.timeProvider.IsOutdated(r.dynakube.Status.OneAgent.LastProcessModuleConfigUpdate, DefaultMinRequestThreshold) {
+	if r.timeProvider.IsOutdated(r.dynakube.Status.OneAgent.LastProcessModuleConfigUpdate, r.dynakube.FeatureApiRequestThreshold()) {
 		return r.updateSecret(ctx, oldSecret)
 	} else {
 		log.Info("skipping updating process module config due to min request threshold")
