@@ -62,7 +62,7 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 	}
 
 	log.Info("running binary garbage collection (for deprecated location)")
-	gc.runBinaryGarbageCollection(ctx, tenantUUID)
+	gc.runBinaryGarbageCollection(ctx, tenantUUID, dynakube.GetName())
 
 	if err := ctx.Err(); err != nil {
 		return defaultReconcileResult, err

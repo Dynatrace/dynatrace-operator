@@ -18,18 +18,18 @@ func (pr PathResolver) OsAgentDir(tenantUUID string) string {
 	return filepath.Join(pr.TenantDir(tenantUUID), "osagent")
 }
 
-func (pr PathResolver) AgentBinaryDir(tenantUUID string) string {
-	return filepath.Join(pr.TenantDir(tenantUUID), dtcsi.AgentBinaryDir)
+func (pr PathResolver) AgentBinaryDir(tenantUUID string, dynakubeName string) string {
+	return filepath.Join(pr.TenantDir(tenantUUID), dynakubeName, dtcsi.AgentBinaryDir)
 }
 
 // Deprecated
-func (pr PathResolver) AgentProcessModuleConfigForVersion(tenantUUID string, version string) string {
-	return filepath.Join(pr.AgentBinaryDirForVersion(tenantUUID, version), "agent", "conf", "ruxitagentproc.conf")
+func (pr PathResolver) AgentProcessModuleConfigForVersion(tenantUUID string, dynakubeName string, version string) string {
+	return filepath.Join(pr.AgentBinaryDirForVersion(tenantUUID, dynakubeName, version), "agent", "conf", "ruxitagentproc.conf")
 }
 
 // Deprecated
-func (pr PathResolver) SourceAgentProcessModuleConfigForVersion(tenantUUID string, version string) string {
-	return filepath.Join(pr.AgentBinaryDirForVersion(tenantUUID, version), "agent", "conf", "_ruxitagentproc.conf")
+func (pr PathResolver) SourceAgentProcessModuleConfigForVersion(tenantUUID string, dynakubeName string, version string) string {
+	return filepath.Join(pr.AgentBinaryDirForVersion(tenantUUID, dynakubeName, version), "agent", "conf", "_ruxitagentproc.conf")
 }
 
 func (pr PathResolver) AgentRuxitProcResponseCache(tenantUUID string) string {
@@ -37,8 +37,8 @@ func (pr PathResolver) AgentRuxitProcResponseCache(tenantUUID string) string {
 }
 
 // Deprecated
-func (pr PathResolver) AgentBinaryDirForVersion(tenantUUID string, version string) string {
-	return filepath.Join(pr.AgentBinaryDir(tenantUUID), version)
+func (pr PathResolver) AgentBinaryDirForVersion(tenantUUID string, dynakubeName string, version string) string {
+	return filepath.Join(pr.AgentBinaryDir(tenantUUID, dynakubeName), version)
 }
 
 func (pr PathResolver) AgentSharedBinaryDirBase() string {
@@ -62,8 +62,8 @@ func (pr PathResolver) AgentConfigDir(tenantUUID string) string {
 }
 
 // Deprecated
-func (pr PathResolver) InnerAgentBinaryDirForSymlinkForVersion(tenantUUID string, version string) string {
-	return filepath.Join(pr.AgentBinaryDirForVersion(tenantUUID, version), "agent", "bin", "current")
+func (pr PathResolver) InnerAgentBinaryDirForSymlinkForVersion(tenantUUID string, dynakube string, version string) string {
+	return filepath.Join(pr.AgentBinaryDirForVersion(tenantUUID, dynakube, version), "agent", "bin", "current")
 }
 
 func (pr PathResolver) AgentRunDir(tenantUUID string) string {

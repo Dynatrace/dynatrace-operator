@@ -14,15 +14,16 @@ import (
 )
 
 const (
-	testTenantUUID = "asd12345"
-	testVersion1   = "1"
-	testVersion2   = "2"
-	testVersion3   = "3"
-	testRootDir    = "/tmp"
+	testTenantUUID   = "asd12345"
+	testVersion1     = "1"
+	testVersion2     = "2"
+	testVersion3     = "3"
+	testRootDir      = "/tmp"
+	testDynakubeName = "superDynakube"
 )
 
 var (
-	testBinaryDir = filepath.Join(testRootDir, testTenantUUID, "bin")
+	testBinaryDir = filepath.Join(testRootDir, testTenantUUID, testDynakubeName, "bin")
 )
 
 func TestRunBinaryGarbageCollection(t *testing.T) {
@@ -30,7 +31,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		resetMetrics()
 		gc := NewMockGarbageCollector()
 
-		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID)
+		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID, testDynakubeName)
 
 		assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(foldersRemovedMetric))
@@ -41,7 +42,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		gc := NewMockGarbageCollector()
 		_ = gc.fs.MkdirAll(testBinaryDir, 0770)
 
-		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID)
+		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID, testDynakubeName)
 
 		assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(foldersRemovedMetric))
@@ -52,7 +53,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		gc := NewMockGarbageCollector()
 		gc.mockUnusedVersions(testVersion1, testVersion2, testVersion3)
 
-		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID)
+		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID, testDynakubeName)
 
 		assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
 		assert.Equal(t, float64(3), testutil.ToFloat64(foldersRemovedMetric))
@@ -64,7 +65,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		gc := NewMockGarbageCollector()
 		gc.mockUsedVersions(testVersion1, testVersion2, testVersion3)
 
-		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID)
+		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID, testDynakubeName)
 
 		assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(foldersRemovedMetric))

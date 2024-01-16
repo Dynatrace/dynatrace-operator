@@ -146,7 +146,7 @@ func (provisioner *OneAgentProvisioner) setupFileSystem(dk *dynatracev1beta1.Dyn
 	if err != nil {
 		return err
 	}
-	if err := provisioner.createCSIDirectories(tenantUUID); err != nil {
+	if err := provisioner.createCSIDirectories(tenantUUID, dk.GetName()); err != nil {
 		log.Error(err, "error when creating csi directories", "path", provisioner.path.TenantDir(tenantUUID))
 		return errors.WithStack(err)
 	}
@@ -347,13 +347,13 @@ func (provisioner *OneAgentProvisioner) getDynaKube(ctx context.Context, name ty
 	return &dk, err
 }
 
-func (provisioner *OneAgentProvisioner) createCSIDirectories(tenantUUID string) error {
+func (provisioner *OneAgentProvisioner) createCSIDirectories(tenantUUID string, dynakubeName string) error {
 	tenantDir := provisioner.path.TenantDir(tenantUUID)
 	if err := provisioner.fs.MkdirAll(tenantDir, 0755); err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", tenantDir, err)
 	}
 
-	agentBinaryDir := provisioner.path.AgentBinaryDir(tenantUUID)
+	agentBinaryDir := provisioner.path.AgentBinaryDir(tenantUUID, dynakubeName)
 	if err := provisioner.fs.MkdirAll(agentBinaryDir, 0755); err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", agentBinaryDir, err)
 	}

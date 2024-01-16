@@ -109,7 +109,7 @@ func (checker *CorrectnessChecker) copyCodeModulesFromDeprecatedBin(ctx context.
 		if dynakube.TenantUUID == "" || dynakube.LatestVersion == "" {
 			continue
 		}
-		deprecatedBin := checker.path.AgentBinaryDirForVersion(dynakube.TenantUUID, dynakube.LatestVersion)
+		deprecatedBin := checker.path.AgentBinaryDirForVersion(dynakube.TenantUUID, dynakube.Name, dynakube.LatestVersion)
 		currentBin := checker.path.AgentSharedBinaryDirForAgent(dynakube.LatestVersion)
 
 		linked, err := checker.safelyLinkCodeModule(deprecatedBin, currentBin)

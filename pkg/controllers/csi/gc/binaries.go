@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, tenantUUID string) {
+func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, tenantUUID string, dynakubeName string) {
 	fs := &afero.Afero{Fs: gc.fs}
 	gcRunsMetric.Inc()
 
@@ -19,7 +19,7 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, t
 	}
 	log.Info("got all used versions (in deprecated location)", "tenantUUID", tenantUUID, "len(usedVersions)", len(usedVersions))
 
-	storedVersions, err := gc.getStoredVersions(fs, tenantUUID)
+	storedVersions, err := gc.getStoredVersions(fs, tenantUUID, dynakubeName)
 	if err != nil {
 		log.Info("failed to get stored versions", "error", err)
 		return
@@ -38,14 +38,14 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, t
 			log.Info("skipped, version should not be deleted", "version", version)
 			continue
 		}
-		binaryPath := gc.path.AgentBinaryDirForVersion(tenantUUID, version)
+		binaryPath := gc.path.AgentBinaryDirForVersion(tenantUUID, dynakubeName, version)
 		log.Info("deleting unused version (in deprecated location)", "version", version, "path", binaryPath)
 		removeUnusedVersion(fs, binaryPath)
 	}
 }
 
-func (gc *CSIGarbageCollector) getStoredVersions(fs *afero.Afero, tenantUUID string) ([]string, error) {
-	bins, err := fs.ReadDir(gc.path.AgentBinaryDir(tenantUUID))
+func (gc *CSIGarbageCollector) getStoredVersions(fs *afero.Afero, tenantUUID string, dynakubeName string) ([]string, error) {
+	bins, err := fs.ReadDir(gc.path.AgentBinaryDir(tenantUUID, dynakubeName))
 	versions := make([]string, 0, len(bins))
 
 	if os.IsNotExist(err) {
