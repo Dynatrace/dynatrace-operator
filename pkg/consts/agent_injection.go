@@ -24,7 +24,6 @@ const (
 	AgentContainerImageEnvTemplate = "CONTAINER_%d_IMAGE"
 
 	AgentInjectedEnv = "ONEAGENT_INJECTED"
-	AgentReadonlyCSI = "CSI_VOLUME_READONLY"
 
 	AgentBinDirMount      = "/mnt/bin"
 	AgentShareDirMount    = "/mnt/share"
