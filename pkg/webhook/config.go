@@ -43,6 +43,8 @@ const (
 	// "fail", the init container will exit with error code 1. Defaults to "silent".
 	AnnotationFailurePolicy = "oneagent.dynatrace.com/failure-policy"
 
+	AnnotationContainerInjection = "container.inject.dynatrace.com"
+
 	// DefaultInstallPath is the default directory to install the app-only OneAgent package.
 	DefaultInstallPath = "/opt/dynatrace/oneagent-paas"
 
