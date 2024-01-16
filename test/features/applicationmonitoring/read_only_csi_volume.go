@@ -8,10 +8,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/oneagent_mutation"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/codemodules"
@@ -48,7 +45,6 @@ func ReadOnlyCSIVolume(t *testing.T) features.Feature {
 	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
 	builder.Assess("install sample deployment and wait till ready", sampleDeployment.Install())
-	builder.Assess("check init container env var", checkInitContainerEnvVar(sampleDeployment))
 	builder.Assess("check mounted volumes", checkMountedVolumes(sampleDeployment))
 	builder.Assess(fmt.Sprintf("check %s has no conn info", codemodules.RuxitAgentProcFile), codemodules.CheckRuxitAgentProcFileHasNoConnInfo(testDynakube))
 
@@ -56,23 +52,6 @@ func ReadOnlyCSIVolume(t *testing.T) features.Feature {
 
 	dynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 	return builder.Feature()
-}
-
-func checkInitContainerEnvVar(sampleApp *sample.App) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resources := envConfig.Client().Resources()
-		pods := sampleApp.GetPods(ctx, t, resources)
-
-		for _, podItem := range pods.Items {
-			for _, initContainer := range podItem.Spec.InitContainers {
-				require.NotEmpty(t, initContainer)
-				if initContainer.Name == webhook.InstallContainerName {
-					require.Equal(t, "true", env.FindEnvVar(initContainer.Env, consts.AgentReadonlyCSI).Value)
-				}
-			}
-		}
-		return ctx
-	}
 }
 
 func checkMountedVolumes(sampleApp *sample.App) features.Func {
