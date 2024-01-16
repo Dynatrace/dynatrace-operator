@@ -65,6 +65,9 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		apiReader:                            apiReader,
 		scheme:                               scheme,
 		fs:                                   afero.Afero{Fs: afero.NewOsFs()},
+		config:                               config,
+		operatorNamespace:                    os.Getenv(env.PodNamespace),
+		clusterID:                            clusterID,
 		dynatraceClientBuilder:               dynatraceclient.NewBuilder(apiReader),
 		istioClientBuilder:                   istio.NewClient,
 		registryClientBuilder:                registry.NewClient,
@@ -72,9 +75,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		versionReconcilerBuilder:             version.NewReconciler,
 		connectioninfoReconcilerBuilder:      connectioninfo.NewReconciler,
 		activegateReconcilerBuilder:          activegate.NewReconciler,
-		config:                               config,
-		operatorNamespace:                    os.Getenv(env.PodNamespace),
-		clusterID:                            clusterID,
+		istioReconcilerBuilder:               istio.NewReconciler,
 	}
 }
 
@@ -92,10 +93,16 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 type Controller struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the api-server
-	client                               client.Client
-	apiReader                            client.Reader
-	scheme                               *runtime.Scheme
-	fs                                   afero.Afero
+	client            client.Client
+	apiReader         client.Reader
+	scheme            *runtime.Scheme
+	fs                afero.Afero
+	config            *rest.Config
+	operatorNamespace string
+	clusterID         string
+
+	requeueAfter time.Duration
+
 	dynatraceClientBuilder               dynatraceclient.Builder
 	istioClientBuilder                   istio.ClientBuilder
 	registryClientBuilder                registry.ClientBuilder
@@ -103,11 +110,7 @@ type Controller struct {
 	versionReconcilerBuilder             version.ReconcilerBuilder
 	connectioninfoReconcilerBuilder      connectioninfo.ReconcilerBuilder
 	activegateReconcilerBuilder          activegate.ReconcilerBuilder
-	config                               *rest.Config
-	operatorNamespace                    string
-	clusterID                            string
-
-	requeueAfter time.Duration
+	istioReconcilerBuilder               istio.ReconcilerBuilder
 }
 
 // Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read
@@ -250,7 +253,7 @@ func (controller *Controller) setupIstio(ctx context.Context, dynakube *dynatrac
 	} else if !isInstalled {
 		return nil, errors.New("istio not installed, yet is enabled, aborting reconciliation, check configuration")
 	}
-	istioReconciler := istio.NewReconciler(istioClient)
+	istioReconciler := controller.istioReconcilerBuilder(istioClient)
 	err = istioReconciler.ReconcileAPIUrl(ctx, dynakube)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to reconcile istio objects for API url")

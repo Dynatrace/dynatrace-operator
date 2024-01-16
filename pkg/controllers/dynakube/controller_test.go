@@ -1071,14 +1071,15 @@ func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatra
 	controller := &Controller{
 		client:                               fakeClient,
 		apiReader:                            fakeClient,
+		scheme:                               scheme.Scheme,
+		dynatraceClientBuilder:               mockDtcBuilder,
+		fs:                                   afero.Afero{Fs: afero.NewMemMapFs()},
 		registryClientBuilder:                createFakeRegistryClientBuilder(),
 		demploymentMetadataReconcilerBuilder: createFakeDeploymentMetadataReconcilerBuild(),
 		versionReconcilerBuilder:             version.NewReconciler,
 		connectioninfoReconcilerBuilder:      connectioninfo.NewReconciler,
 		activegateReconcilerBuilder:          activegate.NewReconciler,
-		scheme:                               scheme.Scheme,
-		dynatraceClientBuilder:               mockDtcBuilder,
-		fs:                                   afero.Afero{Fs: afero.NewMemMapFs()},
+		istioReconcilerBuilder:               istio.NewReconciler,
 	}
 
 	return controller
@@ -1444,8 +1445,9 @@ func TestSetupIstio(t *testing.T) {
 		fakeIstio := fakeistio.NewSimpleClientset()
 		isIstioInstalled := true
 		controller := &Controller{
-			istioClientBuilder: fakeIstioClientBuilder(t, fakeIstio, isIstioInstalled),
-			scheme:             scheme.Scheme,
+			istioClientBuilder:     fakeIstioClientBuilder(t, fakeIstio, isIstioInstalled),
+			istioReconcilerBuilder: istio.NewReconciler,
+			scheme:                 scheme.Scheme,
 		}
 		istioReconciler, err := controller.setupIstio(ctx, dynakube)
 		require.NoError(t, err)
