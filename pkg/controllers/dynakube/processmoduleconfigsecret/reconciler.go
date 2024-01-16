@@ -19,7 +19,7 @@ import (
 const (
 	PullSecretSuffix             = "-pmc-secret"
 	DefaultMinRequestThreshold   = 15 * time.Minute
-	SecretKeyProcessModuleConfig = "processmoduleconfig"
+	SecretKeyProcessModuleConfig = "ruxitagentproc.conf"
 )
 
 type Reconciler struct {
