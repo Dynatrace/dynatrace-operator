@@ -9,7 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const goodProcessModuleConfigResponse = `
+const (
+	goodProcessModuleConfigResponse = `
 {
 	"revision": 1,
 	"properties": [{
@@ -26,17 +27,35 @@ const goodProcessModuleConfigResponse = `
 	]
 }
 `
+	hostGroup = "hg"
+)
 
 func TestCreateProcessModuleConfigRequest(t *testing.T) {
-	dc := &dynatraceClient{
-		paasToken: "token123",
-	}
-	require.NotNil(t, dc)
+	t.Run("hostGroup undefined", func(t *testing.T) {
+		dc := &dynatraceClient{
+			paasToken: "token123",
+		}
+		require.NotNil(t, dc)
 
-	req, err := dc.createProcessModuleConfigRequest(0)
-	require.Nil(t, err)
-	assert.Equal(t, "0", req.URL.Query().Get("revision"))
-	assert.Contains(t, req.Header.Get("Authorization"), dc.paasToken)
+		req, err := dc.createProcessModuleConfigRequest(0)
+		require.Nil(t, err)
+		assert.Equal(t, "0", req.URL.Query().Get("revision"))
+		assert.Empty(t, req.URL.Query().Get(hostGroupParamName))
+		assert.Contains(t, req.Header.Get("Authorization"), dc.paasToken)
+	})
+	t.Run("hostGroup defined", func(t *testing.T) {
+		dc := &dynatraceClient{
+			paasToken: "token123",
+			hostGroup: hostGroup,
+		}
+		require.NotNil(t, dc)
+
+		req, err := dc.createProcessModuleConfigRequest(0)
+		require.Nil(t, err)
+		assert.Equal(t, "0", req.URL.Query().Get("revision"))
+		assert.Equal(t, hostGroup, req.URL.Query().Get(hostGroupParamName))
+		assert.Contains(t, req.Header.Get("Authorization"), dc.paasToken)
+	})
 }
 
 func TestSpecialProcessModuleConfigRequestStatus(t *testing.T) {

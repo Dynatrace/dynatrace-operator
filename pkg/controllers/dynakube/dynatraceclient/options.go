@@ -28,6 +28,12 @@ func (opts *options) appendNetworkZone(networkZone string) {
 	}
 }
 
+func (opts *options) appendHostGroup(hostGroup string) {
+	if hostGroup != "" {
+		opts.Opts = append(opts.Opts, dtclient.HostGroup(hostGroup))
+	}
+}
+
 func (opts *options) appendCertCheck(skipCertCheck bool) {
 	opts.Opts = append(opts.Opts, dtclient.SkipCertificateValidation(skipCertCheck))
 }
