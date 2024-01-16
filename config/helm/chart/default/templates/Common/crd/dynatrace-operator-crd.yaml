@@ -3601,6 +3601,9 @@ spec:
               dynatraceApi:
                 description: Observed state of Dynatrace API
                 properties:
+                  lastProcessModuleConfigUpdate:
+                    format: date-time
+                    type: string
                   lastTokenScopeRequest:
                     description: Time of the last token request
                     format: date-time
