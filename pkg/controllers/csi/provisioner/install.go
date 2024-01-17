@@ -40,7 +40,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(dynakube dynatracev1be
 	}
 
 	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(imageDigest)
-	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID)
+	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dynakube.GetName())
 	err = provisioner.installAgent(imageInstaller, dynakube, targetDir, targetImage, tenantUUID)
 	if err != nil {
 		return "", err
@@ -62,7 +62,7 @@ func (provisioner *OneAgentProvisioner) installAgentZip(dynakube dynatracev1beta
 	urlInstaller := provisioner.urlInstallerBuilder(provisioner.fs, dtc, getUrlProperties(targetVersion, provisioner.path))
 
 	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(targetVersion)
-	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID)
+	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dynakube.GetName())
 	err = provisioner.installAgent(urlInstaller, dynakube, targetDir, targetVersion, tenantUUID)
 	if err != nil {
 		return "", err
