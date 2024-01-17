@@ -26,6 +26,10 @@ func (_m *PodMutator) EXPECT() *PodMutator_Expecter {
 func (_m *PodMutator) Enabled(request *webhook.BaseRequest) bool {
 	ret := _m.Called(request)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Enabled")
+	}
+
 	var r0 bool
 	if rf, ok := ret.Get(0).(func(*webhook.BaseRequest) bool); ok {
 		r0 = rf(request)
@@ -67,6 +71,10 @@ func (_c *PodMutator_Enabled_Call) RunAndReturn(run func(*webhook.BaseRequest) b
 // Injected provides a mock function with given fields: request
 func (_m *PodMutator) Injected(request *webhook.BaseRequest) bool {
 	ret := _m.Called(request)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Injected")
+	}
 
 	var r0 bool
 	if rf, ok := ret.Get(0).(func(*webhook.BaseRequest) bool); ok {
@@ -110,6 +118,10 @@ func (_c *PodMutator_Injected_Call) RunAndReturn(run func(*webhook.BaseRequest) 
 func (_m *PodMutator) Mutate(ctx context.Context, request *webhook.MutationRequest) error {
 	ret := _m.Called(ctx, request)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Mutate")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *webhook.MutationRequest) error); ok {
 		r0 = rf(ctx, request)
@@ -152,6 +164,10 @@ func (_c *PodMutator_Mutate_Call) RunAndReturn(run func(context.Context, *webhoo
 // Reinvoke provides a mock function with given fields: request
 func (_m *PodMutator) Reinvoke(request *webhook.ReinvocationRequest) bool {
 	ret := _m.Called(request)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Reinvoke")
+	}
 
 	var r0 bool
 	if rf, ok := ret.Get(0).(func(*webhook.ReinvocationRequest) bool); ok {

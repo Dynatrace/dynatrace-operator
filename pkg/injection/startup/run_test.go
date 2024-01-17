@@ -487,7 +487,6 @@ func createTestRunner(t *testing.T) *Runner {
 
 func createMockedRunner(t *testing.T) *Runner {
 	runner := createTestRunner(t)
-	runner.config.ClusterID = "TEST_K8S_CLUSTER_ID"
 	runner.installer = mockedinstaller.NewInstaller(t)
 	runner.dtclient = mockedclient.NewClient(t)
 	return runner

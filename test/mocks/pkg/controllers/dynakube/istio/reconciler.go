@@ -26,6 +26,10 @@ func (_m *Reconciler) EXPECT() *Reconciler_Expecter {
 func (_m *Reconciler) ReconcileAPIUrl(ctx context.Context, _a1 *dynakube.DynaKube) error {
 	ret := _m.Called(ctx, _a1)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ReconcileAPIUrl")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *dynakube.DynaKube) error); ok {
 		r0 = rf(ctx, _a1)
@@ -69,6 +73,10 @@ func (_c *Reconciler_ReconcileAPIUrl_Call) RunAndReturn(run func(context.Context
 func (_m *Reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, _a1 *dynakube.DynaKube) error {
 	ret := _m.Called(ctx, _a1)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ReconcileActiveGateCommunicationHosts")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *dynakube.DynaKube) error); ok {
 		r0 = rf(ctx, _a1)
@@ -111,6 +119,10 @@ func (_c *Reconciler_ReconcileActiveGateCommunicationHosts_Call) RunAndReturn(ru
 // ReconcileCodeModuleCommunicationHosts provides a mock function with given fields: ctx, _a1
 func (_m *Reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, _a1 *dynakube.DynaKube) error {
 	ret := _m.Called(ctx, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ReconcileCodeModuleCommunicationHosts")
+	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *dynakube.DynaKube) error); ok {

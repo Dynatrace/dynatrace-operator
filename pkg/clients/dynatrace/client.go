@@ -216,3 +216,9 @@ func NetworkZone(networkZone string) Option {
 		c.networkZone = networkZone
 	}
 }
+
+func HostGroup(hostGroup string) Option {
+	return func(c *dynatraceClient) {
+		c.hostGroup = hostGroup
+	}
+}

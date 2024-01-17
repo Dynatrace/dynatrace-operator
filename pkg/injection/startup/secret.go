@@ -34,9 +34,6 @@ type SecretConfig struct {
 	EnforcementMode     bool              `json:"enforcementMode"`
 	CSIMode             bool              `json:"csiMode"`
 	ReadOnlyCSIDriver   bool              `json:"readOnlyCSIDriver"`
-
-	// For the enrichment
-	ClusterID string `json:"clusterID"`
 }
 
 func (secret SecretConfig) logContent() {

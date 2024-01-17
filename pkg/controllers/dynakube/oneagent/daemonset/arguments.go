@@ -23,7 +23,7 @@ func (dsInfo *builderInfo) arguments() []string {
 
 	if dsInfo.dynakube.ClassicFullStackMode() {
 		argMap.Append(argumentPrefix+"set-host-id-source", classicHostIdSource)
-	} else if dsInfo.dynakube.HostMonitoringMode() {
+	} else if dsInfo.dynakube.HostMonitoringMode() || dsInfo.dynakube.CloudNativeFullstackMode() {
 		argMap.Append(argumentPrefix+"set-host-id-source", inframonHostIdSource)
 	}
 

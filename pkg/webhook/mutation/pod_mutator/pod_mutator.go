@@ -161,8 +161,9 @@ func (webhook *podMutatorWebhook) handlePodMutation(ctx context.Context, mutatio
 		return nil
 	}
 
-	mutationRequest.InstallContainer = createInstallInitContainerBase(webhook.webhookImage, mutationRequest.Pod, mutationRequest.DynaKube)
-	isMutated := false
+	mutationRequest.InstallContainer = createInstallInitContainerBase(webhook.webhookImage, webhook.clusterID, mutationRequest.Pod, mutationRequest.DynaKube)
+
+  isMutated := false
 	for _, mutator := range webhook.mutators {
 		if !mutator.Enabled(mutationRequest.BaseRequest) {
 			continue
