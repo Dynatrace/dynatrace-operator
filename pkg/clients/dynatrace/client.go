@@ -88,6 +88,10 @@ type Client interface {
 	GetLatestCodeModulesImage() (*LatestImageInfo, error)
 
 	GetLatestActiveGateImage() (*LatestImageInfo, error)
+
+	// GetLatestActiveGateVersion gets the latest gateway version for the given OS and arch.
+	// Returns the version as received from the server on success.
+	GetLatestActiveGateVersion(os string) (string, error)
 }
 
 // Known OS values.
