@@ -1,6 +1,7 @@
 package proxy
 
 const (
+	schemeField   = "scheme"
 	hostField     = "host"
 	portField     = "port"
 	usernameField = "username"

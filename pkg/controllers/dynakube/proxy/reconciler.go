@@ -83,6 +83,7 @@ func (r *Reconciler) createProxyMap(ctx context.Context, dynakube *dynatracev1be
 	if !dynakube.HasProxy() {
 		// the parsed-proxy secret is expected to exist and the entrypoint.sh script handles empty values properly
 		return map[string][]byte{
+			schemeField:   []byte(""),
 			hostField:     []byte(""),
 			portField:     []byte(""),
 			usernameField: []byte(""),
@@ -95,12 +96,13 @@ func (r *Reconciler) createProxyMap(ctx context.Context, dynakube *dynatracev1be
 		return nil, err
 	}
 
-	host, port, username, password, err := parseProxyUrl(proxyUrl)
+	scheme, host, port, username, password, err := parseProxyUrl(proxyUrl)
 	if err != nil {
 		return nil, err
 	}
 
 	return map[string][]byte{
+		schemeField:   []byte(scheme),
 		hostField:     []byte(host),
 		portField:     []byte(port),
 		usernameField: []byte(username),
@@ -108,15 +110,15 @@ func (r *Reconciler) createProxyMap(ctx context.Context, dynakube *dynatracev1be
 	}, nil
 }
 
-func parseProxyUrl(proxy string) (host, port, username, password string, err error) { //nolint:revive // maximum number of return results per function exceeded; max 3 but got 5
+func parseProxyUrl(proxy string) (scheme, host, port, username, password string, err error) { //nolint:revive // maximum number of return results per function exceeded; max 3 but got 5
 	proxyUrl, err := url.Parse(proxy)
 	if err != nil {
-		return "", "", "", "", errors.New("could not parse proxy URL")
+		return "", "", "", "", "", errors.New("could not parse proxy URL")
 	}
 
 	passwd, _ := proxyUrl.User.Password()
 
-	return proxyUrl.Hostname(), proxyUrl.Port(), proxyUrl.User.Username(), passwd, nil
+	return proxyUrl.Scheme, proxyUrl.Hostname(), proxyUrl.Port(), proxyUrl.User.Username(), passwd, nil
 }
 
 func BuildSecretName(dynakubeName string) string {

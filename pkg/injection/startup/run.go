@@ -46,7 +46,12 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 			return nil, err
 		}
 
-		client, err = newDTClientBuilder(secretConfig).createClient()
+		trustedCAs, err := newSecretTrustedCAsViaFs(fs)
+		if err != nil {
+			return nil, err
+		}
+
+		client, err = newDTClientBuilder(secretConfig, trustedCAs).createClient()
 		if err != nil {
 			return nil, err
 		}
@@ -217,14 +222,6 @@ func (runner *Runner) configureOneAgent() error {
 		return err
 	}
 
-	if runner.config.TlsCert != "" {
-		log.Info("propagating tls cert to agent")
-
-		if err := runner.propagateTLSCert(); err != nil {
-			return err
-		}
-	}
-
 	if runner.config.InitialConnectRetry > -1 {
 		log.Info("creating curl options file")
 
@@ -285,10 +282,6 @@ func (runner *Runner) enrichMetadata() error {
 	}
 
 	return nil
-}
-
-func (runner *Runner) propagateTLSCert() error {
-	return runner.createConfFile(filepath.Join(consts.AgentShareDirMount, "custom.pem"), runner.config.TlsCert)
 }
 
 func getReadOnlyAgentConfMountPath() string {

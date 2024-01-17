@@ -29,6 +29,7 @@ type initContainerModifier interface {
 func GenerateAllModifiers(dynakube dynatracev1beta1.DynaKube, capability capability.Capability, agBaseContainerEnvMap *prioritymap.Map) []builder.Modifier {
 	return []builder.Modifier{
 		NewAuthTokenModifier(dynakube),
+		NewSSlVolumeModifier(dynakube),
 		NewCertificatesModifier(dynakube),
 		NewCustomPropertiesModifier(dynakube, capability),
 		NewProxyModifier(dynakube),
@@ -36,5 +37,6 @@ func GenerateAllModifiers(dynakube dynatracev1beta1.DynaKube, capability capabil
 		NewReadOnlyModifier(dynakube),
 		NewServicePortModifier(dynakube, capability, agBaseContainerEnvMap),
 		NewKubernetesMonitoringModifier(dynakube, capability),
+		NewTrustedCAsModifier(dynakube),
 	}
 }

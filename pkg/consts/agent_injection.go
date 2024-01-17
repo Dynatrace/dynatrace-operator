@@ -7,6 +7,7 @@ const (
 	AgentContainerConfFilenameTemplate = "container_%s.conf"
 	AgentInitSecretName                = "dynatrace-dynakube-config"
 	AgentInitSecretConfigField         = "config"
+	AgentInitSecretTrustedCAsField     = "trustedCAs"
 
 	LdPreloadFilename = "ld.so.preload"
 	LibAgentProcPath  = "/agent/lib64/liboneagentproc.so"

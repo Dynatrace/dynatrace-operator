@@ -5,14 +5,16 @@ import (
 )
 
 type dtclientBuilder struct {
-	config  *SecretConfig
-	options []dtclient.Option
+	config     *SecretConfig
+	trustedCAs string
+	options    []dtclient.Option
 }
 
-func newDTClientBuilder(config *SecretConfig) *dtclientBuilder {
+func newDTClientBuilder(config *SecretConfig, trustedCAs string) *dtclientBuilder {
 	return &dtclientBuilder{
-		config:  config,
-		options: []dtclient.Option{},
+		config:     config,
+		trustedCAs: trustedCAs,
+		options:    []dtclient.Option{},
 	}
 }
 
@@ -71,9 +73,9 @@ func (builder *dtclientBuilder) addHostGroup() {
 }
 
 func (builder *dtclientBuilder) addTrustedCerts() {
-	if builder.config.TrustedCAs != "" {
+	if builder.trustedCAs != "" {
 		log.Info("using TrustedCAs, check the secret for more details")
 
-		builder.options = append(builder.options, dtclient.Certs([]byte(builder.config.TrustedCAs)))
+		builder.options = append(builder.options, dtclient.Certs([]byte(builder.trustedCAs)))
 	}
 }

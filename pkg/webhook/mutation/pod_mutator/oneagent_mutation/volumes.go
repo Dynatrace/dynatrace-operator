@@ -64,9 +64,8 @@ func getContainerConfSubPath(containerName string) string {
 func addCertVolumeMounts(container *corev1.Container) {
 	container.VolumeMounts = append(container.VolumeMounts,
 		corev1.VolumeMount{
-			Name:      oneAgentShareVolumeName,
-			MountPath: filepath.Join(oneAgentCustomKeysPath, customCertFileName),
-			SubPath:   customCertFileName,
+			Name:      oneAgentTrustedCAsVolumeName,
+			MountPath: oneAgentCustomKeysPath,
 		})
 }
 
@@ -119,6 +118,25 @@ func addOneAgentVolumes(pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) {
 			Name: oneAgentShareVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		})
+	pod.Spec.Volumes = append(pod.Spec.Volumes,
+		corev1.Volume{
+			Name: oneAgentTrustedCAsVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: consts.AgentInitSecretName,
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.AgentInitSecretTrustedCAsField,
+							Path: customCertFileName,
+						},
+						{
+							Key:  consts.AgentInitSecretTrustedCAsField,
+							Path: customProxyCertFileName,
+						},
+					},
+				},
 			},
 		},
 	)

@@ -1,8 +1,6 @@
 package modifiers
 
 import (
-	"path/filepath"
-
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
@@ -11,30 +9,25 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-var _ volumeModifier = CertificatesModifier{}
-var _ volumeMountModifier = CertificatesModifier{}
-var _ builder.Modifier = CertificatesModifier{}
+var _ volumeModifier = SslVolumeModifier{}
+var _ volumeMountModifier = SslVolumeModifier{}
+var _ builder.Modifier = SslVolumeModifier{}
 
-const (
-	jettyCerts     = "server-certs"
-	secretsRootDir = "/var/lib/dynatrace/secrets/"
-)
-
-func NewCertificatesModifier(dynakube dynatracev1beta1.DynaKube) CertificatesModifier {
-	return CertificatesModifier{
+func NewSSlVolumeModifier(dynakube dynatracev1beta1.DynaKube) SslVolumeModifier {
+	return SslVolumeModifier{
 		dynakube: dynakube,
 	}
 }
 
-type CertificatesModifier struct {
+type SslVolumeModifier struct {
 	dynakube dynatracev1beta1.DynaKube
 }
 
-func (mod CertificatesModifier) Enabled() bool {
-	return mod.dynakube.HasActiveGateCaCert()
+func (mod SslVolumeModifier) Enabled() bool {
+	return mod.dynakube.HasActiveGateCaCert() || mod.dynakube.Spec.TrustedCAs != ""
 }
 
-func (mod CertificatesModifier) Modify(sts *appsv1.StatefulSet) error {
+func (mod SslVolumeModifier) Modify(sts *appsv1.StatefulSet) error {
 	baseContainer := container.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)
@@ -42,25 +35,23 @@ func (mod CertificatesModifier) Modify(sts *appsv1.StatefulSet) error {
 	return nil
 }
 
-func (mod CertificatesModifier) getVolumes() []corev1.Volume {
+func (mod SslVolumeModifier) getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
-			Name: jettyCerts,
+			Name: consts.GatewaySslVolumeName,
 			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: mod.dynakube.Spec.ActiveGate.TlsSecretName,
-				},
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
 	}
 }
 
-func (mod CertificatesModifier) getVolumeMounts() []corev1.VolumeMount {
+func (mod SslVolumeModifier) getVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
-			ReadOnly:  true,
-			Name:      jettyCerts,
-			MountPath: filepath.Join(secretsRootDir, "tls"),
+			ReadOnly:  false,
+			Name:      consts.GatewaySslVolumeName,
+			MountPath: consts.GatewaySslMountPoint,
 		},
 	}
 }

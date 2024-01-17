@@ -46,7 +46,7 @@ func (dk *DynaKube) TrustedCAs(ctx context.Context, kubeReader client.Reader) ([
 	return nil, nil
 }
 
-func (dk *DynaKube) ActiveGateTlsCert(ctx context.Context, kubeReader client.Reader) (string, error) {
+func (dk *DynaKube) ActiveGateTlsCert(ctx context.Context, kubeReader client.Reader) ([]byte, error) {
 	if dk.HasActiveGateCaCert() {
 		secretName := dk.Spec.ActiveGate.TlsSecretName
 
@@ -54,11 +54,11 @@ func (dk *DynaKube) ActiveGateTlsCert(ctx context.Context, kubeReader client.Rea
 
 		err := kubeReader.Get(ctx, client.ObjectKey{Name: secretName, Namespace: dk.Namespace}, &tlsSecret)
 		if err != nil {
-			return "", errors.WithMessage(err, fmt.Sprintf("failed to get activeGate tlsCert from %s secret", secretName))
+			return nil, errors.WithMessage(err, fmt.Sprintf("failed to get activeGate tlsCert from %s secret", secretName))
 		}
 
-		return string(tlsSecret.Data[TlsCertKey]), nil
+		return tlsSecret.Data[TlsCertKey], nil
 	}
 
-	return "", nil
+	return nil, nil
 }

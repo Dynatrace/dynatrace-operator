@@ -19,14 +19,12 @@ type SecretConfig struct {
 	Proxy       string `json:"proxy"`
 	NoProxy     string `json:"noProxy"`
 	NetworkZone string `json:"networkZone"`
-	TrustedCAs  string `json:"trustedCAs"`
 
 	// oneAgent
 	OneAgentNoProxy string `json:"oneAgentNoProxy"`
 
 	// For the injection
 	TenantUUID          string `json:"tenantUUID"`
-	TlsCert             string `json:"tlsCert"`
 	HostGroup           string `json:"hostGroup"`
 	InitialConnectRetry int    `json:"initialConnectRetry"`
 	SkipCertCheck       bool   `json:"skipCertCheck"`
@@ -45,14 +43,6 @@ func (secret SecretConfig) logContent() {
 
 	if secret.PaasToken != "" {
 		secret.PaasToken = asterisks
-	}
-
-	if secret.TrustedCAs != "" {
-		secret.TrustedCAs = asterisks
-	}
-
-	if secret.TlsCert != "" {
-		secret.TlsCert = asterisks
 	}
 
 	log.Info("contents of secret config", "content", secret)
@@ -80,4 +70,20 @@ func newSecretConfigViaFs(fs afero.Fs) (*SecretConfig, error) {
 	config.logContent()
 
 	return &config, nil
+}
+
+func newSecretTrustedCAsViaFs(fs afero.Fs) (string, error) {
+	file, err := fs.Open(filepath.Join(consts.AgentConfigDirMount, consts.AgentInitSecretTrustedCAsField))
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	raw, err := io.ReadAll(file)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	log.Info("read trustedCAs from filesystem", "len", len(raw))
+
+	return string(raw), nil
 }
