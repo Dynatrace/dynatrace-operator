@@ -98,7 +98,13 @@ Important characteristics:
 
 - Has a `Reconcile(<whatever is necessary>)` function
 - Is called/used BY a Controller
-- Examples: OneAgentReconciler, IstioReconciler...
+   - Examples: OneAgentReconciler, IstioReconciler...
+- `Reconciler`s don't hold state in a way that they need to be passed around, or if they currently do, they shouldn't.
+  - Configuring a `struct` once a reusing it makes sense IF the creation was costly. (example: required an API call)
+    - A `Reconciler` shouldn't be this kind of struct, it should be "throw away struct."
+- The cleanup for the resources that are created by the `Reconciler` are cleaned up by the same `Reconciler`
+  - The cleanup is "invisible" for the caller of the `Reconciler`, so its up to the `Reconciler` to decide if it needs to clean up or setup/update.
+    - Example: `DynakubeController` should just call the `ActiveGateReconciler.Reconcile` function, and not worry about if it will create(i.e.: setup) a `StatefulSet` or delete(i.e.: cleanup) the no longer necessary one.
 
 ## Errors
 
