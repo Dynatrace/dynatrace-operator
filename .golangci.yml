@@ -208,51 +208,51 @@ linters:
   - zerologlint # Detects the wrong usage of zerolog that a user forgets to dispatch with Send or Msg.	bugs		v1.53.0
 
 # TODO: Requires fixes
-#  - godot # Check if comments end in a period.	style, comment	✔	v1.25.0
-#  - gochecknoglobals # Check that no global variables exist
-#  - gochecknoinits	# Checks that no init functions are present in Go code.	style		v1.12.0
-#  - errchkjson #	Checks types passed to the json encoding functions. Reports unsupported types and reports occations, where the check for the returned error can be omitted.	bugs		1.44.0
-#  - dupl     # Tool for code clone detection.	style		v1.0.0
-#  - cyclop   # Checks function and package cyclomatic complexity.
-#  - errcheck # enabled by default and recommended
-#  - contextcheck # Check whether the function uses a non-inherited context.
+#  - bodyclose         # Checks whether HTTP response body is closed successfully.
+#  - contextcheck      # Check whether the function uses a non-inherited context.
+#  - cyclop            # Checks function and package cyclomatic complexity.
+#  - dupl              # Tool for code clone detection.
+#  - dupword           # Checks for duplicate words in the source code.	comment
+#  - errcheck          # enabled by default and recommended
+#  - errchkjson        # Checks types passed to the json encoding functions. Reports unsupported types and reports occations, where the check for the returned error can be omitted.	bugs		1.44.0
+#  - errname	       # Checks that sentinel errors are prefixed with the Err and error types are suffixed with the Error.	style		v1.42.0
+#  - execinquery       # Execinquery is a linter about query string checker in Query function which reads your Go src files and warning it finds.	sql		v1.46.0
+#  - exhaustruct       # Checks if all structure fields are initialized.	style, test		v1.46.0
+#  - forbidigo         # Forbids identifiers.	style		v1.34.0
+#  - forcetypeassert   # Finds forced type assertions.	style		v1.38.0
+#  - funlen            # Tool for detection of long functions.	complexity		v1.18.0
+#  - gochecknoglobals  # Check that no global variables exist
+#  - gochecknoinits	   # Checks that no init functions are present in Go code.	style		v1.12.0
+#  - godot             # Check if comments end in a period.	style, comment	✔	v1.25.0
+#  - goerr113	       # Go linter to check the errors handling expressions.	style, error		v1.26.0
+#  - gofumpt           # Gofumpt checks whether code was gofumpt-ed.	format	✔	v1.28.0
+#  - gomnd             # An analyzer to detect magic numbers.	style		v1.22.0
 #  - inamedparam
+#  - ireturn           # Accept Interfaces, Return Concrete Types.	style		v1.43.0
+#  - maintidx          # Maintidx measures the maintainability index of each function.	complexity		v1.44.0
+#  - makezero          # Finds slice declarations with non-zero initial length.	style, bugs		v1.34.0
+#  - maligned          # The repository of the linter has been archived by the owner. Replaced by govet 'fieldalignment'.	performance		v1.0.0
+#  - musttag           # Enforce field tags in (un)marshaled structs.	style, bugs		v1.51.0
+#  - nestif            # Reports deeply nested if statements.	complexity		v1.25.0
+#  - nilnil            # Checks that there is no simultaneous return of nil error and an invalid value.	style		v1.43.0
+#  - nlreturn          # Nlreturn checks for a new line before return and branch statements to increase code clarity.	style		v1.30.0
+#  - noctx             # Finds sending http request without context.Context.	performance, bugs		v1.28.0
+#  - nolintlint        # Reports ill-formed or insufficient nolint directives.	style		v1.26.0
+#  - nonamedreturns    # Reports all named returns.	style		v1.46.0
+#  - nosprintfhostport # Checks for misuse of Sprintf to construct a host with port in a URL.	style		v1.46.0
+#  - paralleltest      # Detects missing usage of t.Parallel() method in your Go test.	style, test		v1.33.0
+#  - predeclared       # Find code that shadows one of Go's predeclared identifiers.	style		v1.35.0
+#  - promlinter        # Check Prometheus metrics naming via promlint.	style		v1.40.0
+#  - protogetter       # Reports direct reads from proto message fields when getters should be used.	bugs	✔	v1.55.0
+#  - rowserrcheck      # Checks whether Rows.Err of rows is checked successfully.	bugs, sql		v1.23.0
 #  - sqlclosecheck
-#  - dupword #	Checks for duplicate words in the source code.	comment	✔	1.50.0
-#  - bodyclose # Checks whether HTTP response body is closed successfully.
-#  - testifylint # Checks usage of github.com/stretchr/testify.	test, bugs		v1.55.0
-#  - thelper # Thelper detects tests helpers which is not start with t.Helper() method.	style		v1.34.0
-#  - tenv # Requers fixex
-#  - usestdlibvars # easy fixes, nice one
-#  - wastedassign # easy fix
-#  - wrapcheck # Checks that errors returned from external packages are wrapped.	style, error		v1.32.0
-#  - wsl # Add or remove empty lines.	style, requires fixes +1
-#  - errname	# Checks that sentinel errors are prefixed with the Err and error types are suffixed with the Error.	style		v1.42.0
-#  - execinquery #	Execinquery is a linter about query string checker in Query function which reads your Go src files and warning it finds.	sql		v1.46.0
-#  - exhaustruct #	Checks if all structure fields are initialized.	style, test		v1.46.0
-#  - forbidigo # Forbids identifiers.	style		v1.34.0
-#  - forcetypeassert	# ddFinds forced type assertions.	style		v1.38.0
-#  - funlen # Tool for detection of long functions.	complexity		v1.18.0
-#  - goerr113	# Go linter to check the errors handling expressions.	style, error		v1.26.0
-#  - gofumpt #	Gofumpt checks whether code was gofumpt-ed.	format	✔	v1.28.0
-#  - gomnd #An analyzer to detect magic numbers.	style		v1.22.0
-#  - ireturn # Accept Interfaces, Return Concrete Types.	style		v1.43.0
-#  - maintidx #	Maintidx measures the maintainability index of each function.	complexity		v1.44.0
-#  - makezero # Finds slice declarations with non-zero initial length.	style, bugs		v1.34.0
-#  - maligned # 	The repository of the linter has been archived by the owner. Replaced by govet 'fieldalignment'.	performance		v1.0.0
-#  - musttag # Enforce field tags in (un)marshaled structs.	style, bugs		v1.51.0
-#  - nestif # Reports deeply nested if statements.	complexity		v1.25.0
-#  - nlreturn # Nlreturn checks for a new line before return and branch statements to increase code clarity.	style		v1.30.0
-#  - noctx # Finds sending http request without context.Context.	performance, bugs		v1.28.0
-#  - nolintlint # Reports ill-formed or insufficient nolint directives.	style		v1.26.0
-#  - nonamedreturns # Reports all named returns.	style		v1.46.0
-#  - nosprintfhostport	# Checks for misuse of Sprintf to construct a host with port in a URL.	style		v1.46.0
-#  - nilnil # Checks that there is no simultaneous return of nil error and an invalid value.	style		v1.43.0
-#  - predeclared # Find code that shadows one of Go's predeclared identifiers.	style		v1.35.0
-#  - paralleltest # Detects missing usage of t.Parallel() method in your Go test.	style, test		v1.33.0
-#  - promlinter # Check Prometheus metrics naming via promlint.	style		v1.40.0
-#  - protogetter # Reports direct reads from proto message fields when getters should be used.	bugs	✔	v1.55.0
-#  - rowserrcheck # Checks whether Rows.Err of rows is checked successfully.	bugs, sql		v1.23.0
+#  - tenv              # Requers fixex
+#  - testifylint       # Checks usage of github.com/stretchr/testify.	test, bugs		v1.55.0
+#  - thelper           # Thelper detects tests helpers which is not start with t.Helper() method.	style		v1.34.0
+#  - usestdlibvars     # easy fixes, nice one
+#  - wastedassign      # easy fix
+#  - wrapcheck         # Checks that errors returned from external packages are wrapped.	style, error		v1.32.0
+#  - wsl               # Add or remove empty lines.	style, requires fixes +1
 
 # TODO: Need to discuss/decide
 #  - testpackage # Linter that makes you use a separate _test package.	style, test		v1.25.0
