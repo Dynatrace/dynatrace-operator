@@ -29,11 +29,11 @@ func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.Mutat
 		if !ContainerIsExcluded(request.BaseRequest, container.Name) {
 			addContainerInfoInitEnv(request.InstallContainer, i+1, container.Name, container.Image)
 			mutator.addOneAgentToContainer(request.ToReinvocationRequest(), container)
-			injecteContainers++
+			injectedContainers++
 		}
 	}
 
-	return injecteContainers
+	return injectedContainers
 }
 
 // reinvokeUserContainers mutates each user container that hasn't been injected yet.

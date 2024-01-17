@@ -147,23 +147,26 @@ func (webhook *podMutatorWebhook) isOcDebugPod(pod *corev1.Pod) bool {
 	return true
 }
 
-func (webhook *podMutatorWebhook) handlePodMutation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) error {
-	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
-	defer span.End()
-
+func podNeedsInjection(mutationRequest *dtwebhook.MutationRequest) bool {
 	needsInjection := false
 	for _, container := range mutationRequest.Pod.Spec.Containers {
 		needsInjection = needsInjection || !oneagent_mutation.ContainerIsExcluded(mutationRequest.BaseRequest, container.Name)
 	}
+	return needsInjection
+}
 
-	if !needsInjection {
+func (webhook *podMutatorWebhook) handlePodMutation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) error {
+	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
+	defer span.End()
+
+	if !podNeedsInjection(mutationRequest) {
 		log.Info("no mutation is needed, all containers are excluded from injection.")
 		return nil
 	}
 
 	mutationRequest.InstallContainer = createInstallInitContainerBase(webhook.webhookImage, webhook.clusterID, mutationRequest.Pod, mutationRequest.DynaKube)
 
-  isMutated := false
+	isMutated := false
 	for _, mutator := range webhook.mutators {
 		if !mutator.Enabled(mutationRequest.BaseRequest) {
 			continue
