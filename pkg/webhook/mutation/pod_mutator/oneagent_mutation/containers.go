@@ -22,7 +22,7 @@ func (mutator *OneAgentPodMutator) setContainerCount(initContainer *corev1.Conta
 }
 
 func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.MutationRequest) int {
-	injecteContainers := 0
+	injectedContainers := 0
 	for i := range request.Pod.Spec.Containers {
 		container := &request.Pod.Spec.Containers[i]
 
