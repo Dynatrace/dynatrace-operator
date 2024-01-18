@@ -159,110 +159,109 @@ linters-settings:
 linters:
   disable-all: true
   enable:
-  - asasalint  # Check for pass []any as any in variadic func(...any).
-  - asciicheck # Checks that all code identifiers does not have non-ASCII symbols in the name.
-  - bidichk    # Checks for dangerous unicode character sequences.
-  - decorder # Check declaration order and count of types, constants, variables and functions.	format, style		v1.44.0
-  - depguard
-  - dogsled
-  - durationcheck #	Check for two durations multiplied together.	bugs		v1.37.0
-  - errorlint #	Errorlint is a linter for that can be used to find code that will cause problems with the error wrapping scheme introduced in Go 1.13.	bugs, error		v1.32.0
-  - exportloopref #	Checks for pointers to enclosing loop variables.	bugs		v1.28.0
-  - gci # Gci controls Go package import order and makes it always deterministic.	format, import		v1.30.0
-  - gocheckcompilerdirectives	# Checks that go compiler directive comments (//go:) are valid.	bugs		v1.51.0
-  - gochecksumtype
-  - gocognit # Computes and checks the cognitive complexity of functions.	complexity		v1.20.0
-  - goconst
-  - gocritic
-  - gocyclo #	Computes and checks the cyclomatic complexity of functions.	complexity		v1.0.0
-  - gofmt
-  - goheader #	Checks is file header matches to pattern.	style		v1.28.0
-  - gomoddirectives # Manage the use of 'replace', 'retract', and 'excludes' directives in go.mod.	style, module		v1.39.0
-  - gomodguard # Allow and block list linter for direct Go module dependencies. This is different from depguard where there are different block types for example version constraints and module recommendations.	style, import, module		v1.25.0
-  - goprintffuncname # Checks that printf-like functions are named with f at the end.	style		v1.23.0
-  - gosec
-  - gosimple
-  - gosmopolitan # Report certain i18n/l10n anti-patterns in your Go codebase.	bugs		v1.53.0
-  - govet
-  - grouper # Analyze expression groups.	style		v1.44.0
-  - importas # Enforces consistent import aliases.	style		v1.38.0
-  - ineffassign
-  - loggercheck # Checks key value pairs for common logger libraries (kitlog,klog,logr,zap).	style, bugs		v1.49.0
-  - mirror	# Reports wrong mirror patterns of bytes/strings usage.	style		v1.53.0
-  - misspell
-  - nakedret # Checks that functions with naked returns are not longer than a maximum size (can be zero).	style		v1.19.0
-  - nilerr	# Finds the code that returns nil even if it checks that the error is not nil.	bugs		v1.38.0
-  - perfsprint
-  - prealloc
-  - reassign # Checks that package variables are not reassigned.	bugs		1.49.0
-  - revive # Fast, configurable, extensible, flexible, and beautiful linter for Go. Drop-in replacement of golint.	style, metalinter		v1.37.0
-  - sloglint # Ensure consistent code style when using log/slog.	style, format		v1.55.0
-  - staticcheck
-  - testableexamples	# Linter checks if examples are testable (have an expected output).	test		v1.50.0
-  - tparallel
-  - typecheck
-  - unconvert
-  - unparam
-  - unused
-  - whitespace
-  - zerologlint # Detects the wrong usage of zerolog that a user forgets to dispatch with Send or Msg.	bugs		v1.53.0
+  - asasalint                 # Check for pass []any as any in variadic func(...any).
+  - asciicheck                # Checks that all code identifiers does not have non-ASCII symbols in the name.
+  - bidichk                   # Checks for dangerous unicode character sequences.
+  - decorder                  # Check declaration order and count of types, constants, variables and functions.
+  - depguard                  # Go linter that checks if package imports are in a list of acceptable packages
+  - dogsled                   # Checks assignments with too many blank identifiers (e.g. x, _, _, _, := f())
+  - durationcheck             # Check for two durations multiplied together.
+  - errorlint                 # Errorlint is a linter for that can be used to find code that will cause problems with the error wrapping scheme introduced in Go 1.13.
+  - exportloopref             # Checks for pointers to enclosing loop variables.
+  - gci                       # Gci controls Go package import order and makes it always deterministic.
+  - gocheckcompilerdirectives # Checks that go compiler directive comments (//go:) are valid.
+  - gochecksumtype            # Run exhaustiveness checks on Go "sum types"
+  - gocognit                  # Computes and checks the cognitive complexity of functions.
+  - goconst                   # Finds repeated strings that could be replaced by a constant
+  - gocritic                  # Provides diagnostics that check for bugs, performance and style issues.
+  - gocyclo                   # Computes and checks the cyclomatic complexity of functions.	complexity.
+  - gofmt                     # Gofmt checks whether code was gofmt-ed. By default this tool runs with -s option to check for code simplification
+  - goheader                  # Checks is file header matches to pattern.
+  - gomoddirectives           # Manage the use of 'replace', 'retract', and 'excludes' directives in go.mod.
+  - gomodguard                # Allow and block list linter for direct Go module dependencies. This is different from depguard where there are different block types for example version constraints and module recommendations.
+  - goprintffuncname          # Checks that printf-like functions are named with f at the end.
+  - gosec                     # Inspects source code for security problems
+  - gosimple                  # Linter for Go source code that specializes in simplifying code.
+  - gosmopolitan              # Report certain i18n/l10n anti-patterns in your Go codebase.
+  - govet                     # Vet examines Go source code and reports suspicious constructs, such as Printf calls whose arguments do not align with the format string
+  - grouper                   # Analyze expression groups.
+  - importas                  # Enforces consistent import aliases.
+  - ineffassign               # Detects when assignments to existing variables are not used
+  - loggercheck               # Checks key value pairs for common logger libraries (kitlog,klog,logr,zap).
+  - mirror                    # Reports wrong mirror patterns of bytes/strings usage.
+  - misspell                  # Finds commonly misspelled English words in comments.
+  - nakedret                  # Checks that functions with naked returns are not longer than a maximum size (can be zero).
+  - nilerr                    # Finds the code that returns nil even if it checks that the error is not nil.
+  - perfsprint                # Checks that fmt.Sprintf can be replaced with a faster alternative.
+  - prealloc                  # Finds slice declarations that could potentially be pre-allocated
+  - reassign                  # Checks that package variables are not reassigned.
+  - revive                    # Fast, configurable, extensible, flexible, and beautiful linter for Go. Drop-in replacement of golint.
+  - sloglint                  # Ensure consistent code style when using log/slog.
+  - staticcheck               # It's a set of rules from staticcheck. It's not the same thing as the staticcheck binary. The author of staticcheck doesn't support or approve the use of staticcheck as a library inside golangci-lint.
+  - testableexamples          # Linter checks if examples are testable (have an expected output).
+  - tparallel                 # tparallel detects inappropriate usage of t.Parallel() method in your Go test codes
+  - unconvert                 # Remove unnecessary type conversions
+  - unparam                   # Reports unused function parameters
+  - unused                    # Checks Go code for unused constants, variables, functions and types
+  - whitespace                # Tool for detection of leading and trailing whitespace.
+  - zerologlint               # Detects the wrong usage of zerolog that a user forgets to dispatch with Send or Msg.
 
-# TODO: Requires fixes
-#  - bodyclose         # Checks whether HTTP response body is closed successfully.
-#  - contextcheck      # Check whether the function uses a non-inherited context.
-#  - cyclop            # Checks function and package cyclomatic complexity.
-#  - dupl              # Tool for code clone detection.
-#  - dupword           # Checks for duplicate words in the source code.	comment
-#  - errcheck          # enabled by default and recommended
-#  - errchkjson        # Checks types passed to the json encoding functions. Reports unsupported types and reports occations, where the check for the returned error can be omitted.	bugs		1.44.0
-#  - errname	       # Checks that sentinel errors are prefixed with the Err and error types are suffixed with the Error.	style		v1.42.0
-#  - execinquery       # Execinquery is a linter about query string checker in Query function which reads your Go src files and warning it finds.	sql		v1.46.0
-#  - exhaustruct       # Checks if all structure fields are initialized.	style, test		v1.46.0
-#  - forbidigo         # Forbids identifiers.	style		v1.34.0
-#  - forcetypeassert   # Finds forced type assertions.	style		v1.38.0
-#  - funlen            # Tool for detection of long functions.	complexity		v1.18.0
-#  - gochecknoglobals  # Check that no global variables exist
-#  - gochecknoinits	   # Checks that no init functions are present in Go code.	style		v1.12.0
-#  - godot             # Check if comments end in a period.	style, comment	✔	v1.25.0
-#  - goerr113	       # Go linter to check the errors handling expressions.	style, error		v1.26.0
-#  - gofumpt           # Gofumpt checks whether code was gofumpt-ed.	format	✔	v1.28.0
-#  - gomnd             # An analyzer to detect magic numbers.	style		v1.22.0
-#  - inamedparam
-#  - ireturn           # Accept Interfaces, Return Concrete Types.	style		v1.43.0
-#  - maintidx          # Maintidx measures the maintainability index of each function.	complexity		v1.44.0
-#  - makezero          # Finds slice declarations with non-zero initial length.	style, bugs		v1.34.0
-#  - maligned          # The repository of the linter has been archived by the owner. Replaced by govet 'fieldalignment'.	performance		v1.0.0
-#  - musttag           # Enforce field tags in (un)marshaled structs.	style, bugs		v1.51.0
-#  - nestif            # Reports deeply nested if statements.	complexity		v1.25.0
-#  - nilnil            # Checks that there is no simultaneous return of nil error and an invalid value.	style		v1.43.0
-#  - nlreturn          # Nlreturn checks for a new line before return and branch statements to increase code clarity.	style		v1.30.0
-#  - noctx             # Finds sending http request without context.Context.	performance, bugs		v1.28.0
-#  - nolintlint        # Reports ill-formed or insufficient nolint directives.	style		v1.26.0
-#  - nonamedreturns    # Reports all named returns.	style		v1.46.0
-#  - nosprintfhostport # Checks for misuse of Sprintf to construct a host with port in a URL.	style		v1.46.0
-#  - paralleltest      # Detects missing usage of t.Parallel() method in your Go test.	style, test		v1.33.0
-#  - predeclared       # Find code that shadows one of Go's predeclared identifiers.	style		v1.35.0
-#  - promlinter        # Check Prometheus metrics naming via promlint.	style		v1.40.0
-#  - protogetter       # Reports direct reads from proto message fields when getters should be used.	bugs	✔	v1.55.0
-#  - rowserrcheck      # Checks whether Rows.Err of rows is checked successfully.	bugs, sql		v1.23.0
-#  - sqlclosecheck
-#  - tenv              # Requers fixex
-#  - testifylint       # Checks usage of github.com/stretchr/testify.	test, bugs		v1.55.0
-#  - thelper           # Thelper detects tests helpers which is not start with t.Helper() method.	style		v1.34.0
-#  - usestdlibvars     # easy fixes, nice one
-#  - wastedassign      # easy fix
-#  - wrapcheck         # Checks that errors returned from external packages are wrapped.	style, error		v1.32.0
-#  - wsl               # Add or remove empty lines.	style, requires fixes +1
+# TODO: Requires some code changes before enabling:
+# - bodyclose         # Checks whether HTTP response body is closed successfully.
+# - contextcheck      # Check whether the function uses a non-inherited context.
+# - cyclop            # Checks function and package cyclomatic complexity.
+# - dupl              # Tool for code clone detection.
+# - dupword           # Checks for duplicate words in the source code.	comment
+# - errcheck          # enabled by default and recommended
+# - errchkjson        # Checks types passed to the json encoding functions. Reports unsupported types and reports occations, where the check for the returned error can be omitted.
+# - errname           # Checks that sentinel errors are prefixed with the Err and error types are suffixed with the Error.	style		v1.42.0
+# - execinquery       # Execinquery is a linter about query string checker in Query function which reads your Go src files and warning it finds.	sql		v1.46.0
+# - exhaustruct       # Checks if all structure fields are initialized.	style, test		v1.46.0
+# - forbidigo         # Forbids identifiers.
+# - forcetypeassert   # Finds forced type assertions.
+# - funlen            # Tool for detection of long functions.
+# - gochecknoglobals  # Check that no global variables exist.
+# - gochecknoinits    # Checks that no init functions are present in Go code.
+# - godot             # Check if comments end in a period.
+# - goerr113          # Go linter to check the errors handling expressions.
+# - gofumpt           # Gofumpt checks whether code was gofumpt-ed.
+# - gomnd             # An analyzer to detect magic numbers.
+# - inamedparam # reports interfaces with unnamed method parameters.
+# - ireturn           # Accept Interfaces, Return Concrete Types.
+# - maintidx          # Maintidx measures the maintainability index of each function.
+# - makezero          # Finds slice declarations with non-zero initial length.
+# - maligned          # The repository of the linter has been archived by the owner. Replaced by govet 'fieldalignment'.
+# - musttag           # Enforce field tags in (un)marshaled structs.
+# - nestif            # Reports deeply nested if statements.
+# - nilnil            # Checks that there is no simultaneous return of nil error and an invalid value.
+# - nlreturn          # Nlreturn checks for a new line before return and branch statements to increase code clarity.
+# - noctx             # Finds sending http request without context.Context.
+# - nolintlint        # Reports ill-formed or insufficient nolint directives.
+# - nonamedreturns    # Reports all named returns.
+# - nosprintfhostport # Checks for misuse of Sprintf to construct a host with port in a URL.
+# - paralleltest      # Detects missing usage of t.Parallel() method in your Go test.
+# - predeclared       # Find code that shadows one of Go's predeclared identifiers.
+# - promlinter        # Check Prometheus metrics naming via promlint.
+# - protogetter       # Reports direct reads from proto message fields when getters should be used.
+# - rowserrcheck      # Checks whether Rows.Err of rows is checked successfully.
+# - sqlclosecheck # Checks that sql.Rows and sql.Stmt are closed.
+# - tenv              # tenv is analyzer that detects using os.Setenv instead of t.Setenv since Go1.17
+# - testifylint       # Checks usage of github.com/stretchr/testify.
+# - thelper           # Thelper detects tests helpers which is not start with t.Helper() method.
+# - usestdlibvars     #  A linter that detect the possibility to use variables/constants from the Go standard library.
+# - wastedassign      # wastedassign finds wasted assignment statements.
+# - wrapcheck         # Checks that errors returned from external packages are wrapped.
+# - wsl               # Add or remove empty lines.
 
-# TODO: Need to discuss/decide
-#  - testpackage # Linter that makes you use a separate _test package.	style, test		v1.25.0
-#  - tagliatelle
-#  - stylecheck
-#  - inamedparam
-#  - exhaustive # Check exhaustiveness of enum switch statements.	bugs		v1.28.0
-#  - godox # Tool for detection of FIXME, TODO and other comment keywords.	style, comment		v1.19.0
-# - interfacebloat # A linter that checks the number of methods inside an interface.	style		v1.49.0
-# - lll # Reports long lines.	style		v1.8.0
+# TODO: Need to discuss/decide/remove
+# - exhaustive     # Check exhaustiveness of enum switch statements.
+# - godox          # Tool for detection of FIXME, TODO and other comment keywords.
+# - inamedparam    # reports interfaces with unnamed method parameters.
+# - stylecheck     # Stylecheck is a replacement for golint.
+# - tagliatelle    # Checks the struct tags.
+# - testpackage    # Linter that makes you use a separate _test package.
+# - interfacebloat # A linter that checks the number of methods inside an interface.
+# - lll            # Reports long lines.
 
 
 service:
