@@ -27,6 +27,10 @@ func (_m *StatusUpdater) EXPECT() *StatusUpdater_Expecter {
 func (_m *StatusUpdater) CheckForDowngrade(latestVersion string) (bool, error) {
 	ret := _m.Called(latestVersion)
 
+	if len(ret) == 0 {
+		panic("no return value specified for CheckForDowngrade")
+	}
+
 	var r0 bool
 	var r1 error
 	if rf, ok := ret.Get(0).(func(string) (bool, error)); ok {
@@ -79,6 +83,10 @@ func (_c *StatusUpdater_CheckForDowngrade_Call) RunAndReturn(run func(string) (b
 func (_m *StatusUpdater) CustomImage() string {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for CustomImage")
+	}
+
 	var r0 string
 	if rf, ok := ret.Get(0).(func() string); ok {
 		r0 = rf()
@@ -119,6 +127,10 @@ func (_c *StatusUpdater_CustomImage_Call) RunAndReturn(run func() string) *Statu
 // CustomVersion provides a mock function with given fields:
 func (_m *StatusUpdater) CustomVersion() string {
 	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for CustomVersion")
+	}
 
 	var r0 string
 	if rf, ok := ret.Get(0).(func() string); ok {
@@ -161,6 +173,10 @@ func (_c *StatusUpdater_CustomVersion_Call) RunAndReturn(run func() string) *Sta
 func (_m *StatusUpdater) IsAutoUpdateEnabled() bool {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for IsAutoUpdateEnabled")
+	}
+
 	var r0 bool
 	if rf, ok := ret.Get(0).(func() bool); ok {
 		r0 = rf()
@@ -201,6 +217,10 @@ func (_c *StatusUpdater_IsAutoUpdateEnabled_Call) RunAndReturn(run func() bool) 
 // IsEnabled provides a mock function with given fields:
 func (_m *StatusUpdater) IsEnabled() bool {
 	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for IsEnabled")
+	}
 
 	var r0 bool
 	if rf, ok := ret.Get(0).(func() bool); ok {
@@ -243,6 +263,10 @@ func (_c *StatusUpdater_IsEnabled_Call) RunAndReturn(run func() bool) *StatusUpd
 func (_m *StatusUpdater) IsPublicRegistryEnabled() bool {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for IsPublicRegistryEnabled")
+	}
+
 	var r0 bool
 	if rf, ok := ret.Get(0).(func() bool); ok {
 		r0 = rf()
@@ -283,6 +307,10 @@ func (_c *StatusUpdater_IsPublicRegistryEnabled_Call) RunAndReturn(run func() bo
 // LatestImageInfo provides a mock function with given fields:
 func (_m *StatusUpdater) LatestImageInfo() (*dynatrace.LatestImageInfo, error) {
 	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for LatestImageInfo")
+	}
 
 	var r0 *dynatrace.LatestImageInfo
 	var r1 error
@@ -337,6 +365,10 @@ func (_c *StatusUpdater_LatestImageInfo_Call) RunAndReturn(run func() (*dynatrac
 func (_m *StatusUpdater) Name() string {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for Name")
+	}
+
 	var r0 string
 	if rf, ok := ret.Get(0).(func() string); ok {
 		r0 = rf()
@@ -377,6 +409,10 @@ func (_c *StatusUpdater_Name_Call) RunAndReturn(run func() string) *StatusUpdate
 // Target provides a mock function with given fields:
 func (_m *StatusUpdater) Target() *status.VersionStatus {
 	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Target")
+	}
 
 	var r0 *status.VersionStatus
 	if rf, ok := ret.Get(0).(func() *status.VersionStatus); ok {
@@ -421,6 +457,10 @@ func (_c *StatusUpdater_Target_Call) RunAndReturn(run func() *status.VersionStat
 func (_m *StatusUpdater) UseTenantRegistry(_a0 context.Context) error {
 	ret := _m.Called(_a0)
 
+	if len(ret) == 0 {
+		panic("no return value specified for UseTenantRegistry")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
 		r0 = rf(_a0)
@@ -462,6 +502,10 @@ func (_c *StatusUpdater_UseTenantRegistry_Call) RunAndReturn(run func(context.Co
 // ValidateStatus provides a mock function with given fields:
 func (_m *StatusUpdater) ValidateStatus() error {
 	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for ValidateStatus")
+	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func() error); ok {

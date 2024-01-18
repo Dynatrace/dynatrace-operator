@@ -5,12 +5,12 @@ chart:
 templates:
   - Common/csi/daemonset.yaml
 tests:
-  - it: should not exist by default
+  - it: should exist 1 by default
     set:
       platform: kubernetes
     asserts:
       - hasDocuments:
-          count: 0
+          count: 1
 
   - it: should have tolerations by default
     set:

@@ -8,4 +8,5 @@ const (
 	K8sPodUIDEnv      = "K8S_PODUID"
 	K8sBasePodNameEnv = "K8S_BASEPODNAME"
 	K8sNamespaceEnv   = "K8S_NAMESPACE"
+	K8sClusterIDEnv   = "K8S_CLUSTER_ID"
 )

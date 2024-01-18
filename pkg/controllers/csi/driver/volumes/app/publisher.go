@@ -147,7 +147,7 @@ func (publisher *AppVolumePublisher) buildLowerDir(bindCfg *csivolumes.BindConfi
 		binFolderName = bindCfg.ImageDigest
 	}
 	directories := []string{
-		publisher.path.AgentConfigDir(bindCfg.TenantUUID),
+		publisher.path.AgentConfigDir(bindCfg.TenantUUID, bindCfg.DynakubeName),
 		publisher.path.AgentSharedBinaryDirForAgent(binFolderName),
 	}
 	return strings.Join(directories, ":")

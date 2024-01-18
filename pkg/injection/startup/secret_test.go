@@ -27,7 +27,6 @@ const (
 	testNodeName  = "node1"
 	testTlsCert   = "tls"
 	testHostGroup = "group"
-	testClusterID = "id"
 
 	testTenantUUID = "test"
 
@@ -52,7 +51,6 @@ func getTestSecretConfig() *SecretConfig {
 		},
 		TlsCert:             testTlsCert,
 		HostGroup:           testHostGroup,
-		ClusterID:           testClusterID,
 		InitialConnectRetry: testInitialConnectRetry,
 	}
 }
@@ -77,7 +75,6 @@ func TestNewSecretConfigViaFs(t *testing.T) {
 	assert.True(t, config.HasHost)
 	assert.Equal(t, testTlsCert, config.TlsCert)
 	assert.Equal(t, testHostGroup, config.HostGroup)
-	assert.Equal(t, testClusterID, config.ClusterID)
 	assert.Len(t, config.MonitoringNodes, 1)
 	assert.Equal(t, testInitialConnectRetry, config.InitialConnectRetry)
 }

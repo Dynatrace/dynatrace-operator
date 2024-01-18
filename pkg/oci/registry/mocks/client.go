@@ -27,6 +27,10 @@ func (_m *MockImageGetter) EXPECT() *MockImageGetter_Expecter {
 func (_m *MockImageGetter) GetImageVersion(ctx context.Context, imageName string) (registry.ImageVersion, error) {
 	ret := _m.Called(ctx, imageName)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetImageVersion")
+	}
+
 	var r0 registry.ImageVersion
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (registry.ImageVersion, error)); ok {
@@ -79,6 +83,10 @@ func (_c *MockImageGetter_GetImageVersion_Call) RunAndReturn(run func(context.Co
 // PullImageInfo provides a mock function with given fields: ctx, imageName
 func (_m *MockImageGetter) PullImageInfo(ctx context.Context, imageName string) (*v1.Image, error) {
 	ret := _m.Called(ctx, imageName)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PullImageInfo")
+	}
 
 	var r0 *v1.Image
 	var r1 error

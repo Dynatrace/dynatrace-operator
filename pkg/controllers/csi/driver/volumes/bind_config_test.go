@@ -37,8 +37,9 @@ func TestNewBindConfig(t *testing.T) {
 		bindCfg, err := NewBindConfig(context.TODO(), db, volumeCfg)
 
 		expected := BindConfig{
-			TenantUUID: testTenantUUID,
-			Version:    testAgentVersion,
+			TenantUUID:   testTenantUUID,
+			Version:      testAgentVersion,
+			DynakubeName: testDynakubeName,
 		}
 		assert.NoError(t, err)
 		assert.NotNil(t, bindCfg)

@@ -24,6 +24,10 @@ func (_m *Provider) EXPECT() *Provider_Expecter {
 func (_m *Provider) GetConfig() (*rest.Config, error) {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetConfig")
+	}
+
 	var r0 *rest.Config
 	var r1 error
 	if rf, ok := ret.Get(0).(func() (*rest.Config, error)); ok {

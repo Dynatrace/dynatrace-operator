@@ -42,10 +42,15 @@ func TestNewClient(t *testing.T) {
 
 func TestProxy(t *testing.T) {
 	proxyRawURL := "proxy.url"
-	dynatraceServer, _ := createTestDynatraceServer(t, http.NotFoundHandler(), "")
-	defer dynatraceServer.Close()
+
+	// each subtest needs new instance of the http Server or actually http Server-Client pair
+	// because otherwise a modification of the client.Transport.Proxy field affects http Client
+	// in the subsequent subtests
 
 	t.Run("set correct proxy (both http and https)", func(t *testing.T) {
+		dynatraceServer, _ := createTestDynatraceServer(t, http.NotFoundHandler(), "")
+		defer dynatraceServer.Close()
+
 		dtc := createTestDynatraceClient(*dynatraceServer)
 		options := Proxy(proxyRawURL, "")
 		assert.NotNil(t, options)
@@ -57,6 +62,9 @@ func TestProxy(t *testing.T) {
 		checkProxyForUrl(t, *transport, proxyRawURL, "https://working.url", false)
 	})
 	t.Run("set NO_PROXY", func(t *testing.T) {
+		dynatraceServer, _ := createTestDynatraceServer(t, http.NotFoundHandler(), "")
+		defer dynatraceServer.Close()
+
 		dtc := createTestDynatraceClient(*dynatraceServer)
 		noProxy := "working.url,url.working"
 		options := Proxy(proxyRawURL, noProxy)
@@ -75,10 +83,15 @@ func TestProxy(t *testing.T) {
 		checkProxyForUrl(t, *transport, proxyRawURL, "https://proxied.url", false)
 	})
 	t.Run("set incorrect proxy", func(t *testing.T) {
+		dynatraceServer, _ := createTestDynatraceServer(t, http.NotFoundHandler(), "")
+		defer dynatraceServer.Close()
+
 		dtc := createTestDynatraceClient(*dynatraceServer)
+
 		options := Proxy("{!.*&%", "")
 		require.NotNil(t, options)
 		options(&dtc)
+		assert.Nil(t, dtc.httpClient.Transport.(*http.Transport).Proxy)
 	})
 }
 
