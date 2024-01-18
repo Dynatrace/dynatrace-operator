@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -24,6 +25,24 @@ const (
 	testDeploymentName = "deployment-as-owner-of-secret"
 	testSecretName     = "test-secret"
 	testNamespace      = "test-namespace"
+	testSecretDataKey  = "key"
+)
+
+var (
+	dataValue  = []byte("dGVzdCB2YWx1ZSBudW1iZXIgMQ==")
+	testSecret = corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testSecretName,
+			Namespace: testNamespace,
+		},
+		Data: map[string][]byte{
+			testSecretDataKey: dataValue,
+		},
+	}
 )
 
 func createDeployment() *appsv1.Deployment {
@@ -288,5 +307,57 @@ func TestSecretBuilder(t *testing.T) {
 		assert.Equal(t, corev1.SecretTypeDockercfg, secret.Type)
 		_, found := secret.Data[dataKey]
 		assert.True(t, found)
+	})
+}
+
+func TestCreateOrUpdate(t *testing.T) {
+	fakeClient := fake.NewClient()
+	fakeClient.Create(context.TODO(), testSecret.DeepCopy())
+
+	t.Run("create secret", func(t *testing.T) {
+		// empty client
+		secretQuery := NewQuery(context.TODO(), fake.NewClient(), fake.NewClient(), secretLog)
+
+		err := secretQuery.CreateOrUpdate(testSecret)
+		assert.NoError(t, err)
+		secret, _ := secretQuery.Get(types.NamespacedName{Name: testSecretName, Namespace: testNamespace})
+		assert.NotNil(t, secret)
+	})
+	t.Run("existing equal secret", func(t *testing.T) {
+		// existing mocked secret in fakeClient
+		secretQuery := NewQuery(context.TODO(), fakeClient, fakeClient, secretLog)
+
+		err := secretQuery.CreateOrUpdate(testSecret)
+		assert.NoError(t, err)
+		secret, _ := secretQuery.Get(types.NamespacedName{Name: testSecretName, Namespace: testNamespace})
+		assert.NotNil(t, secret)
+	})
+	t.Run("update secret", func(t *testing.T) {
+		// existing mocked secret in fakeClient
+		secretQuery := NewQuery(context.TODO(), fakeClient, fakeClient, secretLog)
+		newValue := []byte("dGVzdCB2YWx1ZSBudW1iZXIgMg==")
+		updatedSecret := corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testSecretName,
+				Namespace: testNamespace,
+			},
+			Data: map[string][]byte{
+				testSecretDataKey: newValue,
+			},
+		}
+		err := secretQuery.CreateOrUpdate(updatedSecret)
+		assert.NoError(t, err)
+		secret, _ := secretQuery.Get(types.NamespacedName{Name: testSecretName, Namespace: testNamespace})
+		assert.Equal(t, secret.Data[testSecretDataKey], newValue)
+	})
+}
+
+func TestGetDataFromSecretName(t *testing.T) {
+	fakeClient := fake.NewClient()
+	fakeClient.Create(context.TODO(), testSecret.DeepCopy())
+
+	t.Run("get secret data", func(t *testing.T) {
+		data, _ := GetDataFromSecretName(fakeClient, types.NamespacedName{Name: testSecretName, Namespace: testNamespace}, testSecretDataKey, logr.Logger{})
+		assert.Equal(t, string(dataValue), data)
 	})
 }
