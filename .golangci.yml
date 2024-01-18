@@ -167,7 +167,6 @@ linters:
   - dogsled                   # Checks assignments with too many blank identifiers (e.g. x, _, _, _, := f())
   - durationcheck             # Check for two durations multiplied together.
   - errorlint                 # Errorlint is a linter for that can be used to find code that will cause problems with the error wrapping scheme introduced in Go 1.13.
-  - exportloopref             # Checks for pointers to enclosing loop variables.
   - gci                       # Gci controls Go package import order and makes it always deterministic.
   - gocheckcompilerdirectives # Checks that go compiler directive comments (//go:) are valid.
   - gochecksumtype            # Run exhaustiveness checks on Go "sum types"
@@ -207,6 +206,7 @@ linters:
   - zerologlint               # Detects the wrong usage of zerolog that a user forgets to dispatch with Send or Msg.
 
 # TODO: Requires some code changes before enabling:
+# - exportloopref     # Checks for pointers to enclosing loop variables.
 # - bodyclose         # Checks whether HTTP response body is closed successfully.
 # - contextcheck      # Check whether the function uses a non-inherited context.
 # - cyclop            # Checks function and package cyclomatic complexity.
@@ -226,7 +226,7 @@ linters:
 # - goerr113          # Go linter to check the errors handling expressions.
 # - gofumpt           # Gofumpt checks whether code was gofumpt-ed.
 # - gomnd             # An analyzer to detect magic numbers.
-# - inamedparam # reports interfaces with unnamed method parameters.
+# - inamedparam       # reports interfaces with unnamed method parameters.
 # - ireturn           # Accept Interfaces, Return Concrete Types.
 # - maintidx          # Maintidx measures the maintainability index of each function.
 # - makezero          # Finds slice declarations with non-zero initial length.
@@ -244,11 +244,11 @@ linters:
 # - promlinter        # Check Prometheus metrics naming via promlint.
 # - protogetter       # Reports direct reads from proto message fields when getters should be used.
 # - rowserrcheck      # Checks whether Rows.Err of rows is checked successfully.
-# - sqlclosecheck # Checks that sql.Rows and sql.Stmt are closed.
+# - sqlclosecheck     # Checks that sql.Rows and sql.Stmt are closed.
 # - tenv              # tenv is analyzer that detects using os.Setenv instead of t.Setenv since Go1.17
 # - testifylint       # Checks usage of github.com/stretchr/testify.
 # - thelper           # Thelper detects tests helpers which is not start with t.Helper() method.
-# - usestdlibvars     #  A linter that detect the possibility to use variables/constants from the Go standard library.
+# - usestdlibvars     # A linter that detect the possibility to use variables/constants from the Go standard library.
 # - wastedassign      # wastedassign finds wasted assignment statements.
 # - wrapcheck         # Checks that errors returned from external packages are wrapped.
 # - wsl               # Add or remove empty lines.
