@@ -57,8 +57,8 @@ func (pr PathResolver) AgentSharedBinaryDirForAgent(versionOrDigest string) stri
 	return filepath.Join(pr.AgentSharedBinaryDirBase(), versionOrDigest)
 }
 
-func (pr PathResolver) AgentConfigDir(tenantUUID string) string {
-	return filepath.Join(pr.TenantDir(tenantUUID), dtcsi.SharedAgentConfigDir)
+func (pr PathResolver) AgentConfigDir(tenantUUID string, dynakubeName string) string {
+	return filepath.Join(pr.TenantDir(tenantUUID), dynakubeName, dtcsi.SharedAgentConfigDir)
 }
 
 // Deprecated

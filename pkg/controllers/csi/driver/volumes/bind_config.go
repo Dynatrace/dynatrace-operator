@@ -13,6 +13,7 @@ type BindConfig struct {
 	TenantUUID       string
 	Version          string
 	ImageDigest      string
+	DynakubeName     string
 	MaxMountAttempts int
 }
 
@@ -28,6 +29,7 @@ func NewBindConfig(ctx context.Context, access metadata.Access, volumeCfg *Volum
 		TenantUUID:       dynakube.TenantUUID,
 		Version:          dynakube.LatestVersion,
 		ImageDigest:      dynakube.ImageDigest,
+		DynakubeName:     dynakube.Name,
 		MaxMountAttempts: dynakube.MaxFailedMountAttempts,
 	}, nil
 }

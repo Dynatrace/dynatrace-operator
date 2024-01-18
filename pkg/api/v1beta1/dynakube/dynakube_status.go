@@ -115,6 +115,9 @@ type OneAgentStatus struct {
 	// Time of the last instance status update
 	LastInstanceStatusUpdate *metav1.Time `json:"lastInstanceStatusUpdate,omitempty"`
 
+	// Time of the last process module config update
+	LastProcessModuleConfigUpdate *metav1.Time `json:"lastProcessModuleConfigUpdate,omitempty"`
+
 	// Information about OneAgent's connections
 	ConnectionInfoStatus OneAgentConnectionInfoStatus `json:"connectionInfoStatus,omitempty"`
 
