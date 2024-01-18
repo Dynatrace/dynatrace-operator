@@ -49,6 +49,9 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		}
 
 		daemonSet := appsv1.DaemonSet{
+			TypeMeta: metav1.TypeMeta{
+				Kind: "DaemonSet",
+			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      resourceName,
 				Namespace: namespaceName,
