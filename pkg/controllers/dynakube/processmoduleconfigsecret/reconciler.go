@@ -53,7 +53,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return errors.WithStack(err)
 		}
 	} else {
-		log.Info("skipping process module secret reconciler")
+		log.Info("skipping process module config secret reconciler")
 	}
 
 	return nil
@@ -75,7 +75,7 @@ func (r *Reconciler) getOrCreateSecretIfNotExists(ctx context.Context) (*corev1.
 	var config corev1.Secret
 	err := r.apiReader.Get(ctx, client.ObjectKey{Name: extendWithSuffix(r.dynakube.Name), Namespace: r.dynakube.Namespace}, &config)
 	if k8serrors.IsNotFound(err) {
-		log.Info("creating pull secret")
+		log.Info("creating process module config secret")
 		newSecret, err := r.prepareSecret()
 		if err != nil {
 			return nil, err
