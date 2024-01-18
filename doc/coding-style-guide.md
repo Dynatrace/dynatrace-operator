@@ -98,7 +98,7 @@ Important characteristics:
 
 - Has a `Reconcile(<whatever is necessary>)` function
 - Is called/used BY a Controller
-   - Examples: OneAgentReconciler, IstioReconciler...
+  - Examples: OneAgentReconciler, IstioReconciler...
 - `Reconciler`s don't hold state in a way that they need to be passed around, or if they currently do, they shouldn't.
   - Configuring a `struct` once a reusing it makes sense IF the creation was costly. (example: required an API call)
     - A `Reconciler` shouldn't be this kind of struct, it should be "throw away struct."
