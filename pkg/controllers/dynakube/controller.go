@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
@@ -210,7 +211,17 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 	}
 
 	log.Info("start reconciling deployment meta data")
-	err = deploymentmetadata.NewReconciler(controller.client, controller.apiReader, controller.scheme, *dynakube, controller.clusterID).Reconcile(ctx)
+	err = deploymentmetadata.NewReconciler(
+		controller.client, controller.apiReader, controller.scheme, *dynakube, controller.clusterID).
+		Reconcile(ctx)
+	if err != nil {
+		return err
+	}
+
+	log.Info("start reconciling process module config")
+	err = processmoduleconfigsecret.NewReconciler(
+		controller.client, controller.apiReader, dynatraceClient, dynakube, controller.scheme, timeprovider.New()).
+		Reconcile(ctx)
 	if err != nil {
 		return err
 	}
