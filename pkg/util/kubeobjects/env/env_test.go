@@ -1,6 +1,7 @@
 package env
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -66,5 +67,19 @@ func TestAddOrUpdate(t *testing.T) {
 		envVars = AddOrUpdate(envVars, newEnvVar)
 		assert.Len(t, envVars, 3)
 		assert.Contains(t, envVars, newEnvVar)
+	})
+}
+
+func TestDefaultNamespace(t *testing.T) {
+	t.Run("Get from env var", func(t *testing.T) {
+		testNamespace := "test-namespace"
+		os.Setenv(PodNamespace, testNamespace)
+		got := DefaultNamespace()
+		assert.Equal(t, testNamespace, got)
+	})
+	t.Run("Get dynatrace", func(t *testing.T) {
+		os.Unsetenv(PodNamespace)
+		got := DefaultNamespace()
+		assert.Equal(t, "dynatrace", got)
 	})
 }
