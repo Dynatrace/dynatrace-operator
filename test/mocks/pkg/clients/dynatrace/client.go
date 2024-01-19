@@ -578,6 +578,62 @@ func (_c *Client_GetLatestActiveGateImage_Call) RunAndReturn(run func() (*dynatr
 	return _c
 }
 
+// GetLatestActiveGateVersion provides a mock function with given fields: os
+func (_m *Client) GetLatestActiveGateVersion(os string) (string, error) {
+	ret := _m.Called(os)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetLatestActiveGateVersion")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (string, error)); ok {
+		return rf(os)
+	}
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(os)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(os)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Client_GetLatestActiveGateVersion_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLatestActiveGateVersion'
+type Client_GetLatestActiveGateVersion_Call struct {
+	*mock.Call
+}
+
+// GetLatestActiveGateVersion is a helper method to define mock.On call
+//   - os string
+func (_e *Client_Expecter) GetLatestActiveGateVersion(os interface{}) *Client_GetLatestActiveGateVersion_Call {
+	return &Client_GetLatestActiveGateVersion_Call{Call: _e.mock.On("GetLatestActiveGateVersion", os)}
+}
+
+func (_c *Client_GetLatestActiveGateVersion_Call) Run(run func(os string)) *Client_GetLatestActiveGateVersion_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Client_GetLatestActiveGateVersion_Call) Return(_a0 string, _a1 error) *Client_GetLatestActiveGateVersion_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Client_GetLatestActiveGateVersion_Call) RunAndReturn(run func(string) (string, error)) *Client_GetLatestActiveGateVersion_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetLatestAgent provides a mock function with given fields: os, installerType, flavor, arch, technologies, skipMetadata, writer
 func (_m *Client) GetLatestAgent(os string, installerType string, flavor string, arch string, technologies []string, skipMetadata bool, writer io.Writer) error {
 	ret := _m.Called(os, installerType, flavor, arch, technologies, skipMetadata, writer)
