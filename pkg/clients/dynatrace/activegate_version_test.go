@@ -2,9 +2,10 @@ package dynatrace
 
 import (
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func testActiveGateVersionGetLatestActiveGateVersion(t *testing.T, dynatraceClient Client) {
