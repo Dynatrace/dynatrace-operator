@@ -62,7 +62,7 @@ func TestGetSecret(t *testing.T) {
 			},
 		},
 	)
-	secretQuery := NewQuery(context.TODO(), fakeClient, fakeClient, secretLog)
+	secretQuery := NewQuery(context.Background(), fakeClient, fakeClient, secretLog)
 
 	t.Run("get existing secret", func(t *testing.T) {
 		secret, err := secretQuery.Get(types.NamespacedName{Name: testSecretName, Namespace: testNamespace})
@@ -121,7 +121,7 @@ func newClientWithSecrets() client.Client {
 func TestMultipleSecrets(t *testing.T) {
 	t.Run("get existing secret from all namespaces", func(t *testing.T) {
 		fakeClient := newClientWithSecrets()
-		secretQuery := NewQuery(context.TODO(), fakeClient, fakeClient, secretLog)
+		secretQuery := NewQuery(context.Background(), fakeClient, fakeClient, secretLog)
 
 		secrets, err := secretQuery.GetAllFromNamespaces(testSecretName)
 		require.NoError(t, err)
@@ -129,7 +129,7 @@ func TestMultipleSecrets(t *testing.T) {
 	})
 	t.Run("update and create secret in specific namespaces", func(t *testing.T) {
 		fakeClient := newClientWithSecrets()
-		secretQuery := NewQuery(context.TODO(), fakeClient, fakeClient, secretLog)
+		secretQuery := NewQuery(context.Background(), fakeClient, fakeClient, secretLog)
 
 		namespaces := []corev1.Namespace{
 			{
@@ -218,7 +218,7 @@ func TestMultipleSecrets(t *testing.T) {
 				},
 			},
 		}
-		secretQuery := NewQuery(context.TODO(), boomClient, fakeReader, secretLog)
+		secretQuery := NewQuery(context.Background(), boomClient, fakeReader, secretLog)
 
 		err := secretQuery.CreateOrUpdateForNamespaces(secret, namespaces)
 		require.Error(t, err)
@@ -229,7 +229,7 @@ func TestMultipleSecrets(t *testing.T) {
 func TestInitialMultipleSecrets(t *testing.T) {
 	testSecretName := "testSecret"
 	fakeClient := fake.NewClientWithIndex()
-	secretQuery := NewQuery(context.TODO(), fakeClient, fakeClient, secretLog)
+	secretQuery := NewQuery(context.Background(), fakeClient, fakeClient, secretLog)
 
 	t.Run("get existing secret from all namespaces", func(t *testing.T) {
 		secrets, err := secretQuery.GetAllFromNamespaces(testSecretName)
@@ -312,11 +312,11 @@ func TestSecretBuilder(t *testing.T) {
 
 func TestCreateOrUpdate(t *testing.T) {
 	fakeClient := fake.NewClient()
-	fakeClient.Create(context.TODO(), testSecret.DeepCopy())
+	fakeClient.Create(context.Background(), testSecret.DeepCopy())
 
 	t.Run("create secret", func(t *testing.T) {
 		// empty client
-		secretQuery := NewQuery(context.TODO(), fake.NewClient(), fake.NewClient(), secretLog)
+		secretQuery := NewQuery(context.Background(), fake.NewClient(), fake.NewClient(), secretLog)
 
 		err := secretQuery.CreateOrUpdate(testSecret)
 		assert.NoError(t, err)
@@ -325,7 +325,7 @@ func TestCreateOrUpdate(t *testing.T) {
 	})
 	t.Run("existing equal secret", func(t *testing.T) {
 		// existing mocked secret in fakeClient
-		secretQuery := NewQuery(context.TODO(), fakeClient, fakeClient, secretLog)
+		secretQuery := NewQuery(context.Background(), fakeClient, fakeClient, secretLog)
 
 		err := secretQuery.CreateOrUpdate(testSecret)
 		assert.NoError(t, err)
@@ -334,7 +334,7 @@ func TestCreateOrUpdate(t *testing.T) {
 	})
 	t.Run("update secret", func(t *testing.T) {
 		// existing mocked secret in fakeClient
-		secretQuery := NewQuery(context.TODO(), fakeClient, fakeClient, secretLog)
+		secretQuery := NewQuery(context.Background(), fakeClient, fakeClient, secretLog)
 		newValue := []byte("dGVzdCB2YWx1ZSBudW1iZXIgMg==")
 		updatedSecret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -354,7 +354,7 @@ func TestCreateOrUpdate(t *testing.T) {
 
 func TestGetDataFromSecretName(t *testing.T) {
 	fakeClient := fake.NewClient()
-	fakeClient.Create(context.TODO(), testSecret.DeepCopy())
+	fakeClient.Create(context.Background(), testSecret.DeepCopy())
 
 	t.Run("get secret data", func(t *testing.T) {
 		data, _ := GetDataFromSecretName(fakeClient, types.NamespacedName{Name: testSecretName, Namespace: testNamespace}, testSecretDataKey, logr.Logger{})
