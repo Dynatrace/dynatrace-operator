@@ -11,6 +11,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
@@ -61,21 +62,22 @@ func NewController(mgr manager.Manager, clusterID string) *Controller {
 
 func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, scheme *runtime.Scheme, config *rest.Config, clusterID string) *Controller { //nolint:revive
 	return &Controller{
-		client:                               kubeClient,
-		apiReader:                            apiReader,
-		scheme:                               scheme,
-		fs:                                   afero.Afero{Fs: afero.NewOsFs()},
-		config:                               config,
-		operatorNamespace:                    os.Getenv(env.PodNamespace),
-		clusterID:                            clusterID,
-		dynatraceClientBuilder:               dynatraceclient.NewBuilder(apiReader),
-		istioClientBuilder:                   istio.NewClient,
-		registryClientBuilder:                registry.NewClient,
-		demploymentMetadataReconcilerBuilder: deploymentmetadata.NewReconciler,
-		versionReconcilerBuilder:             version.NewReconciler,
-		connectioninfoReconcilerBuilder:      connectioninfo.NewReconciler,
-		activegateReconcilerBuilder:          activegate.NewReconciler,
-		istioReconcilerBuilder:               istio.NewReconciler,
+		client:                              kubeClient,
+		apiReader:                           apiReader,
+		scheme:                              scheme,
+		fs:                                  afero.Afero{Fs: afero.NewOsFs()},
+		config:                              config,
+		operatorNamespace:                   os.Getenv(env.PodNamespace),
+		clusterID:                           clusterID,
+		dynatraceClientBuilder:              dynatraceclient.NewBuilder(apiReader),
+		istioClientBuilder:                  istio.NewClient,
+		registryClientBuilder:               registry.NewClient,
+		deploymentMetadataReconcilerBuilder: deploymentmetadata.NewReconciler,
+		versionReconcilerBuilder:            version.NewReconciler,
+		connectioninfoReconcilerBuilder:     connectioninfo.NewReconciler,
+		activegateReconcilerBuilder:         activegate.NewReconciler,
+		istioReconcilerBuilder:              istio.NewReconciler,
+		apimonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
 	}
 }
 
@@ -103,14 +105,15 @@ type Controller struct {
 
 	requeueAfter time.Duration
 
-	dynatraceClientBuilder               dynatraceclient.Builder
-	istioClientBuilder                   istio.ClientBuilder
-	registryClientBuilder                registry.ClientBuilder
-	demploymentMetadataReconcilerBuilder deploymentmetadata.ReconcilerBuilder
-	versionReconcilerBuilder             version.ReconcilerBuilder
-	connectioninfoReconcilerBuilder      connectioninfo.ReconcilerBuilder
-	activegateReconcilerBuilder          activegate.ReconcilerBuilder
-	istioReconcilerBuilder               istio.ReconcilerBuilder
+	dynatraceClientBuilder              dynatraceclient.Builder
+	istioClientBuilder                  istio.ClientBuilder
+	registryClientBuilder               registry.ClientBuilder
+	deploymentMetadataReconcilerBuilder deploymentmetadata.ReconcilerBuilder
+	versionReconcilerBuilder            version.ReconcilerBuilder
+	connectioninfoReconcilerBuilder     connectioninfo.ReconcilerBuilder
+	activegateReconcilerBuilder         activegate.ReconcilerBuilder
+	istioReconcilerBuilder              istio.ReconcilerBuilder
+	apimonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
 }
 
 // Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read
@@ -155,7 +158,12 @@ func (controller *Controller) getDynakubeOrCleanup(ctx context.Context, dkName, 
 	return dynakube, nil
 }
 
-func (controller *Controller) handleError(ctx context.Context, dynaKube *dynatracev1beta1.DynaKube, err error, oldStatus dynatracev1beta1.DynaKubeStatus) (reconcile.Result, error) {
+func (controller *Controller) handleError(
+	ctx context.Context,
+	dynaKube *dynatracev1beta1.DynaKube,
+	err error,
+	oldStatus dynatracev1beta1.DynaKubeStatus,
+) (reconcile.Result, error) {
 	switch {
 	case dynatraceapi.IsUnreachable(err):
 		log.Info("the Dynatrace API server is unavailable or request limit reached! trying again in one minute",
@@ -222,7 +230,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 	}
 
 	log.Info("start reconciling deployment meta data")
-	err = controller.demploymentMetadataReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, *dynakube, controller.clusterID).Reconcile(ctx)
+	err = controller.deploymentMetadataReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, *dynakube, controller.clusterID).Reconcile(ctx)
 	if err != nil {
 		return err
 	}

@@ -12,6 +12,8 @@ type Reconciler struct {
 	kubeSystemUUID string
 }
 
+type ReconcilerBuilder func(dtc dtclient.Client, clusterLabel, kubeSystemUUID string) *Reconciler
+
 func NewReconciler(dtc dtclient.Client, clusterLabel, kubeSystemUUID string) *Reconciler {
 	return &Reconciler{
 		dtc,

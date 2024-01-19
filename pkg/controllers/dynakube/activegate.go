@@ -5,8 +5,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
@@ -30,7 +28,7 @@ func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube 
 			}
 		}
 	} // TODO: have a cleanup for things that we create above
-	reconciler := activegate.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube, dtc)
+	reconciler := controller.activegateReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynakube, dtc)
 	err := reconciler.Reconcile(ctx)
 
 	if err != nil {
@@ -50,7 +48,7 @@ func (controller *Controller) setupAutomaticApiMonitoring(dynakube *dynakube.Dyn
 			clusterLabel = dynakube.Name
 		}
 
-		err := apimonitoring.NewReconciler(dtc, clusterLabel, dynakube.Status.KubeSystemUUID).
+		err := controller.apimonitoringReconcilerBuilder(dtc, clusterLabel, dynakube.Status.KubeSystemUUID).
 			Reconcile(dynakube)
 		if err != nil {
 			log.Error(err, "could not create setting")

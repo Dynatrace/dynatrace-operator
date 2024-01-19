@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -27,8 +28,9 @@ func TestReconcileActiveGate(t *testing.T) {
 		dynakube.Spec.ActiveGate = dynatracev1beta1.ActiveGateSpec{}
 		fakeClient := fake.NewClientWithIndex(dynakube)
 		controller := &Controller{
-			client:    fakeClient,
-			apiReader: fakeClient,
+			client:                      fakeClient,
+			apiReader:                   fakeClient,
+			activegateReconcilerBuilder: activegate.NewReconciler,
 		}
 
 		err := controller.reconcileActiveGate(ctx, dynakube, nil, nil, nil, nil)
