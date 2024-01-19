@@ -84,7 +84,6 @@ func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatra
 	return controller
 }
 
-// TODO: (re)move test to OneAgent reconciler tests -> just test if oneagent reconciler gets called
 func TestMonitoringModesDynakube_Reconcile(t *testing.T) {
 	deploymentModes := map[string]dynatracev1beta1.OneAgentSpec{
 		"hostMonitoring":        {HostMonitoring: &dynatracev1beta1.HostInjectSpec{AutoUpdate: address.Of(false)}},
