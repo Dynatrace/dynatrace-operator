@@ -2,6 +2,7 @@ package dynakube
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -22,6 +23,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	mockregistry "github.com/Dynatrace/dynatrace-operator/pkg/oci/registry/mocks"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
