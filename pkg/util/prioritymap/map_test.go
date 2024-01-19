@@ -7,63 +7,109 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func TestWithEnvVars(t *testing.T) {
-	argMap := New()
+func TestAppend(t *testing.T) {
+	t.Run("with single env vars", func(t *testing.T) {
+		argMap := New()
 
-	// value source
-	valueSource := &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}
-	Append(argMap, corev1.EnvVar{
-		Name:      "DT_NODE_NAME",
-		ValueFrom: valueSource,
-	})
-
-	// value
-	Append(argMap, corev1.EnvVar{
-		Name:  "DT_CLUSTER_ID",
-		Value: "abcdef-ghijkl",
-	})
-
-	// value
-	Append(argMap, corev1.EnvVar{
-		Name:      "DT_TENANT",
-		ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.tenant"}},
-	})
-
-	// value
-	Append(argMap, corev1.EnvVar{
-		Name:  "DT_TENANT",
-		Value: "abc12345",
-	}, WithPriority(MediumPriority))
-
-	// strings
-	Append(argMap, []string{
-		"TESTVAR1=herbert",
-		"VARTEST1=waltraud",
-	})
-
-	expectedEnvVars := []corev1.EnvVar{
-		{
-			Name:  "DT_CLUSTER_ID",
-			Value: "abcdef-ghijkl",
-		},
-		{
+		// value source
+		valueSource := &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}
+		Append(argMap, corev1.EnvVar{
 			Name:      "DT_NODE_NAME",
 			ValueFrom: valueSource,
-		},
-		{
+		})
+
+		// value
+		Append(argMap, corev1.EnvVar{
+			Name:  "DT_CLUSTER_ID",
+			Value: "abcdef-ghijkl",
+		})
+
+		// value
+		Append(argMap, corev1.EnvVar{
+			Name:      "DT_TENANT",
+			ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.tenant"}},
+		})
+
+		// value
+		Append(argMap, corev1.EnvVar{
 			Name:  "DT_TENANT",
 			Value: "abc12345",
-		},
-		{
-			Name:  "TESTVAR1",
-			Value: "herbert",
-		},
-		{
-			Name:  "VARTEST1",
-			Value: "waltraud",
-		},
-	}
-	assert.Equal(t, expectedEnvVars, argMap.AsEnvVars())
+		}, WithPriority(MediumPriority))
+
+		// strings
+		Append(argMap, []string{
+			"TESTVAR1=herbert",
+			"VARTEST1=waltraud",
+		})
+
+		expectedEnvVars := []corev1.EnvVar{
+			{
+				Name:  "DT_CLUSTER_ID",
+				Value: "abcdef-ghijkl",
+			},
+			{
+				Name:      "DT_NODE_NAME",
+				ValueFrom: valueSource,
+			},
+			{
+				Name:  "DT_TENANT",
+				Value: "abc12345",
+			},
+			{
+				Name:  "TESTVAR1",
+				Value: "herbert",
+			},
+			{
+				Name:  "VARTEST1",
+				Value: "waltraud",
+			},
+		}
+		assert.Equal(t, expectedEnvVars, argMap.AsEnvVars())
+	})
+	t.Run("with sliced env vars", func(t *testing.T) {
+		argMap := New()
+
+		valueSource := &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}
+		Append(argMap,
+			[]corev1.EnvVar{
+				{
+					Name:      "DT_NODE_NAME",
+					ValueFrom: valueSource,
+				},
+				{
+					Name:  "DT_CLUSTER_ID",
+					Value: "abcdef-ghijkl",
+				},
+			},
+		)
+		expectedEnvVars := []corev1.EnvVar{
+			{
+				Name:  "DT_CLUSTER_ID",
+				Value: "abcdef-ghijkl",
+			},
+			{
+				Name:      "DT_NODE_NAME",
+				ValueFrom: valueSource,
+			},
+		}
+		assert.Equal(t, expectedEnvVars, argMap.AsEnvVars())
+	})
+	t.Run("with string map", func(t *testing.T) {
+		argMap := New()
+
+		Append(argMap,
+			map[string]any{
+				"DT_CLUSTER_ID": "abcdef-ghijkl",
+			},
+		)
+		expectedEnvVars := []corev1.EnvVar{
+			{
+				Name:  "DT_CLUSTER_ID",
+				Value: "abcdef-ghijkl",
+			},
+		}
+		assert.Equal(t, expectedEnvVars, argMap.AsEnvVars())
+	})
 }
 
 func TestWithArguments(t *testing.T) {
