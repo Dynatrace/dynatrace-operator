@@ -13,7 +13,7 @@ import (
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/internal/otel"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/oneagent_mutation"
+	dtwebhookutil "github.com/Dynatrace/dynatrace-operator/pkg/webhook/util"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -150,7 +150,7 @@ func (webhook *podMutatorWebhook) isOcDebugPod(pod *corev1.Pod) bool {
 func podNeedsInjection(mutationRequest *dtwebhook.MutationRequest) bool {
 	needsInjection := false
 	for _, container := range mutationRequest.Pod.Spec.Containers {
-		needsInjection = needsInjection || !oneagent_mutation.ContainerIsExcluded(mutationRequest.BaseRequest, container.Name)
+		needsInjection = needsInjection || !dtwebhookutil.ContainerIsExcluded(mutationRequest.BaseRequest, container.Name)
 	}
 	return needsInjection
 }

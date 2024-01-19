@@ -2,12 +2,12 @@ package oneagent_mutation
 
 import (
 	"strconv"
-	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	dtwebhookutil "github.com/Dynatrace/dynatrace-operator/pkg/webhook/util"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -26,7 +26,7 @@ func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.Mutat
 	for i := range request.Pod.Spec.Containers {
 		container := &request.Pod.Spec.Containers[i]
 
-		if !ContainerIsExcluded(request.BaseRequest, container.Name) {
+		if !dtwebhookutil.ContainerIsExcluded(request.BaseRequest, container.Name) {
 			addContainerInfoInitEnv(request.InstallContainer, i+1, container.Name, container.Image)
 			mutator.addOneAgentToContainer(request.ToReinvocationRequest(), container)
 			injectedContainers++
@@ -52,7 +52,7 @@ func (mutator *OneAgentPodMutator) reinvokeUserContainers(request *dtwebhook.Rei
 			injectedContainers++
 			continue
 		}
-		if ContainerIsExcluded(request.BaseRequest, currentContainer.Name) {
+		if dtwebhookutil.ContainerIsExcluded(request.BaseRequest, currentContainer.Name) {
 			continue
 		}
 		newContainers = append(newContainers, currentContainer)
@@ -110,20 +110,4 @@ func findOneAgentInstallContainer(initContainers []corev1.Container) *corev1.Con
 		}
 	}
 	return nil
-}
-
-func isContainerExcluded(annotations map[string]string, name string) bool {
-	for key, value := range annotations {
-		if strings.HasPrefix(key, dtwebhook.AnnotationContainerInjection) {
-			keySplit := strings.Split(key, "/")
-			if len(keySplit) == 2 && keySplit[1] == name {
-				return value == "false"
-			}
-		}
-	}
-	return false
-}
-
-func ContainerIsExcluded(request *dtwebhook.BaseRequest, name string) bool {
-	return isContainerExcluded(request.DynaKube.Annotations, name) || isContainerExcluded(request.Pod.Annotations, name)
 }

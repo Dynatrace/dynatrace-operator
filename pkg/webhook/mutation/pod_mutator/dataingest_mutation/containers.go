@@ -1,18 +1,28 @@
 package dataingest_mutation
 
-import corev1 "k8s.io/api/core/v1"
+import (
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	dtwebhookutil "github.com/Dynatrace/dynatrace-operator/pkg/webhook/util"
+	corev1 "k8s.io/api/core/v1"
+)
 
-func mutateUserContainers(pod *corev1.Pod) {
-	for i := range pod.Spec.Containers {
-		container := &pod.Spec.Containers[i]
-		setupVolumeMountsForUserContainer(container)
+func mutateUserContainers(request *dtwebhook.BaseRequest) {
+	for i := range request.Pod.Spec.Containers {
+		container := &request.Pod.Spec.Containers[i]
+
+		if !dtwebhookutil.ContainerIsExcluded(request, container.Name) {
+			setupVolumeMountsForUserContainer(container)
+		}
 	}
 }
 
-func reinvokeUserContainers(pod *corev1.Pod) bool {
+func reinvokeUserContainers(request *dtwebhook.BaseRequest) bool {
 	var updated bool
-	for i := range pod.Spec.Containers {
-		container := &pod.Spec.Containers[i]
+	for i := range request.Pod.Spec.Containers {
+		container := &request.Pod.Spec.Containers[i]
+		if dtwebhookutil.ContainerIsExcluded(request, container.Name) {
+			continue
+		}
 		if containerIsInjected(container) {
 			continue
 		}
