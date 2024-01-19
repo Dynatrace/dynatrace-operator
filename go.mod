@@ -10,7 +10,7 @@ require (
 	github.com/klauspost/compress v1.16.7
 	github.com/mattn/go-sqlite3 v1.14.19
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/opencontainers/image-spec v1.1.0-rc5
+	github.com/opencontainers/image-spec v1.1.0-rc6
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.16.0
 	github.com/prometheus/client_model v0.4.0
