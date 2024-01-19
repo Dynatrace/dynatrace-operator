@@ -5,6 +5,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
@@ -26,6 +27,7 @@ const (
 	use                            = "support-archive"
 	namespaceFlagName              = "namespace"
 	archiveToStdoutFlagName        = "stdout"
+	delayFlagName                  = "delay"
 	defaultSupportArchiveTargetDir = "/tmp/dynatrace-operator"
 	defaultOperatorAppName         = "dynatrace-operator"
 	loadsimFileSizeFlagName        = "loadsim-file-size"
@@ -39,6 +41,7 @@ var (
 	loadsimFilesFlagValue       int
 	loadsimFileSizeFlagValue    int
 	collectManagedLogsFlagValue bool
+	delayFlagValue              int
 )
 
 type CommandBuilder struct {
@@ -86,10 +89,13 @@ func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().IntVar(&loadsimFileSizeFlagValue, loadsimFileSizeFlagName, 10, "Simulated log files, size in MiB (default 10)")
 	cmd.PersistentFlags().IntVar(&loadsimFilesFlagValue, loadsimFilesFlagName, 0, "Number of simulated log files (default 0)")
 	cmd.PersistentFlags().BoolVar(&collectManagedLogsFlagValue, collectManagedLogsFlagName, true, "Add logs from rolled out pods to the support archive.")
+	cmd.PersistentFlags().IntVar(&delayFlagValue, delayFlagName, 0, "Delay start of support-archive collection. Useful for standalone execution with 'kubectl run'")
 }
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
+		time.Sleep(time.Duration(delayFlagValue) * time.Second)
+
 		logBuffer := bytes.Buffer{}
 		log := newSupportArchiveLogger(getLogOutput(archiveToStdoutFlagValue, &logBuffer))
 		version.LogVersionToLogger(log)
