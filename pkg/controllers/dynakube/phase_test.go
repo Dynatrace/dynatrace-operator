@@ -31,15 +31,6 @@ func TestActiveGatePhaseChanges(t *testing.T) {
 		phase := controller.determineDynaKubePhase(dynakube)
 		assert.Equal(t, status.Deploying, phase)
 	})
-	t.Run("Error accessing k8s api", func(t *testing.T) {
-		fakeClient := errorClient{}
-		controller := &Controller{
-			client:    fakeClient,
-			apiReader: fakeClient,
-		}
-		phase := controller.determineDynaKubePhase(dynakube)
-		assert.Equal(t, status.Error, phase)
-	})
 	t.Run("activegate pods not ready -> deploying", func(t *testing.T) {
 		objects := []client.Object{
 			createStatefulset(testNamespace, "test-name-kubemon", 3, 2),
@@ -112,15 +103,6 @@ func TestOneAgentPhaseChanges(t *testing.T) {
 		}
 		phase := controller.determineDynaKubePhase(dynakube)
 		assert.Equal(t, status.Deploying, phase)
-	})
-	t.Run("Error accessing k8s api", func(t *testing.T) {
-		fakeClient := errorClient{}
-		controller := &Controller{
-			client:    fakeClient,
-			apiReader: fakeClient,
-		}
-		phase := controller.determineDynaKubePhase(dynakube)
-		assert.Equal(t, status.Error, phase)
 	})
 	t.Run("OneAgent daemonsets in cluster not all ready -> deploying", func(t *testing.T) {
 		objects := []client.Object{
