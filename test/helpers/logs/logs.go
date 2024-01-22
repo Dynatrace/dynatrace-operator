@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -44,12 +43,4 @@ func AssertContains(t *testing.T, logStream io.ReadCloser, contains string) {
 	require.NoError(t, err)
 	require.Equal(t, int64(buffer.Len()), copied)
 	assert.Contains(t, buffer.String(), contains)
-}
-
-func Contains(t *testing.T, logStream io.ReadCloser, contains string) bool {
-	buffer := new(bytes.Buffer)
-	_, err := io.Copy(buffer, logStream)
-
-	require.NoError(t, err)
-	return strings.Contains(buffer.String(), contains)
 }

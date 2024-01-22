@@ -35,3 +35,8 @@ go/test:
 ## creates mocks from .mockery.yaml
 go/gen_mocks:
 	mockery
+
+## Runs deadcode https://go.dev/blog/deadcode
+go/deadcode:
+	# we add `tee` in the end to make it fail if it finds dead code, by default deadcode always return exit code 0
+	deadcode -test -tags="$(shell ./hack/build/create_go_build_tags.sh true)" $(LINT_TARGET) | tee deadcode.out && [ ! -s deadcode.out ]

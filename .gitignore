@@ -62,6 +62,7 @@ anaconda-mode/
 # Test binary, build with 'go test -c'
 *.test
 # Output of the go coverage tool
+deadcode.out
 coverage.txt
 ### Vim ###
 # swap

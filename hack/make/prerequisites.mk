@@ -38,6 +38,7 @@ prerequisites/go-linting:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(golang_ci_cmd_version)
 	go install github.com/daixiang0/gci@$(gci_version)
 	go install golang.org/x/tools/cmd/goimports@$(golang_tools_version)
+	go install golang.org/x/tools/cmd/deadcode@$(golang_tools_version)
 
 ## Install 'helm' if it is missing
 ## TODO: Have version accessible by renovate?

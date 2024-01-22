@@ -46,7 +46,6 @@ var (
 
 type CommandBuilder struct {
 	configProvider config.Provider
-	cluster        cluster.Cluster
 }
 
 func NewCommandBuilder() CommandBuilder {
@@ -56,17 +55,6 @@ func NewCommandBuilder() CommandBuilder {
 func (builder CommandBuilder) SetConfigProvider(provider config.Provider) CommandBuilder {
 	builder.configProvider = provider
 	return builder
-}
-
-func (builder CommandBuilder) GetCluster(kubeConfig *rest.Config) (cluster.Cluster, error) {
-	if builder.cluster == nil {
-		k8sCluster, err := cluster.New(kubeConfig, clusterOptions)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-		builder.cluster = k8sCluster
-	}
-	return builder.cluster, nil
 }
 
 func clusterOptions(opts *cluster.Options) {
