@@ -41,11 +41,8 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 	customImage := updater.CustomImage()
 	if customImage != "" {
 		log.Info("updating version status according to custom image", "updater", updater.Name())
-		err = setImageIDWithDigest(ctx, updater.Target(), r.registryClient, customImage)
-		if err != nil {
-			return err
-		}
-		return updater.ValidateStatus()
+		setImageIDToCustomImage(updater.Target(), customImage)
+		return nil
 	}
 
 	if !updater.IsAutoUpdateEnabled() {
@@ -110,6 +107,21 @@ func determineSource(updater StatusUpdater) status.VersionSource {
 	return status.TenantRegistryVersionSource
 }
 
+func setImageIDToCustomImage(
+	target *status.VersionStatus,
+	imageUri string,
+) {
+	log.Info("updating image version info",
+		"image", imageUri,
+		"oldImageID", target.ImageID)
+
+	target.ImageID = imageUri
+	target.Version = string(status.CustomImageVersionSource)
+
+	log.Info("updated image version info",
+		"newImageID", target.ImageID)
+}
+
 func setImageIDWithDigest(
 	ctx context.Context,
 	target *status.VersionStatus,
@@ -148,7 +160,7 @@ func setImageIDWithDigest(
 	return nil
 }
 
-func updateVersionStatusForTenantRegistry(
+func updateSyntheticVersionStatusForTenantRegistry(
 	ctx context.Context,
 	target *status.VersionStatus,
 	registryClient registry.ImageGetter,
@@ -172,6 +184,33 @@ func updateVersionStatusForTenantRegistry(
 		}
 		target.ImageID = taggedRef.String()
 		target.Version = imageVersion.Version
+	}
+
+	log.Info("updated image version info for tenant registry image",
+		"newImageID", target.ImageID,
+		"newVersion", target.Version)
+
+	return nil
+}
+
+func updateVersionStatusForTenantRegistry(
+	target *status.VersionStatus,
+	imageUri string,
+	latestVersion string,
+) error {
+	ref, err := name.ParseReference(imageUri)
+	if err != nil {
+		return errors.WithMessage(err, "failed to parse image uri")
+	}
+
+	log.Info("updating image version info for tenant registry image",
+		"image", imageUri,
+		"oldImageID", target.ImageID,
+		"oldVersion", target.Version)
+
+	if taggedRef, ok := ref.(name.Tag); ok {
+		target.ImageID = taggedRef.String()
+		target.Version = latestVersion
 	}
 
 	log.Info("updated image version info for tenant registry image",

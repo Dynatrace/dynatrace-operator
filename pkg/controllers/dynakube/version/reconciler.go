@@ -47,7 +47,7 @@ func (r *reconciler) ReconcileCodeModules(ctx context.Context, dynakube *dynatra
 }
 
 func (r *reconciler) ReconcileOneAgent(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	updater := newOneAgentUpdater(dynakube, r.apiReader, r.dtClient, r.registryClient)
+	updater := newOneAgentUpdater(dynakube, r.apiReader, r.dtClient)
 	if r.needsUpdate(updater, dynakube) {
 		return r.updateVersionStatuses(ctx, updater, dynakube)
 	}
@@ -56,7 +56,7 @@ func (r *reconciler) ReconcileOneAgent(ctx context.Context, dynakube *dynatracev
 
 func (r *reconciler) ReconcileActiveGate(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	updaters := []StatusUpdater{
-		newActiveGateUpdater(dynakube, r.apiReader, r.dtClient, r.registryClient),
+		newActiveGateUpdater(dynakube, r.apiReader, r.dtClient),
 		newSyntheticUpdater(dynakube, r.apiReader, r.dtClient, r.registryClient),
 	}
 	for _, updater := range updaters {

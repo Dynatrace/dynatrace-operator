@@ -70,7 +70,7 @@ func (updater syntheticUpdater) CheckForDowngrade(latestVersion string) (bool, e
 
 func (updater *syntheticUpdater) UseTenantRegistry(ctx context.Context) error {
 	defaultImage := updater.dynakube.DefaultSyntheticImage()
-	return updateVersionStatusForTenantRegistry(ctx, updater.Target(), updater.registryClient, defaultImage)
+	return updateSyntheticVersionStatusForTenantRegistry(ctx, updater.Target(), updater.registryClient, defaultImage)
 }
 
 func (updater syntheticUpdater) ValidateStatus() error {

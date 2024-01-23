@@ -35,13 +35,12 @@ func TestRun(t *testing.T) {
 			},
 		})
 
-		mockImageGetter := registryMock.MockImageGetter{}
-		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: testImage.Tag}, nil)
+		mockImageGetter := registryMock.NewMockImageGetter(t)
 
 		target := &status.VersionStatus{}
 		versionReconciler := reconciler{
 			timeProvider:   timeProvider,
-			registryClient: &mockImageGetter,
+			registryClient: mockImageGetter,
 		}
 		updater := newCustomImageUpdater(target, testImage.String())
 		err := versionReconciler.run(ctx, updater)
@@ -51,19 +50,19 @@ func TestRun(t *testing.T) {
 		assertVersionStatusEquals(t, fakeRegistry, getTaggedReference(t, testImage.String()), *target)
 	})
 
-	t.Run("DON'T set source and probe at the end, if error", func(t *testing.T) {
+	t.Run("set source and probe at the end, if invalid custom image", func(t *testing.T) {
 		target := &status.VersionStatus{}
-		mockImageGetter := registryMock.MockImageGetter{}
-		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{}, fmt.Errorf("BOOM"))
+		mockImageGetter := registryMock.NewMockImageGetter(t)
 		versionReconciler := reconciler{
 			timeProvider:   timeProvider,
-			registryClient: &mockImageGetter,
+			registryClient: mockImageGetter,
 		}
 		updater := newCustomImageUpdater(target, "incorrect-uri")
 		err := versionReconciler.run(ctx, updater)
-		require.Error(t, err)
-		assert.Nil(t, target.LastProbeTimestamp)
-		assert.Empty(t, target.Source)
+		require.NoError(t, err)
+		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
+		assert.Equal(t, status.CustomImageVersionSource, target.Source)
+		assert.Equal(t, string(status.CustomImageVersionSource), target.Version)
 	})
 	t.Run("autoUpdate disabled, runs if status is empty or source changes", func(t *testing.T) {
 		target := &status.VersionStatus{}
