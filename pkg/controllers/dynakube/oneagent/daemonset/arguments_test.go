@@ -53,7 +53,7 @@ func TestArguments(t *testing.T) {
 				clusterID:      testClusterID,
 			},
 		}
-		podSpecs := dsInfo.podSpec()
+		podSpecs, _ := dsInfo.podSpec()
 		assert.NotNil(t, podSpecs)
 		assert.NotEmpty(t, podSpecs.Containers)
 		assert.Contains(t, podSpecs.Containers[0].Args, testValue)
@@ -124,7 +124,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 	}
 
 	instance.Annotations = map[string]string{}
-	podSpecs := dsInfo.podSpec()
+	podSpecs, _ := dsInfo.podSpec()
 	require.NotNil(t, podSpecs)
 	require.NotEmpty(t, podSpecs.Containers)
 
@@ -135,26 +135,26 @@ func TestPodSpec_Arguments(t *testing.T) {
 
 	t.Run(`has proxy arg`, func(t *testing.T) {
 		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
-		podSpecs = dsInfo.podSpec()
+		podSpecs, _ = dsInfo.podSpec()
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 
 		instance.Spec.Proxy = nil
-		podSpecs = dsInfo.podSpec()
+		podSpecs, _ = dsInfo.podSpec()
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 	})
 	t.Run(`has proxy arg but feature flag to ignore is enabled`, func(t *testing.T) {
 		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 		instance.Annotations[dynatracev1beta1.AnnotationFeatureOneAgentIgnoreProxy] = "true"
-		podSpecs = dsInfo.podSpec()
+		podSpecs, _ = dsInfo.podSpec()
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 	})
 	t.Run(`has network zone arg`, func(t *testing.T) {
 		instance.Spec.NetworkZone = testValue
-		podSpecs = dsInfo.podSpec()
+		podSpecs, _ = dsInfo.podSpec()
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-network-zone="+testValue)
 
 		instance.Spec.NetworkZone = ""
-		podSpecs = dsInfo.podSpec()
+		podSpecs, _ = dsInfo.podSpec()
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-network-zone="+testValue)
 	})
 	t.Run(`has host-id-source arg for classic fullstack`, func(t *testing.T) {

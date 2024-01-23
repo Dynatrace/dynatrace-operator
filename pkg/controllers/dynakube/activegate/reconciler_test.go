@@ -11,9 +11,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
-	"github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	mocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	controllerMocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -66,44 +65,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, dtc)
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
-	})
-	t.Run(`Create AG proxy secret`, func(t *testing.T) { // TODO: This is not a unit test, it tests the functionality of another package, it should use a mock for that
-		instance := &dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				Proxy:      &dynatracev1beta1.DynaKubeProxy{Value: testProxyName},
-				ActiveGate: dynatracev1beta1.ActiveGateSpec{Capabilities: []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.KubeMonCapability.DisplayName}},
-			},
-		}
-		fakeClient := fake.NewClient()
-		fakeReconciler := controllerMocks.NewReconciler(t)
-		fakeReconciler.On("Reconcile", mock.Anything).Return(nil)
-		r := Reconciler{
-			client:              fakeClient,
-			apiReader:           fakeClient,
-			dynakube:            instance,
-			scheme:              scheme.Scheme,
-			authTokenReconciler: fakeReconciler,
-			proxyReconciler:     proxy.NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance),
-			newStatefulsetReconcilerFunc: func(_ client.Client, _ client.Reader, _ *runtime.Scheme, _ *dynatracev1beta1.DynaKube, _ capability.Capability) controllers.Reconciler {
-				return fakeReconciler
-			},
-			newCapabilityReconcilerFunc: func(_ client.Client, _ capability.Capability, _ *dynatracev1beta1.DynaKube, _ controllers.Reconciler, _ controllers.Reconciler) controllers.Reconciler {
-				return fakeReconciler
-			},
-			newCustomPropertiesReconcilerFunc: func(_ string, _ *dynatracev1beta1.DynaKubeValueSource) controllers.Reconciler {
-				return fakeReconciler
-			},
-		}
-		err := r.Reconcile(context.Background())
-		require.NoError(t, err)
-
-		var proxySecret corev1.Secret
-		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testName + "-activegate-internal-proxy", Namespace: testNamespace}, &proxySecret)
-		assert.NoError(t, err)
 	})
 	t.Run(`Create AG capability (creation and deletion)`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
@@ -158,7 +119,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 		fakeReconciler := controllerMocks.NewReconciler(t)
 		fakeReconciler.On("Reconcile", mock.Anything).Return(nil)
 		proxyReconciler := Reconciler{
-			proxyReconciler:     proxy.NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynaKubeWithProxy),
 			client:              fakeClient,
 			apiReader:           fakeClient,
 			dynakube:            dynaKubeWithProxy,
@@ -178,7 +138,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		noProxyReconciler := Reconciler{
-			proxyReconciler:     proxy.NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynaKubeWithProxy),
 			client:              fakeClient,
 			apiReader:           fakeClient,
 			dynakube:            dynaKubeNoProxy,
@@ -196,10 +155,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 		err = noProxyReconciler.Reconcile(context.Background())
 		require.NoError(t, err)
-
-		var proxySecret corev1.Secret
-		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: "proxyDk-activegate-internal-proxy", Namespace: testNamespace}, &proxySecret)
-		assert.NoError(t, err)
 	})
 }
 
@@ -372,7 +327,6 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 			dynakube:            dynakube,
 			scheme:              scheme.Scheme,
 			authTokenReconciler: fakeReconciler,
-			proxyReconciler:     proxy.NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube),
 			newStatefulsetReconcilerFunc: func(_ client.Client, _ client.Reader, _ *runtime.Scheme, _ *dynatracev1beta1.DynaKube, _ capability.Capability) controllers.Reconciler {
 				return fakeReconciler
 			},

@@ -19,7 +19,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		dsInfo := builderInfo{
 			dynakube: &dynatracev1beta1.DynaKube{},
 		}
-		envVars := dsInfo.environmentVariables()
+		envVars, _ := dsInfo.environmentVariables()
 
 		assert.Contains(t, envVars, corev1.EnvVar{Name: dtClusterId, ValueFrom: nil})
 		assert.True(t, k8senv.IsIn(envVars, dtNodeName))
@@ -43,7 +43,7 @@ func TestEnvironmentVariables(t *testing.T) {
 			dynakube:  dynakube,
 			clusterID: clusterID,
 		}
-		envVars := dsInfo.environmentVariables()
+		envVars, _ := dsInfo.environmentVariables()
 
 		assertClusterIDEnv(t, envVars, clusterID)
 		assertNodeNameEnv(t, envVars)
@@ -59,21 +59,21 @@ func TestEnvironmentVariables(t *testing.T) {
 			{Name: deploymentmetadata.EnvDtDeploymentMetadata, Value: testValue},
 			{Name: deploymentmetadata.EnvDtOperatorVersion, Value: testValue},
 			{Name: connectioninfo.EnvDtTenant, Value: testValue},
-			{Name: proxy, Value: testValue},
+			{Name: proxyEnv, Value: testValue},
 			{Name: oneagentReadOnlyMode, Value: testValue},
 		}
 		builder := builderInfo{
 			dynakube:       &dynatracev1beta1.DynaKube{},
 			hostInjectSpec: &dynatracev1beta1.HostInjectSpec{Env: potentiallyOverriddenEnvVars},
 		}
-		envVars := builder.environmentVariables()
+		envVars, _ := builder.environmentVariables()
 
 		assertEnvVarNameAndValue(t, envVars, dtNodeName, testValue)
 		assertEnvVarNameAndValue(t, envVars, dtClusterId, testValue)
 		assertEnvVarNameAndValue(t, envVars, deploymentmetadata.EnvDtDeploymentMetadata, testValue)
 		assertEnvVarNameAndValue(t, envVars, deploymentmetadata.EnvDtOperatorVersion, testValue)
 		assertEnvVarNameAndValue(t, envVars, connectioninfo.EnvDtTenant, testValue)
-		assertEnvVarNameAndValue(t, envVars, proxy, testValue)
+		assertEnvVarNameAndValue(t, envVars, proxyEnv, testValue)
 		assertEnvVarNameAndValue(t, envVars, oneagentReadOnlyMode, testValue)
 	})
 }
@@ -233,8 +233,8 @@ func TestAddProxyEnvs(t *testing.T) {
 }
 
 func assertProxyEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynatracev1beta1.DynaKube) {
-	env := k8senv.FindEnvVar(envs, proxy)
-	assert.Equal(t, env.Name, proxy)
+	env := k8senv.FindEnvVar(envs, proxyEnv)
+	assert.Equal(t, env.Name, proxyEnv)
 	assert.Equal(t, dynakube.Spec.Proxy.Value, env.Value)
 	if dynakube.Spec.Proxy.ValueFrom != "" {
 		assert.Equal(t, dynakube.Spec.Proxy.ValueFrom, env.ValueFrom.SecretKeyRef.LocalObjectReference.Name)

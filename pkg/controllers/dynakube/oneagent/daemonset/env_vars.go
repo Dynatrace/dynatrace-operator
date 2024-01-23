@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
+	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -18,13 +19,13 @@ const (
 	oneagentDisableContainerInjection = "ONEAGENT_DISABLE_CONTAINER_INJECTION"
 	oneagentReadOnlyMode              = "ONEAGENT_READ_ONLY_MODE"
 
-	proxy = "https_proxy"
+	proxyEnv = "https_proxy"
 )
 
 const customEnvPriority = prioritymap.HighPriority
 const defaultEnvPriority = prioritymap.DefaultPriority
 
-func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
+func (dsInfo *builderInfo) environmentVariables() ([]corev1.EnvVar, error) {
 	envMap := prioritymap.New(prioritymap.WithPriority(defaultEnvPriority))
 
 	if dsInfo.hostInjectSpec != nil {
@@ -36,10 +37,18 @@ func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
 	dsInfo.addDeploymentMetadataEnv(envMap)
 	dsInfo.addOperatorVersionInfoEnv(envMap)
 	dsInfo.addConnectionInfoEnvs(envMap)
-	dsInfo.addProxyEnv(envMap)
 	dsInfo.addReadOnlyEnv(envMap)
 
-	return envMap.AsEnvVars()
+	isProxyAsEnvVarDeprecated, err := IsProxyAsEnvVarDeprecated(dsInfo.dynakube.OneAgentVersion())
+	if err != nil {
+		return []corev1.EnvVar{}, err
+	}
+	if !isProxyAsEnvVarDeprecated {
+		// deprecated
+		dsInfo.addProxyEnv(envMap)
+	}
+
+	return envMap.AsEnvVars(), nil
 }
 
 func addNodeNameEnv(envVarMap *prioritymap.Map) {
@@ -92,14 +101,14 @@ func (dsInfo *builderInfo) addProxyEnv(envVarMap *prioritymap.Map) {
 		return
 	}
 	if dsInfo.dynakube.Spec.Proxy.ValueFrom != "" {
-		addDefaultValueSource(envVarMap, proxy, &corev1.EnvVarSource{
+		addDefaultValueSource(envVarMap, proxyEnv, &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{Name: dsInfo.dynakube.Spec.Proxy.ValueFrom},
 				Key:                  dynatracev1beta1.ProxyKey,
 			},
 		})
 	} else {
-		addDefaultValue(envVarMap, proxy, dsInfo.dynakube.Spec.Proxy.Value)
+		addDefaultValue(envVarMap, proxyEnv, dsInfo.dynakube.Spec.Proxy.Value)
 	}
 }
 
@@ -128,4 +137,32 @@ func addDefaultValueSource(envVarMap *prioritymap.Map, name string, value *corev
 		Name:      name,
 		ValueFrom: value,
 	})
+}
+
+const (
+	// starting with this version, OneAgent allows mounting proxy as file
+	// enabling us to deprecate it as env var (which is non security compliant)
+	ProxyAsEnvVarDeprecatedVersion = "1.273"
+)
+
+func IsProxyAsEnvVarDeprecated(oneAgentVersion string) (bool, error) {
+	if oneAgentVersion == "" {
+		return false, nil
+	}
+	runningVersion, err := version.ExtractSemanticVersion(oneAgentVersion)
+	if err != nil {
+		return false, err
+	}
+	fixVersion, err := version.ExtractSemanticVersion(ProxyAsEnvVarDeprecatedVersion)
+	if err != nil {
+		return false, err
+	}
+
+	result := version.CompareSemanticVersions(runningVersion, fixVersion)
+
+	// if current OneAgent version is older than fix version
+	if result < 0 {
+		return false, nil
+	}
+	return true, nil
 }

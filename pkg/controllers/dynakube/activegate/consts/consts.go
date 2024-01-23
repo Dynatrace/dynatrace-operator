@@ -31,22 +31,6 @@ const (
 	AnnotationActiveGateConfigurationHash = dynatracev1beta1.InternalFlagPrefix + "activegate-configuration-hash"
 	AnnotationActiveGateContainerAppArmor = "container.apparmor.security.beta.kubernetes.io/" + ActiveGateContainerName
 
-	InternalProxySecretMountPath = "/var/lib/dynatrace/secrets/internal-proxy"
-
-	InternalProxySecretVolumeName = "internal-proxy-secret-volume"
-
-	InternalProxySecretHost          = "host"
-	InternalProxySecretHostMountPath = InternalProxySecretMountPath + "/" + InternalProxySecretHost
-
-	InternalProxySecretPort          = "port"
-	InternalProxySecretPortMountPath = InternalProxySecretMountPath + "/" + InternalProxySecretPort
-
-	InternalProxySecretUsername          = "username"
-	InternalProxySecretUsernameMountPath = InternalProxySecretMountPath + "/" + InternalProxySecretUsername
-
-	InternalProxySecretPassword          = "password"
-	InternalProxySecretPasswordMountPath = InternalProxySecretMountPath + "/" + InternalProxySecretPassword
-
 	GatewayConfigVolumeName  = "ag-lib-gateway-config"
 	GatewayLibTempVolumeName = "ag-lib-gateway-temp"
 	GatewayDataVolumeName    = "ag-lib-gateway-data"
