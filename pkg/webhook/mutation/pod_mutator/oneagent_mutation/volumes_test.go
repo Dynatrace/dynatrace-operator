@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -121,9 +122,20 @@ func TestAddReadOnlyCSIVolumes(t *testing.T) {
 		addVolumesForReadOnlyCSI(pod)
 		require.Len(t, pod.Spec.Volumes, 3)
 		for _, expectedVolumeName := range expectedVolumes {
-			mount, err := volumes.GetByName(pod.Spec.Volumes, expectedVolumeName)
+			mount, err := getByName(pod.Spec.Volumes, expectedVolumeName)
 			require.NoError(t, err)
 			require.NotNil(t, mount)
 		}
 	})
+}
+
+func getByName(volumes []corev1.Volume, volumeName string) (*corev1.Volume, error) {
+	for _, volume := range volumes {
+		if volume.Name == volumeName {
+			return &volume, nil
+		}
+	}
+	return nil, errors.Errorf(`Cannot find volume "%s" in the provided slice (len %d)`,
+		volumeName, len(volumes),
+	)
 }
