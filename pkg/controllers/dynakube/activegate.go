@@ -48,7 +48,7 @@ func (controller *Controller) setupAutomaticApiMonitoring(dynakube *dynakube.Dyn
 			clusterLabel = dynakube.Name
 		}
 
-		err := controller.apimonitoringReconcilerBuilder(dtc, clusterLabel, dynakube.Status.KubeSystemUUID).
+		err := controller.apiMonitoringReconcilerBuilder(dtc, clusterLabel, dynakube.Status.KubeSystemUUID).
 			Reconcile(dynakube)
 		if err != nil {
 			log.Error(err, "could not create setting")
