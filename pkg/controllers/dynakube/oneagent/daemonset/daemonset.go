@@ -177,7 +177,10 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 func (dsInfo *builderInfo) podSpec() (corev1.PodSpec, error) {
 	resources := dsInfo.resources()
 	dnsPolicy := dsInfo.dnsPolicy()
-	arguments := dsInfo.arguments()
+	arguments, err := dsInfo.arguments()
+	if err != nil {
+		return corev1.PodSpec{}, err
+	}
 	environmentVariables, err := dsInfo.environmentVariables()
 	if err != nil {
 		return corev1.PodSpec{}, err

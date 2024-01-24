@@ -49,6 +49,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		assertNodeNameEnv(t, envVars)
 		assertConnectionInfoEnv(t, envVars, dynakube)
 		assertDeploymentMetadataEnv(t, envVars, dynakube.Name)
+		// deprecated
 		assertProxyEnv(t, envVars, dynakube)
 		assertReadOnlyEnv(t, envVars)
 	})
@@ -190,6 +191,7 @@ func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynat
 	)
 }
 
+// deprecated
 func TestAddProxyEnvs(t *testing.T) {
 	t.Run("adds proxy value from dynakube", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
@@ -232,6 +234,7 @@ func TestAddProxyEnvs(t *testing.T) {
 	})
 }
 
+// deprecated
 func assertProxyEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynatracev1beta1.DynaKube) {
 	env := k8senv.FindEnvVar(envs, proxyEnv)
 	assert.Equal(t, env.Name, proxyEnv)

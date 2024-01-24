@@ -96,6 +96,7 @@ func (dsInfo *builderInfo) addConnectionInfoEnvs(envVarMap *prioritymap.Map) {
 	}})
 }
 
+// deprecated
 func (dsInfo *builderInfo) addProxyEnv(envVarMap *prioritymap.Map) {
 	if !dsInfo.hasProxy() {
 		return

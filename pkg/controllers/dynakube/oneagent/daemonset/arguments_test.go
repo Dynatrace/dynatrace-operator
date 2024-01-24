@@ -25,7 +25,7 @@ func TestArguments(t *testing.T) {
 		builder := builderInfo{
 			dynakube: &dynatracev1beta1.DynaKube{},
 		}
-		arguments := builder.arguments()
+		arguments, _ := builder.arguments()
 
 		expectedDefaultArguments := []string{
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
@@ -65,7 +65,7 @@ func TestArguments(t *testing.T) {
 			hostInjectSpec: &dynatracev1beta1.HostInjectSpec{Args: args},
 		}
 
-		arguments := builder.arguments()
+		arguments, _ := builder.arguments()
 
 		expectedDefaultArguments := []string{
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
@@ -88,7 +88,7 @@ func TestArguments(t *testing.T) {
 			hostInjectSpec: &dynatracev1beta1.HostInjectSpec{Args: args},
 		}
 
-		arguments := builder.arguments()
+		arguments, _ := builder.arguments()
 
 		expectedDefaultArguments := []string{
 			"--set-app-log-content-access=true",
@@ -133,6 +133,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 	}
 	assert.Contains(t, podSpecs.Containers[0].Args, fmt.Sprintf("--set-host-property=OperatorVersion=$(%s)", deploymentmetadata.EnvDtOperatorVersion))
 
+	// deprecated
 	t.Run(`has proxy arg`, func(t *testing.T) {
 		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 		podSpecs, _ = dsInfo.podSpec()
@@ -142,6 +143,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 		podSpecs, _ = dsInfo.podSpec()
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 	})
+	// deprecated
 	t.Run(`has proxy arg but feature flag to ignore is enabled`, func(t *testing.T) {
 		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 		instance.Annotations[dynatracev1beta1.AnnotationFeatureOneAgentIgnoreProxy] = "true"
