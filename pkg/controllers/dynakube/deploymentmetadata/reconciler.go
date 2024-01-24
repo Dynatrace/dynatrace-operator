@@ -13,6 +13,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// type DeploymentMetadataReconciler interface {
+// 	Reconcile(ctx context.Context) error
+// }
+
 type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
