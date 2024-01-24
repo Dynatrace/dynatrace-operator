@@ -47,10 +47,6 @@ func (builder CommandBuilder) SetConfigProvider(provider config.Provider) Comman
 	return builder
 }
 
-func (builder CommandBuilder) GetCluster(kubeConfig *rest.Config) (cluster.Cluster, error) {
-	return cluster.New(kubeConfig, clusterOptions)
-}
-
 func (builder CommandBuilder) Build() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  use,

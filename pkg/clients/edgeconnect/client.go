@@ -11,7 +11,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/pkg/errors"
-	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
@@ -50,24 +49,6 @@ func NewClient(clientID, clientSecret string, options ...Option) (Client, error)
 	c.httpClient = httpClient
 
 	return c, nil
-}
-
-// NewClientWithProxy creates a REST client for the given API base URL and proxy
-// NB: added here for demonstration purpose only for now
-func NewClientWithProxy(clientID, clientSecret, proxy string) (Client, error) {
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	proxyUrl, err := url.Parse(proxy)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	transport.Proxy = func(req *http.Request) (*url.URL, error) {
-		return proxyUrl, nil
-	}
-	httpClient := http.Client{Transport: transport}
-	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
-
-	return NewClient(clientID, clientSecret, WithContext(ctx))
 }
 
 func WithBaseURL(url string) func(*client) {

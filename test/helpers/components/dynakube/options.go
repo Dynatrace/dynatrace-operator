@@ -31,12 +31,6 @@ func WithName(name string) Option {
 	}
 }
 
-func WithNamespace(namespace string) Option {
-	return func(dynakube *dynakubev1beta1.DynaKube) {
-		dynakube.Namespace = namespace
-	}
-}
-
 func WithCustomPullSecret(secretName string) Option {
 	return func(dynakube *dynakubev1beta1.DynaKube) {
 		dynakube.Spec.CustomPullSecret = secretName
@@ -76,12 +70,6 @@ func WithActiveGate() Option {
 	}
 }
 
-func WithTokens(secretName string) Option {
-	return func(dynakube *dynakubev1beta1.DynaKube) {
-		dynakube.Spec.Tokens = secretName
-	}
-}
-
 func WithNameBasedNamespaceSelector() Option {
 	return func(dynakube *dynakubev1beta1.DynaKube) {
 		dynakube.Spec.NamespaceSelector = metav1.LabelSelector{
@@ -107,12 +95,6 @@ func WithProxy(proxy *dynakubev1beta1.DynaKubeProxy) Option {
 func WithIstioIntegration() Option {
 	return func(dynakube *dynakubev1beta1.DynaKube) {
 		dynakube.Spec.EnableIstio = true
-	}
-}
-
-func WithPrivilegedOneAgent() Option {
-	return func(dynakube *dynakubev1beta1.DynaKube) {
-		dynakube.Annotations[dynakubev1beta1.AnnotationFeatureRunOneAgentContainerPrivileged] = "true"
 	}
 }
 
