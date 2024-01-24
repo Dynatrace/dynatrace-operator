@@ -22,7 +22,7 @@ func TestActiveGatePhaseChanges(t *testing.T) {
 			ActiveGate: dynatracev1beta1.ActiveGateSpec{Capabilities: []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.KubeMonCapability.DisplayName}},
 		},
 	}
-	t.Run(" no activegate statefulsets in cluster -> deploying", func(t *testing.T) {
+	t.Run("no activegate statefulsets in cluster -> deploying", func(t *testing.T) {
 		fakeClient := fake.NewClient()
 		controller := &Controller{
 			client:    fakeClient,
