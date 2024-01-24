@@ -236,7 +236,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 	}
 
 	log.Info("start reconciling process module config")
-	err = processmoduleconfigsecret.NewReconciler(
+	err = processmoduleconfigsecret.NewReconciler( // TODO wepudt: another builder?
 		controller.client, controller.apiReader, dynatraceClient, dynakube, controller.scheme, timeprovider.New()).
 		Reconcile(ctx)
 	if err != nil {
@@ -291,7 +291,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube
 
 	log.Info("start reconciling pull secret")
 	err = dtpullsecret.
-		NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube, tokens).
+		NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube, tokens). // TODO wepudt: add another builder here?
 		Reconcile(ctx)
 	if err != nil {
 		log.Info("could not reconcile Dynatrace pull secret")

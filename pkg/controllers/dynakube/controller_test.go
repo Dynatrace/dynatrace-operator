@@ -506,53 +506,6 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 	})
 }
 
-func createDTMockClient(t *testing.T, paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *mockedclient.Client {
-	mockClient := mockedclient.NewClient(t)
-
-	mockClient.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
-		Protocol: testProtocol,
-		Host:     testHost,
-		Port:     testPort,
-	}, nil).Maybe()
-	mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
-		CommunicationHosts: []dtclient.CommunicationHost{
-			{
-				Protocol: testProtocol,
-				Host:     testHost,
-				Port:     testPort,
-			},
-			{
-				Protocol: testAnotherProtocol,
-				Host:     testAnotherHost,
-				Port:     testAnotherPort,
-			},
-		},
-		ConnectionInfo: dtclient.ConnectionInfo{
-			TenantUUID: testUUID,
-		},
-	}, nil).Maybe()
-	mockClient.On("GetTokenScopes", testPaasToken).Return(paasTokenScopes, nil).Maybe()
-	mockClient.On("GetTokenScopes", testAPIToken).Return(apiTokenScopes, nil).Maybe()
-	mockClient.On("GetOneAgentConnectionInfo").Return(
-		dtclient.OneAgentConnectionInfo{
-			ConnectionInfo: dtclient.ConnectionInfo{
-				TenantUUID: "abc123456",
-			},
-		}, nil).Maybe()
-	mockClient.On("GetLatestAgentVersion", mock.Anything, mock.Anything).Return(testVersion, nil).Maybe()
-	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("string")).
-		Return([]dtclient.MonitoredEntity{}, nil).Maybe()
-	mockClient.On("GetSettingsForMonitoredEntities", []dtclient.MonitoredEntity{}, mock.AnythingOfType("string")).
-		Return(dtclient.GetSettingsResponse{}, nil).Maybe()
-	mockClient.On("CreateOrUpdateKubernetesSetting", testName, testUID, mock.AnythingOfType("string")).
-		Return(testObjectID, nil).Maybe()
-	mockClient.On("GetActiveGateConnectionInfo").Return(dtclient.ActiveGateConnectionInfo{}, nil).Maybe()
-	mockClient.On("GetProcessModuleConfig", mock.AnythingOfType("uint")).
-		Return(&dtclient.ProcessModuleConfig{}, nil).Maybe()
-
-	return mockClient
-}
-
 func createFakeRegistryClientBuilder() func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
 	fakeRegistryClient := &mockregistry.MockImageGetter{}
 	fakeImage := &fakecontainer.FakeImage{}
