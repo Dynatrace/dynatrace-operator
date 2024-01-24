@@ -30,7 +30,7 @@ func TestReconcileActiveGate(t *testing.T) {
 		controller := &Controller{
 			client:                      fakeClient,
 			apiReader:                   fakeClient,
-			activegateReconcilerBuilder: activegate.NewReconciler,
+			activeGateReconcilerBuilder: activegate.NewReconciler,
 		}
 
 		err := controller.reconcileActiveGate(ctx, dynakube, nil, nil, nil, nil)
