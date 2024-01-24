@@ -261,7 +261,7 @@ func (controller *Controller) setupIstio(ctx context.Context, dynakube *dynatrac
 	} else if !isInstalled {
 		return nil, errors.New("istio not installed, yet is enabled, aborting reconciliation, check configuration")
 	}
-	istioReconciler := istio.NewReconciler(istioClient)
+	istioReconciler := controller.istioReconcilerBuilder(istioClient)
 	err = istioReconciler.ReconcileAPIUrl(ctx, dynakube)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to reconcile istio objects for API url")
