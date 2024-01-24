@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	testImageTag = "1.203.0"
+	testImageTag = "1.203.0.0-0"
 	testImage    = "test-image:" + testImageTag
 )
 

@@ -184,7 +184,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	c := fake.NewClient(
 		NewSecret(name, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
-	oldComponentVersion := "1.186"
+	oldComponentVersion := "1.186.0.0-0"
 	hostIP := "1.2.3.4"
 
 	reconciler := &Reconciler{
