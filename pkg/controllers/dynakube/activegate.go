@@ -28,7 +28,7 @@ func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube 
 			}
 		}
 	} // TODO: have a cleanup for things that we create above
-	reconciler := controller.activegateReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynakube, dtc)
+	reconciler := controller.activeGateReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynakube, dtc)
 	err := reconciler.Reconcile(ctx)
 
 	if err != nil {
