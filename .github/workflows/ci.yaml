@@ -61,10 +61,11 @@ jobs:
         id: depdownload
         run: |
           hack/build/ci/install-cgo-dependencies.sh
-      - name: Run Unit tests
+      - name: Run Unit tests and Integration tests
         id: unittest
         run: |
           make go/test
+          make go/integration_test
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
         env:

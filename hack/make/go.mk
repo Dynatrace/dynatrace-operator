@@ -32,6 +32,9 @@ go/lint: go/format go/vet go/golangci
 go/test:
 	go test ./... -coverprofile=coverage.txt -covermode=atomic -tags "$(shell ./hack/build/create_go_build_tags.sh false)"
 
+go/integration_test:
+	go test -ldflags="-X 'github.com/Dynatrace/dynatrace-operator/pkg/version.Commit=$(shell git rev-parse HEAD)' -X 'github.com/Dynatrace/dynatrace-operator/pkg/version.Version=$(shell git branch --show-current)'" ./cmd/integration/*
+
 ## creates mocks from .mockery.yaml
 go/gen_mocks:
 	mockery
