@@ -163,7 +163,7 @@ func getActiveGateCaCertVolume(instance *dynatracev1beta1.DynaKube) corev1.Volum
 	}
 }
 
-func getHttpProxyVolume(instance *dynatracev1beta1.DynaKube) corev1.Volume {
+func buildHttpProxyVolume(instance *dynatracev1beta1.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name: proxy.ProxySecretVolumeName,
 		VolumeSource: corev1.VolumeSource{
