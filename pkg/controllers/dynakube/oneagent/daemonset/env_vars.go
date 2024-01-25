@@ -159,7 +159,7 @@ func IsProxyAsEnvVarDeprecated(oneAgentVersion string) (bool, error) {
 		return false, err
 	}
 
-	result := version.CompareSemanticVersions(runningVersion, fixVersion)
+	result := version.CompareSemanticVersions(runningVersion, versionConstraint)
 
 	// if current OneAgent version is older than fix version
 	if result < 0 {

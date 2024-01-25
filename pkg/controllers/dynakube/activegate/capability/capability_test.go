@@ -42,7 +42,7 @@ func buildDynakube(capabilities []dynatracev1beta1.CapabilityDisplayName) *dynat
 func TestBuildProxySecretName(t *testing.T) {
 	t.Run(`correct secret name`, func(t *testing.T) {
 		expectedProxySecretName := "someDK-internal-proxy"
-		actualProxySecretName := proxy.BuildProxySecretName("someDK")
+		actualProxySecretName := proxy.BuildSecretName("someDK")
 		require.NotEmpty(t, actualProxySecretName)
 		assert.Equal(t, expectedProxySecretName, actualProxySecretName)
 	})

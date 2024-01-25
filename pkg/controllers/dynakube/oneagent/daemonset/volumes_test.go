@@ -57,13 +57,13 @@ func TestPrepareVolumes(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{}
 		instance.Spec =
 			dynatracev1beta1.DynaKubeSpec{
-				Proxy: &dynatracev1beta1.DynaKubeProxy{ValueFrom: proxy.BuildProxySecretName(instance.Name)},
+				Proxy: &dynatracev1beta1.DynaKubeProxy{ValueFrom: proxy.BuildSecretName(instance.Name)},
 			}
 
 		volumes := prepareVolumes(instance)
 
 		assert.Contains(t, volumes, getRootVolume())
-		assert.Contains(t, volumes, getHttpProxyVolume(instance))
+		assert.Contains(t, volumes, buildHttpProxyVolume(instance))
 	})
 	t.Run(`has tls volume`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{

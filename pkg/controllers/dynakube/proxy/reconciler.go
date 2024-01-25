@@ -50,7 +50,7 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dynakube *dynatrac
 	}
 
 	secret, err := k8ssecret.Create(r.scheme, r.dynakube,
-		k8ssecret.NewNameModifier(BuildProxySecretName(dynakube.Name)),
+		k8ssecret.NewNameModifier(BuildSecretName(dynakube.Name)),
 		k8ssecret.NewNamespaceModifier(r.dynakube.Namespace),
 		k8ssecret.NewTypeModifier(corev1.SecretTypeOpaque),
 		k8ssecret.NewDataModifier(data))
@@ -65,7 +65,7 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dynakube *dynatrac
 }
 
 func (r *Reconciler) ensureDeleted(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	secretName := BuildProxySecretName(dynakube.Name)
+	secretName := BuildSecretName(dynakube.Name)
 	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: secretName, Namespace: dynakube.Namespace}}
 	if err := r.client.Delete(ctx, &secret); err != nil && !k8serrors.IsNotFound(err) {
 		return err
@@ -80,10 +80,10 @@ func (r *Reconciler) createProxyMap(ctx context.Context, dynakube *dynatracev1be
 	if !dynakube.HasProxy() {
 		// the parsed-proxy secret is expected to exist and the entrypoint.sh script handles empty values properly
 		return map[string][]byte{
-			proxyHostField:     []byte(""),
-			proxyPortField:     []byte(""),
-			proxyUsernameField: []byte(""),
-			proxyPasswordField: []byte(""),
+			hostField:     []byte(""),
+			portField:     []byte(""),
+			usernameField: []byte(""),
+			passwordField: []byte(""),
 		}, nil
 	}
 
@@ -98,10 +98,10 @@ func (r *Reconciler) createProxyMap(ctx context.Context, dynakube *dynatracev1be
 	}
 
 	return map[string][]byte{
-		proxyHostField:     []byte(host),
-		proxyPortField:     []byte(port),
-		proxyUsernameField: []byte(username),
-		proxyPasswordField: []byte(password),
+		hostField:     []byte(host),
+		portField:     []byte(port),
+		usernameField: []byte(username),
+		passwordField: []byte(password),
 	}, nil
 }
 
@@ -115,6 +115,6 @@ func parseProxyUrl(proxy string) (host, port, username, password string, err err
 	return proxyUrl.Hostname(), proxyUrl.Port(), proxyUrl.User.Username(), passwd, nil
 }
 
-func BuildProxySecretName(dynakubeName string) string {
+func BuildSecretName(dynakubeName string) string {
 	return dynakubeName + "-" + consts.ProxySecretSuffix
 }

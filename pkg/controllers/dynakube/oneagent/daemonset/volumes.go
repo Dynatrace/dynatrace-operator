@@ -81,7 +81,7 @@ func getCSIStorageMount() corev1.VolumeMount {
 }
 
 func getHttpProxyMount() corev1.VolumeMount {
-	return proxy.PrepareVolumeMount()
+	return proxy.BuildVolumeMount()
 }
 
 func prepareVolumes(instance *dynatracev1beta1.DynaKube) []corev1.Volume {
@@ -106,7 +106,7 @@ func prepareVolumes(instance *dynatracev1beta1.DynaKube) []corev1.Volume {
 	}
 
 	if instance.HasProxy() {
-		volumes = append(volumes, getHttpProxyVolume(instance))
+		volumes = append(volumes, buildHttpProxyVolume(instance))
 	}
 
 	return volumes
@@ -165,10 +165,10 @@ func getActiveGateCaCertVolume(instance *dynatracev1beta1.DynaKube) corev1.Volum
 
 func buildHttpProxyVolume(instance *dynatracev1beta1.DynaKube) corev1.Volume {
 	return corev1.Volume{
-		Name: proxy.ProxySecretVolumeName,
+		Name: proxy.SecretVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: proxy.BuildProxySecretName(instance.Name),
+				SecretName: proxy.BuildSecretName(instance.Name),
 			},
 		},
 	}

@@ -41,7 +41,7 @@ func (mod ProxyModifier) getVolumes() []corev1.Volume {
 			Name: proxy.SecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: proxy.BuildProxySecretName(mod.dynakube.Name),
+					SecretName: proxy.BuildSecretName(mod.dynakube.Name),
 				},
 			},
 		},
@@ -49,5 +49,5 @@ func (mod ProxyModifier) getVolumes() []corev1.Volume {
 }
 
 func (mod ProxyModifier) getVolumeMounts() []corev1.VolumeMount {
-	return []corev1.VolumeMount{proxy.PrepareVolumeMount()}
+	return []corev1.VolumeMount{proxy.BuildVolumeMount()}
 }

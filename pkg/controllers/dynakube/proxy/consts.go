@@ -1,23 +1,23 @@
 package proxy
 
 const (
-	proxyHostField     = "host"
-	proxyPortField     = "port"
-	proxyUsernameField = "username"
-	proxyPasswordField = "password"
+	hostField     = "host"
+	portField     = "port"
+	usernameField = "username"
+	passwordField = "password"
 
-	ProxySecretMountPath  = "/var/lib/dynatrace/secrets/internal-proxy"
-	ProxySecretVolumeName = "internal-proxy-secret-volume"
+	SecretMountPath  = "/var/lib/dynatrace/secrets/internal-proxy"
+	SecretVolumeName = "internal-proxy-secret-volume"
 
-	ProxySecretHost          = "host"
-	ProxySecretHostMountPath = ProxySecretMountPath + "/" + ProxySecretHost
+	SecretHost          = "host"
+	SecretHostMountPath = SecretMountPath + "/" + SecretHost
 
-	ProxySecretPort          = "port"
-	ProxySecretPortMountPath = ProxySecretMountPath + "/" + ProxySecretPort
+	SecretPort          = "port"
+	SecretPortMountPath = SecretMountPath + "/" + SecretPort
 
-	ProxySecretUsername          = "username"
-	ProxySecretUsernameMountPath = ProxySecretMountPath + "/" + ProxySecretUsername
+	SecretUsername          = "username"
+	SecretUsernameMountPath = SecretMountPath + "/" + SecretUsername
 
-	ProxySecretPassword          = "password"
-	ProxySecretPasswordMountPath = ProxySecretMountPath + "/" + ProxySecretPassword
+	SecretPassword          = "password"
+	SecretPasswordMountPath = SecretMountPath + "/" + SecretPassword
 )
