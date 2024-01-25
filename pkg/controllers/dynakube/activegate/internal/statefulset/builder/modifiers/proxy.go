@@ -2,9 +2,9 @@ package modifiers
 
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -38,10 +38,10 @@ func (mod ProxyModifier) Modify(sts *appsv1.StatefulSet) error {
 func (mod ProxyModifier) getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
-			Name: consts.InternalProxySecretVolumeName,
+			Name: proxy.SecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: capability.BuildProxySecretName(mod.dynakube.Name),
+					SecretName: proxy.BuildSecretName(mod.dynakube.Name),
 				},
 			},
 		},
@@ -49,30 +49,5 @@ func (mod ProxyModifier) getVolumes() []corev1.Volume {
 }
 
 func (mod ProxyModifier) getVolumeMounts() []corev1.VolumeMount {
-	return []corev1.VolumeMount{
-		{
-			ReadOnly:  true,
-			Name:      consts.InternalProxySecretVolumeName,
-			MountPath: consts.InternalProxySecretHostMountPath,
-			SubPath:   consts.InternalProxySecretHost,
-		},
-		{
-			ReadOnly:  true,
-			Name:      consts.InternalProxySecretVolumeName,
-			MountPath: consts.InternalProxySecretPortMountPath,
-			SubPath:   consts.InternalProxySecretPort,
-		},
-		{
-			ReadOnly:  true,
-			Name:      consts.InternalProxySecretVolumeName,
-			MountPath: consts.InternalProxySecretUsernameMountPath,
-			SubPath:   consts.InternalProxySecretUsername,
-		},
-		{
-			ReadOnly:  true,
-			Name:      consts.InternalProxySecretVolumeName,
-			MountPath: consts.InternalProxySecretPasswordMountPath,
-			SubPath:   consts.InternalProxySecretPassword,
-		},
-	}
+	return []corev1.VolumeMount{proxy.BuildVolumeMount()}
 }

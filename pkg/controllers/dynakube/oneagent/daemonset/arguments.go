@@ -12,10 +12,18 @@ const argumentPrefix = "--"
 const customArgumentPriority = 2
 const defaultArgumentPriority = 1
 
-func (dsInfo *builderInfo) arguments() []string {
+func (dsInfo *builderInfo) arguments() ([]string, error) {
 	argMap := prioritymap.New(prioritymap.WithSeparator(prioritymap.DefaultSeparator), prioritymap.WithPriority(defaultArgumentPriority))
 
-	dsInfo.appendProxyArg(argMap)
+	isProxyAsEnvVarDeprecated, err := IsProxyAsEnvVarDeprecated(dsInfo.dynakube.OneAgentVersion())
+	if err != nil {
+		return []string{}, err
+	}
+	if !isProxyAsEnvVarDeprecated {
+		// deprecated
+		dsInfo.appendProxyArg(argMap)
+	}
+
 	dsInfo.appendNetworkZoneArg(argMap)
 
 	appendOperatorVersionArg(argMap)
@@ -29,7 +37,7 @@ func (dsInfo *builderInfo) arguments() []string {
 
 	dsInfo.appendHostInjectArgs(argMap)
 
-	return argMap.AsKeyValueStrings()
+	return argMap.AsKeyValueStrings(), nil
 }
 
 func appendImmutableImageArgs(argMap *prioritymap.Map) {
@@ -53,6 +61,7 @@ func (dsInfo *builderInfo) appendNetworkZoneArg(argMap *prioritymap.Map) {
 	}
 }
 
+// deprecated
 func (dsInfo *builderInfo) appendProxyArg(argMap *prioritymap.Map) {
 	if dsInfo.hasProxy() {
 		argMap.Append(argumentPrefix+"set-proxy", "$(https_proxy)")
@@ -61,6 +70,7 @@ func (dsInfo *builderInfo) appendProxyArg(argMap *prioritymap.Map) {
 	argMap.Append(argumentPrefix+"set-proxy", "")
 }
 
+// deprecated
 func (dsInfo *builderInfo) hasProxy() bool {
 	return dsInfo.dynakube != nil && dsInfo.dynakube.NeedsOneAgentProxy()
 }

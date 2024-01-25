@@ -14,7 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
-	"github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	mocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -184,7 +184,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	c := fake.NewClient(
 		NewSecret(name, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
-	oldComponentVersion := "1.186"
+	oldComponentVersion := "1.186.0.0-0"
 	hostIP := "1.2.3.4"
 
 	reconciler := &Reconciler{
@@ -201,7 +201,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		labels.AppManagedByLabel: version.AppName,
 	}
 
-	t.Run("reconileImp Instances set, if autoUpdate is true", func(t *testing.T) {
+	t.Run("reconcileImp Instances set, if autoUpdate is true", func(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Status.OneAgent.Version = oldComponentVersion
 		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)

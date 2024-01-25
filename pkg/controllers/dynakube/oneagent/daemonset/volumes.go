@@ -6,6 +6,7 @@ import (
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
 	hostvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes/host"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -27,6 +28,10 @@ func prepareVolumeMounts(instance *dynatracev1beta1.DynaKube) []corev1.VolumeMou
 
 	if instance != nil && instance.HasActiveGateCaCert() {
 		volumeMounts = append(volumeMounts, getActiveGateCaCertVolumeMount())
+	}
+
+	if instance != nil && instance.HasProxy() {
+		volumeMounts = append(volumeMounts, getHttpProxyMount())
 	}
 
 	return volumeMounts
@@ -75,6 +80,10 @@ func getCSIStorageMount() corev1.VolumeMount {
 	}
 }
 
+func getHttpProxyMount() corev1.VolumeMount {
+	return proxy.BuildVolumeMount()
+}
+
 func prepareVolumes(instance *dynatracev1beta1.DynaKube) []corev1.Volume {
 	volumes := []corev1.Volume{getRootVolume()}
 
@@ -94,6 +103,10 @@ func prepareVolumes(instance *dynatracev1beta1.DynaKube) []corev1.Volume {
 
 	if instance.HasActiveGateCaCert() {
 		volumes = append(volumes, getActiveGateCaCertVolume(instance))
+	}
+
+	if instance.HasProxy() {
+		volumes = append(volumes, buildHttpProxyVolume(instance))
 	}
 
 	return volumes
@@ -145,6 +158,17 @@ func getActiveGateCaCertVolume(instance *dynatracev1beta1.DynaKube) corev1.Volum
 						Path: "custom.pem",
 					},
 				},
+			},
+		},
+	}
+}
+
+func buildHttpProxyVolume(instance *dynatracev1beta1.DynaKube) corev1.Volume {
+	return corev1.Volume{
+		Name: proxy.SecretVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: proxy.BuildSecretName(instance.Name),
 			},
 		},
 	}
