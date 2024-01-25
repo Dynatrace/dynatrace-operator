@@ -15,7 +15,10 @@ func TestBuildVariables(t *testing.T) {
 		t.Fatalf("Failed to run 'git branch': %v", err)
 	}
 
-	currentBranch := getCurrentBranch(string(output))
+	currentBranch, err := getCurrentBranch(string(output))
+	if err != nil {
+		t.Fatalf("Failed to get current branch: %v", err)
+	}
 
 	// get the current git commit
 	currentGitCommit := exec.Command("git", "log", "-n", "1", currentBranch)
@@ -40,14 +43,14 @@ func TestBuildVariables(t *testing.T) {
 	}
 }
 
-func getCurrentBranch(output string) string {
+func getCurrentBranch(output string) (string, error) {
 	lines := strings.Split(output, "\n")
 	for _, line := range lines {
 		if strings.HasPrefix(line, "*") {
-			return strings.TrimSpace(strings.TrimPrefix(line, "*"))
+			return strings.TrimSpace(strings.TrimPrefix(line, "*")), nil
 		}
 	}
-	return ""
+	return "", fmt.Errorf("could not find current branch")
 }
 
 func extractCommitHash(input string) (string, error) {
