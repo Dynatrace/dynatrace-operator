@@ -15,7 +15,6 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry/mocks"
@@ -25,6 +24,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	dtClientMock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	fakecontainer "github.com/google/go-containerregistry/pkg/v1/fake"
 	"github.com/pkg/errors"
@@ -234,9 +234,11 @@ func TestSetupTokensAndClient(t *testing.T) {
 		}
 		fakeClient := fake.NewClientWithIndex(dynakube, tokens)
 
-		mockDtcBuilder := &dynatraceclient.StubBuilder{
-			Err: errors.New("BOOM"),
-		}
+		mockDtcBuilder := dtClientMock.NewBuilder(t)
+		mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
+		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
+		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
+		mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything).Return(nil, errors.New("BOOM"))
 
 		controller := &Controller{
 			client:                 fakeClient,
@@ -265,9 +267,13 @@ func TestSetupTokensAndClient(t *testing.T) {
 		}
 		fakeClient := fake.NewClientWithIndex(dynakube, tokens)
 
-		mockDtcBuilder := &dynatraceclient.StubBuilder{
-			DynatraceClient: mockedclient.NewClient(t),
-		}
+		mockedDtc := mockedclient.NewClient(t)
+
+		mockDtcBuilder := dtClientMock.NewBuilder(t)
+		mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
+		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
+		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
+		mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything).Return(mockedDtc, nil)
 
 		controller := &Controller{
 			client:                 fakeClient,
@@ -407,7 +413,7 @@ func TestMonitoringModesDynakube_Reconcile(t *testing.T) {
 				},
 				Status: *getTestDynkubeStatus(),
 			}
-			controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
+			controller := createFakeClientAndReconciler(t, mockClient, instance, testPaasToken, testAPIToken)
 
 			result, err := controller.Reconcile(context.Background(), reconcile.Request{
 				NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -446,7 +452,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				APIURL: testApiUrl,
 			},
 		}
-		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
+		controller := createFakeClientAndReconciler(t, mockClient, instance, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -472,7 +478,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				}},
 			Status: *getTestDynkubeStatus(),
 		}
-		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
+		controller := createFakeClientAndReconciler(t, mockClient, instance, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -514,7 +520,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			},
 			Status: *getTestDynkubeStatus(),
 		}
-		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
+		controller := createFakeClientAndReconciler(t, mockClient, instance, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -557,7 +563,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			},
 			Status: *getTestDynkubeStatus(),
 		}
-		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
+		controller := createFakeClientAndReconciler(t, mockClient, instance, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -591,7 +597,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 
 			Status: *getTestDynkubeStatus(),
 		}
-		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
+		controller := createFakeClientAndReconciler(t, mockClient, instance, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -622,7 +628,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 					ValueFrom: "",
 				}}}
 		instance.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureActiveGateIgnoreProxy: "true"}
-		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
+		controller := createFakeClientAndReconciler(t, mockClient, instance, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -661,7 +667,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			},
 			Status: *getTestDynkubeStatus(),
 		}
-		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
+		controller := createFakeClientAndReconciler(t, mockClient, instance, testPaasToken, testAPIToken)
 		// Remove existing StatefulSet created by createFakeClientAndReconciler
 		require.NoError(t, controller.client.Delete(context.Background(), &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: testName + "-activegate", Namespace: testNamespace}}))
 
@@ -697,7 +703,7 @@ func TestReconcileOnlyOneTokenProvided_Reconcile(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
 			}}
-		controller := createFakeClientAndReconciler(mockClient, instance, "", testAPIToken)
+		controller := createFakeClientAndReconciler(t, mockClient, instance, "", testAPIToken)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -763,9 +769,11 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 
 		fakeClient := fake.NewClient(objects...)
 
-		mockDtcBuilder := &dynatraceclient.StubBuilder{
-			DynatraceClient: mockClient,
-		}
+		mockDtcBuilder := dtClientMock.NewBuilder(t)
+		mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
+		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
+		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
+		mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything).Return(mockClient, nil)
 
 		controller := &Controller{
 			client:                 fakeClient,
@@ -805,7 +813,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 			Routing: dynatracev1beta1.RoutingSpec{
 				Enabled: true,
 			}}}
-	controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
+	controller := createFakeClientAndReconciler(t, mockClient, instance, testPaasToken, testAPIToken)
 	request := reconcile.Request{
 		NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 	}
@@ -886,7 +894,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 			}},
 	}
 
-	r := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
+	r := createFakeClientAndReconciler(t, mockClient, instance, testPaasToken, testAPIToken)
 	request := reconcile.Request{
 		NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 	}
@@ -1005,7 +1013,7 @@ func createFakeRegistryClientBuilder() func(options ...func(*registry.Client)) (
 	}
 }
 
-func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatracev1beta1.DynaKube, paasToken, apiToken string) *Controller {
+func createFakeClientAndReconciler(t *testing.T, mockClient dtclient.Client, instance *dynatracev1beta1.DynaKube, paasToken, apiToken string) *Controller {
 	data := map[string][]byte{
 		dtclient.DynatraceApiToken: []byte(apiToken),
 	}
@@ -1034,9 +1042,11 @@ func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatra
 
 	fakeClient := fake.NewClientWithIndex(objects...)
 
-	mockDtcBuilder := &dynatraceclient.StubBuilder{
-		DynatraceClient: mockClient,
-	}
+	mockDtcBuilder := dtClientMock.NewBuilder(t)
+	mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
+	mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
+	mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
+	mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything).Return(mockClient, nil)
 
 	controller := &Controller{
 		client:                 fakeClient,
@@ -1304,9 +1314,11 @@ func TestTokenConditions(t *testing.T) {
 			},
 		})
 		mockClient := mockedclient.NewClient(t)
-		mockDtcBuilder := &dynatraceclient.StubBuilder{
-			DynatraceClient: mockClient,
-		}
+		mockDtcBuilder := dtClientMock.NewBuilder(t)
+		mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
+		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
+		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
+		mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything).Return(mockClient, nil)
 
 		controller := &Controller{
 			client:                 fakeClient,
@@ -1343,7 +1355,7 @@ func TestAPIError(t *testing.T) {
 
 	t.Run("should return error result on 503", func(t *testing.T) {
 		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, dtclient.ServerError{Code: http.StatusServiceUnavailable, Message: "Service unavailable"})
-		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
+		controller := createFakeClientAndReconciler(t, mockClient, instance, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -1354,7 +1366,7 @@ func TestAPIError(t *testing.T) {
 	})
 	t.Run("should return error result on 429", func(t *testing.T) {
 		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, dtclient.ServerError{Code: http.StatusTooManyRequests, Message: "Too many requests"})
-		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
+		controller := createFakeClientAndReconciler(t, mockClient, instance, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
