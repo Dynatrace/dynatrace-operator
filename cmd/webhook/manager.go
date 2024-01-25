@@ -19,7 +19,7 @@ import (
 const (
 	metricsBindAddress     = ":8383"
 	healthProbeBindAddress = ":10080"
-	defaultPort                   = 8443
+	defaultPort            = 8443
 	livezEndpointName      = "livez"
 	livenessEndpointName   = "/" + livezEndpointName
 	readyzEndpointName     = "readyz"
@@ -65,6 +65,7 @@ func (provider Provider) createOptions(namespace string) ctrl.Options {
 	if parsedWebhookPort, err := strconv.Atoi(webhookPortEnv); err == nil {
 		port = parsedWebhookPort
 	}
+	
 	return ctrl.Options{
 		Scheme:                 scheme.Scheme,
 		ReadinessEndpointName:  readinessEndpointName,
