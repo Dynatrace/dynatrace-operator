@@ -38,7 +38,7 @@ func (mod ProxyModifier) Modify(sts *appsv1.StatefulSet) error {
 func (mod ProxyModifier) getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
-			Name: proxy.ProxySecretVolumeName,
+			Name: proxy.SecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: proxy.BuildProxySecretName(mod.dynakube.Name),
