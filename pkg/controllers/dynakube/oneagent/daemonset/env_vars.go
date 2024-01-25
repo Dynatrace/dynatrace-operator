@@ -141,8 +141,8 @@ func addDefaultValueSource(envVarMap *prioritymap.Map, name string, value *corev
 }
 
 const (
-	// starting with this version, OneAgent allows mounting proxy as file
-	// enabling us to deprecate it as env var (which is non security compliant)
+	// starting with this version, OneAgent allows mounting proxy as file, therefore
+	// enabling us to deprecate the env var/arg approach (which is non security compliant)
 	ProxyAsEnvVarDeprecatedVersion = "1.273.0.0-0"
 )
 

@@ -287,3 +287,30 @@ func assertReadOnlyEnv(t *testing.T, envs []corev1.EnvVar) {
 	assert.Equal(t, env.Name, oneagentReadOnlyMode)
 	assert.Equal(t, "true", env.Value)
 }
+
+func TestIsProxyAsEnvVarDeprecated(t *testing.T) {
+	t.Run("empty version", func(t *testing.T) {
+		got, err := IsProxyAsEnvVarDeprecated("")
+		assert.Nil(t, err)
+		assert.Equal(t, false, got)
+	})
+	t.Run("wrong format", func(t *testing.T) {
+		_, err := IsProxyAsEnvVarDeprecated("1.2")
+		assert.NotNil(t, err)
+	})
+	t.Run("older version", func(t *testing.T) {
+		got, err := IsProxyAsEnvVarDeprecated("1.261.2.20220212-223432")
+		assert.Nil(t, err)
+		assert.Equal(t, false, got)
+	})
+	t.Run("same version", func(t *testing.T) {
+		got, err := IsProxyAsEnvVarDeprecated("1.273.0.0-0")
+		assert.Nil(t, err)
+		assert.Equal(t, true, got)
+	})
+	t.Run("newer version", func(t *testing.T) {
+		got, err := IsProxyAsEnvVarDeprecated("1.285.0.20240122-141707")
+		assert.Nil(t, err)
+		assert.Equal(t, true, got)
+	})
+}
