@@ -154,7 +154,7 @@ func IsProxyAsEnvVarDeprecated(oneAgentVersion string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	fixVersion, err := version.ExtractSemanticVersion(ProxyAsEnvVarDeprecatedVersion)
+	versionConstraint, err := version.ExtractSemanticVersion(ProxyAsEnvVarDeprecatedVersion)
 	if err != nil {
 		return false, err
 	}
