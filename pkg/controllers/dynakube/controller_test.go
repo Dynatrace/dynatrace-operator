@@ -632,7 +632,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			dynatracev1beta1.AnnotationFeatureActiveGateIgnoreProxy: "true",
 			dynatracev1beta1.AnnotationFeatureOneAgentIgnoreProxy:   "true",
 		}
-		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
+		controller := createFakeClientAndReconciler(t, mockClient, instance, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
