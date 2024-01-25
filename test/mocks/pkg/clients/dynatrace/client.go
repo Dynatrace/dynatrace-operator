@@ -6,6 +6,7 @@ import (
 	io "io"
 
 	dynatrace "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
