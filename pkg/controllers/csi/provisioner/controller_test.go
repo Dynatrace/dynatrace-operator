@@ -12,11 +12,11 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
-	clientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	dtClientMock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 	reconcilermock "github.com/Dynatrace/dynatrace-operator/test/mocks/sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +32,6 @@ const (
 	otherDkName  = "other-dk"
 	errorMsg     = "test-error"
 	agentVersion = "12345"
-	testZip      = "UEsDBAoAAAAAAKh0p1JsLSFnGQAAABkAAAAIABwAdGVzdC50eHRVVAkAA3w0lWATB55gdXgLAAEE6AMAAAToAwAAeW91IGZvdW5kIHRoZSBlYXN0ZXIgZWdnClBLAwQKAAAAAADAOa5SAAAAAAAAAAAAAAAABQAcAHRlc3QvVVQJAAMXB55gHQeeYHV4CwABBOgDAAAE6AMAAFBLAwQKAAAAAACodKdSbC0hZxkAAAAZAAAADQAcAHRlc3QvdGVzdC50eHRVVAkAA3w0lWATB55gdXgLAAEE6AMAAAToAwAAeW91IGZvdW5kIHRoZSBlYXN0ZXIgZWdnClBLAwQKAAAAAADCOa5SAAAAAAAAAAAAAAAACgAcAHRlc3QvdGVzdC9VVAkAAxwHnmAgB55gdXgLAAEE6AMAAAToAwAAUEsDBAoAAAAAAKh0p1JsLSFnGQAAABkAAAASABwAdGVzdC90ZXN0L3Rlc3QudHh0VVQJAAN8NJVgHAeeYHV4CwABBOgDAAAE6AMAAHlvdSBmb3VuZCB0aGUgZWFzdGVyIGVnZwpQSwMECgAAAAAA2zquUgAAAAAAAAAAAAAAAAYAHABhZ2VudC9VVAkAAy4JnmAxCZ5gdXgLAAEE6AMAAAToAwAAUEsDBAoAAAAAAOI6rlIAAAAAAAAAAAAAAAALABwAYWdlbnQvY29uZi9VVAkAAzgJnmA+CZ5gdXgLAAEE6AMAAAToAwAAUEsDBAoAAAAAAKh0p1JsLSFnGQAAABkAAAATABwAYWdlbnQvY29uZi90ZXN0LnR4dFVUCQADfDSVYDgJnmB1eAsAAQToAwAABOgDAAB5b3UgZm91bmQgdGhlIGVhc3RlciBlZ2cKUEsBAh4DCgAAAAAAqHSnUmwtIWcZAAAAGQAAAAgAGAAAAAAAAQAAAKSBAAAAAHRlc3QudHh0VVQFAAN8NJVgdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAAwDmuUgAAAAAAAAAAAAAAAAUAGAAAAAAAAAAQAO1BWwAAAHRlc3QvVVQFAAMXB55gdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAAqHSnUmwtIWcZAAAAGQAAAA0AGAAAAAAAAQAAAKSBmgAAAHRlc3QvdGVzdC50eHRVVAUAA3w0lWB1eAsAAQToAwAABOgDAABQSwECHgMKAAAAAADCOa5SAAAAAAAAAAAAAAAACgAYAAAAAAAAABAA7UH6AAAAdGVzdC90ZXN0L1VUBQADHAeeYHV4CwABBOgDAAAE6AMAAFBLAQIeAwoAAAAAAKh0p1JsLSFnGQAAABkAAAASABgAAAAAAAEAAACkgT4BAAB0ZXN0L3Rlc3QvdGVzdC50eHRVVAUAA3w0lWB1eAsAAQToAwAABOgDAABQSwECHgMKAAAAAADbOq5SAAAAAAAAAAAAAAAABgAYAAAAAAAAABAA7UGjAQAAYWdlbnQvVVQFAAMuCZ5gdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAA4jquUgAAAAAAAAAAAAAAAAsAGAAAAAAAAAAQAO1B4wEAAGFnZW50L2NvbmYvVVQFAAM4CZ5gdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAAqHSnUmwtIWcZAAAAGQAAABMAGAAAAAAAAQAAAKSBKAIAAGFnZW50L2NvbmYvdGVzdC50eHRVVAUAA3w0lWB1eAsAAQToAwAABOgDAABQSwUGAAAAAAgACACKAgAAjgIAAAAA"
 )
 
 type mkDirAllErrorFs struct {
@@ -182,10 +181,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 				},
 			},
 		)
-		mockClient := clientmock.NewClient(t)
-		mockDtcBuilder := &dynatraceclient.StubBuilder{
-			DynatraceClient: mockClient,
-		}
+		mockDtcBuilder := dtClientMock.NewBuilder(t)
 
 		gc := reconcilermock.NewReconciler(t)
 		db := metadata.FakeMemoryDB()
@@ -244,9 +240,12 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 	})
 	t.Run("error when creating dynatrace client", func(t *testing.T) {
 		gc := reconcilermock.NewReconciler(t)
-		mockDtcBuilder := &dynatraceclient.StubBuilder{
-			Err: fmt.Errorf(errorMsg),
-		}
+		mockDtcBuilder := dtClientMock.NewBuilder(t)
+		mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
+		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
+		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
+		mockDtcBuilder.On("Build").Return(nil, fmt.Errorf(errorMsg))
+
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -292,10 +291,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		errorfs := &mkDirAllErrorFs{
 			Fs: afero.NewMemMapFs(),
 		}
-		mockClient := clientmock.NewClient(t)
-		mockDtcBuilder := &dynatraceclient.StubBuilder{
-			DynatraceClient: mockClient,
-		}
+		mockDtcBuilder := dtClientMock.NewBuilder(t)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -335,10 +331,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 	t.Run("error getting latest agent version", func(t *testing.T) {
 		gc := reconcilermock.NewReconciler(t)
 		memFs := afero.NewMemMapFs()
-		mockClient := clientmock.NewClient(t)
-		mockDtcBuilder := &dynatraceclient.StubBuilder{
-			DynatraceClient: mockClient,
-		}
+		mockDtcBuilder := dtClientMock.NewBuilder(t)
 		dynakube := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: dkName,
@@ -397,10 +390,8 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 	t.Run("error getting dynakube from db", func(t *testing.T) {
 		gc := reconcilermock.NewReconciler(t)
 		memFs := afero.NewMemMapFs()
-		mockClient := clientmock.NewClient(t)
-		mockDtcBuilder := &dynatraceclient.StubBuilder{
-			DynatraceClient: mockClient,
-		}
+		mockDtcBuilder := dtClientMock.NewBuilder(t)
+
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{

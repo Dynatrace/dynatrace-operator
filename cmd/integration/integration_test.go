@@ -3,12 +3,12 @@
 package integration
 
 import (
-	"github.com/stretchr/testify/assert"
 	"os/exec"
 	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBuildVariables(t *testing.T) {

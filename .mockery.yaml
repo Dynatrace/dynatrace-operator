@@ -25,6 +25,9 @@ packages:
     interfaces:
       StatusUpdater:
       Reconciler:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient:
+    interfaces:
+      Builder:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers:
     interfaces:
       Reconciler:
