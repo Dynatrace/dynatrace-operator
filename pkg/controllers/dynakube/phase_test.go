@@ -31,7 +31,7 @@ func TestActiveGatePhaseChanges(t *testing.T) {
 		phase := controller.determineDynaKubePhase(dynakube)
 		assert.Equal(t, status.Deploying, phase)
 	})
-	t.Run("Error accessing k8s api", func(t *testing.T) {
+	t.Run("error accessing k8s api -> error", func(t *testing.T) {
 		fakeClient := errorClient{}
 		controller := &Controller{
 			client:    fakeClient,
