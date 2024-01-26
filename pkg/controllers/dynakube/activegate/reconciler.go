@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	capabilityInternal "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
@@ -28,7 +27,6 @@ type Reconciler struct {
 	apiReader                         client.Reader
 	scheme                            *runtime.Scheme
 	authTokenReconciler               controllers.Reconciler
-	proxyReconciler                   controllers.Reconciler
 	newStatefulsetReconcilerFunc      statefulset.NewReconcilerFunc
 	newCapabilityReconcilerFunc       capabilityInternal.NewReconcilerFunc
 	newCustomPropertiesReconcilerFunc func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) controllers.Reconciler
@@ -38,7 +36,6 @@ var _ controllers.Reconciler = (*Reconciler)(nil)
 
 func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) controllers.Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	authTokenReconciler := authtoken.NewReconciler(clt, apiReader, scheme, dynakube, dtc)
-	proxyReconciler := proxy.NewReconciler(clt, apiReader, scheme, dynakube)
 	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) controllers.Reconciler {
 		return customproperties.NewReconciler(clt, dynakube, customPropertiesOwnerName, scheme, customPropertiesSource)
 	}
@@ -49,7 +46,6 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		scheme:                            scheme,
 		dynakube:                          dynakube,
 		authTokenReconciler:               authTokenReconciler,
-		proxyReconciler:                   proxyReconciler,
 		newCustomPropertiesReconcilerFunc: newCustomPropertiesReconcilerFunc,
 		newStatefulsetReconcilerFunc:      statefulset.NewReconciler,
 		newCapabilityReconcilerFunc:       capabilityInternal.NewReconciler,
@@ -67,11 +63,6 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		if err != nil {
 			return errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
 		}
-	}
-
-	err = r.proxyReconciler.Reconcile(ctx)
-	if err != nil {
-		return err
 	}
 
 	caps := capability.GenerateActiveGateCapabilities(r.dynakube)

@@ -17,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
@@ -302,6 +303,12 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
 		componentErrors = append(componentErrors, err)
+	}
+
+	proxyReconciler := proxy.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube)
+	err = proxyReconciler.Reconcile(ctx)
+	if err != nil {
+		return err
 	}
 
 	if dynakube.NeedsOneAgent() || dynakube.ApplicationMonitoringMode() { // TODO: improve check

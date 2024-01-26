@@ -200,10 +200,6 @@ func GenerateActiveGateCapabilities(dk *dynatracev1beta1.DynaKube) []Capability 
 	}
 }
 
-func BuildProxySecretName(dynakubeName string) string {
-	return dynakubeName + "-" + consts.MultiActiveGateName + "-" + consts.ProxySecretSuffix
-}
-
 func BuildServiceName(dynakubeName string, module string) string {
 	return dynakubeName + "-" + module
 }
