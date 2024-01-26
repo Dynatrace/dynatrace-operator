@@ -3,6 +3,7 @@ package deploymentmetadata
 import (
 	"testing"
 
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -41,4 +42,39 @@ func TestDeploymentMetadata_asString_empty_agent(t *testing.T) {
 func TestFormatKeyValue(t *testing.T) {
 	formattedArgument := formatKeyValue(testKey, testValue)
 	assert.Equal(t, testKey+`=`+testValue, formattedArgument)
+}
+
+func TestGetOneAgentDeploymentType(t *testing.T) {
+	t.Run("deploymentType should be empty", func(t *testing.T) {
+		dynakube := &dynatracev1beta1.DynaKube{}
+		deploymentType := GetOneAgentDeploymentType(*dynakube)
+		assert.Equal(t, "", deploymentType)
+	})
+	t.Run("deploymentType should be HostMonitoring", func(t *testing.T) {
+		dynakube := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{HostMonitoring: &dynatracev1beta1.HostInjectSpec{}},
+			},
+		}
+		deploymentType := GetOneAgentDeploymentType(*dynakube)
+		assert.Equal(t, HostMonitoringDeploymentType, deploymentType)
+	})
+	t.Run("deploymentType should be HostMonitoring", func(t *testing.T) {
+		dynakube := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{ClassicFullStack: &dynatracev1beta1.HostInjectSpec{}},
+			},
+		}
+		deploymentType := GetOneAgentDeploymentType(*dynakube)
+		assert.Equal(t, ClassicFullStackDeploymentType, deploymentType)
+	})
+	t.Run("deploymentType should be HostMonitoring", func(t *testing.T) {
+		dynakube := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{}},
+			},
+		}
+		deploymentType := GetOneAgentDeploymentType(*dynakube)
+		assert.Equal(t, ApplicationMonitoringDeploymentType, deploymentType)
+	})
 }
