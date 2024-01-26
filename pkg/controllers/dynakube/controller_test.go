@@ -344,8 +344,8 @@ func TestReconcileComponents(t *testing.T) {
 			registryClientBuilder:           createFakeRegistryClientBuilder(),
 			versionReconcilerBuilder:        createVersionReconcilerBuilder(&mockVersionReconciler),
 			connectioninfoReconcilerBuilder: createConnectionInfoReconcilerBuilder(&mockConnectionInfoReconciler),
-			activegateReconcilerBuilder:     createActivegateReconcilerBuilder(&mockActiveGateReconciler),
-			apimonitoringReconcilerBuilder:  apimonitoring.NewReconciler,
+			activeGateReconcilerBuilder:     createActivegateReconcilerBuilder(&mockActiveGateReconciler),
+			apiMonitoringReconcilerBuilder:  apimonitoring.NewReconciler,
 		}
 		mockedDtc := mockedclient.NewClient(t)
 		err := controller.reconcileComponents(ctx, mockedDtc, nil, dynakube)
@@ -373,7 +373,7 @@ func TestReconcileComponents(t *testing.T) {
 			registryClientBuilder:           createFakeRegistryClientBuilder(),
 			versionReconcilerBuilder:        createVersionReconcilerBuilder(&mockVersionReconciler),
 			connectioninfoReconcilerBuilder: createConnectionInfoReconcilerBuilder(&mockConnectionInfoReconciler),
-			activegateReconcilerBuilder:     createActivegateReconcilerBuilder(&mockActiveGateReconciler),
+			activeGateReconcilerBuilder:     createActivegateReconcilerBuilder(&mockActiveGateReconciler),
 		}
 		mockedDtc := mockedclient.NewClient(t)
 		err := controller.reconcileComponents(ctx, mockedDtc, nil, dynakube)
@@ -487,8 +487,8 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 			deploymentMetadataReconcilerBuilder: createFakeDeploymentMetadataReconcilerBuild(),
 			versionReconcilerBuilder:            version.NewReconciler,
 			connectioninfoReconcilerBuilder:     connectioninfo.NewReconciler,
-			activegateReconcilerBuilder:         activegate.NewReconciler,
-			apimonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
+			activeGateReconcilerBuilder:         activegate.NewReconciler,
+			apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
 		}
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{

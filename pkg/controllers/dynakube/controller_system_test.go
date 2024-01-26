@@ -80,9 +80,9 @@ func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatra
 		deploymentMetadataReconcilerBuilder: createFakeDeploymentMetadataReconcilerBuild(),
 		versionReconcilerBuilder:            version.NewReconciler,
 		connectioninfoReconcilerBuilder:     connectioninfo.NewReconciler,
-		activegateReconcilerBuilder:         activegate.NewReconciler,
+		activeGateReconcilerBuilder:         activegate.NewReconciler,
 		istioReconcilerBuilder:              istio.NewReconciler,
-		apimonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
+		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
 	}
 
 	return controller

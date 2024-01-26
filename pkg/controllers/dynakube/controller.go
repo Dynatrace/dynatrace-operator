@@ -75,9 +75,9 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		deploymentMetadataReconcilerBuilder: deploymentmetadata.NewReconciler,
 		versionReconcilerBuilder:            version.NewReconciler,
 		connectioninfoReconcilerBuilder:     connectioninfo.NewReconciler,
-		activegateReconcilerBuilder:         activegate.NewReconciler,
+		activeGateReconcilerBuilder:         activegate.NewReconciler,
 		istioReconcilerBuilder:              istio.NewReconciler,
-		apimonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
+		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
 	}
 }
 
@@ -111,9 +111,9 @@ type Controller struct {
 	deploymentMetadataReconcilerBuilder deploymentmetadata.ReconcilerBuilder
 	versionReconcilerBuilder            version.ReconcilerBuilder
 	connectioninfoReconcilerBuilder     connectioninfo.ReconcilerBuilder
-	activegateReconcilerBuilder         activegate.ReconcilerBuilder
+	activeGateReconcilerBuilder         activegate.ReconcilerBuilder
 	istioReconcilerBuilder              istio.ReconcilerBuilder
-	apimonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
+	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
 }
 
 // Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read
