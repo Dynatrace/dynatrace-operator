@@ -32,7 +32,7 @@ func TestContainerExclusionAnnotations(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			assert.Equal(t, test.expected, isContainerExcluded(annoations, test.name))
+			assert.Equal(t, test.expected, checkInjectionAnnotation(annoations, test.name))
 		})
 	}
 }

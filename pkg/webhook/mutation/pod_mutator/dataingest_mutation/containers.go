@@ -10,9 +10,11 @@ func mutateUserContainers(request *dtwebhook.BaseRequest) {
 	for i := range request.Pod.Spec.Containers {
 		container := &request.Pod.Spec.Containers[i]
 
-		if !dtwebhookutil.ContainerIsExcluded(request, container.Name) {
-			setupVolumeMountsForUserContainer(container)
+		if dtwebhookutil.IsContainerExcludedFromInjection(request, container.Name) {
+			log.Info("Container excluded from data ingest injection", "container", container.Name)
+			continue
 		}
+		setupVolumeMountsForUserContainer(container)
 	}
 }
 
@@ -20,7 +22,8 @@ func reinvokeUserContainers(request *dtwebhook.BaseRequest) bool {
 	var updated bool
 	for i := range request.Pod.Spec.Containers {
 		container := &request.Pod.Spec.Containers[i]
-		if dtwebhookutil.ContainerIsExcluded(request, container.Name) {
+		if dtwebhookutil.IsContainerExcludedFromInjection(request, container.Name) {
+			log.Info("Container excluded from data ingest injection", "container", container.Name)
 			continue
 		}
 		if containerIsInjected(container) {

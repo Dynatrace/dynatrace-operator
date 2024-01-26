@@ -150,7 +150,7 @@ func (webhook *podMutatorWebhook) isOcDebugPod(pod *corev1.Pod) bool {
 func podNeedsInjection(mutationRequest *dtwebhook.MutationRequest) bool {
 	needsInjection := false
 	for _, container := range mutationRequest.Pod.Spec.Containers {
-		needsInjection = needsInjection || !dtwebhookutil.ContainerIsExcluded(mutationRequest.BaseRequest, container.Name)
+		needsInjection = needsInjection || !dtwebhookutil.IsContainerExcludedFromInjection(mutationRequest.BaseRequest, container.Name)
 	}
 	return needsInjection
 }

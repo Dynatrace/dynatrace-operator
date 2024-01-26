@@ -26,11 +26,14 @@ func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.Mutat
 	for i := range request.Pod.Spec.Containers {
 		container := &request.Pod.Spec.Containers[i]
 
-		if !dtwebhookutil.ContainerIsExcluded(request.BaseRequest, container.Name) {
-			addContainerInfoInitEnv(request.InstallContainer, i+1, container.Name, container.Image)
-			mutator.addOneAgentToContainer(request.ToReinvocationRequest(), container)
-			injectedContainers++
+		if dtwebhookutil.IsContainerExcludedFromInjection(request.BaseRequest, container.Name) {
+			log.Info("Container excluded from code modules ingest injection", "container", container.Name)
+			continue
 		}
+
+		addContainerInfoInitEnv(request.InstallContainer, i+1, container.Name, container.Image)
+		mutator.addOneAgentToContainer(request.ToReinvocationRequest(), container)
+		injectedContainers++
 	}
 
 	return injectedContainers
@@ -48,11 +51,12 @@ func (mutator *OneAgentPodMutator) reinvokeUserContainers(request *dtwebhook.Rei
 
 	for i := range pod.Spec.Containers {
 		currentContainer := &pod.Spec.Containers[i]
-		if containerIsInjected(currentContainer) {
-			injectedContainers++
+		if dtwebhookutil.IsContainerExcludedFromInjection(request.BaseRequest, currentContainer.Name) {
+			log.Info("Container excluded from code modules ingest injection", "container", currentContainer.Name)
 			continue
 		}
-		if dtwebhookutil.ContainerIsExcluded(request.BaseRequest, currentContainer.Name) {
+		if containerIsInjected(currentContainer) {
+			injectedContainers++
 			continue
 		}
 		newContainers = append(newContainers, currentContainer)
