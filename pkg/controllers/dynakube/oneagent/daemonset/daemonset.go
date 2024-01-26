@@ -124,7 +124,10 @@ func (dsInfo *ClassicFullStack) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 
 func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	dynakube := dsInfo.dynakube
-	podSpec := dsInfo.podSpec()
+	podSpec, err := dsInfo.podSpec()
+	if err != nil {
+		return nil, err
+	}
 
 	versionLabelValue := dynakube.OneAgentVersion()
 
@@ -171,11 +174,17 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	return result, nil
 }
 
-func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
+func (dsInfo *builderInfo) podSpec() (corev1.PodSpec, error) {
 	resources := dsInfo.resources()
 	dnsPolicy := dsInfo.dnsPolicy()
-	arguments := dsInfo.arguments()
-	environmentVariables := dsInfo.environmentVariables()
+	arguments, err := dsInfo.arguments()
+	if err != nil {
+		return corev1.PodSpec{}, err
+	}
+	environmentVariables, err := dsInfo.environmentVariables()
+	if err != nil {
+		return corev1.PodSpec{}, err
+	}
 	volumeMounts := dsInfo.volumeMounts()
 	volumes := dsInfo.volumes()
 	imagePullSecrets := dsInfo.imagePullSecrets()
@@ -211,7 +220,7 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 		podSpec.Containers[0].LivenessProbe = dsInfo.getDefaultProbeFromStatus()
 	}
 
-	return podSpec
+	return podSpec, nil
 }
 
 func (dsInfo *builderInfo) immutableOneAgentImage() string {

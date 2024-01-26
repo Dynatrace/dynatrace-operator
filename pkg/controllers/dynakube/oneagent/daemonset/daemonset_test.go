@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	testImageTag = "1.203.0"
+	testImageTag = "1.203.0.0-0"
 	testImage    = "test-image:" + testImageTag
 )
 
@@ -407,7 +407,7 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 		builder := builderInfo{
 			dynakube: &dynatracev1beta1.DynaKube{},
 		}
-		podSpec := builder.podSpec()
+		podSpec, _ := builder.podSpec()
 
 		assert.Equal(t, serviceAccountName, podSpec.ServiceAccountName)
 	})
@@ -421,7 +421,7 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 				},
 			},
 		}
-		podSpec := builder.podSpec()
+		podSpec, _ := builder.podSpec()
 
 		assert.Equal(t, serviceAccountName, podSpec.ServiceAccountName)
 	})
@@ -436,7 +436,7 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 		builder := builderInfo{
 			dynakube: dynakube,
 		}
-		podSpec := builder.podSpec()
+		podSpec, _ := builder.podSpec()
 
 		assert.Equal(t, serviceAccountName, podSpec.ServiceAccountName)
 	})
@@ -461,7 +461,7 @@ func TestPodSpecProbes(t *testing.T) {
 				},
 			},
 		}
-		podSpec := builder.podSpec()
+		podSpec, _ := builder.podSpec()
 
 		actualReadinessProbe := podSpec.Containers[0].ReadinessProbe
 		require.NotNil(t, actualReadinessProbe)
@@ -494,7 +494,7 @@ func TestPodSpecProbes(t *testing.T) {
 				},
 			},
 		}
-		podSpec := builder.podSpec()
+		podSpec, _ := builder.podSpec()
 
 		actualReadinessProbe := podSpec.Containers[0].ReadinessProbe
 		require.NotNil(t, actualReadinessProbe)
@@ -508,7 +508,7 @@ func TestPodSpecProbes(t *testing.T) {
 		builder := builderInfo{
 			dynakube: &dynatracev1beta1.DynaKube{},
 		}
-		podSpec := builder.podSpec()
+		podSpec, _ := builder.podSpec()
 
 		assert.Nil(t, podSpec.Containers[0].ReadinessProbe)
 		assert.Nil(t, podSpec.Containers[0].LivenessProbe)

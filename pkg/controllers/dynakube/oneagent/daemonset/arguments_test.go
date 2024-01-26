@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +26,7 @@ func TestArguments(t *testing.T) {
 		builder := builderInfo{
 			dynakube: &dynatracev1beta1.DynaKube{},
 		}
-		arguments := builder.arguments()
+		arguments, _ := builder.arguments()
 
 		expectedDefaultArguments := []string{
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
@@ -53,7 +54,7 @@ func TestArguments(t *testing.T) {
 				clusterID:      testClusterID,
 			},
 		}
-		podSpecs := dsInfo.podSpec()
+		podSpecs, _ := dsInfo.podSpec()
 		assert.NotNil(t, podSpecs)
 		assert.NotEmpty(t, podSpecs.Containers)
 		assert.Contains(t, podSpecs.Containers[0].Args, testValue)
@@ -65,7 +66,7 @@ func TestArguments(t *testing.T) {
 			hostInjectSpec: &dynatracev1beta1.HostInjectSpec{Args: args},
 		}
 
-		arguments := builder.arguments()
+		arguments, _ := builder.arguments()
 
 		expectedDefaultArguments := []string{
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
@@ -88,7 +89,7 @@ func TestArguments(t *testing.T) {
 			hostInjectSpec: &dynatracev1beta1.HostInjectSpec{Args: args},
 		}
 
-		arguments := builder.arguments()
+		arguments, _ := builder.arguments()
 
 		expectedDefaultArguments := []string{
 			"--set-app-log-content-access=true",
@@ -97,6 +98,27 @@ func TestArguments(t *testing.T) {
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
 			"--set-proxy=",
 			"--set-server=https://hyper.super.com:9999",
+			"--set-tenant=$(DT_TENANT)",
+		}
+		assert.Equal(t, expectedDefaultArguments, arguments)
+	})
+	t.Run("--set-proxy is not set with OneAgent version >=1.271.0", func(t *testing.T) {
+		builder := builderInfo{
+			dynakube: &dynatracev1beta1.DynaKube{
+				Status: dynatracev1beta1.DynaKubeStatus{
+					OneAgent: dynatracev1beta1.OneAgentStatus{
+						VersionStatus: status.VersionStatus{
+							Version: "1.285.0.20240122-141707",
+						},
+					},
+				},
+			},
+		}
+		arguments, _ := builder.arguments()
+
+		expectedDefaultArguments := []string{
+			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+			"--set-server={$(DT_SERVER)}",
 			"--set-tenant=$(DT_TENANT)",
 		}
 		assert.Equal(t, expectedDefaultArguments, arguments)
@@ -124,7 +146,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 	}
 
 	instance.Annotations = map[string]string{}
-	podSpecs := dsInfo.podSpec()
+	podSpecs, _ := dsInfo.podSpec()
 	require.NotNil(t, podSpecs)
 	require.NotEmpty(t, podSpecs.Containers)
 
@@ -133,28 +155,30 @@ func TestPodSpec_Arguments(t *testing.T) {
 	}
 	assert.Contains(t, podSpecs.Containers[0].Args, fmt.Sprintf("--set-host-property=OperatorVersion=$(%s)", deploymentmetadata.EnvDtOperatorVersion))
 
+	// deprecated
 	t.Run(`has proxy arg`, func(t *testing.T) {
 		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
-		podSpecs = dsInfo.podSpec()
+		podSpecs, _ = dsInfo.podSpec()
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 
 		instance.Spec.Proxy = nil
-		podSpecs = dsInfo.podSpec()
+		podSpecs, _ = dsInfo.podSpec()
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 	})
+	// deprecated
 	t.Run(`has proxy arg but feature flag to ignore is enabled`, func(t *testing.T) {
 		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 		instance.Annotations[dynatracev1beta1.AnnotationFeatureOneAgentIgnoreProxy] = "true"
-		podSpecs = dsInfo.podSpec()
+		podSpecs, _ = dsInfo.podSpec()
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 	})
 	t.Run(`has network zone arg`, func(t *testing.T) {
 		instance.Spec.NetworkZone = testValue
-		podSpecs = dsInfo.podSpec()
+		podSpecs, _ = dsInfo.podSpec()
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-network-zone="+testValue)
 
 		instance.Spec.NetworkZone = ""
-		podSpecs = dsInfo.podSpec()
+		podSpecs, _ = dsInfo.podSpec()
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-network-zone="+testValue)
 	})
 	t.Run(`has host-id-source arg for classic fullstack`, func(t *testing.T) {

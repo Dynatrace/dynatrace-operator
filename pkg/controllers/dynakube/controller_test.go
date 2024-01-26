@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry/mocks"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
@@ -607,7 +608,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 
 		var proxySecret corev1.Secret
-		name := capability.BuildProxySecretName(testName)
+		name := proxy.BuildSecretName(testName)
 		err = controller.client.Get(context.Background(), client.ObjectKey{Name: name, Namespace: testNamespace}, &proxySecret)
 
 		assert.NoError(t, err)
@@ -627,7 +628,10 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 					Value:     "https://proxy:1234",
 					ValueFrom: "",
 				}}}
-		instance.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureActiveGateIgnoreProxy: "true"}
+		instance.Annotations = map[string]string{
+			dynatracev1beta1.AnnotationFeatureActiveGateIgnoreProxy: "true",
+			dynatracev1beta1.AnnotationFeatureOneAgentIgnoreProxy:   "true",
+		}
 		controller := createFakeClientAndReconciler(t, mockClient, instance, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
@@ -638,7 +642,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 
 		var proxySecret corev1.Secret
-		name := capability.BuildProxySecretName(testName)
+		name := proxy.BuildSecretName(testName)
 		err = controller.client.Get(context.Background(), client.ObjectKey{Name: name, Namespace: testNamespace}, &proxySecret)
 
 		assert.Error(t, err)
