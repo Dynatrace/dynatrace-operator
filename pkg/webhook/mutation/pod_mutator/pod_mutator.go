@@ -13,6 +13,7 @@ import (
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/internal/otel"
+	dtwebhookutil "github.com/Dynatrace/dynatrace-operator/pkg/webhook/util"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -146,11 +147,25 @@ func (webhook *podMutatorWebhook) isOcDebugPod(pod *corev1.Pod) bool {
 	return true
 }
 
+func podNeedsInjection(mutationRequest *dtwebhook.MutationRequest) bool {
+	needsInjection := false
+	for _, container := range mutationRequest.Pod.Spec.Containers {
+		needsInjection = needsInjection || !dtwebhookutil.IsContainerExcludedFromInjection(mutationRequest.BaseRequest, container.Name)
+	}
+	return needsInjection
+}
+
 func (webhook *podMutatorWebhook) handlePodMutation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) error {
 	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
 	defer span.End()
 
+	if !podNeedsInjection(mutationRequest) {
+		log.Info("no mutation is needed, all containers are excluded from injection.")
+		return nil
+	}
+
 	mutationRequest.InstallContainer = createInstallInitContainerBase(webhook.webhookImage, webhook.clusterID, mutationRequest.Pod, mutationRequest.DynaKube)
+
 	isMutated := false
 	for _, mutator := range webhook.mutators {
 		if !mutator.Enabled(mutationRequest.BaseRequest) {

@@ -58,7 +58,7 @@ func (mutator *DataIngestPodMutator) Mutate(ctx context.Context, request *dtwebh
 		return err
 	}
 	setupVolumes(request.Pod)
-	mutateUserContainers(request.Pod)
+	mutateUserContainers(request.BaseRequest)
 	updateInstallContainer(request.InstallContainer, workload)
 	setInjectedAnnotation(request.Pod)
 	return nil
@@ -69,7 +69,7 @@ func (mutator *DataIngestPodMutator) Reinvoke(request *dtwebhook.ReinvocationReq
 		return false
 	}
 	log.Info("reinvoking", "podName", request.PodName())
-	return reinvokeUserContainers(request.Pod)
+	return reinvokeUserContainers(request.BaseRequest)
 }
 
 func (mutator *DataIngestPodMutator) ensureDataIngestSecret(request *dtwebhook.MutationRequest) error {

@@ -5,11 +5,11 @@ go 1.21
 require (
 	github.com/container-storage-interface/spec v1.9.0
 	github.com/docker/cli v25.0.1+incompatible
-	github.com/evanphx/json-patch v5.8.1+incompatible
+	github.com/evanphx/json-patch v5.9.0+incompatible
 	github.com/go-logr/logr v1.4.1
 	github.com/google/go-containerregistry v0.18.0
-	github.com/klauspost/compress v1.17.4
-	github.com/mattn/go-sqlite3 v1.14.19
+	github.com/klauspost/compress v1.17.5
+	github.com/mattn/go-sqlite3 v1.14.20
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.18.0

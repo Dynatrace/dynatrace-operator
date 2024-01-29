@@ -8,26 +8,74 @@ import (
 )
 
 func TestMutateUserContainers(t *testing.T) {
+	dynakube := getTestDynakube()
+	annotations := map[string]string{"container.inject.dyantrace/container": "false"}
+
 	t.Run("Add volume mounts to containers", func(t *testing.T) {
-		pod := getTestPod(nil)
+		request := createTestMutationRequest(getTestDynakube(), nil)
+		mutateUserContainers(request.BaseRequest)
 
-		mutateUserContainers(pod)
+		for _, container := range request.Pod.Spec.Containers {
+			require.GreaterOrEqual(t, len(container.VolumeMounts), 2)
+		}
+	})
 
-		for _, container := range pod.Spec.Containers {
+	t.Run("Do not inject container if excluded in dynkube", func(t *testing.T) {
+		dynakube.Annotations = annotations
+
+		request := createTestMutationRequest(dynakube, nil)
+		mutateUserContainers(request.BaseRequest)
+
+		for _, container := range request.Pod.Spec.Containers {
+			require.GreaterOrEqual(t, len(container.VolumeMounts), 2)
+		}
+	})
+
+	t.Run("Do not inject container if excluded in pod", func(t *testing.T) {
+		request := createTestMutationRequest(dynakube, annotations)
+		mutateUserContainers(request.BaseRequest)
+
+		for _, container := range request.Pod.Spec.Containers {
 			require.GreaterOrEqual(t, len(container.VolumeMounts), 2)
 		}
 	})
 }
 
 func TestReinvokeUserContainers(t *testing.T) {
+	dynakube := getTestDynakube()
+	annotations := map[string]string{"container.inject.dyantrace/container": "false"}
+
 	t.Run("Add volume mounts to containers", func(t *testing.T) {
-		pod := getTestPod(nil)
+		request := createTestReinvocationRequest(dynakube, nil)
+		reinvokeUserContainers(request.BaseRequest)
+		request.Pod.Spec.Containers = append(request.Pod.Spec.Containers, corev1.Container{})
+		reinvokeUserContainers(request.BaseRequest)
 
-		reinvokeUserContainers(pod)
-		pod.Spec.Containers = append(pod.Spec.Containers, corev1.Container{})
-		reinvokeUserContainers(pod)
+		for _, container := range request.Pod.Spec.Containers {
+			require.GreaterOrEqual(t, len(container.VolumeMounts), 2)
+		}
+	})
 
-		for _, container := range pod.Spec.Containers {
+	t.Run("Do not inject container if excluded in dynkube", func(t *testing.T) {
+		dynakube.Annotations = annotations
+
+		request := createTestReinvocationRequest(dynakube, nil)
+		reinvokeUserContainers(request.BaseRequest)
+		request.Pod.Spec.Containers = append(request.Pod.Spec.Containers, corev1.Container{})
+		reinvokeUserContainers(request.BaseRequest)
+
+		for _, container := range request.Pod.Spec.Containers {
+			require.GreaterOrEqual(t, len(container.VolumeMounts), 2)
+		}
+	})
+
+	t.Run("Do not inject container if excluded in pod", func(t *testing.T) {
+		request := createTestReinvocationRequest(dynakube, annotations)
+		reinvokeUserContainers(request.BaseRequest)
+		request.Pod.Spec.Containers = append(request.Pod.Spec.Containers, corev1.Container{})
+		reinvokeUserContainers(request.BaseRequest)
+
+		for _, container := range request.Pod.Spec.Containers {
 			require.GreaterOrEqual(t, len(container.VolumeMounts), 2)
 		}
 	})

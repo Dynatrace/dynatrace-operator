@@ -62,8 +62,8 @@ func (mutator *OneAgentPodMutator) Mutate(ctx context.Context, request *dtwebhoo
 	installerInfo := getInstallerInfo(request.Pod, request.DynaKube)
 	mutator.addVolumes(request.Pod, request.DynaKube)
 	mutator.configureInitContainer(request, installerInfo)
-	mutator.setContainerCount(request.InstallContainer, len(request.Pod.Spec.Containers))
-	mutator.mutateUserContainers(request)
+	injecteContainers := mutator.mutateUserContainers(request)
+	mutator.setContainerCount(request.InstallContainer, injecteContainers)
 	addInjectionConfigVolumeMount(request.InstallContainer)
 	setInjectedAnnotation(request.Pod)
 	return nil
