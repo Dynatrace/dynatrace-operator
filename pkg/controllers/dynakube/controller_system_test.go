@@ -13,10 +13,8 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -80,10 +78,7 @@ func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatra
 		deploymentMetadataReconcilerBuilder: createFakeDeploymentMetadataReconcilerBuild(),
 		versionReconcilerBuilder:            version.NewReconciler,
 		connectioninfoReconcilerBuilder:     connectioninfo.NewReconciler,
-		activeGateReconcilerBuilder:         activegate.NewReconciler,
-		istioReconcilerBuilder:              istio.NewReconciler,
-		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
-	}
+		activeGateReconcilerBuilder:         activegate.NewReconciler}
 
 	return controller
 }

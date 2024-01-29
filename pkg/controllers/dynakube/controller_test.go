@@ -14,7 +14,6 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
@@ -337,15 +336,15 @@ func TestReconcileComponents(t *testing.T) {
 		mockActiveGateReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(errors.New("BOOM"))
 
 		controller := &Controller{
-			client:                          fakeClient,
-			apiReader:                       fakeClient,
-			scheme:                          scheme.Scheme,
-			fs:                              afero.Afero{Fs: afero.NewMemMapFs()},
-			registryClientBuilder:           createFakeRegistryClientBuilder(),
+			client:                fakeClient,
+			apiReader:             fakeClient,
+			scheme:                scheme.Scheme,
+			fs:                    afero.Afero{Fs: afero.NewMemMapFs()},
+			registryClientBuilder: createFakeRegistryClientBuilder(),
+
 			versionReconcilerBuilder:        createVersionReconcilerBuilder(&mockVersionReconciler),
 			connectioninfoReconcilerBuilder: createConnectionInfoReconcilerBuilder(&mockConnectionInfoReconciler),
 			activeGateReconcilerBuilder:     createActivegateReconcilerBuilder(&mockActiveGateReconciler),
-			apiMonitoringReconcilerBuilder:  apimonitoring.NewReconciler,
 		}
 		mockedDtc := mockedclient.NewClient(t)
 		err := controller.reconcileComponents(ctx, mockedDtc, nil, dynakube)
@@ -426,7 +425,6 @@ func createVersionReconcilerBuilder(reconciler *mockversion.Reconciler) version.
 	}
 }
 
-// TODO: integration test?
 func TestRemoveOneAgentDaemonset(t *testing.T) {
 	t.Run(`Create validates apiToken correctly if apiToken with "InstallerDownload"-scope is provided`, func(t *testing.T) {
 		mockClient := createDTMockClient(t, dtclient.TokenScopes{}, dtclient.TokenScopes{
@@ -488,7 +486,6 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 			versionReconcilerBuilder:            version.NewReconciler,
 			connectioninfoReconcilerBuilder:     connectioninfo.NewReconciler,
 			activeGateReconcilerBuilder:         activegate.NewReconciler,
-			apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
 		}
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
@@ -688,9 +685,8 @@ func TestSetupIstio(t *testing.T) {
 		fakeIstio := fakeistio.NewSimpleClientset()
 		isIstioInstalled := true
 		controller := &Controller{
-			istioClientBuilder:     fakeIstioClientBuilder(t, fakeIstio, isIstioInstalled),
-			istioReconcilerBuilder: istio.NewReconciler,
-			scheme:                 scheme.Scheme,
+			istioClientBuilder: fakeIstioClientBuilder(t, fakeIstio, isIstioInstalled),
+			scheme:             scheme.Scheme,
 		}
 		istioReconciler, err := controller.setupIstio(ctx, dynakube)
 		require.NoError(t, err)
