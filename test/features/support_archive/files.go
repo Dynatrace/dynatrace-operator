@@ -64,6 +64,7 @@ func (r requiredFiles) collectRequiredFiles() []string {
 	requiredFiles = append(requiredFiles, r.getRequiredDaemonSetFiles()...)
 	requiredFiles = append(requiredFiles, r.getRequiredWebhookConfigurationFiles()...)
 	requiredFiles = append(requiredFiles, r.getRequiredCRDFiles()...)
+	requiredFiles = append(requiredFiles, r.getRequiredConfigMapFiles()...)
 	return requiredFiles
 }
 
@@ -258,6 +259,55 @@ func (r requiredFiles) getRequiredCRDFiles() []string {
 			support_archive.ManifestsDirectoryName,
 			support_archive.CRDDirectoryName,
 			strings.Join([]string{strings.ToLower(support_archive.CRDKindName), "edgeconnect"}, "-"),
+			support_archive.ManifestsFileExtension))
+
+	return requiredFiles
+}
+
+func (r requiredFiles) getRequiredConfigMapFiles() []string {
+	requiredFiles := make([]string, 0)
+
+	requiredFiles = append(requiredFiles,
+		fmt.Sprintf("%s/%s/%s/%s%s",
+			support_archive.ManifestsDirectoryName,
+			r.dynakube.Namespace,
+			"configmap",
+			"dynatrace-node-cache",
+			support_archive.ManifestsFileExtension))
+
+	requiredFiles = append(requiredFiles,
+		fmt.Sprintf("%s/%s/%s/%s%s",
+			support_archive.ManifestsDirectoryName,
+			r.dynakube.Namespace,
+			"configmap",
+			"kube-root-ca.crt",
+			support_archive.ManifestsFileExtension))
+
+	requiredFiles = append(requiredFiles,
+		fmt.Sprintf("%s/%s/%s/%s-%s%s",
+			support_archive.ManifestsDirectoryName,
+			r.dynakube.Namespace,
+			"configmap",
+			r.dynakube.Name,
+			"deployment-metadata",
+			support_archive.ManifestsFileExtension))
+
+	requiredFiles = append(requiredFiles,
+		fmt.Sprintf("%s/%s/%s/%s-%s%s",
+			support_archive.ManifestsDirectoryName,
+			r.dynakube.Namespace,
+			"configmap",
+			r.dynakube.Name,
+			"oneagent-connection-info",
+			support_archive.ManifestsFileExtension))
+
+	requiredFiles = append(requiredFiles,
+		fmt.Sprintf("%s/%s/%s/%s-%s%s",
+			support_archive.ManifestsDirectoryName,
+			r.dynakube.Namespace,
+			"configmap",
+			r.dynakube.Name,
+			"activegate-connection-info",
 			support_archive.ManifestsFileExtension))
 
 	return requiredFiles

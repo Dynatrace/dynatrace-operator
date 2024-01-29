@@ -3,7 +3,7 @@ package support_archive
 import (
 	"reflect"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1"
 	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
@@ -33,6 +33,7 @@ func getQueries(namespace string, appName string) []resourceQuery {
 	allQueries = append(allQueries, getComponentsQueryGroup(namespace, appName, labels.AppNameLabel).getQueries()...)
 	allQueries = append(allQueries, getComponentsQueryGroup(namespace, appName, labels.AppManagedByLabel).getQueries()...)
 	allQueries = append(allQueries, getCustomResourcesQueryGroup(namespace).getQueries()...)
+	allQueries = append(allQueries, getConfigMapQueryGroup(namespace).getQueries()...)
 	return allQueries
 }
 
@@ -85,7 +86,18 @@ func getCustomResourcesQueryGroup(namespace string) resourceQueryGroup {
 	return resourceQueryGroup{
 		resources: []schema.GroupVersionKind{
 			toGroupVersionKind(dynatracev1beta1.GroupVersion, dynakubev1beta1.DynaKube{}),
-			toGroupVersionKind(v1alpha1.GroupVersion, edgeconnect.EdgeConnect{}),
+			toGroupVersionKind(dynatracev1alpha1.GroupVersion, edgeconnect.EdgeConnect{}),
+		},
+		filters: []client.ListOption{
+			client.InNamespace(namespace),
+		},
+	}
+}
+
+func getConfigMapQueryGroup(namespace string) resourceQueryGroup {
+	return resourceQueryGroup{
+		resources: []schema.GroupVersionKind{
+			toGroupVersionKind(corev1.SchemeGroupVersion, corev1.ConfigMap{}),
 		},
 		filters: []client.ListOption{
 			client.InNamespace(namespace),
