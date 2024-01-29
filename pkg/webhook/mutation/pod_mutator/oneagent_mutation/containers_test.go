@@ -1,6 +1,7 @@
 package oneagent_mutation
 
 import (
+	"maps"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
@@ -145,6 +146,81 @@ func TestReinvokeUserContainers(t *testing.T) {
 	}
 }
 
+func TestContainerExclusion(t *testing.T) {
+	testCases := []struct {
+		name                               string
+		dynakube                           dynatracev1beta1.DynaKube
+		expectedAdditionalEnvCount         int
+		expectedAdditionalVolumeMountCount int
+		expectedInitContainerEnvCount      int
+		dynakubeAnnotations                map[string]string
+		podAnnotations                     map[string]string
+	}{
+		{
+			name:                               "container exclusion on dynakube level",
+			dynakube:                           *getTestDynakubeWithContainerExclusion(),
+			expectedAdditionalEnvCount:         0,
+			expectedAdditionalVolumeMountCount: 0,
+			expectedInitContainerEnvCount:      3,
+			dynakubeAnnotations: map[string]string{
+				dtwebhook.AnnotationContainerInjection + "/sidecar-container": "false",
+			},
+		},
+		{
+			name:                               "container exclusion on dynakube level, do not exclude",
+			dynakube:                           *getTestDynakubeWithContainerExclusion(),
+			expectedAdditionalEnvCount:         2,
+			expectedAdditionalVolumeMountCount: 3,
+			expectedInitContainerEnvCount:      5,
+			dynakubeAnnotations: map[string]string{
+				dtwebhook.AnnotationContainerInjection + "/sidecar-container": "true",
+			},
+		},
+		{
+			name:                               "container exclusion on pod level",
+			dynakube:                           *getTestDynakube(),
+			expectedAdditionalEnvCount:         0,
+			expectedAdditionalVolumeMountCount: 0,
+			expectedInitContainerEnvCount:      3,
+			podAnnotations: map[string]string{
+				dtwebhook.AnnotationContainerInjection + "/sidecar-container": "false",
+			},
+		},
+		{
+			name:                               "container exclusion on pod level, do not exclude",
+			dynakube:                           *getTestDynakube(),
+			expectedAdditionalEnvCount:         2,
+			expectedAdditionalVolumeMountCount: 3,
+			expectedInitContainerEnvCount:      5,
+			podAnnotations: map[string]string{
+				dtwebhook.AnnotationContainerInjection + "/sidecar-container": "true",
+			},
+		},
+	}
+
+	for index, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
+			request := createTestMutationRequest(&testCases[index].dynakube, testCase.podAnnotations, getTestNamespace(nil)).ToReinvocationRequest()
+
+			maps.Copy(request.DynaKube.Annotations, testCase.dynakubeAnnotations)
+
+			initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
+			initialContainerVolumeMountsLen := len(request.Pod.Spec.Containers[0].VolumeMounts)
+			request.Pod.Spec.InitContainers = append(request.Pod.Spec.InitContainers, corev1.Container{
+				Name: dtwebhook.InstallContainerName,
+			})
+			installContainer := &request.Pod.Spec.InitContainers[1]
+
+			mutator.reinvokeUserContainers(request)
+
+			require.Len(t, installContainer.Env, testCase.expectedInitContainerEnvCount) // CONTAINERS_COUNT + N*(CONTAINER_x_IMAGE, CONTAINER_x_NAME)
+			assert.Len(t, request.Pod.Spec.Containers[1].VolumeMounts, initialContainerVolumeMountsLen+testCase.expectedAdditionalVolumeMountCount)
+			assert.Len(t, request.Pod.Spec.Containers[1].Env, initialNumberOfContainerEnvsLen+testCase.expectedAdditionalEnvCount)
+		})
+	}
+}
+
 func assertContainersNamesAndImages(t *testing.T, request *dtwebhook.ReinvocationRequest, installContainer *corev1.Container, containersNumber int) {
 	for containerIdx := 0; containerIdx < containersNumber; containerIdx++ {
 		internalContainerIndex := 1 + containerIdx // starting from 1
@@ -173,13 +249,13 @@ func TestVersionDetectionMappingDrivenByNamespaceAnnotations(t *testing.T) {
 		customProductAnnotationName      = "custom-product"
 		customStageAnnotationName        = "custom-stage"
 		customBuildVersionAnnotationName = "custom-build-version"
-		customVersionFieldPath           = "metadata.annotations['" + customVersionAnnotationName + "']"
-		customProductFieldPath           = "metadata.annotations['" + customProductAnnotationName + "']"
-		customStageFieldPath             = "metadata.annotations['" + customStageAnnotationName + "']"
-		customBuildVersionFieldPath      = "metadata.annotations['" + customBuildVersionAnnotationName + "']"
+		customVersionFieldPath           = "metadata.podAnnotations['" + customVersionAnnotationName + "']"
+		customProductFieldPath           = "metadata.podAnnotations['" + customProductAnnotationName + "']"
+		customStageFieldPath             = "metadata.podAnnotations['" + customStageAnnotationName + "']"
+		customBuildVersionFieldPath      = "metadata.podAnnotations['" + customBuildVersionAnnotationName + "']"
 	)
 
-	t.Run("version and product env vars are set using values referenced in namespace annotations", func(t *testing.T) {
+	t.Run("version and product env vars are set using values referenced in namespace podAnnotations", func(t *testing.T) {
 		podAnnotations := map[string]string{
 			customVersionAnnotationName: customVersionValue,
 			customProductAnnotationName: customProductValue,
@@ -196,7 +272,7 @@ func TestVersionDetectionMappingDrivenByNamespaceAnnotations(t *testing.T) {
 
 		doTestMappings(t, podAnnotations, namespaceAnnotations, expectedMappings, unexpectedMappingsKeys)
 	})
-	t.Run("only version env vars is set using value referenced in namespace annotations, product is default", func(t *testing.T) {
+	t.Run("only version env vars is set using value referenced in namespace podAnnotations, product is default", func(t *testing.T) {
 		podAnnotations := map[string]string{
 			customVersionAnnotationName: customVersionValue,
 		}
@@ -211,7 +287,7 @@ func TestVersionDetectionMappingDrivenByNamespaceAnnotations(t *testing.T) {
 
 		doTestMappings(t, podAnnotations, namespaceAnnotations, expectedMappings, unexpectedMappingsKeys)
 	})
-	t.Run("optional env vars (stage, build-version) are set using values referenced in namespace annotations, default ones remain default", func(t *testing.T) {
+	t.Run("optional env vars (stage, build-version) are set using values referenced in namespace podAnnotations, default ones remain default", func(t *testing.T) {
 		podAnnotations := map[string]string{
 			customStageAnnotationName:        customReleaseStageValue,
 			customBuildVersionAnnotationName: customBuildVersionValue,
@@ -229,7 +305,7 @@ func TestVersionDetectionMappingDrivenByNamespaceAnnotations(t *testing.T) {
 
 		doTestMappings(t, podAnnotations, namespaceAnnotations, expectedMappings, nil)
 	})
-	t.Run("all env vars are namespace-annotations driven", func(t *testing.T) {
+	t.Run("all env vars are namespace-podAnnotations driven", func(t *testing.T) {
 		podAnnotations := map[string]string{
 			customVersionAnnotationName:      customVersionValue,
 			customProductAnnotationName:      customProductValue,
