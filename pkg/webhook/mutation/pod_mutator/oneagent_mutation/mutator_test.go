@@ -333,6 +333,20 @@ func getTestDynakube() *dynatracev1beta1.DynaKube {
 	}
 }
 
+func getTestDynakubeWithContainerExclusion() *dynatracev1beta1.DynaKube {
+	dk := &dynatracev1beta1.DynaKube{
+		ObjectMeta: getTestDynakubeMeta(),
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
+			},
+		},
+		Status: getTestDynakubeCommunicationHostStatus(),
+	}
+	dk.ObjectMeta.Annotations[dtwebhook.AnnotationContainerInjection+"/sidecar-container"] = "false"
+	return dk
+}
+
 func getTestDynakubeCommunicationHostStatus() dynatracev1beta1.DynaKubeStatus {
 	return dynatracev1beta1.DynaKubeStatus{
 		OneAgent: dynatracev1beta1.OneAgentStatus{

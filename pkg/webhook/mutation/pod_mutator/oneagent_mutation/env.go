@@ -15,12 +15,12 @@ import (
 func addPreloadEnv(container *corev1.Container, installPath string) {
 	preloadPath := filepath.Join(installPath, consts.LibAgentProcPath)
 
-	env := env.FindEnvVar(container.Env, preloadEnv)
-	if env != nil {
-		if strings.Contains(env.Value, installPath) {
+	ldPreloadEnv := env.FindEnvVar(container.Env, preloadEnv)
+	if ldPreloadEnv != nil {
+		if strings.Contains(ldPreloadEnv.Value, installPath) {
 			return
 		}
-		env.Value = concatPreloadPaths(env.Value, preloadPath)
+		ldPreloadEnv.Value = concatPreloadPaths(ldPreloadEnv.Value, preloadPath)
 	} else {
 		container.Env = append(container.Env,
 			corev1.EnvVar{

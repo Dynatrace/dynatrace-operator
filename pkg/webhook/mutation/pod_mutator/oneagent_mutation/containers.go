@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	dtwebhookutil "github.com/Dynatrace/dynatrace-operator/pkg/webhook/util"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -20,12 +21,22 @@ func (mutator *OneAgentPodMutator) setContainerCount(initContainer *corev1.Conta
 	initContainer.Env = env.AddOrUpdate(initContainer.Env, corev1.EnvVar{Name: consts.AgentContainerCountEnv, Value: desiredContainerCountEnvVarValue})
 }
 
-func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.MutationRequest) {
+func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.MutationRequest) int {
+	injectedContainers := 0
 	for i := range request.Pod.Spec.Containers {
 		container := &request.Pod.Spec.Containers[i]
+
+		if dtwebhookutil.IsContainerExcludedFromInjection(request.BaseRequest, container.Name) {
+			log.Info("Container excluded from code modules ingest injection", "container", container.Name)
+			continue
+		}
+
 		addContainerInfoInitEnv(request.InstallContainer, i+1, container.Name, container.Image)
 		mutator.addOneAgentToContainer(request.ToReinvocationRequest(), container)
+		injectedContainers++
 	}
+
+	return injectedContainers
 }
 
 // reinvokeUserContainers mutates each user container that hasn't been injected yet.
@@ -36,26 +47,32 @@ func (mutator *OneAgentPodMutator) reinvokeUserContainers(request *dtwebhook.Rei
 	oneAgentInstallContainer := findOneAgentInstallContainer(pod.Spec.InitContainers)
 	newContainers := []*corev1.Container{}
 
+	injectedContainers := 0
+
 	for i := range pod.Spec.Containers {
 		currentContainer := &pod.Spec.Containers[i]
+		if dtwebhookutil.IsContainerExcludedFromInjection(request.BaseRequest, currentContainer.Name) {
+			log.Info("Container excluded from code modules ingest injection", "container", currentContainer.Name)
+			continue
+		}
 		if containerIsInjected(currentContainer) {
+			injectedContainers++
 			continue
 		}
 		newContainers = append(newContainers, currentContainer)
-	}
-
-	oldContainersLen := len(pod.Spec.Containers) - len(newContainers)
-	for i := range newContainers {
-		currentContainer := newContainers[i]
-		addContainerInfoInitEnv(oneAgentInstallContainer, oldContainersLen+i+1, currentContainer.Name, currentContainer.Image)
-		mutator.addOneAgentToContainer(request, currentContainer)
 	}
 
 	if len(newContainers) == 0 {
 		return false
 	}
 
-	mutator.setContainerCount(oneAgentInstallContainer, len(request.Pod.Spec.Containers))
+	for i := range newContainers {
+		currentContainer := newContainers[i]
+		addContainerInfoInitEnv(oneAgentInstallContainer, injectedContainers+i+1, currentContainer.Name, currentContainer.Image)
+		mutator.addOneAgentToContainer(request, currentContainer)
+	}
+
+	mutator.setContainerCount(oneAgentInstallContainer, injectedContainers+len(newContainers))
 	return true
 }
 
