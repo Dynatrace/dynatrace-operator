@@ -119,7 +119,7 @@ jobs:
         with:
           config: .markdownlint.json
           # renovate depName=github.com/igorshubovych/markdownlint-cli
-          version: v0.38.0
+          version: v0.39.0
 
   check-uncommitted-doc-changes:
     name: Check uncommitted changes in api docs action
