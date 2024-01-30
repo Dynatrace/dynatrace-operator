@@ -137,6 +137,7 @@ linters-settings:
           - "github.com/docker/cli"
           - "github.com/go-gormigrate/gormigrate"
           - "github.com/google/uuid"
+          - "software.sslmate.com/src/go-pkcs12"
 
           # Allowed packages in container-based builder.
         deny:

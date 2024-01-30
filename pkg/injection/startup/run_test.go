@@ -457,22 +457,6 @@ func TestEnrichMetadata(t *testing.T) {
 	}) // TODO: Check content ?
 }
 
-func TestPropagateTLSCert(t *testing.T) {
-	runner := createMockedRunner(t)
-	runner.config.HasHost = false
-
-	t.Run("create tls custom.pem", func(t *testing.T) {
-		runner.fs = afero.NewMemMapFs()
-
-		err := runner.propagateTLSCert()
-
-		require.NoError(t, err)
-		assertIfFileExists(t,
-			runner.fs,
-			filepath.Join(consts.AgentShareDirMount, "custom.pem"))
-	})
-}
-
 func TestWriteCurlOptions(t *testing.T) {
 	filesystem := afero.NewMemMapFs()
 	runner := Runner{
@@ -525,10 +509,6 @@ func assertIfAgentFilesExists(t *testing.T, runner Runner) {
 	assertIfFileExists(t,
 		runner.fs,
 		filepath.Join(consts.AgentShareDirMount, consts.LdPreloadFilename))
-	// tls cert
-	assertIfFileExists(t,
-		runner.fs,
-		filepath.Join(consts.AgentShareDirMount, "custom.pem"))
 }
 
 func assertIfEnrichmentFilesExists(t *testing.T, runner Runner) {
