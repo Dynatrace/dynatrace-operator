@@ -33,6 +33,12 @@ const (
 	oldDsName             = "classic"
 )
 
+type ReconcilerBuilder func( //nolint:revive // maximum number of return results per function exceeded; max 3 but got 4
+	client client.Client,
+	apiReader client.Reader,
+	scheme *runtime.Scheme,
+	clusterID string) *Reconciler
+
 // NewOneAgentReconciler initializes a new ReconcileOneAgent instance
 func NewOneAgentReconciler( //nolint:revive // maximum number of return results per function exceeded; max 3 but got 4
 	client client.Client,

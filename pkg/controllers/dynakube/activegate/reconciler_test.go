@@ -156,6 +156,35 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = noProxyReconciler.Reconcile(context.Background())
 		require.NoError(t, err)
 	})
+	t.Run(`Reconciles Kubernetes Monitoring`, func(t *testing.T) {
+		instance := &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: "test-api-url",
+				KubernetesMonitoring: dynatracev1beta1.KubernetesMonitoringSpec{
+					Enabled: true,
+				}},
+		}
+		fakeClient := fake.NewClient(testKubeSystemNamespace)
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, dtc)
+		err := r.Reconcile(context.Background())
+		require.NoError(t, err)
+
+		assert.NoError(t, err)
+
+		var statefulSet appsv1.StatefulSet
+
+		kubeMonCapability := capability.NewKubeMonCapability(instance)
+		name := capability.CalculateStatefulSetName(kubeMonCapability, instance.Name)
+		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: name, Namespace: testNamespace}, &statefulSet)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, statefulSet)
+		assert.Equal(t, "test-name-kubemon", statefulSet.GetName())
+	})
 }
 
 func TestServiceCreation(t *testing.T) {

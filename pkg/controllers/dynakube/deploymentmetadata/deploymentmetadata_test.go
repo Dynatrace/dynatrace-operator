@@ -3,6 +3,7 @@ package deploymentmetadata
 import (
 	"testing"
 
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -41,4 +42,26 @@ func TestDeploymentMetadata_asString_empty_agent(t *testing.T) {
 func TestFormatKeyValue(t *testing.T) {
 	formattedArgument := formatKeyValue(testKey, testValue)
 	assert.Equal(t, testKey+`=`+testValue, formattedArgument)
+}
+
+func TestGetOneAgentDeploymentType(t *testing.T) {
+	tests := []struct {
+		oneAgentSpec           dynatracev1beta1.OneAgentSpec
+		expectedDeploymentType string
+	}{
+		{dynatracev1beta1.OneAgentSpec{HostMonitoring: &dynatracev1beta1.HostInjectSpec{}}, HostMonitoringDeploymentType},
+		{dynatracev1beta1.OneAgentSpec{ClassicFullStack: &dynatracev1beta1.HostInjectSpec{}}, ClassicFullStackDeploymentType},
+		{dynatracev1beta1.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}}, CloudNativeDeploymentType},
+		{dynatracev1beta1.OneAgentSpec{ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{}}, ApplicationMonitoringDeploymentType},
+	}
+
+	for _, test := range tests {
+		dynakube := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: test.oneAgentSpec,
+			},
+		}
+		deploymentType := GetOneAgentDeploymentType(*dynakube)
+		assert.Equal(t, test.expectedDeploymentType, deploymentType)
+	}
 }

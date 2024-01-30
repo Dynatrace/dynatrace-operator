@@ -2,6 +2,7 @@ package dtpullsecret
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
@@ -18,6 +19,18 @@ import (
 const (
 	testPaasToken = "test-paas-token"
 )
+
+type errorClient struct {
+	client.Client
+}
+
+func (clt errorClient) Get(_ context.Context, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
+	return errors.New("fake error")
+}
+
+func (clt errorClient) Create(_ context.Context, _ client.Object, _ ...client.CreateOption) error {
+	return errors.New("fake error")
+}
 
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run(`Create works with minimal setup`, func(t *testing.T) {
@@ -50,6 +63,61 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.NotEmpty(t, pullSecret.Data)
 		assert.Contains(t, pullSecret.Data, ".dockerconfigjson")
 		assert.NotEmpty(t, pullSecret.Data[".dockerconfigjson"])
+	})
+	t.Run(`Error when accessing K8s API`, func(t *testing.T) {
+		dynakube := &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      testName,
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL:   testApiUrl,
+				OneAgent: dynatracev1beta1.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}},
+			},
+		}
+		fakeClient := errorClient{}
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
+			dtclient.DynatraceApiToken: token.Token{Value: testValue},
+		})
+
+		err := r.Reconcile(context.Background())
+		assert.Error(t, err)
+	})
+	t.Run(`Error when creating tenant UUID`, func(t *testing.T) {
+		dynakube := &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      testName,
+			},
+		}
+		fakeClient := errorClient{}
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
+			dtclient.DynatraceApiToken: token.Token{Value: testValue},
+		})
+
+		err := r.Reconcile(context.Background())
+		assert.Error(t, err)
+	})
+	t.Run(`Error when creating secret`, func(t *testing.T) {
+		dynakube := &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      testName,
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL:   testApiUrl,
+				OneAgent: dynatracev1beta1.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}},
+			},
+		}
+		fakeErrorClient := errorClient{}
+		fakeClient := fake.NewClient()
+		r := NewReconciler(fakeErrorClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
+			dtclient.DynatraceApiToken: token.Token{Value: testValue},
+		})
+
+		err := r.Reconcile(context.Background())
+		assert.Error(t, err)
+		assert.Equal(t, "failed to create or update secret: failed to create secret test-name-pull-secret: fake error", err.Error())
 	})
 	t.Run(`Create does not reconcile with custom pull secret`, func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
