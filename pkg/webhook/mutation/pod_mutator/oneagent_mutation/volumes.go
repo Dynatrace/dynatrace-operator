@@ -19,6 +19,7 @@ func (mutator *OneAgentPodMutator) addVolumes(pod *corev1.Pod, dynakube dynatrac
 	if dynakube.FeatureReadOnlyCsiVolume() {
 		addVolumesForReadOnlyCSI(pod)
 	}
+	addTrustStoreVolume(pod)
 }
 
 func addOneAgentVolumeMounts(container *corev1.Container, installPath string) {
@@ -36,7 +37,8 @@ func addOneAgentVolumeMounts(container *corev1.Container, installPath string) {
 			Name:      oneAgentShareVolumeName,
 			MountPath: containerConfPath,
 			SubPath:   getContainerConfSubPath(container.Name),
-		})
+		},
+	)
 }
 
 func addVolumeMountsForReadOnlyCSI(container *corev1.Container) {
@@ -78,6 +80,13 @@ func addInitVolumeMounts(initContainer *corev1.Container, dynakube dynatracev1be
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{Name: oneagentConfVolumeName, MountPath: consts.AgentConfInitDirMount})
 	}
 	initContainer.VolumeMounts = append(initContainer.VolumeMounts, volumeMounts...)
+
+	initContainer.VolumeMounts = append(initContainer.VolumeMounts,
+		corev1.VolumeMount{
+			Name:      truststoreVolumeName,
+			MountPath: consts.TrustedCAsAgentInitDirMount,
+		},
+	)
 }
 
 func addCurlOptionsVolumeMount(container *corev1.Container) {
@@ -97,6 +106,38 @@ func addInjectionConfigVolume(pod *corev1.Pod) {
 					SecretName: consts.AgentInitSecretName,
 				},
 			},
+		},
+	)
+}
+
+func addTrustStoreVolume(pod *corev1.Pod) {
+	pod.Spec.Volumes = append(pod.Spec.Volumes,
+		corev1.Volume{
+			Name: truststoreVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: consts.AgentInitSecretName,
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TrustedCAsInitSecretField,
+							Path: customCertFileName,
+						},
+						{
+							Key:  consts.TrustedCAsInitSecretField,
+							Path: customProxyCertFileName,
+						},
+					},
+				},
+			},
+		},
+	)
+}
+
+func addTrustStoreVolumeMount(container *corev1.Container) {
+	container.VolumeMounts = append(container.VolumeMounts,
+		corev1.VolumeMount{
+			Name:      truststoreVolumeName,
+			MountPath: oneAgentCustomKeysPath,
 		},
 	)
 }

@@ -58,6 +58,7 @@ func newSecretConfigViaFs(fs afero.Fs) (*SecretConfig, error) {
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+	defer file.Close()
 
 	rawJson, err := io.ReadAll(file)
 	if err != nil {
@@ -72,6 +73,23 @@ func newSecretConfigViaFs(fs afero.Fs) (*SecretConfig, error) {
 	}
 
 	log.Info("read secret from filesystem")
+
+	filePem, err := fs.Open(filepath.Join(consts.TrustedCAsAgentInitDirMount, "custom.pem"))
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	defer filePem.Close()
+
+	raw, err := io.ReadAll(filePem)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if len(raw) > 0 {
+		log.Info("read TrustedCAs from filesystem")
+		config.TrustedCAs = string(raw)
+	}
+
 	config.logContent()
 
 	return &config, nil

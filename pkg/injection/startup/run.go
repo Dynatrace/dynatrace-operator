@@ -186,12 +186,14 @@ func (runner *Runner) configureOneAgent() error {
 		return err
 	}
 
-	if runner.config.TlsCert != "" {
-		log.Info("propagating tls cert to agent")
-		if err := runner.propagateTLSCert(); err != nil {
-			return err
+	/*
+		if runner.config.TlsCert != "" {
+			log.Info("propagating tls cert to agent")
+			if err := runner.propagateTLSCert(); err != nil {
+				return err
+			}
 		}
-	}
+	*/
 
 	if runner.config.InitialConnectRetry > -1 {
 		log.Info("creating curl options file")
