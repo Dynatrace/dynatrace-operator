@@ -37,7 +37,8 @@ func addOneAgentVolumeMounts(container *corev1.Container, installPath string) {
 			Name:      oneAgentShareVolumeName,
 			MountPath: containerConfPath,
 			SubPath:   getContainerConfSubPath(container.Name),
-		})
+		},
+	)
 }
 
 func addVolumeMountsForReadOnlyCSI(container *corev1.Container) {
@@ -61,13 +62,24 @@ func getContainerConfSubPath(containerName string) string {
 	return fmt.Sprintf(consts.AgentContainerConfFilenameTemplate, containerName)
 }
 
-func addCertVolumeMounts(container *corev1.Container) {
-	container.VolumeMounts = append(container.VolumeMounts,
-		corev1.VolumeMount{
-			Name:      oneAgentShareVolumeName,
-			MountPath: filepath.Join(oneAgentCustomKeysPath, customCertFileName),
-			SubPath:   customCertFileName,
-		})
+func addCertVolumeMounts(container *corev1.Container, dynakube dynatracev1beta1.DynaKube) {
+	if dynakube.HasActiveGateCaCert() || dynakube.Spec.TrustedCAs != "" {
+		container.VolumeMounts = append(container.VolumeMounts,
+			corev1.VolumeMount{
+				Name:      oneAgentShareVolumeName,
+				MountPath: filepath.Join(oneAgentCustomKeysPath, customCertFileName),
+				SubPath:   customCertFileName,
+			})
+	}
+
+	if dynakube.Spec.TrustedCAs != "" {
+		container.VolumeMounts = append(container.VolumeMounts,
+			corev1.VolumeMount{
+				Name:      oneAgentShareVolumeName,
+				MountPath: filepath.Join(oneAgentCustomKeysPath, customProxyCertFileName),
+				SubPath:   customProxyCertFileName,
+			})
+	}
 }
 
 func addInitVolumeMounts(initContainer *corev1.Container, dynakube dynatracev1beta1.DynaKube) {

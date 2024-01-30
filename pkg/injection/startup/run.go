@@ -24,6 +24,8 @@ type Runner struct {
 	dtclient   dtclient.Client
 	installer  installer.Installer
 	hostTenant string
+	trustedCAs string
+	agCerts    string
 }
 
 func NewRunner(fs afero.Fs) (*Runner, error) {
@@ -36,6 +38,10 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 
 	var secretConfig *SecretConfig
 
+	var trustedCAs string
+
+	var agCerts string
+
 	var client dtclient.Client
 
 	var oneAgentInstaller installer.Installer
@@ -46,7 +52,17 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 			return nil, err
 		}
 
-		client, err = newDTClientBuilder(secretConfig).createClient()
+		agCerts, err = newCertificatesViaFs(fs, consts.ActiveGateCAsInitSecretField)
+		if err != nil {
+			return nil, err
+		}
+
+		trustedCAs, err = newCertificatesViaFs(fs, consts.TrustedCAsInitSecretField)
+		if err != nil {
+			return nil, err
+		}
+
+		client, err = newDTClientBuilder(secretConfig, trustedCAs).createClient()
 		if err != nil {
 			return nil, err
 		}
@@ -76,11 +92,13 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 	log.Info("standalone runner created successfully")
 
 	return &Runner{
-		fs:        fs,
-		env:       env,
-		config:    secretConfig,
-		dtclient:  client,
-		installer: oneAgentInstaller,
+		fs:         fs,
+		env:        env,
+		config:     secretConfig,
+		dtclient:   client,
+		installer:  oneAgentInstaller,
+		trustedCAs: trustedCAs,
+		agCerts:    agCerts,
 	}, nil
 }
 
@@ -217,12 +235,8 @@ func (runner *Runner) configureOneAgent() error {
 		return err
 	}
 
-	if runner.config.TlsCert != "" {
-		log.Info("propagating tls cert to agent")
-
-		if err := runner.propagateTLSCert(); err != nil {
-			return err
-		}
+	if err := runner.propagateTLSCert(); err != nil {
+		return err
 	}
 
 	if runner.config.InitialConnectRetry > -1 {
@@ -288,7 +302,23 @@ func (runner *Runner) enrichMetadata() error {
 }
 
 func (runner *Runner) propagateTLSCert() error {
-	return runner.createConfFile(filepath.Join(consts.AgentShareDirMount, "custom.pem"), runner.config.TlsCert)
+	if runner.agCerts != "" || runner.trustedCAs != "" {
+		log.Info("propagating tls certificates to agent")
+
+		if err := runner.createConfFileWithShortMessage(filepath.Join(consts.AgentShareDirMount, consts.CustomCertsFileName), runner.agCerts+"\n"+runner.trustedCAs); err != nil {
+			return err
+		}
+	}
+
+	if runner.trustedCAs != "" {
+		log.Info("propagating tls certificates to agent proxy configuration")
+
+		if err := runner.createConfFileWithShortMessage(filepath.Join(consts.AgentShareDirMount, consts.CustomProxyCertsFileName), runner.trustedCAs); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func getReadOnlyAgentConfMountPath() string {

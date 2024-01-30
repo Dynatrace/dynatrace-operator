@@ -7,6 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/pkg/errors"
+	"github.com/spf13/afero"
 )
 
 const (
@@ -120,12 +121,34 @@ func (runner *Runner) createCurlOptionsFile() error {
 }
 
 func (runner *Runner) createConfFile(path string, content string) error {
-	err := runner.fs.MkdirAll(filepath.Dir(path), onlyReadAllFileMode)
+	err := createConfigFile(runner.fs, path, content)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	file, err := runner.fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, onlyReadAllFileMode)
+	log.Info("created file", "filePath", path, "content", content)
+
+	return nil
+}
+
+func (runner *Runner) createConfFileWithShortMessage(path string, content string) error {
+	err := createConfigFile(runner.fs, path, content)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	log.Info("created file", "filePath", path)
+
+	return nil
+}
+
+func createConfigFile(fs afero.Fs, path string, content string) error {
+	err := fs.MkdirAll(filepath.Dir(path), onlyReadAllFileMode)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	file, err := fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, onlyReadAllFileMode)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -134,8 +157,6 @@ func (runner *Runner) createConfFile(path string, content string) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-
-	log.Info("created file", "filePath", path, "content", content)
 
 	return nil
 }

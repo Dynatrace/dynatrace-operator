@@ -95,9 +95,7 @@ func (mutator *OneAgentPodMutator) addOneAgentToContainer(request *dtwebhook.Rei
 	addDeploymentMetadataEnv(container, dynakube, mutator.clusterID)
 	addPreloadEnv(container, installPath)
 
-	if dynakube.HasActiveGateCaCert() {
-		addCertVolumeMounts(container)
-	}
+	addCertVolumeMounts(container, dynakube)
 
 	if dynakube.FeatureAgentInitialConnectRetry() > 0 {
 		addCurlOptionsVolumeMount(container)
