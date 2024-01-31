@@ -25,32 +25,17 @@ const (
 
     // Deprecated: AnnotationFeatureDisableActiveGateUpdates use AnnotationFeatureActiveGateUpdates instead
     AnnotationFeatureDisableActiveGateUpdates = AnnotationFeaturePrefix + "disable-activegate-updates"
-    // Deprecated: AnnotationFeatureDisableActiveGateRawImage use AnnotationFeatureActiveGateRawImage instead
-    AnnotationFeatureDisableActiveGateRawImage = AnnotationFeaturePrefix + "disable-activegate-raw-image"
 
-    AnnotationFeatureActiveGateUpdates   = AnnotationFeaturePrefix + "activegate-updates"
-    AnnotationFeatureActiveGateRawImage  = AnnotationFeaturePrefix + "activegate-raw-image"
-    AnnotationFeatureActiveGateAuthToken = AnnotationFeaturePrefix + "activegate-authtoken"
+    AnnotationFeatureActiveGateUpdates = AnnotationFeaturePrefix + "activegate-updates"
 
     AnnotationFeatureActiveGateAppArmor                   = AnnotationFeaturePrefix + "activegate-apparmor"
-    AnnotationFeatureActiveGateReadOnlyFilesystem         = AnnotationFeaturePrefix + "activegate-readonly-fs"
     AnnotationFeatureAutomaticK8sApiMonitoring            = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
     AnnotationFeatureAutomaticK8sApiMonitoringClusterName = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring-cluster-name"
     AnnotationFeatureK8sAppEnabled                        = AnnotationFeaturePrefix + "k8s-app-enabled"
     AnnotationFeatureActiveGateIgnoreProxy                = AnnotationFeaturePrefix + "activegate-ignore-proxy"
 
-    AnnotationFeatureCustomSyntheticImage = AnnotationFeaturePrefix + "custom-synthetic-image"
-
-    // Deprecated: AnnotationFeatureDisableHostsRequests use AnnotationFeatureHostsRequests instead
-    AnnotationFeatureDisableHostsRequests = AnnotationFeaturePrefix + "disable-hosts-requests"
-    AnnotationFeatureHostsRequests        = AnnotationFeaturePrefix + "hosts-requests"
-    AnnotationFeatureNoProxy              = AnnotationFeaturePrefix + "no-proxy"
-    AnnotationFeatureApiRequestThreshold  = AnnotationFeaturePrefix + "dynatrace-api-request-threshold"
-
-    // Deprecated: AnnotationFeatureDisableReadOnlyOneAgent use AnnotationFeatureReadOnlyOneAgent instead
-    AnnotationFeatureDisableReadOnlyOneAgent = AnnotationFeaturePrefix + "disable-oneagent-readonly-host-fs"
-
-    AnnotationFeatureReadOnlyOneAgent = AnnotationFeaturePrefix + "oneagent-readonly-host-fs"
+    AnnotationFeatureNoProxy             = AnnotationFeaturePrefix + "no-proxy"
+    AnnotationFeatureApiRequestThreshold = AnnotationFeaturePrefix + "dynatrace-api-request-threshold"
 
     AnnotationFeatureMultipleOsAgentsOnNode         = AnnotationFeaturePrefix + "multiple-osagents-on-node"
     AnnotationFeatureOneAgentMaxUnavailable         = AnnotationFeaturePrefix + "oneagent-max-unavailable"
@@ -59,13 +44,10 @@ const (
     AnnotationFeatureRunOneAgentContainerPrivileged = AnnotationFeaturePrefix + "oneagent-privileged"
     AnnotationFeatureOneAgentSecCompProfile         = AnnotationFeaturePrefix + "oneagent-seccomp-profile"
 
-    // Deprecated: AnnotationFeatureDisableWebhookReinvocationPolicy use AnnotationFeatureWebhookReinvocationPolicy instead
-    AnnotationFeatureDisableWebhookReinvocationPolicy = AnnotationFeaturePrefix + "disable-webhook-reinvocation-policy"
     // Deprecated: AnnotationFeatureDisableMetadataEnrichment use AnnotationFeatureMetadataEnrichment instead
     AnnotationFeatureDisableMetadataEnrichment = AnnotationFeaturePrefix + "disable-metadata-enrichment"
 
-    AnnotationFeatureWebhookReinvocationPolicy = AnnotationFeaturePrefix + "webhook-reinvocation-policy"
-    AnnotationFeatureMetadataEnrichment        = AnnotationFeaturePrefix + "metadata-enrichment"
+    AnnotationFeatureMetadataEnrichment = AnnotationFeaturePrefix + "metadata-enrichment"
 
     AnnotationFeatureIgnoreUnknownState    = AnnotationFeaturePrefix + "ignore-unknown-state"
     AnnotationFeatureIgnoredNamespaces     = AnnotationFeaturePrefix + "ignored-namespaces"
@@ -78,20 +60,6 @@ const (
     // CSI
     AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
     AnnotationFeatureReadOnlyCsiVolume         = AnnotationFeaturePrefix + "injection-readonly-volume"
-
-    // synthetic location
-    AnnotationFeatureSyntheticLocationEntityId = AnnotationFeaturePrefix + "synthetic-location-entity-id"
-
-    // synthetic node type
-    AnnotationFeatureSyntheticNodeType = AnnotationFeaturePrefix + "synthetic-node-type"
-
-    // replicas for the synthetic monitoring
-    AnnotationFeatureSyntheticReplicas = AnnotationFeaturePrefix + "synthetic-replicas"
-
-    // synthetic node types
-    SyntheticNodeXs = "XS"
-    SyntheticNodeS  = "S"
-    SyntheticNodeM  = "M"
 )
 ```
 
