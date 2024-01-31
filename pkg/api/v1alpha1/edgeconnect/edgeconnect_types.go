@@ -11,7 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EdgeConnectSpec defines the desired state of EdgeConnect
+// EdgeConnectSpec defines the desired state of EdgeConnect.
 type EdgeConnectSpec struct { //nolint:revive
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
@@ -91,7 +91,7 @@ type ImageRefSpec struct {
 	Tag string `json:"tag,omitempty"`
 }
 
-// EdgeConnectStatus defines the observed state of EdgeConnect
+// EdgeConnectStatus defines the observed state of EdgeConnect.
 type EdgeConnectStatus struct { //nolint:revive
 	// Defines the current state (Running, Updating, Error, ...)
 	DeploymentPhase status.DeploymentPhase `json:"phase,omitempty"`
@@ -106,7 +106,7 @@ type EdgeConnectStatus struct { //nolint:revive
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-// SetPhase sets the status phase on the EdgeConnect object
+// SetPhase sets the status phase on the EdgeConnect object.
 func (dk *EdgeConnectStatus) SetPhase(phase status.DeploymentPhase) bool {
 	upd := phase != dk.DeploymentPhase
 	dk.DeploymentPhase = phase

@@ -34,6 +34,10 @@ const (
 
 	livezEndpointName    = "livez"
 	livenessEndpointName = "/" + livezEndpointName
+
+	defaultLeaseDuration = int64(30)
+	defaultRenewDeadline = int64(20)
+	defaultRetryPeriod   = int64(6)
 )
 
 type bootstrapManagerProvider struct {
@@ -145,13 +149,13 @@ func (provider operatorManagerProvider) createOptions(namespace string) ctrl.Opt
 		LeaderElectionNamespace:    namespace,
 		HealthProbeBindAddress:     healthProbeBindAddress,
 		LivenessEndpointName:       livenessEndpointName,
-		LeaseDuration:              getTimeFromEnvWithDefault(leaderElectionEnvVarLeaseDuration, 30),
-		RenewDeadline:              getTimeFromEnvWithDefault(leaderElectionEnvVarRenewDeadline, 20),
-		RetryPeriod:                getTimeFromEnvWithDefault(leaderElectionEnvVarRetryPeriod, 6),
+		LeaseDuration:              getTimeFromEnvWithDefault(leaderElectionEnvVarLeaseDuration, defaultLeaseDuration),
+		RenewDeadline:              getTimeFromEnvWithDefault(leaderElectionEnvVarRenewDeadline, defaultRenewDeadline),
+		RetryPeriod:                getTimeFromEnvWithDefault(leaderElectionEnvVarRetryPeriod, defaultRetryPeriod),
 	}
 }
 
-// managerBuilder is used for testing the createManager functions in the providers
+// managerBuilder is used for testing the createManager functions in the providers.
 type managerBuilder struct {
 	mgr manager.Manager
 }

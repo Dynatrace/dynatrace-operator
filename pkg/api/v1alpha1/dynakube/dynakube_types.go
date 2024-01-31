@@ -167,7 +167,7 @@ type KubernetesMonitoringSpec struct {
 
 // CapabilityProperties is a struct which can be embedded by ActiveGate capabilities
 // Such as KubernetesMonitoring or Routing
-// It encapsulates common properties
+// It encapsulates common properties.
 type CapabilityProperties struct {
 	// Enables Capability
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Capability",order=29,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
@@ -305,7 +305,7 @@ type OneAgentInstance struct {
 	IPAddress string `json:"ipAddress,omitempty"`
 }
 
-// SetPhase sets the status phase on the DynaKube object
+// SetPhase sets the status phase on the DynaKube object.
 func (dk *DynaKubeStatus) SetPhase(phase status.DeploymentPhase) bool {
 	upd := phase != dk.Phase
 	dk.Phase = phase
@@ -323,7 +323,7 @@ func (dk *DynaKubeStatus) SetPhase(phase status.DeploymentPhase) bool {
 // +kubebuilder:printcolumn:name="Tokens",type=string,JSONPath=`.status.tokens`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +operator-sdk:csv:customresourcedefinitions:displayName="Dynatrace DynaKube"
-// +operator-sdk:csv:customresourcedefinitions:resources={{StatefulSet,v1,},{DaemonSet,v1,},{Pod,v1,}}
+// +operator-sdk:csv:customresourcedefinitions:resources={{StatefulSet,v1,},{DaemonSet,v1,},{Pod,v1,}}.
 type DynaKube struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

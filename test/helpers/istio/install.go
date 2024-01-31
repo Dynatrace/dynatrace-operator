@@ -126,7 +126,7 @@ func determineIstioInitContainerName(t *testing.T) string {
 	return istioInitName
 }
 
-func checkVirtualServiceForApiUrl(dynakube dynatracev1beta1.DynaKube) features.Func {
+func checkVirtualServiceForApiUrl(dynakube dynatracev1beta1.DynaKube) features.Func { // nolint: dupl
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		apiHost := apiUrlCommunicationHost(t, dynakube)
 		serviceName := istio.BuildNameForFQDNServiceEntry(dynakube.Name, istio.OperatorComponent)
@@ -144,7 +144,7 @@ func checkVirtualServiceForApiUrl(dynakube dynatracev1beta1.DynaKube) features.F
 	}
 }
 
-func checkServiceEntryForApiUrl(dynakube dynatracev1beta1.DynaKube) features.Func {
+func checkServiceEntryForApiUrl(dynakube dynatracev1beta1.DynaKube) features.Func { // nolint: dupl
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		apiHost := apiUrlCommunicationHost(t, dynakube)
 		serviceName := istio.BuildNameForFQDNServiceEntry(dynakube.Name, istio.OperatorComponent)

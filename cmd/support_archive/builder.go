@@ -33,6 +33,13 @@ const (
 	loadsimFileSizeFlagName        = "loadsim-file-size"
 	loadsimFilesFlagName           = "loadsim-files"
 	collectManagedLogsFlagName     = "managed-logs"
+	defaultSimFileSize             = 10
+)
+
+const (
+	_ = 1 << (10 * iota) // nolint:gomnd
+	Kibi
+	Mebi
 )
 
 var (
@@ -74,7 +81,7 @@ func (builder CommandBuilder) Build() *cobra.Command {
 func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&namespaceFlagValue, namespaceFlagName, env.DefaultNamespace(), "Specify a different Namespace.")
 	cmd.PersistentFlags().BoolVar(&archiveToStdoutFlagValue, archiveToStdoutFlagName, false, "Write tarball to stdout.")
-	cmd.PersistentFlags().IntVar(&loadsimFileSizeFlagValue, loadsimFileSizeFlagName, 10, "Simulated log files, size in MiB (default 10)")
+	cmd.PersistentFlags().IntVar(&loadsimFileSizeFlagValue, loadsimFileSizeFlagName, defaultSimFileSize, "Simulated log files, size in MiB (default 10)")
 	cmd.PersistentFlags().IntVar(&loadsimFilesFlagValue, loadsimFilesFlagName, 0, "Number of simulated log files (default 0)")
 	cmd.PersistentFlags().BoolVar(&collectManagedLogsFlagValue, collectManagedLogsFlagName, true, "Add logs from rolled out pods to the support archive.")
 	cmd.PersistentFlags().IntVar(&delayFlagValue, delayFlagName, 0, "Delay start of support-archive collection. Useful for standalone execution with 'kubectl run'")
@@ -148,7 +155,7 @@ func (builder CommandBuilder) runCollectors(log logr.Logger, supportArchive arch
 
 	logInfof(log, "%s=%s", labels.AppNameLabel, appName)
 
-	fileSize := loadsimFileSizeFlagValue * 1024 * 1024
+	fileSize := loadsimFileSizeFlagValue * Mebi
 	collectors := []collector{
 		newOperatorVersionCollector(log, supportArchive),
 		newLogCollector(ctx, log, supportArchive, pods, appName, collectManagedLogsFlagValue),

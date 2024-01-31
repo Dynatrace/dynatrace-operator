@@ -29,8 +29,11 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-const annotationInjected = "oneagent.dynatrace.com/injected"
-const annotationReason = "oneagent.dynatrace.com/reason"
+const (
+	annotationInjected = "oneagent.dynatrace.com/injected"
+	annotationReason   = "oneagent.dynatrace.com/reason"
+	timeout            = 2 * time.Minute
+)
 
 // Feature defines the overall e2e test for testing OneAgent
 // injection behavior when Dynatrace is configured with a network zone.
@@ -88,7 +91,7 @@ func Feature(t *testing.T) features.Feature {
 
 	// Register actual tests
 	builder.Assess("check injection annotations on sample app pods", checkInjectionAnnotations(sampleApp, "false", "EmptyConnectionInfo"))
-	builder.Assess("make sure that OneAgent pods do not yet start up", checkOneAgentPodsDoNotStart(testDynakube, 2*time.Minute))
+	builder.Assess("make sure that OneAgent pods do not yet start up", checkOneAgentPodsDoNotStart(testDynakube, timeout))
 
 	// update DynaKube to start AG, which should than enable OA rollout
 	options = append(options, dynakube.WithActiveGate())

@@ -137,7 +137,13 @@ func (c *client) getServerResponseData(response *http.Response) ([]byte, error) 
 func (c *client) GetEdgeConnect(edgeConnectId string) (GetResponse, error) {
 	edgeConnectUrl := c.getEdgeConnectUrl(edgeConnectId)
 
-	resp, err := c.httpClient.Get(edgeConnectUrl)
+	req, err := http.NewRequestWithContext(c.ctx, http.MethodGet, edgeConnectUrl, nil)
+
+	if err != nil {
+		return GetResponse{}, err
+	}
+
+	resp, err := c.httpClient.Do(req)
 	defer utils.CloseBodyAfterRequest(resp)
 
 	if err != nil {
@@ -169,7 +175,7 @@ func (c *client) UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []st
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPut, edgeConnectUrl, payloadBuf)
+	req, err := http.NewRequestWithContext(c.ctx, http.MethodPut, edgeConnectUrl, payloadBuf)
 	if err != nil {
 		return err
 	}
@@ -199,7 +205,7 @@ func (c *client) UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []st
 func (c *client) DeleteEdgeConnect(edgeConnectId string) error {
 	edgeConnectUrl := c.getEdgeConnectUrl(edgeConnectId)
 
-	req, err := http.NewRequest(http.MethodDelete, edgeConnectUrl, nil)
+	req, err := http.NewRequestWithContext(c.ctx, http.MethodDelete, edgeConnectUrl, nil)
 	if err != nil {
 		return err
 	}
@@ -233,7 +239,14 @@ func (c *client) CreateEdgeConnect(name string, hostPatterns []string, oauthClie
 		return CreateResponse{}, err
 	}
 
-	resp, err := c.httpClient.Post(edgeConnectsUrl, contentTypeJSON, payloadBuf)
+	req, err := http.NewRequestWithContext(c.ctx, http.MethodPost, edgeConnectsUrl, payloadBuf)
+	if err != nil {
+		return CreateResponse{}, err
+	}
+	req.Header.Set("Content-Type", contentTypeJSON)
+
+	resp, err := c.httpClient.Do(req)
+
 	defer utils.CloseBodyAfterRequest(resp)
 
 	if err != nil {
@@ -258,7 +271,7 @@ func (c *client) CreateEdgeConnect(name string, hostPatterns []string, oauthClie
 func (c *client) GetEdgeConnects(name string) (ListResponse, error) {
 	edgeConnectsUrl := c.getEdgeConnectsUrl()
 
-	req, err := http.NewRequest("GET", edgeConnectsUrl, nil)
+	req, err := http.NewRequestWithContext(c.ctx, http.MethodGet, edgeConnectsUrl, nil)
 	if err != nil {
 		return ListResponse{}, err
 	}

@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
@@ -191,7 +192,6 @@ func (app *App) build() k8s.Object {
 }
 
 func (app *App) asDeployment() *appsv1.Deployment {
-	replicas := int32(2)
 	selectorKey := "app"
 	selectorValue := app.Name()
 	if app.base.Labels == nil {
@@ -202,7 +202,7 @@ func (app *App) asDeployment() *appsv1.Deployment {
 	return &appsv1.Deployment{
 		ObjectMeta: app.base.ObjectMeta,
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &replicas,
+			Replicas: address.Of(int32(32)),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					selectorKey: selectorValue,
