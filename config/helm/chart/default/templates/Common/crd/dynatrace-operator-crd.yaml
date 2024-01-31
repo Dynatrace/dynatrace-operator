@@ -3779,7 +3779,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: EdgeConnectSpec defines the desired state of EdgeConnect
+            description: EdgeConnectSpec defines the desired state of EdgeConnect.
             properties:
               annotations:
                 additionalProperties:
@@ -4255,7 +4255,7 @@ spec:
             - oauth
             type: object
           status:
-            description: EdgeConnectStatus defines the observed state of EdgeConnect
+            description: EdgeConnectStatus defines the observed state of EdgeConnect.
             properties:
               conditions:
                 description: Conditions includes status about the current state of
