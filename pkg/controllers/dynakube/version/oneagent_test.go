@@ -8,12 +8,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
-	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry/mocks"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -36,9 +33,8 @@ func TestOneAgentUpdater(t *testing.T) {
 		}
 		mockClient := mockedclient.NewClient(t)
 		mockOneAgentImageInfo(mockClient, testImage)
-		mockImageGetter := mocks.MockImageGetter{}
 
-		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient, &mockImageGetter)
+		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient)
 
 		assert.Equal(t, "oneagent", updater.Name())
 		assert.True(t, updater.IsEnabled())
@@ -53,7 +49,7 @@ func TestOneAgentUpdater(t *testing.T) {
 
 func TestOneAgentUseDefault(t *testing.T) {
 	testVersion := "1.2.3.4-5"
-	testDigest := getTestDigest()
+
 	t.Run("Set according to version field", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -68,10 +64,8 @@ func TestOneAgentUseDefault(t *testing.T) {
 		expectedImage := dynakube.DefaultOneAgentImage()
 
 		mockClient := mockedclient.NewClient(t)
-		mockImageGetter := mocks.MockImageGetter{}
-		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: testVersion, Digest: testDigest}, nil)
 
-		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient, &mockImageGetter)
+		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient)
 
 		err := updater.UseTenantRegistry(context.TODO())
 
@@ -91,11 +85,8 @@ func TestOneAgentUseDefault(t *testing.T) {
 
 		mockClient := mockedclient.NewClient(t)
 		mockLatestAgentVersion(mockClient, testVersion)
-		mockImageGetter := mocks.MockImageGetter{}
 
-		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: testVersion, Digest: testDigest}, nil)
-
-		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient, &mockImageGetter)
+		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient)
 
 		err := updater.UseTenantRegistry(context.TODO())
 
@@ -124,11 +115,8 @@ func TestOneAgentUseDefault(t *testing.T) {
 
 		mockClient := mockedclient.NewClient(t)
 		mockLatestAgentVersion(mockClient, testVersion)
-		mockImageGetter := mocks.MockImageGetter{}
 
-		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: testVersion, Digest: testDigest}, nil)
-
-		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient, &mockImageGetter)
+		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient)
 
 		err := updater.UseTenantRegistry(context.TODO())
 		require.NoError(t, err) // we only log the downgrade problem, not fail the reconcile
@@ -195,11 +183,29 @@ func TestCheckForDowngrade(t *testing.T) {
 			newVersion:  newerVersion,
 			isDowngrade: false,
 		},
+		{
+			testName: "is NOT downgrade, custom image - no logic",
+			dynakube: newDynakubeWithOneAgentStatus(status.VersionStatus{
+				ImageID: "some.registry.com:" + newerVersion,
+				Source:  status.CustomImageVersionSource,
+			}),
+			newVersion:  olderVersion,
+			isDowngrade: false,
+		},
+		{
+			testName: "is NOT downgrade, custom version - no logic",
+			dynakube: newDynakubeWithOneAgentStatus(status.VersionStatus{
+				ImageID: "some.registry.com:" + newerVersion,
+				Source:  status.CustomVersionVersionSource,
+			}),
+			newVersion:  olderVersion,
+			isDowngrade: false,
+		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.testName, func(t *testing.T) {
-			updater := newOneAgentUpdater(testCase.dynakube, fake.NewClient(), nil, nil)
+			updater := newOneAgentUpdater(testCase.dynakube, fake.NewClient(), nil)
 
 			isDowngrade, err := updater.CheckForDowngrade(testCase.newVersion)
 			require.NoError(t, err)
@@ -234,27 +240,27 @@ func TestCheckLabels(t *testing.T) {
 	t.Run("Validate immutable oneAgent image with default cloudNative", func(t *testing.T) {
 		dynakube := newDynakubeForCheckLabelTest(versionStatus)
 		dynakube.Spec.OneAgent.CloudNativeFullStack = &dynatracev1beta1.CloudNativeFullStackSpec{}
-		updater := newOneAgentUpdater(dynakube, fake.NewClient(), nil, nil)
+		updater := newOneAgentUpdater(dynakube, fake.NewClient(), nil)
 		require.NoError(t, updater.ValidateStatus())
 	})
 	t.Run("Validate immutable oneAgent image with classicFullStack", func(t *testing.T) {
 		dynakube := newDynakubeForCheckLabelTest(versionStatus)
 		dynakube.Spec.OneAgent.ClassicFullStack = &dynatracev1beta1.HostInjectSpec{}
-		updater := newOneAgentUpdater(dynakube, fake.NewClient(), nil, nil)
+		updater := newOneAgentUpdater(dynakube, fake.NewClient(), nil)
 		require.Error(t, updater.ValidateStatus())
 	})
 	t.Run("Validate immutable oneAgent image when image version is not set", func(t *testing.T) {
 		dynakube := newDynakubeForCheckLabelTest(versionStatus)
 		dynakube.Spec.OneAgent.CloudNativeFullStack = &dynatracev1beta1.CloudNativeFullStackSpec{}
 		dynakube.Status.OneAgent.VersionStatus.Version = ""
-		updater := newOneAgentUpdater(dynakube, fake.NewClient(), nil, nil)
+		updater := newOneAgentUpdater(dynakube, fake.NewClient(), nil)
 		require.Error(t, updater.ValidateStatus())
 	})
 	t.Run("Validate mutable oneAgent image with classicFullStack", func(t *testing.T) {
 		dynakube := newDynakubeForCheckLabelTest(versionStatus)
 		dynakube.Spec.OneAgent.ClassicFullStack = &dynatracev1beta1.HostInjectSpec{}
 		dynakube.Status.OneAgent.VersionStatus.Type = "mutable"
-		updater := newOneAgentUpdater(dynakube, fake.NewClient(), nil, nil)
+		updater := newOneAgentUpdater(dynakube, fake.NewClient(), nil)
 		require.NoError(t, updater.ValidateStatus())
 	})
 }
