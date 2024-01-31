@@ -238,6 +238,7 @@ linters:
   - gomnd             # An analyzer to detect magic numbers.
   - forbidigo         # Forbids identifiers.
   - dupl              # Tool for code clone detection.
+  - noctx             # Finds sending http request without context.Context.
 
 
     # TODO: Requires some code changes before enabling:
@@ -268,7 +269,6 @@ linters:
 # - nestif            # Reports deeply nested if statements.
 # - nilnil            # Checks that there is no simultaneous return of nil error and an invalid value.
 # - nlreturn          # Nlreturn checks for a new line before return and branch statements to increase code clarity.
-# - noctx             # Finds sending http request without context.Context.
 # - nolintlint        # Reports ill-formed or insufficient nolint directives.
 # - nonamedreturns    # Reports all named returns.
 # - paralleltest      # Detects missing usage of t.Parallel() method in your Go test.
@@ -302,6 +302,12 @@ issues:
   exclude-rules:
     # Exclude duplicate code and function length and complexity checking in test
     # files (due to common repeats and long functions in test code)
+    - path: _(test|gen)\.go
+      linters:
+        - dupl
+    - path: (test/*)
+      linters:
+        - noctx
     - path: _(test|gen)\.go
       linters:
         - dupl

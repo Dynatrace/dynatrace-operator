@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -168,7 +169,7 @@ func (dtc *dynatraceClient) GetProcessModuleConfig(prevRevision uint) (*ProcessM
 }
 
 func (dtc *dynatraceClient) createProcessModuleConfigRequest(prevRevision uint) (*http.Request, error) {
-	req, err := http.NewRequest(http.MethodGet, dtc.getProcessModuleConfigUrl(), nil)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, dtc.getProcessModuleConfigUrl(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing http request: %w", err)
 	}

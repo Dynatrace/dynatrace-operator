@@ -2,6 +2,7 @@ package dynatrace
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -42,7 +43,7 @@ func (dtc *dynatraceClient) SendEvent(eventData *EventData) error {
 		return errors.WithStack(err)
 	}
 
-	req, err := http.NewRequest("POST", dtc.getEventsUrl(), bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, dtc.getEventsUrl(), bytes.NewBuffer(jsonStr))
 	if err != nil {
 		return fmt.Errorf("error initializing http request: %w", err)
 	}
