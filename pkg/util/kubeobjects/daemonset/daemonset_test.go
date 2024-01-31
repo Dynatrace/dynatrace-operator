@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var daemonSetLog = logger.Factory.GetLogger("test-daemonset")
+var daemonSetLog = logger.Get().WithName("test-daemonset")
 
 func TestCreateOrUpdateDaemonSet(t *testing.T) {
 	const namespaceName = "dynatrace"

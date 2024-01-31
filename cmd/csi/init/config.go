@@ -4,4 +4,4 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 )
 
-var log = logger.Factory.GetLogger("csi-init")
+var log = logger.Get().WithName("csi-init")

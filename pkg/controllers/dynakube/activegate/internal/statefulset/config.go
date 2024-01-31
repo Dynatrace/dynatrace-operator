@@ -9,5 +9,5 @@ const (
 )
 
 var (
-	log = logger.Factory.GetLogger("activegate-statefulset")
+	log = logger.Get().WithName("activegate-statefulset")
 )

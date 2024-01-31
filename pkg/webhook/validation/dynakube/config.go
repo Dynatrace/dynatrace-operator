@@ -12,7 +12,7 @@ const oneagentEnableVolumeStorageEnvVarName = "ONEAGENT_ENABLE_VOLUME_STORAGE"
 const oneagentInstallerScriptUrlEnvVarName = "ONEAGENT_INSTALLER_SCRIPT_URL"
 const oneagentInstallerTokenEnvVarName = "ONEAGENT_INSTALLER_TOKEN"
 
-var log = logger.Factory.GetLogger("dynakube-validation")
+var log = logger.Get().WithName("dynakube-validation")
 
 type validator func(ctx context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string
 

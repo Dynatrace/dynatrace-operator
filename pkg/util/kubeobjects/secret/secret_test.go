@@ -19,7 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
-var secretLog = logger.Factory.GetLogger("test-secret")
+var secretLog = logger.Get().WithName("test-secret")
 
 const (
 	testDeploymentName = "deployment-as-owner-of-secret"

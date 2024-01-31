@@ -15,8 +15,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var deploymentLog = logger.Factory.GetLogger("test-deployment")
-var daemonSetLog = logger.Factory.GetLogger("test-daemonset")
+var deploymentLog = logger.Get().WithName("test-deployment")
+var daemonSetLog = logger.Get().WithName("test-daemonset")
 
 func createTestDeploymentWithMatchLabels(name, namespace string, annotations, matchLabels map[string]string) appsv1.Deployment {
 	return appsv1.Deployment{

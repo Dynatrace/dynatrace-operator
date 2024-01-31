@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("oneagent-url")
+	log = logger.Get().WithName("oneagent-url")
 )
 
 const (

@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("initgeneration")
+	log = logger.Get().WithName("initgeneration")
 )

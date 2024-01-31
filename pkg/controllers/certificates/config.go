@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("webhook-certificates")
+	log = logger.Get().WithName("webhook-certificates")
 )

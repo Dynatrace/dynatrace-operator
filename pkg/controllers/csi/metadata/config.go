@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("csi-metadata")
+	log = logger.Get().WithName("csi-metadata")
 )

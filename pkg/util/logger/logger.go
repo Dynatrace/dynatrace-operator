@@ -26,6 +26,11 @@ func newLogger() logr.Logger {
 	)
 }
 
+func Get() logr.Logger {
+	logger := newLogger()
+	return logger
+}
+
 func (dtl logSink) Init(logr.RuntimeInfo) {}
 
 func (dtl logSink) Info(_ int, msg string, keysAndValues ...any) {

@@ -24,6 +24,7 @@ func newSupportArchiveLogger(out io.Writer) logr.Logger {
 }
 
 func logInfof(log logr.Logger, format string, v ...any) {
+	log.V(1).Info("foobar")
 	log.Info(fmt.Sprintf(format, v...))
 }
 

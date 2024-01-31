@@ -20,4 +20,4 @@ const (
 	otelMetricsUrl = "/v1/metrics"
 )
 
-var log = logger.Factory.GetLogger("open-telemetry")
+var log = logger.Get().WithName("open-telemetry")

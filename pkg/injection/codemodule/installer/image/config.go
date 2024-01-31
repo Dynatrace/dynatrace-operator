@@ -9,5 +9,5 @@ import (
 
 var (
 	CacheDir = filepath.Join(dtcsi.DataPath, "cache")
-	log      = logger.Factory.GetLogger("oneagent-image")
+	log      = logger.Get().WithName("oneagent-image")
 )

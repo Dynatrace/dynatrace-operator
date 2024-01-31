@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("certificate-watcher")
+	log = logger.Get().WithName("certificate-watcher")
 )
