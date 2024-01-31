@@ -20,7 +20,7 @@ const (
 
 	serviceAccountName = "dynatrace-dynakube-oneagent"
 
-	// normal oneagent shutdown scenario with some extra time.
+	// normal oneagent shutdown scenario with some extra time
 	defaultTerminationGracePeriod = int64(80)
 
 	hostRootVolumeName      = "host-root"
@@ -346,7 +346,7 @@ func defaultSecurityContextCapabilities() *corev1.Capabilities {
 	}
 }
 
-// getDefaultProbeFromStatus uses the docker HEALTHCHECK from status.
+// getDefaultProbeFromStatus uses the docker HEALTHCHECK from status
 func (dsInfo *builderInfo) getDefaultProbeFromStatus() *corev1.Probe {
 	return &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
@@ -362,7 +362,7 @@ func (dsInfo *builderInfo) getDefaultProbeFromStatus() *corev1.Probe {
 	}
 }
 
-// getReadinessProbe overrides the default HEALTHCHECK to ensure early readiness.
+// getReadinessProbe overrides the default HEALTHCHECK to ensure early readiness
 func (dsInfo *builderInfo) getReadinessProbe() *corev1.Probe {
 	defaultProbe := dsInfo.getDefaultProbeFromStatus()
 	if defaultProbe.InitialDelaySeconds > probeMaxInitialDelay {

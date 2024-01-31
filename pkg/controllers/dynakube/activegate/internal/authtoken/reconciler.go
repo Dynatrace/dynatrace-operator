@@ -18,7 +18,7 @@ import (
 const (
 	ActiveGateAuthTokenName = "auth-token"
 
-	// Buffer to avoid warnings in the UI.
+	// Buffer to avoid warnings in the UI
 	AuthTokenBuffer           = time.Hour * 24
 	AuthTokenRotationInterval = time.Hour*24*30 - AuthTokenBuffer
 )

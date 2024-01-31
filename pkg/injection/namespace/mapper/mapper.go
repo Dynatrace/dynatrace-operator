@@ -55,7 +55,7 @@ func setUpdatedViaDynakubeAnnotation(ns *corev1.Namespace) {
 }
 
 // match uses the namespace selector in the dynakube to check if it matches a given namespace
-// if the namespace selector is not set on the dynakube its an automatic match.
+// if the namespace selector is not set on the dynakube its an automatic match
 func match(dk *dynatracev1beta1.DynaKube, namespace *corev1.Namespace) (bool, error) {
 	if dk.NamespaceSelector() == nil {
 		return true, nil

@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// CSIGarbageCollector removes unused and outdated agent versions.
+// CSIGarbageCollector removes unused and outdated agent versions
 type CSIGarbageCollector struct {
 	apiReader client.Reader
 	fs        afero.Fs
@@ -27,7 +27,7 @@ type CSIGarbageCollector struct {
 
 var _ reconcile.Reconciler = (*CSIGarbageCollector)(nil)
 
-// NewCSIGarbageCollector returns a new CSIGarbageCollector.
+// NewCSIGarbageCollector returns a new CSIGarbageCollector
 func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollector {
 	return &CSIGarbageCollector{
 		apiReader:             apiReader,

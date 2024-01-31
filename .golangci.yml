@@ -323,6 +323,10 @@ issues:
     - linters:
         - revive
       path: pkg/clients/dynatrace # it's awaiting refactoring
+    # Run some linter only for test files by excluding its issues for everything else.
+    - path-except: 'pkg/api/(.+)\.go'
+      linters:
+        - godot
 
 run:
   skip-dirs:

@@ -43,7 +43,7 @@ type SyntheticModifier struct {
 	envMap     *prioritymap.Map
 }
 
-// make the compiler watch the implemented interfaces.
+// make the compiler watch the implemented interfaces
 var (
 	_ volumeMountModifier = (*SyntheticModifier)(nil)
 	_ envModifier         = (*SyntheticModifier)(nil)

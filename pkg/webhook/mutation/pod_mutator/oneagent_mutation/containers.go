@@ -41,7 +41,7 @@ func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.Mutat
 
 // reinvokeUserContainers mutates each user container that hasn't been injected yet.
 // It makes sure that the new containers will have an environment variable in the install-container
-// that doesn't conflict with the previous environment variables of the originally injected containers.
+// that doesn't conflict with the previous environment variables of the originally injected containers
 func (mutator *OneAgentPodMutator) reinvokeUserContainers(request *dtwebhook.ReinvocationRequest) bool {
 	pod := request.Pod
 	oneAgentInstallContainer := findOneAgentInstallContainer(pod.Spec.InitContainers)

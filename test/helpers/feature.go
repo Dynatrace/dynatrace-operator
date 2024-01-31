@@ -10,13 +10,13 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-// The e2e framework has this in an internal package, no idea why.
+// The e2e framework has this in an internal package, no idea why
 const (
-	// LevelSetup when doing the setup phase.
+	// LevelSetup when doing the setup phase
 	LevelSetup features.Level = iota
-	// LevelAssess when doing the assess phase.
+	// LevelAssess when doing the assess phase
 	LevelAssess
-	// LevelTeardown when doing the teardown phase.
+	// LevelTeardown when doing the teardown phase
 	LevelTeardown
 )
 

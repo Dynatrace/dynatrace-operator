@@ -15,7 +15,7 @@ const (
 	MarkedForTerminationEvent = "MARKED_FOR_TERMINATION"
 )
 
-// EventData struct which defines what event payload should contain.
+// EventData struct which defines what event payload should contain
 type EventData struct {
 	EventType     string               `json:"eventType"`
 	StartInMillis uint64               `json:"start"`

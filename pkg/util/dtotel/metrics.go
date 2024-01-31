@@ -63,7 +63,7 @@ type Number interface {
 }
 
 // Count is a utility that can be used to increase Int64 and Float64 counters, but with same safeguards to avoid panics, if meter is not
-// properly initialized.
+// properly initialized
 func Count[N Number](ctx context.Context, meter metric.Meter, name string, value N, attributes ...attribute.KeyValue) {
 	if meter == nil || name == "" {
 		return

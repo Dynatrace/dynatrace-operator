@@ -96,7 +96,7 @@ func (dsInfo *builderInfo) addConnectionInfoEnvs(envVarMap *prioritymap.Map) {
 	}})
 }
 
-// deprecated.
+// deprecated
 func (dsInfo *builderInfo) addProxyEnv(envVarMap *prioritymap.Map) {
 	if !dsInfo.hasProxy() {
 		return
@@ -142,7 +142,7 @@ func addDefaultValueSource(envVarMap *prioritymap.Map, name string, value *corev
 
 const (
 	// starting with this version, OneAgent allows mounting proxy as file, therefore
-	// enabling us to deprecate the env var/arg approach (which is non security compliant).
+	// enabling us to deprecate the env var/arg approach (which is non security compliant)
 	ProxyAsEnvVarDeprecatedVersion = "1.273.0.0-0"
 )
 

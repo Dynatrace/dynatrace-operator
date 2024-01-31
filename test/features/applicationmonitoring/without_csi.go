@@ -18,7 +18,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-// ApplicationMonitoring deployment without CSI driver.
+// ApplicationMonitoring deployment without CSI driver
 func WithoutCSI(t *testing.T) features.Feature {
 	builder := features.New("application monitoring without csi driver enabled")
 	builder.WithLabel("name", "app-without-csi")

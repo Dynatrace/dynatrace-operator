@@ -1064,7 +1064,7 @@ func createFakeClientAndReconciler(t *testing.T, mockClient dtclient.Client, ins
 	return controller
 }
 
-// generateStatefulSetForTesting prepares an ActiveGate StatefulSet after a Reconciliation of the Dynakube with a specific feature enabled.
+// generateStatefulSetForTesting prepares an ActiveGate StatefulSet after a Reconciliation of the Dynakube with a specific feature enabled
 func generateStatefulSetForTesting(name, namespace, feature, kubeSystemUUID string) *appsv1.StatefulSet {
 	expectedLabels := map[string]string{
 		labels.AppNameLabel:      labels.ActiveGateComponentLabel,

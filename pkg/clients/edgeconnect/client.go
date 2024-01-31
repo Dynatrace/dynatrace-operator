@@ -70,7 +70,7 @@ func WithOauthScopes(scopes []string) func(*client) {
 }
 
 // WithContext can set context for client
-// NB: via context you can override default http client to add Proxy or CA certificates.
+// NB: via context you can override default http client to add Proxy or CA certificates
 func WithContext(ctx context.Context) func(*client) {
 	return func(c *client) {
 		c.ctx = ctx
@@ -84,13 +84,13 @@ type ServerError struct {
 	Details DetailsError `json:"details"`
 }
 
-// DetailsError represents details of errors.
+// DetailsError represents details of errors
 type DetailsError struct {
 	ConstraintViolations ConstraintViolations `json:"constraintViolations"`
 	MissingScopes        []string             `json:"missingScopes,omitempty"`
 }
 
-// ConstraintViolations represents constraint violation errors.
+// ConstraintViolations represents constraint violation errors
 type ConstraintViolations struct {
 	Message           string `json:"message"`
 	Path              string `json:"path,omitempty"`
@@ -133,7 +133,7 @@ func (c *client) getServerResponseData(response *http.Response) ([]byte, error) 
 	return responseData, nil
 }
 
-// GetEdgeConnect returns edge connect if it exists.
+// GetEdgeConnect returns edge connect if it exists
 func (c *client) GetEdgeConnect(edgeConnectId string) (GetResponse, error) {
 	edgeConnectUrl := c.getEdgeConnectUrl(edgeConnectId)
 
@@ -164,7 +164,7 @@ func (c *client) GetEdgeConnect(edgeConnectId string) (GetResponse, error) {
 	return response, nil
 }
 
-// UpdateEdgeConnect updates existing edge connect hostPatterns and oauthClientId.
+// UpdateEdgeConnect updates existing edge connect hostPatterns and oauthClientId
 func (c *client) UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []string, oauthClientId string) error {
 	edgeConnectUrl := c.getEdgeConnectUrl(edgeConnectId)
 
@@ -201,7 +201,7 @@ func (c *client) UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []st
 	return nil
 }
 
-// DeleteEdgeConnect deletes edge connect using DELETE method for give edgeConnectId.
+// DeleteEdgeConnect deletes edge connect using DELETE method for give edgeConnectId
 func (c *client) DeleteEdgeConnect(edgeConnectId string) error {
 	edgeConnectUrl := c.getEdgeConnectUrl(edgeConnectId)
 
@@ -228,7 +228,7 @@ func (c *client) DeleteEdgeConnect(edgeConnectId string) error {
 	return nil
 }
 
-// CreateEdgeConnect creates new edge connect.
+// CreateEdgeConnect creates new edge connect
 func (c *client) CreateEdgeConnect(name string, hostPatterns []string, oauthClientId string) (CreateResponse, error) {
 	edgeConnectsUrl := c.getEdgeConnectsUrl()
 
@@ -267,7 +267,7 @@ func (c *client) CreateEdgeConnect(name string, hostPatterns []string, oauthClie
 	return response, nil
 }
 
-// GetEdgeConnects returns list of edge connects.
+// GetEdgeConnects returns list of edge connects
 func (c *client) GetEdgeConnects(name string) (ListResponse, error) {
 	edgeConnectsUrl := c.getEdgeConnectsUrl()
 

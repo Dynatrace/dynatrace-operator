@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// TokenScopes is a list of scopes assigned to a token.
+// TokenScopes is a list of scopes assigned to a token
 type TokenScopes []string
 
 // Contains returns true if scope is included on the scopes, or false otherwise.

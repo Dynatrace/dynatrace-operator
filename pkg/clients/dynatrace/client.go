@@ -100,19 +100,19 @@ const (
 	// Commented for linter, left for further reference
 	// OsWindows = "windows"
 	// OsAix     = "aix"
-	// OsSolaris = "solaris".
+	// OsSolaris = "solaris"
 )
 
 // Known installer types.
 const (
 	InstallerTypeDefault = "default"
 	// Commented for linter, left for further reference
-	// InstallerTypeUnattended = "default-unattended".
+	// InstallerTypeUnattended = "default-unattended"
 	InstallerTypePaaS = "paas"
-	// InstallerTypePaasSh     = "paas-sh".
+	// InstallerTypePaasSh     = "paas-sh"
 )
 
-// Known token scopes.
+// Known token scopes
 const (
 	TokenScopeInstallerDownload     = "InstallerDownload"
 	TokenScopeDataExport            = "DataExport"

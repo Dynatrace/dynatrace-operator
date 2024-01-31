@@ -61,7 +61,7 @@ func (dsInfo *builderInfo) appendNetworkZoneArg(argMap *prioritymap.Map) {
 	}
 }
 
-// deprecated.
+// deprecated
 func (dsInfo *builderInfo) appendProxyArg(argMap *prioritymap.Map) {
 	if dsInfo.hasProxy() {
 		argMap.Append(argumentPrefix+"set-proxy", "$(https_proxy)")
@@ -70,7 +70,7 @@ func (dsInfo *builderInfo) appendProxyArg(argMap *prioritymap.Map) {
 	argMap.Append(argumentPrefix+"set-proxy", "")
 }
 
-// deprecated.
+// deprecated
 func (dsInfo *builderInfo) hasProxy() bool {
 	return dsInfo.dynakube != nil && dsInfo.dynakube.NeedsOneAgentProxy()
 }

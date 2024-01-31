@@ -10,7 +10,7 @@ import (
 
 var (
 
-	// AppName contains the name of the application.
+	// AppName contains the name of the application
 	AppName = "dynatrace-operator"
 
 	// Version contains the version of the Operator. Assigned externally.

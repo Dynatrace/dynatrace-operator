@@ -6,7 +6,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// New time provider always returns the current time.
+// New time provider always returns the current time
 func New() *Provider {
 	return &Provider{
 		now: nil,

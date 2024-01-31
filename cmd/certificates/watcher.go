@@ -119,7 +119,7 @@ func (watcher *CertificateWatcher) WaitForCertificates() {
 			} else {
 				log.Info("failed to update certificates", "error", err)
 			}
-			time.Sleep(tenSeconds)
+			time.Sleep(10 * time.Second)
 			continue
 		}
 		break

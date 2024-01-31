@@ -16,7 +16,7 @@ import (
 
 type ClientBuilder func(config *rest.Config, scheme *runtime.Scheme, owner metav1.Object) (*Client, error)
 
-// Client - an adapter for the external istioclientset library.
+// Client - an adapter for the external istioclientset library
 type Client struct {
 	IstioClientset istioclientset.Interface
 	Scheme         *runtime.Scheme

@@ -333,7 +333,7 @@ func (controller *Controller) hasUnschedulableTaint(node *corev1.Node) bool {
 	return false
 }
 
-// isMarkableForTermination checks if the timestamp from last mark is at least one hour old.
+// isMarkableForTermination checks if the timestamp from last mark is at least one hour old
 func (controller *Controller) isMarkableForTermination(nodeInfo *CacheEntry) bool {
 	// If the last mark was an hour ago, mark again
 	// Zero value for time.Time is 0001-01-01, so first mark is also executed

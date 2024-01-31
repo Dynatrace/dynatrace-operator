@@ -208,7 +208,7 @@ func addSkipCertCheck(transport *http.Transport, skipCertCheck bool) *http.Trans
 	return transport
 }
 
-// PrepareTransportForDynaKube creates default http transport and add proxy or trustedCAs if any.
+// PrepareTransportForDynaKube creates default http transport and add proxy or trustedCAs if any
 func PrepareTransportForDynaKube(ctx context.Context, apiReader client.Reader, transport *http.Transport, dynakube *dynatracev1beta1.DynaKube) (*http.Transport, error) {
 	var (
 		proxy      string

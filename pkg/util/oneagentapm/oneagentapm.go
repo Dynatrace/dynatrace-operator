@@ -5,7 +5,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-// Exists checks if a OneAgentAPM object exists.
+// Exists checks if a OneAgentAPM object exists
 func Exists(cfg *rest.Config) (bool, error) {
 	client, err := discovery.NewDiscoveryClientForConfig(cfg)
 	if err != nil {

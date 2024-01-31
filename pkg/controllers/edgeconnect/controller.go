@@ -45,7 +45,7 @@ type oauthCredentialsType struct {
 
 type edgeConnectClientBuilderType func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error)
 
-// Controller reconciles an EdgeConnect object.
+// Controller reconciles an EdgeConnect object
 type Controller struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the api-server

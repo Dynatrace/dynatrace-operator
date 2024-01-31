@@ -1,6 +1,6 @@
 package testdata
 
-// Generated via openssl req -new -newkey rsa:2048 -sha256 -days 365 -nodes -x509 -extensions v3_ca -keyout myCA.pem -out myCA.pem.
+// Generated via openssl req -new -newkey rsa:2048 -sha256 -days 365 -nodes -x509 -extensions v3_ca -keyout myCA.pem -out myCA.pem
 const CertsContent = `
 -----BEGIN CERTIFICATE-----
 MIIDhTCCAm2gAwIBAgIUWpUWshYDpAk2gr0dNRBS2VosGMIwDQYJKoZIhvcNAQEL

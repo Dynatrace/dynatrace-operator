@@ -10,7 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// DynakubeMapper manages the mapping creation from the dynakube's side.
+// DynakubeMapper manages the mapping creation from the dynakube's side
 type DynakubeMapper struct {
 	ctx        context.Context
 	client     client.Client
@@ -25,7 +25,7 @@ func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.
 
 // MapFromDynakube checks all the namespaces to all the dynakubes
 // updates the labels on the namespaces if necessary,
-// finds conflicting dynakubes (2 dynakube with codeModules on the same namespace).
+// finds conflicting dynakubes (2 dynakube with codeModules on the same namespace)
 func (dm DynakubeMapper) MapFromDynakube() error {
 	modifiedNs, err := dm.MatchingNamespaces()
 	if err != nil {

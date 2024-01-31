@@ -58,7 +58,7 @@ func (pmc *ProcessModuleConfig) Add(newProperty ProcessModuleProperty) *ProcessM
 // instead of updating it.
 // The fixed algorithm in Add cannot handle this broken cache without this function
 // It adds every property first to a map using the property's key, to make them distinct
-// Then collects the now distinct properties and updates the cache.
+// Then collects the now distinct properties and updates the cache
 func (pmc *ProcessModuleConfig) fixBrokenCache() {
 	properties := make([]ProcessModuleProperty, 0, len(pmc.Properties))
 	propertyMap := make(map[string]ProcessModuleProperty)
@@ -187,7 +187,7 @@ func (dtc *dynatraceClient) createProcessModuleConfigRequest(prevRevision uint) 
 
 // The endpoint used here is new therefore some tenants may not have it so we need to
 // handle it gracefully, by checking the status code of the request.
-// we also handle when there were no changes.
+// we also handle when there were no changes
 func (dtc *dynatraceClient) checkProcessModuleConfigRequestStatus(resp *http.Response) bool {
 	if resp == nil {
 		log.Info("problems checking response for processmoduleconfig endpoint")

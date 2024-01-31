@@ -29,7 +29,7 @@ const (
 	ocDebugAnnotationsResource  = "debug.openshift.io/source-resource"
 )
 
-// AddPodMutationWebhookToManager adds the Webhook server to the Manager.
+// AddPodMutationWebhookToManager adds the Webhook server to the Manager
 func AddPodMutationWebhookToManager(mgr manager.Manager, ns string) error {
 	podName := os.Getenv(env.PodName)
 	if podName == "" {
@@ -43,7 +43,7 @@ func AddPodMutationWebhookToManager(mgr manager.Manager, ns string) error {
 	return nil
 }
 
-// podMutatorWebhook executes mutators on Pods.
+// podMutatorWebhook executes mutators on Pods
 type podMutatorWebhook struct {
 	apiReader client.Reader
 	decoder   admission.Decoder
@@ -211,7 +211,7 @@ func setDynatraceInjectedAnnotation(mutationRequest *dtwebhook.MutationRequest) 
 	mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected] = "true"
 }
 
-// createResponseForPod tries to format pod as json.
+// createResponseForPod tries to format pod as json
 func createResponseForPod(ctx context.Context, pod *corev1.Pod, req admission.Request) admission.Response {
 	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
 	defer span.End()

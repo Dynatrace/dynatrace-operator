@@ -47,7 +47,7 @@ func CreateAgentConfigDir(fs afero.Fs, targetDir, sourceDir string, processModul
 
 // checkProcessModuleConfigCopy checks if we already made a copy of the original ruxitagentproc.conf file.
 // After the initial installation of a version we copy the ruxitagentproc.conf to _ruxitagentproc.conf, and we use the _ruxitagentproc.conf + the api response to re-create the ruxitagentproc.conf
-// so it`s easier to update.
+// so it`s easier to update
 func checkProcessModuleConfigCopy(fs afero.Fs, sourcePath, destPath string) error {
 	if _, err := fs.Open(sourcePath); !os.IsNotExist(err) {
 		return nil
