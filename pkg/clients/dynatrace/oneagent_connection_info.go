@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
+	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"golang.org/x/exp/maps"
@@ -35,7 +36,7 @@ func (dtc *dynatraceClient) GetOneAgentConnectionInfo() (OneAgentConnectionInfo,
 	}
 	defer utils.CloseBodyAfterRequest(resp)
 
-	if resp.StatusCode == 400 {
+	if resp.StatusCode == http.StatusBadRequest {
 		log.Info("server could not find the network zone or deliver default fallback config, is there an ActiveGate configured for the network zone?")
 		return OneAgentConnectionInfo{}, nil
 	}

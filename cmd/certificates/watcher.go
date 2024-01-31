@@ -20,7 +20,15 @@ import (
 )
 
 // TODO: refactor code below to be testable and also tested.
-const certificateRenewalInterval = 6 * time.Hour
+const (
+	certificateRenewalInterval = 6 * time.Hour
+	// The folders will be readable and executed by others, but writable by the user only.
+	permDirUser = 0775
+	// Grants read and write permission to everyone.
+	permAll     = 0666
+	fiveMinutes = 5 * time.Minute
+	tenSeconds  = 10 * time.Second
+)
 
 type CertificateWatcher struct {
 	apiReader             client.Reader
@@ -67,7 +75,7 @@ func (watcher *CertificateWatcher) updateCertificatesFromSecret() (bool, error) 
 	}
 
 	if _, err = watcher.fs.Stat(watcher.certificateDirectory); os.IsNotExist(err) {
-		err = watcher.fs.MkdirAll(watcher.certificateDirectory, 0755)
+		err = watcher.fs.MkdirAll(watcher.certificateDirectory, permDirUser)
 		if err != nil {
 			return false, fmt.Errorf("could not create cert directory: %w", err)
 		}
@@ -92,7 +100,7 @@ func (watcher *CertificateWatcher) ensureCertificateFile(secret corev1.Secret, f
 
 	data, err := afero.ReadFile(watcher.fs, f)
 	if os.IsNotExist(err) || !bytes.Equal(data, secret.Data[filename]) {
-		if err := afero.WriteFile(watcher.fs, f, secret.Data[filename], 0666); err != nil {
+		if err := afero.WriteFile(watcher.fs, f, secret.Data[filename], permAll); err != nil {
 			return false, err
 		}
 	} else {
@@ -102,7 +110,7 @@ func (watcher *CertificateWatcher) ensureCertificateFile(secret corev1.Secret, f
 }
 
 func (watcher *CertificateWatcher) WaitForCertificates() {
-	for threshold := time.Now().Add(5 * time.Minute); time.Now().Before(threshold); {
+	for threshold := time.Now().Add(fiveMinutes); time.Now().Before(threshold); {
 		_, err := watcher.updateCertificatesFromSecret()
 
 		if err != nil {
@@ -111,7 +119,7 @@ func (watcher *CertificateWatcher) WaitForCertificates() {
 			} else {
 				log.Info("failed to update certificates", "error", err)
 			}
-			time.Sleep(10 * time.Second)
+			time.Sleep(tenSeconds)
 			continue
 		}
 		break

@@ -155,6 +155,33 @@ linters-settings:
         deny:
           - pkg: "github.com/google/go-cmp"
             desc: Please don't use go-cmp for non-test code.
+  gomnd:
+    checks:
+      - argument
+      - case
+      - condition
+      - operation
+      - return
+    ignored-files:
+      - test*.go,testing.go
+    ignored-functions:
+      - '^time\.'
+      - strings.SplitN
+      - '^wait\.'
+      - rand.WithLength
+      - '^require\.'
+      - WaitForCondition
+      - '^int*'
+    ignored-numbers:
+      - '0666'
+      - '0644'
+      - '0755'
+      - '0770'
+      - '0755'
+      - '0000'
+      - '1001'
+      - '1000'
+      - '1234'
 
 linters:
   disable-all: true
@@ -206,6 +233,10 @@ linters:
   - whitespace                # Tool for detection of leading and trailing whitespace.
   - zerologlint               # Detects the wrong usage of zerolog that a user forgets to dispatch with Send or Msg.
   - godot             # Check if comments end in a period.
+  - gomnd             # An analyzer to detect magic numbers.
+    # - forbidigo         # Forbids identifiers.
+
+
 
     # TODO: Requires some code changes before enabling:
 
@@ -220,14 +251,12 @@ linters:
 # - execinquery       # Execinquery is a linter about query string checker in Query function which reads your Go src files and warning it finds.
 # - exhaustruct       # Checks if all structure fields are initialized.
 # - exportloopref     # Checks for pointers to enclosing loop variables.
-# - forbidigo         # Forbids identifiers.
 # - forcetypeassert   # Finds forced type assertions.
 # - funlen            # Tool for detection of long functions.
 # - gochecknoglobals  # Check that no global variables exist.
 # - gochecknoinits    # Checks that no init functions are present in Go code.
 # - goerr113          # Go linter to check the errors handling expressions.
 # - gofumpt           # Gofumpt checks whether code was gofumpt-ed.
-# - gomnd             # An analyzer to detect magic numbers.
 # - inamedparam       # reports interfaces with unnamed method parameters.
 # - ireturn           # Accept Interfaces, Return Concrete Types.
 # - maintidx          # Maintidx measures the maintainability index of each function.

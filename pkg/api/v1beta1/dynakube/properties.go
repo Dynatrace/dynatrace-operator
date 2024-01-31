@@ -486,7 +486,8 @@ func (dk *DynaKube) HostGroup() string {
 
 func splitArg(arg string) (key, value string) {
 	split := strings.Split(arg, "=")
-	if len(split) != 2 {
+	const expectedLen = 2
+	if len(split) != expectedLen {
 		return
 	}
 	key = split[0]
