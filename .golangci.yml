@@ -182,6 +182,8 @@ linters-settings:
       - '1001'
       - '1000'
       - '1234'
+  dupl:
+    threshold: 150
 
 linters:
   disable-all: true
@@ -235,10 +237,11 @@ linters:
   - godot             # Check if comments end in a period.
   - gomnd             # An analyzer to detect magic numbers.
   - forbidigo         # Forbids identifiers.
-#     - dupl              # Tool for code clone detection.
+  - dupl              # Tool for code clone detection.
 
 
     # TODO: Requires some code changes before enabling:
+
 
 # - bodyclose         # Checks whether HTTP response body is closed successfully.
 # - contextcheck      # Check whether the function uses a non-inherited context.
@@ -297,6 +300,11 @@ service:
 
 issues:
   exclude-rules:
+    # Exclude duplicate code and function length and complexity checking in test
+    # files (due to common repeats and long functions in test code)
+    - path: _(test|gen)\.go
+      linters:
+        - dupl
     - linters:
         - gosec
       path: pkg/webhook/validation/proxy_url_test.go
