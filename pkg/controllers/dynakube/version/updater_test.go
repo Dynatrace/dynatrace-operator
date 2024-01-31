@@ -14,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	mocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/opencontainers/go-digest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -495,8 +494,4 @@ func getTaggedReference(t *testing.T, image string) name.Tag {
 func assertStatusBasedOnTenantRegistry(t *testing.T, expectedImage, expectedVersion string, versionStatus status.VersionStatus) { //nolint:revive // argument-limit
 	assert.Equal(t, expectedImage, versionStatus.ImageID)
 	assert.Equal(t, expectedVersion, versionStatus.Version)
-}
-
-func getTestDigest() digest.Digest {
-	return digest.FromString("sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f")
 }

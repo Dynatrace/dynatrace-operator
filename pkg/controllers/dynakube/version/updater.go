@@ -160,39 +160,6 @@ func setImageIDWithDigest(
 	return nil
 }
 
-func updateSyntheticVersionStatusForTenantRegistry(
-	ctx context.Context,
-	target *status.VersionStatus,
-	registryClient registry.ImageGetter,
-	imageUri string,
-) error {
-	ref, err := name.ParseReference(imageUri)
-	if err != nil {
-		return errors.WithMessage(err, "failed to parse image uri")
-	}
-
-	log.Info("updating image version info for tenant registry image",
-		"image", imageUri,
-		"oldImageID", target.ImageID,
-		"oldVersion", target.Version)
-
-	if taggedRef, ok := ref.(name.Tag); ok {
-		imageVersion, err := registryClient.GetImageVersion(ctx, imageUri)
-		if err != nil {
-			log.Info("failed to determine image version")
-			return err
-		}
-		target.ImageID = taggedRef.String()
-		target.Version = imageVersion.Version
-	}
-
-	log.Info("updated image version info for tenant registry image",
-		"newImageID", target.ImageID,
-		"newVersion", target.Version)
-
-	return nil
-}
-
 func updateVersionStatusForTenantRegistry(
 	target *status.VersionStatus,
 	imageUri string,
