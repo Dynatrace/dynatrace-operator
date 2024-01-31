@@ -6,29 +6,25 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type oneAgentUpdater struct {
-	dynakube       *dynatracev1beta1.DynaKube
-	apiReader      client.Reader
-	dtClient       dtclient.Client
-	registryClient registry.ImageGetter
+	dynakube  *dynatracev1beta1.DynaKube
+	apiReader client.Reader
+	dtClient  dtclient.Client
 }
 
 func newOneAgentUpdater(
 	dynakube *dynatracev1beta1.DynaKube,
 	apiReader client.Reader,
 	dtClient dtclient.Client,
-	registryClient registry.ImageGetter,
 ) *oneAgentUpdater {
 	return &oneAgentUpdater{
-		dynakube:       dynakube,
-		apiReader:      apiReader,
-		dtClient:       dtClient,
-		registryClient: registryClient,
+		dynakube:  dynakube,
+		apiReader: apiReader,
+		dtClient:  dtClient,
 	}
 }
 
@@ -70,6 +66,7 @@ func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 	if latestVersion == "" {
 		latestVersion, err = updater.dtClient.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypeDefault)
 		if err != nil {
+			log.Info("failed to determine image version")
 			return err
 		}
 	}
@@ -80,7 +77,7 @@ func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 	}
 
 	defaultImage := updater.dynakube.DefaultOneAgentImage()
-	return updateVersionStatusForTenantRegistry(ctx, updater.Target(), updater.registryClient, defaultImage)
+	return updateVersionStatusForTenantRegistry(updater.Target(), defaultImage, latestVersion)
 }
 
 func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, error) {
@@ -94,13 +91,15 @@ func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, e
 	switch updater.Target().Source {
 	case status.TenantRegistryVersionSource:
 		previousVersion = updater.Target().Version
+		return isDowngrade(updater.Name(), previousVersion, latestVersion)
 	case status.PublicRegistryVersionSource:
 		previousVersion, err = getTagFromImageID(imageID)
 		if err != nil {
 			return false, err
 		}
+		return isDowngrade(updater.Name(), previousVersion, latestVersion)
 	}
-	return isDowngrade(updater.Name(), previousVersion, latestVersion)
+	return false, nil
 }
 
 func (updater oneAgentUpdater) ValidateStatus() error {
