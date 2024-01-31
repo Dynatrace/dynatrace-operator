@@ -11,7 +11,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
 )
 
-func (provisioner *OneAgentProvisioner) installAgentImage(dynakube dynatracev1beta1.DynaKube, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
+func (provisioner *OneAgentProvisioner) installAgentImage(
+	dynakube dynatracev1beta1.DynaKube,
+	latestProcessModuleConfig *dtclient.ProcessModuleConfig,
+) (
+	string,
+	error,
+) {
 	tenantUUID, err := dynakube.TenantUUIDFromApiUrl()
 	if err != nil {
 		return "", err
@@ -46,14 +52,14 @@ func (provisioner *OneAgentProvisioner) installAgentImage(dynakube dynatracev1be
 		return "", err
 	}
 
-	err = processmoduleconfig.CreateAgentConfigDir(provisioner.fs, targetConfigDir, targetDir, latestProcessModuleConfigCache.ProcessModuleConfig)
+	err = processmoduleconfig.CreateAgentConfigDir(provisioner.fs, targetConfigDir, targetDir, latestProcessModuleConfig)
 	if err != nil {
 		return "", err
 	}
 	return imageDigest, err
 }
 
-func (provisioner *OneAgentProvisioner) installAgentZip(dynakube dynatracev1beta1.DynaKube, dtc dtclient.Client, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
+func (provisioner *OneAgentProvisioner) installAgentZip(dynakube dynatracev1beta1.DynaKube, dtc dtclient.Client, latestProcessModuleConfig *dtclient.ProcessModuleConfig) (string, error) {
 	tenantUUID, err := dynakube.TenantUUIDFromApiUrl()
 	if err != nil {
 		return "", err
@@ -68,7 +74,7 @@ func (provisioner *OneAgentProvisioner) installAgentZip(dynakube dynatracev1beta
 		return "", err
 	}
 
-	err = processmoduleconfig.CreateAgentConfigDir(provisioner.fs, targetConfigDir, targetDir, latestProcessModuleConfigCache.ProcessModuleConfig)
+	err = processmoduleconfig.CreateAgentConfigDir(provisioner.fs, targetConfigDir, targetDir, latestProcessModuleConfig)
 	if err != nil {
 		return "", err
 	}
