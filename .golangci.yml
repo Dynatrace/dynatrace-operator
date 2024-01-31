@@ -234,8 +234,8 @@ linters:
   - zerologlint               # Detects the wrong usage of zerolog that a user forgets to dispatch with Send or Msg.
   - godot             # Check if comments end in a period.
   - gomnd             # An analyzer to detect magic numbers.
-    # - forbidigo         # Forbids identifiers.
-
+  - forbidigo         # Forbids identifiers.
+#     - dupl              # Tool for code clone detection.
 
 
     # TODO: Requires some code changes before enabling:
@@ -243,7 +243,6 @@ linters:
 # - bodyclose         # Checks whether HTTP response body is closed successfully.
 # - contextcheck      # Check whether the function uses a non-inherited context.
 # - cyclop            # Checks function and package cyclomatic complexity.
-# - dupl              # Tool for code clone detection.
 # - dupword           # Checks for duplicate words in the source code.	comment
 # - errcheck          # enabled by default and recommended
 # - errchkjson        # Checks types passed to the json encoding functions. Reports unsupported types and reports occations, where the check for the returned error can be omitted.
