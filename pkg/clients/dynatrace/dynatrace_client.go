@@ -58,7 +58,7 @@ const (
 // The response body must be closed by the caller when no longer used.
 func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.Response, error) {
 	// TODO: introduce ctx into dynatrace client
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, url, nil)
 	if err != nil {
 		return nil, errors.WithMessage(err, "error initializing http request")
 	}
@@ -89,7 +89,7 @@ func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.
 
 func createBaseRequest(url, method, apiToken string, body io.Reader) (*http.Request, error) {
 	// TODO: introduce ctx into dynatrace client
-	req, err := http.NewRequestWithContext(context.Background(), method, url, body)
+	req, err := http.NewRequestWithContext(context.TODO(), method, url, body)
 	if err != nil {
 		return nil, errors.WithMessage(err, "error initializing http request")
 	}
