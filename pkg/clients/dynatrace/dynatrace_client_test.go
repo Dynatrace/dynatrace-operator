@@ -36,7 +36,7 @@ func TestMakeRequest(t *testing.T) {
 		defer utils.CloseBodyAfterRequest(resp)
 	}
 	{
-		resp, err := dc.makeRequest("%s/v1/deployment/installer/agent/connectioninfo", dynatraceApiToken) //nolint:bodyclose
+		resp, err := dc.makeRequest("%s/v1/deployment/installer/agent/connectioninfo", dynatraceApiToken)
 		assert.Error(t, err, "unsupported protocol scheme")
 		assert.Nil(t, resp)
 	}
@@ -59,7 +59,7 @@ func TestGetResponseOrServerError(t *testing.T) {
 
 	reqURL := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dc.url)
 	{
-		resp, err := dc.makeRequest(reqURL, dynatraceApiToken) //nolint:bodyclose
+		resp, err := dc.makeRequest(reqURL, dynatraceApiToken)
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
 

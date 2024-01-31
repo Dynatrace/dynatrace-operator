@@ -194,8 +194,10 @@ linters:
   - decorder                  # Check declaration order and count of types, constants, variables and functions.
   - depguard                  # Go linter that checks if package imports are in a list of acceptable packages
   - dogsled                   # Checks assignments with too many blank identifiers (e.g. x, _, _, _, := f())
+  - dupl                      # Tool for code clone detection.
   - durationcheck             # Check for two durations multiplied together.
   - errorlint                 # Errorlint is a linter for that can be used to find code that will cause problems with the error wrapping scheme introduced in Go 1.13.
+  - forbidigo                 # Forbids identifiers.
   - gci                       # Gci controls Go package import order and makes it always deterministic.
   - gocheckcompilerdirectives # Checks that go compiler directive comments (//go:) are valid.
   - gochecksumtype            # Run exhaustiveness checks on Go "sum types"
@@ -203,8 +205,10 @@ linters:
   - goconst                   # Finds repeated strings that could be replaced by a constant
   - gocritic                  # Provides diagnostics that check for bugs, performance and style issues.
   - gocyclo                   # Computes and checks the cyclomatic complexity of functions.	complexity.
+  - godot                     # Check if comments end in a period.
   - gofmt                     # Gofmt checks whether code was gofmt-ed. By default this tool runs with -s option to check for code simplification
   - goheader                  # Checks is file header matches to pattern.
+  - gomnd                     # An analyzer to detect magic numbers.
   - gomoddirectives           # Manage the use of 'replace', 'retract', and 'excludes' directives in go.mod.
   - gomodguard                # Allow and block list linter for direct Go module dependencies. This is different from depguard where there are different block types for example version constraints and module recommendations.
   - goprintffuncname          # Checks that printf-like functions are named with f at the end.
@@ -220,6 +224,7 @@ linters:
   - misspell                  # Finds commonly misspelled English words in comments.
   - nakedret                  # Checks that functions with naked returns are not longer than a maximum size (can be zero).
   - nilerr                    # Finds the code that returns nil even if it checks that the error is not nil.
+  - noctx                     # Finds sending http request without context.Context.
   - nosprintfhostport         # Checks for misuse of Sprintf to construct a host with port in a URL.
   - perfsprint                # Checks that fmt.Sprintf can be replaced with a faster alternative.
   - prealloc                  # Finds slice declarations that could potentially be pre-allocated
@@ -234,17 +239,12 @@ linters:
   - unused                    # Checks Go code for unused constants, variables, functions and types
   - whitespace                # Tool for detection of leading and trailing whitespace.
   - zerologlint               # Detects the wrong usage of zerolog that a user forgets to dispatch with Send or Msg.
-  - godot             # Check if comments end in a period.
-  - gomnd             # An analyzer to detect magic numbers.
-  - forbidigo         # Forbids identifiers.
-  - dupl              # Tool for code clone detection.
-  - noctx             # Finds sending http request without context.Context.
 
-
-    # TODO: Requires some code changes before enabling:
-
-
+# Blocked:
+# false positive -> https://github.com/timakin/bodyclose/issues/51
 # - bodyclose         # Checks whether HTTP response body is closed successfully.
+
+# TODO: Requires some code changes before enabling:
 # - contextcheck      # Check whether the function uses a non-inherited context.
 # - cyclop            # Checks function and package cyclomatic complexity.
 # - dupword           # Checks for duplicate words in the source code.	comment
