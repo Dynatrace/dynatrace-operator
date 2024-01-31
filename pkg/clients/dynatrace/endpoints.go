@@ -20,7 +20,7 @@ func (dtc *dynatraceClient) getLatestAgentVersionUrl(os, installerType, flavor, 
 }
 
 func (dtc *dynatraceClient) getLatestActiveGateVersionUrl(os, arch string) string {
-	return fmt.Sprintf("%s/api/v1/deployment/installer/gateway/%s/latest/metainfo?&arch=%s",
+	return fmt.Sprintf("%s/v1/deployment/installer/gateway/%s/latest/metainfo?arch=%s",
 		dtc.url, os, arch)
 }
 
