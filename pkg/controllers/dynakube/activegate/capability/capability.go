@@ -6,14 +6,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
-	corev1 "k8s.io/api/core/v1"
-)
-
-const (
-	SyntheticName                      = "synthetic"
-	SyntheticActiveGateEnvCapabilities = "synthetic,beacon_forwarder,beacon_forwarder_synthetic"
 )
 
 type baseFunc func() *capabilityBase
@@ -24,11 +16,6 @@ var (
 		dynatracev1beta1.RoutingCapability.DisplayName:       routingBase,
 		dynatracev1beta1.MetricsIngestCapability.DisplayName: metricsIngestBase,
 		dynatracev1beta1.DynatraceApiCapability.DisplayName:  dynatraceApiBase,
-	}
-
-	SyntheticActiveGateResourceRequirements = corev1.ResourceRequirements{
-		Limits:   resources.NewResourceList("300m", "1Gi"),
-		Requests: resources.NewResourceList("150m", "250Mi"),
 	}
 )
 
@@ -77,10 +64,6 @@ type RoutingCapability struct {
 }
 
 type MultiCapability struct {
-	capabilityBase
-}
-
-type SyntheticCapability struct {
 	capabilityBase
 }
 
@@ -143,25 +126,6 @@ func NewRoutingCapability(dk *dynatracev1beta1.DynaKube) *RoutingCapability {
 	return c
 }
 
-func NewSyntheticCapability(dk *dynatracev1beta1.DynaKube) *SyntheticCapability {
-	capability := &SyntheticCapability{
-		*syntheticBase(),
-	}
-	if dk == nil {
-		return capability
-	}
-
-	capability.enabled = dk.IsSyntheticMonitoringEnabled()
-	capability.properties = &dk.Spec.ActiveGate.CapabilityProperties
-
-	if capability.enabled {
-		capability.properties.Replicas = address.Of(dk.FeatureSyntheticReplicas())
-		capability.properties.Resources = SyntheticActiveGateResourceRequirements
-	}
-
-	return capability
-}
-
 func kubeMonBase() *capabilityBase {
 	c := capabilityBase{
 		shortName: dynatracev1beta1.KubeMonCapability.ShortName,
@@ -198,21 +162,11 @@ func dynatraceApiBase() *capabilityBase {
 	return &c
 }
 
-func syntheticBase() *capabilityBase {
-	c := capabilityBase{
-		shortName: SyntheticName,
-		argName:   SyntheticActiveGateEnvCapabilities,
-	}
-
-	return &c
-}
-
 func GenerateActiveGateCapabilities(dk *dynatracev1beta1.DynaKube) []Capability {
 	return []Capability{
 		NewKubeMonCapability(dk),
 		NewRoutingCapability(dk),
 		NewMultiCapability(dk),
-		NewSyntheticCapability(dk),
 	}
 }
 

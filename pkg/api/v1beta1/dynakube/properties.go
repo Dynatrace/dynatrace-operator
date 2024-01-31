@@ -43,7 +43,6 @@ const (
 	PodNameOsAgent                          = "oneagent"
 
 	defaultActiveGateImage = "/linux/activegate:latest"
-	defaultSyntheticImage  = "linux/dynatrace-synthetic"
 )
 
 // ApiUrl is a getter for dk.Spec.APIURL.
@@ -66,8 +65,7 @@ func (dk *DynaKube) ApiUrlHost() string {
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.
 func (dk *DynaKube) NeedsActiveGate() bool {
 	return dk.DeprecatedActiveGateMode() ||
-		dk.ActiveGateMode() ||
-		dk.IsSyntheticMonitoringEnabled()
+		dk.ActiveGateMode()
 }
 
 // ApplicationMonitoringMode returns true when application only section is used.
@@ -153,10 +151,6 @@ func (dk *DynaKube) NeedsActiveGateServicePorts() bool {
 
 func (dk *DynaKube) NeedsActiveGateService() bool {
 	return dk.NeedsActiveGateServicePorts()
-}
-
-func (dk *DynaKube) IsSyntheticMonitoringEnabled() bool {
-	return dk.FeatureSyntheticLocationEntityId() != ""
 }
 
 func (dk *DynaKube) HasActiveGateCaCert() bool {
@@ -305,31 +299,6 @@ func (dk *DynaKube) CustomActiveGateImage() string {
 	}
 
 	return dk.Spec.ActiveGate.Image
-}
-
-// SyntheticImage provides the image reference set in Status for Synthetic.
-// Format: repo@sha256:digest.
-func (dk *DynaKube) SyntheticImage() string {
-	return dk.Status.Synthetic.ImageID
-}
-
-// CustomSyntheticImage provides the image reference for Synthetic provided in the feature-flags.
-func (dk *DynaKube) CustomSyntheticImage() string {
-	return dk.FeatureCustomSyntheticImage()
-}
-
-// DefaultActiveGateImage provides the image reference for Synthetic from tenant registry.
-// Format: repo:tag.
-func (dk *DynaKube) DefaultSyntheticImage() string {
-	apiUrlHost := dk.ApiUrlHost()
-	if apiUrlHost == "" {
-		return ""
-	}
-
-	return fmt.Sprintf("%s/%s:%s",
-		apiUrlHost,
-		defaultSyntheticImage,
-		api.LatestTag)
 }
 
 // CodeModulesVersion provides version set in Status for the CodeModules.

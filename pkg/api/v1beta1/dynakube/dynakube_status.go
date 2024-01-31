@@ -40,9 +40,6 @@ type DynaKubeStatus struct { // nolint:revive
 	// Observed state of Code Modules
 	CodeModules CodeModulesStatus `json:"codeModules,omitempty"`
 
-	// Observed state of Synthetic
-	Synthetic SyntheticStatus `json:"synthetic,omitempty"`
-
 	// Observed state of Dynatrace API
 	DynatraceApi DynatraceApiStatus `json:"dynatraceApi,omitempty"`
 }
@@ -137,11 +134,7 @@ type OneAgentInstance struct {
 	IPAddress string `json:"ipAddress,omitempty"`
 }
 
-type SyntheticStatus struct {
-	status.VersionStatus `json:",inline"`
-}
-
-// SetPhase sets the status phase on the DynaKube object.
+// SetPhase sets the status phase on the DynaKube object
 func (dk *DynaKubeStatus) SetPhase(phase status.DeploymentPhase) bool {
 	upd := phase != dk.Phase
 	dk.Phase = phase
