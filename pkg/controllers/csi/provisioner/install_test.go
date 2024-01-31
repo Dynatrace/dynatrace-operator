@@ -27,6 +27,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	testTenantUUID = "zib123"
+)
+
 func TestUpdateAgent(t *testing.T) {
 	testVersion := "test"
 	testImageDigest := "7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
@@ -35,14 +39,14 @@ func TestUpdateAgent(t *testing.T) {
 		provisioner := createTestProvisioner()
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(dk.CodeModulesVersion())
 		var revision uint = 3
-		processModuleCache := createTestProcessModuleConfigCache(revision)
+		processModule := createTestProcessModuleConfig(revision)
 		installerMock := mockedinstaller.NewInstaller(t)
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testVersion))
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentZip(dk, mockedclient.NewClient(t), &processModuleCache)
+		currentVersion, err := provisioner.installAgentZip(dk, mockedclient.NewClient(t), processModule)
 		require.NoError(t, err)
 		assert.Equal(t, testVersion, currentVersion)
 		t_utils.AssertEvents(t,
@@ -68,14 +72,14 @@ func TestUpdateAgent(t *testing.T) {
 		newTargetDir := provisioner.path.AgentSharedBinaryDirForAgent(dk.CodeModulesVersion())
 
 		var revision uint = 3
-		processModuleCache := createTestProcessModuleConfigCache(revision)
+		processModule := createTestProcessModuleConfig(revision)
 		installerMock := mockedinstaller.NewInstaller(t)
 		installerMock.
 			On("InstallAgent", newTargetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, newVersion))
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentZip(dk, mockedclient.NewClient(t), &processModuleCache)
+		currentVersion, err := provisioner.installAgentZip(dk, mockedclient.NewClient(t), processModule)
 		require.NoError(t, err)
 		assert.Equal(t, newVersion, currentVersion)
 	})
@@ -87,14 +91,14 @@ func TestUpdateAgent(t *testing.T) {
 		_ = provisioner.fs.MkdirAll(targetDir, 0755)
 		_, _ = provisioner.fs.Create(sourceConfigPath)
 		var revision uint = 3
-		processModuleCache := createTestProcessModuleConfigCache(revision)
+		processModule := createTestProcessModuleConfig(revision)
 		installerMock := mockedinstaller.NewInstaller(t)
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(false, nil)
 
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
-		currentVersion, err := provisioner.installAgentZip(dk, mockedclient.NewClient(t), &processModuleCache)
+		currentVersion, err := provisioner.installAgentZip(dk, mockedclient.NewClient(t), processModule)
 
 		require.NoError(t, err)
 		assert.Equal(t, testVersion, currentVersion)
@@ -104,7 +108,7 @@ func TestUpdateAgent(t *testing.T) {
 		dk := createTestDynaKubeWithImage(testImageDigest)
 		provisioner := createTestProvisioner(createMockedPullSecret(dk, dockerconfigjsonContent))
 		var revision uint = 3
-		processModuleCache := createTestProcessModuleConfigCache(revision)
+		processModule := createTestProcessModuleConfig(revision)
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(testImageDigest)
 		installerMock := mockedinstaller.NewInstaller(t)
 		installerMock.
@@ -112,7 +116,7 @@ func TestUpdateAgent(t *testing.T) {
 			Return(false, fmt.Errorf("BOOM"))
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentImage(dk, &processModuleCache)
+		currentVersion, err := provisioner.installAgentImage(dk, processModule)
 
 		require.Error(t, err)
 		assert.Equal(t, "", currentVersion)
@@ -129,7 +133,7 @@ func TestUpdateAgent(t *testing.T) {
 	t.Run("codeModulesImage set without custom pull secret", func(t *testing.T) {
 		dockerconfigjsonContent := `{"auths":{}}`
 		var revision uint = 3
-		processModuleCache := createTestProcessModuleConfigCache(revision)
+		processModule := createTestProcessModuleConfig(revision)
 
 		dk := createTestDynaKubeWithImage(testImageDigest)
 		provisioner := createTestProvisioner(createMockedPullSecret(dk, dockerconfigjsonContent))
@@ -140,7 +144,7 @@ func TestUpdateAgent(t *testing.T) {
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentImage(dk, &processModuleCache)
+		currentVersion, err := provisioner.installAgentImage(dk, processModule)
 		require.NoError(t, err)
 		assert.Equal(t, testImageDigest, currentVersion)
 	})
@@ -148,7 +152,7 @@ func TestUpdateAgent(t *testing.T) {
 		pullSecretName := "test-pull-secret"
 		dockerconfigjsonContent := `{"auths":{}}`
 		var revision uint = 3
-		processModuleCache := createTestProcessModuleConfigCache(revision)
+		processModule := createTestProcessModuleConfig(revision)
 
 		dk := createTestDynaKubeWithImage(testImageDigest)
 		dk.Spec.CustomPullSecret = pullSecretName
@@ -161,7 +165,7 @@ func TestUpdateAgent(t *testing.T) {
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentImage(dk, &processModuleCache)
+		currentVersion, err := provisioner.installAgentImage(dk, processModule)
 		require.NoError(t, err)
 		assert.Equal(t, testImageDigest, currentVersion)
 	})
@@ -171,7 +175,7 @@ func TestUpdateAgent(t *testing.T) {
 		customCertContent := "I-am-a-cert-trust-me"
 		dockerconfigjsonContent := `{"auths":{}}`
 		var revision uint = 3
-		processModuleCache := createTestProcessModuleConfigCache(revision)
+		processModule := createTestProcessModuleConfig(revision)
 
 		dk := createTestDynaKubeWithImage(testImageDigest)
 		dk.Spec.CustomPullSecret = pullSecretName
@@ -185,7 +189,7 @@ func TestUpdateAgent(t *testing.T) {
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentImage(dk, &processModuleCache)
+		currentVersion, err := provisioner.installAgentImage(dk, processModule)
 		require.NoError(t, err)
 		assert.Equal(t, testImageDigest, currentVersion)
 	})
@@ -292,5 +296,18 @@ func mockImageInstallerBuilder(mock *mockedinstaller.Installer) imageInstallerBu
 func mockUrlInstallerBuilder(mock *mockedinstaller.Installer) urlInstallerBuilder {
 	return func(f afero.Fs, c dtclient.Client, p *url.Properties) installer.Installer {
 		return mock
+	}
+}
+
+func createTestProcessModuleConfig(revision uint) *dtclient.ProcessModuleConfig {
+	return &dtclient.ProcessModuleConfig{
+		Revision: revision,
+		Properties: []dtclient.ProcessModuleProperty{
+			{
+				Section: "test",
+				Key:     "test",
+				Value:   "test3",
+			},
+		},
 	}
 }

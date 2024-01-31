@@ -29,6 +29,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
@@ -178,7 +179,7 @@ func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context
 		return err
 	}
 
-	latestProcessModuleConfigCache, requeue, err := provisioner.updateAgentInstallation(ctx, dtc, dynakubeMetadata, dk)
+	requeue, err := provisioner.updateAgentInstallation(ctx, dtc, dynakubeMetadata, dk)
 	if requeue || err != nil {
 		return err
 	}
@@ -189,28 +190,25 @@ func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context
 		return err
 	}
 
-	err = provisioner.writeProcessModuleConfigCache(dynakubeMetadata.TenantUUID, latestProcessModuleConfigCache)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
-func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Context, dtc dtclient.Client, dynakubeMetadata *metadata.Dynakube, dk *dynatracev1beta1.DynaKube) (
-	latestProcessModuleConfigCache *processModuleConfigCache,
+func (provisioner *OneAgentProvisioner) updateAgentInstallation(
+	ctx context.Context, dtc dtclient.Client,
+	dynakubeMetadata *metadata.Dynakube,
+	dk *dynatracev1beta1.DynaKube,
+) (
 	requeue bool,
 	err error,
 ) {
-	latestProcessModuleConfig, _, err := provisioner.getProcessModuleConfig(dtc, dynakubeMetadata.TenantUUID)
+	latestProcessModuleConfig, err := processmoduleconfigsecret.GetSecretData(ctx, provisioner.apiReader, dk.Name, dk.Namespace)
 	if err != nil {
-		log.Error(err, "error when getting the latest ruxitagentproc.conf")
-		return nil, false, err
+		return false, err
 	}
 
 	tenantToken, err := provisioner.getAgentTenantToken(ctx, dk)
 	if err != nil {
-		return nil, false, err
+		return false, err
 	}
 
 	latestProcessModuleConfig = latestProcessModuleConfig.
@@ -218,12 +216,11 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 		AddConnectionInfo(dk.Status.OneAgent.ConnectionInfoStatus, tenantToken).
 		// set proxy explicitly empty, so old proxy settings get deleted where necessary
 		AddProxy("")
-	latestProcessModuleConfigCache = newProcessModuleConfigCache(latestProcessModuleConfig)
 
 	if dk.NeedsOneAgentProxy() {
 		proxy, err := dk.Proxy(ctx, provisioner.apiReader)
 		if err != nil {
-			return nil, false, err
+			return false, err
 		}
 		latestProcessModuleConfig.AddProxy(proxy)
 
@@ -234,27 +231,27 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 	}
 
 	if dk.CodeModulesImage() != "" {
-		updatedDigest, err := provisioner.installAgentImage(*dk, latestProcessModuleConfigCache)
+		updatedDigest, err := provisioner.installAgentImage(*dk, latestProcessModuleConfig)
 		if err != nil {
 			log.Info("error when updating agent from image", "error", err.Error())
 			// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
-			return nil, true, nil
+			return true, nil
 		} else if updatedDigest != "" {
 			dynakubeMetadata.LatestVersion = ""
 			dynakubeMetadata.ImageDigest = updatedDigest
 		}
 	} else {
-		updateVersion, err := provisioner.installAgentZip(*dk, dtc, latestProcessModuleConfigCache)
+		updateVersion, err := provisioner.installAgentZip(*dk, dtc, latestProcessModuleConfig)
 		if err != nil {
 			log.Info("error when updating agent from zip", "error", err.Error())
 			// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
-			return nil, true, nil
+			return true, nil
 		} else if updateVersion != "" {
 			dynakubeMetadata.LatestVersion = updateVersion
 			dynakubeMetadata.ImageDigest = ""
 		}
 	}
-	return latestProcessModuleConfigCache, false, nil
+	return false, nil
 }
 
 func (provisioner *OneAgentProvisioner) getAgentTenantToken(ctx context.Context, dk *dynatracev1beta1.DynaKube) (string, error) {

@@ -12,6 +12,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	clientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -34,7 +35,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		reconciler := NewReconciler(mockK8sClient,
 			mockK8sClient, createMockDtClient(t, 0), dynakube, scheme.Scheme, mockTime)
-		err := reconciler.Reconcile(context.TODO())
+		err := reconciler.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		checkSecretForValue(t, mockK8sClient, "\"revision\":0")
@@ -43,7 +44,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		// update should be blocked by timeout
 		mockTime.Set(timeprovider.Now())
 		reconciler.dtClient = createMockDtClient(t, 1)
-		err = reconciler.Reconcile(context.TODO())
+		err = reconciler.Reconcile(context.Background())
 		require.NoError(t, err)
 		checkSecretForValue(t, mockK8sClient, "\"revision\":0")
 		require.True(t, dynakube.Status.OneAgent.LastProcessModuleConfigUpdate.Time != mockTime.Now().Time)
@@ -52,7 +53,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		futureTime := metav1.NewTime(time.Now().Add(time.Hour))
 		mockTime.Set(&futureTime)
 
-		err = reconciler.Reconcile(context.TODO())
+		err = reconciler.Reconcile(context.Background())
 		require.NoError(t, err)
 		checkSecretForValue(t, mockK8sClient, "\"revision\":1")
 		require.True(t, dynakube.Status.OneAgent.LastProcessModuleConfigUpdate.Time == futureTime.Time)
@@ -62,7 +63,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			ClassicFullStack: &dynatracev1beta1.HostInjectSpec{}})
 
 		reconciler := NewReconciler(nil, nil, nil, dynakube, scheme.Scheme, timeprovider.New())
-		err := reconciler.Reconcile(context.TODO())
+		err := reconciler.Reconcile(context.Background())
 
 		require.NoError(t, err)
 	})
@@ -70,7 +71,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 func checkSecretForValue(t *testing.T, k8sClient client.Client, shouldContain string) {
 	var secret corev1.Secret
-	err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: extendWithSuffix(testName), Namespace: testNamespace}, &secret)
+	err := k8sClient.Get(context.Background(), client.ObjectKey{Name: extendWithSuffix(testName), Namespace: testNamespace}, &secret)
 	require.NoError(t, err)
 
 	processModuleConfig, ok := secret.Data[SecretKeyProcessModuleConfig]
@@ -97,4 +98,38 @@ func createMockDtClient(t *testing.T, revision uint) *clientmock.Client {
 		Properties: nil,
 	}, nil)
 	return mockClient
+}
+
+func TestGetSecretData(t *testing.T) {
+	t.Run("unmarshal secret data into struct", func(t *testing.T) {
+		// use Reconcile to automatically create the secret to test
+		dynakube := createDynakube(dynatracev1beta1.OneAgentSpec{
+			CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}})
+		mockK8sClient := fake.NewClient(dynakube)
+		mockTime := timeprovider.New().Freeze()
+		reconciler := NewReconciler(mockK8sClient,
+			mockK8sClient, createMockDtClient(t, 0), dynakube, scheme.Scheme, mockTime)
+		reconciler.Reconcile(context.Background())
+
+		got, err := GetSecretData(context.Background(), mockK8sClient, testName, testNamespace)
+		assert.Nil(t, err)
+		assert.Equal(t, &dtclient.ProcessModuleConfig{Revision: 0, Properties: nil}, got)
+	})
+	t.Run("error when secret not found", func(t *testing.T) {
+		got, err := GetSecretData(context.Background(), fake.NewClient(), testName, testNamespace)
+		assert.NotNil(t, err)
+		assert.Nil(t, got)
+	})
+	t.Run("error when unmarshaling secret data", func(t *testing.T) {
+		fakeClient := fake.NewClient()
+		fakeClient.Create(context.Background(),
+			&corev1.Secret{
+				Data:       map[string][]byte{SecretKeyProcessModuleConfig: []byte("WRONG VALUE!")},
+				ObjectMeta: metav1.ObjectMeta{Name: extendWithSuffix(testName), Namespace: testNamespace},
+			},
+		)
+		got, err := GetSecretData(context.Background(), fakeClient, testName, testNamespace)
+		assert.NotNil(t, err)
+		assert.Nil(t, got)
+	})
 }
