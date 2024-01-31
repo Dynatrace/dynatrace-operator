@@ -25,7 +25,7 @@ func AddNamespaceMutationWebhookToManager(manager ctrl.Manager, namespace string
 	return nil
 }
 
-// namespaceMutator adds the necessary label to namespaces that match a dynakubes namespace selector
+// namespaceMutator adds the necessary label to namespaces that match a dynakubes namespace selector.
 type namespaceMutator struct {
 	client    client.Client
 	apiReader client.Reader

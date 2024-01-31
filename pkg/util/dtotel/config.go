@@ -15,7 +15,7 @@ const (
 	otelMetricReadInterval         = 5 * time.Second
 	golangRuntimeStatsReadInterval = otelMetricReadInterval
 
-	// these are the default values defined by OpenTelementry spec but not exported as consts in SDK packages
+	// these are the default values defined by OpenTelementry spec but not exported as consts in SDK packages.
 	otelTracesUrl  = "/v1/traces"
 	otelMetricsUrl = "/v1/metrics"
 )

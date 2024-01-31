@@ -205,6 +205,7 @@ linters:
   - unused                    # Checks Go code for unused constants, variables, functions and types
   - whitespace                # Tool for detection of leading and trailing whitespace.
   - zerologlint               # Detects the wrong usage of zerolog that a user forgets to dispatch with Send or Msg.
+  - godot             # Check if comments end in a period.
 
     # TODO: Requires some code changes before enabling:
 
@@ -224,7 +225,6 @@ linters:
 # - funlen            # Tool for detection of long functions.
 # - gochecknoglobals  # Check that no global variables exist.
 # - gochecknoinits    # Checks that no init functions are present in Go code.
-# - godot             # Check if comments end in a period.
 # - goerr113          # Go linter to check the errors handling expressions.
 # - gofumpt           # Gofumpt checks whether code was gofumpt-ed.
 # - gomnd             # An analyzer to detect magic numbers.

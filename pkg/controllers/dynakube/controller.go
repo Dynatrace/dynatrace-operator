@@ -54,7 +54,7 @@ func Add(mgr manager.Manager, _ string) error {
 	return NewController(mgr, string(kubeSysUID)).SetupWithManager(mgr)
 }
 
-// NewController returns a new ReconcileDynaKube
+// NewController returns a new ReconcileDynaKube.
 func NewController(mgr manager.Manager, clusterID string) *Controller {
 	return NewDynaKubeController(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetScheme(), mgr.GetConfig(), clusterID)
 }
@@ -84,7 +84,7 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(controller)
 }
 
-// Controller reconciles a DynaKube object
+// Controller reconciles a DynaKube object.
 type Controller struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the api-server

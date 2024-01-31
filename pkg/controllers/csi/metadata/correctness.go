@@ -32,7 +32,7 @@ func NewCorrectnessChecker(cl client.Reader, access Access, opts dtcsi.CSIOption
 
 // CorrectMetadata checks if the entries in the storage are actually valid
 // Removes not valid entries
-// "Moves" agent bins from deprecated location. (just creates a symlink)
+// "Moves" agent bins from deprecated location. (just creates a symlink).
 func (checker *CorrectnessChecker) CorrectCSI(ctx context.Context) error {
 	defer LogAccessOverview(checker.access)
 	if err := checker.removeVolumesForMissingPods(ctx); err != nil {
@@ -47,7 +47,7 @@ func (checker *CorrectnessChecker) CorrectCSI(ctx context.Context) error {
 	return nil
 }
 
-// Removes volume entries if their pod is no longer exists
+// Removes volume entries if their pod is no longer exists.
 func (checker *CorrectnessChecker) removeVolumesForMissingPods(ctx context.Context) error {
 	if checker.apiReader == nil {
 		log.Info("no kubernetes client configured, skipping orphaned volume metadata cleanup")
@@ -73,7 +73,7 @@ func (checker *CorrectnessChecker) removeVolumesForMissingPods(ctx context.Conte
 	return nil
 }
 
-// Removes dynakube entries if their Dynakube instance no longer exists in the cluster
+// Removes dynakube entries if their Dynakube instance no longer exists in the cluster.
 func (checker *CorrectnessChecker) removeMissingDynakubes(ctx context.Context) error {
 	if checker.apiReader == nil {
 		log.Info("no kubernetes client configured, skipping orphaned dynakube metadata cleanup")

@@ -25,7 +25,7 @@ type PodMutator interface {
 	Reinvoke(request *ReinvocationRequest) bool
 }
 
-// BaseRequest is the base request for all mutation requests
+// BaseRequest is the base request for all mutation requests.
 type BaseRequest struct {
 	Pod       *corev1.Pod
 	DynaKube  dynatracev1beta1.DynaKube

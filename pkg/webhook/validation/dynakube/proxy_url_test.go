@@ -12,13 +12,13 @@ import (
 const (
 	testProxySecret = "proxysecret"
 
-	// invalidPlainTextProxyUrl contains forbidden apostrophe character
+	// invalidPlainTextProxyUrl contains forbidden apostrophe character.
 	invalidPlainTextProxyUrl = "http://test:password'!\"#$()*-./:;<>?@[]^_{|}~@proxy-service.dynatrace:3128"
 
 	// validEncodedProxyUrl contains no forbidden characters "http://test:password!"#$()*-./:;<>?@[]^_{|}~@proxy-service.dynatrace:3128"
 	validEncodedProxyUrl = "http://test:password!%22%23%24()*-.%2F%3A%3B%3C%3E%3F%40%5B%5D%5E_%7B%7C%7D~@proxy-service.dynatrace:3128"
 
-	// validEncodedProxyUrlNoPassword contains empty password
+	// validEncodedProxyUrlNoPassword contains empty password.
 	validEncodedProxyUrlNoPassword = "http://test@proxy-service.dynatrace:3128"
 )
 

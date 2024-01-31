@@ -105,7 +105,7 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 	return nil
 }
 
-// generate gets the necessary info the create the init secret data
+// generate gets the necessary info the create the init secret data.
 func (g *InitGenerator) generate(ctx context.Context, dk *dynatracev1beta1.DynaKube) (map[string][]byte, error) {
 	hostMonitoringNodes, err := g.getHostMonitoringNodes(dk)
 	if err != nil {

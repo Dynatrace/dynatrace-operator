@@ -30,7 +30,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 )
 
-// Scheme contains the type definitions used by the Operator and tests
+// Scheme contains the type definitions used by the Operator and tests.
 var Scheme = k8sruntime.NewScheme()
 
 func init() {

@@ -19,7 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
-// TODO: refactor code below to be testable and also tested
+// TODO: refactor code below to be testable and also tested.
 const certificateRenewalInterval = 6 * time.Hour
 
 type CertificateWatcher struct {

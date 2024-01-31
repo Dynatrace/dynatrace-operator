@@ -66,12 +66,12 @@ func CalculateStatefulSetName(capability Capability, dynakubeName string) string
 	return dynakubeName + "-" + capability.ShortName()
 }
 
-// Deprecated: Use MultiCapability instead
+// Deprecated: Use MultiCapability instead.
 type KubeMonCapability struct {
 	capabilityBase
 }
 
-// Deprecated: Use MultiCapability instead
+// Deprecated: Use MultiCapability instead.
 type RoutingCapability struct {
 	capabilityBase
 }
@@ -108,7 +108,7 @@ func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 	return &mc
 }
 
-// Deprecated
+// Deprecated.
 func NewKubeMonCapability(dk *dynatracev1beta1.DynaKube) *KubeMonCapability {
 	c := &KubeMonCapability{
 		*kubeMonBase(),
@@ -121,7 +121,7 @@ func NewKubeMonCapability(dk *dynatracev1beta1.DynaKube) *KubeMonCapability {
 	return c
 }
 
-// Deprecated
+// Deprecated.
 func NewRoutingCapability(dk *dynatracev1beta1.DynaKube) *RoutingCapability {
 	c := &RoutingCapability{
 		*routingBase(),
@@ -212,13 +212,13 @@ func BuildServiceHostName(dynakubeName string, module string) string {
 	return fmt.Sprintf("$(%s_SERVICE_HOST):$(%s_SERVICE_PORT)", serviceName, serviceName)
 }
 
-// BuildServiceDomainName builds service domain name
+// BuildServiceDomainName builds service domain name.
 func BuildServiceDomainName(dynakubeName string, namespaceName string, module string) string {
 	return fmt.Sprintf("%s.%s:$(%s_SERVICE_PORT)", BuildServiceName(dynakubeName, module), namespaceName, BuildServiceNameUnderscore(dynakubeName, module))
 }
 
 // BuildServiceNameUnderscore converts result of BuildServiceName by replacing dashes with underscores
-// to make it env variable compatible because it's only special symbol it supports
+// to make it env variable compatible because it's only special symbol it supports.
 func BuildServiceNameUnderscore(dynakubeName string, module string) string {
 	return strings.ReplaceAll(
 		strings.ToUpper(
@@ -226,7 +226,7 @@ func BuildServiceNameUnderscore(dynakubeName string, module string) string {
 		"-", "_")
 }
 
-// BuildDNSEntryPoint for give capability
+// BuildDNSEntryPoint for give capability.
 func BuildDNSEntryPoint(dynakubeName, dynakubeNamespace string, capability Capability) string {
 	if capability.ShortName() == consts.MultiActiveGateName && strings.Contains(capability.ArgName(), dynatracev1beta1.RoutingCapability.ArgumentName) ||
 		capability.ShortName() == dynatracev1beta1.RoutingCapability.ShortName {
@@ -235,7 +235,7 @@ func BuildDNSEntryPoint(dynakubeName, dynakubeNamespace string, capability Capab
 	return fmt.Sprintf("https://%s/communication", BuildServiceHostName(dynakubeName, capability.ShortName()))
 }
 
-// BuildDNSEntryPointWithoutEnvVars for give capability
+// BuildDNSEntryPointWithoutEnvVars for give capability.
 func BuildDNSEntryPointWithoutEnvVars(dynakubeName, dynakubeNamespace string, capability Capability) string {
 	return fmt.Sprintf("%s.%s", BuildServiceName(dynakubeName, capability.ShortName()), dynakubeNamespace)
 }

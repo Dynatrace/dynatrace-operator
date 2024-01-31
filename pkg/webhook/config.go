@@ -36,7 +36,7 @@ const (
 	AnnotationInstallPath = "oneagent.dynatrace.com/install-path"
 
 	// AnnotationInstallerUrl can be set on a Pod to configure the installer url for downloading the agent
-	// defaults to the PaaS installer download url of your tenant
+	// defaults to the PaaS installer download url of your tenant.
 	AnnotationInstallerUrl = "oneagent.dynatrace.com/installer-url"
 
 	// AnnotationFailurePolicy can be set on a Pod to control what the init container does on failures. When set to
@@ -56,6 +56,6 @@ const (
 
 	WebhookContainerName = "webhook"
 
-	// InstallContainerName is the name used for the install container
+	// InstallContainerName is the name used for the install container.
 	InstallContainerName = "install-oneagent"
 )

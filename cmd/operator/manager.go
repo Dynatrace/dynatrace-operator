@@ -151,7 +151,7 @@ func (provider operatorManagerProvider) createOptions(namespace string) ctrl.Opt
 	}
 }
 
-// managerBuilder is used for testing the createManager functions in the providers
+// managerBuilder is used for testing the createManager functions in the providers.
 type managerBuilder struct {
 	mgr manager.Manager
 }

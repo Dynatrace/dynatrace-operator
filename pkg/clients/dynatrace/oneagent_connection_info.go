@@ -9,7 +9,7 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-// CommunicationHost => struct of connection endpoint
+// CommunicationHost => struct of connection endpoint.
 type CommunicationHost struct {
 	Protocol string // nolint:unused
 	Host     string // nolint:unused

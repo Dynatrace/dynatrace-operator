@@ -54,7 +54,7 @@ const (
 type urlInstallerBuilder func(afero.Fs, dtclient.Client, *url.Properties) installer.Installer
 type imageInstallerBuilder func(afero.Fs, *image.Properties) (installer.Installer, error)
 
-// OneAgentProvisioner reconciles a DynaKube object
+// OneAgentProvisioner reconciles a DynaKube object.
 type OneAgentProvisioner struct {
 	client    client.Client
 	apiReader client.Reader
@@ -70,7 +70,7 @@ type OneAgentProvisioner struct {
 	imageInstallerBuilder  imageInstallerBuilder
 }
 
-// NewOneAgentProvisioner returns a new OneAgentProvisioner
+// NewOneAgentProvisioner returns a new OneAgentProvisioner.
 func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.Access) *OneAgentProvisioner {
 	return &OneAgentProvisioner{
 		client:                 mgr.GetClient(),

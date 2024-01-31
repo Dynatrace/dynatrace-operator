@@ -29,7 +29,7 @@ func invalidActiveGateProxyUrl(ctx context.Context, dv *dynakubeValidator, dynak
 
 // proxyUrl is valid if
 // 1) encoded
-// 2) password does not contain '` characters
+// 2) password does not contain '` characters.
 func validateProxyUrl(proxyUrl string, parseErrorMessage string, evalErrorMessage string) string {
 	if parsedUrl, err := url.Parse(proxyUrl); err != nil {
 		return parseErrorMessage

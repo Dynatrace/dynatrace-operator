@@ -12,11 +12,11 @@ import (
 	"github.com/spf13/afero"
 )
 
-// example match: [general]
+// example match: [general].
 var sectionRegexp = regexp.MustCompile(`\[(.*)\]`)
 
 // Update opens the file at `sourcePath` and merges it with the ConfMap provided
-// then writes the results into a file at `destPath`
+// then writes the results into a file at `destPath`.
 func Update(fs afero.Fs, sourcePath, destPath string, conf dtclient.ConfMap) error {
 	fileInfo, err := fs.Stat(sourcePath)
 	if err != nil {

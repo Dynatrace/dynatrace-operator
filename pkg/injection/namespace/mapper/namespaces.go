@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// NamespaceMapper manages the mapping creation from the namespace's side
+// NamespaceMapper manages the mapping creation from the namespace's side.
 type NamespaceMapper struct {
 	client     client.Client
 	apiReader  client.Reader
@@ -24,7 +24,7 @@ func NewNamespaceMapper(clt client.Client, apiReader client.Reader, operatorNs s
 	return NamespaceMapper{controller_runtime.NewClient(clt), apiReader, operatorNs, targetNs}
 }
 
-// MapFromNamespace adds the labels to the targetNs if there is a matching Dynakube
+// MapFromNamespace adds the labels to the targetNs if there is a matching Dynakube.
 func (nm NamespaceMapper) MapFromNamespace(ctx context.Context) (bool, error) {
 	ctx, span := dtotel.StartSpan(ctx, injectionotel.Tracer())
 	defer span.End()

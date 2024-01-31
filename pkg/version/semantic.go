@@ -69,7 +69,7 @@ func (version SemanticVersion) String() string {
 	return fmt.Sprintf("%d.%d.%d.%s", version.major, version.minor, version.release, version.timestamp)
 }
 
-// IsDowngrade parses prev and curr, and returns true when curr is a older version than prev
+// IsDowngrade parses prev and curr, and returns true when curr is a older version than prev.
 func IsDowngrade(prev string, curr string) (bool, error) {
 	parsedPrev, err := ExtractSemanticVersion(prev)
 	if err != nil {

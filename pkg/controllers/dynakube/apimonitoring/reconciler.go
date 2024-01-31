@@ -93,7 +93,7 @@ func (r *Reconciler) handleKubernetesAppEnabled(dynakube *dynatracev1beta1.DynaK
 	return "", nil
 }
 
-// determineNewestMonitoredEntity returns the UUID of the newest entities; or empty string if the slice of entities is empty
+// determineNewestMonitoredEntity returns the UUID of the newest entities; or empty string if the slice of entities is empty.
 func determineNewestMonitoredEntity(entities []dtclient.MonitoredEntity) string {
 	if len(entities) == 0 {
 		return ""

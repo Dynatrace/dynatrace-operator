@@ -29,7 +29,7 @@ const (
 	preloadPath       = "/etc/ld.so.preload"
 	containerConfPath = "/var/lib/dynatrace/oneagent/agent/config/container.conf"
 
-	// readonly CSI
+	// readonly CSI.
 	oneagentConfVolumeName = "oneagent-agent-conf"
 	OneAgentConfMountPath  = "/opt/dynatrace/oneagent-paas/agent/conf"
 

@@ -18,7 +18,7 @@ const (
 	DefaultHealthConfigRetries     = 3
 )
 
-// Constructor setting default values for docker image HealthConfig
+// Constructor setting default values for docker image HealthConfig.
 func newHealthConfig() *containerv1.HealthConfig {
 	return &containerv1.HealthConfig{
 		Test:        []string{},

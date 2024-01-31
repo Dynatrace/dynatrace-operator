@@ -46,14 +46,14 @@ const (
 	defaultSyntheticImage  = "linux/dynatrace-synthetic"
 )
 
-// ApiUrl is a getter for dk.Spec.APIURL
+// ApiUrl is a getter for dk.Spec.APIURL.
 func (dk *DynaKube) ApiUrl() string {
 	return dk.Spec.APIURL
 }
 
 // ApiUrlHost returns the host of dk.Spec.APIURL
 // E.g. if the APIURL is set to "https://my-tenant.dynatrace.com/api", it returns "my-tenant.dynatrace.com"
-// If the URL cannot be parsed, it returns an empty string
+// If the URL cannot be parsed, it returns an empty string.
 func (dk *DynaKube) ApiUrlHost() string {
 	parsedUrl, err := url.Parse(dk.ApiUrl())
 
@@ -185,17 +185,17 @@ func (dk *DynaKube) ShouldAutoUpdateOneAgent() bool {
 	}
 }
 
-// ActivegateTenantSecret returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate
+// ActivegateTenantSecret returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate.
 func (dk *DynaKube) ActivegateTenantSecret() string {
 	return dk.Name + ActiveGateTenantSecretSuffix
 }
 
-// OneagentTenantSecret returns the name of the secret containing the token for the OneAgent
+// OneagentTenantSecret returns the name of the secret containing the token for the OneAgent.
 func (dk *DynaKube) OneagentTenantSecret() string {
 	return dk.Name + OneAgentTenantSecretSuffix
 }
 
-// ActiveGateAuthTokenSecret returns the name of the secret containing the ActiveGateAuthToken, which is mounted to the AGs
+// ActiveGateAuthTokenSecret returns the name of the secret containing the ActiveGateAuthToken, which is mounted to the AGs.
 func (dk *DynaKube) ActiveGateAuthTokenSecret() string {
 	return dk.Name + AuthTokenSecretSuffix
 }
@@ -216,7 +216,7 @@ func (dk *DynaKube) PullSecretName() string {
 	return dk.Name + PullSecretSuffix
 }
 
-// PullSecretWithoutData returns a secret which can be used to query the actual secrets data from the cluster
+// PullSecretWithoutData returns a secret which can be used to query the actual secrets data from the cluster.
 func (dk *DynaKube) PullSecretWithoutData() corev1.Secret {
 	return corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -268,13 +268,13 @@ func (dk *DynaKube) NodeSelector() map[string]string {
 }
 
 // ActiveGateImage provides the image reference set in Status for the ActiveGate.
-// Format: repo@sha256:digest
+// Format: repo@sha256:digest.
 func (dk *DynaKube) ActiveGateImage() string {
 	return dk.Status.ActiveGate.ImageID
 }
 
 // DefaultActiveGateImage provides the image reference for the ActiveGate from tenant registry.
-// Format: repo:tag
+// Format: repo:tag.
 func (dk *DynaKube) DefaultActiveGateImage() string {
 	apiUrlHost := dk.ApiUrlHost()
 
@@ -305,7 +305,7 @@ func (dk *DynaKube) CustomActiveGateImage() string {
 }
 
 // SyntheticImage provides the image reference set in Status for Synthetic.
-// Format: repo@sha256:digest
+// Format: repo@sha256:digest.
 func (dk *DynaKube) SyntheticImage() string {
 	return dk.Status.Synthetic.ImageID
 }
@@ -316,7 +316,7 @@ func (dk *DynaKube) CustomSyntheticImage() string {
 }
 
 // DefaultActiveGateImage provides the image reference for Synthetic from tenant registry.
-// Format: repo:tag
+// Format: repo:tag.
 func (dk *DynaKube) DefaultSyntheticImage() string {
 	apiUrlHost := dk.ApiUrlHost()
 	if apiUrlHost == "" {
@@ -335,7 +335,7 @@ func (dk *DynaKube) CodeModulesVersion() string {
 }
 
 // CodeModulesImage provides the image reference set in Status for the CodeModules.
-// Format: repo@sha256:digest
+// Format: repo@sha256:digest.
 func (dk *DynaKube) CodeModulesImage() string {
 	return dk.Status.CodeModules.ImageID
 }
@@ -359,7 +359,7 @@ func (dk *DynaKube) CustomCodeModulesVersion() string {
 }
 
 // OneAgentImage provides the image reference set in Status for the OneAgent.
-// Format: repo@sha256:digest
+// Format: repo@sha256:digest.
 func (dk *DynaKube) OneAgentImage() string {
 	return dk.Status.OneAgent.ImageID
 }
@@ -439,7 +439,7 @@ func (dk *DynaKube) Tokens() string {
 	return dk.Name
 }
 
-// TenantUUIDFromApiUrl gets the tenantUUID from the ApiUrl present in the struct, if the tenant is aliased then the alias will be returned
+// TenantUUIDFromApiUrl gets the tenantUUID from the ApiUrl present in the struct, if the tenant is aliased then the alias will be returned.
 func (dk *DynaKube) TenantUUIDFromApiUrl() (string, error) {
 	return tenantUUID(dk.Spec.APIURL)
 }
