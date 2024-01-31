@@ -101,18 +101,35 @@ func createMockDtClient(t *testing.T, revision uint) *clientmock.Client {
 }
 
 func TestGetSecretData(t *testing.T) {
-	// use Reconcile to automatically create the secret to test
-	dynakube := createDynakube(dynatracev1beta1.OneAgentSpec{
-		CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}})
-	mockK8sClient := fake.NewClient(dynakube)
-	mockTime := timeprovider.New().Freeze()
-	reconciler := NewReconciler(mockK8sClient,
-		mockK8sClient, createMockDtClient(t, 0), dynakube, scheme.Scheme, mockTime)
-	reconciler.Reconcile(context.Background())
-
 	t.Run("unmarshal secret data into struct", func(t *testing.T) {
+		// use Reconcile to automatically create the secret to test
+		dynakube := createDynakube(dynatracev1beta1.OneAgentSpec{
+			CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}})
+		mockK8sClient := fake.NewClient(dynakube)
+		mockTime := timeprovider.New().Freeze()
+		reconciler := NewReconciler(mockK8sClient,
+			mockK8sClient, createMockDtClient(t, 0), dynakube, scheme.Scheme, mockTime)
+		reconciler.Reconcile(context.Background())
+
 		got, err := GetSecretData(context.Background(), mockK8sClient, testName, testNamespace)
 		assert.Nil(t, err)
 		assert.Equal(t, &dtclient.ProcessModuleConfig{Revision: 0, Properties: nil}, got)
+	})
+	t.Run("error when secret not found", func(t *testing.T) {
+		got, err := GetSecretData(context.Background(), fake.NewClient(), testName, testNamespace)
+		assert.NotNil(t, err)
+		assert.Nil(t, got)
+	})
+	t.Run("error when unmarshaling secret data", func(t *testing.T) {
+		fakeClient := fake.NewClient()
+		fakeClient.Create(context.Background(),
+			&corev1.Secret{
+				Data:       map[string][]byte{SecretKeyProcessModuleConfig: []byte("WRONG VALUE!")},
+				ObjectMeta: metav1.ObjectMeta{Name: extendWithSuffix(testName), Namespace: testNamespace},
+			},
+		)
+		got, err := GetSecretData(context.Background(), fakeClient, testName, testNamespace)
+		assert.NotNil(t, err)
+		assert.Nil(t, got)
 	})
 }
