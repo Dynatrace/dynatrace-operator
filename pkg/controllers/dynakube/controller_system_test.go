@@ -70,6 +70,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	t.Run(`Create reconciles proxy secret`, func(t *testing.T) {
 		mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
 		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
+		mockClient.On("GetLatestActiveGateVersion", mock.Anything).Return(testVersion, nil)
 
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -107,6 +108,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeEntitiesRead, dtclient.TokenScopeSettingsRead, dtclient.TokenScopeSettingsWrite, dtclient.TokenScopeActiveGateTokenCreate})
 
 		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
+		mockClient.On("GetLatestActiveGateVersion", mock.Anything).Return(testVersion, nil)
 
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -184,6 +186,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
 
 	mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
+	mockClient.On("GetLatestActiveGateVersion", mock.Anything).Return(testVersion, nil)
 
 	instance := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -334,6 +337,8 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 
 func TestAPIError(t *testing.T) {
 	mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
+	mockClient.On("GetLatestActiveGateVersion", mock.Anything).Return(testVersion, nil)
+
 	instance := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
