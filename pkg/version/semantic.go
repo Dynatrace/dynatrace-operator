@@ -16,7 +16,10 @@ type SemanticVersion struct {
 	timestamp string
 }
 
-var versionRegex = regexp.MustCompile(`^([\d]+)\.([\d]+)\.([\d]+)\.([\d]+\-[\d]+)$`)
+var versionRegex = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)\.(\d+-\d+)$`)
+
+// Max sub match = orignal string + 4 groups from versionRegex ^.
+const maxStringSubMatch = 5
 
 // CompareSemanticVersions returns:
 //
@@ -43,7 +46,7 @@ func CompareSemanticVersions(a SemanticVersion, b SemanticVersion) int {
 func ExtractSemanticVersion(versionString string) (SemanticVersion, error) {
 	version := versionRegex.FindStringSubmatch(versionString)
 
-	if len(version) < 5 {
+	if len(version) < maxStringSubMatch {
 		return SemanticVersion{}, fmt.Errorf("version malformed: %s", versionString)
 	}
 
@@ -69,7 +72,7 @@ func (version SemanticVersion) String() string {
 	return fmt.Sprintf("%d.%d.%d.%s", version.major, version.minor, version.release, version.timestamp)
 }
 
-// IsDowngrade parses prev and curr, and returns true when curr is a older version than prev
+// IsDowngrade parses prev and curr, and returns true when curr is a older version than prev.
 func IsDowngrade(prev string, curr string) (bool, error) {
 	parsedPrev, err := ExtractSemanticVersion(prev)
 	if err != nil {

@@ -31,12 +31,12 @@ const (
 
 	AnnotationFeaturePrefix = "feature.dynatrace.com/"
 
-	// General
+	// General.
 	AnnotationFeaturePublicRegistry = AnnotationFeaturePrefix + "public-registry"
 
-	// activeGate
+	// activeGate.
 
-	// Deprecated: AnnotationFeatureDisableActiveGateUpdates use AnnotationFeatureActiveGateUpdates instead
+	// Deprecated: AnnotationFeatureDisableActiveGateUpdates use AnnotationFeatureActiveGateUpdates instead.
 	AnnotationFeatureDisableActiveGateUpdates = AnnotationFeaturePrefix + "disable-activegate-updates"
 
 	AnnotationFeatureActiveGateUpdates = AnnotationFeaturePrefix + "activegate-updates"
@@ -49,12 +49,12 @@ const (
 
 	AnnotationFeatureCustomSyntheticImage = AnnotationFeaturePrefix + "custom-synthetic-image"
 
-	// dtClient
+	// dtClient.
 
 	AnnotationFeatureNoProxy             = AnnotationFeaturePrefix + "no-proxy"
 	AnnotationFeatureApiRequestThreshold = AnnotationFeaturePrefix + "dynatrace-api-request-threshold"
 
-	// oneAgent
+	// oneAgent.
 
 	AnnotationFeatureMultipleOsAgentsOnNode         = AnnotationFeaturePrefix + "multiple-osagents-on-node"
 	AnnotationFeatureOneAgentMaxUnavailable         = AnnotationFeaturePrefix + "oneagent-max-unavailable"
@@ -63,9 +63,9 @@ const (
 	AnnotationFeatureRunOneAgentContainerPrivileged = AnnotationFeaturePrefix + "oneagent-privileged"
 	AnnotationFeatureOneAgentSecCompProfile         = AnnotationFeaturePrefix + "oneagent-seccomp-profile"
 
-	// injection (webhook)
+	// injection (webhook).
 
-	// Deprecated: AnnotationFeatureDisableMetadataEnrichment use AnnotationFeatureMetadataEnrichment instead
+	// Deprecated: AnnotationFeatureDisableMetadataEnrichment use AnnotationFeatureMetadataEnrichment instead.
 	AnnotationFeatureDisableMetadataEnrichment = AnnotationFeaturePrefix + "disable-metadata-enrichment"
 
 	AnnotationFeatureMetadataEnrichment = AnnotationFeaturePrefix + "metadata-enrichment"
@@ -78,17 +78,17 @@ const (
 	AnnotationFeatureInitContainerSeccomp  = AnnotationFeaturePrefix + "init-container-seccomp-profile"
 	AnnotationFeatureEnforcementMode       = AnnotationFeaturePrefix + "enforcement-mode"
 
-	// CSI
+	// CSI.
 	AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
 	AnnotationFeatureReadOnlyCsiVolume         = AnnotationFeaturePrefix + "injection-readonly-volume"
 
-	// synthetic location
+	// synthetic location.
 	AnnotationFeatureSyntheticLocationEntityId = AnnotationFeaturePrefix + "synthetic-location-entity-id"
 
-	// synthetic node type
+	// synthetic node type.
 	AnnotationFeatureSyntheticNodeType = AnnotationFeaturePrefix + "synthetic-node-type"
 
-	// replicas for the synthetic monitoring
+	// replicas for the synthetic monitoring.
 	AnnotationFeatureSyntheticReplicas = AnnotationFeaturePrefix + "synthetic-replicas"
 
 	falsePhrase  = "false"
@@ -96,7 +96,7 @@ const (
 	silentPhrase = "silent"
 	failPhrase   = "fail"
 
-	// synthetic node types
+	// synthetic node types.
 	SyntheticNodeXs = "XS"
 	SyntheticNodeS  = "S"
 	SyntheticNodeM  = "M"
@@ -174,7 +174,7 @@ func (dk *DynaKube) FeatureIgnoreUnknownState() bool {
 }
 
 // FeatureIgnoredNamespaces is a feature flag for ignoring certain namespaces.
-// defaults to "[ \"^dynatrace$\", \"^kube-.*\", \"openshift(-.*)?\" ]"
+// defaults to "[ \"^dynatrace$\", \"^kube-.*\", \"openshift(-.*)?\" ]".
 func (dk *DynaKube) FeatureIgnoredNamespaces() []string {
 	raw := dk.getFeatureFlagRaw(AnnotationFeatureIgnoredNamespaces)
 	if raw == "" {
@@ -201,12 +201,12 @@ func (dk *DynaKube) getDefaultIgnoredNamespaces() []string {
 }
 
 // FeatureAutomaticKubernetesApiMonitoring is a feature flag to enable automatic kubernetes api monitoring,
-// which ensures that settings for this kubernetes cluster exist in Dynatrace
+// which ensures that settings for this kubernetes cluster exist in Dynatrace.
 func (dk *DynaKube) FeatureAutomaticKubernetesApiMonitoring() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticK8sApiMonitoring) != falsePhrase
 }
 
-// FeatureAutomaticKubernetesApiMonitoringClusterName is a feature flag to set custom cluster name for automatic-kubernetes-api-monitoring
+// FeatureAutomaticKubernetesApiMonitoringClusterName is a feature flag to set custom cluster name for automatic-kubernetes-api-monitoring.
 func (dk *DynaKube) FeatureAutomaticKubernetesApiMonitoringClusterName() string {
 	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticK8sApiMonitoringClusterName)
 }
@@ -216,13 +216,13 @@ func (dk *DynaKube) FeatureEnableK8sAppEnabled() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureK8sAppEnabled) == truePhrase
 }
 
-// FeatureDisableMetadataEnrichment is a feature flag to disable metadata enrichment,
+// FeatureDisableMetadataEnrichment is a feature flag to disable metadata enrichment,.
 func (dk *DynaKube) FeatureDisableMetadataEnrichment() bool {
 	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureMetadataEnrichment, AnnotationFeatureDisableMetadataEnrichment)
 }
 
 // FeatureAutomaticInjection controls OneAgent is injected to pods in selected namespaces automatically ("automatic-injection=true" or flag not set)
-// or if pods need to be opted-in one by one ("automatic-injection=false")
+// or if pods need to be opted-in one by one ("automatic-injection=false").
 func (dk *DynaKube) FeatureAutomaticInjection() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticInjection) != falsePhrase
 }
@@ -231,32 +231,32 @@ func (dk *DynaKube) FeatureCustomSyntheticImage() string {
 	return dk.getFeatureFlagRaw(AnnotationFeatureCustomSyntheticImage)
 }
 
-// FeatureEnableMultipleOsAgentsOnNode is a feature flag to enable multiple osagents running on the same host
+// FeatureEnableMultipleOsAgentsOnNode is a feature flag to enable multiple osagents running on the same host.
 func (dk *DynaKube) FeatureEnableMultipleOsAgentsOnNode() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureMultipleOsAgentsOnNode) == truePhrase
 }
 
-// FeatureActiveGateAppArmor is a feature flag to enable AppArmor in ActiveGate container
+// FeatureActiveGateAppArmor is a feature flag to enable AppArmor in ActiveGate container.
 func (dk *DynaKube) FeatureActiveGateAppArmor() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAppArmor) == truePhrase
 }
 
-// FeatureOneAgentIgnoreProxy is a feature flag to ignore the proxy for oneAgents when set in CR
+// FeatureOneAgentIgnoreProxy is a feature flag to ignore the proxy for oneAgents when set in CR.
 func (dk *DynaKube) FeatureOneAgentIgnoreProxy() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureOneAgentIgnoreProxy) == truePhrase
 }
 
-// FeatureActiveGateIgnoreProxy is a feature flag to ignore the proxy for ActiveGate when set in CR
+// FeatureActiveGateIgnoreProxy is a feature flag to ignore the proxy for ActiveGate when set in CR.
 func (dk *DynaKube) FeatureActiveGateIgnoreProxy() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateIgnoreProxy) == truePhrase
 }
 
-// FeatureLabelVersionDetection is a feature flag to enable injecting additional environment variables based on user labels
+// FeatureLabelVersionDetection is a feature flag to enable injecting additional environment variables based on user labels.
 func (dk *DynaKube) FeatureLabelVersionDetection() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureLabelVersionDetection) == truePhrase
 }
 
-// FeatureAgentInitialConnectRetry is a feature flag to configure startup delay of standalone agents
+// FeatureAgentInitialConnectRetry is a feature flag to configure startup delay of standalone agents.
 func (dk *DynaKube) FeatureAgentInitialConnectRetry() int {
 	defaultValue := -1
 	ffValue := dk.getFeatureFlagInt(AnnotationFeatureOneAgentInitialConnectRetry, defaultValue)
@@ -331,7 +331,7 @@ func (dk *DynaKube) FeatureInitContainerSeccomp() bool {
 }
 
 // FeatureEnforcementMode is a feature flag to control how the initContainer
-// sets the tenantUUID to the container.conf file (always vs if oneAgent is present)
+// sets the tenantUUID to the container.conf file (always vs if oneAgent is present).
 func (dk *DynaKube) FeatureEnforcementMode() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureEnforcementMode) != falsePhrase
 }

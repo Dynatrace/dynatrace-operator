@@ -17,7 +17,8 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "crd_path", help="path to crd to get OpenAPI spec"
+        "crd_path", default="/config/crd/bases/dynatrace.com_dynakubes.yaml", help="path to crd to get OpenAPI spec"
+
     )
     args = parser.parse_args()
 
@@ -69,9 +70,11 @@ def traverse(props, level=".spec"):
 
 
 def clean_description(desc):
-    if 'http' in desc:
-        return desc.replace('(', '(<').replace(')', '>)')
-    return desc
+    d = ' '.join(desc.splitlines())
+    if 'http' in d:
+        return d.replace('(', '(<').replace(')', '>)')
+    return d
+
 
 
 if __name__ == "__main__":
