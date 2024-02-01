@@ -78,7 +78,7 @@ func (r *reconciler) updateVersionStatuses(ctx context.Context, updater StatusUp
 
 	_, ok := updater.(*oneAgentUpdater)
 	if ok {
-		healthConfig, err := GetOneAgentHealthConfig(ctx, r.apiReader, r.registryClient, dynakube, dynakube.OneAgentImage())
+		healthConfig, err := getOneAgentHealthConfig(dynakube.OneAgentVersion())
 		if err != nil {
 			log.Error(err, "could not set OneAgent healthcheck")
 		} else {
