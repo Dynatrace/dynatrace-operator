@@ -13,11 +13,11 @@ func TestErrorPrettify_Write(t *testing.T) {
 		// I.e., `\n` = "\\n"
 		// Which is why backslashes remain in the result text
 		testString := `{"newlines" : "some\\n text to \n\\n escape newlines", "tabs": "some\t text\t to \\t\t escape tabs", "mixed": "some\n\\n text \n\t to escape \\n\\t tabs \t\\n\n\\t"}`
-		expectedString := "{\"mixed\":\"some\n\\\n text \n\t to escape \\\n\\\t tabs \t\\\n\n\\\t\",\"newlines\":\"some\\\n text to \n\\\n escape newlines\",\"tabs\":\"some\t text\t to \\\t\t escape tabs\"}"
+		expectedString := "{\"mixed\":\"some\n\\\n text \n\t to escape \\\n\\\t tabs \t\\\n\n\\\t\",\"newlines\":\"some\\\n text to \n\\\n escape newlines\",\"tabs\":\"some\t text\t to \\\t\t escape tabs\"}\n"
 
 		bufferString := bytes.NewBufferString("")
-		errPrettify := errorPrettify{}
-		written, err := errPrettify.writeToWriter([]byte(testString), bufferString)
+		errPrettify := NewPrettyLogWriter(WithWriter(bufferString))
+		written, err := errPrettify.Write([]byte(testString))
 
 		assert.NoError(t, err)
 		assert.Greater(t, written, 0)
@@ -25,11 +25,11 @@ func TestErrorPrettify_Write(t *testing.T) {
 	})
 	t.Run(`Write replaces "stacktrace" with "errorVerbose"`, func(t *testing.T) {
 		testString := `{"stacktrace":"stacktrace","errorVerbose":"errorVerbose"}`
-		expectedString := `{"stacktrace":"errorVerbose"}`
+		expectedString := "{\"stacktrace\":\"errorVerbose\"}\n"
 
 		bufferString := bytes.NewBufferString("")
-		errPrettify := errorPrettify{}
-		written, err := errPrettify.writeToWriter([]byte(testString), bufferString)
+		errPrettify := NewPrettyLogWriter(WithWriter(bufferString))
+		written, err := errPrettify.Write([]byte(testString))
 
 		assert.NoError(t, err)
 		assert.Greater(t, written, 0)
@@ -40,8 +40,8 @@ func TestErrorPrettify_Write(t *testing.T) {
 		expectedString := "this is a normal message"
 
 		bufferString := bytes.NewBufferString("")
-		errPrettify := errorPrettify{}
-		written, err := errPrettify.writeToWriter([]byte(testString), bufferString)
+		errPrettify := NewPrettyLogWriter(WithWriter(bufferString))
+		written, err := errPrettify.Write([]byte(testString))
 
 		assert.NoError(t, err)
 		assert.Greater(t, written, 0)

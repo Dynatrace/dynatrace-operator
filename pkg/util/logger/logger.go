@@ -9,52 +9,23 @@ import (
 	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-type logSink struct {
-	infoLogger  logr.Logger
-	errorLogger logr.Logger
-}
+const LogLevelEnv = "LOG_LEVEL"
 
-func newLogger() logr.Logger {
+// Get returns a new, unnamed logger configured with the basics we need for operator logs which can be used as a blueprint for
+// derived loggers int the operator components.
+func Get() logr.Logger {
 	config := zap.NewProductionEncoderConfig()
 	config.EncodeTime = zapcore.ISO8601TimeEncoder
-
-	return logr.New(
-		logSink{
-			infoLogger:  ctrlzap.New(ctrlzap.WriteTo(os.Stdout), ctrlzap.Encoder(zapcore.NewJSONEncoder(config))),
-			errorLogger: ctrlzap.New(ctrlzap.WriteTo(&errorPrettify{}), ctrlzap.Encoder(zapcore.NewJSONEncoder(config))),
-		},
-	)
-}
-
-func Get() logr.Logger {
-	logger := newLogger()
+	config.StacktraceKey = stacktraceKey
+	logger := ctrlzap.New(ctrlzap.WriteTo(NewPrettyLogWriter()), ctrlzap.Encoder(zapcore.NewJSONEncoder(config)), ctrlzap.Level(readLogLevelFromEnv()))
 	return logger
 }
 
-func (dtl logSink) Init(logr.RuntimeInfo) {}
-
-func (dtl logSink) Info(_ int, msg string, keysAndValues ...any) {
-	dtl.infoLogger.Info(msg, keysAndValues...)
-}
-
-func (dtl logSink) Enabled(int) bool {
-	return dtl.infoLogger.Enabled()
-}
-
-func (dtl logSink) Error(err error, msg string, keysAndValues ...any) {
-	dtl.errorLogger.Error(err, msg, keysAndValues...)
-}
-
-func (dtl logSink) WithValues(keysAndValues ...any) logr.LogSink {
-	return logSink{
-		infoLogger:  dtl.infoLogger.WithValues(keysAndValues...),
-		errorLogger: dtl.errorLogger.WithValues(keysAndValues...),
+func readLogLevelFromEnv() zapcore.Level {
+	envLevel := os.Getenv(LogLevelEnv)
+	level, err := zapcore.ParseLevel(envLevel)
+	if err != nil {
+		level = zapcore.DebugLevel
 	}
-}
-
-func (dtl logSink) WithName(name string) logr.LogSink {
-	return logSink{
-		infoLogger:  dtl.infoLogger.WithName(name),
-		errorLogger: dtl.errorLogger.WithName(name),
-	}
+	return level
 }
