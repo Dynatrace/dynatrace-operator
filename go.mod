@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/container-storage-interface/spec v1.9.0
-	github.com/docker/cli v24.0.8+incompatible
+	github.com/docker/cli v24.0.9+incompatible
 	github.com/evanphx/json-patch v5.7.0+incompatible
 	github.com/go-logr/logr v1.3.0
 	github.com/google/go-containerregistry v0.16.1
