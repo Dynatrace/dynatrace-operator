@@ -2,7 +2,6 @@ package dynatrace
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -363,7 +362,6 @@ func TestDynatraceClient_getKubernetesSettingBody(t *testing.T) {
 		assert.EqualValues(t, true, actual[0].Value.(postKubernetesSettings).Enabled)
 		bodyJson, err := json.Marshal(actual[0])
 		assert.NoError(t, err)
-		fmt.Println(string(bodyJson))
 		assert.NotContains(t, string(bodyJson), "cloudApplicationPipelineEnabled")
 		assert.NotContains(t, string(bodyJson), "openMetricsPipelineEnabled")
 		assert.NotContains(t, string(bodyJson), "eventProcessingActive")
@@ -393,7 +391,6 @@ func TestDynatraceClient_getKubernetesSettingBody(t *testing.T) {
 		assert.EqualValues(t, true, actual[0].Value.(postKubernetesSettings).Enabled)
 		bodyJson, err := json.Marshal(actual[0])
 		assert.NoError(t, err)
-		fmt.Println(string(bodyJson))
 		assert.Contains(t, string(bodyJson), "cloudApplicationPipelineEnabled")
 		assert.Contains(t, string(bodyJson), "openMetricsPipelineEnabled")
 		assert.Contains(t, string(bodyJson), "eventProcessingActive")

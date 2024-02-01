@@ -140,7 +140,7 @@ type SyntheticStatus struct {
 	status.VersionStatus `json:",inline"`
 }
 
-// SetPhase sets the status phase on the DynaKube object
+// SetPhase sets the status phase on the DynaKube object.
 func (dk *DynaKubeStatus) SetPhase(phase status.DeploymentPhase) bool {
 	upd := phase != dk.Phase
 	dk.Phase = phase

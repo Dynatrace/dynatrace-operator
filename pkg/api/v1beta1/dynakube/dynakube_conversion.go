@@ -6,7 +6,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
-// ConvertTo converts v1beta1 to v1alpha1
+// ConvertTo converts v1beta1 to v1alpha1.
 func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*dynakube.DynaKube)
 
@@ -106,7 +106,7 @@ func convertToDeprecatedActiveGateCapability(dst *dynakube.CapabilityProperties,
 	dst.Env = src.Env
 }
 
-// ConvertFrom converts v1alpha1 to v1beta1
+// ConvertFrom converts v1alpha1 to v1beta1.
 func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	src := srcRaw.(*dynakube.DynaKube)
 	dst.ObjectMeta = src.ObjectMeta

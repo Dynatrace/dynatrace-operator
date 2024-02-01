@@ -14,7 +14,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 )
 
-var serialNumberLimit = new(big.Int).Lsh(big.NewInt(1), 128)
+const intSerialNumberLimit = 128
+
+var serialNumberLimit = new(big.Int).Lsh(big.NewInt(1), intSerialNumberLimit)
 
 const (
 	renewalThreshold = 12 * time.Hour

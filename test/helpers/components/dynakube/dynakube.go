@@ -70,10 +70,11 @@ func WaitForPhase(dynakube dynakubev1beta1.DynaKube, phase status.DeploymentPhas
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
+		const timeout = 5 * time.Minute
 		err := wait.For(conditions.New(resources).ResourceMatch(&dynakube, func(object k8s.Object) bool {
 			dynakube, isDynakube := object.(*dynakubev1beta1.DynaKube)
 			return isDynakube && dynakube.Status.Phase == phase
-		}), wait.WithTimeout(5*time.Minute))
+		}), wait.WithTimeout(timeout))
 
 		require.NoError(t, err)
 
