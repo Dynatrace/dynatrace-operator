@@ -1,6 +1,9 @@
 package csiprovisioner
 
 import (
+	"context"
+	"net/http"
+
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -9,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 )
 
 func (provisioner *OneAgentProvisioner) installAgentImage(
@@ -28,19 +32,19 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 	}
 
 	targetImage := dynakube.CodeModulesImage()
-	imageDigest, err := image.GetDigest(targetImage)
+	imageDigest, err := provisioner.getDigest(dynakube, targetImage)
 	if err != nil {
 		return "", err
 	}
 
-	imageInstaller, err := provisioner.imageInstallerBuilder(provisioner.fs, &image.Properties{
+	props := &image.Properties{
 		ImageUri:     targetImage,
 		ApiReader:    provisioner.apiReader,
 		Dynakube:     &dynakube,
 		PathResolver: provisioner.path,
 		Metadata:     provisioner.db,
-		ImageDigest:  imageDigest,
-	})
+	}
+	imageInstaller, err := provisioner.imageInstallerBuilder(provisioner.fs, props)
 	if err != nil {
 		return "", err
 	}
@@ -57,6 +61,33 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 		return "", err
 	}
 	return imageDigest, err
+}
+
+func (provisioner *OneAgentProvisioner) getDigest(dynakube dynatracev1beta1.DynaKube, imageUri string) (string, error) {
+	ctx := context.TODO()
+	pullSecret := dynakube.PullSecretWithoutData()
+	defaultTransport := http.DefaultTransport.(*http.Transport).Clone()
+
+	transport, err := registry.PrepareTransportForDynaKube(ctx, provisioner.apiReader, defaultTransport, &dynakube)
+	if err != nil {
+		return "", err
+	}
+
+	registryClient, err := provisioner.registryClientBuilder(
+		registry.WithContext(ctx),
+		registry.WithApiReader(provisioner.apiReader),
+		registry.WithKeyChainSecret(&pullSecret),
+		registry.WithTransport(transport),
+	)
+	if err != nil {
+		return "", err
+	}
+
+	imageVersion, err := registryClient.GetImageVersion(ctx, imageUri)
+	if err != nil {
+		return "", err
+	}
+	return string(imageVersion.Digest), nil
 }
 
 func (provisioner *OneAgentProvisioner) installAgentZip(dynakube dynatracev1beta1.DynaKube, dtc dtclient.Client, latestProcessModuleConfig *dtclient.ProcessModuleConfig) (string, error) {

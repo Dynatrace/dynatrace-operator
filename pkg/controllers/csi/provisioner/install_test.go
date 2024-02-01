@@ -14,9 +14,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
+	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry/mocks"
 	t_utils "github.com/Dynatrace/dynatrace-operator/pkg/util/testing"
 	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	mockedinstaller "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
+	"github.com/opencontainers/go-digest"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -114,6 +117,7 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(false, fmt.Errorf("BOOM"))
+		mockRegistryClient(provisioner, testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentImage(dk, processModule)
@@ -142,6 +146,7 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
+		mockRegistryClient(provisioner, testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentImage(dk, processModule)
@@ -163,6 +168,7 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
+		mockRegistryClient(provisioner, testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentImage(dk, processModule)
@@ -172,7 +178,29 @@ func TestUpdateAgent(t *testing.T) {
 	t.Run("codeModulesImage + trustedCA set", func(t *testing.T) {
 		pullSecretName := "test-pull-secret"
 		trustedCAName := "test-trusted-ca"
-		customCertContent := "I-am-a-cert-trust-me"
+		customCertContent := `
+-----BEGIN CERTIFICATE-----
+MIIDazCCAlOgAwIBAgIUdKGNuWxm1t7auCtk+RYAgMKC4wkwDQYJKoZIhvcNAQEL
+BQAwRTELMAkGA1UEBhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM
+GEludGVybmV0IFdpZGdpdHMgUHR5IEx0ZDAeFw0yMzA4MDcxMzUzMjBaFw0yNDA4
+MDYxMzUzMjBaMEUxCzAJBgNVBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEw
+HwYDVQQKDBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwggEiMA0GCSqGSIb3DQEB
+AQUAA4IBDwAwggEKAoIBAQDGkW280WZbTyHPiNQXHVaWW/C3ZbaKh5cuarQUkHZc
+1SVfFELuJXm3YAA5ZOtwaIuqsSO9Yieao0kWYWWCSyFdwcOIl5H85n9YaZ1/8ki3
+af7TwH1UppA3Zh24eV9ME+uJKsmn4AkMVaM9EKUaOTybZD6Sc0jxsmec9yDuE4md
+P0vqIshcd6VmxruPnzzmOEXggP3QPFF5s9017uPnQ7k2kU8b0MG19HS2opeeSO59
+R2+kg/Xkz8UnCa5y+OSORW20DHjwc7DUr/Gr78X49iiFBzBewBfeqxQKwtYcC9eB
+DxiDWiXENUnsS0EkMs4jNFjgiAJTzx6rBa4xiwe7SJWfAgMBAAGjUzBRMB0GA1Ud
+DgQWBBR+L23VHT1LLmpAwz4esbVmfSCOdDAfBgNVHSMEGDAWgBR+L23VHT1LLmpA
+wz4esbVmfSCOdDAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQCj
+jU/luq9dNiZi6fhgfhDQRuZEYnHSV8L3+hEDn1j6Gn02c9wNcCDjOBH4i8pJz8g2
+x+Z1SNALXFcr+bGJQx94lw7S1Vm84YxELyNbwVYuHo+7aLAUXSQ62RMIhEJ/NCzW
+yN0j8PhweOTBwUtvzPa+71f1gNbDgkfXqgLSXBgjNvolcg/lefmKBs0pU8swOmX1
+q8nrWV12953Gf9sMJ0mFP5/Lcv4l1SdnFLOSdVjWF4RX+SjnVgiHSuJxp9k3QiXz
+5dlfTqc9/qZa1PRq4hdq/3Rs42Hiwa3FTWSgqjM1qcDycQtTIAeZu2zfYDQDkYcI
+NK85cEJwyxQ+wahdNGUD
+-----END CERTIFICATE-----
+`
 		dockerconfigjsonContent := `{"auths":{}}`
 		var revision uint = 3
 		processModule := createTestProcessModuleConfig(revision)
@@ -187,6 +215,7 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
+		mockRegistryClient(provisioner, testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentImage(dk, processModule)
@@ -285,6 +314,14 @@ func createTestProvisioner(obj ...client.Object) *OneAgentProvisioner {
 	}
 
 	return provisioner
+}
+
+func mockRegistryClient(provisioner *OneAgentProvisioner, imageDigest string) {
+	provisioner.registryClientBuilder = func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
+		regMock := &mocks.MockImageGetter{}
+		regMock.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Digest: digest.Digest(imageDigest)}, nil)
+		return regMock, nil
+	}
 }
 
 func mockImageInstallerBuilder(mock *mockedinstaller.Installer) imageInstallerBuilder {

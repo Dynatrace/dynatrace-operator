@@ -14,7 +14,7 @@ const (
 	semverSep    = "."
 
 	// relevantVersionLength defines how many segments of the semver we care about, for-example:
-	//in case of 3, we only care about major.minor.patch and the rest is ignored.
+	// in case of 3, we only care about major.minor.patch and the rest is ignored.
 	relevantSemverLength = 3
 
 	// healthCheckVersionThreshold hold the semver after which point the binary-based health-check can be used.
