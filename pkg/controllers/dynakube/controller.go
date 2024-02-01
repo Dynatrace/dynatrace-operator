@@ -3,7 +3,6 @@ package dynakube
 import (
 	"context"
 	goerrors "errors"
-	"net/http"
 	"os"
 	"time"
 
@@ -302,18 +301,13 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 	// it's important to setup app injection before AG so that it is already working when AG pods start, in case code modules shall get
 	// injected into AG for self-monitoring reasons
 
-	registryClient, err := controller.createDynatraceRegistryClient(ctx, dynakube)
-	if err != nil {
-		return err
-	}
-
-	versionReconciler := controller.versionReconcilerBuilder(controller.apiReader, dynatraceClient, registryClient, controller.fs, timeprovider.New().Freeze())
+	versionReconciler := controller.versionReconcilerBuilder(controller.apiReader, dynatraceClient, controller.fs, timeprovider.New().Freeze())
 	connectionInfoReconciler := controller.connectionInfoReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient)
 
 	componentErrors := []error{}
 
 	log.Info("start reconciling ActiveGate")
-	err = controller.reconcileActiveGate(ctx, dynakube, dynatraceClient, istioReconciler, connectionInfoReconciler, versionReconciler)
+	err := controller.reconcileActiveGate(ctx, dynakube, dynatraceClient, istioReconciler, connectionInfoReconciler, versionReconciler)
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
 		componentErrors = append(componentErrors, err)
@@ -353,26 +347,4 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 	}
 
 	return goerrors.Join(componentErrors...)
-}
-
-func (controller *Controller) createDynatraceRegistryClient(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (registry.ImageGetter, error) {
-	pullSecret := dynakube.PullSecretWithoutData()
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-
-	transport, err := registry.PrepareTransportForDynaKube(ctx, controller.apiReader, transport, dynakube)
-	if err != nil {
-		return nil, err
-	}
-
-	registryClient, err := controller.registryClientBuilder(
-		registry.WithContext(ctx),
-		registry.WithApiReader(controller.apiReader),
-		registry.WithKeyChainSecret(&pullSecret),
-		registry.WithTransport(transport),
-	)
-
-	if err != nil {
-		return nil, err
-	}
-	return registryClient, nil
 }
