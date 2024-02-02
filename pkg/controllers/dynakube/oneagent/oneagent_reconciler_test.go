@@ -62,7 +62,7 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 
-	t.Run("Removing DaemonSet is safe even if its missing", func(t *testing.T) {
+	t.Run("removing DaemonSet is safe even if its missing", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace}}
 		fakeClient := fake.NewClient(dynakube)
 
