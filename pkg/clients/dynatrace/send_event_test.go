@@ -156,7 +156,7 @@ func handleSendEvent(request *http.Request, writer http.ResponseWriter) {
 		"storedCorrelationIds": ["string"]}`)
 
 	switch request.Method {
-	case "POST":
+	case http.MethodPost:
 		writer.WriteHeader(http.StatusOK)
 		_, _ = writer.Write(eventPostResponse)
 	default:

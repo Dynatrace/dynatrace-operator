@@ -28,6 +28,8 @@ type reconciler struct {
 	apiReader client.Reader
 }
 
+type ReconcilerBuilder func(apiReader client.Reader, dtClient dtclient.Client, registryClient registry.ImageGetter, fs afero.Afero, timeProvider *timeprovider.Provider) Reconciler
+
 func NewReconciler(apiReader client.Reader, dtClient dtclient.Client, registryClient registry.ImageGetter, fs afero.Afero, timeProvider *timeprovider.Provider) Reconciler { //nolint:revive
 	return &reconciler{
 		apiReader:      apiReader,

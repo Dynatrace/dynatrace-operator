@@ -34,6 +34,8 @@ type Reconciler struct {
 
 var _ controllers.Reconciler = (*Reconciler)(nil)
 
+type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) controllers.Reconciler
+
 func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) controllers.Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	authTokenReconciler := authtoken.NewReconciler(clt, apiReader, scheme, dynakube, dtc)
 	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) controllers.Reconciler {

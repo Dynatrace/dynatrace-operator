@@ -22,7 +22,7 @@ const fakeDigest = "sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac
 
 func TestReconcile(t *testing.T) {
 	edgeConnect := createBasicEdgeConnect()
-	fakeRegistryClient := &mocks.MockImageGetter{}
+	fakeRegistryClient := mocks.NewMockImageGetter(t)
 	fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
 	fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
 
@@ -49,9 +49,7 @@ func TestReconcile(t *testing.T) {
 
 func TestCombineImagesWithDigest(t *testing.T) {
 	edgeConnect := createBasicEdgeConnect()
-	fakeRegistryClient := &mocks.MockImageGetter{}
-	fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
-	fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
+	fakeRegistryClient := mocks.NewMockImageGetter(t)
 
 	updater := newUpdater(fake.NewClient(), nil, fakeRegistryClient, edgeConnect)
 
@@ -72,8 +70,7 @@ func TestCombineImagesWithDigest(t *testing.T) {
 
 func TestReconcileRequired(t *testing.T) {
 	currentTime := timeprovider.New().Freeze()
-	mockImageGetter := &mocks.MockImageGetter{}
-	mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
+	mockImageGetter := mocks.NewMockImageGetter(t)
 
 	t.Run("initial reconcile always required", func(t *testing.T) {
 		edgeConnect := createBasicEdgeConnect()
