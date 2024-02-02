@@ -64,7 +64,7 @@ type Reconciler struct {
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *Reconciler) Reconcile(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	if !dynakube.NeedsOneAgent() {
-		log.Info("removing OneAgent")
+		log.Info("removing OneAgent daemonSet")
 		return r.removeOneAgentDaemonSet(ctx, dynakube)
 	}
 	log.Info("reconciling OneAgent")
