@@ -22,6 +22,8 @@ type reconciler struct {
 	client *Client
 }
 
+type ReconcilerBuilder func(istio *Client) Reconciler
+
 func NewReconciler(istio *Client) Reconciler {
 	return &reconciler{
 		client: istio,
