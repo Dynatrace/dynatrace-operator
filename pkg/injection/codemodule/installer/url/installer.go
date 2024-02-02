@@ -82,7 +82,7 @@ func (installer Installer) InstallAgent(targetDir string) (bool, error) {
 
 func (installer Installer) installAgent(targetDir string) error {
 	fs := installer.fs
-	path := ""
+	var path string
 	if installer.isInitContainerMode() {
 		path = targetDir
 	} else {
