@@ -9,25 +9,25 @@ import (
 )
 
 const (
-	// TokenConditionType identifies the token validity condition
+	// TokenConditionType identifies the token validity condition.
 	TokenConditionType string = "Tokens"
 
-	// APITokenConditionType identifies the API Token validity condition
+	// APITokenConditionType identifies the API Token validity condition.
 	APITokenConditionType string = "APIToken"
 
-	// PaaSTokenConditionType identifies the PaaS Token validity condition
+	// PaaSTokenConditionType identifies the PaaS Token validity condition.
 	PaaSTokenConditionType string = "PaaSToken"
 
-	// DataIngestTokenConditionType identifies the DataIngest Token validity condition
+	// DataIngestTokenConditionType identifies the DataIngest Token validity condition.
 	DataIngestTokenConditionType string = "DataIngestToken"
 )
 
-// Possible reasons for ApiToken and PaaSToken conditions
+// Possible reasons for ApiToken and PaaSToken conditions.
 const (
-	// ReasonTokenReady is set when a token has passed verifications
+	// ReasonTokenReady is set when a token has passed verifications.
 	ReasonTokenReady string = "TokenReady"
 
-	// ReasonTokenError is set when an unknown error has been found when verifying the token
+	// ReasonTokenError is set when an unknown error has been found when verifying the token.
 	ReasonTokenError string = "TokenError"
 )
 
@@ -67,7 +67,7 @@ type DynaKubeValueSource struct { // nolint:revive
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +operator-sdk:csv:customresourcedefinitions:displayName="Dynatrace DynaKube"
-// +operator-sdk:csv:customresourcedefinitions:resources={{StatefulSet,v1,},{DaemonSet,v1,},{Pod,v1,}}
+// +operator-sdk:csv:customresourcedefinitions:resources={{StatefulSet,v1,},{DaemonSet,v1,},{Pod,v1,}}.
 type DynaKube struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

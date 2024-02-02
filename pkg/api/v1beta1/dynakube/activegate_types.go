@@ -85,7 +85,7 @@ type ActiveGateSpec struct {
 
 // CapabilityProperties is a struct which can be embedded by ActiveGate capabilities
 // Such as KubernetesMonitoring or Routing
-// It encapsulates common properties
+// It encapsulates common properties.
 type CapabilityProperties struct {
 	// Amount of replicas for your ActiveGates
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Replicas",order=30,xDescriptors="urn:alm:descriptor:com.tectonic.ui:podCount"

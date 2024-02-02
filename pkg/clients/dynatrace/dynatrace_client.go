@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"crypto/md5" //nolint:gosec
 	"encoding/hex"
 	"encoding/json"
@@ -56,7 +57,8 @@ const (
 // makeRequest does an HTTP request by formatting the URL from the given arguments and returns the response.
 // The response body must be closed by the caller when no longer used.
 func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.Response, error) {
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	// TODO: introduce ctx into dynatrace client
+	req, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, url, nil)
 	if err != nil {
 		return nil, errors.WithMessage(err, "error initializing http request")
 	}
@@ -86,7 +88,8 @@ func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.
 }
 
 func createBaseRequest(url, method, apiToken string, body io.Reader) (*http.Request, error) {
-	req, err := http.NewRequest(method, url, body)
+	// TODO: introduce ctx into dynatrace client
+	req, err := http.NewRequestWithContext(context.TODO(), method, url, body)
 	if err != nil {
 		return nil, errors.WithMessage(err, "error initializing http request")
 	}

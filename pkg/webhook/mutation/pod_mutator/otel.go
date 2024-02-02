@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	// the attribute key needs to be added to the allow list on the receiving tenant
+	// the attribute key needs to be added to the allow list on the receiving tenant.
 	mutatedPodNameKey = "webhook.mutationrequest.pod.name"
 )
 
