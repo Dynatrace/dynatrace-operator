@@ -43,7 +43,7 @@ func TestReconcile(t *testing.T) {
 	namespace := "dynatrace"
 	dkName := "dynakube"
 
-	t.Run("Remove DaemonSet in case OneAgent is not needed", func(t *testing.T) {
+	t.Run("remove DaemonSet in case OneAgent is not needed", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace}}
 		fakeClient := fake.NewClient(dynakube, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dynakube.OneAgentDaemonsetName(), Namespace: dynakube.Namespace}})
 
