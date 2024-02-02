@@ -237,6 +237,8 @@ linters:
   - unconvert                 # Remove unnecessary type conversions
   - unparam                   # Reports unused function parameters
   - unused                    # Checks Go code for unused constants, variables, functions and types
+  - usestdlibvars             # A linter that detect the possibility to use variables/constants from the Go standard library.
+  - wastedassign              # wastedassign finds wasted assignment statements.
   - whitespace                # Tool for detection of leading and trailing whitespace.
   - zerologlint               # Detects the wrong usage of zerolog that a user forgets to dispatch with Send or Msg.
 
@@ -280,8 +282,6 @@ linters:
 # - tenv              # tenv is analyzer that detects using os.Setenv instead of t.Setenv since Go1.17
 # - testifylint       # Checks usage of github.com/stretchr/testify.
 # - thelper           # Thelper detects tests helpers which is not start with t.Helper() method.
-# - usestdlibvars     # A linter that detect the possibility to use variables/constants from the Go standard library.
-# - wastedassign      # wastedassign finds wasted assignment statements.
 # - wrapcheck         # Checks that errors returned from external packages are wrapped.
 # - wsl               # Add or remove empty lines.
 # TODO: Need to discuss/decide/remove
