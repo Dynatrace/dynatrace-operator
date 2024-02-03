@@ -75,6 +75,7 @@ func (builder CommandBuilder) Build() *cobra.Command {
 		RunE: builder.buildRun(),
 	}
 	addFlags(cmd)
+
 	return cmd
 }
 
@@ -99,7 +100,9 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		if err != nil {
 			return err
 		}
+
 		supportArchive := newZipArchive(archiveTargetFile)
+
 		defer archiveTargetFile.Close()
 		defer supportArchive.Close()
 
@@ -107,10 +110,12 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		if err != nil {
 			return err
 		}
+
 		printCopyCommand(log, archiveToStdoutFlagValue, archiveTargetFile.Name())
 
 		// make sure to run this collector at the very end
 		newSupportArchiveOutputCollector(log, supportArchive, &logBuffer).Do()
+
 		return nil
 	}
 }
@@ -128,12 +133,15 @@ func getAppNameLabel(ctx context.Context, pods clientgocorev1.PodInterface) stri
 	podName := os.Getenv(env.PodName)
 	if podName != "" {
 		options := metav1.GetOptions{}
+
 		pod, err := pods.Get(ctx, podName, options)
 		if err != nil {
 			return defaultOperatorAppName
 		}
+
 		return pod.Labels[labels.AppNameLabel]
 	}
+
 	return defaultOperatorAppName
 }
 
@@ -169,6 +177,7 @@ func (builder CommandBuilder) runCollectors(log logr.Logger, supportArchive arch
 			logErrorf(log, err, "%s failed", c.Name())
 		}
 	}
+
 	return nil
 }
 
@@ -182,6 +191,7 @@ func getK8sClients(kubeConfig *rest.Config) (*kubernetes.Clientset, client.Reade
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
+
 	apiReader := k8sCluster.GetAPIReader()
 
 	return clientSet, apiReader, nil

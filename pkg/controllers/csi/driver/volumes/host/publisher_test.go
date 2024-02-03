@@ -82,6 +82,7 @@ func TestUnpublishVolume(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Nil(t, response)
 		assert.NotEmpty(t, mounter.MountPoints)
+
 		volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(context.TODO(), testVolumeId)
 		assert.NoError(t, err)
 		assert.Nil(t, volume)
@@ -142,6 +143,7 @@ func newPublisherForTesting(mounter *mount.FakeMounter) HostVolumePublisher {
 
 func mockPublishedvolume(t *testing.T, publisher *HostVolumePublisher) {
 	mockDynakube(t, publisher)
+
 	now := time.Now()
 	err := publisher.db.InsertOsAgentVolume(context.TODO(), metadata.NewOsAgentVolume(testVolumeId, testTenantUUID, true, &now))
 	require.NoError(t, err)
@@ -159,6 +161,7 @@ func mockDynakubeWithoutVersion(t *testing.T, publisher *HostVolumePublisher) {
 
 func assertReferencesForPublishedVolume(t *testing.T, publisher *HostVolumePublisher, mounter *mount.FakeMounter) {
 	assert.NotEmpty(t, mounter.MountPoints)
+
 	volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(context.TODO(), testVolumeId)
 	assert.NoError(t, err)
 	assert.Equal(t, volume.VolumeID, testVolumeId)

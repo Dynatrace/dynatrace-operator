@@ -48,6 +48,7 @@ func TestInjection(t *testing.T) {
 		apiReader: clt,
 		namespace: "dynatrace",
 	}
+
 	t.Run("Don't inject into operator ns", func(t *testing.T) {
 		baseNs := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
@@ -124,6 +125,7 @@ func TestInjection(t *testing.T) {
 		assert.NoError(t, err)
 
 		var updNs corev1.Namespace
+
 		assert.NoError(t, json.Unmarshal(updNsBytes, &updNs))
 
 		dkName, ok := updNs.Labels[dtwebhook.InjectionInstanceLabel]
@@ -162,6 +164,7 @@ func TestInjection(t *testing.T) {
 		assert.NoError(t, err)
 
 		var updNs corev1.Namespace
+
 		assert.NoError(t, json.Unmarshal(updNsBytes, &updNs))
 
 		dkName, ok := updNs.Labels[dtwebhook.InjectionInstanceLabel]
@@ -202,6 +205,7 @@ func TestInjection(t *testing.T) {
 		assert.NoError(t, err)
 
 		var updNs corev1.Namespace
+
 		assert.NoError(t, json.Unmarshal(updNsBytes, &updNs))
 
 		dkName, ok := updNs.Labels[dtwebhook.InjectionInstanceLabel]

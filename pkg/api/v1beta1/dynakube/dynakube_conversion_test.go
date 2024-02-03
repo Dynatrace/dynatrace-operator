@@ -253,6 +253,7 @@ func prepareObjectMeta() metav1.ObjectMeta {
 
 func prepareAlphaCapability() dynakube.CapabilityProperties {
 	intVal := int32(3)
+
 	return dynakube.CapabilityProperties{
 		Enabled:  true,
 		Replicas: &intVal,
@@ -473,6 +474,7 @@ func compareBetaCapability(t *testing.T, expectedCapability CapabilityProperties
 
 func prepareBetaCapability() CapabilityProperties {
 	intVal := int32(3)
+
 	return CapabilityProperties{
 		Replicas: &intVal,
 		Group:    "test-activegate-group",

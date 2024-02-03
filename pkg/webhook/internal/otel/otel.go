@@ -12,5 +12,6 @@ func GetWebhookPodName() string {
 	oncePodName.Do(func() {
 		envPodName = os.Getenv("POD_NAME")
 	})
+
 	return envPodName
 }

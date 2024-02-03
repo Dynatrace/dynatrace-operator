@@ -134,6 +134,7 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 		if tenantEdgeConnect.ID != edgeConnectIdFromSecret {
 			log.Info("EdgeConnect client secret contains invalid Id")
 		}
+
 		return edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID)
 	}
 
@@ -144,7 +145,6 @@ func (controller *Controller) reconcileEdgeConnect(ctx context.Context, edgeConn
 	oldStatus := *edgeConnect.Status.DeepCopy()
 
 	err := controller.reconcileEdgeConnectCR(ctx, edgeConnect)
-
 	if err != nil {
 		edgeConnect.Status.SetPhase(status.Error)
 		log.Error(err, "error reconciling EdgeConnect", "namespace", edgeConnect.Namespace, "name", edgeConnect.Name)
@@ -156,6 +156,7 @@ func (controller *Controller) reconcileEdgeConnect(ctx context.Context, edgeConn
 		log.Error(errors.WithStack(err), "failed to generate hash for the status section")
 	} else if isDifferentStatus {
 		log.Info("status changed, updating EdgeConnect")
+
 		if errClient := controller.updateEdgeConnectStatus(ctx, edgeConnect); errClient != nil {
 			return reconcile.Result{RequeueAfter: fastUpdateInterval}, errors.WithMessagef(errClient, "failed to update EdgeConnect after failure, original error: %s", err)
 		}
@@ -166,6 +167,7 @@ func (controller *Controller) reconcileEdgeConnect(ctx context.Context, edgeConn
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+
 	return reconcile.Result{RequeueAfter: defaultUpdateInterval}, err
 }
 
@@ -192,24 +194,27 @@ func (controller *Controller) getEdgeConnect(ctx context.Context, name, namespac
 			Namespace: namespace,
 		},
 	}
-	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: edgeConnect.Name, Namespace: edgeConnect.Namespace}, edgeConnect)
 
+	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: edgeConnect.Name, Namespace: edgeConnect.Namespace}, edgeConnect)
 	if k8serrors.IsNotFound(err) {
 		return nil, nil
 	} else if err != nil {
 		return nil, errors.WithStack(err)
 	}
+
 	return edgeConnect, nil
 }
 
 func (controller *Controller) updateFinalizers(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
 	if edgeConnect.Spec.OAuth.Provisioner && len(edgeConnect.ObjectMeta.Finalizers) == 0 {
 		log.Info("updating finalizers", "name", edgeConnect.Name, "namespace", edgeConnect.Namespace)
+
 		edgeConnect.ObjectMeta.Finalizers = []string{finalizerName}
 		if err := controller.client.Update(ctx, edgeConnect); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -218,6 +223,7 @@ func (controller *Controller) updateVersionInfo(ctx context.Context, edgeConnect
 
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	keyChainSecret := edgeConnect.PullSecretWithoutData()
+
 	registryClient, err := controller.registryClientBuilder(
 		registry.WithContext(ctx),
 		registry.WithApiReader(controller.apiReader),
@@ -233,6 +239,7 @@ func (controller *Controller) updateVersionInfo(ctx context.Context, edgeConnect
 		log.Error(err, "reconciliation of EdgeConnect failed", "name", edgeConnect.Name, "namespace", edgeConnect.Namespace)
 		return err
 	}
+
 	return nil
 }
 
@@ -246,7 +253,9 @@ func (controller *Controller) updateEdgeConnectStatus(ctx context.Context, edgeC
 	} else if err != nil {
 		return errors.WithStack(err)
 	}
+
 	log.Info("EdgeConnect status updated", "name", edgeConnect.Name, "timestamp", edgeConnect.Status.UpdatedTimestamp)
+
 	return nil
 }
 
@@ -261,14 +270,15 @@ func (controller *Controller) reconcileEdgeConnectRegular(edgeConnect *edgeconne
 	if err != nil {
 		return err
 	}
+
 	desiredDeployment.Annotations[hasher.AnnotationHash] = ddHash
 
 	_, err = k8sdeployment.CreateOrUpdateDeployment(controller.client, log, desiredDeployment)
-
 	if err != nil {
 		log.Info("could not create or update deployment for EdgeConnect", "name", desiredDeployment.Name)
 		return err
 	}
+
 	return nil
 }
 
@@ -298,6 +308,7 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 	if tenantEdgeConnect.ID != "" {
 		if edgeConnectIdFromSecret == "" {
 			log.Info("EdgeConnect has to be recreated due to missing secret")
+
 			if err := edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID); err != nil {
 				return err
 			}
@@ -305,6 +316,7 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 			tenantEdgeConnect.ID = ""
 		} else if tenantEdgeConnect.ID != edgeConnectIdFromSecret {
 			log.Info("EdgeConnect has to be recreated due to invalid Id")
+
 			if err := edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID); err != nil {
 				return err
 			}
@@ -318,6 +330,7 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 		if err != nil {
 			return err
 		}
+
 		return controller.createOrUpdateEdgeConnectDeployment(ctx, edgeConnect)
 	}
 
@@ -325,6 +338,7 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 	if err != nil {
 		return err
 	}
+
 	return controller.createOrUpdateEdgeConnectDeployment(ctx, edgeConnect)
 }
 
@@ -339,6 +353,7 @@ func (controller *Controller) buildEdgeConnectClient(ctx context.Context, edgeCo
 
 func (controller *Controller) getOauthCredentials(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) (oauthCredentialsType, error) {
 	query := k8ssecret.NewQuery(ctx, controller.client, controller.apiReader, log)
+
 	secret, err := query.Get(types.NamespacedName{
 		Name:      edgeConnect.Spec.OAuth.ClientSecret,
 		Namespace: edgeConnect.Namespace,
@@ -356,6 +371,7 @@ func (controller *Controller) getOauthCredentials(ctx context.Context, edgeConne
 	if err != nil {
 		return oauthCredentialsType{}, errors.WithStack(err)
 	}
+
 	return oauthCredentialsType{clientId: oauthClientId, clientSecret: oauthClientSecret}, nil
 }
 
@@ -395,11 +411,13 @@ func getEdgeConnectByName(edgeConnectClient edgeconnect.Client, name string) (ed
 	if len(ecs.EdgeConnects) > 0 {
 		return ecs.EdgeConnects[0], nil
 	}
+
 	return edgeconnect.GetResponse{}, nil
 }
 
 func (controller *Controller) getEdgeConnectIdFromClientSecret(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) (string, error) {
 	query := k8ssecret.NewQuery(ctx, controller.client, controller.apiReader, log)
+
 	secret, err := query.Get(types.NamespacedName{Name: edgeConnectClientSecretName(edgeConnect.Name), Namespace: edgeConnect.Namespace})
 	if err != nil {
 		if k8serrors.IsNotFound(errors.Cause(err)) {
@@ -408,15 +426,18 @@ func (controller *Controller) getEdgeConnectIdFromClientSecret(ctx context.Conte
 			return "", errors.WithStack(err)
 		}
 	}
+
 	id, err := k8ssecret.ExtractToken(&secret, consts.KeyEdgeConnectId)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
+
 	return id, nil
 }
 
 func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnectClient edgeconnect.Client, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
 	log.Info("creating EdgeConnect", "name", edgeConnect.Name)
+
 	createResponse, err := edgeConnectClient.CreateEdgeConnect(edgeConnect.Name, edgeConnect.Spec.HostPatterns, "")
 	if err != nil {
 		return errors.WithStack(err)
@@ -438,24 +459,29 @@ func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnect
 	}
 
 	query := k8ssecret.NewQuery(ctx, controller.client, controller.apiReader, log)
+
 	err = query.CreateOrUpdate(*ecOAuthSecret)
 	if err != nil {
 		log.Info("could not create or update secret for edge-connect client", "name", ecOAuthSecret.Name)
 		return errors.WithStack(err)
 	}
+
 	return nil
 }
 
 func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnectClient edgeconnect.Client, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
 	secretQuery := k8ssecret.NewQuery(ctx, controller.client, controller.apiReader, log)
+
 	secret, err := secretQuery.Get(types.NamespacedName{Name: edgeConnectClientSecretName(edgeConnect.Name), Namespace: edgeConnect.Namespace})
 	if err != nil {
 		return err
 	}
+
 	id, err := k8ssecret.ExtractToken(&secret, consts.KeyEdgeConnectId)
 	if err != nil {
 		return err
 	}
+
 	oauthClientId, err := k8ssecret.ExtractToken(&secret, consts.KeyEdgeConnectOauthClientID)
 	if err != nil {
 		return err
@@ -478,15 +504,18 @@ func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnect
 	}
 
 	log.Info("updating EdgeConnect done", "name", edgeConnect.Name)
+
 	return nil
 }
 
 func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
 	secretQuery := k8ssecret.NewQuery(ctx, controller.client, controller.apiReader, log)
+
 	secret, err := secretQuery.Get(types.NamespacedName{Name: edgeConnectClientSecretName(edgeConnect.Name), Namespace: edgeConnect.Namespace})
 	if err != nil {
 		return err
 	}
+
 	resource, err := k8ssecret.ExtractToken(&secret, consts.KeyEdgeConnectOauthResource)
 	if err != nil {
 		return err
@@ -502,14 +531,15 @@ func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Co
 	if err != nil {
 		return err
 	}
+
 	desiredDeployment.Annotations[hasher.AnnotationHash] = ddHash
 
 	_, err = k8sdeployment.CreateOrUpdateDeployment(controller.client, log, desiredDeployment)
-
 	if err != nil {
 		log.Info("could not create or update deployment for EdgeConnect", "name", desiredDeployment.Name)
 		return err
 	}
+
 	return nil
 }
 

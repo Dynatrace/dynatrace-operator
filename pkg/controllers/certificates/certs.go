@@ -110,16 +110,19 @@ func (cs *Certs) validateServerCerts(now time.Time) bool {
 		log.Info("server certificate failed to parse or is outdated")
 		return true
 	}
+
 	return false
 }
 
 func (cs *Certs) generateRootCerts(domain string, now time.Time) error {
 	// Generate CA root keys
 	log.Info("generating root certificate")
+
 	privateKey, err := cs.generatePrivateKey(RootKey)
 	if err != nil {
 		return err
 	}
+
 	cs.rootPrivateKey = privateKey
 
 	// Generate CA root certificate
@@ -162,12 +165,14 @@ func (cs *Certs) generateRootCerts(domain string, now time.Time) error {
 	cs.Data[RootCert] = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: rootPublicCertDER})
 
 	log.Info("root certificate generated")
+
 	return nil
 }
 
 func (cs *Certs) generateServerCerts(domain string, now time.Time) error {
 	// Generate server keys
 	log.Info("generating server certificate")
+
 	privateKey, err := cs.generatePrivateKey(ServerKey)
 	if err != nil {
 		return err
@@ -206,7 +211,9 @@ func (cs *Certs) generateServerCerts(domain string, now time.Time) error {
 	}
 
 	cs.Data[ServerCert] = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: serverPublicCertDER})
+
 	log.Info("server certificate generated")
+
 	return nil
 }
 
@@ -220,9 +227,11 @@ func (cs *Certs) generatePrivateKey(dataKey string) (*ecdsa.PrivateKey, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	cs.Data[dataKey] = pem.EncodeToMemory(&pem.Block{
 		Type:  "PRIVATE KEY",
 		Bytes: x509Encoded,
 	})
+
 	return privateKey, nil
 }

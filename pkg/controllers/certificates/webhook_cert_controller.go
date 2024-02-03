@@ -62,9 +62,11 @@ type WebhookCertificateController struct {
 func (controller *WebhookCertificateController) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling webhook certificates",
 		"namespace", request.Namespace, "name", request.Name)
+
 	controller.namespace = request.Namespace
 
 	webhookDeployment := appsv1.Deployment{}
+
 	err := controller.apiReader.Get(ctx, types.NamespacedName{Name: webhook.DeploymentName, Namespace: controller.namespace}, &webhookDeployment)
 	if k8serrors.IsNotFound(err) {
 		log.Info("no webhook deployment found, skipping webhook certificate generation")
@@ -99,6 +101,7 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 	if controller.isUpToDate(certSecret, mutatingWebhookClientConfigs, validatingWebhookConfigConfigs, crd) {
 		log.Info("secret for certificates up to date, skipping update")
 		controller.cancelMgr()
+
 		return reconcile.Result{RequeueAfter: SuccessDuration}, nil
 	}
 
@@ -126,6 +129,7 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 	}
 
 	controller.cancelMgr()
+
 	return reconcile.Result{RequeueAfter: SuccessDuration}, nil
 }
 
@@ -138,6 +142,7 @@ func (controller *WebhookCertificateController) isUpToDate(certSecret *certifica
 		areMutatingWebhookConfigsValid &&
 		areValidatingWebhookConfigsValid &&
 		isCRDConversionConfigValid
+
 	return isUpToDate
 }
 
@@ -155,6 +160,7 @@ func (controller *WebhookCertificateController) getWebhooksConfigurations(ctx co
 		// See cmd/operator/manager.go and cmd/operator/watcher.go
 		log.Info("could not find validating webhook configuration, this is normal when deployed using OLM")
 	}
+
 	return mutatingWebhookConfiguration, validatingWebhookConfiguration
 }
 
@@ -167,6 +173,7 @@ func (controller *WebhookCertificateController) cancelMgr() {
 
 func (controller *WebhookCertificateController) getMutatingWebhookConfiguration(ctx context.Context) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 	var mutatingWebhook admissionregistrationv1.MutatingWebhookConfiguration
+
 	err := controller.apiReader.Get(ctx, client.ObjectKey{
 		Name: webhook.DeploymentName,
 	}, &mutatingWebhook)
@@ -177,11 +184,13 @@ func (controller *WebhookCertificateController) getMutatingWebhookConfiguration(
 	if len(mutatingWebhook.Webhooks) == 0 {
 		return nil, errors.New("mutating webhook configuration has no registered webhooks")
 	}
+
 	return &mutatingWebhook, nil
 }
 
 func (controller *WebhookCertificateController) getValidatingWebhookConfiguration(ctx context.Context) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 	var mutatingWebhook admissionregistrationv1.ValidatingWebhookConfiguration
+
 	err := controller.apiReader.Get(ctx, client.ObjectKey{
 		Name: webhook.DeploymentName,
 	}, &mutatingWebhook)
@@ -192,6 +201,7 @@ func (controller *WebhookCertificateController) getValidatingWebhookConfiguratio
 	if len(mutatingWebhook.Webhooks) == 0 {
 		return nil, errors.New("validating webhook configuration has no registered webhooks")
 	}
+
 	return &mutatingWebhook, nil
 }
 
@@ -217,6 +227,7 @@ func (controller *WebhookCertificateController) updateClientConfigurations(ctx c
 	if err := controller.client.Update(ctx, webhookConfig); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -236,6 +247,7 @@ func (controller *WebhookCertificateController) updateCRDConfiguration(ctx conte
 	if err := controller.client.Update(ctx, &crd); err != nil {
 		return err
 	}
+
 	return nil
 }
 

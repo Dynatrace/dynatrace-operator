@@ -74,6 +74,7 @@ func buildDynakube(capabilities []dynatracev1beta1.CapabilityDisplayName) *dynat
 func getMockReconciler(t *testing.T, returnArguments ...any) *reconcilermock.CapabilityReconciler {
 	mockReconciler := reconcilermock.NewCapabilityReconciler(t)
 	mockReconciler.On("Reconcile", mock.Anything).Return(returnArguments...).Maybe()
+
 	return mockReconciler
 }
 
@@ -96,6 +97,7 @@ func TestReconcile(t *testing.T) {
 		verifyReconciler(t, r)
 
 		err := r.Reconcile(context.Background())
+
 		mockStatefulSetReconciler.AssertCalled(t, "Reconcile", mock.Anything)
 		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile", mock.Anything)
 		require.NoError(t, err)
@@ -109,6 +111,7 @@ func TestReconcile(t *testing.T) {
 		verifyReconciler(t, r)
 
 		err := r.Reconcile(context.Background())
+
 		mockStatefulSetReconciler.AssertCalled(t, "Reconcile", mock.Anything)
 		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile", mock.Anything)
 		require.Error(t, err)
@@ -122,6 +125,7 @@ func TestReconcile(t *testing.T) {
 		verifyReconciler(t, r)
 
 		err := r.Reconcile(context.Background())
+
 		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile", mock.Anything)
 		require.Error(t, err)
 	})
@@ -145,6 +149,7 @@ func TestReconcile(t *testing.T) {
 		verifyReconciler(t, r)
 
 		err := r.Reconcile(context.Background())
+
 		mockStatefulSetReconciler.AssertCalled(t, "Reconcile", mock.Anything)
 		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile", mock.Anything)
 		require.NoError(t, err)
@@ -165,6 +170,7 @@ func TestReconcile(t *testing.T) {
 		verifyReconciler(t, r)
 
 		err := r.Reconcile(context.Background())
+
 		mockStatefulSetReconciler.AssertCalled(t, "Reconcile", mock.Anything)
 		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile", mock.Anything)
 		require.NoError(t, err)

@@ -49,7 +49,6 @@ func (provider csiDriverManagerProvider) CreateManager(namespace string, config 
 
 func (provider csiDriverManagerProvider) addHealthzCheck(mgr manager.Manager) error {
 	err := mgr.AddHealthzCheck(livezEndpointName, healthz.Ping)
-
 	if err != nil {
 		return errors.WithStack(err)
 	}

@@ -34,6 +34,7 @@ func getQueries(namespace string, appName string) []resourceQuery {
 	allQueries = append(allQueries, getComponentsQueryGroup(namespace, appName, labels.AppManagedByLabel).getQueries()...)
 	allQueries = append(allQueries, getCustomResourcesQueryGroup(namespace).getQueries()...)
 	allQueries = append(allQueries, getConfigMapQueryGroup(namespace).getQueries()...)
+
 	return allQueries
 }
 
@@ -113,6 +114,7 @@ func toGroupVersionKind(groupVersion schema.GroupVersion, resource any) schema.G
 		Version: groupVersion.Version,
 		Kind:    typ.Name(),
 	}
+
 	return gvk
 }
 
@@ -125,5 +127,6 @@ func (q resourceQueryGroup) getQueries() []resourceQuery {
 			filters:          q.filters,
 		})
 	}
+
 	return queries
 }

@@ -119,6 +119,7 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 				},
 			},
 		}, &dummyNamespace, &dummyNamespace2)
+
 		testsInvalidLabels := []string{
 			"name%",
 			"name/",

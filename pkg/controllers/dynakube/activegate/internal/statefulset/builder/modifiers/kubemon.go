@@ -49,6 +49,7 @@ func (mod KubernetesMonitoringModifier) Modify(sts *appsv1.StatefulSet) error {
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)
 	sts.Spec.Template.Spec.InitContainers = append(sts.Spec.Template.Spec.InitContainers, mod.getInitContainers()...)
+
 	return nil
 }
 
@@ -86,6 +87,7 @@ func (mod KubernetesMonitoringModifier) getVolumes() []corev1.Volume {
 			},
 		},
 	}
+
 	return append(volumes, mod.getReadOnlyInitVolumes()...)
 }
 
@@ -136,5 +138,6 @@ func GetSecurityContext(readOnlyRootFileSystem bool) *corev1.SecurityContext {
 		},
 		ReadOnlyRootFilesystem: address.Of(readOnlyRootFileSystem),
 	}
+
 	return &securityContext
 }

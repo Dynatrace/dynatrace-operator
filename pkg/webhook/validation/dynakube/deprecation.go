@@ -51,6 +51,7 @@ func deprecatedFeatureFlagDisableMetadataEnrichment(_ context.Context, _ *dynaku
 
 func deprecatedFeatureFlagWillBeDeleted(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	var featureFlags []string
+
 	for _, ff := range getDeprecatedFeatureFlagsWillBeRemoved() {
 		if isDeprecatedFeatureFlagUsed(dynakube, ff) {
 			featureFlags = append(featureFlags, fmt.Sprintf("'%s'", ff))
@@ -60,11 +61,13 @@ func deprecatedFeatureFlagWillBeDeleted(_ context.Context, _ *dynakubeValidator,
 	if len(featureFlags) == 0 {
 		return ""
 	}
+
 	return "Some feature flags are deprecated and will be removed in the future: " + strings.Join(featureFlags, ", ")
 }
 
 func deprecatedFeatureFlagMovedCRDField(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	var featureFlags []string
+
 	for _, ff := range getDeprecatedFeatureFlagsWillBeMovedCRD() {
 		if isDeprecatedFeatureFlagUsed(dynakube, ff) {
 			featureFlags = append(featureFlags, fmt.Sprintf("'%s'", ff))
@@ -74,6 +77,7 @@ func deprecatedFeatureFlagMovedCRDField(_ context.Context, _ *dynakubeValidator,
 	if len(featureFlags) == 0 {
 		return ""
 	}
+
 	return "These feature flags are deprecated and will be moved to the CRD in the future: " + strings.Join(featureFlags, ", ")
 }
 

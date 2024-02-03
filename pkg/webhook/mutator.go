@@ -36,6 +36,7 @@ func (req BaseRequest) PodName() string {
 	if req.Pod == nil {
 		return ""
 	}
+
 	return pod.GetName(*req.Pod)
 }
 

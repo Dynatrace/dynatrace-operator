@@ -41,6 +41,7 @@ func New(defaultOptions ...Option) *Map {
 		entries:        make(map[string]entry),
 		defaultOptions: defaultOptions,
 	}
+
 	return m
 }
 
@@ -57,6 +58,7 @@ func (m Map) Append(key string, value any, opts ...Option) {
 	for _, opt := range m.defaultOptions {
 		opt(&newArg)
 	}
+
 	for _, opt := range opts {
 		opt(&newArg)
 	}

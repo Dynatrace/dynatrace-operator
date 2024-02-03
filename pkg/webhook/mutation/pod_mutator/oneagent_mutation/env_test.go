@@ -63,6 +63,7 @@ func createContainerWithPreloadEnv(existingPath string) *corev1.Container {
 			Value: existingPath,
 		})
 	}
+
 	return container
 }
 
@@ -148,6 +149,7 @@ func TestAddVersionDetectionEnvs(t *testing.T) {
 		addVersionDetectionEnvs(container, defaultVersionLabelMapping)
 
 		require.Len(t, container.Env, len(defaultVersionLabelMapping))
+
 		for _, envvar := range container.Env {
 			assert.Equal(t, defaultVersionLabelMapping[envvar.Name], envvar.ValueFrom.FieldRef.FieldPath)
 		}

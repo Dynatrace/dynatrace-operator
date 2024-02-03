@@ -109,6 +109,7 @@ func createTestMutationRequest(dynakube *dynatracev1beta1.DynaKube) *dtwebhook.M
 
 func createTestAdmissionRequest(pod *corev1.Pod) *admission.Request {
 	basePodBytes, _ := json.Marshal(pod)
+
 	return &admission.Request{
 		AdmissionRequest: admissionv1.AdmissionRequest{
 			Object: runtime.RawExtension{

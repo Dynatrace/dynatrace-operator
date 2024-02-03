@@ -66,22 +66,27 @@ func (installer Installer) InstallAgent(targetDir string) (bool, error) {
 
 	log.Info("installing agent", "target dir", targetDir)
 	installer.props.fillEmptyWithDefaults()
+
 	if err := installer.installAgent(targetDir); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
 		log.Info("failed to install agent", "targetDir", targetDir)
+
 		return false, err
 	}
 
 	if err := symlink.CreateSymlinkForCurrentVersionIfNotExists(installer.fs, targetDir); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
 		log.Info("failed to create symlink for agent installation", "targetDir", targetDir)
+
 		return false, err
 	}
+
 	return true, nil
 }
 
 func (installer Installer) installAgent(targetDir string) error {
 	fs := installer.fs
+
 	var path string
 	if installer.isInitContainerMode() {
 		path = targetDir
@@ -90,20 +95,23 @@ func (installer Installer) installAgent(targetDir string) error {
 	}
 
 	tmpFile, err := afero.TempFile(fs, path, "download")
-
 	if err != nil {
 		log.Info("failed to create temp file download", "err", err)
 		return errors.WithStack(err)
 	}
+
 	defer func() {
 		_ = tmpFile.Close()
+
 		if err := fs.Remove(tmpFile.Name()); err != nil {
 			log.Error(err, "failed to delete downloaded file", "path", tmpFile.Name())
 		}
 	}()
+
 	if err := installer.downloadOneAgentFromUrl(tmpFile); err != nil {
 		return err
 	}
+
 	return installer.unpackOneAgentZip(targetDir, tmpFile)
 }
 
@@ -111,6 +119,7 @@ func (installer Installer) isInitContainerMode() bool {
 	if installer.props != nil {
 		return installer.props.PathResolver.RootDir == consts.AgentBinDirMount
 	}
+
 	return false
 }
 
@@ -118,7 +127,9 @@ func (installer Installer) isAlreadyDownloaded(targetDir string) bool {
 	if isStandaloneInstall(targetDir) {
 		return false
 	}
+
 	_, err := installer.fs.Stat(targetDir)
+
 	return !os.IsNotExist(err)
 }
 

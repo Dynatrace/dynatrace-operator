@@ -51,14 +51,17 @@ func (collector k8sResourceCollector) Do() error {
 	logInfof(collector.log, "Starting K8S resource collection")
 
 	numberOfStorages := 0
+
 	for _, query := range getQueries(collector.namespace, collector.appName) {
 		resourceList, err := collector.readObjectsList(query.groupVersionKind, query.filters)
 		if err != nil {
 			logErrorf(collector.log, err, "could not get manifest for %s", query.groupVersionKind.String())
 			continue
 		}
+
 		for _, resource := range resourceList.Items {
 			numberOfStorages++
+
 			collector.storeObject(resource)
 		}
 	}
@@ -69,6 +72,7 @@ func (collector k8sResourceCollector) Do() error {
 			logErrorf(collector.log, err, "could not read webhook configurations")
 			return err
 		}
+
 		for _, resource := range webhookConfigurations.Items {
 			collector.storeObject(resource)
 		}
@@ -78,6 +82,7 @@ func (collector k8sResourceCollector) Do() error {
 			logErrorf(collector.log, err, "could not read custom resource definitions")
 			return err
 		}
+
 		for _, resource := range customResourceDefinitions.Items {
 			collector.storeObject(resource)
 		}
@@ -98,6 +103,7 @@ func (collector k8sResourceCollector) readObjectsList(groupVersionKind schema.Gr
 	if err != nil {
 		return nil, err
 	}
+
 	return resourceList, nil
 }
 
@@ -107,6 +113,7 @@ func (collector k8sResourceCollector) readWebhookConfigurations() (*unstructured
 	resourceList.SetGroupVersionKind(toGroupVersionKind(admissionregistrationv1.SchemeGroupVersion, admissionregistrationv1.ValidatingWebhookConfiguration{}))
 
 	var mutatingWebhookConfiguration admissionregistrationv1.MutatingWebhookConfiguration
+
 	err := collector.apiReader.Get(collector.context, client.ObjectKey{Name: webhookValidatorName}, &mutatingWebhookConfiguration)
 	if err != nil {
 		return nil, err
@@ -115,12 +122,14 @@ func (collector k8sResourceCollector) readWebhookConfigurations() (*unstructured
 	resourceList.Items = append(resourceList.Items, collector.getMutatingWebhookConfiguration(mutatingWebhookConfiguration))
 
 	var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
+
 	err = collector.apiReader.Get(collector.context, client.ObjectKey{Name: webhookValidatorName}, &validatingWebhookConfiguration)
 	if err != nil {
 		return nil, err
 	}
 
 	resourceList.Items = append(resourceList.Items, collector.getValidatingWebhookConfiguration(validatingWebhookConfiguration))
+
 	return resourceList, nil
 }
 
@@ -146,10 +155,12 @@ func (collector k8sResourceCollector) readCustomResourceDefinitions() (*unstruct
 				// Not only the CRDs but also their statuses are listed. As we are only interested in the CRDs I have to exclude those statuses
 				if !strings.Contains(apiResource.Name, "/status") {
 					var crd v1.CustomResourceDefinition
+
 					err = collector.apiReader.Get(collector.context, client.ObjectKey{Name: fmt.Sprintf("%s.%s", apiResource.Name, crdNameSuffix)}, &crd)
 					if err != nil {
 						return nil, err
 					}
+
 					crds[apiResource.Name] = collector.getCRD(crd)
 				}
 			}
@@ -159,6 +170,7 @@ func (collector k8sResourceCollector) readCustomResourceDefinitions() (*unstruct
 	for _, crd := range crds {
 		resourceList.Items = append(resourceList.Items, crd)
 	}
+
 	return resourceList, nil
 }
 
@@ -202,6 +214,7 @@ func (collector k8sResourceCollector) storeObject(resource unstructured.Unstruct
 		logErrorf(collector.log, err, "Failed to marshal %s %s/%s", resource.GetKind(), collector.namespace, resource.GetName())
 		return
 	}
+
 	fileName := collector.createFileName(resource.GetKind(), resource)
 
 	err = collector.supportArchive.addFile(fileName, bytes.NewBuffer(yamlManifest))
@@ -233,11 +246,13 @@ func (collector k8sResourceCollector) getCRDName(resourceMeta unstructured.Unstr
 	if strings.Contains(objectMeta.Name, "dynakube") {
 		return "dynakube"
 	}
+
 	return "edgeconnect"
 }
 
 func (collector k8sResourceCollector) createFileName(kind string, resourceMeta unstructured.Unstructured) string {
 	kind = strings.ToLower(kind)
+
 	switch {
 	case resourceMeta.GetNamespace() != "":
 		return fmt.Sprintf("%s/%s/%s/%s%s", ManifestsDirectoryName, resourceMeta.GetNamespace(), kind, resourceMeta.GetName(), ManifestsFileExtension)

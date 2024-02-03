@@ -47,20 +47,24 @@ func (mutator *DataIngestPodMutator) Mutate(ctx context.Context, request *dtwebh
 	defer span.End()
 
 	log.Info("injecting data-ingest into pod", "podName", request.PodName())
+
 	workload, err := mutator.retrieveWorkload(request)
 	if err != nil {
 		span.RecordError(err)
 		return err
 	}
+
 	err = mutator.ensureDataIngestSecret(request)
 	if err != nil {
 		span.RecordError(err)
 		return err
 	}
+
 	setupVolumes(request.Pod)
 	mutateUserContainers(request.BaseRequest)
 	updateInstallContainer(request.InstallContainer, workload)
 	setInjectedAnnotation(request.Pod)
+
 	return nil
 }
 
@@ -68,7 +72,9 @@ func (mutator *DataIngestPodMutator) Reinvoke(request *dtwebhook.ReinvocationReq
 	if !mutator.Injected(request.BaseRequest) {
 		return false
 	}
+
 	log.Info("reinvoking", "podName", request.PodName())
+
 	return reinvokeUserContainers(request.BaseRequest)
 }
 
@@ -76,6 +82,7 @@ func (mutator *DataIngestPodMutator) ensureDataIngestSecret(request *dtwebhook.M
 	endpointGenerator := dtingestendpoint.NewEndpointSecretGenerator(mutator.client, mutator.apiReader, mutator.webhookNamespace)
 
 	var endpointSecret corev1.Secret
+
 	err := mutator.apiReader.Get(
 		request.Context,
 		client.ObjectKey{
@@ -89,6 +96,7 @@ func (mutator *DataIngestPodMutator) ensureDataIngestSecret(request *dtwebhook.M
 			log.Info("failed to create the data-ingest endpoint secret before pod injection")
 			return err
 		}
+
 		log.Info("ensured that the data-ingest endpoint secret is present before pod injection")
 	} else if err != nil {
 		log.Info("failed to query the data-ingest endpoint secret before pod injection")
@@ -102,6 +110,7 @@ func setInjectedAnnotation(pod *corev1.Pod) {
 	if pod.Annotations == nil {
 		pod.Annotations = make(map[string]string)
 	}
+
 	pod.Annotations[dtwebhook.AnnotationDataIngestInjected] = "true"
 }
 
@@ -111,5 +120,6 @@ func containerIsInjected(container *corev1.Container) bool {
 			return true
 		}
 	}
+
 	return false
 }

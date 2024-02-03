@@ -46,6 +46,7 @@ func NewClient(clientID, clientSecret string, options ...Option) (Client, error)
 	if httpClient == nil {
 		return nil, errors.New("can't create http client for edge connect")
 	}
+
 	c.httpClient = httpClient
 
 	return c, nil
@@ -138,7 +139,6 @@ func (c *client) GetEdgeConnect(edgeConnectId string) (GetResponse, error) {
 	edgeConnectUrl := c.getEdgeConnectUrl(edgeConnectId)
 
 	req, err := http.NewRequestWithContext(c.ctx, http.MethodGet, edgeConnectUrl, nil)
-
 	if err != nil {
 		return GetResponse{}, err
 	}
@@ -156,6 +156,7 @@ func (c *client) GetEdgeConnect(edgeConnectId string) (GetResponse, error) {
 	}
 
 	response := GetResponse{}
+
 	err = json.Unmarshal(responseData, &response)
 	if err != nil {
 		return GetResponse{}, err
@@ -170,6 +171,7 @@ func (c *client) UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []st
 
 	body := NewRequest(name, hostPatterns, oauthClientId)
 	payloadBuf := new(bytes.Buffer)
+
 	err := json.NewEncoder(payloadBuf).Encode(body)
 	if err != nil {
 		return err
@@ -191,10 +193,12 @@ func (c *client) UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []st
 
 	if resp.StatusCode != http.StatusOK {
 		var errorResponse serverErrorResponse
+
 		err = json.NewDecoder(resp.Body).Decode(&errorResponse)
 		if err != nil {
 			return err
 		}
+
 		return errors.Errorf("edgeconnect server error %d: %s: details %s", errorResponse.ErrorMessage.Code, errorResponse.ErrorMessage.Message, errorResponse.ErrorMessage.Details)
 	}
 
@@ -219,12 +223,15 @@ func (c *client) DeleteEdgeConnect(edgeConnectId string) error {
 
 	if resp.StatusCode != http.StatusNoContent {
 		var errorResponse serverErrorResponse
+
 		err = json.NewDecoder(resp.Body).Decode(&errorResponse)
 		if err != nil {
 			return err
 		}
+
 		return errors.Errorf("edgeconnect server error %d: %s", errorResponse.ErrorMessage.Code, errorResponse.ErrorMessage.Message)
 	}
+
 	return nil
 }
 
@@ -234,6 +241,7 @@ func (c *client) CreateEdgeConnect(name string, hostPatterns []string, oauthClie
 
 	body := NewRequest(name, hostPatterns, oauthClientId)
 	payloadBuf := new(bytes.Buffer)
+
 	err := json.NewEncoder(payloadBuf).Encode(body)
 	if err != nil {
 		return CreateResponse{}, err
@@ -243,6 +251,7 @@ func (c *client) CreateEdgeConnect(name string, hostPatterns []string, oauthClie
 	if err != nil {
 		return CreateResponse{}, err
 	}
+
 	req.Header.Set("Content-Type", contentTypeJSON)
 
 	resp, err := c.httpClient.Do(req)
@@ -259,6 +268,7 @@ func (c *client) CreateEdgeConnect(name string, hostPatterns []string, oauthClie
 	}
 
 	response := CreateResponse{}
+
 	err = json.Unmarshal(responseData, &response)
 	if err != nil {
 		return CreateResponse{}, err
@@ -275,6 +285,7 @@ func (c *client) GetEdgeConnects(name string) (ListResponse, error) {
 	if err != nil {
 		return ListResponse{}, err
 	}
+
 	req.URL.RawQuery = url.Values{
 		"add-fields": {"name,managedByDynatraceOperator"},
 		"filter":     {fmt.Sprintf("name='%s'", name)},
@@ -293,6 +304,7 @@ func (c *client) GetEdgeConnects(name string) (ListResponse, error) {
 	}
 
 	response := ListResponse{}
+
 	err = json.Unmarshal(responseData, &response)
 	if err != nil {
 		return ListResponse{}, err

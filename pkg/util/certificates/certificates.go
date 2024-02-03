@@ -19,5 +19,6 @@ func ValidateCertificateExpiration(certData []byte, renewalThreshold time.Durati
 		log.Info("certificate is outdated, waiting for new ones", "Valid until", cert.NotAfter.UTC())
 		return false, nil
 	}
+
 	return true, nil
 }

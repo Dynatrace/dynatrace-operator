@@ -32,6 +32,7 @@ var testCacheKey = client.ObjectKey{Name: cacheName, Namespace: testNamespace}
 
 func TestReconcile(t *testing.T) {
 	ctx := context.TODO()
+
 	t.Run("Create node and then delete it", func(t *testing.T) {
 		ctx := context.Background()
 		node := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}}
@@ -75,6 +76,7 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, result)
 
 		var cm corev1.ConfigMap
+
 		require.NoError(t, fakeClient.Get(ctx, testCacheKey, &cm))
 		nodesCache := &Cache{Obj: &cm}
 
@@ -103,6 +105,7 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, result)
 
 		var cm corev1.ConfigMap
+
 		require.NoError(t, fakeClient.Get(ctx, testCacheKey, &cm))
 		nodesCache := &Cache{Obj: &cm}
 
@@ -196,6 +199,7 @@ func TestReconcile(t *testing.T) {
 
 		// Emulate error by explicitly removing node1 from cache
 		var cm corev1.ConfigMap
+
 		require.NoError(t, fakeClient.Get(ctx, testCacheKey, &cm))
 		nodesCache := &Cache{Obj: &cm}
 
@@ -263,6 +267,7 @@ func createDTMockClient(t *testing.T, ip, host string) *mocks.Client {
 	dtClient.On("SendEvent", mock.MatchedBy(func(e *dtclient.EventData) bool {
 		return e.EventType == "MARKED_FOR_TERMINATION"
 	})).Return(nil)
+
 	return dtClient
 }
 

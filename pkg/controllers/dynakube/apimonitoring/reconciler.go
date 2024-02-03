@@ -24,7 +24,6 @@ func NewReconciler(dtc dtclient.Client, clusterLabel, kubeSystemUUID string) *Re
 
 func (r *Reconciler) Reconcile(dynakube *dynatracev1beta1.DynaKube) error {
 	objectID, err := r.createObjectIdIfNotExists(dynakube)
-
 	if err != nil {
 		return err
 	}
@@ -60,15 +59,18 @@ func (r *Reconciler) createObjectIdIfNotExists(dynakube *dynatracev1beta1.DynaKu
 		if err != nil {
 			return "", err
 		}
+
 		return "", nil
 	}
 
 	// determine newest ME (can be empty string), and create or update a settings object accordingly
 	meID := determineNewestMonitoredEntity(monitoredEntities)
+
 	objectID, err := r.dtc.CreateOrUpdateKubernetesSetting(r.clusterLabel, r.kubeSystemUUID, meID)
 	if err != nil {
 		return "", errors.WithMessage(err, "error creating dynatrace settings object")
 	}
+
 	return objectID, nil
 }
 
@@ -78,6 +80,7 @@ func (r *Reconciler) handleKubernetesAppEnabled(dynakube *dynatracev1beta1.DynaK
 		if err != nil {
 			return "", errors.WithMessage(err, "error trying to check if app setting exists")
 		}
+
 		if appSettings.TotalCount == 0 {
 			meID := determineNewestMonitoredEntity(monitoredEntities)
 			if meID != "" {
@@ -92,6 +95,7 @@ func (r *Reconciler) handleKubernetesAppEnabled(dynakube *dynatracev1beta1.DynaK
 			}
 		}
 	}
+
 	return "", nil
 }
 

@@ -68,11 +68,13 @@ func (r *Reconciler) reconcilePullSecret(ctx context.Context) error {
 
 func (r *Reconciler) createPullSecretIfNotExists(ctx context.Context, pullSecretData map[string][]byte) (*corev1.Secret, error) {
 	var config corev1.Secret
+
 	err := r.apiReader.Get(ctx, client.ObjectKey{Name: extendWithPullSecretSuffix(r.dynakube.Name), Namespace: r.dynakube.Namespace}, &config)
 	if k8serrors.IsNotFound(err) {
 		log.Info("creating pull secret")
 		return r.createPullSecret(ctx, pullSecretData)
 	}
+
 	return &config, err
 }
 
@@ -80,6 +82,7 @@ func (r *Reconciler) updatePullSecretIfOutdated(ctx context.Context, pullSecret 
 	if !isPullSecretEqual(pullSecret, desiredPullSecretData) {
 		return r.updatePullSecret(ctx, pullSecret, desiredPullSecretData)
 	}
+
 	return nil
 }
 
@@ -97,15 +100,18 @@ func (r *Reconciler) createPullSecret(ctx context.Context, pullSecretData map[st
 	if err != nil {
 		return nil, errors.WithMessagef(err, "failed to create secret %s", extendWithPullSecretSuffix(r.dynakube.Name))
 	}
+
 	return pullSecret, nil
 }
 
 func (r *Reconciler) updatePullSecret(ctx context.Context, pullSecret *corev1.Secret, desiredPullSecretData map[string][]byte) error {
 	log.Info("updating secret", "name", pullSecret.Name)
+
 	pullSecret.Data = desiredPullSecretData
 	if err := r.client.Update(ctx, pullSecret); err != nil {
 		return errors.WithMessagef(err, "failed to update secret %s", pullSecret.Name)
 	}
+
 	return nil
 }
 

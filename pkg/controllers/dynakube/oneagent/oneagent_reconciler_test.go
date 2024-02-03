@@ -202,6 +202,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		namespace = "dynatrace"
 		name      = "dynakube"
 	)
+
 	base := dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 		Spec: dynatracev1beta1.DynaKubeSpec{
@@ -354,6 +355,7 @@ func NewSecret(name, namespace string, kv map[string]string) *corev1.Secret {
 	for k, v := range kv {
 		data[k] = []byte(v)
 	}
+
 	return &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}, Data: data}
 }
 

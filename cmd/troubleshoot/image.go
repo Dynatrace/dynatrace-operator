@@ -38,9 +38,11 @@ func verifyAllImagesAvailable(ctx context.Context, baseLog logr.Logger, keychain
 		verifyImageIsAvailable(log, imagePullFunc, dynakube, componentOneAgent, false)
 		verifyImageIsAvailable(log, imagePullFunc, dynakube, componentCodeModules, true)
 	}
+
 	if dynakube.NeedsActiveGate() {
 		verifyImageIsAvailable(log, imagePullFunc, dynakube, componentActiveGate, false)
 	}
+
 	return nil
 }
 
@@ -91,5 +93,6 @@ func tryImagePull(ctx context.Context, keychain authn.Keychain, transport *http.
 	if err != nil {
 		return err
 	}
+
 	return nil
 }

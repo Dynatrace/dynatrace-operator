@@ -15,12 +15,13 @@ func checkNamespace(ctx context.Context, baseLog logr.Logger, apiReader client.R
 	logNewCheckf(log, "checking if namespace '%s' exists ...", namespaceName)
 
 	var namespace corev1.Namespace
-	err := apiReader.Get(ctx, client.ObjectKey{Name: namespaceName}, &namespace)
 
+	err := apiReader.Get(ctx, client.ObjectKey{Name: namespaceName}, &namespace)
 	if err != nil {
 		return errors.Wrapf(err, "missing namespace '%s'", namespaceName)
 	}
 
 	logOkf(log, "using namespace '%s'", namespaceName)
+
 	return nil
 }

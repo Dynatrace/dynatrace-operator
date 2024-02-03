@@ -48,6 +48,7 @@ func (installer Installer) pullImageInfo(imageName string) (*containerv1.Image, 
 	if err != nil {
 		return nil, errors.WithMessagef(err, "getting image %q", imageName)
 	}
+
 	return &image, nil
 }
 
@@ -81,6 +82,7 @@ func (installer Installer) pullOCIimage(image containerv1.Image, imageName strin
 		log.Info("failed to unpackOciImage", "error", err)
 		return errors.WithStack(err)
 	}
+
 	return nil
 }
 
@@ -92,6 +94,7 @@ func (installer Installer) unpackOciImage(layers []containerv1.Layer, imageCache
 			digest, _ := layer.Digest()
 			sourcePath := filepath.Join(imageCacheDir, "blobs", digest.Algorithm, digest.Hex)
 			log.Info("unpackOciImage", "sourcePath", sourcePath)
+
 			if err := installer.extractor.ExtractGzip(sourcePath, targetDir); err != nil {
 				return err
 			}
@@ -103,6 +106,8 @@ func (installer Installer) unpackOciImage(layers []containerv1.Layer, imageCache
 			return fmt.Errorf("media type %s is not implemented", mediaType)
 		}
 	}
+
 	log.Info("unpackOciImage", "targetDir", targetDir)
+
 	return nil
 }

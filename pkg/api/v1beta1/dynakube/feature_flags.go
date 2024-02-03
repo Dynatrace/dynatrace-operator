@@ -123,11 +123,14 @@ func (dk *DynaKube) getFeatureFlagRaw(annotation string) string {
 	if raw, ok := dk.Annotations[annotation]; ok {
 		return raw
 	}
+
 	split := strings.Split(annotation, "/")
+
 	postFix := split[1]
 	if raw, ok := dk.Annotations[DeprecatedFeatureFlagPrefix+postFix]; ok {
 		return raw
 	}
+
 	return ""
 }
 
@@ -136,6 +139,7 @@ func (dk *DynaKube) getFeatureFlagInt(annotation string, defaultVal int) int {
 	if raw == "" {
 		return defaultVal
 	}
+
 	val, err := strconv.Atoi(raw)
 	if err != nil {
 		return defaultVal
@@ -159,6 +163,7 @@ func (dk *DynaKube) FeatureApiRequestThreshold() time.Duration {
 	if interval < 0 {
 		interval = DefaultMinRequestThresholdMinutes
 	}
+
 	return time.Duration(interval) * time.Minute
 }
 
@@ -180,12 +185,15 @@ func (dk *DynaKube) FeatureIgnoredNamespaces() []string {
 	if raw == "" {
 		return dk.getDefaultIgnoredNamespaces()
 	}
+
 	ignoredNamespaces := &[]string{}
+
 	err := json.Unmarshal([]byte(raw), ignoredNamespaces)
 	if err != nil {
 		log.Error(err, "failed to unmarshal ignoredNamespaces feature-flag")
 		return dk.getDefaultIgnoredNamespaces()
 	}
+
 	return *ignoredNamespaces
 }
 
@@ -197,6 +205,7 @@ func (dk *DynaKube) getDefaultIgnoredNamespaces() []string {
 		"^gke-.*",
 		"^gmp-.*",
 	}
+
 	return defaultIgnoredNamespaces
 }
 
@@ -282,6 +291,7 @@ func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
 	if maxCsiMountAttemptsValue < 0 {
 		return DefaultMaxFailedCsiMountAttempts
 	}
+
 	return maxCsiMountAttemptsValue
 }
 
@@ -294,6 +304,7 @@ func (dk *DynaKube) FeatureSyntheticNodeType() string {
 	if node == "" {
 		return SyntheticNodeS
 	}
+
 	return node
 }
 
@@ -305,6 +316,7 @@ func (dk *DynaKube) FeatureInjectionFailurePolicy() string {
 	if dk.getFeatureFlagRaw(AnnotationInjectionFailurePolicy) == failPhrase {
 		return failPhrase
 	}
+
 	return silentPhrase
 }
 

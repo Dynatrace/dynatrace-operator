@@ -113,6 +113,7 @@ func TestHasTooManyMountAttempts(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.False(t, hasTooManyAttempts)
+
 		volume, err := publisher.db.GetVolume(context.TODO(), volumeCfg.VolumeID)
 		require.NoError(t, err)
 		require.NotNil(t, volume)
@@ -121,6 +122,7 @@ func TestHasTooManyMountAttempts(t *testing.T) {
 	t.Run(`too many mount attempts`, func(t *testing.T) {
 		publisher := newPublisherForTesting(nil)
 		mockFailedPublishedVolume(t, &publisher)
+
 		bindCfg := &csivolumes.BindConfig{
 			MaxMountAttempts: dynatracev1beta1.DefaultMaxFailedCsiMountAttempts,
 		}
@@ -135,6 +137,7 @@ func TestHasTooManyMountAttempts(t *testing.T) {
 func TestUnpublishVolume(t *testing.T) {
 	t.Run(`valid metadata`, func(t *testing.T) {
 		resetMetrics()
+
 		mounter := mount.NewFakeMounter([]mount.MountPoint{
 			{Path: testTargetPath},
 			{Path: fmt.Sprintf("/%s/run/%s/mapped", testTenantUUID, testVolumeId)},
@@ -158,6 +161,7 @@ func TestUnpublishVolume(t *testing.T) {
 
 	t.Run(`invalid metadata`, func(t *testing.T) {
 		resetMetrics()
+
 		mounter := mount.NewFakeMounter([]mount.MountPoint{
 			{Path: testTargetPath},
 			{Path: fmt.Sprintf("/%s/run/%s/mapped", testTenantUUID, testVolumeId)},
@@ -174,6 +178,7 @@ func TestUnpublishVolume(t *testing.T) {
 
 	t.Run(`remove dummy volume created after too many failed attempts`, func(t *testing.T) {
 		resetMetrics()
+
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		publisher := newPublisherForTesting(mounter)
 		mockFailedPublishedVolume(t, &publisher)
@@ -188,6 +193,7 @@ func TestUnpublishVolume(t *testing.T) {
 
 func TestNodePublishAndUnpublishVolume(t *testing.T) {
 	resetMetrics()
+
 	mounter := mount.NewFakeMounter([]mount.MountPoint{})
 	publisher := newPublisherForTesting(mounter)
 	mockUrlDynakubeMetadata(t, &publisher)
@@ -316,6 +322,7 @@ func mockImageDynakubeMetadata(t *testing.T, publisher *AppVolumePublisher) {
 
 func assertReferencesForPublishedVolume(t *testing.T, publisher *AppVolumePublisher, mounter *mount.FakeMounter) {
 	assert.NotEmpty(t, mounter.MountPoints)
+
 	volume, err := publisher.loadVolume(context.TODO(), testVolumeId)
 	require.NoError(t, err)
 	assert.Equal(t, volume.VolumeID, testVolumeId)
@@ -326,6 +333,7 @@ func assertReferencesForPublishedVolume(t *testing.T, publisher *AppVolumePublis
 
 func assertReferencesForPublishedVolumeWithCodeModulesImage(t *testing.T, publisher *AppVolumePublisher, mounter *mount.FakeMounter) {
 	assert.NotEmpty(t, mounter.MountPoints)
+
 	volume, err := publisher.loadVolume(context.TODO(), testVolumeId)
 	require.NoError(t, err)
 	assert.Equal(t, volume.VolumeID, testVolumeId)

@@ -23,6 +23,7 @@ var (
 
 func TestRunSharedImagesGarbageCollection(t *testing.T) {
 	ctx := context.TODO()
+
 	t.Run("bad database", func(t *testing.T) {
 		testDir := testPathResolver.AgentSharedBinaryDirForAgent(testImageDigest)
 		fs := createTestDirs(t, testDir)
@@ -123,6 +124,7 @@ func TestGetSharedImageDirs(t *testing.T) {
 
 func TestCollectUnusedAgentBins(t *testing.T) {
 	ctx := context.TODO()
+
 	t.Run("bad database", func(t *testing.T) {
 		gc := CSIGarbageCollector{
 			db:   &metadata.FakeFailDB{},
@@ -175,6 +177,7 @@ func TestCollectUnusedAgentBins(t *testing.T) {
 			Version:    testVersion1,
 			PodName:    "test",
 		})
+
 		testImageDir := testPathResolver.AgentSharedBinaryDirForAgent(testImageDigest)
 		testZipDir := testPathResolver.AgentSharedBinaryDirForAgent(testVersion1)
 		fs := createTestDirs(t, testImageDir, testZipDir)
@@ -214,5 +217,6 @@ func createTestDirs(t *testing.T, paths ...string) afero.Fs {
 	for _, path := range paths {
 		require.NoError(t, fs.MkdirAll(path, 0755))
 	}
+
 	return fs
 }

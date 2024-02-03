@@ -23,11 +23,13 @@ func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context,
 		span.RecordError(err)
 		return nil, err
 	}
+
 	namespace, err := getNamespaceFromRequest(ctx, webhook.apiReader, request)
 	if err != nil {
 		span.RecordError(err)
 		return nil, err
 	}
+
 	dynakubeName, err := getDynakubeName(*namespace)
 	if err != nil && !webhook.deployedViaOLM {
 		span.RecordError(err)
@@ -46,17 +48,21 @@ func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context,
 		span.RecordError(err)
 		return nil, err
 	}
+
 	mutationRequest := dtwebhook.NewMutationRequest(ctx, *namespace, nil, pod, *dynakube)
+
 	return mutationRequest, nil
 }
 
 func getPodFromRequest(req admission.Request, decoder admission.Decoder) (*corev1.Pod, error) {
 	pod := &corev1.Pod{}
+
 	err := decoder.Decode(req, pod)
 	if err != nil {
 		log.Error(err, "failed to decode the request for pod injection")
 		return nil, err
 	}
+
 	return pod, nil
 }
 
@@ -67,6 +73,7 @@ func getNamespaceFromRequest(ctx context.Context, apiReader client.Reader, req a
 		log.Error(err, "failed to query the namespace before pod injection")
 		return nil, err
 	}
+
 	return &namespace, nil
 }
 
@@ -75,11 +82,13 @@ func getDynakubeName(namespace corev1.Namespace) (string, error) {
 	if !ok {
 		return "", errors.Errorf("no DynaKube instance set for namespace: %s", namespace.Name)
 	}
+
 	return dynakubeName, nil
 }
 
 func (webhook *podMutatorWebhook) getDynakube(ctx context.Context, dynakubeName string) (*dynatracev1beta1.DynaKube, error) {
 	var dk dynatracev1beta1.DynaKube
+
 	err := webhook.apiReader.Get(ctx, client.ObjectKey{Name: dynakubeName, Namespace: webhook.webhookNamespace}, &dk)
 	if k8serrors.IsNotFound(err) {
 		webhook.recorder.sendMissingDynaKubeEvent(webhook.webhookNamespace, dynakubeName)
@@ -87,5 +96,6 @@ func (webhook *podMutatorWebhook) getDynakube(ctx context.Context, dynakubeName 
 	} else if err != nil {
 		return nil, err
 	}
+
 	return &dk, nil
 }

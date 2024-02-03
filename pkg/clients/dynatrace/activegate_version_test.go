@@ -21,6 +21,7 @@ func handleLatestActiveGateVersion(request *http.Request, writer http.ResponseWr
 	switch request.Method {
 	case http.MethodGet:
 		writer.WriteHeader(http.StatusOK)
+
 		out, _ := json.Marshal(map[string]string{"latestGatewayVersion": "1.242.0.20220429-180918"})
 		_, _ = writer.Write(out)
 	default:

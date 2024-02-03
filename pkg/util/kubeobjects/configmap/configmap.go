@@ -48,10 +48,12 @@ func (query Query) Update(configMap corev1.ConfigMap) error {
 
 func (query Query) Delete(configMap corev1.ConfigMap) error {
 	query.Log.Info("removing configMap", "name", configMap.Name, "namespace", configMap.Namespace)
+
 	err := query.KubeClient.Delete(query.Ctx, &configMap)
 	if k8serrors.IsNotFound(err) {
 		return nil
 	}
+
 	return errors.WithStack(err)
 }
 
@@ -63,8 +65,10 @@ func (query Query) CreateOrUpdate(configMap corev1.ConfigMap) error {
 			if err != nil {
 				return errors.WithStack(err)
 			}
+
 			return nil
 		}
+
 		return errors.WithStack(err)
 	}
 
@@ -77,6 +81,7 @@ func (query Query) CreateOrUpdate(configMap corev1.ConfigMap) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
+
 	return nil
 }
 
@@ -90,6 +95,7 @@ type configMapModifier = builder.Modifier[configMapData]
 func CreateConfigMap(scheme *runtime.Scheme, owner metav1.Object, mods ...configMapModifier) (*corev1.ConfigMap, error) {
 	builderOfSecret := builder.NewBuilder(corev1.ConfigMap{})
 	secret, err := builderOfSecret.AddModifier(mods...).AddModifier(newConfigMapOwnerModifier(scheme, owner)).Build()
+
 	return &secret, err
 }
 
@@ -113,6 +119,7 @@ func (mod configMapOwnerModifier) Modify(secret *corev1.ConfigMap) error {
 	if err := controllerutil.SetControllerReference(mod.owner, secret, mod.scheme); err != nil {
 		return errors.WithStack(err)
 	}
+
 	return nil
 }
 

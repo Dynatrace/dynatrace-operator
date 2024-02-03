@@ -117,6 +117,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		}
 
 		signalHandler := ctrl.SetupSignalHandler()
+
 		otelShutdownFn := dtotel.Start(signalHandler, "dynatrace-csi-server", csiManager.GetAPIReader(), builder.namespace)
 		defer otelShutdownFn()
 
@@ -136,6 +137,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		}
 
 		err = csiManager.Start(signalHandler)
+
 		return errors.WithStack(err)
 	}
 }

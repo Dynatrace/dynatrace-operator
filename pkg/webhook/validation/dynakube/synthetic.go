@@ -21,6 +21,7 @@ func invalidSyntheticNodeType(_ context.Context, dv *dynakubeValidator, dynakube
 			dynatracev1beta1.SyntheticNodeM:
 			return true
 		}
+
 		return false
 	}
 
@@ -29,7 +30,9 @@ func invalidSyntheticNodeType(_ context.Context, dv *dynakubeValidator, dynakube
 			"requested dynakube has the invalid synthetic node type",
 			"name", dynakube.Name,
 			"namespace", dynakube.Namespace)
+
 		return fmt.Sprintf(errorInvalidSyntheticNodeType, dynakube.FeatureSyntheticNodeType())
 	}
+
 	return ""
 }

@@ -62,6 +62,7 @@ func (updater oneAgentUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, err
 
 func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 	var err error
+
 	latestVersion := updater.CustomVersion()
 	if latestVersion == "" {
 		latestVersion, err = updater.dtClient.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypeDefault)
@@ -77,6 +78,7 @@ func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 	}
 
 	defaultImage := updater.dynakube.DefaultOneAgentImage()
+
 	return updateVersionStatusForTenantRegistry(updater.Target(), defaultImage, latestVersion)
 }
 
@@ -87,7 +89,9 @@ func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, e
 	}
 
 	var previousVersion string
+
 	var err error
+
 	switch updater.Target().Source {
 	case status.TenantRegistryVersionSource:
 		previousVersion = updater.Target().Version
@@ -97,8 +101,10 @@ func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, e
 		if err != nil {
 			return false, err
 		}
+
 		return isDowngrade(updater.Name(), previousVersion, latestVersion)
 	}
+
 	return false, nil
 }
 

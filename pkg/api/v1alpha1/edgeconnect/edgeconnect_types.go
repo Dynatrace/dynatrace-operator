@@ -110,6 +110,7 @@ type EdgeConnectStatus struct { //nolint:revive
 func (dk *EdgeConnectStatus) SetPhase(phase status.DeploymentPhase) bool {
 	upd := phase != dk.DeploymentPhase
 	dk.DeploymentPhase = phase
+
 	return upd
 }
 

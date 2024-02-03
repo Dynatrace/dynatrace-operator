@@ -17,6 +17,7 @@ import (
 func (extractor OneAgentExtractor) ExtractZip(sourceFile afero.File, targetDir string) error {
 	extractor.cleanTempZipDir()
 	fs := extractor.fs
+
 	if sourceFile == nil {
 		return fmt.Errorf("file is nil")
 	}
@@ -43,6 +44,7 @@ func (extractor OneAgentExtractor) ExtractZip(sourceFile afero.File, targetDir s
 		log.Info("failed to extract files from zip", "err", err)
 		return err
 	}
+
 	if extractDest != targetDir {
 		err := extractor.moveToTargetDir(targetDir)
 		if err != nil {
@@ -50,6 +52,7 @@ func (extractor OneAgentExtractor) ExtractZip(sourceFile afero.File, targetDir s
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -57,6 +60,7 @@ func extractFilesFromZip(fs afero.Fs, targetDir string, reader *zip.Reader) erro
 	if err := fs.MkdirAll(targetDir, common.MkDirFileMode); err != nil {
 		return errors.WithStack(err)
 	}
+
 	for _, file := range reader.File {
 		path := filepath.Join(targetDir, file.Name)
 
@@ -72,6 +76,7 @@ func extractFilesFromZip(fs afero.Fs, targetDir string, reader *zip.Reader) erro
 			if err != nil {
 				return errors.WithStack(err)
 			}
+
 			continue
 		}
 
@@ -97,8 +102,10 @@ func extractFilesFromZip(fs afero.Fs, targetDir string, reader *zip.Reader) erro
 		if err != nil {
 			return errors.WithStack(err)
 		}
+
 		dstFile.Close()
 		srcFile.Close()
 	}
+
 	return nil
 }

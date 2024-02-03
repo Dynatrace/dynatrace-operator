@@ -31,6 +31,7 @@ func conflictingActiveGateConfiguration(_ context.Context, dv *dynakubeValidator
 		log.Info("requested dynakube has conflicting active gate configuration", "name", dynakube.Name, "namespace", dynakube.Namespace)
 		return errorConflictingActiveGateSections
 	}
+
 	return ""
 }
 
@@ -38,14 +39,17 @@ func duplicateActiveGateCapabilities(_ context.Context, dv *dynakubeValidator, d
 	if dynakube.ActiveGateMode() {
 		capabilities := dynakube.Spec.ActiveGate.Capabilities
 		duplicateChecker := map[dynatracev1beta1.CapabilityDisplayName]bool{}
+
 		for _, capability := range capabilities {
 			if duplicateChecker[capability] {
 				log.Info("requested dynakube has duplicates in the active gate capabilities section", "name", dynakube.Name, "namespace", dynakube.Namespace)
 				return fmt.Sprintf(errorDuplicateActiveGateCapability, capability)
 			}
+
 			duplicateChecker[capability] = true
 		}
 	}
+
 	return ""
 }
 
@@ -59,6 +63,7 @@ func invalidActiveGateCapabilities(_ context.Context, dv *dynakubeValidator, dyn
 			}
 		}
 	}
+
 	return ""
 }
 
@@ -68,6 +73,7 @@ func missingActiveGateMemoryLimit(_ context.Context, dv *dynakubeValidator, dyna
 		!memoryLimitSet(dynakube.Spec.ActiveGate.Resources) {
 		return warningMissingActiveGateMemoryLimit
 	}
+
 	return ""
 }
 
@@ -81,7 +87,9 @@ func exclusiveSyntheticCapability(_ context.Context, dv *dynakubeValidator, dyna
 			"requested dynakube has the synthetic active gate capability accompanied with others",
 			"name", dynakube.Name,
 			"namespace", dynakube.Namespace)
+
 		return fmt.Sprintf(errorJoinedSyntheticActiveGateCapability, dynakube.Spec.ActiveGate.Capabilities)
 	}
+
 	return ""
 }

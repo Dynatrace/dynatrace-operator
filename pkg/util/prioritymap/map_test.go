@@ -82,6 +82,7 @@ func TestAppend(t *testing.T) {
 				},
 			},
 		)
+
 		expectedEnvVars := []corev1.EnvVar{
 			{
 				Name:  "DT_CLUSTER_ID",
@@ -102,6 +103,7 @@ func TestAppend(t *testing.T) {
 				"DT_CLUSTER_ID": "abcdef-ghijkl",
 			},
 		)
+
 		expectedEnvVars := []corev1.EnvVar{
 			{
 				Name:  "DT_CLUSTER_ID",

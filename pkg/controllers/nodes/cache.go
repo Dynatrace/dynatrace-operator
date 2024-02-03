@@ -53,11 +53,14 @@ func (cache *Cache) Set(node string, entry CacheEntry) error {
 	if err != nil {
 		return err
 	}
+
 	if cache.Obj.Data == nil {
 		cache.Obj.Data = map[string]string{}
 	}
+
 	cache.Obj.Data[node] = string(raw)
 	cache.upd = true
+
 	return nil
 }
 
@@ -79,6 +82,7 @@ func (cache *Cache) Keys() []string {
 	for k := range cache.Obj.Data {
 		out = append(out, k)
 	}
+
 	return out
 }
 
@@ -95,6 +99,7 @@ func (cache *Cache) IsCacheOutdated() bool {
 			return false
 		}
 	}
+
 	return true // Cache is not annotated -> outdated
 }
 
@@ -102,6 +107,7 @@ func (cache *Cache) UpdateTimestamp() {
 	if cache.Obj.Annotations == nil {
 		cache.Obj.Annotations = make(map[string]string)
 	}
+
 	cache.Obj.Annotations[lastUpdatedCacheAnnotation] = cache.timeProvider.Now().Format(time.RFC3339)
 	cache.upd = true
 }

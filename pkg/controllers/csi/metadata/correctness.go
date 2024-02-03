@@ -35,15 +35,19 @@ func NewCorrectnessChecker(cl client.Reader, access Access, opts dtcsi.CSIOption
 // "Moves" agent bins from deprecated location. (just creates a symlink)
 func (checker *CorrectnessChecker) CorrectCSI(ctx context.Context) error {
 	defer LogAccessOverview(checker.access)
+
 	if err := checker.removeVolumesForMissingPods(ctx); err != nil {
 		return err
 	}
+
 	if err := checker.removeMissingDynakubes(ctx); err != nil {
 		return err
 	}
+
 	if err := checker.copyCodeModulesFromDeprecatedBin(ctx); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -53,23 +57,30 @@ func (checker *CorrectnessChecker) removeVolumesForMissingPods(ctx context.Conte
 		log.Info("no kubernetes client configured, skipping orphaned volume metadata cleanup")
 		return nil
 	}
+
 	podNames, err := checker.access.GetPodNames(ctx)
 	if err != nil {
 		return err
 	}
+
 	pruned := []string{}
+
 	for podName := range podNames {
 		var pod corev1.Pod
 		if err := checker.apiReader.Get(ctx, client.ObjectKey{Name: podName}, &pod); !k8serrors.IsNotFound(err) {
 			continue
 		}
+
 		volumeID := podNames[podName]
 		if err := checker.access.DeleteVolume(ctx, volumeID); err != nil {
 			return err
 		}
+
 		pruned = append(pruned, volumeID+"|"+podName)
 	}
+
 	log.Info("CSI volumes database is corrected for missing pods (volume|pod)", "prunedRows", pruned)
+
 	return nil
 }
 
@@ -79,23 +90,30 @@ func (checker *CorrectnessChecker) removeMissingDynakubes(ctx context.Context) e
 		log.Info("no kubernetes client configured, skipping orphaned dynakube metadata cleanup")
 		return nil
 	}
+
 	dynakubes, err := checker.access.GetTenantsToDynakubes(ctx)
 	if err != nil {
 		return err
 	}
+
 	pruned := []string{}
+
 	for dynakubeName := range dynakubes {
 		var dynakube dynatracev1beta1.DynaKube
 		if err := checker.apiReader.Get(ctx, client.ObjectKey{Name: dynakubeName}, &dynakube); !k8serrors.IsNotFound(err) {
 			continue
 		}
+
 		if err := checker.access.DeleteDynakube(ctx, dynakubeName); err != nil {
 			return err
 		}
+
 		tenantUUID := dynakubes[dynakubeName]
 		pruned = append(pruned, tenantUUID+"|"+dynakubeName)
 	}
+
 	log.Info("CSI tenants database is corrected for missing dynakubes (tenant|dynakube)", "prunedRows", pruned)
+
 	return nil
 }
 
@@ -104,11 +122,14 @@ func (checker *CorrectnessChecker) copyCodeModulesFromDeprecatedBin(ctx context.
 	if err != nil {
 		return err
 	}
+
 	moved := []string{}
+
 	for _, dynakube := range dynakubes {
 		if dynakube.TenantUUID == "" || dynakube.LatestVersion == "" {
 			continue
 		}
+
 		deprecatedBin := checker.path.AgentBinaryDirForVersion(dynakube.TenantUUID, dynakube.LatestVersion)
 		currentBin := checker.path.AgentSharedBinaryDirForAgent(dynakube.LatestVersion)
 
@@ -116,11 +137,14 @@ func (checker *CorrectnessChecker) copyCodeModulesFromDeprecatedBin(ctx context.
 		if err != nil {
 			return err
 		}
+
 		if linked {
 			moved = append(moved, dynakube.TenantUUID+"|"+dynakube.LatestVersion)
 		}
 	}
+
 	log.Info("CSI filesystem corrected, linked deprecated agent binary to current location (tenant|version-bin)", "movedBins", moved)
+
 	return nil
 }
 
@@ -139,13 +163,17 @@ func (checker *CorrectnessChecker) safelyLinkCodeModule(deprecatedBin, currentBi
 			log.Info("failed to create parent dir for new path", "path", currentBin)
 			return false, errors.WithStack(err)
 		}
+
 		log.Info("creating symlink", "from", deprecatedBin, "to", currentBin)
+
 		if err := linker.SymlinkIfPossible(deprecatedBin, currentBin); err != nil {
 			log.Info("symlinking failed", "path", deprecatedBin)
 			return false, errors.WithStack(err)
 		}
+
 		return true, nil
 	}
+
 	return false, nil
 }
 
@@ -154,5 +182,6 @@ func folderExists(fs afero.Fs, filename string) bool {
 	if os.IsNotExist(err) {
 		return false
 	}
+
 	return info.IsDir()
 }

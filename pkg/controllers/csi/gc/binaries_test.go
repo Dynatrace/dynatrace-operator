@@ -28,6 +28,7 @@ var (
 func TestRunBinaryGarbageCollection(t *testing.T) {
 	t.Run("succeeds when no version present", func(t *testing.T) {
 		resetMetrics()
+
 		gc := NewMockGarbageCollector()
 
 		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID)
@@ -38,6 +39,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 	})
 	t.Run("succeeds when no version available", func(t *testing.T) {
 		resetMetrics()
+
 		gc := NewMockGarbageCollector()
 		_ = gc.fs.MkdirAll(testBinaryDir, 0770)
 
@@ -49,6 +51,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 	})
 	t.Run("remove unused", func(t *testing.T) {
 		resetMetrics()
+
 		gc := NewMockGarbageCollector()
 		gc.mockUnusedVersions(testVersion1, testVersion2, testVersion3)
 
@@ -61,6 +64,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 	})
 	t.Run("ignore used", func(t *testing.T) {
 		resetMetrics()
+
 		gc := NewMockGarbageCollector()
 		gc.mockUsedVersions(testVersion1, testVersion2, testVersion3)
 

@@ -83,6 +83,7 @@ func TestGetEntityIDForIP(t *testing.T) {
 		}
 	}
 ]`, time.Now().UTC().Unix()*1000))))
+
 	id, err := dtc.GetEntityIDForIP("1.1.1.1")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, id)
@@ -264,6 +265,7 @@ type ipHandler struct {
 
 func (ipHandler *ipHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	query := request.URL.Query()
+
 	arch, present := query["arch"]
 	if present && arch[0] == "invalid" {
 		writeError(writer, http.StatusNotFound)
@@ -273,15 +275,19 @@ func (ipHandler *ipHandler) ServeHTTP(writer http.ResponseWriter, request *http.
 	switch request.Method {
 	case http.MethodGet:
 		writer.WriteHeader(http.StatusOK)
+
 		resp := []byte(agentVersionHostsResponse)
+
 		if strings.HasSuffix(request.URL.Path, "/latest") {
 			// write to temp file and write content to response
 			writer.Header().Set("Content-Type", "application/octet-stream")
+
 			file, _ := afero.TempFile(ipHandler.fs, "server", "installer")
 			_, _ = file.WriteString(agentResponse)
 
 			resp, _ = afero.ReadFile(ipHandler.fs, file.Name())
 		}
+
 		_, _ = writer.Write(resp)
 	default:
 		writeError(writer, http.StatusMethodNotAllowed)
@@ -292,6 +298,7 @@ func handleLatestAgentVersion(request *http.Request, writer http.ResponseWriter)
 	switch request.Method {
 	case http.MethodGet:
 		writer.WriteHeader(http.StatusOK)
+
 		out, _ := json.Marshal(map[string]string{"latestAgentVersion": "1.242.0.20220429-180918"})
 		_, _ = writer.Write(out)
 	default:
@@ -303,6 +310,7 @@ func handleAvailableAgentVersions(request *http.Request, writer http.ResponseWri
 	switch request.Method {
 	case http.MethodGet:
 		writer.WriteHeader(http.StatusOK)
+
 		out, _ := json.Marshal(
 			map[string][]string{
 				"availableVersions": {

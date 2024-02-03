@@ -56,6 +56,7 @@ func testReadTokens(t *testing.T) {
 			testIrrelevantTokenKey:            []byte(testIrrelevantToken),
 		}))
 		assert.NoError(t, err)
+
 		clt := fake.NewClient(secret, &dynakube)
 
 		reader := NewReader(clt, &dynakube)

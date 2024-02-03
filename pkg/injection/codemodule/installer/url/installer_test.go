@@ -57,6 +57,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		dtc.
 			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro, mock.AnythingOfType("string")).
 			Return([]string{}, fmt.Errorf(testErrorMessage))
+
 		installer := &Installer{
 			fs:  fs,
 			dtc: dtc,
@@ -88,6 +89,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 				require.NoError(t, err)
 			}).
 			Return(nil)
+
 		installer := &Installer{
 			fs:        fs,
 			dtc:       dtc,
@@ -119,6 +121,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 				require.NoError(t, err)
 			}).
 			Return(nil)
+
 		installer := &Installer{
 			fs:        fs,
 			dtc:       dtc,
@@ -152,6 +155,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 				require.NoError(t, err)
 			}).
 			Return(nil)
+
 		installer := &Installer{
 			fs:        fs,
 			dtc:       dtc,
@@ -183,6 +187,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 				require.NoError(t, err)
 			}).
 			Return(nil)
+
 		installer := &Installer{
 			fs:        fs,
 			dtc:       dtc,

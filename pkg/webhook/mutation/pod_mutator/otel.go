@@ -23,6 +23,7 @@ func getWebhookPodName() string {
 	once.Do(func() {
 		envPodName = os.Getenv("POD_NAME")
 	})
+
 	return envPodName
 }
 
@@ -37,5 +38,6 @@ func spanOptions(opts ...trace.SpanStartOption) []trace.SpanStartOption {
 	options = append(options, opts...)
 	options = append(options, trace.WithAttributes(
 		attribute.String(webhookotel.WebhookPodNameKey, getWebhookPodName())))
+
 	return options
 }

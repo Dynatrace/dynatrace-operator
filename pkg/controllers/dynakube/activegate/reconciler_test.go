@@ -230,6 +230,7 @@ func TestServiceCreation(t *testing.T) {
 				err = fakeClient.Get(context.Background(), client.ObjectKey{Name: testServiceName, Namespace: testNamespace}, &corev1.Service{})
 
 				assert.True(t, k8serrors.IsNotFound(err))
+
 				continue
 			}
 
@@ -300,6 +301,7 @@ func TestExclusiveSynMonitoring(t *testing.T) {
 	require.Len(t, statefulSets.Items, 1)
 
 	statefulSetCreated := false
+
 	expectedName := capability.BuildServiceName(testName, capability.SyntheticName)
 	for _, statefulSet := range statefulSets.Items {
 		if statefulSet.GetName() == expectedName {
@@ -307,6 +309,7 @@ func TestExclusiveSynMonitoring(t *testing.T) {
 			break
 		}
 	}
+
 	assert.True(t, statefulSetCreated, "unique StatefulSet for syn-mon")
 
 	var services corev1.ServiceList
@@ -346,9 +349,11 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 			},
 		},
 	}
+
 	t.Run(`create activegate ConfigMap`, func(t *testing.T) {
 		fakeReconciler := controllerMocks.NewReconciler(t)
 		fakeReconciler.On("Reconcile", mock.Anything).Return(nil)
+
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 		r := Reconciler{
 			client:              fakeClient,

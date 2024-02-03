@@ -27,6 +27,7 @@ func TestVersionCollector(t *testing.T) {
 	assert.Equal(t, operatorVersionCollectorName, versionCollector.Name())
 
 	require.NoError(t, versionCollector.Do())
+
 	err := archive.Close()
 	assert.NoError(t, err)
 	assert.Contains(t, logBuffer.String(), "Storing operator version")
@@ -41,8 +42,10 @@ func TestVersionCollector(t *testing.T) {
 	versionFile := make([]byte, size)
 	reader, err := file.Open()
 	bytesRead, _ := reader.Read(versionFile)
+
 	if !errors.Is(err, io.EOF) {
 		require.NoError(t, err)
 	}
+
 	assert.Equal(t, size, int64(bytesRead))
 }

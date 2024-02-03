@@ -167,6 +167,7 @@ func TestManifestCollector_Success(t *testing.T) {
 	for i, file := range zipReader.File {
 		actualFileName[i] = file.Name
 	}
+
 	sort.Strings(actualFileName)
 
 	for i, expectedFile := range expectedFiles {
@@ -191,6 +192,7 @@ func TestManifestCollector_NoManifestsAvailable(t *testing.T) {
 	err := newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, rest.Config{}).Do()
 	require.NoError(t, err)
 	assertNoErrorOnClose(t, supportArchive)
+
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
 	assert.NoError(t, err)
 	assert.Len(t, zipReader.File, 0)
@@ -272,6 +274,7 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 	collector := newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, *rc)
 	require.NoError(t, collector.Do())
 	assertNoErrorOnClose(t, supportArchive)
+
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
 	require.NoError(t, err)
 	require.Len(t, zipReader.File, 8)
@@ -336,6 +339,7 @@ func getResourceLists() []metav1.APIResourceList {
 			{Version: "v1alpha1", Group: crdNameSuffix, Name: "edgeconnects", Namespaced: true, Kind: "EdgeConnect"},
 		},
 	}
+
 	return []metav1.APIResourceList{
 		stable,
 		dk,
@@ -346,6 +350,7 @@ func getResourceLists() []metav1.APIResourceList {
 func createFakeServer(t *testing.T, stable metav1.APIResourceList, dk metav1.APIResourceList, ec metav1.APIResourceList) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		var list any
+
 		switch req.URL.Path {
 		case "/api/v1":
 			list = &stable
@@ -374,13 +379,16 @@ func createFakeServer(t *testing.T, stable metav1.APIResourceList, dk metav1.API
 		default:
 			t.Logf("unexpected request: %s", req.URL.Path)
 			w.WriteHeader(http.StatusNotFound)
+
 			return
 		}
+
 		output, err := json.Marshal(list)
 		if err != nil {
 			t.Errorf("unexpected encoding error: %v", err)
 			return
 		}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(output)

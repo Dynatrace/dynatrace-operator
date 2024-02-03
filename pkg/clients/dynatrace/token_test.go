@@ -43,7 +43,9 @@ func handleTokenScopes(request *http.Request, writer http.ResponseWriter) {
 		// Swallow error, nothing can be done at this point
 		_ = request.Body.Close()
 	}()
+
 	d, _ := ioutil.ReadAll(request.Body)
+
 	err := json.Unmarshal(d, &model)
 	if err != nil {
 		writeError(writer, http.StatusInternalServerError)

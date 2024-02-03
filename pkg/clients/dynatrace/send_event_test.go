@@ -104,6 +104,7 @@ func testSendEvent(t *testing.T, dynatraceClient Client) {
 			},
 			"source": "OneAgent Operator"
 		}`)
+
 		var testEventData EventData
 		err := json.Unmarshal(testValidEventData, &testEventData)
 		assert.NoError(t, err)
@@ -121,6 +122,7 @@ func testSendEvent(t *testing.T, dynatraceClient Client) {
 			},
 			"source": "OneAgent Operator"
 		}`)
+
 		var testEventData EventData
 		err := json.Unmarshal(testInvalidEventData, &testEventData)
 		assert.NoError(t, err)
@@ -140,6 +142,7 @@ func testSendEvent(t *testing.T, dynatraceClient Client) {
 			"source": "OneAgent Operator",
 		 	"cat": "potato"
 		}`)
+
 		var testEventData EventData
 		err := json.Unmarshal(testExtraKeysEventData, &testEventData)
 		assert.NoError(t, err)

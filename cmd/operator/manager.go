@@ -129,6 +129,7 @@ func (provider operatorManagerProvider) addCertificateController(mgr manager.Man
 	if !provider.deployedViaOlm {
 		return certificates.Add(mgr, namespace)
 	}
+
 	return nil
 }
 
@@ -175,15 +176,19 @@ func (builder *managerBuilder) setManager(mgr manager.Manager) {
 
 func getTimeFromEnvWithDefault(envName string, defaultValue int64) *time.Duration {
 	duration := time.Duration(defaultValue) * time.Second
+
 	envValue := os.Getenv(envName)
 	if envValue != "" {
 		asInt, err := strconv.ParseInt(envValue, 10, 64)
 		if err == nil {
 			log.Info("using non-default value for", "env", envName, "value", asInt)
 			duration = time.Duration(asInt) * time.Second
+
 			return &duration
 		}
+
 		log.Info("failed to convert envvar value to int so default value is used", "env", envName, "default", defaultValue)
 	}
+
 	return &duration
 }

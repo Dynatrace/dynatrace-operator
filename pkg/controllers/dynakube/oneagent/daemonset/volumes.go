@@ -70,6 +70,7 @@ func getRootMount() corev1.VolumeMount {
 func getReadOnlyRootMount() corev1.VolumeMount {
 	rootMount := getRootMount()
 	rootMount.ReadOnly = true
+
 	return rootMount
 }
 

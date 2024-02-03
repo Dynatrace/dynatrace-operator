@@ -16,6 +16,7 @@ func checkCRD(baseLog logr.Logger, err error) error {
 	}
 
 	logOkf(log, "CRD for Dynakube exists")
+
 	return nil
 }
 
@@ -25,5 +26,6 @@ func DetermineDynakubeError(err error) error {
 	} else {
 		err = errors.Wrap(err, "could not list Dynakube")
 	}
+
 	return err
 }

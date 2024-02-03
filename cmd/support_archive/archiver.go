@@ -47,6 +47,7 @@ func (z zipArchive) addFile(fileName string, reader io.Reader) error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -57,6 +58,7 @@ func (z zipArchive) Close() error {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -68,6 +70,7 @@ func createZipArchiveTargetFile(useStdout bool, targetDir string) (*os.File, err
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
+
 		return archiveFile, nil
 	}
 }
@@ -80,5 +83,6 @@ func createZipArchiveFile(targetDir string) (*os.File, error) {
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+
 	return tarFile, nil
 }

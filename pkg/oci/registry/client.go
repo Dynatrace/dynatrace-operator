@@ -76,17 +76,21 @@ func WithTransport(transport *http.Transport) func(*Client) {
 
 func NewClient(options ...func(*Client)) (ImageGetter, error) {
 	var err error
+
 	c := &Client{}
 	for _, opt := range options {
 		opt(c)
 	}
+
 	if c.keyChainSecret != nil {
 		keychain, err := dockerkeychain.NewDockerKeychain(c.ctx, c.apiReader, *c.keyChainSecret)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to fetch pull secret")
 		}
+
 		c.keychain = keychain
 	}
+
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to prepare transport")
 	}
@@ -177,6 +181,7 @@ func addProxy(transport *http.Transport, proxy string, noProxy string) (*http.Tr
 		NoProxy:    noProxy,
 	}
 	transport.Proxy = proxyWrapper(proxyConfig)
+
 	return transport, nil
 }
 
@@ -191,9 +196,11 @@ func addCertificates(transport *http.Transport, trustedCAs []byte) (*http.Transp
 	if ok := rootCAs.AppendCertsFromPEM(trustedCAs); !ok {
 		return nil, errors.New("failed to append custom certs")
 	}
+
 	if transport.TLSClientConfig == nil {
 		transport.TLSClientConfig = &tls.Config{} // nolint:gosec
 	}
+
 	transport.TLSClientConfig.RootCAs = rootCAs
 
 	return transport, nil
@@ -203,6 +210,7 @@ func addSkipCertCheck(transport *http.Transport, skipCertCheck bool) *http.Trans
 	if transport.TLSClientConfig == nil {
 		transport.TLSClientConfig = &tls.Config{} // nolint:gosec
 	}
+
 	transport.TLSClientConfig.InsecureSkipVerify = skipCertCheck
 
 	return transport
@@ -215,6 +223,7 @@ func PrepareTransportForDynaKube(ctx context.Context, apiReader client.Reader, t
 		trustedCAs []byte
 		err        error
 	)
+
 	if dynakube.HasProxy() {
 		proxy, err = dynakube.Proxy(ctx, apiReader)
 		if err != nil {

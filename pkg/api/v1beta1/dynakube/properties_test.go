@@ -237,6 +237,7 @@ func TestTenantUUID(t *testing.T) {
 
 func TestCodeModulesVersion(t *testing.T) {
 	testVersion := "1.2.3"
+
 	t.Run(`use status`, func(t *testing.T) {
 		dk := DynaKube{
 			Spec: DynaKubeSpec{

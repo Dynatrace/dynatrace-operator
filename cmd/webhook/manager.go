@@ -94,9 +94,11 @@ func (provider Provider) setupWebhookServer(mgr manager.Manager) (manager.Manage
 	if !ok {
 		return nil, errors.WithStack(errors.New("Unable to cast webhook server"))
 	}
+
 	webhookServer.Options.CertDir = provider.certificateDirectory
 	webhookServer.Options.KeyName = provider.keyFileName
 	webhookServer.Options.CertName = provider.certificateFileName
 	webhookServer.Options.TLSOpts = []func(*tls.Config){tlsConfig}
+
 	return mgr, nil
 }

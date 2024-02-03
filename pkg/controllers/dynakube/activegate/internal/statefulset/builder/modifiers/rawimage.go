@@ -38,6 +38,7 @@ func (mod RawImageModifier) Modify(sts *appsv1.StatefulSet) error {
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)
 	baseContainer.Env = mod.getEnvs()
+
 	return nil
 }
 
@@ -69,6 +70,7 @@ func (mod RawImageModifier) getEnvs() []corev1.EnvVar {
 	prioritymap.Append(mod.envMap,
 		[]corev1.EnvVar{mod.tenantUUIDEnvVar(), mod.communicationEndpointEnvVar()},
 		prioritymap.WithPriority(modifierEnvPriority))
+
 	return mod.envMap.AsEnvVars()
 }
 

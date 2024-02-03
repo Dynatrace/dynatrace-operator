@@ -54,6 +54,7 @@ type DynatraceApiStatus struct {
 
 func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time, timeout time.Duration) string {
 	remaining := timeout - time.Since(lastRequestTimestamp.Time)
+
 	return fmt.Sprintf("skipping %s, last request was made less than %d minutes ago, %d minutes remaining until next request",
 		functionName,
 		int(timeout.Minutes()),
@@ -144,5 +145,6 @@ type SyntheticStatus struct {
 func (dk *DynaKubeStatus) SetPhase(phase status.DeploymentPhase) bool {
 	upd := phase != dk.Phase
 	dk.Phase = phase
+
 	return upd
 }

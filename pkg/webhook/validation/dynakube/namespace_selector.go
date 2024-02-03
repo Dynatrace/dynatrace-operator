@@ -24,7 +24,9 @@ func conflictingNamespaceSelector(ctx context.Context, dv *dynakubeValidator, dy
 	if !dynakube.NeedAppInjection() {
 		return ""
 	}
+
 	dkMapper := mapper.NewDynakubeMapper(ctx, dv.clt, dv.apiReader, dynakube.Namespace, dynakube)
+
 	_, err := dkMapper.MatchingNamespaces()
 	if err != nil && err.Error() == mapper.ErrorConflictingNamespace {
 		if dynakube.NamespaceSelector().MatchExpressions == nil && dynakube.NamespaceSelector().MatchLabels == nil {
@@ -35,6 +37,7 @@ func conflictingNamespaceSelector(ctx context.Context, dv *dynakubeValidator, dy
 			return errorConflictingNamespaceSelector
 		}
 	}
+
 	return ""
 }
 

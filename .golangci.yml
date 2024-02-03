@@ -241,6 +241,7 @@ linters:
   - wastedassign              # wastedassign finds wasted assignment statements.
   - whitespace                # Tool for detection of leading and trailing whitespace.
   - zerologlint               # Detects the wrong usage of zerolog that a user forgets to dispatch with Send or Msg.
+  - wsl               # Add or remove empty lines.
 
 # Blocked:
 # false positive -> https://github.com/timakin/bodyclose/issues/51
@@ -283,7 +284,6 @@ linters:
 # - testifylint       # Checks usage of github.com/stretchr/testify.
 # - thelper           # Thelper detects tests helpers which is not start with t.Helper() method.
 # - wrapcheck         # Checks that errors returned from external packages are wrapped.
-# - wsl               # Add or remove empty lines.
 # TODO: Need to discuss/decide/remove
 # - exhaustive     # Check exhaustiveness of enum switch statements.
 # - godox          # Tool for detection of FIXME, TODO and other comment keywords.
@@ -305,9 +305,11 @@ issues:
     - path: _(test|gen)\.go
       linters:
         - dupl
+        - wsl
     - path: (test/*)
       linters:
         - noctx
+        - wsl
     - path: _(test|gen)\.go
       linters:
         - dupl

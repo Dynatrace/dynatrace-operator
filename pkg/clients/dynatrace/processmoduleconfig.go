@@ -42,6 +42,7 @@ func (pmc *ProcessModuleConfig) Add(newProperty ProcessModuleProperty) *ProcessM
 			} else {
 				pmc.updateProperty(index, newProperty)
 			}
+
 			return pmc
 		}
 	}
@@ -134,9 +135,11 @@ func (pmc ProcessModuleConfig) ToMap() ConfMap {
 		if section == nil {
 			section = map[string]string{}
 		}
+
 		section[prop.Key] = prop.Value
 		sections[prop.Section] = section
 	}
+
 	return sections
 }
 
@@ -155,9 +158,11 @@ func (dtc *dynatraceClient) GetProcessModuleConfig(prevRevision uint) (*ProcessM
 	if dtc.checkProcessModuleConfigRequestStatus(resp) {
 		return &ProcessModuleConfig{}, nil
 	}
+
 	if err != nil {
 		return nil, fmt.Errorf("error while requesting process module config: %w", err)
 	}
+
 	defer utils.CloseBodyAfterRequest(resp)
 
 	responseData, err := dtc.getServerResponseData(resp)
@@ -173,11 +178,14 @@ func (dtc *dynatraceClient) createProcessModuleConfigRequest(prevRevision uint) 
 	if err != nil {
 		return nil, fmt.Errorf("error initializing http request: %w", err)
 	}
+
 	query := req.URL.Query()
 	query.Add("revision", strconv.FormatUint(uint64(prevRevision), 10))
+
 	if dtc.hostGroup != "" {
 		query.Add(hostGroupParamName, dtc.hostGroup)
 	}
+
 	req.URL.RawQuery = query.Encode()
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", dtc.paasToken))
@@ -208,6 +216,7 @@ func (dtc *dynatraceClient) checkProcessModuleConfigRequestStatus(resp *http.Res
 
 func (dtc *dynatraceClient) readResponseForProcessModuleConfig(response []byte) (*ProcessModuleConfig, error) {
 	resp := ProcessModuleConfig{}
+
 	err := json.Unmarshal(response, &resp)
 	if err != nil {
 		log.Error(err, "error unmarshalling processmoduleconfig response", "response", string(response))

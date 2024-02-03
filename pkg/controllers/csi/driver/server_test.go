@@ -31,6 +31,7 @@ func (*fakeMounter) IsLikelyNotMountPoint(target string) (bool, error) {
 	case target == testTargetMounted:
 		return true, nil
 	}
+
 	return false, nil
 }
 

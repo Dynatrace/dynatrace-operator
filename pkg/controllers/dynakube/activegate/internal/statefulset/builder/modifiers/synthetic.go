@@ -171,6 +171,7 @@ func (modifier SyntheticModifier) buildContainer() corev1.Container {
 		SecurityContext: modifier.buildSecurityContext(),
 		Resources:       modifier.buildResources(),
 	}
+
 	return container
 }
 
@@ -190,6 +191,7 @@ func (modifier SyntheticModifier) getVolumeMounts() []corev1.VolumeMount {
 			MountPath: xvfbTmpStorageMountPath,
 		},
 	}
+
 	return append(
 		privateMounts,
 		buildPublicVolumeMounts()...)

@@ -23,6 +23,7 @@ func GetOneAgentCommunicationHosts(dynakube *dynatracev1beta1.DynaKube) []dtclie
 			Port:     host.Port,
 		})
 	}
+
 	return communicationHosts
 }
 
@@ -31,12 +32,14 @@ func GetActiveGateEndpointsAsCommunicationHosts(dynakube *dynatracev1beta1.DynaK
 	if activegateEndpointsString == "" {
 		return []dtclient.CommunicationHost{}
 	}
+
 	return parseCommunicationHostFromActiveGateEndpoints(activegateEndpointsString)
 }
 
 func parseCommunicationHostFromActiveGateEndpoints(activegateEndpointsString string) []dtclient.CommunicationHost {
 	endpointStrings := strings.Split(activegateEndpointsString, ",")
 	endpointCommunicationHosts := make(map[dtclient.CommunicationHost]bool, len(endpointStrings))
+
 	for _, endpointString := range endpointStrings {
 		if endpoint, err := parseEndpointToCommunicationHost(endpointString); err == nil {
 			endpointCommunicationHosts[endpoint] = true

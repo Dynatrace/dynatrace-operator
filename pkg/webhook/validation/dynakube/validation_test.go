@@ -181,6 +181,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 func assertDeniedResponse(t *testing.T, errMessages []string, dynakube *dynatracev1beta1.DynaKube, other ...client.Object) {
 	response := handleRequest(t, dynakube, other...)
 	assert.False(t, response.Allowed)
+
 	message := response.Result.Message
 	for _, errMsg := range errMessages {
 		assert.Contains(t, message, errMsg)
@@ -200,6 +201,7 @@ func assertAllowedResponseWithWarnings(t *testing.T, warningAmount int, dynakube
 func assertAllowedResponse(t *testing.T, dynakube *dynatracev1beta1.DynaKube, other ...client.Object) admission.Response {
 	response := handleRequest(t, dynakube, other...)
 	assert.True(t, response.Allowed)
+
 	return response
 }
 
@@ -208,6 +210,7 @@ func handleRequest(t *testing.T, dynakube *dynatracev1beta1.DynaKube, other ...c
 	if other != nil {
 		clt = fake.NewClient(other...)
 	}
+
 	validator := &dynakubeValidator{
 		clt:       clt,
 		apiReader: clt,

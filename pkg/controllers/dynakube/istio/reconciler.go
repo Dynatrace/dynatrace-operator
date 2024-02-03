@@ -32,9 +32,11 @@ func NewReconciler(istio *Client) Reconciler {
 
 func (r *reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	log.Info("reconciling istio components for the Dynatrace API url")
+
 	if dynakube == nil {
 		return errors.New("can't reconcile api url of nil dynakube")
 	}
+
 	apiHost, err := dtclient.ParseEndpoint(dynakube.Spec.APIURL)
 	if err != nil {
 		return err
@@ -44,6 +46,7 @@ func (r *reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1b
 	if err != nil {
 		return errors.WithMessage(err, "error reconciling config for Dynatrace API URL")
 	}
+
 	log.Info("reconciled istio objects for API url")
 
 	return nil
@@ -51,29 +54,35 @@ func (r *reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1b
 
 func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	log.Info("reconciling istio components for oneagent-code-modules communication hosts")
+
 	if dynakube == nil {
 		return errors.New("can't reconcile oneagent communication hosts of nil dynakube")
 	}
 
 	oneAgentCommunicationHosts := connectioninfo.GetOneAgentCommunicationHosts(dynakube)
+
 	err := r.reconcileCommunicationHostsForComponent(ctx, oneAgentCommunicationHosts, OneAgentComponent)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	log.Info("reconciling istio components for activegate communication hosts")
+
 	if dynakube == nil {
 		return errors.New("can't reconcile oneagent communication hosts of nil dynakube")
 	}
 
 	activeGateEndpoints := connectioninfo.GetActiveGateEndpointsAsCommunicationHosts(dynakube)
+
 	err := r.reconcileCommunicationHostsForComponent(ctx, activeGateEndpoints, ActiveGateComponent)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -82,7 +91,9 @@ func (r *reconciler) reconcileCommunicationHostsForComponent(ctx context.Context
 	if err != nil {
 		return errors.WithMessage(err, "error reconciling config for Dynatrace communication hosts")
 	}
+
 	log.Info("reconciled istio objects for communication hosts", "component", componentName)
+
 	return nil
 }
 
@@ -98,6 +109,7 @@ func (r *reconciler) reconcileCommunicationHosts(ctx context.Context, comHosts [
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -109,12 +121,14 @@ func splitCommunicationHost(comHosts []dtclient.CommunicationHost) (ipHosts, fqd
 			fqdnHosts = append(fqdnHosts, commHost)
 		}
 	}
+
 	return
 }
 
 func (r *reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []dtclient.CommunicationHost, component string) error {
 	owner := r.client.Owner
 	entryName := BuildNameForIPServiceEntry(owner.GetName(), component)
+
 	if len(ipHosts) != 0 {
 		meta := buildObjectMeta(
 			entryName,
@@ -123,6 +137,7 @@ func (r *reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []dtcl
 		)
 
 		serviceEntry := buildServiceEntryIPs(meta, ipHosts)
+
 		err := r.client.CreateOrUpdateServiceEntry(ctx, serviceEntry)
 		if err != nil {
 			return err
@@ -140,6 +155,7 @@ func (r *reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []dtcl
 func (r *reconciler) reconcileFQDNServiceEntry(ctx context.Context, fqdnHosts []dtclient.CommunicationHost, component string) error {
 	owner := r.client.Owner
 	entryName := BuildNameForFQDNServiceEntry(owner.GetName(), component)
+
 	if len(fqdnHosts) != 0 {
 		meta := buildObjectMeta(
 			entryName,
@@ -148,12 +164,14 @@ func (r *reconciler) reconcileFQDNServiceEntry(ctx context.Context, fqdnHosts []
 		)
 
 		serviceEntry := buildServiceEntryFQDNs(meta, fqdnHosts)
+
 		err := r.client.CreateOrUpdateServiceEntry(ctx, serviceEntry)
 		if err != nil {
 			return err
 		}
 
 		virtualService := buildVirtualService(meta, fqdnHosts)
+
 		err = r.client.CreateOrUpdateVirtualService(ctx, virtualService)
 		if err != nil {
 			return err
@@ -169,6 +187,7 @@ func (r *reconciler) reconcileFQDNServiceEntry(ctx context.Context, fqdnHosts []
 			return err
 		}
 	}
+
 	return nil
 }
 

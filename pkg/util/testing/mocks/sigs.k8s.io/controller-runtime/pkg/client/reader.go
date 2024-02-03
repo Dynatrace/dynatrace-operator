@@ -21,6 +21,7 @@ func (_m *Reader) Get(ctx context.Context, key types.NamespacedName, obj client.
 	for _i := range opts {
 		_va[_i] = opts[_i]
 	}
+
 	var _ca []interface{}
 	_ca = append(_ca, ctx, key, obj)
 	_ca = append(_ca, _va...)
@@ -42,6 +43,7 @@ func (_m *Reader) List(ctx context.Context, list client.ObjectList, opts ...clie
 	for _i := range opts {
 		_va[_i] = opts[_i]
 	}
+
 	var _ca []interface{}
 	_ca = append(_ca, ctx, list)
 	_ca = append(_ca, _va...)

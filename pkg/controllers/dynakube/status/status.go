@@ -14,6 +14,8 @@ func SetKubeSystemUUIDInStatus(ctx context.Context, dynakube *dynatracev1beta1.D
 		log.Info("could not get cluster ID")
 		return err
 	}
+
 	dynakube.Status.KubeSystemUUID = string(uid)
+
 	return nil
 }

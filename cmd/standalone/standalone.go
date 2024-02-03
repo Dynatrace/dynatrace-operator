@@ -20,9 +20,11 @@ func NewStandaloneCommand() *cobra.Command {
 
 func startStandAloneInit(_ *cobra.Command, _ []string) error {
 	unix.Umask(0000)
+
 	standaloneRunner, err := startup.NewRunner(afero.NewOsFs())
 	if err != nil {
 		return err
 	}
+
 	return standaloneRunner.Run()
 }

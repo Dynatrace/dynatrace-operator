@@ -46,9 +46,11 @@ func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dynakube dynatr
 
 func (statefulSetBuilder Builder) CreateStatefulSet(mods []builder.Modifier) (*appsv1.StatefulSet, error) {
 	activeGateBuilder := builder.NewBuilder(statefulSetBuilder.getBase())
+
 	if len(mods) == 0 {
 		mods = modifiers.GenerateAllModifiers(statefulSetBuilder.dynakube, statefulSetBuilder.capability, statefulSetBuilder.envMap)
 	}
+
 	sts, _ := activeGateBuilder.AddModifier(mods...).Build()
 
 	if err := setHash(&sts); err != nil {
@@ -71,6 +73,7 @@ func (statefulSetBuilder Builder) getBase() appsv1.StatefulSet {
 	if statefulSetBuilder.dynakube.FeatureActiveGateAppArmor() {
 		sts.Spec.Template.ObjectMeta.Annotations[consts.AnnotationActiveGateContainerAppArmor] = "runtime/default"
 	}
+
 	return sts
 }
 
@@ -108,6 +111,7 @@ func (statefulSetBuilder Builder) buildAppLabels() *labels.AppLabels {
 	if version == "" {
 		version = statefulSetBuilder.dynakube.Status.ActiveGate.Version
 	}
+
 	return labels.NewAppLabels(labels.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, statefulSetBuilder.capability.ShortName(), version)
 }
 
@@ -143,11 +147,13 @@ func (statefulSetBuilder Builder) buildTopologySpreadConstraints(capability capa
 	if len(capability.Properties().TopologySpreadConstraints) > 0 {
 		return capability.Properties().TopologySpreadConstraints
 	}
+
 	return statefulSetBuilder.defaultTopologyConstraints()
 }
 
 func (statefulSetBuilder Builder) defaultTopologyConstraints() []corev1.TopologySpreadConstraint {
 	appLabels := statefulSetBuilder.buildAppLabels()
+
 	return []corev1.TopologySpreadConstraint{
 		{
 			MaxSkew:           1,
@@ -186,6 +192,7 @@ func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 		},
 		SecurityContext: modifiers.GetSecurityContext(false),
 	}
+
 	return []corev1.Container{container}
 }
 
@@ -212,6 +219,7 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 	if statefulSetBuilder.capability.Properties().Group != "" {
 		prioritymap.Append(statefulSetBuilder.envMap, corev1.EnvVar{Name: consts.EnvDtGroup, Value: statefulSetBuilder.capability.Properties().Group})
 	}
+
 	if statefulSetBuilder.dynakube.Spec.NetworkZone != "" {
 		prioritymap.Append(statefulSetBuilder.envMap, corev1.EnvVar{Name: consts.EnvDtNetworkZone, Value: statefulSetBuilder.dynakube.Spec.NetworkZone})
 	}
@@ -244,6 +252,8 @@ func setHash(sts *appsv1.StatefulSet) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
+
 	sts.ObjectMeta.Annotations[hasher.AnnotationHash] = hash
+
 	return nil
 }

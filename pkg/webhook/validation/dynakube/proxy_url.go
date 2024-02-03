@@ -22,8 +22,10 @@ func invalidActiveGateProxyUrl(ctx context.Context, dv *dynakubeValidator, dynak
 		if err != nil {
 			return errors.Wrap(err, errorMissingProxySecret).Error()
 		}
+
 		return validateProxyUrl(proxyUrl, errorInvalidProxyUrl, errorInvalidEvalCharacter)
 	}
+
 	return ""
 }
 
@@ -39,6 +41,7 @@ func validateProxyUrl(proxyUrl string, parseErrorMessage string, evalErrorMessag
 			return evalErrorMessage
 		}
 	}
+
 	return ""
 }
 
@@ -49,11 +52,9 @@ func isStringValidForAG(str string) bool {
 	// P	Q	R	S	T	U	V	W	X	Y	Z	[	\	]	^	_
 	// `	a	b	c	d	e	f	g	h	i	j	k	l	m	n	o
 	// p	q	r	s	t	u	v	w	x	y	z	{	|	}	~
-
 	// '\'' '`'            exceptions due to entrypoint.sh:readSecret:eval
 	// ','                 exceptions due to Gateway reader of config files
 	// '&' '=' '+' '%' '\' exceptions due to entrypoint.sh:saveProxyConfiguration
-
 	regex := regexp.MustCompile(`^[!"#$()*\-./0-9:;<>?@A-Z\[\]^_a-z{|}~]*$`)
 	return regex.MatchString(str)
 }

@@ -12,6 +12,7 @@ func TestOf(t *testing.T) {
 		assert.False(t, *Of(false))
 
 		const constantBool = true
+
 		assert.True(t, *Of(constantBool))
 
 		mutableBool := true
@@ -25,6 +26,7 @@ func TestOf(t *testing.T) {
 		assert.Equal(t, 23, *Of(23))
 
 		const constantInt = 27
+
 		assert.Equal(t, 27, *Of(constantInt))
 
 		mutableInt := int64(4)

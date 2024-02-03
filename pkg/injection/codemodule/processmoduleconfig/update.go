@@ -20,12 +20,16 @@ func UpdateProcessModuleConfigInPlace(fs afero.Fs, targetDir string, processModu
 		log.Info("updating ruxitagentproc.conf", "targetDir", targetDir)
 		usedProcessModuleConfigPath := filepath.Join(targetDir, RuxitAgentProcPath)
 		sourceProcessModuleConfigPath := filepath.Join(targetDir, sourceRuxitAgentProcPath)
+
 		if err := checkProcessModuleConfigCopy(fs, sourceProcessModuleConfigPath, usedProcessModuleConfigPath); err != nil {
 			return err
 		}
+
 		return Update(fs, sourceProcessModuleConfigPath, usedProcessModuleConfigPath, processModuleConfig.ToMap())
 	}
+
 	log.Info("no changes to ruxitagentproc.conf, skipping update")
+
 	return nil
 }
 
@@ -35,13 +39,17 @@ func CreateAgentConfigDir(fs afero.Fs, targetDir, sourceDir string, processModul
 		sourceProcessModuleConfigPath := filepath.Join(sourceDir, RuxitAgentProcPath)
 		destinationProcessModuleConfigPath := filepath.Join(targetDir, RuxitAgentProcPath)
 		err := fs.MkdirAll(filepath.Dir(destinationProcessModuleConfigPath), 0755)
+
 		if err != nil {
 			log.Info("failed to create directory for destination process module config", "path", filepath.Dir(destinationProcessModuleConfigPath))
 			return errors.WithStack(err)
 		}
+
 		return Update(fs, sourceProcessModuleConfigPath, destinationProcessModuleConfigPath, processModuleConfig.ToMap())
 	}
+
 	log.Info("no changes to ruxitagentproc.conf, skipping update")
+
 	return nil
 }
 
@@ -54,6 +62,7 @@ func checkProcessModuleConfigCopy(fs afero.Fs, sourcePath, destPath string) erro
 	}
 
 	log.Info("saving original ruxitagentproc.conf to _ruxitagentproc.conf")
+
 	fileInfo, err := fs.Stat(destPath)
 	if err != nil {
 		return err
@@ -74,13 +83,17 @@ func checkProcessModuleConfigCopy(fs afero.Fs, sourcePath, destPath string) erro
 		if err := sourceProcessModuleConfigFile.Close(); err != nil {
 			log.Error(err, "failed to close sourceProcessModuleConfigFile")
 		}
+
 		if err := usedProcessModuleConfigFile.Close(); err != nil {
 			log.Error(err, "failed to close usedProcessModuleConfigFile")
 		}
+
 		return err
 	}
+
 	if err = sourceProcessModuleConfigFile.Close(); err != nil {
 		return err
 	}
+
 	return usedProcessModuleConfigFile.Close()
 }

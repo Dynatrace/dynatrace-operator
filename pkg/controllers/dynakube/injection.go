@@ -32,11 +32,13 @@ func (controller *Controller) reconcileAppInjection(ctx context.Context, dynakub
 	if err := controller.setupEnrichmentInjection(ctx, dynakube); err != nil {
 		setupErrors = append(setupErrors, err)
 	}
+
 	if len(setupErrors) > 0 {
 		return goerrors.Join(setupErrors...)
 	}
 
 	log.Info("app injection reconciled")
+
 	return nil
 }
 
@@ -49,6 +51,7 @@ func (controller *Controller) removeAppInjection(ctx context.Context, dynakube *
 	}
 
 	endpointSecretGenerator := ingestendpoint.NewEndpointSecretGenerator(controller.client, controller.apiReader, dynakube.Namespace)
+
 	err = endpointSecretGenerator.RemoveEndpointSecrets(ctx, dynakube)
 	if err != nil {
 		log.Info("could not remove data-ingest secret")
@@ -70,6 +73,7 @@ func (controller *Controller) setupOneAgentInjection(ctx context.Context, dynaku
 			return err
 		}
 	}
+
 	err := versionReconciler.ReconcileCodeModules(ctx, dynakube)
 	if err != nil {
 		return err
@@ -80,9 +84,11 @@ func (controller *Controller) setupOneAgentInjection(ctx context.Context, dynaku
 		log.Info("failed to generate init secret")
 		return err
 	}
+
 	if dynakube.ApplicationMonitoringMode() {
 		dynakube.Status.SetPhase(status.Running)
 	}
+
 	return nil
 }
 
@@ -90,12 +96,15 @@ func (controller *Controller) setupEnrichmentInjection(ctx context.Context, dyna
 	if dynakube.FeatureDisableMetadataEnrichment() {
 		return nil
 	}
+
 	endpointSecretGenerator := ingestendpoint.NewEndpointSecretGenerator(controller.client, controller.apiReader, dynakube.Namespace)
+
 	err := endpointSecretGenerator.GenerateForDynakube(ctx, dynakube)
 	if err != nil {
 		log.Info("failed to generate data-ingest secret")
 		return err
 	}
+
 	return nil
 }
 

@@ -56,7 +56,6 @@ func (dk *DynaKube) ApiUrl() string {
 // If the URL cannot be parsed, it returns an empty string.
 func (dk *DynaKube) ApiUrlHost() string {
 	parsedUrl, err := url.Parse(dk.ApiUrl())
-
 	if err != nil {
 		return ""
 	}
@@ -114,6 +113,7 @@ func (dk *DynaKube) IsActiveGateMode(mode CapabilityDisplayName) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -213,6 +213,7 @@ func (dk *DynaKube) PullSecretName() string {
 	if dk.Spec.CustomPullSecret != "" {
 		return dk.Spec.CustomPullSecret
 	}
+
 	return dk.Name + PullSecretSuffix
 }
 
@@ -248,6 +249,7 @@ func (dk *DynaKube) InitResources() *corev1.ResourceRequirements {
 	} else if dk.CloudNativeFullstackMode() {
 		return dk.Spec.OneAgent.CloudNativeFullStack.InitResources
 	}
+
 	return nil
 }
 
@@ -264,6 +266,7 @@ func (dk *DynaKube) NodeSelector() map[string]string {
 	case dk.CloudNativeFullstackMode():
 		return dk.Spec.OneAgent.CloudNativeFullStack.NodeSelector
 	}
+
 	return nil
 }
 
@@ -347,6 +350,7 @@ func (dk *DynaKube) CustomCodeModulesImage() string {
 	} else if dk.ApplicationMonitoringMode() && dk.NeedsCSIDriver() {
 		return dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage
 	}
+
 	return ""
 }
 
@@ -355,6 +359,7 @@ func (dk *DynaKube) CustomCodeModulesVersion() string {
 	if !dk.ApplicationMonitoringMode() {
 		return ""
 	}
+
 	return dk.CustomOneAgentVersion()
 }
 
@@ -381,6 +386,7 @@ func (dk *DynaKube) CustomOneAgentVersion() string {
 	case dk.HostMonitoringMode():
 		return dk.Spec.OneAgent.HostMonitoring.Version
 	}
+
 	return ""
 }
 
@@ -394,6 +400,7 @@ func (dk *DynaKube) CustomOneAgentImage() string {
 	case dk.CloudNativeFullstackMode():
 		return dk.Spec.OneAgent.CloudNativeFullStack.Image
 	}
+
 	return ""
 }
 
@@ -404,6 +411,7 @@ func (dk *DynaKube) DefaultOneAgentImage() string {
 	}
 
 	tag := api.LatestTag
+
 	if version := dk.CustomOneAgentVersion(); version != "" {
 		truncatedVersion := truncateBuildDate(version)
 		tag = truncatedVersion
@@ -419,6 +427,7 @@ func (dk *DynaKube) DefaultOneAgentImage() string {
 
 func truncateBuildDate(version string) string {
 	const versionSeparator = "."
+
 	const buildDateIndex = 3
 
 	if strings.Count(version, versionSeparator) >= buildDateIndex {
@@ -436,6 +445,7 @@ func (dk *DynaKube) Tokens() string {
 	if tkns := dk.Spec.Tokens; tkns != "" {
 		return tkns
 	}
+
 	return dk.Name
 }
 
@@ -472,6 +482,7 @@ func tenantUUID(apiUrl string) (string, error) {
 
 func (dk *DynaKube) HostGroup() string {
 	var hostGroup string
+
 	if dk.CloudNativeFullstackMode() && dk.Spec.OneAgent.CloudNativeFullStack.Args != nil {
 		for _, arg := range dk.Spec.OneAgent.CloudNativeFullStack.Args {
 			key, value := splitArg(arg)
@@ -481,17 +492,22 @@ func (dk *DynaKube) HostGroup() string {
 			}
 		}
 	}
+
 	return hostGroup
 }
 
 func splitArg(arg string) (key, value string) {
 	split := strings.Split(arg, "=")
+
 	const expectedLen = 2
+
 	if len(split) != expectedLen {
 		return
 	}
+
 	key = split[0]
 	value = split[1]
+
 	return
 }
 
@@ -499,7 +515,9 @@ func getRawImageTag(imageURI string) string {
 	if !strings.Contains(imageURI, ":") {
 		return api.LatestTag
 	}
+
 	splitURI := strings.Split(imageURI, ":")
+
 	return splitURI[len(splitURI)-1]
 }
 
@@ -512,6 +530,7 @@ func (dk *DynaKube) GetOneAgentEnvironment() []corev1.EnvVar {
 	case dk.HostMonitoringMode():
 		return dk.Spec.OneAgent.HostMonitoring.Env
 	}
+
 	return []corev1.EnvVar{}
 }
 

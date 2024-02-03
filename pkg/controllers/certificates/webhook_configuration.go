@@ -11,6 +11,7 @@ func getClientConfigsFromMutatingWebhook(mutatingWebhookConfig *admissionregistr
 	for i := range mutatingWebhookConfig.Webhooks {
 		mutatingWebhookConfigs[i] = &mutatingWebhookConfig.Webhooks[i].ClientConfig
 	}
+
 	return mutatingWebhookConfigs
 }
 
@@ -23,5 +24,6 @@ func getClientConfigsFromValidatingWebhook(validatingWebhookConfig *admissionreg
 	for i := range validatingWebhookConfig.Webhooks {
 		validatingWebhookConfigs[i] = &validatingWebhookConfig.Webhooks[i].ClientConfig
 	}
+
 	return validatingWebhookConfigs
 }

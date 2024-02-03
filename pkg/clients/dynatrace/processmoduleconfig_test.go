@@ -274,6 +274,7 @@ func TestAdd(t *testing.T) {
 				Value:   value,
 			})
 		}
+
 		for i := 0; i < 10; i++ {
 			processModuleConfig.Properties = append(processModuleConfig.Properties, ProcessModuleProperty{
 				Section: testSection,
@@ -306,13 +307,16 @@ func TestAdd(t *testing.T) {
 
 func TestProcessModuleConfig_AddProxy(t *testing.T) {
 	const proxy = "dummy-proxy"
+
 	type fields struct {
 		Revision   uint
 		Properties []ProcessModuleProperty
 	}
+
 	type args struct {
 		proxy string
 	}
+
 	tests := []struct {
 		name   string
 		fields fields
@@ -355,13 +359,16 @@ func TestProcessModuleConfig_AddProxy(t *testing.T) {
 
 func TestProcessModuleConfig_AddNoProxy(t *testing.T) {
 	const NoProxy = "dummy-proxy"
+
 	type fields struct {
 		Revision   uint
 		Properties []ProcessModuleProperty
 	}
+
 	type args struct {
 		noProxy string
 	}
+
 	tests := []struct {
 		name   string
 		fields fields

@@ -41,15 +41,19 @@ func (secret SecretConfig) logContent() {
 	if secret.ApiToken != "" {
 		secret.ApiToken = asterisks
 	}
+
 	if secret.PaasToken != "" {
 		secret.PaasToken = asterisks
 	}
+
 	if secret.TrustedCAs != "" {
 		secret.TrustedCAs = asterisks
 	}
+
 	if secret.TlsCert != "" {
 		secret.TlsCert = asterisks
 	}
+
 	log.Info("contents of secret config", "content", secret)
 }
 

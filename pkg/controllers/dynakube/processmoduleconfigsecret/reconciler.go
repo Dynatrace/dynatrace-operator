@@ -68,6 +68,7 @@ func (r *Reconciler) reconcileSecret(ctx context.Context) error {
 	if err := r.updateSecretIfOutdated(ctx, secret); err != nil {
 		return errors.WithMessage(err, "could not update secret")
 	}
+
 	return nil
 }
 
@@ -75,6 +76,7 @@ func (r *Reconciler) getOrCreateSecretIfNotExists(ctx context.Context) (*corev1.
 	config, err := getSecret(ctx, r.apiReader, r.dynakube.Name, r.dynakube.Namespace)
 	if k8serrors.IsNotFound(err) {
 		log.Info("creating process module config secret")
+
 		newSecret, err := r.prepareSecret()
 		if err != nil {
 			return nil, err
@@ -85,10 +87,12 @@ func (r *Reconciler) getOrCreateSecretIfNotExists(ctx context.Context) (*corev1.
 		}
 
 		r.dynakube.Status.OneAgent.LastProcessModuleConfigUpdate = r.timeProvider.Now()
+
 		return newSecret, nil
 	} else if err != nil {
 		return nil, err
 	}
+
 	return config, nil
 }
 
@@ -97,12 +101,14 @@ func (r *Reconciler) updateSecret(ctx context.Context, oldSecret *corev1.Secret)
 	if err != nil {
 		return err
 	}
+
 	oldSecret.Data = newSecret.Data
 	if err = r.client.Update(ctx, oldSecret); err != nil {
 		return err
 	}
 
 	r.dynakube.Status.OneAgent.LastProcessModuleConfigUpdate = r.timeProvider.Now()
+
 	return nil
 }
 
@@ -112,6 +118,7 @@ func (r *Reconciler) updateSecretIfOutdated(ctx context.Context, oldSecret *core
 	} else {
 		log.Info("skipping updating process module config due to min request threshold")
 	}
+
 	return nil
 }
 
@@ -141,28 +148,34 @@ func GetSecretData(ctx context.Context, apiReader client.Reader, dynakubeName st
 	if err != nil {
 		return nil, err
 	}
+
 	processModuleConfig, err := unmarshal(secret)
 	if err != nil {
 		return nil, err
 	}
+
 	return processModuleConfig, nil
 }
 
 func getSecret(ctx context.Context, apiReader client.Reader, dynakubeName string, dynakubeNamespace string) (*corev1.Secret, error) {
 	var config corev1.Secret
+
 	err := apiReader.Get(ctx, client.ObjectKey{Name: extendWithSuffix(dynakubeName), Namespace: dynakubeNamespace}, &config)
 	if err != nil {
 		return nil, err
 	}
+
 	return &config, nil
 }
 
 func unmarshal(secret *corev1.Secret) (*dtclient.ProcessModuleConfig, error) {
 	var config *dtclient.ProcessModuleConfig
+
 	err := json.Unmarshal(secret.Data[SecretKeyProcessModuleConfig], &config)
 	if err != nil {
 		return nil, err
 	}
+
 	return config, nil
 }
 
