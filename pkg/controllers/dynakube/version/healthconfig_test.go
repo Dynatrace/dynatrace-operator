@@ -12,7 +12,7 @@ func TestGetOneAgentHealthConfig(t *testing.T) {
 		title           string
 		inputVersion    string
 		expectedCommand []string
-		errors          bool
+		expectError     bool
 	}
 
 	testCases := []test{
@@ -20,61 +20,67 @@ func TestGetOneAgentHealthConfig(t *testing.T) {
 			title:           "get healthConfig with test as CMD - current versions case",
 			inputVersion:    "1.277.209.20231204-134602",
 			expectedCommand: currentHealthCheck,
-			errors:          false,
+			expectError:     false,
 		},
 		{
 			title:           "get healthConfig with test as shell script - old version case",
 			inputVersion:    "1.267.209.20231204-134602",
 			expectedCommand: preThresholdHealthCheck,
-			errors:          false,
+			expectError:     false,
 		},
 		{
 			title:           "partial version works - no dash part at the end",
 			inputVersion:    "1.277.209.20231204",
 			expectedCommand: currentHealthCheck,
-			errors:          false,
+			expectError:     false,
 		},
 		{
 			title:           "partial version works - only till patch version",
 			inputVersion:    "1.277.209",
 			expectedCommand: currentHealthCheck,
-			errors:          false,
+			expectError:     false,
 		},
 		{
 			title:           "partial version works - only till minor version",
 			inputVersion:    "1.277",
 			expectedCommand: currentHealthCheck,
-			errors:          false,
+			expectError:     false,
 		},
 		{
 			title:           "partial version works - only till mayor version",
 			inputVersion:    "1",
 			expectedCommand: preThresholdHealthCheck,
-			errors:          false,
+			expectError:     false,
 		},
 		{
 			title:           "empty version works - default is the current healthcheck",
 			inputVersion:    "",
 			expectedCommand: currentHealthCheck,
-			errors:          false,
+			expectError:     false,
 		},
 		{
 			title:           "exact match works",
 			inputVersion:    healthCheckVersionThreshold,
 			expectedCommand: currentHealthCheck,
-			errors:          false,
+			expectError:     false,
 		},
 		{
 			title:           "works with 'v' prefix",
 			inputVersion:    "v1.277",
 			expectedCommand: currentHealthCheck,
-			errors:          false,
+			expectError:     false,
+		},
+		{
+			title:           "works without 'v' prefix",
+			inputVersion:    "1.275.0",
+			expectedCommand: preThresholdHealthCheck,
+			expectError:     false,
 		},
 		{
 			title:           "malformed version - returns error",
 			inputVersion:    ".4.malformed-",
 			expectedCommand: nil,
-			errors:          true,
+			expectError:     true,
 		},
 	}
 
@@ -82,7 +88,7 @@ func TestGetOneAgentHealthConfig(t *testing.T) {
 		t.Run(testCase.title, func(t *testing.T) {
 			healthConfig, err := getOneAgentHealthConfig(testCase.inputVersion)
 
-			if testCase.errors {
+			if testCase.expectError {
 				require.Error(t, err)
 				require.Nil(t, healthConfig)
 				assert.Contains(t, err.Error(), testCase.inputVersion)

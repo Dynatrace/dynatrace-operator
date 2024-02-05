@@ -27,7 +27,7 @@ const (
 )
 
 var (
-	preThresholdHealthCheck = []string{"/bin/sh", "-c", "grep", "-q", "oneagentwatchdo", "/proc/[0-9]*/stat"}
+	preThresholdHealthCheck = []string{"/bin/sh", "-c", "grep -q oneagentwatchdo /proc/[0-9]*/stat"}
 	currentHealthCheck      = []string{"/usr/bin/watchdog-healthcheck64"}
 )
 
