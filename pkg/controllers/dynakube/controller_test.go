@@ -76,6 +76,7 @@ func TestGetDynakubeOrCleanup(t *testing.T) {
 	request := reconcile.Request{
 		NamespacedName: types.NamespacedName{Name: "dynakube-test", Namespace: "dynatrace"},
 	}
+
 	t.Run("dynakube doesn't exist => unmap namespace", func(t *testing.T) {
 		markedNamespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
@@ -94,6 +95,7 @@ func TestGetDynakubeOrCleanup(t *testing.T) {
 		dk, err := controller.getDynakubeOrCleanup(ctx, request.Name, request.Namespace)
 		require.NoError(t, err)
 		assert.Nil(t, dk)
+
 		unmarkedNamespace := &corev1.Namespace{}
 		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: markedNamespace.Name}, unmarkedNamespace)
 		require.NoError(t, err)
@@ -143,6 +145,7 @@ func TestHandleError(t *testing.T) {
 		},
 		Spec: dynatracev1beta1.DynaKubeSpec{APIURL: "this-is-an-api-url"},
 	}
+
 	t.Run("no error => update status", func(t *testing.T) {
 		oldDynakube := dynakubeBase.DeepCopy()
 		fakeClient := fake.NewClientWithIndex(oldDynakube)
@@ -160,6 +163,7 @@ func TestHandleError(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.Equal(t, controller.requeueAfter, result.RequeueAfter)
+
 		dynakube := &dynatracev1beta1.DynaKube{}
 		err = fakeClient.Get(ctx, types.NamespacedName{Name: expectedDynakube.Name, Namespace: expectedDynakube.Namespace}, dynakube)
 		require.NoError(t, err)
@@ -202,6 +206,7 @@ func TestHandleError(t *testing.T) {
 		result, err := controller.handleError(ctx, oldDynakube, randomError, oldDynakube.Status)
 		assert.Empty(t, result)
 		require.Error(t, err)
+
 		dynakube := &dynatracev1beta1.DynaKube{}
 		err = fakeClient.Get(ctx, types.NamespacedName{Name: oldDynakube.Name, Namespace: oldDynakube.Namespace}, dynakube)
 		require.NoError(t, err)
@@ -303,6 +308,7 @@ func TestSetupTokensAndClient(t *testing.T) {
 func assertTokenCondition(t *testing.T, dynakube *dynatracev1beta1.DynaKube, hasError bool) {
 	condition := dynakube.Status.Conditions[0]
 	assert.Equal(t, dynatracev1beta1.TokenConditionType, condition.Type)
+
 	if hasError {
 		assert.Equal(t, dynatracev1beta1.ReasonTokenError, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
@@ -540,6 +546,7 @@ func createFakeRegistryClientBuilder() func(options ...func(*registry.Client)) (
 	}
 	fakeImage.ConfigFile()
 	image := containerv1.Image(fakeImage)
+
 	fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: "1.2.3.4-5"}, nil)
 	fakeRegistryClient.On("PullImageInfo", mock.Anything, mock.Anything).Return(&image, nil)
 
@@ -683,6 +690,7 @@ func TestSetupIstio(t *testing.T) {
 			EnableIstio: true,
 		},
 	}
+
 	t.Run("EnableIstio: false => do nothing + nil", func(t *testing.T) {
 		dynakube := dynakubeBase.DeepCopy()
 		dynakube.Spec.EnableIstio = false
@@ -719,6 +727,7 @@ func TestSetupIstio(t *testing.T) {
 		serviceEntry, err := fakeIstio.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
+
 		virtualService, err := fakeIstio.NetworkingV1beta1().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, virtualService)
@@ -730,10 +739,12 @@ func fakeIstioClientBuilder(t *testing.T, fakeIstio *fakeistio.Clientset, isIsti
 		if isIstioInstalled == true {
 			fakeDiscovery, ok := fakeIstio.Discovery().(*fakediscovery.FakeDiscovery)
 			fakeDiscovery.Resources = []*metav1.APIResourceList{{GroupVersion: istio.IstioGVR}}
+
 			if !ok {
 				t.Fatalf("couldn't convert Discovery() to *FakeDiscovery")
 			}
 		}
+
 		return &istio.Client{
 			IstioClientset: fakeIstio,
 			Scheme:         scheme,

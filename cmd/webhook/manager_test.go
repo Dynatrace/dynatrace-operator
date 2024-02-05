@@ -38,6 +38,7 @@ func TestCreateOptions(t *testing.T) {
 
 	t.Run("creates options with configured webhook port", func(t *testing.T) {
 		t.Setenv("WEBHOOK_PORT", "6443")
+
 		provider := Provider{}
 		options := provider.createOptions("test-namespace")
 

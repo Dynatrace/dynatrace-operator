@@ -93,6 +93,7 @@ func TestReconcileWithoutProxy(t *testing.T) {
 			dynatracev1beta1.AnnotationFeatureActiveGateIgnoreProxy: "true",
 			dynatracev1beta1.AnnotationFeatureOneAgentIgnoreProxy:   "true",
 		}
+
 		var testClient = fake.NewClientBuilder().WithObjects(&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      BuildSecretName(testDynakubeName),
@@ -106,6 +107,7 @@ func TestReconcileWithoutProxy(t *testing.T) {
 		assert.NoError(t, err)
 
 		var proxySecret corev1.Secret
+
 		name := BuildSecretName(testDynakubeName)
 		err = testClient.Get(context.Background(), client.ObjectKey{Name: name, Namespace: testNamespace}, &proxySecret)
 

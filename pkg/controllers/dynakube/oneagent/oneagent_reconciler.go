@@ -73,6 +73,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dynakube *dynatracev1beta1.D
 		log.Info("removing OneAgent daemonSet")
 		return r.removeOneAgentDaemonSet(ctx, dynakube)
 	}
+
 	log.Info("reconciling OneAgent")
 
 	if !dynakube.IsOneAgentCommunicationRouteClear() {

@@ -18,10 +18,12 @@ func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube 
 		if err != nil {
 			return err
 		}
+
 		err = versionReconciler.ReconcileActiveGate(ctx, dynakube)
 		if err != nil {
 			return err
 		}
+
 		if istioReconciler != nil {
 			err = istioReconciler.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
 			if err != nil {
@@ -29,12 +31,14 @@ func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube 
 			}
 		}
 	} // TODO: have a cleanup for things that we create above
+
 	reconciler := controller.activeGateReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynakube, dtc)
 	err := reconciler.Reconcile(ctx)
 
 	if err != nil {
 		return errors.WithMessage(err, "failed to reconcile ActiveGate")
 	}
+
 	controller.setupAutomaticApiMonitoring(dynakube, dtc)
 
 	return nil

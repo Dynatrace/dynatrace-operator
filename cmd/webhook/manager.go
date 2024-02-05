@@ -62,6 +62,7 @@ func (provider Provider) CreateManager(namespace string, config *rest.Config) (m
 func (provider Provider) createOptions(namespace string) ctrl.Options {
 	port := defaultPort
 	webhookPortEnv := os.Getenv("WEBHOOK_PORT")
+
 	if parsedWebhookPort, err := strconv.Atoi(webhookPortEnv); err == nil {
 		port = parsedWebhookPort
 	}

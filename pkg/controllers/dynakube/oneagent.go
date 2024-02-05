@@ -15,6 +15,7 @@ func (controller *Controller) reconcileOneAgent(ctx context.Context, dynakube *d
 			return err
 		}
 	}
+
 	return oneagent.NewOneAgentReconciler(
 		controller.client, controller.apiReader, controller.scheme, controller.clusterID,
 	).Reconcile(ctx, dynakube)
