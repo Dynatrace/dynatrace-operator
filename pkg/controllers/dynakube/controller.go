@@ -10,6 +10,7 @@ import (
 	dynatracestatus "github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
@@ -65,12 +66,17 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		apiReader:              apiReader,
 		scheme:                 scheme,
 		fs:                     afero.Afero{Fs: afero.NewOsFs()},
-		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
-		istioClientBuilder:     istio.NewClient,
-		registryClientBuilder:  registry.NewClient,
 		config:                 config,
 		operatorNamespace:      os.Getenv(env.PodNamespace),
 		clusterID:              clusterID,
+		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
+		istioClientBuilder:     istio.NewClient,
+		registryClientBuilder:  registry.NewClient,
+		// move these builders after refactoring the reconciler logic of the controller
+		deploymentMetadataReconcilerBuilder: deploymentmetadata.NewReconciler,
+		versionReconcilerBuilder:            version.NewReconciler,
+		connectionInfoReconcilerBuilder:     connectioninfo.NewReconciler,
+		activeGateReconcilerBuilder:         activegate.NewReconciler,
 	}
 }
 
@@ -88,19 +94,24 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 type Controller struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the api-server
-	client                 client.Client
-	apiReader              client.Reader
-	scheme                 *runtime.Scheme
-	fs                     afero.Afero
-	dynatraceClientBuilder dynatraceclient.Builder
-	istioClientBuilder     istio.ClientBuilder
-	registryClientBuilder  registry.ClientBuilder
-
+	client            client.Client
+	apiReader         client.Reader
+	scheme            *runtime.Scheme
+	fs                afero.Afero
 	config            *rest.Config
 	operatorNamespace string
 	clusterID         string
 
 	requeueAfter time.Duration
+
+	dynatraceClientBuilder dynatraceclient.Builder
+	istioClientBuilder     istio.ClientBuilder
+	registryClientBuilder  registry.ClientBuilder
+
+	deploymentMetadataReconcilerBuilder deploymentmetadata.ReconcilerBuilder
+	versionReconcilerBuilder            version.ReconcilerBuilder
+	connectionInfoReconcilerBuilder     connectioninfo.ReconcilerBuilder
+	activeGateReconcilerBuilder         activegate.ReconcilerBuilder
 }
 
 // Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read
@@ -145,7 +156,12 @@ func (controller *Controller) getDynakubeOrCleanup(ctx context.Context, dkName, 
 	return dynakube, nil
 }
 
-func (controller *Controller) handleError(ctx context.Context, dynaKube *dynatracev1beta1.DynaKube, err error, oldStatus dynatracev1beta1.DynaKubeStatus) (reconcile.Result, error) {
+func (controller *Controller) handleError(
+	ctx context.Context,
+	dynaKube *dynatracev1beta1.DynaKube,
+	err error,
+	oldStatus dynatracev1beta1.DynaKubeStatus,
+) (reconcile.Result, error) {
 	switch {
 	case dynatraceapi.IsUnreachable(err):
 		log.Info("the Dynatrace API server is unavailable or request limit reached! trying again in one minute",
@@ -212,9 +228,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 	}
 
 	log.Info("start reconciling deployment meta data")
-	err = deploymentmetadata.NewReconciler(
-		controller.client, controller.apiReader, controller.scheme, *dynakube, controller.clusterID).
-		Reconcile(ctx)
+	err = controller.deploymentMetadataReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, *dynakube, controller.clusterID).Reconcile(ctx)
 	if err != nil {
 		return err
 	}
@@ -293,8 +307,8 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		return err
 	}
 
-	versionReconciler := version.NewReconciler(controller.apiReader, dynatraceClient, registryClient, controller.fs, timeprovider.New().Freeze())
-	connectionInfoReconciler := connectioninfo.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynatraceClient)
+	versionReconciler := controller.versionReconcilerBuilder(controller.apiReader, dynatraceClient, registryClient, controller.fs, timeprovider.New().Freeze())
+	connectionInfoReconciler := controller.connectionInfoReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient)
 
 	componentErrors := []error{}
 

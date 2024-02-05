@@ -75,6 +75,41 @@ func TestReconcileWithoutProxy(t *testing.T) {
 		assert.Empty(t, proxySecret)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
+	t.Run(`ensure no proxy is used when supplying a secret but disabling proxy via feature flag`, func(t *testing.T) {
+		instance := &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testDynakubeName,
+				Namespace: testNamespace,
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: "https://testing.dev.dynatracelabs.com/api",
+				Proxy: &dynatracev1beta1.DynaKubeProxy{
+					Value:     "https://proxy:1234",
+					ValueFrom: "",
+				}}}
+		instance.Annotations = map[string]string{
+			dynatracev1beta1.AnnotationFeatureActiveGateIgnoreProxy: "true",
+			dynatracev1beta1.AnnotationFeatureOneAgentIgnoreProxy:   "true",
+		}
+		var testClient = fake.NewClientBuilder().WithObjects(&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      BuildSecretName(testDynakubeName),
+				Namespace: testNamespace,
+			},
+		}).Build()
+
+		r := NewReconciler(testClient, testClient, scheme.Scheme, instance)
+		err := r.Reconcile(context.Background())
+
+		assert.NoError(t, err)
+
+		var proxySecret corev1.Secret
+		name := BuildSecretName(testDynakubeName)
+		err = testClient.Get(context.Background(), client.ObjectKey{Name: name, Namespace: testNamespace}, &proxySecret)
+
+		assert.Error(t, err)
+		assert.True(t, k8serrors.IsNotFound(err))
+	})
 }
 
 func TestReconcileProxyValue(t *testing.T) {

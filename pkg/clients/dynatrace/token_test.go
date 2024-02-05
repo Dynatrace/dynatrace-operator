@@ -50,7 +50,7 @@ func handleTokenScopes(request *http.Request, writer http.ResponseWriter) {
 		return
 	}
 
-	if request.Method != "POST" {
+	if request.Method != http.MethodPost {
 		writeError(writer, http.StatusMethodNotAllowed)
 		return
 	}
