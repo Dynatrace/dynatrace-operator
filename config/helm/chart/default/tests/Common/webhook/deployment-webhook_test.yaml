@@ -21,7 +21,7 @@ tests:
           value: NAMESPACE
       - equal:
           path: metadata.labels["app.kubernetes.io/name"]
-          value: RELEASE-NAME
+          value: dynatrace-operator
       - equal:
           path: metadata.labels["app.kubernetes.io/component"]
           value: webhook
@@ -209,7 +209,7 @@ tests:
           value: NAMESPACE
       - equal:
           path: metadata.labels["app.kubernetes.io/name"]
-          value: RELEASE-NAME
+          value: dynatrace-operator
       - equal:
           path: metadata.labels["app.kubernetes.io/component"]
           value: webhook
