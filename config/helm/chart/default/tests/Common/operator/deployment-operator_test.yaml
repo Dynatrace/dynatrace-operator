@@ -42,12 +42,24 @@ tests:
           of: Deployment
       - equal:
           path: metadata.name
-          value: RELEASE-NAME
+          value: dynatrace-operator
       - equal:
           path: metadata.namespace
           value: NAMESPACE
       - isNotEmpty:
           path: metadata.labels
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: dynatrace-operator
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: operator
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: dynatrace-operator-1.0.0
+      - equal:
+          path: metadata.labels["app.kubernetes.io/version"]
+          value: 1.0.1
       - equal:
           path: spec.replicas
           value: 1
@@ -66,7 +78,7 @@ tests:
           path: spec.template.spec
           value:
             containers:
-              - name: RELEASE-NAME
+              - name: operator
                 args:
                   - operator
                 # Replace this with the built image name
@@ -142,7 +154,7 @@ tests:
             securityContext:
               seccompProfile:
                 type: RuntimeDefault
-            serviceAccountName: RELEASE-NAME
+            serviceAccountName: dynatrace-operator
             tolerations:
               - effect: NoSchedule
                 key: kubernetes.io/arch
@@ -208,7 +220,7 @@ tests:
           of: Deployment
       - equal:
           path: metadata.name
-          value: RELEASE-NAME
+          value: dynatrace-operator
       - equal:
           path: metadata.namespace
           value: NAMESPACE
@@ -232,7 +244,7 @@ tests:
           path: spec.template.spec
           value:
             containers:
-              - name: RELEASE-NAME
+              - name: operator
                 args:
                   - operator
                 # Replace this with the built image name
@@ -308,7 +320,7 @@ tests:
             securityContext:
               seccompProfile:
                 type: RuntimeDefault
-            serviceAccountName: RELEASE-NAME
+            serviceAccountName: dynatrace-operator
             tolerations:
               - effect: NoSchedule
                 key: kubernetes.io/arch

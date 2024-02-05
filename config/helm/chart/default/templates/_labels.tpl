@@ -16,7 +16,7 @@
 Selector labels
 */}}
 {{- define "dynatrace-operator.futureSelectorLabels" -}}
-app.kubernetes.io/name: {{ .Release.Name }}
+app.kubernetes.io/name: dynatrace-operator
 {{- if not (.Values).manifests }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}

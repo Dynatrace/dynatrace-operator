@@ -7,7 +7,7 @@ tests:
     asserts:
       - equal:
           path: metadata.name
-          value: RELEASE-NAME
+          value: dynatrace-operator
       - equal:
           path: metadata.namespace
           value: NAMESPACE
@@ -169,7 +169,7 @@ tests:
           of: RoleBinding
       - equal:
           path: metadata.name
-          value: RELEASE-NAME
+          value: dynatrace-operator
       - equal:
           path: metadata.namespace
           value: NAMESPACE
@@ -179,10 +179,10 @@ tests:
           path: subjects
           content:
             kind: ServiceAccount
-            name: RELEASE-NAME
+            name: dynatrace-operator
       - equal:
           path: roleRef
           value:
             kind: Role
-            name: RELEASE-NAME
+            name: dynatrace-operator
             apiGroup: rbac.authorization.k8s.io
