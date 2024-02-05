@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
 )
 
 type PathResolver struct {
@@ -64,6 +65,12 @@ func (pr PathResolver) AgentConfigDir(tenantUUID string, dynakubeName string) st
 // Deprecated
 func (pr PathResolver) InnerAgentBinaryDirForSymlinkForVersion(tenantUUID string, version string) string {
 	return filepath.Join(pr.AgentBinaryDirForVersion(tenantUUID, version), "agent", "bin", "current")
+func (pr PathResolver) AgentSharedRuxitAgentProcConf(tenantUUID, dynakubeName string) string {
+	return filepath.Join(pr.AgentConfigDir(tenantUUID, dynakubeName), processmoduleconfig.RuxitAgentProcPath)
+}
+
+func (pr PathResolver) OverlayVarRuxitAgentProcConf(tenantUUID, volumeId string) string {
+	return filepath.Join(pr.OverlayVarDir(tenantUUID, volumeId), processmoduleconfig.RuxitAgentProcPath)
 }
 
 func (pr PathResolver) AgentRunDir(tenantUUID string) string {
