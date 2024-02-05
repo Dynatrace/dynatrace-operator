@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
 	k8sdaemonset "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/object"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -68,6 +69,10 @@ type Reconciler struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *Reconciler) Reconcile(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+	if !dynakube.NeedsOneAgent() {
+		log.Info("removing OneAgent daemonSet")
+		return r.removeOneAgentDaemonSet(ctx, dynakube)
+	}
 	log.Info("reconciling OneAgent")
 
 	if !dynakube.IsOneAgentCommunicationRouteClear() {
@@ -241,6 +246,11 @@ func (r *Reconciler) reconcileInstanceStatuses(ctx context.Context, dynakube *dy
 	}
 
 	return err
+}
+
+func (r *Reconciler) removeOneAgentDaemonSet(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+	oneAgentDaemonSet := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dynakube.OneAgentDaemonsetName(), Namespace: dynakube.Namespace}}
+	return object.Delete(ctx, r.client, &oneAgentDaemonSet)
 }
 
 func getInstanceStatuses(pods []corev1.Pod) map[string]dynatracev1beta1.OneAgentInstance {
