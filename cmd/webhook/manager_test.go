@@ -33,7 +33,22 @@ func TestCreateOptions(t *testing.T) {
 
 		webhookServer, ok := options.WebhookServer.(*webhook.DefaultServer)
 		require.True(t, ok)
-		assert.Equal(t, port, webhookServer.Options.Port)
+		assert.Equal(t, defaultPort, webhookServer.Options.Port)
+	})
+
+	t.Run("creates options with configured webhook port", func(t *testing.T) {
+		t.Setenv("WEBHOOK_PORT", "6443")
+		provider := Provider{}
+		options := provider.createOptions("test-namespace")
+
+		assert.NotNil(t, options)
+		assert.Contains(t, options.Cache.DefaultNamespaces, "test-namespace")
+		assert.Equal(t, scheme.Scheme, options.Scheme)
+		assert.Equal(t, metricsBindAddress, options.Metrics.BindAddress)
+
+		webhookServer, ok := options.WebhookServer.(*webhook.DefaultServer)
+		require.True(t, ok)
+		assert.Equal(t, 6443, webhookServer.Options.Port)
 	})
 	t.Run("configures webhooks server", func(t *testing.T) {
 		provider := NewProvider("certs-dir", "key-file", "cert-file")
