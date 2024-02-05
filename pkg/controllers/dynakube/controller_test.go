@@ -432,7 +432,7 @@ func createConnectionInfoReconcilerBuilder(reconciler *mockconnectioninfo.Reconc
 }
 
 func createVersionReconcilerBuilder(reconciler *mockversion.Reconciler) version.ReconcilerBuilder {
-	return func(apiReader client.Reader, dtClient dtclient.Client, registryClient registry.ImageGetter, fs afero.Afero, timeProvider *timeprovider.Provider) version.Reconciler {
+	return func(apiReader client.Reader, dtClient dtclient.Client, fs afero.Afero, timeProvider *timeprovider.Provider) version.Reconciler {
 		return reconciler
 	}
 }

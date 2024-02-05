@@ -57,7 +57,7 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 	}
 
 	if updater.IsPublicRegistryEnabled() {
-		err = r.processPublicRegistry(ctx, updater)
+		err = r.processPublicRegistry(updater)
 		if err != nil {
 			return err
 		}
@@ -73,7 +73,7 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 	return updater.ValidateStatus()
 }
 
-func (r *reconciler) processPublicRegistry(ctx context.Context, updater StatusUpdater) error {
+func (r *reconciler) processPublicRegistry(updater StatusUpdater) error {
 	log.Info("updating version status according to public registry", "updater", updater.Name())
 	var publicImage *dtclient.LatestImageInfo
 	publicImage, err := updater.LatestImageInfo()
@@ -85,12 +85,7 @@ func (r *reconciler) processPublicRegistry(ctx context.Context, updater StatusUp
 	if err != nil || isDowngrade {
 		return err
 	}
-
-	err = setImageIDWithDigest(ctx, updater.Target(), r.registryClient, publicImage.String())
-	if err != nil {
-		log.Info("could not update version status according to the public registry", "updater", updater.Name())
-		return err
-	}
+	setImageFromImageInfo(updater.Target(), *publicImage)
 	return nil
 }
 
@@ -122,42 +117,20 @@ func setImageIDToCustomImage(
 		"newImageID", target.ImageID)
 }
 
-func setImageIDWithDigest(
-	ctx context.Context,
+func setImageFromImageInfo(
 	target *status.VersionStatus,
-	registryClient registry.ImageGetter,
-	imageUri string,
-) error {
-	ref, err := name.ParseReference(imageUri, name.WithDefaultTag(""))
-	if err != nil {
-		return errors.WithMessage(err, "failed to parse image uri")
-	}
-
+	imageInfo dtclient.LatestImageInfo,
+) {
+	imageUri := imageInfo.String()
 	log.Info("updating image version info",
-		"image", imageUri,
+		"image", imageInfo.String(),
 		"oldImageID", target.ImageID)
 
-	imageVersion, err := registryClient.GetImageVersion(ctx, imageUri)
-	if err != nil {
-		log.Info("failed to determine image version")
-		return err
-	}
-	target.Version = imageVersion.Version
-
-	if digestRef, ok := ref.(name.Digest); ok {
-		target.ImageID = digestRef.String()
-	} else if taggedRef, ok := ref.(name.Tag); ok {
-		if taggedRef.TagStr() == "" {
-			return errors.Errorf("unsupported image reference: %s", imageUri)
-		}
-		target.ImageID = registry.BuildImageIDWithTagAndDigest(taggedRef, imageVersion.Digest)
-	} else {
-		return errors.Errorf("unsupported image reference: %s", imageUri)
-	}
+	target.Version = imageInfo.Tag
+	target.ImageID = imageUri
 
 	log.Info("updated image version info",
 		"newImageID", target.ImageID)
-	return nil
 }
 
 func updateVersionStatusForTenantRegistry(
