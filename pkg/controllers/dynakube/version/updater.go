@@ -30,7 +30,9 @@ type StatusUpdater interface {
 
 func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 	currentSource := determineSource(updater)
+
 	var err error
+
 	defer func() {
 		if err == nil {
 			updater.Target().LastProbeTimestamp = r.timeProvider.Now()
@@ -42,11 +44,13 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 	if customImage != "" {
 		log.Info("updating version status according to custom image", "updater", updater.Name())
 		setImageIDToCustomImage(updater.Target(), customImage)
+
 		return nil
 	}
 
 	if !updater.IsAutoUpdateEnabled() {
 		previousSource := updater.Target().Source
+
 		emptyVersionStatus := status.VersionStatus{}
 		if updater.Target() == nil || *updater.Target() == emptyVersionStatus {
 			log.Info("initial status update in progress with no auto update", "updater", updater.Name())
@@ -61,10 +65,12 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 		if err != nil {
 			return err
 		}
+
 		return updater.ValidateStatus()
 	}
 
 	log.Info("updating version status according to the tenant registry", "updater", updater.Name())
+
 	err = updater.UseTenantRegistry(ctx)
 	if err != nil {
 		return err
@@ -75,17 +81,22 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 
 func (r *reconciler) processPublicRegistry(updater StatusUpdater) error {
 	log.Info("updating version status according to public registry", "updater", updater.Name())
+
 	var publicImage *dtclient.LatestImageInfo
+
 	publicImage, err := updater.LatestImageInfo()
 	if err != nil {
 		log.Info("could not get public image", "updater", updater.Name())
 		return err
 	}
+
 	isDowngrade, err := updater.CheckForDowngrade(publicImage.Tag)
 	if err != nil || isDowngrade {
 		return err
 	}
+
 	setImageFromImageInfo(updater.Target(), *publicImage)
+
 	return nil
 }
 
@@ -93,12 +104,15 @@ func determineSource(updater StatusUpdater) status.VersionSource {
 	if updater.CustomImage() != "" {
 		return status.CustomImageVersionSource
 	}
+
 	if updater.IsPublicRegistryEnabled() {
 		return status.PublicRegistryVersionSource
 	}
+
 	if updater.CustomVersion() != "" {
 		return status.CustomVersionVersionSource
 	}
+
 	return status.TenantRegistryVersionSource
 }
 
@@ -193,5 +207,6 @@ func isDowngrade(updaterName, previousVersion, latestVersion string) (bool, erro
 			return true, err
 		}
 	}
+
 	return false, nil
 }

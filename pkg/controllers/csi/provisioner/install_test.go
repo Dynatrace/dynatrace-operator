@@ -117,6 +117,7 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(false, fmt.Errorf("BOOM"))
+		mockRegistryClient(provisioner, testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentImage(dk, processModule)
@@ -145,6 +146,7 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
+		mockRegistryClient(provisioner, testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentImage(dk, processModule)

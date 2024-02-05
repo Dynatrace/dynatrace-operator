@@ -32,6 +32,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 	}
 
 	targetImage := dynakube.CodeModulesImage()
+
 	imageDigest, err := provisioner.getDigest(dynakube, targetImage)
 	if err != nil {
 		return "", err
@@ -44,6 +45,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 		PathResolver: provisioner.path,
 		Metadata:     provisioner.db,
 	}
+
 	imageInstaller, err := provisioner.imageInstallerBuilder(provisioner.fs, props)
 	if err != nil {
 		return "", err
@@ -51,6 +53,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 
 	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(imageDigest)
 	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dynakube.GetName())
+
 	err = provisioner.installAgent(imageInstaller, dynakube, targetDir, targetImage, tenantUUID)
 	if err != nil {
 		return "", err
@@ -60,6 +63,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 	if err != nil {
 		return "", err
 	}
+
 	return imageDigest, err
 }
 
@@ -87,6 +91,7 @@ func (provisioner *OneAgentProvisioner) getDigest(dynakube dynatracev1beta1.Dyna
 	if err != nil {
 		return "", err
 	}
+
 	return string(imageVersion.Digest), nil
 }
 
@@ -95,11 +100,13 @@ func (provisioner *OneAgentProvisioner) installAgentZip(dynakube dynatracev1beta
 	if err != nil {
 		return "", err
 	}
+
 	targetVersion := dynakube.CodeModulesVersion()
 	urlInstaller := provisioner.urlInstallerBuilder(provisioner.fs, dtc, getUrlProperties(targetVersion, provisioner.path))
 
 	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(targetVersion)
 	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dynakube.GetName())
+
 	err = provisioner.installAgent(urlInstaller, dynakube, targetDir, targetVersion, tenantUUID)
 	if err != nil {
 		return "", err
@@ -109,6 +116,7 @@ func (provisioner *OneAgentProvisioner) installAgentZip(dynakube dynatracev1beta
 	if err != nil {
 		return "", err
 	}
+
 	return targetVersion, nil
 }
 
@@ -118,13 +126,16 @@ func (provisioner *OneAgentProvisioner) installAgent(agentInstaller installer.In
 		dynakube: &dynakube,
 	}
 	isNewlyInstalled, err := agentInstaller.InstallAgent(targetDir)
+
 	if err != nil {
 		eventRecorder.sendFailedInstallAgentVersionEvent(targetVersion, tenantUUID)
 		return err
 	}
+
 	if isNewlyInstalled {
 		eventRecorder.sendInstalledAgentVersionEvent(targetVersion, tenantUUID)
 	}
+
 	return nil
 }
 

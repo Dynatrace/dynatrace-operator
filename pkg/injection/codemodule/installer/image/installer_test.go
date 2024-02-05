@@ -54,6 +54,7 @@ func TestIsAlreadyPresent(t *testing.T) {
 func testFileSystemWithSharedDirPresent(pathResolver metadata.PathResolver, imageDigest string) afero.Fs {
 	fs := afero.NewMemMapFs()
 	fs.MkdirAll(pathResolver.AgentSharedBinaryDirForAgent(imageDigest), 0777)
+
 	return fs
 }
 
@@ -98,6 +99,7 @@ func TestInstaller_InstallAgent(t *testing.T) {
 		props     *Properties
 		transport http.RoundTripper
 	}
+
 	type args struct {
 		targetDir string
 	}
@@ -110,6 +112,7 @@ func TestInstaller_InstallAgent(t *testing.T) {
 			Body:       io.NopCloser(strings.NewReader(`OK`)),
 		}
 	})
+
 	tests := []struct {
 		name    string
 		fields  fields
@@ -148,10 +151,12 @@ func TestInstaller_InstallAgent(t *testing.T) {
 				props:     tt.fields.props,
 				transport: tt.fields.transport,
 			}
+
 			got, err := installer.InstallAgent(tt.args.targetDir)
 			if !tt.wantErr(t, err, fmt.Sprintf("InstallAgent(%v)", tt.args.targetDir)) {
 				return
 			}
+
 			assert.Equalf(t, tt.want, got, "InstallAgent(%v)", tt.args.targetDir)
 		})
 	}

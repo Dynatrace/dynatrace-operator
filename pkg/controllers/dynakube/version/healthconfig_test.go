@@ -92,8 +92,10 @@ func TestGetOneAgentHealthConfig(t *testing.T) {
 				require.Error(t, err)
 				require.Nil(t, healthConfig)
 				assert.Contains(t, err.Error(), testCase.inputVersion)
+
 				return
 			}
+
 			require.NoError(t, err)
 			require.NotNil(t, healthConfig)
 			assert.Equal(t, testCase.expectedCommand, healthConfig.Test)

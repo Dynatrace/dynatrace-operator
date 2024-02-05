@@ -212,106 +212,9 @@ func TestUpdateVersionStatus(t *testing.T) {
 
 		setImageFromImageInfo(&target, testImage)
 
-<<<<<<< HEAD
 		assert.Equal(t, testImage.String(), target.ImageID)
 		assert.Equal(t, testImage.Tag, target.Version)
 	})
-||||||| parent of 58a689e1 (resolve conflicts)
-func TestNewImageLib(t *testing.T) {
-	mockImageGetter := &registryMock.MockImageGetter{}
-	const fakeDigest = "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
-	fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
-	mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
-
-	tests := []struct {
-		input    string
-		expected string
-		wantErr  require.ErrorAssertionFunc
-	}{
-		{
-			input:    "some.registry.com/image",
-			expected: "",
-			wantErr:  require.Error,
-		},
-		{
-			input:    "some.registry.com/image:latest",
-			expected: "some.registry.com/image:latest@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
-			wantErr:  require.NoError,
-		},
-		{
-			input:    "some.registry.com/image@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
-			expected: "some.registry.com/image@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
-			wantErr:  require.NoError,
-		},
-		{
-			input:    "some.registry.com/image:0.1.2.3",
-			expected: "some.registry.com/image:0.1.2.3@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
-			wantErr:  require.NoError,
-		},
-		{
-			input:    "some.registry.com/image:0.1.2.3@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
-			expected: "some.registry.com/image:0.1.2.3@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
-			wantErr:  require.NoError,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.input, func(t *testing.T) {
-			targetNew := status.VersionStatus{}
-			err := setImageIDWithDigest(context.TODO(), &targetNew, mockImageGetter, test.input)
-			test.wantErr(t, err)
-			assert.Equal(t, test.expected, targetNew.ImageID)
-		})
-	}
-=======
-func TestNewImageLib(t *testing.T) {
-	mockImageGetter := &registryMock.MockImageGetter{}
-
-	const fakeDigest = "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
-	fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
-	mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
-
-	tests := []struct {
-		input    string
-		expected string
-		wantErr  require.ErrorAssertionFunc
-	}{
-		{
-			input:    "some.registry.com/image",
-			expected: "",
-			wantErr:  require.Error,
-		},
-		{
-			input:    "some.registry.com/image:latest",
-			expected: "some.registry.com/image:latest@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
-			wantErr:  require.NoError,
-		},
-		{
-			input:    "some.registry.com/image@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
-			expected: "some.registry.com/image@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
-			wantErr:  require.NoError,
-		},
-		{
-			input:    "some.registry.com/image:0.1.2.3",
-			expected: "some.registry.com/image:0.1.2.3@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
-			wantErr:  require.NoError,
-		},
-		{
-			input:    "some.registry.com/image:0.1.2.3@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
-			expected: "some.registry.com/image:0.1.2.3@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
-			wantErr:  require.NoError,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.input, func(t *testing.T) {
-			targetNew := status.VersionStatus{}
-			err := setImageIDWithDigest(context.TODO(), &targetNew, mockImageGetter, test.input)
-			test.wantErr(t, err)
-			assert.Equal(t, test.expected, targetNew.ImageID)
-		})
-	}
->>>>>>> 58a689e1 (resolve conflicts)
 }
 
 func TestGetTagFromImageID(t *testing.T) {
@@ -433,48 +336,6 @@ func newBaseUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool)
 	return updater
 }
 
-<<<<<<< HEAD
-||||||| parent of 58a689e1 (resolve conflicts)
-func newClassicFullStackDynakube() *dynatracev1beta1.DynaKube {
-	return &dynatracev1beta1.DynaKube{
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
-			},
-		},
-	}
-}
-
-func getTaggedReference(t *testing.T, image string) name.Tag {
-	ref, err := name.ParseReference(image)
-	require.NoError(t, err)
-	taggedRef, ok := ref.(name.Tag)
-	require.True(t, ok)
-	return taggedRef
-}
-
-=======
-func newClassicFullStackDynakube() *dynatracev1beta1.DynaKube {
-	return &dynatracev1beta1.DynaKube{
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
-			},
-		},
-	}
-}
-
-func getTaggedReference(t *testing.T, image string) name.Tag {
-	ref, err := name.ParseReference(image)
-	require.NoError(t, err)
-
-	taggedRef, ok := ref.(name.Tag)
-	require.True(t, ok)
-
-	return taggedRef
-}
-
->>>>>>> 58a689e1 (resolve conflicts)
 func assertStatusBasedOnTenantRegistry(t *testing.T, expectedImage, expectedVersion string, versionStatus status.VersionStatus) { //nolint:revive // argument-limit
 	assert.Equal(t, expectedImage, versionStatus.ImageID)
 	assert.Equal(t, expectedVersion, versionStatus.Version)

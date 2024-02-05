@@ -318,38 +318,14 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube
 func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioReconciler istio.Reconciler, dynakube *dynatracev1beta1.DynaKube) error {
 	// it's important to setup app injection before AG so that it is already working when AG pods start, in case code modules shall get
 	// injected into AG for self-monitoring reasons
-<<<<<<< HEAD
-
 	versionReconciler := controller.versionReconcilerBuilder(controller.apiReader, dynatraceClient, controller.fs, timeprovider.New().Freeze())
-||||||| parent of 58a689e1 (resolve conflicts)
-
-	registryClient, err := controller.createDynatraceRegistryClient(ctx, dynakube)
-	if err != nil {
-		return err
-	}
-
-	versionReconciler := controller.versionReconcilerBuilder(controller.apiReader, dynatraceClient, registryClient, controller.fs, timeprovider.New().Freeze())
-=======
-	registryClient, err := controller.createDynatraceRegistryClient(ctx, dynakube)
-	if err != nil {
-		return err
-	}
-
-	versionReconciler := controller.versionReconcilerBuilder(controller.apiReader, dynatraceClient, registryClient, controller.fs, timeprovider.New().Freeze())
->>>>>>> 58a689e1 (resolve conflicts)
 	connectionInfoReconciler := controller.connectionInfoReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient)
 
 	componentErrors := []error{}
 
 	log.Info("start reconciling ActiveGate")
-<<<<<<< HEAD
-	err := controller.reconcileActiveGate(ctx, dynakube, dynatraceClient, istioReconciler, connectionInfoReconciler, versionReconciler)
-||||||| parent of 58a689e1 (resolve conflicts)
-	err = controller.reconcileActiveGate(ctx, dynakube, dynatraceClient, istioReconciler, connectionInfoReconciler, versionReconciler)
-=======
 
-	err = controller.reconcileActiveGate(ctx, dynakube, dynatraceClient, istioReconciler, connectionInfoReconciler, versionReconciler)
->>>>>>> 58a689e1 (resolve conflicts)
+	err := controller.reconcileActiveGate(ctx, dynakube, dynatraceClient, istioReconciler, connectionInfoReconciler, versionReconciler)
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
 
@@ -396,52 +372,3 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	return goerrors.Join(componentErrors...)
 }
-<<<<<<< HEAD
-||||||| parent of 58a689e1 (resolve conflicts)
-
-func (controller *Controller) createDynatraceRegistryClient(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (registry.ImageGetter, error) {
-	pullSecret := dynakube.PullSecretWithoutData()
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-
-	transport, err := registry.PrepareTransportForDynaKube(ctx, controller.apiReader, transport, dynakube)
-	if err != nil {
-		return nil, err
-	}
-
-	registryClient, err := controller.registryClientBuilder(
-		registry.WithContext(ctx),
-		registry.WithApiReader(controller.apiReader),
-		registry.WithKeyChainSecret(&pullSecret),
-		registry.WithTransport(transport),
-	)
-
-	if err != nil {
-		return nil, err
-	}
-	return registryClient, nil
-}
-=======
-
-func (controller *Controller) createDynatraceRegistryClient(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (registry.ImageGetter, error) {
-	pullSecret := dynakube.PullSecretWithoutData()
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-
-	transport, err := registry.PrepareTransportForDynaKube(ctx, controller.apiReader, transport, dynakube)
-	if err != nil {
-		return nil, err
-	}
-
-	registryClient, err := controller.registryClientBuilder(
-		registry.WithContext(ctx),
-		registry.WithApiReader(controller.apiReader),
-		registry.WithKeyChainSecret(&pullSecret),
-		registry.WithTransport(transport),
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return registryClient, nil
-}
->>>>>>> 58a689e1 (resolve conflicts)
