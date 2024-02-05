@@ -240,8 +240,8 @@ linters:
   - usestdlibvars             # A linter that detect the possibility to use variables/constants from the Go standard library.
   - wastedassign              # wastedassign finds wasted assignment statements.
   - whitespace                # Tool for detection of leading and trailing whitespace.
+  - wsl                       # Add or remove empty lines.
   - zerologlint               # Detects the wrong usage of zerolog that a user forgets to dispatch with Send or Msg.
-  - wsl               # Add or remove empty lines.
 
 # Blocked:
 # false positive -> https://github.com/timakin/bodyclose/issues/51
