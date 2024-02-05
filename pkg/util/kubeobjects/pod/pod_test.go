@@ -22,6 +22,7 @@ func TestGetPod(t *testing.T) {
 			},
 		},
 	)
+
 	t.Run("get existing pod", func(t *testing.T) {
 		pod, err := Get(context.TODO(), fakeClient, testPodName, testNamespace)
 		require.NoError(t, err)

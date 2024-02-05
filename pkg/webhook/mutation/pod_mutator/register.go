@@ -47,6 +47,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 	if err != nil {
 		return errors.WithStack(err)
 	}
+
 	if apmExists {
 		eventRecorder.sendOneAgentAPMWarningEvent(webhookPod)
 		return errors.New("OneAgentAPM object detected - the Dynatrace webhook will not inject until the deprecated OneAgent Operator has been fully uninstalled")
@@ -100,6 +101,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 		requestCounter: requestCounter,
 	}})
 	log.Info("registered /inject endpoint")
+
 	return nil
 }
 
@@ -115,7 +117,9 @@ func getWebhookContainerImage(webhookPod corev1.Pod) (string, error) {
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
+
 	log.Info("got webhook's image", "image", webhookContainer.Image)
+
 	return webhookContainer.Image, nil
 }
 

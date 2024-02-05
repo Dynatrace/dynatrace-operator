@@ -38,6 +38,7 @@ func (mod ServicePortModifier) Modify(sts *appsv1.StatefulSet) error {
 	baseContainer.ReadinessProbe.HTTPGet.Port = intstr.FromString(consts.HttpsServicePortName)
 	baseContainer.Ports = append(baseContainer.Ports, mod.getPorts()...)
 	baseContainer.Env = mod.getEnvs()
+
 	return nil
 }
 
@@ -54,6 +55,7 @@ func (mod ServicePortModifier) getPorts() []corev1.ContainerPort {
 			ContainerPort: consts.HttpContainerPort,
 		})
 	}
+
 	return ports
 }
 
@@ -66,6 +68,7 @@ func (mod ServicePortModifier) getEnvs() []corev1.EnvVar {
 			},
 		},
 		prioritymap.WithPriority(modifierEnvPriority))
+
 	return mod.envMap.AsEnvVars()
 }
 

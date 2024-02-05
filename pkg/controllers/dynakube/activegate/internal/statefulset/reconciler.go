@@ -110,15 +110,18 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context) (*appsv1.State
 	statefulSetBuilder := NewStatefulSetBuilder(kubeUID, activeGateConfigurationHash, *r.dynakube, r.capability)
 
 	desiredSts, err := statefulSetBuilder.CreateStatefulSet(r.modifiers)
+
 	return desiredSts, errors.WithStack(err)
 }
 
 func (r *Reconciler) getStatefulSet(ctx context.Context, desiredSts *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 	var sts appsv1.StatefulSet
+
 	err := r.client.Get(ctx, client.ObjectKey{Name: desiredSts.Name, Namespace: desiredSts.Namespace}, &sts)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+
 	return &sts, nil
 }
 
@@ -128,6 +131,7 @@ func (r *Reconciler) createStatefulSetIfNotExists(ctx context.Context, desiredSt
 		log.Info("creating new stateful set for " + r.capability.ShortName())
 		return true, r.client.Create(ctx, desiredSts)
 	}
+
 	return false, err
 }
 
@@ -136,6 +140,7 @@ func (r *Reconciler) updateStatefulSetIfOutdated(ctx context.Context, desiredSts
 	if err != nil {
 		return false, err
 	}
+
 	if !hasher.IsAnnotationDifferent(currentSts, desiredSts) {
 		return false, nil
 	}
@@ -145,9 +150,11 @@ func (r *Reconciler) updateStatefulSetIfOutdated(ctx context.Context, desiredSts
 	}
 
 	log.Info("updating existing stateful set")
+
 	if err = r.client.Update(ctx, desiredSts); err != nil {
 		return false, err
 	}
+
 	return true, err
 }
 
@@ -176,6 +183,7 @@ func (r *Reconciler) deleteStatefulSetIfSelectorChanged(ctx context.Context, des
 
 	if hasSelectorChanged(desiredSts, currentSts) {
 		log.Info("deleting existing stateful set because selector changed")
+
 		if err = r.client.Delete(ctx, desiredSts); err != nil {
 			return false, err
 		}
@@ -222,6 +230,7 @@ func (r *Reconciler) getCustomPropertyValue() (string, error) {
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
+
 	return customPropertyData, nil
 }
 
@@ -234,6 +243,7 @@ func (r *Reconciler) getAuthTokenValue() (string, error) {
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
+
 	return authTokenData, nil
 }
 
@@ -241,6 +251,7 @@ func (r *Reconciler) getDataFromCustomProperty(customProperties *dynatracev1beta
 	if customProperties.ValueFrom != "" {
 		return secret.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dynakube.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey, log)
 	}
+
 	return customProperties.Value, nil
 }
 

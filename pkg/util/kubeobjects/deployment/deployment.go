@@ -18,6 +18,7 @@ import (
 // GetDeployment returns the Deployment object who is the owner of this pod.
 func GetDeployment(c client.Client, podName, namespace string) (*appsv1.Deployment, error) {
 	var pod corev1.Pod
+
 	err := c.Get(context.TODO(), client.ObjectKey{Name: podName, Namespace: namespace}, &pod)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -46,6 +47,7 @@ func GetDeployment(c client.Client, podName, namespace string) (*appsv1.Deployme
 	if err := c.Get(context.TODO(), client.ObjectKey{Name: dOwner.Name, Namespace: namespace}, &d); err != nil {
 		return nil, errors.WithStack(err)
 	}
+
 	return &d, nil
 }
 
@@ -68,14 +70,17 @@ func CreateOrUpdateDeployment(c client.Client, logger logr.Logger, desiredDeploy
 	}
 
 	logger.Info("updating existing deployment", "name", desiredDeployment.Name)
+
 	if err = c.Update(context.TODO(), desiredDeployment); err != nil {
 		return false, err
 	}
+
 	return true, err
 }
 
 func getDeployment(c client.Client, desiredDeployment *appsv1.Deployment) (*appsv1.Deployment, error) {
 	var actualDaemonSet appsv1.Deployment
+
 	err := c.Get(
 		context.TODO(),
 		object.Key(desiredDeployment),
@@ -84,6 +89,7 @@ func getDeployment(c client.Client, desiredDeployment *appsv1.Deployment) (*apps
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+
 	return &actualDaemonSet, nil
 }
 
@@ -92,7 +98,9 @@ func recreateDeployment(c client.Client, logger logr.Logger, currentDs, desiredD
 	if err != nil {
 		return false, err
 	}
+
 	logger.Info("deleted deployment")
 	logger.Info("recreating deployment", "name", desiredDeployment.Name)
+
 	return true, c.Create(context.TODO(), desiredDeployment)
 }

@@ -64,6 +64,7 @@ func createSecret(auths Auths) (*corev1.Secret, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).
 		dataAppend(dtpullsecret.DockerConfigJson, string(authsBytes)).
 		build(), nil
@@ -90,6 +91,7 @@ func TestImagePullable(t *testing.T) {
 			"/v2/" + testActiveGateCustomImage + "/manifests/" + testVersion,
 		})
 	require.NoError(t, err)
+
 	defer dockerServer.Close()
 
 	tests := []struct {
@@ -392,6 +394,7 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 			"/v2/" + testOneAgentCodeModulesImage + "/manifests/" + testVersion,
 		})
 	require.NoError(t, err)
+
 	defer dockerServer.Close()
 
 	t.Run("OneAgent code modules unreachable server", func(t *testing.T) {
@@ -441,6 +444,7 @@ func testDockerServerHandler(method string, serverUrls []string) http.HandlerFun
 				return
 			}
 		}
+
 		writer.WriteHeader(http.StatusBadRequest)
 	}
 }
@@ -468,5 +472,6 @@ func getPullSecretToken(pullSecret *corev1.Secret) (string, error) {
 	}
 
 	secretStr := string(secretBytes)
+
 	return secretStr, nil
 }

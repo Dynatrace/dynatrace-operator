@@ -20,6 +20,7 @@ func TestReconcile(t *testing.T) {
 	tenantUUID := "testTenant"
 	apiUrl := fmt.Sprintf("https://%s.dev.dynatracelabs.com/api", tenantUUID)
 	namespace := "test-namespace"
+
 	t.Run(`no latest version in status`, func(t *testing.T) {
 		dynakube := dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{

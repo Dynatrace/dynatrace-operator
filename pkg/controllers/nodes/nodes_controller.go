@@ -67,6 +67,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	nodeName := request.NamespacedName.Name
 	dynakube, err := controller.determineDynakubeForNode(nodeName)
 	log.Info("reconciling node name", "node", nodeName)
+
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -82,6 +83,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 			// if there is no node it means it get deleted
 			return reconcile.Result{}, controller.reconcileNodeDeletion(ctx, nodeName)
 		}
+
 		return reconcile.Result{}, err
 	}
 
@@ -121,6 +123,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		if err := controller.handleOutdatedCache(ctx, nodeCache); err != nil {
 			return reconcile.Result{}, err
 		}
+
 		nodeCache.UpdateTimestamp()
 	}
 
@@ -144,6 +147,7 @@ func (controller *Controller) reconcileNodeDeletion(ctx context.Context, nodeNam
 			// uncached node -> ignoring
 			return nil
 		}
+
 		return err
 	}
 
@@ -160,9 +164,11 @@ func (controller *Controller) reconcileNodeDeletion(ctx context.Context, nodeNam
 	}
 
 	nodeCache.Delete(nodeName)
+
 	if err := controller.updateCache(ctx, nodeCache); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -212,6 +218,7 @@ func (controller *Controller) updateCache(ctx context.Context, nodeCache *Cache)
 	if err := controller.client.Update(ctx, nodeCache.Obj); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -223,6 +230,7 @@ func (controller *Controller) handleOutdatedCache(ctx context.Context, nodeCache
 
 	for _, cachedNodeName := range nodeCache.Keys() {
 		cachedNodeInCluster := false
+
 		for _, clusterNode := range nodeLst.Items {
 			if clusterNode.Name == cachedNodeName {
 				// We ignore errors because we always ask ONLY existing key from the cache,
@@ -231,6 +239,7 @@ func (controller *Controller) handleOutdatedCache(ctx context.Context, nodeCache
 				cachedNodeInCluster = true
 				// Check if node was seen less than an hour ago, otherwise do not remove from cache
 				controller.removeNodeFromCache(nodeCache, cachedNodeInfo, cachedNodeName)
+
 				break
 			}
 		}
@@ -238,12 +247,14 @@ func (controller *Controller) handleOutdatedCache(ctx context.Context, nodeCache
 		// if node is not in cluster -> probably deleted
 		if !cachedNodeInCluster {
 			log.Info("Removing missing cached node from cluster", "node", cachedNodeName)
+
 			err := controller.reconcileNodeDeletion(ctx, cachedNodeName)
 			if err != nil {
 				return err
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -259,13 +270,14 @@ func (controller *Controller) isNodeDeletable(cachedNode CacheEntry) bool {
 	} else if cachedNode.IPAddress == "" {
 		return true
 	}
+
 	return false
 }
 
 func (controller *Controller) sendMarkedForTermination(dynakubeInstance *dynatracev1beta1.DynaKube, cachedNode CacheEntry) error {
 	tokenReader := token.NewReader(controller.apiReader, dynakubeInstance)
-	tokens, err := tokenReader.ReadTokens(context.TODO())
 
+	tokens, err := tokenReader.ReadTokens(context.TODO())
 	if err != nil {
 		return err
 	}
@@ -284,6 +296,7 @@ func (controller *Controller) sendMarkedForTermination(dynakubeInstance *dynatra
 			log.Info("skipping to send mark for termination event", "dynakube", dynakubeInstance.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
 			return nil
 		}
+
 		log.Info("failed to send mark for termination event",
 			"reason", "failed to determine entity id", "dynakube", dynakubeInstance.Name, "nodeIP", cachedNode.IPAddress, "cause", err)
 
@@ -291,6 +304,7 @@ func (controller *Controller) sendMarkedForTermination(dynakubeInstance *dynatra
 	}
 
 	ts := uint64(cachedNode.LastSeen.Add(-10*time.Minute).UnixNano()) / uint64(time.Millisecond)
+
 	return dynatraceClient.SendEvent(&dtclient.EventData{
 		EventType:     dtclient.MarkedForTerminationEvent,
 		Source:        "Dynatrace Operator",
@@ -330,6 +344,7 @@ func (controller *Controller) hasUnschedulableTaint(node *corev1.Node) bool {
 			}
 		}
 	}
+
 	return false
 }
 

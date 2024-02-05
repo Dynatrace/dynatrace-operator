@@ -33,6 +33,7 @@ func AddEdgeConnectValidationWebhookToManager(manager ctrl.Manager) error {
 	manager.GetWebhookServer().Register("/validate/edgeconnect", &webhook.Admission{
 		Handler: newEdgeConnectValidator(manager.GetClient(), manager.GetAPIReader(), manager.GetConfig()),
 	})
+
 	return nil
 }
 
@@ -40,25 +41,31 @@ func (validator *edgeconnectValidator) Handle(ctx context.Context, request admis
 	log.Info("validating edgeconnect request", "name", request.Name, "namespace", request.Namespace)
 
 	edgeConnect := &edgeconnect.EdgeConnect{}
+
 	err := decodeRequestToEdgeConnect(request, edgeConnect)
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, errors.WithStack(err))
 	}
+
 	validationErrors := validator.runValidators(ctx, validators, edgeConnect)
 	response := admission.Allowed("")
+
 	if len(validationErrors) > 0 {
 		response = admission.Denied(validation.SumErrors(validationErrors, "EdgeConnect"))
 	}
+
 	return response
 }
 
 func (validator *edgeconnectValidator) runValidators(ctx context.Context, validators []validator, edgeConnect *edgeconnect.EdgeConnect) []string {
 	results := []string{}
+
 	for _, validate := range validators {
 		if errMsg := validate(ctx, validator, edgeConnect); errMsg != "" {
 			results = append(results, errMsg)
 		}
 	}
+
 	return results
 }
 
@@ -69,5 +76,6 @@ func decodeRequestToEdgeConnect(request admission.Request, edgeConnect *edgeconn
 	if err != nil {
 		return errors.WithStack(err)
 	}
+
 	return nil
 }

@@ -22,6 +22,7 @@ func (timeProvider *Provider) Now() *metav1.Time {
 	if timeProvider.now != nil {
 		return timeProvider.now
 	}
+
 	return Now()
 }
 

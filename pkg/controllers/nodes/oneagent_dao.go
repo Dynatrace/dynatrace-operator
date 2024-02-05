@@ -12,15 +12,18 @@ func (controller *Controller) determineDynakubeForNode(nodeName string) (*dynatr
 	if err != nil {
 		return nil, err
 	}
+
 	return controller.filterDynakubeFromList(dks, nodeName), nil
 }
 
 func (controller *Controller) getDynakubeList() (*dynatracev1beta1.DynaKubeList, error) {
 	var dynakubeList dynatracev1beta1.DynaKubeList
+
 	err := controller.apiReader.List(context.TODO(), &dynakubeList, client.InNamespace(controller.podNamespace))
 	if err != nil {
 		return nil, err
 	}
+
 	return &dynakubeList, nil
 }
 
@@ -32,5 +35,6 @@ func (controller *Controller) filterDynakubeFromList(dkList *dynatracev1beta1.Dy
 			return &dynakube
 		}
 	}
+
 	return nil
 }

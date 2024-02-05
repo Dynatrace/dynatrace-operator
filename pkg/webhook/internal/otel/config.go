@@ -23,6 +23,7 @@ func Meter() metric.Meter {
 		tracer = otel.Tracer(otelInstrumentationScope)
 		meter = otel.Meter(otelInstrumentationScope)
 	})
+
 	return meter
 }
 
@@ -31,5 +32,6 @@ func Tracer() trace.Tracer {
 		tracer = otel.Tracer(otelInstrumentationScope)
 		meter = otel.Meter(otelInstrumentationScope)
 	})
+
 	return tracer
 }

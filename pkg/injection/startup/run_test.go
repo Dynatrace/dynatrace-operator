@@ -32,6 +32,7 @@ func TestNewRunner(t *testing.T) {
 	t.Run("create runner with oneagent and data-ingest injection", func(t *testing.T) {
 		resetEnv := prepCombinedTestEnv(t)
 		runner, err := NewRunner(fs)
+
 		resetEnv()
 
 		require.NoError(t, err)
@@ -46,6 +47,7 @@ func TestNewRunner(t *testing.T) {
 	t.Run("create runner with only oneagent", func(t *testing.T) {
 		resetEnv := prepOneAgentTestEnv(t)
 		runner, err := NewRunner(fs)
+
 		resetEnv()
 
 		require.NoError(t, err)
@@ -59,6 +61,7 @@ func TestNewRunner(t *testing.T) {
 	t.Run("create runner with only data-ingest injection", func(t *testing.T) {
 		resetEnv := prepDataIngestTestEnv(t, false)
 		runner, err := NewRunner(fs)
+
 		resetEnv()
 
 		require.NoError(t, err)
@@ -207,6 +210,7 @@ func TestRun(t *testing.T) {
 		runner.installer.(*mockedinstaller.Installer).
 			On("InstallAgent", consts.AgentBinDirMount).
 			Return(true, nil)
+
 		runner.fs = prepReadOnlyCSIFilesystem(t, afero.NewMemMapFs())
 		runner.config.CSIMode = false
 		runner.fs.Create(filepath.Join(consts.AgentBinDirMount, "agent/conf/ruxitagentproc.conf"))
@@ -291,6 +295,7 @@ func TestGetProcessModuleConfig(t *testing.T) {
 
 	t.Run("add proxy to process module config", func(t *testing.T) {
 		const proxy = "dummy-proxy"
+
 		runner := createMockedRunner(t)
 		runner.config.Proxy = proxy
 		runner.dtclient.(*mockedclient.Client).
@@ -310,6 +315,7 @@ func TestGetProcessModuleConfig(t *testing.T) {
 
 	t.Run("add proxy to process module config", func(t *testing.T) {
 		const oneAgentNoProxy = "dummy-no-proxy"
+
 		runner := createMockedRunner(t)
 		runner.config.OneAgentNoProxy = oneAgentNoProxy
 		runner.dtclient.(*mockedclient.Client).
@@ -345,6 +351,7 @@ k8s_cluster_id TEST_K8S_CLUSTER_ID
 tenant test
 isCloudNativeFullStack true
 `
+
 	runner := createMockedRunner(t)
 
 	t.Run("create config files in case of application monitoring", func(t *testing.T) {
@@ -354,6 +361,7 @@ isCloudNativeFullStack true
 		err := runner.createContainerConfigurationFiles()
 
 		require.NoError(t, err)
+
 		for i, container := range runner.env.Containers {
 			filePath := filepath.Join(
 				consts.AgentShareDirMount,
@@ -384,6 +392,7 @@ isCloudNativeFullStack true
 		err := runner.createContainerConfigurationFiles()
 
 		require.NoError(t, err)
+
 		for i, container := range runner.env.Containers {
 			filePath := filepath.Join(
 				consts.AgentShareDirMount,
@@ -479,9 +488,11 @@ func createTestRunner(t *testing.T) *Runner {
 	resetEnv := prepCombinedTestEnv(t)
 
 	runner, err := NewRunner(fs)
+
 	resetEnv()
 	require.NoError(t, err)
 	require.NotNil(t, runner)
+
 	return runner
 }
 
@@ -489,6 +500,7 @@ func createMockedRunner(t *testing.T) *Runner {
 	runner := createTestRunner(t)
 	runner.installer = mockedinstaller.NewInstaller(t)
 	runner.dtclient = mockedclient.NewClient(t)
+
 	return runner
 }
 

@@ -34,6 +34,7 @@ func (nm NamespaceMapper) MapFromNamespace(ctx context.Context) (bool, error) {
 		span.RecordError(err)
 		return false, err
 	}
+
 	return updatedNamespace, nil
 }
 
@@ -42,8 +43,8 @@ func (nm NamespaceMapper) updateNamespace(ctx context.Context) (bool, error) {
 	defer span.End()
 
 	deployedDynakubes := &dynatracev1beta1.DynaKubeList{}
-	err := nm.client.List(ctx, deployedDynakubes)
 
+	err := nm.client.List(ctx, deployedDynakubes)
 	if err != nil {
 		span.RecordError(err)
 		return false, errors.Cause(err)

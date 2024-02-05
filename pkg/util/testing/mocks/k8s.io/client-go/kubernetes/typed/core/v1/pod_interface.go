@@ -69,6 +69,7 @@ func (_c *PodInterface_Apply_Call) Run(run func(ctx context.Context, pod *v1.Pod
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*v1.PodApplyConfiguration), args[2].(metav1.ApplyOptions))
 	})
+
 	return _c
 }
 
@@ -117,6 +118,7 @@ func (_c *PodInterface_ApplyStatus_Call) Run(run func(ctx context.Context, pod *
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*v1.PodApplyConfiguration), args[2].(metav1.ApplyOptions))
 	})
+
 	return _c
 }
 
@@ -156,6 +158,7 @@ func (_c *PodInterface_Bind_Call) Run(run func(ctx context.Context, binding *cor
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*corev1.Binding), args[2].(metav1.CreateOptions))
 	})
+
 	return _c
 }
 
@@ -204,6 +207,7 @@ func (_c *PodInterface_Create_Call) Run(run func(ctx context.Context, pod *corev
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*corev1.Pod), args[2].(metav1.CreateOptions))
 	})
+
 	return _c
 }
 
@@ -243,6 +247,7 @@ func (_c *PodInterface_Delete_Call) Run(run func(ctx context.Context, name strin
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(metav1.DeleteOptions))
 	})
+
 	return _c
 }
 
@@ -282,6 +287,7 @@ func (_c *PodInterface_DeleteCollection_Call) Run(run func(ctx context.Context, 
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(metav1.DeleteOptions), args[2].(metav1.ListOptions))
 	})
+
 	return _c
 }
 
@@ -320,6 +326,7 @@ func (_c *PodInterface_Evict_Call) Run(run func(ctx context.Context, eviction *v
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*v1beta1.Eviction))
 	})
+
 	return _c
 }
 
@@ -358,6 +365,7 @@ func (_c *PodInterface_EvictV1_Call) Run(run func(ctx context.Context, eviction 
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*policyv1.Eviction))
 	})
+
 	return _c
 }
 
@@ -396,6 +404,7 @@ func (_c *PodInterface_EvictV1beta1_Call) Run(run func(ctx context.Context, evic
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*v1beta1.Eviction))
 	})
+
 	return _c
 }
 
@@ -444,6 +453,7 @@ func (_c *PodInterface_Get_Call) Run(run func(ctx context.Context, name string, 
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(metav1.GetOptions))
 	})
+
 	return _c
 }
 
@@ -484,6 +494,7 @@ func (_c *PodInterface_GetLogs_Call) Run(run func(name string, opts *corev1.PodL
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string), args[1].(*corev1.PodLogOptions))
 	})
+
 	return _c
 }
 
@@ -531,6 +542,7 @@ func (_c *PodInterface_List_Call) Run(run func(ctx context.Context, opts metav1.
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(metav1.ListOptions))
 	})
+
 	return _c
 }
 
@@ -545,6 +557,7 @@ func (_m *PodInterface) Patch(ctx context.Context, name string, pt types.PatchTy
 	for _i := range subresources {
 		_va[_i] = subresources[_i]
 	}
+
 	var _ca []interface{}
 	_ca = append(_ca, ctx, name, pt, data, opts)
 	_ca = append(_ca, _va...)
@@ -589,13 +602,16 @@ func (_e *PodInterface_Expecter) Patch(ctx interface{}, name interface{}, pt int
 func (_c *PodInterface_Patch_Call) Run(run func(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string)) *PodInterface_Patch_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]string, len(args)-5)
+
 		for i, a := range args[5:] {
 			if a != nil {
 				variadicArgs[i] = a.(string)
 			}
 		}
+
 		run(args[0].(context.Context), args[1].(string), args[2].(types.PatchType), args[3].([]byte), args[4].(metav1.PatchOptions), variadicArgs...)
 	})
+
 	return _c
 }
 
@@ -639,6 +655,7 @@ func (_c *PodInterface_ProxyGet_Call) Run(run func(scheme string, name string, p
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string), args[1].(string), args[2].(string), args[3].(string), args[4].(map[string]string))
 	})
+
 	return _c
 }
 
@@ -687,6 +704,7 @@ func (_c *PodInterface_Update_Call) Run(run func(ctx context.Context, pod *corev
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*corev1.Pod), args[2].(metav1.UpdateOptions))
 	})
+
 	return _c
 }
 
@@ -736,6 +754,7 @@ func (_c *PodInterface_UpdateEphemeralContainers_Call) Run(run func(ctx context.
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(*corev1.Pod), args[3].(metav1.UpdateOptions))
 	})
+
 	return _c
 }
 
@@ -784,6 +803,7 @@ func (_c *PodInterface_UpdateStatus_Call) Run(run func(ctx context.Context, pod 
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*corev1.Pod), args[2].(metav1.UpdateOptions))
 	})
+
 	return _c
 }
 
@@ -831,6 +851,7 @@ func (_c *PodInterface_Watch_Call) Run(run func(ctx context.Context, opts metav1
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(metav1.ListOptions))
 	})
+
 	return _c
 }
 

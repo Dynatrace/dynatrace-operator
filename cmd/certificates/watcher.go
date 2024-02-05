@@ -57,6 +57,7 @@ func (watcher *CertificateWatcher) watchForCertificatesSecret() {
 	for {
 		<-time.After(certificateRenewalInterval)
 		log.Info("checking for new certificates")
+
 		if updated, err := watcher.updateCertificatesFromSecret(); err != nil {
 			log.Info("failed to update certificates", "error", err)
 		} else if updated {
@@ -86,12 +87,14 @@ func (watcher *CertificateWatcher) updateCertificatesFromSecret() (bool, error) 
 			return false, err
 		}
 	}
+
 	isValid, err := certsutils.ValidateCertificateExpiration(secret.Data[certificates.ServerCert], certificateRenewalInterval, time.Now(), log)
 	if err != nil {
 		return false, err
 	} else if !isValid {
 		return false, fmt.Errorf("certificate is outdated")
 	}
+
 	return true, nil
 }
 
@@ -106,23 +109,27 @@ func (watcher *CertificateWatcher) ensureCertificateFile(secret corev1.Secret, f
 	} else {
 		return false, err
 	}
+
 	return true, nil
 }
 
 func (watcher *CertificateWatcher) WaitForCertificates() {
 	for threshold := time.Now().Add(fiveMinutes); time.Now().Before(threshold); {
 		_, err := watcher.updateCertificatesFromSecret()
-
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
 				log.Info("waiting for certificate secret to be available.")
 			} else {
 				log.Info("failed to update certificates", "error", err)
 			}
+
 			time.Sleep(10 * time.Second)
+
 			continue
 		}
+
 		break
 	}
+
 	go watcher.watchForCertificatesSecret()
 }

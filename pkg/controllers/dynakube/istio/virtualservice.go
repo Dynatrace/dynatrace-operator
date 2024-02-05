@@ -22,6 +22,7 @@ func buildVirtualService(meta metav1.ObjectMeta, commHosts []dtclient.Communicat
 			nonIPhosts = append(nonIPhosts, commHost)
 		}
 	}
+
 	if len(nonIPhosts) == 0 {
 		return nil
 	}
@@ -34,6 +35,7 @@ func buildVirtualService(meta metav1.ObjectMeta, commHosts []dtclient.Communicat
 
 func buildVirtualServiceSpec(commHosts []dtclient.CommunicationHost) istio.VirtualService {
 	hosts := make([]string, len(commHosts))
+
 	var (
 		tlses  []*istio.TLSRoute
 		routes []*istio.HTTPRoute
@@ -41,6 +43,7 @@ func buildVirtualServiceSpec(commHosts []dtclient.CommunicationHost) istio.Virtu
 
 	for i, commHost := range commHosts {
 		hosts[i] = commHost.Host
+
 		switch commHost.Protocol {
 		case protocolHttps:
 			tlses = append(tlses, buildVirtualServiceTLSRoute(commHost.Host, commHost.Port))
@@ -48,6 +51,7 @@ func buildVirtualServiceSpec(commHosts []dtclient.CommunicationHost) istio.Virtu
 			routes = append(routes, buildVirtualServiceHttpRoute(commHost.Host, commHost.Port))
 		}
 	}
+
 	return istio.VirtualService{
 		Hosts: hosts,
 		Http:  routes,

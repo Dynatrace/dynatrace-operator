@@ -11,6 +11,7 @@ func TestCloseBodyAfterRequest(t *testing.T) {
 	type args struct {
 		response *http.Response
 	}
+
 	tests := []struct {
 		name string
 		args args

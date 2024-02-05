@@ -37,6 +37,7 @@ func (mod CustomPropertiesModifier) Modify(sts *appsv1.StatefulSet) error {
 	baseContainer := container.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)
+
 	return nil
 }
 
@@ -53,6 +54,7 @@ func (mod CustomPropertiesModifier) getVolumes() []corev1.Volume {
 					}}},
 		},
 	}
+
 	return volumes
 }
 
@@ -69,6 +71,7 @@ func (mod CustomPropertiesModifier) getVolumeMounts() []corev1.VolumeMount {
 
 func (mod CustomPropertiesModifier) hasCustomProperties() bool {
 	customProperties := mod.capability.Properties().CustomProperties
+
 	return customProperties != nil &&
 		(customProperties.Value != "" ||
 			customProperties.ValueFrom != "")
@@ -78,5 +81,6 @@ func (mod CustomPropertiesModifier) determineCustomPropertiesSource() string {
 	if mod.capability.Properties().CustomProperties.ValueFrom == "" {
 		return fmt.Sprintf("%s-%s-%s", mod.dynakube.Name, mod.dynakube.ActiveGateServiceAccountOwner(), customproperties.Suffix)
 	}
+
 	return mod.capability.Properties().CustomProperties.ValueFrom
 }

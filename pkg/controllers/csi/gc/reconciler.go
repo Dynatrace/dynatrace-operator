@@ -40,12 +40,14 @@ func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db m
 
 func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("running OneAgent garbage collection", "namespace", request.Namespace, "name", request.Name)
+
 	defaultReconcileResult := reconcile.Result{}
 
 	dynakube, err := getDynakubeFromRequest(ctx, gc.apiReader, request)
 	if err != nil {
 		return defaultReconcileResult, err
 	}
+
 	if dynakube == nil {
 		return defaultReconcileResult, nil
 	}
@@ -76,6 +78,7 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 	}
 
 	log.Info("running shared binary garbage collection")
+
 	if err := gc.runSharedBinaryGarbageCollection(ctx); err != nil {
 		log.Info("failed to garbage collect the shared images")
 		return defaultReconcileResult, err
@@ -93,7 +96,9 @@ func getDynakubeFromRequest(ctx context.Context, apiReader client.Reader, reques
 		}
 
 		log.Info("failed to get DynaKube object")
+
 		return nil, errors.WithStack(err)
 	}
+
 	return &dynakube, nil
 }

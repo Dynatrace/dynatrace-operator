@@ -33,6 +33,7 @@ func (dtc *dynatraceClient) getOneAgentConnectionInfoUrl() string {
 	if dtc.networkZone != "" {
 		return fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo?networkZone=%s&defaultZoneFallback=true", dtc.url, dtc.networkZone)
 	}
+
 	return fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dtc.url)
 }
 
@@ -53,6 +54,7 @@ func (dtc *dynatraceClient) getSettingsUrl(validate bool) string {
 	if !validate {
 		validationQuery = "?validateOnly=false"
 	}
+
 	return fmt.Sprintf("%s/v2/settings/objects%s", dtc.url, validationQuery)
 }
 
@@ -88,5 +90,6 @@ func appendTechnologies(url string, technologies []string) string {
 	for _, tech := range technologies {
 		url = fmt.Sprintf("%s&include=%s", url, tech)
 	}
+
 	return url
 }

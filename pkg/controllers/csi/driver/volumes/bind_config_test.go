@@ -41,6 +41,7 @@ func TestNewBindConfig(t *testing.T) {
 			Version:      testAgentVersion,
 			DynakubeName: testDynakubeName,
 		}
+
 		assert.NoError(t, err)
 		assert.NotNil(t, bindCfg)
 		assert.Equal(t, expected, *bindCfg)

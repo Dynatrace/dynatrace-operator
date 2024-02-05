@@ -17,5 +17,6 @@ func Delete(ctx context.Context, client client.Client, obj client.Object) error 
 	if err := client.Delete(ctx, obj); err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
+
 	return nil
 }

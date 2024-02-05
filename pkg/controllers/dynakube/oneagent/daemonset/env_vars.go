@@ -43,6 +43,7 @@ func (dsInfo *builderInfo) environmentVariables() ([]corev1.EnvVar, error) {
 	if err != nil {
 		return []corev1.EnvVar{}, err
 	}
+
 	if !isProxyAsEnvVarDeprecated {
 		// deprecated
 		dsInfo.addProxyEnv(envMap)
@@ -101,6 +102,7 @@ func (dsInfo *builderInfo) addProxyEnv(envVarMap *prioritymap.Map) {
 	if !dsInfo.hasProxy() {
 		return
 	}
+
 	if dsInfo.dynakube.Spec.Proxy.ValueFrom != "" {
 		addDefaultValueSource(envVarMap, proxyEnv, &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
@@ -150,10 +152,12 @@ func IsProxyAsEnvVarDeprecated(oneAgentVersion string) (bool, error) {
 	if oneAgentVersion == "" {
 		return false, nil
 	}
+
 	runningVersion, err := version.ExtractSemanticVersion(oneAgentVersion)
 	if err != nil {
 		return false, err
 	}
+
 	versionConstraint, err := version.ExtractSemanticVersion(ProxyAsEnvVarDeprecatedVersion)
 	if err != nil {
 		return false, err
@@ -165,5 +169,6 @@ func IsProxyAsEnvVarDeprecated(oneAgentVersion string) (bool, error) {
 	if result < 0 {
 		return false, nil
 	}
+
 	return true, nil
 }

@@ -66,6 +66,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		}
 
 		signalHandler := ctrl.SetupSignalHandler()
+
 		access, err := metadata.NewAccess(signalHandler, dtcsi.MetadataAccessPath)
 		if err != nil {
 			return err
@@ -81,10 +82,12 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		if csiManager != nil {
 			apiReader = csiManager.GetAPIReader()
 		}
+
 		err = metadata.NewCorrectnessChecker(apiReader, access, csiOptions).CorrectCSI(signalHandler)
 		if err != nil {
 			return err
 		}
+
 		return nil
 	}
 }

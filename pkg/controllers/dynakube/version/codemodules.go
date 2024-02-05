@@ -64,6 +64,7 @@ func (updater *codeModulesUpdater) UseTenantRegistry(_ context.Context) error {
 				Version: customVersion,
 			},
 		}
+
 		return nil
 	}
 
@@ -79,6 +80,7 @@ func (updater *codeModulesUpdater) UseTenantRegistry(_ context.Context) error {
 			Version: latestAgentVersionUnixPaas,
 		},
 	}
+
 	return nil
 }
 

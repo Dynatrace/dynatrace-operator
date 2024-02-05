@@ -20,6 +20,7 @@ func GenerateHash(ds any) (string, error) {
 	}
 
 	hasher := fnv.New32()
+
 	_, err = hasher.Write(data)
 	if err != nil {
 		return "", errors.WithStack(err)
@@ -33,10 +34,12 @@ func IsDifferent(a, b any) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
 	hashB, err := GenerateHash(b)
 	if err != nil {
 		return false, err
 	}
+
 	return hashA != hashB, nil
 }
 
@@ -48,6 +51,7 @@ func getHash(a metav1.Object) string {
 	if annotations := a.GetAnnotations(); annotations != nil {
 		return annotations[AnnotationHash]
 	}
+
 	return ""
 }
 
@@ -55,15 +59,19 @@ func AddAnnotation(object metav1.Object) error {
 	if object == nil || reflect.ValueOf(object).IsNil() {
 		return errors.New("nil objects can't have a hash annotation")
 	}
+
 	annotations := object.GetAnnotations()
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
+
 	objectHash, err := GenerateHash(object)
 	if err != nil {
 		return err
 	}
+
 	annotations[AnnotationHash] = objectHash
 	object.SetAnnotations(annotations)
+
 	return nil
 }

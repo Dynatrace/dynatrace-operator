@@ -105,8 +105,10 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		if k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, provisioner.db.DeleteDynakube(ctx, request.Name)
 		}
+
 		return reconcile.Result{}, err
 	}
+
 	if !dk.NeedsCSIDriver() {
 		log.Info("CSI driver provisioner not needed")
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.db.DeleteDynakube(ctx, request.Name)
@@ -150,11 +152,14 @@ func (provisioner *OneAgentProvisioner) setupFileSystem(dk *dynatracev1beta1.Dyn
 	if err != nil {
 		return err
 	}
+
 	if err := provisioner.createCSIDirectories(tenantUUID); err != nil {
 		log.Error(err, "error when creating csi directories", "path", provisioner.path.TenantDir(tenantUUID))
 		return errors.WithStack(err)
 	}
+
 	log.Info("csi directories exist", "path", provisioner.path.TenantDir(tenantUUID))
+
 	return nil
 }
 
@@ -225,6 +230,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 		if err != nil {
 			return false, err
 		}
+
 		latestProcessModuleConfig.AddProxy(proxy)
 
 		if dk.NeedsActiveGate() {
@@ -254,11 +260,13 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 			dynakubeMetadata.ImageDigest = ""
 		}
 	}
+
 	return false, nil
 }
 
 func (provisioner *OneAgentProvisioner) getAgentTenantToken(ctx context.Context, dk *dynatracev1beta1.DynaKube) (string, error) {
 	query := secret.NewQuery(ctx, provisioner.client, provisioner.apiReader, log)
+
 	secret, err := query.Get(types.NamespacedName{Namespace: dk.Namespace, Name: dk.OneagentTenantSecret()})
 	if err != nil {
 		return "", errors.Wrapf(err, "OneAgent tenant token secret %s/%s not found", dk.Namespace, dk.OneagentTenantSecret())
@@ -306,6 +314,7 @@ func (provisioner *OneAgentProvisioner) createOrUpdateDynakubeMetadata(ctx conte
 			"tenantUUID", dynakube.TenantUUID,
 			"version", dynakube.LatestVersion,
 			"max mount attempts", dynakube.MaxFailedMountAttempts)
+
 		if oldDynakube == (metadata.Dynakube{}) {
 			log.Info("adding dynakube to db", "tenantUUID", dynakube.TenantUUID, "version", dynakube.LatestVersion)
 			return provisioner.db.InsertDynakube(ctx, dynakube)
@@ -313,16 +322,18 @@ func (provisioner *OneAgentProvisioner) createOrUpdateDynakubeMetadata(ctx conte
 			log.Info("updating dynakube in db",
 				"old version", oldDynakube.LatestVersion, "new version", dynakube.LatestVersion,
 				"old tenantUUID", oldDynakube.TenantUUID, "new tenantUUID", dynakube.TenantUUID)
+
 			return provisioner.db.UpdateDynakube(ctx, dynakube)
 		}
 	}
+
 	return nil
 }
 
 func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynatracev1beta1.DynaKube) (dtclient.Client, error) {
 	tokenReader := token.NewReader(provisioner.apiReader, dk)
-	tokens, err := tokenReader.ReadTokens(ctx)
 
+	tokens, err := tokenReader.ReadTokens(ctx)
 	if err != nil {
 		return nil, err
 	}

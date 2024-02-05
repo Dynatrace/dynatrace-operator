@@ -64,6 +64,7 @@ func getTestDynakube() dynatracev1beta1.DynaKube {
 
 func TestGetBaseObjectMeta(t *testing.T) {
 	dynakube := getTestDynakube()
+
 	t.Run("creating object meta", func(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
@@ -128,6 +129,7 @@ func TestGetBaseObjectMeta(t *testing.T) {
 
 func TestGetBaseSpec(t *testing.T) {
 	dynakube := getTestDynakube()
+
 	t.Run("creating base statefulset spec", func(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
@@ -333,12 +335,15 @@ func TestBuildCommonEnvs(t *testing.T) {
 		capEnv := env.FindEnvVar(envs, consts.EnvDtCapabilities)
 		require.NotNil(t, capEnv)
 		assert.Equal(t, multiCapability.ArgName(), capEnv.Value)
+
 		namespaceEnv := env.FindEnvVar(envs, consts.EnvDtIdSeedNamespace)
 		require.NotNil(t, namespaceEnv)
 		assert.Equal(t, dynakube.Namespace, namespaceEnv.Value)
+
 		idEnv := env.FindEnvVar(envs, consts.EnvDtIdSeedClusterId)
 		require.NotNil(t, idEnv)
 		assert.Equal(t, testKubeUID, idEnv.Value)
+
 		metadataEnv := env.FindEnvVar(envs, deploymentmetadata.EnvDtDeploymentMetadata)
 		require.NotNil(t, metadataEnv)
 		assert.NotEmpty(t, metadataEnv.ValueFrom.ConfigMapKeyRef)
@@ -373,6 +378,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 		envs := builder.buildCommonEnvs()
 
 		require.NotEmpty(t, envs)
+
 		for _, env := range testEnvs {
 			require.Contains(t, envs, env)
 		}

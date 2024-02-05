@@ -42,6 +42,7 @@ func TestGetClientConfigsFromMutatingWebhook(t *testing.T) {
 	})
 	t.Run(`returns client configs of all configured webhooks`, func(t *testing.T) {
 		const expectedClientConfigs = 3
+
 		clientConfigs := getClientConfigsFromMutatingWebhook(createTestMutatingWebhookConfig(t))
 
 		assert.NotNil(t, clientConfigs)
@@ -56,6 +57,7 @@ func TestGetClientConfigsFromValidatingWebhook(t *testing.T) {
 	})
 	t.Run(`returns client configs of all configured webhooks`, func(t *testing.T) {
 		const expectedClientConfigs = 3
+
 		clientConfigs := getClientConfigsFromValidatingWebhook(createTestValidatingWebhookConfig(t))
 
 		assert.NotNil(t, clientConfigs)

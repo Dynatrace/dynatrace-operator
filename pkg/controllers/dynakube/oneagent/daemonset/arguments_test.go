@@ -153,6 +153,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 	for _, arg := range hostInjectSpecs.Args {
 		assert.Contains(t, podSpecs.Containers[0].Args, arg)
 	}
+
 	assert.Contains(t, podSpecs.Containers[0].Args, fmt.Sprintf("--set-host-property=OperatorVersion=$(%s)", deploymentmetadata.EnvDtOperatorVersion))
 
 	// deprecated

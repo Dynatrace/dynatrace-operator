@@ -13,6 +13,7 @@ func (gc *CSIGarbageCollector) runSharedBinaryGarbageCollection(ctx context.Cont
 	if err != nil {
 		return err
 	}
+
 	if len(imageDirs) == 0 {
 		log.Info("no shared binary dirs on node")
 		return nil
@@ -22,6 +23,7 @@ func (gc *CSIGarbageCollector) runSharedBinaryGarbageCollection(ctx context.Cont
 	if err != nil {
 		return err
 	}
+
 	if len(binsToDelete) == 0 {
 		log.Info("no shared binary dirs to delete on the node")
 		return nil
@@ -35,20 +37,24 @@ func (gc *CSIGarbageCollector) getSharedBinDirs() ([]os.FileInfo, error) {
 	if os.IsNotExist(err) {
 		return nil, nil
 	}
+
 	if err != nil {
 		log.Info("failed to read shared image directory")
 		return nil, errors.WithStack(err)
 	}
+
 	return imageDirs, nil
 }
 
 func (gc *CSIGarbageCollector) collectUnusedAgentBins(ctx context.Context, imageDirs []os.FileInfo) ([]string, error) {
 	var toDelete []string
+
 	usedAgentVersions, err := gc.db.GetLatestVersions(ctx)
 	if err != nil {
 		log.Info("failed to get the used image versions")
 		return nil, err
 	}
+
 	usedAgentDigest, err := gc.db.GetUsedImageDigests(ctx)
 	if err != nil {
 		log.Info("failed to get the used image digests")
@@ -63,23 +69,27 @@ func (gc *CSIGarbageCollector) collectUnusedAgentBins(ctx context.Context, image
 		log.Info("failed to get all mounted versions")
 		return nil, err
 	}
+
 	for _, imageDir := range imageDirs {
 		agentBin := imageDir.Name()
 		if !mountedAgentBins[agentBin] && !usedAgentVersions[agentBin] && !usedAgentDigest[agentBin] {
 			toDelete = append(toDelete, gc.path.AgentSharedBinaryDirForAgent(agentBin))
 		}
 	}
+
 	return toDelete, nil
 }
 
 func deleteSharedBinDirs(fs afero.Fs, imageDirs []string) error {
 	for _, dir := range imageDirs {
 		log.Info("deleting shared image dir", "dir", dir)
+
 		err := fs.RemoveAll(dir)
 		if err != nil {
 			log.Info("failed to delete image cache", "dir", dir)
 			return errors.WithStack(err)
 		}
 	}
+
 	return nil
 }

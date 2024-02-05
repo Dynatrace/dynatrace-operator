@@ -21,5 +21,6 @@ func removeCapability(capabilities []dynatracev1beta1.CapabilityDisplayName, rem
 			return append(capabilities[:i], capabilities[i+1:]...)
 		}
 	}
+
 	return capabilities
 }

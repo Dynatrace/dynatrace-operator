@@ -511,6 +511,7 @@ func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 
 func buildValidApplicationMonitoringSpec(_ *testing.T) *dynatracev1beta1.ApplicationMonitoringSpec {
 	useCSIDriver := true
+
 	return &dynatracev1beta1.ApplicationMonitoringSpec{
 		UseCSIDriver: &useCSIDriver,
 	}

@@ -46,6 +46,7 @@ func NewEndpointSecretGenerator(client client.Client, apiReader client.Reader, n
 // Used by the podInjection webhook in case the namespace lacks the secret.
 func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkName, targetNs string) error {
 	log.Info("reconciling data-ingest endpoint secret for", "namespace", targetNs)
+
 	var dk dynatracev1beta1.DynaKube
 	if err := g.client.Get(ctx, client.ObjectKey{Name: dkName, Namespace: g.namespace}, &dk); err != nil {
 		return errors.WithStack(err)
@@ -70,6 +71,7 @@ func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkNa
 	secretQuery := k8ssecret.NewQuery(ctx, g.client, g.apiReader, log)
 
 	err = secretQuery.CreateOrUpdate(*secret)
+
 	return errors.WithStack(err)
 }
 
@@ -84,8 +86,8 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 	}
 
 	coreLabels := labels.NewCoreLabels(dk.Name, labels.ActiveGateComponentLabel)
-	nsList, err := mapper.GetNamespacesForDynakube(ctx, g.apiReader, dk.Name)
 
+	nsList, err := mapper.GetNamespacesForDynakube(ctx, g.apiReader, dk.Name)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -107,6 +109,7 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 	}
 
 	log.Info("done updating data-ingest endpoint secrets")
+
 	return nil
 }
 
@@ -115,6 +118,7 @@ func (g *EndpointSecretGenerator) RemoveEndpointSecrets(ctx context.Context, dk 
 	if err != nil {
 		return err
 	}
+
 	for _, targetNs := range nsList {
 		endpointSecret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -142,6 +146,7 @@ func (g *EndpointSecretGenerator) prepare(ctx context.Context, dk *dynatracev1be
 		if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", MetricsUrlSecretField, fields[MetricsUrlSecretField])); err != nil {
 			return nil, errors.WithStack(err)
 		}
+
 		if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", MetricsTokenSecretField, fields[MetricsTokenSecretField])); err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -150,6 +155,7 @@ func (g *EndpointSecretGenerator) prepare(ctx context.Context, dk *dynatracev1be
 	data := map[string][]byte{
 		configFile: bytes.NewBufferString(endpointPropertiesBuilder.String()).Bytes(),
 	}
+
 	return data, nil
 }
 
@@ -198,5 +204,6 @@ func metricsIngestUrlForClusterActiveGate(dk *dynatracev1beta1.DynaKube) (string
 	}
 
 	serviceName := capability.BuildServiceName(dk.Name, agconsts.MultiActiveGateName)
+
 	return fmt.Sprintf("http://%s.%s/e/%s/api/v2/metrics/ingest", serviceName, dk.Namespace, tenant), nil
 }

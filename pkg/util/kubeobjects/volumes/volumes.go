@@ -11,6 +11,7 @@ func GetVolumeMountByName(mounts []corev1.VolumeMount, volumeName string) (*core
 			return &mount, nil
 		}
 	}
+
 	return nil, errors.Errorf(`Cannot find volume mount "%s" in the provided slice (len %d)`,
 		volumeName, len(mounts),
 	)

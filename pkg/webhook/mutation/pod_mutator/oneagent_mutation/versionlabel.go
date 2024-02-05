@@ -34,6 +34,7 @@ func getMappingFromNamespace(namespace corev1.Namespace) VersionLabelMapping {
 	}
 
 	versionLabelMapping := VersionLabelMapping{}
+
 	for annotationKey, labelKey := range annotationLabelMap {
 		if fieldRef, ok := namespace.Annotations[annotationKey]; ok {
 			versionLabelMapping[labelKey] = fieldRef
@@ -47,5 +48,6 @@ func mergeMappingWithDefault(labelMapping VersionLabelMapping) VersionLabelMappi
 	result := VersionLabelMapping{}
 	maps.Copy(result, defaultVersionLabelMapping)
 	maps.Copy(result, labelMapping)
+
 	return result
 }

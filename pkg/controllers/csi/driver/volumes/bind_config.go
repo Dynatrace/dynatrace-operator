@@ -22,9 +22,11 @@ func NewBindConfig(ctx context.Context, access metadata.Access, volumeCfg *Volum
 	if err != nil {
 		return nil, status.Error(codes.Unavailable, fmt.Sprintf("failed to extract tenant for DynaKube %s: %s", volumeCfg.DynakubeName, err.Error()))
 	}
+
 	if dynakube == nil {
 		return nil, status.Error(codes.Unavailable, fmt.Sprintf("dynakube (%s) is missing from metadata database", volumeCfg.DynakubeName))
 	}
+
 	return &BindConfig{
 		TenantUUID:       dynakube.TenantUUID,
 		Version:          dynakube.LatestVersion,
@@ -43,5 +45,6 @@ func (cfg BindConfig) MetricVersionLabel() string {
 	if versionLabel == "" {
 		versionLabel = cfg.ImageDigest
 	}
+
 	return versionLabel
 }

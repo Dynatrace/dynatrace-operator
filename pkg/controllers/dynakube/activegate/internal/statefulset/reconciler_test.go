@@ -111,11 +111,13 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		found := 0
+
 		for _, vm := range newStatefulSet.Spec.Template.Spec.Containers[0].VolumeMounts {
 			if vm.Name == InternalProxySecretVolumeName {
 				found++
 			}
 		}
+
 		assert.Equal(t, 1, found)
 	})
 }

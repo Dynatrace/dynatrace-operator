@@ -52,6 +52,7 @@ func NewClientWithIndex(objs ...client.Object) client.Client {
 			return []string{o.GetName()}
 		})
 	}
+
 	return clientBuilder.Build()
 }
 
@@ -59,5 +60,6 @@ func NewClientWithInterceptors(funcs interceptor.Funcs) client.Client {
 	clientBuilder := fake.NewClientBuilder().
 		WithScheme(scheme.Scheme).
 		WithInterceptorFuncs(funcs)
+
 	return clientBuilder.Build()
 }

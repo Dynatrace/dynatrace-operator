@@ -37,6 +37,7 @@ func AddDynakubeValidationWebhookToManager(manager ctrl.Manager) error {
 	manager.GetWebhookServer().Register("/validate", &webhook.Admission{
 		Handler: newDynakubeValidator(manager.GetClient(), manager.GetAPIReader(), manager.GetConfig()),
 	})
+
 	return nil
 }
 
@@ -44,32 +45,40 @@ func (validator *dynakubeValidator) Handle(ctx context.Context, request admissio
 	log.Info("validating request", "name", request.Name, "namespace", request.Namespace)
 
 	dynakube := &dynatracev1beta1.DynaKube{}
+
 	err := decodeRequestToDynakube(request, dynakube)
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, errors.WithStack(err))
 	}
+
 	validationErrors := validator.runValidators(ctx, validators, dynakube)
 	response := admission.Allowed("")
+
 	if len(validationErrors) > 0 {
 		response = admission.Denied(validation.SumErrors(validationErrors, "Dynakube"))
 	}
+
 	warningMessages := validator.runValidators(ctx, warnings, dynakube)
 	if len(warningMessages) > 0 {
 		if hasPreviewWarning(warningMessages) {
 			warningMessages = append(warningMessages, basePreviewWarning)
 		}
+
 		response = response.WithWarnings(warningMessages...)
 	}
+
 	return response
 }
 
 func (validator *dynakubeValidator) runValidators(ctx context.Context, validators []validator, dynakube *dynatracev1beta1.DynaKube) []string {
 	results := []string{}
+
 	for _, validate := range validators {
 		if errMsg := validate(ctx, validator, dynakube); errMsg != "" {
 			results = append(results, errMsg)
 		}
 	}
+
 	return results
 }
 
@@ -80,6 +89,7 @@ func decodeRequestToDynakube(request admission.Request, dynakube *dynatracev1bet
 	if err != nil {
 		return errors.WithStack(err)
 	}
+
 	return nil
 }
 
@@ -89,5 +99,6 @@ func hasPreviewWarning(warnings []string) bool {
 			return true
 		}
 	}
+
 	return false
 }

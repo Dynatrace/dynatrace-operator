@@ -19,5 +19,6 @@ func Tracer() trace.Tracer {
 	once.Do(func() {
 		tracer = otel.Tracer(otelInstrumentationScope)
 	})
+
 	return tracer
 }

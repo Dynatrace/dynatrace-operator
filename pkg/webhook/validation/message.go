@@ -7,5 +7,6 @@ func SumErrors(validationErrors []string, customResourceType string) string {
 	for i, errMsg := range validationErrors {
 		summedErrors += fmt.Sprintf("\n %d. %s", i+1, errMsg)
 	}
+
 	return summedErrors
 }

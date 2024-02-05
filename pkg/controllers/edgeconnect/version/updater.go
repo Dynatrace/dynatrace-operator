@@ -47,6 +47,7 @@ func (u updater) RequiresReconcile() bool {
 	if didCustomImageChange || version.ImageID == "" {
 		return true
 	}
+
 	return isRequestOutdated && u.IsAutoUpdateEnabled()
 }
 
@@ -64,6 +65,7 @@ func (u updater) Update(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
 	imageID, err := u.combineImageWithDigest(imageVersion.Digest)
 	if err != nil {
 		return err
@@ -86,13 +88,17 @@ func (u updater) combineImageWithDigest(digest digest.Digest) (string, error) {
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
+
 	if taggedRef, ok := imageRef.(name.Tag); ok {
 		canonRef := registry.BuildImageIDWithTagAndDigest(taggedRef, digest)
+
 		if err != nil {
 			return "", errors.WithStack(err)
 		}
+
 		return canonRef, nil
 	}
+
 	return "", fmt.Errorf("wrong image reference format")
 }
 

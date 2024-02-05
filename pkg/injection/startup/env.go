@@ -48,19 +48,24 @@ type environment struct {
 
 func newEnv() (*environment, error) {
 	log.Info("checking envvars")
+
 	env := &environment{}
 	env.setMutationTypeFields()
+
 	err := env.setRequiredFields()
 	if err != nil {
 		return nil, err
 	}
+
 	env.setOptionalFields()
 	log.Info("envvars checked", "env", env)
+
 	return env, nil
 }
 
 func (env *environment) setRequiredFields() error {
 	errs := []error{}
+
 	requiredFieldSetters := []func() error{
 		env.addFailurePolicy,
 	}
@@ -78,9 +83,11 @@ func (env *environment) setRequiredFields() error {
 			log.Info(err.Error())
 		}
 	}
+
 	if len(errs) != 0 {
 		return errors.Errorf("%d envvars missing", len(errs))
 	}
+
 	return nil
 }
 
@@ -126,12 +133,14 @@ func (env *environment) addFailurePolicy() error {
 	if err != nil {
 		return err
 	}
+
 	switch failurePolicy {
 	case failPhrase:
 		env.FailurePolicy = failPhrase
 	default:
 		env.FailurePolicy = silentPhrase
 	}
+
 	return nil
 }
 
@@ -149,7 +158,9 @@ func (env *environment) addInstallerTech() error {
 	if err != nil {
 		return err
 	}
+
 	env.InstallerTech = strings.Split(technologies, ",")
+
 	return nil
 }
 
@@ -158,20 +169,25 @@ func (env *environment) addInstallPath() error {
 	if err != nil {
 		return err
 	}
+
 	env.InstallPath = installPath
+
 	return nil
 }
 
 func (env *environment) addContainers() error {
 	containers := []containerInfo{}
+
 	containerCountStr, err := checkEnvVar(consts.AgentContainerCountEnv)
 	if err != nil {
 		return err
 	}
+
 	countCount, err := strconv.Atoi(containerCountStr)
 	if err != nil {
 		return err
 	}
+
 	for i := 1; i <= countCount; i++ {
 		nameEnv := fmt.Sprintf(consts.AgentContainerNameEnvTemplate, i)
 		imageEnv := fmt.Sprintf(consts.AgentContainerImageEnvTemplate, i)
@@ -180,16 +196,20 @@ func (env *environment) addContainers() error {
 		if err != nil {
 			return err
 		}
+
 		imageName, err := checkEnvVar(imageEnv)
 		if err != nil {
 			return err
 		}
+
 		containers = append(containers, containerInfo{
 			Name:  containerName,
 			Image: imageName,
 		})
 	}
+
 	env.Containers = containers
+
 	return nil
 }
 
@@ -198,7 +218,9 @@ func (env *environment) addK8NodeName() error {
 	if err != nil {
 		return err
 	}
+
 	env.K8NodeName = nodeName
+
 	return nil
 }
 
@@ -207,7 +229,9 @@ func (env *environment) addK8PodName() error {
 	if err != nil {
 		return err
 	}
+
 	env.K8PodName = podName
+
 	return nil
 }
 
@@ -216,7 +240,9 @@ func (env *environment) addK8PodUID() error {
 	if err != nil {
 		return err
 	}
+
 	env.K8PodUID = podUID
+
 	return nil
 }
 
@@ -225,7 +251,9 @@ func (env *environment) addK8BasePodName() error {
 	if err != nil {
 		return err
 	}
+
 	env.K8BasePodName = basePodName
+
 	return nil
 }
 
@@ -234,7 +262,9 @@ func (env *environment) addK8Namespace() error {
 	if err != nil {
 		return err
 	}
+
 	env.K8Namespace = namespace
+
 	return nil
 }
 
@@ -243,11 +273,13 @@ func (env *environment) addWorkloadKind() error {
 	if err != nil {
 		return err
 	}
+
 	if workloadKind == consts.EnrichmentUnknownWorkload {
 		env.WorkloadKind = ""
 	} else {
 		env.WorkloadKind = workloadKind
 	}
+
 	return nil
 }
 
@@ -256,11 +288,13 @@ func (env *environment) addWorkloadName() error {
 	if err != nil {
 		return err
 	}
+
 	if workloadName == consts.EnrichmentUnknownWorkload {
 		env.WorkloadName = ""
 	} else {
 		env.WorkloadName = workloadName
 	}
+
 	return nil
 }
 
@@ -289,7 +323,9 @@ func (env *environment) addK8ClusterID() error {
 	if err != nil {
 		return err
 	}
+
 	env.K8ClusterID = clusterID
+
 	return nil
 }
 
@@ -298,5 +334,6 @@ func checkEnvVar(envvar string) (string, error) {
 	if result == "" {
 		return "", errors.Errorf("%s environment variable is missing", envvar)
 	}
+
 	return result, nil
 }

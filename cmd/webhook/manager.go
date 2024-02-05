@@ -62,6 +62,7 @@ func (provider Provider) CreateManager(namespace string, config *rest.Config) (m
 func (provider Provider) createOptions(namespace string) ctrl.Options {
 	port := defaultPort
 	webhookPortEnv := os.Getenv("WEBHOOK_PORT")
+
 	if parsedWebhookPort, err := strconv.Atoi(webhookPortEnv); err == nil {
 		port = parsedWebhookPort
 	}
@@ -94,9 +95,11 @@ func (provider Provider) setupWebhookServer(mgr manager.Manager) (manager.Manage
 	if !ok {
 		return nil, errors.WithStack(errors.New("Unable to cast webhook server"))
 	}
+
 	webhookServer.Options.CertDir = provider.certificateDirectory
 	webhookServer.Options.KeyName = provider.keyFileName
 	webhookServer.Options.CertName = provider.certificateFileName
 	webhookServer.Options.TLSOpts = []func(*tls.Config){tlsConfig}
+
 	return mgr, nil
 }

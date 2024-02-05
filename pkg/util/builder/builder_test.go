@@ -15,6 +15,7 @@ func TestBuilder(t *testing.T) {
 		b := GenericBuilder[mocks.DataMock]{}
 		actual, err := b.Build()
 		assert.NoError(t, err)
+
 		expected := mocks.DataMock{}
 		assert.Equal(t, expected, actual)
 	})
@@ -54,6 +55,7 @@ func TestBuilder(t *testing.T) {
 		modifierMock0 := modifiermock.NewModifier[mocks.DataMock](t)
 		modifierMock0.On("Modify", mock.Anything).Return(nil)
 		modifierMock0.On("Enabled").Return(true)
+
 		modifierMock1 := modifiermock.NewModifier[mocks.DataMock](t)
 		modifierMock1.On("Modify", mock.Anything).Return(nil)
 		modifierMock1.On("Enabled").Return(true)
@@ -73,6 +75,7 @@ func TestBuilder(t *testing.T) {
 		modifierMock0 := modifiermock.NewModifier[mocks.DataMock](t)
 		modifierMock0.On("Modify", mock.Anything).Return(nil)
 		modifierMock0.On("Enabled").Return(true)
+
 		modifierMock1 := modifiermock.NewModifier[mocks.DataMock](t)
 		modifierMock1.On("Modify", mock.Anything).Return(nil)
 		modifierMock1.On("Enabled").Return(true)

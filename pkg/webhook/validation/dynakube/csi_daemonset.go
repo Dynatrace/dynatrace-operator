@@ -21,7 +21,9 @@ func missingCSIDaemonSet(ctx context.Context, dv *dynakubeValidator, dynakube *d
 	if !dynakube.NeedsCSIDriver() {
 		return ""
 	}
+
 	csiDaemonSet := appsv1.DaemonSet{}
+
 	err := dv.clt.Get(ctx, types.NamespacedName{Name: dtcsi.DaemonSetName, Namespace: dynakube.Namespace}, &csiDaemonSet)
 	if k8serrors.IsNotFound(err) {
 		log.Info("requested dynakube uses csi driver, but csi driver is missing in the cluster", "name", dynakube.Name, "namespace", dynakube.Namespace)
@@ -29,6 +31,7 @@ func missingCSIDaemonSet(ctx context.Context, dv *dynakubeValidator, dynakube *d
 	} else if err != nil {
 		log.Info("error occurred while listing dynakubes", "err", err.Error())
 	}
+
 	return ""
 }
 
@@ -37,5 +40,6 @@ func disabledCSIForReadonlyCSIVolume(_ context.Context, dv *dynakubeValidator, d
 		log.Info("requested dynakube uses readonly csi volume, but csi driver is not enabled", "name", dynakube.Name, "namespace", dynakube.Namespace)
 		return errorCSIEnabledRequired
 	}
+
 	return ""
 }

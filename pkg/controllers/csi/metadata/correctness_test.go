@@ -121,6 +121,7 @@ func TestCorrectCSI(t *testing.T) {
 		db.InsertDynakube(ctx, &testDynakube1)
 		db.InsertDynakube(ctx, &testDynakube2)
 		db.InsertDynakube(ctx, &testDynakube3)
+
 		client := fake.NewClient(
 			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testVolume1.PodName}},
 			&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},

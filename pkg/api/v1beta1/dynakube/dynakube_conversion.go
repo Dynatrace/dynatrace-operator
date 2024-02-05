@@ -70,6 +70,7 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 
 	dst.Status.OneAgent.UseImmutableImage = true
 	dst.Status.OneAgent.Instances = map[string]dynakube.OneAgentInstance{}
+
 	for key, value := range src.Status.OneAgent.Instances {
 		tmp := dynakube.OneAgentInstance{
 			Version:   src.Status.OneAgent.Version,
@@ -78,6 +79,7 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 		}
 		dst.Status.OneAgent.Instances[key] = tmp
 	}
+
 	dst.Status.OneAgent.LastUpdateProbeTimestamp = src.Status.OneAgent.LastProbeTimestamp
 	dst.Status.OneAgent.Version = src.Status.OneAgent.Version
 
@@ -93,12 +95,14 @@ func convertToDeprecatedActiveGateCapability(dst *dynakube.CapabilityProperties,
 
 	dst.Replicas = src.Replicas
 	dst.Group = src.Group
+
 	if src.CustomProperties != nil {
 		dst.CustomProperties = &dynakube.DynaKubeValueSource{
 			Value:     src.CustomProperties.Value,
 			ValueFrom: src.CustomProperties.ValueFrom,
 		}
 	}
+
 	dst.Resources = src.Resources
 	dst.NodeSelector = src.NodeSelector
 	dst.Tolerations = src.Tolerations
@@ -166,6 +170,7 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Status.LastTokenProbeTimestamp = src.Status.LastAPITokenProbeTimestamp
 
 	dst.Status.OneAgent.Instances = map[string]OneAgentInstance{}
+
 	for key, value := range src.Status.OneAgent.Instances {
 		instance := OneAgentInstance{
 			PodName:   value.PodName,
@@ -173,6 +178,7 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 		}
 		dst.Status.OneAgent.Instances[key] = instance
 	}
+
 	dst.Status.OneAgent.Version = src.Status.OneAgent.Version
 	dst.Status.OneAgent.LastProbeTimestamp = src.Status.OneAgent.LastUpdateProbeTimestamp
 
@@ -185,12 +191,14 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 func convertFromDeprecatedActiveGateCapability(dst *CapabilityProperties, src *dynakube.CapabilityProperties) {
 	dst.Replicas = src.Replicas
 	dst.Group = src.Group
+
 	if src.CustomProperties != nil {
 		dst.CustomProperties = &DynaKubeValueSource{
 			Value:     src.CustomProperties.Value,
 			ValueFrom: src.CustomProperties.ValueFrom,
 		}
 	}
+
 	dst.Resources = src.Resources
 	dst.NodeSelector = src.NodeSelector
 	dst.Tolerations = src.Tolerations

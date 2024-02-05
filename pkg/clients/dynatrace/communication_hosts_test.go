@@ -49,6 +49,7 @@ func TestReadCommunicationHosts(t *testing.T) {
 				{Protocol: "http", Host: "insecurehost", Port: 80},
 				{Protocol: "https", Host: "managedhost.com", Port: 9999},
 			}
+
 			sort.Slice(m.CommunicationHosts, func(i, j int) bool {
 				return m.CommunicationHosts[i].Host < m.CommunicationHosts[j].Host
 			})
@@ -76,6 +77,7 @@ func TestReadCommunicationHosts(t *testing.T) {
 
 func TestParseEndpoints(t *testing.T) {
 	var err error
+
 	var ch CommunicationHost
 
 	ch, err = ParseEndpoint("https://example.live.dynatrace.com/communication")

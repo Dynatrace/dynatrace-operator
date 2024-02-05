@@ -19,7 +19,9 @@ const (
 
 func nameViolatesDNS1035(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	dynakubeName := dynakube.Name
+
 	var errs []string
+
 	if dynakubeName != "" {
 		errs = validation.IsDNS1035Label(dynakubeName)
 	}
@@ -27,6 +29,7 @@ func nameViolatesDNS1035(_ context.Context, _ *dynakubeValidator, dynakube *dyna
 	if len(errs) == 0 {
 		return ""
 	}
+
 	return errorNoDNS1053Label
 }
 
@@ -35,5 +38,6 @@ func nameTooLong(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1b
 	if dynakubeName != "" && len(dynakubeName) > dynatracev1beta1.MaxNameLength {
 		return fmt.Sprintf(errorNameTooLong, dynatracev1beta1.MaxNameLength)
 	}
+
 	return ""
 }

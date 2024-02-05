@@ -59,7 +59,6 @@ func (tokens Tokens) VerifyScopes(dtc dtclient.Client) error {
 		}
 
 		scopes, err := dtc.GetTokenScopes(token.Value)
-
 		if err != nil {
 			scopeErrors = append(scopeErrors, err)
 			continue
@@ -119,5 +118,6 @@ func concatErrors(errs []error) error {
 			Message: concatenatedError,
 		}
 	}
+
 	return errors.New(concatenatedError)
 }

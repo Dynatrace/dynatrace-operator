@@ -42,6 +42,7 @@ func (r *reconciler) ReconcileCodeModules(ctx context.Context, dynakube *dynatra
 	if r.needsUpdate(updater, dynakube) {
 		return r.updateVersionStatuses(ctx, updater, dynakube)
 	}
+
 	return nil
 }
 
@@ -50,6 +51,7 @@ func (r *reconciler) ReconcileOneAgent(ctx context.Context, dynakube *dynatracev
 	if r.needsUpdate(updater, dynakube) {
 		return r.updateVersionStatuses(ctx, updater, dynakube)
 	}
+
 	return nil
 }
 
@@ -63,11 +65,13 @@ func (r *reconciler) ReconcileActiveGate(ctx context.Context, dynakube *dynatrac
 			return r.updateVersionStatuses(ctx, updater, dynakube)
 		}
 	}
+
 	return nil
 }
 
 func (r *reconciler) updateVersionStatuses(ctx context.Context, updater StatusUpdater, dynakube *dynatracev1beta1.DynaKube) error {
 	log.Info("updating version status", "updater", updater.Name())
+
 	err := r.run(ctx, updater)
 	if err != nil {
 		return err
@@ -82,6 +86,7 @@ func (r *reconciler) updateVersionStatuses(ctx context.Context, updater StatusUp
 			dynakube.Status.OneAgent.Healthcheck = healthConfig
 		}
 	}
+
 	return nil
 }
 
@@ -104,6 +109,7 @@ func (r *reconciler) needsUpdate(updater StatusUpdater, dynakube *dynatracev1bet
 		log.Info("status timestamp still valid, skipping version status updater", "updater", updater.Name())
 		return false
 	}
+
 	return true
 }
 
@@ -121,10 +127,12 @@ func hasCustomFieldChanged(updater StatusUpdater) bool {
 	} else if updater.Target().Source == status.CustomVersionVersionSource {
 		oldVersion := updater.Target().Version
 		newVersion := updater.CustomVersion()
+
 		if oldVersion != newVersion {
 			log.Info("custom version value changed, update for version status is needed", "updater", updater.Name(), "oldVersion", oldVersion, "newVersion", newVersion)
 			return true
 		}
 	}
+
 	return false
 }

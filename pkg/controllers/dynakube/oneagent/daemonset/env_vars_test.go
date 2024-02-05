@@ -239,6 +239,7 @@ func assertProxyEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynatracev1bet
 	env := k8senv.FindEnvVar(envs, proxyEnv)
 	assert.Equal(t, env.Name, proxyEnv)
 	assert.Equal(t, dynakube.Spec.Proxy.Value, env.Value)
+
 	if dynakube.Spec.Proxy.ValueFrom != "" {
 		assert.Equal(t, dynakube.Spec.Proxy.ValueFrom, env.ValueFrom.SecretKeyRef.LocalObjectReference.Name)
 		assert.Equal(t, "proxy", env.ValueFrom.SecretKeyRef.Key)
@@ -327,6 +328,7 @@ func TestIsProxyAsEnvVarDeprecated(t *testing.T) {
 				t.Errorf("IsProxyAsEnvVarDeprecated() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			if got != tt.want {
 				t.Errorf("IsProxyAsEnvVarDeprecated() = %v, want %v", got, tt.want)
 			}

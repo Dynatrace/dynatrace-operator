@@ -49,6 +49,7 @@ func (opts *options) appendProxySettings(apiReader client.Reader, dynakube *dyna
 	}
 
 	opts.Opts = append(opts.Opts, proxyOption)
+
 	return nil
 }
 
@@ -61,6 +62,7 @@ func (opts *options) createProxyOption(apiReader client.Reader, dynakube *dynatr
 	}
 
 	proxyOption = dtclient.Proxy(proxyUrl, dynakube.FeatureNoProxy())
+
 	return proxyOption, nil
 }
 
@@ -70,10 +72,13 @@ func (opts *options) appendTrustedCerts(apiReader client.Reader, trustedCerts st
 		if err := apiReader.Get(opts.ctx, client.ObjectKey{Namespace: namespace, Name: trustedCerts}, certs); err != nil {
 			return errors.WithMessage(err, "failed to get certificate configmap")
 		}
+
 		if certs.Data[dynatracev1beta1.TrustedCAKey] == "" {
 			return errors.New("failed to extract certificate configmap field: missing field certs")
 		}
+
 		opts.Opts = append(opts.Opts, dtclient.Certs([]byte(certs.Data[dynatracev1beta1.TrustedCAKey])))
 	}
+
 	return nil
 }

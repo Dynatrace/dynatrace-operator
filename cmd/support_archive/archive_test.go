@@ -17,6 +17,7 @@ func TestAddFile(t *testing.T) {
 
 	archiveFile, err := createZipArchiveFile(tmpDir)
 	require.NoError(t, err)
+
 	archive := newZipArchive(archiveFile)
 
 	fileName := archiveFile.Name()

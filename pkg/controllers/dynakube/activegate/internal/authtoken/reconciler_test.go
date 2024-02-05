@@ -46,6 +46,7 @@ func newTestReconcilerWithInstance(t *testing.T, client client.Client) *Reconcil
 	dtc.On("GetActiveGateAuthToken", mock.Anything).Return(testAgAuthTokenResponse, nil).Maybe()
 
 	r := NewReconciler(client, client, scheme.Scheme, instance, dtc)
+
 	return r
 }
 

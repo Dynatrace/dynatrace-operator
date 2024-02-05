@@ -51,6 +51,7 @@ func TestConnect_badDriver(t *testing.T) {
 
 func TestCreateTables(t *testing.T) {
 	ctx := context.TODO()
+
 	t.Run("volume table is created correctly", func(t *testing.T) {
 		db := emptyMemoryDB()
 
@@ -58,6 +59,7 @@ func TestCreateTables(t *testing.T) {
 		require.NoError(t, err)
 
 		var volumeTableName string
+
 		row := db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", volumesTableName)
 		err = row.Scan(&volumeTableName)
 		require.NoError(t, err)
@@ -79,6 +81,7 @@ func TestCreateTables(t *testing.T) {
 			assert.True(t, rows.Next())
 
 			var id, name, columnType, notNull, primaryKey string
+
 			var defaultValue = new(string)
 
 			err = rows.Scan(&id, &name, &columnType, &notNull, &defaultValue, &primaryKey)
@@ -99,6 +102,7 @@ func TestCreateTables(t *testing.T) {
 		require.NoError(t, err)
 
 		var dkTable string
+
 		row := db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", dynakubesTableName)
 		err = row.Scan(&dkTable)
 		require.NoError(t, err)
@@ -120,6 +124,7 @@ func TestCreateTables(t *testing.T) {
 			assert.True(t, rows.Next())
 
 			var id, name, columnType, notNull, primaryKey string
+
 			var defaultValue = new(string)
 
 			err = rows.Scan(&id, &name, &columnType, &notNull, &defaultValue, &primaryKey)
@@ -147,8 +152,11 @@ func TestInsertDynakube(t *testing.T) {
 	require.NoError(t, err)
 
 	var uuid, lv, name string
+
 	var imageDigest string
+
 	var maxMountAttempts int
+
 	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE TenantUUID = ?;", dynakubesTableName), testDynakube1.TenantUUID)
 	err = row.Scan(&name, &uuid, &lv, &imageDigest, &maxMountAttempts)
 	require.NoError(t, err)
@@ -170,6 +178,7 @@ func TestGetDynakube_Empty(t *testing.T) {
 
 func TestGetDynakube(t *testing.T) {
 	ctx := context.TODO()
+
 	t.Run("get dynakube", func(t *testing.T) {
 		testDynakube1 := createTestDynakube(1)
 		db := FakeMemoryDB()
@@ -197,7 +206,9 @@ func TestUpdateDynakube(t *testing.T) {
 	require.NoError(t, err)
 
 	var uuid, lv, name string
+
 	var imageDigest string
+
 	var maxFailedMountAttempts int
 
 	row := db.conn.QueryRow(fmt.Sprintf("SELECT Name, TenantUUID, LatestVersion, ImageDigest, MaxFailedMountAttempts FROM %s WHERE Name = ?;", dynakubesTableName), copyDynakube.Name)
@@ -231,6 +242,7 @@ func TestGetTenantsToDynakubes(t *testing.T) {
 
 func TestGetAllDynakubes(t *testing.T) {
 	ctx := context.TODO()
+
 	t.Run("get multiple dynakubes", func(t *testing.T) {
 		testDynakube1 := createTestDynakube(1)
 		testDynakube2 := createTestDynakube(2)
@@ -330,11 +342,17 @@ func TestInsertVolume(t *testing.T) {
 
 	err := db.InsertVolume(ctx, &testVolume1)
 	require.NoError(t, err)
+
 	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE ID = ?;", volumesTableName), testVolume1.VolumeID)
+
 	var id string
+
 	var puid string
+
 	var ver string
+
 	var tuid string
+
 	var mountAttempts int
 	err = row.Scan(&id, &puid, &ver, &tuid, &mountAttempts)
 
@@ -349,6 +367,7 @@ func TestInsertVolume(t *testing.T) {
 	testVolume1.PodName = newPodName
 	err = db.InsertVolume(ctx, &testVolume1)
 	require.NoError(t, err)
+
 	row = db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE ID = ?;", volumesTableName), testVolume1.VolumeID)
 	err = row.Scan(&id, &puid, &ver, &tuid, &mountAttempts)
 
@@ -374,10 +393,15 @@ func TestInsertOsAgentVolume(t *testing.T) {
 
 	err := db.InsertOsAgentVolume(context.TODO(), &volume)
 	require.NoError(t, err)
+
 	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE TenantUUID = ?;", osAgentVolumesTableName), volume.TenantUUID)
+
 	var volumeID string
+
 	var tenantUUID string
+
 	var mounted bool
+
 	var lastModified time.Time
 	err = row.Scan(&tenantUUID, &volumeID, &mounted, &lastModified)
 	require.NoError(t, err)
@@ -449,6 +473,7 @@ func TestUpdateOsAgentVolume(t *testing.T) {
 
 	err := db.InsertOsAgentVolume(ctx, &old)
 	require.NoError(t, err)
+
 	new := old
 	new.Mounted = false
 	err = db.UpdateOsAgentVolume(ctx, &new)
@@ -508,6 +533,7 @@ func TestGetUsedVersions(t *testing.T) {
 	testVolume11 := testVolume1
 	testVolume11.VolumeID = "vol-11"
 	testVolume11.Version = "321"
+
 	require.NoError(t, err)
 	err = db.InsertVolume(ctx, &testVolume11)
 	require.NoError(t, err)
@@ -527,6 +553,7 @@ func TestGetAllUsedVersions(t *testing.T) {
 	testVolume11 := testVolume1
 	testVolume11.VolumeID = "vol-11"
 	testVolume11.Version = "321"
+
 	require.NoError(t, err)
 	err = db.InsertVolume(ctx, &testVolume11)
 	require.NoError(t, err)

@@ -81,6 +81,7 @@ func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCf
 	}
 
 	agentsVersionsMetric.WithLabelValues(bindCfg.MetricVersionLabel()).Inc()
+
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
@@ -89,9 +90,11 @@ func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volume
 	if err != nil {
 		log.Info("failed to load volume info", "error", err.Error())
 	}
+
 	if volume == nil {
 		return nil, nil
 	}
+
 	log.Info("loaded volume info", "id", volume.VolumeID, "pod name", volume.PodName, "version", volume.Version, "dynakube", volume.TenantUUID)
 
 	if volume.Version == "" {
@@ -105,6 +108,7 @@ func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volume
 	if err = publisher.db.DeleteVolume(ctx, volume.VolumeID); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+
 	log.Info("deleted volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
 
 	if err = publisher.fs.RemoveAll(volumeInfo.TargetPath); err != nil {
@@ -123,16 +127,19 @@ func (publisher *AppVolumePublisher) CanUnpublishVolume(ctx context.Context, vol
 	if err != nil {
 		return false, status.Error(codes.Internal, fmt.Sprintf("failed to get volume info from database: %s", err.Error()))
 	}
+
 	return volume != nil, nil
 }
 
 func (publisher *AppVolumePublisher) fireVolumeUnpublishedMetric(volume metadata.Volume) {
 	if len(volume.Version) > 0 {
 		agentsVersionsMetric.WithLabelValues(volume.Version).Dec()
+
 		var m = &dto.Metric{}
 		if err := agentsVersionsMetric.WithLabelValues(volume.Version).Write(m); err != nil {
 			log.Error(err, "failed to get the value of agent version metric")
 		}
+
 		if m.Gauge.GetValue() <= float64(0) {
 			agentsVersionsMetric.DeleteLabelValues(volume.Version)
 		}
@@ -146,10 +153,12 @@ func (publisher *AppVolumePublisher) buildLowerDir(bindCfg *csivolumes.BindConfi
 	} else {
 		binFolderName = bindCfg.ImageDigest
 	}
+
 	directories := []string{
 		publisher.path.AgentConfigDir(bindCfg.TenantUUID, bindCfg.DynakubeName),
 		publisher.path.AgentSharedBinaryDirForAgent(binFolderName),
 	}
+
 	return strings.Join(directories, ":")
 }
 
@@ -176,6 +185,7 @@ func (publisher *AppVolumePublisher) mountOneAgent(bindCfg *csivolumes.BindConfi
 	if err := publisher.mounter.Mount("overlay", mappedDir, "overlay", overlayOptions); err != nil {
 		return err
 	}
+
 	if err := publisher.mounter.Mount(mappedDir, volumeCfg.TargetPath, "", []string{"bind"}); err != nil {
 		_ = publisher.mounter.Unmount(mappedDir)
 		return err
@@ -208,6 +218,7 @@ func (publisher *AppVolumePublisher) ensureMountSteps(ctx context.Context, bindC
 
 		return status.Error(codes.Internal, fmt.Sprintf("Failed to store volume info: %s", err))
 	}
+
 	return nil
 }
 
@@ -216,19 +227,24 @@ func (publisher *AppVolumePublisher) hasTooManyMountAttempts(ctx context.Context
 	if err != nil {
 		return false, err
 	}
+
 	if volume == nil {
 		volume = createNewVolume(bindCfg, volumeCfg)
 	}
+
 	if volume.MountAttempts > bindCfg.MaxMountAttempts {
 		return true, nil
 	}
+
 	volume.MountAttempts += 1
+
 	return false, publisher.db.InsertVolume(ctx, volume)
 }
 
 func (publisher *AppVolumePublisher) storeVolume(ctx context.Context, bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
 	volume := createNewVolume(bindCfg, volumeCfg)
 	log.Info("inserting volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
+
 	return publisher.db.InsertVolume(ctx, volume)
 }
 
@@ -237,6 +253,7 @@ func (publisher *AppVolumePublisher) loadVolume(ctx context.Context, volumeID st
 	if err != nil {
 		return nil, err
 	}
+
 	return volume, nil
 }
 
@@ -245,5 +262,6 @@ func createNewVolume(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.Volum
 	if bindCfg.ImageDigest != "" {
 		version = bindCfg.ImageDigest
 	}
+
 	return metadata.NewVolume(volumeCfg.VolumeID, volumeCfg.PodName, version, bindCfg.TenantUUID, 0)
 }

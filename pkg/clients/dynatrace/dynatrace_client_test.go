@@ -33,6 +33,7 @@ func TestMakeRequest(t *testing.T) {
 		resp, err := dc.makeRequest(url, dynatraceApiToken)
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
+
 		defer utils.CloseBodyAfterRequest(resp)
 	}
 	{
@@ -192,7 +193,6 @@ func TestIgnoreNonCurrentlySeenHosts(t *testing.T) {
 	// now:                         20/05/2020 10:10 AM UTC
 	// HOST-42 - lastSeenTimestamp: 20/05/2020 10:04 AM UTC
 	// HOST-84 - lastSeenTimestamp: 19/05/2020 01:49 AM UTC
-
 	c := dynatraceClient{
 		now: time.Unix(1589969400, 0).UTC(),
 	}

@@ -35,9 +35,12 @@ func isInvalidApiServer(_ context.Context, _ *edgeconnectValidator, edgeConnect 
 			if len(hostnameWithTenant) > len(hostnameWithDomains) {
 				return ""
 			}
+
 			log.Info("apiServer is not a valid hostname", "apiServer", edgeConnect.Spec.ApiServer)
+
 			break
 		}
 	}
+
 	return errorInvalidApiServer
 }

@@ -47,6 +47,7 @@ func (r *Reconciler) addOneAgentDeploymentMetadata(configMapData map[string]stri
 	if !r.dynakube.NeedsOneAgent() {
 		return
 	}
+
 	configMapData[OneAgentMetadataKey] = NewDeploymentMetadata(r.clusterID, GetOneAgentDeploymentType(r.dynakube)).AsString()
 }
 
@@ -54,6 +55,7 @@ func (r *Reconciler) addActiveGateDeploymentMetadata(configMapData map[string]st
 	if !r.dynakube.NeedsActiveGate() {
 		return
 	}
+
 	configMapData[ActiveGateMetadataKey] = NewDeploymentMetadata(r.clusterID, ActiveGateMetadataKey).AsString()
 }
 
@@ -61,11 +63,13 @@ func (r *Reconciler) addOperatorVersionInfo(configMapData map[string]string) {
 	if !r.dynakube.NeedsOneAgent() { // Currently only used for oneAgent args
 		return
 	}
+
 	configMapData[OperatorVersionKey] = version.Version
 }
 
 func (r *Reconciler) maintainMetadataConfigMap(ctx context.Context, configMapData map[string]string) error {
 	configMapQuery := configmap.NewQuery(ctx, r.client, r.apiReader, log)
+
 	configMap, err := configmap.CreateConfigMap(r.scheme, &r.dynakube,
 		configmap.NewModifier(GetDeploymentMetadataConfigMapName(r.dynakube.Name)),
 		configmap.NewNamespaceModifier(r.dynakube.Namespace),
@@ -77,6 +81,7 @@ func (r *Reconciler) maintainMetadataConfigMap(ctx context.Context, configMapDat
 	if len(configMapData) > 0 {
 		return configMapQuery.CreateOrUpdate(*configMap)
 	}
+
 	return configMapQuery.Delete(*configMap)
 }
 

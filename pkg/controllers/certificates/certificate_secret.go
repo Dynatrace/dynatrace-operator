@@ -48,6 +48,7 @@ func (certSecret *certificateSecret) setSecretFromReader(ctx context.Context, ap
 		if err != nil {
 			return errors.WithStack(err)
 		}
+
 		certSecret.existsInCluster = false
 	case err != nil:
 		return errors.WithStack(err)
@@ -68,6 +69,7 @@ func (certSecret *certificateSecret) isRecent() bool {
 	case !reflect.DeepEqual(certSecret.certificates.Data, certSecret.secret.Data):
 		return false
 	}
+
 	return true
 }
 
@@ -100,6 +102,7 @@ func (certSecret *certificateSecret) areWebhookConfigsValid(configs []*admission
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -121,9 +124,11 @@ func (certSecret *certificateSecret) createOrUpdateIfNecessary(ctx context.Conte
 	certSecret.secret.Data = certSecret.certificates.Data
 	if certSecret.existsInCluster {
 		err = clt.Update(ctx, certSecret.secret)
+
 		log.Info("updated certificates secret")
 	} else {
 		err = clt.Create(ctx, certSecret.secret)
+
 		log.Info("created certificates secret")
 	}
 
@@ -139,5 +144,6 @@ func (certSecret *certificateSecret) loadCombinedBundle() ([]byte, error) {
 	if oldData, hasOldData := certSecret.secret.Data[RootCertOld]; hasOldData {
 		data = append(data, oldData...)
 	}
+
 	return data, nil
 }

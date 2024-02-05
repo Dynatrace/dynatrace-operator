@@ -20,6 +20,7 @@ func TestActiveGateUpdater(t *testing.T) {
 		Source: "some.registry.com",
 		Tag:    "1.2.3.4-5",
 	}
+
 	t.Run("Getters work as expected", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{

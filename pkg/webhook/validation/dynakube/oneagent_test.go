@@ -289,6 +289,7 @@ func createDynakube(oaEnvVar ...string) *dynatracev1beta1.DynaKube {
 			Value: oaEnvVar[i+1],
 		})
 	}
+
 	return &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dynakube",
@@ -313,6 +314,7 @@ func TestUnsupportedOneAgentImage(t *testing.T) {
 		envVars         []string
 		allowedWarnings int
 	}
+
 	testcases := []unsupportedOneAgentImageTests{
 		{
 			testName:        "ONEAGENT_INSTALLER_SCRIPT_URL",

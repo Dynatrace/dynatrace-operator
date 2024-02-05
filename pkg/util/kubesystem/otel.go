@@ -18,5 +18,6 @@ func tracer() trace.Tracer {
 	once.Do(func() {
 		kubeSystemTracer = otel.Tracer(otelInstrumentationScope)
 	})
+
 	return kubeSystemTracer
 }

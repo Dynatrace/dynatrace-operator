@@ -74,11 +74,13 @@ func TestDefaultNamespace(t *testing.T) {
 	t.Run("Get from env var", func(t *testing.T) {
 		testNamespace := "test-namespace"
 		os.Setenv(PodNamespace, testNamespace)
+
 		got := DefaultNamespace()
 		assert.Equal(t, testNamespace, got)
 	})
 	t.Run("Get dynatrace", func(t *testing.T) {
 		os.Unsetenv(PodNamespace)
+
 		got := DefaultNamespace()
 		assert.Equal(t, "dynatrace", got)
 	})

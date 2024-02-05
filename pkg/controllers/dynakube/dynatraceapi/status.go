@@ -16,6 +16,7 @@ func IsUnreachable(err error) bool {
 	if errors.As(err, &serverErr) && (serverErr.Code == http.StatusTooManyRequests || serverErr.Code == http.StatusServiceUnavailable) {
 		return true
 	}
+
 	return false
 }
 
@@ -24,6 +25,7 @@ func StatusCode(err error) int {
 	if errors.As(err, &serverErr) {
 		return serverErr.Code
 	}
+
 	return 0
 }
 
@@ -32,5 +34,6 @@ func Message(err error) string {
 	if errors.As(err, &serverErr) {
 		return serverErr.Message
 	}
+
 	return ""
 }

@@ -14,5 +14,6 @@ func ParseCommandLineArgument(arg string) (string, string, string) {
 	if foundSeparator {
 		return arg, DefaultSeparator, value
 	}
+
 	return arg, "", ""
 }

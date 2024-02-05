@@ -35,6 +35,7 @@ func TestGenerateForNamespace(t *testing.T) {
 
 		// add TrustedCA
 		setTrustedCA(dynakube, "ca-configmap")
+
 		caValue := "ca-test"
 		caConfigMap := createTestCaConfigMap(dynakube, caValue)
 
@@ -44,6 +45,7 @@ func TestGenerateForNamespace(t *testing.T) {
 
 		// add TLS secret
 		setTlsSecret(dynakube, "tls-test")
+
 		tlsValue := "tls-test-value"
 		tlsSecret := createTestTlsSecret(dynakube, tlsValue)
 
@@ -89,6 +91,7 @@ func TestGenerateForDynakube(t *testing.T) {
 
 		// add TrustedCA
 		setTrustedCA(dynakube, "ca-configmap")
+
 		caValue := "ca-test"
 		caConfigMap := createTestCaConfigMap(dynakube, caValue)
 
@@ -98,6 +101,7 @@ func TestGenerateForDynakube(t *testing.T) {
 
 		// add TLS secret
 		setTlsSecret(dynakube, "tls-test")
+
 		tlsValue := "tls-test-value"
 		tlsSecret := createTestTlsSecret(dynakube, tlsValue)
 
@@ -246,7 +250,9 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 	t.Run("Create SecretConfig with trustedCA", func(t *testing.T) {
 		dynakube := baseDynakube.DeepCopy()
 		expectedSecretConfig := *baseExpectedSecretConfig
+
 		setTrustedCA(dynakube, "ca-configmap")
+
 		caValue := "ca-test"
 		caConfigMap := createTestCaConfigMap(dynakube, caValue)
 		expectedSecretConfig.TrustedCAs = caValue
@@ -315,6 +321,7 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 		expectedSecretConfig := *baseExpectedSecretConfig
 		retryValue := "123"
 		setInitialConnectRetry(dynakube, retryValue)
+
 		expectedSecretConfig.InitialConnectRetry = 123
 
 		testNamespace := createTestInjectedNamespace(dynakube, "test")
@@ -329,6 +336,7 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 	t.Run("Create SecretConfig with tlsSecret", func(t *testing.T) {
 		dynakube := baseDynakube.DeepCopy()
 		setTlsSecret(dynakube, "tls-test")
+
 		expectedSecretConfig := *baseExpectedSecretConfig
 		tlsValue := "tls-test-value"
 		tlsSecret := createTestTlsSecret(dynakube, tlsValue)
@@ -468,6 +476,7 @@ func setNodesToInstances(dynakube *dynatracev1beta1.DynaKube, nodeNames ...strin
 	for _, name := range nodeNames {
 		instances[name] = dynatracev1beta1.OneAgentInstance{}
 	}
+
 	dynakube.Status.OneAgent.Instances = instances
 }
 
@@ -505,9 +514,11 @@ func createApiTokenSecret(dynakube *dynatracev1beta1.DynaKube, apiToken, paasTok
 	if apiToken != "" {
 		tokenSecret.Data["apiToken"] = []byte(apiToken)
 	}
+
 	if paasToken != "" {
 		tokenSecret.Data["paasToken"] = []byte(paasToken)
 	}
+
 	return tokenSecret
 }
 
@@ -534,6 +545,7 @@ func retrieveInitSecret(t *testing.T, clt client.Client, namespaceName string) c
 	err := clt.Get(context.TODO(), types.NamespacedName{Name: consts.AgentInitSecretName, Namespace: namespaceName}, &initSecret)
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(initSecret.Data))
+
 	return initSecret
 }
 
@@ -541,6 +553,7 @@ func checkSecretConfigExists(t *testing.T, initSecret corev1.Secret) {
 	secretConfig, ok := initSecret.Data[consts.AgentInitSecretConfigField]
 	require.True(t, ok)
 	require.NotNil(t, secretConfig)
+
 	var parsedConfig startup.SecretConfig
 	err := json.Unmarshal(secretConfig, &parsedConfig)
 	require.NoError(t, err)

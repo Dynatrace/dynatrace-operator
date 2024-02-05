@@ -23,6 +23,7 @@ func createTestDynakubeWithProxy(proxy dynatracev1beta1.DynaKubeProxy) *dynatrac
 		},
 	}
 	dk.Namespace = testNamespace
+
 	return dk
 }
 

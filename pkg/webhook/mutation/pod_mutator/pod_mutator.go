@@ -39,7 +39,9 @@ func AddPodMutationWebhookToManager(mgr manager.Manager, ns string) error {
 	if err := registerInjectEndpoint(mgr, ns, podName); err != nil {
 		return err
 	}
+
 	registerLivezEndpoint(mgr)
+
 	return nil
 }
 
@@ -67,12 +69,15 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 
 	emptyPatch := admission.Patched("")
 	mutationRequest, err := webhook.createMutationRequestBase(ctx, request)
+
 	if err != nil {
 		emptyPatch.Result.Message = fmt.Sprintf("unable to inject into pod (err=%s)", err.Error())
 		log.Error(err, "building mutation request base encountered an error")
 		span.RecordError(err)
+
 		return emptyPatch
 	}
+
 	if mutationRequest == nil {
 		emptyPatch.Result.Message = "injection into pod not required"
 		return emptyPatch
@@ -94,15 +99,19 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 		if webhook.handlePodReinvocation(ctx, mutationRequest) {
 			log.Info("reinvocation policy applied", "podName", podName)
 			webhook.recorder.sendPodUpdateEvent()
+
 			return createResponseForPod(ctx, mutationRequest.Pod, request)
 		}
+
 		log.Info("no change, all containers already injected", "podName", podName)
+
 		return emptyPatch
 	}
 
 	if err := webhook.handlePodMutation(ctx, mutationRequest); err != nil {
 		return silentErrorResponse(ctx, mutationRequest.Pod, err)
 	}
+
 	log.Info("injection finished for pod", "podName", podName, "namespace", request.Namespace)
 
 	return createResponseForPod(ctx, mutationRequest.Pod, request)
@@ -112,6 +121,7 @@ func mutationRequired(mutationRequest *dtwebhook.MutationRequest) bool {
 	if mutationRequest == nil {
 		return false
 	}
+
 	return maputils.GetFieldBool(mutationRequest.Pod.Annotations, dtwebhook.AnnotationDynatraceInject, true)
 }
 
@@ -132,6 +142,7 @@ func (webhook *podMutatorWebhook) isInjected(ctx context.Context, mutationReques
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -152,6 +163,7 @@ func podNeedsInjection(mutationRequest *dtwebhook.MutationRequest) bool {
 	for _, container := range mutationRequest.Pod.Spec.Containers {
 		needsInjection = needsInjection || !dtwebhookutil.IsContainerExcludedFromInjection(mutationRequest.BaseRequest, container.Name)
 	}
+
 	return needsInjection
 }
 
@@ -167,15 +179,19 @@ func (webhook *podMutatorWebhook) handlePodMutation(ctx context.Context, mutatio
 	mutationRequest.InstallContainer = createInstallInitContainerBase(webhook.webhookImage, webhook.clusterID, mutationRequest.Pod, mutationRequest.DynaKube)
 
 	isMutated := false
+
 	for _, mutator := range webhook.mutators {
 		if !mutator.Enabled(mutationRequest.BaseRequest) {
 			continue
 		}
+
 		if err := mutator.Mutate(ctx, mutationRequest); err != nil {
 			return err
 		}
+
 		isMutated = true
 	}
+
 	if !isMutated {
 		log.Info("no mutation is enabled")
 		return nil
@@ -184,6 +200,7 @@ func (webhook *podMutatorWebhook) handlePodMutation(ctx context.Context, mutatio
 	addInitContainerToPod(mutationRequest.Pod, mutationRequest.InstallContainer)
 	webhook.recorder.sendPodInjectEvent()
 	setDynatraceInjectedAnnotation(mutationRequest)
+
 	return nil
 }
 
@@ -194,6 +211,7 @@ func (webhook *podMutatorWebhook) handlePodReinvocation(ctx context.Context, mut
 	var needsUpdate bool
 
 	reinvocationRequest := mutationRequest.ToReinvocationRequest()
+
 	for _, mutator := range webhook.mutators {
 		if mutator.Enabled(mutationRequest.BaseRequest) {
 			if update := mutator.Reinvoke(reinvocationRequest); update {
@@ -201,6 +219,7 @@ func (webhook *podMutatorWebhook) handlePodReinvocation(ctx context.Context, mut
 			}
 		}
 	}
+
 	return needsUpdate
 }
 
@@ -208,6 +227,7 @@ func setDynatraceInjectedAnnotation(mutationRequest *dtwebhook.MutationRequest) 
 	if mutationRequest.Pod.Annotations == nil {
 		mutationRequest.Pod.Annotations = make(map[string]string)
 	}
+
 	mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected] = "true"
 }
 
@@ -220,6 +240,7 @@ func createResponseForPod(ctx context.Context, pod *corev1.Pod, req admission.Re
 	if err != nil {
 		return silentErrorResponse(ctx, pod, err)
 	}
+
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
 }
 
@@ -231,5 +252,6 @@ func silentErrorResponse(ctx context.Context, pod *corev1.Pod, err error) admiss
 	podName := k8spod.GetName(*pod)
 	log.Error(err, "failed to inject into pod", "podName", podName)
 	rsp.Result.Message = fmt.Sprintf("Failed to inject into pod: %s because %s", podName, err.Error())
+
 	return rsp
 }

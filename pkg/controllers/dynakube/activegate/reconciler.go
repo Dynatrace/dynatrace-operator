@@ -96,6 +96,7 @@ func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.C
 		// TODO: Add clean up of the config map
 		return nil
 	}
+
 	configMapData := extractPublicData(r.dynakube)
 
 	configMap, err := configmap.CreateConfigMap(r.scheme, r.dynakube,
@@ -107,11 +108,13 @@ func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.C
 	}
 
 	query := configmap.NewQuery(ctx, r.client, r.apiReader, log)
+
 	err = query.CreateOrUpdate(*configMap)
 	if err != nil {
 		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
 		return err
 	}
+
 	return nil
 }
 
@@ -121,9 +124,11 @@ func extractPublicData(dynakube *dynatracev1beta1.DynaKube) map[string]string {
 	if dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID != "" {
 		data[connectioninfo.TenantUUIDName] = dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID
 	}
+
 	if dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints != "" {
 		data[connectioninfo.CommunicationEndpointsName] = dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints
 	}
+
 	return data
 }
 
@@ -132,6 +137,7 @@ func (r *Reconciler) createCapability(ctx context.Context, agCapability capabili
 	statefulsetReconciler := r.newStatefulsetReconcilerFunc(r.client, r.apiReader, r.scheme, r.dynakube, agCapability)                                        // nolint:typeCheck
 
 	capabilityReconciler := r.newCapabilityReconcilerFunc(r.client, agCapability, r.dynakube, statefulsetReconciler, customPropertiesReconciler)
+
 	return capabilityReconciler.Reconcile(ctx)
 }
 
@@ -158,6 +164,7 @@ func (r *Reconciler) deleteService(ctx context.Context, agCapability capability.
 			Namespace: r.dynakube.Namespace,
 		},
 	}
+
 	return object.Delete(ctx, r.client, &svc)
 }
 
@@ -168,5 +175,6 @@ func (r *Reconciler) deleteStatefulset(ctx context.Context, agCapability capabil
 			Namespace: r.dynakube.Namespace,
 		},
 	}
+
 	return object.Delete(ctx, r.client, &sts)
 }

@@ -16,6 +16,7 @@ func (dtc *dynatraceClient) GetEntityIDForIP(ip string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	if hostInfo.entityID == "" {
 		return "", errors.New("entity id not set for host")
 	}
@@ -30,10 +31,12 @@ func (dtc *dynatraceClient) GetLatestAgent(os, installerType, flavor, arch strin
 	}
 
 	url := dtc.getLatestAgentUrl(os, installerType, flavor, arch, technologies, skipMetadata)
+
 	md5, err := dtc.makeRequestForBinary(url, dynatracePaaSToken, writer)
 	if err == nil {
 		log.Info("downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "technologies", technologies, "md5", md5)
 	}
+
 	return err
 }
 
@@ -58,6 +61,7 @@ func (dtc *dynatraceClient) GetLatestAgentVersion(os, installerType string) (str
 
 	url := dtc.getLatestAgentVersionUrl(os, installerType, flavor, arch.Arch)
 	err := dtc.makeRequestAndUnmarshal(url, dynatracePaaSToken, &response)
+
 	return response.LatestAgentVersion, errors.WithStack(err)
 }
 
@@ -73,6 +77,7 @@ func (dtc *dynatraceClient) GetAgentVersions(os, installerType, flavor, arch str
 
 	url := dtc.getAgentVersionsUrl(os, installerType, flavor, arch)
 	err := dtc.makeRequestAndUnmarshal(url, dynatracePaaSToken, &response)
+
 	return response.AvailableVersions, errors.WithStack(err)
 }
 
@@ -82,10 +87,12 @@ func (dtc *dynatraceClient) GetAgent(os, installerType, flavor, arch, version st
 	}
 
 	url := dtc.getAgentUrl(os, installerType, flavor, arch, version, technologies, skipMetadata)
+
 	md5, err := dtc.makeRequestForBinary(url, dynatracePaaSToken, writer)
 	if err == nil {
 		log.Info("downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "technologies", technologies, "md5", md5)
 	}
+
 	return err
 }
 
@@ -94,5 +101,6 @@ func (dtc *dynatraceClient) GetAgentViaInstallerUrl(url string, writer io.Writer
 	if err == nil {
 		log.Info("downloaded agent file using given url", "url", url, "md5", md5)
 	}
+
 	return err
 }

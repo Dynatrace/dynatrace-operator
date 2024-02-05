@@ -39,8 +39,10 @@ func (in *EdgeConnect) DeepCopy() *EdgeConnect {
 	if in == nil {
 		return nil
 	}
+
 	out := new(EdgeConnect)
 	in.DeepCopyInto(out)
+
 	return out
 }
 
@@ -49,6 +51,7 @@ func (in *EdgeConnect) DeepCopyObject() runtime.Object {
 	if c := in.DeepCopy(); c != nil {
 		return c
 	}
+
 	return nil
 }
 
@@ -57,9 +60,11 @@ func (in *EdgeConnectList) DeepCopyInto(out *EdgeConnectList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
 	in.ListMeta.DeepCopyInto(&out.ListMeta)
+
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]EdgeConnect, len(*in))
+
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -71,8 +76,10 @@ func (in *EdgeConnectList) DeepCopy() *EdgeConnectList {
 	if in == nil {
 		return nil
 	}
+
 	out := new(EdgeConnectList)
 	in.DeepCopyInto(out)
+
 	return out
 }
 
@@ -81,6 +88,7 @@ func (in *EdgeConnectList) DeepCopyObject() runtime.Object {
 	if c := in.DeepCopy(); c != nil {
 		return c
 	}
+
 	return nil
 }
 
@@ -89,50 +97,64 @@ func (in *EdgeConnectSpec) DeepCopyInto(out *EdgeConnectSpec) {
 	*out = *in
 	out.OAuth = in.OAuth
 	out.ImageRef = in.ImageRef
+
 	if in.Annotations != nil {
 		in, out := &in.Annotations, &out.Annotations
 		*out = make(map[string]string, len(*in))
+
 		for key, val := range *in {
 			(*out)[key] = val
 		}
 	}
+
 	if in.Labels != nil {
 		in, out := &in.Labels, &out.Labels
 		*out = make(map[string]string, len(*in))
+
 		for key, val := range *in {
 			(*out)[key] = val
 		}
 	}
+
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
 		*out = make([]v1.EnvVar, len(*in))
+
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+
 	if in.Replicas != nil {
 		in, out := &in.Replicas, &out.Replicas
 		*out = new(int32)
 		**out = **in
 	}
+
 	in.Resources.DeepCopyInto(&out.Resources)
+
 	if in.NodeSelector != nil {
 		in, out := &in.NodeSelector, &out.NodeSelector
 		*out = make(map[string]string, len(*in))
+
 		for key, val := range *in {
 			(*out)[key] = val
 		}
 	}
+
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
 		*out = make([]v1.Toleration, len(*in))
+
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+
 	if in.TopologySpreadConstraints != nil {
 		in, out := &in.TopologySpreadConstraints, &out.TopologySpreadConstraints
 		*out = make([]v1.TopologySpreadConstraint, len(*in))
+
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -144,8 +166,10 @@ func (in *EdgeConnectSpec) DeepCopy() *EdgeConnectSpec {
 	if in == nil {
 		return nil
 	}
+
 	out := new(EdgeConnectSpec)
 	in.DeepCopyInto(out)
+
 	return out
 }
 
@@ -154,9 +178,11 @@ func (in *EdgeConnectStatus) DeepCopyInto(out *EdgeConnectStatus) {
 	*out = *in
 	in.Version.DeepCopyInto(&out.Version)
 	in.UpdatedTimestamp.DeepCopyInto(&out.UpdatedTimestamp)
+
 	if in.Conditions != nil {
 		in, out := &in.Conditions, &out.Conditions
 		*out = make([]metav1.Condition, len(*in))
+
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -168,8 +194,10 @@ func (in *EdgeConnectStatus) DeepCopy() *EdgeConnectStatus {
 	if in == nil {
 		return nil
 	}
+
 	out := new(EdgeConnectStatus)
 	in.DeepCopyInto(out)
+
 	return out
 }
 
@@ -183,8 +211,10 @@ func (in *ImageRefSpec) DeepCopy() *ImageRefSpec {
 	if in == nil {
 		return nil
 	}
+
 	out := new(ImageRefSpec)
 	in.DeepCopyInto(out)
+
 	return out
 }
 
@@ -198,7 +228,9 @@ func (in *OAuthSpec) DeepCopy() *OAuthSpec {
 	if in == nil {
 		return nil
 	}
+
 	out := new(OAuthSpec)
 	in.DeepCopyInto(out)
+
 	return out
 }

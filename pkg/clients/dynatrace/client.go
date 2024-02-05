@@ -135,6 +135,7 @@ func NewClient(url, apiToken, paasToken string, opts ...Option) (Client, error) 
 	if len(url) == 0 {
 		return nil, errors.New("url is empty")
 	}
+
 	if len(apiToken) == 0 && len(paasToken) == 0 {
 		return nil, errors.New("tokens are empty")
 	}
@@ -172,6 +173,7 @@ func SkipCertificateValidation(skip bool) Option {
 			if t.TLSClientConfig == nil {
 				t.TLSClientConfig = &tls.Config{} //nolint:gosec // fix is expected to be delivered soon
 			}
+
 			t.TLSClientConfig.InsecureSkipVerify = true
 		}
 	}
@@ -184,6 +186,7 @@ func Proxy(proxyURL string, noProxy string) Option {
 			log.Info("could not parse proxy URL!")
 			return
 		}
+
 		transport := dtclient.httpClient.Transport.(*http.Transport)
 		proxyConfig := httpproxy.Config{
 			HTTPProxy:  parsedURL.String(),
@@ -211,6 +214,7 @@ func Certs(certs []byte) Option {
 		if t.TLSClientConfig == nil {
 			t.TLSClientConfig = &tls.Config{} //nolint:gosec // fix is expected to be delivered soon
 		}
+
 		t.TLSClientConfig.RootCAs = rootCAs
 	}
 }

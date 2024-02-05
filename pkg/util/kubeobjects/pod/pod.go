@@ -11,10 +11,12 @@ import (
 
 func Get(ctx context.Context, clt client.Reader, name, namespace string) (*corev1.Pod, error) {
 	pod := &corev1.Pod{}
+
 	err := clt.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, pod)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+
 	return pod, nil
 }
 
@@ -24,5 +26,6 @@ func GetName(pod corev1.Pod) string {
 	if pod.Name != "" {
 		return pod.Name
 	}
+
 	return pod.GenerateName
 }

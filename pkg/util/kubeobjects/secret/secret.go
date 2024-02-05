@@ -65,11 +65,12 @@ func (query Query) GetAllFromNamespaces(secretName string) ([]corev1.Secret, err
 			"metadata.name": secretName,
 		},
 	}
-	err := query.KubeReader.List(query.Ctx, secretList, listOps...)
 
+	err := query.KubeReader.List(query.Ctx, secretList, listOps...)
 	if client.IgnoreNotFound(err) != nil {
 		return nil, errors.WithStack(err)
 	}
+
 	return secretList.Items, err
 }
 
@@ -81,8 +82,10 @@ func (query Query) CreateOrUpdate(secret corev1.Secret) error {
 			if err != nil {
 				return errors.WithStack(err)
 			}
+
 			return nil
 		}
+
 		return errors.WithStack(err)
 	}
 
@@ -94,6 +97,7 @@ func (query Query) CreateOrUpdate(secret corev1.Secret) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
+
 	return nil
 }
 
@@ -105,10 +109,12 @@ func (query Query) CreateOrUpdateForNamespaces(newSecret corev1.Secret, namespac
 
 	query.Log.Info("reconciling secret for multiple namespaces",
 		"name", newSecret.Name, "len(namespaces)", len(namespaces))
+
 	namespacesContainingSecret := make(map[string]corev1.Secret, len(secrets))
 	for _, secret := range secrets {
 		namespacesContainingSecret[secret.Namespace] = secret
 	}
+
 	return query.createOrUpdateForNamespaces(newSecret, namespacesContainingSecret, namespaces)
 }
 
@@ -117,7 +123,9 @@ func (query Query) CreateOrUpdateForNamespaces(newSecret corev1.Secret, namespac
 func (query Query) createOrUpdateForNamespaces(newSecret corev1.Secret, namespacesContainingSecret map[string]corev1.Secret, namespaces []corev1.Namespace) error {
 	updateCount := 0
 	creationCount := 0
+
 	var errs []error
+
 	for _, namespace := range namespaces {
 		newSecret.Namespace = namespace.Name
 		if oldSecret, ok := namespacesContainingSecret[namespace.Name]; ok {
@@ -127,6 +135,7 @@ func (query Query) createOrUpdateForNamespaces(newSecret corev1.Secret, namespac
 					errs = append(errs, errors.WithMessagef(err, "failed to update secret %s for namespace %s", newSecret.Name, namespace.Name))
 					continue
 				}
+
 				updateCount++
 			}
 		} else {
@@ -135,11 +144,14 @@ func (query Query) createOrUpdateForNamespaces(newSecret corev1.Secret, namespac
 				errs = append(errs, errors.WithMessagef(err, "failed to create secret %s for namespace %s", newSecret.Name, namespace.Name))
 				continue
 			}
+
 			creationCount++
 		}
 	}
+
 	query.Log.Info("reconciled secret for multiple namespaces",
 		"name", newSecret.Name, "creationCount", creationCount, "updateCount", updateCount)
+
 	return goerrors.Join(errs...)
 }
 
@@ -164,6 +176,7 @@ func ExtractToken(secret *corev1.Secret, key string) (string, error) {
 
 func GetDataFromSecretName(apiReader client.Reader, namespacedName types.NamespacedName, dataKey string, log logr.Logger) (string, error) {
 	query := NewQuery(context.TODO(), nil, apiReader, log)
+
 	secret, err := query.Get(namespacedName)
 	if err != nil {
 		return "", errors.WithStack(err)
@@ -173,6 +186,7 @@ func GetDataFromSecretName(apiReader client.Reader, namespacedName types.Namespa
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
+
 	return value, nil
 }
 
@@ -182,6 +196,7 @@ type secretBuilderModifier = builder.Modifier[secretBuilderData]
 func Create(scheme *runtime.Scheme, owner metav1.Object, mods ...secretBuilderModifier) (*corev1.Secret, error) {
 	builderOfSecret := builder.NewBuilder(corev1.Secret{})
 	secret, err := builderOfSecret.AddModifier(mods...).AddModifier(newSecretOwnerModifier(scheme, owner)).Build()
+
 	return &secret, err
 }
 
@@ -205,6 +220,7 @@ func (mod secretOwnerModifier) Modify(secret *corev1.Secret) error {
 	if err := controllerutil.SetControllerReference(mod.owner, secret, mod.scheme); err != nil {
 		return errors.WithStack(err)
 	}
+
 	return nil
 }
 

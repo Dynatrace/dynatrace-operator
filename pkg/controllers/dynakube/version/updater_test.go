@@ -156,6 +156,7 @@ func TestRun(t *testing.T) {
 func TestDetermineSource(t *testing.T) {
 	customImage := "my.special.image"
 	customVersion := "3.2.1.4-5"
+
 	t.Run("custom-image", func(t *testing.T) {
 		updater := newCustomImageUpdater(t, nil, customImage)
 		source := determineSource(updater)
@@ -276,13 +277,16 @@ func enablePublicRegistry(dynakube *dynatracev1beta1.DynaKube) *dynatracev1beta1
 	if dynakube.Annotations == nil {
 		dynakube.Annotations = make(map[string]string)
 	}
+
 	dynakube.Annotations[dynatracev1beta1.AnnotationFeaturePublicRegistry] = "true"
+
 	return dynakube
 }
 
 func newCustomImageUpdater(t *testing.T, target *status.VersionStatus, image string) *mocks.StatusUpdater {
 	updater := newBaseUpdater(t, target, true)
 	updater.On("CustomImage").Maybe().Return(image)
+
 	return updater
 }
 
@@ -291,6 +295,7 @@ func newCustomVersionUpdater(t *testing.T, target *status.VersionStatus, version
 	updater.On("CustomImage").Maybe().Return("")
 	updater.On("IsPublicRegistryEnabled").Maybe().Maybe().Return(false)
 	updater.On("CustomVersion").Maybe().Return(version)
+
 	return updater
 }
 
@@ -300,6 +305,7 @@ func newDefaultUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bo
 	updater.On("IsPublicRegistryEnabled").Maybe().Return(false)
 	updater.On("CustomVersion").Maybe().Return("")
 	updater.On("UseTenantRegistry", mock.Anything).Maybe().Return(nil)
+
 	return updater
 }
 
@@ -308,12 +314,14 @@ func newPublicRegistryUpdater(t *testing.T, target *status.VersionStatus, imageI
 	updater.On("CustomImage").Maybe().Return("")
 	updater.On("IsPublicRegistryEnabled").Maybe().Return(true)
 	updater.On("LatestImageInfo").Maybe().Return(imageInfo, nil)
+
 	return updater
 }
 
 func newClassicFullStackUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool) *mocks.StatusUpdater {
 	updater := newBaseUpdater(t, target, autoUpdate)
 	updater.On("IsPublicRegistryEnabled").Maybe().Return(false)
+
 	return updater
 }
 
@@ -324,6 +332,7 @@ func newBaseUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool)
 	updater.On("IsEnabled").Maybe().Return(true)
 	updater.On("IsAutoUpdateEnabled").Maybe().Return(autoUpdate)
 	updater.On("ValidateStatus").Maybe().Return(nil)
+
 	return updater
 }
 

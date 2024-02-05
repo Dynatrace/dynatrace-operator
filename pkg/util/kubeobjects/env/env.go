@@ -18,6 +18,7 @@ func FindEnvVar(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
 			return &envVars[i]
 		}
 	}
+
 	return nil
 }
 
@@ -27,6 +28,7 @@ func IsIn(envVars []corev1.EnvVar, envVarToCheck string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -37,6 +39,7 @@ func AddOrUpdate(envVars []corev1.EnvVar, desiredEnvVar corev1.EnvVar) []corev1.
 	} else {
 		envVars = append(envVars, desiredEnvVar)
 	}
+
 	return envVars
 }
 
@@ -50,5 +53,6 @@ func DefaultNamespace() string {
 	if namespace == "" {
 		return "dynatrace"
 	}
+
 	return namespace
 }

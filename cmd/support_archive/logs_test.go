@@ -81,9 +81,11 @@ func testLogCollection(t *testing.T, collectManagedLogs bool) {
 		for _, containerNumber := range containerNumber {
 			assert.Equal(t, fmt.Sprintf("logs/pod%d/container%d.log", podNumber, containerNumber),
 				zipReader.File[fileIndex].Name)
+
 			fileIndex++
 			assert.Equal(t, fmt.Sprintf("logs/pod%d/container%d_previous.log", podNumber, containerNumber),
 				zipReader.File[fileIndex].Name)
+
 			fileIndex++
 		}
 	}
@@ -108,6 +110,7 @@ func TestLogCollectorPodListError(t *testing.T) {
 	mockedPods.EXPECT().
 		List(ctx, createPodListOptions(labels.AppNameLabel)).
 		Return(nil, assert.AnError)
+
 	logCollector := newLogCollector(ctx,
 		newSupportArchiveLogger(&logBuffer),
 		supportArchive,
@@ -132,12 +135,14 @@ func TestLogCollectorGetPodFail(t *testing.T) {
 	logBuffer := bytes.Buffer{}
 
 	buffer := bytes.Buffer{}
+
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 	defer assertNoErrorOnClose(t, supportArchive)
 
 	mockedPods := corev1mocks.NewPodInterface(t)
 	listOptionsAppName := createPodListOptions(labels.AppNameLabel)
 	listOptionsManagedByOperator := createPodListOptions(labels.AppManagedByLabel)
+
 	mockedPods.EXPECT().
 		List(ctx, listOptionsAppName).
 		Return(fakeClientSet.CoreV1().Pods("dynatrace").List(ctx, listOptionsAppName))
@@ -168,6 +173,7 @@ func TestLogCollectorGetLogsFail(t *testing.T) {
 	logBuffer := bytes.Buffer{}
 
 	buffer := bytes.Buffer{}
+
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 	defer assertNoErrorOnClose(t, supportArchive)
 
@@ -184,6 +190,7 @@ func TestLogCollectorGetLogsFail(t *testing.T) {
 		List(ctx, listOptionsManagedByOperator).
 		NotBefore(listAppNameCall.Call).
 		Return(fakeClientSet.CoreV1().Pods("dynatrace").List(ctx, listOptionsManagedByOperator))
+
 	getPod1Call := mockedPods.EXPECT().
 		Get(ctx, "pod1", getOptions).
 		NotBefore(listAppNameCall.Call).
@@ -258,6 +265,7 @@ func TestLogCollectorNoAbortOnError(t *testing.T) {
 		List(ctx, listOptionsManagedByOperator).
 		NotBefore(listCall.Call).
 		Return(fakeClientSet.CoreV1().Pods("dynatrace").List(ctx, listOptionsManagedByOperator))
+
 	getPod1Call := mockedPods.EXPECT().
 		Get(ctx, "pod1", getOptions).
 		NotBefore(listCall.Call).
@@ -298,6 +306,7 @@ func TestLogCollectorNoAbortOnError(t *testing.T) {
 
 func createPod(name string, labelKey string) *corev1.Pod {
 	const namespace = "dynatrace"
+
 	return &corev1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Pod",

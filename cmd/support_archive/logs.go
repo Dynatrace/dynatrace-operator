@@ -50,6 +50,7 @@ func (collector logCollector) Do() error {
 		if err != nil {
 			return err
 		}
+
 		podList.Items = append(podList.Items, managedByOperatorPodList.Items...)
 	}
 
@@ -63,6 +64,7 @@ func (collector logCollector) Do() error {
 			collector.collectPodLogs(pod)
 		}
 	}
+
 	return nil
 }
 
@@ -77,6 +79,7 @@ func (collector logCollector) getPodList(labelKey string) (*corev1.PodList, erro
 		},
 		LabelSelector: fmt.Sprintf("%s=%s", labelKey, collector.appName),
 	}
+
 	podList, err := collector.pods.List(collector.ctx, listOptions)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -106,13 +109,13 @@ func (collector logCollector) collectContainerLogs(pod *corev1.Pod, container co
 	}
 
 	podLogs, err := req.Stream(collector.ctx)
-
 	if logOptions.Previous && err != nil {
 		if k8serrors.IsBadRequest(err) { // Prevent logging of "previous terminated container not found" error
 			return
 		}
 
 		logErrorf(collector.log, err, "error getting previous logs")
+
 		return
 	} else if err != nil {
 		logErrorf(collector.log, err, "error in opening stream")
@@ -122,12 +125,13 @@ func (collector logCollector) collectContainerLogs(pod *corev1.Pod, container co
 	defer podLogs.Close()
 
 	fileName := buildLogFileName(pod, container, logOptions)
-	err = collector.supportArchive.addFile(fileName, podLogs)
 
+	err = collector.supportArchive.addFile(fileName, podLogs)
 	if err != nil {
 		logErrorf(collector.log, err, "error writing to tarball")
 		return
 	}
+
 	logInfof(collector.log, "Successfully collected logs %s", fileName)
 }
 
@@ -135,5 +139,6 @@ func buildLogFileName(pod *corev1.Pod, container corev1.Container, logOptions co
 	if logOptions.Previous {
 		return fmt.Sprintf("%s/%s/%s_previous.log", LogsDirectoryName, pod.Name, container.Name)
 	}
+
 	return fmt.Sprintf("%s/%s/%s.log", LogsDirectoryName, pod.Name, container.Name)
 }

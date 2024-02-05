@@ -132,6 +132,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 			testIp  = "42.42.42.42"
 			testIp1 = "42.42.42.43"
 		)
+
 		expected := &istiov1beta1.ServiceEntry{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,

@@ -15,6 +15,7 @@ func checkInjectionAnnotation(annotations map[string]string, name string) bool {
 			}
 		}
 	}
+
 	return false
 }
 

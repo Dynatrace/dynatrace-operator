@@ -33,6 +33,7 @@ func CreateService(dynakube *dynatracev1beta1.DynaKube, feature string) *corev1.
 	}
 
 	coreLabels := labels.NewCoreLabels(dynakube.Name, labels.ActiveGateComponentLabel)
+
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      capability.BuildServiceName(dynakube.Name, feature),

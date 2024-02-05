@@ -69,5 +69,6 @@ func IsThirdGenAPIUrl(_ context.Context, dv *dynakubeValidator, dynakube *dynatr
 	if strings.Contains(dynakube.ApiUrl(), ".apps.") {
 		return errorThirdGenApiUrl
 	}
+
 	return ""
 }

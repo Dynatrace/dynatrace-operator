@@ -76,33 +76,42 @@ func (installer *Installer) InstallAgent(targetDir string) (bool, error) {
 	}
 
 	log.Info("installing agent", "target dir", targetDir)
+
 	if err := installer.installAgentFromImage(targetDir); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
+
 		log.Info("failed to install agent from image", "err", err)
+
 		return false, errors.WithStack(err)
 	}
 
 	if err := symlink.CreateSymlinkForCurrentVersionIfNotExists(installer.fs, targetDir); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
+
 		log.Info("failed to create symlink for agent installation", "err", err)
+
 		return false, errors.WithStack(err)
 	}
+
 	return true, nil
 }
 
 func (installer *Installer) installAgentFromImage(targetDir string) error {
 	defer installer.fs.RemoveAll(CacheDir)
+
 	err := installer.fs.MkdirAll(CacheDir, common.MkDirFileMode)
 	if err != nil {
 		log.Info("failed to create cache dir", "err", err)
 		return errors.WithStack(err)
 	}
+
 	image := installer.props.ImageUri
 
 	if err != nil {
 		log.Info("failed to get source information", "image", image)
 		return errors.WithStack(err)
 	}
+
 	imageCacheDir := getCacheDirPath(installer.props.ImageDigest)
 	if err != nil {
 		log.Info("failed to get destination information", "image", image, "imageCacheDir", imageCacheDir)
@@ -119,6 +128,7 @@ func (installer *Installer) installAgentFromImage(targetDir string) error {
 	if err != nil {
 		log.Info("failed to extract agent binaries from image via proxy", "image", image, "imageCacheDir", imageCacheDir, "err", err)
 	}
+
 	return nil
 }
 

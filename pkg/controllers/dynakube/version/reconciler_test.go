@@ -68,6 +68,7 @@ func TestReconcile(t *testing.T) {
 		dynakube := dynakubeTemplate.DeepCopy()
 		fakeClient := fake.NewClient()
 		timeProvider := timeprovider.New().Freeze()
+
 		setupPullSecret(t, fakeClient, *dynakube)
 
 		dkStatus := &dynakube.Status
@@ -100,6 +101,7 @@ func TestReconcile(t *testing.T) {
 
 		// change if probe old enough
 		changeTime(timeProvider, 15*time.Minute+1*time.Second)
+
 		err = versionReconciler.ReconcileCodeModules(ctx, dynakube)
 		require.NoError(t, err)
 		assert.NotEqual(t, previousProbe, *dkStatus.CodeModules.VersionStatus.LastProbeTimestamp)
@@ -111,6 +113,7 @@ func TestReconcile(t *testing.T) {
 		testCodeModulesImage := getTestCodeModulesImage()
 		dynakube := dynakubeTemplate.DeepCopy()
 		enablePublicRegistry(dynakube)
+
 		fakeClient := fake.NewClient()
 		setupPullSecret(t, fakeClient, *dynakube)
 
@@ -191,6 +194,7 @@ func TestNeedsUpdate(t *testing.T) {
 	t.Run("needs, because source changed", func(t *testing.T) {
 		updatedDynakube := dynakube.DeepCopy()
 		setOneAgentCustomImageStatus(updatedDynakube, "")
+
 		reconciler := reconciler{
 			timeProvider: timeProvider,
 		}
@@ -203,6 +207,7 @@ func TestNeedsUpdate(t *testing.T) {
 		updatedDynakube := dynakube.DeepCopy()
 		updatedDynakube.Spec.OneAgent.ClassicFullStack.Image = newImage
 		setOneAgentCustomImageStatus(updatedDynakube, oldImage)
+
 		reconciler := reconciler{
 			timeProvider: timeProvider,
 		}
@@ -215,6 +220,7 @@ func TestNeedsUpdate(t *testing.T) {
 		updatedDynakube := dynakube.DeepCopy()
 		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newVersion
 		setOneAgentCustomVersionStatus(updatedDynakube, oldVersion)
+
 		reconciler := reconciler{
 			timeProvider: timeProvider,
 		}

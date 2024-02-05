@@ -15,6 +15,7 @@ func TestCreateConfFile(t *testing.T) {
 	runner := Runner{
 		fs: fs,
 	}
+
 	t.Run(`create file`, func(t *testing.T) {
 		path := "test"
 

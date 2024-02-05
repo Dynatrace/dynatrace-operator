@@ -23,6 +23,7 @@ func (mutator *OneAgentPodMutator) setContainerCount(initContainer *corev1.Conta
 
 func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.MutationRequest) int {
 	injectedContainers := 0
+
 	for i := range request.Pod.Spec.Containers {
 		container := &request.Pod.Spec.Containers[i]
 
@@ -33,6 +34,7 @@ func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.Mutat
 
 		addContainerInfoInitEnv(request.InstallContainer, i+1, container.Name, container.Image)
 		mutator.addOneAgentToContainer(request.ToReinvocationRequest(), container)
+
 		injectedContainers++
 	}
 
@@ -55,10 +57,12 @@ func (mutator *OneAgentPodMutator) reinvokeUserContainers(request *dtwebhook.Rei
 			log.Info("Container excluded from code modules ingest injection", "container", currentContainer.Name)
 			continue
 		}
+
 		if containerIsInjected(currentContainer) {
 			injectedContainers++
 			continue
 		}
+
 		newContainers = append(newContainers, currentContainer)
 	}
 
@@ -73,14 +77,17 @@ func (mutator *OneAgentPodMutator) reinvokeUserContainers(request *dtwebhook.Rei
 	}
 
 	mutator.setContainerCount(oneAgentInstallContainer, injectedContainers+len(newContainers))
+
 	return true
 }
 
 func (mutator *OneAgentPodMutator) addOneAgentToContainer(request *dtwebhook.ReinvocationRequest, container *corev1.Container) {
 	log.Info("adding OneAgent to container", "name", container.Name)
+
 	installPath := maputils.GetField(request.Pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
 
 	dynakube := request.DynaKube
+
 	addOneAgentVolumeMounts(container, installPath)
 	addDeploymentMetadataEnv(container, dynakube, mutator.clusterID)
 	addPreloadEnv(container, installPath)
@@ -113,5 +120,6 @@ func findOneAgentInstallContainer(initContainers []corev1.Container) *corev1.Con
 			return container
 		}
 	}
+
 	return nil
 }

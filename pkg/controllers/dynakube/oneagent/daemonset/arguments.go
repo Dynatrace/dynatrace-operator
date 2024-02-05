@@ -19,6 +19,7 @@ func (dsInfo *builderInfo) arguments() ([]string, error) {
 	if err != nil {
 		return []string{}, err
 	}
+
 	if !isProxyAsEnvVarDeprecated {
 		// deprecated
 		dsInfo.appendProxyArg(argMap)

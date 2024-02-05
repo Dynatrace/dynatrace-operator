@@ -20,6 +20,7 @@ func newSupportArchiveLogger(out io.Writer) logr.Logger {
 	config.LevelKey = ""
 	config.NameKey = "name"
 	config.EncodeTime = zapcore.ISO8601TimeEncoder
+
 	return ctrlzap.New(ctrlzap.WriteTo(out), ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).WithName(supportArchiveLoggerName)
 }
 

@@ -20,11 +20,13 @@ func GetUID(ctx context.Context, clt client.Reader) (types.UID, error) {
 	defer span.End()
 
 	kubeSystemNamespace := &corev1.Namespace{}
+
 	err := clt.Get(ctx, client.ObjectKey{Name: Namespace}, kubeSystemNamespace)
 	if err != nil {
 		span.RecordError(err)
 		return "", errors.WithStack(err)
 	}
+
 	return kubeSystemNamespace.UID, nil
 }
 

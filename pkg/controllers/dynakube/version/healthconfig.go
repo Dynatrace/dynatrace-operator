@@ -44,6 +44,7 @@ func newHealthConfig(command []string) *containerv1.HealthConfig {
 
 func getOneAgentHealthConfig(agentVersion string) (*containerv1.HealthConfig, error) {
 	var testCommand []string
+
 	if agentVersion != "" {
 		agentSemver := agentVersionToSemver(agentVersion)
 		if !semver.IsValid(agentSemver) {
@@ -61,6 +62,7 @@ func getOneAgentHealthConfig(agentVersion string) (*containerv1.HealthConfig, er
 	} else {
 		testCommand = currentHealthCheck
 	}
+
 	return newHealthConfig(testCommand), nil
 }
 
@@ -68,15 +70,20 @@ func agentVersionToSemver(agentVersion string) string {
 	if agentVersion == "" {
 		return ""
 	}
+
 	split := strings.Split(agentVersion, semverSep)
+
 	var agentSemver string
+
 	if len(split) > relevantSemverLength {
 		agentSemver = strings.Join(split[:relevantSemverLength], semverSep)
 	} else {
 		agentSemver = strings.Join(split, semverSep)
 	}
+
 	if !strings.HasPrefix(agentSemver, semverPrefix) {
 		agentSemver = semverPrefix + agentSemver
 	}
+
 	return semver.Canonical(agentSemver)
 }

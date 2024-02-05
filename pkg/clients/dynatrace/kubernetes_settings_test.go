@@ -422,7 +422,6 @@ func mockHandleEntitiesRequest(request *http.Request, writer http.ResponseWriter
 		}
 
 		entitiesResponse, err := json.Marshal(meResponse)
-
 		if err != nil {
 			return
 		}
@@ -441,10 +440,12 @@ func mockHandleSettingsRequest(request *http.Request, writer http.ResponseWriter
 			writer.WriteHeader(http.StatusBadRequest)
 			return
 		}
+
 		settingsGetResponse, err := json.Marshal(GetSettingsResponse{TotalCount: totalCount})
 		if err != nil {
 			return
 		}
+
 		writer.WriteHeader(http.StatusOK)
 		writer.Write(settingsGetResponse)
 	case http.MethodPost:
@@ -452,23 +453,29 @@ func mockHandleSettingsRequest(request *http.Request, writer http.ResponseWriter
 			writer.WriteHeader(http.StatusBadRequest)
 			return
 		}
+
 		body, err := ioutil.ReadAll(request.Body)
 		if err != nil {
 			return
 		}
+
 		var parsedBody []postKubernetesSettingsBody
+
 		err = json.Unmarshal(body, &parsedBody)
 		if err != nil {
 			return
 		}
+
 		var settingsPostResponse []postSettingsResponse
 		settingsPostResponse = append(settingsPostResponse, postSettingsResponse{
 			ObjectId: objectId,
 		})
+
 		settingsPostResponseBytes, err := json.Marshal(settingsPostResponse)
 		if err != nil {
 			return
 		}
+
 		writer.WriteHeader(http.StatusOK)
 		writer.Write(settingsPostResponseBytes)
 	default:

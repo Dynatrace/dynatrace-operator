@@ -17,5 +17,6 @@ func nameTooLong(_ context.Context, _ *edgeconnectValidator, edgeConnect *edgeco
 	if edgeConnectName != "" && len(edgeConnectName) > edgeconnect.MaxNameLength {
 		return fmt.Sprintf(errorNameTooLong, edgeconnect.MaxNameLength)
 	}
+
 	return ""
 }

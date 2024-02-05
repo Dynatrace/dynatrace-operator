@@ -100,6 +100,7 @@ val key
 	err := storeFile(memFs, "/dest", 0776, []string{"[general]", "val key"})
 
 	require.Nil(t, err)
+
 	file, _ := memFs.Open("/dest")
 	content, _ := ioutil.ReadAll(file)
 	assert.Equal(t, expectedOut, string(content))
@@ -144,6 +145,7 @@ prop5 new
 
 	err := Update(memFs, "/source", "/dest", testConfMap)
 	require.Nil(t, err)
+
 	file, _ := memFs.Open("/dest")
 	content, _ := ioutil.ReadAll(file)
 	assert.Equal(t, expected, string(content))
@@ -169,6 +171,7 @@ prop3 old
 
 	err := Update(memFs, "/source", "/dest", testConfMap)
 	require.Nil(t, err)
+
 	file, _ := memFs.Open("/dest")
 	content, _ := ioutil.ReadAll(file)
 	assert.Equal(t, sourceContent, string(content))
@@ -189,6 +192,7 @@ func TestUpdateConfFileEmptySource(t *testing.T) {
 
 	err := Update(memFs, "/source", "/dest", testConfMap)
 	require.Nil(t, err)
+
 	file, _ := memFs.Open("/dest")
 	content, _ := ioutil.ReadAll(file)
 	assert.Equal(t, sourceContent, string(content))

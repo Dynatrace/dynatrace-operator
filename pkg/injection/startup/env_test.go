@@ -15,6 +15,7 @@ func TestNewEnv(t *testing.T) {
 		resetEnv := prepCombinedTestEnv(t)
 
 		env, err := newEnv()
+
 		resetEnv()
 
 		require.NoError(t, err)
@@ -44,6 +45,7 @@ func TestNewEnv(t *testing.T) {
 		resetEnv := prepDataIngestTestEnv(t, false)
 
 		env, err := newEnv()
+
 		resetEnv()
 
 		require.NoError(t, err)
@@ -73,6 +75,7 @@ func TestNewEnv(t *testing.T) {
 		resetEnv := prepDataIngestTestEnv(t, true)
 
 		env, err := newEnv()
+
 		resetEnv()
 
 		require.NoError(t, err)
@@ -89,6 +92,7 @@ func TestNewEnv(t *testing.T) {
 		resetEnv := prepOneAgentTestEnv(t)
 
 		env, err := newEnv()
+
 		resetEnv()
 
 		require.NoError(t, err)
@@ -131,6 +135,7 @@ func TestFailurePolicyModes(t *testing.T) {
 			require.NoError(t, err)
 
 			env, err := newEnv()
+
 			resetEnv()
 
 			require.NoError(t, err)
@@ -144,6 +149,7 @@ func TestFailurePolicyModes(t *testing.T) {
 func prepCombinedTestEnv(t *testing.T) func() {
 	resetDataIngestEnvs := prepDataIngestTestEnv(t, false)
 	resetOneAgentEnvs := prepOneAgentTestEnv(t)
+
 	return func() {
 		resetDataIngestEnvs()
 		resetOneAgentEnvs()
@@ -167,6 +173,7 @@ func prepOneAgentTestEnv(t *testing.T) func() {
 		envs = append(envs, fmt.Sprintf(consts.AgentContainerNameEnvTemplate, i))
 		envs = append(envs, fmt.Sprintf(consts.AgentContainerImageEnvTemplate, i))
 	}
+
 	for _, envvar := range envs {
 		err := os.Setenv(envvar, fmt.Sprintf("TEST_%s", envvar))
 		require.NoError(t, err)
@@ -185,6 +192,7 @@ func prepOneAgentTestEnv(t *testing.T) func() {
 	// Bool envs
 	err = os.Setenv(consts.AgentInjectedEnv, trueStatement)
 	require.NoError(t, err)
+
 	envs = append(envs, consts.AgentInjectedEnv)
 
 	return resetTestEnv(envs)
@@ -218,6 +226,7 @@ func prepDataIngestTestEnv(t *testing.T, isUnknownWorkload bool) func() {
 	// Bool envs
 	err = os.Setenv(consts.EnrichmentInjectedEnv, "true")
 	require.NoError(t, err)
+
 	envs = append(envs, consts.EnrichmentInjectedEnv)
 
 	return resetTestEnv(envs)

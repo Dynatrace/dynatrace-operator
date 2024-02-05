@@ -49,8 +49,10 @@ func TestOperatorManagerProvider(t *testing.T) {
 	t.Run("check if healthz/readyz checks are added", func(t *testing.T) {
 		testHealthzAndReadyz(t, func(mockMgr *managermock.Manager) error {
 			var controlManagerProvider = NewOperatorManagerProvider(false).(operatorManagerProvider)
+
 			controlManagerProvider.setManager(mockMgr)
 			_, err := controlManagerProvider.CreateManager("namespace", &rest.Config{})
+
 			return err
 		})
 	})
@@ -66,6 +68,7 @@ func TestBootstrapManagerProvider(t *testing.T) {
 			bootstrapProvider, _ := NewBootstrapManagerProvider().(bootstrapManagerProvider)
 			bootstrapProvider.setManager(mockMgr)
 			_, err := bootstrapProvider.CreateManager("namespace", &rest.Config{})
+
 			return err
 		})
 	})
@@ -76,6 +79,7 @@ func testHealthzAndReadyz(t *testing.T, createProviderAndRunManager func(mockMgr
 	mockMgr.On(addHealthzCheckMethodName, livezEndpointName, mock.AnythingOfType(checkerArgumentType)).Return(nil)
 
 	client := fake.NewClient(&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "kube-system"}})
+
 	mockMgr.On("GetConfig").Return(&rest.Config{})
 	mockMgr.On("GetScheme").Return(scheme.Scheme)
 	mockMgr.On("GetClient").Return(client)

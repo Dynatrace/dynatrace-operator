@@ -27,6 +27,7 @@ func TestExtractGzip(t *testing.T) {
 
 		reader, err := gzip.NewReader(gzipFile)
 		require.NoError(t, err)
+
 		tarReader := tar.NewReader(reader)
 
 		err = extractFilesFromGzip(fs, TestZipDirName, tarReader)

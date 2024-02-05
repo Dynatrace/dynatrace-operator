@@ -23,6 +23,7 @@ type DockerKeychain struct {
 func NewDockerKeychain(ctx context.Context, apiReader client.Reader, pullSecret corev1.Secret) (authn.Keychain, error) {
 	keychain := &DockerKeychain{}
 	err := keychain.loadDockerConfigFromSecret(ctx, apiReader, pullSecret)
+
 	return keychain, err
 }
 
@@ -35,6 +36,7 @@ func (keychain *DockerKeychain) loadDockerConfigFromSecret(ctx context.Context, 
 		log.Info("failed to load registry pull secret", "name", pullSecret.Name, "namespace", pullSecret.Namespace)
 		return errors.WithStack(err)
 	}
+
 	dockerAuths, err := extractDockerAuthsFromSecret(&pullSecret)
 	if err != nil {
 		log.Info("failed to parse pull secret content", "name", pullSecret.Name, "namespace", pullSecret.Namespace)
@@ -47,6 +49,7 @@ func (keychain *DockerKeychain) loadDockerConfigFromSecret(ctx context.Context, 
 	}
 
 	keychain.dockerConfig = cf
+
 	return nil
 }
 
@@ -79,7 +82,9 @@ func (keychain *DockerKeychain) Resolve(target authn.Resource) (authn.Authentica
 	// https://github.com/google/ko/issues/90
 	// https://github.com/moby/moby/blob/fc01c2b481097a6057bec3cd1ab2d7b4488c50c4/registry/config.go#L397-L404
 	var cfg, empty dockertypes.AuthConfig
+
 	var err error
+
 	for _, key := range []string{
 		target.String(),
 		target.RegistryStr(),
@@ -100,6 +105,7 @@ func (keychain *DockerKeychain) Resolve(target authn.Resource) (authn.Authentica
 			break
 		}
 	}
+
 	if cfg == empty {
 		return authn.Anonymous, nil
 	}

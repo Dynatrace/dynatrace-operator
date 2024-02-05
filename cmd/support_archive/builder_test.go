@@ -15,6 +15,7 @@ import (
 
 func TestGetAppName(t *testing.T) {
 	const alternativeOperatorName = "renamed-operator"
+
 	const alternativeNamespace = "weirednamespacename"
 
 	fakeClientSet := fake.NewSimpleClientset(

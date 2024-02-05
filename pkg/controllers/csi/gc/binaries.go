@@ -10,6 +10,7 @@ import (
 
 func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, tenantUUID string) {
 	fs := &afero.Afero{Fs: gc.fs}
+
 	gcRunsMetric.Inc()
 
 	usedVersions, err := gc.db.GetUsedVersions(ctx, tenantUUID)
@@ -17,6 +18,7 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, t
 		log.Info("failed to get used versions", "error", err)
 		return
 	}
+
 	log.Info("got all used versions (in deprecated location)", "tenantUUID", tenantUUID, "len(usedVersions)", len(usedVersions))
 
 	storedVersions, err := gc.getStoredVersions(fs, tenantUUID)
@@ -24,6 +26,7 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, t
 		log.Info("failed to get stored versions", "error", err)
 		return
 	}
+
 	log.Info("got all stored versions (in deprecated location)", "tenantUUID", tenantUUID, "len(storedVersions)", len(storedVersions))
 
 	setAgentBins, err := gc.db.GetLatestVersions(ctx)
@@ -33,11 +36,13 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, t
 
 	for _, version := range storedVersions {
 		_, isPinnedVersion := setAgentBins[version]
+
 		shouldDelete := shouldDeleteVersion(version, usedVersions) && !isPinnedVersion
 		if !shouldDelete {
 			log.Info("skipped, version should not be deleted", "version", version)
 			continue
 		}
+
 		binaryPath := gc.path.AgentBinaryDirForVersion(tenantUUID, version)
 		log.Info("deleting unused version (in deprecated location)", "version", version, "path", binaryPath)
 		removeUnusedVersion(fs, binaryPath)
@@ -58,6 +63,7 @@ func (gc *CSIGarbageCollector) getStoredVersions(fs *afero.Afero, tenantUUID str
 	for _, bin := range bins {
 		versions = append(versions, bin.Name())
 	}
+
 	return versions, nil
 }
 
@@ -67,6 +73,7 @@ func shouldDeleteVersion(version string, usedVersions map[string]bool) bool {
 
 func removeUnusedVersion(fs *afero.Afero, binaryPath string) {
 	size, _ := dirSize(fs, binaryPath)
+
 	err := fs.RemoveAll(binaryPath)
 	if err != nil {
 		log.Info("delete failed", "path", binaryPath)
@@ -78,14 +85,18 @@ func removeUnusedVersion(fs *afero.Afero, binaryPath string) {
 
 func dirSize(fs *afero.Afero, path string) (int64, error) {
 	var size int64
+
 	err := fs.Walk(path, func(_ string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
+
 		if !info.IsDir() {
 			size += info.Size()
 		}
+
 		return err
 	})
+
 	return size, err
 }
