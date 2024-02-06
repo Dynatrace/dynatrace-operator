@@ -32,6 +32,7 @@ func setupTracesWithOtlp(ctx context.Context, resource *resource.Resource, endpo
 	if err != nil {
 		return nil, nil, err
 	}
+
 	sdkTracerProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(tracerExporter),
 		sdktrace.WithResource(resource),
@@ -54,10 +55,12 @@ func newOtlpTraceExporter(ctx context.Context, endpoint string, apiToken string)
 		otlptracehttp.WithHeaders(map[string]string{
 			"Authorization": "Api-Token " + apiToken,
 		}))
+
 	exporter, err := otlptrace.New(ctx, otlpHttpClient)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+
 	return exporter, nil
 }
 
@@ -69,6 +72,7 @@ func resolveTracer[T any](tracer T) trace.Tracer {
 	case trace.Tracer:
 		realTracer = t
 	}
+
 	return realTracer
 }
 
@@ -77,8 +81,10 @@ func getCaller(i int) string {
 		details := runtime.FuncForPC(pc)
 		fileName := filepath.Base(filePath)
 		functionName := filepath.Base(details.Name())
+
 		return fmt.Sprintf("%s (%s:%d)", functionName, fileName, line)
 	}
+
 	return "<unknown function>"
 }
 

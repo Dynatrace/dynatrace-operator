@@ -66,5 +66,6 @@ func TestTroubleshootCollector(t *testing.T) {
 	if !errors.Is(err, io.EOF) {
 		require.NoError(t, err)
 	}
+
 	assert.Equal(t, size, int64(bytesRead))
 }

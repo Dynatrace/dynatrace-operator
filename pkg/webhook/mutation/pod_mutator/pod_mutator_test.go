@@ -244,6 +244,7 @@ func getTestPodWithInjectionDisabled() *corev1.Pod {
 	pod.Annotations = map[string]string{
 		dtwebhook.AnnotationDynatraceInject: "false",
 	}
+
 	return pod
 }
 
@@ -253,6 +254,7 @@ func getTestPodWithOcDebugPodAnnotations() *corev1.Pod {
 		ocDebugAnnotationsContainer: "true",
 		ocDebugAnnotationsResource:  "true",
 	}
+
 	return pod
 }
 
@@ -277,6 +279,7 @@ func createSimplePodMutatorMock(t *testing.T) *mocks.PodMutator {
 	mutator.On("Injected", mock.Anything).Return(false).Maybe()
 	mutator.On("Mutate", mock.Anything, mock.Anything).Return(nil).Maybe()
 	mutator.On("Reinvoke", mock.Anything).Return(true).Maybe()
+
 	return mutator
 }
 
@@ -286,6 +289,7 @@ func createAlreadyInjectedPodMutatorMock(t *testing.T) *mocks.PodMutator {
 	mutator.On("Injected", mock.Anything).Return(true).Maybe()
 	mutator.On("Mutate", mock.Anything, mock.Anything).Return(nil).Maybe()
 	mutator.On("Reinvoke", mock.Anything).Return(true).Maybe()
+
 	return mutator
 }
 
@@ -295,6 +299,7 @@ func createFailPodMutatorMock(t *testing.T) *mocks.PodMutator {
 	mutator.On("Injected", mock.Anything).Return(false).Maybe()
 	mutator.On("Mutate", mock.Anything, mock.Anything).Return(fmt.Errorf("BOOM")).Maybe()
 	mutator.On("Reinvoke", mock.Anything).Return(false).Maybe()
+
 	return mutator
 }
 

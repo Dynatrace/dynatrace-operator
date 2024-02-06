@@ -29,6 +29,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 			Endpoints:   testEndpoint,
 		},
 	}
+
 	t.Run("no network zone", func(t *testing.T) {
 		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(activeGateConnectionInfoEndpoint, activegateJsonResponse), "")
 		defer dynatraceServer.Close()
@@ -101,6 +102,7 @@ func tenantInternalServerError(url string) http.HandlerFunc {
 					Code:    http.StatusInternalServerError,
 					Message: "error retrieving tenant info",
 				}})
+
 			writer.WriteHeader(http.StatusInternalServerError)
 
 			if err == nil {

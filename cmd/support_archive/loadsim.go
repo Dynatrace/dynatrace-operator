@@ -40,6 +40,7 @@ func (collector loadSimCollector) Do() error {
 
 	logInfof(collector.log, "Starting load simulation (%d files, %d MB/file)", collector.fileCount, collector.fileSize)
 	collector.createSimulatedLogFiles()
+
 	return nil
 }
 
@@ -56,11 +57,11 @@ func (collector loadSimCollector) createSimulatedLogFiles() {
 		}
 
 		err := collector.supportArchive.addFile(fileName, &lg)
-
 		if err != nil {
 			logErrorf(collector.log, err, "error writing simulated load to zip")
 			return
 		}
+
 		logInfof(collector.log, "Successfully collected logs %s", fileName)
 	}
 }
@@ -82,7 +83,9 @@ func (lg *loadGenerator) Read(p []byte) (n int, err error) {
 			p[i] = letters[rand.Intn(len(letters))]
 			lg.fileSize--
 		}
+
 		return i, nil
 	}
+
 	return 0, io.EOF
 }

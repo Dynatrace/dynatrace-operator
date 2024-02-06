@@ -27,14 +27,18 @@ type Runner struct {
 
 func NewRunner(fs afero.Fs) (*Runner, error) {
 	log.Info("creating standalone runner")
+
 	env, err := newEnv()
 	if err != nil {
 		return nil, err
 	}
 
 	var secretConfig *SecretConfig
+
 	var client dtclient.Client
+
 	var oneAgentInstaller installer.Installer
+
 	if env.OneAgentInjected {
 		secretConfig, err = newSecretConfigViaFs(fs)
 		if err != nil {
@@ -45,10 +49,12 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		targetVersion := url.VersionLatest
 		if env.InstallVersion != "" {
 			targetVersion = env.InstallVersion
 		}
+
 		oneAgentInstaller = url.NewUrlInstaller(
 			fs,
 			client,
@@ -65,7 +71,9 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 			},
 		)
 	}
+
 	log.Info("standalone runner created successfully")
+
 	return &Runner{
 		fs:        fs,
 		env:       env,
@@ -77,6 +85,7 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 
 func (runner *Runner) Run() (resultedError error) {
 	log.Info("standalone agent init started")
+
 	defer runner.consumeErrorIfNecessary(&resultedError)
 
 	if runner.env.OneAgentInjected {
@@ -88,6 +97,7 @@ func (runner *Runner) Run() (resultedError error) {
 			if err := runner.installOneAgent(); err != nil {
 				return err
 			}
+
 			log.Info("OneAgent download finished")
 		}
 	}
@@ -96,6 +106,7 @@ func (runner *Runner) Run() (resultedError error) {
 	if err == nil {
 		log.Info("standalone agent init completed")
 	}
+
 	return err
 }
 
@@ -108,37 +119,46 @@ func (runner *Runner) consumeErrorIfNecessary(resultedError *error) {
 
 func (runner *Runner) setHostTenant() error {
 	log.Info("setting host tenant")
+
 	runner.hostTenant = consts.AgentNoHostTenant
 	if runner.config.HasHost {
 		if runner.config.EnforcementMode {
 			runner.hostTenant = runner.config.TenantUUID
+
 			log.Info("host tenant set to TenantUUID")
 		} else {
 			hostTenant, ok := runner.config.MonitoringNodes[runner.env.K8NodeName]
 			if !ok {
 				return errors.Errorf("host tenant info is missing for %s", runner.env.K8NodeName)
 			}
+
 			runner.hostTenant = hostTenant
 		}
 	}
+
 	log.Info("successfully set host tenant", "hostTenant", runner.hostTenant)
+
 	return nil
 }
 
 func (runner *Runner) installOneAgent() error {
 	log.Info("downloading OneAgent")
+
 	_, err := runner.installer.InstallAgent(consts.AgentBinDirMount)
 	if err != nil {
 		return err
 	}
+
 	processModuleConfig, err := runner.getProcessModuleConfig()
 	if err != nil {
 		return err
 	}
+
 	err = processmoduleconfig.UpdateProcessModuleConfigInPlace(runner.fs, consts.AgentBinDirMount, processModuleConfig)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -155,6 +175,7 @@ func (runner *Runner) getProcessModuleConfig() (*dtclient.ProcessModuleConfig, e
 	if runner.config.OneAgentNoProxy != "" {
 		processModuleConfig = processModuleConfig.AddNoProxy(runner.config.OneAgentNoProxy)
 	}
+
 	return processModuleConfig, nil
 }
 
@@ -166,28 +187,34 @@ func (runner *Runner) configureInstallation() error {
 			return err
 		}
 	}
+
 	if runner.env.DataIngestInjected {
 		log.Info("creating enrichment files")
+
 		if err := runner.enrichMetadata(); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
 func (runner *Runner) configureOneAgent() error {
 	log.Info("setting ld.so.preload")
+
 	if err := runner.setLDPreload(); err != nil {
 		return err
 	}
 
 	log.Info("creating container configuration files")
+
 	if err := runner.createContainerConfigurationFiles(); err != nil {
 		return err
 	}
 
 	if runner.config.TlsCert != "" {
 		log.Info("propagating tls cert to agent")
+
 		if err := runner.propagateTLSCert(); err != nil {
 			return err
 		}
@@ -195,17 +222,21 @@ func (runner *Runner) configureOneAgent() error {
 
 	if runner.config.InitialConnectRetry > -1 {
 		log.Info("creating curl options file")
+
 		if err := runner.createCurlOptionsFile(); err != nil {
 			return err
 		}
 	}
+
 	if runner.config.ReadOnlyCSIDriver {
 		log.Info("readOnly CSI detected, copying agent conf to empty-dir")
+
 		err := copyFolder(runner.fs, getReadOnlyAgentConfMountPath(), consts.AgentConfInitDirMount)
 		if err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -220,18 +251,22 @@ func (runner *Runner) createContainerConfigurationFiles() error {
 		content := runner.getBaseConfContent(container)
 
 		log.Info("adding k8s cluster id")
+
 		content += runner.getK8SClusterID()
 
 		if runner.hostTenant != consts.AgentNoHostTenant {
 			if runner.config.TenantUUID == runner.hostTenant {
 				log.Info("adding k8s node name")
+
 				content += runner.getK8SHostInfo()
 			}
 		}
+
 		if err := runner.createConfFile(confFilePath, content); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -239,9 +274,11 @@ func (runner *Runner) enrichMetadata() error {
 	if err := runner.createPropsEnrichmentFile(); err != nil {
 		return err
 	}
+
 	if err := runner.createJsonEnrichmentFile(); err != nil {
 		return err
 	}
+
 	return nil
 }
 

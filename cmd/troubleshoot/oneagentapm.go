@@ -12,8 +12,8 @@ func checkOneAgentAPM(baseLog logr.Logger, kubeConfig *rest.Config) error {
 	log := baseLog.WithName("oneAgentAPM")
 
 	logNewCheckf(log, "checking if OneAgentAPM object exists ...")
-	exists, err := oneagentapm.Exists(kubeConfig)
 
+	exists, err := oneagentapm.Exists(kubeConfig)
 	if err != nil {
 		return err
 	}
@@ -23,5 +23,6 @@ func checkOneAgentAPM(baseLog logr.Logger, kubeConfig *rest.Config) error {
 	}
 
 	logOkf(log, "OneAgentAPM does not exist")
+
 	return nil
 }

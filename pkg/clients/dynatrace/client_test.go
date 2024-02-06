@@ -114,6 +114,7 @@ func checkProxyForUrl(t *testing.T, transport http.Transport, proxyRawURL, targe
 
 	url, err := transport.Proxy(&http.Request{URL: targetURL})
 	require.NoError(t, err)
+
 	if !noProxy {
 		require.NotNil(t, url)
 		assert.Equal(t, proxyRawURL, url.Host)

@@ -39,9 +39,11 @@ func initContainerResources(dynakube dynatracev1beta1.DynaKube) corev1.ResourceR
 	if customInitResources != nil {
 		return *customInitResources
 	}
+
 	if !dynakube.NeedsCSIDriver() {
 		return corev1.ResourceRequirements{}
 	}
+
 	return defaultInitContainerResources()
 }
 
@@ -81,6 +83,7 @@ func combineSecurityContexts(baseSecurityCtx corev1.SecurityContext, pod corev1.
 	if hasPodUserSet(podSecurityCtx) {
 		baseSecurityCtx.RunAsUser = podSecurityCtx.RunAsUser
 	}
+
 	if hasPodGroupSet(podSecurityCtx) {
 		baseSecurityCtx.RunAsGroup = podSecurityCtx.RunAsGroup
 	}
@@ -88,6 +91,7 @@ func combineSecurityContexts(baseSecurityCtx corev1.SecurityContext, pod corev1.
 	if hasContainerUserSet(containerSecurityCtx) {
 		baseSecurityCtx.RunAsUser = containerSecurityCtx.RunAsUser
 	}
+
 	if hasContainerGroupSet(containerSecurityCtx) {
 		baseSecurityCtx.RunAsGroup = containerSecurityCtx.RunAsGroup
 	}
@@ -126,6 +130,7 @@ func getBasePodName(pod *corev1.Pod) string {
 	if lastDashIndex := strings.LastIndex(basePodName, "-"); lastDashIndex != -1 {
 		basePodName = basePodName[:lastDashIndex]
 	}
+
 	return basePodName
 }
 

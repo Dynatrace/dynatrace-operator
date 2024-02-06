@@ -68,6 +68,7 @@ func NewOsAgentVolume(volumeID, tenantUUID string, mounted bool, timeStamp *time
 	if volumeID == "" || tenantUUID == "" || timeStamp == nil {
 		return nil
 	}
+
 	return &OsAgentVolume{volumeID, tenantUUID, mounted, timeStamp}
 }
 
@@ -107,18 +108,22 @@ type AccessOverview struct {
 
 func NewAccessOverview(access Access) (*AccessOverview, error) {
 	ctx := context.Background()
+
 	volumes, err := access.GetAllVolumes(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	dynakubes, err := access.GetAllDynakubes(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	osVolumes, err := access.GetAllOsAgentVolumes(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	return &AccessOverview{
 		Volumes:        volumes,
 		Dynakubes:      dynakubes,
@@ -131,5 +136,6 @@ func LogAccessOverview(access Access) {
 	if err != nil {
 		log.Error(err, "Failed to get an overview of the stored csi metadata")
 	}
+
 	log.Info("The current overview of the csi metadata", "overview", overview)
 }

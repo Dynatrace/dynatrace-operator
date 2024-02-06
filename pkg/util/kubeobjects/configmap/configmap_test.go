@@ -293,6 +293,7 @@ func createTestConfigMap(labels map[string]string, data map[string]string) *core
 		},
 		Data: data,
 	}
+
 	return configMap
 }
 
@@ -301,6 +302,7 @@ func TestConfigMapBuilder(t *testing.T) {
 	data := map[string]string{
 		dataKey: "",
 	}
+
 	t.Run("create config map", func(t *testing.T) {
 		configMap, err := CreateConfigMap(scheme.Scheme, createDeployment(),
 			NewModifier(testConfigMapName),

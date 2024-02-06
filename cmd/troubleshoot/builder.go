@@ -72,7 +72,6 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		version.LogVersion()
 
 		kubeConfig, err := builder.configProvider.GetConfig()
-
 		if err != nil {
 			return err
 		}
@@ -80,6 +79,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		log := NewTroubleshootLoggerToWriter(os.Stdout)
 
 		RunTroubleshootCmd(cmd.Context(), log, namespaceFlagValue, kubeConfig)
+
 		return nil
 	}
 }
@@ -90,16 +90,20 @@ func RunTroubleshootCmd(ctx context.Context, log logr.Logger, namespaceName stri
 		logErrorf(log, "prerequisite checks failed, aborting (%v)", err)
 		return
 	}
+
 	apiReader, err := GetK8SClusterAPIReader(kubeConfig)
 	if err != nil {
 		return
 	}
+
 	err = checkNamespace(ctx, log, apiReader, namespaceName)
 	if err != nil {
 		logErrorf(log, "prerequisite checks failed, aborting (%v)", err)
 		return
 	}
+
 	dynakubes := &dynatracev1beta1.DynaKubeList{}
+
 	err = apiReader.List(ctx, dynakubes, &client.ListOptions{Namespace: namespaceName})
 	if checkCRD(log, err) != nil {
 		return
@@ -113,6 +117,7 @@ func GetK8SClusterAPIReader(kubeConfig *rest.Config) (client.Reader, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return k8scluster.GetAPIReader(), nil
 }
 
@@ -136,6 +141,7 @@ func runChecksForDynakube(ctx context.Context, baseLog logr.Logger, apiReader cl
 		return errors.Wrapf(err, "'%s:%s' Dynakube isn't valid. %s",
 			dynakube.Namespace, dynakube.Name, dynakubeNotValidMessage())
 	}
+
 	logOkf(log, "'%s:%s' Dynakube is valid", dynakube.Namespace, dynakube.Name)
 
 	keychain, err := dockerkeychain.NewDockerKeychain(ctx, apiReader, pullSecret)
@@ -169,10 +175,12 @@ func createTransport(ctx context.Context, apiReader client.Reader, dynakube *dyn
 
 func getDynakubes(ctx context.Context, log logr.Logger, apiReader client.Reader, namespaceName string, dynakubeName string) ([]dynatracev1beta1.DynaKube, error) {
 	var err error
+
 	var dynakubes []dynatracev1beta1.DynaKube
 
 	if dynakubeName == "" {
 		logNewDynakubef(log, "no Dynakube specified - checking all Dynakubes in namespace '%s'", namespaceName)
+
 		dynakubes, err = getAllDynakubesInNamespace(ctx, log, apiReader, namespaceName)
 		if err != nil {
 			return nil, err
@@ -182,6 +190,7 @@ func getDynakubes(ctx context.Context, log logr.Logger, apiReader client.Reader,
 		if err != nil {
 			return nil, err
 		}
+
 		dynakubes = append(dynakubes, dynakube)
 	}
 
@@ -190,8 +199,8 @@ func getDynakubes(ctx context.Context, log logr.Logger, apiReader client.Reader,
 
 func getAllDynakubesInNamespace(ctx context.Context, log logr.Logger, apiReader client.Reader, namespaceName string) ([]dynatracev1beta1.DynaKube, error) {
 	var dynakubes dynatracev1beta1.DynaKubeList
-	err := apiReader.List(ctx, &dynakubes, client.InNamespace(namespaceName))
 
+	err := apiReader.List(ctx, &dynakubes, client.InNamespace(namespaceName))
 	if err != nil {
 		logErrorf(log, "failed to list Dynakubes: %v", err)
 		return nil, err
@@ -200,6 +209,7 @@ func getAllDynakubesInNamespace(ctx context.Context, log logr.Logger, apiReader 
 	if len(dynakubes.Items) == 0 {
 		err = fmt.Errorf("no Dynakubes found in namespace '%s'", namespaceName)
 		logErrorf(log, err.Error())
+
 		return nil, err
 	}
 

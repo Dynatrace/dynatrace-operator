@@ -12,6 +12,7 @@ import (
 func TestFindVersionFromFileSystem(t *testing.T) {
 	testPath := "/test"
 	testVersion := "1.239.14.20220325-164521"
+
 	t.Run("get version from directory in file system", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		err := fs.MkdirAll(filepath.Join(testPath, testVersion), 0755)

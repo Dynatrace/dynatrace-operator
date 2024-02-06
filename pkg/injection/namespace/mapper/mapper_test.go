@@ -23,15 +23,18 @@ func createTestDynakubeWithAppInject(name string, labels map[string]string, labe
 	if labels != nil {
 		dk.Spec.NamespaceSelector = metav1.LabelSelector{MatchLabels: labels}
 	}
+
 	if labelExpression != nil {
 		dk.Spec.NamespaceSelector = metav1.LabelSelector{MatchExpressions: labelExpression}
 	}
+
 	return dk
 }
 
 func createTestDynakubeWithMultipleFeatures(name string, labels map[string]string) *dynatracev1beta1.DynaKube {
 	dk := createTestDynakubeWithAppInject(name, labels, nil)
 	dk.Spec.Routing.Enabled = true
+
 	return dk
 }
 

@@ -98,6 +98,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 
 		var proxySecret corev1.Secret
+
 		name := proxy.BuildSecretName(testName)
 		err = controller.client.Get(context.Background(), client.ObjectKey{Name: name, Namespace: testNamespace}, &proxySecret)
 
@@ -145,6 +146,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.Equal(t, false, result.Requeue)
 
 		var activeGateStatefulSet appsv1.StatefulSet
+
 		assert.NoError(t,
 			controller.client.Get(context.Background(), client.ObjectKey{Name: testName + "-activegate", Namespace: testNamespace}, &activeGateStatefulSet))
 		assert.NoError(t, controller.client.Get(context.Background(), client.ObjectKey{Name: testName, Namespace: testNamespace}, instance))
@@ -492,6 +494,7 @@ func generateStatefulSetForTesting(name, namespace, feature, kubeSystemUUID stri
 		labels.AppManagedByLabel: semVersion.AppName,
 		labels.AppCreatedByLabel: name,
 	}
+
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name + "-" + feature,

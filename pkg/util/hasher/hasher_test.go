@@ -25,6 +25,7 @@ func TestIsDifferent(t *testing.T) {
 	testDeployment.Name = "deployment"
 	testDaemonSet := appsv1.DaemonSet{}
 	testDaemonSet.Name = "daemonset"
+
 	t.Run("different", func(t *testing.T) {
 		isDifferent, err := IsDifferent(testDeployment, testDaemonSet)
 		require.NoError(t, err)
@@ -46,6 +47,7 @@ func TestIsHashAnnotationDifferent(t *testing.T) {
 	testDaemonSet.Annotations = map[string]string{
 		AnnotationHash: "hash2",
 	}
+
 	t.Run("different", func(t *testing.T) {
 		isDifferent := IsAnnotationDifferent(&testDeployment.ObjectMeta, &testDaemonSet.ObjectMeta)
 		assert.True(t, isDifferent)

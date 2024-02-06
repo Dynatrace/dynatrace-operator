@@ -22,6 +22,7 @@ func (b GenericBuilder[T]) Build() (T, error) {
 	if b.data == nil {
 		b.data = &data
 	}
+
 	for _, m := range b.modifiers {
 		if m.Enabled() {
 			err := m.Modify(b.data)
@@ -30,6 +31,7 @@ func (b GenericBuilder[T]) Build() (T, error) {
 			}
 		}
 	}
+
 	return *b.data, nil
 }
 

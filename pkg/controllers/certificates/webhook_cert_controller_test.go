@@ -197,6 +197,7 @@ func TestReconcile(t *testing.T) {
 
 		expectedBundle, err := cs.loadCombinedBundle()
 		require.NoError(t, err)
+
 		actualCrd := &apiv1.CustomResourceDefinition{}
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: crdName}, actualCrd)
 		require.NoError(t, err)
@@ -239,6 +240,7 @@ func createValidTestCertData(_ *testing.T) map[string][]byte {
 		Now:    time.Now(),
 	}
 	_ = cert.ValidateCerts()
+
 	return cert.Data
 }
 
@@ -280,6 +282,7 @@ func testWebhookClientConfig(
 	if isUpdate {
 		expectedCert = append(expectedCert, []byte{123}...)
 	}
+
 	assert.Equal(t, expectedCert, webhookClientConfig.CABundle)
 }
 

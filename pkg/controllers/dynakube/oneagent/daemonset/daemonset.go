@@ -124,6 +124,7 @@ func (dsInfo *ClassicFullStack) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 
 func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	dynakube := dsInfo.dynakube
+
 	podSpec, err := dsInfo.podSpec()
 	if err != nil {
 		return nil, err
@@ -177,14 +178,17 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 func (dsInfo *builderInfo) podSpec() (corev1.PodSpec, error) {
 	resources := dsInfo.resources()
 	dnsPolicy := dsInfo.dnsPolicy()
+
 	arguments, err := dsInfo.arguments()
 	if err != nil {
 		return corev1.PodSpec{}, err
 	}
+
 	environmentVariables, err := dsInfo.environmentVariables()
 	if err != nil {
 		return corev1.PodSpec{}, err
 	}
+
 	volumeMounts := dsInfo.volumeMounts()
 	volumes := dsInfo.volumes()
 	imagePullSecrets := dsInfo.imagePullSecrets()
@@ -227,6 +231,7 @@ func (dsInfo *builderInfo) immutableOneAgentImage() string {
 	if dsInfo.dynakube == nil {
 		return ""
 	}
+
 	return dsInfo.dynakube.OneAgentImage()
 }
 
@@ -259,10 +264,12 @@ func (dsInfo *builderInfo) resources() corev1.ResourceRequirements {
 	if resources.Requests == nil {
 		resources.Requests = corev1.ResourceList{}
 	}
+
 	if _, hasCPUResource := resources.Requests[corev1.ResourceCPU]; !hasCPUResource {
 		// Set CPU resource to 1 * 10**(-1) Cores, e.g. 100mC
 		resources.Requests[corev1.ResourceCPU] = *resource.NewScaledQuantity(1, -1)
 	}
+
 	return resources
 }
 
@@ -278,6 +285,7 @@ func (dsInfo *builderInfo) dnsPolicy() corev1.DNSPolicy {
 	if dsInfo.hostInjectSpec != nil && dsInfo.hostInjectSpec.DNSPolicy != "" {
 		return dsInfo.hostInjectSpec.DNSPolicy
 	}
+
 	return corev1.DNSClusterFirstWithHostNet
 }
 
@@ -318,6 +326,7 @@ func (dsInfo *builderInfo) securityContext() *corev1.SecurityContext {
 			}
 		}
 	}
+
 	return &securityContext
 }
 
@@ -368,5 +377,6 @@ func (dsInfo *builderInfo) getReadinessProbe() *corev1.Probe {
 	if defaultProbe.InitialDelaySeconds > probeMaxInitialDelay {
 		defaultProbe.InitialDelaySeconds = probeMaxInitialDelay
 	}
+
 	return defaultProbe
 }

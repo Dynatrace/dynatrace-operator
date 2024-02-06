@@ -165,6 +165,7 @@ func TestMultipleSecrets(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Len(t, secrets, 4)
+
 		secretsMap := make(map[string]corev1.Secret)
 		for _, secret := range secrets {
 			secretsMap[secret.Namespace] = secret
@@ -320,6 +321,7 @@ func TestCreateOrUpdate(t *testing.T) {
 
 		err := secretQuery.CreateOrUpdate(testSecret)
 		assert.NoError(t, err)
+
 		secret, _ := secretQuery.Get(types.NamespacedName{Name: testSecretName, Namespace: testNamespace})
 		assert.NotNil(t, secret)
 	})
@@ -329,6 +331,7 @@ func TestCreateOrUpdate(t *testing.T) {
 
 		err := secretQuery.CreateOrUpdate(testSecret)
 		assert.NoError(t, err)
+
 		secret, _ := secretQuery.Get(types.NamespacedName{Name: testSecretName, Namespace: testNamespace})
 		assert.NotNil(t, secret)
 	})
@@ -347,6 +350,7 @@ func TestCreateOrUpdate(t *testing.T) {
 		}
 		err := secretQuery.CreateOrUpdate(updatedSecret)
 		assert.NoError(t, err)
+
 		secret, _ := secretQuery.Get(types.NamespacedName{Name: testSecretName, Namespace: testNamespace})
 		assert.Equal(t, secret.Data[testSecretDataKey], newValue)
 	})

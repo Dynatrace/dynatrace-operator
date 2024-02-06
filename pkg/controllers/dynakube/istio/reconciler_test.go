@@ -76,6 +76,7 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 
 		err := reconciler.reconcileIPServiceEntry(ctx, commHosts, component)
 		require.NoError(t, err)
+
 		expectedName := BuildNameForIPServiceEntry(dynakube.Name, component)
 		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dynakube.Namespace).Get(ctx, expectedName, metav1.GetOptions{})
 		require.NoError(t, err)
@@ -135,10 +136,12 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 
 		err := reconciler.reconcileFQDNServiceEntry(ctx, commHosts, component)
 		require.NoError(t, err)
+
 		expectedName := BuildNameForFQDNServiceEntry(owner.GetName(), component)
 		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(owner.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
+
 		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(owner.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, virtualService)
@@ -161,6 +164,7 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 func TestReconcileAPIUrl(t *testing.T) {
 	ctx := context.Background()
 	dynakube := createTestDynaKube()
+
 	t.Run("nil => error", func(t *testing.T) {
 		istioClient := newTestingClient(nil, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
@@ -184,10 +188,12 @@ func TestReconcileAPIUrl(t *testing.T) {
 
 		err := reconciler.ReconcileAPIUrl(ctx, dynakube)
 		require.NoError(t, err)
+
 		expectedName := BuildNameForFQDNServiceEntry(dynakube.GetName(), OperatorComponent)
 		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
+
 		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, virtualService)
@@ -207,6 +213,7 @@ func TestReconcileAPIUrl(t *testing.T) {
 func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 	ctx := context.Background()
 	dynakube := createTestDynaKube()
+
 	t.Run("nil => error", func(t *testing.T) {
 		istioClient := newTestingClient(nil, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
@@ -221,6 +228,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 
 		err := reconciler.ReconcileCodeModuleCommunicationHosts(ctx, dynakube)
 		require.NoError(t, err)
+
 		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), OneAgentComponent)
 		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.NoError(t, err)
@@ -252,6 +260,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 	ctx := context.Background()
 	dynakube := createTestDynaKube()
+
 	t.Run("nil => error", func(t *testing.T) {
 		istioClient := newTestingClient(nil, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
@@ -312,6 +321,7 @@ func createTestDynaKube() *dynatracev1beta1.DynaKube {
 	fqdnHost := createTestFQDNCommunicationHost()
 	ipHost := createTestIPCommunicationHost()
 	endpoints := "https://abcd123.some.activegate.endpointurl.com:443"
+
 	return &dynatracev1beta1.DynaKube{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "DynaKube",

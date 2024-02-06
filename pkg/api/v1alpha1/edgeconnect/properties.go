@@ -23,6 +23,7 @@ func (edgeConnect *EdgeConnect) Image() string {
 	if edgeConnect.Spec.ImageRef.Repository != "" {
 		repository = edgeConnect.Spec.ImageRef.Repository
 	}
+
 	if edgeConnect.Spec.ImageRef.Tag != "" {
 		tag = edgeConnect.Spec.ImageRef.Tag
 	}

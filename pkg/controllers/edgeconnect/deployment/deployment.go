@@ -81,6 +81,7 @@ func prepareImagePullSecrets(instance *edgeconnectv1alpha1.EdgeConnect) []corev1
 			{Name: instance.Spec.CustomPullSecret},
 		}
 	}
+
 	return nil
 }
 
@@ -134,6 +135,7 @@ func buildAnnotations(instance *edgeconnectv1alpha1.EdgeConnect) map[string]stri
 		webhook.AnnotationDynatraceInject:             "false",
 	}
 	annotations = maputils.MergeMap(instance.Annotations, annotations)
+
 	return annotations
 }
 

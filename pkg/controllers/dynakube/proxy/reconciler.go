@@ -61,11 +61,13 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dynakube *dynatrac
 	secretQuery := k8ssecret.NewQuery(ctx, r.client, r.apiReader, log)
 
 	err = secretQuery.CreateOrUpdate(*secret)
+
 	return errors.WithStack(err)
 }
 
 func (r *Reconciler) ensureDeleted(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	secretName := BuildSecretName(dynakube.Name)
+
 	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: secretName, Namespace: dynakube.Namespace}}
 	if err := r.client.Delete(ctx, &secret); err != nil && !k8serrors.IsNotFound(err) {
 		return err
@@ -73,6 +75,7 @@ func (r *Reconciler) ensureDeleted(ctx context.Context, dynakube *dynatracev1bet
 		// If the secret is deleted the error is nil, otherwise err is notFound, then we should log nothing
 		log.Info("removed secret", "namespace", dynakube.Namespace, "secret", secretName)
 	}
+
 	return nil
 }
 
@@ -112,6 +115,7 @@ func parseProxyUrl(proxy string) (host, port, username, password string, err err
 	}
 
 	passwd, _ := proxyUrl.User.Password()
+
 	return proxyUrl.Hostname(), proxyUrl.Port(), proxyUrl.User.Username(), passwd, nil
 }
 

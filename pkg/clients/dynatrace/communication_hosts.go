@@ -25,6 +25,7 @@ func ParseEndpoint(s string) (CommunicationHost, error) {
 	rp := u.Port() // Empty if not included in the URI
 
 	var p uint32
+
 	if rp == "" {
 		switch u.Scheme {
 		case "http":
@@ -37,6 +38,7 @@ func ParseEndpoint(s string) (CommunicationHost, error) {
 		if err != nil {
 			return CommunicationHost{}, errors.New("failed to parse port")
 		}
+
 		p = uint32(q)
 	}
 

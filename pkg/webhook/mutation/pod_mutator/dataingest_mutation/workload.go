@@ -35,6 +35,7 @@ func (mutator *DataIngestPodMutator) retrieveWorkload(request *dtwebhook.Mutatio
 	if err != nil {
 		return nil, err
 	}
+
 	return workload, nil
 }
 
@@ -51,10 +52,12 @@ func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod,
 			OwnerReferences: pod.ObjectMeta.OwnerReferences,
 		},
 	}
+
 	workloadInfo, err := findRootOwner(ctx, clt, podPartialMetadata)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+
 	return &workloadInfo, nil
 }
 
@@ -64,6 +67,7 @@ func findRootOwner(ctx context.Context, clt client.Client, partialObjectMetadata
 			// pod is not created directly and does not have an owner reference set
 			return newUnknownWorkloadInfo(), nil
 		}
+
 		return newWorkloadInfo(partialObjectMetadata), nil
 	}
 
@@ -81,6 +85,7 @@ func findRootOwner(ctx context.Context, clt client.Client, partialObjectMetadata
 					Kind:       owner.Kind,
 				},
 			}
+
 			err := clt.Get(ctx, client.ObjectKey{Name: owner.Name, Namespace: objectMetadata.Namespace}, ownerObjectMetadata)
 			if err != nil {
 				log.Error(err, "failed to query the object",
@@ -89,12 +94,14 @@ func findRootOwner(ctx context.Context, clt client.Client, partialObjectMetadata
 					"name", owner.Name,
 					"namespace", objectMetadata.Namespace,
 				)
+
 				return newWorkloadInfo(partialObjectMetadata), err
 			}
 
 			return findRootOwner(ctx, clt, ownerObjectMetadata)
 		}
 	}
+
 	return newWorkloadInfo(partialObjectMetadata), nil
 }
 
@@ -116,5 +123,6 @@ func isWellKnownWorkload(ownerRef metav1.OwnerReference) bool {
 			return true
 		}
 	}
+
 	return false
 }

@@ -2,6 +2,8 @@ package webhook
 
 import (
 	"crypto/tls"
+	"os"
+	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/pkg/errors"
@@ -17,7 +19,7 @@ import (
 const (
 	metricsBindAddress     = ":8383"
 	healthProbeBindAddress = ":10080"
-	port                   = 8443
+	defaultPort            = 8443
 	livezEndpointName      = "livez"
 	livenessEndpointName   = "/" + livezEndpointName
 	readyzEndpointName     = "readyz"
@@ -58,6 +60,13 @@ func (provider Provider) CreateManager(namespace string, config *rest.Config) (m
 }
 
 func (provider Provider) createOptions(namespace string) ctrl.Options {
+	port := defaultPort
+	webhookPortEnv := os.Getenv("WEBHOOK_PORT")
+
+	if parsedWebhookPort, err := strconv.Atoi(webhookPortEnv); err == nil {
+		port = parsedWebhookPort
+	}
+
 	return ctrl.Options{
 		Scheme:                 scheme.Scheme,
 		ReadinessEndpointName:  readinessEndpointName,
@@ -86,9 +95,11 @@ func (provider Provider) setupWebhookServer(mgr manager.Manager) (manager.Manage
 	if !ok {
 		return nil, errors.WithStack(errors.New("Unable to cast webhook server"))
 	}
+
 	webhookServer.Options.CertDir = provider.certificateDirectory
 	webhookServer.Options.KeyName = provider.keyFileName
 	webhookServer.Options.CertName = provider.certificateFileName
 	webhookServer.Options.TLSOpts = []func(*tls.Config){tlsConfig}
+
 	return mgr, nil
 }

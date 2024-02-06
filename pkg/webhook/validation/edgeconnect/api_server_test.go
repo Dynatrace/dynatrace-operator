@@ -74,6 +74,7 @@ func assertAllowedResponse(t *testing.T, edgeConnect *edgeconnect.EdgeConnect, o
 func assertDeniedResponse(t *testing.T, errMessages []string, edgeConnect *edgeconnect.EdgeConnect, other ...client.Object) {
 	response := handleRequest(t, edgeConnect, other...)
 	assert.False(t, response.Allowed)
+
 	for _, errMsg := range errMessages {
 		assert.Contains(t, response.Result.Message, errMsg)
 	}
@@ -84,6 +85,7 @@ func handleRequest(t *testing.T, edgeConnect *edgeconnect.EdgeConnect, other ...
 	if other != nil {
 		clt = fake.NewClient(other...)
 	}
+
 	validator := &edgeconnectValidator{
 		clt:       clt,
 		apiReader: clt,

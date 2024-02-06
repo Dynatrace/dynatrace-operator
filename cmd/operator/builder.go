@@ -91,6 +91,7 @@ func (builder *CommandBuilder) getSignalHandler() context.Context {
 	if builder.signalHandler == nil {
 		builder.signalHandler = ctrl.SetupSignalHandler()
 	}
+
 	return builder.signalHandler
 }
 
@@ -107,8 +108,10 @@ func (builder CommandBuilder) setClientFromConfig(kubeCfg *rest.Config) (Command
 		if err != nil {
 			return builder, err
 		}
+
 		return builder.setClient(clt), nil
 	}
+
 	return builder, nil
 }
 
@@ -144,7 +147,6 @@ func (builder CommandBuilder) runInPod(kubeCfg *rest.Config) error {
 	isDeployedViaOlm := kubesystem.IsDeployedViaOlm(*operatorPod)
 	if !isDeployedViaOlm {
 		err = builder.runBootstrapper(kubeCfg)
-
 		if err != nil {
 			return err
 		}
@@ -164,7 +166,6 @@ func (builder CommandBuilder) runLocally(kubeCfg *rest.Config) error {
 
 func (builder CommandBuilder) runBootstrapper(kubeCfg *rest.Config) error {
 	bootstrapManager, err := builder.getBootstrapManagerProvider().CreateManager(builder.namespace, kubeCfg)
-
 	if err != nil {
 		return err
 	}
@@ -188,14 +189,13 @@ func (builder CommandBuilder) runOperatorManager(kubeCfg *rest.Config, isDeploye
 
 func startBootstrapperManager(bootstrapManager ctrl.Manager, namespace string) error {
 	ctx, cancelFn := context.WithCancel(context.Background())
-	err := certificates.AddBootstrap(bootstrapManager, namespace, cancelFn)
 
+	err := certificates.AddBootstrap(bootstrapManager, namespace, cancelFn)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
 	err = bootstrapManager.Start(ctx)
-
 	if err != nil {
 		return errors.WithStack(err)
 	}

@@ -309,6 +309,7 @@ type OneAgentInstance struct {
 func (dk *DynaKubeStatus) SetPhase(phase status.DeploymentPhase) bool {
 	upd := phase != dk.Phase
 	dk.Phase = phase
+
 	return upd
 }
 

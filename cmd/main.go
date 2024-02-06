@@ -43,6 +43,7 @@ func newRootCommand() *cobra.Command {
 		Use:  "dynatrace-operator",
 		RunE: rootCommand,
 	}
+
 	return cmd
 }
 
@@ -98,6 +99,7 @@ func rootCommand(_ *cobra.Command, _ []string) error {
 
 func main() {
 	ctrl.SetLogger(log)
+
 	cmd := newRootCommand()
 
 	cmd.AddCommand(

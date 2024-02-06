@@ -184,6 +184,7 @@ func createTestMutationRequest(dynakube *dynatracev1beta1.DynaKube, annotations 
 	if dynakube == nil {
 		dynakube = &dynatracev1beta1.DynaKube{}
 	}
+
 	return dtwebhook.NewMutationRequest(
 		context.Background(),
 		*getTestNamespace(),
@@ -198,6 +199,7 @@ func createTestMutationRequest(dynakube *dynatracev1beta1.DynaKube, annotations 
 func createTestReinvocationRequest(dynakube *dynatracev1beta1.DynaKube, annotations map[string]string) *dtwebhook.ReinvocationRequest {
 	request := createTestMutationRequest(dynakube, annotations).ToReinvocationRequest()
 	request.Pod.Spec.InitContainers = append(request.Pod.Spec.InitContainers, corev1.Container{Name: dtwebhook.InstallContainerName})
+
 	return request
 }
 

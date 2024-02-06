@@ -34,6 +34,7 @@ func TestAddReadOnlyCSIVolumeMounts(t *testing.T) {
 		addVolumeMountsForReadOnlyCSI(container)
 
 		require.Len(t, container.VolumeMounts, 3)
+
 		for expectedVolumeName, expectedMountPath := range expectedMounts {
 			mount, err := volumes.GetVolumeMountByName(container.VolumeMounts, expectedVolumeName)
 			require.NoError(t, err)
@@ -121,6 +122,7 @@ func TestAddReadOnlyCSIVolumes(t *testing.T) {
 
 		addVolumesForReadOnlyCSI(pod)
 		require.Len(t, pod.Spec.Volumes, 3)
+
 		for _, expectedVolumeName := range expectedVolumes {
 			mount, err := getByName(pod.Spec.Volumes, expectedVolumeName)
 			require.NoError(t, err)
@@ -135,6 +137,7 @@ func getByName(volumes []corev1.Volume, volumeName string) (*corev1.Volume, erro
 			return &volume, nil
 		}
 	}
+
 	return nil, errors.Errorf(`Cannot find volume "%s" in the provided slice (len %d)`,
 		volumeName, len(volumes),
 	)

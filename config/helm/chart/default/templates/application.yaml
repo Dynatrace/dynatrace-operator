@@ -61,7 +61,7 @@ spec:
         url: https://www.dynatrace.com/technologies/kubernetes-monitoring
   selector:
     matchLabels:
-      app.kubernetes.io/name: "{{ .Release.Name }}"
+      app.kubernetes.io/name: dynatrace-operator
   componentKinds:
     - group: apps/v1
       kind: DaemonSet

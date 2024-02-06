@@ -80,10 +80,12 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 		volume.VolumeID = volumeCfg.VolumeID
 		volume.Mounted = true
 		volume.LastModified = &timestamp
+
 		if err := publisher.db.UpdateOsAgentVolume(ctx, volume); err != nil {
 			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to update osagent volume info to database. info: %v err: %s", volume, err.Error()))
 		}
 	}
+
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
@@ -92,6 +94,7 @@ func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volum
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get osagent volume info from database: %s", err.Error()))
 	}
+
 	if volume == nil {
 		return nil, nil
 	}
@@ -116,6 +119,7 @@ func (publisher *HostVolumePublisher) CanUnpublishVolume(ctx context.Context, vo
 	if err != nil {
 		return false, status.Error(codes.Internal, fmt.Sprintf("failed to get osagent volume info from database: %s", err.Error()))
 	}
+
 	return volume != nil, nil
 }
 

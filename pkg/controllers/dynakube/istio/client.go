@@ -25,11 +25,11 @@ type Client struct {
 
 func NewClient(config *rest.Config, scheme *runtime.Scheme, owner metav1.Object) (*Client, error) {
 	istioClient, err := istioclientset.NewForConfig(config)
-
 	if err != nil {
 		log.Info("failed to initialize istio client", "error", err.Error())
 		return nil, errors.WithStack(err)
 	}
+
 	if owner == nil {
 		return nil, errors.New("can't create istio client for empty owner")
 	}
@@ -60,6 +60,7 @@ func (cl *Client) GetVirtualService(ctx context.Context, name string) (*istiov1b
 		log.Info("failed to get current virtual service", "name", name, "error", err.Error())
 		return nil, errors.WithStack(err)
 	}
+
 	return virtualService, nil
 }
 
@@ -74,6 +75,7 @@ func (cl *Client) CreateOrUpdateVirtualService(ctx context.Context, newVirtualSe
 	}
 
 	delete(newVirtualService.Annotations, hasher.AnnotationHash)
+
 	err := hasher.AddAnnotation(newVirtualService)
 	if err != nil {
 		return errors.WithMessage(err, "failed to generate and hash annotation for virtual service")
@@ -91,6 +93,7 @@ func (cl *Client) CreateOrUpdateVirtualService(ctx context.Context, newVirtualSe
 	if !hasher.IsAnnotationDifferent(oldVirtualService, newVirtualService) {
 		return nil
 	}
+
 	return cl.updateVirtualService(ctx, oldVirtualService, newVirtualService)
 }
 
@@ -98,11 +101,13 @@ func (cl *Client) createVirtualService(ctx context.Context, virtualService *isti
 	if virtualService == nil {
 		return errors.New("can't create virtual service based on nil object")
 	}
+
 	_, err := cl.IstioClientset.NetworkingV1beta1().VirtualServices(cl.Owner.GetNamespace()).Create(ctx, virtualService, metav1.CreateOptions{})
 	if err != nil {
 		log.Info("failed to create virtual service", "name", virtualService.GetName(), "error", err.Error())
 		return errors.WithStack(err)
 	}
+
 	return nil
 }
 
@@ -110,12 +115,15 @@ func (cl *Client) updateVirtualService(ctx context.Context, oldVirtualService, n
 	if oldVirtualService == nil || newVirtualService == nil {
 		return errors.New("can't update service entry based on nil object")
 	}
+
 	newVirtualService.ObjectMeta.ResourceVersion = oldVirtualService.ObjectMeta.ResourceVersion
 	_, err := cl.IstioClientset.NetworkingV1beta1().VirtualServices(cl.Owner.GetNamespace()).Update(ctx, newVirtualService, metav1.UpdateOptions{})
+
 	if err != nil {
 		log.Info("failed to update virtual service", "name", newVirtualService.GetName(), "error", err.Error())
 		return errors.WithStack(err)
 	}
+
 	return nil
 }
 
@@ -127,6 +135,7 @@ func (cl *Client) DeleteVirtualService(ctx context.Context, name string) error {
 		log.Info("failed to remove virtual service", "name", name)
 		return errors.WithStack(err)
 	}
+
 	return nil
 }
 
@@ -138,6 +147,7 @@ func (cl *Client) GetServiceEntry(ctx context.Context, name string) (*istiov1bet
 		log.Info("failed to get current service entry", "name", name, "error", err.Error())
 		return nil, errors.WithStack(err)
 	}
+
 	return serviceEntry, nil
 }
 
@@ -152,10 +162,12 @@ func (cl *Client) CreateOrUpdateServiceEntry(ctx context.Context, newServiceEntr
 	}
 
 	delete(newServiceEntry.Annotations, hasher.AnnotationHash)
+
 	err := hasher.AddAnnotation(newServiceEntry)
 	if err != nil {
 		return errors.WithMessage(err, "failed to generate and hash annotation for service entry")
 	}
+
 	oldServiceEntry, err := cl.GetServiceEntry(ctx, newServiceEntry.Name)
 	if err != nil {
 		return err
@@ -168,6 +180,7 @@ func (cl *Client) CreateOrUpdateServiceEntry(ctx context.Context, newServiceEntr
 	if !hasher.IsAnnotationDifferent(oldServiceEntry, newServiceEntry) {
 		return nil
 	}
+
 	return cl.updateServiceEntry(ctx, oldServiceEntry, newServiceEntry)
 }
 
@@ -181,6 +194,7 @@ func (cl *Client) createServiceEntry(ctx context.Context, serviceEntry *istiov1b
 		log.Info("failed to create service entry", "name", serviceEntry.GetName(), "error", err.Error())
 		return errors.WithStack(err)
 	}
+
 	return nil
 }
 
@@ -191,10 +205,12 @@ func (cl *Client) updateServiceEntry(ctx context.Context, oldServiceEntry, newSe
 
 	newServiceEntry.ObjectMeta.ResourceVersion = oldServiceEntry.ObjectMeta.ResourceVersion
 	_, err := cl.IstioClientset.NetworkingV1beta1().ServiceEntries(cl.Owner.GetNamespace()).Update(ctx, newServiceEntry, metav1.UpdateOptions{})
+
 	if err != nil {
 		log.Info("failed to update service entry", "name", newServiceEntry.GetName(), "error", err.Error())
 		return errors.WithStack(err)
 	}
+
 	return nil
 }
 
@@ -206,5 +222,6 @@ func (cl *Client) DeleteServiceEntry(ctx context.Context, name string) error {
 		log.Info("failed to remove service entry", "name", name)
 		return errors.WithStack(err)
 	}
+
 	return nil
 }

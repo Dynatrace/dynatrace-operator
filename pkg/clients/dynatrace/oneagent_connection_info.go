@@ -34,6 +34,7 @@ func (dtc *dynatraceClient) GetOneAgentConnectionInfo() (OneAgentConnectionInfo,
 	if err != nil {
 		return OneAgentConnectionInfo{}, err
 	}
+
 	defer utils.CloseBodyAfterRequest(resp)
 
 	if resp.StatusCode == http.StatusBadRequest {
@@ -56,6 +57,7 @@ func (dtc *dynatraceClient) GetOneAgentConnectionInfo() (OneAgentConnectionInfo,
 
 func (dtc *dynatraceClient) readResponseForOneAgentConnectionInfo(response []byte) (OneAgentConnectionInfo, error) {
 	resp := oneAgentConnectionInfoJsonResponse{}
+
 	err := json.Unmarshal(response, &resp)
 	if err != nil {
 		log.Error(err, "error unmarshalling connection info response", "response", string(response))
@@ -73,6 +75,7 @@ func (dtc *dynatraceClient) readResponseForOneAgentConnectionInfo(response []byt
 			log.Info("failed to parse communication endpoint", "url", s)
 			continue
 		}
+
 		hash := fnv.New32a()
 		// Hash write implements Write interface, but never return err, so let's ignore it
 		_, _ = hash.Write([]byte(fmt.Sprintf("%s-%s-%d", e.Protocol, e.Host, e.Port)))
@@ -87,5 +90,6 @@ func (dtc *dynatraceClient) readResponseForOneAgentConnectionInfo(response []byt
 			Endpoints:   formattedCommunicationEndpoints,
 		},
 	}
+
 	return ci, nil
 }

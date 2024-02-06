@@ -72,6 +72,7 @@ func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {
 	}
 
 	defaultImage := updater.dynakube.DefaultActiveGateImage()
+
 	return updateVersionStatusForTenantRegistry(updater.Target(), defaultImage, latestVersion)
 }
 
@@ -80,5 +81,6 @@ func (updater activeGateUpdater) ValidateStatus() error {
 	if imageVersion == "" {
 		return errors.New("build version of ActiveGate image is not set")
 	}
+
 	return nil
 }

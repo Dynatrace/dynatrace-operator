@@ -73,6 +73,7 @@ func TestGetDeployment(t *testing.T) {
 
 func TestCreateOrUpdateDeployment(t *testing.T) {
 	const namespaceName = "dynatrace"
+
 	const deploymentName = "my-deployment"
 
 	t.Run("create when not exists", func(t *testing.T) {
@@ -121,6 +122,7 @@ func TestCreateOrUpdateDeployment(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.True(t, updated)
+
 		var actualDepl appsv1.Deployment
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: deploymentName, Namespace: namespaceName}, &actualDepl)
 		require.NoError(t, err)

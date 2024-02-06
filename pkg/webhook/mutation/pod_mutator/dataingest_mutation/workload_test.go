@@ -17,6 +17,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 	ctx := context.Background()
 	resourceName := "test"
 	namespaceName := "test"
+
 	t.Run("should find the root owner of the pod", func(t *testing.T) {
 		pod := corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{

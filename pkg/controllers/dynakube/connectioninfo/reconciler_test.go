@@ -143,6 +143,7 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 			},
 		}
 		resetCachedTimestamps(&dynakube.Status)
+
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc)
 		err := r.ReconcileActiveGate(context.Background(), &dynakube)
 		require.NoError(t, err)
@@ -260,7 +261,9 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 	t.Run(`update activegate secret`, func(t *testing.T) {
 		fakeClient := fake.NewClient(dynakube,
 			buildActiveGateSecret(*dynakube, testOutdated))
+
 		resetCachedTimestamps(&dynakube.Status)
+
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc)
 		err := r.ReconcileActiveGate(context.Background(), dynakube)
 		require.NoError(t, err)

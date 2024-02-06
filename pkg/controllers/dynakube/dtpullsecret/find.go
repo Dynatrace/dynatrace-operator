@@ -11,6 +11,7 @@ import (
 
 func GetImagePullSecret(clt client.Client, instance *dynatracev1beta1.DynaKube) (*corev1.Secret, error) {
 	imagePullSecret := &corev1.Secret{}
+
 	err := clt.Get(context.TODO(), client.ObjectKey{Namespace: instance.Namespace, Name: extendWithPullSecretSuffix(instance.Name)}, imagePullSecret)
 	if err != nil {
 		return nil, errors.WithStack(err)

@@ -13,6 +13,7 @@ func TestSyntheticInvalidSettings(t *testing.T) {
 		invalidType     = "XL"
 		invalidReplicas = "?"
 	)
+
 	dynaKube := dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,

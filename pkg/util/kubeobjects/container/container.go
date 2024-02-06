@@ -11,7 +11,9 @@ func FindContainerInPod(pod corev1.Pod, name string) (*corev1.Container, error) 
 	if container != nil {
 		return container, nil
 	}
+
 	podName := k8spod.GetName(pod)
+
 	return nil, errors.Errorf("no container %s found for pod %s", name, podName)
 }
 
@@ -22,5 +24,6 @@ func FindContainerInPodSpec(podSpec *corev1.PodSpec, containerName string) *core
 			return container
 		}
 	}
+
 	return nil
 }

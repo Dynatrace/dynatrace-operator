@@ -72,6 +72,7 @@ func (svr *Server) SetupWithManager(mgr ctrl.Manager) error {
 
 func (svr *Server) Start(ctx context.Context) error {
 	defer metadata.LogAccessOverview(svr.db)
+
 	proto, addr, err := parseEndpoint(svr.opts.Endpoint)
 	if err != nil {
 		return fmt.Errorf("failed to parse endpoint '%s': %w", svr.opts.Endpoint, err)
@@ -96,8 +97,10 @@ func (svr *Server) Start(ctx context.Context) error {
 	}
 
 	server := grpc.NewServer(grpc.UnaryInterceptor(logGRPC()))
+
 	go func() {
 		ticker := time.NewTicker(memoryMetricTick)
+
 		done := false
 		for !done {
 			select {
@@ -105,9 +108,11 @@ func (svr *Server) Start(ctx context.Context) error {
 				log.Info("stopping server")
 				server.GracefulStop()
 				log.Info("stopped server")
+
 				done = true
 			case <-ticker.C:
 				var m runtime.MemStats
+
 				runtime.ReadMemStats(&m)
 				memoryUsageMetric.Set(float64(m.Alloc))
 			}
@@ -121,6 +126,7 @@ func (svr *Server) Start(ctx context.Context) error {
 
 	err = server.Serve(listener)
 	server.GracefulStop()
+
 	return err
 }
 
@@ -147,10 +153,12 @@ func (svr *Server) NodePublishVolume(ctx context.Context, req *csi.NodePublishVo
 	} else if isMounted {
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
+
 	publisher, ok := svr.publishers[volumeCfg.Mode]
 	if !ok {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("unknown csi mode provided, mode=%s", volumeCfg.Mode))
 	}
+
 	log.Info("publishing volume",
 		"csiMode", volumeCfg.Mode,
 		"target", volumeCfg.TargetPath,
@@ -160,6 +168,7 @@ func (svr *Server) NodePublishVolume(ctx context.Context, req *csi.NodePublishVo
 		"attributes", req.GetVolumeContext(),
 		"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
 	)
+
 	return publisher.PublishVolume(ctx, volumeCfg)
 }
 
@@ -168,25 +177,31 @@ func (svr *Server) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpubli
 	if err != nil {
 		return nil, err
 	}
+
 	for _, publisher := range svr.publishers {
 		canUnpublish, err := publisher.CanUnpublishVolume(ctx, volumeInfo)
 		if err != nil {
 			log.Error(err, "couldn't determine if volume can be unpublished", "publisher", publisher)
 		}
+
 		if canUnpublish {
 			response, err := publisher.UnpublishVolume(ctx, volumeInfo)
 			if err != nil {
 				return nil, err
 			}
+
 			return response, nil
 		}
 	}
+
 	svr.unmountUnknownVolume(*volumeInfo)
+
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
 func (svr *Server) unmountUnknownVolume(volumeInfo csivolumes.VolumeInfo) {
 	log.Info("VolumeID not present in the database", "volumeID", volumeInfo.VolumeID, "targetPath", volumeInfo.TargetPath)
+
 	if err := svr.mounter.Unmount(volumeInfo.TargetPath); err != nil {
 		log.Error(err, "Tried to unmount unknown volume", "volumeID", volumeInfo.VolumeID)
 	}
@@ -223,6 +238,7 @@ func isMounted(mounter mount.Interface, targetPath string) (bool, error) {
 	} else if err != nil {
 		return false, status.Error(codes.Internal, err.Error())
 	}
+
 	return !isNotMounted, nil
 }
 
@@ -231,7 +247,9 @@ func logGRPC() grpc.UnaryServerInterceptor {
 		if info.FullMethod == "/csi.v1.Identity/Probe" || info.FullMethod == "/csi.v1.Node/NodeGetCapabilities" {
 			return handler(ctx, req)
 		}
+
 		methodName := ""
+
 		if info.FullMethod == "/csi.v1.Node/NodePublishVolume" {
 			req := req.(*csi.NodePublishVolumeRequest)
 			methodName = "NodePublishVolume"
@@ -241,10 +259,12 @@ func logGRPC() grpc.UnaryServerInterceptor {
 			methodName = "NodeUnpublishVolume"
 			log.Info("GRPC call", "method", methodName, "volume-id", req.VolumeId)
 		}
+
 		resp, err := handler(ctx, req)
 		if err != nil {
 			log.Error(err, "GRPC call failed", "method", methodName)
 		}
+
 		return resp, err
 	}
 }
@@ -256,5 +276,6 @@ func parseEndpoint(ep string) (string, string, error) {
 			return s[0], s[1], nil
 		}
 	}
+
 	return "", "", fmt.Errorf("invalid endpoint: %v", ep)
 }

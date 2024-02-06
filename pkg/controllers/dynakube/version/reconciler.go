@@ -7,7 +7,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/spf13/afero"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -20,23 +19,21 @@ type Reconciler interface {
 }
 
 type reconciler struct {
-	dtClient       dtclient.Client
-	registryClient registry.ImageGetter
-	timeProvider   *timeprovider.Provider
+	dtClient     dtclient.Client
+	timeProvider *timeprovider.Provider
 
 	fs        afero.Afero
 	apiReader client.Reader
 }
 
-type ReconcilerBuilder func(apiReader client.Reader, dtClient dtclient.Client, registryClient registry.ImageGetter, fs afero.Afero, timeProvider *timeprovider.Provider) Reconciler
+type ReconcilerBuilder func(apiReader client.Reader, dtClient dtclient.Client, fs afero.Afero, timeProvider *timeprovider.Provider) Reconciler
 
-func NewReconciler(apiReader client.Reader, dtClient dtclient.Client, registryClient registry.ImageGetter, fs afero.Afero, timeProvider *timeprovider.Provider) Reconciler { //nolint:revive
+func NewReconciler(apiReader client.Reader, dtClient dtclient.Client, fs afero.Afero, timeProvider *timeprovider.Provider) Reconciler { //nolint:revive
 	return &reconciler{
-		apiReader:      apiReader,
-		fs:             fs,
-		timeProvider:   timeProvider,
-		dtClient:       dtClient,
-		registryClient: registryClient,
+		apiReader:    apiReader,
+		fs:           fs,
+		timeProvider: timeProvider,
+		dtClient:     dtClient,
 	}
 }
 
@@ -45,6 +42,7 @@ func (r *reconciler) ReconcileCodeModules(ctx context.Context, dynakube *dynatra
 	if r.needsUpdate(updater, dynakube) {
 		return r.updateVersionStatuses(ctx, updater, dynakube)
 	}
+
 	return nil
 }
 
@@ -53,6 +51,7 @@ func (r *reconciler) ReconcileOneAgent(ctx context.Context, dynakube *dynatracev
 	if r.needsUpdate(updater, dynakube) {
 		return r.updateVersionStatuses(ctx, updater, dynakube)
 	}
+
 	return nil
 }
 
@@ -66,11 +65,13 @@ func (r *reconciler) ReconcileActiveGate(ctx context.Context, dynakube *dynatrac
 			return r.updateVersionStatuses(ctx, updater, dynakube)
 		}
 	}
+
 	return nil
 }
 
 func (r *reconciler) updateVersionStatuses(ctx context.Context, updater StatusUpdater, dynakube *dynatracev1beta1.DynaKube) error {
 	log.Info("updating version status", "updater", updater.Name())
+
 	err := r.run(ctx, updater)
 	if err != nil {
 		return err
@@ -78,13 +79,14 @@ func (r *reconciler) updateVersionStatuses(ctx context.Context, updater StatusUp
 
 	_, ok := updater.(*oneAgentUpdater)
 	if ok {
-		healthConfig, err := GetOneAgentHealthConfig(ctx, r.apiReader, r.registryClient, dynakube, dynakube.OneAgentImage())
+		healthConfig, err := getOneAgentHealthConfig(dynakube.OneAgentVersion())
 		if err != nil {
 			log.Error(err, "could not set OneAgent healthcheck")
 		} else {
 			dynakube.Status.OneAgent.Healthcheck = healthConfig
 		}
 	}
+
 	return nil
 }
 
@@ -107,6 +109,7 @@ func (r *reconciler) needsUpdate(updater StatusUpdater, dynakube *dynatracev1bet
 		log.Info("status timestamp still valid, skipping version status updater", "updater", updater.Name())
 		return false
 	}
+
 	return true
 }
 
@@ -124,10 +127,12 @@ func hasCustomFieldChanged(updater StatusUpdater) bool {
 	} else if updater.Target().Source == status.CustomVersionVersionSource {
 		oldVersion := updater.Target().Version
 		newVersion := updater.CustomVersion()
+
 		if oldVersion != newVersion {
 			log.Info("custom version value changed, update for version status is needed", "updater", updater.Name(), "oldVersion", oldVersion, "newVersion", newVersion)
 			return true
 		}
 	}
+
 	return false
 }

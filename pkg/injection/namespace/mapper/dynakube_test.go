@@ -24,6 +24,7 @@ func TestMapFromDynakube(t *testing.T) {
 		err := dm.MapFromDynakube()
 
 		assert.NoError(t, err)
+
 		var ns corev1.Namespace
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
 		assert.NoError(t, err)
@@ -42,6 +43,7 @@ func TestMapFromDynakube(t *testing.T) {
 		err := dm.MapFromDynakube()
 
 		assert.NoError(t, err)
+
 		var ns corev1.Namespace
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
 		assert.NoError(t, err)
@@ -60,6 +62,7 @@ func TestMapFromDynakube(t *testing.T) {
 		err := dm.MapFromDynakube()
 
 		assert.NoError(t, err)
+
 		var ns corev1.Namespace
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
 		assert.NoError(t, err)
@@ -89,6 +92,7 @@ func TestMapFromDynakube(t *testing.T) {
 		err := dm.MapFromDynakube()
 
 		assert.NoError(t, err)
+
 		var ns corev1.Namespace
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
 		assert.NoError(t, err)
@@ -105,6 +109,7 @@ func TestMapFromDynakube(t *testing.T) {
 		err := dm.MapFromDynakube()
 
 		assert.NoError(t, err)
+
 		var ns corev1.Namespace
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
 		assert.NoError(t, err)
@@ -123,6 +128,7 @@ func TestMapFromDynakube(t *testing.T) {
 		err := dm.MapFromDynakube()
 
 		assert.NoError(t, err)
+
 		var ns corev1.Namespace
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
 		assert.NoError(t, err)
@@ -150,6 +156,7 @@ func TestUnmapFromDynaKube(t *testing.T) {
 		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
 		err := dm.UnmapFromDynaKube()
 		assert.NoError(t, err)
+
 		var ns corev1.Namespace
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
 		assert.NoError(t, err)

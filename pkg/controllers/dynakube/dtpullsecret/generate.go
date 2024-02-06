@@ -75,6 +75,7 @@ func getImageRegistryFromAPIURL(apiURL string) (string, error) {
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
+
 	return u.Host, nil
 }
 
@@ -83,5 +84,6 @@ func pullSecretDataFromDockerConfig(dockerConf *dockerConfig) (map[string][]byte
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+
 	return map[string][]byte{DockerConfigJson: dockerConfJson}, nil
 }

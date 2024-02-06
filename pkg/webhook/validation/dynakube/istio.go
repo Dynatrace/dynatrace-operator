@@ -19,6 +19,7 @@ func noResourcesAvailable(_ context.Context, dv *dynakubeValidator, dynakube *dy
 		if err != nil {
 			return errorFailToInitIstioClient
 		}
+
 		enabled, err := istioClient.CheckIstioInstalled()
 		if !enabled || err != nil {
 			return errorNoResources

@@ -82,6 +82,7 @@ func createMonitoredEntities() []dtclient.MonitoredEntity {
 
 func TestReconcile(t *testing.T) {
 	dynakube := newDynaKube()
+
 	t.Run(`reconciler does not fail in with defaults`, func(t *testing.T) {
 		// arrange
 		r := createDefaultReconciler(t)
@@ -134,6 +135,7 @@ func TestReconcile(t *testing.T) {
 
 func TestReconcileErrors(t *testing.T) {
 	dynakube := newDynaKube()
+
 	t.Run(`don't create setting when no kube-system uuid is given`, func(t *testing.T) {
 		// arrange
 		r := createReconciler(t, "", []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{}, testObjectID, "")
@@ -196,6 +198,7 @@ func TestReconcileErrors(t *testing.T) {
 
 func TestHandleKubernetesAppEnabled(t *testing.T) {
 	dynakube := newDynaKube()
+
 	t.Run(`don't create app setting due to empty MonitoredEntitys`, func(t *testing.T) {
 		// arrange
 		r := createReconciler(t, "", []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{}, "", "")

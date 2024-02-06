@@ -28,6 +28,7 @@ func TestReconcileActiveGate(t *testing.T) {
 			ActiveGate: dynatracev1beta1.ActiveGateSpec{Capabilities: []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.KubeMonCapability.DisplayName}},
 		},
 	}
+
 	t.Run("no active-gate configured => nothing happens (only call active-gate reconciler)", func(t *testing.T) {
 		dynakube := dynakubeBase.DeepCopy()
 		dynakube.Spec.ActiveGate = dynatracev1beta1.ActiveGateSpec{}

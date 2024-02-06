@@ -22,6 +22,7 @@ func AddNamespaceMutationWebhookToManager(manager ctrl.Manager, namespace string
 	manager.GetWebhookServer().Register("/label-ns", &webhook.Admission{
 		Handler: newNamespaceMutator(manager.GetClient(), manager.GetAPIReader(), namespace),
 	})
+
 	return nil
 }
 
@@ -50,6 +51,7 @@ func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Reques
 	log.Info("namespace request", "namespace", request.Name, "operation", request.Operation)
 	ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: request.Namespace}}
 	nsMapper := mapper.NewNamespaceMapper(nm.client, nm.apiReader, nm.namespace, &ns)
+
 	if err := decodeRequestToNamespace(request, &ns); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
@@ -57,19 +59,24 @@ func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Reques
 	if _, ok := ns.Annotations[mapper.UpdatedViaDynakubeAnnotation]; ok {
 		log.Info("checking namespace labels not necessary", "namespace", request.Name)
 		delete(ns.Annotations, mapper.UpdatedViaDynakubeAnnotation)
+
 		return getResponseForNamespace(&ns, &request)
 	}
 
 	log.Info("checking namespace labels", "namespace", request.Name)
+
 	updatedNamespace, err := nsMapper.MapFromNamespace(ctx)
 	if err != nil {
 		span.RecordError(err)
 		return admission.Errored(http.StatusBadRequest, err)
 	}
+
 	if !updatedNamespace {
 		return admission.Patched("")
 	}
+
 	log.Info("namespace", "labels", ns.Labels)
+
 	return getResponseForNamespace(&ns, &request)
 }
 
@@ -80,6 +87,7 @@ func decodeRequestToNamespace(request admission.Request, namespace *corev1.Names
 	if err != nil {
 		return errors.WithStack(err)
 	}
+
 	return nil
 }
 
@@ -96,5 +104,6 @@ func getResponseForNamespace(ns *corev1.Namespace, req *admission.Request) admis
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
+
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledNamespace)
 }

@@ -48,11 +48,13 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if err != nil {
 		return errors.WithMessage(err, "failed to create activeGateAuthToken secret")
 	}
+
 	return nil
 }
 
 func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context) error {
 	var secret corev1.Secret
+
 	err := r.apiReader.Get(ctx,
 		client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: r.dynakube.Namespace},
 		&secret)
@@ -61,13 +63,17 @@ func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context) error {
 			log.Info("creating activeGateAuthToken secret")
 			return r.ensureAuthTokenSecret(ctx)
 		}
+
 		return errors.WithStack(err)
 	}
+
 	if isSecretOutdated(&secret) {
 		log.Info("activeGateAuthToken is outdated, creating new one")
+
 		if err := r.deleteSecret(ctx, &secret); err != nil {
 			return errors.WithStack(err)
 		}
+
 		return r.ensureAuthTokenSecret(ctx)
 	}
 
@@ -79,6 +85,7 @@ func (r *Reconciler) ensureAuthTokenSecret(ctx context.Context) error {
 	if err != nil {
 		return errors.WithMessagef(err, "failed to create secret '%s'", r.dynakube.ActiveGateAuthTokenSecret())
 	}
+
 	return r.createSecret(ctx, agSecretData)
 }
 
@@ -87,6 +94,7 @@ func (r *Reconciler) getActiveGateAuthToken() (map[string][]byte, error) {
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+
 	return map[string][]byte{
 		ActiveGateAuthTokenName: []byte(authTokenInfo.Token),
 	}, nil
@@ -94,6 +102,7 @@ func (r *Reconciler) getActiveGateAuthToken() (map[string][]byte, error) {
 
 func (r *Reconciler) createSecret(ctx context.Context, secretData map[string][]byte) error {
 	secretName := r.dynakube.ActiveGateAuthTokenSecret()
+
 	secret, err := secret.Create(r.scheme, r.dynakube,
 		secret.NewNameModifier(secretName),
 		secret.NewNamespaceModifier(r.dynakube.Namespace),
@@ -106,6 +115,7 @@ func (r *Reconciler) createSecret(ctx context.Context, secretData map[string][]b
 	if err != nil {
 		return errors.Errorf("failed to create secret '%s': %v", secretName, err)
 	}
+
 	return nil
 }
 
@@ -113,6 +123,7 @@ func (r *Reconciler) deleteSecret(ctx context.Context, secret *corev1.Secret) er
 	if err := r.client.Delete(ctx, secret); err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
+
 	return nil
 }
 

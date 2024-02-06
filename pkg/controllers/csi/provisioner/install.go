@@ -1,6 +1,9 @@
 package csiprovisioner
 
 import (
+	"context"
+	"net/http"
+
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -9,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 )
 
 func (provisioner *OneAgentProvisioner) installAgentImage(
@@ -28,25 +32,28 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 	}
 
 	targetImage := dynakube.CodeModulesImage()
-	imageDigest, err := image.GetDigest(targetImage)
+
+	imageDigest, err := provisioner.getDigest(dynakube, targetImage)
 	if err != nil {
 		return "", err
 	}
 
-	imageInstaller, err := provisioner.imageInstallerBuilder(provisioner.fs, &image.Properties{
+	props := &image.Properties{
 		ImageUri:     targetImage,
 		ApiReader:    provisioner.apiReader,
 		Dynakube:     &dynakube,
 		PathResolver: provisioner.path,
 		Metadata:     provisioner.db,
-		ImageDigest:  imageDigest,
-	})
+	}
+
+	imageInstaller, err := provisioner.imageInstallerBuilder(provisioner.fs, props)
 	if err != nil {
 		return "", err
 	}
 
 	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(imageDigest)
 	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dynakube.GetName())
+
 	err = provisioner.installAgent(imageInstaller, dynakube, targetDir, targetImage, tenantUUID)
 	if err != nil {
 		return "", err
@@ -56,7 +63,36 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 	if err != nil {
 		return "", err
 	}
+
 	return imageDigest, err
+}
+
+func (provisioner *OneAgentProvisioner) getDigest(dynakube dynatracev1beta1.DynaKube, imageUri string) (string, error) {
+	ctx := context.TODO()
+	pullSecret := dynakube.PullSecretWithoutData()
+	defaultTransport := http.DefaultTransport.(*http.Transport).Clone()
+
+	transport, err := registry.PrepareTransportForDynaKube(ctx, provisioner.apiReader, defaultTransport, &dynakube)
+	if err != nil {
+		return "", err
+	}
+
+	registryClient, err := provisioner.registryClientBuilder(
+		registry.WithContext(ctx),
+		registry.WithApiReader(provisioner.apiReader),
+		registry.WithKeyChainSecret(&pullSecret),
+		registry.WithTransport(transport),
+	)
+	if err != nil {
+		return "", err
+	}
+
+	imageVersion, err := registryClient.GetImageVersion(ctx, imageUri)
+	if err != nil {
+		return "", err
+	}
+
+	return string(imageVersion.Digest), nil
 }
 
 func (provisioner *OneAgentProvisioner) installAgentZip(dynakube dynatracev1beta1.DynaKube, dtc dtclient.Client, latestProcessModuleConfig *dtclient.ProcessModuleConfig) (string, error) {
@@ -64,11 +100,13 @@ func (provisioner *OneAgentProvisioner) installAgentZip(dynakube dynatracev1beta
 	if err != nil {
 		return "", err
 	}
+
 	targetVersion := dynakube.CodeModulesVersion()
 	urlInstaller := provisioner.urlInstallerBuilder(provisioner.fs, dtc, getUrlProperties(targetVersion, provisioner.path))
 
 	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(targetVersion)
 	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dynakube.GetName())
+
 	err = provisioner.installAgent(urlInstaller, dynakube, targetDir, targetVersion, tenantUUID)
 	if err != nil {
 		return "", err
@@ -78,6 +116,7 @@ func (provisioner *OneAgentProvisioner) installAgentZip(dynakube dynatracev1beta
 	if err != nil {
 		return "", err
 	}
+
 	return targetVersion, nil
 }
 
@@ -87,13 +126,16 @@ func (provisioner *OneAgentProvisioner) installAgent(agentInstaller installer.In
 		dynakube: &dynakube,
 	}
 	isNewlyInstalled, err := agentInstaller.InstallAgent(targetDir)
+
 	if err != nil {
 		eventRecorder.sendFailedInstallAgentVersionEvent(targetVersion, tenantUUID)
 		return err
 	}
+
 	if isNewlyInstalled {
 		eventRecorder.sendInstalledAgentVersionEvent(targetVersion, tenantUUID)
 	}
+
 	return nil
 }
 

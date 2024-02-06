@@ -21,6 +21,7 @@ func (s TokenScopes) Contains(scope string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -28,6 +29,7 @@ func (dtc *dynatraceClient) GetTokenScopes(token string) (TokenScopes, error) {
 	var model struct {
 		Token string `json:"token"`
 	}
+
 	model.Token = token
 
 	jsonStr, err := json.Marshal(model)
@@ -39,6 +41,7 @@ func (dtc *dynatraceClient) GetTokenScopes(token string) (TokenScopes, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error initializing http request: %w", err)
 	}
+
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", token))
 
@@ -46,6 +49,7 @@ func (dtc *dynatraceClient) GetTokenScopes(token string) (TokenScopes, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error making post request to dynatrace api: %w", err)
 	}
+
 	defer utils.CloseBodyAfterRequest(resp)
 
 	data, err := dtc.getServerResponseData(resp)

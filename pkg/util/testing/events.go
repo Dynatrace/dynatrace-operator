@@ -19,6 +19,7 @@ type Events []Event
 // In case of the Event.Message field it only checks if it "CONTAINED" in sent event.
 func AssertEvents(t *testing.T, eventsCh chan string, expectedEvents Events) {
 	assert.Equal(t, len(eventsCh), len(expectedEvents))
+
 	for _, event := range expectedEvents {
 		eventString := <-eventsCh
 		assert.NotNil(t, eventString)
@@ -26,8 +27,10 @@ func AssertEvents(t *testing.T, eventsCh chan string, expectedEvents Events) {
 		eventType := tmp[0]
 		reason := tmp[1]
 		message := strings.Join(tmp[2:], " ")
+
 		assert.Equal(t, eventType, event.EventType)
 		assert.Equal(t, reason, event.Reason)
+
 		if len(event.Message) > 0 {
 			assert.Contains(t, message, event.Message)
 		}

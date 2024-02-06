@@ -21,7 +21,6 @@ type shutdownFn func(ctx context.Context) error
 // It logs and swallows all errors to not prevent the application from startup.
 func Start(ctx context.Context, otelServiceName string, apiReader client.Reader, webhookNamespace string) func() {
 	endpoint, apiToken, err := getOtelConfig(ctx, apiReader, webhookNamespace)
-
 	if err != nil {
 		log.Info("failed to read OpenTelementry config secret", "err", err.Error())
 		return setupNoopOTel()
@@ -32,6 +31,7 @@ func Start(ctx context.Context, otelServiceName string, apiReader client.Reader,
 		log.Error(err, "failed to setup OTLP OpenTelementry")
 		return setupNoopOTel()
 	}
+
 	return shutdown
 }
 
@@ -51,6 +51,7 @@ func setupOtlpOTel(ctx context.Context, otelServiceName string, endpoint string,
 		_ = tracesShutdownFn(ctx)
 		return nil, err
 	}
+
 	startAutoInstrumentation(meterProvider)
 
 	return func() {
@@ -65,6 +66,7 @@ func setupNoopOTel() func() {
 	otel.SetMeterProvider(noop.NewMeterProvider())
 	otel.SetTracerProvider(trace.NewNoopTracerProvider())
 	log.Info("use Noop providers for OpenTelemetry")
+
 	return func() {}
 }
 
@@ -78,6 +80,7 @@ func newResource(otelServiceName string) (*resource.Resource, error) {
 			semconv.ServiceVersionKey.String(version.Version),
 		),
 	)
+
 	return r, errors.WithStack(err)
 }
 
@@ -92,6 +95,7 @@ func getOtelConfig(ctx context.Context, apiReader client.Reader, namespace strin
 	}
 
 	query := k8ssecret.NewQuery(ctx, nil, apiReader, log)
+
 	secret, err := query.Get(secretName)
 	if err != nil {
 		return "", "", errors.WithStack(err)

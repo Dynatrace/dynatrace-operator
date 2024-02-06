@@ -14,5 +14,6 @@ func checkHostPatternsValue(_ context.Context, _ *edgeconnectValidator, edgeConn
 	if edgeConnect.Spec.OAuth.Provisioner && len(edgeConnect.Spec.HostPatterns) == 0 {
 		return errorHostPattersIsRequired
 	}
+
 	return ""
 }

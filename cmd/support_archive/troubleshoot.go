@@ -48,5 +48,6 @@ func (t troubleshootCollector) Do() error {
 	troubleshoot.RunTroubleshootCmd(context.Background(), log, t.namespace, &t.kubeConfig)
 
 	t.supportArchive.addFile(TroublshootOutputFileName, &troubleshootCmdOutput)
+
 	return nil
 }

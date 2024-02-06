@@ -42,6 +42,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
+
 	if r.dynakube.NeedsActiveGateService() {
 		err = r.createOrUpdateService(ctx)
 		if err != nil {
@@ -50,14 +51,15 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	err = r.statefulsetReconciler.Reconcile(ctx)
+
 	return errors.WithStack(err)
 }
 
 func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
 	desired := CreateService(r.dynakube, r.capability.ShortName())
 	installed := &corev1.Service{}
-	err := r.client.Get(ctx, object.Key(desired), installed)
 
+	err := r.client.Get(ctx, object.Key(desired), installed)
 	if k8serrors.IsNotFound(err) {
 		log.Info("creating AG service", "module", r.capability.ShortName())
 
@@ -67,6 +69,7 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
 		}
 
 		err = r.client.Create(ctx, desired)
+
 		return errors.WithStack(err)
 	}
 
@@ -77,12 +80,13 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
 	if r.portsAreOutdated(installed, desired) || r.labelsAreOutdated(installed, desired) {
 		desired.Spec.ClusterIP = installed.Spec.ClusterIP
 		desired.ObjectMeta.ResourceVersion = installed.ObjectMeta.ResourceVersion
-		err = r.client.Update(ctx, desired)
 
+		err = r.client.Update(ctx, desired)
 		if err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 

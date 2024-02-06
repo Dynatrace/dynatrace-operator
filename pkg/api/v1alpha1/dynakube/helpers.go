@@ -40,6 +40,7 @@ func (dk *DynaKube) PullSecret() string {
 	if dk.Spec.CustomPullSecret != "" {
 		return dk.Spec.CustomPullSecret
 	}
+
 	return dk.Name + PullSecretSuffix
 }
 
@@ -54,6 +55,7 @@ func (dk *DynaKube) ActiveGateImage() string {
 	}
 
 	registry := buildImageRegistry(dk.Spec.APIURL)
+
 	return fmt.Sprintf("%s/linux/activegate:latest", registry)
 }
 
@@ -73,6 +75,7 @@ func (dk *DynaKube) ImmutableOneAgentImage() string {
 	}
 
 	registry := buildImageRegistry(dk.Spec.APIURL)
+
 	return fmt.Sprintf("%s/linux/oneagent:%s", registry, tag)
 }
 
@@ -80,5 +83,6 @@ func buildImageRegistry(apiURL string) string {
 	registry := strings.TrimPrefix(apiURL, "https://")
 	registry = strings.TrimPrefix(registry, "http://")
 	registry = strings.TrimSuffix(registry, "/api")
+
 	return registry
 }

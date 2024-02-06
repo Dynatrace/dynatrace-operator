@@ -44,7 +44,9 @@ func NewInitGenerator(client client.Client, apiReader client.Reader, namespace s
 // Used by the podInjection webhook in case the namespace lacks the init secret.
 func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynatracev1beta1.DynaKube, targetNs string) error {
 	log.Info("reconciling namespace init secret for", "namespace", targetNs)
+
 	g.canWatchNodes = false
+
 	data, err := g.generate(ctx, &dk)
 	if err != nil {
 		return errors.WithStack(err)
@@ -64,6 +66,7 @@ func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynatracev1
 	secretQuery := k8ssecret.NewQuery(ctx, g.client, g.apiReader, log)
 
 	err = secretQuery.CreateOrUpdate(*secret)
+
 	return errors.WithStack(err)
 }
 
@@ -71,15 +74,15 @@ func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynatracev1
 // Used by the dynakube controller during reconcile.
 func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1beta1.DynaKube) error {
 	log.Info("reconciling namespace init secret for", "dynakube", dk.Name)
-	g.canWatchNodes = true
-	data, err := g.generate(ctx, dk)
 
+	g.canWatchNodes = true
+
+	data, err := g.generate(ctx, dk)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
 	nsList, err := mapper.GetNamespacesForDynakube(ctx, g.apiReader, dk.Name)
-
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -102,6 +105,7 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 	}
 
 	log.Info("done updating init secrets")
+
 	return nil
 }
 
@@ -121,6 +125,7 @@ func (g *InitGenerator) generate(ctx context.Context, dk *dynatracev1beta1.DynaK
 	if err != nil {
 		return nil, err
 	}
+
 	return data, nil
 }
 
@@ -131,6 +136,7 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 	}
 
 	var proxy string
+
 	var err error
 	if dynakube.NeedsOneAgentProxy() {
 		proxy, err = dynakube.Proxy(ctx, g.apiReader)
@@ -182,6 +188,7 @@ func getPaasToken(tokens corev1.Secret) string {
 	if len(tokens.Data[dtclient.DynatracePaasToken]) != 0 {
 		return string(tokens.Data[dtclient.DynatracePaasToken])
 	}
+
 	return string(tokens.Data[dtclient.DynatraceApiToken])
 }
 
@@ -198,6 +205,7 @@ func getAPIToken(tokens corev1.Secret) string {
 // Checks all the dynakubes with host-monitoring against all the nodes (using the nodeSelector), creating the above mentioned mapping.
 func (g *InitGenerator) getHostMonitoringNodes(dk *dynatracev1beta1.DynaKube) (map[string]string, error) {
 	tenantUUID := dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID
+
 	imNodes := map[string]string{}
 	if !dk.CloudNativeFullstackMode() {
 		return imNodes, nil
@@ -205,6 +213,7 @@ func (g *InitGenerator) getHostMonitoringNodes(dk *dynatracev1beta1.DynaKube) (m
 
 	if g.canWatchNodes {
 		var err error
+
 		imNodes, err = g.calculateImNodes(dk, tenantUUID)
 		if err != nil {
 			return nil, err
@@ -212,6 +221,7 @@ func (g *InitGenerator) getHostMonitoringNodes(dk *dynatracev1beta1.DynaKube) (m
 	} else {
 		updateImNodes(dk, tenantUUID, imNodes)
 	}
+
 	return imNodes, nil
 }
 
@@ -220,8 +230,10 @@ func (g *InitGenerator) calculateImNodes(dk *dynatracev1beta1.DynaKube, tenantUU
 	if err != nil {
 		return nil, err
 	}
+
 	nodeSelector := labels.SelectorFromSet(dk.NodeSelector())
 	updateNodeInfImNodes(dk, nodeInf, nodeSelector, tenantUUID)
+
 	return nodeInf.imNodes, nil
 }
 
@@ -253,10 +265,12 @@ func (g *InitGenerator) initIMNodes() (nodeInfo, error) {
 	if err := g.client.List(context.TODO(), &nodeList); err != nil {
 		return nodeInfo{}, err
 	}
+
 	imNodes := map[string]string{}
 	for _, node := range nodeList.Items {
 		imNodes[node.Name] = consts.AgentNoHostTenant
 	}
+
 	return nodeInfo{nodeList.Items, imNodes}, nil
 }
 
@@ -265,6 +279,7 @@ func (g *InitGenerator) createSecretData(secretConfig *startup.SecretConfig) (ma
 	if err != nil {
 		return nil, err
 	}
+
 	return map[string][]byte{
 		consts.AgentInitSecretConfigField: jsonContent,
 		dynatracev1beta1.ProxyKey:         []byte(secretConfig.Proxy), // needed so that it can be mounted to the user's pod without directly reading the secret

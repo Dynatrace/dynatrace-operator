@@ -15,6 +15,7 @@ func copyFolder(fs afero.Fs, source string, destination string) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
+
 	if !sourceInfo.IsDir() {
 		return errors.Errorf("%s is not a directory", source)
 	}
@@ -28,9 +29,11 @@ func copyFolder(fs afero.Fs, source string, destination string) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
+
 	for _, entry := range entries {
 		sourcePath := filepath.Join(source, entry.Name())
 		destinationPath := filepath.Join(destination, entry.Name())
+
 		if entry.IsDir() {
 			err = copyFolder(fs, sourcePath, destinationPath)
 			if err != nil {
@@ -38,12 +41,14 @@ func copyFolder(fs afero.Fs, source string, destination string) error {
 			}
 		} else {
 			log.Info(fmt.Sprintf("copying from %s to %s ", sourcePath, destinationPath))
+
 			err = copyFile(fs, sourcePath, destinationPath)
 			if err != nil {
 				return err
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -63,7 +68,9 @@ func copyFile(fs afero.Fs, sourcePath string, destinationPath string) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
+
 	defer destinationFile.Close()
+
 	_, err = io.Copy(destinationFile, sourceFile)
 	if err != nil {
 		return errors.WithStack(err)
@@ -73,5 +80,6 @@ func copyFile(fs afero.Fs, sourcePath string, destinationPath string) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
+
 	return nil
 }

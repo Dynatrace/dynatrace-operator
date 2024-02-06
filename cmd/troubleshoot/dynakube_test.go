@@ -269,6 +269,7 @@ func (builder *testDynaKubeBuilder) withProxy(proxyURL string) *testDynaKubeBuil
 	builder.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{
 		Value: proxyURL,
 	}
+
 	return builder
 }
 
@@ -276,6 +277,7 @@ func (builder *testDynaKubeBuilder) withProxySecret(secretName string) *testDyna
 	builder.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{
 		ValueFrom: secretName,
 	}
+
 	return builder
 }
 
@@ -285,6 +287,7 @@ func (builder *testDynaKubeBuilder) withActiveGateCapability(capability dynatrac
 	}
 
 	builder.dynakube.Spec.ActiveGate.Capabilities = append(builder.dynakube.Spec.ActiveGate.Capabilities, capability)
+
 	return builder
 }
 
@@ -297,6 +300,7 @@ func (builder *testDynaKubeBuilder) withCloudNativeFullStack() *testDynaKubeBuil
 	builder.dynakube.Spec.OneAgent.CloudNativeFullStack = &dynatracev1beta1.CloudNativeFullStackSpec{
 		HostInjectSpec: dynatracev1beta1.HostInjectSpec{},
 	}
+
 	return builder
 }
 
@@ -318,6 +322,7 @@ func (builder *testDynaKubeBuilder) withClassicFullStackCustomImage(image string
 			Image: image,
 		}
 	}
+
 	return builder
 }
 
@@ -331,6 +336,7 @@ func (builder *testDynaKubeBuilder) withCloudNativeFullStackCustomImage(image st
 			},
 		}
 	}
+
 	return builder
 }
 
@@ -342,6 +348,7 @@ func (builder *testDynaKubeBuilder) withHostMonitoringCustomImage(image string) 
 			Image: image,
 		}
 	}
+
 	return builder
 }
 
@@ -356,6 +363,7 @@ func (builder *testDynaKubeBuilder) withCloudNativeCodeModulesImage(image string
 			},
 		}
 	}
+
 	return builder
 }
 
@@ -372,6 +380,7 @@ func (builder *testDynaKubeBuilder) withApplicationMonitoringCodeModulesImage(im
 			UseCSIDriver: address.Of(true),
 		}
 	}
+
 	return builder
 }
 
@@ -383,6 +392,7 @@ func (builder *testDynaKubeBuilder) withClassicFullStackImageVersion(version str
 			Version: version,
 		}
 	}
+
 	return builder
 }
 
@@ -396,6 +406,7 @@ func (builder *testDynaKubeBuilder) withCloudNativeFullStackImageVersion(version
 			},
 		}
 	}
+
 	return builder
 }
 
@@ -407,6 +418,7 @@ func (builder *testDynaKubeBuilder) withHostMonitoringImageVersion(version strin
 			Version: version,
 		}
 	}
+
 	return builder
 }
 
@@ -422,6 +434,7 @@ func testNewSecretBuilder(namespace string, name string) *testSecretBuilder {
 	secretData := map[string][]byte{
 		name: []byte("topsecretstringhere"),
 	}
+
 	return &testSecretBuilder{
 		secret: &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -440,6 +453,7 @@ func (builder *testSecretBuilder) dataAppend(key string, value string) *testSecr
 	} else {
 		builder.secret.Data[key] = []byte(value)
 	}
+
 	return builder
 }
 

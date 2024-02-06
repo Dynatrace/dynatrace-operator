@@ -17,6 +17,7 @@ func setupMetricsWithOtlp(ctx context.Context, resource *resource.Resource, endp
 	if err != nil {
 		return nil, nil, err
 	}
+
 	sdkMeterProvider := sdkmetric.NewMeterProvider(
 		sdkmetric.WithResource(resource),
 		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(meterExporter, sdkmetric.WithInterval(otelMetricReadInterval))),
@@ -41,6 +42,7 @@ func newOtlpMetricsExporter(ctx context.Context, endpoint string, apiToken strin
 			// Dynatrace doesn't ingest histograms yet, drop it
 			return sdkmetric.AggregationDrop{}
 		}
+
 		return sdkmetric.DefaultAggregationSelector(ik)
 	}
 
@@ -55,6 +57,7 @@ func newOtlpMetricsExporter(ctx context.Context, endpoint string, apiToken strin
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+
 	return exporter, nil
 }
 
@@ -70,15 +73,18 @@ func Count[N Number](ctx context.Context, meter metric.Meter, name string, value
 	}
 
 	var err error
+
 	switch v := any(value).(type) {
 	case int64:
 		var counter metric.Int64Counter
+
 		counter, err = meter.Int64Counter(name)
 		if err == nil {
 			counter.Add(ctx, v, metric.WithAttributes(attributes...))
 		}
 	case float64:
 		var counter metric.Float64Counter
+
 		counter, err = meter.Float64Counter(name)
 		if err == nil {
 			counter.Add(ctx, v, metric.WithAttributes(attributes...))
@@ -86,6 +92,7 @@ func Count[N Number](ctx context.Context, meter metric.Meter, name string, value
 	default:
 		err = errors.Errorf("unsupported counter type")
 	}
+
 	if err != nil {
 		log.Error(err, "failed counting", "metric", name)
 	}

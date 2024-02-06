@@ -16,6 +16,7 @@ import (
 func (mutator *OneAgentPodMutator) addVolumes(pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) {
 	addInjectionConfigVolume(pod)
 	addOneAgentVolumes(pod, dynakube)
+
 	if dynakube.FeatureReadOnlyCsiVolume() {
 		addVolumesForReadOnlyCSI(pod)
 	}
@@ -77,6 +78,7 @@ func addInitVolumeMounts(initContainer *corev1.Container, dynakube dynatracev1be
 	if dynakube.FeatureReadOnlyCsiVolume() {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{Name: oneagentConfVolumeName, MountPath: consts.AgentConfInitDirMount})
 	}
+
 	initContainer.VolumeMounts = append(initContainer.VolumeMounts, volumeMounts...)
 }
 
@@ -159,5 +161,6 @@ func getInstallerVolumeSource(dynakube dynatracev1beta1.DynaKube) corev1.VolumeS
 	} else {
 		volumeSource.EmptyDir = &corev1.EmptyDirVolumeSource{}
 	}
+
 	return volumeSource
 }

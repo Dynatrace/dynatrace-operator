@@ -14,6 +14,7 @@ import (
 
 func TestProxy(t *testing.T) {
 	proxyRawURL := "proxy.url"
+
 	t.Run("set NO_PROXY", func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -60,6 +61,7 @@ func TestSkipCertCheck(t *testing.T) {
 			},
 		},
 	}
+
 	t.Run("has skipCertCheck enabled", func(t *testing.T) {
 		instance.Spec.SkipCertCheck = true
 		transport := http.DefaultTransport.(*http.Transport).Clone()
@@ -82,6 +84,7 @@ func checkProxyForUrl(t *testing.T, transport http.Transport, proxyRawURL, targe
 
 	url, err := transport.Proxy(&http.Request{URL: targetURL})
 	require.NoError(t, err)
+
 	if !noProxy {
 		require.NotNil(t, url)
 		assert.Equal(t, proxyRawURL, url.Host)

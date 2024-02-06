@@ -136,5 +136,6 @@ func (runner *Runner) createConfFile(path string, content string) error {
 	}
 
 	log.Info("created file", "filePath", path, "content", content)
+
 	return nil
 }

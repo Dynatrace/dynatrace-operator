@@ -22,13 +22,16 @@ func Update(fs afero.Fs, sourcePath, destPath string, conf dtclient.ConfMap) err
 	if err != nil {
 		return err
 	}
+
 	sourceFile, err := fs.Open(sourcePath)
 	if err != nil {
 		return err
 	}
+
 	scanner := bufio.NewScanner(sourceFile)
 	currentSection := ""
 	content := []string{}
+
 	for scanner.Scan() {
 		line := scanner.Text()
 		header := confSectionHeader(line)
@@ -38,10 +41,13 @@ func Update(fs afero.Fs, sourcePath, destPath string, conf dtclient.ConfMap) err
 			leftovers := addLeftoversForSection(currentSection, conf)
 			if hasExtraNewLine(leftovers, content) {
 				content = content[:len(content)-1]
+
 				leftovers = append(leftovers, "")
 			}
+
 			content = append(content, leftovers...)
 			currentSection = header
+
 			content = append(content, line)
 		case strings.HasPrefix(line, "#"):
 			content = append(content, line)
@@ -49,6 +55,7 @@ func Update(fs afero.Fs, sourcePath, destPath string, conf dtclient.ConfMap) err
 			content = append(content, mergeLine(line, currentSection, conf))
 		}
 	}
+
 	if err := scanner.Err(); err != nil {
 		sourceFile.Close()
 		return err
@@ -59,6 +66,7 @@ func Update(fs afero.Fs, sourcePath, destPath string, conf dtclient.ConfMap) err
 	if hasExtraNewLine(leftovers, content) {
 		content = content[:len(content)-1]
 	}
+
 	content = append(content, leftovers...)
 
 	// for sections not in the original conf file need to be added as well
@@ -66,6 +74,7 @@ func Update(fs afero.Fs, sourcePath, destPath string, conf dtclient.ConfMap) err
 	if hasMissingNewLine(leftovers, content) {
 		content = append(content, "")
 	}
+
 	content = append(content, leftovers...)
 
 	if err = sourceFile.Close(); err != nil {
@@ -88,13 +97,16 @@ func storeFile(fs afero.Fs, destPath string, fileMode fs.FileMode, content []str
 	if err != nil {
 		return err
 	}
+
 	for _, line := range content {
 		_, _ = file.WriteString(line + "\n")
+
 		if err != nil {
 			file.Close()
 			return err
 		}
 	}
+
 	return file.Close()
 }
 
@@ -102,6 +114,7 @@ func confSectionHeader(confLine string) string {
 	if matches := sectionRegexp.FindStringSubmatch(confLine); len(matches) != 0 {
 		return matches[1]
 	}
+
 	return ""
 }
 
@@ -113,20 +126,24 @@ func addLeftovers(conf dtclient.ConfMap) []string {
 			lines = append(lines, fmt.Sprintf("%s %s", key, value))
 		}
 	}
+
 	return lines
 }
 
 func addLeftoversForSection(currentSection string, conf dtclient.ConfMap) []string {
 	lines := []string{}
+
 	if currentSection != "" {
 		section, ok := conf[currentSection]
 		if ok {
 			for key, value := range section {
 				lines = append(lines, fmt.Sprintf("%s %s", key, value))
 			}
+
 			delete(conf, currentSection)
 		}
 	}
+
 	return lines
 }
 
@@ -138,10 +155,13 @@ func mergeLine(line, currentSection string, conf dtclient.ConfMap) string {
 	if !ok {
 		return line
 	}
+
 	newValue, ok := props[key]
 	if !ok {
 		return line
 	}
+
 	delete(conf[currentSection], key)
+
 	return fmt.Sprintf("%s %s", key, newValue)
 }

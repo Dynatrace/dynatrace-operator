@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,6 +37,44 @@ var sampleKubeSystemNS = &corev1.Namespace{
 		Name: "kube-system",
 		UID:  "01234-5678-9012-3456",
 	},
+}
+
+func TestReconcile(t *testing.T) {
+	namespace := "dynatrace"
+	dkName := "dynakube"
+
+	t.Run("remove DaemonSet in case OneAgent is not needed", func(t *testing.T) {
+		dynakube := &dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace}}
+		fakeClient := fake.NewClient(dynakube, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dynakube.OneAgentDaemonsetName(), Namespace: dynakube.Namespace}})
+
+		reconciler := &Reconciler{
+			client:    fakeClient,
+			apiReader: fakeClient,
+			scheme:    scheme.Scheme,
+		}
+
+		err := reconciler.Reconcile(context.Background(), dynakube)
+		require.NoError(t, err)
+
+		dsActual := &appsv1.DaemonSet{}
+		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: dynakube.OneAgentDaemonsetName(), Namespace: namespace}, dsActual)
+		require.Error(t, err)
+		assert.True(t, k8serrors.IsNotFound(err))
+	})
+
+	t.Run("removing DaemonSet is safe even if its missing", func(t *testing.T) {
+		dynakube := &dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace}}
+		fakeClient := fake.NewClient(dynakube)
+
+		reconciler := &Reconciler{
+			client:    fakeClient,
+			apiReader: fakeClient,
+			scheme:    scheme.Scheme,
+		}
+
+		err := reconciler.Reconcile(context.Background(), dynakube)
+		require.NoError(t, err)
+	})
 }
 
 func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T) {
@@ -163,6 +202,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		namespace = "dynatrace"
 		name      = "dynakube"
 	)
+
 	base := dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 		Spec: dynatracev1beta1.DynaKubeSpec{
@@ -315,6 +355,7 @@ func NewSecret(name, namespace string, kv map[string]string) *corev1.Secret {
 	for k, v := range kv {
 		data[k] = []byte(v)
 	}
+
 	return &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}, Data: data}
 }
 

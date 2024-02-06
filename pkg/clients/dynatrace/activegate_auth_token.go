@@ -57,6 +57,7 @@ func (dtc *dynatraceClient) createAuthTokenRequest(dynakubeName string) (*http.R
 		ActiveGateType: activeGateType,
 		ExpirationDate: getAuthTokenExpirationDate(),
 	}
+
 	bodyData, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
@@ -71,6 +72,7 @@ func (dtc *dynatraceClient) createAuthTokenRequest(dynakubeName string) (*http.R
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+
 	return request, nil
 }
 
@@ -90,6 +92,7 @@ func (dtc *dynatraceClient) handleAuthTokenResponse(response *http.Response) (*A
 
 func (dtc *dynatraceClient) readResponseForActiveGateAuthToken(response []byte) (*ActiveGateAuthTokenInfo, error) {
 	agAuthToken := &ActiveGateAuthTokenInfo{}
+
 	err := json.Unmarshal(response, agAuthToken)
 	if err != nil {
 		log.Error(err, "error unmarshalling ActiveGateAuthTokenInfo", "response", string(response))

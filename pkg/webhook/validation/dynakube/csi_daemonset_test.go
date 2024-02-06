@@ -112,6 +112,7 @@ func TestDisabledCSIForReadonlyCSIVolume(t *testing.T) {
 	objectMeta.Annotations = map[string]string{
 		dynatracev1beta1.AnnotationFeatureReadOnlyCsiVolume: "true",
 	}
+
 	t.Run(`valid cloud-native dynakube specs`, func(t *testing.T) {
 		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
 			ObjectMeta: *objectMeta,

@@ -70,11 +70,13 @@ func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.
 		if dtc.apiToken == "" {
 			return nil, errors.Errorf("not able to set token since api token is empty for request: %s", url)
 		}
+
 		authHeader = fmt.Sprintf("Api-Token %s", dtc.apiToken)
 	case dynatracePaaSToken:
 		if dtc.paasToken == "" {
 			return nil, errors.Errorf("not able to set token since paas token is empty for request: %s", url)
 		}
+
 		authHeader = fmt.Sprintf("Api-Token %s", dtc.paasToken)
 	case installerUrlToken:
 		return dtc.httpClient.Do(req)
@@ -93,6 +95,7 @@ func createBaseRequest(url, method, apiToken string, body io.Reader) (*http.Requ
 	if err != nil {
 		return nil, errors.WithMessage(err, "error initializing http request")
 	}
+
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", apiToken))
 
@@ -122,6 +125,7 @@ func (dtc *dynatraceClient) makeRequestAndUnmarshal(url string, token tokenType,
 	if err != nil {
 		return err
 	}
+
 	defer utils.CloseBodyAfterRequest(resp)
 
 	responseData, err := dtc.getServerResponseData(resp)
@@ -137,19 +141,23 @@ func (dtc *dynatraceClient) makeRequestForBinary(url string, token tokenType, wr
 	if err != nil {
 		return "", err
 	}
+
 	defer utils.CloseBodyAfterRequest(resp)
 
 	if resp.StatusCode != http.StatusOK {
 		var errorResponse serverErrorResponse
+
 		err = json.NewDecoder(resp.Body).Decode(&errorResponse)
 		if err != nil {
 			return "", err
 		}
+
 		return "", errors.Errorf("dynatrace server error %d: %s", errorResponse.ErrorMessage.Code, errorResponse.ErrorMessage.Message)
 	}
 
 	hash := md5.New() //nolint:gosec
 	_, err = io.Copy(writer, io.TeeReader(resp.Body, hash))
+
 	return hex.EncodeToString(hash.Sum(nil)), err
 }
 
@@ -183,6 +191,7 @@ func (dtc *dynatraceClient) buildHostCache() error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
+
 	defer utils.CloseBodyAfterRequest(resp)
 
 	responseData, err := dtc.getServerResponseData(resp)
@@ -225,6 +234,7 @@ func (dtc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 	}
 
 	var inactive []string
+
 	for _, info := range hostInfoResponses {
 		// If we haven't seen this host in the last 30 minutes, ignore it.
 		if tm := time.Unix(info.LastSeenTimestamp/1000, 0).UTC(); tm.Before(now.Add(-30 * time.Minute)) {
@@ -264,11 +274,13 @@ func (dtc *dynatraceClient) updateHostCache(info hostInfoResponse, hostInfo host
 
 func (dtc *dynatraceClient) extractHostInfoResponse(response []byte) ([]hostInfoResponse, error) {
 	var hostInfoResponses []hostInfoResponse
+
 	err := json.Unmarshal(response, &hostInfoResponses)
 	if err != nil {
 		log.Error(err, "error unmarshalling json response", "response", string(response))
 		return nil, errors.WithStack(err)
 	}
+
 	return hostInfoResponses, nil
 }
 

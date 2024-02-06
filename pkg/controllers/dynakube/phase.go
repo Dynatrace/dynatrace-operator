@@ -18,10 +18,12 @@ func (controller *Controller) determineDynaKubePhase(dynakube *dynatracev1beta1.
 			log.Error(err, "activegate statefulset could not be accessed", "dynakube", dynakube.Name)
 			return status.Error
 		}
+
 		if activeGatePods > 0 {
 			log.Info("activegate statefulset is still deploying", "dynakube", dynakube.Name)
 			return status.Deploying
 		}
+
 		if activeGatePods < 0 {
 			log.Info("activegate statefulset not yet available", "dynakube", dynakube.Name)
 			return status.Deploying
@@ -34,10 +36,12 @@ func (controller *Controller) determineDynaKubePhase(dynakube *dynatracev1beta1.
 			log.Info("oneagent daemonset not yet available", "dynakube", dynakube.Name)
 			return status.Deploying
 		}
+
 		if err != nil {
 			log.Error(err, "oneagent daemonset could not be accessed", "dynakube", dynakube.Name)
 			return status.Error
 		}
+
 		if oneAgentPods > 0 {
 			log.Info("oneagent daemonset is still deploying", "dynakube", dynakube.Name)
 			return status.Deploying
@@ -50,11 +54,12 @@ func (controller *Controller) determineDynaKubePhase(dynakube *dynatracev1beta1.
 func (controller *Controller) numberOfMissingOneagentPods(dynakube *dynatracev1beta1.DynaKube) (int32, error) {
 	oneAgentDaemonSet := &appsv1.DaemonSet{}
 	instanceName := dynakube.OneAgentDaemonsetName()
-	err := controller.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: dynakube.Namespace}, oneAgentDaemonSet)
 
+	err := controller.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: dynakube.Namespace}, oneAgentDaemonSet)
 	if err != nil {
 		return 0, err
 	}
+
 	return oneAgentDaemonSet.Status.CurrentNumberScheduled - oneAgentDaemonSet.Status.NumberReady, nil
 }
 
@@ -67,14 +72,16 @@ func (controller *Controller) numberOfMissingActiveGatePods(dynakube *dynatracev
 	for _, activeGateCapability := range capabilities {
 		activeGateStatefulSet := &appsv1.StatefulSet{}
 		instanceName := capability.CalculateStatefulSetName(activeGateCapability, dynakube.Name)
-		err := controller.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: dynakube.Namespace}, activeGateStatefulSet)
 
+		err := controller.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: dynakube.Namespace}, activeGateStatefulSet)
 		if k8serrors.IsNotFound(err) {
 			continue
 		}
+
 		if err != nil {
 			return -1, err
 		}
+
 		capabilityFound = true
 
 		// This check is needed as in our unit tests replicas is always nil. We can't set it manually as this function
@@ -83,6 +90,7 @@ func (controller *Controller) numberOfMissingActiveGatePods(dynakube *dynatracev
 		if activeGateStatefulSet.Spec.Replicas != nil {
 			scheduledReplicas = *activeGateStatefulSet.Spec.Replicas
 		}
+
 		sum += scheduledReplicas - activeGateStatefulSet.Status.ReadyReplicas
 	}
 

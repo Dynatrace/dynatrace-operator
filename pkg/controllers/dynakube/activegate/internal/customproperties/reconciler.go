@@ -68,25 +68,30 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 func (r *Reconciler) createCustomPropertiesIfNotExists(ctx context.Context) (bool, error) {
 	var customPropertiesSecret corev1.Secret
+
 	err := r.client.Get(ctx,
 		client.ObjectKey{Name: r.buildCustomPropertiesName(r.instance.Name), Namespace: r.instance.Namespace}, &customPropertiesSecret)
 	if err != nil && k8serrors.IsNotFound(err) {
 		return true, r.createCustomProperties()
 	}
+
 	return false, errors.WithStack(err)
 }
 
 func (r *Reconciler) updateCustomPropertiesIfOutdated(ctx context.Context) error {
 	var customPropertiesSecret corev1.Secret
+
 	err := r.client.Get(ctx,
 		client.ObjectKey{Name: r.buildCustomPropertiesName(r.instance.Name), Namespace: r.instance.Namespace},
 		&customPropertiesSecret)
 	if err != nil {
 		return errors.WithStack(err)
 	}
+
 	if r.isOutdated(&customPropertiesSecret) {
 		return r.updateCustomProperties(ctx, &customPropertiesSecret)
 	}
+
 	return nil
 }
 

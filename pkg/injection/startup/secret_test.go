@@ -111,5 +111,6 @@ func prepReadOnlyCSIFilesystem(t *testing.T, fs afero.Fs) afero.Fs {
 	fs.Chmod(getReadOnlyAgentConfMountPath(), 0444)
 
 	require.NoError(t, fs.MkdirAll(consts.AgentConfInitDirMount, 0770))
+
 	return fs
 }

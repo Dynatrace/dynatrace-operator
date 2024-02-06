@@ -13,7 +13,9 @@ import (
 
 func TestGetConfig(t *testing.T) {
 	const namespace = "dynatrace"
+
 	const expectedEndpoint = "abc12345.dynatrace.com"
+
 	const expectedApiToken = "dt01234.abcdef.abcdefg"
 
 	t.Run("happy path", func(t *testing.T) {

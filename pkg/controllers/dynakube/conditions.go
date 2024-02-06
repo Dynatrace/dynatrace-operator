@@ -57,9 +57,11 @@ func (controller *Controller) removeDeprecatedConditionTypes(dynakube *dynatrace
 	if meta.FindStatusCondition(dynakube.Status.Conditions, dynatracev1beta1.PaaSTokenConditionType) != nil {
 		meta.RemoveStatusCondition(&dynakube.Status.Conditions, dynatracev1beta1.PaaSTokenConditionType)
 	}
+
 	if meta.FindStatusCondition(dynakube.Status.Conditions, dynatracev1beta1.APITokenConditionType) != nil {
 		meta.RemoveStatusCondition(&dynakube.Status.Conditions, dynatracev1beta1.APITokenConditionType)
 	}
+
 	if meta.FindStatusCondition(dynakube.Status.Conditions, dynatracev1beta1.DataIngestTokenConditionType) != nil {
 		meta.RemoveStatusCondition(&dynakube.Status.Conditions, dynatracev1beta1.DataIngestTokenConditionType)
 	}

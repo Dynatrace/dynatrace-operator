@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
 	k8sdaemonset "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/object"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -68,6 +69,11 @@ type Reconciler struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *Reconciler) Reconcile(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+	if !dynakube.NeedsOneAgent() {
+		log.Info("removing OneAgent daemonSet")
+		return r.removeOneAgentDaemonSet(ctx, dynakube)
+	}
+
 	log.Info("reconciling OneAgent")
 
 	if !dynakube.IsOneAgentCommunicationRouteClear() {
@@ -76,8 +82,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, dynakube *dynatracev1beta1.D
 		if len(dynakube.Spec.NetworkZone) > 0 {
 			log.Info("A network zone has been configured for DynaKube, check that there a working ActiveGate ready for that network zone", "network zone", dynakube.Spec.NetworkZone, "dynakube", dynakube.Name)
 		}
+
 		return nil
 	}
+
 	log.Info("At least one ActiveGate is operational, deploying OneAgent")
 
 	err := r.createOneAgentTenantConnectionInfoConfigMap(ctx, dynakube)
@@ -91,6 +99,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dynakube *dynatracev1beta1.D
 	}
 
 	updInterval := defaultUpdateInterval
+
 	if val := os.Getenv(updateEnvVar); val != "" {
 		x, err := strconv.Atoi(val)
 		if err != nil {
@@ -106,16 +115,20 @@ func (r *Reconciler) Reconcile(ctx context.Context, dynakube *dynatracev1beta1.D
 		if err != nil {
 			return err
 		}
+
 		dynakube.Status.OneAgent.LastInstanceStatusUpdate = &now
+
 		log.Info("oneagent instance statuses reconciled")
 	}
 
 	log.Info("reconciled " + deploymentmetadata.GetOneAgentDeploymentType(*dynakube))
+
 	return nil
 }
 
 func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	configMapData := extractPublicData(dynakube)
+
 	configMap, err := configmap.CreateConfigMap(r.scheme, dynakube,
 		configmap.NewModifier(dynakube.OneAgentConnectionInfoConfigMapName()),
 		configmap.NewNamespaceModifier(dynakube.Namespace),
@@ -125,6 +138,7 @@ func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 	}
 
 	query := configmap.NewQuery(ctx, r.client, r.apiReader, log)
+
 	err = query.CreateOrUpdate(*configMap)
 	if err != nil {
 		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
@@ -140,9 +154,11 @@ func extractPublicData(dynakube *dynatracev1beta1.DynaKube) map[string]string {
 	if dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID != "" {
 		data[connectioninfo.TenantUUIDName] = dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID
 	}
+
 	if dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints != "" {
 		data[connectioninfo.CommunicationEndpointsName] = dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints
 	}
+
 	return data
 }
 
@@ -164,6 +180,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context, dynakube *dynatracev1
 		log.Info("failed to roll out new OneAgent DaemonSet")
 		return err
 	}
+
 	if updated {
 		log.Info("rolled out new OneAgent DaemonSet")
 		// remove old daemonset with feature in name
@@ -173,6 +190,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context, dynakube *dynatracev1
 				Namespace: dynakube.Namespace,
 			},
 		}
+
 		err = r.client.Delete(ctx, oldClassicDaemonset)
 		if err == nil {
 			log.Info("removed oneagent daemonset with feature in name")
@@ -181,6 +199,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context, dynakube *dynatracev1
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -194,11 +213,13 @@ func (r *Reconciler) getOneagentPods(ctx context.Context, dynakube *dynatracev1b
 		client.MatchingLabels(appLabels.BuildLabels()),
 	}
 	err := r.client.List(ctx, podList, listOps...)
+
 	return podList.Items, listOps, err
 }
 
 func (r *Reconciler) buildDesiredDaemonSet(dynakube *dynatracev1beta1.DynaKube) (*appsv1.DaemonSet, error) {
 	var ds *appsv1.DaemonSet
+
 	var err error
 
 	switch {
@@ -209,6 +230,7 @@ func (r *Reconciler) buildDesiredDaemonSet(dynakube *dynatracev1beta1.DynaKube) 
 	case dynakube.CloudNativeFullstackMode():
 		ds, err = daemonset.NewCloudNativeFullStack(dynakube, r.clusterID).BuildDaemonSet()
 	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -217,6 +239,7 @@ func (r *Reconciler) buildDesiredDaemonSet(dynakube *dynatracev1beta1.DynaKube) 
 	if err != nil {
 		return nil, err
 	}
+
 	ds.Annotations[hasher.AnnotationHash] = dsHash
 
 	return ds, nil
@@ -241,6 +264,11 @@ func (r *Reconciler) reconcileInstanceStatuses(ctx context.Context, dynakube *dy
 	}
 
 	return err
+}
+
+func (r *Reconciler) removeOneAgentDaemonSet(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+	oneAgentDaemonSet := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dynakube.OneAgentDaemonsetName(), Namespace: dynakube.Namespace}}
+	return object.Delete(ctx, r.client, &oneAgentDaemonSet)
 }
 
 func getInstanceStatuses(pods []corev1.Pod) map[string]dynatracev1beta1.OneAgentInstance {

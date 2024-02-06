@@ -93,18 +93,23 @@ func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 	if dk == nil || !dk.ActiveGateMode() {
 		return &mc
 	}
+
 	mc.enabled = true
 	mc.properties = &dk.Spec.ActiveGate.CapabilityProperties
 	capabilityNames := []string{}
+
 	for _, capName := range dk.Spec.ActiveGate.Capabilities {
 		capabilityGenerator, ok := activeGateCapabilities[capName]
 		if !ok {
 			continue
 		}
+
 		capGen := capabilityGenerator()
 		capabilityNames = append(capabilityNames, capGen.argName)
 	}
+
 	mc.argName = strings.Join(capabilityNames, ",")
+
 	return &mc
 }
 
@@ -116,8 +121,10 @@ func NewKubeMonCapability(dk *dynatracev1beta1.DynaKube) *KubeMonCapability {
 	if dk == nil {
 		return c
 	}
+
 	c.enabled = dk.Spec.KubernetesMonitoring.Enabled
 	c.properties = &dk.Spec.KubernetesMonitoring.CapabilityProperties
+
 	return c
 }
 
@@ -129,8 +136,10 @@ func NewRoutingCapability(dk *dynatracev1beta1.DynaKube) *RoutingCapability {
 	if dk == nil {
 		return c
 	}
+
 	c.enabled = dk.Spec.Routing.Enabled
 	c.properties = &dk.Spec.Routing.CapabilityProperties
+
 	return c
 }
 
@@ -141,8 +150,10 @@ func NewSyntheticCapability(dk *dynatracev1beta1.DynaKube) *SyntheticCapability 
 	if dk == nil {
 		return capability
 	}
+
 	capability.enabled = dk.IsSyntheticMonitoringEnabled()
 	capability.properties = &dk.Spec.ActiveGate.CapabilityProperties
+
 	if capability.enabled {
 		capability.properties.Replicas = address.Of(dk.FeatureSyntheticReplicas())
 		capability.properties.Resources = SyntheticActiveGateResourceRequirements
@@ -156,6 +167,7 @@ func kubeMonBase() *capabilityBase {
 		shortName: dynatracev1beta1.KubeMonCapability.ShortName,
 		argName:   dynatracev1beta1.KubeMonCapability.ArgumentName,
 	}
+
 	return &c
 }
 
@@ -164,6 +176,7 @@ func routingBase() *capabilityBase {
 		shortName: dynatracev1beta1.RoutingCapability.ShortName,
 		argName:   dynatracev1beta1.RoutingCapability.ArgumentName,
 	}
+
 	return &c
 }
 
@@ -172,6 +185,7 @@ func metricsIngestBase() *capabilityBase {
 		shortName: dynatracev1beta1.MetricsIngestCapability.ShortName,
 		argName:   dynatracev1beta1.MetricsIngestCapability.ArgumentName,
 	}
+
 	return &c
 }
 
@@ -180,6 +194,7 @@ func dynatraceApiBase() *capabilityBase {
 		shortName: dynatracev1beta1.DynatraceApiCapability.ShortName,
 		argName:   dynatracev1beta1.DynatraceApiCapability.ArgumentName,
 	}
+
 	return &c
 }
 
@@ -188,6 +203,7 @@ func syntheticBase() *capabilityBase {
 		shortName: SyntheticName,
 		argName:   SyntheticActiveGateEnvCapabilities,
 	}
+
 	return &c
 }
 
@@ -232,6 +248,7 @@ func BuildDNSEntryPoint(dynakubeName, dynakubeNamespace string, capability Capab
 		capability.ShortName() == dynatracev1beta1.RoutingCapability.ShortName {
 		return fmt.Sprintf("https://%s/communication,https://%s/communication", BuildServiceHostName(dynakubeName, capability.ShortName()), BuildServiceDomainName(dynakubeName, dynakubeNamespace, capability.ShortName()))
 	}
+
 	return fmt.Sprintf("https://%s/communication", BuildServiceHostName(dynakubeName, capability.ShortName()))
 }
 

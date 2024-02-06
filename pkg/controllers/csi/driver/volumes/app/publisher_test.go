@@ -35,6 +35,7 @@ func TestPublishVolume(t *testing.T) {
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		publisher := newPublisherForTesting(mounter)
 		mockUrlDynakubeMetadata(t, &publisher)
+		mockSharedRuxitAgentProcConf(t, &publisher)
 
 		response, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
 		require.NoError(t, err)
@@ -45,7 +46,7 @@ func TestPublishVolume(t *testing.T) {
 		assert.Equal(t, "overlay", mounter.MountPoints[0].Device)
 		assert.Equal(t, "overlay", mounter.MountPoints[0].Type)
 		assert.Equal(t, []string{
-			"lowerdir=/a-tenant-uuid/a-dynakube/config:/codemodules/1.2-3",
+			"lowerdir=/codemodules/1.2-3",
 			"upperdir=/a-tenant-uuid/run/a-volume/var",
 			"workdir=/a-tenant-uuid/run/a-volume/work"},
 			mounter.MountPoints[0].Opts)
@@ -55,6 +56,10 @@ func TestPublishVolume(t *testing.T) {
 		assert.Equal(t, "", mounter.MountPoints[1].Type)
 		assert.Equal(t, []string{"bind"}, mounter.MountPoints[1].Opts)
 		assert.Equal(t, testTargetPath, mounter.MountPoints[1].Path)
+
+		confCopied, err := publisher.fs.Exists(publisher.path.OverlayVarRuxitAgentProcConf(testTenantUUID, testVolumeId))
+		require.NoError(t, err)
+		assert.True(t, confCopied)
 
 		assertReferencesForPublishedVolume(t, &publisher, mounter)
 	})
@@ -63,6 +68,7 @@ func TestPublishVolume(t *testing.T) {
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		publisher := newPublisherForTesting(mounter)
 		mockImageDynakubeMetadata(t, &publisher)
+		mockSharedRuxitAgentProcConf(t, &publisher)
 
 		response, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
 		require.NoError(t, err)
@@ -73,7 +79,7 @@ func TestPublishVolume(t *testing.T) {
 		assert.Equal(t, "overlay", mounter.MountPoints[0].Device)
 		assert.Equal(t, "overlay", mounter.MountPoints[0].Type)
 		assert.Equal(t, []string{
-			"lowerdir=/a-tenant-uuid/a-dynakube/config:/codemodules/" + testImageDigest,
+			"lowerdir=/codemodules/" + testImageDigest,
 			"upperdir=/a-tenant-uuid/run/a-volume/var",
 			"workdir=/a-tenant-uuid/run/a-volume/work"},
 			mounter.MountPoints[0].Opts)
@@ -83,6 +89,10 @@ func TestPublishVolume(t *testing.T) {
 		assert.Equal(t, "", mounter.MountPoints[1].Type)
 		assert.Equal(t, []string{"bind"}, mounter.MountPoints[1].Opts)
 		assert.Equal(t, testTargetPath, mounter.MountPoints[1].Path)
+
+		confCopied, err := publisher.fs.Exists(publisher.path.OverlayVarRuxitAgentProcConf(testTenantUUID, testVolumeId))
+		require.NoError(t, err)
+		assert.True(t, confCopied)
 
 		assertReferencesForPublishedVolumeWithCodeModulesImage(t, &publisher, mounter)
 	})
@@ -100,6 +110,45 @@ func TestPublishVolume(t *testing.T) {
 	})
 }
 
+func TestPrepareUpperDir(t *testing.T) {
+	testFileContent := []byte{'t', 'e', 's', 't'}
+	testBindConfig := &csivolumes.BindConfig{
+		TenantUUID: testTenantUUID,
+	}
+
+	t.Run("happy path -> file copied from shared dir to overlay dir", func(t *testing.T) {
+		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+
+		publisher := newPublisherForTesting(mounter)
+		mockSharedRuxitAgentProcConf(t, &publisher, testFileContent...)
+
+		upperDir, err := publisher.prepareUpperDir(testBindConfig, createTestVolumeConfig())
+		require.NoError(t, err)
+		require.NotEmpty(t, upperDir)
+		assertUpperDirContent(t, &publisher, testFileContent)
+	})
+
+	t.Run("sad path -> source file doesn't exist -> error", func(t *testing.T) {
+		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+
+		publisher := newPublisherForTesting(mounter)
+
+		upperDir, err := publisher.prepareUpperDir(testBindConfig, createTestVolumeConfig())
+		require.Error(t, err)
+		require.Empty(t, upperDir)
+
+		confCopied, err := publisher.fs.Exists(publisher.path.OverlayVarRuxitAgentProcConf(testTenantUUID, testVolumeId))
+		require.NoError(t, err)
+		assert.False(t, confCopied)
+	})
+}
+
+func assertUpperDirContent(t *testing.T, publisher *AppVolumePublisher, expected []byte) {
+	content, err := publisher.fs.ReadFile(publisher.path.OverlayVarRuxitAgentProcConf(testTenantUUID, testVolumeId))
+	require.NoError(t, err)
+	assert.Equal(t, expected, content)
+}
+
 func TestHasTooManyMountAttempts(t *testing.T) {
 	t.Run(`initial try`, func(t *testing.T) {
 		publisher := newPublisherForTesting(nil)
@@ -113,6 +162,7 @@ func TestHasTooManyMountAttempts(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.False(t, hasTooManyAttempts)
+
 		volume, err := publisher.db.GetVolume(context.TODO(), volumeCfg.VolumeID)
 		require.NoError(t, err)
 		require.NotNil(t, volume)
@@ -121,6 +171,7 @@ func TestHasTooManyMountAttempts(t *testing.T) {
 	t.Run(`too many mount attempts`, func(t *testing.T) {
 		publisher := newPublisherForTesting(nil)
 		mockFailedPublishedVolume(t, &publisher)
+
 		bindCfg := &csivolumes.BindConfig{
 			MaxMountAttempts: dynatracev1beta1.DefaultMaxFailedCsiMountAttempts,
 		}
@@ -135,6 +186,7 @@ func TestHasTooManyMountAttempts(t *testing.T) {
 func TestUnpublishVolume(t *testing.T) {
 	t.Run(`valid metadata`, func(t *testing.T) {
 		resetMetrics()
+
 		mounter := mount.NewFakeMounter([]mount.MountPoint{
 			{Path: testTargetPath},
 			{Path: fmt.Sprintf("/%s/run/%s/mapped", testTenantUUID, testVolumeId)},
@@ -158,6 +210,7 @@ func TestUnpublishVolume(t *testing.T) {
 
 	t.Run(`invalid metadata`, func(t *testing.T) {
 		resetMetrics()
+
 		mounter := mount.NewFakeMounter([]mount.MountPoint{
 			{Path: testTargetPath},
 			{Path: fmt.Sprintf("/%s/run/%s/mapped", testTenantUUID, testVolumeId)},
@@ -174,6 +227,7 @@ func TestUnpublishVolume(t *testing.T) {
 
 	t.Run(`remove dummy volume created after too many failed attempts`, func(t *testing.T) {
 		resetMetrics()
+
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		publisher := newPublisherForTesting(mounter)
 		mockFailedPublishedVolume(t, &publisher)
@@ -188,16 +242,18 @@ func TestUnpublishVolume(t *testing.T) {
 
 func TestNodePublishAndUnpublishVolume(t *testing.T) {
 	resetMetrics()
+
 	mounter := mount.NewFakeMounter([]mount.MountPoint{})
 	publisher := newPublisherForTesting(mounter)
 	mockUrlDynakubeMetadata(t, &publisher)
+	mockSharedRuxitAgentProcConf(t, &publisher)
 
 	publishResponse, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
 
+	require.NoError(t, err)
 	assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
 	assert.Equal(t, float64(1), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(testAgentVersion)))
 
-	assert.NoError(t, err)
 	assert.NotNil(t, publishResponse)
 	assert.NotEmpty(t, mounter.MountPoints)
 	assertReferencesForPublishedVolume(t, &publisher, mounter)
@@ -309,6 +365,17 @@ func mockUrlDynakubeMetadata(t *testing.T, publisher *AppVolumePublisher) {
 	require.NoError(t, err)
 }
 
+func mockSharedRuxitAgentProcConf(t *testing.T, publisher *AppVolumePublisher, content ...byte) {
+	file, err := publisher.fs.Create(publisher.path.AgentSharedRuxitAgentProcConf(testTenantUUID, testDynakubeName))
+	defer func() { _ = file.Close() }()
+	require.NoError(t, err)
+
+	if len(content) > 0 {
+		_, err = file.Write(content)
+		require.NoError(t, err)
+	}
+}
+
 func mockImageDynakubeMetadata(t *testing.T, publisher *AppVolumePublisher) {
 	err := publisher.db.InsertDynakube(context.TODO(), metadata.NewDynakube(testDynakubeName, testTenantUUID, "", testImageDigest, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts))
 	require.NoError(t, err)
@@ -316,6 +383,7 @@ func mockImageDynakubeMetadata(t *testing.T, publisher *AppVolumePublisher) {
 
 func assertReferencesForPublishedVolume(t *testing.T, publisher *AppVolumePublisher, mounter *mount.FakeMounter) {
 	assert.NotEmpty(t, mounter.MountPoints)
+
 	volume, err := publisher.loadVolume(context.TODO(), testVolumeId)
 	require.NoError(t, err)
 	assert.Equal(t, volume.VolumeID, testVolumeId)
@@ -326,6 +394,7 @@ func assertReferencesForPublishedVolume(t *testing.T, publisher *AppVolumePublis
 
 func assertReferencesForPublishedVolumeWithCodeModulesImage(t *testing.T, publisher *AppVolumePublisher, mounter *mount.FakeMounter) {
 	assert.NotEmpty(t, mounter.MountPoints)
+
 	volume, err := publisher.loadVolume(context.TODO(), testVolumeId)
 	require.NoError(t, err)
 	assert.Equal(t, volume.VolumeID, testVolumeId)

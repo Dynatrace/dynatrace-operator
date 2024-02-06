@@ -107,8 +107,8 @@ func (dynatraceClientBuilder builder) BuildWithTokenVerification(dynaKubeStatus 
 	}
 
 	dynatraceClientBuilder.tokens = dynatraceClientBuilder.getTokens().SetScopesForDynakube(dynatraceClientBuilder.dynakube)
-	err = dynatraceClientBuilder.verifyTokenScopes(dynatraceClient, dynaKubeStatus)
 
+	err = dynatraceClientBuilder.verifyTokenScopes(dynatraceClient, dynaKubeStatus)
 	if err != nil {
 		return nil, err
 	}
@@ -122,6 +122,7 @@ func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient
 			"token verification",
 			dynaKubeStatus.DynatraceApi.LastTokenScopeRequest,
 			dynatraceClientBuilder.dynakube.FeatureApiRequestThreshold()))
+
 		return lastErrorFromCondition(dynaKubeStatus)
 	}
 
@@ -131,7 +132,9 @@ func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient
 	}
 
 	log.Info("token verified")
+
 	dynaKubeStatus.DynatraceApi.LastTokenScopeRequest = metav1.Now()
+
 	return nil
 }
 

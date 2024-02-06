@@ -34,6 +34,7 @@ func boomReaction(action clienttest.Action) (handled bool, ret runtime.Object, e
 
 func TestGetVirtualService(t *testing.T) {
 	ctx := context.Background()
+
 	t.Run("success", func(t *testing.T) {
 		expectedVirtualService := createTestEmptyVirtualService()
 		fakeClient := fakeistio.NewSimpleClientset(expectedVirtualService)
@@ -69,6 +70,7 @@ func TestGetVirtualService(t *testing.T) {
 
 func TestCreateVirtualService(t *testing.T) {
 	ctx := context.Background()
+
 	t.Run("success", func(t *testing.T) {
 		expectedVirtualService := createTestEmptyVirtualService()
 		fakeClient := fakeistio.NewSimpleClientset()
@@ -116,6 +118,7 @@ func TestCreateVirtualService(t *testing.T) {
 
 func TestUpdateVirtualService(t *testing.T) {
 	ctx := context.Background()
+
 	t.Run("success", func(t *testing.T) {
 		expectedResourceVersion := "1.2.3"
 		oldVirtualService := createTestEmptyVirtualService()
@@ -178,6 +181,7 @@ func TestUpdateVirtualService(t *testing.T) {
 
 func TestCreateOrUpdateVirtualService(t *testing.T) {
 	ctx := context.Background()
+
 	t.Run("create", func(t *testing.T) {
 		expectedVirtualService := createTestEmptyVirtualService()
 		fakeClient := fakeistio.NewSimpleClientset()
@@ -263,6 +267,7 @@ func TestCreateOrUpdateVirtualService(t *testing.T) {
 
 func TestDeleteVirtualService(t *testing.T) {
 	ctx := context.Background()
+
 	t.Run("success", func(t *testing.T) {
 		virtualService := createTestEmptyVirtualService()
 		fakeClient := fakeistio.NewSimpleClientset(virtualService)
@@ -296,6 +301,7 @@ func TestDeleteVirtualService(t *testing.T) {
 
 func TestGetServiceEntry(t *testing.T) {
 	ctx := context.Background()
+
 	t.Run("success", func(t *testing.T) {
 		expectedServiceEntry := createTestEmptyServiceEntry()
 		fakeClient := fakeistio.NewSimpleClientset(expectedServiceEntry)
@@ -331,6 +337,7 @@ func TestGetServiceEntry(t *testing.T) {
 
 func TestCreateServiceEntry(t *testing.T) {
 	ctx := context.Background()
+
 	t.Run("success", func(t *testing.T) {
 		expectedServiceEntry := createTestEmptyServiceEntry()
 		fakeClient := fakeistio.NewSimpleClientset()
@@ -378,6 +385,7 @@ func TestCreateServiceEntry(t *testing.T) {
 
 func TestUpdateServiceEntry(t *testing.T) {
 	ctx := context.Background()
+
 	t.Run("success", func(t *testing.T) {
 		expectedResourceVersion := "1.2.3"
 		oldServiceEntry := createTestEmptyServiceEntry()
@@ -440,6 +448,7 @@ func TestUpdateServiceEntry(t *testing.T) {
 
 func TestCreateOrUpdateServiceEntry(t *testing.T) {
 	ctx := context.Background()
+
 	t.Run("create", func(t *testing.T) {
 		expectedServiceEntry := createTestEmptyServiceEntry()
 		fakeClient := fakeistio.NewSimpleClientset()
@@ -525,6 +534,7 @@ func TestCreateOrUpdateServiceEntry(t *testing.T) {
 
 func TestDeleteServiceEntry(t *testing.T) {
 	ctx := context.Background()
+
 	t.Run("success", func(t *testing.T) {
 		serviceEntry := createTestEmptyServiceEntry()
 		fakeClient := fakeistio.NewSimpleClientset(serviceEntry)

@@ -11,6 +11,7 @@ func Exists(cfg *rest.Config) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
 	_, resourceList, err := client.ServerGroupsAndResources()
 	if err != nil {
 		return false, err
@@ -23,5 +24,6 @@ func Exists(cfg *rest.Config) (bool, error) {
 			}
 		}
 	}
+
 	return false, nil
 }

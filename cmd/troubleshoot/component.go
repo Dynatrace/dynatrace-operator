@@ -20,6 +20,7 @@ func (c component) Name(isCustomImage bool) string {
 	if isCustomImage {
 		return c.String() + customImagePostfix
 	}
+
 	return c.String()
 }
 
@@ -37,6 +38,7 @@ func (c component) getImage(dynakube *dynatracev1beta1.DynaKube) (string, bool) 
 		if dynakube.CustomOneAgentImage() != "" {
 			return dynakube.CustomOneAgentImage(), true
 		}
+
 		return dynakube.DefaultOneAgentImage(), false
 	case componentCodeModules:
 		return dynakube.CustomCodeModulesImage(), true
@@ -44,7 +46,9 @@ func (c component) getImage(dynakube *dynatracev1beta1.DynaKube) (string, bool) 
 		if dynakube.CustomActiveGateImage() != "" {
 			return dynakube.CustomActiveGateImage(), true
 		}
+
 		return dynakube.DefaultActiveGateImage(), false
 	}
+
 	return "", false
 }

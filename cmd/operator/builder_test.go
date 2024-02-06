@@ -158,6 +158,7 @@ func TestOperatorCommand(t *testing.T) {
 
 		mockMgr := managermock.NewManager(t)
 		mockMgr.On("Start", mock.Anything).Return(nil)
+
 		clt := dtfake.NewClient()
 
 		mockMgr.On("GetScheme").Return(scheme.Scheme)

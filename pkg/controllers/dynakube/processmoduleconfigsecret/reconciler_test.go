@@ -43,6 +43,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		// update should be blocked by timeout
 		mockTime.Set(timeprovider.Now())
+
 		reconciler.dtClient = createMockDtClient(t, 1)
 		err = reconciler.Reconcile(context.Background())
 		require.NoError(t, err)
@@ -97,6 +98,7 @@ func createMockDtClient(t *testing.T, revision uint) *clientmock.Client {
 		Revision:   revision,
 		Properties: nil,
 	}, nil)
+
 	return mockClient
 }
 
@@ -128,6 +130,7 @@ func TestGetSecretData(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: extendWithSuffix(testName), Namespace: testNamespace},
 			},
 		)
+
 		got, err := GetSecretData(context.Background(), fakeClient, testName, testNamespace)
 		assert.NotNil(t, err)
 		assert.Nil(t, got)

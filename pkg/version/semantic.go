@@ -85,5 +85,6 @@ func IsDowngrade(prev string, curr string) (bool, error) {
 	}
 
 	comp := CompareSemanticVersions(parsedPrev, parsedCurr)
+
 	return comp > 0, nil
 }

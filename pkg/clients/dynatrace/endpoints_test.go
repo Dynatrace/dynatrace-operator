@@ -26,6 +26,7 @@ func Test_dynatraceClient_getOneAgentConnectionInfoUrl(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fake.NewClient()
+
 			dtc := &dynatraceClient{
 				url:         "https://testenvironment.live.dynatrace.com/api",
 				networkZone: tt.networkZone,
@@ -57,6 +58,7 @@ func Test_dynatraceClient_getActiveGateConnectionInfoUrl(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fake.NewClient()
+
 			dtc := &dynatraceClient{
 				url:         "https://testenvironment.live.dynatrace.com/api",
 				networkZone: tt.networkZone,

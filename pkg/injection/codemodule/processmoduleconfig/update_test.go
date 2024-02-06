@@ -40,6 +40,7 @@ func TestUpdateProcessModuleConfigInPlace(t *testing.T) {
 	t.Run("update file", func(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 		prepTestConfFs(memFs)
+
 		expectedUsed := `
 [general]
 key value
@@ -68,6 +69,7 @@ func TestCreateAgentConfigDir(t *testing.T) {
 		sourceDir := ""
 		memFs := afero.NewMemMapFs()
 		prepTestConfFs(memFs)
+
 		expectedUsed := `
 [general]
 key value
@@ -86,6 +88,7 @@ test test3
 func TestCheckProcessModuleConfigCopy(t *testing.T) {
 	memFs := afero.NewMemMapFs()
 	prepTestConfFs(memFs)
+
 	sourcePath := sourceRuxitAgentProcPath
 	destPath := RuxitAgentProcPath
 

@@ -103,6 +103,7 @@ func (dtc *dynatraceClient) performCreateOrUpdateKubernetesSetting(body []postKu
 	if err != nil {
 		return "", fmt.Errorf("error making post request to dynatrace api: %w", err)
 	}
+
 	defer utils.CloseBodyAfterRequest(res)
 
 	resData, err := io.ReadAll(res.Body)
@@ -116,6 +117,7 @@ func (dtc *dynatraceClient) performCreateOrUpdateKubernetesSetting(body []postKu
 	}
 
 	var resDataJson []postSettingsResponse
+
 	err = json.Unmarshal(resData, &resDataJson)
 	if err != nil {
 		return "", err
@@ -134,6 +136,7 @@ func createPostKubernetesSettings(clusterLabel, kubeSystemUUID string) postKuber
 		ClusterIdEnabled: true,
 		ClusterId:        kubeSystemUUID,
 	}
+
 	return settings
 }
 
@@ -146,6 +149,7 @@ func createBaseKubernetesSettings(postK8sSettings any, schemaId string, schemaVe
 	if scope != "" {
 		base.Scope = scope
 	}
+
 	return base
 }
 
@@ -172,6 +176,7 @@ func createV3KubernetesSettingsBody(clusterLabel, kubeSystemUUID, scope string) 
 		hierarchicalMonitoringSettingsSchemaVersion,
 		scope)
 	settings.SchemaVersion = hierarchicalMonitoringSettingsSchemaVersion
+
 	return []postKubernetesSettingsBody{settings}
 }
 
@@ -179,7 +184,9 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(clusterLabel, kubeSy
 	if kubeSystemUUID == "" {
 		return "", errors.New("no kube-system namespace UUID given")
 	}
+
 	body := createV3KubernetesSettingsBody(clusterLabel, kubeSystemUUID, scope)
+
 	objectId, err := dtc.performCreateOrUpdateKubernetesSetting(body)
 	if err != nil {
 		if strings.Contains(err.Error(), strconv.Itoa(http.StatusNotFound)) {
@@ -189,6 +196,7 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(clusterLabel, kubeSy
 			return "", err
 		}
 	}
+
 	return objectId, nil
 }
 
@@ -210,7 +218,6 @@ func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID
 	req.URL.RawQuery = q.Encode()
 
 	res, err := dtc.httpClient.Do(req)
-
 	if err != nil {
 		log.Info("check if ME exists failed")
 		return nil, err
@@ -219,6 +226,7 @@ func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID
 	defer utils.CloseBodyAfterRequest(res)
 
 	var resDataJson monitoredEntitiesResponse
+
 	err = dtc.unmarshalToJson(res, &resDataJson)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing response body: %w", err)
@@ -248,7 +256,6 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities []
 	req.URL.RawQuery = q.Encode()
 
 	res, err := dtc.httpClient.Do(req)
-
 	if err != nil {
 		log.Info("failed to retrieve MEs")
 		return GetSettingsResponse{}, err
@@ -257,6 +264,7 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities []
 	defer utils.CloseBodyAfterRequest(res)
 
 	var resDataJson GetSettingsResponse
+
 	err = dtc.unmarshalToJson(res, &resDataJson)
 	if err != nil {
 		return GetSettingsResponse{}, fmt.Errorf("error parsing response body: %w", err)
@@ -267,12 +275,11 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities []
 
 func (dtc *dynatraceClient) unmarshalToJson(res *http.Response, resDataJson interface{}) error {
 	resData, err := dtc.getServerResponseData(res)
-
 	if err != nil {
 		return fmt.Errorf("error reading response body: %w", err)
 	}
-	err = json.Unmarshal(resData, resDataJson)
 
+	err = json.Unmarshal(resData, resDataJson)
 	if err != nil {
 		return fmt.Errorf("error parsing response body: %w", err)
 	}
@@ -286,6 +293,7 @@ func handleErrorArrayResponseFromAPI(response []byte, statusCode int) error {
 		if err := json.Unmarshal(response, &se); err != nil {
 			return fmt.Errorf("response error: %d, can't unmarshal json response", statusCode)
 		}
+
 		return fmt.Errorf("response error: %d, %s", statusCode, se.ErrorMessage.Message)
 	} else {
 		var se []getSettingsErrorResponse
@@ -294,13 +302,16 @@ func handleErrorArrayResponseFromAPI(response []byte, statusCode int) error {
 		}
 
 		var sb strings.Builder
+
 		sb.WriteString("[Settings Creation]: could not create the Kubernetes setting for the following reason:\n")
 
 		for _, errorResponse := range se {
 			sb.WriteString(fmt.Sprintf("[%s; Code: %d\n", errorResponse.ErrorMessage.Message, errorResponse.ErrorMessage.Code))
+
 			for _, constraintViolation := range errorResponse.ErrorMessage.ConstraintViolations {
 				sb.WriteString(fmt.Sprintf("\t- %s\n", constraintViolation.Message))
 			}
+
 			sb.WriteString("]\n")
 		}
 
@@ -314,6 +325,7 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesAppSetting(scope string) (st
 			EnableKubernetesApp: true,
 		},
 	}, AppTransitionSchemaId, appTransitionSchemaVersion, scope)
+
 	objectId, err := dtc.performCreateOrUpdateKubernetesSetting([]postKubernetesSettingsBody{settings})
 	if err != nil {
 		return "", err

@@ -105,8 +105,10 @@ func startCertificateWatcher(webhookManager manager.Manager, namespace string, p
 		if err != nil {
 			return err
 		}
+
 		watcher.WaitForCertificates()
 	}
+
 	return nil
 }
 
@@ -128,6 +130,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		webhookManager.GetHTTPClient().Transport = otelhttp.NewTransport(webhookManager.GetHTTPClient().Transport)
 
 		signalHandler := ctrl.SetupSignalHandler()
+
 		otelShutdownFn := dtotel.Start(signalHandler, "dynatrace-webhook", webhookManager.GetAPIReader(), builder.namespace)
 		defer otelShutdownFn()
 

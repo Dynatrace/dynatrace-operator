@@ -43,6 +43,7 @@ var NoOneAgentCommunicationHostsError = errors.New("no communication hosts for O
 
 func (r *reconciler) ReconcileActiveGate(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	oldStatus := dynakube.Status.DeepCopy()
+
 	err := r.reconcileActiveGateConnectionInfo(ctx, dynakube)
 	if err != nil {
 		return err
@@ -54,11 +55,13 @@ func (r *reconciler) ReconcileActiveGate(ctx context.Context, dynakube *dynatrac
 	} else if needStatusUpdate {
 		err = r.updateDynakubeStatus(ctx, dynakube)
 	}
+
 	return err
 }
 
 func (r *reconciler) ReconcileOneAgent(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	oldStatus := dynakube.Status.DeepCopy()
+
 	err := r.reconcileOneAgentConnectionInfo(ctx, dynakube)
 	if err != nil {
 		return err
@@ -70,29 +73,35 @@ func (r *reconciler) ReconcileOneAgent(ctx context.Context, dynakube *dynatracev
 	} else if needStatusUpdate {
 		err = r.updateDynakubeStatus(ctx, dynakube)
 	}
+
 	return err
 }
 
 func (r *reconciler) needsUpdate(ctx context.Context, secretNamespacedName types.NamespacedName, isAllowedFunc dynatracev1beta1.RequestAllowedChecker) (bool, error) {
 	query := k8ssecret.NewQuery(ctx, r.client, r.apiReader, log)
+
 	_, err := query.Get(secretNamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("creating secret, because missing", "secretName", secretNamespacedName.Name)
 			return true, nil
 		}
+
 		return false, err
 	}
+
 	return isAllowedFunc(r.timeProvider), nil
 }
 
 func (r reconciler) updateDynakubeStatus(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	dynakube.Status.UpdatedTimestamp = metav1.Now()
 	err := r.client.Status().Update(ctx, dynakube)
+
 	if err != nil {
 		log.Info("could not update dynakube status", "name", dynakube.Name)
 		return err
 	}
+
 	return nil
 }
 
@@ -101,11 +110,13 @@ func (r *reconciler) reconcileOneAgentConnectionInfo(ctx context.Context, dynaku
 	if err != nil {
 		return err
 	}
+
 	if !needsUpdate {
 		log.Info(dynatracev1beta1.GetCacheValidMessage(
 			"OneAgent connection info update",
 			dynakube.Status.OneAgent.ConnectionInfoStatus.LastRequest,
 			dynakube.FeatureApiRequestThreshold()))
+
 		return nil
 	}
 
@@ -135,6 +146,7 @@ func (r *reconciler) reconcileOneAgentConnectionInfo(ctx context.Context, dynaku
 	log.Info("received OneAgent communication hosts", "communication hosts", connectionInfo.CommunicationHosts, "tenant", connectionInfo.TenantUUID)
 
 	dynakube.Status.OneAgent.ConnectionInfoStatus.LastRequest = metav1.Now()
+
 	return nil
 }
 
@@ -160,11 +172,13 @@ func (r *reconciler) reconcileActiveGateConnectionInfo(ctx context.Context, dyna
 	if err != nil {
 		return err
 	}
+
 	if !needsUpdate {
 		log.Info(dynatracev1beta1.GetCacheValidMessage(
 			"activegate connection info update",
 			dynakube.Status.ActiveGate.ConnectionInfoStatus.LastRequest,
 			dynakube.FeatureApiRequestThreshold()))
+
 		return nil
 	}
 
@@ -182,7 +196,9 @@ func (r *reconciler) reconcileActiveGateConnectionInfo(ctx context.Context, dyna
 	}
 
 	log.Info("activegate connection info updated")
+
 	dynakube.Status.ActiveGate.ConnectionInfoStatus.LastRequest = metav1.Now()
+
 	return nil
 }
 
@@ -193,6 +209,7 @@ func (r *reconciler) updateDynakubeActiveGateStatus(dynakube *dynatracev1beta1.D
 
 func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName string, owner metav1.Object, connectionInfo dtclient.ConnectionInfo) error {
 	secretData := extractSensitiveData(connectionInfo)
+
 	secret, err := k8ssecret.Create(r.scheme, owner,
 		k8ssecret.NewNameModifier(secretName),
 		k8ssecret.NewNamespaceModifier(owner.GetNamespace()),
@@ -202,11 +219,13 @@ func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName str
 	}
 
 	query := k8ssecret.NewQuery(ctx, r.client, r.apiReader, log)
+
 	err = query.CreateOrUpdate(*secret)
 	if err != nil {
 		log.Info("could not create or update secret for connection info", "name", secret.Name)
 		return err
 	}
+
 	return nil
 }
 
@@ -214,5 +233,6 @@ func extractSensitiveData(connectionInfo dtclient.ConnectionInfo) map[string][]b
 	data := map[string][]byte{
 		TenantTokenName: []byte(connectionInfo.TenantToken),
 	}
+
 	return data
 }

@@ -126,6 +126,7 @@ func createTestEdgeConnectServer(t *testing.T, handler http.Handler) (*httptest.
 
 func writeOauthTokenResponse(writer http.ResponseWriter) {
 	writer.WriteHeader(http.StatusOK)
+
 	out, _ := json.Marshal(map[string]string{
 		"scope":        "app-engine:edge-connects:write app-engine:edge-connects:read oauth2:clients:manage app-engine:edge-connects:delete",
 		"token_type":   "Bearer",
@@ -138,6 +139,7 @@ func writeOauthTokenResponse(writer http.ResponseWriter) {
 func edgeConnectCreateServerHandler(error bool) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
+
 		switch request.URL.Path {
 		case "/sso/oauth2/token":
 			writeOauthTokenResponse(writer)
@@ -149,6 +151,7 @@ func edgeConnectCreateServerHandler(error bool) http.HandlerFunc {
 				}
 
 				writer.WriteHeader(http.StatusOK)
+
 				resp := CreateResponse{
 					ID:            "348b4cd9-ba31-4670-9c45-9125a7d87439",
 					Name:          "InternalServices",
@@ -163,6 +166,7 @@ func edgeConnectCreateServerHandler(error bool) http.HandlerFunc {
 				_, _ = writer.Write(out)
 			} else {
 				writer.WriteHeader(http.StatusBadRequest)
+
 				resp := serverErrorResponse{
 					ErrorMessage: ServerError{
 						Code:    400,
@@ -188,11 +192,13 @@ func edgeConnectCreateServerHandler(error bool) http.HandlerFunc {
 func edgeConnectGetServerHandler() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
+
 		switch request.URL.Path {
 		case "/sso/oauth2/token":
 			writeOauthTokenResponse(writer)
 		case fmt.Sprintf("/edge-connects/%s", EdgeConnectID):
 			writer.WriteHeader(http.StatusOK)
+
 			resp := GetResponse{
 				ID:            "348b4cd9-ba31-4670-9c45-9125a7d87439",
 				Name:          "InternalServices",
@@ -215,6 +221,7 @@ func edgeConnectGetServerHandler() http.HandlerFunc {
 func edgeConnectDeleteServerHandler() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
+
 		switch request.URL.Path {
 		case "/sso/oauth2/token":
 			writeOauthTokenResponse(writer)
@@ -229,6 +236,7 @@ func edgeConnectDeleteServerHandler() http.HandlerFunc {
 func edgeConnectUpdateServerHandler() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
+
 		switch request.URL.Path {
 		case "/sso/oauth2/token":
 			writeOauthTokenResponse(writer)
@@ -248,6 +256,7 @@ func edgeConnectUpdateServerHandler() http.HandlerFunc {
 func isManagedByOperator(request *http.Request) bool {
 	edgeConnect := Request{}
 	err := json.NewDecoder(request.Body).Decode(&edgeConnect)
+
 	return err == nil && edgeConnect.ManagedByDynatraceOperator
 }
 

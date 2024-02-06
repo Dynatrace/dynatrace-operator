@@ -18,6 +18,7 @@ var daemonSetLog = logger.Get().WithName("test-daemonset")
 
 func TestCreateOrUpdateDaemonSet(t *testing.T) {
 	const namespaceName = "dynatrace"
+
 	const daemonsetName = "my-daemonset"
 
 	t.Run("create when not exists", func(t *testing.T) {
@@ -66,6 +67,7 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.True(t, updated)
+
 		var actualDaemonSet appsv1.DaemonSet
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: daemonsetName, Namespace: namespaceName}, &actualDaemonSet)
 		require.NoError(t, err)

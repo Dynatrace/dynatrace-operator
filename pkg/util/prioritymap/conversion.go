@@ -10,6 +10,7 @@ import (
 func (m Map) AsEnvVars() []corev1.EnvVar {
 	keys := m.getSortedKeys()
 	envVars := make([]corev1.EnvVar, 0, len(keys))
+
 	for _, key := range keys {
 		switch typedValue := m.entries[key].value.(type) {
 		case string:
@@ -33,16 +34,19 @@ func (m Map) AsEnvVars() []corev1.EnvVar {
 			})
 		}
 	}
+
 	return envVars
 }
 
 func (m Map) AsKeyValueStrings() []string {
 	keys := m.getSortedKeys()
 	valStrings := make([]string, 0)
+
 	for _, key := range keys {
 		val := m.entries[key]
 		valStrings = append(valStrings, fmt.Sprintf("%s%s%v", key, val.delimiter, val.value))
 	}
+
 	return valStrings
 }
 
@@ -52,6 +56,8 @@ func (m Map) getSortedKeys() []string {
 	for key := range m.entries {
 		keys = append(keys, key)
 	}
+
 	slices.Sort(keys)
+
 	return keys
 }

@@ -32,6 +32,7 @@ func TestSuppotrArchiveOutputCollector(t *testing.T) {
 
 	require.NoError(t, supportArchiveOutputCollector.Do())
 	assertNoErrorOnClose(t, archive)
+
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
 
 	assert.Contains(t, logBuffer.String(), "Storing support archive output")
@@ -50,6 +51,7 @@ func TestSuppotrArchiveOutputCollector(t *testing.T) {
 	if !errors.Is(err, io.EOF) {
 		require.NoError(t, err)
 	}
+
 	assert.Equal(t, size, int64(bytesRead))
 	assert.Equal(t, supportArchiveOutput, string(outputFile))
 }

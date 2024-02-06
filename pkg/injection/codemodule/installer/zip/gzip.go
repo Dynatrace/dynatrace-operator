@@ -34,10 +34,12 @@ func (extractor OneAgentExtractor) ExtractGzip(sourceFilePath, targetDir string)
 
 	tmpUnzipDir := extractor.pathResolver.AgentTempUnzipRootDir()
 	tarReader := tar.NewReader(gzipReader)
+
 	err = extractFilesFromGzip(fs, tmpUnzipDir, tarReader)
 	if err != nil {
 		return err
 	}
+
 	return extractor.moveToTargetDir(targetDir)
 }
 
@@ -85,6 +87,7 @@ func extract(fs afero.Fs, targetDir string, reader *tar.Reader, header *tar.Head
 	default:
 		log.Info("skipping special file", "name", header.Name)
 	}
+
 	return nil
 }
 
@@ -99,6 +102,7 @@ func extractLink(fs afero.Fs, targetDir, target string, header *tar.Header) erro
 	if err := os.Link(filepath.Join(targetDir, header.Linkname), target); err != nil {
 		return errors.WithStack(err)
 	}
+
 	return nil
 }
 
@@ -109,9 +113,11 @@ func extractSymlink(fs afero.Fs, targetDir, target string, header *tar.Header) e
 		log.Info("symlinking not possible", "targetDir", targetDir, "fs", fs)
 		return nil
 	}
+
 	if err := linker.SymlinkIfPossible(header.Linkname, target); err != nil {
 		return errors.WithStack(err)
 	}
+
 	return nil
 }
 
@@ -120,8 +126,11 @@ func extractFile(fs afero.Fs, target string, header *tar.Header, tarReader *tar.
 	if isAgentConfFile(header.Name) {
 		mode = common.ReadWriteAllFileMode
 	}
+
 	destinationFile, err := fs.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, mode)
+
 	defer (func() { _ = destinationFile.Close() })()
+
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -129,5 +138,6 @@ func extractFile(fs afero.Fs, target string, header *tar.Header, tarReader *tar.
 	if _, err := io.Copy(destinationFile, tarReader); err != nil {
 		return errors.WithStack(err)
 	}
+
 	return nil
 }

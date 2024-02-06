@@ -53,6 +53,7 @@ func (dtc *dynatraceClient) GetActiveGateConnectionInfo() (ActiveGateConnectionI
 
 func (dtc *dynatraceClient) readResponseForActiveGateTenantInfo(response []byte) (ActiveGateConnectionInfo, error) {
 	resp := activeGateConnectionInfoJsonResponse{}
+
 	err := json.Unmarshal(response, &resp)
 	if err != nil {
 		log.Error(err, "error unmarshalling activegate tenant info", "response", string(response))
@@ -66,5 +67,6 @@ func (dtc *dynatraceClient) readResponseForActiveGateTenantInfo(response []byte)
 			Endpoints:   resp.CommunicationEndpoints,
 		},
 	}
+
 	return agTenantInfo, nil
 }

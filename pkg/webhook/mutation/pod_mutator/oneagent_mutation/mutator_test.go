@@ -240,6 +240,7 @@ func TestReinvoke(t *testing.T) {
 			assert.Len(t, request.Pod.Spec.InitContainers[1].Env, 1+initialContainersLen*2) // +1 == installer mode
 		})
 	}
+
 	t.Run("no change ==> no update", func(t *testing.T) {
 		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
 		request := &dtwebhook.ReinvocationRequest{
@@ -280,6 +281,7 @@ func createTestMutationRequest(dynakube *dynatracev1beta1.DynaKube, podAnnotatio
 	if dynakube == nil {
 		dynakube = &dynatracev1beta1.DynaKube{}
 	}
+
 	return dtwebhook.NewMutationRequest(
 		context.Background(),
 		namespace,
@@ -294,6 +296,7 @@ func createTestMutationRequest(dynakube *dynatracev1beta1.DynaKube, podAnnotatio
 func createTestReinvocationRequest(dynakube *dynatracev1beta1.DynaKube, annotations map[string]string) *dtwebhook.ReinvocationRequest {
 	request := createTestMutationRequest(dynakube, annotations, getTestNamespace(nil)).ToReinvocationRequest()
 	request.Pod.Spec.InitContainers = append(request.Pod.Spec.InitContainers, corev1.Container{Name: dtwebhook.InstallContainerName})
+
 	return request
 }
 
@@ -312,12 +315,14 @@ func getTestCSIDynakube() *dynatracev1beta1.DynaKube {
 func getTestReadOnlyCSIDynakube() *dynatracev1beta1.DynaKube {
 	dk := getTestCSIDynakube()
 	dk.Annotations[dynatracev1beta1.AnnotationFeatureReadOnlyCsiVolume] = "true"
+
 	return dk
 }
 
 func getTestNoCommunicationHostDynakube() *dynatracev1beta1.DynaKube {
 	dk := getTestCSIDynakube()
 	dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynatracev1beta1.CommunicationHostStatus{}
+
 	return dk
 }
 
@@ -344,6 +349,7 @@ func getTestDynakubeWithContainerExclusion() *dynatracev1beta1.DynaKube {
 		Status: getTestDynakubeCommunicationHostStatus(),
 	}
 	dk.ObjectMeta.Annotations[dtwebhook.AnnotationContainerInjection+"/sidecar-container"] = "false"
+
 	return dk
 }
 
@@ -383,6 +389,7 @@ func getTestComplexDynakube() *dynatracev1beta1.DynaKube {
 		dynatracev1beta1.AnnotationFeatureOneAgentInitialConnectRetry: "5",
 		dynatracev1beta1.AnnotationFeatureLabelVersionDetection:       "true",
 	}
+
 	return dynakube
 }
 
