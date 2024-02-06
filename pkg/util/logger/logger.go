@@ -21,6 +21,8 @@ var (
 // derived loggers int the operator components.
 func Get() logr.Logger {
 	baseLoggerOnce.Do(func() {
+		// its important to create only one "main" logger to avoid excessive memory usage, creating a full logger is rather expensive,
+		// deriving other loggers by WithName is rather cheap
 		config := zap.NewProductionEncoderConfig()
 		config.EncodeTime = zapcore.ISO8601TimeEncoder
 		config.StacktraceKey = stacktraceKey
