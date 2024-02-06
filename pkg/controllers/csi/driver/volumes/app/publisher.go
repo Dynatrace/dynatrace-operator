@@ -19,6 +19,7 @@ package appvolumes
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,6 +28,7 @@ import (
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/pkg/errors"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/spf13/afero"
 	"google.golang.org/grpc/codes"
@@ -155,19 +157,58 @@ func (publisher *AppVolumePublisher) buildLowerDir(bindCfg *csivolumes.BindConfi
 	}
 
 	directories := []string{
-		publisher.path.AgentConfigDir(bindCfg.TenantUUID, bindCfg.DynakubeName),
 		publisher.path.AgentSharedBinaryDirForAgent(binFolderName),
 	}
 
 	return strings.Join(directories, ":")
 }
 
+func (publisher *AppVolumePublisher) prepareUpperDir(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) (string, error) {
+	upperDir := publisher.path.OverlayVarDir(bindCfg.TenantUUID, volumeCfg.VolumeID)
+	err := publisher.fs.MkdirAll(upperDir, os.ModePerm)
+	if err != nil {
+		return "", errors.WithMessagef(err, "failed create overlay upper directory structure, path: %s", upperDir)
+	}
+
+	destAgentConfPath := publisher.path.OverlayVarRuxitAgentProcConf(bindCfg.TenantUUID, volumeCfg.VolumeID)
+	err = publisher.fs.MkdirAll(filepath.Dir(destAgentConfPath), os.ModePerm)
+	if err != nil {
+		return "", errors.WithMessagef(err, "failed create overlay upper directory agent config directory structure, path: %s", upperDir)
+	}
+
+	srcAgentConfPath := publisher.path.AgentSharedRuxitAgentProcConf(bindCfg.TenantUUID, volumeCfg.DynakubeName)
+	srcFile, err := publisher.fs.Open(srcAgentConfPath)
+	if err != nil {
+		return "", errors.WithMessagef(err, "failed to open ruxitagentproc.conf file, path: %s", srcAgentConfPath)
+	}
+	defer func() { _ = srcFile.Close() }()
+	srcStat, err := srcFile.Stat()
+	if err != nil {
+		return "", errors.WithMessage(err, "failed to get source ruxitagentproc.conf file info")
+	}
+
+	destFile, err := publisher.fs.OpenFile(destAgentConfPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, srcStat.Mode())
+	if err != nil {
+		return "", errors.WithMessagef(err, "failed to open destination ruxitagentproc.conf file, path: %s", destAgentConfPath)
+	}
+	defer func() { _ = destFile.Close() }()
+
+	_, err = io.Copy(destFile, srcFile)
+	if err != nil {
+		return "", errors.WithMessagef(err, "failed to copy ruxitagentproc.conf file to overlay, from->to: %s -> %s", srcAgentConfPath, destAgentConfPath)
+	}
+
+	return upperDir, nil
+}
+
 func (publisher *AppVolumePublisher) mountOneAgent(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
 	mappedDir := publisher.path.OverlayMappedDir(bindCfg.TenantUUID, volumeCfg.VolumeID)
 	_ = publisher.fs.MkdirAll(mappedDir, os.ModePerm)
 
-	upperDir := publisher.path.OverlayVarDir(bindCfg.TenantUUID, volumeCfg.VolumeID)
-	_ = publisher.fs.MkdirAll(upperDir, os.ModePerm)
+	upperDir, err := publisher.prepareUpperDir(bindCfg, volumeCfg)
+	if err != nil {
+		return err
+	}
 
 	workDir := publisher.path.OverlayWorkDir(bindCfg.TenantUUID, volumeCfg.VolumeID)
 	_ = publisher.fs.MkdirAll(workDir, os.ModePerm)

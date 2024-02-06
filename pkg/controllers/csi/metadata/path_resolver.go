@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
 )
 
 type PathResolver struct {
@@ -20,20 +21,6 @@ func (pr PathResolver) OsAgentDir(tenantUUID string) string {
 
 func (pr PathResolver) AgentBinaryDir(tenantUUID string) string {
 	return filepath.Join(pr.TenantDir(tenantUUID), dtcsi.AgentBinaryDir)
-}
-
-// Deprecated
-func (pr PathResolver) AgentProcessModuleConfigForVersion(tenantUUID string, version string) string {
-	return filepath.Join(pr.AgentBinaryDirForVersion(tenantUUID, version), "agent", "conf", "ruxitagentproc.conf")
-}
-
-// Deprecated
-func (pr PathResolver) SourceAgentProcessModuleConfigForVersion(tenantUUID string, version string) string {
-	return filepath.Join(pr.AgentBinaryDirForVersion(tenantUUID, version), "agent", "conf", "_ruxitagentproc.conf")
-}
-
-func (pr PathResolver) AgentRuxitProcResponseCache(tenantUUID string) string {
-	return filepath.Join(pr.TenantDir(tenantUUID), "revision.json")
 }
 
 // Deprecated
@@ -61,9 +48,12 @@ func (pr PathResolver) AgentConfigDir(tenantUUID string, dynakubeName string) st
 	return filepath.Join(pr.TenantDir(tenantUUID), dynakubeName, dtcsi.SharedAgentConfigDir)
 }
 
-// Deprecated
-func (pr PathResolver) InnerAgentBinaryDirForSymlinkForVersion(tenantUUID string, version string) string {
-	return filepath.Join(pr.AgentBinaryDirForVersion(tenantUUID, version), "agent", "bin", "current")
+func (pr PathResolver) AgentSharedRuxitAgentProcConf(tenantUUID, dynakubeName string) string {
+	return filepath.Join(pr.AgentConfigDir(tenantUUID, dynakubeName), processmoduleconfig.RuxitAgentProcPath)
+}
+
+func (pr PathResolver) OverlayVarRuxitAgentProcConf(tenantUUID, volumeId string) string {
+	return filepath.Join(pr.OverlayVarDir(tenantUUID, volumeId), processmoduleconfig.RuxitAgentProcPath)
 }
 
 func (pr PathResolver) AgentRunDir(tenantUUID string) string {
