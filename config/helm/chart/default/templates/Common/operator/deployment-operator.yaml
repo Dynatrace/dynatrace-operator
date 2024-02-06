@@ -16,7 +16,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}
+  name: dynatrace-operator
   namespace: {{ .Release.Namespace }}
   labels:
       {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
@@ -36,7 +36,7 @@ spec:
       annotations:
         dynatrace.com/inject: "false"
       {{- if (.Values.operator).apparmor}}
-        container.apparmor.security.beta.kubernetes.io/{{ .Release.Name }}: runtime/default
+        container.apparmor.security.beta.kubernetes.io/operator: runtime/default
       {{- end }}
       {{- if .Values.operator.annotations }}
         {{- toYaml .Values.operator.annotations | nindent 8 }}
@@ -49,7 +49,7 @@ spec:
         {{- end }}
     spec:
       containers:
-        - name: {{ .Release.Name }}
+        - name: operator
           args:
             - operator
           # Replace this with the built image name
@@ -105,7 +105,7 @@ spec:
       volumes:
         - emptyDir: { }
           name: tmp-cert-dir
-      serviceAccountName: {{ .Release.Name }}
+      serviceAccountName: dynatrace-operator
       securityContext:
         {{- toYaml .Values.operator.podSecurityContext | nindent 8 }}
       {{- if .Values.customPullSecret }}

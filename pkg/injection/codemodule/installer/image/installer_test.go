@@ -57,34 +57,6 @@ func testFileSystemWithSharedDirPresent(pathResolver metadata.PathResolver, imag
 	return fs
 }
 
-func TestGetDigest(t *testing.T) {
-	type args struct {
-		uri string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr assert.ErrorAssertionFunc
-	}{
-		{
-			name:    "basic digest from url",
-			args:    args{uri: "test:5000/repo@sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"},
-			want:    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			wantErr: assert.NoError,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetDigest(tt.args.uri)
-			if !tt.wantErr(t, err, fmt.Sprintf("GetDigest(%v)", tt.args.uri)) {
-				return
-			}
-			assert.Equalf(t, tt.want, got, "GetDigest(%v)", tt.args.uri)
-		})
-	}
-}
-
 func TestNewImageInstaller(t *testing.T) {
 	testFS := afero.NewMemMapFs()
 	dynakube := &dynatracev1beta1.DynaKube{

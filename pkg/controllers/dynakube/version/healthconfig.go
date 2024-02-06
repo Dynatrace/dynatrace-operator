@@ -1,79 +1,82 @@
 package version
 
 import (
-	"context"
+	"strings"
 	"time"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/pkg/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"golang.org/x/mod/semver"
 )
 
 const (
-	DefaultHealthConfigInterval    = 10 * time.Second
-	DefaultHealthConfigStartPeriod = 1200 * time.Second
-	DefaultHealthConfigTimeout     = 30 * time.Second
-	DefaultHealthConfigRetries     = 3
+	semverPrefix = "v"
+	semverSep    = "."
+
+	// relevantVersionLength defines how many segments of the semver we care about, for-example:
+	// in case of 3, we only care about major.minor.patch and the rest is ignored.
+	relevantSemverLength = 3
+
+	// healthCheckVersionThreshold hold the semver after which point the binary-based health-check can be used.
+	healthCheckVersionThreshold = semverPrefix + "1.276"
+
+	defaultHealthConfigInterval    = 10 * time.Second
+	defaultHealthConfigStartPeriod = 1200 * time.Second
+	defaultHealthConfigTimeout     = 30 * time.Second
+	defaultHealthConfigRetries     = 3
+)
+
+var (
+	preThresholdHealthCheck = []string{"/bin/sh", "-c", "grep -q oneagentwatchdo /proc/[0-9]*/stat"}
+	currentHealthCheck      = []string{"/usr/bin/watchdog-healthcheck64"}
 )
 
 // Constructor setting default values for docker image HealthConfig
-func newHealthConfig() *containerv1.HealthConfig {
+func newHealthConfig(command []string) *containerv1.HealthConfig {
 	return &containerv1.HealthConfig{
-		Test:        []string{},
-		Interval:    DefaultHealthConfigInterval,
-		StartPeriod: DefaultHealthConfigStartPeriod,
-		Timeout:     DefaultHealthConfigTimeout,
-		Retries:     DefaultHealthConfigRetries,
+		Test:        command,
+		Interval:    defaultHealthConfigInterval,
+		StartPeriod: defaultHealthConfigStartPeriod,
+		Timeout:     defaultHealthConfigTimeout,
+		Retries:     defaultHealthConfigRetries,
 	}
 }
 
-func GetOneAgentHealthConfig(ctx context.Context, apiReader client.Reader, registryClient registry.ImageGetter, dynakube *dynatracev1beta1.DynaKube, imageUri string) (*containerv1.HealthConfig, error) {
-	imageInfo, err := registryClient.PullImageInfo(ctx, imageUri)
-	if err != nil {
-		return nil, errors.WithMessage(err, "error pulling image info")
-	}
-
-	configFile, err := (*imageInfo).ConfigFile()
-	if err != nil {
-		return nil, errors.WithMessage(err, "error reading image config file")
-	}
-
-	var healthConfig *containerv1.HealthConfig
-
-	// Healthcheck.Test values from go-containerregistry documentation:
-	// {} : inherit healthcheck
-	// {"NONE"} : disable healthcheck
-	// {"CMD", args...} : exec arguments directly
-	// {"CMD-SHELL", command} : run command with system's default shell
-	if configFile.Config.Healthcheck != nil && len(configFile.Config.Healthcheck.Test) > 0 {
-		var testCommand []string
-
-		switch configFile.Config.Healthcheck.Test[0] {
-		case "CMD-SHELL":
-			testCommand = []string{"/bin/sh", "-c"}
-			testCommand = append(testCommand, configFile.Config.Healthcheck.Test[1:]...)
-		case "CMD":
-			testCommand = configFile.Config.Healthcheck.Test[1:]
+func getOneAgentHealthConfig(agentVersion string) (*containerv1.HealthConfig, error) {
+	var testCommand []string
+	if agentVersion != "" {
+		agentSemver := agentVersionToSemver(agentVersion)
+		if !semver.IsValid(agentSemver) {
+			return nil, errors.Errorf("provided oneagent version %s is not a valid semver", agentVersion)
 		}
-
-		if len(testCommand) > 0 {
-			healthConfig = newHealthConfig()
-			healthConfig.Test = testCommand
-			if configFile.Config.Healthcheck.Interval != 0 {
-				healthConfig.Interval = configFile.Config.Healthcheck.Interval
-			}
-			if configFile.Config.Healthcheck.StartPeriod != 0 {
-				healthConfig.StartPeriod = configFile.Config.Healthcheck.StartPeriod
-			}
-			if configFile.Config.Healthcheck.Timeout != 0 {
-				healthConfig.Timeout = configFile.Config.Healthcheck.Timeout
-			}
-			if configFile.Config.Healthcheck.Retries != 0 {
-				healthConfig.Retries = configFile.Config.Healthcheck.Retries
-			}
+		// threshold > agentSemver == 1
+		// threshold < agentSemver == -1
+		// threshold == agentSemver == 0
+		switch semver.Compare(healthCheckVersionThreshold, agentSemver) {
+		case 1:
+			testCommand = preThresholdHealthCheck
+		default:
+			testCommand = currentHealthCheck
 		}
+	} else {
+		testCommand = currentHealthCheck
 	}
-	return healthConfig, nil
+	return newHealthConfig(testCommand), nil
+}
+
+func agentVersionToSemver(agentVersion string) string {
+	if agentVersion == "" {
+		return ""
+	}
+	split := strings.Split(agentVersion, semverSep)
+	var agentSemver string
+	if len(split) > relevantSemverLength {
+		agentSemver = strings.Join(split[:relevantSemverLength], semverSep)
+	} else {
+		agentSemver = strings.Join(split, semverSep)
+	}
+	if !strings.HasPrefix(agentSemver, semverPrefix) {
+		agentSemver = semverPrefix + agentSemver
+	}
+	return semver.Canonical(agentSemver)
 }
