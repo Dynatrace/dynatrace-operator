@@ -369,6 +369,7 @@ func mockSharedRuxitAgentProcConf(t *testing.T, publisher *AppVolumePublisher, c
 	file, err := publisher.fs.Create(publisher.path.AgentSharedRuxitAgentProcConf(testTenantUUID, testDynakubeName))
 	defer func() { _ = file.Close() }()
 	require.NoError(t, err)
+
 	if len(content) > 0 {
 		_, err = file.Write(content)
 		require.NoError(t, err)
