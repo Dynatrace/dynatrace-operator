@@ -2,6 +2,7 @@ package logger
 
 import (
 	"os"
+	"sync"
 
 	"github.com/go-logr/logr"
 	"go.uber.org/zap"
@@ -11,14 +12,21 @@ import (
 
 const LogLevelEnv = "LOG_LEVEL"
 
+var (
+	baseLogger     logr.Logger
+	baseLoggerOnce sync.Once
+)
+
 // Get returns a new, unnamed logger configured with the basics we need for operator logs which can be used as a blueprint for
 // derived loggers int the operator components.
 func Get() logr.Logger {
-	config := zap.NewProductionEncoderConfig()
-	config.EncodeTime = zapcore.ISO8601TimeEncoder
-	config.StacktraceKey = stacktraceKey
-	logger := ctrlzap.New(ctrlzap.WriteTo(NewPrettyLogWriter()), ctrlzap.Encoder(zapcore.NewJSONEncoder(config)), ctrlzap.Level(readLogLevelFromEnv()))
-	return logger
+	baseLoggerOnce.Do(func() {
+		config := zap.NewProductionEncoderConfig()
+		config.EncodeTime = zapcore.ISO8601TimeEncoder
+		config.StacktraceKey = stacktraceKey
+		baseLogger = ctrlzap.New(ctrlzap.WriteTo(NewPrettyLogWriter()), ctrlzap.Encoder(zapcore.NewJSONEncoder(config)), ctrlzap.Level(readLogLevelFromEnv()))
+	})
+	return baseLogger
 }
 
 func readLogLevelFromEnv() zapcore.Level {
