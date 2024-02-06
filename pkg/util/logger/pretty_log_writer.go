@@ -25,6 +25,7 @@ func NewPrettyLogWriter(options ...func(prettifier *prettyLogWriter)) io.Writer 
 	for _, o := range options {
 		o(&pretty)
 	}
+
 	return &pretty
 }
 
@@ -41,6 +42,7 @@ func (pretty *prettyLogWriter) Write(payload []byte) (int, error) {
 	if err != nil {
 		return pretty.out.Write(payload)
 	}
+
 	return pretty.out.Write(correctLineEndings(payload))
 }
 
@@ -57,6 +59,7 @@ func correctLineEndings(payload []byte) []byte {
 
 func removeDuplicatedStacktrace(payload []byte) ([]byte, error) {
 	var document map[string]any
+
 	err := json.Unmarshal(payload, &document)
 	if err != nil {
 		// If message is not json, just write without modification
@@ -64,6 +67,7 @@ func removeDuplicatedStacktrace(payload []byte) ([]byte, error) {
 	}
 
 	document = setErrorVerboseAsStacktrace(document)
+
 	return json.Marshal(document)
 }
 
@@ -73,5 +77,6 @@ func setErrorVerboseAsStacktrace(document map[string]any) map[string]any {
 		document[stacktraceKey] = errorVerbose
 		delete(document, errorVerboseKey)
 	}
+
 	return document
 }

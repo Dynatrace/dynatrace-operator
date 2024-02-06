@@ -28,14 +28,17 @@ func Get() logr.Logger {
 		config.StacktraceKey = stacktraceKey
 		baseLogger = ctrlzap.New(ctrlzap.WriteTo(NewPrettyLogWriter()), ctrlzap.Encoder(zapcore.NewJSONEncoder(config)), ctrlzap.Level(readLogLevelFromEnv()))
 	})
+
 	return baseLogger
 }
 
 func readLogLevelFromEnv() zapcore.Level {
 	envLevel := os.Getenv(LogLevelEnv)
+
 	level, err := zapcore.ParseLevel(envLevel)
 	if err != nil {
 		level = zapcore.DebugLevel
 	}
+
 	return level
 }
