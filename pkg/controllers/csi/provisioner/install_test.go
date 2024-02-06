@@ -37,16 +37,19 @@ const (
 func TestUpdateAgent(t *testing.T) {
 	testVersion := "test"
 	testImageDigest := "7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
+
 	t.Run("zip install", func(t *testing.T) {
 		dk := createTestDynaKubeWithZip(testVersion)
 		provisioner := createTestProvisioner()
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(dk.CodeModulesVersion())
+
 		var revision uint = 3
 		processModule := createTestProcessModuleConfig(revision)
 		installerMock := mockedinstaller.NewInstaller(t)
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testVersion))
+
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentZip(dk, mockedclient.NewClient(t), processModule)
@@ -80,6 +83,7 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", newTargetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, newVersion))
+
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentZip(dk, mockedclient.NewClient(t), processModule)
@@ -93,6 +97,7 @@ func TestUpdateAgent(t *testing.T) {
 		sourceConfigPath := filepath.Join(targetDir, processmoduleconfig.RuxitAgentProcPath)
 		_ = provisioner.fs.MkdirAll(targetDir, 0755)
 		_, _ = provisioner.fs.Create(sourceConfigPath)
+
 		var revision uint = 3
 		processModule := createTestProcessModuleConfig(revision)
 		installerMock := mockedinstaller.NewInstaller(t)
@@ -110,6 +115,7 @@ func TestUpdateAgent(t *testing.T) {
 		dockerconfigjsonContent := `{"auths":{}}`
 		dk := createTestDynaKubeWithImage(testImageDigest)
 		provisioner := createTestProvisioner(createMockedPullSecret(dk, dockerconfigjsonContent))
+
 		var revision uint = 3
 		processModule := createTestProcessModuleConfig(revision)
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(testImageDigest)
@@ -136,6 +142,7 @@ func TestUpdateAgent(t *testing.T) {
 	})
 	t.Run("codeModulesImage set without custom pull secret", func(t *testing.T) {
 		dockerconfigjsonContent := `{"auths":{}}`
+
 		var revision uint = 3
 		processModule := createTestProcessModuleConfig(revision)
 
@@ -156,6 +163,7 @@ func TestUpdateAgent(t *testing.T) {
 	t.Run("codeModulesImage set with custom pull secret", func(t *testing.T) {
 		pullSecretName := "test-pull-secret"
 		dockerconfigjsonContent := `{"auths":{}}`
+
 		var revision uint = 3
 		processModule := createTestProcessModuleConfig(revision)
 
@@ -202,6 +210,7 @@ NK85cEJwyxQ+wahdNGUD
 -----END CERTIFICATE-----
 `
 		dockerconfigjsonContent := `{"auths":{}}`
+
 		var revision uint = 3
 		processModule := createTestProcessModuleConfig(revision)
 
@@ -260,6 +269,7 @@ func createMockedCAConfigMap(dynakube dynatracev1beta1.DynaKube, certContent str
 
 func createTestDynaKubeWithImage(imageDigest string) dynatracev1beta1.DynaKube {
 	imageID := "some.registry.com/image:1.234.345@sha256:" + imageDigest
+
 	return dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-dk",
@@ -320,6 +330,7 @@ func mockRegistryClient(provisioner *OneAgentProvisioner, imageDigest string) {
 	provisioner.registryClientBuilder = func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
 		regMock := &mocks.MockImageGetter{}
 		regMock.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Digest: digest.Digest(imageDigest)}, nil)
+
 		return regMock, nil
 	}
 }
