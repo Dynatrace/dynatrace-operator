@@ -3,7 +3,7 @@
   "extends": [ "config:base" ],
   "labels": [ "dependencies" ],
   "digest": { "enabled": false },
-  "baseBranches": ["$default", "release-0.12", "release-0.13", "release-0.14", "release-0.15"],
+  "baseBranches": ["$default", "release-0.14", "release-0.15", "release-1.0"],
   "enabledManagers": [ "regex", "dockerfile", "gomod", "github-actions" ],
   "regexManagers": [
     {
@@ -24,10 +24,9 @@
   "packageRules": [
     {
       "matchBaseBranches": [
-        "release-0.12",
-        "release-0.13",
         "release-0.14",
         "release-0.15",
+        "release-1.0"
       ],
       "matchUpdateTypes": [
         "major",
