@@ -30,7 +30,6 @@ func TestArguments(t *testing.T) {
 
 		expectedDefaultArguments := []string{
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
-			"--set-proxy=",
 			"--set-server={$(DT_SERVER)}",
 			"--set-tenant=$(DT_TENANT)",
 		}
@@ -70,7 +69,6 @@ func TestArguments(t *testing.T) {
 
 		expectedDefaultArguments := []string{
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
-			"--set-proxy=",
 			"--set-server={$(DT_SERVER)}",
 			"--set-tenant=$(DT_TENANT)",
 			"test-value",
@@ -96,7 +94,6 @@ func TestArguments(t *testing.T) {
 			"--set-host-group=APP_LUSTIG_PETER",
 			"--set-host-id-source=lustiglustig",
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
-			"--set-proxy=",
 			"--set-server=https://hyper.super.com:9999",
 			"--set-tenant=$(DT_TENANT)",
 		}
@@ -157,11 +154,13 @@ func TestPodSpec_Arguments(t *testing.T) {
 
 	// deprecated
 	t.Run(`has proxy arg`, func(t *testing.T) {
+		instance.Status.OneAgent.Version = "1.272.0.0-0"
 		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 		podSpecs, _ = dsInfo.podSpec()
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 
 		instance.Spec.Proxy = nil
+		instance.Status.OneAgent.Version = ""
 		podSpecs, _ = dsInfo.podSpec()
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 	})

@@ -15,11 +15,11 @@ const defaultArgumentPriority = 1
 func (dsInfo *builderInfo) arguments() ([]string, error) {
 	argMap := prioritymap.New(prioritymap.WithSeparator(prioritymap.DefaultSeparator), prioritymap.WithPriority(defaultArgumentPriority))
 
-	isProxyAsEnvVarDeprecated, err := IsProxyAsEnvVarDeprecated(dsInfo.dynakube.OneAgentVersion())
+	isProxyAsEnvDeprecated, err := isProxyAsEnvVarDeprecated(dsInfo.dynakube.OneAgentVersion())
 	if err != nil {
 		return []string{}, err
 	}
-	if !isProxyAsEnvVarDeprecated {
+	if !isProxyAsEnvDeprecated {
 		// deprecated
 		dsInfo.appendProxyArg(argMap)
 	}

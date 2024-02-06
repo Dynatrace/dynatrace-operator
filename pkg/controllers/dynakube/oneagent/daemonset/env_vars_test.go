@@ -3,6 +3,7 @@ package daemonset
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
@@ -49,8 +50,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		assertNodeNameEnv(t, envVars)
 		assertConnectionInfoEnv(t, envVars, dynakube)
 		assertDeploymentMetadataEnv(t, envVars, dynakube.Name)
-		// deprecated
-		assertProxyEnv(t, envVars, dynakube)
+
 		assertReadOnlyEnv(t, envVars)
 	})
 	t.Run("when injected envvars are provided then they will not be overridden", func(t *testing.T) {
@@ -298,7 +298,7 @@ func TestIsProxyAsEnvVarDeprecated(t *testing.T) {
 		{
 			name:            "empty version",
 			oneAgentVersion: "",
-			want:            false,
+			want:            true,
 			wantErr:         false,
 		},
 		{
@@ -319,16 +319,22 @@ func TestIsProxyAsEnvVarDeprecated(t *testing.T) {
 			want:            true,
 			wantErr:         false,
 		},
+		{
+			name:            "custom-image -> hard-coded version placeholder",
+			oneAgentVersion: string(status.CustomImageVersionSource),
+			want:            true,
+			wantErr:         false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := IsProxyAsEnvVarDeprecated(tt.oneAgentVersion)
+			got, err := isProxyAsEnvVarDeprecated(tt.oneAgentVersion)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("IsProxyAsEnvVarDeprecated() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("isProxyAsEnvVarDeprecated() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("IsProxyAsEnvVarDeprecated() = %v, want %v", got, tt.want)
+				t.Errorf("isProxyAsEnvVarDeprecated() = %v, want %v", got, tt.want)
 			}
 		})
 	}
