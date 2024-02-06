@@ -164,13 +164,13 @@ func (publisher *AppVolumePublisher) prepareUpperDir(bindCfg *csivolumes.BindCon
 	destAgentConfPath := publisher.path.OverlayVarRuxitAgentProcConf(bindCfg.TenantUUID, volumeCfg.VolumeID)
 	err = publisher.fs.MkdirAll(filepath.Dir(destAgentConfPath), os.ModePerm)
 	if err != nil {
-		return "", errors.WithMessagef(err, "failed create overlay upper directory agen config directory structure, path: %s", upperDir)
+		return "", errors.WithMessagef(err, "failed create overlay upper directory agent config directory structure, path: %s", upperDir)
 	}
 
 	srcAgentConfPath := publisher.path.AgentSharedRuxitAgentProcConf(bindCfg.TenantUUID, volumeCfg.DynakubeName)
 	srcFile, err := publisher.fs.Open(srcAgentConfPath)
 	if err != nil {
-		return "", errors.WithMessagef(err, "failed to open source ruxitagentproc.conf file, path: %s", srcAgentConfPath)
+		return "", errors.WithMessagef(err, "failed to open ruxitagentproc.conf file, path: %s", srcAgentConfPath)
 	}
 	defer func() { _ = srcFile.Close() }()
 	srcStat, err := srcFile.Stat()
