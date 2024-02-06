@@ -287,7 +287,6 @@ func TestReconcile_InstancesSet(t *testing.T) {
 			"--set-host-group=APP_LUSTIG_PETER",
 			"--set-host-id-source=fqdn",
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
-			"--set-proxy=",
 			"--set-server=https://hyper.super.com:9999",
 			"--set-tenant=$(DT_TENANT)",
 		}
@@ -311,7 +310,6 @@ func TestReconcile_InstancesSet(t *testing.T) {
 			"--set-host-group=APP_LUSTIG_PETER",
 			"--set-host-id-source=auto",
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
-			"--set-proxy=",
 			"--set-server=https://hyper.super.com:9999",
 			"--set-tenant=$(DT_TENANT)",
 		}
