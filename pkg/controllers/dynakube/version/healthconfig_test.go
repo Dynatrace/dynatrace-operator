@@ -3,6 +3,7 @@ package version
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -81,6 +82,12 @@ func TestGetOneAgentHealthConfig(t *testing.T) {
 			inputVersion:    ".4.malformed-",
 			expectedCommand: nil,
 			expectError:     true,
+		},
+		{
+			title:           "incase of custom-image",
+			inputVersion:    string(status.CustomImageVersionSource),
+			expectedCommand: currentHealthCheck,
+			expectError:     false,
 		},
 	}
 

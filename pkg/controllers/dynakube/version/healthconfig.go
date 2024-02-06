@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/pkg/errors"
 	"golang.org/x/mod/semver"
@@ -45,7 +46,7 @@ func newHealthConfig(command []string) *containerv1.HealthConfig {
 func getOneAgentHealthConfig(agentVersion string) (*containerv1.HealthConfig, error) {
 	var testCommand []string
 
-	if agentVersion != "" {
+	if agentVersion != "" && agentVersion != string(status.CustomImageVersionSource) {
 		agentSemver := agentVersionToSemver(agentVersion)
 		if !semver.IsValid(agentSemver) {
 			return nil, errors.Errorf("provided oneagent version %s is not a valid semver", agentVersion)
