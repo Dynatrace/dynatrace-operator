@@ -235,6 +235,7 @@ linters:
   - tenv                      # tenv is analyzer that detects using os.Setenv instead of t.Setenv since Go1.17
   - testableexamples          # Linter checks if examples are testable (have an expected output).
   - testifylint               # Checks usage of github.com/stretchr/testify.
+  - thelper                   # Thelper detects tests helpers which is not start with t.Helper() method.
   - tparallel                 # tparallel detects inappropriate usage of t.Parallel() method in your Go test codes
   - unconvert                 # Remove unnecessary type conversions
   - unparam                   # Reports unused function parameters
@@ -282,7 +283,6 @@ linters:
 # - protogetter       # Reports direct reads from proto message fields when getters should be used.
 # - rowserrcheck      # Checks whether Rows.Err of rows is checked successfully.
 # - sqlclosecheck     # Checks that sql.Rows and sql.Stmt are closed.
-# - thelper           # Thelper detects tests helpers which is not start with t.Helper() method.
 # - wrapcheck         # Checks that errors returned from external packages are wrapped.
 # TODO: Need to discuss/decide/remove
 # - exhaustive     # Check exhaustiveness of enum switch statements.
@@ -310,6 +310,7 @@ issues:
       linters:
         - noctx
         - wsl
+        - thelper
     - path: _(test|gen)\.go
       linters:
         - dupl
