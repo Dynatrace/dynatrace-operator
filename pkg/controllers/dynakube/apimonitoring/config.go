@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("automatic-api-monitoring")
+	log = logger.Get().WithName("automatic-api-monitoring")
 )

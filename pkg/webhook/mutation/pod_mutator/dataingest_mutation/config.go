@@ -11,5 +11,5 @@ const (
 )
 
 var (
-	log = logger.Factory.GetLogger("dataingest-pod-mutation")
+	log = logger.Get().WithName("dataingest-pod-mutation")
 )

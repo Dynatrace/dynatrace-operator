@@ -10,5 +10,5 @@ const (
 )
 
 var (
-	log = logger.Factory.GetLogger("csi-provisioner")
+	log = logger.Get().WithName("csi-provisioner")
 )

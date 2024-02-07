@@ -13,6 +13,6 @@ const (
 )
 
 var (
-	log                 = logger.Factory.GetLogger("nodes")
+	log                 = logger.Get().WithName("nodes")
 	unschedulableTaints = []string{"ToBeDeletedByClusterAutoscaler"}
 )

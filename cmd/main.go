@@ -35,7 +35,7 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("main")
+	log = logger.Get().WithName("main")
 )
 
 func newRootCommand() *cobra.Command {

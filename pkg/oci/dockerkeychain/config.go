@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("docker-keychain")
+	log = logger.Get().WithName("docker-keychain")
 )

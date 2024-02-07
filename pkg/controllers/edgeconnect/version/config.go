@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("edgeconnect-version")
+	log = logger.Get().WithName("edgeconnect-version")
 )

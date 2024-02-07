@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("csi-gc")
+	log = logger.Get().WithName("csi-gc")
 
 	reclaimedMemoryMetric = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "dynatrace",

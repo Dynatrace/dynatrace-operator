@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("dynakube-version")
+	log = logger.Get().WithName("dynakube-version")
 )

@@ -11,5 +11,5 @@ const (
 )
 
 var (
-	log = logger.Factory.GetLogger("namespace-mapper")
+	log = logger.Get().WithName("namespace-mapper")
 )

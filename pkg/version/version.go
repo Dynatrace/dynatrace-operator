@@ -22,7 +22,7 @@ var (
 	// BuildDate is the date when the binary was build. Assigned externally.
 	BuildDate = ""
 
-	log = logger.Factory.GetLogger("version")
+	log = logger.Get().WithName("version")
 )
 
 // LogVersion logs metadata about the Operator.
