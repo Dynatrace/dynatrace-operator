@@ -118,7 +118,7 @@ func TestInstaller_InstallAgent(t *testing.T) {
 		fields  fields
 		args    args
 		want    bool
-		wantErr assert.ErrorAssertionFunc
+		wantErr require.ErrorAssertionFunc
 	}{
 		{
 			name: "Successfully install agent",
@@ -140,7 +140,7 @@ func TestInstaller_InstallAgent(t *testing.T) {
 				transport: transport,
 			},
 			args: args{targetDir: consts.AgentBinDirMount},
-			want: true, wantErr: assert.NoError,
+			want: true, wantErr: require.NoError,
 		},
 	}
 	for _, tt := range tests {
@@ -153,10 +153,7 @@ func TestInstaller_InstallAgent(t *testing.T) {
 			}
 
 			got, err := installer.InstallAgent(tt.args.targetDir)
-			if !tt.wantErr(t, err, fmt.Sprintf("InstallAgent(%v)", tt.args.targetDir)) {
-				return
-			}
-
+			tt.wantErr(t, err, fmt.Sprintf("InstallAgent(%v)", tt.args.targetDir))
 			assert.Equalf(t, tt.want, got, "InstallAgent(%v)", tt.args.targetDir)
 		})
 	}

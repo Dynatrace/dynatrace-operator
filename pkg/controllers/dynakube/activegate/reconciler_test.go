@@ -173,7 +173,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		var statefulSet appsv1.StatefulSet
 
@@ -181,7 +181,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		name := capability.CalculateStatefulSetName(kubeMonCapability, instance.Name)
 		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: name, Namespace: testNamespace}, &statefulSet)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, statefulSet)
 		assert.Equal(t, "test-name-kubemon", statefulSet.GetName())
 	})
@@ -318,7 +318,7 @@ func TestExclusiveSynMonitoring(t *testing.T) {
 		&services,
 		client.InNamespace(testNamespace))
 	require.NoError(t, err)
-	require.Len(t, services.Items, 0)
+	require.Empty(t, services.Items)
 }
 
 func TestReconcile_ActivegateConfigMap(t *testing.T) {

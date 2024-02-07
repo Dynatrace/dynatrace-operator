@@ -21,7 +21,7 @@ func TestHostPatternsRequired(t *testing.T) {
 		}
 		response := handleRequest(t, edgeConnect)
 		assert.True(t, response.Allowed)
-		assert.Equal(t, 0, len(response.Warnings))
+		assert.Empty(t, response.Warnings)
 	})
 
 	t.Run(`hostPatters is required - error when provisioner true`, func(t *testing.T) {

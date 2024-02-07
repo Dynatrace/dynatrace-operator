@@ -85,13 +85,13 @@ func TestGetEntityIDForIP(t *testing.T) {
 ]`, time.Now().UTC().Unix()*1000))))
 
 	id, err := dtc.GetEntityIDForIP("1.1.1.1")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, id)
 	assert.Equal(t, "HOST-42", id)
 
 	id, err = dtc.GetEntityIDForIP("2.2.2.2")
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Empty(t, id)
 
 	require.NoError(t, dtc.setHostCacheFromResponse([]byte(
@@ -118,7 +118,7 @@ func TestGetEntityIDForIP(t *testing.T) {
 
 	id, err = dtc.GetEntityIDForIP("1.1.1.1")
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Empty(t, id)
 }
 
@@ -126,17 +126,17 @@ func testAgentVersionGetLatestAgentVersion(t *testing.T, dynatraceClient Client)
 	{
 		_, err := dynatraceClient.GetLatestAgentVersion("", InstallerTypeDefault)
 
-		assert.Error(t, err, "empty OS")
+		require.Error(t, err, "empty OS")
 	}
 	{
 		_, err := dynatraceClient.GetLatestAgentVersion(OsUnix, "")
 
-		assert.Error(t, err, "empty installer type")
+		require.Error(t, err, "empty installer type")
 	}
 	{
 		latestAgentVersion, err := dynatraceClient.GetLatestAgentVersion(OsUnix, InstallerTypePaaS)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "1.242.0.20220429-180918", latestAgentVersion, "latest agent version equals expected version")
 	}
 }
@@ -183,7 +183,7 @@ func TestDynatraceClient_GetAgent(t *testing.T) {
 		readWriter := &memoryReadWriter{data: make([]byte, len(versionedAgentResponse))}
 		err := dtc.GetAgent(OsUnix, InstallerTypePaaS, "", "", "", nil, false, readWriter)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, versionedAgentResponse, string(readWriter.data))
 	})
 	t.Run(`handle server error`, func(t *testing.T) {
@@ -193,7 +193,7 @@ func TestDynatraceClient_GetAgent(t *testing.T) {
 		readWriter := &memoryReadWriter{data: make([]byte, len(versionedAgentResponse))}
 		err := dtc.GetAgent(OsUnix, InstallerTypePaaS, "", "", "", nil, false, readWriter)
 
-		assert.EqualError(t, err, "dynatrace server error 400: test-error")
+		require.EqualError(t, err, "dynatrace server error 400: test-error")
 	})
 }
 
@@ -204,8 +204,8 @@ func TestDynatraceClient_GetAgentVersions(t *testing.T) {
 
 		availableVersions, err := dtc.GetAgentVersions(OsUnix, InstallerTypePaaS, "", "")
 
-		assert.NoError(t, err)
-		assert.Equal(t, 4, len(availableVersions))
+		require.NoError(t, err)
+		assert.Len(t, availableVersions, 4)
 		assert.Contains(t, availableVersions, "1.123.1")
 		assert.Contains(t, availableVersions, "1.123.2")
 		assert.Contains(t, availableVersions, "1.123.3")
@@ -217,8 +217,8 @@ func TestDynatraceClient_GetAgentVersions(t *testing.T) {
 
 		availableVersions, err := dtc.GetAgentVersions(OsUnix, InstallerTypePaaS, "", "")
 
-		assert.EqualError(t, err, "dynatrace server error 400: test-error")
-		assert.Equal(t, 0, len(availableVersions))
+		require.EqualError(t, err, "dynatrace server error 400: test-error")
+		assert.Empty(t, availableVersions)
 	})
 }
 

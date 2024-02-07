@@ -121,11 +121,11 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 	}
 
 	err := reconciler.Reconcile(context.TODO(), dynakube)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	dsActual := &appsv1.DaemonSet{}
 	err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: dynakube.OneAgentDaemonsetName(), Namespace: namespace}, dsActual)
-	assert.NoError(t, err, "failed to get DaemonSet")
+	require.NoError(t, err, "failed to get DaemonSet")
 	assert.Equal(t, namespace, dsActual.Namespace, "wrong namespace")
 	assert.Equal(t, dynakube.OneAgentDaemonsetName(), dsActual.GetObjectMeta().GetName(), "wrong name")
 	assert.Equal(t, corev1.DNSClusterFirstWithHostNet, dsActual.Spec.Template.Spec.DNSPolicy, "wrong policy")
@@ -192,7 +192,7 @@ func TestReconcile_PostponeOnEmptyCommunicationHosts(t *testing.T) {
 
 	err := reconciler.Reconcile(context.TODO(), &dynaKube)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Nil(t, dynaKube.Status.OneAgent.Instances)
 	assert.Empty(t, dynaKube.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts)
 }
@@ -260,11 +260,11 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		pod.Status.HostIP = hostIP
 		err = reconciler.client.Create(context.TODO(), pod)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = reconciler.Reconcile(context.TODO(), dk)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, dk.Status.OneAgent.Instances)
 		assert.NotEmpty(t, dk.Status.OneAgent.Instances)
 	})
@@ -338,11 +338,11 @@ func TestReconcile_InstancesSet(t *testing.T) {
 
 		err = reconciler.client.Create(context.TODO(), pod)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = reconciler.Reconcile(context.TODO(), dk)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, dk.Status.OneAgent.Instances)
 		assert.NotEmpty(t, dk.Status.OneAgent.Instances)
 	})
@@ -372,7 +372,7 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 	}
 
 	ds2, err := r.buildDesiredDaemonSet(dynakube)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, ds2.Annotations[hasher.AnnotationHash])
 
 	assert.True(t, hasher.IsAnnotationDifferent(ds1, ds2))
@@ -530,10 +530,10 @@ func TestHasSpecChanged(t *testing.T) {
 			}
 			test.mod(&oldInstance, &newInstance)
 			ds1, err := r.buildDesiredDaemonSet(&oldInstance)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			ds2, err := r.buildDesiredDaemonSet(&newInstance)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			assert.NotEmpty(t, ds1.Annotations[hasher.AnnotationHash])
 			assert.NotEmpty(t, ds2.Annotations[hasher.AnnotationHash])
@@ -549,7 +549,7 @@ func TestNewDaemonset_Affinity(t *testing.T) {
 		dynakube := newDynaKube()
 		ds, err := r.buildDesiredDaemonSet(dynakube)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, ds)
 
 		affinity := ds.Spec.Template.Spec.Affinity
@@ -670,12 +670,12 @@ func TestInstanceStatus(t *testing.T) {
 	}
 
 	err := reconciler.reconcileInstanceStatuses(context.Background(), dynakube)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, t, dynakube.Status.OneAgent.Instances)
 	instances := dynakube.Status.OneAgent.Instances
 
 	err = reconciler.reconcileInstanceStatuses(context.Background(), dynakube)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, instances, dynakube.Status.OneAgent.Instances)
 }
 
@@ -723,7 +723,7 @@ func TestEmptyInstancesWithWrongLabels(t *testing.T) {
 	}
 
 	err := reconciler.reconcileInstanceStatuses(context.Background(), dynakube)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Empty(t, dynakube.Status.OneAgent.Instances)
 }
 

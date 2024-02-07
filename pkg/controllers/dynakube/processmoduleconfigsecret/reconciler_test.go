@@ -39,7 +39,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		checkSecretForValue(t, mockK8sClient, "\"revision\":0")
-		require.True(t, dynakube.Status.OneAgent.LastProcessModuleConfigUpdate.Time == mockTime.Now().Time)
+		require.Equal(t, dynakube.Status.OneAgent.LastProcessModuleConfigUpdate.Time, mockTime.Now().Time)
 
 		// update should be blocked by timeout
 		mockTime.Set(timeprovider.Now())
@@ -48,7 +48,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = reconciler.Reconcile(context.Background())
 		require.NoError(t, err)
 		checkSecretForValue(t, mockK8sClient, "\"revision\":0")
-		require.True(t, dynakube.Status.OneAgent.LastProcessModuleConfigUpdate.Time != mockTime.Now().Time)
+		require.NotEqual(t, dynakube.Status.OneAgent.LastProcessModuleConfigUpdate.Time, mockTime.Now().Time)
 
 		// go forward in time => should update again
 		futureTime := metav1.NewTime(time.Now().Add(time.Hour))
@@ -57,7 +57,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = reconciler.Reconcile(context.Background())
 		require.NoError(t, err)
 		checkSecretForValue(t, mockK8sClient, "\"revision\":1")
-		require.True(t, dynakube.Status.OneAgent.LastProcessModuleConfigUpdate.Time == futureTime.Time)
+		require.Equal(t, dynakube.Status.OneAgent.LastProcessModuleConfigUpdate.Time, futureTime.Time)
 	})
 	t.Run("Only runs when required", func(t *testing.T) {
 		dynakube := createDynakube(dynatracev1beta1.OneAgentSpec{
@@ -114,12 +114,12 @@ func TestGetSecretData(t *testing.T) {
 		reconciler.Reconcile(context.Background())
 
 		got, err := GetSecretData(context.Background(), mockK8sClient, testName, testNamespace)
-		assert.Nil(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, &dtclient.ProcessModuleConfig{Revision: 0, Properties: nil}, got)
 	})
 	t.Run("error when secret not found", func(t *testing.T) {
 		got, err := GetSecretData(context.Background(), fake.NewClient(), testName, testNamespace)
-		assert.NotNil(t, err)
+		require.Error(t, err)
 		assert.Nil(t, got)
 	})
 	t.Run("error when unmarshaling secret data", func(t *testing.T) {
@@ -132,7 +132,7 @@ func TestGetSecretData(t *testing.T) {
 		)
 
 		got, err := GetSecretData(context.Background(), fakeClient, testName, testNamespace)
-		assert.NotNil(t, err)
+		require.Error(t, err)
 		assert.Nil(t, got)
 	})
 }

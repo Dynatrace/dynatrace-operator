@@ -43,7 +43,7 @@ func TestCorrectCSI(t *testing.T) {
 
 		err := checker.CorrectCSI(context.TODO())
 
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 	t.Run("no error on empty db", func(t *testing.T) {
 		db := FakeMemoryDB()
@@ -52,7 +52,7 @@ func TestCorrectCSI(t *testing.T) {
 
 		err := checker.CorrectCSI(context.TODO())
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("no error on nil apiReader, database is not cleaned", func(t *testing.T) {
@@ -67,14 +67,14 @@ func TestCorrectCSI(t *testing.T) {
 
 		err := checker.CorrectCSI(context.TODO())
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		vol, err := db.GetVolume(ctx, testVolume1.VolumeID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, &testVolume1, vol)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		dk, err := db.GetDynakube(ctx, testDynakube1.Name)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, &testDynakube1, dk)
 	})
 
@@ -94,14 +94,14 @@ func TestCorrectCSI(t *testing.T) {
 
 		err := checker.CorrectCSI(ctx)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		vol, err := db.GetVolume(ctx, testVolume1.VolumeID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, &testVolume1, vol)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		dk, err := db.GetDynakube(ctx, testDynakube1.Name)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, &testDynakube1, dk)
 	})
 	t.Run("remove unnecessary entries in the filesystem", func(t *testing.T) {

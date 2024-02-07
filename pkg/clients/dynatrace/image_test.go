@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -33,7 +34,7 @@ func TestGetLatestImage(t *testing.T) {
 		defer dynatraceServer.Close()
 
 		latestImageInfo, err := dynatraceClient.GetLatestOneAgentImage()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, latestImageInfo)
 
 		assert.Equal(t, latestImageInfo.Source, latestOneAgentImageResponse.Source)
@@ -44,7 +45,7 @@ func TestGetLatestImage(t *testing.T) {
 		defer dynatraceServer.Close()
 
 		latestImageInfo, err := dynatraceClient.GetLatestActiveGateImage()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, latestImageInfo)
 
 		assert.Equal(t, latestImageInfo.Source, latestActiveGateImageResponse.Source)
@@ -55,7 +56,7 @@ func TestGetLatestImage(t *testing.T) {
 		defer dynatraceServer.Close()
 
 		latestImageInfo, err := dynatraceClient.GetLatestCodeModulesImage()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, latestImageInfo)
 
 		assert.Equal(t, latestImageInfo.Source, latestCodeModulesImageResponse.Source)
@@ -69,7 +70,7 @@ func TestGetLatestImageFailure(t *testing.T) {
 		defer faultyDynatraceServer.Close()
 
 		latestImageInfo, err := faultyDynatraceClient.GetLatestOneAgentImage()
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, latestImageInfo)
 
 		assert.Equal(t, "dynatrace server error 500: error retrieving tenant info", err.Error())
@@ -79,7 +80,7 @@ func TestGetLatestImageFailure(t *testing.T) {
 		defer faultyDynatraceServer.Close()
 
 		latestImageInfo, err := faultyDynatraceClient.GetLatestActiveGateImage()
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, latestImageInfo)
 
 		assert.Equal(t, "dynatrace server error 500: error retrieving tenant info", err.Error())
@@ -89,7 +90,7 @@ func TestGetLatestImageFailure(t *testing.T) {
 		defer faultyDynatraceServer.Close()
 
 		latestImageInfo, err := faultyDynatraceClient.GetLatestCodeModulesImage()
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, latestImageInfo)
 
 		assert.Equal(t, "dynatrace server error 500: error retrieving tenant info", err.Error())
@@ -99,7 +100,7 @@ func TestGetLatestImageFailure(t *testing.T) {
 		defer faultyDynatraceServer.Close()
 
 		latestImageInfo, err := faultyDynatraceClient.GetLatestOneAgentImage()
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, latestImageInfo)
 
 		assert.Equal(t, "invalid character 'h' in literal true (expecting 'r')", err.Error())
@@ -109,7 +110,7 @@ func TestGetLatestImageFailure(t *testing.T) {
 		defer faultyDynatraceServer.Close()
 
 		latestImageInfo, err := faultyDynatraceClient.GetLatestActiveGateImage()
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, latestImageInfo)
 
 		assert.Equal(t, "invalid character 'h' in literal true (expecting 'r')", err.Error())
@@ -119,7 +120,7 @@ func TestGetLatestImageFailure(t *testing.T) {
 		defer faultyDynatraceServer.Close()
 
 		latestImageInfo, err := faultyDynatraceClient.GetLatestCodeModulesImage()
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, latestImageInfo)
 
 		assert.Equal(t, "invalid character 'h' in literal true (expecting 'r')", err.Error())

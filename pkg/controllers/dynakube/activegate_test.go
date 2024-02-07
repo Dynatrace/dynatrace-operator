@@ -11,7 +11,6 @@ import (
 	mockcontroller "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	mockconnectioninfo "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/connectioninfo"
 	mockversion "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -107,12 +106,12 @@ func TestReconcileActiveGate(t *testing.T) {
 		}
 
 		err := controller.reconcileActiveGate(ctx, instance, mockClient, nil, mockConnectionInfoReconciler, mockVersionReconciler)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		mockClient.AssertCalled(t, "CreateOrUpdateKubernetesSetting",
 			testName,
 			testUID,
 			mock.AnythingOfType("string"))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 	t.Run(`reconcile automatic kubernetes api monitoring with custom cluster name`, func(t *testing.T) {
 		const clusterLabel = "..blabla..;.🙃"
@@ -162,11 +161,11 @@ func TestReconcileActiveGate(t *testing.T) {
 		}
 
 		err := controller.reconcileActiveGate(ctx, instance, mockClient, nil, mockConnectionInfoReconciler, mockVersionReconciler)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		mockClient.AssertCalled(t, "CreateOrUpdateKubernetesSetting",
 			clusterLabel,
 			testUID,
 			mock.AnythingOfType("string"))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 }

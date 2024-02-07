@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/container-storage-interface/spec v1.9.0
-	github.com/docker/cli v25.0.2+incompatible
+	github.com/docker/cli v25.0.3+incompatible
 	github.com/evanphx/json-patch v5.9.0+incompatible
 	github.com/go-logr/logr v1.4.1
 	github.com/google/go-containerregistry v0.19.0
@@ -20,18 +20,18 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/host v0.47.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.47.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.47.0
-	go.opentelemetry.io/contrib/instrumentation/runtime v0.47.0
-	go.opentelemetry.io/otel v1.22.0
+	go.opentelemetry.io/contrib/instrumentation/runtime v0.48.0
+	go.opentelemetry.io/otel v1.23.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v0.45.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.22.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.22.0
-	go.opentelemetry.io/otel/metric v1.22.0
+	go.opentelemetry.io/otel/metric v1.23.0
 	go.opentelemetry.io/otel/sdk v1.22.0
 	go.opentelemetry.io/otel/sdk/metric v1.22.0
-	go.opentelemetry.io/otel/trace v1.22.0
+	go.opentelemetry.io/otel/trace v1.23.0
 	go.uber.org/zap v1.26.0
 	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63
-	golang.org/x/mod v0.14.0
+	golang.org/x/mod v0.15.0
 	golang.org/x/net v0.20.0
 	golang.org/x/oauth2 v0.16.0
 	golang.org/x/sys v0.16.0

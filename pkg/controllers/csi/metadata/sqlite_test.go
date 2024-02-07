@@ -63,10 +63,10 @@ func TestCreateTables(t *testing.T) {
 		row := db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", volumesTableName)
 		err = row.Scan(&volumeTableName)
 		require.NoError(t, err)
-		assert.Equal(t, volumeTableName, volumesTableName)
+		assert.Equal(t, volumesTableName, volumeTableName)
 
 		rows, err := db.conn.Query("PRAGMA table_info(" + volumesTableName + ")")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, rows)
 
 		columns := []string{
@@ -86,7 +86,7 @@ func TestCreateTables(t *testing.T) {
 
 			err = rows.Scan(&id, &name, &columnType, &notNull, &defaultValue, &primaryKey)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, column, name)
 
 			if column == "MountAttempts" {
@@ -106,10 +106,10 @@ func TestCreateTables(t *testing.T) {
 		row := db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", dynakubesTableName)
 		err = row.Scan(&dkTable)
 		require.NoError(t, err)
-		assert.Equal(t, dkTable, dynakubesTableName)
+		assert.Equal(t, dynakubesTableName, dkTable)
 
 		rows, err := db.conn.Query("PRAGMA table_info(" + dynakubesTableName + ")")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, rows)
 
 		columns := []string{
@@ -129,12 +129,12 @@ func TestCreateTables(t *testing.T) {
 
 			err = rows.Scan(&id, &name, &columnType, &notNull, &defaultValue, &primaryKey)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, column, name)
 
 			if column == "MaxFailedMountAttempts" {
 				maxFailedMountAttempts, err := strconv.Atoi(*defaultValue)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, strconv.Itoa(dynatracev1beta1.DefaultMaxFailedCsiMountAttempts), *defaultValue)
 				assert.Equal(t, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts, maxFailedMountAttempts)
 				assert.Equal(t, "1", notNull)
@@ -235,7 +235,7 @@ func TestGetTenantsToDynakubes(t *testing.T) {
 
 	dynakubes, err := db.GetTenantsToDynakubes(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, 2, len(dynakubes))
+	assert.Len(t, dynakubes, 2)
 	assert.Equal(t, testDynakube1.TenantUUID, dynakubes[testDynakube1.Name])
 	assert.Equal(t, testDynakube2.TenantUUID, dynakubes[testDynakube2.Name])
 }
@@ -255,7 +255,7 @@ func TestGetAllDynakubes(t *testing.T) {
 
 		dynakubes, err := db.GetAllDynakubes(ctx)
 		require.NoError(t, err)
-		assert.Equal(t, 2, len(dynakubes))
+		assert.Len(t, dynakubes, 2)
 	})
 }
 
@@ -272,7 +272,7 @@ func TestGetAllVolumes(t *testing.T) {
 
 	volumes, err := db.GetAllVolumes(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, 2, len(volumes))
+	assert.Len(t, volumes, 2)
 	assert.Equal(t, testVolume1, *volumes[0])
 	assert.Equal(t, testVolume2, *volumes[1])
 }
@@ -303,7 +303,7 @@ func TestGetAllOsAgentVolumes(t *testing.T) {
 
 	osVolumes, err := db.GetAllOsAgentVolumes(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, 2, len(osVolumes))
+	assert.Len(t, osVolumes, 2)
 }
 
 func TestDeleteDynakube(t *testing.T) {
@@ -321,7 +321,7 @@ func TestDeleteDynakube(t *testing.T) {
 	require.NoError(t, err)
 	dynakubes, err := db.GetTenantsToDynakubes(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, len(dynakubes), 1)
+	assert.Len(t, dynakubes, 1)
 	assert.Equal(t, testDynakube2.TenantUUID, dynakubes[testDynakube2.Name])
 }
 
@@ -428,7 +428,7 @@ func TestGetOsAgentVolumeViaVolumeID(t *testing.T) {
 	require.NoError(t, err)
 	actual, err := db.GetOsAgentVolumeViaVolumeID(ctx, expected.VolumeID)
 	require.NoError(t, err)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expected.VolumeID, actual.VolumeID)
 	assert.Equal(t, expected.TenantUUID, actual.TenantUUID)
 	assert.Equal(t, expected.Mounted, actual.Mounted)
@@ -517,7 +517,7 @@ func TestUpdateVolume(t *testing.T) {
 
 	insertedVolume, err := db.GetVolume(ctx, testVolume1.VolumeID)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, testVolume1.VolumeID, insertedVolume.VolumeID)
 	assert.Equal(t, testVolume1.PodName, insertedVolume.PodName)
 	assert.Equal(t, testVolume1.Version, insertedVolume.Version)
@@ -540,7 +540,7 @@ func TestGetUsedVersions(t *testing.T) {
 
 	versions, err := db.GetUsedVersions(ctx, testVolume1.TenantUUID)
 	require.NoError(t, err)
-	assert.Equal(t, len(versions), 2)
+	assert.Len(t, versions, 2)
 	assert.True(t, versions[testVolume1.Version])
 	assert.True(t, versions[testVolume11.Version])
 }
@@ -560,7 +560,7 @@ func TestGetAllUsedVersions(t *testing.T) {
 
 	versions, err := db.GetAllUsedVersions(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, len(versions), 2)
+	assert.Len(t, versions, 2)
 	assert.True(t, versions[testVolume1.Version])
 	assert.True(t, versions[testVolume11.Version])
 }
@@ -583,7 +583,7 @@ func TestGetUsedImageDigests(t *testing.T) {
 
 	digests, err := db.GetUsedImageDigests(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, 2, len(digests))
+	assert.Len(t, digests, 2)
 	assert.True(t, digests[testDynakube1.ImageDigest])
 	assert.True(t, digests[copyDynakube.ImageDigest])
 	assert.True(t, digests[testDynakube2.ImageDigest])
@@ -619,7 +619,7 @@ func TestGetPodNames(t *testing.T) {
 
 	podNames, err := db.GetPodNames(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, len(podNames), 2)
+	assert.Len(t, podNames, 2)
 	assert.Equal(t, testVolume1.VolumeID, podNames[testVolume1.PodName])
 	assert.Equal(t, testVolume2.VolumeID, podNames[testVolume2.PodName])
 }
@@ -639,6 +639,6 @@ func TestDeleteVolume(t *testing.T) {
 	require.NoError(t, err)
 	podNames, err := db.GetPodNames(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, len(podNames), 1)
+	assert.Len(t, podNames, 1)
 	assert.Equal(t, testVolume1.VolumeID, podNames[testVolume1.PodName])
 }

@@ -389,7 +389,7 @@ func TestIstio(t *testing.T) {
 			istioClient := newTestingClient(ist, "")
 			isInstalled, err := istioClient.CheckIstioInstalled()
 			assert.Equal(t, tc.want, isInstalled)
-			assert.ErrorIs(t, tc.wantErr, err)
+			require.ErrorIs(t, tc.wantErr, err)
 		})
 	}
 }

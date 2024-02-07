@@ -34,7 +34,7 @@ func TestGetCommunicationHosts(t *testing.T) {
 
 	t.Run(`communications host empty`, func(t *testing.T) {
 		hosts := GetOneAgentCommunicationHosts(dynakube)
-		assert.Len(t, hosts, 0)
+		assert.Empty(t, hosts)
 	})
 
 	t.Run(`communication-hosts field found`, func(t *testing.T) {
@@ -71,14 +71,14 @@ func TestParseCommunicationHostsFromActiveGateEndpoints(t *testing.T) {
 
 	t.Run(`endpoints empty`, func(t *testing.T) {
 		hosts := parseCommunicationHostFromActiveGateEndpoints("")
-		assert.Len(t, hosts, 0)
+		assert.Empty(t, hosts)
 	})
 
 	t.Run(`activegate endpoint set`, func(t *testing.T) {
 		dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints = "https://abcd123.some.activegate.endpointurl.com:443"
 
 		hosts := GetActiveGateEndpointsAsCommunicationHosts(dynakube)
-		assert.Equal(t, 1, len(hosts))
+		assert.Len(t, hosts, 1)
 		assert.Equal(t, "abcd123.some.activegate.endpointurl.com", hosts[0].Host)
 		assert.Equal(t, "https", hosts[0].Protocol)
 		assert.Equal(t, uint32(443), hosts[0].Port)
@@ -87,7 +87,7 @@ func TestParseCommunicationHostsFromActiveGateEndpoints(t *testing.T) {
 		dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints = "https://abcd123.some.activegate.endpointurl.com:443,https://efg5678.some.other.activegate.endpointurl.com"
 
 		hosts := GetActiveGateEndpointsAsCommunicationHosts(dynakube)
-		assert.Equal(t, 2, len(hosts))
+		assert.Len(t, hosts, 2)
 		hostNames := []string{hosts[0].Host, hosts[1].Host}
 		assert.Contains(t, hostNames, "abcd123.some.activegate.endpointurl.com")
 		assert.Contains(t, hostNames, "efg5678.some.other.activegate.endpointurl.com")
@@ -96,7 +96,7 @@ func TestParseCommunicationHostsFromActiveGateEndpoints(t *testing.T) {
 		dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints = "https://abcd123.some.activegate.endpointurl.com:443,https://abcd123.some.activegate.endpointurl.com:443,https://abcd123.some.activegate.endpointurl.com:443"
 
 		hosts := GetActiveGateEndpointsAsCommunicationHosts(dynakube)
-		assert.Equal(t, 1, len(hosts))
+		assert.Len(t, hosts, 1)
 		assert.Equal(t, "abcd123.some.activegate.endpointurl.com", hosts[0].Host)
 		assert.Equal(t, "https", hosts[0].Protocol)
 		assert.Equal(t, uint32(443), hosts[0].Port)

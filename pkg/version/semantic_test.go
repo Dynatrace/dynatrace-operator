@@ -10,15 +10,15 @@ import (
 func TestExtractVersion(t *testing.T) {
 	t.Run("ExtractSemanticVersion", func(t *testing.T) {
 		version, err := ExtractSemanticVersion("1.203.0.20200908-220956")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, version)
 
 		version, err = ExtractSemanticVersion("2.003.0.20200908-220956")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, version)
 
 		version, err = ExtractSemanticVersion("1.003.5.20200908-220956")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, version)
 	})
 	t.Run("ExtractSemanticVersion fails on malformed version", func(t *testing.T) {
@@ -43,7 +43,7 @@ func TestExtractVersion(t *testing.T) {
 }
 
 func assertIsDefaultVersionInfo(t *testing.T, version SemanticVersion, err error) {
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.NotNil(t, version)
 	assert.Equal(t, SemanticVersion{
 		major:     0,

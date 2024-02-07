@@ -91,7 +91,7 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(dynakube)
 
 		// assert
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run(`create setting when no monitored entities are existing`, func(t *testing.T) {
@@ -102,7 +102,7 @@ func TestReconcile(t *testing.T) {
 		actual, err := r.createObjectIdIfNotExists(dynakube)
 
 		// assert
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, testObjectID, actual)
 	})
 
@@ -115,7 +115,7 @@ func TestReconcile(t *testing.T) {
 		actual, err := r.createObjectIdIfNotExists(dynakube)
 
 		// assert
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, testObjectID, actual)
 	})
 
@@ -128,7 +128,7 @@ func TestReconcile(t *testing.T) {
 		actual, err := r.createObjectIdIfNotExists(dynakube)
 
 		// assert
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "", actual)
 	})
 }
@@ -144,7 +144,7 @@ func TestReconcileErrors(t *testing.T) {
 		actual, err := r.createObjectIdIfNotExists(dynakube)
 
 		// assert
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, "", actual)
 	})
 
@@ -156,7 +156,7 @@ func TestReconcileErrors(t *testing.T) {
 		actual, err := r.createObjectIdIfNotExists(dynakube)
 
 		// assert
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, "", actual)
 	})
 
@@ -168,7 +168,7 @@ func TestReconcileErrors(t *testing.T) {
 		actual, err := r.createObjectIdIfNotExists(dynakube)
 
 		// assert
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, "", actual)
 	})
 
@@ -180,7 +180,7 @@ func TestReconcileErrors(t *testing.T) {
 		actual, err := r.createObjectIdIfNotExists(dynakube)
 
 		// assert
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, "", actual)
 	})
 
@@ -192,7 +192,7 @@ func TestReconcileErrors(t *testing.T) {
 		_, err := r.createObjectIdIfNotExists(dynakube)
 
 		// assert
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 }
 
@@ -207,7 +207,7 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 		_, err := r.handleKubernetesAppEnabled(dynakube, []dtclient.MonitoredEntity{})
 
 		// assert
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run(`don't create app setting as settings already exist`, func(t *testing.T) {
@@ -222,7 +222,7 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 		_, err := r.handleKubernetesAppEnabled(dynakube, entities)
 
 		// assert
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run(`don't create app setting when get entities api response is error`, func(t *testing.T) {
@@ -233,7 +233,7 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 		_, err := r.handleKubernetesAppEnabled(dynakube, []dtclient.MonitoredEntity{})
 
 		// assert
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run(`don't create app setting when get CreateOrUpdateKubernetesAppSetting response is error`, func(t *testing.T) {
@@ -247,7 +247,7 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 		_, err := r.handleKubernetesAppEnabled(dynakube, entities)
 
 		// assert
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run(`create app setting as settings already exist`, func(t *testing.T) {
@@ -260,7 +260,7 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 		// act
 		id, err := r.handleKubernetesAppEnabled(dynakube, entities)
 		// assert
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "transitionSchemaObjectID", id)
 	})
 }

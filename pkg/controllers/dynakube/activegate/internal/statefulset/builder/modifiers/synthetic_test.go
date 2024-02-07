@@ -40,9 +40,9 @@ func TestSyntheticContainer(t *testing.T) {
 
 	t.Run("by requirements", func(t *testing.T) {
 		expectedRequestCpu := resource.NewScaledQuantity(1000, resource.Milli).String()
-		assertion.Equal(
-			container.Resources.Requests.Cpu().String(),
+		assertion.Equalf(
 			expectedRequestCpu,
+			container.Resources.Requests.Cpu().String(),
 			"declared for %v node resource request CPU: %v",
 			dynatracev1beta1.SyntheticNodeXs,
 			expectedRequestCpu)

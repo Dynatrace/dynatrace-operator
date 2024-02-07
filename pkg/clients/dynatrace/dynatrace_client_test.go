@@ -31,14 +31,14 @@ func TestMakeRequest(t *testing.T) {
 	{
 		url := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dc.url)
 		resp, err := dc.makeRequest(url, dynatraceApiToken)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, resp)
 
 		defer utils.CloseBodyAfterRequest(resp)
 	}
 	{
 		resp, err := dc.makeRequest("%s/v1/deployment/installer/agent/connectioninfo", dynatraceApiToken)
-		assert.Error(t, err, "unsupported protocol scheme")
+		require.Error(t, err, "unsupported protocol scheme")
 		assert.Nil(t, resp)
 	}
 }
@@ -61,11 +61,11 @@ func TestGetResponseOrServerError(t *testing.T) {
 	reqURL := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dc.url)
 	{
 		resp, err := dc.makeRequest(reqURL, dynatraceApiToken)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, resp)
 
 		body, err := dc.getServerResponseData(resp)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, body, "response body available")
 	}
 }
@@ -87,13 +87,13 @@ func TestBuildHostCache(t *testing.T) {
 
 	{
 		err := dc.buildHostCache()
-		assert.Error(t, err, "error querying dynatrace server")
+		require.Error(t, err, "error querying dynatrace server")
 		assert.Empty(t, dc.hostCache)
 	}
 	{
 		dc.apiToken = apiToken
 		err := dc.buildHostCache()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotZero(t, len(dc.hostCache))
 		assert.ObjectsAreEqualValues(dc.hostCache, map[string]hostInfo{
 			"10.11.12.13": {version: "1.142.0.20180313-173634", entityID: "dynatraceSampleEntityId"},
@@ -105,19 +105,19 @@ func TestBuildHostCache(t *testing.T) {
 func TestServerError(t *testing.T) {
 	{
 		se := &ServerError{Code: 401, Message: "Unauthorized"}
-		assert.Equal(t, se.Error(), "dynatrace server error 401: Unauthorized")
+		assert.Equal(t, "dynatrace server error 401: Unauthorized", se.Error())
 	}
 	{
 		se := &ServerError{Message: "Unauthorized"}
-		assert.Equal(t, se.Error(), "dynatrace server error 0: Unauthorized")
+		assert.Equal(t, "dynatrace server error 0: Unauthorized", se.Error())
 	}
 	{
 		se := &ServerError{Code: 401}
-		assert.Equal(t, se.Error(), "dynatrace server error 401: ")
+		assert.Equal(t, "dynatrace server error 401: ", se.Error())
 	}
 	{
 		se := &ServerError{}
-		assert.Equal(t, se.Error(), "unknown server error")
+		assert.Equal(t, "unknown server error", se.Error())
 	}
 }
 

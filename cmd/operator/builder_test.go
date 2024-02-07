@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -77,7 +78,7 @@ func TestOperatorCommand(t *testing.T) {
 	t.Run("operator command exists", func(t *testing.T) {
 		operatorCommand := NewOperatorCommandBuilder().Build()
 
-		assert.Equal(t, operatorCommand.Use, "operator")
+		assert.Equal(t, "operator", operatorCommand.Use)
 		assert.NotNil(t, operatorCommand.RunE)
 	})
 	t.Run("kubernetes config provider is called", func(t *testing.T) {
@@ -106,7 +107,7 @@ func TestOperatorCommand(t *testing.T) {
 
 		err := operatorCommand.RunE(operatorCommand, make([]string, 0))
 
-		assert.EqualError(t, err, "config provider error")
+		require.EqualError(t, err, "config provider error")
 	})
 	t.Run("create manager if not in OLM", func(t *testing.T) {
 		mockCfgProvider := &configmock.Provider{}
@@ -129,7 +130,7 @@ func TestOperatorCommand(t *testing.T) {
 
 		err := operatorCommand.RunE(operatorCommand, make([]string, 0))
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 	t.Run("exit on manager error", func(t *testing.T) {
 		mockCfgProvider := &configmock.Provider{}
@@ -150,7 +151,7 @@ func TestOperatorCommand(t *testing.T) {
 
 		err := operatorCommand.RunE(operatorCommand, make([]string, 0))
 
-		assert.EqualError(t, err, "create manager error")
+		require.EqualError(t, err, "create manager error")
 	})
 	t.Run("bootstrap manager is started", func(t *testing.T) {
 		mockCfgProvider := &configmock.Provider{}
@@ -186,7 +187,7 @@ func TestOperatorCommand(t *testing.T) {
 
 		err := operatorCommand.RunE(operatorCommand, make([]string, 0))
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		mockMgr.AssertCalled(t, "Start", mock.Anything)
 	})
 	t.Run("operator manager is started", func(t *testing.T) {
@@ -223,7 +224,7 @@ func TestOperatorCommand(t *testing.T) {
 
 		err := operatorCommand.RunE(operatorCommand, make([]string, 0))
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		mockBootstrapMgrProvider.AssertNotCalled(t, "CreateManager", mock.AnythingOfType("string"), &rest.Config{})
 		bootstrapMockMgr.AssertNotCalled(t, "Start", mock.Anything)
 		operatorMockMgr.AssertCalled(t, "Start", mock.Anything)

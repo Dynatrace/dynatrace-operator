@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTestManager(t *testing.T) {
@@ -15,6 +16,6 @@ func TestTestManager(t *testing.T) {
 	assert.NotNil(t, mgr.GetControllerOptions())
 	assert.Equal(t, scheme.Scheme, mgr.GetScheme())
 	assert.NotNil(t, mgr.GetLogger())
-	assert.NoError(t, mgr.Add(nil))
-	assert.NoError(t, mgr.Start(context.TODO()))
+	require.NoError(t, mgr.Add(nil))
+	require.NoError(t, mgr.Start(context.TODO()))
 }

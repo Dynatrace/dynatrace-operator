@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -22,7 +23,7 @@ func TestGetActiveGateAuthTokenInfo(t *testing.T) {
 		defer dynatraceServer.Close()
 
 		agAuthTokenInfo, err := dynatraceClient.GetActiveGateAuthToken(dynakubeName)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, agAuthTokenInfo)
 
 		assert.Equal(t, activeGateAuthTokenResponse, agAuthTokenInfo)
@@ -32,7 +33,7 @@ func TestGetActiveGateAuthTokenInfo(t *testing.T) {
 		defer faultyDynatraceServer.Close()
 
 		tenantInfo, err := faultyDynatraceClient.GetActiveGateAuthToken(dynakubeName)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, tenantInfo)
 
 		assert.Equal(t, "invalid character 'h' in literal true (expecting 'r')", err.Error())
@@ -42,7 +43,7 @@ func TestGetActiveGateAuthTokenInfo(t *testing.T) {
 		defer faultyDynatraceServer.Close()
 
 		tenantInfo, err := faultyDynatraceClient.GetActiveGateAuthToken(dynakubeName)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, tenantInfo)
 
 		assert.Equal(t, "dynatrace server error 500: error retrieving tenant info", err.Error())

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestErrorPrettify_Write(t *testing.T) {
@@ -19,7 +20,7 @@ func TestErrorPrettify_Write(t *testing.T) {
 		errPrettify := NewPrettyLogWriter(WithWriter(bufferString))
 		written, err := errPrettify.Write([]byte(testString))
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Greater(t, written, 0)
 		assert.Equal(t, expectedString, bufferString.String())
 	})
@@ -31,7 +32,7 @@ func TestErrorPrettify_Write(t *testing.T) {
 		errPrettify := NewPrettyLogWriter(WithWriter(bufferString))
 		written, err := errPrettify.Write([]byte(testString))
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Greater(t, written, 0)
 		assert.Equal(t, expectedString, bufferString.String())
 	})
@@ -43,7 +44,7 @@ func TestErrorPrettify_Write(t *testing.T) {
 		errPrettify := NewPrettyLogWriter(WithWriter(bufferString))
 		written, err := errPrettify.Write([]byte(testString))
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Greater(t, written, 0)
 		assert.Equal(t, expectedString, bufferString.String())
 	})

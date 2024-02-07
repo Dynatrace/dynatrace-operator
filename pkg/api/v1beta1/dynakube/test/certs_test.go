@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -37,18 +38,18 @@ func trustedCAsTester(t *testing.T) {
 		},
 	}
 	trustedCAs, err := dk.TrustedCAs(context.TODO(), kubeReader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, []byte(testConfigMapValue), trustedCAs)
 
 	kubeReader = fake.NewClient()
 	trustedCAs, err = dk.TrustedCAs(context.TODO(), kubeReader)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Empty(t, trustedCAs)
 
 	emptyDk := dynakube.DynaKube{}
 	trustedCAs, err = emptyDk.TrustedCAs(context.TODO(), kubeReader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Empty(t, trustedCAs)
 }
 
@@ -69,18 +70,18 @@ func activeGateTlsCertTester(t *testing.T) {
 	}
 	tlsCert, err := dk.ActiveGateTlsCert(context.TODO(), kubeReader)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, testSecretValue, tlsCert)
 
 	kubeReader = fake.NewClient()
 	tlsCert, err = dk.ActiveGateTlsCert(context.TODO(), kubeReader)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Empty(t, tlsCert)
 
 	emptyDk := dynakube.DynaKube{}
 	tlsCert, err = emptyDk.ActiveGateTlsCert(context.TODO(), kubeReader)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Empty(t, tlsCert)
 }

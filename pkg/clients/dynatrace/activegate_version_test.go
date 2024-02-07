@@ -6,13 +6,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func testActiveGateVersionGetLatestActiveGateVersion(t *testing.T, dynatraceClient Client) {
 	{
 		latestAgentVersion, err := dynatraceClient.GetLatestActiveGateVersion(OsUnix)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "1.242.0.20220429-180918", latestAgentVersion, "latest agent version equals expected version")
 	}
 }

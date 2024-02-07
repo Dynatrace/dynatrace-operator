@@ -106,8 +106,8 @@ func prepTestConfFs(fs afero.Fs) {
 
 func assertTestConf(t *testing.T, fs afero.Fs, path, expected string) {
 	file, err := fs.Open(path)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	content, err := ioutil.ReadAll(file)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expected, string(content))
 }

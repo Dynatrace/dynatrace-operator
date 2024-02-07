@@ -14,7 +14,7 @@ func TestBuilder(t *testing.T) {
 	t.Run("Simple, no modifiers", func(t *testing.T) {
 		b := GenericBuilder[mocks.DataMock]{}
 		actual, err := b.Build()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		expected := mocks.DataMock{}
 		assert.Equal(t, expected, actual)

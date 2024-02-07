@@ -131,7 +131,7 @@ func TestMinimalRequest(t *testing.T) {
 		}
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{})
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, result)
 	})
 }
@@ -521,14 +521,14 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 		})
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, result)
 
 		var daemonSet appsv1.DaemonSet
 
 		err = controller.client.Get(context.Background(), client.ObjectKey{Name: dynakube.OneAgentDaemonsetName(), Namespace: testNamespace}, &daemonSet)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 }
 
@@ -584,7 +584,7 @@ func TestGetDynakube(t *testing.T) {
 		dynakube, err := controller.getDynakubeOrCleanup(ctx, testName, testNamespace)
 
 		assert.NotNil(t, dynakube)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, testName, dynakube.Name)
 		assert.Equal(t, testNamespace, dynakube.Namespace)
@@ -606,7 +606,7 @@ func TestGetDynakube(t *testing.T) {
 		dynakube, err := controller.getDynakubeOrCleanup(ctx, testName, testNamespace)
 
 		assert.Nil(t, dynakube)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = fakeClient.Get(ctx, client.ObjectKey{Name: testNamespace}, namespace)
 		require.NoError(t, err)
@@ -622,7 +622,7 @@ func TestGetDynakube(t *testing.T) {
 		dynakube, err := controller.getDynakubeOrCleanup(ctx, testName, testNamespace)
 
 		assert.Nil(t, dynakube)
-		assert.EqualError(t, err, "fake error")
+		require.EqualError(t, err, "fake error")
 	})
 }
 
@@ -637,7 +637,7 @@ func TestTokenConditions(t *testing.T) {
 
 		err := controller.reconcileDynaKube(context.Background(), dynakube)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assertCondition(t, dynakube, dynatracev1beta1.TokenConditionType, metav1.ConditionFalse, dynatracev1beta1.ReasonTokenError, "secrets \"\" not found")
 		assert.Nil(t, dynakube.Status.LastTokenProbeTimestamp, "LastTokenProbeTimestamp should be Nil if token retrieval did not work.")
 	})
@@ -673,7 +673,7 @@ func TestTokenConditions(t *testing.T) {
 
 		err := controller.reconcileDynaKube(context.TODO(), dynakube)
 
-		assert.Error(t, err, "status update will fail")
+		require.Error(t, err, "status update will fail")
 		assertCondition(t, dynakube, dynatracev1beta1.TokenConditionType, metav1.ConditionTrue, dynatracev1beta1.ReasonTokenReady, "")
 	})
 }

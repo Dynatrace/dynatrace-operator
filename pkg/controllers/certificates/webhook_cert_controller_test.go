@@ -63,8 +63,8 @@ func TestReconcileCertificate_Create_NoCRD(t *testing.T) {
 	controller, request := prepareController(clt)
 
 	res, err := controller.Reconcile(context.TODO(), request)
-	assert.Error(t, err)
-	assert.Equal(t, res, reconcile.Result{})
+	require.Error(t, err)
+	assert.Equal(t, reconcile.Result{}, res)
 }
 
 func TestReconcileCertificate_Update(t *testing.T) {
@@ -146,7 +146,7 @@ func TestReconcile(t *testing.T) {
 		controller, request := prepareController(fakeClient)
 		result, err := controller.Reconcile(context.TODO(), request)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, result)
 	})
 
@@ -174,7 +174,7 @@ func TestReconcile(t *testing.T) {
 		controller, request := prepareController(fakeClient)
 		result, err := controller.Reconcile(context.TODO(), request)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, result)
 	})
 
@@ -216,12 +216,12 @@ func TestReconcile(t *testing.T) {
 		controller, request := prepareController(fakeClient)
 		result, err := controller.Reconcile(context.TODO(), request)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, result)
 
 		secret := &corev1.Secret{}
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 }
 

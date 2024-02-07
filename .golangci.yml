@@ -232,7 +232,9 @@ linters:
   - revive                    # Fast, configurable, extensible, flexible, and beautiful linter for Go. Drop-in replacement of golint.
   - sloglint                  # Ensure consistent code style when using log/slog.
   - staticcheck               # It's a set of rules from staticcheck. It's not the same thing as the staticcheck binary. The author of staticcheck doesn't support or approve the use of staticcheck as a library inside golangci-lint.
+  - tenv                      # tenv is analyzer that detects using os.Setenv instead of t.Setenv since Go1.17
   - testableexamples          # Linter checks if examples are testable (have an expected output).
+  - testifylint               # Checks usage of github.com/stretchr/testify.
   - tparallel                 # tparallel detects inappropriate usage of t.Parallel() method in your Go test codes
   - unconvert                 # Remove unnecessary type conversions
   - unparam                   # Reports unused function parameters
@@ -280,8 +282,6 @@ linters:
 # - protogetter       # Reports direct reads from proto message fields when getters should be used.
 # - rowserrcheck      # Checks whether Rows.Err of rows is checked successfully.
 # - sqlclosecheck     # Checks that sql.Rows and sql.Stmt are closed.
-# - tenv              # tenv is analyzer that detects using os.Setenv instead of t.Setenv since Go1.17
-# - testifylint       # Checks usage of github.com/stretchr/testify.
 # - thelper           # Thelper detects tests helpers which is not start with t.Helper() method.
 # - wrapcheck         # Checks that errors returned from external packages are wrapped.
 # TODO: Need to discuss/decide/remove

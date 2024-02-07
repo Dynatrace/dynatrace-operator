@@ -191,7 +191,7 @@ func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 
 	r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc)
 	err := r.ReconcileOneAgent(context.Background(), &dynakube)
-	assert.ErrorIs(t, err, NoOneAgentCommunicationHostsError)
+	require.ErrorIs(t, err, NoOneAgentCommunicationHostsError)
 
 	assert.Equal(t, testTenantUUID, dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
 	assert.Empty(t, dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints)

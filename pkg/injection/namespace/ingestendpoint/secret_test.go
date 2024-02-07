@@ -59,7 +59,7 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 
 		{
 			err := endpointSecretGenerator.GenerateForNamespace(context.TODO(), testDynakubeName, testNamespace1)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace1, Name: consts.EnrichmentEndpointSecretName}, testDataIngestSecretWithMetrics)
 			checkTestSecretDoesntExist(t, fakeClient, types.NamespacedName{Namespace: testNamespace2, Name: consts.EnrichmentEndpointSecretName})
@@ -67,7 +67,7 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 		}
 		{
 			err := endpointSecretGenerator.GenerateForNamespace(context.TODO(), testDynakubeName, testNamespace1)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace1, Name: consts.EnrichmentEndpointSecretName}, testDataIngestSecretWithMetrics)
 			checkTestSecretDoesntExist(t, fakeClient, types.NamespacedName{Namespace: testNamespace2, Name: consts.EnrichmentEndpointSecretName})
@@ -81,7 +81,7 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 
 		{
 			err := endpointSecretGenerator.GenerateForNamespace(context.TODO(), testDynakubeName, testNamespace1)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace1, Name: consts.EnrichmentEndpointSecretName}, testDataIngestSecretWithMetrics)
 			checkTestSecretDoesntExist(t, fakeClient, types.NamespacedName{Namespace: testNamespace2, Name: consts.EnrichmentEndpointSecretName})
@@ -92,7 +92,7 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 
 		{
 			err := endpointSecretGenerator.GenerateForNamespace(context.TODO(), testDynakubeName, testNamespace1)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace1, Name: consts.EnrichmentEndpointSecretName}, testUpdatedTokenDataIngestSecretWithMetrics)
 			checkTestSecretDoesntExist(t, fakeClient, types.NamespacedName{Namespace: testNamespace2, Name: consts.EnrichmentEndpointSecretName})
@@ -106,7 +106,7 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 
 		{
 			err := endpointSecretGenerator.GenerateForNamespace(context.TODO(), testDynakubeName, testNamespace1)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace1, Name: consts.EnrichmentEndpointSecretName}, testDataIngestSecretWithMetrics)
 			checkTestSecretDoesntExist(t, fakeClient, types.NamespacedName{Namespace: testNamespace2, Name: consts.EnrichmentEndpointSecretName})
@@ -117,7 +117,7 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 
 		{
 			err := endpointSecretGenerator.GenerateForNamespace(context.TODO(), testDynakubeName, testNamespace1)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace1, Name: consts.EnrichmentEndpointSecretName}, testUpdatedApiUrlDataIngestSecretWithMetrics)
 			checkTestSecretDoesntExist(t, fakeClient, types.NamespacedName{Namespace: testNamespace2, Name: consts.EnrichmentEndpointSecretName})
@@ -233,7 +233,7 @@ func testGenerateEndpointsSecret(t *testing.T, instance *dynatracev1beta1.DynaKu
 	endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace)
 
 	err := endpointSecretGenerator.GenerateForDynakube(context.TODO(), instance)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestRemoveEndpointSecrets(t *testing.T) {
@@ -252,7 +252,7 @@ func TestRemoveEndpointSecrets(t *testing.T) {
 func checkTestSecretContains(t *testing.T, fakeClient client.Client, secretName types.NamespacedName, data string) {
 	var testSecret corev1.Secret
 	err := fakeClient.Get(context.TODO(), secretName, &testSecret)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, testSecret.Data)
 	assert.NotEmpty(t, testSecret.Data)
 	assert.Contains(t, testSecret.Data, "endpoint.properties")
@@ -262,7 +262,7 @@ func checkTestSecretContains(t *testing.T, fakeClient client.Client, secretName 
 func checkTestSecretDoesntExist(t *testing.T, fakeClient client.Client, secretName types.NamespacedName) {
 	var testSecret corev1.Secret
 	err := fakeClient.Get(context.TODO(), secretName, &testSecret)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, testSecret.Data)
 }
 
@@ -280,7 +280,7 @@ func updateTestSecret(t *testing.T, fakeClient client.Client) {
 	}
 
 	err := fakeClient.Update(context.TODO(), updatedSecret)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func updatedTestDynakube() *dynatracev1beta1.DynaKube {
@@ -313,12 +313,12 @@ func updatedTestDynakubeWithDataIngestCapability(capabilities []dynatracev1beta1
 func updateTestDynakube(t *testing.T, fakeClient client.Client) {
 	var dk dynatracev1beta1.DynaKube
 	err := fakeClient.Get(context.TODO(), client.ObjectKey{Name: testDynakubeName, Namespace: testNamespaceDynatrace}, &dk)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	dk.Spec.APIURL = testUpdatedApiUrl
 
 	err = fakeClient.Update(context.TODO(), &dk)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func buildTestDynakube() *dynatracev1beta1.DynaKube {

@@ -47,7 +47,7 @@ func TestGetFieldBool(t *testing.T) {
 			m := make(map[string]string)
 			m["value"] = text
 			value := GetFieldBool(m, "value", true)
-			assert.Equal(t, value, expected)
+			assert.Equal(t, expected, value)
 		})
 	}
 
@@ -59,8 +59,8 @@ func TestGetFieldBool(t *testing.T) {
 			value1 := GetFieldBool(m, "value", true)
 			value2 := GetFieldBool(m, "value", false)
 
-			assert.Equal(t, value1, true)
-			assert.Equal(t, value2, false)
+			assert.True(t, value1)
+			assert.False(t, value2)
 		})
 	}
 }
