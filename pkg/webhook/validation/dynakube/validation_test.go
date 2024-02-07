@@ -190,12 +190,12 @@ func assertDeniedResponse(t *testing.T, errMessages []string, dynakube *dynatrac
 
 func assertAllowedResponseWithoutWarnings(t *testing.T, dynakube *dynatracev1beta1.DynaKube, other ...client.Object) {
 	response := assertAllowedResponse(t, dynakube, other...)
-	assert.Equal(t, 0, len(response.Warnings))
+	assert.Empty(t, response.Warnings)
 }
 
 func assertAllowedResponseWithWarnings(t *testing.T, warningAmount int, dynakube *dynatracev1beta1.DynaKube, other ...client.Object) {
 	response := assertAllowedResponse(t, dynakube, other...)
-	assert.Equal(t, warningAmount, len(response.Warnings))
+	assert.Len(t, response.Warnings, warningAmount)
 }
 
 func assertAllowedResponse(t *testing.T, dynakube *dynatracev1beta1.DynaKube, other ...client.Object) admission.Response {

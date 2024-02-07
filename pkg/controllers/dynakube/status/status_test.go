@@ -8,6 +8,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -27,7 +28,7 @@ func TestSetDynakubeStatus(t *testing.T) {
 		})
 		err := SetKubeSystemUUIDInStatus(context.Background(), instance, clt)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, testUUID, instance.Status.KubeSystemUUID)
 	})
 	t.Run(`error querying kube system uid`, func(t *testing.T) {
@@ -35,6 +36,6 @@ func TestSetDynakubeStatus(t *testing.T) {
 		clt := fake.NewClient()
 
 		err := SetKubeSystemUUIDInStatus(context.Background(), instance, clt)
-		assert.EqualError(t, err, "namespaces \"kube-system\" not found")
+		require.EqualError(t, err, "namespaces \"kube-system\" not found")
 	})
 }

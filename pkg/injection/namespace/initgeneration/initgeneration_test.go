@@ -169,7 +169,7 @@ func TestGetInfraMonitoringNodes(t *testing.T) {
 		ig.canWatchNodes = true
 		monitoringNodes, err := ig.getHostMonitoringNodes(dynakube)
 		require.NoError(t, err)
-		assert.Equal(t, 2, len(monitoringNodes))
+		assert.Len(t, monitoringNodes, 2)
 		assert.Equal(t, tenantUUID, monitoringNodes[node1.Name])
 		assert.Equal(t, tenantUUID, monitoringNodes[node2.Name])
 	})
@@ -185,7 +185,7 @@ func TestGetInfraMonitoringNodes(t *testing.T) {
 		ig.canWatchNodes = false
 		monitoringNodes, err := ig.getHostMonitoringNodes(dynakube)
 		require.NoError(t, err)
-		assert.Equal(t, 2, len(monitoringNodes))
+		assert.Len(t, monitoringNodes, 2)
 		assert.Equal(t, tenantUUID, monitoringNodes[node1.Name])
 		assert.Equal(t, tenantUUID, monitoringNodes[node2.Name])
 	})
@@ -202,7 +202,7 @@ func TestGetInfraMonitoringNodes(t *testing.T) {
 		ig.canWatchNodes = true
 		monitoringNodes, err := ig.getHostMonitoringNodes(dynakube)
 		require.NoError(t, err)
-		assert.Equal(t, 3, len(monitoringNodes))
+		assert.Len(t, monitoringNodes, 3)
 		assert.Equal(t, tenantUUID, monitoringNodes[labeledNode.Name])
 		assert.Equal(t, consts.AgentNoHostTenant, monitoringNodes[node1.Name])
 		assert.Equal(t, consts.AgentNoHostTenant, monitoringNodes[node2.Name])
@@ -544,7 +544,7 @@ func retrieveInitSecret(t *testing.T, clt client.Client, namespaceName string) c
 	var initSecret corev1.Secret
 	err := clt.Get(context.TODO(), types.NamespacedName{Name: consts.AgentInitSecretName, Namespace: namespaceName}, &initSecret)
 	require.NoError(t, err)
-	assert.Equal(t, 2, len(initSecret.Data))
+	assert.Len(t, initSecret.Data, 2)
 
 	return initSecret
 }

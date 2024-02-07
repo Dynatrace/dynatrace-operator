@@ -131,8 +131,7 @@ func TestFailurePolicyModes(t *testing.T) {
 		t.Run(`injection failure policy: `+configuredMode, func(t *testing.T) {
 			resetEnv := prepDataIngestTestEnv(t, true)
 
-			err := os.Setenv(consts.InjectionFailurePolicyEnv, configuredMode)
-			require.NoError(t, err)
+			t.Setenv(consts.InjectionFailurePolicyEnv, configuredMode)
 
 			env, err := newEnv()
 
@@ -181,17 +180,14 @@ func prepOneAgentTestEnv(t *testing.T) func() {
 
 	// Int env
 	envs = append(envs, consts.AgentContainerCountEnv)
-	err := os.Setenv(consts.AgentContainerCountEnv, "5")
-	require.NoError(t, err)
+	t.Setenv(consts.AgentContainerCountEnv, "5")
 
 	// Mode Env
 	envs = append(envs, consts.InjectionFailurePolicyEnv)
-	err = os.Setenv(consts.InjectionFailurePolicyEnv, "fail")
-	require.NoError(t, err)
+	t.Setenv(consts.InjectionFailurePolicyEnv, "fail")
 
 	// Bool envs
-	err = os.Setenv(consts.AgentInjectedEnv, trueStatement)
-	require.NoError(t, err)
+	t.Setenv(consts.AgentInjectedEnv, trueStatement)
 
 	envs = append(envs, consts.AgentInjectedEnv)
 
@@ -220,12 +216,10 @@ func prepDataIngestTestEnv(t *testing.T, isUnknownWorkload bool) func() {
 
 	// Mode Env
 	envs = append(envs, consts.InjectionFailurePolicyEnv)
-	err := os.Setenv(consts.InjectionFailurePolicyEnv, "fail")
-	require.NoError(t, err)
+	t.Setenv(consts.InjectionFailurePolicyEnv, "fail")
 
 	// Bool envs
-	err = os.Setenv(consts.EnrichmentInjectedEnv, "true")
-	require.NoError(t, err)
+	t.Setenv(consts.EnrichmentInjectedEnv, "true")
 
 	envs = append(envs, consts.EnrichmentInjectedEnv)
 

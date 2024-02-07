@@ -8,6 +8,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -23,13 +24,13 @@ func TestMapFromDynakube(t *testing.T) {
 
 		err := dm.MapFromDynakube()
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		var ns corev1.Namespace
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
-		assert.NoError(t, err)
-		assert.Equal(t, 2, len(ns.Labels))
-		assert.Equal(t, 1, len(ns.Annotations))
+		require.NoError(t, err)
+		assert.Len(t, ns.Labels, 2)
+		assert.Len(t, ns.Annotations, 1)
 	})
 	t.Run("Overwrite stale entry in labels", func(t *testing.T) {
 		nsLabels := map[string]string{
@@ -42,13 +43,13 @@ func TestMapFromDynakube(t *testing.T) {
 
 		err := dm.MapFromDynakube()
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		var ns corev1.Namespace
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
-		assert.NoError(t, err)
-		assert.Equal(t, 2, len(ns.Labels))
-		assert.Equal(t, 1, len(ns.Annotations))
+		require.NoError(t, err)
+		assert.Len(t, ns.Labels, 2)
+		assert.Len(t, ns.Annotations, 1)
 	})
 	t.Run("Remove stale dynakube entry for no longer matching ns", func(t *testing.T) {
 		movedDk := createTestDynakubeWithAppInject("moved-dk", labels, nil)
@@ -61,13 +62,13 @@ func TestMapFromDynakube(t *testing.T) {
 
 		err := dm.MapFromDynakube()
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		var ns corev1.Namespace
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
-		assert.NoError(t, err)
-		assert.Equal(t, 0, len(ns.Labels))
-		assert.Equal(t, 1, len(ns.Annotations))
+		require.NoError(t, err)
+		assert.Empty(t, ns.Labels)
+		assert.Len(t, ns.Annotations, 1)
 	})
 	t.Run("Throw error in case of conflicting Dynakubes", func(t *testing.T) {
 		conflictingDk := createTestDynakubeWithMultipleFeatures("conflicting-dk", labels)
@@ -81,7 +82,7 @@ func TestMapFromDynakube(t *testing.T) {
 
 		err := dm.MapFromDynakube()
 
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 	t.Run("Ignore kube namespaces", func(t *testing.T) {
 		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil)
@@ -91,13 +92,13 @@ func TestMapFromDynakube(t *testing.T) {
 
 		err := dm.MapFromDynakube()
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		var ns corev1.Namespace
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
-		assert.NoError(t, err)
-		assert.Equal(t, 0, len(ns.Labels))
-		assert.Equal(t, 0, len(ns.Annotations))
+		require.NoError(t, err)
+		assert.Empty(t, ns.Labels)
+		assert.Empty(t, ns.Annotations)
 	})
 
 	t.Run("Ignore openshift namespaces", func(t *testing.T) {
@@ -108,13 +109,13 @@ func TestMapFromDynakube(t *testing.T) {
 
 		err := dm.MapFromDynakube()
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		var ns corev1.Namespace
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
-		assert.NoError(t, err)
-		assert.Equal(t, 0, len(ns.Labels))
-		assert.Equal(t, 0, len(ns.Annotations))
+		require.NoError(t, err)
+		assert.Empty(t, ns.Labels)
+		assert.Empty(t, ns.Annotations)
 	})
 	t.Run("ComponentFeature flag for monitoring system namespaces", func(t *testing.T) {
 		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil)
@@ -127,13 +128,13 @@ func TestMapFromDynakube(t *testing.T) {
 
 		err := dm.MapFromDynakube()
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		var ns corev1.Namespace
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
-		assert.NoError(t, err)
-		assert.Equal(t, 1, len(ns.Labels))
-		assert.Equal(t, 1, len(ns.Annotations))
+		require.NoError(t, err)
+		assert.Len(t, ns.Labels, 1)
+		assert.Len(t, ns.Annotations, 1)
 	})
 }
 
@@ -149,22 +150,22 @@ func TestUnmapFromDynaKube(t *testing.T) {
 		clt := fake.NewClient()
 		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
 		err := dm.UnmapFromDynaKube()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 	t.Run("Remove from everywhere, multiple entries", func(t *testing.T) {
 		clt := fake.NewClient(namespace, namespace2)
 		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
 		err := dm.UnmapFromDynaKube()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		var ns corev1.Namespace
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
-		assert.NoError(t, err)
-		assert.Equal(t, 0, len(ns.Labels))
-		assert.Equal(t, 1, len(ns.Annotations))
+		require.NoError(t, err)
+		assert.Empty(t, ns.Labels)
+		assert.Len(t, ns.Annotations, 1)
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace2.Name}, &ns)
-		assert.NoError(t, err)
-		assert.Equal(t, 0, len(ns.Labels))
-		assert.Equal(t, 1, len(ns.Annotations))
+		require.NoError(t, err)
+		assert.Empty(t, ns.Labels)
+		assert.Len(t, ns.Annotations, 1)
 	})
 }

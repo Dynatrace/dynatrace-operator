@@ -44,7 +44,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		}
 
 		err := installer.installAgent("")
-		assert.EqualError(t, err, testErrorMessage)
+		require.EqualError(t, err, testErrorMessage)
 	})
 	t.Run(`error when downloading latest agent`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
@@ -69,7 +69,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		}
 
 		err := installer.installAgent("")
-		assert.EqualError(t, err, testErrorMessage)
+		require.EqualError(t, err, testErrorMessage)
 	})
 	t.Run(`error unzipping file`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
@@ -102,7 +102,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		}
 
 		err := installer.installAgent("")
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 	t.Run(`downloading and unzipping agent via version`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()

@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/rest"
 )
 
@@ -38,13 +39,13 @@ func TestCsiCommand(t *testing.T) {
 	err := commandFn(command, make([]string, 0))
 
 	// sqlite library does not use afero fs, so it throws an error because path does not exist
-	assert.Error(t, err)
+	require.Error(t, err)
 	configProvider.AssertCalled(t, "GetConfig")
 	managerProvider.AssertCalled(t, "CreateManager", "test-namespace", &rest.Config{})
 
 	exists, err := afero.Exists(memFs, dtcsi.DataPath)
 	assert.True(t, exists)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Logging a newline because otherwise `go test` doesn't recognize the result
 	logger.Factory.GetLogger("csi command").Info("")

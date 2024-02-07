@@ -29,7 +29,7 @@ func TestSetSecretFromReader(t *testing.T) {
 		certSecret := newCertificateSecret(scheme.Scheme, &appsv1.Deployment{})
 		err := certSecret.setSecretFromReader(context.TODO(), fake.NewClient(), testNamespace)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.False(t, certSecret.existsInCluster)
 		assert.NotNil(t, certSecret.secret)
 	})
@@ -38,7 +38,7 @@ func TestSetSecretFromReader(t *testing.T) {
 		err := certSecret.setSecretFromReader(context.TODO(), fake.NewClient(
 			createTestSecret(t, createInvalidTestCertData(t))), testNamespace)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, certSecret.existsInCluster)
 		assert.NotNil(t, certSecret.secret)
 	})
@@ -121,11 +121,11 @@ func TestCreateOrUpdateIfNecessary(t *testing.T) {
 
 		err := certSecret.createOrUpdateIfNecessary(context.TODO(), fakeClient)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: buildSecretName()}, &corev1.Secret{})
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run(`create if secret does not exist`, func(t *testing.T) {
@@ -143,12 +143,12 @@ func TestCreateOrUpdateIfNecessary(t *testing.T) {
 
 		err := certSecret.createOrUpdateIfNecessary(context.TODO(), fakeClient)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		newSecret := corev1.Secret{}
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: buildSecretName(), Namespace: testNamespace}, &newSecret)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, newSecret)
 		assert.EqualValues(t, certSecret.certificates.Data, newSecret.Data)
 	})
@@ -181,11 +181,11 @@ func TestCreateOrUpdateIfNecessary(t *testing.T) {
 		certSecret.existsInCluster = true
 		err = certSecret.createOrUpdateIfNecessary(context.TODO(), fakeClient)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: buildSecretName(), Namespace: testNamespace}, &newSecret)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, newSecret)
 		assert.EqualValues(t, certSecret.certificates.Data, newSecret.Data)
 	})

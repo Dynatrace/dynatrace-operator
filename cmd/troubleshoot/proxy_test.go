@@ -2,7 +2,6 @@ package troubleshoot
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
@@ -15,8 +14,8 @@ import (
 
 func TestCheckProxySettings(t *testing.T) {
 	t.Run("No proxy settings", func(t *testing.T) {
-		os.Setenv("HTTP_PROXY", "")
-		os.Setenv("HTTPS_PROXY", "")
+		t.Setenv("HTTP_PROXY", "")
+		t.Setenv("HTTPS_PROXY", "")
 
 		logOutput := runWithTestLogger(func(logger logr.Logger) {
 			checkProxySettings(context.Background(), logger, nil, &dynatracev1beta1.DynaKube{})
@@ -29,8 +28,8 @@ func TestCheckProxySettings(t *testing.T) {
 		assert.Contains(t, logOutput, "No proxy settings found.")
 	})
 	t.Run("HTTP_PROXY", func(t *testing.T) {
-		os.Setenv("HTTP_PROXY", "foobar:1234")
-		os.Setenv("HTTPS_PROXY", "")
+		t.Setenv("HTTP_PROXY", "foobar:1234")
+		t.Setenv("HTTPS_PROXY", "")
 
 		logOutput := runWithTestLogger(func(logger logr.Logger) {
 			checkProxySettings(context.Background(), logger, nil, &dynatracev1beta1.DynaKube{})
@@ -43,8 +42,8 @@ func TestCheckProxySettings(t *testing.T) {
 		assert.NotContains(t, logOutput, "No proxy settings found.")
 	})
 	t.Run("HTTPS_PROXY", func(t *testing.T) {
-		os.Setenv("HTTP_PROXY", "")
-		os.Setenv("HTTPS_PROXY", "foobar:1234")
+		t.Setenv("HTTP_PROXY", "")
+		t.Setenv("HTTPS_PROXY", "foobar:1234")
 
 		logOutput := runWithTestLogger(func(logger logr.Logger) {
 			checkProxySettings(context.Background(), logger, nil, &dynatracev1beta1.DynaKube{})
@@ -57,8 +56,8 @@ func TestCheckProxySettings(t *testing.T) {
 		assert.NotContains(t, logOutput, "No proxy settings found.")
 	})
 	t.Run("Dynakube proxy", func(t *testing.T) {
-		os.Setenv("HTTP_PROXY", "")
-		os.Setenv("HTTPS_PROXY", "")
+		t.Setenv("HTTP_PROXY", "")
+		t.Setenv("HTTPS_PROXY", "")
 
 		dynakube := *testNewDynakubeBuilder(testNamespace, testDynakube).
 			withProxy("http://foobar:1234").
@@ -75,8 +74,8 @@ func TestCheckProxySettings(t *testing.T) {
 		assert.NotContains(t, logOutput, "No proxy settings found.")
 	})
 	t.Run("Dynakube proxy from secret", func(t *testing.T) {
-		os.Setenv("HTTP_PROXY", "")
-		os.Setenv("HTTPS_PROXY", "")
+		t.Setenv("HTTP_PROXY", "")
+		t.Setenv("HTTPS_PROXY", "")
 
 		proxySecret := testNewSecretBuilder(testNamespace, testSecretName)
 		proxySecret.dataAppend(dynatracev1beta1.ProxyKey, "foobar:1234")
@@ -105,8 +104,8 @@ func TestCheckProxySettings(t *testing.T) {
 		assert.NotContains(t, logOutput, "No proxy settings found.")
 	})
 	t.Run("HTTP_PROXY,HTTPS_PROXY,Dynakube proxy", func(t *testing.T) {
-		os.Setenv("HTTP_PROXY", "foobar:1234")
-		os.Setenv("HTTPS_PROXY", "foobar:1234")
+		t.Setenv("HTTP_PROXY", "foobar:1234")
+		t.Setenv("HTTPS_PROXY", "foobar:1234")
 
 		dynakube := *testNewDynakubeBuilder(testNamespace, testDynakube).
 			withProxy("http://foobar:1234").

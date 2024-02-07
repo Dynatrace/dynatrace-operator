@@ -188,7 +188,7 @@ func TestCollectUnusedAgentBins(t *testing.T) {
 
 		dirs, err := gc.collectUnusedAgentBins(ctx, []os.FileInfo{imageDirInfo, versionDirInfo})
 		require.NoError(t, err)
-		assert.Len(t, dirs, 0)
+		assert.Empty(t, dirs)
 	})
 }
 

@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -25,7 +26,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	t.Run(`Create works with minimal setup`, func(t *testing.T) {
 		r := NewReconciler(nil, nil, "", nil, &dynatracev1beta1.DynaKubeValueSource{})
 		err := r.Reconcile(context.Background())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 	t.Run(`Create creates custom properties secret`, func(t *testing.T) {
 		valueSource := dynatracev1beta1.DynaKubeValueSource{Value: testValue}
@@ -38,12 +39,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r := NewReconciler(fakeClient, instance, testOwner, scheme.Scheme, &valueSource)
 		err := r.Reconcile(context.Background())
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		var customPropertiesSecret corev1.Secret
 		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: r.buildCustomPropertiesName(testName), Namespace: testNamespace}, &customPropertiesSecret)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, customPropertiesSecret)
 		assert.NotEmpty(t, customPropertiesSecret.Data)
 		assert.Contains(t, customPropertiesSecret.Data, DataKey)
@@ -60,12 +61,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r := NewReconciler(fakeClient, instance, testOwner, scheme.Scheme, &valueSource)
 		err := r.Reconcile(context.Background())
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		var customPropertiesSecret corev1.Secret
 		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: r.buildCustomPropertiesName(testName), Namespace: testNamespace}, &customPropertiesSecret)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, customPropertiesSecret)
 		assert.NotEmpty(t, customPropertiesSecret.Data)
 		assert.Contains(t, customPropertiesSecret.Data, DataKey)
@@ -73,11 +74,11 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		err = r.Reconcile(context.Background())
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: r.buildCustomPropertiesName(testName), Namespace: testNamespace}, &customPropertiesSecret)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, customPropertiesSecret)
 		assert.NotEmpty(t, customPropertiesSecret.Data)
 		assert.Contains(t, customPropertiesSecret.Data, DataKey)
@@ -86,11 +87,11 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r.customPropertiesSource.Value = testKey
 		err = r.Reconcile(context.Background())
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: r.buildCustomPropertiesName(testName), Namespace: testNamespace}, &customPropertiesSecret)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, customPropertiesSecret)
 		assert.NotEmpty(t, customPropertiesSecret.Data)
 		assert.Contains(t, customPropertiesSecret.Data, DataKey)

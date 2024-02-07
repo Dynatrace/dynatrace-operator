@@ -59,7 +59,7 @@ func TestReconcile(t *testing.T) {
 			timeProvider: timeprovider.New().Freeze(),
 		}
 		err := versionReconciler.ReconcileActiveGate(ctx, dynakubeTemplate.DeepCopy())
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("all image versions were updated", func(t *testing.T) {

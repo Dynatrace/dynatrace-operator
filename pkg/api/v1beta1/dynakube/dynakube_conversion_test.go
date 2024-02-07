@@ -225,7 +225,7 @@ func TestConversion_ConvertFrom(t *testing.T) {
 		oldDynakube.Spec.KubernetesMonitoringSpec.CapabilityProperties,
 		convertedDynakube.Spec.KubernetesMonitoring.CapabilityProperties)
 
-	assert.Len(t, convertedDynakube.Spec.ActiveGate.Capabilities, 0)
+	assert.Empty(t, convertedDynakube.Spec.ActiveGate.Capabilities)
 
 	assert.Equal(t, oldDynakube.Status.ActiveGate.LastImageProbeTimestamp, convertedDynakube.Status.ActiveGate.LastProbeTimestamp)
 	assert.Equal(t, oldDynakube.Status.ActiveGate.ImageVersion, convertedDynakube.Status.ActiveGate.Version)

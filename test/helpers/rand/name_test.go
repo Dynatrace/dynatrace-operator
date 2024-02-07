@@ -32,7 +32,7 @@ func TestGetNetworkZoneName(t *testing.T) {
 	name, err := GetRandomName(WithLength(defaultLength), WithPrefix("op-e2e-"))
 	require.NoError(t, err)
 
-	assert.Equal(t, len(prefix)+defaultLength, len(name))
+	assert.Len(t, name, len(prefix)+defaultLength)
 	assert.True(t, strings.HasPrefix(name, "op-e2e-"))
 
 	name, found := strings.CutPrefix(name, prefix)

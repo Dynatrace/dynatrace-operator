@@ -194,8 +194,8 @@ func TestManifestCollector_NoManifestsAvailable(t *testing.T) {
 	assertNoErrorOnClose(t, supportArchive)
 
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
-	assert.NoError(t, err)
-	assert.Len(t, zipReader.File, 0)
+	require.NoError(t, err)
+	assert.Empty(t, zipReader.File)
 }
 
 func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {

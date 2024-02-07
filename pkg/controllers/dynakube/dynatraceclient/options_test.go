@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -66,12 +67,12 @@ func TestOptions(t *testing.T) {
 		assert.Empty(t, opts.Opts)
 
 		err := opts.appendProxySettings(nil, nil)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Empty(t, opts.Opts)
 
 		err = opts.appendProxySettings(nil, createTestDynakubeWithProxy(dynatracev1beta1.DynaKubeProxy{Value: testValue}))
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotEmpty(t, opts.Opts)
 
 		fakeClient := fake.NewClient(
@@ -87,7 +88,7 @@ func TestOptions(t *testing.T) {
 		opts = newOptions(context.Background())
 		err = opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}))
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotEmpty(t, opts.Opts)
 	})
 	t.Run(`AppendProxySettings handles missing or malformed secret`, func(t *testing.T) {
@@ -95,7 +96,7 @@ func TestOptions(t *testing.T) {
 		opts := newOptions(context.Background())
 		err := opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}))
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Empty(t, opts.Opts)
 
 		fakeClient = fake.NewClient(
@@ -109,7 +110,7 @@ func TestOptions(t *testing.T) {
 		opts = newOptions(context.Background())
 		err = opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}))
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Empty(t, opts.Opts)
 	})
 	t.Run(`Test append trusted certificates`, func(t *testing.T) {
@@ -120,7 +121,7 @@ func TestOptions(t *testing.T) {
 
 		err := opts.appendTrustedCerts(nil, "", "")
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Empty(t, opts.Opts)
 
 		fakeClient := fake.NewClient(
@@ -134,7 +135,7 @@ func TestOptions(t *testing.T) {
 				}})
 		err = opts.appendTrustedCerts(fakeClient, testName, testNamespace)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotEmpty(t, opts.Opts)
 	})
 	t.Run(`AppendTrustedCerts handles missing or malformed config map`, func(t *testing.T) {
@@ -146,7 +147,7 @@ func TestOptions(t *testing.T) {
 		fakeClient := fake.NewClient()
 		err := opts.appendTrustedCerts(fakeClient, testName, testNamespace)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Empty(t, opts.Opts)
 
 		fakeClient = fake.NewClient(
@@ -158,7 +159,7 @@ func TestOptions(t *testing.T) {
 				Data: map[string]string{}})
 		err = opts.appendTrustedCerts(fakeClient, testName, testNamespace)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Empty(t, opts.Opts)
 	})
 }

@@ -70,11 +70,11 @@ func TestInjection(t *testing.T) {
 			},
 		}
 		resp := inj.Handle(context.Background(), req)
-		assert.NoError(t, resp.Complete(req))
+		require.NoError(t, resp.Complete(req))
 		assert.True(t, resp.Allowed)
 
 		_, err = jsonpatch.DecodePatch(resp.Patch)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("Don't inject into namespace not matching dynakube", func(t *testing.T) {
@@ -95,11 +95,11 @@ func TestInjection(t *testing.T) {
 			},
 		}
 		resp := inj.Handle(context.Background(), req)
-		assert.NoError(t, resp.Complete(req))
+		require.NoError(t, resp.Complete(req))
 		assert.True(t, resp.Allowed)
 
 		_, err = jsonpatch.DecodePatch(resp.Patch)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("Create", func(t *testing.T) {
@@ -115,18 +115,18 @@ func TestInjection(t *testing.T) {
 			},
 		}
 		resp := inj.Handle(context.Background(), req)
-		assert.NoError(t, resp.Complete(req))
+		require.NoError(t, resp.Complete(req))
 		assert.True(t, resp.Allowed)
 
 		patch, err := jsonpatch.DecodePatch(resp.Patch)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		updNsBytes, err := patch.Apply(baseNsBytes)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		var updNs corev1.Namespace
 
-		assert.NoError(t, json.Unmarshal(updNsBytes, &updNs))
+		require.NoError(t, json.Unmarshal(updNsBytes, &updNs))
 
 		dkName, ok := updNs.Labels[dtwebhook.InjectionInstanceLabel]
 		assert.True(t, ok)
@@ -154,23 +154,23 @@ func TestInjection(t *testing.T) {
 			},
 		}
 		resp := inj.Handle(context.Background(), req)
-		assert.NoError(t, resp.Complete(req))
+		require.NoError(t, resp.Complete(req))
 		assert.True(t, resp.Allowed)
 
 		patch, err := jsonpatch.DecodePatch(resp.Patch)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		updNsBytes, err := patch.Apply(baseNsBytes)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		var updNs corev1.Namespace
 
-		assert.NoError(t, json.Unmarshal(updNsBytes, &updNs))
+		require.NoError(t, json.Unmarshal(updNsBytes, &updNs))
 
 		dkName, ok := updNs.Labels[dtwebhook.InjectionInstanceLabel]
 		assert.True(t, ok)
 		assert.Equal(t, dk.Name, dkName)
-		assert.Equal(t, 2, len(updNs.Labels))
+		assert.Len(t, updNs.Labels, 2)
 	})
 
 	t.Run("Remove stale", func(t *testing.T) {
@@ -195,22 +195,22 @@ func TestInjection(t *testing.T) {
 			},
 		}
 		resp := inj.Handle(context.Background(), req)
-		assert.NoError(t, resp.Complete(req))
+		require.NoError(t, resp.Complete(req))
 		assert.True(t, resp.Allowed)
 
 		patch, err := jsonpatch.DecodePatch(resp.Patch)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		updNsBytes, err := patch.Apply(baseNsBytes)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		var updNs corev1.Namespace
 
-		assert.NoError(t, json.Unmarshal(updNsBytes, &updNs))
+		require.NoError(t, json.Unmarshal(updNsBytes, &updNs))
 
 		dkName, ok := updNs.Labels[dtwebhook.InjectionInstanceLabel]
 		assert.True(t, ok)
 		assert.Equal(t, dk.Name, dkName)
-		assert.Equal(t, 2, len(updNs.Labels))
+		assert.Len(t, updNs.Labels, 2)
 	})
 }

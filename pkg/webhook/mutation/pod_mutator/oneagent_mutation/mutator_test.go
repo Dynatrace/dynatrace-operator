@@ -185,8 +185,8 @@ func TestNoCommunicationHostsMutate(t *testing.T) {
 	assert.Equal(t, "false", request.Pod.Annotations[dtwebhook.AnnotationOneAgentInjected])
 	assert.Equal(t, dtwebhook.EmptyConnectionInfoReason, request.Pod.Annotations[dtwebhook.AnnotationOneAgentReason])
 
-	assert.Len(t, request.InstallContainer.Env, 0)
-	assert.Len(t, request.InstallContainer.VolumeMounts, 0)
+	assert.Empty(t, request.InstallContainer.Env)
+	assert.Empty(t, request.InstallContainer.VolumeMounts)
 }
 
 type reinvokeTestCase struct {

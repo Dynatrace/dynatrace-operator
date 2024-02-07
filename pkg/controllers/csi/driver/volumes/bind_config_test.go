@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -22,7 +23,7 @@ func TestNewBindConfig(t *testing.T) {
 
 		bindCfg, err := NewBindConfig(context.TODO(), metadata.FakeMemoryDB(), volumeCfg)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, bindCfg)
 	})
 	t.Run(`create correct bind config`, func(t *testing.T) {
@@ -42,7 +43,7 @@ func TestNewBindConfig(t *testing.T) {
 			DynakubeName: testDynakubeName,
 		}
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, bindCfg)
 		assert.Equal(t, expected, *bindCfg)
 	})

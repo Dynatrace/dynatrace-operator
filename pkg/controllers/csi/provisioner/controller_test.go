@@ -157,7 +157,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 
 		dynakubeMetadatas, err := db.GetAllDynakubes(ctx)
 		require.NoError(t, err)
-		require.Len(t, dynakubeMetadatas, 0)
+		require.Empty(t, dynakubeMetadatas)
 	})
 	t.Run("host monitoring used", func(t *testing.T) {
 		fakeClient := fake.NewClient(

@@ -139,7 +139,7 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 
 func assertDeploymentMetadataEnv(t *testing.T, envs []corev1.EnvVar, dynakubeName string) {
 	env := k8senv.FindEnvVar(envs, deploymentmetadata.EnvDtDeploymentMetadata)
-	assert.Equal(t, env.Name, deploymentmetadata.EnvDtDeploymentMetadata)
+	assert.Equal(t, deploymentmetadata.EnvDtDeploymentMetadata, env.Name)
 	assert.Equal(t,
 		deploymentmetadata.GetDeploymentMetadataConfigMapName(dynakubeName),
 		env.ValueFrom.ConfigMapKeyRef.Name,
@@ -169,7 +169,7 @@ func TestAddConnectionInfoEnvs(t *testing.T) {
 
 func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynatracev1beta1.DynaKube) {
 	env := k8senv.FindEnvVar(envs, connectioninfo.EnvDtTenant)
-	assert.Equal(t, env.Name, connectioninfo.EnvDtTenant)
+	assert.Equal(t, connectioninfo.EnvDtTenant, env.Name)
 	assert.Equal(t,
 		dynakube.OneAgentConnectionInfoConfigMapName(),
 		env.ValueFrom.ConfigMapKeyRef.Name,
@@ -180,7 +180,7 @@ func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynat
 	)
 
 	env = k8senv.FindEnvVar(envs, connectioninfo.EnvDtServer)
-	assert.Equal(t, env.Name, connectioninfo.EnvDtServer)
+	assert.Equal(t, connectioninfo.EnvDtServer, env.Name)
 	assert.Equal(t,
 		dynakube.OneAgentConnectionInfoConfigMapName(),
 		env.ValueFrom.ConfigMapKeyRef.Name,
@@ -237,7 +237,7 @@ func TestAddProxyEnvs(t *testing.T) {
 // deprecated
 func assertProxyEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynatracev1beta1.DynaKube) {
 	env := k8senv.FindEnvVar(envs, proxyEnv)
-	assert.Equal(t, env.Name, proxyEnv)
+	assert.Equal(t, proxyEnv, env.Name)
 	assert.Equal(t, dynakube.Spec.Proxy.Value, env.Value)
 
 	if dynakube.Spec.Proxy.ValueFrom != "" {
@@ -285,7 +285,7 @@ func TestAddReadOnlyEnv(t *testing.T) {
 
 func assertReadOnlyEnv(t *testing.T, envs []corev1.EnvVar) {
 	env := k8senv.FindEnvVar(envs, oneagentReadOnlyMode)
-	assert.Equal(t, env.Name, oneagentReadOnlyMode)
+	assert.Equal(t, oneagentReadOnlyMode, env.Name)
 	assert.Equal(t, "true", env.Value)
 }
 

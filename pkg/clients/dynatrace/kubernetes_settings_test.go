@@ -38,7 +38,7 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 
 		// assert
 		require.NotNil(t, actual)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Len(t, actual, 2)
 		assert.EqualValues(t, expected, actual)
 	})
@@ -60,8 +60,8 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 
 		// assert
 		require.NotNil(t, actual)
-		assert.NoError(t, err)
-		assert.Len(t, actual, 0)
+		require.NoError(t, err)
+		assert.Empty(t, actual)
 		assert.EqualValues(t, expected, actual)
 	})
 
@@ -82,8 +82,8 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 
 		// assert
 		require.Nil(t, actual)
-		assert.Error(t, err)
-		assert.Len(t, actual, 0)
+		require.Error(t, err)
+		assert.Empty(t, actual)
 	})
 
 	t.Run("no monitored entities found because of an api error", func(t *testing.T) {
@@ -103,8 +103,8 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 
 		// assert
 		require.Nil(t, actual)
-		assert.Error(t, err)
-		assert.Len(t, actual, 0)
+		require.Error(t, err)
+		assert.Empty(t, actual)
 	})
 }
 
@@ -126,10 +126,10 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		actual, err := dtc.(*dynatraceClient).GetSettingsForMonitoredEntities(expected, SettingsSchemaId)
 
 		// assert
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		require.NotNil(t, actual)
-		assert.True(t, actual.TotalCount > 0)
-		assert.Equal(t, len(expected), actual.TotalCount)
+		assert.Greater(t, actual.TotalCount, 0)
+		assert.Len(t, expected, actual.TotalCount)
 	})
 
 	t.Run(`no settings for the given monitored entities exist`, func(t *testing.T) {
@@ -149,9 +149,9 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		actual, err := dtc.(*dynatraceClient).GetSettingsForMonitoredEntities(expected, SettingsSchemaId)
 
 		// assert
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		require.NotNil(t, actual)
-		assert.True(t, actual.TotalCount < 1)
+		assert.Less(t, actual.TotalCount, 1)
 	})
 
 	t.Run(`no settings for an empty list of monitored entities exist`, func(t *testing.T) {
@@ -173,9 +173,9 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		actual, err := dtc.(*dynatraceClient).GetSettingsForMonitoredEntities(entities, SettingsSchemaId)
 
 		// assert
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		require.NotNil(t, actual)
-		assert.True(t, actual.TotalCount == 0)
+		assert.Empty(t, actual.TotalCount)
 	})
 
 	t.Run(`no settings found for because of an api error`, func(t *testing.T) {
@@ -196,8 +196,8 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		actual, err := dtc.(*dynatraceClient).GetSettingsForMonitoredEntities(entities, SettingsSchemaId)
 
 		// assert
-		assert.Error(t, err)
-		assert.True(t, actual.TotalCount == 0)
+		require.Error(t, err)
+		assert.Empty(t, actual.TotalCount)
 	})
 }
 
@@ -217,7 +217,7 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 
 		// assert
 		require.NotNil(t, actual)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Len(t, actual, len(testObjectID))
 		assert.EqualValues(t, testObjectID, actual)
 	})
@@ -237,7 +237,7 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 
 		// assert
 		require.NotNil(t, actual)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Len(t, actual, len(testObjectID))
 		assert.EqualValues(t, testObjectID, actual)
 	})
@@ -256,8 +256,8 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 		actual, err := dtc.(*dynatraceClient).CreateOrUpdateKubernetesSetting(testName, "", testScope)
 
 		// assert
-		assert.Error(t, err)
-		assert.Len(t, actual, 0)
+		require.Error(t, err)
+		assert.Empty(t, actual)
 	})
 
 	t.Run(`don't create settings for the given monitored entity id because of api error`, func(t *testing.T) {
@@ -274,9 +274,9 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 		actual, err := dtc.(*dynatraceClient).CreateOrUpdateKubernetesSetting(testName, testUID, testScope)
 
 		// assert
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), strconv.Itoa(http.StatusBadRequest))
-		assert.Len(t, actual, 0)
+		assert.Empty(t, actual)
 	})
 
 	t.Run(`don't create settings for the given monitored entity id because of api error`, func(t *testing.T) {
@@ -293,9 +293,9 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 		actual, err := dtc.(*dynatraceClient).CreateOrUpdateKubernetesSetting(testName, testUID, testScope)
 
 		// assert
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), strconv.Itoa(http.StatusNotFound))
-		assert.Len(t, actual, 0)
+		assert.Empty(t, actual)
 	})
 }
 
@@ -315,7 +315,7 @@ func TestDynatraceClient_CreateOrUpdateAppKubernetesSetting(t *testing.T) {
 
 		// assert
 		require.NotNil(t, actual)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Len(t, actual, len(testObjectID))
 		assert.EqualValues(t, testObjectID, actual)
 	})
@@ -334,9 +334,9 @@ func TestDynatraceClient_CreateOrUpdateAppKubernetesSetting(t *testing.T) {
 		actual, err := dtc.(*dynatraceClient).CreateOrUpdateKubernetesAppSetting(testScope)
 
 		// assert
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), strconv.Itoa(http.StatusNotFound))
-		assert.Len(t, actual, 0)
+		assert.Empty(t, actual)
 	})
 }
 
@@ -361,7 +361,7 @@ func TestDynatraceClient_getKubernetesSettingBody(t *testing.T) {
 		assert.IsType(t, postKubernetesSettings{}, actual[0].Value)
 		assert.EqualValues(t, true, actual[0].Value.(postKubernetesSettings).Enabled)
 		bodyJson, err := json.Marshal(actual[0])
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotContains(t, string(bodyJson), "cloudApplicationPipelineEnabled")
 		assert.NotContains(t, string(bodyJson), "openMetricsPipelineEnabled")
 		assert.NotContains(t, string(bodyJson), "eventProcessingActive")
@@ -390,7 +390,7 @@ func TestDynatraceClient_getKubernetesSettingBody(t *testing.T) {
 		assert.IsType(t, postKubernetesSettings{}, actual[0].Value)
 		assert.EqualValues(t, true, actual[0].Value.(postKubernetesSettings).Enabled)
 		bodyJson, err := json.Marshal(actual[0])
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Contains(t, string(bodyJson), "cloudApplicationPipelineEnabled")
 		assert.Contains(t, string(bodyJson), "openMetricsPipelineEnabled")
 		assert.Contains(t, string(bodyJson), "eventProcessingActive")

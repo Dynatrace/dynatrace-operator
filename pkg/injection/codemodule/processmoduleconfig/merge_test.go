@@ -55,15 +55,15 @@ func TestAddLeftoversForSection(t *testing.T) {
 			},
 		}
 		leftovers := addLeftoversForSection("general", testConfMap)
-		assert.Len(t, testConfMap, 0)
+		assert.Empty(t, testConfMap)
 		assert.Len(t, leftovers, 1)
 		assert.Equal(t, []string{"prop1 val1"}, leftovers)
 	})
 	t.Run(`0 section`, func(t *testing.T) {
 		testConfMap := dtclient.ConfMap{}
 		leftovers := addLeftoversForSection("general", testConfMap)
-		assert.Len(t, testConfMap, 0)
-		assert.Len(t, leftovers, 0)
+		assert.Empty(t, testConfMap)
+		assert.Empty(t, leftovers)
 	})
 }
 
@@ -99,7 +99,7 @@ val key
 
 	err := storeFile(memFs, "/dest", 0776, []string{"[general]", "val key"})
 
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	file, _ := memFs.Open("/dest")
 	content, _ := ioutil.ReadAll(file)
@@ -144,7 +144,7 @@ prop5 new
 	source.Close()
 
 	err := Update(memFs, "/source", "/dest", testConfMap)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	file, _ := memFs.Open("/dest")
 	content, _ := ioutil.ReadAll(file)
@@ -170,7 +170,7 @@ prop3 old
 	source.Close()
 
 	err := Update(memFs, "/source", "/dest", testConfMap)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	file, _ := memFs.Open("/dest")
 	content, _ := ioutil.ReadAll(file)
@@ -191,7 +191,7 @@ func TestUpdateConfFileEmptySource(t *testing.T) {
 	source.Close()
 
 	err := Update(memFs, "/source", "/dest", testConfMap)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	file, _ := memFs.Open("/dest")
 	content, _ := ioutil.ReadAll(file)

@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestToken_Contains(t *testing.T) {
@@ -23,13 +24,13 @@ func TestToken_Contains(t *testing.T) {
 func testGetTokenScopes(t *testing.T, dynatraceClient Client) {
 	{
 		scopes, err := dynatraceClient.GetTokenScopes("good-token")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.ElementsMatch(t, []string{"DataExport", "LogExport"}, scopes)
 	}
 	{
 		scopes, err := dynatraceClient.GetTokenScopes("bad-token")
 		assert.Nil(t, scopes)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Exactly(t, ServerError{Code: 401, Message: "error received from server"}, errors.Cause(err))
 	}
 }

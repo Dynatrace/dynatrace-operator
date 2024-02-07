@@ -693,7 +693,7 @@ func TestAnnotations(t *testing.T) {
 		builder := NewCloudNativeFullStack(&dynakube, testClusterID)
 		daemonset, err := builder.BuildDaemonSet()
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
 		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
 	})
@@ -713,7 +713,7 @@ func TestAnnotations(t *testing.T) {
 		builder := NewHostMonitoring(&dynakube, testClusterID)
 		daemonset, err := builder.BuildDaemonSet()
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
 		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
 	})
@@ -733,7 +733,7 @@ func TestAnnotations(t *testing.T) {
 		builder := NewClassicFullStack(&dynakube, testClusterID)
 		daemonset, err := builder.BuildDaemonSet()
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
 		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
 	})
@@ -760,7 +760,7 @@ func TestAnnotations(t *testing.T) {
 		builder := NewCloudNativeFullStack(&dynakube, testClusterID)
 		daemonset, err := builder.BuildDaemonSet()
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
 		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
 	})
@@ -785,7 +785,7 @@ func TestAnnotations(t *testing.T) {
 		builder := NewHostMonitoring(&dynakube, testClusterID)
 		daemonset, err := builder.BuildDaemonSet()
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
 		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
 	})
@@ -810,7 +810,7 @@ func TestAnnotations(t *testing.T) {
 		builder := NewClassicFullStack(&dynakube, testClusterID)
 		daemonset, err := builder.BuildDaemonSet()
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
 		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
 	})

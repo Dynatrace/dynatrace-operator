@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -35,7 +36,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 		defer dynatraceServer.Close()
 
 		connectionInfo, err := dynatraceClient.GetActiveGateConnectionInfo()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
 		assert.Equal(t, expectedActivegateConnectionInfo, connectionInfo)
@@ -45,7 +46,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 		defer dynatraceServer.Close()
 
 		connectionInfo, err := dynatraceClient.GetActiveGateConnectionInfo()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
 		assert.Equal(t, expectedActivegateConnectionInfo, connectionInfo)
@@ -55,7 +56,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 		defer dynatraceServer.Close()
 
 		connectionInfo, err := dynatraceClient.GetActiveGateConnectionInfo()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
 		assert.Equal(t, expectedActivegateConnectionInfo, connectionInfo)
@@ -65,7 +66,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 		defer faultyDynatraceServer.Close()
 
 		connectionInfo, err := faultyDynatraceClient.GetActiveGateConnectionInfo()
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, "invalid character 'h' in literal true (expecting 'r')", err.Error())
 
 		assert.NotNil(t, connectionInfo)
@@ -76,7 +77,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 		defer faultyDynatraceServer.Close()
 
 		connectionInfo, err := faultyDynatraceClient.GetActiveGateConnectionInfo()
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.NotNil(t, connectionInfo)
 		assert.Equal(t, ActiveGateConnectionInfo{}, connectionInfo)
 

@@ -9,6 +9,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,7 +32,7 @@ func TestGetImagePullSecret(t *testing.T) {
 	secret, err := GetImagePullSecret(fakeClient, instance)
 
 	assert.Nil(t, secret)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.IsType(t, &k8serrors.StatusError{}, errors.Cause(err))
 
 	pullSecret := &corev1.Secret{
@@ -42,12 +43,12 @@ func TestGetImagePullSecret(t *testing.T) {
 		Data: map[string][]byte{testKey: []byte(testValue)}}
 	err = fakeClient.Create(context.TODO(), pullSecret)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	secret, err = GetImagePullSecret(fakeClient, instance)
 
 	assert.NotNil(t, secret)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, pullSecret.Name, secret.Name)
 	assert.Equal(t, pullSecret.Namespace, secret.Namespace)
 	assert.Contains(t, pullSecret.Data, testKey)

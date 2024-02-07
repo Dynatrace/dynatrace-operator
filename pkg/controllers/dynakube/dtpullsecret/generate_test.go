@@ -27,9 +27,8 @@ func TestGetImageRegistryFromAPIURL(t *testing.T) {
 		"http://host.com/e/abc1234/api",
 	} {
 		host, err := getImageRegistryFromAPIURL(url)
-		if assert.NoError(t, err) {
-			assert.Equal(t, "host.com", host)
-		}
+		require.NoError(t, err)
+		assert.Equal(t, "host.com", host)
 	}
 }
 
@@ -48,7 +47,7 @@ func TestReconciler_GenerateData(t *testing.T) {
 
 	data, err := r.GenerateData()
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, data)
 	assert.NotEmpty(t, data)
 

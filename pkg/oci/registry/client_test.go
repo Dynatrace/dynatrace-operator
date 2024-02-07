@@ -35,7 +35,7 @@ func TestProxy(t *testing.T) {
 		transport := http.DefaultTransport.(*http.Transport).Clone()
 		transport, err := PrepareTransportForDynaKube(context.TODO(), nil, transport, instance)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		checkProxyForUrl(t, *transport, proxyRawURL, "http://working.url", true)
 		checkProxyForUrl(t, *transport, proxyRawURL, "https://working.url", true)
@@ -66,15 +66,15 @@ func TestSkipCertCheck(t *testing.T) {
 		instance.Spec.SkipCertCheck = true
 		transport := http.DefaultTransport.(*http.Transport).Clone()
 		transport, err := PrepareTransportForDynaKube(context.TODO(), nil, transport, instance)
-		assert.NoError(t, err)
-		assert.Equal(t, transport.TLSClientConfig.InsecureSkipVerify, true)
+		require.NoError(t, err)
+		assert.True(t, transport.TLSClientConfig.InsecureSkipVerify)
 	})
 	t.Run("has skipCertCheck disabled", func(t *testing.T) {
 		instance.Spec.SkipCertCheck = false
 		transport := http.DefaultTransport.(*http.Transport).Clone()
 		transport, err := PrepareTransportForDynaKube(context.TODO(), nil, transport, instance)
-		assert.NoError(t, err)
-		assert.Equal(t, transport.TLSClientConfig.InsecureSkipVerify, false)
+		require.NoError(t, err)
+		assert.False(t, transport.TLSClientConfig.InsecureSkipVerify)
 	})
 }
 

@@ -55,15 +55,15 @@ func TestCurlOptions(t *testing.T) {
 
 	err := runner.createCurlOptionsFile()
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	exists, err := afero.Exists(filesystem, "/mnt/share/curl_options.conf")
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, exists)
 
 	content, err := afero.ReadFile(filesystem, "/mnt/share/curl_options.conf")
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, runner.getCurlOptionsContent(), string(content))
 }

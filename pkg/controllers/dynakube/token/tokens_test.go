@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -126,11 +127,11 @@ func testVerifyTokenScopes(t *testing.T) {
 		On("GetTokenScopes", "api-error").
 		Return(dtclient.TokenScopes{}, errors.New("test api-error"))
 
-	assert.NoError(t, validTokens.VerifyScopes(fakeDynatraceClient))
-	assert.EqualError(t,
+	require.NoError(t, validTokens.VerifyScopes(fakeDynatraceClient))
+	require.EqualError(t,
 		invalidTokens.VerifyScopes(fakeDynatraceClient),
 		"token 'invalid-scopes' is missing the following scopes: [ b, d ]")
-	assert.EqualError(t,
+	require.EqualError(t,
 		apiError.VerifyScopes(fakeDynatraceClient),
 		"test api-error")
 }
@@ -143,8 +144,8 @@ func testVerifyTokenValues(t *testing.T) {
 		"whitespaces": Token{Value: " whitespaces "},
 	}
 
-	assert.NoError(t, validTokens.VerifyValues())
-	assert.EqualError(t, invalidTokens.VerifyValues(), "value of token 'whitespaces' contains whitespaces at the beginning or end of the value")
+	require.NoError(t, validTokens.VerifyValues())
+	require.EqualError(t, invalidTokens.VerifyValues(), "value of token 'whitespaces' contains whitespaces at the beginning or end of the value")
 }
 
 type concatErrorsTestCase struct {
@@ -213,7 +214,7 @@ func TestConcatErrors(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			err := concatErrors(testCase.encounteredErrors)
-			assert.EqualError(t, err, testCase.message)
+			require.EqualError(t, err, testCase.message)
 		})
 	}
 }

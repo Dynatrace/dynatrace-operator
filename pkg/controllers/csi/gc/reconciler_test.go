@@ -38,6 +38,6 @@ func TestReconcile(t *testing.T) {
 		result, err := gc.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakube.Name}})
 
 		require.NoError(t, err)
-		assert.Equal(t, result, reconcile.Result{})
+		assert.Equal(t, reconcile.Result{}, result)
 	})
 }

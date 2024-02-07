@@ -67,7 +67,7 @@ func TestDynaKube_UseCSIDriver(t *testing.T) {
 				},
 			},
 		}
-		assert.Equal(t, false, dk.NeedsCSIDriver())
+		assert.False(t, dk.NeedsCSIDriver())
 	})
 
 	t.Run(`DynaKube with application monitoring with csi driver enabled`, func(t *testing.T) {
@@ -81,12 +81,12 @@ func TestDynaKube_UseCSIDriver(t *testing.T) {
 				},
 			},
 		}
-		assert.Equal(t, true, dk.NeedsCSIDriver())
+		assert.True(t, dk.NeedsCSIDriver())
 	})
 
 	t.Run(`DynaKube with cloud native`, func(t *testing.T) {
 		dk := DynaKube{Spec: DynaKubeSpec{OneAgent: OneAgentSpec{CloudNativeFullStack: &CloudNativeFullStackSpec{}}}}
-		assert.Equal(t, true, dk.NeedsCSIDriver())
+		assert.True(t, dk.NeedsCSIDriver())
 	})
 }
 
@@ -174,7 +174,7 @@ func TestTenantUUID(t *testing.T) {
 
 		actualTenantId, err := tenantUUID(apiUrl)
 
-		assert.NoErrorf(t, err, "Expected that getting tenant id from '%s' will be successful", apiUrl)
+		require.NoErrorf(t, err, "Expected that getting tenant id from '%s' will be successful", apiUrl)
 		assert.Equalf(t, expectedTenantId, actualTenantId, "Expected that tenant id of %s is %s, but found %s",
 			apiUrl, expectedTenantId, actualTenantId,
 		)
@@ -186,7 +186,7 @@ func TestTenantUUID(t *testing.T) {
 
 		actualTenantId, err := tenantUUID(apiUrl)
 
-		assert.NoErrorf(t, err, "Expected that getting tenant id from '%s' will be successful", apiUrl)
+		require.NoErrorf(t, err, "Expected that getting tenant id from '%s' will be successful", apiUrl)
 		assert.Equalf(t, expectedTenantId, actualTenantId, "Expected that tenant id of %s is %s, but found %s",
 			apiUrl, expectedTenantId, actualTenantId,
 		)
@@ -198,7 +198,7 @@ func TestTenantUUID(t *testing.T) {
 
 		actualTenantId, err := tenantUUID(apiUrl)
 
-		assert.NoErrorf(t, err, "Expected that getting tenant id from '%s' will be successful", apiUrl)
+		require.NoErrorf(t, err, "Expected that getting tenant id from '%s' will be successful", apiUrl)
 		assert.Equalf(t, expectedTenantId, actualTenantId, "Expected that tenant id of %s is %s, but found %s",
 			apiUrl, expectedTenantId, actualTenantId,
 		)
@@ -211,7 +211,7 @@ func TestTenantUUID(t *testing.T) {
 
 		actualTenantId, err := tenantUUID(apiUrl)
 
-		assert.EqualErrorf(t, err, expectedError, "Expected that getting tenant id from '%s' will result in: '%v'",
+		require.EqualErrorf(t, err, expectedError, "Expected that getting tenant id from '%s' will result in: '%v'",
 			apiUrl, expectedError,
 		)
 		assert.Equalf(t, expectedTenantId, actualTenantId, "Expected that tenant id of %s is %s, but found %s",
@@ -226,7 +226,7 @@ func TestTenantUUID(t *testing.T) {
 
 		actualTenantId, err := tenantUUID(apiUrl)
 
-		assert.EqualErrorf(t, err, expectedError, "Expected that getting tenant id from '%s' will result in: '%v'",
+		require.EqualErrorf(t, err, expectedError, "Expected that getting tenant id from '%s' will result in: '%v'",
 			apiUrl, expectedError,
 		)
 		assert.Equalf(t, expectedTenantId, actualTenantId, "Expected that tenant id of %s is %s, but found %s",
@@ -412,7 +412,7 @@ func TestGetOneAgentEnvironment(t *testing.T) {
 		env := dk.GetOneAgentEnvironment()
 
 		require.NotNil(t, env)
-		assert.Len(t, env, 0)
+		assert.Empty(t, env)
 	})
 
 	t.Run("get environment from unconfigured dynakube", func(t *testing.T) {
@@ -420,7 +420,7 @@ func TestGetOneAgentEnvironment(t *testing.T) {
 		env := dk.GetOneAgentEnvironment()
 
 		require.NotNil(t, env)
-		assert.Len(t, env, 0)
+		assert.Empty(t, env)
 	})
 }
 

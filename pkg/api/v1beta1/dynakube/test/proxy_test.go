@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -28,12 +29,12 @@ func proxyValueTester(t *testing.T) {
 		},
 	}
 	proxy, err := dk.Proxy(context.TODO(), nil)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, testProxyData, proxy)
 
 	emptyDk := dynakube.DynaKube{}
 	proxy, err = emptyDk.Proxy(context.TODO(), nil)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "", proxy)
 }
 
@@ -49,11 +50,11 @@ func proxyValueFromTester(t *testing.T) {
 		},
 	}
 	proxy, err := dk.Proxy(context.TODO(), kubeReader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, testProxyData, proxy)
 
 	kubeReader = fake.NewClient()
 	proxy, err = dk.Proxy(context.TODO(), kubeReader)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, "", proxy)
 }

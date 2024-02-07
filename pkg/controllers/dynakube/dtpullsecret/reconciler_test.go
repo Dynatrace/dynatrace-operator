@@ -11,6 +11,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,14 +52,14 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		err := r.Reconcile(context.Background())
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		var pullSecret corev1.Secret
 		err = fakeClient.Get(context.Background(),
 			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
 			&pullSecret)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, pullSecret)
 		assert.NotEmpty(t, pullSecret.Data)
 		assert.Contains(t, pullSecret.Data, ".dockerconfigjson")
@@ -81,7 +82,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		})
 
 		err := r.Reconcile(context.Background())
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 	t.Run(`Error when creating tenant UUID`, func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
@@ -96,7 +97,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		})
 
 		err := r.Reconcile(context.Background())
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 	t.Run(`Error when creating secret`, func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
@@ -116,7 +117,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		})
 
 		err := r.Reconcile(context.Background())
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, "failed to create or update secret: failed to create secret test-name-pull-secret: fake error", err.Error())
 	})
 	t.Run(`Create does not reconcile with custom pull secret`, func(t *testing.T) {
@@ -131,7 +132,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r := NewReconciler(nil, nil, nil, dynakube, nil)
 		err := r.Reconcile(context.Background())
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 	t.Run(`Create creates correct docker config`, func(t *testing.T) {
 		expectedJSON := `{"auths":{"test-api-url":{"username":"test-tenant","password":"test-value","auth":"dGVzdC10ZW5hbnQ6dGVzdC12YWx1ZQ=="}}}`
@@ -152,14 +153,14 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		err := r.Reconcile(context.Background())
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		var pullSecret corev1.Secret
 		err = fakeClient.Get(context.Background(),
 			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
 			&pullSecret)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, pullSecret)
 		assert.NotEmpty(t, pullSecret.Data)
 		assert.Contains(t, pullSecret.Data, ".dockerconfigjson")
@@ -185,29 +186,29 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		err := r.Reconcile(context.Background())
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		var pullSecret corev1.Secret
 		err = fakeClient.Get(context.Background(),
 			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
 			&pullSecret)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		pullSecret.Data = nil
 		err = fakeClient.Update(context.Background(), &pullSecret)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = r.Reconcile(context.Background())
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = fakeClient.Get(context.Background(),
 			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
 			&pullSecret)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, pullSecret)
 		assert.NotEmpty(t, pullSecret.Data)
 		assert.Contains(t, pullSecret.Data, ".dockerconfigjson")

@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,8 +26,8 @@ func TestTroubleshootCommandBuilder(t *testing.T) {
 		clt := fake.NewClient(&dynakube)
 
 		dynakubes, err := getAllDynakubesInNamespace(context.Background(), getNullLogger(t), clt, testNamespace)
-		assert.NoError(t, err)
-		assert.Equal(t, 1, len(dynakubes))
+		require.NoError(t, err)
+		assert.Len(t, dynakubes, 1)
 		assert.Equal(t, dynakube.Name, dynakubes[0].Name)
 	})
 
@@ -34,8 +35,8 @@ func TestTroubleshootCommandBuilder(t *testing.T) {
 		dynakube := buildTestDynakube()
 		clt := fake.NewClient(&dynakube)
 		dynakubes, err := getDynakubes(context.Background(), getNullLogger(t), clt, testNamespace, testDynakube)
-		assert.NoError(t, err)
-		assert.Equal(t, 1, len(dynakubes))
+		require.NoError(t, err)
+		assert.Len(t, dynakubes, 1)
 		assert.Equal(t, testDynakube, dynakubes[0].Name)
 	})
 }

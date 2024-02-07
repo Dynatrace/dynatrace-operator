@@ -65,7 +65,7 @@ func TestUnpublishVolume(t *testing.T) {
 
 		response, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, response)
 		assert.Empty(t, mounter.MountPoints)
 		assertReferencesForUnpublishedVolume(t, &publisher)
@@ -79,12 +79,12 @@ func TestUnpublishVolume(t *testing.T) {
 
 		response, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Nil(t, response)
 		assert.NotEmpty(t, mounter.MountPoints)
 
 		volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(context.TODO(), testVolumeId)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Nil(t, volume)
 	})
 }
@@ -95,7 +95,7 @@ func TestNodePublishAndUnpublishVolume(t *testing.T) {
 	mockDynakube(t, &publisher)
 
 	publishResponse, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.NotNil(t, publishResponse)
 	assert.NotEmpty(t, mounter.MountPoints)
@@ -103,7 +103,7 @@ func TestNodePublishAndUnpublishVolume(t *testing.T) {
 
 	unpublishResponse, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, unpublishResponse)
 	assert.Empty(t, mounter.MountPoints)
 	assertReferencesForUnpublishedVolume(t, &publisher)
@@ -163,15 +163,15 @@ func assertReferencesForPublishedVolume(t *testing.T, publisher *HostVolumePubli
 	assert.NotEmpty(t, mounter.MountPoints)
 
 	volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(context.TODO(), testVolumeId)
-	assert.NoError(t, err)
-	assert.Equal(t, volume.VolumeID, testVolumeId)
-	assert.Equal(t, volume.TenantUUID, testTenantUUID)
+	require.NoError(t, err)
+	assert.Equal(t, testVolumeId, volume.VolumeID)
+	assert.Equal(t, testTenantUUID, volume.TenantUUID)
 	assert.True(t, volume.Mounted)
 }
 
 func assertReferencesForUnpublishedVolume(t *testing.T, publisher *HostVolumePublisher) {
 	volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(context.TODO(), testVolumeId)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, volume)
 	assert.False(t, volume.Mounted)
 }

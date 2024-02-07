@@ -38,7 +38,7 @@ func TestCreateProcessModuleConfigRequest(t *testing.T) {
 		require.NotNil(t, dc)
 
 		req, err := dc.createProcessModuleConfigRequest(0)
-		require.Nil(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "0", req.URL.Query().Get("revision"))
 		assert.Empty(t, req.URL.Query().Get(hostGroupParamName))
 		assert.Contains(t, req.Header.Get("Authorization"), dc.paasToken)
@@ -51,7 +51,7 @@ func TestCreateProcessModuleConfigRequest(t *testing.T) {
 		require.NotNil(t, dc)
 
 		req, err := dc.createProcessModuleConfigRequest(0)
-		require.Nil(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "0", req.URL.Query().Get("revision"))
 		assert.Equal(t, hostGroup, req.URL.Query().Get(hostGroupParamName))
 		assert.Contains(t, req.Header.Get("Authorization"), dc.paasToken)
@@ -74,7 +74,7 @@ func TestReadResponseForProcessModuleConfig(t *testing.T) {
 	require.NotNil(t, dc)
 
 	processConfig, err := dc.readResponseForProcessModuleConfig([]byte(goodProcessModuleConfigResponse))
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, uint(1), processConfig.Revision)
 	require.Len(t, processConfig.Properties, 2)
 	assert.Equal(t, "general", processConfig.Properties[0].Section)
@@ -133,7 +133,7 @@ func TestAddHostGroup(t *testing.T) {
 		}
 		result := pmc.AddHostGroup("")
 		assert.NotNil(t, result)
-		assert.Len(t, pmc.Properties, 0)
+		assert.Empty(t, pmc.Properties)
 	})
 }
 
@@ -350,7 +350,7 @@ func TestProcessModuleConfig_AddProxy(t *testing.T) {
 				Revision:   tt.fields.Revision,
 				Properties: tt.fields.Properties,
 			}
-			if got := pmc.AddProxy(tt.args.proxy); !assert.Equal(t, got, tt.want) {
+			if got := pmc.AddProxy(tt.args.proxy); !assert.Equal(t, tt.want, got) {
 				t.Errorf("ProcessModuleConfig.AddProxy() = %v, want %v", got, tt.want)
 			}
 		})
@@ -402,7 +402,7 @@ func TestProcessModuleConfig_AddNoProxy(t *testing.T) {
 				Revision:   tt.fields.Revision,
 				Properties: tt.fields.Properties,
 			}
-			if got := pmc.AddNoProxy(tt.args.noProxy); !assert.Equal(t, got, tt.want) {
+			if got := pmc.AddNoProxy(tt.args.noProxy); !assert.Equal(t, tt.want, got) {
 				t.Errorf("ProcessModuleConfig.AddNoProxy() = %v, want %v", got, tt.want)
 			}
 		})

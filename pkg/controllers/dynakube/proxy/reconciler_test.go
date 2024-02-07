@@ -104,14 +104,14 @@ func TestReconcileWithoutProxy(t *testing.T) {
 		r := NewReconciler(testClient, testClient, scheme.Scheme, instance)
 		err := r.Reconcile(context.Background())
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		var proxySecret corev1.Secret
 
 		name := BuildSecretName(testDynakubeName)
 		err = testClient.Get(context.Background(), client.ObjectKey{Name: name, Namespace: testNamespace}, &proxySecret)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 }

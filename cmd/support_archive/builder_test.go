@@ -2,7 +2,6 @@ package support_archive
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
@@ -39,6 +38,6 @@ func TestGetAppName(t *testing.T) {
 			},
 		})
 
-	os.Setenv(env.PodName, alternativeOperatorName)
+	t.Setenv(env.PodName, alternativeOperatorName)
 	assert.Equal(t, alternativeOperatorName, getAppNameLabel(context.TODO(), fakeClientSet.CoreV1().Pods(alternativeNamespace)))
 }

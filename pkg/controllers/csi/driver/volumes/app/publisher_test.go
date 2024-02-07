@@ -252,8 +252,9 @@ func TestNodePublishAndUnpublishVolume(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
-	assert.Equal(t, float64(1), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(testAgentVersion)))
+	assert.InEpsilon(t, 1, testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(testAgentVersion)), 0.01)
 
+	require.NoError(t, err)
 	assert.NotNil(t, publishResponse)
 	assert.NotEmpty(t, mounter.MountPoints)
 	assertReferencesForPublishedVolume(t, &publisher, mounter)
@@ -261,7 +262,7 @@ func TestNodePublishAndUnpublishVolume(t *testing.T) {
 	unpublishResponse, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
 
 	assert.Equal(t, 0, testutil.CollectAndCount(agentsVersionsMetric))
-	assert.Equal(t, float64(0), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(testAgentVersion)))
+	assert.InDelta(t, 0, testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(testAgentVersion)), 0.01)
 
 	require.NoError(t, err)
 	require.NotNil(t, unpublishResponse)
@@ -386,10 +387,10 @@ func assertReferencesForPublishedVolume(t *testing.T, publisher *AppVolumePublis
 
 	volume, err := publisher.loadVolume(context.TODO(), testVolumeId)
 	require.NoError(t, err)
-	assert.Equal(t, volume.VolumeID, testVolumeId)
-	assert.Equal(t, volume.PodName, testPodUID)
-	assert.Equal(t, volume.Version, testAgentVersion)
-	assert.Equal(t, volume.TenantUUID, testTenantUUID)
+	assert.Equal(t, testVolumeId, volume.VolumeID)
+	assert.Equal(t, testPodUID, volume.PodName)
+	assert.Equal(t, testAgentVersion, volume.Version)
+	assert.Equal(t, testTenantUUID, volume.TenantUUID)
 }
 
 func assertReferencesForPublishedVolumeWithCodeModulesImage(t *testing.T, publisher *AppVolumePublisher, mounter *mount.FakeMounter) {
@@ -397,10 +398,10 @@ func assertReferencesForPublishedVolumeWithCodeModulesImage(t *testing.T, publis
 
 	volume, err := publisher.loadVolume(context.TODO(), testVolumeId)
 	require.NoError(t, err)
-	assert.Equal(t, volume.VolumeID, testVolumeId)
-	assert.Equal(t, volume.PodName, testPodUID)
-	assert.Equal(t, volume.Version, testImageDigest)
-	assert.Equal(t, volume.TenantUUID, testTenantUUID)
+	assert.Equal(t, testVolumeId, volume.VolumeID)
+	assert.Equal(t, testPodUID, volume.PodName)
+	assert.Equal(t, testImageDigest, volume.Version)
+	assert.Equal(t, testTenantUUID, volume.TenantUUID)
 }
 
 func assertNoReferencesForUnpublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
