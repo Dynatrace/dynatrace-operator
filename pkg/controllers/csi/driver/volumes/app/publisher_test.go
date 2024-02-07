@@ -195,14 +195,14 @@ func TestUnpublishVolume(t *testing.T) {
 		mockPublishedVolume(t, &publisher)
 
 		assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
-		assert.Equal(t, float64(1), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(testAgentVersion)))
+		assert.InEpsilon(t, 1, testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(testAgentVersion)), 0.01)
 
 		response, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
+		require.NoError(t, err)
 
 		assert.Equal(t, 0, testutil.CollectAndCount(agentsVersionsMetric))
-		assert.Equal(t, float64(0), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(testAgentVersion)))
+		assert.InDelta(t, 0, testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(testAgentVersion)), 0.01)
 
-		require.NoError(t, err)
 		require.NotNil(t, response)
 		require.Empty(t, mounter.MountPoints)
 		assertNoReferencesForUnpublishedVolume(t, &publisher)
