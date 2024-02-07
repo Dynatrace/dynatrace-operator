@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestEventDataMarshal(t *testing.T) {
@@ -23,13 +24,13 @@ func TestEventDataMarshal(t *testing.T) {
 
 	var testEventData EventData
 	err := json.Unmarshal(testJSONInput, &testEventData)
-	assert.NoError(t, err)
-	assert.Equal(t, testEventData.EventType, "MARKED_FOR_TERMINATION")
+	require.NoError(t, err)
+	assert.Equal(t, "MARKED_FOR_TERMINATION", testEventData.EventType)
 	assert.ElementsMatch(t, testEventData.AttachRules.EntityIDs, []string{"HOST-CA78D78BBC6687D3"})
-	assert.Equal(t, testEventData.Source, "OneAgent Operator")
+	assert.Equal(t, "OneAgent Operator", testEventData.Source)
 
 	jsonBuffer, err := json.Marshal(testEventData)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.JSONEq(t, string(jsonBuffer), string(testJSONInput))
 }
 
@@ -44,7 +45,7 @@ func TestSendEvent(t *testing.T) {
 		defer dynatraceServer.Close()
 
 		err := dynatraceClient.SendEvent(nil)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, "no data found in eventData payload", err.Error())
 	})
 	t.Run("SendEvent incomplete event data", func(t *testing.T) {
@@ -52,27 +53,27 @@ func TestSendEvent(t *testing.T) {
 		defer dynatraceServer.Close()
 
 		err := dynatraceClient.SendEvent(&empty)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, "no key set for eventType in eventData payload", err.Error())
 
 		err = dynatraceClient.SendEvent(&eventTypeOnly)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 	t.Run("SendEvent request error", func(t *testing.T) {
 		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, sendEventHandlerError(), "")
 
 		err := dynatraceClient.SendEvent(&empty)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, "no key set for eventType in eventData payload", err.Error())
 
 		err = dynatraceClient.SendEvent(&eventTypeOnly)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, "dynatrace server error 500: error received from server", err.Error())
 
 		dynatraceServer.Close()
 
 		err = dynatraceClient.SendEvent(&eventTypeOnly)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.True(t,
 			// Reason differs between local tests and travis test, so only check main error message
 			strings.HasPrefix(err.Error(),
@@ -107,10 +108,10 @@ func testSendEvent(t *testing.T, dynatraceClient Client) {
 
 		var testEventData EventData
 		err := json.Unmarshal(testValidEventData, &testEventData)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = dynatraceClient.SendEvent(&testEventData)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 	{
 		testInvalidEventData := []byte(`{
@@ -125,10 +126,10 @@ func testSendEvent(t *testing.T, dynatraceClient Client) {
 
 		var testEventData EventData
 		err := json.Unmarshal(testInvalidEventData, &testEventData)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = dynatraceClient.SendEvent(&testEventData)
-		assert.Error(t, err, "no eventType set")
+		require.Error(t, err, "no eventType set")
 	}
 	{
 		testExtraKeysEventData := []byte(`{
@@ -145,10 +146,10 @@ func testSendEvent(t *testing.T, dynatraceClient Client) {
 
 		var testEventData EventData
 		err := json.Unmarshal(testExtraKeysEventData, &testEventData)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = dynatraceClient.SendEvent(&testEventData)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 }
 

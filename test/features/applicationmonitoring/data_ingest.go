@@ -96,8 +96,8 @@ func podHasOnlyDataIngestInitContainer(samplePod *sample.App) features.Func {
 func assessPodHasDataIngestFile(ctx context.Context, t *testing.T, resource *resources.Resources, testPod corev1.Pod) {
 	dataIngestMetadata := getDataIngestMetadataFromPod(ctx, t, resource, testPod)
 
-	assert.Equal(t, dataIngestMetadata.WorkloadKind, "Pod")
-	assert.Equal(t, dataIngestMetadata.WorkloadName, testPod.Name)
+	assert.Equal(t, "Pod", dataIngestMetadata.WorkloadKind)
+	assert.Equal(t, testPod.Name, dataIngestMetadata.WorkloadName)
 }
 
 func deploymentPodsHaveOnlyDataIngestInitContainer(sampleApp *sample.App) features.Func {
@@ -122,8 +122,8 @@ func assessDeploymentHasDataIngestFile(ctx context.Context, t *testing.T, resour
 	return func(pod corev1.Pod) {
 		dataIngestMetadata := getDataIngestMetadataFromPod(ctx, t, resource, pod)
 
-		assert.Equal(t, dataIngestMetadata.WorkloadKind, "Deployment")
-		assert.Equal(t, dataIngestMetadata.WorkloadName, deploymentName)
+		assert.Equal(t, "Deployment", dataIngestMetadata.WorkloadKind)
+		assert.Equal(t, deploymentName, dataIngestMetadata.WorkloadName)
 	}
 }
 

@@ -8,6 +8,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -39,13 +40,13 @@ func TestBuildDynatraceClient(t *testing.T) {
 		}
 		dtc, err := dynatraceClientBuilder.Build()
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, dtc)
 	})
 	t.Run(`BuildDynatraceClient handles nil instance`, func(t *testing.T) {
 		dtc, err := builder{}.Build()
 		assert.Nil(t, dtc)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 	t.Run(`BuildDynatraceClient handles invalid token secret`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
@@ -69,7 +70,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 		dtc, err := dynatraceClientBuilder.Build()
 
 		assert.Nil(t, dtc)
-		assert.Error(t, err)
+		require.Error(t, err)
 
 		dynatraceClientBuilder = builder{
 			apiReader: fakeClient,
@@ -78,7 +79,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 		dtc, err = dynatraceClientBuilder.Build()
 
 		assert.Nil(t, dtc)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 	t.Run(`BuildDynatraceClient handles missing proxy secret`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
@@ -101,7 +102,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 		}
 		dtc, err := dynatraceClientBuilder.Build()
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, dtc)
 	})
 	t.Run(`BuildDynatraceClient handles missing trusted certificate config map`, func(t *testing.T) {
@@ -125,7 +126,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 		}
 		dtc, err := dtf.Build()
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, dtc)
 	})
 }

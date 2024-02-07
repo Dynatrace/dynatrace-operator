@@ -57,7 +57,7 @@ func TestUpdateNamespace(t *testing.T) {
 
 		require.NoError(t, err)
 		require.True(t, updated)
-		assert.Equal(t, 2, len(namespace.Labels))
+		assert.Len(t, namespace.Labels, 2)
 	})
 	t.Run("Overwrite stale entry in labels", func(t *testing.T) {
 		labels := map[string]string{"test": "selector"}
@@ -72,7 +72,7 @@ func TestUpdateNamespace(t *testing.T) {
 
 		require.NoError(t, err)
 		require.True(t, updated)
-		assert.Equal(t, 2, len(namespace.Labels))
+		assert.Len(t, namespace.Labels, 2)
 		assert.Equal(t, dk.Name, namespace.Labels[dtwebhook.InjectionInstanceLabel])
 	})
 	t.Run("Remove stale dynakube entry for no longer matching ns", func(t *testing.T) {
@@ -84,10 +84,9 @@ func TestUpdateNamespace(t *testing.T) {
 		namespace := createNamespace("test-namespace", nsLabels)
 
 		updated, err := updateNamespace(namespace, &dynatracev1beta1.DynaKubeList{Items: []dynatracev1beta1.DynaKube{*movedDk}})
-
 		require.NoError(t, err)
 		require.True(t, updated)
-		assert.Equal(t, 0, len(namespace.Labels))
+		assert.Empty(t, namespace.Labels)
 	})
 	t.Run("Throw error in case of conflicting Dynakubes", func(t *testing.T) {
 		labels := map[string]string{"test": "selector"}
@@ -101,7 +100,7 @@ func TestUpdateNamespace(t *testing.T) {
 
 		_, err := updateNamespace(namespace, &dynatracev1beta1.DynaKubeList{Items: []dynatracev1beta1.DynaKube{*conflictingDk, *dk}})
 
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 	t.Run("Ignore kube namespaces", func(t *testing.T) {
 		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil)
@@ -111,7 +110,7 @@ func TestUpdateNamespace(t *testing.T) {
 
 		require.NoError(t, err)
 		require.False(t, updated)
-		assert.Equal(t, 0, len(namespace.Labels))
+		assert.Empty(t, namespace.Labels)
 	})
 
 	t.Run("Ignore openshift namespaces", func(t *testing.T) {
@@ -122,7 +121,7 @@ func TestUpdateNamespace(t *testing.T) {
 
 		require.NoError(t, err)
 		require.False(t, updated)
-		assert.Equal(t, 0, len(namespace.Labels))
+		assert.Empty(t, namespace.Labels)
 	})
 	t.Run("Double dynakube, 1. ignores openshift namespaces, 2. doesn't", func(t *testing.T) {
 		labels := map[string]string{"test": "selector"}
@@ -138,7 +137,7 @@ func TestUpdateNamespace(t *testing.T) {
 
 		require.NoError(t, err)
 		require.True(t, updated)
-		assert.Equal(t, 2, len(namespace.Labels))
+		assert.Len(t, namespace.Labels, 2)
 		assert.Equal(t, notIgnoreDk.Name, namespace.Labels[dtwebhook.InjectionInstanceLabel])
 	})
 	t.Run("Double dynakube, 1. doesn't, 2. ignores openshift namespaces", func(t *testing.T) {
@@ -155,7 +154,7 @@ func TestUpdateNamespace(t *testing.T) {
 
 		require.NoError(t, err)
 		require.True(t, updated)
-		assert.Equal(t, 2, len(namespace.Labels))
+		assert.Len(t, namespace.Labels, 2)
 		assert.Equal(t, notIgnoreDk.Name, namespace.Labels[dtwebhook.InjectionInstanceLabel])
 	})
 }

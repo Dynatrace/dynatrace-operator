@@ -9,6 +9,7 @@ import (
 	providermock "github.com/Dynatrace/dynatrace-operator/test/mocks/cmd/manager"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCsiCommandBuilder(t *testing.T) {
@@ -68,16 +69,16 @@ func TestCreateCsiRootPath(t *testing.T) {
 	memFs := afero.NewMemMapFs()
 	err := createCsiDataPath(memFs)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	exists, err := afero.Exists(memFs, dtcsi.DataPath)
 
 	assert.True(t, exists)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	stat, err := memFs.Stat(dtcsi.DataPath)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, fs.FileMode(0770), stat.Mode()&fs.FileMode(0770))
 	assert.True(t, stat.IsDir())
 }

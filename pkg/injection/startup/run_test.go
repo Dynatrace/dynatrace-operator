@@ -79,19 +79,19 @@ func TestConsumeErrorIfNecessary(t *testing.T) {
 	t.Run("no error thrown", func(t *testing.T) {
 		runner.env.FailurePolicy = silentPhrase
 		err := runner.Run()
-		assert.Nil(t, err)
+		require.NoError(t, err)
 	})
 	t.Run("error thrown, but consume error", func(t *testing.T) {
 		runner.env.K8NodeName = "" // create artificial error
 		runner.env.FailurePolicy = silentPhrase
 		err := runner.Run()
-		assert.Nil(t, err)
+		require.NoError(t, err)
 	})
 	t.Run("error thrown, but don't consume error", func(t *testing.T) {
 		runner.env.K8NodeName = "" // create artificial error
 		runner.env.FailurePolicy = failPhrase
 		err := runner.Run()
-		assert.NotNil(t, err)
+		require.Error(t, err)
 	})
 }
 
@@ -475,11 +475,11 @@ func TestWriteCurlOptions(t *testing.T) {
 
 	err := runner.configureInstallation()
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	exists, err := afero.Exists(filesystem, "/mnt/share/curl_options.conf")
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, exists)
 }
 
@@ -580,12 +580,12 @@ func assertIfReadOnlyCSIFilesExists(t *testing.T, runner Runner) {
 
 func assertIfFileExists(t *testing.T, fs afero.Fs, path string) {
 	fileInfo, err := fs.Stat(path)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, fileInfo)
 }
 
 func assertIfFileNotExists(t *testing.T, fs afero.Fs, path string) {
 	fileInfo, err := fs.Stat(path)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, fileInfo)
 }

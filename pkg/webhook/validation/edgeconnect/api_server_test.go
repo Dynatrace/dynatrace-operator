@@ -68,7 +68,7 @@ func TestApiServer(t *testing.T) {
 func assertAllowedResponse(t *testing.T, edgeConnect *edgeconnect.EdgeConnect, other ...client.Object) {
 	response := handleRequest(t, edgeConnect, other...)
 	assert.True(t, response.Allowed, "it is a valid apiServer", "apiServer", edgeConnect.Spec.ApiServer)
-	assert.Equal(t, 0, len(response.Warnings))
+	assert.Empty(t, response.Warnings)
 }
 
 func assertDeniedResponse(t *testing.T, errMessages []string, edgeConnect *edgeconnect.EdgeConnect, other ...client.Object) {

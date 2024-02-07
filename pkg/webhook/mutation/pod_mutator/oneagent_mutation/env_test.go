@@ -69,9 +69,9 @@ func createContainerWithPreloadEnv(existingPath string) *corev1.Container {
 
 func verifyContainerWithPreloadEnv(t *testing.T, container *corev1.Container, expectedPath string) {
 	require.NotEmpty(t, container.Env)
-	env := env.FindEnvVar(container.Env, preloadEnv)
-	require.NotNil(t, env)
-	assert.Contains(t, env.Value, expectedPath)
+	containerEnv := env.FindEnvVar(container.Env, preloadEnv)
+	require.NotNil(t, containerEnv)
+	assert.Contains(t, containerEnv.Value, expectedPath)
 }
 
 func TestAddNetworkZoneEnv(t *testing.T) {
@@ -82,8 +82,8 @@ func TestAddNetworkZoneEnv(t *testing.T) {
 		addNetworkZoneEnv(container, networkZone)
 
 		require.Len(t, container.Env, 1)
-		assert.Equal(t, container.Env[0].Name, networkZoneEnv)
-		assert.Equal(t, container.Env[0].Value, networkZone)
+		assert.Equal(t, networkZoneEnv, container.Env[0].Name)
+		assert.Equal(t, networkZone, container.Env[0].Value)
 	})
 }
 

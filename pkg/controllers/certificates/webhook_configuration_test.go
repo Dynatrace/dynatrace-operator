@@ -46,7 +46,7 @@ func TestGetClientConfigsFromMutatingWebhook(t *testing.T) {
 		clientConfigs := getClientConfigsFromMutatingWebhook(createTestMutatingWebhookConfig(t))
 
 		assert.NotNil(t, clientConfigs)
-		assert.Equal(t, expectedClientConfigs, len(clientConfigs))
+		assert.Len(t, clientConfigs, expectedClientConfigs)
 	})
 }
 
@@ -61,6 +61,6 @@ func TestGetClientConfigsFromValidatingWebhook(t *testing.T) {
 		clientConfigs := getClientConfigsFromValidatingWebhook(createTestValidatingWebhookConfig(t))
 
 		assert.NotNil(t, clientConfigs)
-		assert.Equal(t, expectedClientConfigs, len(clientConfigs))
+		assert.Len(t, clientConfigs, expectedClientConfigs)
 	})
 }

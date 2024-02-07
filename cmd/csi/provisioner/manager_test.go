@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCsiDriverManagerProvider(t *testing.T) {
@@ -39,7 +40,7 @@ func TestCsiDriverManagerProvider(t *testing.T) {
 
 		err := operatorMgrProvider.addHealthzCheck(mockMgr)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		mockMgr.AssertCalled(t, addHealthzCheck, livezEndpointName, mock.AnythingOfType("healthz.Checker"))
 
 		expectedError := errors.New("healthz error")
@@ -48,7 +49,7 @@ func TestCsiDriverManagerProvider(t *testing.T) {
 
 		err = operatorMgrProvider.addHealthzCheck(mockMgr)
 
-		assert.EqualError(t, err, expectedError.Error())
+		require.EqualError(t, err, expectedError.Error())
 		mockMgr.AssertCalled(t, addHealthzCheck, mock.Anything, mock.Anything)
 	})
 }

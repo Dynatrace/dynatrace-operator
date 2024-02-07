@@ -63,16 +63,16 @@ func TestReconcile(t *testing.T) {
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
 		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
-		assert.Nil(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, result)
 
 		// delete node from kube api
 		err = fakeClient.Delete(ctx, node)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// run another request reconcile
 		result, err = ctrl.Reconcile(ctx, createReconcileRequest("node1"))
-		assert.Nil(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, result)
 
 		var cm corev1.ConfigMap
@@ -81,7 +81,7 @@ func TestReconcile(t *testing.T) {
 		nodesCache := &Cache{Obj: &cm}
 
 		_, err = nodesCache.Get("node1")
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("Create two nodes and then delete one", func(t *testing.T) {
@@ -97,11 +97,11 @@ func TestReconcile(t *testing.T) {
 
 		// delete node from kube api
 		err := fakeClient.Delete(ctx, node1)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// run another request reconcile
 		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
-		assert.Nil(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, result)
 
 		var cm corev1.ConfigMap
@@ -110,9 +110,9 @@ func TestReconcile(t *testing.T) {
 		nodesCache := &Cache{Obj: &cm}
 
 		_, err = nodesCache.Get("node1")
-		assert.Error(t, err)
+		require.Error(t, err)
 		_, err = nodesCache.Get("node2")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("Node has taint", func(t *testing.T) {
@@ -123,7 +123,7 @@ func TestReconcile(t *testing.T) {
 		// Get node 1
 		node1 := &corev1.Node{}
 		err := fakeClient.Get(context.TODO(), client.ObjectKey{Name: "node1"}, node1)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		reconcileAllNodes(t, ctrl, fakeClient)
 		// Add taint that makes it unschedulable
@@ -131,19 +131,19 @@ func TestReconcile(t *testing.T) {
 			{Key: "ToBeDeletedByClusterAutoscaler"},
 		}
 		err = fakeClient.Update(context.TODO(), node1)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		result, err := ctrl.Reconcile(context.TODO(), createReconcileRequest("node1"))
 		assert.NotNil(t, result)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Get node from cache
 		c, err := ctrl.getCache(ctx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, c)
 
 		node, err := c.Get("node1")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, node)
 
 		// Check if LastMarkedForTermination Timestamp is set to current time
@@ -162,7 +162,7 @@ func TestReconcile(t *testing.T) {
 
 		reconcileAllNodes(t, ctrl, fakeClient)
 
-		assert.Error(t, ctrl.reconcileNodeDeletion(ctx, "node1"), ErrNotFound)
+		require.ErrorIs(t, ctrl.reconcileNodeDeletion(ctx, "node1"), ErrNotFound)
 	})
 
 	t.Run("Remove host from cache even if server error: host not found", func(t *testing.T) {
@@ -175,16 +175,16 @@ func TestReconcile(t *testing.T) {
 
 		reconcileAllNodes(t, ctrl, fakeClient)
 
-		assert.NoError(t, ctrl.reconcileNodeDeletion(ctx, "node1"))
+		require.NoError(t, ctrl.reconcileNodeDeletion(ctx, "node1"))
 
 		// Get node from cache
 		c, err := ctrl.getCache(ctx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, c)
 
 		// should return not found for key inside configmap
 		_, err = c.Get("node1")
-		assert.Error(t, err, ErrNotFound)
+		require.ErrorIs(t, err, ErrNotFound)
 	})
 
 	t.Run("Handle outdated cache", func(t *testing.T) {
@@ -206,10 +206,10 @@ func TestReconcile(t *testing.T) {
 		// delete node from kube api
 		node1 := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}}
 		err := fakeClient.Delete(ctx, node1)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// run another request reconcile
-		assert.NoError(t, ctrl.handleOutdatedCache(ctx, nodesCache))
+		require.NoError(t, ctrl.handleOutdatedCache(ctx, nodesCache))
 	})
 }
 
@@ -279,7 +279,7 @@ func reconcileAllNodes(t *testing.T, ctrl *Controller, fakeClient client.Client)
 
 	for _, clusterNode := range nodeList.Items {
 		result, err := ctrl.Reconcile(context.TODO(), createReconcileRequest(clusterNode.Name))
-		assert.Nil(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, result)
 	}
 }

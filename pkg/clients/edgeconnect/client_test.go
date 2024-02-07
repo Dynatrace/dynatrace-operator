@@ -27,7 +27,7 @@ func TestNewClient(t *testing.T) {
 		WithBaseURL("http://test.com"),
 		WithTokenURL("http://test.com/token"),
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, client)
 }
 
@@ -38,14 +38,14 @@ func TestCreateEdgeConnect(t *testing.T) {
 
 		resp, err := edgeConnectClient.CreateEdgeConnect("InternalServices", []string{"*.internal.org"}, "dt0s02.AIOUP56P")
 		require.NoError(t, err)
-		assert.Equal(t, resp.Name, "InternalServices")
+		assert.Equal(t, "InternalServices", resp.Name)
 	})
 	t.Run("create basic edge connect without name returns error", func(t *testing.T) {
 		edgeConnectServer, edgeConnectClient := createTestEdgeConnectServer(t, edgeConnectCreateServerHandler(true))
 		defer edgeConnectServer.Close()
 
 		_, err := edgeConnectClient.CreateEdgeConnect("", []string{"*.internal.org"}, "dt0s02.AIOUP56P")
-		assert.Error(t, err, "edgeconnect server error 400: Constraints violated.")
+		require.Error(t, err, "edgeconnect server error 400: Constraints violated.")
 	})
 }
 
@@ -56,7 +56,7 @@ func TestGetEdgeConnect(t *testing.T) {
 
 		resp, err := edgeConnectClient.GetEdgeConnect("348b4cd9-ba31-4670-9c45-9125a7d87439")
 		require.NoError(t, err)
-		assert.Equal(t, resp.Name, "InternalServices")
+		assert.Equal(t, "InternalServices", resp.Name)
 	})
 
 	t.Run("get edge connect with wrong edge connect id", func(t *testing.T) {
@@ -64,7 +64,7 @@ func TestGetEdgeConnect(t *testing.T) {
 		defer edgeConnectServer.Close()
 
 		_, err := edgeConnectClient.GetEdgeConnect("not-found")
-		assert.Error(t, err, http.StatusBadRequest)
+		require.Error(t, err, http.StatusBadRequest)
 	})
 }
 
@@ -74,7 +74,7 @@ func TestDeleteEdgeConnect(t *testing.T) {
 		defer edgeConnectServer.Close()
 
 		err := edgeConnectClient.DeleteEdgeConnect("348b4cd9-ba31-4670-9c45-9125a7d87439")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("delete edge connect with wrong edge connect id", func(t *testing.T) {
@@ -82,7 +82,7 @@ func TestDeleteEdgeConnect(t *testing.T) {
 		defer edgeConnectServer.Close()
 
 		err := edgeConnectClient.DeleteEdgeConnect("not-found")
-		assert.Error(t, err, http.StatusBadRequest)
+		require.Error(t, err, http.StatusBadRequest)
 	})
 }
 
@@ -92,7 +92,7 @@ func TestUpdateEdgeConnect(t *testing.T) {
 		defer edgeConnectServer.Close()
 
 		err := edgeConnectClient.UpdateEdgeConnect(EdgeConnectID, "test_name", []string{""}, "")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("update edge connect returns error", func(t *testing.T) {
@@ -100,7 +100,7 @@ func TestUpdateEdgeConnect(t *testing.T) {
 		defer edgeConnectServer.Close()
 
 		err := edgeConnectClient.UpdateEdgeConnect("", "test_name", []string{""}, "")
-		assert.Error(t, err, http.StatusBadRequest)
+		require.Error(t, err, http.StatusBadRequest)
 	})
 }
 

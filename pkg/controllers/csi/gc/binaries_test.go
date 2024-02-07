@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -33,9 +34,9 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 
 		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID)
 
-		assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
-		assert.Equal(t, float64(0), testutil.ToFloat64(foldersRemovedMetric))
-		assert.Equal(t, float64(0), testutil.ToFloat64(reclaimedMemoryMetric))
+		assert.InDelta(t, 1, testutil.ToFloat64(gcRunsMetric), 0.01)
+		assert.InDelta(t, 0, testutil.ToFloat64(foldersRemovedMetric), 0.01)
+		assert.InDelta(t, 0, testutil.ToFloat64(reclaimedMemoryMetric), 0.01)
 	})
 	t.Run("succeeds when no version available", func(t *testing.T) {
 		resetMetrics()
@@ -45,9 +46,9 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 
 		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID)
 
-		assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
-		assert.Equal(t, float64(0), testutil.ToFloat64(foldersRemovedMetric))
-		assert.Equal(t, float64(0), testutil.ToFloat64(reclaimedMemoryMetric))
+		assert.InDelta(t, 1, testutil.ToFloat64(gcRunsMetric), 0.01)
+		assert.InDelta(t, 0, testutil.ToFloat64(foldersRemovedMetric), 0.01)
+		assert.InDelta(t, 0, testutil.ToFloat64(reclaimedMemoryMetric), 0.01)
 	})
 	t.Run("remove unused", func(t *testing.T) {
 		resetMetrics()
@@ -57,8 +58,8 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 
 		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID)
 
-		assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
-		assert.Equal(t, float64(3), testutil.ToFloat64(foldersRemovedMetric))
+		assert.InDelta(t, 1, testutil.ToFloat64(gcRunsMetric), 0.01)
+		assert.InDelta(t, 3, testutil.ToFloat64(foldersRemovedMetric), 0.01)
 
 		gc.assertVersionNotExists(t, testVersion1, testVersion3)
 	})
@@ -70,9 +71,9 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 
 		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID)
 
-		assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
-		assert.Equal(t, float64(0), testutil.ToFloat64(foldersRemovedMetric))
-		assert.Equal(t, float64(0), testutil.ToFloat64(reclaimedMemoryMetric))
+		assert.InDelta(t, 1, testutil.ToFloat64(gcRunsMetric), 0.01)
+		assert.InDelta(t, 0, testutil.ToFloat64(foldersRemovedMetric), 0.01)
+		assert.InDelta(t, 0, testutil.ToFloat64(reclaimedMemoryMetric), 0.01)
 
 		gc.assertVersionExists(t, testVersion1, testVersion2, testVersion3)
 	})
@@ -83,11 +84,11 @@ func TestBinaryGarbageCollector_getUsedVersions(t *testing.T) {
 	gc.mockUsedVersions(testVersion1, testVersion2, testVersion3)
 
 	usedVersions, err := gc.db.GetUsedVersions(context.TODO(), testTenantUUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.NotNil(t, usedVersions)
-	assert.Equal(t, len(usedVersions), 3)
-	assert.NoError(t, err)
+	assert.Len(t, usedVersions, 3)
+	require.NoError(t, err)
 }
 
 func NewMockGarbageCollector() *CSIGarbageCollector {
@@ -117,7 +118,7 @@ func (gc *CSIGarbageCollector) assertVersionNotExists(t *testing.T, versions ...
 	for _, version := range versions {
 		exists, err := afero.Exists(gc.fs, filepath.Join(testBinaryDir, version))
 		assert.False(t, exists)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 }
 
@@ -125,7 +126,7 @@ func (gc *CSIGarbageCollector) assertVersionExists(t *testing.T, versions ...str
 	for _, version := range versions {
 		exists, err := afero.Exists(gc.fs, filepath.Join(testBinaryDir, version))
 		assert.True(t, exists)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 }
 

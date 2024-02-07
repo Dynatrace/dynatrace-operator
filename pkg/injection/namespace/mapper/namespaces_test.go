@@ -8,6 +8,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMatchForNamespaceNothingEverything(t *testing.T) {
@@ -26,7 +27,7 @@ func TestMatchForNamespaceNothingEverything(t *testing.T) {
 		nm := NewNamespaceMapper(clt, clt, "dynatrace", namespace)
 
 		updated, err := nm.updateNamespace(context.Background())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, updated)
 	})
 }
@@ -42,9 +43,9 @@ func TestMapFromNamespace(t *testing.T) {
 
 		updated, err := nm.MapFromNamespace(context.Background())
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, updated)
-		assert.Equal(t, 2, len(nm.targetNs.Labels))
+		assert.Len(t, nm.targetNs.Labels, 2)
 	})
 
 	t.Run("Error, 2 dynakubes point to same namespace", func(t *testing.T) {
@@ -54,7 +55,7 @@ func TestMapFromNamespace(t *testing.T) {
 
 		updated, err := nm.MapFromNamespace(context.Background())
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.False(t, updated)
 	})
 
@@ -68,9 +69,9 @@ func TestMapFromNamespace(t *testing.T) {
 
 		updated, err := nm.MapFromNamespace(context.Background())
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, updated)
-		assert.Equal(t, 0, len(nm.targetNs.Labels))
+		assert.Empty(t, nm.targetNs.Labels)
 	})
 
 	t.Run("Ignore kube namespaces", func(t *testing.T) {
@@ -81,9 +82,9 @@ func TestMapFromNamespace(t *testing.T) {
 
 		updated, err := nm.MapFromNamespace(context.Background())
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.False(t, updated)
-		assert.Equal(t, 0, len(nm.targetNs.Labels))
+		assert.Empty(t, nm.targetNs.Labels)
 	})
 
 	t.Run("Ignore openshift namespaces", func(t *testing.T) {
@@ -94,9 +95,9 @@ func TestMapFromNamespace(t *testing.T) {
 
 		updated, err := nm.MapFromNamespace(context.Background())
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.False(t, updated)
-		assert.Equal(t, 0, len(nm.targetNs.Labels))
+		assert.Empty(t, nm.targetNs.Labels)
 	})
 
 	t.Run("ComponentFeature flag for monitoring system namespaces", func(t *testing.T) {
@@ -110,8 +111,8 @@ func TestMapFromNamespace(t *testing.T) {
 
 		updated, err := nm.MapFromNamespace(context.Background())
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, updated)
-		assert.Equal(t, 1, len(nm.targetNs.Labels))
+		assert.Len(t, nm.targetNs.Labels, 1)
 	})
 }

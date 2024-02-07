@@ -64,7 +64,7 @@ func testLogCollection(t *testing.T, collectManagedLogs bool) {
 
 	require.NoError(t, logCollector.Do())
 
-	assert.NoError(t, supportArchive.Close())
+	require.NoError(t, supportArchive.Close())
 
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
 	require.NoError(t, err)
@@ -91,9 +91,9 @@ func testLogCollection(t *testing.T, collectManagedLogs bool) {
 	}
 
 	if collectManagedLogs {
-		assert.Equal(t, 16, len(zipReader.File))
+		assert.Len(t, zipReader.File, 16)
 	} else {
-		assert.Equal(t, 8, len(zipReader.File))
+		assert.Len(t, zipReader.File, 8)
 	}
 }
 
@@ -121,7 +121,7 @@ func TestLogCollectorPodListError(t *testing.T) {
 }
 
 func assertNoErrorOnClose(t *testing.T, closer io.Closer) {
-	assert.NoError(t, closer.Close())
+	require.NoError(t, closer.Close())
 }
 
 func TestLogCollectorGetPodFail(t *testing.T) {

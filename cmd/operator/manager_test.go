@@ -12,6 +12,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
@@ -93,7 +94,7 @@ func testHealthzAndReadyz(t *testing.T, createProviderAndRunManager func(mockMgr
 
 	err := createProviderAndRunManager(mockMgr)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	mockMgr.AssertCalled(t, addHealthzCheckMethodName, livezEndpointName, mock.AnythingOfType(checkerArgumentType))
 
 	expectedHealthzError := errors.New("healthz error")
@@ -103,7 +104,7 @@ func testHealthzAndReadyz(t *testing.T, createProviderAndRunManager func(mockMgr
 
 	err = createProviderAndRunManager(mockMgr)
 
-	assert.EqualError(t, err, expectedHealthzError.Error())
+	require.EqualError(t, err, expectedHealthzError.Error())
 	mockMgr.AssertCalled(t, addHealthzCheckMethodName, mock.Anything, mock.Anything)
 }
 
@@ -114,7 +115,7 @@ func testBootstrapHealthzAndReadyz(t *testing.T, createProviderAndRunManager fun
 
 	err := createProviderAndRunManager(mockMgr)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	mockMgr.AssertCalled(t, addHealthzCheckMethodName, livezEndpointName, mock.AnythingOfType(checkerArgumentType))
 
 	expectedHealthzError := errors.New("healthz error")
@@ -124,6 +125,6 @@ func testBootstrapHealthzAndReadyz(t *testing.T, createProviderAndRunManager fun
 
 	err = createProviderAndRunManager(mockMgr)
 
-	assert.EqualError(t, err, expectedHealthzError.Error())
+	require.EqualError(t, err, expectedHealthzError.Error())
 	mockMgr.AssertCalled(t, addHealthzCheckMethodName, mock.Anything, mock.Anything)
 }

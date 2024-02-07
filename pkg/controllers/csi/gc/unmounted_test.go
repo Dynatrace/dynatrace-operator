@@ -62,7 +62,7 @@ func TestGetUnmountedVolumes(t *testing.T) {
 
 		unmountedVolumes, err := gc.getUnmountedVolumes(testTenantUUID)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		require.Len(t, unmountedVolumes, 2)
 		assert.Equal(t, testVersion1, unmountedVolumes[0].Name())
 		assert.Equal(t, testVersion2, unmountedVolumes[1].Name())

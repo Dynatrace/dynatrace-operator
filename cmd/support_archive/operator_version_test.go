@@ -29,7 +29,7 @@ func TestVersionCollector(t *testing.T) {
 	require.NoError(t, versionCollector.Do())
 
 	err := archive.Close()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, logBuffer.String(), "Storing operator version")
 
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))

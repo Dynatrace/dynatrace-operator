@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -46,7 +47,7 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 		defer dynatraceServer.Close()
 
 		connectionInfo, err := dynatraceClient.GetOneAgentConnectionInfo()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
 		assert.Equal(t, expectedOneAgentConnectionInfo, connectionInfo)
@@ -57,7 +58,7 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 		defer dynatraceServer.Close()
 
 		connectionInfo, err := dynatraceClient.GetOneAgentConnectionInfo()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
 		assert.Equal(t, expectedOneAgentConnectionInfo, connectionInfo)
@@ -67,7 +68,7 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 		defer dynatraceServer.Close()
 
 		connectionInfo, err := dynatraceClient.GetOneAgentConnectionInfo()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
 		assert.Equal(t, expectedOneAgentConnectionInfo, connectionInfo)
@@ -83,7 +84,7 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 		defer dynatraceServer.Close()
 
 		connectionInfo, err := dynatraceClient.GetOneAgentConnectionInfo()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
 		assert.Equal(t, expectedOneAgentConnectionInfo, connectionInfo)
@@ -93,7 +94,7 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 		defer dynatraceServer.Close()
 
 		connectionInfo, err := dynatraceClient.GetOneAgentConnectionInfo()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
 		assert.Equal(t, expectedOneAgentConnectionInfo, connectionInfo)
@@ -103,7 +104,7 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 		defer faultyDynatraceServer.Close()
 
 		connectionInfo, err := faultyDynatraceClient.GetOneAgentConnectionInfo()
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, "invalid character 'h' in literal true (expecting 'r')", err.Error())
 
 		assert.NotNil(t, connectionInfo)
@@ -114,7 +115,7 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 		defer faultyDynatraceServer.Close()
 
 		connectionInfo, err := faultyDynatraceClient.GetOneAgentConnectionInfo()
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.NotNil(t, connectionInfo)
 		assert.Equal(t, OneAgentConnectionInfo{}, connectionInfo)
 

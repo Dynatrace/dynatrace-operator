@@ -43,7 +43,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		}
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{})
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, result)
 	})
 	t.Run(`Create works with minimal setup and interface`, func(t *testing.T) { // keep as integration test?
@@ -64,7 +64,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 		})
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, result)
 	})
 	t.Run(`Create reconciles proxy secret`, func(t *testing.T) {
@@ -94,7 +94,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 		})
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, result)
 
 		var proxySecret corev1.Secret
@@ -102,7 +102,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		name := proxy.BuildSecretName(testName)
 		err = controller.client.Get(context.Background(), client.ObjectKey{Name: name, Namespace: testNamespace}, &proxySecret)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, proxySecret)
 	})
 	t.Run(`reconciles phase change correctly`, func(t *testing.T) {
@@ -142,14 +142,14 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			testUID,
 			mock.AnythingOfType("string"))
 
-		assert.NoError(t, err)
-		assert.Equal(t, false, result.Requeue)
+		require.NoError(t, err)
+		assert.False(t, result.Requeue)
 
 		var activeGateStatefulSet appsv1.StatefulSet
 
-		assert.NoError(t,
+		require.NoError(t,
 			controller.client.Get(context.Background(), client.ObjectKey{Name: testName + "-activegate", Namespace: testNamespace}, &activeGateStatefulSet))
-		assert.NoError(t, controller.client.Get(context.Background(), client.ObjectKey{Name: testName, Namespace: testNamespace}, instance))
+		require.NoError(t, controller.client.Get(context.Background(), client.ObjectKey{Name: testName, Namespace: testNamespace}, instance))
 		assert.Equal(t, status.Running, instance.Status.Phase)
 	})
 }
@@ -172,16 +172,16 @@ func TestReconcileOnlyOneTokenProvided_Reconcile(t *testing.T) {
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 		})
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, result)
 
 		var secret corev1.Secret
 
 		err = controller.client.Get(context.Background(), client.ObjectKey{Name: testName, Namespace: testNamespace}, &secret)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, secret)
-		assert.Equal(t, string(secret.Data[dtclient.DynatraceApiToken]), testAPIToken)
+		assert.Equal(t, testAPIToken, string(secret.Data[dtclient.DynatraceApiToken]))
 	})
 }
 func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
@@ -206,11 +206,11 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	}
 
 	_, err := controller.Reconcile(context.Background(), request)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Reconcile twice since routing service is created before the stateful set
 	_, err = controller.Reconcile(context.Background(), request)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	routingCapability := capability.NewRoutingCapability(instance)
 	stsName := capability.CalculateStatefulSetName(routingCapability, testName)
@@ -220,7 +220,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 		Namespace: testNamespace,
 		Name:      stsName,
 	}, routingSts)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, routingSts)
 
 	routingSvc := &corev1.Service{}
@@ -228,7 +228,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 		Namespace: testNamespace,
 		Name:      testName + "-" + routingCapability.ShortName(),
 	}, routingSvc)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, routingSvc)
 
 	err = controller.client.Get(context.Background(), client.ObjectKey{Name: instance.Name, Namespace: instance.Namespace}, instance)
@@ -239,20 +239,20 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = controller.Reconcile(context.Background(), request)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	err = controller.client.Get(context.Background(), client.ObjectKey{
 		Namespace: testNamespace,
 		Name:      stsName,
 	}, routingSts)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))
 
 	err = controller.client.Get(context.Background(), client.ObjectKey{
 		Namespace: testNamespace,
 		Name:      testName + "-" + routingCapability.ShortName(),
 	}, routingSvc)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))
 }
 func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
@@ -287,11 +287,11 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	}
 
 	_, err := r.Reconcile(context.Background(), request)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Reconcile twice since routing service is created before the stateful set
 	_, err = r.Reconcile(context.Background(), request)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	multiCapability := capability.NewMultiCapability(instance)
 	stsName := capability.CalculateStatefulSetName(multiCapability, testName)
@@ -301,7 +301,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 		Namespace: testNamespace,
 		Name:      stsName,
 	}, routingSts)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, routingSts)
 
 	routingSvc := &corev1.Service{}
@@ -309,7 +309,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 		Namespace: testNamespace,
 		Name:      testName + "-" + multiCapability.ShortName(),
 	}, routingSvc)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, routingSvc)
 
 	err = r.client.Get(context.Background(), client.ObjectKey{Name: instance.Name, Namespace: instance.Namespace}, instance)
@@ -320,20 +320,20 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = r.Reconcile(context.Background(), request)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	err = r.client.Get(context.Background(), client.ObjectKey{
 		Namespace: testNamespace,
 		Name:      stsName,
 	}, routingSts)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))
 
 	err = r.client.Get(context.Background(), client.ObjectKey{
 		Namespace: testNamespace,
 		Name:      testName + "-" + multiCapability.ShortName(),
 	}, routingSvc)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))
 }
 
@@ -366,7 +366,7 @@ func TestAPIError(t *testing.T) {
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 		})
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, fastUpdateInterval, result.RequeueAfter)
 	})
 	t.Run("should return error result on 429", func(t *testing.T) {
@@ -377,7 +377,7 @@ func TestAPIError(t *testing.T) {
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 		})
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, fastUpdateInterval, result.RequeueAfter)
 	})
 }

@@ -198,10 +198,10 @@ func assertExpectedModulesAreActive(t *testing.T, log string) {
 	}
 
 	head := strings.SplitAfter(log, "[<collector.modules>, ModulesManager] Modules:")
-	require.Equal(t, 2, len(head), "list of AG active modules not found")
+	require.Len(t, head, 2, "list of AG active modules not found")
 
 	tail := strings.SplitAfter(head[1], "Lifecycle listeners:")
-	require.Equal(t, 2, len(head), "list of AG active modules not found")
+	require.Len(t, head, 2, "list of AG active modules not found")
 
 	/*
 		Expected log messages of the Gateway process:

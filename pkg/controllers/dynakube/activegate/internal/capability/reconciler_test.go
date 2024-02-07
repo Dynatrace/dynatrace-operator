@@ -158,7 +158,7 @@ func TestReconcile(t *testing.T) {
 		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, &service)
 
 		assert.NotNil(t, service)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 	t.Run(`service does not get created when missing capabilities`, func(t *testing.T) {
 		clt := createClient()
@@ -179,7 +179,7 @@ func TestReconcile(t *testing.T) {
 		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, &service)
 
 		assert.Empty(t, service)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 }
 

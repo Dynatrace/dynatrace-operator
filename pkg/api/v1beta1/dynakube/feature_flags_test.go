@@ -39,20 +39,20 @@ func TestCreateDynakubeWithAnnotation(t *testing.T) {
 	dynakube := createDynakubeWithAnnotation("test", "true")
 
 	assert.Contains(t, dynakube.Annotations, "test")
-	assert.Equal(t, dynakube.Annotations["test"], "true")
+	assert.Equal(t, "true", dynakube.Annotations["test"])
 
 	dynakube = createDynakubeWithAnnotation("other test", "false")
 
 	assert.Contains(t, dynakube.Annotations, "other test")
-	assert.Equal(t, dynakube.Annotations["other test"], "false")
+	assert.Equal(t, "false", dynakube.Annotations["other test"])
 	assert.NotContains(t, dynakube.Annotations, "test")
 
 	dynakube = createDynakubeWithAnnotation("test", "true", "other test", "false")
 
 	assert.Contains(t, dynakube.Annotations, "other test")
-	assert.Equal(t, dynakube.Annotations["other test"], "false")
+	assert.Equal(t, "false", dynakube.Annotations["other test"])
 	assert.Contains(t, dynakube.Annotations, "test")
-	assert.Equal(t, dynakube.Annotations["test"], "true")
+	assert.Equal(t, "true", dynakube.Annotations["test"])
 }
 
 func testDeprecateDisableAnnotation(t *testing.T,
@@ -243,7 +243,7 @@ func TestDefaultEnabledFeatureFlags(t *testing.T) {
 
 	assert.True(t, dynakube.FeatureAutomaticKubernetesApiMonitoring())
 	assert.True(t, dynakube.FeatureAutomaticInjection())
-	assert.True(t, dynakube.FeatureInjectionFailurePolicy() == "silent")
+	assert.Equal(t, "silent", dynakube.FeatureInjectionFailurePolicy())
 
 	assert.False(t, dynakube.FeatureDisableActiveGateUpdates())
 	assert.False(t, dynakube.FeatureDisableMetadataEnrichment())

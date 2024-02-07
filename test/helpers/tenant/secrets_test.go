@@ -28,7 +28,7 @@ func TestNewFromConfig(t *testing.T) {
 
 	tenantSecrets, err := newFromConfig(fs, path.Join(secretsPath, "Secrets-test.yaml"))
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "apiUrl", tenantSecrets.ApiUrl)
 	assert.Equal(t, "apiToken", tenantSecrets.ApiToken)
 }

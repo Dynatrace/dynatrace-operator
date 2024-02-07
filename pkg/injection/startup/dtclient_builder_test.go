@@ -17,7 +17,7 @@ func TestCreateClient(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, client)
 
-		assert.Len(t, builder.options, 0)
+		assert.Empty(t, builder.options)
 	})
 
 	t.Run(`multiple options`, func(t *testing.T) {
