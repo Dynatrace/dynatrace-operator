@@ -30,8 +30,6 @@ runs:
       shell: bash
       run: |
         hack/build/ci/third-party-licenses.sh
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
     - name: Build target
       uses: docker/build-push-action@4a13e500e55cf31b7a5d59a38ab2040ab0f42f56 # v5.1.0
       with:
