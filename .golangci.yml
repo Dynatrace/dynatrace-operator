@@ -244,8 +244,9 @@ linters:
   - whitespace                # Tool for detection of leading and trailing whitespace.
   - wsl                       # Add or remove empty lines.
   - zerologlint               # Detects the wrong usage of zerolog that a user forgets to dispatch with Send or Msg.
+  - thelper           # Thelper detects tests helpers which is not start with t.Helper() method.
 
-# Blocked:
+    # Blocked:
 # false positive -> https://github.com/timakin/bodyclose/issues/51
 # - bodyclose         # Checks whether HTTP response body is closed successfully.
 
@@ -282,7 +283,6 @@ linters:
 # - protogetter       # Reports direct reads from proto message fields when getters should be used.
 # - rowserrcheck      # Checks whether Rows.Err of rows is checked successfully.
 # - sqlclosecheck     # Checks that sql.Rows and sql.Stmt are closed.
-# - thelper           # Thelper detects tests helpers which is not start with t.Helper() method.
 # - wrapcheck         # Checks that errors returned from external packages are wrapped.
 # TODO: Need to discuss/decide/remove
 # - exhaustive     # Check exhaustiveness of enum switch statements.
@@ -310,6 +310,7 @@ issues:
       linters:
         - noctx
         - wsl
+        - thelper
     - path: _(test|gen)\.go
       linters:
         - dupl
