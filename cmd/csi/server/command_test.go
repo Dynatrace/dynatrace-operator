@@ -48,5 +48,5 @@ func TestCsiCommand(t *testing.T) {
 	require.NoError(t, err)
 
 	// Logging a newline because otherwise `go test` doesn't recognize the result
-	logger.Factory.GetLogger("csi command").Info("")
+	logger.Get().WithName("csi command").Info("")
 }

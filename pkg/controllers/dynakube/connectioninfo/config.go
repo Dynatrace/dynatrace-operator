@@ -19,5 +19,5 @@ const (
 )
 
 var (
-	log = logger.Factory.GetLogger("dynakube-connectioninfo")
+	log = logger.Get().WithName("dynakube-connectioninfo")
 )

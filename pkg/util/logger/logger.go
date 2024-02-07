@@ -2,6 +2,7 @@ package logger
 
 import (
 	"os"
+	"sync"
 
 	"github.com/go-logr/logr"
 	"go.uber.org/zap"
@@ -9,47 +10,35 @@ import (
 	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-type logSink struct {
-	infoLogger  logr.Logger
-	errorLogger logr.Logger
+const LogLevelEnv = "LOG_LEVEL"
+
+var (
+	baseLogger     logr.Logger
+	baseLoggerOnce sync.Once
+)
+
+// Get returns a new, unnamed logger configured with the basics we need for operator logs which can be used as a blueprint for
+// derived loggers int the operator components.
+func Get() logr.Logger {
+	baseLoggerOnce.Do(func() {
+		// its important to create only one "main" logger to avoid excessive memory usage, creating a full logger is rather expensive,
+		// deriving other loggers by WithName is rather cheap
+		config := zap.NewProductionEncoderConfig()
+		config.EncodeTime = zapcore.ISO8601TimeEncoder
+		config.StacktraceKey = stacktraceKey
+		baseLogger = ctrlzap.New(ctrlzap.WriteTo(NewPrettyLogWriter()), ctrlzap.Encoder(zapcore.NewJSONEncoder(config)), ctrlzap.Level(readLogLevelFromEnv()))
+	})
+
+	return baseLogger
 }
 
-func newLogger() logr.Logger {
-	config := zap.NewProductionEncoderConfig()
-	config.EncodeTime = zapcore.ISO8601TimeEncoder
+func readLogLevelFromEnv() zapcore.Level {
+	envLevel := os.Getenv(LogLevelEnv)
 
-	return logr.New(
-		logSink{
-			infoLogger:  ctrlzap.New(ctrlzap.WriteTo(os.Stdout), ctrlzap.Encoder(zapcore.NewJSONEncoder(config))),
-			errorLogger: ctrlzap.New(ctrlzap.WriteTo(&errorPrettify{}), ctrlzap.Encoder(zapcore.NewJSONEncoder(config))),
-		},
-	)
-}
-
-func (dtl logSink) Init(logr.RuntimeInfo) {}
-
-func (dtl logSink) Info(_ int, msg string, keysAndValues ...any) {
-	dtl.infoLogger.Info(msg, keysAndValues...)
-}
-
-func (dtl logSink) Enabled(int) bool {
-	return dtl.infoLogger.Enabled()
-}
-
-func (dtl logSink) Error(err error, msg string, keysAndValues ...any) {
-	dtl.errorLogger.Error(err, msg, keysAndValues...)
-}
-
-func (dtl logSink) WithValues(keysAndValues ...any) logr.LogSink {
-	return logSink{
-		infoLogger:  dtl.infoLogger.WithValues(keysAndValues...),
-		errorLogger: dtl.errorLogger.WithValues(keysAndValues...),
+	level, err := zapcore.ParseLevel(envLevel)
+	if err != nil {
+		level = zapcore.DebugLevel
 	}
-}
 
-func (dtl logSink) WithName(name string) logr.LogSink {
-	return logSink{
-		infoLogger:  dtl.infoLogger.WithName(name),
-		errorLogger: dtl.errorLogger.WithName(name),
-	}
+	return level
 }

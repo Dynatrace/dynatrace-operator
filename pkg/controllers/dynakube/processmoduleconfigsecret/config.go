@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("dynakube-processmoduleconfigsecret")
+	log = logger.Get().WithName("dynakube-processmoduleconfigsecret")
 )

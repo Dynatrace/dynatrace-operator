@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 )
 
-var configMapLog = logger.Factory.GetLogger("test-configMap")
+var configMapLog = logger.Get().WithName("test-configMap")
 
 func TestKubeQuery(t *testing.T) {
 	fakeClient := fake.NewClient()

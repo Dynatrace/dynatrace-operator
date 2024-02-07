@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("processmoduleconfig")
+	log = logger.Get().WithName("processmoduleconfig")
 )

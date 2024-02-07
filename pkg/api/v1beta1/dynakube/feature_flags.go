@@ -109,8 +109,7 @@ const (
 )
 
 var (
-	log = logger.Factory.GetLogger("dynakube-api")
-
+	log                      = logger.Get().WithName("dynakube-api")
 	defaultSyntheticReplicas = int32(1)
 )
 
