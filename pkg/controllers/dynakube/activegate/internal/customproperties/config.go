@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("activegate-customproperties")
+	log = logger.Get().WithName("activegate-customproperties")
 )

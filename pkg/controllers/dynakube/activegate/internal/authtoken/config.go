@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("dynakube-activegate-authtoken")
+	log = logger.Get().WithName("dynakube-activegate-authtoken")
 )

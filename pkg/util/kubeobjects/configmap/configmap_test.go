@@ -26,7 +26,7 @@ const (
 	testNamespace      = "test-namespace"
 )
 
-var configMapLog = logger.Factory.GetLogger("test-configMap")
+var configMapLog = logger.Get().WithName("test-configMap")
 
 func createDeployment() *appsv1.Deployment {
 	return &appsv1.Deployment{

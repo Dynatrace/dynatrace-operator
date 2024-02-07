@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("injection-startup")
+	log = logger.Get().WithName("injection-startup")
 )

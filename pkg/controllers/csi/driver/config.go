@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	log               = logger.Factory.GetLogger("csi-driver")
+	log               = logger.Get().WithName("csi-driver")
 	memoryUsageMetric = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "dynatrace",
 		Subsystem: "csi_driver",

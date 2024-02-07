@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("edgeconnect")
+	log = logger.Get().WithName("edgeconnect")
 )

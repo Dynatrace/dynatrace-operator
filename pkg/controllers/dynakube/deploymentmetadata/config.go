@@ -25,5 +25,5 @@ const (
 )
 
 var (
-	log = logger.Factory.GetLogger("dynakube-deployment-metadata")
+	log = logger.Get().WithName("dynakube-deployment-metadata")
 )

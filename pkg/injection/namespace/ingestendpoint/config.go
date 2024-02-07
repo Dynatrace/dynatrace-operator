@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("ingestendpoint")
+	log = logger.Get().WithName("ingestendpoint")
 )

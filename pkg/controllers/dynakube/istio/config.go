@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("dynakube-istio")
+	log = logger.Get().WithName("dynakube-istio")
 )
 
 const (
