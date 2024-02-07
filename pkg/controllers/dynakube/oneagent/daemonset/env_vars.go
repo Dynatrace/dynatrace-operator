@@ -1,6 +1,7 @@
 package daemonset
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
@@ -20,6 +21,10 @@ const (
 	oneagentReadOnlyMode              = "ONEAGENT_READ_ONLY_MODE"
 
 	proxyEnv = "https_proxy"
+
+	// ProxyAsEnvVarDeprecatedVersion holds the version after which OneAgent allows mounting proxy as file, therefore
+	// enabling us to deprecate the env var/arg approach (which is non security compliant)
+	ProxyAsEnvVarDeprecatedVersion = "1.273.0.0-0"
 )
 
 const customEnvPriority = prioritymap.HighPriority
@@ -39,12 +44,12 @@ func (dsInfo *builderInfo) environmentVariables() ([]corev1.EnvVar, error) {
 	dsInfo.addConnectionInfoEnvs(envMap)
 	dsInfo.addReadOnlyEnv(envMap)
 
-	isProxyAsEnvVarDeprecated, err := IsProxyAsEnvVarDeprecated(dsInfo.dynakube.OneAgentVersion())
+	isProxyAsEnvDeprecated, err := isProxyAsEnvVarDeprecated(dsInfo.dynakube.OneAgentVersion())
 	if err != nil {
 		return []corev1.EnvVar{}, err
 	}
 
-	if !isProxyAsEnvVarDeprecated {
+	if !isProxyAsEnvDeprecated {
 		// deprecated
 		dsInfo.addProxyEnv(envMap)
 	}
@@ -142,15 +147,10 @@ func addDefaultValueSource(envVarMap *prioritymap.Map, name string, value *corev
 	})
 }
 
-const (
-	// starting with this version, OneAgent allows mounting proxy as file, therefore
-	// enabling us to deprecate the env var/arg approach (which is non security compliant)
-	ProxyAsEnvVarDeprecatedVersion = "1.273.0.0-0"
-)
-
-func IsProxyAsEnvVarDeprecated(oneAgentVersion string) (bool, error) {
-	if oneAgentVersion == "" {
-		return false, nil
+func isProxyAsEnvVarDeprecated(oneAgentVersion string) (bool, error) {
+	if oneAgentVersion == "" || oneAgentVersion == string(status.CustomImageVersionSource) {
+		// If the version is unknown or from a custom image, then we don't care about deprecation.
+		return true, nil
 	}
 
 	runningVersion, err := version.ExtractSemanticVersion(oneAgentVersion)
@@ -165,7 +165,7 @@ func IsProxyAsEnvVarDeprecated(oneAgentVersion string) (bool, error) {
 
 	result := version.CompareSemanticVersions(runningVersion, versionConstraint)
 
-	// if current OneAgent version is older than fix version
+	// if a current OneAgent version is older than fix version
 	if result < 0 {
 		return false, nil
 	}
