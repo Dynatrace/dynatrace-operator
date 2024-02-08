@@ -26,10 +26,6 @@ func (_m *Reconciler) EXPECT() *Reconciler_Expecter {
 func (_m *Reconciler) Reconcile(_a0 context.Context, _a1 reconcile.Request) (reconcile.Result, error) {
 	ret := _m.Called(_a0, _a1)
 
-	if len(ret) == 0 {
-		panic("no return value specified for Reconcile")
-	}
-
 	var r0 reconcile.Result
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, reconcile.Request) (reconcile.Result, error)); ok {

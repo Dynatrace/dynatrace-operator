@@ -168,7 +168,7 @@ func (g *EndpointSecretGenerator) PrepareFields(ctx context.Context, dk *dynatra
 	}
 
 	if !dk.FeatureDisableMetadataEnrichment() { // TODO: why check here and not at the very beginning?
-		if token, ok := tokens.Data[dtclient.DynatraceDataIngestToken]; ok {
+		if token, ok := tokens.Data[dtclient.DataIngestToken]; ok {
 			fields[MetricsTokenSecretField] = string(token)
 		}
 

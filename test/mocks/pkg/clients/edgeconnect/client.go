@@ -24,10 +24,6 @@ func (_m *Client) EXPECT() *Client_Expecter {
 func (_m *Client) CreateEdgeConnect(name string, hostPatterns []string, oauthClientId string) (edgeconnect.CreateResponse, error) {
 	ret := _m.Called(name, hostPatterns, oauthClientId)
 
-	if len(ret) == 0 {
-		panic("no return value specified for CreateEdgeConnect")
-	}
-
 	var r0 edgeconnect.CreateResponse
 	var r1 error
 	if rf, ok := ret.Get(0).(func(string, []string, string) (edgeconnect.CreateResponse, error)); ok {
@@ -82,10 +78,6 @@ func (_c *Client_CreateEdgeConnect_Call) RunAndReturn(run func(string, []string,
 func (_m *Client) DeleteEdgeConnect(edgeConnectId string) error {
 	ret := _m.Called(edgeConnectId)
 
-	if len(ret) == 0 {
-		panic("no return value specified for DeleteEdgeConnect")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string) error); ok {
 		r0 = rf(edgeConnectId)
@@ -127,10 +119,6 @@ func (_c *Client_DeleteEdgeConnect_Call) RunAndReturn(run func(string) error) *C
 // GetEdgeConnect provides a mock function with given fields: edgeConnectId
 func (_m *Client) GetEdgeConnect(edgeConnectId string) (edgeconnect.GetResponse, error) {
 	ret := _m.Called(edgeConnectId)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetEdgeConnect")
-	}
 
 	var r0 edgeconnect.GetResponse
 	var r1 error
@@ -184,10 +172,6 @@ func (_c *Client_GetEdgeConnect_Call) RunAndReturn(run func(string) (edgeconnect
 func (_m *Client) GetEdgeConnects(name string) (edgeconnect.ListResponse, error) {
 	ret := _m.Called(name)
 
-	if len(ret) == 0 {
-		panic("no return value specified for GetEdgeConnects")
-	}
-
 	var r0 edgeconnect.ListResponse
 	var r1 error
 	if rf, ok := ret.Get(0).(func(string) (edgeconnect.ListResponse, error)); ok {
@@ -239,10 +223,6 @@ func (_c *Client_GetEdgeConnects_Call) RunAndReturn(run func(string) (edgeconnec
 // UpdateEdgeConnect provides a mock function with given fields: edgeConnectId, name, hostPatterns, oauthClientId
 func (_m *Client) UpdateEdgeConnect(edgeConnectId string, name string, hostPatterns []string, oauthClientId string) error {
 	ret := _m.Called(edgeConnectId, name, hostPatterns, oauthClientId)
-
-	if len(ret) == 0 {
-		panic("no return value specified for UpdateEdgeConnect")
-	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string, string, []string, string) error); ok {

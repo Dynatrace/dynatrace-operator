@@ -26,10 +26,6 @@ func (_m *Reconciler) EXPECT() *Reconciler_Expecter {
 func (_m *Reconciler) ReconcileActiveGate(ctx context.Context, _a1 *dynakube.DynaKube) error {
 	ret := _m.Called(ctx, _a1)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ReconcileActiveGate")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *dynakube.DynaKube) error); ok {
 		r0 = rf(ctx, _a1)
@@ -72,10 +68,6 @@ func (_c *Reconciler_ReconcileActiveGate_Call) RunAndReturn(run func(context.Con
 // ReconcileOneAgent provides a mock function with given fields: ctx, _a1
 func (_m *Reconciler) ReconcileOneAgent(ctx context.Context, _a1 *dynakube.DynaKube) error {
 	ret := _m.Called(ctx, _a1)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ReconcileOneAgent")
-	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *dynakube.DynaKube) error); ok {

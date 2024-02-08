@@ -26,10 +26,6 @@ func (_m *Provider) EXPECT() *Provider_Expecter {
 func (_m *Provider) CreateManager(namespace string, config *rest.Config) (manager.Manager, error) {
 	ret := _m.Called(namespace, config)
 
-	if len(ret) == 0 {
-		panic("no return value specified for CreateManager")
-	}
-
 	var r0 manager.Manager
 	var r1 error
 	if rf, ok := ret.Get(0).(func(string, *rest.Config) (manager.Manager, error)); ok {
