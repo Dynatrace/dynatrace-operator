@@ -25,6 +25,10 @@ func (_m *Installer) EXPECT() *Installer_Expecter {
 func (_m *Installer) InstallAgent(ctx context.Context, targetDir string) (bool, error) {
 	ret := _m.Called(ctx, targetDir)
 
+	if len(ret) == 0 {
+		panic("no return value specified for InstallAgent")
+	}
+
 	var r0 bool
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {

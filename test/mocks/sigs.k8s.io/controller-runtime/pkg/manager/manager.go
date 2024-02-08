@@ -48,6 +48,10 @@ func (_m *Manager) EXPECT() *Manager_Expecter {
 func (_m *Manager) Add(_a0 manager.Runnable) error {
 	ret := _m.Called(_a0)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Add")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(manager.Runnable) error); ok {
 		r0 = rf(_a0)
@@ -89,6 +93,10 @@ func (_c *Manager_Add_Call) RunAndReturn(run func(manager.Runnable) error) *Mana
 // AddHealthzCheck provides a mock function with given fields: name, check
 func (_m *Manager) AddHealthzCheck(name string, check healthz.Checker) error {
 	ret := _m.Called(name, check)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AddHealthzCheck")
+	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string, healthz.Checker) error); ok {
@@ -133,6 +141,10 @@ func (_c *Manager_AddHealthzCheck_Call) RunAndReturn(run func(string, healthz.Ch
 func (_m *Manager) AddReadyzCheck(name string, check healthz.Checker) error {
 	ret := _m.Called(name, check)
 
+	if len(ret) == 0 {
+		panic("no return value specified for AddReadyzCheck")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string, healthz.Checker) error); ok {
 		r0 = rf(name, check)
@@ -175,6 +187,10 @@ func (_c *Manager_AddReadyzCheck_Call) RunAndReturn(run func(string, healthz.Che
 // Elected provides a mock function with given fields:
 func (_m *Manager) Elected() <-chan struct{} {
 	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Elected")
+	}
 
 	var r0 <-chan struct{}
 	if rf, ok := ret.Get(0).(func() <-chan struct{}); ok {
@@ -219,6 +235,10 @@ func (_c *Manager_Elected_Call) RunAndReturn(run func() <-chan struct{}) *Manage
 func (_m *Manager) GetAPIReader() client.Reader {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetAPIReader")
+	}
+
 	var r0 client.Reader
 	if rf, ok := ret.Get(0).(func() client.Reader); ok {
 		r0 = rf()
@@ -261,6 +281,10 @@ func (_c *Manager_GetAPIReader_Call) RunAndReturn(run func() client.Reader) *Man
 // GetCache provides a mock function with given fields:
 func (_m *Manager) GetCache() cache.Cache {
 	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetCache")
+	}
 
 	var r0 cache.Cache
 	if rf, ok := ret.Get(0).(func() cache.Cache); ok {
@@ -305,6 +329,10 @@ func (_c *Manager_GetCache_Call) RunAndReturn(run func() cache.Cache) *Manager_G
 func (_m *Manager) GetClient() client.Client {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetClient")
+	}
+
 	var r0 client.Client
 	if rf, ok := ret.Get(0).(func() client.Client); ok {
 		r0 = rf()
@@ -347,6 +375,10 @@ func (_c *Manager_GetClient_Call) RunAndReturn(run func() client.Client) *Manage
 // GetConfig provides a mock function with given fields:
 func (_m *Manager) GetConfig() *rest.Config {
 	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetConfig")
+	}
 
 	var r0 *rest.Config
 	if rf, ok := ret.Get(0).(func() *rest.Config); ok {
@@ -391,6 +423,10 @@ func (_c *Manager_GetConfig_Call) RunAndReturn(run func() *rest.Config) *Manager
 func (_m *Manager) GetControllerOptions() config.Controller {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetControllerOptions")
+	}
+
 	var r0 config.Controller
 	if rf, ok := ret.Get(0).(func() config.Controller); ok {
 		r0 = rf()
@@ -431,6 +467,10 @@ func (_c *Manager_GetControllerOptions_Call) RunAndReturn(run func() config.Cont
 // GetEventRecorderFor provides a mock function with given fields: name
 func (_m *Manager) GetEventRecorderFor(name string) record.EventRecorder {
 	ret := _m.Called(name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetEventRecorderFor")
+	}
 
 	var r0 record.EventRecorder
 	if rf, ok := ret.Get(0).(func(string) record.EventRecorder); ok {
@@ -476,6 +516,10 @@ func (_c *Manager_GetEventRecorderFor_Call) RunAndReturn(run func(string) record
 func (_m *Manager) GetFieldIndexer() client.FieldIndexer {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetFieldIndexer")
+	}
+
 	var r0 client.FieldIndexer
 	if rf, ok := ret.Get(0).(func() client.FieldIndexer); ok {
 		r0 = rf()
@@ -518,6 +562,10 @@ func (_c *Manager_GetFieldIndexer_Call) RunAndReturn(run func() client.FieldInde
 // GetHTTPClient provides a mock function with given fields:
 func (_m *Manager) GetHTTPClient() *http.Client {
 	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetHTTPClient")
+	}
 
 	var r0 *http.Client
 	if rf, ok := ret.Get(0).(func() *http.Client); ok {
@@ -562,6 +610,10 @@ func (_c *Manager_GetHTTPClient_Call) RunAndReturn(run func() *http.Client) *Man
 func (_m *Manager) GetLogger() logr.Logger {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetLogger")
+	}
+
 	var r0 logr.Logger
 	if rf, ok := ret.Get(0).(func() logr.Logger); ok {
 		r0 = rf()
@@ -602,6 +654,10 @@ func (_c *Manager_GetLogger_Call) RunAndReturn(run func() logr.Logger) *Manager_
 // GetRESTMapper provides a mock function with given fields:
 func (_m *Manager) GetRESTMapper() meta.RESTMapper {
 	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetRESTMapper")
+	}
 
 	var r0 meta.RESTMapper
 	if rf, ok := ret.Get(0).(func() meta.RESTMapper); ok {
@@ -646,6 +702,10 @@ func (_c *Manager_GetRESTMapper_Call) RunAndReturn(run func() meta.RESTMapper) *
 func (_m *Manager) GetScheme() *runtime.Scheme {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetScheme")
+	}
+
 	var r0 *runtime.Scheme
 	if rf, ok := ret.Get(0).(func() *runtime.Scheme); ok {
 		r0 = rf()
@@ -689,6 +749,10 @@ func (_c *Manager_GetScheme_Call) RunAndReturn(run func() *runtime.Scheme) *Mana
 func (_m *Manager) GetWebhookServer() webhook.Server {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetWebhookServer")
+	}
+
 	var r0 webhook.Server
 	if rf, ok := ret.Get(0).(func() webhook.Server); ok {
 		r0 = rf()
@@ -731,6 +795,10 @@ func (_c *Manager_GetWebhookServer_Call) RunAndReturn(run func() webhook.Server)
 // Start provides a mock function with given fields: ctx
 func (_m *Manager) Start(ctx context.Context) error {
 	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Start")
+	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context) error); ok {

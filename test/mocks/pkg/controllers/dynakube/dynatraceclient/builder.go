@@ -32,6 +32,10 @@ func (_m *Builder) EXPECT() *Builder_Expecter {
 func (_m *Builder) Build() (dynatrace.Client, error) {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for Build")
+	}
+
 	var r0 dynatrace.Client
 	var r1 error
 	if rf, ok := ret.Get(0).(func() (dynatrace.Client, error)); ok {
@@ -84,6 +88,10 @@ func (_c *Builder_Build_Call) RunAndReturn(run func() (dynatrace.Client, error))
 // BuildWithTokenVerification provides a mock function with given fields: dynaKubeStatus
 func (_m *Builder) BuildWithTokenVerification(dynaKubeStatus *dynakube.DynaKubeStatus) (dynatrace.Client, error) {
 	ret := _m.Called(dynaKubeStatus)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BuildWithTokenVerification")
+	}
 
 	var r0 dynatrace.Client
 	var r1 error
@@ -139,6 +147,10 @@ func (_c *Builder_BuildWithTokenVerification_Call) RunAndReturn(run func(*dynaku
 func (_m *Builder) SetContext(ctx context.Context) dynatraceclient.Builder {
 	ret := _m.Called(ctx)
 
+	if len(ret) == 0 {
+		panic("no return value specified for SetContext")
+	}
+
 	var r0 dynatraceclient.Builder
 	if rf, ok := ret.Get(0).(func(context.Context) dynatraceclient.Builder); ok {
 		r0 = rf(ctx)
@@ -183,6 +195,10 @@ func (_c *Builder_SetContext_Call) RunAndReturn(run func(context.Context) dynatr
 func (_m *Builder) SetDynakube(_a0 dynakube.DynaKube) dynatraceclient.Builder {
 	ret := _m.Called(_a0)
 
+	if len(ret) == 0 {
+		panic("no return value specified for SetDynakube")
+	}
+
 	var r0 dynatraceclient.Builder
 	if rf, ok := ret.Get(0).(func(dynakube.DynaKube) dynatraceclient.Builder); ok {
 		r0 = rf(_a0)
@@ -226,6 +242,10 @@ func (_c *Builder_SetDynakube_Call) RunAndReturn(run func(dynakube.DynaKube) dyn
 // SetTokens provides a mock function with given fields: tokens
 func (_m *Builder) SetTokens(tokens token.Tokens) dynatraceclient.Builder {
 	ret := _m.Called(tokens)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetTokens")
+	}
 
 	var r0 dynatraceclient.Builder
 	if rf, ok := ret.Get(0).(func(token.Tokens) dynatraceclient.Builder); ok {
