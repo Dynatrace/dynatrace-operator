@@ -336,7 +336,7 @@ func newBaseUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool)
 	return updater
 }
 
-func assertStatusBasedOnTenantRegistry(t *testing.T, expectedImage, expectedVersion string, versionStatus status.VersionStatus) { //nolint:revive // argument-limit
+func assertStatusBasedOnTenantRegistry(t *testing.T, expectedImage, expectedVersion string, versionStatus status.VersionStatus) {
 	assert.Equal(t, expectedImage, versionStatus.ImageID)
 	assert.Equal(t, expectedVersion, versionStatus.Version)
 }

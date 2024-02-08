@@ -29,7 +29,7 @@ type reconciler struct {
 }
 type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client) Reconciler
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client) Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client) Reconciler {
 	return &reconciler{
 		client:       clt,
 		apiReader:    apiReader,

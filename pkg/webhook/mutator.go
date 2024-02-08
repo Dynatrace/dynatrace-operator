@@ -64,7 +64,7 @@ func newBaseRequest(pod *corev1.Pod, namespace corev1.Namespace, dynakube dynatr
 	}
 }
 
-func NewMutationRequest(ctx context.Context, namespace corev1.Namespace, installContainer *corev1.Container, pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) *MutationRequest { //nolint:revive // argument-limit doesn't apply to constructors
+func NewMutationRequest(ctx context.Context, namespace corev1.Namespace, installContainer *corev1.Container, pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) *MutationRequest {
 	return &MutationRequest{
 		BaseRequest:      newBaseRequest(pod, namespace, dynakube),
 		Context:          ctx,

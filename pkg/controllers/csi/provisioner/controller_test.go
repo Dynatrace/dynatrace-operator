@@ -42,7 +42,7 @@ func (fs *mkDirAllErrorFs) MkdirAll(_ string, _ os.FileMode) error {
 	return fmt.Errorf(errorMsg)
 }
 
-func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
+func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	ctx := context.TODO()
 	dynakubeName := "test-dk"
 

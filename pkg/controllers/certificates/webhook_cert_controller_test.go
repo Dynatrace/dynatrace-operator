@@ -286,7 +286,7 @@ func testWebhookClientConfig(
 	assert.Equal(t, expectedCert, webhookClientConfig.CABundle)
 }
 
-func verifyCertificates(t *testing.T, rec *WebhookCertificateController, secret *corev1.Secret, clt client.Client, isUpdate bool) { //nolint:revive // argument-limit
+func verifyCertificates(t *testing.T, rec *WebhookCertificateController, secret *corev1.Secret, clt client.Client, isUpdate bool) {
 	cert := Certs{
 		Domain:  getDomain(rec.namespace),
 		Data:    secret.Data,

@@ -25,7 +25,7 @@ type OneAgentPodMutator struct {
 
 var _ dtwebhook.PodMutator = &OneAgentPodMutator{}
 
-func NewOneAgentPodMutator(image, clusterID, webhookNamespace string, client client.Client, apiReader client.Reader) *OneAgentPodMutator { //nolint:revive // argument-limit doesn't apply to constructors
+func NewOneAgentPodMutator(image, clusterID, webhookNamespace string, client client.Client, apiReader client.Reader) *OneAgentPodMutator {
 	return &OneAgentPodMutator{
 		image:            image,
 		clusterID:        clusterID,

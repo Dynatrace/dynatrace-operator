@@ -26,7 +26,7 @@ type Reconciler struct {
 	tokens    token.Tokens
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, tokens token.Tokens) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, tokens token.Tokens) *Reconciler {
 	return &Reconciler{
 		client:    clt,
 		apiReader: apiReader,

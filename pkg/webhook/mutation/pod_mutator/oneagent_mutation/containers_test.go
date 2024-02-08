@@ -329,7 +329,7 @@ func TestVersionDetectionMappingDrivenByNamespaceAnnotations(t *testing.T) {
 	})
 }
 
-func doTestMappings(t *testing.T, podAnnotations map[string]string, namespaceAnnotations map[string]string, expectedMappings map[string]string, unexpectedMappingsKeys []string) { //nolint:revive // argument-limit
+func doTestMappings(t *testing.T, podAnnotations map[string]string, namespaceAnnotations map[string]string, expectedMappings map[string]string, unexpectedMappingsKeys []string) {
 	mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
 	request := createTestMutationRequest(getTestComplexDynakube(), podAnnotations, getTestNamespace(namespaceAnnotations))
 	mutator.mutateUserContainers(request)

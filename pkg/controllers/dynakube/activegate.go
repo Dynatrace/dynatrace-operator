@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube *dynakube.DynaKube, dtc dynatrace.Client, istioReconciler istio.Reconciler, connectionReconciler connectioninfo.Reconciler, versionReconciler version.Reconciler) error { // nolint: revive
+func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube *dynakube.DynaKube, dtc dynatrace.Client, istioReconciler istio.Reconciler, connectionReconciler connectioninfo.Reconciler, versionReconciler version.Reconciler) error { //nolint: revive
 	if dynakube.NeedsActiveGate() { // TODO: this is not optimal, because this check is in the activegate reconciler as well (to do the cleanup)
 		err := connectionReconciler.ReconcileActiveGate(ctx, dynakube)
 		if err != nil {
