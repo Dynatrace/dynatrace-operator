@@ -142,7 +142,7 @@ func (publisher *AppVolumePublisher) fireVolumeUnpublishedMetric(volume metadata
 			log.Error(err, "failed to get the value of agent version metric")
 		}
 
-		if m.Gauge.GetValue() <= float64(0) {
+		if m.GetGauge().GetValue() <= float64(0) {
 			agentsVersionsMetric.DeleteLabelValues(volume.Version)
 		}
 	}
