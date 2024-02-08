@@ -94,7 +94,7 @@ func createDynakube(oneAgentSpec dynatracev1beta1.OneAgentSpec) *dynatracev1beta
 
 func createMockDtClient(t *testing.T, revision uint) *clientmock.Client {
 	mockClient := clientmock.NewClient(t)
-	mockClient.On("GetProcessModuleConfig", mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{
+	mockClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{
 		Revision:   revision,
 		Properties: nil,
 	}, nil)

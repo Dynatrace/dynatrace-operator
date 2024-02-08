@@ -1,22 +1,24 @@
 package url
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
-func (installer Installer) downloadOneAgentFromUrl(tmpFile afero.File) error {
+func (installer Installer) downloadOneAgentFromUrl(ctx context.Context, tmpFile afero.File) error {
 	switch {
 	case installer.props.Url != "":
-		if err := installer.downloadOneAgentViaInstallerUrl(tmpFile); err != nil {
+		if err := installer.downloadOneAgentViaInstallerUrl(ctx, tmpFile); err != nil {
 			return errors.WithStack(err)
 		}
 	case installer.props.TargetVersion == VersionLatest:
-		if err := installer.downloadLatestOneAgent(tmpFile); err != nil {
+		if err := installer.downloadLatestOneAgent(ctx, tmpFile); err != nil {
 			return errors.WithStack(err)
 		}
 	default:
-		if err := installer.downloadOneAgentWithVersion(tmpFile); err != nil {
+		if err := installer.downloadOneAgentWithVersion(ctx, tmpFile); err != nil {
 			return err
 		}
 	}
@@ -24,10 +26,10 @@ func (installer Installer) downloadOneAgentFromUrl(tmpFile afero.File) error {
 	return nil
 }
 
-func (installer Installer) downloadLatestOneAgent(tmpFile afero.File) error {
+func (installer Installer) downloadLatestOneAgent(ctx context.Context, tmpFile afero.File) error {
 	log.Info("downloading latest OneAgent package", "props", installer.props)
 
-	return installer.dtc.GetLatestAgent(
+	return installer.dtc.GetLatestAgent(ctx,
 		installer.props.Os,
 		installer.props.Type,
 		installer.props.Flavor,
@@ -38,9 +40,9 @@ func (installer Installer) downloadLatestOneAgent(tmpFile afero.File) error {
 	)
 }
 
-func (installer Installer) downloadOneAgentWithVersion(tmpFile afero.File) error {
+func (installer Installer) downloadOneAgentWithVersion(ctx context.Context, tmpFile afero.File) error {
 	log.Info("downloading specific OneAgent package", "version", installer.props.TargetVersion)
-	err := installer.dtc.GetAgent(
+	err := installer.dtc.GetAgent(ctx,
 		installer.props.Os,
 		installer.props.Type,
 		installer.props.Flavor,
@@ -52,7 +54,7 @@ func (installer Installer) downloadOneAgentWithVersion(tmpFile afero.File) error
 	)
 
 	if err != nil {
-		availableVersions, getVersionsError := installer.dtc.GetAgentVersions(
+		availableVersions, getVersionsError := installer.dtc.GetAgentVersions(ctx,
 			installer.props.Os,
 			installer.props.Type,
 			installer.props.Flavor,
@@ -71,7 +73,7 @@ func (installer Installer) downloadOneAgentWithVersion(tmpFile afero.File) error
 	return nil
 }
 
-func (installer Installer) downloadOneAgentViaInstallerUrl(tmpFile afero.File) error {
+func (installer Installer) downloadOneAgentViaInstallerUrl(ctx context.Context, tmpFile afero.File) error {
 	log.Info("downloading OneAgent package using provided url, all other properties are ignored", "url", installer.props.Url)
-	return installer.dtc.GetAgentViaInstallerUrl(installer.props.Url, tmpFile)
+	return installer.dtc.GetAgentViaInstallerUrl(ctx, installer.props.Url, tmpFile)
 }

@@ -2,6 +2,7 @@ package dynatrace
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -88,13 +89,13 @@ const (
 	appTransitionSchemaVersion                  = "1.0.1"
 )
 
-func (dtc *dynatraceClient) performCreateOrUpdateKubernetesSetting(body []postKubernetesSettingsBody) (string, error) {
+func (dtc *dynatraceClient) performCreateOrUpdateKubernetesSetting(ctx context.Context, body []postKubernetesSettingsBody) (string, error) {
 	bodyData, err := json.Marshal(body)
 	if err != nil {
 		return "", err
 	}
 
-	req, err := createBaseRequest(dtc.getSettingsUrl(false), http.MethodPost, dtc.apiToken, bytes.NewReader(bodyData))
+	req, err := createBaseRequest(ctx, dtc.getSettingsUrl(false), http.MethodPost, dtc.apiToken, bytes.NewReader(bodyData))
 	if err != nil {
 		return "", err
 	}
@@ -180,18 +181,18 @@ func createV3KubernetesSettingsBody(clusterLabel, kubeSystemUUID, scope string) 
 	return []postKubernetesSettingsBody{settings}
 }
 
-func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(clusterLabel, kubeSystemUUID, scope string) (string, error) {
+func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(ctx context.Context, clusterLabel, kubeSystemUUID, scope string) (string, error) {
 	if kubeSystemUUID == "" {
 		return "", errors.New("no kube-system namespace UUID given")
 	}
 
 	body := createV3KubernetesSettingsBody(clusterLabel, kubeSystemUUID, scope)
 
-	objectId, err := dtc.performCreateOrUpdateKubernetesSetting(body)
+	objectId, err := dtc.performCreateOrUpdateKubernetesSetting(ctx, body)
 	if err != nil {
 		if strings.Contains(err.Error(), strconv.Itoa(http.StatusNotFound)) {
 			body = createV1KubernetesSettingsBody(clusterLabel, kubeSystemUUID, scope)
-			return dtc.performCreateOrUpdateKubernetesSetting(body)
+			return dtc.performCreateOrUpdateKubernetesSetting(ctx, body)
 		} else {
 			return "", err
 		}
@@ -200,12 +201,12 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(clusterLabel, kubeSy
 	return objectId, nil
 }
 
-func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID string) ([]MonitoredEntity, error) {
+func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(ctx context.Context, kubeSystemUUID string) ([]MonitoredEntity, error) {
 	if kubeSystemUUID == "" {
 		return nil, errors.New("no kube-system namespace UUID given")
 	}
 
-	req, err := createBaseRequest(dtc.getEntitiesUrl(), http.MethodGet, dtc.apiToken, nil)
+	req, err := createBaseRequest(ctx, dtc.getEntitiesUrl(), http.MethodGet, dtc.apiToken, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +236,7 @@ func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID
 	return resDataJson.Entities, nil
 }
 
-func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities []MonitoredEntity, schemaId string) (GetSettingsResponse, error) {
+func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(ctx context.Context, monitoredEntities []MonitoredEntity, schemaId string) (GetSettingsResponse, error) {
 	if len(monitoredEntities) < 1 {
 		return GetSettingsResponse{TotalCount: 0}, nil
 	}
@@ -245,7 +246,7 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities []
 		scopes = append(scopes, entity.EntityId)
 	}
 
-	req, err := createBaseRequest(dtc.getSettingsUrl(true), http.MethodGet, dtc.apiToken, nil)
+	req, err := createBaseRequest(ctx, dtc.getSettingsUrl(true), http.MethodGet, dtc.apiToken, nil)
 	if err != nil {
 		return GetSettingsResponse{}, err
 	}
@@ -319,14 +320,14 @@ func handleErrorArrayResponseFromAPI(response []byte, statusCode int) error {
 	}
 }
 
-func (dtc *dynatraceClient) CreateOrUpdateKubernetesAppSetting(scope string) (string, error) {
+func (dtc *dynatraceClient) CreateOrUpdateKubernetesAppSetting(ctx context.Context, scope string) (string, error) {
 	settings := createBaseKubernetesSettings(postKubernetesAppSettings{
 		kubernetesAppOptionsSettings{
 			EnableKubernetesApp: true,
 		},
 	}, AppTransitionSchemaId, appTransitionSchemaVersion, scope)
 
-	objectId, err := dtc.performCreateOrUpdateKubernetesSetting([]postKubernetesSettingsBody{settings})
+	objectId, err := dtc.performCreateOrUpdateKubernetesSetting(ctx, []postKubernetesSettingsBody{settings})
 	if err != nil {
 		return "", err
 	}

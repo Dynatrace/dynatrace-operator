@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -10,12 +11,14 @@ import (
 )
 
 func testActiveGateVersionGetLatestActiveGateVersion(t *testing.T, dynatraceClient Client) {
-	{
-		latestAgentVersion, err := dynatraceClient.GetLatestActiveGateVersion(OsUnix)
+	ctx := context.Background()
+
+	t.Run("happy path", func(t *testing.T) {
+		latestActiveGateVersion, err := dynatraceClient.GetLatestActiveGateVersion(ctx, OsUnix)
 
 		require.NoError(t, err)
-		assert.Equal(t, "1.242.0.20220429-180918", latestAgentVersion, "latest agent version equals expected version")
-	}
+		assert.Equal(t, "1.242.0.20220429-180918", latestActiveGateVersion)
+	})
 }
 
 func handleLatestActiveGateVersion(request *http.Request, writer http.ResponseWriter) {

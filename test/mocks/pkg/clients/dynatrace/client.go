@@ -3,6 +3,7 @@
 package mocks
 
 import (
+	context "context"
 	io "io"
 
 	dynatrace "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -23,9 +24,9 @@ func (_m *Client) EXPECT() *Client_Expecter {
 	return &Client_Expecter{mock: &_m.Mock}
 }
 
-// CreateOrUpdateKubernetesAppSetting provides a mock function with given fields: scope
-func (_m *Client) CreateOrUpdateKubernetesAppSetting(scope string) (string, error) {
-	ret := _m.Called(scope)
+// CreateOrUpdateKubernetesAppSetting provides a mock function with given fields: ctx, scope
+func (_m *Client) CreateOrUpdateKubernetesAppSetting(ctx context.Context, scope string) (string, error) {
+	ret := _m.Called(ctx, scope)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateOrUpdateKubernetesAppSetting")
@@ -33,17 +34,17 @@ func (_m *Client) CreateOrUpdateKubernetesAppSetting(scope string) (string, erro
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (string, error)); ok {
-		return rf(scope)
+	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
+		return rf(ctx, scope)
 	}
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(scope)
+	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
+		r0 = rf(ctx, scope)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(scope)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, scope)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -57,14 +58,15 @@ type Client_CreateOrUpdateKubernetesAppSetting_Call struct {
 }
 
 // CreateOrUpdateKubernetesAppSetting is a helper method to define mock.On call
+//   - ctx context.Context
 //   - scope string
-func (_e *Client_Expecter) CreateOrUpdateKubernetesAppSetting(scope interface{}) *Client_CreateOrUpdateKubernetesAppSetting_Call {
-	return &Client_CreateOrUpdateKubernetesAppSetting_Call{Call: _e.mock.On("CreateOrUpdateKubernetesAppSetting", scope)}
+func (_e *Client_Expecter) CreateOrUpdateKubernetesAppSetting(ctx interface{}, scope interface{}) *Client_CreateOrUpdateKubernetesAppSetting_Call {
+	return &Client_CreateOrUpdateKubernetesAppSetting_Call{Call: _e.mock.On("CreateOrUpdateKubernetesAppSetting", ctx, scope)}
 }
 
-func (_c *Client_CreateOrUpdateKubernetesAppSetting_Call) Run(run func(scope string)) *Client_CreateOrUpdateKubernetesAppSetting_Call {
+func (_c *Client_CreateOrUpdateKubernetesAppSetting_Call) Run(run func(ctx context.Context, scope string)) *Client_CreateOrUpdateKubernetesAppSetting_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -74,14 +76,14 @@ func (_c *Client_CreateOrUpdateKubernetesAppSetting_Call) Return(_a0 string, _a1
 	return _c
 }
 
-func (_c *Client_CreateOrUpdateKubernetesAppSetting_Call) RunAndReturn(run func(string) (string, error)) *Client_CreateOrUpdateKubernetesAppSetting_Call {
+func (_c *Client_CreateOrUpdateKubernetesAppSetting_Call) RunAndReturn(run func(context.Context, string) (string, error)) *Client_CreateOrUpdateKubernetesAppSetting_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// CreateOrUpdateKubernetesSetting provides a mock function with given fields: name, kubeSystemUUID, scope
-func (_m *Client) CreateOrUpdateKubernetesSetting(name string, kubeSystemUUID string, scope string) (string, error) {
-	ret := _m.Called(name, kubeSystemUUID, scope)
+// CreateOrUpdateKubernetesSetting provides a mock function with given fields: ctx, name, kubeSystemUUID, scope
+func (_m *Client) CreateOrUpdateKubernetesSetting(ctx context.Context, name string, kubeSystemUUID string, scope string) (string, error) {
+	ret := _m.Called(ctx, name, kubeSystemUUID, scope)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateOrUpdateKubernetesSetting")
@@ -89,17 +91,17 @@ func (_m *Client) CreateOrUpdateKubernetesSetting(name string, kubeSystemUUID st
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, string, string) (string, error)); ok {
-		return rf(name, kubeSystemUUID, scope)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (string, error)); ok {
+		return rf(ctx, name, kubeSystemUUID, scope)
 	}
-	if rf, ok := ret.Get(0).(func(string, string, string) string); ok {
-		r0 = rf(name, kubeSystemUUID, scope)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) string); ok {
+		r0 = rf(ctx, name, kubeSystemUUID, scope)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string, string, string) error); ok {
-		r1 = rf(name, kubeSystemUUID, scope)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, name, kubeSystemUUID, scope)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -113,16 +115,17 @@ type Client_CreateOrUpdateKubernetesSetting_Call struct {
 }
 
 // CreateOrUpdateKubernetesSetting is a helper method to define mock.On call
+//   - ctx context.Context
 //   - name string
 //   - kubeSystemUUID string
 //   - scope string
-func (_e *Client_Expecter) CreateOrUpdateKubernetesSetting(name interface{}, kubeSystemUUID interface{}, scope interface{}) *Client_CreateOrUpdateKubernetesSetting_Call {
-	return &Client_CreateOrUpdateKubernetesSetting_Call{Call: _e.mock.On("CreateOrUpdateKubernetesSetting", name, kubeSystemUUID, scope)}
+func (_e *Client_Expecter) CreateOrUpdateKubernetesSetting(ctx interface{}, name interface{}, kubeSystemUUID interface{}, scope interface{}) *Client_CreateOrUpdateKubernetesSetting_Call {
+	return &Client_CreateOrUpdateKubernetesSetting_Call{Call: _e.mock.On("CreateOrUpdateKubernetesSetting", ctx, name, kubeSystemUUID, scope)}
 }
 
-func (_c *Client_CreateOrUpdateKubernetesSetting_Call) Run(run func(name string, kubeSystemUUID string, scope string)) *Client_CreateOrUpdateKubernetesSetting_Call {
+func (_c *Client_CreateOrUpdateKubernetesSetting_Call) Run(run func(ctx context.Context, name string, kubeSystemUUID string, scope string)) *Client_CreateOrUpdateKubernetesSetting_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string), args[2].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string))
 	})
 	return _c
 }
@@ -132,14 +135,14 @@ func (_c *Client_CreateOrUpdateKubernetesSetting_Call) Return(_a0 string, _a1 er
 	return _c
 }
 
-func (_c *Client_CreateOrUpdateKubernetesSetting_Call) RunAndReturn(run func(string, string, string) (string, error)) *Client_CreateOrUpdateKubernetesSetting_Call {
+func (_c *Client_CreateOrUpdateKubernetesSetting_Call) RunAndReturn(run func(context.Context, string, string, string) (string, error)) *Client_CreateOrUpdateKubernetesSetting_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetActiveGateAuthToken provides a mock function with given fields: dynakubeName
-func (_m *Client) GetActiveGateAuthToken(dynakubeName string) (*dynatrace.ActiveGateAuthTokenInfo, error) {
-	ret := _m.Called(dynakubeName)
+// GetActiveGateAuthToken provides a mock function with given fields: ctx, dynakubeName
+func (_m *Client) GetActiveGateAuthToken(ctx context.Context, dynakubeName string) (*dynatrace.ActiveGateAuthTokenInfo, error) {
+	ret := _m.Called(ctx, dynakubeName)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetActiveGateAuthToken")
@@ -147,19 +150,19 @@ func (_m *Client) GetActiveGateAuthToken(dynakubeName string) (*dynatrace.Active
 
 	var r0 *dynatrace.ActiveGateAuthTokenInfo
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (*dynatrace.ActiveGateAuthTokenInfo, error)); ok {
-		return rf(dynakubeName)
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*dynatrace.ActiveGateAuthTokenInfo, error)); ok {
+		return rf(ctx, dynakubeName)
 	}
-	if rf, ok := ret.Get(0).(func(string) *dynatrace.ActiveGateAuthTokenInfo); ok {
-		r0 = rf(dynakubeName)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *dynatrace.ActiveGateAuthTokenInfo); ok {
+		r0 = rf(ctx, dynakubeName)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*dynatrace.ActiveGateAuthTokenInfo)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(dynakubeName)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, dynakubeName)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -173,14 +176,15 @@ type Client_GetActiveGateAuthToken_Call struct {
 }
 
 // GetActiveGateAuthToken is a helper method to define mock.On call
+//   - ctx context.Context
 //   - dynakubeName string
-func (_e *Client_Expecter) GetActiveGateAuthToken(dynakubeName interface{}) *Client_GetActiveGateAuthToken_Call {
-	return &Client_GetActiveGateAuthToken_Call{Call: _e.mock.On("GetActiveGateAuthToken", dynakubeName)}
+func (_e *Client_Expecter) GetActiveGateAuthToken(ctx interface{}, dynakubeName interface{}) *Client_GetActiveGateAuthToken_Call {
+	return &Client_GetActiveGateAuthToken_Call{Call: _e.mock.On("GetActiveGateAuthToken", ctx, dynakubeName)}
 }
 
-func (_c *Client_GetActiveGateAuthToken_Call) Run(run func(dynakubeName string)) *Client_GetActiveGateAuthToken_Call {
+func (_c *Client_GetActiveGateAuthToken_Call) Run(run func(ctx context.Context, dynakubeName string)) *Client_GetActiveGateAuthToken_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -190,14 +194,14 @@ func (_c *Client_GetActiveGateAuthToken_Call) Return(_a0 *dynatrace.ActiveGateAu
 	return _c
 }
 
-func (_c *Client_GetActiveGateAuthToken_Call) RunAndReturn(run func(string) (*dynatrace.ActiveGateAuthTokenInfo, error)) *Client_GetActiveGateAuthToken_Call {
+func (_c *Client_GetActiveGateAuthToken_Call) RunAndReturn(run func(context.Context, string) (*dynatrace.ActiveGateAuthTokenInfo, error)) *Client_GetActiveGateAuthToken_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetActiveGateConnectionInfo provides a mock function with given fields:
-func (_m *Client) GetActiveGateConnectionInfo() (dynatrace.ActiveGateConnectionInfo, error) {
-	ret := _m.Called()
+// GetActiveGateConnectionInfo provides a mock function with given fields: ctx
+func (_m *Client) GetActiveGateConnectionInfo(ctx context.Context) (dynatrace.ActiveGateConnectionInfo, error) {
+	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetActiveGateConnectionInfo")
@@ -205,17 +209,17 @@ func (_m *Client) GetActiveGateConnectionInfo() (dynatrace.ActiveGateConnectionI
 
 	var r0 dynatrace.ActiveGateConnectionInfo
 	var r1 error
-	if rf, ok := ret.Get(0).(func() (dynatrace.ActiveGateConnectionInfo, error)); ok {
-		return rf()
+	if rf, ok := ret.Get(0).(func(context.Context) (dynatrace.ActiveGateConnectionInfo, error)); ok {
+		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func() dynatrace.ActiveGateConnectionInfo); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(context.Context) dynatrace.ActiveGateConnectionInfo); ok {
+		r0 = rf(ctx)
 	} else {
 		r0 = ret.Get(0).(dynatrace.ActiveGateConnectionInfo)
 	}
 
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -229,13 +233,14 @@ type Client_GetActiveGateConnectionInfo_Call struct {
 }
 
 // GetActiveGateConnectionInfo is a helper method to define mock.On call
-func (_e *Client_Expecter) GetActiveGateConnectionInfo() *Client_GetActiveGateConnectionInfo_Call {
-	return &Client_GetActiveGateConnectionInfo_Call{Call: _e.mock.On("GetActiveGateConnectionInfo")}
+//   - ctx context.Context
+func (_e *Client_Expecter) GetActiveGateConnectionInfo(ctx interface{}) *Client_GetActiveGateConnectionInfo_Call {
+	return &Client_GetActiveGateConnectionInfo_Call{Call: _e.mock.On("GetActiveGateConnectionInfo", ctx)}
 }
 
-func (_c *Client_GetActiveGateConnectionInfo_Call) Run(run func()) *Client_GetActiveGateConnectionInfo_Call {
+func (_c *Client_GetActiveGateConnectionInfo_Call) Run(run func(ctx context.Context)) *Client_GetActiveGateConnectionInfo_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(context.Context))
 	})
 	return _c
 }
@@ -245,22 +250,22 @@ func (_c *Client_GetActiveGateConnectionInfo_Call) Return(_a0 dynatrace.ActiveGa
 	return _c
 }
 
-func (_c *Client_GetActiveGateConnectionInfo_Call) RunAndReturn(run func() (dynatrace.ActiveGateConnectionInfo, error)) *Client_GetActiveGateConnectionInfo_Call {
+func (_c *Client_GetActiveGateConnectionInfo_Call) RunAndReturn(run func(context.Context) (dynatrace.ActiveGateConnectionInfo, error)) *Client_GetActiveGateConnectionInfo_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetAgent provides a mock function with given fields: os, installerType, flavor, arch, version, technologies, skipMetadata, writer
-func (_m *Client) GetAgent(os string, installerType string, flavor string, arch string, version string, technologies []string, skipMetadata bool, writer io.Writer) error {
-	ret := _m.Called(os, installerType, flavor, arch, version, technologies, skipMetadata, writer)
+// GetAgent provides a mock function with given fields: ctx, os, installerType, flavor, arch, version, technologies, skipMetadata, writer
+func (_m *Client) GetAgent(ctx context.Context, os string, installerType string, flavor string, arch string, version string, technologies []string, skipMetadata bool, writer io.Writer) error {
+	ret := _m.Called(ctx, os, installerType, flavor, arch, version, technologies, skipMetadata, writer)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAgent")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string, string, string, string, []string, bool, io.Writer) error); ok {
-		r0 = rf(os, installerType, flavor, arch, version, technologies, skipMetadata, writer)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, []string, bool, io.Writer) error); ok {
+		r0 = rf(ctx, os, installerType, flavor, arch, version, technologies, skipMetadata, writer)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -274,6 +279,7 @@ type Client_GetAgent_Call struct {
 }
 
 // GetAgent is a helper method to define mock.On call
+//   - ctx context.Context
 //   - os string
 //   - installerType string
 //   - flavor string
@@ -282,13 +288,13 @@ type Client_GetAgent_Call struct {
 //   - technologies []string
 //   - skipMetadata bool
 //   - writer io.Writer
-func (_e *Client_Expecter) GetAgent(os interface{}, installerType interface{}, flavor interface{}, arch interface{}, version interface{}, technologies interface{}, skipMetadata interface{}, writer interface{}) *Client_GetAgent_Call {
-	return &Client_GetAgent_Call{Call: _e.mock.On("GetAgent", os, installerType, flavor, arch, version, technologies, skipMetadata, writer)}
+func (_e *Client_Expecter) GetAgent(ctx interface{}, os interface{}, installerType interface{}, flavor interface{}, arch interface{}, version interface{}, technologies interface{}, skipMetadata interface{}, writer interface{}) *Client_GetAgent_Call {
+	return &Client_GetAgent_Call{Call: _e.mock.On("GetAgent", ctx, os, installerType, flavor, arch, version, technologies, skipMetadata, writer)}
 }
 
-func (_c *Client_GetAgent_Call) Run(run func(os string, installerType string, flavor string, arch string, version string, technologies []string, skipMetadata bool, writer io.Writer)) *Client_GetAgent_Call {
+func (_c *Client_GetAgent_Call) Run(run func(ctx context.Context, os string, installerType string, flavor string, arch string, version string, technologies []string, skipMetadata bool, writer io.Writer)) *Client_GetAgent_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string), args[2].(string), args[3].(string), args[4].(string), args[5].([]string), args[6].(bool), args[7].(io.Writer))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string), args[4].(string), args[5].(string), args[6].([]string), args[7].(bool), args[8].(io.Writer))
 	})
 	return _c
 }
@@ -298,14 +304,14 @@ func (_c *Client_GetAgent_Call) Return(_a0 error) *Client_GetAgent_Call {
 	return _c
 }
 
-func (_c *Client_GetAgent_Call) RunAndReturn(run func(string, string, string, string, string, []string, bool, io.Writer) error) *Client_GetAgent_Call {
+func (_c *Client_GetAgent_Call) RunAndReturn(run func(context.Context, string, string, string, string, string, []string, bool, io.Writer) error) *Client_GetAgent_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetAgentVersions provides a mock function with given fields: os, installerType, flavor, arch
-func (_m *Client) GetAgentVersions(os string, installerType string, flavor string, arch string) ([]string, error) {
-	ret := _m.Called(os, installerType, flavor, arch)
+// GetAgentVersions provides a mock function with given fields: ctx, os, installerType, flavor, arch
+func (_m *Client) GetAgentVersions(ctx context.Context, os string, installerType string, flavor string, arch string) ([]string, error) {
+	ret := _m.Called(ctx, os, installerType, flavor, arch)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAgentVersions")
@@ -313,19 +319,19 @@ func (_m *Client) GetAgentVersions(os string, installerType string, flavor strin
 
 	var r0 []string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, string, string, string) ([]string, error)); ok {
-		return rf(os, installerType, flavor, arch)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) ([]string, error)); ok {
+		return rf(ctx, os, installerType, flavor, arch)
 	}
-	if rf, ok := ret.Get(0).(func(string, string, string, string) []string); ok {
-		r0 = rf(os, installerType, flavor, arch)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) []string); ok {
+		r0 = rf(ctx, os, installerType, flavor, arch)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]string)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string, string, string, string) error); ok {
-		r1 = rf(os, installerType, flavor, arch)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string) error); ok {
+		r1 = rf(ctx, os, installerType, flavor, arch)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -339,17 +345,18 @@ type Client_GetAgentVersions_Call struct {
 }
 
 // GetAgentVersions is a helper method to define mock.On call
+//   - ctx context.Context
 //   - os string
 //   - installerType string
 //   - flavor string
 //   - arch string
-func (_e *Client_Expecter) GetAgentVersions(os interface{}, installerType interface{}, flavor interface{}, arch interface{}) *Client_GetAgentVersions_Call {
-	return &Client_GetAgentVersions_Call{Call: _e.mock.On("GetAgentVersions", os, installerType, flavor, arch)}
+func (_e *Client_Expecter) GetAgentVersions(ctx interface{}, os interface{}, installerType interface{}, flavor interface{}, arch interface{}) *Client_GetAgentVersions_Call {
+	return &Client_GetAgentVersions_Call{Call: _e.mock.On("GetAgentVersions", ctx, os, installerType, flavor, arch)}
 }
 
-func (_c *Client_GetAgentVersions_Call) Run(run func(os string, installerType string, flavor string, arch string)) *Client_GetAgentVersions_Call {
+func (_c *Client_GetAgentVersions_Call) Run(run func(ctx context.Context, os string, installerType string, flavor string, arch string)) *Client_GetAgentVersions_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string), args[2].(string), args[3].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string), args[4].(string))
 	})
 	return _c
 }
@@ -359,22 +366,22 @@ func (_c *Client_GetAgentVersions_Call) Return(_a0 []string, _a1 error) *Client_
 	return _c
 }
 
-func (_c *Client_GetAgentVersions_Call) RunAndReturn(run func(string, string, string, string) ([]string, error)) *Client_GetAgentVersions_Call {
+func (_c *Client_GetAgentVersions_Call) RunAndReturn(run func(context.Context, string, string, string, string) ([]string, error)) *Client_GetAgentVersions_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetAgentViaInstallerUrl provides a mock function with given fields: url, writer
-func (_m *Client) GetAgentViaInstallerUrl(url string, writer io.Writer) error {
-	ret := _m.Called(url, writer)
+// GetAgentViaInstallerUrl provides a mock function with given fields: ctx, url, writer
+func (_m *Client) GetAgentViaInstallerUrl(ctx context.Context, url string, writer io.Writer) error {
+	ret := _m.Called(ctx, url, writer)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAgentViaInstallerUrl")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, io.Writer) error); ok {
-		r0 = rf(url, writer)
+	if rf, ok := ret.Get(0).(func(context.Context, string, io.Writer) error); ok {
+		r0 = rf(ctx, url, writer)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -388,15 +395,16 @@ type Client_GetAgentViaInstallerUrl_Call struct {
 }
 
 // GetAgentViaInstallerUrl is a helper method to define mock.On call
+//   - ctx context.Context
 //   - url string
 //   - writer io.Writer
-func (_e *Client_Expecter) GetAgentViaInstallerUrl(url interface{}, writer interface{}) *Client_GetAgentViaInstallerUrl_Call {
-	return &Client_GetAgentViaInstallerUrl_Call{Call: _e.mock.On("GetAgentViaInstallerUrl", url, writer)}
+func (_e *Client_Expecter) GetAgentViaInstallerUrl(ctx interface{}, url interface{}, writer interface{}) *Client_GetAgentViaInstallerUrl_Call {
+	return &Client_GetAgentViaInstallerUrl_Call{Call: _e.mock.On("GetAgentViaInstallerUrl", ctx, url, writer)}
 }
 
-func (_c *Client_GetAgentViaInstallerUrl_Call) Run(run func(url string, writer io.Writer)) *Client_GetAgentViaInstallerUrl_Call {
+func (_c *Client_GetAgentViaInstallerUrl_Call) Run(run func(ctx context.Context, url string, writer io.Writer)) *Client_GetAgentViaInstallerUrl_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(io.Writer))
+		run(args[0].(context.Context), args[1].(string), args[2].(io.Writer))
 	})
 	return _c
 }
@@ -406,7 +414,7 @@ func (_c *Client_GetAgentViaInstallerUrl_Call) Return(_a0 error) *Client_GetAgen
 	return _c
 }
 
-func (_c *Client_GetAgentViaInstallerUrl_Call) RunAndReturn(run func(string, io.Writer) error) *Client_GetAgentViaInstallerUrl_Call {
+func (_c *Client_GetAgentViaInstallerUrl_Call) RunAndReturn(run func(context.Context, string, io.Writer) error) *Client_GetAgentViaInstallerUrl_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -466,9 +474,9 @@ func (_c *Client_GetCommunicationHostForClient_Call) RunAndReturn(run func() (dy
 	return _c
 }
 
-// GetEntityIDForIP provides a mock function with given fields: ip
-func (_m *Client) GetEntityIDForIP(ip string) (string, error) {
-	ret := _m.Called(ip)
+// GetEntityIDForIP provides a mock function with given fields: ctx, ip
+func (_m *Client) GetEntityIDForIP(ctx context.Context, ip string) (string, error) {
+	ret := _m.Called(ctx, ip)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetEntityIDForIP")
@@ -476,17 +484,17 @@ func (_m *Client) GetEntityIDForIP(ip string) (string, error) {
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (string, error)); ok {
-		return rf(ip)
+	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
+		return rf(ctx, ip)
 	}
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(ip)
+	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
+		r0 = rf(ctx, ip)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(ip)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, ip)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -500,14 +508,15 @@ type Client_GetEntityIDForIP_Call struct {
 }
 
 // GetEntityIDForIP is a helper method to define mock.On call
+//   - ctx context.Context
 //   - ip string
-func (_e *Client_Expecter) GetEntityIDForIP(ip interface{}) *Client_GetEntityIDForIP_Call {
-	return &Client_GetEntityIDForIP_Call{Call: _e.mock.On("GetEntityIDForIP", ip)}
+func (_e *Client_Expecter) GetEntityIDForIP(ctx interface{}, ip interface{}) *Client_GetEntityIDForIP_Call {
+	return &Client_GetEntityIDForIP_Call{Call: _e.mock.On("GetEntityIDForIP", ctx, ip)}
 }
 
-func (_c *Client_GetEntityIDForIP_Call) Run(run func(ip string)) *Client_GetEntityIDForIP_Call {
+func (_c *Client_GetEntityIDForIP_Call) Run(run func(ctx context.Context, ip string)) *Client_GetEntityIDForIP_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -517,14 +526,14 @@ func (_c *Client_GetEntityIDForIP_Call) Return(_a0 string, _a1 error) *Client_Ge
 	return _c
 }
 
-func (_c *Client_GetEntityIDForIP_Call) RunAndReturn(run func(string) (string, error)) *Client_GetEntityIDForIP_Call {
+func (_c *Client_GetEntityIDForIP_Call) RunAndReturn(run func(context.Context, string) (string, error)) *Client_GetEntityIDForIP_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetLatestActiveGateImage provides a mock function with given fields:
-func (_m *Client) GetLatestActiveGateImage() (*dynatrace.LatestImageInfo, error) {
-	ret := _m.Called()
+// GetLatestActiveGateImage provides a mock function with given fields: ctx
+func (_m *Client) GetLatestActiveGateImage(ctx context.Context) (*dynatrace.LatestImageInfo, error) {
+	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetLatestActiveGateImage")
@@ -532,19 +541,19 @@ func (_m *Client) GetLatestActiveGateImage() (*dynatrace.LatestImageInfo, error)
 
 	var r0 *dynatrace.LatestImageInfo
 	var r1 error
-	if rf, ok := ret.Get(0).(func() (*dynatrace.LatestImageInfo, error)); ok {
-		return rf()
+	if rf, ok := ret.Get(0).(func(context.Context) (*dynatrace.LatestImageInfo, error)); ok {
+		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func() *dynatrace.LatestImageInfo); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(context.Context) *dynatrace.LatestImageInfo); ok {
+		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*dynatrace.LatestImageInfo)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -558,13 +567,14 @@ type Client_GetLatestActiveGateImage_Call struct {
 }
 
 // GetLatestActiveGateImage is a helper method to define mock.On call
-func (_e *Client_Expecter) GetLatestActiveGateImage() *Client_GetLatestActiveGateImage_Call {
-	return &Client_GetLatestActiveGateImage_Call{Call: _e.mock.On("GetLatestActiveGateImage")}
+//   - ctx context.Context
+func (_e *Client_Expecter) GetLatestActiveGateImage(ctx interface{}) *Client_GetLatestActiveGateImage_Call {
+	return &Client_GetLatestActiveGateImage_Call{Call: _e.mock.On("GetLatestActiveGateImage", ctx)}
 }
 
-func (_c *Client_GetLatestActiveGateImage_Call) Run(run func()) *Client_GetLatestActiveGateImage_Call {
+func (_c *Client_GetLatestActiveGateImage_Call) Run(run func(ctx context.Context)) *Client_GetLatestActiveGateImage_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(context.Context))
 	})
 	return _c
 }
@@ -574,14 +584,14 @@ func (_c *Client_GetLatestActiveGateImage_Call) Return(_a0 *dynatrace.LatestImag
 	return _c
 }
 
-func (_c *Client_GetLatestActiveGateImage_Call) RunAndReturn(run func() (*dynatrace.LatestImageInfo, error)) *Client_GetLatestActiveGateImage_Call {
+func (_c *Client_GetLatestActiveGateImage_Call) RunAndReturn(run func(context.Context) (*dynatrace.LatestImageInfo, error)) *Client_GetLatestActiveGateImage_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetLatestActiveGateVersion provides a mock function with given fields: os
-func (_m *Client) GetLatestActiveGateVersion(os string) (string, error) {
-	ret := _m.Called(os)
+// GetLatestActiveGateVersion provides a mock function with given fields: ctx, os
+func (_m *Client) GetLatestActiveGateVersion(ctx context.Context, os string) (string, error) {
+	ret := _m.Called(ctx, os)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetLatestActiveGateVersion")
@@ -589,17 +599,17 @@ func (_m *Client) GetLatestActiveGateVersion(os string) (string, error) {
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (string, error)); ok {
-		return rf(os)
+	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
+		return rf(ctx, os)
 	}
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(os)
+	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
+		r0 = rf(ctx, os)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(os)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, os)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -613,14 +623,15 @@ type Client_GetLatestActiveGateVersion_Call struct {
 }
 
 // GetLatestActiveGateVersion is a helper method to define mock.On call
+//   - ctx context.Context
 //   - os string
-func (_e *Client_Expecter) GetLatestActiveGateVersion(os interface{}) *Client_GetLatestActiveGateVersion_Call {
-	return &Client_GetLatestActiveGateVersion_Call{Call: _e.mock.On("GetLatestActiveGateVersion", os)}
+func (_e *Client_Expecter) GetLatestActiveGateVersion(ctx interface{}, os interface{}) *Client_GetLatestActiveGateVersion_Call {
+	return &Client_GetLatestActiveGateVersion_Call{Call: _e.mock.On("GetLatestActiveGateVersion", ctx, os)}
 }
 
-func (_c *Client_GetLatestActiveGateVersion_Call) Run(run func(os string)) *Client_GetLatestActiveGateVersion_Call {
+func (_c *Client_GetLatestActiveGateVersion_Call) Run(run func(ctx context.Context, os string)) *Client_GetLatestActiveGateVersion_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -630,22 +641,22 @@ func (_c *Client_GetLatestActiveGateVersion_Call) Return(_a0 string, _a1 error) 
 	return _c
 }
 
-func (_c *Client_GetLatestActiveGateVersion_Call) RunAndReturn(run func(string) (string, error)) *Client_GetLatestActiveGateVersion_Call {
+func (_c *Client_GetLatestActiveGateVersion_Call) RunAndReturn(run func(context.Context, string) (string, error)) *Client_GetLatestActiveGateVersion_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetLatestAgent provides a mock function with given fields: os, installerType, flavor, arch, technologies, skipMetadata, writer
-func (_m *Client) GetLatestAgent(os string, installerType string, flavor string, arch string, technologies []string, skipMetadata bool, writer io.Writer) error {
-	ret := _m.Called(os, installerType, flavor, arch, technologies, skipMetadata, writer)
+// GetLatestAgent provides a mock function with given fields: ctx, os, installerType, flavor, arch, technologies, skipMetadata, writer
+func (_m *Client) GetLatestAgent(ctx context.Context, os string, installerType string, flavor string, arch string, technologies []string, skipMetadata bool, writer io.Writer) error {
+	ret := _m.Called(ctx, os, installerType, flavor, arch, technologies, skipMetadata, writer)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetLatestAgent")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string, string, string, []string, bool, io.Writer) error); ok {
-		r0 = rf(os, installerType, flavor, arch, technologies, skipMetadata, writer)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, []string, bool, io.Writer) error); ok {
+		r0 = rf(ctx, os, installerType, flavor, arch, technologies, skipMetadata, writer)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -659,6 +670,7 @@ type Client_GetLatestAgent_Call struct {
 }
 
 // GetLatestAgent is a helper method to define mock.On call
+//   - ctx context.Context
 //   - os string
 //   - installerType string
 //   - flavor string
@@ -666,13 +678,13 @@ type Client_GetLatestAgent_Call struct {
 //   - technologies []string
 //   - skipMetadata bool
 //   - writer io.Writer
-func (_e *Client_Expecter) GetLatestAgent(os interface{}, installerType interface{}, flavor interface{}, arch interface{}, technologies interface{}, skipMetadata interface{}, writer interface{}) *Client_GetLatestAgent_Call {
-	return &Client_GetLatestAgent_Call{Call: _e.mock.On("GetLatestAgent", os, installerType, flavor, arch, technologies, skipMetadata, writer)}
+func (_e *Client_Expecter) GetLatestAgent(ctx interface{}, os interface{}, installerType interface{}, flavor interface{}, arch interface{}, technologies interface{}, skipMetadata interface{}, writer interface{}) *Client_GetLatestAgent_Call {
+	return &Client_GetLatestAgent_Call{Call: _e.mock.On("GetLatestAgent", ctx, os, installerType, flavor, arch, technologies, skipMetadata, writer)}
 }
 
-func (_c *Client_GetLatestAgent_Call) Run(run func(os string, installerType string, flavor string, arch string, technologies []string, skipMetadata bool, writer io.Writer)) *Client_GetLatestAgent_Call {
+func (_c *Client_GetLatestAgent_Call) Run(run func(ctx context.Context, os string, installerType string, flavor string, arch string, technologies []string, skipMetadata bool, writer io.Writer)) *Client_GetLatestAgent_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string), args[2].(string), args[3].(string), args[4].([]string), args[5].(bool), args[6].(io.Writer))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string), args[4].(string), args[5].([]string), args[6].(bool), args[7].(io.Writer))
 	})
 	return _c
 }
@@ -682,14 +694,14 @@ func (_c *Client_GetLatestAgent_Call) Return(_a0 error) *Client_GetLatestAgent_C
 	return _c
 }
 
-func (_c *Client_GetLatestAgent_Call) RunAndReturn(run func(string, string, string, string, []string, bool, io.Writer) error) *Client_GetLatestAgent_Call {
+func (_c *Client_GetLatestAgent_Call) RunAndReturn(run func(context.Context, string, string, string, string, []string, bool, io.Writer) error) *Client_GetLatestAgent_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetLatestAgentVersion provides a mock function with given fields: os, installerType
-func (_m *Client) GetLatestAgentVersion(os string, installerType string) (string, error) {
-	ret := _m.Called(os, installerType)
+// GetLatestAgentVersion provides a mock function with given fields: ctx, os, installerType
+func (_m *Client) GetLatestAgentVersion(ctx context.Context, os string, installerType string) (string, error) {
+	ret := _m.Called(ctx, os, installerType)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetLatestAgentVersion")
@@ -697,17 +709,17 @@ func (_m *Client) GetLatestAgentVersion(os string, installerType string) (string
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, string) (string, error)); ok {
-		return rf(os, installerType)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (string, error)); ok {
+		return rf(ctx, os, installerType)
 	}
-	if rf, ok := ret.Get(0).(func(string, string) string); ok {
-		r0 = rf(os, installerType)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) string); ok {
+		r0 = rf(ctx, os, installerType)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = rf(os, installerType)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, os, installerType)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -721,15 +733,16 @@ type Client_GetLatestAgentVersion_Call struct {
 }
 
 // GetLatestAgentVersion is a helper method to define mock.On call
+//   - ctx context.Context
 //   - os string
 //   - installerType string
-func (_e *Client_Expecter) GetLatestAgentVersion(os interface{}, installerType interface{}) *Client_GetLatestAgentVersion_Call {
-	return &Client_GetLatestAgentVersion_Call{Call: _e.mock.On("GetLatestAgentVersion", os, installerType)}
+func (_e *Client_Expecter) GetLatestAgentVersion(ctx interface{}, os interface{}, installerType interface{}) *Client_GetLatestAgentVersion_Call {
+	return &Client_GetLatestAgentVersion_Call{Call: _e.mock.On("GetLatestAgentVersion", ctx, os, installerType)}
 }
 
-func (_c *Client_GetLatestAgentVersion_Call) Run(run func(os string, installerType string)) *Client_GetLatestAgentVersion_Call {
+func (_c *Client_GetLatestAgentVersion_Call) Run(run func(ctx context.Context, os string, installerType string)) *Client_GetLatestAgentVersion_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
 	})
 	return _c
 }
@@ -739,14 +752,14 @@ func (_c *Client_GetLatestAgentVersion_Call) Return(_a0 string, _a1 error) *Clie
 	return _c
 }
 
-func (_c *Client_GetLatestAgentVersion_Call) RunAndReturn(run func(string, string) (string, error)) *Client_GetLatestAgentVersion_Call {
+func (_c *Client_GetLatestAgentVersion_Call) RunAndReturn(run func(context.Context, string, string) (string, error)) *Client_GetLatestAgentVersion_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetLatestCodeModulesImage provides a mock function with given fields:
-func (_m *Client) GetLatestCodeModulesImage() (*dynatrace.LatestImageInfo, error) {
-	ret := _m.Called()
+// GetLatestCodeModulesImage provides a mock function with given fields: ctx
+func (_m *Client) GetLatestCodeModulesImage(ctx context.Context) (*dynatrace.LatestImageInfo, error) {
+	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetLatestCodeModulesImage")
@@ -754,19 +767,19 @@ func (_m *Client) GetLatestCodeModulesImage() (*dynatrace.LatestImageInfo, error
 
 	var r0 *dynatrace.LatestImageInfo
 	var r1 error
-	if rf, ok := ret.Get(0).(func() (*dynatrace.LatestImageInfo, error)); ok {
-		return rf()
+	if rf, ok := ret.Get(0).(func(context.Context) (*dynatrace.LatestImageInfo, error)); ok {
+		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func() *dynatrace.LatestImageInfo); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(context.Context) *dynatrace.LatestImageInfo); ok {
+		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*dynatrace.LatestImageInfo)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -780,13 +793,14 @@ type Client_GetLatestCodeModulesImage_Call struct {
 }
 
 // GetLatestCodeModulesImage is a helper method to define mock.On call
-func (_e *Client_Expecter) GetLatestCodeModulesImage() *Client_GetLatestCodeModulesImage_Call {
-	return &Client_GetLatestCodeModulesImage_Call{Call: _e.mock.On("GetLatestCodeModulesImage")}
+//   - ctx context.Context
+func (_e *Client_Expecter) GetLatestCodeModulesImage(ctx interface{}) *Client_GetLatestCodeModulesImage_Call {
+	return &Client_GetLatestCodeModulesImage_Call{Call: _e.mock.On("GetLatestCodeModulesImage", ctx)}
 }
 
-func (_c *Client_GetLatestCodeModulesImage_Call) Run(run func()) *Client_GetLatestCodeModulesImage_Call {
+func (_c *Client_GetLatestCodeModulesImage_Call) Run(run func(ctx context.Context)) *Client_GetLatestCodeModulesImage_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(context.Context))
 	})
 	return _c
 }
@@ -796,14 +810,14 @@ func (_c *Client_GetLatestCodeModulesImage_Call) Return(_a0 *dynatrace.LatestIma
 	return _c
 }
 
-func (_c *Client_GetLatestCodeModulesImage_Call) RunAndReturn(run func() (*dynatrace.LatestImageInfo, error)) *Client_GetLatestCodeModulesImage_Call {
+func (_c *Client_GetLatestCodeModulesImage_Call) RunAndReturn(run func(context.Context) (*dynatrace.LatestImageInfo, error)) *Client_GetLatestCodeModulesImage_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetLatestOneAgentImage provides a mock function with given fields:
-func (_m *Client) GetLatestOneAgentImage() (*dynatrace.LatestImageInfo, error) {
-	ret := _m.Called()
+// GetLatestOneAgentImage provides a mock function with given fields: ctx
+func (_m *Client) GetLatestOneAgentImage(ctx context.Context) (*dynatrace.LatestImageInfo, error) {
+	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetLatestOneAgentImage")
@@ -811,19 +825,19 @@ func (_m *Client) GetLatestOneAgentImage() (*dynatrace.LatestImageInfo, error) {
 
 	var r0 *dynatrace.LatestImageInfo
 	var r1 error
-	if rf, ok := ret.Get(0).(func() (*dynatrace.LatestImageInfo, error)); ok {
-		return rf()
+	if rf, ok := ret.Get(0).(func(context.Context) (*dynatrace.LatestImageInfo, error)); ok {
+		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func() *dynatrace.LatestImageInfo); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(context.Context) *dynatrace.LatestImageInfo); ok {
+		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*dynatrace.LatestImageInfo)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -837,13 +851,14 @@ type Client_GetLatestOneAgentImage_Call struct {
 }
 
 // GetLatestOneAgentImage is a helper method to define mock.On call
-func (_e *Client_Expecter) GetLatestOneAgentImage() *Client_GetLatestOneAgentImage_Call {
-	return &Client_GetLatestOneAgentImage_Call{Call: _e.mock.On("GetLatestOneAgentImage")}
+//   - ctx context.Context
+func (_e *Client_Expecter) GetLatestOneAgentImage(ctx interface{}) *Client_GetLatestOneAgentImage_Call {
+	return &Client_GetLatestOneAgentImage_Call{Call: _e.mock.On("GetLatestOneAgentImage", ctx)}
 }
 
-func (_c *Client_GetLatestOneAgentImage_Call) Run(run func()) *Client_GetLatestOneAgentImage_Call {
+func (_c *Client_GetLatestOneAgentImage_Call) Run(run func(ctx context.Context)) *Client_GetLatestOneAgentImage_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(context.Context))
 	})
 	return _c
 }
@@ -853,14 +868,14 @@ func (_c *Client_GetLatestOneAgentImage_Call) Return(_a0 *dynatrace.LatestImageI
 	return _c
 }
 
-func (_c *Client_GetLatestOneAgentImage_Call) RunAndReturn(run func() (*dynatrace.LatestImageInfo, error)) *Client_GetLatestOneAgentImage_Call {
+func (_c *Client_GetLatestOneAgentImage_Call) RunAndReturn(run func(context.Context) (*dynatrace.LatestImageInfo, error)) *Client_GetLatestOneAgentImage_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetMonitoredEntitiesForKubeSystemUUID provides a mock function with given fields: kubeSystemUUID
-func (_m *Client) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID string) ([]dynatrace.MonitoredEntity, error) {
-	ret := _m.Called(kubeSystemUUID)
+// GetMonitoredEntitiesForKubeSystemUUID provides a mock function with given fields: ctx, kubeSystemUUID
+func (_m *Client) GetMonitoredEntitiesForKubeSystemUUID(ctx context.Context, kubeSystemUUID string) ([]dynatrace.MonitoredEntity, error) {
+	ret := _m.Called(ctx, kubeSystemUUID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetMonitoredEntitiesForKubeSystemUUID")
@@ -868,19 +883,19 @@ func (_m *Client) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID string) (
 
 	var r0 []dynatrace.MonitoredEntity
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) ([]dynatrace.MonitoredEntity, error)); ok {
-		return rf(kubeSystemUUID)
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]dynatrace.MonitoredEntity, error)); ok {
+		return rf(ctx, kubeSystemUUID)
 	}
-	if rf, ok := ret.Get(0).(func(string) []dynatrace.MonitoredEntity); ok {
-		r0 = rf(kubeSystemUUID)
+	if rf, ok := ret.Get(0).(func(context.Context, string) []dynatrace.MonitoredEntity); ok {
+		r0 = rf(ctx, kubeSystemUUID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]dynatrace.MonitoredEntity)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(kubeSystemUUID)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, kubeSystemUUID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -894,14 +909,15 @@ type Client_GetMonitoredEntitiesForKubeSystemUUID_Call struct {
 }
 
 // GetMonitoredEntitiesForKubeSystemUUID is a helper method to define mock.On call
+//   - ctx context.Context
 //   - kubeSystemUUID string
-func (_e *Client_Expecter) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID interface{}) *Client_GetMonitoredEntitiesForKubeSystemUUID_Call {
-	return &Client_GetMonitoredEntitiesForKubeSystemUUID_Call{Call: _e.mock.On("GetMonitoredEntitiesForKubeSystemUUID", kubeSystemUUID)}
+func (_e *Client_Expecter) GetMonitoredEntitiesForKubeSystemUUID(ctx interface{}, kubeSystemUUID interface{}) *Client_GetMonitoredEntitiesForKubeSystemUUID_Call {
+	return &Client_GetMonitoredEntitiesForKubeSystemUUID_Call{Call: _e.mock.On("GetMonitoredEntitiesForKubeSystemUUID", ctx, kubeSystemUUID)}
 }
 
-func (_c *Client_GetMonitoredEntitiesForKubeSystemUUID_Call) Run(run func(kubeSystemUUID string)) *Client_GetMonitoredEntitiesForKubeSystemUUID_Call {
+func (_c *Client_GetMonitoredEntitiesForKubeSystemUUID_Call) Run(run func(ctx context.Context, kubeSystemUUID string)) *Client_GetMonitoredEntitiesForKubeSystemUUID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -911,14 +927,14 @@ func (_c *Client_GetMonitoredEntitiesForKubeSystemUUID_Call) Return(_a0 []dynatr
 	return _c
 }
 
-func (_c *Client_GetMonitoredEntitiesForKubeSystemUUID_Call) RunAndReturn(run func(string) ([]dynatrace.MonitoredEntity, error)) *Client_GetMonitoredEntitiesForKubeSystemUUID_Call {
+func (_c *Client_GetMonitoredEntitiesForKubeSystemUUID_Call) RunAndReturn(run func(context.Context, string) ([]dynatrace.MonitoredEntity, error)) *Client_GetMonitoredEntitiesForKubeSystemUUID_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetOneAgentConnectionInfo provides a mock function with given fields:
-func (_m *Client) GetOneAgentConnectionInfo() (dynatrace.OneAgentConnectionInfo, error) {
-	ret := _m.Called()
+// GetOneAgentConnectionInfo provides a mock function with given fields: ctx
+func (_m *Client) GetOneAgentConnectionInfo(ctx context.Context) (dynatrace.OneAgentConnectionInfo, error) {
+	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetOneAgentConnectionInfo")
@@ -926,17 +942,17 @@ func (_m *Client) GetOneAgentConnectionInfo() (dynatrace.OneAgentConnectionInfo,
 
 	var r0 dynatrace.OneAgentConnectionInfo
 	var r1 error
-	if rf, ok := ret.Get(0).(func() (dynatrace.OneAgentConnectionInfo, error)); ok {
-		return rf()
+	if rf, ok := ret.Get(0).(func(context.Context) (dynatrace.OneAgentConnectionInfo, error)); ok {
+		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func() dynatrace.OneAgentConnectionInfo); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(context.Context) dynatrace.OneAgentConnectionInfo); ok {
+		r0 = rf(ctx)
 	} else {
 		r0 = ret.Get(0).(dynatrace.OneAgentConnectionInfo)
 	}
 
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -950,13 +966,14 @@ type Client_GetOneAgentConnectionInfo_Call struct {
 }
 
 // GetOneAgentConnectionInfo is a helper method to define mock.On call
-func (_e *Client_Expecter) GetOneAgentConnectionInfo() *Client_GetOneAgentConnectionInfo_Call {
-	return &Client_GetOneAgentConnectionInfo_Call{Call: _e.mock.On("GetOneAgentConnectionInfo")}
+//   - ctx context.Context
+func (_e *Client_Expecter) GetOneAgentConnectionInfo(ctx interface{}) *Client_GetOneAgentConnectionInfo_Call {
+	return &Client_GetOneAgentConnectionInfo_Call{Call: _e.mock.On("GetOneAgentConnectionInfo", ctx)}
 }
 
-func (_c *Client_GetOneAgentConnectionInfo_Call) Run(run func()) *Client_GetOneAgentConnectionInfo_Call {
+func (_c *Client_GetOneAgentConnectionInfo_Call) Run(run func(ctx context.Context)) *Client_GetOneAgentConnectionInfo_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(context.Context))
 	})
 	return _c
 }
@@ -966,14 +983,14 @@ func (_c *Client_GetOneAgentConnectionInfo_Call) Return(_a0 dynatrace.OneAgentCo
 	return _c
 }
 
-func (_c *Client_GetOneAgentConnectionInfo_Call) RunAndReturn(run func() (dynatrace.OneAgentConnectionInfo, error)) *Client_GetOneAgentConnectionInfo_Call {
+func (_c *Client_GetOneAgentConnectionInfo_Call) RunAndReturn(run func(context.Context) (dynatrace.OneAgentConnectionInfo, error)) *Client_GetOneAgentConnectionInfo_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetProcessModuleConfig provides a mock function with given fields: prevRevision
-func (_m *Client) GetProcessModuleConfig(prevRevision uint) (*dynatrace.ProcessModuleConfig, error) {
-	ret := _m.Called(prevRevision)
+// GetProcessModuleConfig provides a mock function with given fields: ctx, prevRevision
+func (_m *Client) GetProcessModuleConfig(ctx context.Context, prevRevision uint) (*dynatrace.ProcessModuleConfig, error) {
+	ret := _m.Called(ctx, prevRevision)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetProcessModuleConfig")
@@ -981,19 +998,19 @@ func (_m *Client) GetProcessModuleConfig(prevRevision uint) (*dynatrace.ProcessM
 
 	var r0 *dynatrace.ProcessModuleConfig
 	var r1 error
-	if rf, ok := ret.Get(0).(func(uint) (*dynatrace.ProcessModuleConfig, error)); ok {
-		return rf(prevRevision)
+	if rf, ok := ret.Get(0).(func(context.Context, uint) (*dynatrace.ProcessModuleConfig, error)); ok {
+		return rf(ctx, prevRevision)
 	}
-	if rf, ok := ret.Get(0).(func(uint) *dynatrace.ProcessModuleConfig); ok {
-		r0 = rf(prevRevision)
+	if rf, ok := ret.Get(0).(func(context.Context, uint) *dynatrace.ProcessModuleConfig); ok {
+		r0 = rf(ctx, prevRevision)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*dynatrace.ProcessModuleConfig)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(uint) error); ok {
-		r1 = rf(prevRevision)
+	if rf, ok := ret.Get(1).(func(context.Context, uint) error); ok {
+		r1 = rf(ctx, prevRevision)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1007,14 +1024,15 @@ type Client_GetProcessModuleConfig_Call struct {
 }
 
 // GetProcessModuleConfig is a helper method to define mock.On call
+//   - ctx context.Context
 //   - prevRevision uint
-func (_e *Client_Expecter) GetProcessModuleConfig(prevRevision interface{}) *Client_GetProcessModuleConfig_Call {
-	return &Client_GetProcessModuleConfig_Call{Call: _e.mock.On("GetProcessModuleConfig", prevRevision)}
+func (_e *Client_Expecter) GetProcessModuleConfig(ctx interface{}, prevRevision interface{}) *Client_GetProcessModuleConfig_Call {
+	return &Client_GetProcessModuleConfig_Call{Call: _e.mock.On("GetProcessModuleConfig", ctx, prevRevision)}
 }
 
-func (_c *Client_GetProcessModuleConfig_Call) Run(run func(prevRevision uint)) *Client_GetProcessModuleConfig_Call {
+func (_c *Client_GetProcessModuleConfig_Call) Run(run func(ctx context.Context, prevRevision uint)) *Client_GetProcessModuleConfig_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(uint))
+		run(args[0].(context.Context), args[1].(uint))
 	})
 	return _c
 }
@@ -1024,14 +1042,14 @@ func (_c *Client_GetProcessModuleConfig_Call) Return(_a0 *dynatrace.ProcessModul
 	return _c
 }
 
-func (_c *Client_GetProcessModuleConfig_Call) RunAndReturn(run func(uint) (*dynatrace.ProcessModuleConfig, error)) *Client_GetProcessModuleConfig_Call {
+func (_c *Client_GetProcessModuleConfig_Call) RunAndReturn(run func(context.Context, uint) (*dynatrace.ProcessModuleConfig, error)) *Client_GetProcessModuleConfig_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetSettingsForMonitoredEntities provides a mock function with given fields: monitoredEntities, schemaId
-func (_m *Client) GetSettingsForMonitoredEntities(monitoredEntities []dynatrace.MonitoredEntity, schemaId string) (dynatrace.GetSettingsResponse, error) {
-	ret := _m.Called(monitoredEntities, schemaId)
+// GetSettingsForMonitoredEntities provides a mock function with given fields: ctx, monitoredEntities, schemaId
+func (_m *Client) GetSettingsForMonitoredEntities(ctx context.Context, monitoredEntities []dynatrace.MonitoredEntity, schemaId string) (dynatrace.GetSettingsResponse, error) {
+	ret := _m.Called(ctx, monitoredEntities, schemaId)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetSettingsForMonitoredEntities")
@@ -1039,17 +1057,17 @@ func (_m *Client) GetSettingsForMonitoredEntities(monitoredEntities []dynatrace.
 
 	var r0 dynatrace.GetSettingsResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func([]dynatrace.MonitoredEntity, string) (dynatrace.GetSettingsResponse, error)); ok {
-		return rf(monitoredEntities, schemaId)
+	if rf, ok := ret.Get(0).(func(context.Context, []dynatrace.MonitoredEntity, string) (dynatrace.GetSettingsResponse, error)); ok {
+		return rf(ctx, monitoredEntities, schemaId)
 	}
-	if rf, ok := ret.Get(0).(func([]dynatrace.MonitoredEntity, string) dynatrace.GetSettingsResponse); ok {
-		r0 = rf(monitoredEntities, schemaId)
+	if rf, ok := ret.Get(0).(func(context.Context, []dynatrace.MonitoredEntity, string) dynatrace.GetSettingsResponse); ok {
+		r0 = rf(ctx, monitoredEntities, schemaId)
 	} else {
 		r0 = ret.Get(0).(dynatrace.GetSettingsResponse)
 	}
 
-	if rf, ok := ret.Get(1).(func([]dynatrace.MonitoredEntity, string) error); ok {
-		r1 = rf(monitoredEntities, schemaId)
+	if rf, ok := ret.Get(1).(func(context.Context, []dynatrace.MonitoredEntity, string) error); ok {
+		r1 = rf(ctx, monitoredEntities, schemaId)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1063,15 +1081,16 @@ type Client_GetSettingsForMonitoredEntities_Call struct {
 }
 
 // GetSettingsForMonitoredEntities is a helper method to define mock.On call
+//   - ctx context.Context
 //   - monitoredEntities []dynatrace.MonitoredEntity
 //   - schemaId string
-func (_e *Client_Expecter) GetSettingsForMonitoredEntities(monitoredEntities interface{}, schemaId interface{}) *Client_GetSettingsForMonitoredEntities_Call {
-	return &Client_GetSettingsForMonitoredEntities_Call{Call: _e.mock.On("GetSettingsForMonitoredEntities", monitoredEntities, schemaId)}
+func (_e *Client_Expecter) GetSettingsForMonitoredEntities(ctx interface{}, monitoredEntities interface{}, schemaId interface{}) *Client_GetSettingsForMonitoredEntities_Call {
+	return &Client_GetSettingsForMonitoredEntities_Call{Call: _e.mock.On("GetSettingsForMonitoredEntities", ctx, monitoredEntities, schemaId)}
 }
 
-func (_c *Client_GetSettingsForMonitoredEntities_Call) Run(run func(monitoredEntities []dynatrace.MonitoredEntity, schemaId string)) *Client_GetSettingsForMonitoredEntities_Call {
+func (_c *Client_GetSettingsForMonitoredEntities_Call) Run(run func(ctx context.Context, monitoredEntities []dynatrace.MonitoredEntity, schemaId string)) *Client_GetSettingsForMonitoredEntities_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]dynatrace.MonitoredEntity), args[1].(string))
+		run(args[0].(context.Context), args[1].([]dynatrace.MonitoredEntity), args[2].(string))
 	})
 	return _c
 }
@@ -1081,14 +1100,14 @@ func (_c *Client_GetSettingsForMonitoredEntities_Call) Return(_a0 dynatrace.GetS
 	return _c
 }
 
-func (_c *Client_GetSettingsForMonitoredEntities_Call) RunAndReturn(run func([]dynatrace.MonitoredEntity, string) (dynatrace.GetSettingsResponse, error)) *Client_GetSettingsForMonitoredEntities_Call {
+func (_c *Client_GetSettingsForMonitoredEntities_Call) RunAndReturn(run func(context.Context, []dynatrace.MonitoredEntity, string) (dynatrace.GetSettingsResponse, error)) *Client_GetSettingsForMonitoredEntities_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetTokenScopes provides a mock function with given fields: token
-func (_m *Client) GetTokenScopes(token string) (dynatrace.TokenScopes, error) {
-	ret := _m.Called(token)
+// GetTokenScopes provides a mock function with given fields: ctx, token
+func (_m *Client) GetTokenScopes(ctx context.Context, token string) (dynatrace.TokenScopes, error) {
+	ret := _m.Called(ctx, token)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetTokenScopes")
@@ -1096,19 +1115,19 @@ func (_m *Client) GetTokenScopes(token string) (dynatrace.TokenScopes, error) {
 
 	var r0 dynatrace.TokenScopes
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (dynatrace.TokenScopes, error)); ok {
-		return rf(token)
+	if rf, ok := ret.Get(0).(func(context.Context, string) (dynatrace.TokenScopes, error)); ok {
+		return rf(ctx, token)
 	}
-	if rf, ok := ret.Get(0).(func(string) dynatrace.TokenScopes); ok {
-		r0 = rf(token)
+	if rf, ok := ret.Get(0).(func(context.Context, string) dynatrace.TokenScopes); ok {
+		r0 = rf(ctx, token)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(dynatrace.TokenScopes)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(token)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, token)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1122,14 +1141,15 @@ type Client_GetTokenScopes_Call struct {
 }
 
 // GetTokenScopes is a helper method to define mock.On call
+//   - ctx context.Context
 //   - token string
-func (_e *Client_Expecter) GetTokenScopes(token interface{}) *Client_GetTokenScopes_Call {
-	return &Client_GetTokenScopes_Call{Call: _e.mock.On("GetTokenScopes", token)}
+func (_e *Client_Expecter) GetTokenScopes(ctx interface{}, token interface{}) *Client_GetTokenScopes_Call {
+	return &Client_GetTokenScopes_Call{Call: _e.mock.On("GetTokenScopes", ctx, token)}
 }
 
-func (_c *Client_GetTokenScopes_Call) Run(run func(token string)) *Client_GetTokenScopes_Call {
+func (_c *Client_GetTokenScopes_Call) Run(run func(ctx context.Context, token string)) *Client_GetTokenScopes_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -1139,22 +1159,22 @@ func (_c *Client_GetTokenScopes_Call) Return(_a0 dynatrace.TokenScopes, _a1 erro
 	return _c
 }
 
-func (_c *Client_GetTokenScopes_Call) RunAndReturn(run func(string) (dynatrace.TokenScopes, error)) *Client_GetTokenScopes_Call {
+func (_c *Client_GetTokenScopes_Call) RunAndReturn(run func(context.Context, string) (dynatrace.TokenScopes, error)) *Client_GetTokenScopes_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// SendEvent provides a mock function with given fields: eventData
-func (_m *Client) SendEvent(eventData *dynatrace.EventData) error {
-	ret := _m.Called(eventData)
+// SendEvent provides a mock function with given fields: ctx, eventData
+func (_m *Client) SendEvent(ctx context.Context, eventData *dynatrace.EventData) error {
+	ret := _m.Called(ctx, eventData)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SendEvent")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*dynatrace.EventData) error); ok {
-		r0 = rf(eventData)
+	if rf, ok := ret.Get(0).(func(context.Context, *dynatrace.EventData) error); ok {
+		r0 = rf(ctx, eventData)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -1168,14 +1188,15 @@ type Client_SendEvent_Call struct {
 }
 
 // SendEvent is a helper method to define mock.On call
+//   - ctx context.Context
 //   - eventData *dynatrace.EventData
-func (_e *Client_Expecter) SendEvent(eventData interface{}) *Client_SendEvent_Call {
-	return &Client_SendEvent_Call{Call: _e.mock.On("SendEvent", eventData)}
+func (_e *Client_Expecter) SendEvent(ctx interface{}, eventData interface{}) *Client_SendEvent_Call {
+	return &Client_SendEvent_Call{Call: _e.mock.On("SendEvent", ctx, eventData)}
 }
 
-func (_c *Client_SendEvent_Call) Run(run func(eventData *dynatrace.EventData)) *Client_SendEvent_Call {
+func (_c *Client_SendEvent_Call) Run(run func(ctx context.Context, eventData *dynatrace.EventData)) *Client_SendEvent_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*dynatrace.EventData))
+		run(args[0].(context.Context), args[1].(*dynatrace.EventData))
 	})
 	return _c
 }
@@ -1185,7 +1206,7 @@ func (_c *Client_SendEvent_Call) Return(_a0 error) *Client_SendEvent_Call {
 	return _c
 }
 
-func (_c *Client_SendEvent_Call) RunAndReturn(run func(*dynatrace.EventData) error) *Client_SendEvent_Call {
+func (_c *Client_SendEvent_Call) RunAndReturn(run func(context.Context, *dynatrace.EventData) error) *Client_SendEvent_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -106,9 +106,9 @@ func checkIfDynatraceApiSecretHasApiToken(ctx context.Context, baseLog logr.Logg
 		return nil, errors.Wrapf(err, "'%s:%s' secret is missing or invalid", dynakube.Namespace, dynakube.Tokens())
 	}
 
-	_, hasApiToken := tokens[dtclient.DynatraceApiToken]
+	_, hasApiToken := tokens[dtclient.ApiToken]
 	if !hasApiToken {
-		return nil, errors.New(fmt.Sprintf("'%s' token is missing in '%s:%s' secret", dtclient.DynatraceApiToken, dynakube.Namespace, dynakube.Tokens()))
+		return nil, errors.New(fmt.Sprintf("'%s' token is missing in '%s:%s' secret", dtclient.ApiToken, dynakube.Namespace, dynakube.Tokens()))
 	}
 
 	logInfof(log, "secret token 'apiToken' exists")
@@ -157,7 +157,7 @@ func checkDynatraceApiTokenScopes(ctx context.Context, baseLog logr.Logger, apiR
 		return errors.Wrapf(err, "invalid '%s:%s' secret", dynakube.Namespace, dynakube.Tokens())
 	}
 
-	if err = tokens.VerifyScopes(dtc); err != nil {
+	if err = tokens.VerifyScopes(ctx, dtc); err != nil {
 		return errors.Wrapf(err, "invalid '%s:%s' secret", dynakube.Namespace, dynakube.Tokens())
 	}
 
@@ -180,7 +180,7 @@ func checkApiUrlForLatestAgentVersion(ctx context.Context, baseLog logr.Logger, 
 		return errors.Wrap(err, "failed to build DynatraceAPI client")
 	}
 
-	_, err = dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypeDefault)
+	_, err = dtc.GetLatestAgentVersion(ctx, dtclient.OsUnix, dtclient.InstallerTypeDefault)
 	if err != nil {
 		return errors.Wrap(err, "failed to connect to DynatraceAPI")
 	}
@@ -195,14 +195,14 @@ func checkPullSecretExists(ctx context.Context, baseLog logr.Logger, apiReader c
 
 	query := secret.NewQuery(ctx, nil, apiReader, log)
 
-	secret, err := query.Get(types.NamespacedName{Namespace: dynakube.Namespace, Name: dynakube.PullSecretName()})
+	pullSecret, err := query.Get(types.NamespacedName{Namespace: dynakube.Namespace, Name: dynakube.PullSecretName()})
 	if err != nil {
 		return corev1.Secret{}, errors.Wrapf(err, "'%s:%s' pull secret is missing", dynakube.Namespace, dynakube.PullSecretName())
 	}
 
 	logInfof(log, "pull secret '%s:%s' exists", dynakube.Namespace, dynakube.PullSecretName())
 
-	return secret, nil
+	return pullSecret, nil
 }
 
 func checkPullSecretHasRequiredTokens(baseLog logr.Logger, dynakube *dynatracev1beta1.DynaKube, pullSecret corev1.Secret) error {

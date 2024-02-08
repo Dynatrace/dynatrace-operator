@@ -2,6 +2,7 @@ package dynatrace
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -18,8 +19,8 @@ func (image LatestImageInfo) String() string {
 	return image.Source + ":" + image.Tag
 }
 
-func (dtc *dynatraceClient) GetLatestOneAgentImage() (*LatestImageInfo, error) {
-	latestImageInfo, err := dtc.processLatestImageRequest(dtc.getLatestOneAgentImageUrl())
+func (dtc *dynatraceClient) GetLatestOneAgentImage(ctx context.Context) (*LatestImageInfo, error) {
+	latestImageInfo, err := dtc.processLatestImageRequest(ctx, dtc.getLatestOneAgentImageUrl())
 	if err != nil {
 		log.Info("failed to process latest image response")
 		return nil, err
@@ -28,8 +29,8 @@ func (dtc *dynatraceClient) GetLatestOneAgentImage() (*LatestImageInfo, error) {
 	return latestImageInfo, nil
 }
 
-func (dtc *dynatraceClient) GetLatestCodeModulesImage() (*LatestImageInfo, error) {
-	latestImageInfo, err := dtc.processLatestImageRequest(dtc.getLatestCodeModulesImageUrl())
+func (dtc *dynatraceClient) GetLatestCodeModulesImage(ctx context.Context) (*LatestImageInfo, error) {
+	latestImageInfo, err := dtc.processLatestImageRequest(ctx, dtc.getLatestCodeModulesImageUrl())
 	if err != nil {
 		log.Info("failed to process latest image response")
 		return nil, err
@@ -38,8 +39,8 @@ func (dtc *dynatraceClient) GetLatestCodeModulesImage() (*LatestImageInfo, error
 	return latestImageInfo, nil
 }
 
-func (dtc *dynatraceClient) GetLatestActiveGateImage() (*LatestImageInfo, error) {
-	latestImageInfo, err := dtc.processLatestImageRequest(dtc.getLatestActiveGateImageUrl())
+func (dtc *dynatraceClient) GetLatestActiveGateImage(ctx context.Context) (*LatestImageInfo, error) {
+	latestImageInfo, err := dtc.processLatestImageRequest(ctx, dtc.getLatestActiveGateImageUrl())
 	if err != nil {
 		log.Info("failed to process latest image response")
 		return nil, err
@@ -48,8 +49,8 @@ func (dtc *dynatraceClient) GetLatestActiveGateImage() (*LatestImageInfo, error)
 	return latestImageInfo, nil
 }
 
-func (dtc *dynatraceClient) processLatestImageRequest(url string) (*LatestImageInfo, error) {
-	request, err := dtc.createLatestImageRequest(url)
+func (dtc *dynatraceClient) processLatestImageRequest(ctx context.Context, url string) (*LatestImageInfo, error) {
+	request, err := dtc.createLatestImageRequest(ctx, url)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -92,7 +93,7 @@ func (dtc *dynatraceClient) handleLatestImageResponse(response *http.Response) (
 	return latestImageInfo, err
 }
 
-func (dtc *dynatraceClient) createLatestImageRequest(url string) (*http.Request, error) {
+func (dtc *dynatraceClient) createLatestImageRequest(ctx context.Context, url string) (*http.Request, error) {
 	body := &LatestImageInfo{}
 
 	bodyData, err := json.Marshal(body)
@@ -101,6 +102,7 @@ func (dtc *dynatraceClient) createLatestImageRequest(url string) (*http.Request,
 	}
 
 	request, err := createBaseRequest(
+		ctx,
 		url,
 		http.MethodGet,
 		dtc.apiToken,

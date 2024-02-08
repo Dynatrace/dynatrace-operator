@@ -61,7 +61,7 @@ type Installer struct {
 	keychain  authn.Keychain
 }
 
-func (installer *Installer) InstallAgent(targetDir string) (bool, error) {
+func (installer *Installer) InstallAgent(_ context.Context, targetDir string) (bool, error) {
 	log.Info("installing agent from image")
 
 	if installer.isAlreadyPresent(targetDir) {
@@ -97,7 +97,7 @@ func (installer *Installer) InstallAgent(targetDir string) (bool, error) {
 }
 
 func (installer *Installer) installAgentFromImage(targetDir string) error {
-	defer installer.fs.RemoveAll(CacheDir)
+	defer func() { _ = installer.fs.RemoveAll(CacheDir) }()
 
 	err := installer.fs.MkdirAll(CacheDir, common.MkDirFileMode)
 	if err != nil {
@@ -132,7 +132,7 @@ func (installer *Installer) installAgentFromImage(targetDir string) error {
 	return nil
 }
 
-func (installer Installer) isAlreadyPresent(targetDir string) bool {
+func (installer *Installer) isAlreadyPresent(targetDir string) bool {
 	_, err := installer.fs.Stat(targetDir)
 	return !os.IsNotExist(err)
 }

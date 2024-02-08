@@ -77,7 +77,7 @@ func (r *Reconciler) getOrCreateSecretIfNotExists(ctx context.Context) (*corev1.
 	if k8serrors.IsNotFound(err) {
 		log.Info("creating process module config secret")
 
-		newSecret, err := r.prepareSecret()
+		newSecret, err := r.prepareSecret(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -97,7 +97,7 @@ func (r *Reconciler) getOrCreateSecretIfNotExists(ctx context.Context) (*corev1.
 }
 
 func (r *Reconciler) updateSecret(ctx context.Context, oldSecret *corev1.Secret) error {
-	newSecret, err := r.prepareSecret()
+	newSecret, err := r.prepareSecret(ctx)
 	if err != nil {
 		return err
 	}
@@ -122,8 +122,8 @@ func (r *Reconciler) updateSecretIfOutdated(ctx context.Context, oldSecret *core
 	return nil
 }
 
-func (r *Reconciler) prepareSecret() (*corev1.Secret, error) {
-	pmc, err := r.dtClient.GetProcessModuleConfig(0)
+func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) {
+	pmc, err := r.dtClient.GetProcessModuleConfig(ctx, 0)
 	if err != nil {
 		return nil, err
 	}

@@ -20,7 +20,7 @@ type imagePullInfo struct {
 	targetDir     string
 }
 
-func (installer Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo, imageName string) error { //nolint
+func (installer *Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo, imageName string) error { //nolint
 	img, err := installer.pullImageInfo(imageName)
 	if err != nil {
 		log.Info("pullImageInfo", "error", err)
@@ -38,7 +38,7 @@ func (installer Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo,
 	return nil
 }
 
-func (installer Installer) pullImageInfo(imageName string) (*containerv1.Image, error) {
+func (installer *Installer) pullImageInfo(imageName string) (*containerv1.Image, error) {
 	ref, err := name.ParseReference(imageName)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "parsing reference %q:", imageName)
@@ -52,7 +52,7 @@ func (installer Installer) pullImageInfo(imageName string) (*containerv1.Image, 
 	return &image, nil
 }
 
-func (installer Installer) pullOCIimage(image containerv1.Image, imageName string, imageCacheDir string, targetDir string) error {
+func (installer *Installer) pullOCIimage(image containerv1.Image, imageName string, imageCacheDir string, targetDir string) error {
 	ref, err := name.ParseReference(imageName)
 	if err != nil {
 		return errors.WithMessagef(err, "parsing reference %q", imageName)
@@ -86,7 +86,7 @@ func (installer Installer) pullOCIimage(image containerv1.Image, imageName strin
 	return nil
 }
 
-func (installer Installer) unpackOciImage(layers []containerv1.Layer, imageCacheDir string, targetDir string) error {
+func (installer *Installer) unpackOciImage(layers []containerv1.Layer, imageCacheDir string, targetDir string) error {
 	for _, layer := range layers {
 		mediaType, _ := layer.MediaType()
 		switch mediaType {

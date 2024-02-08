@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -31,13 +32,15 @@ const (
 )
 
 func TestCreateProcessModuleConfigRequest(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run("hostGroup undefined", func(t *testing.T) {
 		dc := &dynatraceClient{
 			paasToken: "token123",
 		}
 		require.NotNil(t, dc)
 
-		req, err := dc.createProcessModuleConfigRequest(0)
+		req, err := dc.createProcessModuleConfigRequest(ctx, 0)
 		require.NoError(t, err)
 		assert.Equal(t, "0", req.URL.Query().Get("revision"))
 		assert.Empty(t, req.URL.Query().Get(hostGroupParamName))
@@ -50,7 +53,7 @@ func TestCreateProcessModuleConfigRequest(t *testing.T) {
 		}
 		require.NotNil(t, dc)
 
-		req, err := dc.createProcessModuleConfigRequest(0)
+		req, err := dc.createProcessModuleConfigRequest(ctx, 0)
 		require.NoError(t, err)
 		assert.Equal(t, "0", req.URL.Query().Get("revision"))
 		assert.Equal(t, hostGroup, req.URL.Query().Get(hostGroupParamName))

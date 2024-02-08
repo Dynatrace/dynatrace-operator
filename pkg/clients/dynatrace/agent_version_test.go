@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -53,6 +54,8 @@ const (
 )
 
 func TestGetEntityIDForIP(t *testing.T) {
+	ctx := context.Background()
+
 	dynatraceServer, _ := createTestDynatraceServer(t, &ipHandler{}, "")
 	defer dynatraceServer.Close()
 
@@ -84,12 +87,12 @@ func TestGetEntityIDForIP(t *testing.T) {
 	}
 ]`, time.Now().UTC().Unix()*1000))))
 
-	id, err := dtc.GetEntityIDForIP("1.1.1.1")
+	id, err := dtc.GetEntityIDForIP(ctx, "1.1.1.1")
 	require.NoError(t, err)
 	assert.NotEmpty(t, id)
 	assert.Equal(t, "HOST-42", id)
 
-	id, err = dtc.GetEntityIDForIP("2.2.2.2")
+	id, err = dtc.GetEntityIDForIP(ctx, "2.2.2.2")
 
 	require.Error(t, err)
 	assert.Empty(t, id)
@@ -116,32 +119,37 @@ func TestGetEntityIDForIP(t *testing.T) {
 	}
 ]`, time.Now().UTC().Unix()*1000))))
 
-	id, err = dtc.GetEntityIDForIP("1.1.1.1")
+	id, err = dtc.GetEntityIDForIP(ctx, "1.1.1.1")
 
 	require.Error(t, err)
 	assert.Empty(t, id)
 }
 
 func testAgentVersionGetLatestAgentVersion(t *testing.T, dynatraceClient Client) {
-	{
-		_, err := dynatraceClient.GetLatestAgentVersion("", InstallerTypeDefault)
+	ctx := context.Background()
+
+	t.Run("os field is required", func(t *testing.T) {
+		_, err := dynatraceClient.GetLatestAgentVersion(ctx, "", InstallerTypeDefault)
 
 		require.Error(t, err, "empty OS")
-	}
-	{
-		_, err := dynatraceClient.GetLatestAgentVersion(OsUnix, "")
+	})
+
+	t.Run("installer field is required", func(t *testing.T) {
+		_, err := dynatraceClient.GetLatestAgentVersion(ctx, OsUnix, "")
 
 		require.Error(t, err, "empty installer type")
-	}
-	{
-		latestAgentVersion, err := dynatraceClient.GetLatestAgentVersion(OsUnix, InstallerTypePaaS)
+	})
+
+	t.Run("happy path", func(t *testing.T) {
+		latestAgentVersion, err := dynatraceClient.GetLatestAgentVersion(ctx, OsUnix, InstallerTypePaaS)
 
 		require.NoError(t, err)
 		assert.Equal(t, "1.242.0.20220429-180918", latestAgentVersion, "latest agent version equals expected version")
-	}
+	})
 }
 
 func TestGetLatestAgent(t *testing.T) {
+	ctx := context.Background()
 	fs := afero.NewMemMapFs()
 
 	dynatraceServer, _ := createTestDynatraceServer(t, &ipHandler{fs}, "")
@@ -158,7 +166,7 @@ func TestGetLatestAgent(t *testing.T) {
 		file, err := afero.TempFile(fs, "client", "installer")
 		require.NoError(t, err)
 
-		err = dtc.GetLatestAgent(OsUnix, InstallerTypePaaS, arch.FlavorMultidistro, "arch", nil, false, file)
+		err = dtc.GetLatestAgent(ctx, OsUnix, InstallerTypePaaS, arch.FlavorMultidistro, "arch", nil, false, file)
 		require.NoError(t, err)
 
 		resp, err := afero.ReadFile(fs, file.Name())
@@ -170,18 +178,20 @@ func TestGetLatestAgent(t *testing.T) {
 		file, err := afero.TempFile(fs, "client", "installer")
 		require.NoError(t, err)
 
-		err = dtc.GetLatestAgent(OsUnix, InstallerTypePaaS, arch.FlavorMultidistro, "invalid", nil, false, file)
+		err = dtc.GetLatestAgent(ctx, OsUnix, InstallerTypePaaS, arch.FlavorMultidistro, "invalid", nil, false, file)
 		require.Error(t, err)
 	})
 }
 
 func TestDynatraceClient_GetAgent(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run(`handle response correctly`, func(t *testing.T) {
 		dynatraceServer, dtc := createTestDynatraceClientWithFunc(t, agentRequestHandler)
 		defer dynatraceServer.Close()
 
 		readWriter := &memoryReadWriter{data: make([]byte, len(versionedAgentResponse))}
-		err := dtc.GetAgent(OsUnix, InstallerTypePaaS, "", "", "", nil, false, readWriter)
+		err := dtc.GetAgent(ctx, OsUnix, InstallerTypePaaS, "", "", "", nil, false, readWriter)
 
 		require.NoError(t, err)
 		assert.Equal(t, versionedAgentResponse, string(readWriter.data))
@@ -191,18 +201,20 @@ func TestDynatraceClient_GetAgent(t *testing.T) {
 		defer dynatraceServer.Close()
 
 		readWriter := &memoryReadWriter{data: make([]byte, len(versionedAgentResponse))}
-		err := dtc.GetAgent(OsUnix, InstallerTypePaaS, "", "", "", nil, false, readWriter)
+		err := dtc.GetAgent(ctx, OsUnix, InstallerTypePaaS, "", "", "", nil, false, readWriter)
 
 		require.EqualError(t, err, "dynatrace server error 400: test-error")
 	})
 }
 
 func TestDynatraceClient_GetAgentVersions(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run(`handle response correctly`, func(t *testing.T) {
 		dynatraceServer, dtc := createTestDynatraceClientWithFunc(t, versionsRequestHandler)
 		defer dynatraceServer.Close()
 
-		availableVersions, err := dtc.GetAgentVersions(OsUnix, InstallerTypePaaS, "", "")
+		availableVersions, err := dtc.GetAgentVersions(ctx, OsUnix, InstallerTypePaaS, "", "")
 
 		require.NoError(t, err)
 		assert.Len(t, availableVersions, 4)
@@ -215,7 +227,7 @@ func TestDynatraceClient_GetAgentVersions(t *testing.T) {
 		dynatraceServer, dtc := createTestDynatraceClientWithFunc(t, errorHandler)
 		defer dynatraceServer.Close()
 
-		availableVersions, err := dtc.GetAgentVersions(OsUnix, InstallerTypePaaS, "", "")
+		availableVersions, err := dtc.GetAgentVersions(ctx, OsUnix, InstallerTypePaaS, "", "")
 
 		require.EqualError(t, err, "dynatrace server error 400: test-error")
 		assert.Empty(t, availableVersions)

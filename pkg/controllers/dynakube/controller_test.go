@@ -246,7 +246,7 @@ func TestSetupTokensAndClient(t *testing.T) {
 				Namespace: dynakube.Namespace,
 			},
 			Data: map[string][]byte{
-				dtclient.DynatraceApiToken: []byte("this is a token"),
+				dtclient.ApiToken: []byte("this is a token"),
 			},
 		}
 		fakeClient := fake.NewClientWithIndex(dynakube, tokens)
@@ -279,7 +279,7 @@ func TestSetupTokensAndClient(t *testing.T) {
 				Namespace: dynakube.Namespace,
 			},
 			Data: map[string][]byte{
-				dtclient.DynatraceApiToken: []byte("this is a token"),
+				dtclient.ApiToken: []byte("this is a token"),
 			},
 		}
 		fakeClient := fake.NewClientWithIndex(dynakube, tokens)
@@ -461,7 +461,7 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 			Status: *getTestDynkubeStatus(),
 		}
 		data := map[string][]byte{
-			dtclient.DynatraceApiToken: []byte(testAPIToken),
+			dtclient.ApiToken: []byte(testAPIToken),
 		}
 
 		objects := []client.Object{
@@ -544,7 +544,7 @@ func createFakeRegistryClientBuilder() func(options ...func(*registry.Client)) (
 	fakeImage.ConfigFileStub = func() (*containerv1.ConfigFile, error) {
 		return &containerv1.ConfigFile{}, nil
 	}
-	fakeImage.ConfigFile()
+	_, _ = fakeImage.ConfigFile()
 	image := containerv1.Image(fakeImage)
 
 	fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: "1.2.3.4-5"}, nil)
@@ -654,7 +654,7 @@ func TestTokenConditions(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				dtclient.DynatraceApiToken: []byte(testAPIToken),
+				dtclient.ApiToken: []byte(testAPIToken),
 			},
 		})
 		mockClient := mockedclient.NewClient(t)

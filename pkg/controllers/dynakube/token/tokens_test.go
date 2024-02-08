@@ -1,6 +1,7 @@
 package token
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -24,7 +26,7 @@ func TestTokens(t *testing.T) {
 func testSetApiTokenScopes(t *testing.T) {
 	t.Run("empty dynakube", func(t *testing.T) {
 		tokens := Tokens{
-			dtclient.DynatraceApiToken: {},
+			dtclient.ApiToken: {},
 		}
 		tokens = tokens.SetScopesForDynakube(dynatracev1beta1.DynaKube{})
 
@@ -37,7 +39,7 @@ func testSetApiTokenScopes(t *testing.T) {
 	})
 	t.Run("kubernetes monitoring with auth token", func(t *testing.T) {
 		tokens := Tokens{
-			dtclient.DynatraceApiToken: {},
+			dtclient.ApiToken: {},
 		}
 		tokens = tokens.SetScopesForDynakube(dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -69,7 +71,7 @@ func testSetApiTokenScopes(t *testing.T) {
 
 func testPaasTokenScopes(t *testing.T) {
 	tokens := Tokens{
-		dtclient.DynatracePaasToken: {},
+		dtclient.PaasToken: {},
 	}
 	tokens = tokens.SetScopesForDynakube(dynatracev1beta1.DynaKube{})
 
@@ -80,7 +82,7 @@ func testPaasTokenScopes(t *testing.T) {
 
 func testDataIngestTokenScopes(t *testing.T) {
 	tokens := Tokens{
-		dtclient.DynatraceDataIngestToken: {},
+		dtclient.DataIngestToken: {},
 	}
 	tokens = tokens.SetScopesForDynakube(dynatracev1beta1.DynaKube{})
 
@@ -90,6 +92,7 @@ func testDataIngestTokenScopes(t *testing.T) {
 }
 
 func testVerifyTokenScopes(t *testing.T) {
+	ctx := context.Background()
 	validTokens := Tokens{
 		"empty-scopes": Token{
 			Value:          "empty-scopes",
@@ -115,24 +118,24 @@ func testVerifyTokenScopes(t *testing.T) {
 	fakeDynatraceClient := mocks.NewClient(t)
 
 	fakeDynatraceClient.
-		On("GetTokenScopes", "empty-scopes").
+		On("GetTokenScopes", mock.AnythingOfType("context.backgroundCtx"), "empty-scopes").
 		Return(dtclient.TokenScopes{"a", "c"}, nil).Maybe().Times(0)
 	fakeDynatraceClient.
-		On("GetTokenScopes", "valid-scopes").
+		On("GetTokenScopes", mock.AnythingOfType("context.backgroundCtx"), "valid-scopes").
 		Return(dtclient.TokenScopes{"a", "c"}, nil)
 	fakeDynatraceClient.
-		On("GetTokenScopes", "invalid-scopes").
+		On("GetTokenScopes", mock.AnythingOfType("context.backgroundCtx"), "invalid-scopes").
 		Return(dtclient.TokenScopes{"a", "c"}, nil)
 	fakeDynatraceClient.
-		On("GetTokenScopes", "api-error").
+		On("GetTokenScopes", mock.AnythingOfType("context.backgroundCtx"), "api-error").
 		Return(dtclient.TokenScopes{}, errors.New("test api-error"))
 
-	require.NoError(t, validTokens.VerifyScopes(fakeDynatraceClient))
+	require.NoError(t, validTokens.VerifyScopes(ctx, fakeDynatraceClient))
 	require.EqualError(t,
-		invalidTokens.VerifyScopes(fakeDynatraceClient),
+		invalidTokens.VerifyScopes(ctx, fakeDynatraceClient),
 		"token 'invalid-scopes' is missing the following scopes: [ b, d ]")
 	require.EqualError(t,
-		apiError.VerifyScopes(fakeDynatraceClient),
+		apiError.VerifyScopes(ctx, fakeDynatraceClient),
 		"test api-error")
 }
 

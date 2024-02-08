@@ -31,10 +31,9 @@ const (
 var testCacheKey = client.ObjectKey{Name: cacheName, Namespace: testNamespace}
 
 func TestReconcile(t *testing.T) {
-	ctx := context.TODO()
+	ctx := context.Background()
 
 	t.Run("Create node and then delete it", func(t *testing.T) {
-		ctx := context.Background()
 		node := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}}
 
 		fakeClient := fake.NewClient(
@@ -53,7 +52,7 @@ func TestReconcile(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string][]byte{
-					dtclient.DynatraceApiToken: []byte(testApiToken),
+					dtclient.ApiToken: []byte(testApiToken),
 				},
 			},
 		)
@@ -85,7 +84,6 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("Create two nodes and then delete one", func(t *testing.T) {
-		ctx := context.Background()
 		node1 := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}}
 		fakeClient := createDefaultFakeClient()
 
@@ -122,7 +120,7 @@ func TestReconcile(t *testing.T) {
 
 		// Get node 1
 		node1 := &corev1.Node{}
-		err := fakeClient.Get(context.TODO(), client.ObjectKey{Name: "node1"}, node1)
+		err := fakeClient.Get(ctx, client.ObjectKey{Name: "node1"}, node1)
 		require.NoError(t, err)
 
 		reconcileAllNodes(t, ctrl, fakeClient)
@@ -130,10 +128,10 @@ func TestReconcile(t *testing.T) {
 		node1.Spec.Taints = []corev1.Taint{
 			{Key: "ToBeDeletedByClusterAutoscaler"},
 		}
-		err = fakeClient.Update(context.TODO(), node1)
+		err = fakeClient.Update(ctx, node1)
 		require.NoError(t, err)
 
-		result, err := ctrl.Reconcile(context.TODO(), createReconcileRequest("node1"))
+		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
 		assert.NotNil(t, result)
 		require.NoError(t, err)
 
@@ -156,7 +154,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := createDefaultFakeClient()
 
 		dtClient := mocks.NewClient(t)
-		dtClient.On("GetEntityIDForIP", mock.Anything).Return("", ErrNotFound)
+		dtClient.On("GetEntityIDForIP", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return("", ErrNotFound)
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
 
@@ -169,7 +167,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := createDefaultFakeClient()
 
 		dtClient := mocks.NewClient(t)
-		dtClient.On("GetEntityIDForIP", mock.Anything).Return("", dtclient.HostNotFoundErr{IP: "1.2.3.4"})
+		dtClient.On("GetEntityIDForIP", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return("", dtclient.HostNotFoundErr{IP: "1.2.3.4"})
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
 
@@ -263,8 +261,8 @@ func createDefaultReconciler(fakeClient client.Client, dtClient *mocks.Client) *
 
 func createDTMockClient(t *testing.T, ip, host string) *mocks.Client {
 	dtClient := mocks.NewClient(t)
-	dtClient.On("GetEntityIDForIP", ip).Return(host, nil)
-	dtClient.On("SendEvent", mock.MatchedBy(func(e *dtclient.EventData) bool {
+	dtClient.On("GetEntityIDForIP", mock.AnythingOfType("context.backgroundCtx"), ip).Return(host, nil)
+	dtClient.On("SendEvent", mock.AnythingOfType("context.backgroundCtx"), mock.MatchedBy(func(e *dtclient.EventData) bool {
 		return e.EventType == "MARKED_FOR_TERMINATION"
 	})).Return(nil)
 
@@ -272,13 +270,15 @@ func createDTMockClient(t *testing.T, ip, host string) *mocks.Client {
 }
 
 func reconcileAllNodes(t *testing.T, ctrl *Controller, fakeClient client.Client) {
+	ctx := context.Background()
+
 	var nodeList corev1.NodeList
-	err := fakeClient.List(context.TODO(), &nodeList)
+	err := fakeClient.List(ctx, &nodeList)
 
 	require.NoError(t, err)
 
 	for _, clusterNode := range nodeList.Items {
-		result, err := ctrl.Reconcile(context.TODO(), createReconcileRequest(clusterNode.Name))
+		result, err := ctrl.Reconcile(ctx, createReconcileRequest(clusterNode.Name))
 		require.NoError(t, err)
 		assert.NotNil(t, result)
 	}
@@ -310,7 +310,7 @@ func createDefaultFakeClient() client.Client {
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				dtclient.DynatraceApiToken: []byte(testApiToken),
+				dtclient.ApiToken: []byte(testApiToken),
 			},
 		},
 		&corev1.Secret{
@@ -319,7 +319,7 @@ func createDefaultFakeClient() client.Client {
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				dtclient.DynatraceApiToken: []byte(testApiToken),
+				dtclient.ApiToken: []byte(testApiToken),
 			},
 		})
 }

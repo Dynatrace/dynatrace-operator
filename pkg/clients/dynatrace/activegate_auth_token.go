@@ -2,6 +2,7 @@ package dynatrace
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -27,8 +28,8 @@ type ActiveGateAuthTokenParams struct {
 	ExpirationDate string `json:"expirationDate"`
 }
 
-func (dtc *dynatraceClient) GetActiveGateAuthToken(dynakubeName string) (*ActiveGateAuthTokenInfo, error) {
-	request, err := dtc.createAuthTokenRequest(dynakubeName)
+func (dtc *dynatraceClient) GetActiveGateAuthToken(ctx context.Context, dynakubeName string) (*ActiveGateAuthTokenInfo, error) {
+	request, err := dtc.createAuthTokenRequest(ctx, dynakubeName)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -50,7 +51,7 @@ func (dtc *dynatraceClient) GetActiveGateAuthToken(dynakubeName string) (*Active
 	return authTokenInfo, nil
 }
 
-func (dtc *dynatraceClient) createAuthTokenRequest(dynakubeName string) (*http.Request, error) {
+func (dtc *dynatraceClient) createAuthTokenRequest(ctx context.Context, dynakubeName string) (*http.Request, error) {
 	body := &ActiveGateAuthTokenParams{
 		Name:           dynakubeName,
 		SeedToken:      false,
@@ -64,6 +65,7 @@ func (dtc *dynatraceClient) createAuthTokenRequest(dynakubeName string) (*http.R
 	}
 
 	request, err := createBaseRequest(
+		ctx,
 		dtc.getActiveGateAuthTokenUrl(),
 		http.MethodPost,
 		dtc.apiToken,

@@ -1,6 +1,7 @@
 package token
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -13,15 +14,15 @@ import (
 type Tokens map[string]Token
 
 func (tokens Tokens) ApiToken() Token {
-	return tokens.getToken(dtclient.DynatraceApiToken)
+	return tokens.getToken(dtclient.ApiToken)
 }
 
 func (tokens Tokens) PaasToken() Token {
-	return tokens.getToken(dtclient.DynatracePaasToken)
+	return tokens.getToken(dtclient.PaasToken)
 }
 
 func (tokens Tokens) DataIngestToken() Token {
-	return tokens.getToken(dtclient.DynatraceDataIngestToken)
+	return tokens.getToken(dtclient.DataIngestToken)
 }
 
 func (tokens Tokens) getToken(tokenName string) Token {
@@ -34,23 +35,23 @@ func (tokens Tokens) getToken(tokenName string) Token {
 }
 
 func (tokens Tokens) SetScopesForDynakube(dynakube dynatracev1beta1.DynaKube) Tokens {
-	_, hasPaasToken := tokens[dtclient.DynatracePaasToken]
+	_, hasPaasToken := tokens[dtclient.PaasToken]
 
 	for tokenType, token := range tokens {
 		switch tokenType {
-		case dtclient.DynatraceApiToken:
-			tokens[dtclient.DynatraceApiToken] = token.setApiTokenScopes(dynakube, hasPaasToken)
-		case dtclient.DynatracePaasToken:
-			tokens[dtclient.DynatracePaasToken] = token.setPaasTokenScopes()
-		case dtclient.DynatraceDataIngestToken:
-			tokens[dtclient.DynatraceDataIngestToken] = token.setDataIngestScopes()
+		case dtclient.ApiToken:
+			tokens[dtclient.ApiToken] = token.setApiTokenScopes(dynakube, hasPaasToken)
+		case dtclient.PaasToken:
+			tokens[dtclient.PaasToken] = token.setPaasTokenScopes()
+		case dtclient.DataIngestToken:
+			tokens[dtclient.DataIngestToken] = token.setDataIngestScopes()
 		}
 	}
 
 	return tokens
 }
 
-func (tokens Tokens) VerifyScopes(dtc dtclient.Client) error {
+func (tokens Tokens) VerifyScopes(ctx context.Context, dtc dtclient.Client) error {
 	scopeErrors := make([]error, 0)
 
 	for tokenType, token := range tokens {
@@ -58,7 +59,7 @@ func (tokens Tokens) VerifyScopes(dtc dtclient.Client) error {
 			continue
 		}
 
-		scopes, err := dtc.GetTokenScopes(token.Value)
+		scopes, err := dtc.GetTokenScopes(ctx, token.Value)
 		if err != nil {
 			scopeErrors = append(scopeErrors, err)
 			continue

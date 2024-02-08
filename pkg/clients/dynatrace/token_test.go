@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -22,17 +23,20 @@ func TestToken_Contains(t *testing.T) {
 }
 
 func testGetTokenScopes(t *testing.T, dynatraceClient Client) {
-	{
-		scopes, err := dynatraceClient.GetTokenScopes("good-token")
+	ctx := context.Background()
+
+	t.Run("happy path", func(t *testing.T) {
+		scopes, err := dynatraceClient.GetTokenScopes(ctx, "good-token")
 		require.NoError(t, err)
 		assert.ElementsMatch(t, []string{"DataExport", "LogExport"}, scopes)
-	}
-	{
-		scopes, err := dynatraceClient.GetTokenScopes("bad-token")
+	})
+
+	t.Run("sad path", func(t *testing.T) {
+		scopes, err := dynatraceClient.GetTokenScopes(ctx, "bad-token")
 		assert.Nil(t, scopes)
 		require.Error(t, err)
 		assert.Exactly(t, ServerError{Code: 401, Message: "error received from server"}, errors.Cause(err))
-	}
+	})
 }
 
 func handleTokenScopes(request *http.Request, writer http.ResponseWriter) {

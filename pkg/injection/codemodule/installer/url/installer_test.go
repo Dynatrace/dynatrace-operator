@@ -1,6 +1,7 @@
 package url
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -35,6 +36,8 @@ func (fs failFs) OpenFile(string, int, os.FileMode) (afero.File, error) {
 }
 
 func TestInstallAgentFromUrl(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run(`error when creating temp file`, func(t *testing.T) {
 		fs := failFs{
 			Fs: afero.NewMemMapFs(),
@@ -43,19 +46,19 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			fs: fs,
 		}
 
-		err := installer.installAgent("")
+		err := installer.installAgent(ctx, "")
 		require.EqualError(t, err, testErrorMessage)
 	})
 	t.Run(`error when downloading latest agent`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		dtc := mocks.NewClient(t)
 		dtc.
-			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro,
+			On("GetAgent", mock.AnythingOfType("context.backgroundCtx"), dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro,
 				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("[]string"),
 				mock.AnythingOfType("bool"), mock.AnythingOfType("*mem.File")).
 			Return(fmt.Errorf(testErrorMessage))
 		dtc.
-			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro, mock.AnythingOfType("string")).
+			On("GetAgentVersions", mock.AnythingOfType("context.backgroundCtx"), dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro, mock.AnythingOfType("string")).
 			Return([]string{}, fmt.Errorf(testErrorMessage))
 
 		installer := &Installer{
@@ -68,7 +71,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			},
 		}
 
-		err := installer.installAgent("")
+		err := installer.installAgent(ctx, "")
 		require.EqualError(t, err, testErrorMessage)
 	})
 	t.Run(`error unzipping file`, func(t *testing.T) {
@@ -76,11 +79,11 @@ func TestInstallAgentFromUrl(t *testing.T) {
 
 		dtc := mocks.NewClient(t)
 		dtc.
-			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro,
+			On("GetAgent", mock.AnythingOfType("context.backgroundCtx"), dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro,
 				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("[]string"),
 				mock.AnythingOfType("bool"), mock.AnythingOfType("*mem.File")).
 			Run(func(args mock.Arguments) {
-				writer, _ := args.Get(7).(io.Writer)
+				writer, _ := args.Get(8).(io.Writer)
 
 				zipFile := zip.SetupInvalidTestZip(t, fs)
 				defer func() { _ = zipFile.Close() }()
@@ -101,18 +104,25 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			},
 		}
 
-		err := installer.installAgent("")
+		err := installer.installAgent(ctx, "")
 		require.Error(t, err)
 	})
 	t.Run(`downloading and unzipping agent via version`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		dtc := mocks.NewClient(t)
-		dtc.
-			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro,
-				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("[]string"),
-				mock.AnythingOfType("bool"), mock.AnythingOfType("*mem.File")).
+		dtc.On("GetAgent",
+			mock.AnythingOfType("context.backgroundCtx"),
+			dtclient.OsUnix,
+			dtclient.InstallerTypePaaS,
+			arch.FlavorMultidistro,
+			mock.AnythingOfType("string"),
+			mock.AnythingOfType("string"),
+			mock.AnythingOfType("[]string"),
+			mock.AnythingOfType("bool"),
+			mock.AnythingOfType("*mem.File"),
+		).
 			Run(func(args mock.Arguments) {
-				writer, _ := args.Get(7).(io.Writer)
+				writer, _ := args.Get(8).(io.Writer)
 
 				zipFile := zip.SetupTestArchive(t, fs, zip.TestRawZip)
 				defer func() { _ = zipFile.Close() }()
@@ -134,7 +144,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			},
 		}
 
-		err := installer.installAgent(testDir)
+		err := installer.installAgent(ctx, testDir)
 		require.NoError(t, err)
 		// afero can't rename directories properly: https://github.com/spf13/afero/issues/141
 	})
@@ -142,11 +152,11 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		dtc := mocks.NewClient(t)
 		dtc.
-			On("GetLatestAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro,
+			On("GetLatestAgent", mock.AnythingOfType("context.backgroundCtx"), dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro,
 				mock.AnythingOfType("string"), mock.AnythingOfType("[]string"), mock.AnythingOfType("bool"),
 				mock.AnythingOfType("*mem.File")).
 			Run(func(args mock.Arguments) {
-				writer, _ := args.Get(6).(io.Writer)
+				writer, _ := args.Get(7).(io.Writer)
 
 				zipFile := zip.SetupTestArchive(t, fs, zip.TestRawZip)
 				defer func() { _ = zipFile.Close() }()
@@ -168,7 +178,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			},
 		}
 
-		err := installer.installAgent(testDir)
+		err := installer.installAgent(ctx, testDir)
 		require.NoError(t, err)
 		// afero can't rename directories properly: https://github.com/spf13/afero/issues/141
 	})
@@ -176,9 +186,9 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		dtc := mocks.NewClient(t)
 		dtc.
-			On("GetAgentViaInstallerUrl", testUrl, mock.AnythingOfType("*mem.File")).
+			On("GetAgentViaInstallerUrl", mock.AnythingOfType("context.backgroundCtx"), testUrl, mock.AnythingOfType("*mem.File")).
 			Run(func(args mock.Arguments) {
-				writer, _ := args.Get(1).(io.Writer)
+				writer, _ := args.Get(2).(io.Writer)
 
 				zipFile := zip.SetupTestArchive(t, fs, zip.TestRawZip)
 				defer func() { _ = zipFile.Close() }()
@@ -197,7 +207,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			},
 		}
 
-		err := installer.installAgent(testDir)
+		err := installer.installAgent(ctx, testDir)
 		require.NoError(t, err)
 		// afero can't rename directories properly: https://github.com/spf13/afero/issues/141
 	})
@@ -207,7 +217,9 @@ func TestIsAlreadyDownloaded(t *testing.T) {
 	t.Run(`true if exits`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		targetDir := "test/test"
-		fs.MkdirAll(targetDir, 0666)
+		err := fs.MkdirAll(targetDir, 0666)
+		require.NoError(t, err)
+
 		installer := &Installer{
 			fs: fs,
 		}

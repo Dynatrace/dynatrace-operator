@@ -1,6 +1,7 @@
 package url
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 
@@ -50,7 +51,7 @@ func NewUrlInstaller(fs afero.Fs, dtc dtclient.Client, props *Properties) instal
 	}
 }
 
-func (installer Installer) InstallAgent(targetDir string) (bool, error) {
+func (installer Installer) InstallAgent(ctx context.Context, targetDir string) (bool, error) {
 	log.Info("installing agent from url")
 
 	if installer.isAlreadyDownloaded(targetDir) {
@@ -67,7 +68,7 @@ func (installer Installer) InstallAgent(targetDir string) (bool, error) {
 	log.Info("installing agent", "target dir", targetDir)
 	installer.props.fillEmptyWithDefaults()
 
-	if err := installer.installAgent(targetDir); err != nil {
+	if err := installer.installAgent(ctx, targetDir); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
 		log.Info("failed to install agent", "targetDir", targetDir)
 
@@ -84,7 +85,7 @@ func (installer Installer) InstallAgent(targetDir string) (bool, error) {
 	return true, nil
 }
 
-func (installer Installer) installAgent(targetDir string) error {
+func (installer Installer) installAgent(ctx context.Context, targetDir string) error {
 	fs := installer.fs
 
 	var path string
@@ -108,7 +109,7 @@ func (installer Installer) installAgent(targetDir string) error {
 		}
 	}()
 
-	if err := installer.downloadOneAgentFromUrl(tmpFile); err != nil {
+	if err := installer.downloadOneAgentFromUrl(ctx, tmpFile); err != nil {
 		return err
 	}
 

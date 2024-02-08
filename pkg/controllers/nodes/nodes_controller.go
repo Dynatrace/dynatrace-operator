@@ -112,7 +112,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 				nodeName:   nodeName,
 			}
 
-			if err := controller.markForTermination(dynakube, cachedNodeData); err != nil {
+			if err := controller.markForTermination(ctx, dynakube, cachedNodeData); err != nil {
 				return reconcile.Result{}, err
 			}
 		}
@@ -158,7 +158,7 @@ func (controller *Controller) reconcileNodeDeletion(ctx context.Context, nodeNam
 			nodeName:   nodeName,
 		}
 
-		if err := controller.markForTermination(dynakube, cachedNodeData); err != nil {
+		if err := controller.markForTermination(ctx, dynakube, cachedNodeData); err != nil {
 			return err
 		}
 	}
@@ -212,7 +212,7 @@ func (controller *Controller) updateCache(ctx context.Context, nodeCache *Cache)
 	}
 
 	if nodeCache.Create {
-		return controller.client.Create(context.TODO(), nodeCache.Obj)
+		return controller.client.Create(ctx, nodeCache.Obj)
 	}
 
 	if err := controller.client.Update(ctx, nodeCache.Obj); err != nil {
@@ -274,10 +274,10 @@ func (controller *Controller) isNodeDeletable(cachedNode CacheEntry) bool {
 	return false
 }
 
-func (controller *Controller) sendMarkedForTermination(dynakubeInstance *dynatracev1beta1.DynaKube, cachedNode CacheEntry) error {
+func (controller *Controller) sendMarkedForTermination(ctx context.Context, dynakubeInstance *dynatracev1beta1.DynaKube, cachedNode CacheEntry) error {
 	tokenReader := token.NewReader(controller.apiReader, dynakubeInstance)
 
-	tokens, err := tokenReader.ReadTokens(context.TODO())
+	tokens, err := tokenReader.ReadTokens(ctx)
 	if err != nil {
 		return err
 	}
@@ -290,7 +290,7 @@ func (controller *Controller) sendMarkedForTermination(dynakubeInstance *dynatra
 		return err
 	}
 
-	entityID, err := dynatraceClient.GetEntityIDForIP(cachedNode.IPAddress)
+	entityID, err := dynatraceClient.GetEntityIDForIP(ctx, cachedNode.IPAddress)
 	if err != nil {
 		if errors.As(err, &dtclient.HostNotFoundErr{}) {
 			log.Info("skipping to send mark for termination event", "dynakube", dynakubeInstance.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
@@ -305,7 +305,7 @@ func (controller *Controller) sendMarkedForTermination(dynakubeInstance *dynatra
 
 	ts := uint64(cachedNode.LastSeen.Add(-10*time.Minute).UnixNano()) / uint64(time.Millisecond)
 
-	return dynatraceClient.SendEvent(&dtclient.EventData{
+	return dynatraceClient.SendEvent(ctx, &dtclient.EventData{
 		EventType:     dtclient.MarkedForTerminationEvent,
 		Source:        "Dynatrace Operator",
 		Description:   "Kubernetes node cordoned. Node might be drained or terminated.",
@@ -317,7 +317,7 @@ func (controller *Controller) sendMarkedForTermination(dynakubeInstance *dynatra
 	})
 }
 
-func (controller *Controller) markForTermination(dynakube *dynatracev1beta1.DynaKube, cachedNodeData CachedNodeInfo) error {
+func (controller *Controller) markForTermination(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, cachedNodeData CachedNodeInfo) error {
 	if !controller.isMarkableForTermination(&cachedNodeData.cachedNode) {
 		return nil
 	}
@@ -329,7 +329,7 @@ func (controller *Controller) markForTermination(dynakube *dynatracev1beta1.Dyna
 	log.Info("sending mark for termination event to dynatrace server", "dynakube", dynakube.Name, "ip", cachedNodeData.cachedNode.IPAddress,
 		"node", cachedNodeData.nodeName)
 
-	return controller.sendMarkedForTermination(dynakube, cachedNodeData.cachedNode)
+	return controller.sendMarkedForTermination(ctx, dynakube, cachedNodeData.cachedNode)
 }
 
 func (controller *Controller) isUnschedulable(node *corev1.Node) bool {

@@ -147,8 +147,8 @@ func (pmc ProcessModuleConfig) IsEmpty() bool {
 	return len(pmc.Properties) == 0
 }
 
-func (dtc *dynatraceClient) GetProcessModuleConfig(prevRevision uint) (*ProcessModuleConfig, error) {
-	req, err := dtc.createProcessModuleConfigRequest(prevRevision)
+func (dtc *dynatraceClient) GetProcessModuleConfig(ctx context.Context, prevRevision uint) (*ProcessModuleConfig, error) {
+	req, err := dtc.createProcessModuleConfigRequest(ctx, prevRevision)
 	if err != nil {
 		return nil, err
 	}
@@ -173,8 +173,8 @@ func (dtc *dynatraceClient) GetProcessModuleConfig(prevRevision uint) (*ProcessM
 	return dtc.readResponseForProcessModuleConfig(responseData)
 }
 
-func (dtc *dynatraceClient) createProcessModuleConfigRequest(prevRevision uint) (*http.Request, error) {
-	req, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, dtc.getProcessModuleConfigUrl(), nil)
+func (dtc *dynatraceClient) createProcessModuleConfigRequest(ctx context.Context, prevRevision uint) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, dtc.getProcessModuleConfigUrl(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing http request: %w", err)
 	}

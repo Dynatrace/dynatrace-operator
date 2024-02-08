@@ -305,9 +305,9 @@ func (_c *StatusUpdater_IsPublicRegistryEnabled_Call) RunAndReturn(run func() bo
 	return _c
 }
 
-// LatestImageInfo provides a mock function with given fields:
-func (_m *StatusUpdater) LatestImageInfo() (*dynatrace.LatestImageInfo, error) {
-	ret := _m.Called()
+// LatestImageInfo provides a mock function with given fields: ctx
+func (_m *StatusUpdater) LatestImageInfo(ctx context.Context) (*dynatrace.LatestImageInfo, error) {
+	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for LatestImageInfo")
@@ -315,19 +315,19 @@ func (_m *StatusUpdater) LatestImageInfo() (*dynatrace.LatestImageInfo, error) {
 
 	var r0 *dynatrace.LatestImageInfo
 	var r1 error
-	if rf, ok := ret.Get(0).(func() (*dynatrace.LatestImageInfo, error)); ok {
-		return rf()
+	if rf, ok := ret.Get(0).(func(context.Context) (*dynatrace.LatestImageInfo, error)); ok {
+		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func() *dynatrace.LatestImageInfo); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(context.Context) *dynatrace.LatestImageInfo); ok {
+		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*dynatrace.LatestImageInfo)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -341,13 +341,14 @@ type StatusUpdater_LatestImageInfo_Call struct {
 }
 
 // LatestImageInfo is a helper method to define mock.On call
-func (_e *StatusUpdater_Expecter) LatestImageInfo() *StatusUpdater_LatestImageInfo_Call {
-	return &StatusUpdater_LatestImageInfo_Call{Call: _e.mock.On("LatestImageInfo")}
+//   - ctx context.Context
+func (_e *StatusUpdater_Expecter) LatestImageInfo(ctx interface{}) *StatusUpdater_LatestImageInfo_Call {
+	return &StatusUpdater_LatestImageInfo_Call{Call: _e.mock.On("LatestImageInfo", ctx)}
 }
 
-func (_c *StatusUpdater_LatestImageInfo_Call) Run(run func()) *StatusUpdater_LatestImageInfo_Call {
+func (_c *StatusUpdater_LatestImageInfo_Call) Run(run func(ctx context.Context)) *StatusUpdater_LatestImageInfo_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(context.Context))
 	})
 	return _c
 }
@@ -357,7 +358,7 @@ func (_c *StatusUpdater_LatestImageInfo_Call) Return(_a0 *dynatrace.LatestImageI
 	return _c
 }
 
-func (_c *StatusUpdater_LatestImageInfo_Call) RunAndReturn(run func() (*dynatrace.LatestImageInfo, error)) *StatusUpdater_LatestImageInfo_Call {
+func (_c *StatusUpdater_LatestImageInfo_Call) RunAndReturn(run func(context.Context) (*dynatrace.LatestImageInfo, error)) *StatusUpdater_LatestImageInfo_Call {
 	_c.Call.Return(run)
 	return _c
 }

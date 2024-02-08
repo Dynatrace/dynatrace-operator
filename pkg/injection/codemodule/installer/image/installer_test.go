@@ -1,6 +1,7 @@
 package image
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -53,7 +54,7 @@ func TestIsAlreadyPresent(t *testing.T) {
 
 func testFileSystemWithSharedDirPresent(pathResolver metadata.PathResolver, imageDigest string) afero.Fs {
 	fs := afero.NewMemMapFs()
-	fs.MkdirAll(pathResolver.AgentSharedBinaryDirForAgent(imageDigest), 0777)
+	_ = fs.MkdirAll(pathResolver.AgentSharedBinaryDirForAgent(imageDigest), 0777)
 
 	return fs
 }
@@ -93,6 +94,7 @@ func (f RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 func TestInstaller_InstallAgent(t *testing.T) {
+	ctx := context.Background()
 	type fields struct {
 		fs        afero.Fs
 		extractor zip.Extractor
@@ -152,7 +154,7 @@ func TestInstaller_InstallAgent(t *testing.T) {
 				transport: tt.fields.transport,
 			}
 
-			got, err := installer.InstallAgent(tt.args.targetDir)
+			got, err := installer.InstallAgent(ctx, tt.args.targetDir)
 			tt.wantErr(t, err, fmt.Sprintf("InstallAgent(%v)", tt.args.targetDir))
 			assert.Equalf(t, tt.want, got, "InstallAgent(%v)", tt.args.targetDir)
 		})

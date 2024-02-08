@@ -1,6 +1,7 @@
 package startup
 
 import (
+	"context"
 	"fmt"
 	"path"
 	"path/filepath"
@@ -83,7 +84,7 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 	}, nil
 }
 
-func (runner *Runner) Run() (resultedError error) {
+func (runner *Runner) Run(ctx context.Context) (resultedError error) {
 	log.Info("standalone agent init started")
 
 	defer runner.consumeErrorIfNecessary(&resultedError)
@@ -94,7 +95,7 @@ func (runner *Runner) Run() (resultedError error) {
 		}
 
 		if !runner.config.CSIMode {
-			if err := runner.installOneAgent(); err != nil {
+			if err := runner.installOneAgent(ctx); err != nil {
 				return err
 			}
 
@@ -141,15 +142,15 @@ func (runner *Runner) setHostTenant() error {
 	return nil
 }
 
-func (runner *Runner) installOneAgent() error {
+func (runner *Runner) installOneAgent(ctx context.Context) error {
 	log.Info("downloading OneAgent")
 
-	_, err := runner.installer.InstallAgent(consts.AgentBinDirMount)
+	_, err := runner.installer.InstallAgent(ctx, consts.AgentBinDirMount)
 	if err != nil {
 		return err
 	}
 
-	processModuleConfig, err := runner.getProcessModuleConfig()
+	processModuleConfig, err := runner.getProcessModuleConfig(ctx)
 	if err != nil {
 		return err
 	}
@@ -162,8 +163,8 @@ func (runner *Runner) installOneAgent() error {
 	return nil
 }
 
-func (runner *Runner) getProcessModuleConfig() (*dtclient.ProcessModuleConfig, error) {
-	processModuleConfig, err := runner.dtclient.GetProcessModuleConfig(0)
+func (runner *Runner) getProcessModuleConfig(ctx context.Context) (*dtclient.ProcessModuleConfig, error) {
+	processModuleConfig, err := runner.dtclient.GetProcessModuleConfig(ctx, 0)
 	if err != nil {
 		return nil, err
 	}
