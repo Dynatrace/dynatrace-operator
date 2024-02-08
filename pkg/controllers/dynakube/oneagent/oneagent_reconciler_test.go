@@ -382,128 +382,128 @@ func TestHasSpecChanged(t *testing.T) {
 	tests := []struct {
 		name     string
 		expected bool
-		mod      func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube)
+		mod      func(oldDynakube *dynatracev1beta1.DynaKube, newDynakube *dynatracev1beta1.DynaKube)
 	}{
 		{
 			name:     "hurga",
 			expected: false,
-			mod:      func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {},
+			mod:      func(oldDynakube *dynatracev1beta1.DynaKube, newDynakube *dynatracev1beta1.DynaKube) {},
 		},
 		{
 			name:     "image present",
 			expected: true,
-			mod: func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
-				new.Status.OneAgent.ImageID = "docker.io/dynatrace/oneagent:1.234.345@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
+			mod: func(oldDynakube *dynatracev1beta1.DynaKube, newDynakube *dynatracev1beta1.DynaKube) {
+				newDynakube.Status.OneAgent.ImageID = "docker.io/dynatrace/oneagent:1.234.345@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 			},
 		},
 		{
 			name:     "image set but no change",
 			expected: false,
-			mod: func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
+			mod: func(oldDynakube *dynatracev1beta1.DynaKube, newDynakube *dynatracev1beta1.DynaKube) {
 				imageId := "docker.io/dynatrace/oneagent:1.234.345@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
-				old.Status.OneAgent.ImageID = imageId
-				new.Status.OneAgent.ImageID = imageId
+				oldDynakube.Status.OneAgent.ImageID = imageId
+				newDynakube.Status.OneAgent.ImageID = imageId
 			},
 		},
 
 		{
 			name:     "image changed",
 			expected: true,
-			mod: func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
-				old.Status.OneAgent.ImageID = "registry.access.redhat.com/dynatrace/oneagent:1.233.345@sha256:6ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
-				new.Status.OneAgent.ImageID = "docker.io/dynatrace/oneagent:1.234.345@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
+			mod: func(oldDynakube *dynatracev1beta1.DynaKube, newDynakube *dynatracev1beta1.DynaKube) {
+				oldDynakube.Status.OneAgent.ImageID = "registry.access.redhat.com/dynatrace/oneagent:1.233.345@sha256:6ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
+				newDynakube.Status.OneAgent.ImageID = "docker.io/dynatrace/oneagent:1.234.345@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 			},
 		},
 
 		{
 			name:     "argument removed",
 			expected: true,
-			mod: func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
-				old.Spec.OneAgent.HostMonitoring.Args = []string{"INFRA_ONLY=1", "--set-host-property=OperatorVersion=snapshot"}
-				new.Spec.OneAgent.HostMonitoring.Args = []string{"INFRA_ONLY=1"}
+			mod: func(oldDynakube *dynatracev1beta1.DynaKube, newDynakube *dynatracev1beta1.DynaKube) {
+				oldDynakube.Spec.OneAgent.HostMonitoring.Args = []string{"INFRA_ONLY=1", "--set-host-property=OperatorVersion=snapshot"}
+				newDynakube.Spec.OneAgent.HostMonitoring.Args = []string{"INFRA_ONLY=1"}
 			},
 		},
 
 		{
 			name:     "argument changed",
 			expected: true,
-			mod: func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
-				old.Spec.OneAgent.HostMonitoring.Args = []string{"INFRA_ONLY=1"}
-				new.Spec.OneAgent.HostMonitoring.Args = []string{"INFRA_ONLY=0"}
+			mod: func(oldDynakube *dynatracev1beta1.DynaKube, newDynakube *dynatracev1beta1.DynaKube) {
+				oldDynakube.Spec.OneAgent.HostMonitoring.Args = []string{"INFRA_ONLY=1"}
+				newDynakube.Spec.OneAgent.HostMonitoring.Args = []string{"INFRA_ONLY=0"}
 			},
 		},
 
 		{
 			name:     "all arguments removed",
 			expected: true,
-			mod: func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
-				old.Spec.OneAgent.HostMonitoring.Args = []string{"INFRA_ONLY=1"}
+			mod: func(oldDynakube *dynatracev1beta1.DynaKube, newDynakube *dynatracev1beta1.DynaKube) {
+				oldDynakube.Spec.OneAgent.HostMonitoring.Args = []string{"INFRA_ONLY=1"}
 			},
 		},
 
 		{
 			name:     "resources added",
 			expected: true,
-			mod: func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
-				new.Spec.OneAgent.HostMonitoring.OneAgentResources = newResourceRequirements()
+			mod: func(oldDynakube *dynatracev1beta1.DynaKube, newDynakube *dynatracev1beta1.DynaKube) {
+				newDynakube.Spec.OneAgent.HostMonitoring.OneAgentResources = newResourceRequirements()
 			},
 		},
 
 		{
 			name:     "resources removed",
 			expected: true,
-			mod: func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
-				old.Spec.OneAgent.HostMonitoring.OneAgentResources = newResourceRequirements()
+			mod: func(oldDynakube *dynatracev1beta1.DynaKube, newDynakube *dynatracev1beta1.DynaKube) {
+				oldDynakube.Spec.OneAgent.HostMonitoring.OneAgentResources = newResourceRequirements()
 			},
 		},
 
 		{
 			name:     "resources removed",
 			expected: true,
-			mod: func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
-				old.Spec.OneAgent.HostMonitoring.OneAgentResources = newResourceRequirements()
+			mod: func(oldDynakube *dynatracev1beta1.DynaKube, newDynakube *dynatracev1beta1.DynaKube) {
+				oldDynakube.Spec.OneAgent.HostMonitoring.OneAgentResources = newResourceRequirements()
 			},
 		},
 
 		{
 			name:     "priority class added",
 			expected: true,
-			mod: func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
-				new.Spec.OneAgent.HostMonitoring.PriorityClassName = "class"
+			mod: func(oldDynakube *dynatracev1beta1.DynaKube, newDynakube *dynatracev1beta1.DynaKube) {
+				newDynakube.Spec.OneAgent.HostMonitoring.PriorityClassName = "class"
 			},
 		},
 
 		{
 			name:     "priority class removed",
 			expected: true,
-			mod: func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
-				old.Spec.OneAgent.HostMonitoring.PriorityClassName = "class"
+			mod: func(oldDynakube *dynatracev1beta1.DynaKube, newDynakube *dynatracev1beta1.DynaKube) {
+				oldDynakube.Spec.OneAgent.HostMonitoring.PriorityClassName = "class"
 			},
 		},
 
 		{
 			name:     "priority class set but no change",
 			expected: false,
-			mod: func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
-				old.Spec.OneAgent.HostMonitoring.PriorityClassName = "class"
-				new.Spec.OneAgent.HostMonitoring.PriorityClassName = "class"
+			mod: func(oldDynakube *dynatracev1beta1.DynaKube, newDynakube *dynatracev1beta1.DynaKube) {
+				oldDynakube.Spec.OneAgent.HostMonitoring.PriorityClassName = "class"
+				newDynakube.Spec.OneAgent.HostMonitoring.PriorityClassName = "class"
 			},
 		},
 
 		{
 			name:     "priority class changed",
 			expected: true,
-			mod: func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
-				old.Spec.OneAgent.HostMonitoring.PriorityClassName = "some class"
-				new.Spec.OneAgent.HostMonitoring.PriorityClassName = "other class"
+			mod: func(oldDynakube *dynatracev1beta1.DynaKube, newDynakube *dynatracev1beta1.DynaKube) {
+				oldDynakube.Spec.OneAgent.HostMonitoring.PriorityClassName = "some class"
+				newDynakube.Spec.OneAgent.HostMonitoring.PriorityClassName = "other class"
 			},
 		},
 
 		{
 			name:     "dns policy added",
 			expected: true,
-			mod: func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
-				new.Spec.OneAgent.HostMonitoring.DNSPolicy = corev1.DNSClusterFirst
+			mod: func(oldDynakube *dynatracev1beta1.DynaKube, newDynakube *dynatracev1beta1.DynaKube) {
+				newDynakube.Spec.OneAgent.HostMonitoring.DNSPolicy = corev1.DNSClusterFirst
 			},
 		},
 	}

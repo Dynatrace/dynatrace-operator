@@ -22,14 +22,14 @@ const (
 )
 
 func NewRegular(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
-	return new(instance, instance.Spec.OAuth.ClientSecret, instance.Spec.OAuth.Resource)
+	return newDeployment(instance, instance.Spec.OAuth.ClientSecret, instance.Spec.OAuth.Resource)
 }
 
 func NewProvisioner(instance *edgeconnectv1alpha1.EdgeConnect, clientSecretName string, resource string) *appsv1.Deployment {
-	return new(instance, clientSecretName, resource)
+	return newDeployment(instance, clientSecretName, resource)
 }
 
-func new(instance *edgeconnectv1alpha1.EdgeConnect, clientSecretName string, resource string) *appsv1.Deployment {
+func newDeployment(instance *edgeconnectv1alpha1.EdgeConnect, clientSecretName string, resource string) *appsv1.Deployment {
 	appLabels := buildAppLabels(instance)
 	labels := maputils.MergeMap(
 		instance.Labels,
