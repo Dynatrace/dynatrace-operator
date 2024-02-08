@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"io"
@@ -14,9 +15,9 @@ import (
 )
 
 const (
-	DynatracePaasToken       = "paasToken"
-	DynatraceApiToken        = "apiToken"
-	DynatraceDataIngestToken = "dataIngestToken"
+	PaasToken       = "paasToken"
+	ApiToken        = "apiToken"
+	DataIngestToken = "dataIngestToken"
 )
 
 // Client is the interface for the Dynatrace REST API client.
@@ -29,72 +30,68 @@ type Client interface {
 	//  - IO error or unexpected response
 	//  - error response from the server (e.g. authentication failure)
 	//  - the agent version is not set or empty
-	GetLatestAgentVersion(os, installerType string) (string, error)
+	GetLatestAgentVersion(ctx context.Context, os, installerType string) (string, error)
 
 	// GetLatestAgent returns a reader with the contents of the download. Must be closed by caller.
-	GetLatestAgent(os, installerType, flavor, arch string, technologies []string, skipMetadata bool, writer io.Writer) error
+	GetLatestAgent(ctx context.Context, os, installerType, flavor, arch string, technologies []string, skipMetadata bool, writer io.Writer) error
 
 	// GetAgent downloads a specific agent version and writes it to the given io.Writer
-	GetAgent(os, installerType, flavor, arch, version string, technologies []string, skipMetadata bool, writer io.Writer) error
+	GetAgent(ctx context.Context, os, installerType, flavor, arch, version string, technologies []string, skipMetadata bool, writer io.Writer) error
 
 	// GetAgentViaInstallerUrl downloads the agent from the user specified URL and writes it to the given io.Writer
-	GetAgentViaInstallerUrl(url string, writer io.Writer) error
+	GetAgentViaInstallerUrl(ctx context.Context, url string, writer io.Writer) error
 
 	// GetAgentVersions on success returns an array of versions that can be used with GetAgent to
 	// download a specific agent version
-	GetAgentVersions(os, installerType, flavor, arch string) ([]string, error)
+	GetAgentVersions(ctx context.Context, os, installerType, flavor, arch string) ([]string, error)
 
-	GetOneAgentConnectionInfo() (OneAgentConnectionInfo, error)
+	GetOneAgentConnectionInfo(ctx context.Context) (OneAgentConnectionInfo, error)
 
-	GetProcessModuleConfig(prevRevision uint) (*ProcessModuleConfig, error)
+	GetProcessModuleConfig(ctx context.Context, prevRevision uint) (*ProcessModuleConfig, error)
 
 	// GetCommunicationHostForClient returns a CommunicationHost for the client's API URL. Or error, if failed to be parsed.
 	GetCommunicationHostForClient() (CommunicationHost, error)
 
 	// SendEvent posts events to dynatrace API
-	SendEvent(eventData *EventData) error
+	SendEvent(ctx context.Context, eventData *EventData) error
 
 	// GetEntityIDForIP returns the entity id for a given IP address.
-	//
 	// Returns an error in case the lookup failed.
-	GetEntityIDForIP(ip string) (string, error)
+	GetEntityIDForIP(ctx context.Context, ip string) (string, error)
 
 	// GetTokenScopes returns the list of scopes assigned to a token if successful.
-	GetTokenScopes(token string) (TokenScopes, error)
+	GetTokenScopes(ctx context.Context, token string) (TokenScopes, error)
 
 	// GetActiveGateConnectionInfo returns AgentTenantInfo for ActiveGate that holds UUID, Tenant Token and Endpoints
-	GetActiveGateConnectionInfo() (ActiveGateConnectionInfo, error)
+	GetActiveGateConnectionInfo(ctx context.Context) (ActiveGateConnectionInfo, error)
 
 	// CreateOrUpdateKubernetesSetting returns the object id of the created k8s settings if successful, or an api error otherwise
-	CreateOrUpdateKubernetesSetting(name, kubeSystemUUID, scope string) (string, error)
+	CreateOrUpdateKubernetesSetting(ctx context.Context, name, kubeSystemUUID, scope string) (string, error)
 
 	// CreateOrUpdateKubernetesAppSetting returns the object id of the created k8s app settings if successful, or an api error otherwise
-	CreateOrUpdateKubernetesAppSetting(scope string) (string, error)
+	CreateOrUpdateKubernetesAppSetting(ctx context.Context, scope string) (string, error)
 
 	// GetMonitoredEntitiesForKubeSystemUUID returns a (possibly empty) list of k8s monitored entities for the given uuid,
 	// or an api error otherwise
-	GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID string) ([]MonitoredEntity, error)
+	GetMonitoredEntitiesForKubeSystemUUID(ctx context.Context, kubeSystemUUID string) ([]MonitoredEntity, error)
 
 	// GetSettingsForMonitoredEntities returns the settings response with the number of settings objects,
 	// or an api error otherwise
-	GetSettingsForMonitoredEntities(monitoredEntities []MonitoredEntity, schemaId string) (GetSettingsResponse, error)
+	GetSettingsForMonitoredEntities(ctx context.Context, monitoredEntities []MonitoredEntity, schemaId string) (GetSettingsResponse, error)
 
-	// GetSettingsForMonitoredEntities returns the settings response with the number of settings objects,
-	// or an api error otherwise
-	GetActiveGateAuthToken(dynakubeName string) (*ActiveGateAuthTokenInfo, error)
+	GetActiveGateAuthToken(ctx context.Context, dynakubeName string) (*ActiveGateAuthTokenInfo, error)
 
-	GetLatestOneAgentImage() (*LatestImageInfo, error)
+	GetLatestOneAgentImage(ctx context.Context) (*LatestImageInfo, error)
 
-	GetLatestCodeModulesImage() (*LatestImageInfo, error)
+	GetLatestCodeModulesImage(ctx context.Context) (*LatestImageInfo, error)
 
-	GetLatestActiveGateImage() (*LatestImageInfo, error)
+	GetLatestActiveGateImage(ctx context.Context) (*LatestImageInfo, error)
 
 	// GetLatestActiveGateVersion gets the latest gateway version for the given OS and arch.
 	// Returns the version as received from the server on success.
-	GetLatestActiveGateVersion(os string) (string, error)
+	GetLatestActiveGateVersion(ctx context.Context, os string) (string, error)
 }
 
-// Known OS values.
 const (
 	OsUnix = "unix"
 	// Commented for linter, left for further reference
@@ -103,16 +100,13 @@ const (
 	// OsSolaris = "solaris"
 )
 
-// Known installer types.
+// Relevant installer types.
 const (
 	InstallerTypeDefault = "default"
-	// Commented for linter, left for further reference
-	// InstallerTypeUnattended = "default-unattended"
-	InstallerTypePaaS = "paas"
-	// InstallerTypePaasSh     = "paas-sh"
+	InstallerTypePaaS    = "paas"
 )
 
-// Known token scopes
+// Relevant token scopes
 const (
 	TokenScopeInstallerDownload     = "InstallerDownload"
 	TokenScopeDataExport            = "DataExport"

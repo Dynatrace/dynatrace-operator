@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,11 +30,13 @@ var latestCodeModulesImageResponse = &LatestImageInfo{
 }
 
 func TestGetLatestImage(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run("GetLatestOneAgentImage works", func(t *testing.T) {
 		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(oneAgentImageUrl, latestOneAgentImageResponse), "")
 		defer dynatraceServer.Close()
 
-		latestImageInfo, err := dynatraceClient.GetLatestOneAgentImage()
+		latestImageInfo, err := dynatraceClient.GetLatestOneAgentImage(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, latestImageInfo)
 
@@ -44,7 +47,7 @@ func TestGetLatestImage(t *testing.T) {
 		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(activeGateImageUrl, latestActiveGateImageResponse), "")
 		defer dynatraceServer.Close()
 
-		latestImageInfo, err := dynatraceClient.GetLatestActiveGateImage()
+		latestImageInfo, err := dynatraceClient.GetLatestActiveGateImage(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, latestImageInfo)
 
@@ -55,7 +58,7 @@ func TestGetLatestImage(t *testing.T) {
 		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(codeModulesImageUrl, latestCodeModulesImageResponse), "")
 		defer dynatraceServer.Close()
 
-		latestImageInfo, err := dynatraceClient.GetLatestCodeModulesImage()
+		latestImageInfo, err := dynatraceClient.GetLatestCodeModulesImage(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, latestImageInfo)
 
@@ -65,11 +68,13 @@ func TestGetLatestImage(t *testing.T) {
 }
 
 func TestGetLatestImageFailure(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run("GetLatestOneAgentImage handle internal server error", func(t *testing.T) {
 		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantInternalServerError(oneAgentImageUrl), "")
 		defer faultyDynatraceServer.Close()
 
-		latestImageInfo, err := faultyDynatraceClient.GetLatestOneAgentImage()
+		latestImageInfo, err := faultyDynatraceClient.GetLatestOneAgentImage(ctx)
 		require.Error(t, err)
 		assert.Nil(t, latestImageInfo)
 
@@ -79,7 +84,7 @@ func TestGetLatestImageFailure(t *testing.T) {
 		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantInternalServerError(activeGateImageUrl), "")
 		defer faultyDynatraceServer.Close()
 
-		latestImageInfo, err := faultyDynatraceClient.GetLatestActiveGateImage()
+		latestImageInfo, err := faultyDynatraceClient.GetLatestActiveGateImage(ctx)
 		require.Error(t, err)
 		assert.Nil(t, latestImageInfo)
 
@@ -89,7 +94,7 @@ func TestGetLatestImageFailure(t *testing.T) {
 		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantInternalServerError(codeModulesImageUrl), "")
 		defer faultyDynatraceServer.Close()
 
-		latestImageInfo, err := faultyDynatraceClient.GetLatestCodeModulesImage()
+		latestImageInfo, err := faultyDynatraceClient.GetLatestCodeModulesImage(ctx)
 		require.Error(t, err)
 		assert.Nil(t, latestImageInfo)
 
@@ -99,7 +104,7 @@ func TestGetLatestImageFailure(t *testing.T) {
 		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantMalformedJson(oneAgentImageUrl), "")
 		defer faultyDynatraceServer.Close()
 
-		latestImageInfo, err := faultyDynatraceClient.GetLatestOneAgentImage()
+		latestImageInfo, err := faultyDynatraceClient.GetLatestOneAgentImage(ctx)
 		require.Error(t, err)
 		assert.Nil(t, latestImageInfo)
 
@@ -109,7 +114,7 @@ func TestGetLatestImageFailure(t *testing.T) {
 		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantMalformedJson(activeGateImageUrl), "")
 		defer faultyDynatraceServer.Close()
 
-		latestImageInfo, err := faultyDynatraceClient.GetLatestActiveGateImage()
+		latestImageInfo, err := faultyDynatraceClient.GetLatestActiveGateImage(ctx)
 		require.Error(t, err)
 		assert.Nil(t, latestImageInfo)
 
@@ -119,7 +124,7 @@ func TestGetLatestImageFailure(t *testing.T) {
 		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantMalformedJson(codeModulesImageUrl), "")
 		defer faultyDynatraceServer.Close()
 
-		latestImageInfo, err := faultyDynatraceClient.GetLatestCodeModulesImage()
+		latestImageInfo, err := faultyDynatraceClient.GetLatestCodeModulesImage(ctx)
 		require.Error(t, err)
 		assert.Nil(t, latestImageInfo)
 

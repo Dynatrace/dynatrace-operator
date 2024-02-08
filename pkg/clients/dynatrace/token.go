@@ -25,7 +25,7 @@ func (s TokenScopes) Contains(scope string) bool {
 	return false
 }
 
-func (dtc *dynatraceClient) GetTokenScopes(token string) (TokenScopes, error) {
+func (dtc *dynatraceClient) GetTokenScopes(ctx context.Context, token string) (TokenScopes, error) {
 	var model struct {
 		Token string `json:"token"`
 	}
@@ -37,7 +37,7 @@ func (dtc *dynatraceClient) GetTokenScopes(token string) (TokenScopes, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, dtc.getTokensLookupUrl(), bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, dtc.getTokensLookupUrl(), bytes.NewBuffer(jsonStr))
 	if err != nil {
 		return nil, fmt.Errorf("error initializing http request: %w", err)
 	}

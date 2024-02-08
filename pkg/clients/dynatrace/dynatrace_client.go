@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -56,9 +55,9 @@ const (
 
 // makeRequest does an HTTP request by formatting the URL from the given arguments and returns the response.
 // The response body must be closed by the caller when no longer used.
-func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.Response, error) {
+func (dtc *dynatraceClient) makeRequest(ctx context.Context, url string, tokenType tokenType) (*http.Response, error) {
 	// TODO: introduce ctx into dynatrace client
-	req, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, errors.WithMessage(err, "error initializing http request")
 	}
@@ -89,9 +88,8 @@ func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.
 	return dtc.httpClient.Do(req)
 }
 
-func createBaseRequest(url, method, apiToken string, body io.Reader) (*http.Request, error) {
-	// TODO: introduce ctx into dynatrace client
-	req, err := http.NewRequestWithContext(context.TODO(), method, url, body)
+func createBaseRequest(ctx context.Context, url, method, apiToken string, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
 		return nil, errors.WithMessage(err, "error initializing http request")
 	}
@@ -107,7 +105,7 @@ func createBaseRequest(url, method, apiToken string, body io.Reader) (*http.Requ
 }
 
 func (dtc *dynatraceClient) getServerResponseData(response *http.Response) ([]byte, error) {
-	responseData, err := ioutil.ReadAll(response.Body)
+	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, errors.WithMessage(err, "error reading response")
 	}
@@ -120,8 +118,8 @@ func (dtc *dynatraceClient) getServerResponseData(response *http.Response) ([]by
 	return responseData, nil
 }
 
-func (dtc *dynatraceClient) makeRequestAndUnmarshal(url string, token tokenType, response interface{}) error {
-	resp, err := dtc.makeRequest(url, token)
+func (dtc *dynatraceClient) makeRequestAndUnmarshal(ctx context.Context, url string, token tokenType, response interface{}) error {
+	resp, err := dtc.makeRequest(ctx, url, token)
 	if err != nil {
 		return err
 	}
@@ -136,8 +134,8 @@ func (dtc *dynatraceClient) makeRequestAndUnmarshal(url string, token tokenType,
 	return json.Unmarshal(responseData, &response)
 }
 
-func (dtc *dynatraceClient) makeRequestForBinary(url string, token tokenType, writer io.Writer) (string, error) {
-	resp, err := dtc.makeRequest(url, token)
+func (dtc *dynatraceClient) makeRequestForBinary(ctx context.Context, url string, token tokenType, writer io.Writer) (string, error) {
+	resp, err := dtc.makeRequest(ctx, url, token)
 	if err != nil {
 		return "", err
 	}
@@ -170,9 +168,9 @@ func (dtc *dynatraceClient) handleErrorResponseFromAPI(response []byte, statusCo
 	return se.ErrorMessage
 }
 
-func (dtc *dynatraceClient) getHostInfoForIP(ip string) (*hostInfo, error) {
+func (dtc *dynatraceClient) getHostInfoForIP(ctx context.Context, ip string) (*hostInfo, error) {
 	if len(dtc.hostCache) == 0 {
-		err := dtc.buildHostCache()
+		err := dtc.buildHostCache(ctx)
 		if err != nil {
 			return nil, errors.WithMessage(err, "error building host-cache from dynatrace cluster")
 		}
@@ -186,8 +184,8 @@ func (dtc *dynatraceClient) getHostInfoForIP(ip string) (*hostInfo, error) {
 	}
 }
 
-func (dtc *dynatraceClient) buildHostCache() error {
-	resp, err := dtc.makeRequest(dtc.getHostsUrl(), dynatraceApiToken)
+func (dtc *dynatraceClient) buildHostCache(ctx context.Context) error {
+	resp, err := dtc.makeRequest(ctx, dtc.getHostsUrl(), dynatraceApiToken)
 	if err != nil {
 		return errors.WithStack(err)
 	}

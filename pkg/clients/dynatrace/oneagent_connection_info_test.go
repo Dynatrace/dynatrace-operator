@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,6 +15,7 @@ const (
 )
 
 func Test_GetOneAgentConnectionInfo(t *testing.T) {
+	ctx := context.Background()
 	oneAgentJsonResponse := &oneAgentConnectionInfoJsonResponse{
 		TenantUUID:                      testTenantUUID,
 		TenantToken:                     testTenantToken,
@@ -46,7 +48,7 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(oneAgentConnectionInfoEndpoint, oneAgentJsonResponse), "")
 		defer dynatraceServer.Close()
 
-		connectionInfo, err := dynatraceClient.GetOneAgentConnectionInfo()
+		connectionInfo, err := dynatraceClient.GetOneAgentConnectionInfo(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
@@ -57,7 +59,7 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(oneAgentConnectionInfoEndpoint, oneAgentJsonResponseWithDups), "")
 		defer dynatraceServer.Close()
 
-		connectionInfo, err := dynatraceClient.GetOneAgentConnectionInfo()
+		connectionInfo, err := dynatraceClient.GetOneAgentConnectionInfo(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
@@ -67,7 +69,7 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(oneAgentConnectionInfoEndpoint, oneAgentJsonResponse), "nz")
 		defer dynatraceServer.Close()
 
-		connectionInfo, err := dynatraceClient.GetOneAgentConnectionInfo()
+		connectionInfo, err := dynatraceClient.GetOneAgentConnectionInfo(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
@@ -83,7 +85,7 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(oneAgentConnectionInfoEndpoint, oneAgentJsonResponse), "")
 		defer dynatraceServer.Close()
 
-		connectionInfo, err := dynatraceClient.GetOneAgentConnectionInfo()
+		connectionInfo, err := dynatraceClient.GetOneAgentConnectionInfo(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
@@ -93,7 +95,7 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(oneAgentConnectionInfoEndpoint, oneAgentJsonResponse), "")
 		defer dynatraceServer.Close()
 
-		connectionInfo, err := dynatraceClient.GetOneAgentConnectionInfo()
+		connectionInfo, err := dynatraceClient.GetOneAgentConnectionInfo(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
@@ -103,7 +105,7 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantMalformedJson(oneAgentConnectionInfoEndpoint), "")
 		defer faultyDynatraceServer.Close()
 
-		connectionInfo, err := faultyDynatraceClient.GetOneAgentConnectionInfo()
+		connectionInfo, err := faultyDynatraceClient.GetOneAgentConnectionInfo(ctx)
 		require.Error(t, err)
 		assert.Equal(t, "invalid character 'h' in literal true (expecting 'r')", err.Error())
 
@@ -114,7 +116,7 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantInternalServerError(oneAgentConnectionInfoEndpoint), "")
 		defer faultyDynatraceServer.Close()
 
-		connectionInfo, err := faultyDynatraceClient.GetOneAgentConnectionInfo()
+		connectionInfo, err := faultyDynatraceClient.GetOneAgentConnectionInfo(ctx)
 		require.Error(t, err)
 		assert.NotNil(t, connectionInfo)
 		assert.Equal(t, OneAgentConnectionInfo{}, connectionInfo)

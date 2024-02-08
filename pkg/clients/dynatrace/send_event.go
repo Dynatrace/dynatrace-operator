@@ -29,7 +29,7 @@ type EventDataAttachRules struct {
 	EntityIDs []string `json:"entityIds"`
 }
 
-func (dtc *dynatraceClient) SendEvent(eventData *EventData) error {
+func (dtc *dynatraceClient) SendEvent(ctx context.Context, eventData *EventData) error {
 	if eventData == nil {
 		return errors.New("no data found in eventData payload")
 	}
@@ -43,7 +43,7 @@ func (dtc *dynatraceClient) SendEvent(eventData *EventData) error {
 		return errors.WithStack(err)
 	}
 
-	req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, dtc.getEventsUrl(), bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, dtc.getEventsUrl(), bytes.NewBuffer(jsonStr))
 	if err != nil {
 		return fmt.Errorf("error initializing http request: %w", err)
 	}
