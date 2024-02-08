@@ -146,7 +146,7 @@ func TestInstallOneAgent(t *testing.T) {
 			On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), uint(0)).
 			Return(getTestProcessModuleConfig(), nil)
 		runner.installer.(*mockedinstaller.Installer).
-			On("InstallAgent", consts.AgentBinDirMount).
+			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), consts.AgentBinDirMount).
 			Return(true, nil)
 
 		err = runner.installOneAgent(ctx)
@@ -156,7 +156,7 @@ func TestInstallOneAgent(t *testing.T) {
 	t.Run("sad install -> install fail", func(t *testing.T) {
 		runner := createMockedRunner(t)
 		runner.installer.(*mockedinstaller.Installer).
-			On("InstallAgent", consts.AgentBinDirMount).
+			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), consts.AgentBinDirMount).
 			Return(false, fmt.Errorf("BOOM"))
 
 		err := runner.installOneAgent(ctx)
@@ -169,7 +169,7 @@ func TestInstallOneAgent(t *testing.T) {
 			On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), uint(0)).
 			Return(getTestProcessModuleConfig(), nil)
 		runner.installer.(*mockedinstaller.Installer).
-			On("InstallAgent", consts.AgentBinDirMount).
+			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), consts.AgentBinDirMount).
 			Return(true, nil)
 
 		err := runner.installOneAgent(ctx)
@@ -182,7 +182,7 @@ func TestInstallOneAgent(t *testing.T) {
 			On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), uint(0)).
 			Return(&dtclient.ProcessModuleConfig{}, fmt.Errorf("BOOM"))
 		runner.installer.(*mockedinstaller.Installer).
-			On("InstallAgent", consts.AgentBinDirMount).
+			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), consts.AgentBinDirMount).
 			Return(true, nil)
 
 		err := runner.installOneAgent(ctx)
@@ -214,7 +214,7 @@ func TestRun(t *testing.T) {
 	})
 	t.Run("install + config generation", func(t *testing.T) {
 		runner.installer.(*mockedinstaller.Installer).
-			On("InstallAgent", consts.AgentBinDirMount).
+			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), consts.AgentBinDirMount).
 			Return(true, nil)
 
 		runner.fs = prepReadOnlyCSIFilesystem(t, afero.NewMemMapFs())
