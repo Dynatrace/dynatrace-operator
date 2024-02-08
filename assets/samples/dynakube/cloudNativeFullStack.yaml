@@ -152,11 +152,11 @@ spec:
       #
       # initResources:
       #   requests:
-      #     cpu: 60m
-      #     memory: 60Mi
+      #     cpu: 30m
+      #     memory: 30Mi
       #   limits:
       #     cpu: 100m
-      #     memory: 100Mi
+      #     memory: 60Mi
 
       # Optional: The URI of the image that contains the codemodules specific OneAgent that will be injected into pods and applications.
       # For an example of a Dockerfile creating such an image, see https://dt-url.net/operator-docker-samples
