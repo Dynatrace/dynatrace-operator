@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,6 +15,8 @@ import (
 )
 
 func TestMakeRequest(t *testing.T) {
+	ctx := context.Background()
+
 	dynatraceServer := httptest.NewServer(dynatraceServerHandler())
 	defer dynatraceServer.Close()
 
@@ -27,23 +30,25 @@ func TestMakeRequest(t *testing.T) {
 	}
 
 	require.NotNil(t, dc)
-
-	{
+	t.Run("happy path", func(t *testing.T) {
 		url := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dc.url)
-		resp, err := dc.makeRequest(url, dynatraceApiToken)
+		resp, err := dc.makeRequest(ctx, url, dynatraceApiToken)
 		require.NoError(t, err)
 		assert.NotNil(t, resp)
 
 		defer utils.CloseBodyAfterRequest(resp)
-	}
-	{
-		resp, err := dc.makeRequest("%s/v1/deployment/installer/agent/connectioninfo", dynatraceApiToken)
+	})
+
+	t.Run("sad path", func(t *testing.T) {
+		resp, err := dc.makeRequest(ctx, "%s/v1/deployment/installer/agent/connectioninfo", dynatraceApiToken)
 		require.Error(t, err, "unsupported protocol scheme")
 		assert.Nil(t, resp)
-	}
+	})
 }
 
 func TestGetResponseOrServerError(t *testing.T) {
+	ctx := context.Background()
+
 	dynatraceServer := httptest.NewServer(dynatraceServerHandler())
 	defer dynatraceServer.Close()
 
@@ -57,20 +62,21 @@ func TestGetResponseOrServerError(t *testing.T) {
 	}
 
 	require.NotNil(t, dc)
-
-	reqURL := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dc.url)
-	{
-		resp, err := dc.makeRequest(reqURL, dynatraceApiToken)
+	t.Run("happy path", func(t *testing.T) {
+		reqURL := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dc.url)
+		resp, err := dc.makeRequest(ctx, reqURL, dynatraceApiToken)
 		require.NoError(t, err)
 		assert.NotNil(t, resp)
 
 		body, err := dc.getServerResponseData(resp)
 		require.NoError(t, err)
 		assert.NotNil(t, body, "response body available")
-	}
+	})
 }
 
 func TestBuildHostCache(t *testing.T) {
+	ctx := context.Background()
+
 	dynatraceServer := httptest.NewServer(dynatraceServerHandler())
 	defer dynatraceServer.Close()
 
@@ -84,41 +90,41 @@ func TestBuildHostCache(t *testing.T) {
 	}
 
 	require.NotNil(t, dc)
-
-	{
-		err := dc.buildHostCache()
+	t.Run("sad path", func(t *testing.T) {
+		dc.apiToken = ""
+		err := dc.buildHostCache(ctx)
 		require.Error(t, err, "error querying dynatrace server")
 		assert.Empty(t, dc.hostCache)
-	}
-	{
+	})
+	t.Run("happy path", func(t *testing.T) {
 		dc.apiToken = apiToken
-		err := dc.buildHostCache()
+		err := dc.buildHostCache(ctx)
 		require.NoError(t, err)
 		assert.NotZero(t, len(dc.hostCache))
 		assert.ObjectsAreEqualValues(dc.hostCache, map[string]hostInfo{
 			"10.11.12.13": {version: "1.142.0.20180313-173634", entityID: "dynatraceSampleEntityId"},
 			"192.168.0.1": {version: "1.142.0.20180313-173634", entityID: "dynatraceSampleEntityId"},
 		})
-	}
+	})
 }
 
 func TestServerError(t *testing.T) {
-	{
+	t.Run("happy path", func(t *testing.T) {
 		se := &ServerError{Code: 401, Message: "Unauthorized"}
 		assert.Equal(t, "dynatrace server error 401: Unauthorized", se.Error())
-	}
-	{
+	})
+	t.Run("no status code is required", func(t *testing.T) {
 		se := &ServerError{Message: "Unauthorized"}
 		assert.Equal(t, "dynatrace server error 0: Unauthorized", se.Error())
-	}
-	{
+	})
+	t.Run("no message is required", func(t *testing.T) {
 		se := &ServerError{Code: 401}
 		assert.Equal(t, "dynatrace server error 401: ", se.Error())
-	}
-	{
+	})
+	t.Run("unknown error", func(t *testing.T) {
 		se := &ServerError{}
 		assert.Equal(t, "unknown server error", se.Error())
-	}
+	})
 }
 
 func TestDynatraceClientWithServer(t *testing.T) {
@@ -132,6 +138,7 @@ func TestDynatraceClientWithServer(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, dtc)
 
+	// TODO: Fix this monster, this is not ok
 	testAgentVersionGetLatestAgentVersion(t, dtc)
 	testActiveGateVersionGetLatestActiveGateVersion(t, dtc)
 	testCommunicationHostsGetCommunicationHosts(t, dtc)
@@ -190,6 +197,7 @@ func writeError(w http.ResponseWriter, status int) {
 }
 
 func TestIgnoreNonCurrentlySeenHosts(t *testing.T) {
+	ctx := context.Background()
 	// now:                         20/05/2020 10:10 AM UTC
 	// HOST-42 - lastSeenTimestamp: 20/05/2020 10:04 AM UTC
 	// HOST-84 - lastSeenTimestamp: 19/05/2020 01:49 AM UTC
@@ -229,7 +237,7 @@ func TestIgnoreNonCurrentlySeenHosts(t *testing.T) {
 	}
 ]`)))
 
-	info, err := c.getHostInfoForIP("1.1.1.1")
+	info, err := c.getHostInfoForIP(ctx, "1.1.1.1")
 	require.NoError(t, err)
 	require.Equal(t, "HOST-42", info.entityID)
 	require.Equal(t, "1.195.0.20200515-045253", info.version)

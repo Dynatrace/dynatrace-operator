@@ -60,7 +60,7 @@ func (updater syntheticUpdater) IsPublicRegistryEnabled() bool {
 	return false
 }
 
-func (updater syntheticUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, error) {
+func (updater syntheticUpdater) LatestImageInfo(_ context.Context) (*dtclient.LatestImageInfo, error) {
 	return nil, errors.New("unsupported method")
 }
 

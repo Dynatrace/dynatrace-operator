@@ -56,8 +56,8 @@ func (updater activeGateUpdater) IsPublicRegistryEnabled() bool {
 	return updater.dynakube.FeaturePublicRegistry()
 }
 
-func (updater activeGateUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, error) {
-	return updater.dtClient.GetLatestActiveGateImage()
+func (updater activeGateUpdater) LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error) {
+	return updater.dtClient.GetLatestActiveGateImage(ctx)
 }
 
 func (updater *activeGateUpdater) CheckForDowngrade(latestVersion string) (bool, error) {
@@ -65,7 +65,7 @@ func (updater *activeGateUpdater) CheckForDowngrade(latestVersion string) (bool,
 }
 
 func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {
-	latestVersion, err := updater.dtClient.GetLatestActiveGateVersion(dtclient.OsUnix)
+	latestVersion, err := updater.dtClient.GetLatestActiveGateVersion(ctx, dtclient.OsUnix)
 	if err != nil {
 		log.Info("failed to determine image version", "error", err)
 		return err

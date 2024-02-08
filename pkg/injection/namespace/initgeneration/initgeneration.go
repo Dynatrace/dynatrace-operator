@@ -185,15 +185,15 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 }
 
 func getPaasToken(tokens corev1.Secret) string {
-	if len(tokens.Data[dtclient.DynatracePaasToken]) != 0 {
-		return string(tokens.Data[dtclient.DynatracePaasToken])
+	if len(tokens.Data[dtclient.PaasToken]) != 0 {
+		return string(tokens.Data[dtclient.PaasToken])
 	}
 
-	return string(tokens.Data[dtclient.DynatraceApiToken])
+	return string(tokens.Data[dtclient.ApiToken])
 }
 
 func getAPIToken(tokens corev1.Secret) string {
-	return string(tokens.Data[dtclient.DynatraceApiToken])
+	return string(tokens.Data[dtclient.ApiToken])
 }
 
 // getHostMonitoringNodes creates a mapping between all the nodes and the tenantUID for the host-monitoring dynakube on that node.

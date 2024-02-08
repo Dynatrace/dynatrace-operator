@@ -1,6 +1,7 @@
 package csiprovisioner
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"testing"
@@ -35,6 +36,7 @@ const (
 )
 
 func TestUpdateAgent(t *testing.T) {
+	ctx := context.Background()
 	testVersion := "test"
 	testImageDigest := "7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 
@@ -47,12 +49,12 @@ func TestUpdateAgent(t *testing.T) {
 		processModule := createTestProcessModuleConfig(revision)
 		installerMock := mockedinstaller.NewInstaller(t)
 		installerMock.
-			On("InstallAgent", targetDir).
+			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testVersion))
 
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentZip(dk, mockedclient.NewClient(t), processModule)
+		currentVersion, err := provisioner.installAgentZip(ctx, dk, mockedclient.NewClient(t), processModule)
 		require.NoError(t, err)
 		assert.Equal(t, testVersion, currentVersion)
 		t_utils.AssertEvents(t,
@@ -81,12 +83,12 @@ func TestUpdateAgent(t *testing.T) {
 		processModule := createTestProcessModuleConfig(revision)
 		installerMock := mockedinstaller.NewInstaller(t)
 		installerMock.
-			On("InstallAgent", newTargetDir).
+			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), newTargetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, newVersion))
 
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentZip(dk, mockedclient.NewClient(t), processModule)
+		currentVersion, err := provisioner.installAgentZip(ctx, dk, mockedclient.NewClient(t), processModule)
 		require.NoError(t, err)
 		assert.Equal(t, newVersion, currentVersion)
 	})
@@ -102,11 +104,11 @@ func TestUpdateAgent(t *testing.T) {
 		processModule := createTestProcessModuleConfig(revision)
 		installerMock := mockedinstaller.NewInstaller(t)
 		installerMock.
-			On("InstallAgent", targetDir).
+			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).
 			Return(false, nil)
 
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
-		currentVersion, err := provisioner.installAgentZip(dk, mockedclient.NewClient(t), processModule)
+		currentVersion, err := provisioner.installAgentZip(ctx, dk, mockedclient.NewClient(t), processModule)
 
 		require.NoError(t, err)
 		assert.Equal(t, testVersion, currentVersion)
@@ -121,12 +123,12 @@ func TestUpdateAgent(t *testing.T) {
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(testImageDigest)
 		installerMock := mockedinstaller.NewInstaller(t)
 		installerMock.
-			On("InstallAgent", targetDir).
+			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).
 			Return(false, fmt.Errorf("BOOM"))
 		mockRegistryClient(provisioner, testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentImage(dk, processModule)
+		currentVersion, err := provisioner.installAgentImage(ctx, dk, processModule)
 
 		require.Error(t, err)
 		assert.Equal(t, "", currentVersion)
@@ -151,12 +153,12 @@ func TestUpdateAgent(t *testing.T) {
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(testImageDigest)
 		installerMock := mockedinstaller.NewInstaller(t)
 		installerMock.
-			On("InstallAgent", targetDir).
+			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
 		mockRegistryClient(provisioner, testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentImage(dk, processModule)
+		currentVersion, err := provisioner.installAgentImage(ctx, dk, processModule)
 		require.NoError(t, err)
 		assert.Equal(t, testImageDigest, currentVersion)
 	})
@@ -174,12 +176,12 @@ func TestUpdateAgent(t *testing.T) {
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(testImageDigest)
 		installerMock := mockedinstaller.NewInstaller(t)
 		installerMock.
-			On("InstallAgent", targetDir).
+			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
 		mockRegistryClient(provisioner, testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentImage(dk, processModule)
+		currentVersion, err := provisioner.installAgentImage(ctx, dk, processModule)
 		require.NoError(t, err)
 		assert.Equal(t, testImageDigest, currentVersion)
 	})
@@ -222,12 +224,12 @@ NK85cEJwyxQ+wahdNGUD
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(testImageDigest)
 		installerMock := mockedinstaller.NewInstaller(t)
 		installerMock.
-			On("InstallAgent", targetDir).
+			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
 		mockRegistryClient(provisioner, testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentImage(dk, processModule)
+		currentVersion, err := provisioner.installAgentImage(ctx, dk, processModule)
 		require.NoError(t, err)
 		assert.Equal(t, testImageDigest, currentVersion)
 	})
@@ -336,13 +338,13 @@ func mockRegistryClient(provisioner *OneAgentProvisioner, imageDigest string) {
 }
 
 func mockImageInstallerBuilder(mock *mockedinstaller.Installer) imageInstallerBuilder {
-	return func(f afero.Fs, p *image.Properties) (installer.Installer, error) {
+	return func(_ afero.Fs, _ *image.Properties) (installer.Installer, error) {
 		return mock, nil
 	}
 }
 
 func mockUrlInstallerBuilder(mock *mockedinstaller.Installer) urlInstallerBuilder {
-	return func(f afero.Fs, c dtclient.Client, p *url.Properties) installer.Installer {
+	return func(_ afero.Fs, _ dtclient.Client, _ *url.Properties) installer.Installer {
 		return mock
 	}
 }

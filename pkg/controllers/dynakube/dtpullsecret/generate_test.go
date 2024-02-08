@@ -41,7 +41,7 @@ func TestReconciler_GenerateData(t *testing.T) {
 	r := &Reconciler{
 		dynakube: dynakube,
 		tokens: token.Tokens{
-			dtclient.DynatracePaasToken: token.Token{Value: testPaasToken},
+			dtclient.PaasToken: token.Token{Value: testPaasToken},
 		},
 	}
 

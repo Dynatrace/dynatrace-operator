@@ -5,7 +5,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
@@ -39,12 +38,12 @@ func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube 
 		return errors.WithMessage(err, "failed to reconcile ActiveGate")
 	}
 
-	controller.setupAutomaticApiMonitoring(dynakube, dtc)
+	controller.setupAutomaticApiMonitoring(ctx, dtc, dynakube)
 
 	return nil
 }
 
-func (controller *Controller) setupAutomaticApiMonitoring(dynakube *dynakube.DynaKube, dtc dynatrace.Client) {
+func (controller *Controller) setupAutomaticApiMonitoring(ctx context.Context, dtc dynatrace.Client, dynakube *dynakube.DynaKube) {
 	if dynakube.Status.KubeSystemUUID != "" &&
 		dynakube.FeatureAutomaticKubernetesApiMonitoring() &&
 		dynakube.IsKubernetesMonitoringActiveGateEnabled() {
@@ -53,8 +52,8 @@ func (controller *Controller) setupAutomaticApiMonitoring(dynakube *dynakube.Dyn
 			clusterLabel = dynakube.Name
 		}
 
-		err := apimonitoring.NewReconciler(dtc, clusterLabel, dynakube.Status.KubeSystemUUID).
-			Reconcile(dynakube)
+		err := controller.apiMonitoringReconcilerBuilder(dtc, dynakube, clusterLabel, dynakube.Status.KubeSystemUUID).
+			Reconcile(ctx)
 		if err != nil {
 			log.Error(err, "could not create setting")
 		}

@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,11 +19,13 @@ var activeGateAuthTokenResponse = &ActiveGateAuthTokenInfo{
 }
 
 func TestGetActiveGateAuthTokenInfo(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run("GetActiveGateAuthToken works", func(t *testing.T) {
 		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(activeGateAuthTokenUrl, activeGateAuthTokenResponse), "")
 		defer dynatraceServer.Close()
 
-		agAuthTokenInfo, err := dynatraceClient.GetActiveGateAuthToken(dynakubeName)
+		agAuthTokenInfo, err := dynatraceClient.GetActiveGateAuthToken(ctx, dynakubeName)
 		require.NoError(t, err)
 		assert.NotNil(t, agAuthTokenInfo)
 
@@ -32,7 +35,7 @@ func TestGetActiveGateAuthTokenInfo(t *testing.T) {
 		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantMalformedJson(activeGateAuthTokenUrl), "")
 		defer faultyDynatraceServer.Close()
 
-		tenantInfo, err := faultyDynatraceClient.GetActiveGateAuthToken(dynakubeName)
+		tenantInfo, err := faultyDynatraceClient.GetActiveGateAuthToken(ctx, dynakubeName)
 		require.Error(t, err)
 		assert.Nil(t, tenantInfo)
 
@@ -42,7 +45,7 @@ func TestGetActiveGateAuthTokenInfo(t *testing.T) {
 		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantInternalServerError(activeGateAuthTokenUrl), "")
 		defer faultyDynatraceServer.Close()
 
-		tenantInfo, err := faultyDynatraceClient.GetActiveGateAuthToken(dynakubeName)
+		tenantInfo, err := faultyDynatraceClient.GetActiveGateAuthToken(ctx, dynakubeName)
 		require.Error(t, err)
 		assert.Nil(t, tenantInfo)
 

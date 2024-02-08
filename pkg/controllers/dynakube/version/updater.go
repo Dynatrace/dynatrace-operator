@@ -23,7 +23,7 @@ type StatusUpdater interface {
 	IsPublicRegistryEnabled() bool
 	CheckForDowngrade(latestVersion string) (bool, error)
 	ValidateStatus() error
-	LatestImageInfo() (*dtclient.LatestImageInfo, error)
+	LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error)
 
 	UseTenantRegistry(context.Context) error
 }
@@ -61,7 +61,7 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 	}
 
 	if updater.IsPublicRegistryEnabled() {
-		err = r.processPublicRegistry(updater)
+		err = r.processPublicRegistry(ctx, updater)
 		if err != nil {
 			return err
 		}
@@ -79,12 +79,12 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 	return updater.ValidateStatus()
 }
 
-func (r *reconciler) processPublicRegistry(updater StatusUpdater) error {
+func (r *reconciler) processPublicRegistry(ctx context.Context, updater StatusUpdater) error {
 	log.Info("updating version status according to public registry", "updater", updater.Name())
 
 	var publicImage *dtclient.LatestImageInfo
 
-	publicImage, err := updater.LatestImageInfo()
+	publicImage, err := updater.LatestImageInfo(ctx)
 	if err != nil {
 		log.Info("could not get public image", "updater", updater.Name())
 		return err

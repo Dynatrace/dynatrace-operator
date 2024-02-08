@@ -109,7 +109,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 
 	fakeClient := fake.NewClient(
 		dynakube,
-		NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
+		NewSecret(dkName, namespace, map[string]string{dtclient.PaasToken: "42", dtclient.ApiToken: "84"}),
 		sampleKubeSystemNS)
 
 	dtClient := mocks.NewClient(t)
@@ -181,7 +181,7 @@ func TestReconcile_PostponeOnEmptyCommunicationHosts(t *testing.T) {
 	}
 
 	c := fake.NewClient(
-		NewSecret(name, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
+		NewSecret(name, namespace, map[string]string{dtclient.PaasToken: "42", dtclient.ApiToken: "84"}),
 		sampleKubeSystemNS)
 
 	reconciler := &Reconciler{
@@ -222,7 +222,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	}
 
 	c := fake.NewClient(
-		NewSecret(name, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
+		NewSecret(name, namespace, map[string]string{dtclient.PaasToken: "42", dtclient.ApiToken: "84"}),
 		sampleKubeSystemNS)
 	oldComponentVersion := "1.186.0.0-0"
 	hostIP := "1.2.3.4"
@@ -660,7 +660,7 @@ func TestInstanceStatus(t *testing.T) {
 	fakeClient := fake.NewClient(
 		dynakube,
 		pod,
-		NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
+		NewSecret(dkName, namespace, map[string]string{dtclient.PaasToken: "42", dtclient.ApiToken: "84"}),
 		sampleKubeSystemNS)
 
 	reconciler := &Reconciler{
@@ -713,7 +713,7 @@ func TestEmptyInstancesWithWrongLabels(t *testing.T) {
 	fakeClient := fake.NewClient(
 		dynakube,
 		pod,
-		NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
+		NewSecret(dkName, namespace, map[string]string{dtclient.PaasToken: "42", dtclient.ApiToken: "84"}),
 		sampleKubeSystemNS)
 
 	reconciler := &Reconciler{
@@ -729,8 +729,6 @@ func TestEmptyInstancesWithWrongLabels(t *testing.T) {
 
 func TestReconcile_ActivegateConfigMap(t *testing.T) {
 	const (
-		testNamespace       = "test-namespace"
-		testTenantToken     = "test-token"
 		testTenantUUID      = "test-uuid"
 		testTenantEndpoints = "test-endpoints"
 	)
@@ -757,7 +755,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 
 	fakeClient := fake.NewClient(
 		dynakube,
-		NewSecret(dynakube.Name, dynakube.Namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
+		NewSecret(dynakube.Name, dynakube.Namespace, map[string]string{dtclient.PaasToken: "42", dtclient.ApiToken: "84"}),
 		sampleKubeSystemNS)
 
 	t.Run(`create OneAgent connection info ConfigMap`, func(t *testing.T) {

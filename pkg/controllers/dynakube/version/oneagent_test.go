@@ -15,6 +15,7 @@ import (
 )
 
 func TestOneAgentUpdater(t *testing.T) {
+	ctx := context.Background()
 	testImage := dtclient.LatestImageInfo{
 		Source: "some.registry.com",
 		Tag:    "1.2.3.4-5",
@@ -42,7 +43,7 @@ func TestOneAgentUpdater(t *testing.T) {
 		assert.Equal(t, dynakube.Spec.OneAgent.ClassicFullStack.Image, updater.CustomImage())
 		assert.Equal(t, dynakube.Spec.OneAgent.ClassicFullStack.Version, updater.CustomVersion())
 		assert.False(t, updater.IsAutoUpdateEnabled())
-		imageInfo, err := updater.LatestImageInfo()
+		imageInfo, err := updater.LatestImageInfo(ctx)
 		require.NoError(t, err)
 		assert.Equal(t, testImage, *imageInfo)
 	})
@@ -89,7 +90,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 
 		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient)
 
-		err := updater.UseTenantRegistry(context.TODO())
+		err := updater.UseTenantRegistry(context.Background())
 
 		require.NoError(t, err)
 		assertStatusBasedOnTenantRegistry(t, expectedImage, testVersion, dynakube.Status.OneAgent.VersionStatus)
@@ -119,7 +120,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 
 		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient)
 
-		err := updater.UseTenantRegistry(context.TODO())
+		err := updater.UseTenantRegistry(context.Background())
 		require.NoError(t, err) // we only log the downgrade problem, not fail the reconcile
 		assert.Equal(t, previousVersion, dynakube.Status.OneAgent.Version)
 	})

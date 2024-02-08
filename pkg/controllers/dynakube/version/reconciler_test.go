@@ -50,7 +50,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("no update if hash provider returns error", func(t *testing.T) {
 		mockClient := mockedclient.NewClient(t)
-		mockClient.On("GetLatestActiveGateVersion", mock.Anything).Return("", errors.New("Something wrong happened"))
+		mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return("", errors.New("Something wrong happened"))
 
 		versionReconciler := reconciler{
 			dtClient:     mockClient,
@@ -327,21 +327,21 @@ func createTestPullSecret(fakeClient client.Client, dynakube dynatracev1beta1.Dy
 }
 
 func mockActiveGateImageInfo(mockClient *mockedclient.Client, imageInfo dtclient.LatestImageInfo) {
-	mockClient.On("GetLatestActiveGateImage").Return(&imageInfo, nil)
+	mockClient.On("GetLatestActiveGateImage", mock.AnythingOfType("context.backgroundCtx")).Return(&imageInfo, nil)
 }
 
 func mockCodeModulesImageInfo(mockClient *mockedclient.Client, imageInfo dtclient.LatestImageInfo) {
-	mockClient.On("GetLatestCodeModulesImage").Return(&imageInfo, nil)
+	mockClient.On("GetLatestCodeModulesImage", mock.AnythingOfType("context.backgroundCtx")).Return(&imageInfo, nil)
 }
 
 func mockOneAgentImageInfo(mockClient *mockedclient.Client, imageInfo dtclient.LatestImageInfo) {
-	mockClient.On("GetLatestOneAgentImage").Return(&imageInfo, nil)
+	mockClient.On("GetLatestOneAgentImage", mock.AnythingOfType("context.backgroundCtx")).Return(&imageInfo, nil)
 }
 
 func mockLatestAgentVersion(mockClient *mockedclient.Client, latestVersion string) {
-	mockClient.On("GetLatestAgentVersion", mock.Anything, mock.Anything).Return(latestVersion, nil)
+	mockClient.On("GetLatestAgentVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything, mock.Anything).Return(latestVersion, nil)
 }
 
 func mockLatestActiveGateVersion(mockClient *mockedclient.Client, latestVersion string) {
-	mockClient.On("GetLatestActiveGateVersion", mock.Anything).Return(latestVersion, nil)
+	mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(latestVersion, nil)
 }

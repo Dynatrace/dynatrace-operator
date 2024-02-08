@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -18,6 +19,7 @@ const (
 )
 
 func Test_GetActiveGateConnectionInfo(t *testing.T) {
+	ctx := context.Background()
 	activegateJsonResponse := &activeGateConnectionInfoJsonResponse{
 		TenantUUID:             testTenantUUID,
 		TenantToken:            testTenantToken,
@@ -35,7 +37,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(activeGateConnectionInfoEndpoint, activegateJsonResponse), "")
 		defer dynatraceServer.Close()
 
-		connectionInfo, err := dynatraceClient.GetActiveGateConnectionInfo()
+		connectionInfo, err := dynatraceClient.GetActiveGateConnectionInfo(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
@@ -45,7 +47,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(activeGateConnectionInfoEndpoint, activegateJsonResponse), "nz")
 		defer dynatraceServer.Close()
 
-		connectionInfo, err := dynatraceClient.GetActiveGateConnectionInfo()
+		connectionInfo, err := dynatraceClient.GetActiveGateConnectionInfo(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
@@ -55,7 +57,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(activeGateConnectionInfoEndpoint, activegateJsonResponse), "")
 		defer dynatraceServer.Close()
 
-		connectionInfo, err := dynatraceClient.GetActiveGateConnectionInfo()
+		connectionInfo, err := dynatraceClient.GetActiveGateConnectionInfo(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, connectionInfo)
 
@@ -65,7 +67,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantMalformedJson(activeGateConnectionInfoEndpoint), "")
 		defer faultyDynatraceServer.Close()
 
-		connectionInfo, err := faultyDynatraceClient.GetActiveGateConnectionInfo()
+		connectionInfo, err := faultyDynatraceClient.GetActiveGateConnectionInfo(ctx)
 		require.Error(t, err)
 		assert.Equal(t, "invalid character 'h' in literal true (expecting 'r')", err.Error())
 
@@ -76,7 +78,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantInternalServerError(activeGateConnectionInfoEndpoint), "")
 		defer faultyDynatraceServer.Close()
 
-		connectionInfo, err := faultyDynatraceClient.GetActiveGateConnectionInfo()
+		connectionInfo, err := faultyDynatraceClient.GetActiveGateConnectionInfo(ctx)
 		require.Error(t, err)
 		assert.NotNil(t, connectionInfo)
 		assert.Equal(t, ActiveGateConnectionInfo{}, connectionInfo)

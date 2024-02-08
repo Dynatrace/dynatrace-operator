@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"net/http"
 	"sort"
 	"testing"
@@ -138,7 +139,8 @@ func TestParseEndpoints(t *testing.T) {
 }
 
 func testCommunicationHostsGetCommunicationHosts(t *testing.T, dynatraceClient Client) {
-	res, err := dynatraceClient.GetOneAgentConnectionInfo()
+	ctx := context.Background()
+	res, err := dynatraceClient.GetOneAgentConnectionInfo(ctx)
 
 	require.NoError(t, err)
 	assert.ObjectsAreEqualValues(res.CommunicationHosts, []CommunicationHost{

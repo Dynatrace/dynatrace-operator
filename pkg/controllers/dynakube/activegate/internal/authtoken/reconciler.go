@@ -81,7 +81,7 @@ func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context) error {
 }
 
 func (r *Reconciler) ensureAuthTokenSecret(ctx context.Context) error {
-	agSecretData, err := r.getActiveGateAuthToken()
+	agSecretData, err := r.getActiveGateAuthToken(ctx)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to create secret '%s'", r.dynakube.ActiveGateAuthTokenSecret())
 	}
@@ -89,8 +89,8 @@ func (r *Reconciler) ensureAuthTokenSecret(ctx context.Context) error {
 	return r.createSecret(ctx, agSecretData)
 }
 
-func (r *Reconciler) getActiveGateAuthToken() (map[string][]byte, error) {
-	authTokenInfo, err := r.dtc.GetActiveGateAuthToken(r.dynakube.Name)
+func (r *Reconciler) getActiveGateAuthToken(ctx context.Context) (map[string][]byte, error) {
+	authTokenInfo, err := r.dtc.GetActiveGateAuthToken(ctx, r.dynakube.Name)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

@@ -1,5 +1,7 @@
 package installer
 
+import "context"
+
 type Installer interface {
-	InstallAgent(targetDir string) (bool, error)
+	InstallAgent(ctx context.Context, targetDir string) (bool, error)
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"golang.org/x/sys/unix"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 const (
@@ -21,10 +22,12 @@ func NewStandaloneCommand() *cobra.Command {
 func startStandAloneInit(_ *cobra.Command, _ []string) error {
 	unix.Umask(0000)
 
+	signalHandler := ctrl.SetupSignalHandler()
+
 	standaloneRunner, err := startup.NewRunner(afero.NewOsFs())
 	if err != nil {
 		return err
 	}
 
-	return standaloneRunner.Run()
+	return standaloneRunner.Run(signalHandler)
 }

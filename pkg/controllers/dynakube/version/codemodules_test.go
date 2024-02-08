@@ -14,6 +14,7 @@ import (
 )
 
 func TestCodeModulesUpdater(t *testing.T) {
+	ctx := context.Background()
 	testImage := dtclient.LatestImageInfo{
 		Source: "some.registry.com",
 		Tag:    "1.2.3.4-5",
@@ -42,14 +43,14 @@ func TestCodeModulesUpdater(t *testing.T) {
 		assert.Equal(t, dynakube.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage, updater.CustomImage())
 		assert.Equal(t, dynakube.Spec.OneAgent.ApplicationMonitoring.Version, updater.CustomVersion())
 		assert.True(t, updater.IsAutoUpdateEnabled())
-		imageInfo, err := updater.LatestImageInfo()
+		imageInfo, err := updater.LatestImageInfo(ctx)
 		require.NoError(t, err)
 		assert.Equal(t, testImage, *imageInfo)
 	})
 }
 
 func TestCodeModulesUseDefault(t *testing.T) {
-	ctx := context.TODO()
+	ctx := context.Background()
 	testVersion := "1.2.3.4-5"
 
 	t.Run("Set according to version field, unset previous status", func(t *testing.T) {

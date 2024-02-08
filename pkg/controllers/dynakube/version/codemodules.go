@@ -48,15 +48,15 @@ func (updater codeModulesUpdater) IsPublicRegistryEnabled() bool {
 	return updater.dynakube.FeaturePublicRegistry()
 }
 
-func (updater codeModulesUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, error) {
-	return updater.dtClient.GetLatestCodeModulesImage()
+func (updater codeModulesUpdater) LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error) {
+	return updater.dtClient.GetLatestCodeModulesImage(ctx)
 }
 
 func (updater *codeModulesUpdater) CheckForDowngrade(latestVersion string) (bool, error) {
 	return false, nil
 }
 
-func (updater *codeModulesUpdater) UseTenantRegistry(_ context.Context) error {
+func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error {
 	customVersion := updater.CustomVersion()
 	if customVersion != "" {
 		updater.dynakube.Status.CodeModules = dynatracev1beta1.CodeModulesStatus{
@@ -68,7 +68,7 @@ func (updater *codeModulesUpdater) UseTenantRegistry(_ context.Context) error {
 		return nil
 	}
 
-	latestAgentVersionUnixPaas, err := updater.dtClient.GetLatestAgentVersion(
+	latestAgentVersionUnixPaas, err := updater.dtClient.GetLatestAgentVersion(ctx,
 		dtclient.OsUnix, dtclient.InstallerTypePaaS)
 	if err != nil {
 		log.Info("could not get agent paas unix version")

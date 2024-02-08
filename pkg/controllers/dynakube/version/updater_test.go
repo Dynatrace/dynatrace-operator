@@ -15,7 +15,7 @@ import (
 )
 
 func TestRun(t *testing.T) {
-	ctx := context.TODO()
+	ctx := context.Background()
 	testImage := dtclient.LatestImageInfo{
 		Source: "some.registry.com",
 		Tag:    "1.2.3.4-5",
@@ -313,7 +313,7 @@ func newPublicRegistryUpdater(t *testing.T, target *status.VersionStatus, imageI
 	updater := newBaseUpdater(t, target, autoUpdate)
 	updater.On("CustomImage").Maybe().Return("")
 	updater.On("IsPublicRegistryEnabled").Maybe().Return(true)
-	updater.On("LatestImageInfo").Maybe().Return(imageInfo, nil)
+	updater.On("LatestImageInfo", mock.AnythingOfType("context.backgroundCtx")).Maybe().Return(imageInfo, nil)
 
 	return updater
 }

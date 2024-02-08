@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -35,6 +36,7 @@ func TestEventDataMarshal(t *testing.T) {
 }
 
 func TestSendEvent(t *testing.T) {
+	ctx := context.Background()
 	empty := EventData{}
 	eventTypeOnly := EventData{
 		EventType: "abcd",
@@ -44,7 +46,7 @@ func TestSendEvent(t *testing.T) {
 		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, sendEventHandlerStub(), "")
 		defer dynatraceServer.Close()
 
-		err := dynatraceClient.SendEvent(nil)
+		err := dynatraceClient.SendEvent(ctx, nil)
 		require.Error(t, err)
 		assert.Equal(t, "no data found in eventData payload", err.Error())
 	})
@@ -52,27 +54,27 @@ func TestSendEvent(t *testing.T) {
 		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, sendEventHandlerStub(), "")
 		defer dynatraceServer.Close()
 
-		err := dynatraceClient.SendEvent(&empty)
+		err := dynatraceClient.SendEvent(ctx, &empty)
 		require.Error(t, err)
 		assert.Equal(t, "no key set for eventType in eventData payload", err.Error())
 
-		err = dynatraceClient.SendEvent(&eventTypeOnly)
+		err = dynatraceClient.SendEvent(ctx, &eventTypeOnly)
 		require.NoError(t, err)
 	})
 	t.Run("SendEvent request error", func(t *testing.T) {
 		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, sendEventHandlerError(), "")
 
-		err := dynatraceClient.SendEvent(&empty)
+		err := dynatraceClient.SendEvent(ctx, &empty)
 		require.Error(t, err)
 		assert.Equal(t, "no key set for eventType in eventData payload", err.Error())
 
-		err = dynatraceClient.SendEvent(&eventTypeOnly)
+		err = dynatraceClient.SendEvent(ctx, &eventTypeOnly)
 		require.Error(t, err)
 		assert.Equal(t, "dynatrace server error 500: error received from server", err.Error())
 
 		dynatraceServer.Close()
 
-		err = dynatraceClient.SendEvent(&eventTypeOnly)
+		err = dynatraceClient.SendEvent(ctx, &eventTypeOnly)
 		require.Error(t, err)
 		assert.True(t,
 			// Reason differs between local tests and travis test, so only check main error message
@@ -94,7 +96,9 @@ func sendEventHandlerError() http.HandlerFunc {
 }
 
 func testSendEvent(t *testing.T, dynatraceClient Client) {
-	{
+	ctx := context.Background()
+
+	t.Run("happy path", func(t *testing.T) {
 		testValidEventData := []byte(`{
 			"eventType": "MARKED_FOR_TERMINATION",
 			"start": 20,
@@ -110,10 +114,10 @@ func testSendEvent(t *testing.T, dynatraceClient Client) {
 		err := json.Unmarshal(testValidEventData, &testEventData)
 		require.NoError(t, err)
 
-		err = dynatraceClient.SendEvent(&testEventData)
+		err = dynatraceClient.SendEvent(ctx, &testEventData)
 		require.NoError(t, err)
-	}
-	{
+	})
+	t.Run("invalid event type sent -> error from API", func(t *testing.T) {
 		testInvalidEventData := []byte(`{
 			"start": 20,
 			"end": 20,
@@ -128,10 +132,10 @@ func testSendEvent(t *testing.T, dynatraceClient Client) {
 		err := json.Unmarshal(testInvalidEventData, &testEventData)
 		require.NoError(t, err)
 
-		err = dynatraceClient.SendEvent(&testEventData)
+		err = dynatraceClient.SendEvent(ctx, &testEventData)
 		require.Error(t, err, "no eventType set")
-	}
-	{
+	})
+	t.Run("extra keys are ignored", func(t *testing.T) {
 		testExtraKeysEventData := []byte(`{
 			"eventType": "MARKED_FOR_TERMINATION",
 			"start": 20,
@@ -148,9 +152,9 @@ func testSendEvent(t *testing.T, dynatraceClient Client) {
 		err := json.Unmarshal(testExtraKeysEventData, &testEventData)
 		require.NoError(t, err)
 
-		err = dynatraceClient.SendEvent(&testEventData)
+		err = dynatraceClient.SendEvent(ctx, &testEventData)
 		require.NoError(t, err)
-	}
+	})
 }
 
 func handleSendEvent(request *http.Request, writer http.ResponseWriter) {

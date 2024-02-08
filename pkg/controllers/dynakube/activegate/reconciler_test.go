@@ -53,7 +53,7 @@ var (
 
 func TestReconciler_Reconcile(t *testing.T) {
 	dtc := mocks.NewClient(t)
-	dtc.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
+	dtc.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
 	t.Run(`Create works with minimal setup`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
@@ -189,7 +189,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 func TestServiceCreation(t *testing.T) {
 	dynatraceClient := mocks.NewClient(t)
-	dynatraceClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
+	dynatraceClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
 	dynakube := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -216,11 +216,11 @@ func TestServiceCreation(t *testing.T) {
 			dynatracev1beta1.KubeMonCapability.DisplayName: {},
 		}
 
-		for capability, expectedPorts := range expectedCapabilityPorts {
+		for capName, expectedPorts := range expectedCapabilityPorts {
 			fakeClient := fake.NewClient(testKubeSystemNamespace)
 			reconciler := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, dynatraceClient)
 			dynakube.Spec.ActiveGate.Capabilities = []dynatracev1beta1.CapabilityDisplayName{
-				capability,
+				capName,
 			}
 
 			err := reconciler.Reconcile(context.Background())
@@ -280,7 +280,7 @@ func getTestActiveGateService(t *testing.T, fakeClient client.Client) corev1.Ser
 
 func TestExclusiveSynMonitoring(t *testing.T) {
 	mockDtClient := mocks.NewClient(t)
-	mockDtClient.On("GetActiveGateAuthToken", testName).
+	mockDtClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).
 		Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
 	dynakube := &dynatracev1beta1.DynaKube{

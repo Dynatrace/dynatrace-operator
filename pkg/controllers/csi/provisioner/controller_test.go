@@ -177,7 +177,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					Name: dkName,
 				},
 				Data: map[string][]byte{
-					dtclient.DynatraceApiToken: []byte("api-token"),
+					dtclient.ApiToken: []byte("api-token"),
 				},
 			},
 		)
@@ -271,7 +271,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						Name: dkName,
 					},
 					Data: map[string][]byte{
-						dtclient.DynatraceApiToken: []byte("test-value"),
+						dtclient.ApiToken: []byte("test-value"),
 					},
 				},
 			),
@@ -310,7 +310,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						Name: dkName,
 					},
 					Data: map[string][]byte{
-						dtclient.DynatraceApiToken: []byte("api-token"),
+						dtclient.ApiToken: []byte("api-token"),
 					},
 				},
 			),
@@ -353,7 +353,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						Name: dkName,
 					},
 					Data: map[string][]byte{
-						dtclient.DynatraceApiToken: []byte("api-token"),
+						dtclient.ApiToken: []byte("api-token"),
 					},
 				},
 				&corev1.Secret{

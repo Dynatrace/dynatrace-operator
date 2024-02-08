@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
@@ -29,8 +30,8 @@ type oneAgentConnectionInfoJsonResponse struct {
 	FormattedCommunicationEndpoints string   `json:"formattedCommunicationEndpoints"`
 }
 
-func (dtc *dynatraceClient) GetOneAgentConnectionInfo() (OneAgentConnectionInfo, error) {
-	resp, err := dtc.makeRequest(dtc.getOneAgentConnectionInfoUrl(), dynatracePaaSToken)
+func (dtc *dynatraceClient) GetOneAgentConnectionInfo(ctx context.Context) (OneAgentConnectionInfo, error) {
+	resp, err := dtc.makeRequest(ctx, dtc.getOneAgentConnectionInfoUrl(), dynatracePaaSToken)
 	if err != nil {
 		return OneAgentConnectionInfo{}, err
 	}

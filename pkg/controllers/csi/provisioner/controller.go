@@ -240,7 +240,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 	}
 
 	if dk.CodeModulesImage() != "" {
-		updatedDigest, err := provisioner.installAgentImage(*dk, latestProcessModuleConfig)
+		updatedDigest, err := provisioner.installAgentImage(ctx, *dk, latestProcessModuleConfig)
 		if err != nil {
 			log.Info("error when updating agent from image", "error", err.Error())
 			// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
@@ -250,7 +250,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 			dynakubeMetadata.ImageDigest = updatedDigest
 		}
 	} else {
-		updateVersion, err := provisioner.installAgentZip(*dk, dtc, latestProcessModuleConfig)
+		updateVersion, err := provisioner.installAgentZip(ctx, *dk, dtc, latestProcessModuleConfig)
 		if err != nil {
 			log.Info("error when updating agent from zip", "error", err.Error())
 			// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
@@ -267,17 +267,17 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 func (provisioner *OneAgentProvisioner) getAgentTenantToken(ctx context.Context, dk *dynatracev1beta1.DynaKube) (string, error) {
 	query := secret.NewQuery(ctx, provisioner.client, provisioner.apiReader, log)
 
-	secret, err := query.Get(types.NamespacedName{Namespace: dk.Namespace, Name: dk.OneagentTenantSecret()})
+	tenantSecret, err := query.Get(types.NamespacedName{Namespace: dk.Namespace, Name: dk.OneagentTenantSecret()})
 	if err != nil {
 		return "", errors.Wrapf(err, "OneAgent tenant token secret %s/%s not found", dk.Namespace, dk.OneagentTenantSecret())
 	}
 
-	token, ok := secret.Data[connectioninfo.TenantTokenName]
+	tokenData, ok := tenantSecret.Data[connectioninfo.TenantTokenName]
 	if !ok {
 		return "", errors.Errorf("OneAgent tenant token not found in secret %s/%s", dk.Namespace, dk.OneagentTenantSecret())
 	}
 
-	return string(token), nil
+	return string(tokenData), nil
 }
 
 func (provisioner *OneAgentProvisioner) handleMetadata(ctx context.Context, dk *dynatracev1beta1.DynaKube) (*metadata.Dynakube, metadata.Dynakube, error) {

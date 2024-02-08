@@ -10,6 +10,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
@@ -77,6 +78,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		versionReconcilerBuilder:            version.NewReconciler,
 		connectionInfoReconcilerBuilder:     connectioninfo.NewReconciler,
 		activeGateReconcilerBuilder:         activegate.NewReconciler,
+		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
 	}
 }
 
@@ -112,6 +114,7 @@ type Controller struct {
 	versionReconcilerBuilder            version.ReconcilerBuilder
 	connectionInfoReconcilerBuilder     connectioninfo.ReconcilerBuilder
 	activeGateReconcilerBuilder         activegate.ReconcilerBuilder
+	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
 }
 
 // Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read

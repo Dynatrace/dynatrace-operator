@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
@@ -23,8 +24,9 @@ type activeGateConnectionInfoJsonResponse struct {
 	CommunicationEndpoints string `json:"communicationEndpoints"`
 }
 
-func (dtc *dynatraceClient) GetActiveGateConnectionInfo() (ActiveGateConnectionInfo, error) {
+func (dtc *dynatraceClient) GetActiveGateConnectionInfo(ctx context.Context) (ActiveGateConnectionInfo, error) {
 	response, err := dtc.makeRequest(
+		ctx,
 		dtc.getActiveGateConnectionInfoUrl(),
 		dynatracePaaSToken,
 	)

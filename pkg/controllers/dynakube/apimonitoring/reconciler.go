@@ -1,6 +1,8 @@
 package apimonitoring
 
 import (
+	"context"
+
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
@@ -8,22 +10,24 @@ import (
 
 type Reconciler struct {
 	dtc            dtclient.Client
+	dynakube       *dynatracev1beta1.DynaKube
 	clusterLabel   string
 	kubeSystemUUID string
 }
 
-type ReconcilerBuilder func(dtc dtclient.Client, clusterLabel, kubeSystemUUID string) *Reconciler
+type ReconcilerBuilder func(dtc dtclient.Client, dynakube *dynatracev1beta1.DynaKube, clusterLabel, kubeSystemUUID string) *Reconciler
 
-func NewReconciler(dtc dtclient.Client, clusterLabel, kubeSystemUUID string) *Reconciler {
+func NewReconciler(dtc dtclient.Client, dynakube *dynatracev1beta1.DynaKube, clusterLabel, kubeSystemUUID string) *Reconciler {
 	return &Reconciler{
 		dtc,
+		dynakube,
 		clusterLabel,
 		kubeSystemUUID,
 	}
 }
 
-func (r *Reconciler) Reconcile(dynakube *dynatracev1beta1.DynaKube) error {
-	objectID, err := r.createObjectIdIfNotExists(dynakube)
+func (r *Reconciler) Reconcile(ctx context.Context) error {
+	objectID, err := r.createObjectIdIfNotExists(ctx)
 	if err != nil {
 		return err
 	}
@@ -37,25 +41,25 @@ func (r *Reconciler) Reconcile(dynakube *dynatracev1beta1.DynaKube) error {
 	return nil
 }
 
-func (r *Reconciler) createObjectIdIfNotExists(dynakube *dynatracev1beta1.DynaKube) (string, error) {
+func (r *Reconciler) createObjectIdIfNotExists(ctx context.Context) (string, error) {
 	if r.kubeSystemUUID == "" {
 		return "", errors.New("no kube-system namespace UUID given")
 	}
 
 	// check if ME with UID exists
-	var monitoredEntities, err = r.dtc.GetMonitoredEntitiesForKubeSystemUUID(r.kubeSystemUUID)
+	var monitoredEntities, err = r.dtc.GetMonitoredEntitiesForKubeSystemUUID(ctx, r.kubeSystemUUID)
 	if err != nil {
 		return "", errors.WithMessage(err, "error while loading MEs")
 	}
 
 	// check if Setting for ME exists
-	settings, err := r.dtc.GetSettingsForMonitoredEntities(monitoredEntities, dtclient.SettingsSchemaId)
+	settings, err := r.dtc.GetSettingsForMonitoredEntities(ctx, monitoredEntities, dtclient.SettingsSchemaId)
 	if err != nil {
 		return "", errors.WithMessage(err, "error trying to check if setting exists")
 	}
 
 	if settings.TotalCount > 0 {
-		_, err = r.handleKubernetesAppEnabled(dynakube, monitoredEntities)
+		_, err = r.handleKubernetesAppEnabled(ctx, monitoredEntities)
 		if err != nil {
 			return "", err
 		}
@@ -66,7 +70,7 @@ func (r *Reconciler) createObjectIdIfNotExists(dynakube *dynatracev1beta1.DynaKu
 	// determine newest ME (can be empty string), and create or update a settings object accordingly
 	meID := determineNewestMonitoredEntity(monitoredEntities)
 
-	objectID, err := r.dtc.CreateOrUpdateKubernetesSetting(r.clusterLabel, r.kubeSystemUUID, meID)
+	objectID, err := r.dtc.CreateOrUpdateKubernetesSetting(ctx, r.clusterLabel, r.kubeSystemUUID, meID)
 	if err != nil {
 		return "", errors.WithMessage(err, "error creating dynatrace settings object")
 	}
@@ -74,9 +78,9 @@ func (r *Reconciler) createObjectIdIfNotExists(dynakube *dynatracev1beta1.DynaKu
 	return objectID, nil
 }
 
-func (r *Reconciler) handleKubernetesAppEnabled(dynakube *dynatracev1beta1.DynaKube, monitoredEntities []dtclient.MonitoredEntity) (string, error) {
-	if dynakube.FeatureEnableK8sAppEnabled() {
-		appSettings, err := r.dtc.GetSettingsForMonitoredEntities(monitoredEntities, dtclient.AppTransitionSchemaId)
+func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, monitoredEntities []dtclient.MonitoredEntity) (string, error) {
+	if r.dynakube.FeatureEnableK8sAppEnabled() {
+		appSettings, err := r.dtc.GetSettingsForMonitoredEntities(ctx, monitoredEntities, dtclient.AppTransitionSchemaId)
 		if err != nil {
 			return "", errors.WithMessage(err, "error trying to check if app setting exists")
 		}
@@ -84,7 +88,7 @@ func (r *Reconciler) handleKubernetesAppEnabled(dynakube *dynatracev1beta1.DynaK
 		if appSettings.TotalCount == 0 {
 			meID := determineNewestMonitoredEntity(monitoredEntities)
 			if meID != "" {
-				transitionSchemaObjectID, err := r.dtc.CreateOrUpdateKubernetesAppSetting(meID)
+				transitionSchemaObjectID, err := r.dtc.CreateOrUpdateKubernetesAppSetting(ctx, meID)
 				if err != nil {
 					log.Info("schema app-transition.kubernetes failed to set", "meID", meID, "err", err)
 					return "", err

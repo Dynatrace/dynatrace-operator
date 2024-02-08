@@ -120,7 +120,7 @@ func (r *reconciler) reconcileOneAgentConnectionInfo(ctx context.Context, dynaku
 		return nil
 	}
 
-	connectionInfo, err := r.dtc.GetOneAgentConnectionInfo()
+	connectionInfo, err := r.dtc.GetOneAgentConnectionInfo(ctx)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get OneAgent connection info")
 	}
@@ -182,7 +182,7 @@ func (r *reconciler) reconcileActiveGateConnectionInfo(ctx context.Context, dyna
 		return nil
 	}
 
-	connectionInfo, err := r.dtc.GetActiveGateConnectionInfo()
+	connectionInfo, err := r.dtc.GetActiveGateConnectionInfo(ctx)
 	if err != nil {
 		log.Info("failed to get activegate connection info")
 		return err

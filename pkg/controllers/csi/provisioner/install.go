@@ -16,6 +16,7 @@ import (
 )
 
 func (provisioner *OneAgentProvisioner) installAgentImage(
+	ctx context.Context,
 	dynakube dynatracev1beta1.DynaKube,
 	latestProcessModuleConfig *dtclient.ProcessModuleConfig,
 ) (
@@ -54,7 +55,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(imageDigest)
 	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dynakube.GetName())
 
-	err = provisioner.installAgent(imageInstaller, dynakube, targetDir, targetImage, tenantUUID)
+	err = provisioner.installAgent(ctx, imageInstaller, dynakube, targetDir, targetImage, tenantUUID)
 	if err != nil {
 		return "", err
 	}
@@ -95,7 +96,7 @@ func (provisioner *OneAgentProvisioner) getDigest(dynakube dynatracev1beta1.Dyna
 	return string(imageVersion.Digest), nil
 }
 
-func (provisioner *OneAgentProvisioner) installAgentZip(dynakube dynatracev1beta1.DynaKube, dtc dtclient.Client, latestProcessModuleConfig *dtclient.ProcessModuleConfig) (string, error) {
+func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dynakube dynatracev1beta1.DynaKube, dtc dtclient.Client, latestProcessModuleConfig *dtclient.ProcessModuleConfig) (string, error) {
 	tenantUUID, err := dynakube.TenantUUIDFromApiUrl()
 	if err != nil {
 		return "", err
@@ -107,7 +108,7 @@ func (provisioner *OneAgentProvisioner) installAgentZip(dynakube dynatracev1beta
 	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(targetVersion)
 	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dynakube.GetName())
 
-	err = provisioner.installAgent(urlInstaller, dynakube, targetDir, targetVersion, tenantUUID)
+	err = provisioner.installAgent(ctx, urlInstaller, dynakube, targetDir, targetVersion, tenantUUID)
 	if err != nil {
 		return "", err
 	}
@@ -120,12 +121,12 @@ func (provisioner *OneAgentProvisioner) installAgentZip(dynakube dynatracev1beta
 	return targetVersion, nil
 }
 
-func (provisioner *OneAgentProvisioner) installAgent(agentInstaller installer.Installer, dynakube dynatracev1beta1.DynaKube, targetDir, targetVersion, tenantUUID string) error {
+func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, agentInstaller installer.Installer, dynakube dynatracev1beta1.DynaKube, targetDir, targetVersion, tenantUUID string) error { // nolint: revive
 	eventRecorder := updaterEventRecorder{
 		recorder: provisioner.recorder,
 		dynakube: &dynakube,
 	}
-	isNewlyInstalled, err := agentInstaller.InstallAgent(targetDir)
+	isNewlyInstalled, err := agentInstaller.InstallAgent(ctx, targetDir)
 
 	if err != nil {
 		eventRecorder.sendFailedInstallAgentVersionEvent(targetVersion, tenantUUID)
