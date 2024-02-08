@@ -53,7 +53,7 @@ func TestIsAlreadyPresent(t *testing.T) {
 
 func testFileSystemWithSharedDirPresent(pathResolver metadata.PathResolver, imageDigest string) afero.Fs {
 	fs := afero.NewMemMapFs()
-	fs.MkdirAll(pathResolver.AgentSharedBinaryDirForAgent(imageDigest), 0777)
+	_ = fs.MkdirAll(pathResolver.AgentSharedBinaryDirForAgent(imageDigest), 0777)
 
 	return fs
 }
@@ -152,7 +152,7 @@ func TestInstaller_InstallAgent(t *testing.T) {
 				transport: tt.fields.transport,
 			}
 
-			got, err := installer.InstallAgent(tt.args.targetDir)
+			got, err := installer.InstallAgent(nil, tt.args.targetDir)
 			tt.wantErr(t, err, fmt.Sprintf("InstallAgent(%v)", tt.args.targetDir))
 			assert.Equalf(t, tt.want, got, "InstallAgent(%v)", tt.args.targetDir)
 		})
