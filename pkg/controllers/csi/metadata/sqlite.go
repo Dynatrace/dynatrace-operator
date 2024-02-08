@@ -448,9 +448,9 @@ func (access *SqliteAccess) GetOsAgentVolumeViaTenantUUID(ctx context.Context, t
 }
 
 // GetAllVolumes gets all the Volumes from the database
-func (access *SqliteAccess) GetAllVolumes(ctx context.Context) ([]*Volume, error) { //nolint:dupl
+func (access *SqliteAccess) GetAllVolumes(ctx context.Context) ([]*Volume, error) {
 	rows, err := access.conn.QueryContext(ctx, getAllVolumesStatement)
-	if err != nil || rows.Err() != nil {
+	if err != nil {
 		return nil, errors.WithStack(errors.WithMessage(err, "couldn't get all the volumes"))
 	}
 
@@ -481,9 +481,9 @@ func (access *SqliteAccess) GetAllVolumes(ctx context.Context) ([]*Volume, error
 }
 
 // GetAllDynakubes gets all the Dynakubes from the database
-func (access *SqliteAccess) GetAllDynakubes(ctx context.Context) ([]*Dynakube, error) { //nolint:dupl
+func (access *SqliteAccess) GetAllDynakubes(ctx context.Context) ([]*Dynakube, error) {
 	rows, err := access.conn.QueryContext(ctx, getAllDynakubesStatement)
-	if err != nil || rows.Err() != nil {
+	if err != nil {
 		return nil, errors.WithStack(errors.WithMessage(err, "couldn't get all the dynakubes"))
 	}
 
@@ -516,7 +516,7 @@ func (access *SqliteAccess) GetAllDynakubes(ctx context.Context) ([]*Dynakube, e
 // GetAllOsAgentVolumes gets all the OsAgentVolume from the database
 func (access *SqliteAccess) GetAllOsAgentVolumes(ctx context.Context) ([]*OsAgentVolume, error) {
 	rows, err := access.conn.QueryContext(ctx, getAllOsAgentVolumes)
-	if err != nil || rows.Err() != nil {
+	if err != nil {
 		return nil, errors.WithStack(errors.WithMessage(err, "couldn't get all the osagent volumes"))
 	}
 
@@ -549,7 +549,7 @@ func (access *SqliteAccess) GetAllOsAgentVolumes(ctx context.Context) ([]*OsAgen
 // it's also easier to check if a version is in it or not. (a Set in style of Golang)
 func (access *SqliteAccess) GetUsedVersions(ctx context.Context, tenantUUID string) (map[string]bool, error) {
 	rows, err := access.conn.QueryContext(ctx, getUsedVersionsStatement, tenantUUID)
-	if err != nil || rows.Err() != nil {
+	if err != nil {
 		return nil, errors.WithStack(errors.WithMessagef(err, "couldn't get used version info for tenant uuid '%s'", tenantUUID))
 	}
 
@@ -576,7 +576,7 @@ func (access *SqliteAccess) GetUsedVersions(ctx context.Context, tenantUUID stri
 // it's also easier to check if a version is in it or not. (a Set in style of Golang)
 func (access *SqliteAccess) GetAllUsedVersions(ctx context.Context) (map[string]bool, error) {
 	rows, err := access.conn.QueryContext(ctx, getAllUsedVersionsStatement)
-	if err != nil || rows.Err() != nil {
+	if err != nil {
 		return nil, errors.WithStack(errors.WithMessagef(err, "couldn't get all used version info"))
 	}
 
@@ -605,7 +605,7 @@ func (access *SqliteAccess) GetAllUsedVersions(ctx context.Context) (map[string]
 // it's also easier to check if a version is in it or not. (a Set in style of Golang)
 func (access *SqliteAccess) GetLatestVersions(ctx context.Context) (map[string]bool, error) {
 	rows, err := access.conn.QueryContext(ctx, getLatestVersionsStatement)
-	if err != nil || rows.Err() != nil {
+	if err != nil {
 		return nil, errors.WithStack(errors.WithMessage(err, "couldn't get all the latests version info for tenant uuid"))
 	}
 
@@ -632,7 +632,7 @@ func (access *SqliteAccess) GetLatestVersions(ctx context.Context) (map[string]b
 // it's also easier to check if a digest is in it or not. (a Set in style of Golang)
 func (access *SqliteAccess) GetUsedImageDigests(ctx context.Context) (map[string]bool, error) {
 	rows, err := access.conn.QueryContext(ctx, getUsedImageDigestStatement)
-	if err != nil || rows.Err() != nil {
+	if err != nil {
 		return nil, errors.WithStack(errors.WithMessage(err, "couldn't get used image digests from database"))
 	}
 
@@ -671,7 +671,7 @@ func (access *SqliteAccess) IsImageDigestUsed(ctx context.Context, imageDigest s
 // GetPodNames gets all PodNames present in the `volumes` database in map with their corresponding volumeIDs.
 func (access *SqliteAccess) GetPodNames(ctx context.Context) (map[string]string, error) {
 	rows, err := access.conn.QueryContext(ctx, getPodNamesStatement)
-	if err != nil || rows.Err() != nil {
+	if err != nil {
 		return nil, errors.WithStack(errors.WithMessage(err, "couldn't get all pod names"))
 	}
 
@@ -698,7 +698,7 @@ func (access *SqliteAccess) GetPodNames(ctx context.Context) (map[string]string,
 // GetTenantsToDynakubes gets all Dynakubes and maps their name to the corresponding TenantUUID.
 func (access *SqliteAccess) GetTenantsToDynakubes(ctx context.Context) (map[string]string, error) {
 	rows, err := access.conn.QueryContext(ctx, getTenantsToDynakubesStatement)
-	if err != nil || rows.Err() != nil {
+	if err != nil {
 		return nil, errors.WithStack(errors.WithMessage(err, "couldn't get all tenants to dynakube metadata"))
 	}
 
