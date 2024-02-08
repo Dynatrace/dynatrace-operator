@@ -69,6 +69,7 @@ func TestCreateTables(t *testing.T) {
 		require.NoError(t, rows.Err())
 		require.NoError(t, err)
 		assert.NotNil(t, rows)
+		defer rows.Close()
 
 		columns := []string{
 			"ID",
@@ -113,6 +114,7 @@ func TestCreateTables(t *testing.T) {
 		require.NoError(t, rows.Err())
 		require.NoError(t, err)
 		assert.NotNil(t, rows)
+		defer rows.Close()
 
 		columns := []string{
 			"Name",
