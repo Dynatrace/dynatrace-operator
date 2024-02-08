@@ -218,7 +218,7 @@ func (dk *DynaKube) FeatureAutomaticInjection() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticInjection) != falsePhrase
 }
 
-// FeatureEnableMultipleOsAgentsOnNode is a feature flag to enable multiple osagents running on the same host
+// FeatureEnableMultipleOsAgentsOnNode is a feature flag to enable multiple osagents running on the same host.
 func (dk *DynaKube) FeatureEnableMultipleOsAgentsOnNode() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureMultipleOsAgentsOnNode) == truePhrase
 }
