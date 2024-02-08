@@ -66,6 +66,7 @@ func TestCreateTables(t *testing.T) {
 		assert.Equal(t, volumesTableName, volumeTableName)
 
 		rows, err := db.conn.Query("PRAGMA table_info(" + volumesTableName + ")")
+		require.NoError(t, rows.Err())
 		require.NoError(t, err)
 		assert.NotNil(t, rows)
 
@@ -109,6 +110,7 @@ func TestCreateTables(t *testing.T) {
 		assert.Equal(t, dynakubesTableName, dkTable)
 
 		rows, err := db.conn.Query("PRAGMA table_info(" + dynakubesTableName + ")")
+		require.NoError(t, rows.Err())
 		require.NoError(t, err)
 		assert.NotNil(t, rows)
 
