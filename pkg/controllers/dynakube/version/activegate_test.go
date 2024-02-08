@@ -16,6 +16,7 @@ import (
 )
 
 func TestActiveGateUpdater(t *testing.T) {
+	ctx := context.Background()
 	testImage := dtclient.LatestImageInfo{
 		Source: "some.registry.com",
 		Tag:    "1.2.3.4-5",
@@ -47,7 +48,7 @@ func TestActiveGateUpdater(t *testing.T) {
 		assert.Equal(t, dynakube.Spec.ActiveGate.Image, updater.CustomImage())
 		assert.Equal(t, "", updater.CustomVersion())
 		assert.False(t, updater.IsAutoUpdateEnabled())
-		imageInfo, err := updater.LatestImageInfo()
+		imageInfo, err := updater.LatestImageInfo(ctx)
 		require.NoError(t, err)
 		assert.Equal(t, testImage, *imageInfo)
 	})
@@ -74,11 +75,11 @@ func TestActiveGateUseDefault(t *testing.T) {
 		expectedVersion := "1.2.3.4-5"
 		mockClient := mockedclient.NewClient(t)
 
-		mockClient.On("GetLatestActiveGateVersion", mock.Anything).Return(expectedVersion, nil)
+		mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(expectedVersion, nil)
 
 		updater := newActiveGateUpdater(dynakube, fake.NewClient(), mockClient)
 
-		err := updater.UseTenantRegistry(context.TODO())
+		err := updater.UseTenantRegistry(context.Background())
 		require.NoError(t, err)
 		assert.Equal(t, expectedImage, dynakube.Status.ActiveGate.ImageID)
 		assert.Equal(t, expectedVersion, dynakube.Status.ActiveGate.Version)

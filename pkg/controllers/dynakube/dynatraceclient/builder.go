@@ -126,7 +126,7 @@ func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient
 		return lastErrorFromCondition(dynaKubeStatus)
 	}
 
-	err := dynatraceClientBuilder.tokens.VerifyScopes(dynatraceClient)
+	err := dynatraceClientBuilder.tokens.VerifyScopes(dynatraceClientBuilder.ctx, dynatraceClient)
 	if err != nil {
 		return err
 	}

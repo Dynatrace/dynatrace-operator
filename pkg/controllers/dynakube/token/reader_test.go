@@ -50,15 +50,15 @@ func testReadTokens(t *testing.T) {
 				Namespace: "dynatrace",
 			},
 		}
-		secret, err := secret.Create(scheme.Scheme, &dynakube, secret.NewNameModifier("dynakube"), secret.NewNamespaceModifier("dynatrace"), secret.NewDataModifier(map[string][]byte{
-			dtclient.DynatraceApiToken:        []byte(testApiToken),
-			dtclient.DynatracePaasToken:       []byte(testPaasToken),
-			dtclient.DynatraceDataIngestToken: []byte(testDataIngestToken),
-			testIrrelevantTokenKey:            []byte(testIrrelevantToken),
+		testSecret, err := secret.Create(scheme.Scheme, &dynakube, secret.NewNameModifier("dynakube"), secret.NewNamespaceModifier("dynatrace"), secret.NewDataModifier(map[string][]byte{
+			dtclient.ApiToken:        []byte(testApiToken),
+			dtclient.PaasToken:       []byte(testPaasToken),
+			dtclient.DataIngestToken: []byte(testDataIngestToken),
+			testIrrelevantTokenKey:   []byte(testIrrelevantToken),
 		}))
 		require.NoError(t, err)
 
-		clt := fake.NewClient(secret, &dynakube)
+		clt := fake.NewClient(testSecret, &dynakube)
 
 		reader := NewReader(clt, &dynakube)
 
@@ -66,13 +66,13 @@ func testReadTokens(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.Len(t, tokens, 4)
-		assert.Contains(t, tokens, dtclient.DynatraceApiToken)
-		assert.Contains(t, tokens, dtclient.DynatracePaasToken)
-		assert.Contains(t, tokens, dtclient.DynatraceDataIngestToken)
+		assert.Contains(t, tokens, dtclient.ApiToken)
+		assert.Contains(t, tokens, dtclient.PaasToken)
+		assert.Contains(t, tokens, dtclient.DataIngestToken)
 		assert.Contains(t, tokens, testIrrelevantTokenKey)
-		assert.Equal(t, testApiToken, tokens[dtclient.DynatraceApiToken].Value)
-		assert.Equal(t, testPaasToken, tokens[dtclient.DynatracePaasToken].Value)
-		assert.Equal(t, testDataIngestToken, tokens[dtclient.DynatraceDataIngestToken].Value)
+		assert.Equal(t, testApiToken, tokens[dtclient.ApiToken].Value)
+		assert.Equal(t, testPaasToken, tokens[dtclient.PaasToken].Value)
+		assert.Equal(t, testDataIngestToken, tokens[dtclient.DataIngestToken].Value)
 		assert.Equal(t, testIrrelevantToken, tokens[testIrrelevantTokenKey].Value)
 	})
 }
@@ -99,7 +99,7 @@ func testVerifyTokens(t *testing.T) {
 			testIrrelevantTokenKey: {
 				Value: testIrrelevantToken,
 			},
-			dtclient.DynatraceApiToken: {
+			dtclient.ApiToken: {
 				Value: testApiToken,
 			},
 		})

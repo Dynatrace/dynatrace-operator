@@ -11,6 +11,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,8 +48,8 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 		}}
 
 	dtc := mocks.NewClient(t)
-	dtc.On("GetActiveGateConnectionInfo").Return(getTestActiveGateConnectionInfo(), nil).Maybe()
-	dtc.On("GetOneAgentConnectionInfo").Return(getTestOneAgentConnectionInfo(), nil).Maybe()
+	dtc.On("GetActiveGateConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestActiveGateConnectionInfo(), nil).Maybe()
+	dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestOneAgentConnectionInfo(), nil).Maybe()
 
 	t.Run(`store OneAgent connection info to DynaKube status`, func(t *testing.T) {
 		fakeClient := fake.NewClient(&dynakube)
@@ -178,7 +179,7 @@ func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 		}}
 
 	dtc := mocks.NewClient(t)
-	dtc.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
+	dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(dtclient.OneAgentConnectionInfo{
 		ConnectionInfo: dtclient.ConnectionInfo{
 			TenantUUID:  testTenantUUID,
 			TenantToken: testTenantToken,
@@ -243,8 +244,8 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 			Name:      testName,
 		}}
 	dtc := mocks.NewClient(t)
-	dtc.On("GetActiveGateConnectionInfo").Return(getTestActiveGateConnectionInfo(), nil)
-	dtc.On("GetOneAgentConnectionInfo").Return(getTestOneAgentConnectionInfo(), nil)
+	dtc.On("GetActiveGateConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestActiveGateConnectionInfo(), nil)
+	dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestOneAgentConnectionInfo(), nil)
 
 	t.Run(`create activegate secret`, func(t *testing.T) {
 		fakeClient := fake.NewClient(dynakube)
@@ -313,7 +314,7 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 		}}
 
 	dtc := mocks.NewClient(t)
-	dtc.On("GetOneAgentConnectionInfo").Return(getTestOneAgentConnectionInfo(), nil)
+	dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestOneAgentConnectionInfo(), nil)
 
 	t.Run(`create oneagent secret`, func(t *testing.T) {
 		fakeClient := fake.NewClient(dynakube)

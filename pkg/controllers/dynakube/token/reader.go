@@ -61,7 +61,7 @@ func (reader Reader) readTokens(ctx context.Context) (Tokens, error) {
 }
 
 func (reader Reader) verifyApiTokenExists(tokens Tokens) error {
-	apiToken, hasApiToken := tokens[dtclient.DynatraceApiToken]
+	apiToken, hasApiToken := tokens[dtclient.ApiToken]
 
 	if !hasApiToken || len(apiToken.Value) == 0 {
 		return errors.New(fmt.Sprintf("the API token is missing from the token secret '%s:%s'", reader.dynakube.Namespace, reader.dynakube.Tokens()))
