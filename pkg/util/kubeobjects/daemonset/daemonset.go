@@ -16,7 +16,7 @@ import (
 func CreateOrUpdateDaemonSet(kubernetesClient client.Client, logger logr.Logger, desiredDaemonSet *appsv1.DaemonSet) (bool, error) {
 	currentDaemonSet, err := getDaemonSet(kubernetesClient, desiredDaemonSet)
 	if err != nil {
-		if k8serrors.IsNotFound(errors.Cause(err)) {
+		if k8serrors.IsNotFound(err) {
 			logger.Info("creating new daemonset", "name", desiredDaemonSet.Name)
 			return true, kubernetesClient.Create(context.TODO(), desiredDaemonSet)
 		}
