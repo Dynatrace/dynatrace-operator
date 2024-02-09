@@ -46,10 +46,6 @@ func (mgr *TestManager) GetRESTMapper() meta.RESTMapper {
 	return nil
 }
 
-func (mgr *TestManager) SetFields(any) error {
-	return nil
-}
-
 func (mgr *TestManager) Add(manager.Runnable) error {
 	return nil
 }
