@@ -107,11 +107,7 @@ func (statefulSetBuilder Builder) addLabels(sts *appsv1.StatefulSet) {
 }
 
 func (statefulSetBuilder Builder) buildAppLabels() *labels.AppLabels {
-	version := statefulSetBuilder.dynakube.Status.Synthetic.Version
-	if version == "" {
-		version = statefulSetBuilder.dynakube.Status.ActiveGate.Version
-	}
-
+	version := statefulSetBuilder.dynakube.Status.ActiveGate.Version
 	return labels.NewAppLabels(labels.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, statefulSetBuilder.capability.ShortName(), version)
 }
 

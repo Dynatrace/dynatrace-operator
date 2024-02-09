@@ -58,7 +58,6 @@ func (r *reconciler) ReconcileOneAgent(ctx context.Context, dynakube *dynatracev
 func (r *reconciler) ReconcileActiveGate(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	updaters := []StatusUpdater{
 		newActiveGateUpdater(dynakube, r.apiReader, r.dtClient),
-		newSyntheticUpdater(dynakube, r.apiReader, r.dtClient),
 	}
 	for _, updater := range updaters {
 		if r.needsUpdate(updater, dynakube) {

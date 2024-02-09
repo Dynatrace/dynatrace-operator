@@ -3695,28 +3695,6 @@ spec:
                 description: Defines the current state (Running, Updating, Error,
                   ...)
                 type: string
-              synthetic:
-                description: Observed state of Synthetic
-                properties:
-                  imageID:
-                    description: Image ID
-                    type: string
-                  lastProbeTimestamp:
-                    description: Indicates when the last check for a new version was
-                      performed
-                    format: date-time
-                    type: string
-                  source:
-                    description: Source of the image (tenant-registry, public-registry,
-                      ...)
-                    type: string
-                  type:
-                    description: Image type
-                    type: string
-                  version:
-                    description: Image version
-                    type: string
-                type: object
               updatedTimestamp:
                 description: UpdatedTimestamp indicates when the instance was last
                   updated

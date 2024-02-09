@@ -15,7 +15,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
@@ -434,74 +433,6 @@ func TestBuildCommonEnvs(t *testing.T) {
 		zoneEnv := env.FindEnvVar(envs, consts.EnvDtNetworkZone)
 		require.NotNil(t, zoneEnv)
 		assert.Equal(t, dynakube.Spec.NetworkZone, zoneEnv.Value)
-	})
-
-	t.Run("synthetic capability", func(t *testing.T) {
-		dynaKube := getTestDynakube()
-		dynaKube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId] = "doctored"
-		dynaKube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticReplicas] = strconv.Itoa(int(testReplicas))
-		synCapability := capability.NewSyntheticCapability(&dynaKube)
-
-		builder := NewStatefulSetBuilder(
-			testKubeUID,
-			testConfigHash,
-			dynaKube,
-			synCapability)
-
-		assert.Contains(t,
-			builder.buildCommonEnvs(),
-			corev1.EnvVar{
-				Name:  consts.EnvDtCapabilities,
-				Value: capability.SyntheticActiveGateEnvCapabilities,
-			},
-			"declared env dt capabilities: %s",
-			capability.SyntheticActiveGateEnvCapabilities)
-
-		statefulSet, _ := builder.CreateStatefulSet(
-			modifiers.GenerateAllModifiers(dynaKube, synCapability, builder.envMap))
-
-		assert.Equal(t,
-			*statefulSet.Spec.Replicas,
-			testReplicas,
-			"declared replicas: %s",
-			testReplicas)
-
-		assert.Equal(t,
-			capability.SyntheticActiveGateResourceRequirements,
-			statefulSet.Spec.Template.Spec.Containers[0].Resources,
-			"declared resource requirements for ActiveGate")
-
-		volumes := []corev1.Volume{
-			{
-				Name: modifiers.ChromiumCacheMountName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{
-						Medium:    "Memory",
-						SizeLimit: resources.NewQuantity("512Mi"),
-					},
-				},
-			},
-			{
-				Name: modifiers.TmpStorageMountName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{
-						SizeLimit: resources.NewQuantity("10Mi"),
-					},
-				},
-			},
-			{
-				Name: modifiers.ArchiveStorageMountName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{
-						SizeLimit: resources.NewQuantity("6Gi"),
-					},
-				},
-			},
-		}
-		assert.Subset(t,
-			statefulSet.Spec.Template.Spec.Volumes,
-			volumes,
-			"declared syn volumes")
 	})
 }
 

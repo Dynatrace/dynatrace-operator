@@ -1,9 +1,7 @@
 package dynakube
 
 import (
-	"fmt"
 	"regexp"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -168,74 +166,6 @@ func TestDynaKube_FeatureIgnoredNamespaces(t *testing.T) {
 	}
 
 	assert.True(t, dynakubeNamespaceMatches)
-}
-
-func TestSyntheticMonitoringFlags(t *testing.T) {
-	t.Run("with non empty loc id", func(t *testing.T) {
-		const locOrdinal = uint64(77777777777)
-		locId := fmt.Sprintf("SYNTHETIC_LOCATION-%x", locOrdinal)
-		dynaKube := DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					AnnotationFeatureSyntheticLocationEntityId: locId,
-				},
-			},
-		}
-		assert.Equal(t,
-			locId,
-			dynaKube.FeatureSyntheticLocationEntityId(),
-			"declared syn loc entity id: %s",
-			locId)
-	})
-
-	t.Run("with default node type", func(t *testing.T) {
-		dynaKube := DynaKube{}
-		assert.Equal(t,
-			SyntheticNodeS,
-			dynaKube.FeatureSyntheticNodeType(),
-			"default node type: %s",
-			SyntheticNodeS)
-	})
-
-	t.Run("with declared node type", func(t *testing.T) {
-		dynaKube := DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					AnnotationFeatureSyntheticNodeType: SyntheticNodeXs,
-				},
-			},
-		}
-		assert.Equal(t,
-			SyntheticNodeXs,
-			dynaKube.FeatureSyntheticNodeType(),
-			"declared node type: %s",
-			SyntheticNodeXs)
-	})
-
-	t.Run("with default replicas", func(t *testing.T) {
-		dynaKube := DynaKube{}
-		assert.Equal(t,
-			defaultSyntheticReplicas,
-			dynaKube.FeatureSyntheticReplicas(),
-			"default replicas: %s",
-			defaultSyntheticReplicas)
-	})
-
-	t.Run("with declared replicas", func(t *testing.T) {
-		replicas := int32(7)
-		dynaKube := DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					AnnotationFeatureSyntheticReplicas: strconv.Itoa(int(replicas)),
-				},
-			},
-		}
-		assert.Equal(t,
-			replicas,
-			dynaKube.FeatureSyntheticReplicas(),
-			"declared replicas: %s",
-			replicas)
-	})
 }
 
 func TestDefaultEnabledFeatureFlags(t *testing.T) {

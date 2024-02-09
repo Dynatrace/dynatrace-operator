@@ -53,7 +53,7 @@ KUSTOMIZE=$(shell hack/build/command.sh kustomize)
 
 ## Install 'markdownlint' if it is missing
 prerequisites/markdownlint:
-	npm install -g markdownlint-cli@$(markdownlint_cli_version)
+	npm install -g --force markdownlint-cli@$(markdownlint_cli_version)
 
 ## Install verktra/mockery
 prerequisites/mockery:
