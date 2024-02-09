@@ -40,15 +40,6 @@ var (
 			UID:  "01234-5678-9012-3456",
 		},
 	}
-
-	syntheticCapabilityObjectMeta = metav1.ObjectMeta{
-		Namespace: testNamespace,
-		Name:      testName,
-		Annotations: map[string]string{
-			dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId: "imaginary",
-			dynatracev1beta1.AnnotationFeatureSyntheticNodeType:         dynatracev1beta1.SyntheticNodeXs,
-		},
-	}
 )
 
 func TestReconciler_Reconcile(t *testing.T) {
@@ -276,49 +267,6 @@ func getTestActiveGateService(t *testing.T, fakeClient client.Client) corev1.Ser
 	require.NoError(t, err)
 
 	return activegateService
-}
-
-func TestExclusiveSynMonitoring(t *testing.T) {
-	mockDtClient := mocks.NewClient(t)
-	mockDtClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).
-		Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
-
-	dynakube := &dynatracev1beta1.DynaKube{
-		ObjectMeta: syntheticCapabilityObjectMeta,
-	}
-	fakeClient := fake.NewClient(testKubeSystemNamespace)
-	reconciler := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, mockDtClient)
-	err := reconciler.Reconcile(context.Background())
-
-	require.NoError(t, err, "successfully reconciled for syn-mon")
-
-	var statefulSets appsv1.StatefulSetList
-	err = fakeClient.List(
-		context.Background(),
-		&statefulSets,
-		client.InNamespace(testNamespace))
-	require.NoError(t, err)
-	require.Len(t, statefulSets.Items, 1)
-
-	statefulSetCreated := false
-
-	expectedName := capability.BuildServiceName(testName, capability.SyntheticName)
-	for _, statefulSet := range statefulSets.Items {
-		if statefulSet.GetName() == expectedName {
-			statefulSetCreated = true
-			break
-		}
-	}
-
-	assert.True(t, statefulSetCreated, "unique StatefulSet for syn-mon")
-
-	var services corev1.ServiceList
-	err = fakeClient.List(
-		context.Background(),
-		&services,
-		client.InNamespace(testNamespace))
-	require.NoError(t, err)
-	require.Empty(t, services.Items)
 }
 
 func TestReconcile_ActivegateConfigMap(t *testing.T) {

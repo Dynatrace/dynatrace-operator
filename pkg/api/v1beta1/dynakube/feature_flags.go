@@ -47,8 +47,6 @@ const (
 	AnnotationFeatureK8sAppEnabled                        = AnnotationFeaturePrefix + "k8s-app-enabled"
 	AnnotationFeatureActiveGateIgnoreProxy                = AnnotationFeaturePrefix + "activegate-ignore-proxy"
 
-	AnnotationFeatureCustomSyntheticImage = AnnotationFeaturePrefix + "custom-synthetic-image"
-
 	// dtClient.
 
 	AnnotationFeatureNoProxy             = AnnotationFeaturePrefix + "no-proxy"
@@ -82,24 +80,10 @@ const (
 	AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
 	AnnotationFeatureReadOnlyCsiVolume         = AnnotationFeaturePrefix + "injection-readonly-volume"
 
-	// synthetic location.
-	AnnotationFeatureSyntheticLocationEntityId = AnnotationFeaturePrefix + "synthetic-location-entity-id"
-
-	// synthetic node type.
-	AnnotationFeatureSyntheticNodeType = AnnotationFeaturePrefix + "synthetic-node-type"
-
-	// replicas for the synthetic monitoring.
-	AnnotationFeatureSyntheticReplicas = AnnotationFeaturePrefix + "synthetic-replicas"
-
 	falsePhrase  = "false"
 	truePhrase   = "true"
 	silentPhrase = "silent"
 	failPhrase   = "fail"
-
-	// synthetic node types.
-	SyntheticNodeXs = "XS"
-	SyntheticNodeS  = "S"
-	SyntheticNodeM  = "M"
 )
 
 const (
@@ -109,8 +93,7 @@ const (
 )
 
 var (
-	log                      = logger.Get().WithName("dynakube-api")
-	defaultSyntheticReplicas = int32(1)
+	log = logger.Get().WithName("dynakube-api")
 )
 
 func (dk *DynaKube) getDisableFlagWithDeprecatedAnnotation(annotation string, deprecatedAnnotation string) bool {
@@ -235,10 +218,6 @@ func (dk *DynaKube) FeatureAutomaticInjection() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticInjection) != falsePhrase
 }
 
-func (dk *DynaKube) FeatureCustomSyntheticImage() string {
-	return dk.getFeatureFlagRaw(AnnotationFeatureCustomSyntheticImage)
-}
-
 // FeatureEnableMultipleOsAgentsOnNode is a feature flag to enable multiple osagents running on the same host.
 func (dk *DynaKube) FeatureEnableMultipleOsAgentsOnNode() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureMultipleOsAgentsOnNode) == truePhrase
@@ -298,19 +277,6 @@ func (dk *DynaKube) FeatureReadOnlyCsiVolume() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureReadOnlyCsiVolume) == truePhrase
 }
 
-func (dk *DynaKube) FeatureSyntheticNodeType() string {
-	node := dk.getFeatureFlagRaw(AnnotationFeatureSyntheticNodeType)
-	if node == "" {
-		return SyntheticNodeS
-	}
-
-	return node
-}
-
-func (dk *DynaKube) FeatureSyntheticLocationEntityId() string {
-	return dk.getFeatureFlagRaw(AnnotationFeatureSyntheticLocationEntityId)
-}
-
 func (dk *DynaKube) FeatureInjectionFailurePolicy() string {
 	if dk.getFeatureFlagRaw(AnnotationInjectionFailurePolicy) == failPhrase {
 		return failPhrase
@@ -321,20 +287,6 @@ func (dk *DynaKube) FeatureInjectionFailurePolicy() string {
 
 func (dk *DynaKube) FeaturePublicRegistry() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeaturePublicRegistry) == truePhrase
-}
-
-func (dk *DynaKube) FeatureSyntheticReplicas() int32 {
-	value := dk.getFeatureFlagRaw(AnnotationFeatureSyntheticReplicas)
-	if value == "" {
-		return defaultSyntheticReplicas
-	}
-
-	parsed, err := strconv.ParseInt(value, 0, 32)
-	if err != nil {
-		return defaultSyntheticReplicas
-	}
-
-	return int32(parsed)
 }
 
 func (dk *DynaKube) FeatureInitContainerSeccomp() bool {
