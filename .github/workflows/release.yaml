@@ -363,6 +363,7 @@ jobs:
           version-without-prefix: ${{ needs.prepare.outputs.version_without_prefix }}
           cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           cosign-password: ${{ secrets.COSIGN_PASSWORD }}
+# TODO: cleanup
 #      - name: Upload helm package to ECR
 #        shell: bash
 #        run: |
