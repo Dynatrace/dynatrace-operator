@@ -188,7 +188,7 @@ func (dtc *dynatraceClient) createProcessModuleConfigRequest(ctx context.Context
 
 	req.URL.RawQuery = query.Encode()
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", dtc.paasToken))
+	req.Header.Add("Authorization", ApiTokenHeader+dtc.paasToken)
 
 	return req, nil
 }

@@ -19,7 +19,7 @@ func (extractor OneAgentExtractor) ExtractZip(sourceFile afero.File, targetDir s
 	fs := extractor.fs
 
 	if sourceFile == nil {
-		return fmt.Errorf("file is nil")
+		return errors.New("file is nil")
 	}
 
 	fileInfo, err := sourceFile.Stat()

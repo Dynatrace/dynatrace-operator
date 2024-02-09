@@ -43,7 +43,7 @@ func (dtc *dynatraceClient) GetTokenScopes(ctx context.Context, token string) (T
 	}
 
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", token))
+	req.Header.Add("Authorization", ApiTokenHeader+token)
 
 	resp, err := dtc.httpClient.Do(req)
 	if err != nil {
