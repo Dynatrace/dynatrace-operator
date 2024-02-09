@@ -45,6 +45,7 @@ func TestReadCommunicationHosts(t *testing.T) {
 	{
 		m, err := readFromString(goodCommunicationEndpointsResponse)
 		require.NoError(t, err)
+
 		expected := []CommunicationHost{
 			{Protocol: "https", Host: "10.0.0.1", Port: 8000},
 			{Protocol: "https", Host: "example.live.dynatrace.com", Port: 443},
@@ -60,6 +61,7 @@ func TestReadCommunicationHosts(t *testing.T) {
 	{
 		m, err := readFromString(mixedCommunicationEndpointsResponse)
 		require.NoError(t, err)
+
 		expected := []CommunicationHost{
 			{Protocol: "https", Host: "example.live.dynatrace.com", Port: 443},
 		}
