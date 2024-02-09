@@ -22,7 +22,7 @@ const (
 	out of it. Example: ` + ExampleApiUrl
 )
 
-func NoApiUrl(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func NoApiUrl(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	apiUrl := dynakube.Spec.APIURL
 
 	if apiUrl == ExampleApiUrl {
@@ -38,7 +38,7 @@ func NoApiUrl(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1bet
 	return ""
 }
 
-func IsInvalidApiUrl(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func IsInvalidApiUrl(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	apiUrl := dynakube.Spec.APIURL
 
 	if !strings.HasSuffix(apiUrl, "/api") {
@@ -65,7 +65,7 @@ func IsInvalidApiUrl(_ context.Context, dv *dynakubeValidator, dynakube *dynatra
 	return ""
 }
 
-func IsThirdGenAPIUrl(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func IsThirdGenAPIUrl(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if strings.Contains(dynakube.ApiUrl(), ".apps.") {
 		return errorThirdGenApiUrl
 	}
