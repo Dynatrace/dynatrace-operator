@@ -29,7 +29,7 @@ go/golangci:
 	golangci-lint run --build-tags "$(shell ./hack/build/create_go_build_tags.sh true)" --timeout 300s
 
 ## Runs all the linting tools
-go/lint: prerequisites/go-linting go/format go/vet go/golangci
+go/lint: prerequisites/go-linting go/format go/vet go/wsl go/golangci
 
 ## Runs all go unit tests and writes the coverprofile to coverage.txt
 go/test:
