@@ -22,7 +22,7 @@ go/vet:
 	go vet -copylocks=false $(LINT_TARGET)
 
 go/wsl:
-	wsl -fix ./pkg/...
+	wsl -fix -allow-trailing-comment ./pkg/...
 
 ## Runs golangci-lint
 go/golangci:
