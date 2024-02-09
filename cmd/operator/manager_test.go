@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	managermock "github.com/Dynatrace/dynatrace-operator/test/mocks/sigs.k8s.io/controller-runtime/pkg/manager"
@@ -25,11 +24,6 @@ const (
 )
 
 func TestOperatorManagerProvider(t *testing.T) {
-	t.Run("implements interface", func(t *testing.T) {
-		var controlManagerProvider manager.Provider = NewOperatorManagerProvider(false)
-		_, _ = controlManagerProvider.CreateManager("namespace", &rest.Config{})
-	})
-
 	t.Run("creates correct options", func(t *testing.T) {
 		operatorMgrProvider := operatorManagerProvider{}
 		options := operatorMgrProvider.createOptions("namespace")
