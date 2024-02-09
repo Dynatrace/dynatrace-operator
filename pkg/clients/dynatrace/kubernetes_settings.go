@@ -316,7 +316,7 @@ func handleErrorArrayResponseFromAPI(response []byte, statusCode int) error {
 			sb.WriteString("]\n")
 		}
 
-		return fmt.Errorf(sb.String())
+		return errors.New(sb.String())
 	}
 }
 

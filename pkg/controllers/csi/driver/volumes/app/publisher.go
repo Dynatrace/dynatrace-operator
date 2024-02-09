@@ -74,7 +74,7 @@ func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCf
 	if !bindCfg.IsArchiveAvailable() {
 		return nil, status.Error(
 			codes.Unavailable,
-			fmt.Sprintf("version or digest is not yet set, csi-provisioner hasn't finished setup yet for tenant: %s", bindCfg.TenantUUID),
+			"version or digest is not yet set, csi-provisioner hasn't finished setup yet for tenant: "+bindCfg.TenantUUID,
 		)
 	}
 
@@ -127,7 +127,7 @@ func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volume
 func (publisher *AppVolumePublisher) CanUnpublishVolume(ctx context.Context, volumeInfo *csivolumes.VolumeInfo) (bool, error) {
 	volume, err := publisher.loadVolume(ctx, volumeInfo.VolumeID)
 	if err != nil {
-		return false, status.Error(codes.Internal, fmt.Sprintf("failed to get volume info from database: %s", err.Error()))
+		return false, status.Error(codes.Internal, "failed to get volume info from database: "+err.Error())
 	}
 
 	return volume != nil, nil

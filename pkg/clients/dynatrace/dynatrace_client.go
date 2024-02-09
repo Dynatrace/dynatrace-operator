@@ -14,6 +14,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const ApiTokenHeader = "Api-Token "
+
 type HostNotFoundErr struct {
 	IP string
 }
@@ -70,13 +72,13 @@ func (dtc *dynatraceClient) makeRequest(ctx context.Context, url string, tokenTy
 			return nil, errors.Errorf("not able to set token since api token is empty for request: %s", url)
 		}
 
-		authHeader = fmt.Sprintf("Api-Token %s", dtc.apiToken)
+		authHeader = ApiTokenHeader + dtc.apiToken
 	case dynatracePaaSToken:
 		if dtc.paasToken == "" {
 			return nil, errors.Errorf("not able to set token since paas token is empty for request: %s", url)
 		}
 
-		authHeader = fmt.Sprintf("Api-Token %s", dtc.paasToken)
+		authHeader = ApiTokenHeader + dtc.paasToken
 	case installerUrlToken:
 		return dtc.httpClient.Do(req)
 	default:
@@ -95,7 +97,7 @@ func createBaseRequest(ctx context.Context, url, method, apiToken string, body i
 	}
 
 	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", apiToken))
+	req.Header.Add("Authorization", ApiTokenHeader+apiToken)
 
 	if method == http.MethodPost {
 		req.Header.Add("Content-Type", "application/json")

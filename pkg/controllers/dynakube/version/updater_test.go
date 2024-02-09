@@ -133,7 +133,7 @@ func TestRun(t *testing.T) {
 		updater.AssertNumberOfCalls(t, "LatestImageInfo", 0)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.TenantRegistryVersionSource, target.Source)
-		assert.Equal(t, target.Version, target.Version)
+		assert.Empty(t, target.Version)
 	})
 	t.Run("classicfullstack enabled, public registry is ignored, custom image is set", func(t *testing.T) {
 		target := &status.VersionStatus{

@@ -156,7 +156,7 @@ func (svr *Server) NodePublishVolume(ctx context.Context, req *csi.NodePublishVo
 
 	publisher, ok := svr.publishers[volumeCfg.Mode]
 	if !ok {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("unknown csi mode provided, mode=%s", volumeCfg.Mode))
+		return nil, status.Error(codes.Internal, "unknown csi mode provided, mode="+volumeCfg.Mode)
 	}
 
 	log.Info("publishing volume",
