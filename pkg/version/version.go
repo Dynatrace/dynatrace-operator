@@ -5,7 +5,6 @@ import (
 	"runtime"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
-	"github.com/go-logr/logr"
 )
 
 var (
@@ -30,7 +29,7 @@ func LogVersion() {
 	LogVersionToLogger(log)
 }
 
-func LogVersionToLogger(log logr.Logger) {
+func LogVersionToLogger(log logger.DtLogger) {
 	log.Info(AppName,
 		"version", Version,
 		"gitCommit", Commit,

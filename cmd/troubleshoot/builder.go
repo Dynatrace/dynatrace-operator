@@ -12,8 +12,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/dockerkeychain"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/rest"
@@ -85,7 +85,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	}
 }
 
-func RunTroubleshootCmd(ctx context.Context, log logr.Logger, namespaceName string, kubeConfig *rest.Config) {
+func RunTroubleshootCmd(ctx context.Context, log logger.DtLogger, namespaceName string, kubeConfig *rest.Config) {
 	err := checkOneAgentAPM(log, kubeConfig)
 	if err != nil {
 		logErrorf(log, "prerequisite checks failed, aborting (%v)", err)
@@ -124,7 +124,7 @@ func GetK8SClusterAPIReader(kubeConfig *rest.Config) (client.Reader, error) {
 	return k8scluster.GetAPIReader(), nil
 }
 
-func runChecksForAllDynakubes(ctx context.Context, baseLog logr.Logger, apiReader client.Reader, httpClient *http.Client, dynakubes []dynatracev1beta1.DynaKube) {
+func runChecksForAllDynakubes(ctx context.Context, baseLog logger.DtLogger, apiReader client.Reader, httpClient *http.Client, dynakubes []dynatracev1beta1.DynaKube) {
 	for _, dynakube := range dynakubes {
 		err := runChecksForDynakube(ctx, baseLog, apiReader, httpClient, dynakube)
 		if err != nil {
@@ -133,7 +133,7 @@ func runChecksForAllDynakubes(ctx context.Context, baseLog logr.Logger, apiReade
 	}
 }
 
-func runChecksForDynakube(ctx context.Context, baseLog logr.Logger, apiReader client.Reader, httpClient *http.Client, dynakube dynatracev1beta1.DynaKube) error {
+func runChecksForDynakube(ctx context.Context, baseLog logger.DtLogger, apiReader client.Reader, httpClient *http.Client, dynakube dynatracev1beta1.DynaKube) error {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
 	logNewCheckf(log, "checking if '%s:%s' Dynakube is configured correctly", dynakube.Namespace, dynakube.Name)
@@ -176,7 +176,7 @@ func createTransport(ctx context.Context, apiReader client.Reader, dynakube *dyn
 	return registry.PrepareTransportForDynaKube(ctx, apiReader, transport, dynakube)
 }
 
-func getDynakubes(ctx context.Context, log logr.Logger, apiReader client.Reader, namespaceName string, dynakubeName string) ([]dynatracev1beta1.DynaKube, error) {
+func getDynakubes(ctx context.Context, log logger.DtLogger, apiReader client.Reader, namespaceName string, dynakubeName string) ([]dynatracev1beta1.DynaKube, error) {
 	var err error
 
 	var dynakubes []dynatracev1beta1.DynaKube
@@ -200,7 +200,7 @@ func getDynakubes(ctx context.Context, log logr.Logger, apiReader client.Reader,
 	return dynakubes, nil
 }
 
-func getAllDynakubesInNamespace(ctx context.Context, log logr.Logger, apiReader client.Reader, namespaceName string) ([]dynatracev1beta1.DynaKube, error) {
+func getAllDynakubesInNamespace(ctx context.Context, log logger.DtLogger, apiReader client.Reader, namespaceName string) ([]dynatracev1beta1.DynaKube, error) {
 	var dynakubes dynatracev1beta1.DynaKubeList
 
 	err := apiReader.List(ctx, &dynakubes, client.InNamespace(namespaceName))

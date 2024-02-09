@@ -6,7 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/object"
-	"github.com/go-logr/logr"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -51,7 +51,7 @@ func GetDeployment(c client.Client, podName, namespace string) (*appsv1.Deployme
 	return &d, nil
 }
 
-func CreateOrUpdateDeployment(c client.Client, logger logr.Logger, desiredDeployment *appsv1.Deployment) (bool, error) {
+func CreateOrUpdateDeployment(c client.Client, logger logger.DtLogger, desiredDeployment *appsv1.Deployment) (bool, error) {
 	currentDeployment, err := getDeployment(c, desiredDeployment)
 	if err != nil && k8serrors.IsNotFound(errors.Cause(err)) {
 		logger.Info("creating new deployment", "name", desiredDeployment.Name)
@@ -95,7 +95,7 @@ func getDeployment(c client.Client, desiredDeployment *appsv1.Deployment) (*apps
 	return &actualDaemonSet, nil
 }
 
-func recreateDeployment(c client.Client, logger logr.Logger, currentDs, desiredDeployment *appsv1.Deployment) (bool, error) {
+func recreateDeployment(c client.Client, logger logger.DtLogger, currentDs, desiredDeployment *appsv1.Deployment) (bool, error) {
 	err := c.Delete(context.TODO(), currentDs)
 	if err != nil {
 		return false, err

@@ -3,12 +3,12 @@ package troubleshoot
 import (
 	"errors"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oneagentapm"
-	"github.com/go-logr/logr"
 	"k8s.io/client-go/rest"
 )
 
-func checkOneAgentAPM(baseLog logr.Logger, kubeConfig *rest.Config) error {
+func checkOneAgentAPM(baseLog logger.DtLogger, kubeConfig *rest.Config) error {
 	log := baseLog.WithName("oneAgentAPM")
 
 	logNewCheckf(log, "checking if OneAgentAPM object exists ...")

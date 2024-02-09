@@ -7,7 +7,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -364,7 +363,7 @@ func TestGetDataFromSecretName(t *testing.T) {
 	fakeClient.Create(context.Background(), testSecret.DeepCopy())
 
 	t.Run("get secret data", func(t *testing.T) {
-		data, _ := GetDataFromSecretName(fakeClient, types.NamespacedName{Name: testSecretName, Namespace: testNamespace}, testSecretDataKey, logr.Logger{})
+		data, _ := GetDataFromSecretName(fakeClient, types.NamespacedName{Name: testSecretName, Namespace: testNamespace}, testSecretDataKey, logger.DtLogger{})
 		assert.Equal(t, string(dataValue), data)
 	})
 }

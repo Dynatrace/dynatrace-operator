@@ -39,7 +39,7 @@ func (mgr *TestManager) GetCache() cache.Cache {
 }
 
 func (mgr *TestManager) GetLogger() logr.Logger {
-	return logger.Get().WithName("test-manager")
+	return logger.Get().WithName("test-manager").Logger
 }
 
 func (mgr *TestManager) GetRESTMapper() meta.RESTMapper {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/go-logr/logr"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"golang.org/x/exp/rand"
 	clientgocorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
@@ -20,7 +20,7 @@ type loadSimCollector struct {
 	fileCount int
 }
 
-func newLoadSimCollector(ctx context.Context, log logr.Logger, supportArchive archiver, fileSize int, fileCount int, pods clientgocorev1.PodInterface) collector { //nolint:revive // argument-limit doesn't apply to constructors
+func newLoadSimCollector(ctx context.Context, log logger.DtLogger, supportArchive archiver, fileSize int, fileCount int, pods clientgocorev1.PodInterface) collector { //nolint:revive // argument-limit doesn't apply to constructors
 	return loadSimCollector{
 		collectorCommon: collectorCommon{
 			log:            log,

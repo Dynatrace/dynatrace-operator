@@ -10,8 +10,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	dynakubevalidation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/validation/dynakube"
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -25,7 +25,7 @@ const (
 
 const dynakubeCheckLoggerName = "dynakube"
 
-func checkDynakube(ctx context.Context, baseLog logr.Logger, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) (corev1.Secret, error) {
+func checkDynakube(ctx context.Context, baseLog logger.DtLogger, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) (corev1.Secret, error) {
 	dynatraceApiSecretTokens, err := checkIfDynatraceApiSecretHasApiToken(ctx, baseLog, apiReader, dynakube)
 	if err != nil {
 		return corev1.Secret{}, err
@@ -96,7 +96,7 @@ func determineSelectedDynakubeError(namespaceName, dynakubeName string, err erro
 	return err
 }
 
-func checkIfDynatraceApiSecretHasApiToken(ctx context.Context, baseLog logr.Logger, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) (token.Tokens, error) {
+func checkIfDynatraceApiSecretHasApiToken(ctx context.Context, baseLog logger.DtLogger, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) (token.Tokens, error) {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
 	tokenReader := token.NewReader(apiReader, dynakube)
@@ -116,7 +116,7 @@ func checkIfDynatraceApiSecretHasApiToken(ctx context.Context, baseLog logr.Logg
 	return tokens, nil
 }
 
-func checkApiUrlSyntax(ctx context.Context, baseLog logr.Logger, dynakube *dynatracev1beta1.DynaKube) error {
+func checkApiUrlSyntax(ctx context.Context, baseLog logger.DtLogger, dynakube *dynatracev1beta1.DynaKube) error {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
 	logInfof(log, "checking if syntax of API URL is valid")
@@ -136,7 +136,7 @@ func checkApiUrlSyntax(ctx context.Context, baseLog logr.Logger, dynakube *dynat
 	return nil
 }
 
-func checkDynatraceApiTokenScopes(ctx context.Context, baseLog logr.Logger, apiReader client.Reader, dynatraceApiSecretTokens token.Tokens, dynakube *dynatracev1beta1.DynaKube) error {
+func checkDynatraceApiTokenScopes(ctx context.Context, baseLog logger.DtLogger, apiReader client.Reader, dynatraceApiSecretTokens token.Tokens, dynakube *dynatracev1beta1.DynaKube) error {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
 	logInfof(log, "checking if token scopes are valid")
@@ -166,7 +166,7 @@ func checkDynatraceApiTokenScopes(ctx context.Context, baseLog logr.Logger, apiR
 	return nil
 }
 
-func checkApiUrlForLatestAgentVersion(ctx context.Context, baseLog logr.Logger, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, dynatraceApiSecretTokens token.Tokens) error {
+func checkApiUrlForLatestAgentVersion(ctx context.Context, baseLog logger.DtLogger, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, dynatraceApiSecretTokens token.Tokens) error {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
 	logInfof(log, "checking if can pull latest agent version")
@@ -190,7 +190,7 @@ func checkApiUrlForLatestAgentVersion(ctx context.Context, baseLog logr.Logger, 
 	return nil
 }
 
-func checkPullSecretExists(ctx context.Context, baseLog logr.Logger, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) (corev1.Secret, error) {
+func checkPullSecretExists(ctx context.Context, baseLog logger.DtLogger, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) (corev1.Secret, error) {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
 	query := secret.NewQuery(ctx, nil, apiReader, log)
@@ -205,7 +205,7 @@ func checkPullSecretExists(ctx context.Context, baseLog logr.Logger, apiReader c
 	return pullSecret, nil
 }
 
-func checkPullSecretHasRequiredTokens(baseLog logr.Logger, dynakube *dynatracev1beta1.DynaKube, pullSecret corev1.Secret) error {
+func checkPullSecretHasRequiredTokens(baseLog logger.DtLogger, dynakube *dynatracev1beta1.DynaKube, pullSecret corev1.Secret) error {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
 	if _, err := secret.ExtractToken(&pullSecret, dtpullsecret.DockerConfigJson); err != nil {

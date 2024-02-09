@@ -516,6 +516,8 @@ func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnect
 }
 
 func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
+	log.Debug("createOrUpdate EdgeConnect deployment ", "name", edgeConnect.Name)
+
 	secretQuery := k8ssecret.NewQuery(ctx, controller.client, controller.apiReader, log)
 
 	secret, err := secretQuery.Get(types.NamespacedName{Name: edgeConnectClientSecretName(edgeConnect.Name), Namespace: edgeConnect.Namespace})

@@ -3,7 +3,7 @@ package support_archive
 import (
 	"io"
 
-	"github.com/go-logr/logr"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 )
 
 const (
@@ -15,7 +15,7 @@ type supportArchiveOutputCollector struct {
 	collectorCommon
 }
 
-func newSupportArchiveOutputCollector(log logr.Logger, supportArchive archiver, logBuffer io.Reader) collector {
+func newSupportArchiveOutputCollector(log logger.DtLogger, supportArchive archiver, logBuffer io.Reader) collector {
 	return supportArchiveOutputCollector{
 		collectorCommon: collectorCommon{
 			log:            log,

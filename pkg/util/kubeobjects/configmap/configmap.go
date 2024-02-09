@@ -6,7 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/query"
-	"github.com/go-logr/logr"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -21,7 +21,7 @@ type Query struct {
 	query.KubeQuery
 }
 
-func NewQuery(ctx context.Context, kubeClient client.Client, kubeReader client.Reader, log logr.Logger) Query {
+func NewQuery(ctx context.Context, kubeClient client.Client, kubeReader client.Reader, log logger.DtLogger) Query {
 	return Query{
 		query.New(ctx, kubeClient, kubeReader, log),
 	}

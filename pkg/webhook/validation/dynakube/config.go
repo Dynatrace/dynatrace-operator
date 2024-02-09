@@ -5,7 +5,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
-	"github.com/go-logr/logr"
 )
 
 const oneagentEnableVolumeStorageEnvVarName = "ONEAGENT_ENABLE_VOLUME_STORAGE"
@@ -47,6 +46,6 @@ var warnings = []validator{
 	conflictingHostGroupSettings,
 }
 
-func SetLogger(logger logr.Logger) {
+func SetLogger(logger logger.DtLogger) {
 	log = logger
 }

@@ -5,7 +5,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/troubleshoot"
-	"github.com/go-logr/logr"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -22,7 +22,7 @@ type troubleshootCollector struct {
 	namespace  string
 }
 
-func newTroubleshootCollector(context context.Context, log logr.Logger, supportArchive archiver, namespace string, apiReader client.Reader, kubeConfig rest.Config) collector { //nolint:revive // argument-limit doesn't apply to constructors
+func newTroubleshootCollector(context context.Context, log logger.DtLogger, supportArchive archiver, namespace string, apiReader client.Reader, kubeConfig rest.Config) collector { //nolint:revive // argument-limit doesn't apply to constructors
 	return troubleshootCollector{
 		collectorCommon: collectorCommon{
 			log:            log,

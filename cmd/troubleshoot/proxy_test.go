@@ -6,7 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/go-logr/logr"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -17,7 +17,7 @@ func TestCheckProxySettings(t *testing.T) {
 		t.Setenv("HTTP_PROXY", "")
 		t.Setenv("HTTPS_PROXY", "")
 
-		logOutput := runWithTestLogger(func(logger logr.Logger) {
+		logOutput := runWithTestLogger(func(logger logger.DtLogger) {
 			checkProxySettings(context.Background(), logger, nil, &dynatracev1beta1.DynaKube{})
 		})
 
@@ -31,7 +31,7 @@ func TestCheckProxySettings(t *testing.T) {
 		t.Setenv("HTTP_PROXY", "foobar:1234")
 		t.Setenv("HTTPS_PROXY", "")
 
-		logOutput := runWithTestLogger(func(logger logr.Logger) {
+		logOutput := runWithTestLogger(func(logger logger.DtLogger) {
 			checkProxySettings(context.Background(), logger, nil, &dynatracev1beta1.DynaKube{})
 		})
 
@@ -45,7 +45,7 @@ func TestCheckProxySettings(t *testing.T) {
 		t.Setenv("HTTP_PROXY", "")
 		t.Setenv("HTTPS_PROXY", "foobar:1234")
 
-		logOutput := runWithTestLogger(func(logger logr.Logger) {
+		logOutput := runWithTestLogger(func(logger logger.DtLogger) {
 			checkProxySettings(context.Background(), logger, nil, &dynatracev1beta1.DynaKube{})
 		})
 
@@ -63,7 +63,7 @@ func TestCheckProxySettings(t *testing.T) {
 			withProxy("http://foobar:1234").
 			build()
 
-		logOutput := runWithTestLogger(func(logger logr.Logger) {
+		logOutput := runWithTestLogger(func(logger logger.DtLogger) {
 			checkProxySettings(context.Background(), logger, nil, &dynakube)
 		})
 
@@ -93,7 +93,7 @@ func TestCheckProxySettings(t *testing.T) {
 			withProxySecret(testSecretName).
 			build()
 
-		logOutput := runWithTestLogger(func(logger logr.Logger) {
+		logOutput := runWithTestLogger(func(logger logger.DtLogger) {
 			checkProxySettings(context.Background(), logger, clt, &dynakube)
 		})
 
@@ -111,7 +111,7 @@ func TestCheckProxySettings(t *testing.T) {
 			withProxy("http://foobar:1234").
 			build()
 
-		logOutput := runWithTestLogger(func(logger logr.Logger) {
+		logOutput := runWithTestLogger(func(logger logger.DtLogger) {
 			checkProxySettings(context.Background(), logger, nil, &dynakube)
 		})
 

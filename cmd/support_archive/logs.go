@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	"github.com/go-logr/logr"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -24,7 +24,7 @@ type logCollector struct {
 	collectManagedLogs bool
 }
 
-func newLogCollector(context context.Context, log logr.Logger, supportArchive archiver, pods clientgocorev1.PodInterface, appName string, collectManagedLogs bool) collector { //nolint:revive // argument-limit doesn't apply to constructors
+func newLogCollector(context context.Context, log logger.DtLogger, supportArchive archiver, pods clientgocorev1.PodInterface, appName string, collectManagedLogs bool) collector { //nolint:revive // argument-limit doesn't apply to constructors
 	return logCollector{
 		collectorCommon: collectorCommon{
 			log:            log,

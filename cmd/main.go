@@ -98,7 +98,7 @@ func rootCommand(_ *cobra.Command, _ []string) error {
 }
 
 func main() {
-	ctrl.SetLogger(log)
+	ctrl.SetLogger(log.Logger)
 
 	cmd := newRootCommand()
 

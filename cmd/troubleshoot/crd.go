@@ -1,12 +1,12 @@
 package troubleshoot
 
 import (
-	"github.com/go-logr/logr"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func checkCRD(baseLog logr.Logger, err error) error {
+func checkCRD(baseLog logger.DtLogger, err error) error {
 	log := baseLog.WithName("crd")
 
 	logNewCheckf(log, "checking if CRD for Dynakube exists ...")

@@ -6,14 +6,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/object"
-	"github.com/go-logr/logr"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func CreateOrUpdateDaemonSet(kubernetesClient client.Client, logger logr.Logger, desiredDaemonSet *appsv1.DaemonSet) (bool, error) {
+func CreateOrUpdateDaemonSet(kubernetesClient client.Client, logger logger.DtLogger, desiredDaemonSet *appsv1.DaemonSet) (bool, error) {
 	currentDaemonSet, err := getDaemonSet(kubernetesClient, desiredDaemonSet)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -42,7 +42,7 @@ func CreateOrUpdateDaemonSet(kubernetesClient client.Client, logger logr.Logger,
 	return true, err
 }
 
-func recreateDaemonSet(kubernetesClient client.Client, logger logr.Logger, currentDs, desiredDaemonSet *appsv1.DaemonSet) (bool, error) {
+func recreateDaemonSet(kubernetesClient client.Client, logger logger.DtLogger, currentDs, desiredDaemonSet *appsv1.DaemonSet) (bool, error) {
 	logger.Info("immutable section changed on daemonset, deleting and recreating", "name", desiredDaemonSet.Name)
 
 	err := kubernetesClient.Delete(context.TODO(), currentDs)
