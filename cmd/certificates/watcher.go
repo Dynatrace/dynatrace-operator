@@ -27,7 +27,6 @@ const (
 	// Grants read and write permission to everyone.
 	permAll     = 0666
 	fiveMinutes = 5 * time.Minute
-	tenSeconds  = 10 * time.Second
 )
 
 type CertificateWatcher struct {
