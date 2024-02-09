@@ -336,6 +336,27 @@ jobs:
           version-without-prefix: ${{ needs.prepare.outputs.version_without_prefix }}
           cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           cosign-password: ${{ secrets.COSIGN_PASSWORD }}
+      - name: Configure aws credentials
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+        with:
+          role-to-assume: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
+          aws-region: us-east-1
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
+        with:
+          registry-type: public
+      - name: Upload helm package to ECR
+        shell: bash
+        run: |
+          hack/build/ci/push-helm-chart.sh \
+            "./helm-pkg/dynatrace-operator-${{ inputs.version-without-prefix }}.tgz" \
+            "oci://public.ecr.aws/${{ ECR_REPOSITORY }}"
+      - name: Sign OCI package with cosign
+        uses: ./.github/actions/sign-image
+        with:
+          image: "oci://public.ecr.aws/${{ ECR_REPOSITORY }}/${{ dynatrace-operator }}:${{ needs.prepare.outputs.version }}@${{ steps.push-helm-to-OCI.outputs.digest }}"
+          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          signing-password: ${{ secrets.COSIGN_PASSWORD }}
       - name: Prepare cosign.pub artifact
         env:
           COSIGN_PUBLIC_KEY: ${{ secrets.COSIGN_PUBLIC_KEY }}
