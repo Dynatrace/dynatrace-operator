@@ -36,6 +36,8 @@ func create(instance *edgeconnectv1alpha1.EdgeConnect, clientSecretName string, 
 		appLabels.BuildLabels(),
 	)
 
+	log.Debug("EdgeConnect deployment app labels", "labels", labels)
+
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        instance.Name,
