@@ -61,8 +61,8 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return nil
 		}
 		if err := f(cmd, args); err != nil {
-			fmt.Println(err) // nolint
-			os.Exit(1)       // nolint
+			fmt.Println(err) //nolint
+			os.Exit(1)       //nolint
 		}
 
 		return nil

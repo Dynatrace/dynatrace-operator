@@ -37,7 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func NewAppVolumePublisher(client client.Client, fs afero.Afero, mounter mount.Interface, db metadata.Access, path metadata.PathResolver) csivolumes.Publisher { //nolint:revive // argument-limit doesn't apply to constructors
+func NewAppVolumePublisher(client client.Client, fs afero.Afero, mounter mount.Interface, db metadata.Access, path metadata.PathResolver) csivolumes.Publisher {
 	return &AppVolumePublisher{
 		client:  client,
 		fs:      fs,
@@ -142,7 +142,7 @@ func (publisher *AppVolumePublisher) fireVolumeUnpublishedMetric(volume metadata
 			log.Error(err, "failed to get the value of agent version metric")
 		}
 
-		if m.Gauge.GetValue() <= float64(0) {
+		if m.GetGauge().GetValue() <= float64(0) {
 			agentsVersionsMetric.DeleteLabelValues(volume.Version)
 		}
 	}

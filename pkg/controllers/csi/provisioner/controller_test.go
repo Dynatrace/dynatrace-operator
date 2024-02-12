@@ -42,8 +42,8 @@ func (fs *mkDirAllErrorFs) MkdirAll(_ string, _ os.FileMode) error {
 	return fmt.Errorf(errorMsg)
 }
 
-func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
-	ctx := context.TODO()
+func TestOneAgentProvisioner_Reconcile(t *testing.T) {
+	ctx := context.Background()
 	dynakubeName := "test-dk"
 
 	t.Run("no dynakube instance", func(t *testing.T) {

@@ -13,9 +13,9 @@ import (
 
 // CommunicationHost => struct of connection endpoint
 type CommunicationHost struct {
-	Protocol string // nolint:unused
-	Host     string // nolint:unused
-	Port     uint32 // nolint:unused
+	Protocol string
+	Host     string
+	Port     uint32
 }
 
 type OneAgentConnectionInfo struct {

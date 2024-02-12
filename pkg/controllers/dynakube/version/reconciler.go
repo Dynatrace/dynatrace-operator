@@ -28,7 +28,7 @@ type reconciler struct {
 
 type ReconcilerBuilder func(apiReader client.Reader, dtClient dtclient.Client, fs afero.Afero, timeProvider *timeprovider.Provider) Reconciler
 
-func NewReconciler(apiReader client.Reader, dtClient dtclient.Client, fs afero.Afero, timeProvider *timeprovider.Provider) Reconciler { //nolint:revive
+func NewReconciler(apiReader client.Reader, dtClient dtclient.Client, fs afero.Afero, timeProvider *timeprovider.Provider) Reconciler {
 	return &reconciler{
 		apiReader:    apiReader,
 		fs:           fs,

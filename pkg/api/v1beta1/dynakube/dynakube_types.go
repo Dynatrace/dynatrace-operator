@@ -31,7 +31,7 @@ const (
 	ReasonTokenError string = "TokenError"
 )
 
-type DynaKubeProxy struct { // nolint:revive
+type DynaKubeProxy struct { //nolint:revive
 	// Proxy URL. It has preference over ValueFrom.
 	// +nullable
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Proxy value",order=32,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
@@ -43,7 +43,7 @@ type DynaKubeProxy struct { // nolint:revive
 	ValueFrom string `json:"valueFrom,omitempty"`
 }
 
-type DynaKubeValueSource struct { // nolint:revive
+type DynaKubeValueSource struct { //nolint:revive
 	// Custom properties value.
 	// +nullable
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom properties value",order=32,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
@@ -78,7 +78,7 @@ type DynaKube struct {
 
 // DynaKubeSpec defines the desired state of DynaKube
 // +k8s:openapi-gen=true
-type DynaKubeSpec struct { // nolint:revive
+type DynaKubeSpec struct { //nolint:revive
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
 	// Dynatrace apiUrl, including the /api path at the end. For SaaS, set YOUR_ENVIRONMENT_ID to your environment ID. For Managed, change the apiUrl address.
@@ -162,7 +162,7 @@ type DynaKubeSpec struct { // nolint:revive
 
 // DynaKubeList contains a list of DynaKube
 // +kubebuilder:object:root=true
-type DynaKubeList struct { // nolint:revive
+type DynaKubeList struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []DynaKube `json:"items"`

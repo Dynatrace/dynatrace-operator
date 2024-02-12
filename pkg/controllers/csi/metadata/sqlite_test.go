@@ -464,6 +464,7 @@ func TestUpdateOsAgentVolume(t *testing.T) {
 	db := FakeMemoryDB()
 
 	now := time.Now()
+
 	oldEntry := OsAgentVolume{
 		VolumeID:     "vol-4",
 		TenantUUID:   testDynakube1.TenantUUID,

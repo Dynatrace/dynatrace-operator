@@ -36,9 +36,6 @@ type Reconciler struct {
 	modifiers  []builder.Modifier
 }
 
-// argument-limit doesn't apply to constructors
-//
-//nolint:revive
 func NewReconciler(
 	clt client.Client,
 	apiReader client.Reader,
