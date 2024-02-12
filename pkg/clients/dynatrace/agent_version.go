@@ -28,7 +28,7 @@ func (dtc *dynatraceClient) GetEntityIDForIP(ctx context.Context, ip string) (st
 }
 
 // GetLatestAgent gets the latest agent package for the given OS and installer type.
-func (dtc *dynatraceClient) GetLatestAgent(ctx context.Context, os, installerType, flavor, arch string, technologies []string, skipMetadata bool, writer io.Writer) error { // nolint: revive
+func (dtc *dynatraceClient) GetLatestAgent(ctx context.Context, os, installerType, flavor, arch string, technologies []string, skipMetadata bool, writer io.Writer) error {
 	if len(os) == 0 || len(installerType) == 0 {
 		return errors.New("os or installerType is empty")
 	}
@@ -84,7 +84,7 @@ func (dtc *dynatraceClient) GetAgentVersions(ctx context.Context, os, installerT
 	return response.AvailableVersions, errors.WithStack(err)
 }
 
-func (dtc *dynatraceClient) GetAgent(ctx context.Context, os, installerType, flavor, arch, version string, technologies []string, skipMetadata bool, writer io.Writer) error { // nolint: revive
+func (dtc *dynatraceClient) GetAgent(ctx context.Context, os, installerType, flavor, arch, version string, technologies []string, skipMetadata bool, writer io.Writer) error {
 	if len(os) == 0 || len(installerType) == 0 {
 		return errors.New("os or installerType is empty")
 	}
