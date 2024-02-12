@@ -35,7 +35,7 @@ func missingCSIDaemonSet(ctx context.Context, dv *dynakubeValidator, dynakube *d
 	return ""
 }
 
-func disabledCSIForReadonlyCSIVolume(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func disabledCSIForReadonlyCSIVolume(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if !dynakube.NeedsCSIDriver() && dynakube.FeatureReadOnlyCsiVolume() {
 		log.Info("requested dynakube uses readonly csi volume, but csi driver is not enabled", "name", dynakube.Name, "namespace", dynakube.Namespace)
 		return errorCSIEnabledRequired

@@ -22,7 +22,6 @@ import (
 
 const (
 	testImageTag = "1.203.0.0-0"
-	testImage    = "test-image:" + testImageTag
 )
 
 func TestUseImmutableImage(t *testing.T) {

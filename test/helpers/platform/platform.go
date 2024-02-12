@@ -11,13 +11,6 @@ const (
 	kubernetesPlatformEnvValue = "kubernetes"
 )
 
-type Platform int
-
-const (
-	Kubernetes Platform = iota
-	Openshift
-)
-
 const openshiftSecurityGVR = "security.openshift.io/v1"
 
 type Resolver struct {

@@ -13,9 +13,8 @@ import (
 )
 
 const (
-	dtNodeName      = "DT_K8S_NODE_NAME"
-	dtClusterId     = "DT_K8S_CLUSTER_ID"
-	dtCommunication = "DT_COMMUNICATION"
+	dtNodeName  = "DT_K8S_NODE_NAME"
+	dtClusterId = "DT_K8S_CLUSTER_ID"
 
 	oneagentDisableContainerInjection = "ONEAGENT_DISABLE_CONTAINER_INJECTION"
 	oneagentReadOnlyMode              = "ONEAGENT_READ_ONLY_MODE"

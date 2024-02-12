@@ -28,8 +28,6 @@ const (
 	testConfigHash    = "test-hash"
 	testDynakubeName  = "test-dynakube"
 	testNamespaceName = "test-namespace"
-	testTag           = "test-tag"
-	testVersion       = "test-version"
 )
 
 var (

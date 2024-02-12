@@ -60,7 +60,7 @@ func (updater activeGateUpdater) LatestImageInfo(ctx context.Context) (*dtclient
 	return updater.dtClient.GetLatestActiveGateImage(ctx)
 }
 
-func (updater *activeGateUpdater) CheckForDowngrade(latestVersion string) (bool, error) {
+func (updater *activeGateUpdater) CheckForDowngrade(_ string) (bool, error) {
 	return false, nil
 }
 

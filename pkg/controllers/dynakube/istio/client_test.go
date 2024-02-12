@@ -28,7 +28,7 @@ func newTestingClient(fakeClient *fakeistio.Clientset, namespace string) *Client
 	}
 }
 
-func boomReaction(action clienttest.Action) (handled bool, ret runtime.Object, err error) {
+func boomReaction(_ clienttest.Action) (handled bool, ret runtime.Object, err error) {
 	return true, nil, errors.New("boom")
 }
 
