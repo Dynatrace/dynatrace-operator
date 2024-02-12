@@ -465,7 +465,6 @@ func TestUpdateOsAgentVolume(t *testing.T) {
 
 	now := time.Now()
 
-
 	oldEntry := OsAgentVolume{
 		VolumeID:     "vol-4",
 		TenantUUID:   testDynakube1.TenantUUID,
