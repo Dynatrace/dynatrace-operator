@@ -15,11 +15,8 @@ import (
 )
 
 const (
-	testName            = "test-name"
-	testNamespace       = "test-namespace"
-	testTenantToken     = "test-token"
-	testTenantUUID      = "test-uuid"
-	testTenantEndpoints = "test-endpoints"
+	testName      = "test-name"
+	testNamespace = "test-namespace"
 )
 
 func createTestDynakubeObjectMeta() metav1.ObjectMeta {

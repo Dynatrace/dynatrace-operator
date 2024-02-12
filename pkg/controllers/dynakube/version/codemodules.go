@@ -52,7 +52,7 @@ func (updater codeModulesUpdater) LatestImageInfo(ctx context.Context) (*dtclien
 	return updater.dtClient.GetLatestCodeModulesImage(ctx)
 }
 
-func (updater *codeModulesUpdater) CheckForDowngrade(latestVersion string) (bool, error) {
+func (updater *codeModulesUpdater) CheckForDowngrade(_ string) (bool, error) {
 	return false, nil
 }
 

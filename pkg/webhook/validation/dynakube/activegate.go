@@ -22,7 +22,7 @@ Make sure you don't duplicate an Activegate capability in your custom resource.
 	warningMissingActiveGateMemoryLimit = `ActiveGate specification missing memory limits. Can cause excess memory usage.`
 )
 
-func conflictingActiveGateConfiguration(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func conflictingActiveGateConfiguration(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.DeprecatedActiveGateMode() && dynakube.ActiveGateMode() {
 		log.Info("requested dynakube has conflicting active gate configuration", "name", dynakube.Name, "namespace", dynakube.Namespace)
 		return errorConflictingActiveGateSections
@@ -31,7 +31,7 @@ func conflictingActiveGateConfiguration(_ context.Context, dv *dynakubeValidator
 	return ""
 }
 
-func duplicateActiveGateCapabilities(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func duplicateActiveGateCapabilities(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.ActiveGateMode() {
 		capabilities := dynakube.Spec.ActiveGate.Capabilities
 		duplicateChecker := map[dynatracev1beta1.CapabilityDisplayName]bool{}
@@ -49,7 +49,7 @@ func duplicateActiveGateCapabilities(_ context.Context, dv *dynakubeValidator, d
 	return ""
 }
 
-func invalidActiveGateCapabilities(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func invalidActiveGateCapabilities(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.ActiveGateMode() {
 		capabilities := dynakube.Spec.ActiveGate.Capabilities
 		for _, capability := range capabilities {
@@ -63,7 +63,7 @@ func invalidActiveGateCapabilities(_ context.Context, dv *dynakubeValidator, dyn
 	return ""
 }
 
-func missingActiveGateMemoryLimit(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func missingActiveGateMemoryLimit(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.ActiveGateMode() &&
 		!memoryLimitSet(dynakube.Spec.ActiveGate.Resources) {
 		return warningMissingActiveGateMemoryLimit

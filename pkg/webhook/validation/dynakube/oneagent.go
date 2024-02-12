@@ -22,7 +22,7 @@ The conflicting Dynakube: %s
 	warningOneAgentInstallerEnvVars = `Environment variables ONEAGENT_INSTALLER_SCRIPT_URL and ONEAGENT_INSTALLER_TOKEN are only relevant for an unsupported image type. Please make sure you are using a supported image.`
 )
 
-func conflictingOneAgentConfiguration(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func conflictingOneAgentConfiguration(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	counter := 0
 	if dynakube.ApplicationMonitoringMode() {
 		counter += 1
@@ -78,7 +78,7 @@ func conflictingNodeSelector(ctx context.Context, dv *dynakubeValidator, dynakub
 	return ""
 }
 
-func imageFieldSetWithoutCSIFlag(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func imageFieldSetWithoutCSIFlag(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.ApplicationMonitoringMode() {
 		if !dynakube.NeedsCSIDriver() && len(dynakube.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) > 0 {
 			return errorImageFieldSetWithoutCSIFlag
@@ -109,7 +109,7 @@ func hasOneAgentVolumeStorageEnabled(dynakube *dynatracev1beta1.DynaKube) (isEna
 	return
 }
 
-func unsupportedOneAgentImage(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func unsupportedOneAgentImage(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if env.FindEnvVar(dynakube.GetOneAgentEnvironment(), oneagentInstallerScriptUrlEnvVarName) != nil ||
 		env.FindEnvVar(dynakube.GetOneAgentEnvironment(), oneagentInstallerTokenEnvVarName) != nil {
 		return warningOneAgentInstallerEnvVars
@@ -118,7 +118,7 @@ func unsupportedOneAgentImage(_ context.Context, dv *dynakubeValidator, dynakube
 	return ""
 }
 
-func conflictingOneAgentVolumeStorageSettings(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func conflictingOneAgentVolumeStorageSettings(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	volumeStorageEnabled, volumeStorageSet := hasOneAgentVolumeStorageEnabled(dynakube)
 	if dynakube.NeedsReadOnlyOneAgents() && volumeStorageSet && !volumeStorageEnabled {
 		return errorVolumeStorageReadOnlyModeConflict
