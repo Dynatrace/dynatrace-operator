@@ -3,6 +3,7 @@ package csiprovisioner
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
@@ -93,7 +94,9 @@ func (provisioner *OneAgentProvisioner) getDigest(dynakube dynatracev1beta1.Dyna
 		return "", err
 	}
 
-	return string(imageVersion.Digest), nil
+	digest, _ := strings.CutPrefix(string(imageVersion.Digest), "sha256:")
+
+	return digest, nil
 }
 
 func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dynakube dynatracev1beta1.DynaKube, dtc dtclient.Client, latestProcessModuleConfig *dtclient.ProcessModuleConfig) (string, error) {

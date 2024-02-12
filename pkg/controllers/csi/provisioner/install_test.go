@@ -125,7 +125,7 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).
 			Return(false, fmt.Errorf("BOOM"))
-		mockRegistryClient(provisioner, testImageDigest)
+		mockRegistryClient(provisioner, "sha256:"+testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentImage(ctx, dk, processModule)
@@ -155,7 +155,7 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
-		mockRegistryClient(provisioner, testImageDigest)
+		mockRegistryClient(provisioner, "sha256:"+testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentImage(ctx, dk, processModule)
@@ -178,7 +178,8 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
-		mockRegistryClient(provisioner, testImageDigest)
+		mockRegistryClient(provisioner, "sha256:"+testImageDigest)
+
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentImage(ctx, dk, processModule)
@@ -226,9 +227,28 @@ NK85cEJwyxQ+wahdNGUD
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
-		mockRegistryClient(provisioner, testImageDigest)
+		mockRegistryClient(provisioner, "sha256:"+testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
+		currentVersion, err := provisioner.installAgentImage(ctx, dk, processModule)
+		require.NoError(t, err)
+		assert.Equal(t, testImageDigest, currentVersion)
+	})
+	t.Run("getDigest should remove sha256: prefix", func(t *testing.T) {
+		dockerconfigjsonContent := `{"auths":{}}`
+
+		var revision uint = 3
+		processModule := createTestProcessModuleConfig(revision)
+
+		dk := createTestDynaKubeWithImage(testImageDigest)
+		provisioner := createTestProvisioner(createMockedPullSecret(dk, dockerconfigjsonContent))
+		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(testImageDigest)
+		installerMock := mockedinstaller.NewInstaller(t)
+		installerMock.
+			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).
+			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
+		mockRegistryClient(provisioner, "sha256:"+testImageDigest)
+		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 		currentVersion, err := provisioner.installAgentImage(ctx, dk, processModule)
 		require.NoError(t, err)
 		assert.Equal(t, testImageDigest, currentVersion)
