@@ -132,17 +132,17 @@ func (gc *CSIGarbageCollector) assertVersionExists(t *testing.T, versions ...str
 
 // This is a very ugly hack, but because you can't Set the value of a Counter metric you have to create new ones to reset them between runs.
 func resetMetrics() {
-	gcRunsMetric = prometheus.NewCounter(prometheus.CounterOpts{ //nolint:promlinter
+	gcRunsMetric = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "test",
 		Subsystem: "csi_driver",
 		Name:      "gc_runs",
 	})
-	foldersRemovedMetric = prometheus.NewCounter(prometheus.CounterOpts{ //nolint:promlinter
+	foldersRemovedMetric = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "test",
 		Subsystem: "csi_driver",
 		Name:      "gc_folder_rm",
 	})
-	reclaimedMemoryMetric = prometheus.NewCounter(prometheus.CounterOpts{ //nolint:promlinter
+	reclaimedMemoryMetric = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "test",
 		Subsystem: "csi_driver",
 		Name:      "gc_memory_reclaimed",

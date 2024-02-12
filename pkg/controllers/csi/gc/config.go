@@ -9,21 +9,21 @@ import (
 var (
 	log = logger.Get().WithName("csi-gc")
 
-	reclaimedMemoryMetric = prometheus.NewCounter(prometheus.CounterOpts{ //nolint:promlinter
+	reclaimedMemoryMetric = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "dynatrace",
 		Subsystem: "csi_driver",
 		Name:      "gc_reclaimed",
 		Help:      "Amount of memory reclaimed by the GC",
 	})
 
-	foldersRemovedMetric = prometheus.NewCounter(prometheus.CounterOpts{ //nolint:promlinter
+	foldersRemovedMetric = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "dynatrace",
 		Subsystem: "csi_driver",
 		Name:      "gc_folder_rmv",
 		Help:      "Number of folders deleted by the GC",
 	})
 
-	gcRunsMetric = prometheus.NewCounter(prometheus.CounterOpts{ //nolint:promlinter
+	gcRunsMetric = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "dynatrace",
 		Subsystem: "csi_driver",
 		Name:      "gc_runs",
