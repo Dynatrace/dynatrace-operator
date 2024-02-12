@@ -136,7 +136,7 @@ func writeOauthTokenResponse(writer http.ResponseWriter) {
 	_, _ = writer.Write(out)
 }
 
-func edgeConnectCreateServerHandler(error bool) http.HandlerFunc {
+func edgeConnectCreateServerHandler(errorBadRequest bool) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
 
@@ -144,7 +144,7 @@ func edgeConnectCreateServerHandler(error bool) http.HandlerFunc {
 		case "/sso/oauth2/token":
 			writeOauthTokenResponse(writer)
 		case "/edge-connects":
-			if !error {
+			if !errorBadRequest {
 				if !isManagedByOperator(request) {
 					writeError(writer, http.StatusBadRequest)
 					return

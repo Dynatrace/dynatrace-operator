@@ -66,7 +66,7 @@ func extractFilesFromGzip(fs afero.Fs, targetDir string, reader *tar.Reader) err
 	}
 }
 
-func extract(fs afero.Fs, targetDir string, reader *tar.Reader, header *tar.Header, target string) error { //nolint:revive // argument-limit - refactoring needed
+func extract(fs afero.Fs, targetDir string, reader *tar.Reader, header *tar.Header, target string) error {
 	switch header.Typeflag {
 	case tar.TypeDir:
 		if err := fs.MkdirAll(target, header.FileInfo().Mode()); err != nil {

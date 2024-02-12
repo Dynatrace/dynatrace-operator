@@ -126,7 +126,7 @@ func determineIstioInitContainerName(t *testing.T) string {
 	return istioInitName
 }
 
-func checkVirtualServiceForApiUrl(dynakube dynatracev1beta1.DynaKube) features.Func { // nolint: dupl
+func checkVirtualServiceForApiUrl(dynakube dynatracev1beta1.DynaKube) features.Func { //nolint: dupl
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		apiHost := apiUrlCommunicationHost(t, dynakube)
 		serviceName := istio.BuildNameForFQDNServiceEntry(dynakube.Name, istio.OperatorComponent)
@@ -137,14 +137,14 @@ func checkVirtualServiceForApiUrl(dynakube dynatracev1beta1.DynaKube) features.F
 		require.NotEmpty(t, virtualService.ObjectMeta.OwnerReferences)
 		assert.Equal(t, dynakube.Name, virtualService.ObjectMeta.OwnerReferences[0].Name)
 
-		require.NotEmpty(t, virtualService.Spec.Hosts)
-		assert.Equal(t, apiHost.Host, virtualService.Spec.Hosts[0])
+		require.NotEmpty(t, virtualService.Spec.GetHosts())
+		assert.Equal(t, apiHost.Host, virtualService.Spec.GetHosts()[0])
 
 		return ctx
 	}
 }
 
-func checkServiceEntryForApiUrl(dynakube dynatracev1beta1.DynaKube) features.Func { // nolint: dupl
+func checkServiceEntryForApiUrl(dynakube dynatracev1beta1.DynaKube) features.Func { //nolint: dupl
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		apiHost := apiUrlCommunicationHost(t, dynakube)
 		serviceName := istio.BuildNameForFQDNServiceEntry(dynakube.Name, istio.OperatorComponent)
@@ -155,8 +155,8 @@ func checkServiceEntryForApiUrl(dynakube dynatracev1beta1.DynaKube) features.Fun
 		require.NotEmpty(t, serviceEntry.ObjectMeta.OwnerReferences)
 		assert.Equal(t, dynakube.Name, serviceEntry.ObjectMeta.OwnerReferences[0].Name)
 
-		require.NotEmpty(t, serviceEntry.Spec.Hosts)
-		assert.Equal(t, apiHost.Host, serviceEntry.Spec.Hosts[0])
+		require.NotEmpty(t, serviceEntry.Spec.GetHosts())
+		assert.Equal(t, apiHost.Host, serviceEntry.Spec.GetHosts()[0])
 
 		return ctx
 	}

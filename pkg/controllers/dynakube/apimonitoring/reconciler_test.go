@@ -28,7 +28,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 	return createReconciler(t, newDynaKube(), testUID, []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{TotalCount: 0}, "", "")
 }
 
-func createReconciler(t *testing.T, dynakube *dynatracev1beta1.DynaKube, uid string, monitoredEntities []dtclient.MonitoredEntity, getSettingsResponse dtclient.GetSettingsResponse, objectID string, meID interface{}) *Reconciler { // nolint:revive // argument-limit doesn't apply to constructors
+func createReconciler(t *testing.T, dynakube *dynatracev1beta1.DynaKube, uid string, monitoredEntities []dtclient.MonitoredEntity, getSettingsResponse dtclient.GetSettingsResponse, objectID string, meID interface{}) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	mockClient := mocks.NewClient(t)
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("string")).
 		Return(monitoredEntities, nil)
@@ -50,7 +50,7 @@ func createReconciler(t *testing.T, dynakube *dynatracev1beta1.DynaKube, uid str
 	return r
 }
 
-func createReconcilerWithError(t *testing.T, dynakube *dynatracev1beta1.DynaKube, monitoredEntitiesError error, getSettingsResponseError error, createSettingsResponseError error, createAppSettingsResponseError error) *Reconciler { // nolint:revive
+func createReconcilerWithError(t *testing.T, dynakube *dynatracev1beta1.DynaKube, monitoredEntitiesError error, getSettingsResponseError error, createSettingsResponseError error, createAppSettingsResponseError error) *Reconciler { //nolint:revive
 	mockClient := mocks.NewClient(t)
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("string")).
 		Return([]dtclient.MonitoredEntity{}, monitoredEntitiesError)

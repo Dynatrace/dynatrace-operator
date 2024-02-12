@@ -116,7 +116,7 @@ func testSupportArchiveCommand(testDynakube dynatracev1beta1.DynaKube, testEdgeC
 	}
 }
 
-func executeSupportArchiveCommand(ctx context.Context, t *testing.T, envConfig *envconf.Config, cmdLineArguments []string, namespace string) *pod.ExecutionResult { //nolint:revive
+func executeSupportArchiveCommand(ctx context.Context, t *testing.T, envConfig *envconf.Config, cmdLineArguments []string, namespace string) *pod.ExecutionResult {
 	environmentResources := envConfig.Client().Resources()
 
 	pods := pod.List(t, ctx, environmentResources, namespace)

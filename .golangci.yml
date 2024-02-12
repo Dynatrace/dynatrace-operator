@@ -226,8 +226,11 @@ linters:
   - nilerr                    # Finds the code that returns nil even if it checks that the error is not nil.
   - noctx                     # Finds sending http request without context.Context.
   - nosprintfhostport         # Checks for misuse of Sprintf to construct a host with port in a URL.
+  - nolintlint                # Reports ill-formed or insufficient nolint directives.
   - perfsprint                # Checks that fmt.Sprintf can be replaced with a faster alternative.
   - prealloc                  # Finds slice declarations that could potentially be pre-allocated
+  - predeclared               # Find code that shadows one of Go's predeclared identifiers.
+  - protogetter               # Reports direct reads from proto message fields when getters should be used.
   - reassign                  # Checks that package variables are not reassigned.
   - revive                    # Fast, configurable, extensible, flexible, and beautiful linter for Go. Drop-in replacement of golint.
   - sloglint                  # Ensure consistent code style when using log/slog.
@@ -275,12 +278,9 @@ linters:
 # - nestif            # Reports deeply nested if statements.
 # - nilnil            # Checks that there is no simultaneous return of nil error and an invalid value.
 # - nlreturn          # Nlreturn checks for a new line before return and branch statements to increase code clarity.
-# - nolintlint        # Reports ill-formed or insufficient nolint directives.
 # - nonamedreturns    # Reports all named returns.
 # - paralleltest      # Detects missing usage of t.Parallel() method in your Go test.
-# - predeclared       # Find code that shadows one of Go's predeclared identifiers.
-# - promlinter        # Check Prometheus metrics naming via promlint.
-# - protogetter       # Reports direct reads from proto message fields when getters should be used.
+#  - promlinter       # Check Prometheus metrics naming via promlint.
 # - rowserrcheck      # Checks whether Rows.Err of rows is checked successfully.
 # - sqlclosecheck     # Checks that sql.Rows and sql.Stmt are closed.
 # - wrapcheck         # Checks that errors returned from external packages are wrapped.

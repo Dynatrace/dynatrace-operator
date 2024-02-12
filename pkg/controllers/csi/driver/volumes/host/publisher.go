@@ -34,7 +34,7 @@ import (
 
 const failedToGetOsAgentVolumePrefix = "failed to get osagent volume info from database: "
 
-func NewHostVolumePublisher(client client.Client, fs afero.Afero, mounter mount.Interface, db metadata.Access, path metadata.PathResolver) csivolumes.Publisher { //nolint:revive // argument-limit doesn't apply to constructors
+func NewHostVolumePublisher(client client.Client, fs afero.Afero, mounter mount.Interface, db metadata.Access, path metadata.PathResolver) csivolumes.Publisher {
 	return &HostVolumePublisher{
 		client:  client,
 		fs:      fs,

@@ -198,7 +198,7 @@ func addCertificates(transport *http.Transport, trustedCAs []byte) (*http.Transp
 	}
 
 	if transport.TLSClientConfig == nil {
-		transport.TLSClientConfig = &tls.Config{} // nolint:gosec
+		transport.TLSClientConfig = &tls.Config{} //nolint:gosec
 	}
 
 	transport.TLSClientConfig.RootCAs = rootCAs
@@ -208,7 +208,7 @@ func addCertificates(transport *http.Transport, trustedCAs []byte) (*http.Transp
 
 func addSkipCertCheck(transport *http.Transport, skipCertCheck bool) *http.Transport {
 	if transport.TLSClientConfig == nil {
-		transport.TLSClientConfig = &tls.Config{} // nolint:gosec
+		transport.TLSClientConfig = &tls.Config{} //nolint:gosec
 	}
 
 	transport.TLSClientConfig.InsecureSkipVerify = skipCertCheck
