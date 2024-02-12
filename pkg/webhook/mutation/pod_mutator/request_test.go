@@ -42,7 +42,6 @@ func TestCreateMutationRequestBase(t *testing.T) {
 		require.NotNil(t, mutationRequest)
 
 		expected := createTestMutationRequest(dynakube)
-		assert.Equal(t, expected.Namespace.ObjectMeta, expected.Namespace.ObjectMeta)
 		assert.Equal(t, expected.Pod.ObjectMeta, mutationRequest.Pod.ObjectMeta)
 		assert.Equal(t, expected.Pod.Spec.Containers, mutationRequest.Pod.Spec.Containers)
 		assert.Equal(t, expected.Pod.Spec.InitContainers, mutationRequest.Pod.Spec.InitContainers)

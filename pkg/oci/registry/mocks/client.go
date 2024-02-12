@@ -33,10 +33,13 @@ func (_m *MockImageGetter) GetImageVersion(ctx context.Context, imageName string
 	}
 
 	var r0 registry.ImageVersion
+
 	var r1 error
+
 	if rf, ok := ret.Get(0).(func(context.Context, string) (registry.ImageVersion, error)); ok {
 		return rf(ctx, imageName)
 	}
+
 	if rf, ok := ret.Get(0).(func(context.Context, string) registry.ImageVersion); ok {
 		r0 = rf(ctx, imageName)
 	} else {
@@ -68,6 +71,7 @@ func (_c *MockImageGetter_GetImageVersion_Call) Run(run func(ctx context.Context
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string))
 	})
+
 	return _c
 }
 
@@ -90,10 +94,13 @@ func (_m *MockImageGetter) PullImageInfo(ctx context.Context, imageName string) 
 	}
 
 	var r0 *v1.Image
+
 	var r1 error
+
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*v1.Image, error)); ok {
 		return rf(ctx, imageName)
 	}
+
 	if rf, ok := ret.Get(0).(func(context.Context, string) *v1.Image); ok {
 		r0 = rf(ctx, imageName)
 	} else {
@@ -127,6 +134,7 @@ func (_c *MockImageGetter_PullImageInfo_Call) Run(run func(ctx context.Context, 
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string))
 	})
+
 	return _c
 }
 

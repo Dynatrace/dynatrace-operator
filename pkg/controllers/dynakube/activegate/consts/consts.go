@@ -8,7 +8,6 @@ import (
 const (
 	MultiActiveGateName     = "activegate"
 	ActiveGateContainerName = "activegate"
-	SyntheticContainerName  = "synthetic"
 	ProxySecretSuffix       = "internal-proxy"
 	HttpsServicePortName    = "https"
 	HttpsServicePort        = 443

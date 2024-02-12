@@ -202,7 +202,7 @@ func (app *App) asDeployment() *appsv1.Deployment {
 	return &appsv1.Deployment{
 		ObjectMeta: app.base.ObjectMeta,
 		Spec: appsv1.DeploymentSpec{
-			Replicas: address.Of(int32(32)),
+			Replicas: address.Of(int32(2)),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					selectorKey: selectorValue,

@@ -2,7 +2,6 @@ package version
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -99,7 +98,7 @@ func (u updater) combineImageWithDigest(digest digest.Digest) (string, error) {
 		return canonRef, nil
 	}
 
-	return "", fmt.Errorf("wrong image reference format")
+	return "", errors.New("wrong image reference format")
 }
 
 func (u updater) Name() string {

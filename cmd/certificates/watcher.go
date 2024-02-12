@@ -92,7 +92,7 @@ func (watcher *CertificateWatcher) updateCertificatesFromSecret() (bool, error) 
 	if err != nil {
 		return false, err
 	} else if !isValid {
-		return false, fmt.Errorf("certificate is outdated")
+		return false, errors.New("certificate is outdated")
 	}
 
 	return true, nil

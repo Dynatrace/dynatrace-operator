@@ -157,20 +157,4 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 		dnsEntryPoint := portModifier.buildDNSEntryPoint()
 		assert.Equal(t, "https://$(DYNAKUBE_KUBEMON_SERVICE_HOST):$(DYNAKUBE_KUBEMON_SERVICE_PORT)/communication", dnsEntryPoint)
 	})
-
-	t.Run("DNSEntryPoint for Synthetic capability", func(t *testing.T) {
-		dynakubeSyntheticCapability := dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dynakube",
-				Namespace: "dynatrace",
-				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId: "test",
-				},
-			},
-		}
-		multiCap := capability.NewSyntheticCapability(&dynakubeSyntheticCapability)
-		portModifier := NewServicePortModifier(dynakubeSyntheticCapability, multiCap, prioritymap.New())
-		dnsEntryPoint := portModifier.buildDNSEntryPoint()
-		assert.Equal(t, "https://$(DYNAKUBE_SYNTHETIC_SERVICE_HOST):$(DYNAKUBE_SYNTHETIC_SERVICE_PORT)/communication", dnsEntryPoint)
-	})
 }
