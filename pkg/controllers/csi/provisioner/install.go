@@ -3,6 +3,7 @@ package csiprovisioner
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
@@ -33,8 +34,8 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 	}
 
 	targetImage := dynakube.CodeModulesImage()
+	imageDigest, err := provisioner.getDigest(ctx, dynakube, targetImage)
 
-	imageDigest, err := provisioner.getDigest(dynakube, targetImage)
 	if err != nil {
 		return "", err
 	}
@@ -68,8 +69,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 	return imageDigest, err
 }
 
-func (provisioner *OneAgentProvisioner) getDigest(dynakube dynatracev1beta1.DynaKube, imageUri string) (string, error) {
-	ctx := context.TODO()
+func (provisioner *OneAgentProvisioner) getDigest(ctx context.Context, dynakube dynatracev1beta1.DynaKube, imageUri string) (string, error) {
 	pullSecret := dynakube.PullSecretWithoutData()
 	defaultTransport := http.DefaultTransport.(*http.Transport).Clone()
 
@@ -93,7 +93,9 @@ func (provisioner *OneAgentProvisioner) getDigest(dynakube dynatracev1beta1.Dyna
 		return "", err
 	}
 
-	return string(imageVersion.Digest), nil
+	digest, _ := strings.CutPrefix(string(imageVersion.Digest), "sha256:")
+
+	return digest, nil
 }
 
 func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dynakube dynatracev1beta1.DynaKube, dtc dtclient.Client, latestProcessModuleConfig *dtclient.ProcessModuleConfig) (string, error) {
