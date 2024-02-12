@@ -1,6 +1,7 @@
 package csiprovisioner
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"testing"
@@ -117,10 +118,10 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(false, fmt.Errorf("BOOM"))
-		mockRegistryClient(provisioner, testImageDigest)
+		mockRegistryClient(provisioner, "sha256:"+testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentImage(dk, processModule)
+		currentVersion, err := provisioner.installAgentImage(context.Background(), dk, processModule)
 
 		require.Error(t, err)
 		assert.Equal(t, "", currentVersion)
@@ -146,10 +147,10 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
-		mockRegistryClient(provisioner, testImageDigest)
+		mockRegistryClient(provisioner, "sha256:"+testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentImage(dk, processModule)
+		currentVersion, err := provisioner.installAgentImage(context.Background(), dk, processModule)
 		require.NoError(t, err)
 		assert.Equal(t, testImageDigest, currentVersion)
 	})
@@ -168,10 +169,10 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
-		mockRegistryClient(provisioner, testImageDigest)
+		mockRegistryClient(provisioner, "sha256:"+testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentImage(dk, processModule)
+		currentVersion, err := provisioner.installAgentImage(context.Background(), dk, processModule)
 		require.NoError(t, err)
 		assert.Equal(t, testImageDigest, currentVersion)
 	})
@@ -215,10 +216,10 @@ NK85cEJwyxQ+wahdNGUD
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
-		mockRegistryClient(provisioner, testImageDigest)
+		mockRegistryClient(provisioner, "sha256:"+testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentImage(dk, processModule)
+		currentVersion, err := provisioner.installAgentImage(context.Background(), dk, processModule)
 		require.NoError(t, err)
 		assert.Equal(t, testImageDigest, currentVersion)
 	})

@@ -234,7 +234,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 	}
 
 	if dk.CodeModulesImage() != "" {
-		updatedDigest, err := provisioner.installAgentImage(*dk, latestProcessModuleConfig)
+		updatedDigest, err := provisioner.installAgentImage(ctx, *dk, latestProcessModuleConfig)
 		if err != nil {
 			log.Info("error when updating agent from image", "error", err.Error())
 			// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
