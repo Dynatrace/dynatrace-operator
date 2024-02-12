@@ -43,7 +43,7 @@ func (fs *mkDirAllErrorFs) MkdirAll(_ string, _ os.FileMode) error {
 }
 
 func TestOneAgentProvisioner_Reconcile(t *testing.T) {
-	ctx := context.TODO()
+	ctx := context.Background()
 	dynakubeName := "test-dk"
 
 	t.Run("no dynakube instance", func(t *testing.T) {
