@@ -125,7 +125,7 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).
 			Return(false, fmt.Errorf("BOOM"))
-		mockRegistryClient(provisioner, testImageDigest)
+		mockRegistryClient(provisioner, "sha256:"+testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentImage(ctx, dk, processModule)
@@ -155,7 +155,7 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
-		mockRegistryClient(provisioner, testImageDigest)
+		mockRegistryClient(provisioner, "sha256:"+testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentImage(ctx, dk, processModule)
@@ -226,7 +226,7 @@ NK85cEJwyxQ+wahdNGUD
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
-		mockRegistryClient(provisioner, testImageDigest)
+		mockRegistryClient(provisioner, "sha256:"+testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentImage(ctx, dk, processModule)
