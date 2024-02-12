@@ -2,7 +2,6 @@ package deploymentmetadata
 
 import (
 	"context"
-	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
@@ -86,5 +85,5 @@ func (r *Reconciler) maintainMetadataConfigMap(ctx context.Context, configMapDat
 }
 
 func GetDeploymentMetadataConfigMapName(dynakubeName string) string {
-	return fmt.Sprintf("%s-deployment-metadata", dynakubeName)
+	return dynakubeName + "-deployment-metadata"
 }

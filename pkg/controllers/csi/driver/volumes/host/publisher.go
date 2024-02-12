@@ -32,6 +32,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const failedToGetOsAgentVolumePrefix = "failed to get osagent volume info from database: "
+
 func NewHostVolumePublisher(client client.Client, fs afero.Afero, mounter mount.Interface, db metadata.Access, path metadata.PathResolver) csivolumes.Publisher { //nolint:revive // argument-limit doesn't apply to constructors
 	return &HostVolumePublisher{
 		client:  client,
@@ -57,12 +59,12 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 	}
 
 	if err := publisher.mountOneAgent(bindCfg.TenantUUID, volumeCfg); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount osagent volume: %s", err.Error()))
+		return nil, status.Error(codes.Internal, "failed to mount osagent volume: "+err.Error())
 	}
 
 	volume, err := publisher.db.GetOsAgentVolumeViaTenantUUID(ctx, bindCfg.TenantUUID)
 	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get osagent volume info from database: %s", err.Error()))
+		return nil, status.Error(codes.Internal, failedToGetOsAgentVolumePrefix+err.Error())
 	}
 
 	timestamp := time.Now()
@@ -92,7 +94,7 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volumeInfo *csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
 	volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(ctx, volumeInfo.VolumeID)
 	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get osagent volume info from database: %s", err.Error()))
+		return nil, status.Error(codes.Internal, failedToGetOsAgentVolumePrefix+err.Error())
 	}
 
 	if volume == nil {
@@ -117,7 +119,7 @@ func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volum
 func (publisher *HostVolumePublisher) CanUnpublishVolume(ctx context.Context, volumeInfo *csivolumes.VolumeInfo) (bool, error) {
 	volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(ctx, volumeInfo.VolumeID)
 	if err != nil {
-		return false, status.Error(codes.Internal, fmt.Sprintf("failed to get osagent volume info from database: %s", err.Error()))
+		return false, status.Error(codes.Internal, failedToGetOsAgentVolumePrefix+err.Error())
 	}
 
 	return volume != nil, nil
