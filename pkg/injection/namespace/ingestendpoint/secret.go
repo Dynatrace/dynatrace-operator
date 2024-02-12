@@ -189,12 +189,12 @@ func dataIngestUrlFor(dk *dynatracev1beta1.DynaKube) (string, error) {
 	case len(dk.Spec.APIURL) > 0:
 		return metricsIngestUrlForDynatraceActiveGate(dk)
 	default:
-		return "", fmt.Errorf("failed to create data-ingest endpoint, DynaKube.spec.apiUrl is empty")
+		return "", errors.New("failed to create data-ingest endpoint, DynaKube.spec.apiUrl is empty")
 	}
 }
 
 func metricsIngestUrlForDynatraceActiveGate(dk *dynatracev1beta1.DynaKube) (string, error) {
-	return fmt.Sprintf("%s/v2/metrics/ingest", dk.Spec.APIURL), nil
+	return dk.Spec.APIURL + "/v2/metrics/ingest", nil
 }
 
 func metricsIngestUrlForClusterActiveGate(dk *dynatracev1beta1.DynaKube) (string, error) {

@@ -46,7 +46,6 @@ func TestActiveGatePhaseChanges(t *testing.T) {
 			createStatefulset(testNamespace, "test-name-kubemon", 3, 2),
 			createStatefulset(testNamespace, "test-name-routing", 3, 2),
 			createStatefulset(testNamespace, "test-name-activegate", 3, 2),
-			createStatefulset(testNamespace, "test-name-synthetic", 3, 2),
 		}
 
 		fakeClient := fake.NewClient(objects...)
@@ -63,7 +62,6 @@ func TestActiveGatePhaseChanges(t *testing.T) {
 			createStatefulset(testNamespace, "test-name-kubemon", 3, 3),
 			createStatefulset(testNamespace, "test-name-routing", 3, 3),
 			createStatefulset(testNamespace, "test-name-activegate", 3, 3),
-			createStatefulset(testNamespace, "test-name-synthetic", 3, 3),
 		}
 
 		fakeClient := fake.NewClient(objects...)

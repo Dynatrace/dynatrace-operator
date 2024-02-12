@@ -146,28 +146,3 @@ func TestMissingActiveGateMemoryLimit(t *testing.T) {
 			})
 	})
 }
-
-func TestSyntheticMonitoring(t *testing.T) {
-	syntheticless := []dynatracev1beta1.CapabilityDisplayName{
-		dynatracev1beta1.MetricsIngestCapability.DisplayName,
-		dynatracev1beta1.KubeMonCapability.DisplayName,
-	}
-	meta := defaultDynakubeObjectMeta.DeepCopy()
-	meta.Annotations = map[string]string{
-		dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId: "doctored",
-	}
-
-	t.Run("denied synthetic and activegate capabilities", func(t *testing.T) {
-		assertDeniedResponse(t,
-			[]string{fmt.Sprintf(errorJoinedSyntheticActiveGateCapability, syntheticless)},
-			&dynatracev1beta1.DynaKube{
-				ObjectMeta: *meta,
-				Spec: dynatracev1beta1.DynaKubeSpec{
-					APIURL: testApiUrl,
-					ActiveGate: dynatracev1beta1.ActiveGateSpec{
-						Capabilities: syntheticless,
-					},
-				},
-			})
-	})
-}

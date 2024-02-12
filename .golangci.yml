@@ -306,11 +306,13 @@ issues:
       linters:
         - dupl
         - wsl
+        - perfsprint
     - path: (test/*)
       linters:
         - noctx
         - wsl
         - thelper
+        - perfsprint
     - path: _(test|gen)\.go
       linters:
         - dupl

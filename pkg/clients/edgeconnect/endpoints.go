@@ -3,7 +3,7 @@ package edgeconnect
 import "fmt"
 
 func (c *client) getEdgeConnectsUrl() string {
-	return fmt.Sprintf("%s/edge-connects", c.baseURL)
+	return c.baseURL + "/edge-connects"
 }
 
 func (c *client) getEdgeConnectUrl(id string) string {

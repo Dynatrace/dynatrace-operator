@@ -34,19 +34,19 @@ func (dtc *dynatraceClient) getOneAgentConnectionInfoUrl() string {
 		return fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo?networkZone=%s&defaultZoneFallback=true", dtc.url, dtc.networkZone)
 	}
 
-	return fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dtc.url)
+	return dtc.url + "/v1/deployment/installer/agent/connectioninfo"
 }
 
 func (dtc *dynatraceClient) getActiveGateConnectionInfoUrl() string {
-	return fmt.Sprintf("%s/v1/deployment/installer/gateway/connectioninfo", dtc.url)
+	return dtc.url + "/v1/deployment/installer/gateway/connectioninfo"
 }
 
 func (dtc *dynatraceClient) getHostsUrl() string {
-	return fmt.Sprintf("%s/v1/entity/infrastructure/hosts?includeDetails=false", dtc.url)
+	return dtc.url + "/v1/entity/infrastructure/hosts?includeDetails=false"
 }
 
 func (dtc *dynatraceClient) getEntitiesUrl() string {
-	return fmt.Sprintf("%s/v2/entities", dtc.url)
+	return dtc.url + "/v2/entities"
 }
 
 func (dtc *dynatraceClient) getSettingsUrl(validate bool) string {
@@ -59,31 +59,31 @@ func (dtc *dynatraceClient) getSettingsUrl(validate bool) string {
 }
 
 func (dtc *dynatraceClient) getProcessModuleConfigUrl() string {
-	return fmt.Sprintf("%s/v1/deployment/installer/agent/processmoduleconfig", dtc.url)
+	return dtc.url + "/v1/deployment/installer/agent/processmoduleconfig"
 }
 
 func (dtc *dynatraceClient) getEventsUrl() string {
-	return fmt.Sprintf("%s/v1/events", dtc.url)
+	return dtc.url + "/v1/events"
 }
 
 func (dtc *dynatraceClient) getTokensLookupUrl() string {
-	return fmt.Sprintf("%s/v1/tokens/lookup", dtc.url)
+	return dtc.url + "/v1/tokens/lookup"
 }
 
 func (dtc *dynatraceClient) getActiveGateAuthTokenUrl() string {
-	return fmt.Sprintf("%s/v2/activeGateTokens", dtc.url)
+	return dtc.url + "/v2/activeGateTokens"
 }
 
 func (dtc *dynatraceClient) getLatestOneAgentImageUrl() string {
-	return fmt.Sprintf("%s/v1/deployment/image/agent/oneAgent/latest", dtc.url)
+	return dtc.url + "/v1/deployment/image/agent/oneAgent/latest"
 }
 
 func (dtc *dynatraceClient) getLatestCodeModulesImageUrl() string {
-	return fmt.Sprintf("%s/v1/deployment/image/agent/codeModules/latest", dtc.url)
+	return dtc.url + "/v1/deployment/image/agent/codeModules/latest"
 }
 
 func (dtc *dynatraceClient) getLatestActiveGateImageUrl() string {
-	return fmt.Sprintf("%s/v1/deployment/image/gateway/latest", dtc.url)
+	return dtc.url + "/v1/deployment/image/gateway/latest"
 }
 
 func appendTechnologies(url string, technologies []string) string {

@@ -138,6 +138,7 @@ func TestSetHostTenant(t *testing.T) {
 
 func TestInstallOneAgent(t *testing.T) {
 	ctx := context.Background()
+
 	t.Run("happy install", func(t *testing.T) {
 		runner := createMockedRunner(t)
 		_, err := runner.fs.Create(filepath.Join(consts.AgentBinDirMount, "agent/conf/ruxitagentproc.conf"))
@@ -290,6 +291,7 @@ func TestConfigureInstallation(t *testing.T) {
 
 func TestGetProcessModuleConfig(t *testing.T) {
 	ctx := context.Background()
+
 	t.Run("error if api call fails", func(t *testing.T) {
 		runner := createMockedRunner(t)
 		runner.dtclient.(*mockedclient.Client).
@@ -438,8 +440,7 @@ func TestSetLDPreload(t *testing.T) {
 			filepath.Join(
 				consts.AgentShareDirMount,
 				consts.LdPreloadFilename))
-		// TODO: Check content ?
-	})
+	}) // TODO: Check content ?
 }
 
 func TestEnrichMetadata(t *testing.T) {
@@ -453,8 +454,7 @@ func TestEnrichMetadata(t *testing.T) {
 
 		require.NoError(t, err)
 		assertIfEnrichmentFilesExists(t, *runner)
-		// TODO: Check content ?
-	})
+	}) // TODO: Check content ?
 }
 
 func TestPropagateTLSCert(t *testing.T) {

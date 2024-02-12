@@ -95,6 +95,7 @@ func (f RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 
 func TestInstaller_InstallAgent(t *testing.T) {
 	ctx := context.Background()
+
 	type fields struct {
 		fs        afero.Fs
 		extractor zip.Extractor

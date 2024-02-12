@@ -49,7 +49,7 @@ func (dtc *dynatraceClient) SendEvent(ctx context.Context, eventData *EventData)
 	}
 
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", dtc.apiToken))
+	req.Header.Add("Authorization", ApiTokenHeader+dtc.apiToken)
 
 	response, err := dtc.httpClient.Do(req)
 	if err != nil {

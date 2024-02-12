@@ -144,9 +144,9 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			},
 		}
 
+		// afero can't rename directories properly: https://github.com/spf13/afero/issues/141
 		err := installer.installAgent(ctx, testDir)
 		require.NoError(t, err)
-		// afero can't rename directories properly: https://github.com/spf13/afero/issues/141
 	})
 	t.Run(`downloading and unzipping latest agent`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
@@ -178,9 +178,9 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			},
 		}
 
+		// afero can't rename directories properly: https://github.com/spf13/afero/issues/141
 		err := installer.installAgent(ctx, testDir)
 		require.NoError(t, err)
-		// afero can't rename directories properly: https://github.com/spf13/afero/issues/141
 	})
 	t.Run(`downloading and unzipping agent via url`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
@@ -207,9 +207,9 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			},
 		}
 
+		// afero can't rename directories properly: https://github.com/spf13/afero/issues/141
 		err := installer.installAgent(ctx, testDir)
 		require.NoError(t, err)
-		// afero can't rename directories properly: https://github.com/spf13/afero/issues/141
 	})
 }
 
