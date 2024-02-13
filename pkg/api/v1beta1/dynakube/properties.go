@@ -471,6 +471,14 @@ func tenantUUID(apiUrl string) (string, error) {
 }
 
 func (dk *DynaKube) HostGroup() string {
+	if dk.Spec.OneAgent.HostGroup != "" {
+		return dk.Spec.OneAgent.HostGroup
+	}
+
+	return dk.HostGroupAsParam()
+}
+
+func (dk *DynaKube) HostGroupAsParam() string {
 	var hostGroup string
 	if dk.CloudNativeFullstackMode() && dk.Spec.OneAgent.CloudNativeFullStack.Args != nil {
 		for _, arg := range dk.Spec.OneAgent.CloudNativeFullStack.Args {

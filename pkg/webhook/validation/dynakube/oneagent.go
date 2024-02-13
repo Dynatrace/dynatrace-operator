@@ -20,6 +20,8 @@ The conflicting Dynakube: %s
 	errorVolumeStorageReadOnlyModeConflict = `The DynaKube's specification specifies a read-only host file system and OneAgent has volume storage enabled.`
 
 	warningOneAgentInstallerEnvVars = `Environment variables ONEAGENT_INSTALLER_SCRIPT_URL and ONEAGENT_INSTALLER_TOKEN are only relevant for an unsupported image type. Please make sure you are using a supported image.`
+
+	warningHostGroupConflict = `DynaKube's specification sets the host group using --set-host-group parameter. Instead, specify the new spec.oneagent.hostGroup field. If you use both settings, the new field precedes the parameter.`
 )
 
 func conflictingOneAgentConfiguration(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
@@ -108,5 +110,13 @@ func conflictingOneAgentVolumeStorageSettings(_ context.Context, dv *dynakubeVal
 	if dynakube.NeedsReadOnlyOneAgents() && volumeStorageSet && !volumeStorageEnabled {
 		return errorVolumeStorageReadOnlyModeConflict
 	}
+	return ""
+}
+
+func conflictingHostGroupSettings(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+	if dynakube.HostGroupAsParam() != "" {
+		return warningHostGroupConflict
+	}
+
 	return ""
 }
