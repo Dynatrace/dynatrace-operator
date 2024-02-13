@@ -460,13 +460,22 @@ func (dk *DynaKube) HostGroup() string {
 func (dk *DynaKube) HostGroupAsParam() string {
 	var hostGroup string
 
-	if dk.CloudNativeFullstackMode() && dk.Spec.OneAgent.CloudNativeFullStack.Args != nil {
-		for _, arg := range dk.Spec.OneAgent.CloudNativeFullStack.Args {
-			key, value := splitArg(arg)
-			if key == "--set-host-group" {
-				hostGroup = value
-				break
-			}
+	var args []string
+
+	switch {
+	case dk.CloudNativeFullstackMode() && dk.Spec.OneAgent.CloudNativeFullStack.Args != nil:
+		args = dk.Spec.OneAgent.CloudNativeFullStack.Args
+	case dk.ClassicFullStackMode() && dk.Spec.OneAgent.ClassicFullStack.Args != nil:
+		args = dk.Spec.OneAgent.ClassicFullStack.Args
+	case dk.HostMonitoringMode() && dk.Spec.OneAgent.HostMonitoring.Args != nil:
+		args = dk.Spec.OneAgent.HostMonitoring.Args
+	}
+
+	for _, arg := range args {
+		key, value := splitArg(arg)
+		if key == "--set-host-group" {
+			hostGroup = value
+			break
 		}
 	}
 

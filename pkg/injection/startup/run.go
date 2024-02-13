@@ -177,6 +177,10 @@ func (runner *Runner) getProcessModuleConfig(ctx context.Context) (*dtclient.Pro
 		processModuleConfig = processModuleConfig.AddNoProxy(runner.config.OneAgentNoProxy)
 	}
 
+	if runner.config.HostGroup != "" {
+		processModuleConfig.AddHostGroup(runner.config.HostGroup)
+	}
+
 	return processModuleConfig, nil
 }
 
