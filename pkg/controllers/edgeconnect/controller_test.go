@@ -315,23 +315,13 @@ func TestReconcileProvisionerDelete(t *testing.T) {
 
 		edgeConnectClient := mocksedgeconnect.NewClient(t)
 
-		objs := []client.Object{instance, createOauthSecret(instance.Spec.OAuth.ClientSecret, instance.Namespace), createClientSecret(instance.Name, instance.Namespace)}
-		fakeClient := fake.NewClientWithIndex(objs...)
-
-		mockImageGetter := registrymock.NewImageGetter(t)
-
-		mockRegistryClientBuilder := func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
-			return mockImageGetter, nil
-		}
-
-		controller := &Controller{
-			client:                   fakeClient,
-			apiReader:                fakeClient,
-			scheme:                   scheme.Scheme,
-			timeProvider:             timeprovider.New(),
-			registryClientBuilder:    mockRegistryClientBuilder,
-			edgeConnectClientBuilder: mockNewEdgeConnectClientDelete(edgeConnectClient),
-		}
+		controller := createFakeClientAndReconcilerForProvisioner(
+			t,
+			instance,
+			mockNewEdgeConnectClientDelete(edgeConnectClient),
+			createOauthSecret(instance.Spec.OAuth.ClientSecret, instance.Namespace),
+			createClientSecret(instance.Name, instance.Namespace),
+		)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
