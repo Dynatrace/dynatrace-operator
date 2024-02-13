@@ -18,7 +18,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
-	mockregistry "github.com/Dynatrace/dynatrace-operator/pkg/oci/registry/mocks"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -27,6 +26,7 @@ import (
 	mockconnectioninfo "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/connectioninfo"
 	dtClientMock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	mockversion "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
+	registrymock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/oci/registry"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	fakecontainer "github.com/google/go-containerregistry/pkg/v1/fake"
 	"github.com/pkg/errors"
@@ -351,7 +351,7 @@ func TestReconcileComponents(t *testing.T) {
 			apiReader:             fakeClient,
 			scheme:                scheme.Scheme,
 			fs:                    afero.Afero{Fs: afero.NewMemMapFs()},
-			registryClientBuilder: createFakeRegistryClientBuilder(),
+			registryClientBuilder: createFakeRegistryClientBuilder(t),
 
 			versionReconcilerBuilder:        createVersionReconcilerBuilder(mockVersionReconciler),
 			connectionInfoReconcilerBuilder: createConnectionInfoReconcilerBuilder(mockConnectionInfoReconciler),
@@ -384,7 +384,7 @@ func TestReconcileComponents(t *testing.T) {
 			apiReader:                       fakeClient,
 			scheme:                          scheme.Scheme,
 			fs:                              afero.Afero{Fs: afero.NewMemMapFs()},
-			registryClientBuilder:           createFakeRegistryClientBuilder(),
+			registryClientBuilder:           createFakeRegistryClientBuilder(t),
 			versionReconcilerBuilder:        createVersionReconcilerBuilder(mockVersionReconciler),
 			connectionInfoReconcilerBuilder: createConnectionInfoReconcilerBuilder(mockConnectionInfoReconciler),
 			activeGateReconcilerBuilder:     createActivegateReconcilerBuilder(mockActiveGateReconciler),
@@ -412,7 +412,7 @@ func TestReconcileComponents(t *testing.T) {
 			apiReader:                       fakeClient,
 			scheme:                          scheme.Scheme,
 			fs:                              afero.Afero{Fs: afero.NewMemMapFs()},
-			registryClientBuilder:           createFakeRegistryClientBuilder(),
+			registryClientBuilder:           createFakeRegistryClientBuilder(t),
 			versionReconcilerBuilder:        createVersionReconcilerBuilder(mockVersionReconciler),
 			connectionInfoReconcilerBuilder: createConnectionInfoReconcilerBuilder(mockConnectionInfoReconciler),
 		}
@@ -510,7 +510,7 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 			apiReader:                           fakeClient,
 			scheme:                              scheme.Scheme,
 			dynatraceClientBuilder:              mockDtcBuilder,
-			registryClientBuilder:               createFakeRegistryClientBuilder(),
+			registryClientBuilder:               createFakeRegistryClientBuilder(t),
 			deploymentMetadataReconcilerBuilder: createDeploymentMetadataReconcilerBuilder(mockReconciler),
 			versionReconcilerBuilder:            createVersionReconcilerBuilder(mockVersionReconciler),
 			connectionInfoReconcilerBuilder:     createConnectionInfoReconcilerBuilder(mockConnectionInfoReconciler),
@@ -538,8 +538,8 @@ func createDeploymentMetadataReconcilerBuilder(mockReconciler *mockcontroller.Re
 	}
 }
 
-func createFakeRegistryClientBuilder() func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
-	fakeRegistryClient := &mockregistry.MockImageGetter{}
+func createFakeRegistryClientBuilder(t *testing.T) func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
+	fakeRegistryClient := registrymock.NewImageGetter(t)
 	fakeImage := &fakecontainer.FakeImage{}
 	fakeImage.ConfigFileStub = func() (*containerv1.ConfigFile, error) {
 		return &containerv1.ConfigFile{}, nil
@@ -547,8 +547,8 @@ func createFakeRegistryClientBuilder() func(options ...func(*registry.Client)) (
 	_, _ = fakeImage.ConfigFile()
 	image := containerv1.Image(fakeImage)
 
-	fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: "1.2.3.4-5"}, nil)
-	fakeRegistryClient.On("PullImageInfo", mock.Anything, mock.Anything).Return(&image, nil)
+	fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: "1.2.3.4-5"}, nil).Maybe()
+	fakeRegistryClient.On("PullImageInfo", mock.Anything, mock.Anything).Return(&image, nil).Maybe()
 
 	return func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
 		return fakeRegistryClient, nil
@@ -668,7 +668,7 @@ func TestTokenConditions(t *testing.T) {
 			client:                 fakeClient,
 			apiReader:              fakeClient,
 			dynatraceClientBuilder: mockDtcBuilder,
-			registryClientBuilder:  createFakeRegistryClientBuilder(),
+			registryClientBuilder:  createFakeRegistryClientBuilder(t),
 		}
 
 		err := controller.reconcileDynaKube(context.TODO(), dynakube)

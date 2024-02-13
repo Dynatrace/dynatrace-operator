@@ -10,8 +10,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
-	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry/mocks"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
+	registrymock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/oci/registry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -22,7 +22,7 @@ const fakeDigest = "sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac
 
 func TestReconcile(t *testing.T) {
 	edgeConnect := createBasicEdgeConnect()
-	fakeRegistryClient := mocks.NewMockImageGetter(t)
+	fakeRegistryClient := registrymock.NewImageGetter(t)
 	fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
 	fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
 
@@ -49,7 +49,7 @@ func TestReconcile(t *testing.T) {
 
 func TestCombineImagesWithDigest(t *testing.T) {
 	edgeConnect := createBasicEdgeConnect()
-	fakeRegistryClient := mocks.NewMockImageGetter(t)
+	fakeRegistryClient := registrymock.NewImageGetter(t)
 
 	updater := newUpdater(fake.NewClient(), nil, fakeRegistryClient, edgeConnect)
 
@@ -70,7 +70,7 @@ func TestCombineImagesWithDigest(t *testing.T) {
 
 func TestReconcileRequired(t *testing.T) {
 	currentTime := timeprovider.New().Freeze()
-	mockImageGetter := mocks.NewMockImageGetter(t)
+	mockImageGetter := registrymock.NewImageGetter(t)
 
 	t.Run("initial reconcile always required", func(t *testing.T) {
 		edgeConnect := createBasicEdgeConnect()
