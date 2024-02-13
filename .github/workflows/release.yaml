@@ -328,7 +328,6 @@ jobs:
           passphrase: ${{ secrets.HELM_PASSPHRASE }}
           output-dir: "./helm-pkg"
       - name: Login Helm to dockerhub
-        id: push-helm-to-OCI
         shell: bash
         run: |
           helm registry login -u "${{ secrets.DOCKERHUB_USERNAME }}" -p "${{ secrets.DOCKERHUB_PASSWORD }}" "registry.hub.docker.com"
@@ -358,24 +357,11 @@ jobs:
         uses: ./.github/actions/upload-helm
         with:
           registry-url: public.ecr.aws
-          image-base-url: public.ecr.aws #???
+          image-base-url: public.ecr.aws
           version: ${{ needs.prepare.outputs.version }}
           version-without-prefix: ${{ needs.prepare.outputs.version_without_prefix }}
           cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           cosign-password: ${{ secrets.COSIGN_PASSWORD }}
-# TODO: cleanup
-#      - name: Upload helm package to ECR
-#        shell: bash
-#        run: |
-#          hack/build/ci/push-helm-chart.sh \
-#            "./helm-pkg/dynatrace-operator-${{ inputs.version-without-prefix }}.tgz" \
-#            "oci://public.ecr.aws/${{ ECR_REPOSITORY }}"
-#      - name: Sign OCI package with cosign
-#        uses: ./.github/actions/sign-image
-#        with:
-#          image: "oci://public.ecr.aws/${{ ECR_REPOSITORY }}/${{ dynatrace-operator }}:${{ needs.prepare.outputs.version }}@${{ steps.push-helm-to-OCI.outputs.digest }}"
-#          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
-#          signing-password: ${{ secrets.COSIGN_PASSWORD }}
       - name: Prepare cosign.pub artifact
         env:
           COSIGN_PUBLIC_KEY: ${{ secrets.COSIGN_PUBLIC_KEY }}
