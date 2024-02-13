@@ -16,12 +16,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
@@ -79,6 +81,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		connectionInfoReconcilerBuilder:     connectioninfo.NewReconciler,
 		activeGateReconcilerBuilder:         activegate.NewReconciler,
 		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
+		injectionReconcilerBuilder:          injection.NewReconciler,
 	}
 }
 
@@ -115,6 +118,7 @@ type Controller struct {
 	connectionInfoReconcilerBuilder     connectioninfo.ReconcilerBuilder
 	activeGateReconcilerBuilder         activegate.ReconcilerBuilder
 	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
+	injectionReconcilerBuilder          injection.ReconcilerBuilder
 }
 
 // Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read
@@ -323,6 +327,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 	// injected into AG for self-monitoring reasons
 	versionReconciler := controller.versionReconcilerBuilder(controller.apiReader, dynatraceClient, controller.fs, timeprovider.New().Freeze())
 	connectionInfoReconciler := controller.connectionInfoReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient)
+	injectionReconciler := controller.injectionReconcilerBuilder(controller.client, controller.apiReader, dynakube, istioReconciler, versionReconciler)
 
 	componentErrors := []error{}
 
@@ -357,7 +362,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling app injection")
 
-	err = controller.reconcileAppInjection(ctx, dynakube, istioReconciler, versionReconciler)
+	err = injectionReconciler.Reconcile(ctx)
 	if err != nil {
 		log.Info("could not reconcile app injection")
 
@@ -374,4 +379,9 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 	}
 
 	return goerrors.Join(componentErrors...)
+}
+
+func (controller *Controller) createDynakubeMapper(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) *mapper.DynakubeMapper {
+	dkMapper := mapper.NewDynakubeMapper(ctx, controller.client, controller.apiReader, controller.operatorNamespace, dynakube)
+	return &dkMapper
 }

@@ -31,6 +31,9 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers:
     interfaces:
       Reconciler:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection:
+    interfaces:
+      Reconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio:
     interfaces:
       Reconciler:
