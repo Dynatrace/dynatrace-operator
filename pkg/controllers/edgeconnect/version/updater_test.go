@@ -20,31 +20,65 @@ import (
 
 const fakeDigest = "sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc"
 
-func TestReconcile(t *testing.T) {
-	edgeConnect := createBasicEdgeConnect()
-	fakeRegistryClient := mocks.NewMockImageGetter(t)
-	fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
-	fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
+func TestUpdate(t *testing.T) {
+	ctx := context.Background()
+	t.Run("default image => registry used", func(t *testing.T) {
+		edgeConnect := createBasicEdgeConnect()
+		fakeRegistryClient := mocks.NewMockImageGetter(t)
+		fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
+		fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
 
-	updater := newUpdater(fake.NewClient(), timeprovider.New(), fakeRegistryClient, edgeConnect)
+		updater := newUpdater(fake.NewClient(), timeprovider.New(), fakeRegistryClient, edgeConnect)
 
-	err := updater.Update(context.TODO())
-	require.NoError(t, err)
+		err := updater.Update(ctx)
+		require.NoError(t, err)
 
-	require.Equal(t, fmt.Sprintf("docker.io/dynatrace/edgeconnect:latest@%s", fakeDigest), edgeConnect.Status.Version.ImageID)
-	require.NotNil(t, edgeConnect.Status.Version.LastProbeTimestamp)
+		require.Equal(t, "docker.io/dynatrace/edgeconnect:latest@"+fakeDigest, edgeConnect.Status.Version.ImageID)
+		require.NotNil(t, edgeConnect.Status.Version.LastProbeTimestamp)
 
-	// check invalid digest
-	invalidImageVersion := registry.ImageVersion{Digest: "invaliddigest"}
-	fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(invalidImageVersion, nil)
+		// check invalid digest
+		invalidImageVersion := registry.ImageVersion{Digest: "invaliddigest"}
+		fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(invalidImageVersion, nil)
 
-	updater = newUpdater(fake.NewClient(), timeprovider.New(), fakeRegistryClient, edgeConnect)
+		updater = newUpdater(fake.NewClient(), timeprovider.New(), fakeRegistryClient, edgeConnect)
 
-	err = updater.Update(context.TODO())
-	require.NoError(t, err)
+		err = updater.Update(ctx)
+		require.NoError(t, err)
 
-	// digest should not have been updated due to probe timestamp
-	require.True(t, strings.Contains(edgeConnect.Status.Version.ImageID, fakeDigest))
+		// digest should not have been updated due to probe timestamp
+		require.True(t, strings.Contains(edgeConnect.Status.Version.ImageID, fakeDigest))
+	})
+
+	t.Run("custom tag used => registry still used", func(t *testing.T) {
+		edgeConnect := createBasicEdgeConnect()
+		customTag := "1.2.3"
+		edgeConnect.Spec.ImageRef.Tag = customTag
+		fakeRegistryClient := mocks.NewMockImageGetter(t)
+		fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
+		fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
+
+		updater := newUpdater(fake.NewClient(), timeprovider.New(), fakeRegistryClient, edgeConnect)
+
+		err := updater.Update(ctx)
+		require.NoError(t, err)
+
+		require.Equal(t, fmt.Sprintf("docker.io/dynatrace/edgeconnect:%s@%s", customTag, fakeDigest), edgeConnect.Status.Version.ImageID)
+		require.NotNil(t, edgeConnect.Status.Version.LastProbeTimestamp)
+	})
+
+	t.Run("custom registry used => registry NOT used", func(t *testing.T) {
+		edgeConnect := createBasicEdgeConnect()
+		customRegistry := "best.registry.io/dynatrace/edgeconnect"
+		edgeConnect.Spec.ImageRef.Repository = customRegistry
+
+		updater := newUpdater(fake.NewClient(), timeprovider.New(), nil, edgeConnect)
+
+		err := updater.Update(ctx)
+		require.NoError(t, err)
+
+		require.Equal(t, fmt.Sprintf("%s:latest", customRegistry), edgeConnect.Status.Version.ImageID)
+		require.NotNil(t, edgeConnect.Status.Version.LastProbeTimestamp)
+	})
 }
 
 func TestCombineImagesWithDigest(t *testing.T) {
@@ -57,7 +91,7 @@ func TestCombineImagesWithDigest(t *testing.T) {
 		combined, err := updater.combineImageWithDigest(fakeDigest)
 
 		require.NoError(t, err)
-		require.Equal(t, fmt.Sprintf("docker.io/dynatrace/edgeconnect:latest@%s", fakeDigest), combined)
+		require.Equal(t, "docker.io/dynatrace/edgeconnect:latest@%s"+fakeDigest, combined)
 	})
 
 	t.Run("malformed image should fail", func(t *testing.T) {
