@@ -27,6 +27,11 @@ type OneAgentSpec struct {
 	// Doesn't inject into application pods.
 	// +nullable
 	HostMonitoring *HostInjectSpec `json:"hostMonitoring,omitempty"`
+
+	// Sets a host group for OneAgent.
+	// +optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Host Group",order=5,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	HostGroup string `json:"hostGroup,omitempty"`
 }
 
 type CloudNativeFullStackSpec struct {
