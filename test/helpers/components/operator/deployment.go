@@ -9,6 +9,7 @@ import (
 
 const (
 	DeploymentName   = "dynatrace-operator"
+	ContainerName    = "operator"
 	DefaultNamespace = "dynatrace"
 )
 
