@@ -12,10 +12,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
-	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry/mocks"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	mocksedgeconnect "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/edgeconnect"
+	registrymock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/oci/registry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -57,7 +57,7 @@ func TestReconcile(t *testing.T) {
 				ApiServer: "abc12345.dynatrace.com",
 			},
 		}
-		controller := createFakeClientAndReconciler(instance)
+		controller := createFakeClientAndReconciler(t, instance)
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -85,7 +85,7 @@ func TestReconcile(t *testing.T) {
 			},
 		}
 
-		controller := createFakeClientAndReconciler(instance)
+		controller := createFakeClientAndReconciler(t, instance)
 		controller.timeProvider.Freeze()
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
@@ -110,7 +110,7 @@ func TestReconcile(t *testing.T) {
 				ApiServer: "abc12345.dynatrace.com",
 			},
 		}
-		controller := createFakeClientAndReconciler(instance)
+		controller := createFakeClientAndReconciler(t, instance)
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -127,7 +127,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, status.Running, instance.Status.DeploymentPhase)
 	})
 	t.Run(`Reconciles doesn't fail if edgeconnect not found`, func(t *testing.T) {
-		controller := createFakeClientAndReconciler(nil)
+		controller := createFakeClientAndReconciler(t, nil)
 
 		_, err := controller.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -144,6 +144,7 @@ func TestReconcileProvisionerCreate(t *testing.T) {
 		edgeConnectClient := mocksedgeconnect.NewClient(t)
 
 		controller := createFakeClientAndReconcilerForProvisioner(
+			t,
 			instance,
 			mockNewEdgeConnectClientCreate(edgeConnectClient),
 			createOauthSecret(instance.Spec.OAuth.ClientSecret, instance.Namespace),
@@ -200,6 +201,7 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 		edgeConnectClient := mocksedgeconnect.NewClient(t)
 
 		controller := createFakeClientAndReconcilerForProvisioner(
+			t,
 			instance,
 			mockNewEdgeConnectClientRecreate(edgeConnectClient, testCreatedId),
 			createOauthSecret(instance.Spec.OAuth.ClientSecret, instance.Namespace),
@@ -255,6 +257,7 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 		edgeConnectClient := mocksedgeconnect.NewClient(t)
 
 		controller := createFakeClientAndReconcilerForProvisioner(
+			t,
 			instance,
 			mockNewEdgeConnectClientRecreate(edgeConnectClient, testRecreatedInvalidId),
 			createOauthSecret(instance.Spec.OAuth.ClientSecret, instance.Namespace),
@@ -313,6 +316,7 @@ func TestReconcileProvisionerDelete(t *testing.T) {
 		edgeConnectClient := mocksedgeconnect.NewClient(t)
 
 		controller := createFakeClientAndReconcilerForProvisioner(
+			t,
 			instance,
 			mockNewEdgeConnectClientDelete(edgeConnectClient),
 			createOauthSecret(instance.Spec.OAuth.ClientSecret, instance.Namespace),
@@ -339,6 +343,7 @@ func TestReconcileProvisionerDelete(t *testing.T) {
 		edgeConnectClient := mocksedgeconnect.NewClient(t)
 
 		controller := createFakeClientAndReconcilerForProvisioner(
+			t,
 			instance,
 			mockNewEdgeConnectClientDelete(edgeConnectClient),
 			createOauthSecret(instance.Spec.OAuth.ClientSecret, instance.Namespace),
@@ -364,6 +369,7 @@ func TestReconcileProvisionerDelete(t *testing.T) {
 		edgeConnectClient := mocksedgeconnect.NewClient(t)
 
 		controller := createFakeClientAndReconcilerForProvisioner(
+			t,
 			instance,
 			mockNewEdgeConnectClientDeleteNotFoundOnTenant(edgeConnectClient),
 			createOauthSecret(instance.Spec.OAuth.ClientSecret, instance.Namespace),
@@ -392,6 +398,7 @@ func TestReconcileProvisionerUpdate(t *testing.T) {
 		edgeConnectClient := mocksedgeconnect.NewClient(t)
 
 		controller := createFakeClientAndReconcilerForProvisioner(
+			t,
 			instance,
 			mockNewEdgeConnectClientUpdate(edgeConnectClient),
 			createOauthSecret(instance.Spec.OAuth.ClientSecret, instance.Namespace),
@@ -451,17 +458,17 @@ func getEdgeConnectCR(apiReader client.Reader, name string, namespace string) (e
 	return edgeConnectCR, err
 }
 
-func createFakeClientAndReconciler(instance *edgeconnectv1alpha1.EdgeConnect) *Controller {
+func createFakeClientAndReconciler(t *testing.T, instance *edgeconnectv1alpha1.EdgeConnect) *Controller {
 	fakeClient := fake.NewClientWithIndex()
 	if instance != nil {
 		fakeClient = fake.NewClientWithIndex(instance)
 	}
 
-	mockImageGetter := &mocks.MockImageGetter{}
+	mockImageGetter := registrymock.NewImageGetter(t)
 
 	const fakeDigest = "sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc"
 	fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
-	mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
+	mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil).Maybe()
 
 	mockRegistryClientBuilder := func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
 		return mockImageGetter, nil
@@ -478,7 +485,7 @@ func createFakeClientAndReconciler(instance *edgeconnectv1alpha1.EdgeConnect) *C
 	return controller
 }
 
-func createFakeClientAndReconcilerForProvisioner(instance *edgeconnectv1alpha1.EdgeConnect, builder edgeConnectClientBuilderType, objects ...client.Object) *Controller {
+func createFakeClientAndReconcilerForProvisioner(t *testing.T, instance *edgeconnectv1alpha1.EdgeConnect, builder edgeConnectClientBuilderType, objects ...client.Object) *Controller {
 	fakeClient := fake.NewClientWithIndex()
 
 	if instance != nil {
@@ -487,11 +494,11 @@ func createFakeClientAndReconcilerForProvisioner(instance *edgeconnectv1alpha1.E
 		fakeClient = fake.NewClientWithIndex(objs...)
 	}
 
-	mockImageGetter := &mocks.MockImageGetter{}
+	mockImageGetter := registrymock.NewImageGetter(t)
 
 	const fakeDigest = "sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc"
 	fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
-	mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
+	mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil).Maybe()
 
 	mockRegistryClientBuilder := func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
 		return mockImageGetter, nil
