@@ -82,6 +82,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		activeGateReconcilerBuilder:         activegate.NewReconciler,
 		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
 		injectionReconcilerBuilder:          injection.NewReconciler,
+		istioReconcilerBuilder:              istio.NewReconciler,
 	}
 }
 
@@ -119,6 +120,7 @@ type Controller struct {
 	activeGateReconcilerBuilder         activegate.ReconcilerBuilder
 	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
 	injectionReconcilerBuilder          injection.ReconcilerBuilder
+	istioReconcilerBuilder              istio.ReconcilerBuilder
 }
 
 // Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read
@@ -225,7 +227,7 @@ func (controller *Controller) updateDynakubeStatus(ctx context.Context, dynakube
 }
 
 func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	istioReconciler, err := controller.setupIstio(ctx, dynakube)
+	istioClient, err := controller.setupIstioClient(dynakube)
 	if err != nil {
 		return err
 	}
@@ -257,10 +259,10 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
-	return controller.reconcileComponents(ctx, dynatraceClient, istioReconciler, dynakube)
+	return controller.reconcileComponents(ctx, dynatraceClient, istioClient, dynakube)
 }
 
-func (controller *Controller) setupIstio(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (istio.Reconciler, error) {
+func (controller *Controller) setupIstioClient(dynakube *dynatracev1beta1.DynaKube) (*istio.Client, error) {
 	if !dynakube.Spec.EnableIstio {
 		return nil, nil
 	}
@@ -277,14 +279,7 @@ func (controller *Controller) setupIstio(ctx context.Context, dynakube *dynatrac
 		return nil, errors.New("istio not installed, yet is enabled, aborting reconciliation, check configuration")
 	}
 
-	istioReconciler := istio.NewReconciler(istioClient)
-
-	err = istioReconciler.ReconcileAPIUrl(ctx, dynakube)
-	if err != nil {
-		return nil, errors.WithMessage(err, "failed to reconcile istio objects for API url")
-	}
-
-	return istioReconciler, nil
+	return istioClient, nil
 }
 
 func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (dtclient.Client, error) {
@@ -322,12 +317,23 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube
 	return dynatraceClient, nil
 }
 
-func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioReconciler istio.Reconciler, dynakube *dynatracev1beta1.DynaKube) error {
+func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioClient *istio.Client, dynakube *dynatracev1beta1.DynaKube) error {
 	// it's important to setup app injection before AG so that it is already working when AG pods start, in case code modules shall get
 	// injected into AG for self-monitoring reasons
 	versionReconciler := controller.versionReconcilerBuilder(controller.apiReader, dynatraceClient, controller.fs, timeprovider.New().Freeze())
 	connectionInfoReconciler := controller.connectionInfoReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient)
-	injectionReconciler := controller.injectionReconcilerBuilder(controller.client, controller.apiReader, dynakube, istioReconciler, versionReconciler)
+	injectionReconciler := controller.injectionReconcilerBuilder(controller.client, dynatraceClient, istioClient, controller.apiReader, controller.fs, dynakube)
+
+	var istioReconciler istio.Reconciler
+
+	if istioClient != nil {
+		istioReconciler = controller.istioReconcilerBuilder(istioClient)
+
+		err := istioReconciler.ReconcileAPIUrl(ctx, dynakube)
+		if err != nil {
+			return errors.WithMessage(err, "failed to reconcile istio objects for API url")
+		}
+	}
 
 	componentErrors := []error{}
 

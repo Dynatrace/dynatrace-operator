@@ -455,7 +455,7 @@ func createVersionReconcilerBuilder(reconciler *mockversion.Reconciler) version.
 }
 
 func createInjectionReconcilerBuilder(reconciler *mockinjection.Reconciler) injection.ReconcilerBuilder {
-	return func(client client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, istioReconciler istio.Reconciler, versionReconciler version.Reconciler) controllers.Reconciler {
+	return func(client client.Client, dynatraceClient dtclient.Client, istioClient *istio.Client, apiReader client.Reader, fs afero.Afero, dynakube *dynatracev1beta1.DynaKube) controllers.Reconciler {
 		return reconciler
 	}
 }
@@ -716,9 +716,9 @@ func TestSetupIstio(t *testing.T) {
 		dynakube := dynakubeBase.DeepCopy()
 		dynakube.Spec.EnableIstio = false
 		controller := &Controller{}
-		istioReconciler, err := controller.setupIstio(ctx, dynakube)
+		istioClient, err := controller.setupIstioClient(dynakube)
 		require.NoError(t, err)
-		assert.Nil(t, istioReconciler)
+		assert.Nil(t, istioClient)
 	})
 	t.Run("no istio installed + EnableIstio: true => error", func(t *testing.T) {
 		dynakube := dynakubeBase.DeepCopy()
@@ -728,9 +728,9 @@ func TestSetupIstio(t *testing.T) {
 			istioClientBuilder: fakeIstioClientBuilder(t, fakeIstio, isIstioInstalled),
 			scheme:             scheme.Scheme,
 		}
-		istioReconciler, err := controller.setupIstio(ctx, dynakube)
+		istioClient, err := controller.setupIstioClient(dynakube)
 		require.Error(t, err)
-		assert.Nil(t, istioReconciler)
+		assert.Nil(t, istioClient)
 	})
 	t.Run("success", func(t *testing.T) {
 		dynakube := dynakubeBase.DeepCopy()
@@ -740,9 +740,12 @@ func TestSetupIstio(t *testing.T) {
 			istioClientBuilder: fakeIstioClientBuilder(t, fakeIstio, isIstioInstalled),
 			scheme:             scheme.Scheme,
 		}
-		istioReconciler, err := controller.setupIstio(ctx, dynakube)
+		istioClient, err := controller.setupIstioClient(dynakube)
+		istioReconciler := istio.NewReconciler(istioClient)
+		istioReconciler.ReconcileAPIUrl(ctx, dynakube)
+
 		require.NoError(t, err)
-		assert.NotNil(t, istioReconciler)
+		assert.NotNil(t, istioClient)
 
 		expectedName := istio.BuildNameForFQDNServiceEntry(dynakube.GetName(), istio.OperatorComponent)
 		serviceEntry, err := fakeIstio.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})

@@ -6,12 +6,16 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
+	"github.com/pkg/errors"
+	"github.com/spf13/afero"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -23,19 +27,47 @@ type reconciler struct {
 	versionReconciler version.Reconciler
 }
 
-type ReconcilerBuilder func(client client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, istioReconciler istio.Reconciler, versionReconciler version.Reconciler) controllers.Reconciler
+type ReconcilerBuilder func(
+	client client.Client,
+	dynatraceClient dynatrace.Client,
+	istioClient *istio.Client,
+	apiReader client.Reader,
+	fs afero.Afero,
+	dynakube *dynatracev1beta1.DynaKube,
+) controllers.Reconciler
 
-func NewReconciler(client client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, istioReconciler istio.Reconciler, versionReconciler version.Reconciler) controllers.Reconciler {
+//nolint:revive
+func NewReconciler(
+	client client.Client,
+	dynatraceClient dynatrace.Client,
+	istioClient *istio.Client,
+	apiReader client.Reader,
+	fs afero.Afero,
+	dynakube *dynatracev1beta1.DynaKube,
+) controllers.Reconciler {
+	var istioReconciler istio.Reconciler = nil
+
+	if istioClient != nil {
+		istioReconciler = istio.NewReconciler(istioClient)
+	}
+
 	return &reconciler{
 		client:            client,
 		apiReader:         apiReader,
 		dynakube:          dynakube,
 		istioReconciler:   istioReconciler,
-		versionReconciler: versionReconciler,
+		versionReconciler: version.NewReconciler(apiReader, dynatraceClient, fs, timeprovider.New().Freeze()),
 	}
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
+	if r.istioReconciler != nil {
+		err := r.istioReconciler.ReconcileAPIUrl(ctx, r.dynakube)
+		if err != nil {
+			return errors.WithMessage(err, "failed to reconcile istio objects for API url")
+		}
+	}
+
 	if !r.dynakube.NeedAppInjection() {
 		return r.removeAppInjection(ctx, r.dynakube)
 	}
