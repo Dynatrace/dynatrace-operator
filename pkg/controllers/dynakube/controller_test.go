@@ -367,7 +367,7 @@ func TestReconcileComponents(t *testing.T) {
 
 		require.Error(t, err)
 		// goerrors.Join concats errors with \n
-		assert.Len(t, strings.Split(err.Error(), "\n"), 3) // ActiveGate, OneAgentInjection, EnrichmentInjection, OneAgent
+		assert.Len(t, strings.Split(err.Error(), "\n"), 3) // ActiveGate, OneAgent and Injection reconcilers
 	})
 
 	t.Run("exit early in case of no oneagent conncection info", func(t *testing.T) {
