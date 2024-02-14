@@ -37,6 +37,10 @@ func (dsInfo *builderInfo) arguments() ([]string, error) {
 
 	dsInfo.appendHostInjectArgs(argMap)
 
+	if dsInfo.dynakube.CloudNativeFullstackMode() {
+		dsInfo.appendHostGroupArg(argMap)
+	}
+
 	return argMap.AsKeyValueStrings(), nil
 }
 
@@ -58,6 +62,12 @@ func appendOperatorVersionArg(argMap *prioritymap.Map) {
 func (dsInfo *builderInfo) appendNetworkZoneArg(argMap *prioritymap.Map) {
 	if dsInfo.dynakube != nil && dsInfo.dynakube.Spec.NetworkZone != "" {
 		argMap.Append(argumentPrefix+"set-network-zone", dsInfo.dynakube.Spec.NetworkZone)
+	}
+}
+
+func (dsInfo *builderInfo) appendHostGroupArg(argMap *prioritymap.Map) {
+	if dsInfo.dynakube != nil && dsInfo.dynakube.Spec.OneAgent.HostGroup != "" {
+		argMap.Append(argumentPrefix+"set-host-group", dsInfo.dynakube.Spec.OneAgent.HostGroup, prioritymap.WithPriority(prioritymap.HighPriority))
 	}
 }
 

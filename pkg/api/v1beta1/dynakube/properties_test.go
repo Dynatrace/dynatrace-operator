@@ -512,3 +512,54 @@ func TestDynaKube_ShallUpdateActiveGateConnectionInfo(t *testing.T) {
 		})
 	}
 }
+
+func TestOneAgentHostGroup(t *testing.T) {
+	t.Run("get host group from cloudNativeFullstack.args", func(t *testing.T) {
+		dk := DynaKube{
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{
+					CloudNativeFullStack: &CloudNativeFullStackSpec{
+						HostInjectSpec: HostInjectSpec{
+							Args: []string{
+								"--set-host-group=arg",
+							},
+						},
+					},
+				},
+			},
+		}
+		hostGroup := dk.HostGroup()
+		assert.Equal(t, "arg", hostGroup)
+	})
+
+	t.Run("get host group from oneagent.hostGroup", func(t *testing.T) {
+		dk := DynaKube{
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{
+					HostGroup: "field",
+				},
+			},
+		}
+		hostGroup := dk.HostGroup()
+		assert.Equal(t, "field", hostGroup)
+	})
+
+	t.Run("get host group if both methods used", func(t *testing.T) {
+		dk := DynaKube{
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{
+					CloudNativeFullStack: &CloudNativeFullStackSpec{
+						HostInjectSpec: HostInjectSpec{
+							Args: []string{
+								"--set-host-group=arg",
+							},
+						},
+					},
+					HostGroup: "field",
+				},
+			},
+		}
+		hostGroup := dk.HostGroup()
+		assert.Equal(t, "field", hostGroup)
+	})
+}

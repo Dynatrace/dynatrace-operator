@@ -345,3 +345,48 @@ func TestUnsupportedOneAgentImage(t *testing.T) {
 		})
 	}
 }
+
+func TestOneAgentHostGroup(t *testing.T) {
+	t.Run(`valid dynakube specs`, func(t *testing.T) {
+		assertAllowedResponseWithoutWarnings(t,
+			createDynakubeWithHostGroup([]string{}, ""),
+			&defaultCSIDaemonSet)
+
+		assertAllowedResponseWithoutWarnings(t,
+			createDynakubeWithHostGroup([]string{"--other-param=1"}, ""),
+			&defaultCSIDaemonSet)
+
+		assertAllowedResponseWithoutWarnings(t,
+			createDynakubeWithHostGroup([]string{}, "field"),
+			&defaultCSIDaemonSet)
+	})
+
+	t.Run(`obsolete settings`, func(t *testing.T) {
+		assertAllowedResponseWithWarnings(t,
+			1,
+			createDynakubeWithHostGroup([]string{"--set-host-group=arg"}, ""),
+			&defaultCSIDaemonSet)
+
+		assertAllowedResponseWithWarnings(t,
+			1,
+			createDynakubeWithHostGroup([]string{"--set-host-group=arg"}, "field"),
+			&defaultCSIDaemonSet)
+	})
+}
+
+func createDynakubeWithHostGroup(args []string, hostGroup string) *dynatracev1beta1.DynaKube {
+	return &dynatracev1beta1.DynaKube{
+		ObjectMeta: defaultDynakubeObjectMeta,
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: testApiUrl,
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+					HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+						Args: args,
+					},
+				},
+				HostGroup: hostGroup,
+			},
+		},
+	}
+}

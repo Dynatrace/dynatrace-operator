@@ -814,3 +814,29 @@ func TestAnnotations(t *testing.T) {
 		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
 	})
 }
+
+func TestOneAgentHostGroup(t *testing.T) {
+	t.Run("cloud native - host group settings", func(t *testing.T) {
+		dynakube := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+						HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+							Args: []string{
+								"--set-host-group=oldgroup",
+							},
+						},
+					},
+					HostGroup: "newgroup",
+				},
+			},
+		}
+
+		builder := NewCloudNativeFullStack(&dynakube, testClusterID)
+		daemonset, err := builder.BuildDaemonSet()
+
+		require.NoError(t, err)
+		assert.NotNil(t, daemonset)
+		assert.Equal(t, "--set-host-group=newgroup", daemonset.Spec.Template.Spec.Containers[0].Args[0])
+	})
+}
