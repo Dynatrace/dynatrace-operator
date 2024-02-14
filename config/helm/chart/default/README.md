@@ -34,7 +34,7 @@ helm install dynatrace-operator dynatrace/dynatrace-operator -n dynatrace --crea
 Install `dynatrace-operator` helm chart using the OCI repository and create the corresponding `dynatrace` namespace:
 
 ```console
-helm install dynatrace-operator oci://docker.io/dynatrace/dynatrace-operator  -n dynatrace --create-namespace --atomic
+helm install dynatrace-operator oci://public.ecr.aws/dynatrace/dynatrace-operator  -n dynatrace --create-namespace --atomic
 ```
 
 ## Uninstall chart
