@@ -49,7 +49,7 @@ type DtLogger struct {
 	logr.Logger
 }
 
-// Debugf can be used for verbose output that is supposed to be  valuable for troubleshooting
+// Debug can be used for verbose output that is supposed to be  valuable for troubleshooting
 func (l *DtLogger) Debug(message string, keysAndValues ...any) {
 	l.Logger.V(1).Info(message, keysAndValues...)
 }
