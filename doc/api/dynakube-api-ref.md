@@ -14,6 +14,12 @@
 |tokens|Name of the secret holding the tokens used for connecting to Dynatrace.|-|string|
 |trustedCAs|Adds custom RootCAs from a configmap. Put the certificate under certs within your configmap. Note: Applies only to Dynatrace Operator and OneAgent, not to ActiveGate.|-|string|
 
+### .spec.oneAgent
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|hostGroup|Sets a host group for OneAgent.|-|string|
+
 ### .spec.activeGate
 
 |Parameter|Description|Default value|Data type|

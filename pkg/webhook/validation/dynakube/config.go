@@ -45,6 +45,7 @@ var warnings = []validator{
 	deprecatedFeatureFlagWillBeDeleted,
 	deprecatedFeatureFlagMovedCRDField,
 	unsupportedOneAgentImage,
+	conflictingHostGroupSettings,
 }
 
 func SetLogger(logger logr.Logger) {
