@@ -76,7 +76,7 @@ func TestUpdate(t *testing.T) {
 		err := updater.Update(ctx)
 		require.NoError(t, err)
 
-		require.Equal(t, fmt.Sprintf("%s:latest", customRegistry), edgeConnect.Status.Version.ImageID)
+		require.Equal(t, customRegistry+":latest", edgeConnect.Status.Version.ImageID)
 		require.NotNil(t, edgeConnect.Status.Version.LastProbeTimestamp)
 	})
 }
@@ -91,7 +91,7 @@ func TestCombineImagesWithDigest(t *testing.T) {
 		combined, err := updater.combineImageWithDigest(fakeDigest)
 
 		require.NoError(t, err)
-		require.Equal(t, "docker.io/dynatrace/edgeconnect:latest@%s"+fakeDigest, combined)
+		require.Equal(t, "docker.io/dynatrace/edgeconnect:latest@"+fakeDigest, combined)
 	})
 
 	t.Run("malformed image should fail", func(t *testing.T) {
