@@ -34,7 +34,7 @@ Check if default image or imageref is used
     {{- else if eq (include "dynatrace-operator.platform" .) "azure-marketplace" -}}
         {{- printf "%s/%s@%s" .Values.global.azure.images.operator.registry .Values.global.azure.images.operator.image .Values.global.azure.images.operator.digest }}
 	{{- else -}}
-		{{- printf "%s:v%s" "docker.io/dynatrace/dynatrace-operator" .Chart.AppVersion }}
+		{{- printf "%s:v%s" "public.ecr.aws/dynatrace/dynatrace-operator" .Chart.AppVersion }}
 	{{- end -}}
 {{- end -}}
 {{- end -}}
