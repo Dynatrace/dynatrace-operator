@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
@@ -13,10 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-type Reconciler interface {
-	Reconcile(ctx context.Context) error
-}
 
 type reconciler struct {
 	client            client.Client
@@ -26,9 +23,9 @@ type reconciler struct {
 	versionReconciler version.Reconciler
 }
 
-type ReconcilerBuilder func(client client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, istioReconciler istio.Reconciler, versionReconciler version.Reconciler) Reconciler
+type ReconcilerBuilder func(client client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, istioReconciler istio.Reconciler, versionReconciler version.Reconciler) controllers.Reconciler
 
-func NewReconciler(client client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, istioReconciler istio.Reconciler, versionReconciler version.Reconciler) Reconciler {
+func NewReconciler(client client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, istioReconciler istio.Reconciler, versionReconciler version.Reconciler) controllers.Reconciler {
 	return &reconciler{
 		client:            client,
 		apiReader:         apiReader,

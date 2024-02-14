@@ -455,7 +455,7 @@ func createVersionReconcilerBuilder(reconciler *mockversion.Reconciler) version.
 }
 
 func createInjectionReconcilerBuilder(reconciler *mockinjection.Reconciler) injection.ReconcilerBuilder {
-	return func(client client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, istioReconciler istio.Reconciler, versionReconciler version.Reconciler) injection.Reconciler {
+	return func(client client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, istioReconciler istio.Reconciler, versionReconciler version.Reconciler) controllers.Reconciler {
 		return reconciler
 	}
 }
