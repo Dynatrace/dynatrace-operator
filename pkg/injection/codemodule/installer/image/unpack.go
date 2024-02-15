@@ -54,7 +54,7 @@ func (installer Installer) pullImageInfo(imageName string) (*containerv1.Image, 
 		remote.WithTransport(installer.transport),
 		remote.WithPlatform(containerv1.Platform{
 			OS:           defaultOS,
-			Architecture: arch.Arch,
+			Architecture: arch.ImageArch,
 		}),
 	)
 	if err != nil {
