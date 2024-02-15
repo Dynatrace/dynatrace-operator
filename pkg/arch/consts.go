@@ -24,6 +24,6 @@ const (
 var (
 	ImagePlatform = containerv1.Platform{
 		OS:           DefaultImageOS,
-		Architecture: Arch,
+		Architecture: ImageArch,
 	}
 )
