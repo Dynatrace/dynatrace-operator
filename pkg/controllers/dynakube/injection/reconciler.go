@@ -61,21 +61,21 @@ func NewReconciler(
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
 	if !r.dynakube.NeedAppInjection() {
-		return r.removeAppInjection(ctx, r.dynakube)
+		return r.removeAppInjection(ctx)
 	}
 
-	dkMapper := r.createDynakubeMapper(ctx, r.dynakube)
+	dkMapper := r.createDynakubeMapper(ctx)
 	if err := dkMapper.MapFromDynakube(); err != nil {
 		log.Info("update of a map of namespaces failed")
 		return err
 	}
 
 	var setupErrors []error
-	if err := r.setupOneAgentInjection(ctx, r.dynakube, r.istioReconciler, r.versionReconciler); err != nil {
+	if err := r.setupOneAgentInjection(ctx); err != nil {
 		setupErrors = append(setupErrors, err)
 	}
 
-	if err := r.setupEnrichmentInjection(ctx, r.dynakube); err != nil {
+	if err := r.setupEnrichmentInjection(ctx); err != nil {
 		setupErrors = append(setupErrors, err)
 	}
 
@@ -88,17 +88,17 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) removeAppInjection(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (err error) {
-	dkMapper := r.createDynakubeMapper(ctx, dynakube)
+func (r *reconciler) removeAppInjection(ctx context.Context) (err error) {
+	dkMapper := r.createDynakubeMapper(ctx)
 
 	if err := dkMapper.UnmapFromDynaKube(); err != nil {
 		log.Info("could not unmap DynaKube from namespace")
 		return err
 	}
 
-	endpointSecretGenerator := ingestendpoint.NewEndpointSecretGenerator(r.client, r.apiReader, dynakube.Namespace)
+	endpointSecretGenerator := ingestendpoint.NewEndpointSecretGenerator(r.client, r.apiReader, r.dynakube.Namespace)
 
-	err = endpointSecretGenerator.RemoveEndpointSecrets(ctx, dynakube)
+	err = endpointSecretGenerator.RemoveEndpointSecrets(ctx, r.dynakube)
 	if err != nil {
 		log.Info("could not remove data-ingest secret")
 		return err
@@ -108,44 +108,44 @@ func (r *reconciler) removeAppInjection(ctx context.Context, dynakube *dynatrace
 	return nil
 }
 
-func (r *reconciler) setupOneAgentInjection(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, istioReconciler istio.Reconciler, versionReconciler version.Reconciler) error {
-	if !dynakube.ApplicationMonitoringMode() && !dynakube.CloudNativeFullstackMode() {
+func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
+	if !r.dynakube.ApplicationMonitoringMode() && !r.dynakube.CloudNativeFullstackMode() {
 		return nil
 	}
 
-	if istioReconciler != nil {
-		err := istioReconciler.ReconcileCodeModuleCommunicationHosts(ctx, dynakube)
+	if r.istioReconciler != nil {
+		err := r.istioReconciler.ReconcileCodeModuleCommunicationHosts(ctx, r.dynakube)
 		if err != nil {
 			return err
 		}
 	}
 
-	err := versionReconciler.ReconcileCodeModules(ctx, dynakube)
+	err := r.versionReconciler.ReconcileCodeModules(ctx, r.dynakube)
 	if err != nil {
 		return err
 	}
 
-	err = initgeneration.NewInitGenerator(r.client, r.apiReader, dynakube.Namespace).GenerateForDynakube(ctx, dynakube)
+	err = initgeneration.NewInitGenerator(r.client, r.apiReader, r.dynakube.Namespace).GenerateForDynakube(ctx, r.dynakube)
 	if err != nil {
 		log.Info("failed to generate init secret")
 		return err
 	}
 
-	if dynakube.ApplicationMonitoringMode() {
-		dynakube.Status.SetPhase(status.Running)
+	if r.dynakube.ApplicationMonitoringMode() {
+		r.dynakube.Status.SetPhase(status.Running)
 	}
 
 	return nil
 }
 
-func (r *reconciler) setupEnrichmentInjection(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	if dynakube.FeatureDisableMetadataEnrichment() {
+func (r *reconciler) setupEnrichmentInjection(ctx context.Context) error {
+	if r.dynakube.FeatureDisableMetadataEnrichment() {
 		return nil
 	}
 
-	endpointSecretGenerator := ingestendpoint.NewEndpointSecretGenerator(r.client, r.apiReader, dynakube.Namespace)
+	endpointSecretGenerator := ingestendpoint.NewEndpointSecretGenerator(r.client, r.apiReader, r.dynakube.Namespace)
 
-	err := endpointSecretGenerator.GenerateForDynakube(ctx, dynakube)
+	err := endpointSecretGenerator.GenerateForDynakube(ctx, r.dynakube)
 	if err != nil {
 		log.Info("failed to generate data-ingest secret")
 		return err
@@ -154,9 +154,9 @@ func (r *reconciler) setupEnrichmentInjection(ctx context.Context, dynakube *dyn
 	return nil
 }
 
-func (r *reconciler) createDynakubeMapper(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) *mapper.DynakubeMapper {
+func (r *reconciler) createDynakubeMapper(ctx context.Context) *mapper.DynakubeMapper {
 	operatorNamespace := r.dynakube.GetNamespace()
-	dkMapper := mapper.NewDynakubeMapper(ctx, r.client, r.apiReader, operatorNamespace, dynakube)
+	dkMapper := mapper.NewDynakubeMapper(ctx, r.client, r.apiReader, operatorNamespace, r.dynakube)
 
 	return &dkMapper
 }
