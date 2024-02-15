@@ -6,6 +6,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -13,6 +14,10 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/types"
 	"github.com/pkg/errors"
+)
+
+const (
+	defaultOS = "linux"
 )
 
 type imagePullInfo struct {
@@ -44,7 +49,14 @@ func (installer Installer) pullImageInfo(imageName string) (*containerv1.Image, 
 		return nil, errors.WithMessagef(err, "parsing reference %q:", imageName)
 	}
 
-	image, err := remote.Image(ref, remote.WithContext(context.TODO()), remote.WithAuthFromKeychain(installer.keychain), remote.WithTransport(installer.transport))
+	image, err := remote.Image(ref, remote.WithContext(context.TODO()),
+		remote.WithAuthFromKeychain(installer.keychain),
+		remote.WithTransport(installer.transport),
+		remote.WithPlatform(containerv1.Platform{
+			OS:           defaultOS,
+			Architecture: arch.Arch,
+		}),
+	)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "getting image %q", imageName)
 	}
