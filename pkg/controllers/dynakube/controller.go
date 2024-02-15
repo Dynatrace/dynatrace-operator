@@ -232,6 +232,15 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
+	if istioClient != nil {
+		istioReconciler := controller.istioReconcilerBuilder(istioClient)
+
+		err := istioReconciler.ReconcileAPIUrl(ctx, dynakube)
+		if err != nil {
+			return errors.WithMessage(err, "failed to reconcile istio objects for API url")
+		}
+	}
+
 	dynatraceClient, err := controller.setupTokensAndClient(ctx, dynakube)
 	if err != nil {
 		return err
@@ -324,22 +333,11 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 	connectionInfoReconciler := controller.connectionInfoReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient)
 	injectionReconciler := controller.injectionReconcilerBuilder(controller.client, controller.apiReader, dynatraceClient, istioClient, controller.fs, dynakube)
 
-	var istioReconciler istio.Reconciler
-
-	if istioClient != nil {
-		istioReconciler = controller.istioReconcilerBuilder(istioClient)
-
-		err := istioReconciler.ReconcileAPIUrl(ctx, dynakube)
-		if err != nil {
-			return errors.WithMessage(err, "failed to reconcile istio objects for API url")
-		}
-	}
-
 	componentErrors := []error{}
 
 	log.Info("start reconciling ActiveGate")
 
-	err := controller.reconcileActiveGate(ctx, dynakube, dynatraceClient, istioReconciler, connectionInfoReconciler, versionReconciler)
+	err := controller.reconcileActiveGate(ctx, dynakube, dynatraceClient, istioClient, connectionInfoReconciler, versionReconciler)
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
 
