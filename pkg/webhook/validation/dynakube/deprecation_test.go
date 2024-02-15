@@ -27,12 +27,12 @@ func TestDeprecationWarning(t *testing.T) {
 		assert.True(t, dynakube.FeatureAutomaticInjection())
 	})
 
-	t.Run(`warning present`, func(t *testing.T) {
+	t.Run(`warning not present anymore`, func(t *testing.T) {
 		dynakubeMeta := defaultDynakubeObjectMeta
 		split := strings.Split(dynatracev1beta1.AnnotationFeatureAutomaticInjection, "/")
 		postFix := split[1]
 		dynakubeMeta.Annotations = map[string]string{
-			dynatracev1beta1.DeprecatedFeatureFlagPrefix + postFix: "true",
+			`alpha.operator.dynatrace.com/feature-` + postFix: "false",
 		}
 		dynakube := &dynatracev1beta1.DynaKube{
 			ObjectMeta: dynakubeMeta,
@@ -40,7 +40,7 @@ func TestDeprecationWarning(t *testing.T) {
 				APIURL: testApiUrl,
 			},
 		}
-		assertAllowedResponseWithWarnings(t, 1, dynakube)
+		assertAllowedResponseWithWarnings(t, 0, dynakube)
 		assert.True(t, dynakube.FeatureAutomaticInjection())
 	})
 }
