@@ -2723,6 +2723,9 @@ spec:
                         description: The OneAgent version to be used.
                         type: string
                     type: object
+                  hostGroup:
+                    description: Sets a host group for OneAgent.
+                    type: string
                   hostMonitoring:
                     description: |-
                       Has a single OneAgent per node via DaemonSet.
