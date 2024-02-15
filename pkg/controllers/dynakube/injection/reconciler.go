@@ -14,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
-	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -61,13 +60,6 @@ func NewReconciler(
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	if r.istioReconciler != nil {
-		err := r.istioReconciler.ReconcileAPIUrl(ctx, r.dynakube)
-		if err != nil {
-			return errors.WithMessage(err, "failed to reconcile istio objects for API url")
-		}
-	}
-
 	if !r.dynakube.NeedAppInjection() {
 		return r.removeAppInjection(ctx, r.dynakube)
 	}
