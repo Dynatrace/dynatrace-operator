@@ -1,12 +1,6 @@
 name: Upload helm package
 description: Upload the helm package
 inputs:
-  registry-username:
-    description: Username for the OCI registry
-    required: true
-  registry-password:
-    description: Password for the OCI registry
-    required: true
   registry-url:
     description: URL for the OCI registry
     required: true
@@ -43,16 +37,9 @@ runs:
     id: push-helm-to-OCI
     shell: bash
     run: |
-      helm registry login -u "${{ inputs.registry-username }}" -p "${{ inputs.registry-password }}" "${{ inputs.registry-url }}"
-      hack/build/ci/push-helm-chart.sh \
+        hack/build/ci/push-helm-chart.sh \
         "./helm-pkg/dynatrace-operator-${{ inputs.version-without-prefix }}.tgz" \
         "oci://${{ inputs.registry-url }}/${{ inputs.registry-namespace }}"
-  - name: Login to Registry
-    uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
-    with:
-      registry: ${{ inputs.image-base-url }}
-      username: ${{ inputs.registry-username }}
-      password: ${{ inputs.registry-password }}
   - name: Sign OCI package with cosign
     uses: ./.github/actions/sign-image
     with:
