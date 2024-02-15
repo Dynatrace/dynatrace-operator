@@ -2,10 +2,10 @@ package troubleshoot
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"net/http"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/go-logr/logr"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
