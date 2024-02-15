@@ -16,10 +16,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	defaultOS = "linux"
-)
-
 type imagePullInfo struct {
 	imageCacheDir string
 	targetDir     string
@@ -52,10 +48,7 @@ func (installer Installer) pullImageInfo(imageName string) (*containerv1.Image, 
 	image, err := remote.Image(ref, remote.WithContext(context.TODO()),
 		remote.WithAuthFromKeychain(installer.keychain),
 		remote.WithTransport(installer.transport),
-		remote.WithPlatform(containerv1.Platform{
-			OS:           defaultOS,
-			Architecture: arch.ImageArch,
-		}),
+		remote.WithPlatform(arch.ImagePlatform),
 	)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "getting image %q", imageName)

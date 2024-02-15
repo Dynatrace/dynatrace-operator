@@ -9,6 +9,7 @@ import (
 	"net/url"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/dockerkeychain"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -105,6 +106,7 @@ func (c *Client) GetImageVersion(ctx context.Context, imageName string) (ImageVe
 	options := []remote.Option{
 		remote.WithContext(ctx),
 		remote.WithTransport(c.transport),
+		remote.WithPlatform(arch.ImagePlatform),
 	}
 	if c.keychain != nil {
 		options = append(options, remote.WithAuthFromKeychain(c.keychain))
@@ -153,7 +155,12 @@ func (c *Client) PullImageInfo(ctx context.Context, imageName string) (*containe
 		return nil, errors.WithMessagef(err, "parsing reference %q:", imageName)
 	}
 
-	image, err := remote.Image(ref, remote.WithContext(ctx), remote.WithAuthFromKeychain(c.keychain), remote.WithTransport(c.transport))
+	image, err := remote.Image(ref,
+		remote.WithContext(ctx),
+		remote.WithAuthFromKeychain(c.keychain),
+		remote.WithTransport(c.transport),
+		remote.WithPlatform(arch.ImagePlatform),
+	)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "getting image %q", imageName)
 	}
