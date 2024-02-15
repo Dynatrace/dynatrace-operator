@@ -59,25 +59,25 @@ func (u updater) Update(ctx context.Context) error {
 	}()
 
 	image := u.edgeConnect.Image()
-
-	imageVersion, err := u.registryClient.GetImageVersion(ctx, image)
-	if err != nil {
-		return err
-	}
-
-	imageID, err := u.combineImageWithDigest(imageVersion.Digest)
-	if err != nil {
-		return err
-	}
-
 	target := u.Target()
-	target.ImageID = imageID
 
-	if u.edgeConnect.IsCustomImage() {
-		target.Source = status.CustomImageVersionSource
-	} else {
+	if !u.edgeConnect.IsCustomImage() {
+		imageVersion, err := u.registryClient.GetImageVersion(ctx, image)
+		if err != nil {
+			return err
+		}
+
+		image, err = u.combineImageWithDigest(imageVersion.Digest)
+		if err != nil {
+			return err
+		}
+
 		target.Source = status.PublicRegistryVersionSource
+	} else {
+		target.Source = status.CustomImageVersionSource
 	}
+
+	target.ImageID = image
 
 	return nil
 }
