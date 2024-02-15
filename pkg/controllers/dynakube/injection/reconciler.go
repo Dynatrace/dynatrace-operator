@@ -29,9 +29,9 @@ type reconciler struct {
 
 type ReconcilerBuilder func(
 	client client.Client,
+	apiReader client.Reader,
 	dynatraceClient dynatrace.Client,
 	istioClient *istio.Client,
-	apiReader client.Reader,
 	fs afero.Afero,
 	dynakube *dynatracev1beta1.DynaKube,
 ) controllers.Reconciler
