@@ -27,6 +27,7 @@ endif
 ## Install all prerequisites
 prerequisites: prerequisites/setup-go-dev-dependencies prerequisites/helm-unittest prerequisites/markdownlint prerequisites/gomarkdoc
 
+## Setup go development dependencies
 prerequisites/setup-go-dev-dependencies: prerequisites/kustomize prerequisites/controller-gen prerequisites/go-linting prerequisites/mockery
 
 ## Install 'controller-gen' if it is missing
@@ -34,6 +35,7 @@ prerequisites/controller-gen:
 	go install "sigs.k8s.io/controller-tools/cmd/controller-gen@$(controller_gen_version)"
 CONTROLLER_GEN=$(shell hack/build/command.sh controller-gen)
 
+## Install go linters
 prerequisites/go-linting:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(golang_ci_cmd_version)
 	go install github.com/daixiang0/gci@$(gci_version)
