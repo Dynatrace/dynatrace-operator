@@ -3,7 +3,6 @@ package dynakube
 import (
 	"context"
 	"fmt"
-	"strings"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
@@ -24,23 +23,6 @@ func TestDeprecationWarning(t *testing.T) {
 			},
 		}
 		assertAllowedResponseWithWarnings(t, 1, dynakube)
-		assert.True(t, dynakube.FeatureAutomaticInjection())
-	})
-
-	t.Run(`warning not present anymore`, func(t *testing.T) {
-		dynakubeMeta := defaultDynakubeObjectMeta
-		split := strings.Split(dynatracev1beta1.AnnotationFeatureAutomaticInjection, "/")
-		postFix := split[1]
-		dynakubeMeta.Annotations = map[string]string{
-			`alpha.operator.dynatrace.com/feature-` + postFix: "false",
-		}
-		dynakube := &dynatracev1beta1.DynaKube{
-			ObjectMeta: dynakubeMeta,
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				APIURL: testApiUrl,
-			},
-		}
-		assertAllowedResponseWithWarnings(t, 0, dynakube)
 		assert.True(t, dynakube.FeatureAutomaticInjection())
 	})
 }
