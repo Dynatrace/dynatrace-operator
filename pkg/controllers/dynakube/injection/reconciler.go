@@ -39,9 +39,9 @@ type ReconcilerBuilder func(
 //nolint:revive
 func NewReconciler(
 	client client.Client,
+	apiReader client.Reader,
 	dynatraceClient dynatrace.Client,
 	istioClient *istio.Client,
-	apiReader client.Reader,
 	fs afero.Afero,
 	dynakube *dynatracev1beta1.DynaKube,
 ) controllers.Reconciler {
