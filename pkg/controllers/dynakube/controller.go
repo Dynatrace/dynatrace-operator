@@ -16,12 +16,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
@@ -79,6 +81,8 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		connectionInfoReconcilerBuilder:     connectioninfo.NewReconciler,
 		activeGateReconcilerBuilder:         activegate.NewReconciler,
 		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
+		injectionReconcilerBuilder:          injection.NewReconciler,
+		istioReconcilerBuilder:              istio.NewReconciler,
 	}
 }
 
@@ -115,6 +119,8 @@ type Controller struct {
 	connectionInfoReconcilerBuilder     connectioninfo.ReconcilerBuilder
 	activeGateReconcilerBuilder         activegate.ReconcilerBuilder
 	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
+	injectionReconcilerBuilder          injection.ReconcilerBuilder
+	istioReconcilerBuilder              istio.ReconcilerBuilder
 }
 
 // Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read
@@ -221,9 +227,18 @@ func (controller *Controller) updateDynakubeStatus(ctx context.Context, dynakube
 }
 
 func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	istioReconciler, err := controller.setupIstio(ctx, dynakube)
+	istioClient, err := controller.setupIstioClient(dynakube)
 	if err != nil {
 		return err
+	}
+
+	if istioClient != nil {
+		istioReconciler := controller.istioReconcilerBuilder(istioClient)
+
+		err := istioReconciler.ReconcileAPIUrl(ctx, dynakube)
+		if err != nil {
+			return errors.WithMessage(err, "failed to reconcile istio objects for API url")
+		}
 	}
 
 	dynatraceClient, err := controller.setupTokensAndClient(ctx, dynakube)
@@ -253,10 +268,10 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
-	return controller.reconcileComponents(ctx, dynatraceClient, istioReconciler, dynakube)
+	return controller.reconcileComponents(ctx, dynatraceClient, istioClient, dynakube)
 }
 
-func (controller *Controller) setupIstio(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (istio.Reconciler, error) {
+func (controller *Controller) setupIstioClient(dynakube *dynatracev1beta1.DynaKube) (*istio.Client, error) {
 	if !dynakube.Spec.EnableIstio {
 		return nil, nil
 	}
@@ -273,14 +288,7 @@ func (controller *Controller) setupIstio(ctx context.Context, dynakube *dynatrac
 		return nil, errors.New("istio not installed, yet is enabled, aborting reconciliation, check configuration")
 	}
 
-	istioReconciler := istio.NewReconciler(istioClient)
-
-	err = istioReconciler.ReconcileAPIUrl(ctx, dynakube)
-	if err != nil {
-		return nil, errors.WithMessage(err, "failed to reconcile istio objects for API url")
-	}
-
-	return istioReconciler, nil
+	return istioClient, nil
 }
 
 func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (dtclient.Client, error) {
@@ -318,17 +326,18 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube
 	return dynatraceClient, nil
 }
 
-func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioReconciler istio.Reconciler, dynakube *dynatracev1beta1.DynaKube) error {
+func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioClient *istio.Client, dynakube *dynatracev1beta1.DynaKube) error {
 	// it's important to setup app injection before AG so that it is already working when AG pods start, in case code modules shall get
 	// injected into AG for self-monitoring reasons
 	versionReconciler := controller.versionReconcilerBuilder(controller.apiReader, dynatraceClient, controller.fs, timeprovider.New().Freeze())
 	connectionInfoReconciler := controller.connectionInfoReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient)
+	injectionReconciler := controller.injectionReconcilerBuilder(controller.client, controller.apiReader, dynatraceClient, istioClient, controller.fs, dynakube)
 
 	componentErrors := []error{}
 
 	log.Info("start reconciling ActiveGate")
 
-	err := controller.reconcileActiveGate(ctx, dynakube, dynatraceClient, istioReconciler, connectionInfoReconciler, versionReconciler)
+	err := controller.reconcileActiveGate(ctx, dynakube, dynatraceClient, istioClient, connectionInfoReconciler, versionReconciler)
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
 
@@ -357,7 +366,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling app injection")
 
-	err = controller.reconcileAppInjection(ctx, dynakube, istioReconciler, versionReconciler)
+	err = injectionReconciler.Reconcile(ctx)
 	if err != nil {
 		log.Info("could not reconcile app injection")
 
@@ -374,4 +383,9 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 	}
 
 	return goerrors.Join(componentErrors...)
+}
+
+func (controller *Controller) createDynakubeMapper(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) *mapper.DynakubeMapper {
+	dkMapper := mapper.NewDynakubeMapper(ctx, controller.client, controller.apiReader, controller.operatorNamespace, dynakube)
+	return &dkMapper
 }
