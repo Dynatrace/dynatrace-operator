@@ -30,6 +30,7 @@ images/build: ensure-tag-not-snapshot
 images/push: ensure-tag-not-snapshot
 	./hack/build/push_image.sh "${IMAGE}" "${TAG}"
 
+## Builds an Operator image and pushes it
 images/build/push: images/build images/push
 
 ## Builds and pushes the deployer image for the Google marketplace to the development environment on GCR

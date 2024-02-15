@@ -2,6 +2,7 @@
 test/e2e/%/debug:
 	@make SKIPCLEANUP="--fail-fast" $(@D)
 
+## Run standard, istio and release e2e tests
 test/e2e:
 	RC=0; \
 	make test/e2e/standard  || RC=1; \
@@ -9,12 +10,15 @@ test/e2e:
 	make test/e2e/release || RC=1; \
 	exit $$RC
 
+## Run standard e2e test only
 test/e2e/standard: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 200m -count=1 ./test/scenarios/standard -args --skip-labels "name=cloudnative-network-zone" $(SKIPCLEANUP)
 
+## Run istio e2e test only
 test/e2e/istio: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 200m -count=1 ./test/scenarios/istio -args $(SKIPCLEANUP)
 
+## Run release e2e test only
 test/e2e/release: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/release -args $(SKIPCLEANUP)
 
@@ -69,6 +73,7 @@ test/e2e/cloudnative/network-zone: manifests/crd/helm
 test/e2e/cloudnative/proxy: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/istio -args --labels "name=cloudnative-proxy" $(SKIPCLEANUP)
 
+## Runs CloudNative public registry e2e test only
 test/e2e/cloudnative/publicregistry: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=cloudnative-public-registry" $(SKIPCLEANUP)
 
@@ -100,6 +105,7 @@ test/e2e/applicationmonitoring/withoutcsi: manifests/crd/helm
 test/e2e/supportarchive: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=support-archive" $(SKIPCLEANUP)
 
+## Runs Edgeconnect e2e test only
 test/e2e/edgeconnect: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=edgeconnect-install" $(SKIPCLEANUP)
 
