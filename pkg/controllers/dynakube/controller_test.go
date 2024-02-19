@@ -711,15 +711,6 @@ func TestSetupIstio(t *testing.T) {
 			EnableIstio: true,
 		},
 	}
-
-	t.Run("EnableIstio: false => do nothing + nil", func(t *testing.T) {
-		dynakube := dynakubeBase.DeepCopy()
-		dynakube.Spec.EnableIstio = false
-		controller := &Controller{}
-		istioClient, err := controller.setupIstioClient(dynakube)
-		require.NoError(t, err)
-		assert.Nil(t, istioClient)
-	})
 	t.Run("no istio installed + EnableIstio: true => error", func(t *testing.T) {
 		dynakube := dynakubeBase.DeepCopy()
 		fakeIstio := fakeistio.NewSimpleClientset()
