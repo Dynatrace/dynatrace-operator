@@ -92,7 +92,7 @@ func TestAreConfigsValid(t *testing.T) {
 		certSecret.certificates = &Certs{
 			Data: map[string][]byte{RootCert: testValue1},
 		}
-		webhookConfigs := make([]*admissionregistrationv1.WebhookClientConfig, 1)
+		var webhookConfigs []*admissionregistrationv1.WebhookClientConfig
 		webhookConfigs = append(webhookConfigs, &admissionregistrationv1.WebhookClientConfig{
 			CABundle: testValue1,
 		})

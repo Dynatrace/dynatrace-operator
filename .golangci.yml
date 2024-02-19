@@ -8,6 +8,8 @@ linters-settings:
       # Disabled, because we still support deprecated feature flags, which would cause the linter to complain
       - "-SA1019"
   govet:
+#    enable:
+#      - fieldalignment
     disable:
       # Disable checking for copied locks since it causes a lot of annoying false-positives
       - copylocks
@@ -248,6 +250,9 @@ linters:
   - whitespace                # Tool for detection of leading and trailing whitespace.
   - wsl                       # Add or remove empty lines.
   - zerologlint               # Detects the wrong usage of zerolog that a user forgets to dispatch with Send or Msg.
+  - makezero                  # Finds slice declarations with non-zero initial length.
+#  - nilnil                    # Checks that there is no simultaneous return of nil error and an invalid value.
+#  - nlreturn                  # Nlreturn checks for a new line before return and branch statements to increase code clarity.
 
 # Blocked:
 # false positive -> https://github.com/timakin/bodyclose/issues/51
@@ -272,12 +277,8 @@ linters:
 # - inamedparam       # reports interfaces with unnamed method parameters.
 # - ireturn           # Accept Interfaces, Return Concrete Types.
 # - maintidx          # Maintidx measures the maintainability index of each function.
-# - makezero          # Finds slice declarations with non-zero initial length.
-# - maligned          # The repository of the linter has been archived by the owner. Replaced by govet 'fieldalignment'.
 # - musttag           # Enforce field tags in (un)marshaled structs.
 # - nestif            # Reports deeply nested if statements.
-# - nilnil            # Checks that there is no simultaneous return of nil error and an invalid value.
-# - nlreturn          # Nlreturn checks for a new line before return and branch statements to increase code clarity.
 # - nonamedreturns    # Reports all named returns.
 # - paralleltest      # Detects missing usage of t.Parallel() method in your Go test.
 #  - promlinter       # Check Prometheus metrics naming via promlint.
@@ -315,6 +316,7 @@ issues:
         - perfsprint
     - path: _(test|gen)\.go
       linters:
+        - govet
         - dupl
     - linters:
         - gosec
