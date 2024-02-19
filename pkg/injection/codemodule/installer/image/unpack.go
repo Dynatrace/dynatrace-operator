@@ -6,6 +6,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -44,7 +45,11 @@ func (installer *Installer) pullImageInfo(imageName string) (*containerv1.Image,
 		return nil, errors.WithMessagef(err, "parsing reference %q:", imageName)
 	}
 
-	image, err := remote.Image(ref, remote.WithContext(context.TODO()), remote.WithAuthFromKeychain(installer.keychain), remote.WithTransport(installer.transport))
+	image, err := remote.Image(ref, remote.WithContext(context.TODO()),
+		remote.WithAuthFromKeychain(installer.keychain),
+		remote.WithTransport(installer.transport),
+		remote.WithPlatform(arch.ImagePlatform),
+	)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "getting image %q", imageName)
 	}
