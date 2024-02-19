@@ -98,7 +98,7 @@ func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volum
 	}
 
 	if volume == nil {
-		return nil, nil
+		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 
 	publisher.umountOneAgent(volumeInfo.TargetPath)

@@ -197,7 +197,7 @@ func (controller *Controller) getEdgeConnect(ctx context.Context, name, namespac
 
 	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: edgeConnect.Name, Namespace: edgeConnect.Namespace}, edgeConnect)
 	if k8serrors.IsNotFound(err) {
-		return nil, nil
+		return nil, nil //nolint: nilnil
 	} else if err != nil {
 		return nil, errors.WithStack(err)
 	}

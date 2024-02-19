@@ -227,7 +227,13 @@ func (controller *Controller) updateDynakubeStatus(ctx context.Context, dynakube
 }
 
 func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	istioClient, err := controller.setupIstioClient(dynakube)
+	var istioClient *istio.Client
+
+	var err error
+	if dynakube.Spec.EnableIstio {
+		istioClient, err = controller.setupIstioClient(dynakube)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -272,10 +278,6 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 }
 
 func (controller *Controller) setupIstioClient(dynakube *dynatracev1beta1.DynaKube) (*istio.Client, error) {
-	if !dynakube.Spec.EnableIstio {
-		return nil, nil
-	}
-
 	istioClient, err := controller.istioClientBuilder(controller.config, controller.scheme, dynakube)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize istio client")

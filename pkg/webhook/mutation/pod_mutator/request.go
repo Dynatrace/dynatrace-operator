@@ -40,7 +40,7 @@ func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context,
 		// therefore their namespace might not have a dynakube assigned
 		// in which case we don't need to do anything
 		span.RecordError(err)
-		return nil, nil
+		return nil, nil //nolint: nilnil
 	}
 
 	dynakube, err := webhook.getDynakube(ctx, dynakubeName)

@@ -94,7 +94,7 @@ func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volume
 	}
 
 	if volume == nil {
-		return nil, nil
+		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 
 	log.Info("loaded volume info", "id", volume.VolumeID, "pod name", volume.PodName, "version", volume.Version, "dynakube", volume.TenantUUID)
