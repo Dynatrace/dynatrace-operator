@@ -40,7 +40,6 @@ var validators = []validator{
 }
 
 var warnings = []validator{
-	deprecatedFeatureFlagFormat,
 	missingActiveGateMemoryLimit,
 	deprecatedFeatureFlagDisableActiveGateUpdates,
 	deprecatedFeatureFlagDisableMetadataEnrichment,
