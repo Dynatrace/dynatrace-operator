@@ -84,6 +84,7 @@ func (r *reconciler) needsUpdate(ctx context.Context, secretNamespacedName types
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("creating secret, because missing", "secretName", secretNamespacedName.Name)
+
 			return true, nil
 		}
 
@@ -99,6 +100,7 @@ func (r reconciler) updateDynakubeStatus(ctx context.Context, dynakube *dynatrac
 
 	if err != nil {
 		log.Info("could not update dynakube status", "name", dynakube.Name)
+
 		return err
 	}
 
@@ -140,6 +142,7 @@ func (r *reconciler) reconcileOneAgentConnectionInfo(ctx context.Context, dynaku
 
 	if len(connectionInfo.CommunicationHosts) == 0 {
 		log.Info("no OneAgent communication hosts received, tenant API requests not yet throttled")
+
 		return NoOneAgentCommunicationHostsError
 	}
 
@@ -185,6 +188,7 @@ func (r *reconciler) reconcileActiveGateConnectionInfo(ctx context.Context, dyna
 	connectionInfo, err := r.dtc.GetActiveGateConnectionInfo(ctx)
 	if err != nil {
 		log.Info("failed to get activegate connection info")
+
 		return err
 	}
 
@@ -223,6 +227,7 @@ func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName str
 	err = query.CreateOrUpdate(*secret)
 	if err != nil {
 		log.Info("could not create or update secret for connection info", "name", secret.Name)
+
 		return err
 	}
 

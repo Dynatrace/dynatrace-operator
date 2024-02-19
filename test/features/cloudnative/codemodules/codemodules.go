@@ -109,6 +109,7 @@ func InstallFromImage(t *testing.T) features.Feature {
 	builder.Teardown(sampleApp.Uninstall())
 	dynakube.Delete(builder, helpers.LevelTeardown, cloudNativeDynakube)
 	dynakube.Delete(builder, helpers.LevelTeardown, appDynakube)
+
 	return builder.Feature()
 }
 
@@ -260,6 +261,7 @@ func imageHasBeenDownloaded(namespace string) features.Func {
 				isNew := strings.Contains(buffer.String(), "Installed agent version: "+codeModulesImage)
 				isOld := strings.Contains(buffer.String(), "agent already installed")
 				t.Logf("wait for Installed agent version in %s", podItem.Name)
+
 				return isNew || isOld, err
 			}, wait.WithTimeout(time.Minute*5))
 			require.NoError(t, err)
@@ -288,6 +290,7 @@ func measureDiskUsage(namespace string, storageMap map[string]int) features.Func
 			storageMap[podItem.Name] = diskUsage
 		})
 		require.NoError(t, err)
+
 		return ctx
 	}
 }
@@ -348,6 +351,7 @@ func volumesAreMountedCorrectly(sampleApp sample.App) features.Func {
 		})
 
 		require.NoError(t, err)
+
 		return ctx
 	}
 }
@@ -362,6 +366,7 @@ func isVolumeMounted(t *testing.T, volumeMounts []corev1.VolumeMount, volumeMoun
 			assert.False(t, volumeMount.ReadOnly)
 		}
 	}
+
 	return result
 }
 
@@ -379,6 +384,7 @@ func isVolumeAttached(t *testing.T, volumes []corev1.Volume, volumeName string) 
 			}
 		}
 	}
+
 	return result
 }
 
@@ -396,6 +402,7 @@ func checkOneAgentEnvVars(dynakube dynatracev1beta1.DynaKube) features.Func {
 		})
 
 		require.NoError(t, err)
+
 		return ctx
 	}
 }

@@ -65,6 +65,7 @@ func (r requiredFiles) collectRequiredFiles() []string {
 	requiredFiles = append(requiredFiles, r.getRequiredWebhookConfigurationFiles()...)
 	requiredFiles = append(requiredFiles, r.getRequiredCRDFiles()...)
 	requiredFiles = append(requiredFiles, r.getRequiredConfigMapFiles()...)
+
 	return requiredFiles
 }
 
@@ -74,6 +75,7 @@ func (r requiredFiles) getRequiredPodFiles(labelKey string, collectManaged bool)
 
 	podList := functional.Filter(pods.Items, func(podItem corev1.Pod) bool {
 		label, ok := podItem.Labels[labelKey]
+
 		return ok && label == operator.DeploymentName
 	})
 
@@ -90,6 +92,7 @@ func (r requiredFiles) getRequiredPodFiles(labelKey string, collectManaged bool)
 			}
 		}
 	}
+
 	return requiredFiles
 }
 
@@ -103,6 +106,7 @@ func (r requiredFiles) getRequiredReplicaSetFiles() []string {
 				replicaSet.Namespace, replicaSet.Name,
 				support_archive.ManifestsFileExtension))
 	}
+
 	return requiredFiles
 }
 
@@ -146,6 +150,7 @@ func (r requiredFiles) getRequiredServiceFiles() []string {
 				requiredService.Name,
 				support_archive.ManifestsFileExtension))
 	}
+
 	return requiredFiles
 }
 
@@ -197,6 +202,7 @@ func (r requiredFiles) getRequiredNamespaceFiles() []string {
 			support_archive.InjectedNamespacesManifestsDirectoryName,
 			testAppNameInjected,
 			support_archive.ManifestsFileExtension))
+
 	return requiredFiles
 }
 

@@ -80,6 +80,7 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 
 	if mutationRequest == nil {
 		emptyPatch.Result.Message = "injection into pod not required"
+
 		return emptyPatch
 	}
 
@@ -173,6 +174,7 @@ func (webhook *podMutatorWebhook) handlePodMutation(ctx context.Context, mutatio
 
 	if !podNeedsInjection(mutationRequest) {
 		log.Info("no mutation is needed, all containers are excluded from injection.")
+
 		return nil
 	}
 
@@ -194,6 +196,7 @@ func (webhook *podMutatorWebhook) handlePodMutation(ctx context.Context, mutatio
 
 	if !isMutated {
 		log.Info("no mutation is enabled")
+
 		return nil
 	}
 

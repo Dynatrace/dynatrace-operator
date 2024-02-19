@@ -83,6 +83,7 @@ func deprecatedFeatureFlagMovedCRDField(_ context.Context, _ *dynakubeValidator,
 
 func isDeprecatedFeatureFlagUsed(dynakube *dynatracev1beta1.DynaKube, annotation string) bool {
 	_, ok := dynakube.Annotations[annotation]
+
 	return ok
 }
 

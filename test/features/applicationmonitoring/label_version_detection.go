@@ -253,6 +253,7 @@ func buildDefaultBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1
 			"my.domain/build-version":   "my-domain-build-version",
 		}),
 	)
+
 	return sampleApp
 }
 
@@ -282,6 +283,7 @@ func buildCustomBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.
 			"my.domain/build-version":   "my-domain-build-version",
 		}),
 	)
+
 	return sampleApp
 }
 
@@ -349,6 +351,7 @@ func buildPreservedBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1bet
 			},
 		}),
 	)
+
 	return sampleApp
 }
 
@@ -376,5 +379,6 @@ func buildInvalidBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1
 			"my.domain/build-version":   "my-domain-build-version",
 		}),
 	)
+
 	return sampleApp
 }

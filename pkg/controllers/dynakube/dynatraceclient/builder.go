@@ -36,16 +36,19 @@ func NewBuilder(apiReader client.Reader) Builder {
 
 func (dynatraceClientBuilder builder) SetContext(ctx context.Context) Builder {
 	dynatraceClientBuilder.ctx = ctx
+
 	return dynatraceClientBuilder
 }
 
 func (dynatraceClientBuilder builder) SetDynakube(dynakube dynatracev1beta1.DynaKube) Builder {
 	dynatraceClientBuilder.dynakube = dynakube
+
 	return dynatraceClientBuilder
 }
 
 func (dynatraceClientBuilder builder) SetTokens(tokens token.Tokens) Builder {
 	dynatraceClientBuilder.tokens = tokens
+
 	return dynatraceClientBuilder
 }
 

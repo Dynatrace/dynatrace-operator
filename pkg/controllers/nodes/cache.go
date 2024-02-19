@@ -114,5 +114,6 @@ func (cache *Cache) UpdateTimestamp() {
 
 func (cache *Cache) updateLastMarkedForTerminationTimestamp(nodeInfo CacheEntry, nodeName string) error {
 	nodeInfo.LastMarkedForTermination = cache.timeProvider.Now().UTC()
+
 	return cache.Set(nodeName, nodeInfo)
 }

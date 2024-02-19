@@ -72,6 +72,7 @@ func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error 
 		dtclient.OsUnix, dtclient.InstallerTypePaaS)
 	if err != nil {
 		log.Info("could not get agent paas unix version")
+
 		return err
 	}
 

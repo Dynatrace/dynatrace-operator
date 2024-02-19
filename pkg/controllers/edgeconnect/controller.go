@@ -87,6 +87,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	edgeConnect, err := controller.getEdgeConnect(ctx, request.Name, request.Namespace)
 	if err != nil {
 		log.Error(errors.WithStack(err), "reconciliation of EdgeConnect failed", "name", request.Name, "namespace", request.Namespace)
+
 		return reconcile.Result{}, err
 	} else if edgeConnect == nil {
 		return reconcile.Result{}, nil
@@ -129,6 +130,7 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 		log.Info("can't delete EdgeConnect configuration from the tenant because it has been created manually by a user", "name", tenantEdgeConnect.Name)
 	case edgeConnectIdFromSecret == "":
 		log.Info("EdgeConnect client secret is missing")
+
 		return edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID)
 	default:
 		if tenantEdgeConnect.ID != edgeConnectIdFromSecret {
@@ -237,6 +239,7 @@ func (controller *Controller) updateVersionInfo(ctx context.Context, edgeConnect
 	versionReconciler := version.NewReconciler(controller.apiReader, registryClient, timeprovider.New(), edgeConnect)
 	if err = versionReconciler.Reconcile(ctx); err != nil {
 		log.Error(err, "reconciliation of EdgeConnect failed", "name", edgeConnect.Name, "namespace", edgeConnect.Namespace)
+
 		return err
 	}
 
@@ -249,6 +252,7 @@ func (controller *Controller) updateEdgeConnectStatus(ctx context.Context, edgeC
 	err := controller.client.Status().Update(ctx, edgeConnect)
 	if k8serrors.IsConflict(err) {
 		log.Info("could not update EdgeConnect status due to conflict", "name", edgeConnect.Name)
+
 		return errors.WithStack(err)
 	} else if err != nil {
 		return errors.WithStack(err)
@@ -276,6 +280,7 @@ func (controller *Controller) reconcileEdgeConnectRegular(edgeConnect *edgeconne
 	_, err = k8sdeployment.CreateOrUpdateDeployment(controller.client, log, desiredDeployment)
 	if err != nil {
 		log.Info("could not create or update deployment for EdgeConnect", "name", desiredDeployment.Name)
+
 		return err
 	}
 
@@ -302,6 +307,7 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 
 	if tenantEdgeConnect.ID != "" && !tenantEdgeConnect.ManagedByDynatraceOperator {
 		log.Info("can't delete EdgeConnect configuration from the tenant because it has been created manually by a user", "name", tenantEdgeConnect.Name)
+
 		return nil
 	}
 
@@ -463,6 +469,7 @@ func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnect
 	err = query.CreateOrUpdate(*ecOAuthSecret)
 	if err != nil {
 		log.Info("could not create or update secret for edge-connect client", "name", ecOAuthSecret.Name)
+
 		return errors.WithStack(err)
 	}
 
@@ -537,6 +544,7 @@ func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Co
 	_, err = k8sdeployment.CreateOrUpdateDeployment(controller.client, log, desiredDeployment)
 	if err != nil {
 		log.Info("could not create or update deployment for EdgeConnect", "name", desiredDeployment.Name)
+
 		return err
 	}
 

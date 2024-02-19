@@ -51,6 +51,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		mustNotUpdate, err := r.createCustomPropertiesIfNotExists(ctx)
 		if err != nil {
 			log.Error(err, "could not create custom properties", "owner", r.customPropertiesOwnerName)
+
 			return errors.WithStack(err)
 		}
 
@@ -58,6 +59,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			err = r.updateCustomPropertiesIfOutdated(ctx)
 			if err != nil {
 				log.Error(err, "could not update custom properties", "owner", r.customPropertiesOwnerName)
+
 				return errors.WithStack(err)
 			}
 		}
@@ -101,6 +103,7 @@ func (r *Reconciler) isOutdated(customProperties *corev1.Secret) bool {
 
 func (r *Reconciler) updateCustomProperties(ctx context.Context, customProperties *corev1.Secret) error {
 	customProperties.Data[DataKey] = []byte(r.customPropertiesSource.Value)
+
 	return r.client.Update(ctx, customProperties)
 }
 

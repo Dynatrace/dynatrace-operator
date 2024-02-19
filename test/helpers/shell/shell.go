@@ -21,6 +21,7 @@ func Pipe(source []string, sink []string) Command {
 	piped := source
 	piped = append(piped, "|")
 	piped = append(piped, sink...)
+
 	return piped
 }
 
@@ -35,6 +36,7 @@ func ListDirectory(path string) Command {
 func CheckIfNotEmpty(path string) Command {
 	// the command returns 1 (an error) if the directory is empty
 	command := fmt.Sprintf("[ \"$(ls -A %s)\" ] || return 1", path)
+
 	return Command{command}
 }
 

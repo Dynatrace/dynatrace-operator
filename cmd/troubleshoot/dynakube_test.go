@@ -252,16 +252,19 @@ func testNewDynakubeBuilder(namespace string, dynakube string) *testDynaKubeBuil
 
 func (builder *testDynaKubeBuilder) withApiUrl(apiUrl string) *testDynaKubeBuilder {
 	builder.dynakube.Spec.APIURL = apiUrl
+
 	return builder
 }
 
 func (builder *testDynaKubeBuilder) withTokens(secretName string) *testDynaKubeBuilder {
 	builder.dynakube.Spec.Tokens = secretName
+
 	return builder
 }
 
 func (builder *testDynaKubeBuilder) withCustomPullSecret(secretName string) *testDynaKubeBuilder {
 	builder.dynakube.Spec.CustomPullSecret = secretName
+
 	return builder
 }
 
@@ -293,6 +296,7 @@ func (builder *testDynaKubeBuilder) withActiveGateCapability(capability dynatrac
 
 func (builder *testDynaKubeBuilder) withActiveGateCustomImage(image string) *testDynaKubeBuilder {
 	builder.dynakube.Spec.ActiveGate.Image = image
+
 	return builder
 }
 
@@ -306,11 +310,13 @@ func (builder *testDynaKubeBuilder) withCloudNativeFullStack() *testDynaKubeBuil
 
 func (builder *testDynaKubeBuilder) withClassicFullStack() *testDynaKubeBuilder {
 	builder.dynakube.Spec.OneAgent.ClassicFullStack = &dynatracev1beta1.HostInjectSpec{}
+
 	return builder
 }
 
 func (builder *testDynaKubeBuilder) withHostMonitoring() *testDynaKubeBuilder {
 	builder.dynakube.Spec.OneAgent.HostMonitoring = &dynatracev1beta1.HostInjectSpec{}
+
 	return builder
 }
 

@@ -61,6 +61,7 @@ func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context) error {
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("creating activeGateAuthToken secret")
+
 			return r.ensureAuthTokenSecret(ctx)
 		}
 

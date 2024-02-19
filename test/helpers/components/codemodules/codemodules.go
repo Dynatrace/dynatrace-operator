@@ -45,6 +45,7 @@ func CheckRuxitAgentProcFileHasNoConnInfo(testDynakube dynatracev1beta1.DynaKube
 		})
 
 		require.NoError(t, err)
+
 		return ctx
 	}
 }

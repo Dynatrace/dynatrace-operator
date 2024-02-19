@@ -192,6 +192,7 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(ctx context.Context,
 	if err != nil {
 		if strings.Contains(err.Error(), strconv.Itoa(http.StatusNotFound)) {
 			body = createV1KubernetesSettingsBody(clusterLabel, kubeSystemUUID, scope)
+
 			return dtc.performCreateOrUpdateKubernetesSetting(ctx, body)
 		} else {
 			return "", err
@@ -221,6 +222,7 @@ func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(ctx context.Co
 	res, err := dtc.httpClient.Do(req)
 	if err != nil {
 		log.Info("check if ME exists failed")
+
 		return nil, err
 	}
 
@@ -259,6 +261,7 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(ctx context.Context,
 	res, err := dtc.httpClient.Do(req)
 	if err != nil {
 		log.Info("failed to retrieve MEs")
+
 		return GetSettingsResponse{}, err
 	}
 

@@ -30,5 +30,6 @@ func Feature(t *testing.T) features.Feature {
 	// Register operator install
 	edgeconnect.Install(builder, helpers.LevelAssess, &secretConfig, testEdgeConnect)
 	builder.Teardown(edgeconnect.Delete(testEdgeConnect))
+
 	return builder.Feature()
 }

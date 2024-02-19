@@ -11,5 +11,6 @@ import (
 func GetStandardKubeClusterEnvConfig() *envconf.Config {
 	kubeConfigPath := conf.ResolveKubeConfigFile()
 	cfg, _ := envconf.NewFromFlags()
+
 	return cfg.WithKubeconfigFile(kubeConfigPath)
 }

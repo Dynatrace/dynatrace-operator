@@ -27,6 +27,7 @@ func NewClient(config *rest.Config, scheme *runtime.Scheme, owner metav1.Object)
 	istioClient, err := istioclientset.NewForConfig(config)
 	if err != nil {
 		log.Info("failed to initialize istio client", "error", err.Error())
+
 		return nil, errors.WithStack(err)
 	}
 
@@ -58,6 +59,7 @@ func (cl *Client) GetVirtualService(ctx context.Context, name string) (*istiov1b
 		return nil, nil //nolint: nilnil
 	} else if err != nil {
 		log.Info("failed to get current virtual service", "name", name, "error", err.Error())
+
 		return nil, errors.WithStack(err)
 	}
 
@@ -105,6 +107,7 @@ func (cl *Client) createVirtualService(ctx context.Context, virtualService *isti
 	_, err := cl.IstioClientset.NetworkingV1beta1().VirtualServices(cl.Owner.GetNamespace()).Create(ctx, virtualService, metav1.CreateOptions{})
 	if err != nil {
 		log.Info("failed to create virtual service", "name", virtualService.GetName(), "error", err.Error())
+
 		return errors.WithStack(err)
 	}
 
@@ -121,6 +124,7 @@ func (cl *Client) updateVirtualService(ctx context.Context, oldVirtualService, n
 
 	if err != nil {
 		log.Info("failed to update virtual service", "name", newVirtualService.GetName(), "error", err.Error())
+
 		return errors.WithStack(err)
 	}
 
@@ -133,6 +137,7 @@ func (cl *Client) DeleteVirtualService(ctx context.Context, name string) error {
 		Delete(ctx, name, metav1.DeleteOptions{})
 	if !k8serrors.IsNotFound(err) {
 		log.Info("failed to remove virtual service", "name", name)
+
 		return errors.WithStack(err)
 	}
 
@@ -145,6 +150,7 @@ func (cl *Client) GetServiceEntry(ctx context.Context, name string) (*istiov1bet
 		return nil, nil //nolint: nilnil
 	} else if err != nil {
 		log.Info("failed to get current service entry", "name", name, "error", err.Error())
+
 		return nil, errors.WithStack(err)
 	}
 
@@ -192,6 +198,7 @@ func (cl *Client) createServiceEntry(ctx context.Context, serviceEntry *istiov1b
 	_, err := cl.IstioClientset.NetworkingV1beta1().ServiceEntries(cl.Owner.GetNamespace()).Create(ctx, serviceEntry, metav1.CreateOptions{})
 	if err != nil {
 		log.Info("failed to create service entry", "name", serviceEntry.GetName(), "error", err.Error())
+
 		return errors.WithStack(err)
 	}
 
@@ -208,6 +215,7 @@ func (cl *Client) updateServiceEntry(ctx context.Context, oldServiceEntry, newSe
 
 	if err != nil {
 		log.Info("failed to update service entry", "name", newServiceEntry.GetName(), "error", err.Error())
+
 		return errors.WithStack(err)
 	}
 
@@ -220,6 +228,7 @@ func (cl *Client) DeleteServiceEntry(ctx context.Context, name string) error {
 		Delete(ctx, name, metav1.DeleteOptions{})
 	if !k8serrors.IsNotFound(err) {
 		log.Info("failed to remove service entry", "name", name)
+
 		return errors.WithStack(err)
 	}
 

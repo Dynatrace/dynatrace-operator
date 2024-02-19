@@ -44,6 +44,7 @@ func NewTroubleshootCommandBuilder() CommandBuilder {
 
 func (builder CommandBuilder) SetConfigProvider(provider config.Provider) CommandBuilder {
 	builder.configProvider = provider
+
 	return builder
 }
 
@@ -88,6 +89,7 @@ func RunTroubleshootCmd(ctx context.Context, log logr.Logger, namespaceName stri
 	err := checkOneAgentAPM(log, kubeConfig)
 	if err != nil {
 		logErrorf(log, "prerequisite checks failed, aborting (%v)", err)
+
 		return
 	}
 
@@ -99,6 +101,7 @@ func RunTroubleshootCmd(ctx context.Context, log logr.Logger, namespaceName stri
 	err = checkNamespace(ctx, log, apiReader, namespaceName)
 	if err != nil {
 		logErrorf(log, "prerequisite checks failed, aborting (%v)", err)
+
 		return
 	}
 
@@ -203,6 +206,7 @@ func getAllDynakubesInNamespace(ctx context.Context, log logr.Logger, apiReader 
 	err := apiReader.List(ctx, &dynakubes, client.InNamespace(namespaceName))
 	if err != nil {
 		logErrorf(log, "failed to list Dynakubes: %v", err)
+
 		return nil, err
 	}
 

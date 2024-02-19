@@ -137,6 +137,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, err
 	} else if dynaKube == nil {
 		log.Info("reconciling DynaKube finished, no dynakube available", "namespace", request.Namespace, "name", request.Name, "result", "empty")
+
 		return reconcile.Result{}, nil
 	}
 
@@ -220,6 +221,7 @@ func (controller *Controller) updateDynakubeStatus(ctx context.Context, dynakube
 
 	if err != nil && k8serrors.IsConflict(err) {
 		log.Info("could not update dynakube due to conflict", "name", dynakube.Name)
+
 		return nil
 	}
 
@@ -255,6 +257,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 	err = status.SetKubeSystemUUIDInStatus(ctx, dynakube, controller.apiReader) // TODO: We should only do this once, as it shouldn't change overtime
 	if err != nil {
 		log.Info("could not set kube-system UUID in Dynakube status")
+
 		return err
 	}
 
@@ -299,6 +302,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube
 	tokens, err := tokenReader.ReadTokens(ctx)
 	if err != nil {
 		controller.setConditionTokenError(dynakube, err)
+
 		return nil, err
 	}
 
@@ -310,6 +314,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube
 	dynatraceClient, err := dynatraceClientBuilder.BuildWithTokenVerification(&dynakube.Status)
 	if err != nil {
 		controller.setConditionTokenError(dynakube, err)
+
 		return nil, err
 	}
 
@@ -322,6 +327,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube
 		Reconcile(ctx)
 	if err != nil {
 		log.Info("could not reconcile Dynatrace pull secret")
+
 		return nil, err
 	}
 
@@ -359,9 +365,11 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
 			// this situation will clear itself after AG has been started
 			controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
+
 			return goerrors.Join(componentErrors...)
 		} else if err != nil {
 			componentErrors = append(componentErrors, err)
+
 			return goerrors.Join(componentErrors...)
 		}
 	} // TODO: there tends to be a clean up for each reconcileX function, so it might makes sense to have the same here
@@ -389,5 +397,6 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 func (controller *Controller) createDynakubeMapper(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) *mapper.DynakubeMapper {
 	dkMapper := mapper.NewDynakubeMapper(ctx, controller.client, controller.apiReader, controller.operatorNamespace, dynakube)
+
 	return &dkMapper
 }

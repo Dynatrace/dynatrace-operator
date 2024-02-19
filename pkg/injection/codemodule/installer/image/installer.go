@@ -66,12 +66,14 @@ func (installer *Installer) InstallAgent(_ context.Context, targetDir string) (b
 
 	if installer.isAlreadyPresent(targetDir) {
 		log.Info("agent already installed", "target dir", targetDir)
+
 		return false, nil
 	}
 
 	err := installer.fs.MkdirAll(installer.props.PathResolver.AgentSharedBinaryDirBase(), common.MkDirFileMode)
 	if err != nil {
 		log.Info("failed to create the base shared agent directory", "err", err)
+
 		return false, errors.WithStack(err)
 	}
 
@@ -102,6 +104,7 @@ func (installer *Installer) installAgentFromImage(targetDir string) error {
 	err := installer.fs.MkdirAll(CacheDir, common.MkDirFileMode)
 	if err != nil {
 		log.Info("failed to create cache dir", "err", err)
+
 		return errors.WithStack(err)
 	}
 
@@ -109,12 +112,14 @@ func (installer *Installer) installAgentFromImage(targetDir string) error {
 
 	if err != nil {
 		log.Info("failed to get source information", "image", image)
+
 		return errors.WithStack(err)
 	}
 
 	imageCacheDir := getCacheDirPath(installer.props.ImageDigest)
 	if err != nil {
 		log.Info("failed to get destination information", "image", image, "imageCacheDir", imageCacheDir)
+
 		return errors.WithStack(err)
 	}
 
@@ -134,6 +139,7 @@ func (installer *Installer) installAgentFromImage(targetDir string) error {
 
 func (installer *Installer) isAlreadyPresent(targetDir string) bool {
 	_, err := installer.fs.Stat(targetDir)
+
 	return !os.IsNotExist(err)
 }
 

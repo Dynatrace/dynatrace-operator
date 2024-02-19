@@ -37,6 +37,7 @@ func (b GenericBuilder[T]) Build() (T, error) {
 
 func (b *GenericBuilder[T]) AddModifier(modifiers ...Modifier[T]) Builder[T] {
 	b.modifiers = append(b.modifiers, modifiers...)
+
 	return b
 }
 

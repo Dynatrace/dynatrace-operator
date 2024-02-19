@@ -178,6 +178,7 @@ func Proxy(proxyURL string, noProxy string) Option {
 		parsedURL, err := url.Parse(proxyURL)
 		if err != nil {
 			log.Info("could not parse proxy URL!")
+
 			return
 		}
 

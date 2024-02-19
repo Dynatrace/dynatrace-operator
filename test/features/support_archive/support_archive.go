@@ -83,6 +83,7 @@ func Feature(t *testing.T) features.Feature {
 	builder.WithTeardown("remove NOT injected namespace", namespace.Delete(testAppNameNotInjected))
 	dynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 	builder.WithTeardown("remove edgeconnect CR", edgeconnect.Delete(testEdgeConnect))
+
 	return builder.Feature()
 }
 
@@ -112,6 +113,7 @@ func testSupportArchiveCommand(testDynakube dynatracev1beta1.DynaKube, testEdgeC
 
 		assert.Emptyf(t, requiredFiles, "Support archive does not contain all expected files.")
 		logMissingFiles(t, requiredFiles)
+
 		return ctx
 	}
 }

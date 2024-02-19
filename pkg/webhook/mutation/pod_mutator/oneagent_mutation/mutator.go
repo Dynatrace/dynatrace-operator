@@ -58,6 +58,7 @@ func (mutator *OneAgentPodMutator) Mutate(ctx context.Context, request *dtwebhoo
 
 	if err := mutator.ensureInitSecret(request); err != nil {
 		span.RecordError(err)
+
 		return err
 	}
 
@@ -92,12 +93,14 @@ func (mutator *OneAgentPodMutator) ensureInitSecret(request *dtwebhook.MutationR
 		err := initGenerator.GenerateForNamespace(request.Context, request.DynaKube, request.Namespace.Name)
 		if err != nil && !k8serrors.IsAlreadyExists(err) {
 			log.Info("failed to create the init secret before oneagent pod injection")
+
 			return err
 		}
 
 		log.Info("ensured that the init secret is present before oneagent pod injection")
 	} else if err != nil {
 		log.Info("failed to query the init secret before oneagent pod injection")
+
 		return errors.WithStack(err)
 	}
 

@@ -24,6 +24,7 @@ func GetUID(ctx context.Context, clt client.Reader) (types.UID, error) {
 	err := clt.Get(ctx, client.ObjectKey{Name: Namespace}, kubeSystemNamespace)
 	if err != nil {
 		span.RecordError(err)
+
 		return "", errors.WithStack(err)
 	}
 
@@ -32,5 +33,6 @@ func GetUID(ctx context.Context, clt client.Reader) (types.UID, error) {
 
 func IsDeployedViaOlm(pod corev1.Pod) bool {
 	_, isDeployedViaOlm := pod.Annotations[olmSpecificAnnotation]
+
 	return isDeployedViaOlm
 }

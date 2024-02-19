@@ -135,6 +135,7 @@ func (publisher *HostVolumePublisher) mountOneAgent(tenantUUID string, volumeCfg
 
 	if err := publisher.mounter.Mount(hostDir, volumeCfg.TargetPath, "", []string{"bind"}); err != nil {
 		_ = publisher.mounter.Unmount(hostDir)
+
 		return err
 	}
 

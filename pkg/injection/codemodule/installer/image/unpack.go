@@ -24,6 +24,7 @@ func (installer *Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo
 	img, err := installer.pullImageInfo(imageName)
 	if err != nil {
 		log.Info("pullImageInfo", "error", err)
+
 		return err
 	}
 
@@ -32,6 +33,7 @@ func (installer *Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo
 	err = installer.pullOCIimage(image, imageName, pullInfo.imageCacheDir, pullInfo.targetDir)
 	if err != nil {
 		log.Info("pullOCIimage", "err", err)
+
 		return err
 	}
 
@@ -63,23 +65,27 @@ func (installer *Installer) pullOCIimage(image containerv1.Image, imageName stri
 	err = installer.fs.MkdirAll(imageCacheDir, common.MkDirFileMode)
 	if err != nil {
 		log.Info("failed to create cache dir", "dir", imageCacheDir, "err", err)
+
 		return errors.WithStack(err)
 	}
 
 	if err := crane.SaveOCI(image, path.Join(imageCacheDir, ref.Identifier())); err != nil {
 		log.Info("saving v1.Image img as an OCI Image Layout at path", imageCacheDir, err)
+
 		return errors.WithMessagef(err, "saving v1.Image img as an OCI Image Layout at path %s", imageCacheDir)
 	}
 
 	layers, err := image.Layers()
 	if err != nil {
 		log.Info("failed to get image layers", "err", err)
+
 		return errors.WithStack(err)
 	}
 
 	err = installer.unpackOciImage(layers, filepath.Join(imageCacheDir, ref.Identifier()), targetDir)
 	if err != nil {
 		log.Info("failed to unpackOciImage", "error", err)
+
 		return errors.WithStack(err)
 	}
 

@@ -12,6 +12,7 @@ func mutateUserContainers(request *dtwebhook.BaseRequest) {
 
 		if dtwebhookutil.IsContainerExcludedFromInjection(request, container.Name) {
 			log.Info("Container excluded from data ingest injection", "container", container.Name)
+
 			continue
 		}
 
@@ -26,10 +27,13 @@ func reinvokeUserContainers(request *dtwebhook.BaseRequest) bool {
 		container := &request.Pod.Spec.Containers[i]
 		if dtwebhookutil.IsContainerExcludedFromInjection(request, container.Name) {
 			log.Info("Container excluded from data ingest injection", "container", container.Name)
+
 			continue
 		}
 
 		if containerIsInjected(container) {
+			log.Info("Container already injected for data ingest", "container", container.Name)
+
 			continue
 		}
 

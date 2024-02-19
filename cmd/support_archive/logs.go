@@ -105,6 +105,7 @@ func (collector logCollector) collectContainerLogs(pod *corev1.Pod, container co
 	req := collector.pods.GetLogs(pod.Name, &logOptions)
 	if req == nil {
 		logErrorf(collector.log, errors.Errorf("Unable to retrieve log stream for pod %s, container %s", pod.Name, container.Name), "")
+
 		return
 	}
 
@@ -119,6 +120,7 @@ func (collector logCollector) collectContainerLogs(pod *corev1.Pod, container co
 		return
 	} else if err != nil {
 		logErrorf(collector.log, err, "error in opening stream")
+
 		return
 	}
 
@@ -129,6 +131,7 @@ func (collector logCollector) collectContainerLogs(pod *corev1.Pod, container co
 	err = collector.supportArchive.addFile(fileName, podLogs)
 	if err != nil {
 		logErrorf(collector.log, err, "error writing to tarball")
+
 		return
 	}
 

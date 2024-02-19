@@ -50,6 +50,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 
 	if apmExists {
 		eventRecorder.sendOneAgentAPMWarningEvent(webhookPod)
+
 		return errors.New("OneAgentAPM object detected - the Dynatrace webhook will not inject until the deprecated OneAgent Operator has been fully uninstalled")
 	}
 
@@ -131,6 +132,7 @@ func getClusterID(ctx context.Context, apiReader client.Reader) (string, error) 
 		return "", errors.WithStack(err)
 	} else {
 		log.Info("got cluster UID", "clusterUID", clusterUID)
+
 		return string(clusterUID), nil
 	}
 }

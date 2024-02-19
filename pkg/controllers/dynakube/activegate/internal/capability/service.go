@@ -50,5 +50,6 @@ func CreateService(dynakube *dynatracev1beta1.DynaKube, feature string) *corev1.
 
 func buildSelectorLabels(dynakubeName string) map[string]string {
 	appLabels := labels.NewAppLabels(labels.ActiveGateComponentLabel, dynakubeName, "", "")
+
 	return appLabels.BuildMatchLabels()
 }

@@ -26,6 +26,7 @@ func New(opts ...Option) *edgeconnectv1alpha1.EdgeConnect {
 	for _, opt := range opts {
 		opt(edgeconnect)
 	}
+
 	return edgeconnect
 }
 

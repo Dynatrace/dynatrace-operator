@@ -40,6 +40,7 @@ func (dtc *dynatraceClient) GetOneAgentConnectionInfo(ctx context.Context) (OneA
 
 	if resp.StatusCode == http.StatusBadRequest {
 		log.Info("server could not find the network zone or deliver default fallback config, is there an ActiveGate configured for the network zone?")
+
 		return OneAgentConnectionInfo{}, nil
 	}
 
@@ -62,6 +63,7 @@ func (dtc *dynatraceClient) readResponseForOneAgentConnectionInfo(response []byt
 	err := json.Unmarshal(response, &resp)
 	if err != nil {
 		log.Error(err, "error unmarshalling connection info response", "response", string(response))
+
 		return OneAgentConnectionInfo{}, err
 	}
 
@@ -74,6 +76,7 @@ func (dtc *dynatraceClient) readResponseForOneAgentConnectionInfo(response []byt
 		e, err := ParseEndpoint(s)
 		if err != nil {
 			log.Info("failed to parse communication endpoint", "url", s)
+
 			continue
 		}
 

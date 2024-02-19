@@ -96,6 +96,7 @@ func extractLink(fs afero.Fs, targetDir, target string, header *tar.Header) erro
 	_, ok := fs.(afero.Linker)
 	if !ok {
 		log.Info("symlinking not possible", "targetDir", targetDir, "fs", fs)
+
 		return nil
 	}
 	// Afero doesn't support Link, so we have to use os.Link
@@ -111,6 +112,7 @@ func extractSymlink(fs afero.Fs, targetDir, target string, header *tar.Header) e
 	linker, ok := fs.(afero.Linker)
 	if !ok {
 		log.Info("symlinking not possible", "targetDir", targetDir, "fs", fs)
+
 		return nil
 	}
 

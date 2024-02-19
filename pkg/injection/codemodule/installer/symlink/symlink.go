@@ -20,18 +20,21 @@ func CreateSymlinkForCurrentVersionIfNotExists(fs afero.Fs, targetDir string) er
 	linker, ok := fs.(afero.Linker)
 	if !ok {
 		log.Info("symlinking not possible", "targetDir", targetDir, "fs", fs)
+
 		return nil
 	}
 
 	relativeSymlinkPath, err = findVersionFromFileSystem(fs, targetBindDir)
 	if err != nil {
 		log.Info("failed to get the version from the filesystem", "targetDir", targetDir)
+
 		return err
 	}
 
 	symlinkTargetPath := filepath.Join(targetBindDir, "current")
 	if fileInfo, _ := fs.Stat(symlinkTargetPath); fileInfo != nil {
 		log.Info("symlink already exists", "location", symlinkTargetPath)
+
 		return nil
 	}
 
@@ -39,6 +42,7 @@ func CreateSymlinkForCurrentVersionIfNotExists(fs afero.Fs, targetDir string) er
 
 	if err := linker.SymlinkIfPossible(relativeSymlinkPath, symlinkTargetPath); err != nil {
 		log.Info("symlinking failed", "version", relativeSymlinkPath)
+
 		return errors.WithStack(err)
 	}
 

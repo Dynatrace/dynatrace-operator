@@ -44,6 +44,7 @@ func Create(edgeConnect edgeconnectv1alpha1.EdgeConnect) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		require.NoError(t, dynatracev1alpha1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
 		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, &edgeConnect))
+
 		return ctx
 	}
 }
@@ -68,6 +69,7 @@ func Delete(edgeConnect edgeconnectv1alpha1.EdgeConnect) features.Func {
 
 		err = wait.For(conditions.New(resources).ResourceDeleted(&edgeConnect), wait.WithTimeout(1*time.Minute))
 		require.NoError(t, err)
+
 		return ctx
 	}
 }
@@ -78,6 +80,7 @@ func WaitForPhase(edgeConnect edgeconnectv1alpha1.EdgeConnect, phase status.Depl
 
 		err := wait.For(conditions.New(resources).ResourceMatch(&edgeConnect, func(object k8s.Object) bool {
 			ec, isEdgeConnect := object.(*edgeconnectv1alpha1.EdgeConnect)
+
 			return isEdgeConnect && ec.Status.DeploymentPhase == phase
 		}), wait.WithTimeout(5*time.Minute))
 

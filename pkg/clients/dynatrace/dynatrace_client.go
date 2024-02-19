@@ -239,6 +239,7 @@ func (dtc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 		// If we haven't seen this host in the last 30 minutes, ignore it.
 		if tm := time.Unix(info.LastSeenTimestamp/1000, 0).UTC(); tm.Before(now.Add(-30 * time.Minute)) {
 			inactive = append(inactive, info.EntityID)
+
 			continue
 		}
 
@@ -278,6 +279,7 @@ func (dtc *dynatraceClient) extractHostInfoResponse(response []byte) ([]hostInfo
 	err := json.Unmarshal(response, &hostInfoResponses)
 	if err != nil {
 		log.Error(err, "error unmarshalling json response", "response", string(response))
+
 		return nil, errors.WithStack(err)
 	}
 

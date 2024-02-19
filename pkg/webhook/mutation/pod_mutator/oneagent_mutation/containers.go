@@ -29,6 +29,7 @@ func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.Mutat
 
 		if dtwebhookutil.IsContainerExcludedFromInjection(request.BaseRequest, container.Name) {
 			log.Info("Container excluded from code modules ingest injection", "container", container.Name)
+
 			continue
 		}
 
@@ -55,11 +56,13 @@ func (mutator *OneAgentPodMutator) reinvokeUserContainers(request *dtwebhook.Rei
 		currentContainer := &pod.Spec.Containers[i]
 		if dtwebhookutil.IsContainerExcludedFromInjection(request.BaseRequest, currentContainer.Name) {
 			log.Info("Container excluded from code modules ingest injection", "container", currentContainer.Name)
+
 			continue
 		}
 
 		if containerIsInjected(currentContainer) {
 			injectedContainers++
+
 			continue
 		}
 

@@ -56,5 +56,6 @@ func isStringValidForAG(str string) bool {
 	// ','                 exceptions due to Gateway reader of config files
 	// '&' '=' '+' '%' '\' exceptions due to entrypoint.sh:saveProxyConfiguration
 	regex := regexp.MustCompile(`^[!"#$()*\-./0-9:;<>?@A-Z\[\]^_a-z{|}~]*$`)
+
 	return regex.MatchString(str)
 }

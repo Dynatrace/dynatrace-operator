@@ -294,6 +294,7 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dyna
 	if err != nil {
 		if errors.As(err, &dtclient.HostNotFoundErr{}) {
 			log.Info("skipping to send mark for termination event", "dynakube", dynakubeInstance.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
+
 			return nil
 		}
 
@@ -353,5 +354,6 @@ func (controller *Controller) isMarkableForTermination(nodeInfo *CacheEntry) boo
 	// If the last mark was an hour ago, mark again
 	// Zero value for time.Time is 0001-01-01, so first mark is also executed
 	lastMarked := nodeInfo.LastMarkedForTermination
+
 	return lastMarked.UTC().Add(time.Hour).Before(controller.timeProvider.Now().UTC())
 }

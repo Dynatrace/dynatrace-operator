@@ -192,6 +192,7 @@ func NewAccess(ctx context.Context, path string) (Access, error) {
 	err := access.Setup(ctx, path)
 	if err != nil {
 		log.Error(err, "failed to connect to the database")
+
 		return nil, err
 	}
 
@@ -726,6 +727,7 @@ func (access *SqliteAccess) GetTenantsToDynakubes(ctx context.Context) (map[stri
 // The `vars` are passed to the SQL statement (in-order), to fill in the SQL wildcards.
 func (access *SqliteAccess) executeStatement(ctx context.Context, statement string, vars ...any) error {
 	_, err := access.conn.ExecContext(ctx, statement, vars...)
+
 	return errors.WithStack(err)
 }
 

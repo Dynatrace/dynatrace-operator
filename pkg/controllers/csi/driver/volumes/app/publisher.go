@@ -68,6 +68,7 @@ func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCf
 
 	if hasTooManyAttempts {
 		log.Info("reached max mount attempts for pod, attaching dummy volume, monitoring disabled", "pod", volumeCfg.PodName)
+
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
 
@@ -101,6 +102,7 @@ func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volume
 
 	if volume.Version == "" {
 		log.Info("requester has a dummy volume, no node-level unmount is needed")
+
 		return &csi.NodeUnpublishVolumeResponse{}, publisher.db.DeleteVolume(ctx, volume.VolumeID)
 	}
 
@@ -235,6 +237,7 @@ func (publisher *AppVolumePublisher) mountOneAgent(bindCfg *csivolumes.BindConfi
 
 	if err := publisher.mounter.Mount(mappedDir, volumeCfg.TargetPath, "", []string{"bind"}); err != nil {
 		_ = publisher.mounter.Unmount(mappedDir)
+
 		return err
 	}
 

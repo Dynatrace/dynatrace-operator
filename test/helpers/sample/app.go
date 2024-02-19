@@ -61,6 +61,7 @@ func NewApp(t *testing.T, owner metav1.Object, options ...Option) *App {
 	for _, opt := range options {
 		opt(app)
 	}
+
 	return app
 }
 
@@ -125,6 +126,7 @@ func (app *App) Namespace() string {
 
 func (app *App) InstallNamespace() features.Func {
 	app.installedNamespace = true
+
 	return namespace.Create(app.namespace)
 }
 
@@ -144,6 +146,7 @@ func (app *App) Install() features.Func {
 		} else if p, ok := object.(*corev1.Pod); ok {
 			require.NoError(t, wait.For(conditions.New(resource).PodReady(p), wait.WithTimeout(5*time.Minute)))
 		}
+
 		return ctx
 	}
 }
@@ -154,6 +157,7 @@ func (app *App) installSCC(ctx context.Context, t *testing.T, c *envconf.Config)
 	if isOpenshift {
 		ctx = helpers.ToFeatureFunc(manifests.InstallFromFile(sccPath), true)(ctx, t, c)
 	}
+
 	return ctx
 }
 
@@ -171,6 +175,7 @@ func (app *App) Uninstall() features.Func {
 		if dep, ok := object.(*appsv1.Deployment); ok {
 			ctx = pod.WaitForPodsDeletionWithOwner(dep.Name, dep.Namespace)(ctx, t, c)
 		}
+
 		return namespace.Delete(app.Namespace())(ctx, t, c)
 	}
 }
@@ -181,6 +186,7 @@ func (app *App) uninstallSCC(ctx context.Context, t *testing.T, c *envconf.Confi
 	if isOpenshift {
 		ctx = helpers.ToFeatureFunc(manifests.UninstallFromFile(sccPath), true)(ctx, t, c)
 	}
+
 	return ctx
 }
 
@@ -188,6 +194,7 @@ func (app *App) build() k8s.Object {
 	if app.isDeployment {
 		return app.asDeployment()
 	}
+
 	return app.base
 }
 
@@ -228,6 +235,7 @@ func (app *App) GetPods(ctx context.Context, t *testing.T, resource *resources.R
 		require.NoError(t, resource.Get(ctx, app.Name(), app.Namespace(), &p))
 		pods = corev1.PodList{Items: []corev1.Pod{p}}
 	}
+
 	return pods
 }
 
@@ -243,6 +251,7 @@ func (app *App) Restart() features.Func {
 		} else {
 			ctx = app.Install()(ctx, t, envConfig)
 		}
+
 		return ctx
 	}
 }

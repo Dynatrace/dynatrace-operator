@@ -281,6 +281,7 @@ func (ipHandler *ipHandler) ServeHTTP(writer http.ResponseWriter, request *http.
 	arch, present := query["arch"]
 	if present && arch[0] == "invalid" {
 		writeError(writer, http.StatusNotFound)
+
 		return
 	}
 

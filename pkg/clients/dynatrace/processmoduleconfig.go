@@ -115,16 +115,19 @@ func (pmc *ProcessModuleConfig) AddConnectionInfo(oneAgentConnectionInfo dynatra
 
 func (pmc *ProcessModuleConfig) AddHostGroup(hostGroup string) *ProcessModuleConfig {
 	property := ProcessModuleProperty{Section: generalSectionName, Key: "hostGroup", Value: hostGroup}
+
 	return pmc.Add(property)
 }
 
 func (pmc *ProcessModuleConfig) AddProxy(proxy string) *ProcessModuleConfig {
 	property := ProcessModuleProperty{Section: generalSectionName, Key: "proxy", Value: proxy}
+
 	return pmc.Add(property)
 }
 
 func (pmc *ProcessModuleConfig) AddNoProxy(noProxy string) *ProcessModuleConfig {
 	property := ProcessModuleProperty{Section: generalSectionName, Key: "noProxy", Value: noProxy}
+
 	return pmc.Add(property)
 }
 
@@ -199,6 +202,7 @@ func (dtc *dynatraceClient) createProcessModuleConfigRequest(ctx context.Context
 func (dtc *dynatraceClient) checkProcessModuleConfigRequestStatus(resp *http.Response) bool {
 	if resp == nil {
 		log.Info("problems checking response for processmoduleconfig endpoint")
+
 		return true
 	}
 
@@ -208,6 +212,7 @@ func (dtc *dynatraceClient) checkProcessModuleConfigRequestStatus(resp *http.Res
 
 	if resp.StatusCode == http.StatusNotFound {
 		log.Info("endpoint for ruxitagentproc.conf is not available on the cluster.")
+
 		return true
 	}
 
@@ -220,6 +225,7 @@ func (dtc *dynatraceClient) readResponseForProcessModuleConfig(response []byte) 
 	err := json.Unmarshal(response, &resp)
 	if err != nil {
 		log.Error(err, "error unmarshalling processmoduleconfig response", "response", string(response))
+
 		return nil, err
 	}
 

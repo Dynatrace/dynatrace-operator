@@ -62,6 +62,7 @@ func NewPod(podName, namespaceName, targetUrl string, options ...Option) *corev1
 	for _, opt := range options {
 		opt(curlPod)
 	}
+
 	return curlPod
 }
 

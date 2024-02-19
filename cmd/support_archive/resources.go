@@ -56,6 +56,7 @@ func (collector k8sResourceCollector) Do() error {
 		resourceList, err := collector.readObjectsList(query.groupVersionKind, query.filters)
 		if err != nil {
 			logErrorf(collector.log, err, "could not get manifest for %s", query.groupVersionKind.String())
+
 			continue
 		}
 
@@ -70,6 +71,7 @@ func (collector k8sResourceCollector) Do() error {
 		webhookConfigurations, err := collector.readWebhookConfigurations()
 		if err != nil {
 			logErrorf(collector.log, err, "could not read webhook configurations")
+
 			return err
 		}
 
@@ -80,6 +82,7 @@ func (collector k8sResourceCollector) Do() error {
 		customResourceDefinitions, err := collector.readCustomResourceDefinitions()
 		if err != nil {
 			logErrorf(collector.log, err, "could not read custom resource definitions")
+
 			return err
 		}
 
@@ -212,6 +215,7 @@ func (collector k8sResourceCollector) storeObject(resource unstructured.Unstruct
 	yamlManifest, err := yaml.Marshal(resource)
 	if err != nil {
 		logErrorf(collector.log, err, "Failed to marshal %s %s/%s", resource.GetKind(), collector.namespace, resource.GetName())
+
 		return
 	}
 
@@ -220,6 +224,7 @@ func (collector k8sResourceCollector) storeObject(resource unstructured.Unstruct
 	err = collector.supportArchive.addFile(fileName, bytes.NewBuffer(yamlManifest))
 	if err != nil {
 		logErrorf(collector.log, err, "Failed to add %s to support archive", fileName)
+
 		return
 	}
 
@@ -234,12 +239,14 @@ func (collector k8sResourceCollector) getCRDName(resourceMeta unstructured.Unstr
 	field, found, err := unstructured.NestedFieldNoCopy(resourceMeta.Object, "metadata")
 	if !found || err != nil {
 		logErrorf(collector.log, err, "Could not determine CRD name, setting it to default")
+
 		return "default"
 	}
 
 	objectMeta, ok := field.(metav1.ObjectMeta)
 	if !ok {
 		logErrorf(collector.log, err, "Could not determine CRD name, setting it to default")
+
 		return "default"
 	}
 

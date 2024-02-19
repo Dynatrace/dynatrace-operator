@@ -28,11 +28,13 @@ func NewCsiInitCommandBuilder() CommandBuilder {
 
 func (builder CommandBuilder) SetConfigProvider(provider config.Provider) CommandBuilder {
 	builder.configProvider = provider
+
 	return builder
 }
 
 func (builder CommandBuilder) SetNamespace(namespace string) CommandBuilder {
 	builder.namespace = namespace
+
 	return builder
 }
 

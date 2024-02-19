@@ -19,5 +19,6 @@ func NewKubeConfigProvider() Provider {
 
 func (provider KubeConfigProvider) GetConfig() (*rest.Config, error) {
 	cfg, err := config.GetConfig()
+
 	return cfg, errors.WithStack(err)
 }

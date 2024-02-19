@@ -44,6 +44,7 @@ func conflictingOneAgentConfiguration(_ context.Context, _ *dynakubeValidator, d
 
 	if counter > 1 {
 		log.Info("requested dynakube has conflicting one agent configuration", "name", dynakube.Name, "namespace", dynakube.Namespace)
+
 		return errorConflictingOneagentMode
 	}
 
@@ -58,6 +59,7 @@ func conflictingNodeSelector(ctx context.Context, dv *dynakubeValidator, dynakub
 	validDynakubes := &dynatracev1beta1.DynaKubeList{}
 	if err := dv.clt.List(ctx, validDynakubes); err != nil {
 		log.Info("error occurred while listing dynakubes", "err", err.Error())
+
 		return ""
 	}
 
@@ -72,6 +74,7 @@ func conflictingNodeSelector(ctx context.Context, dv *dynakubeValidator, dynakub
 		if item.Name != dynakube.Name {
 			if hasConflictingMatchLabels(nodeSelectorMap, validNodeSelectorMap) {
 				log.Info("requested dynakube has conflicting nodeSelector", "name", dynakube.Name, "namespace", dynakube.Namespace)
+
 				return fmt.Sprintf(errorNodeSelectorConflict, item.Name)
 			}
 		}

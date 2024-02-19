@@ -50,6 +50,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		err := r.reconcileSecret(ctx)
 		if err != nil {
 			log.Info("could not reconcile pull secret")
+
 			return errors.WithStack(err)
 		}
 	} else {
@@ -131,6 +132,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 	marshaled, err := json.Marshal(pmc)
 	if err != nil {
 		log.Info("could not marshal process module config")
+
 		return nil, err
 	}
 

@@ -31,6 +31,7 @@ func WaitForCondition(name string, namespace string, conditionFunction Condition
 		}, conditionFunction), wait.WithTimeout(timeout))
 
 		require.NoError(t, err)
+
 		return ctx
 	}
 }
@@ -38,6 +39,7 @@ func WaitForCondition(name string, namespace string, conditionFunction Condition
 func WaitFor(name string, namespace string) features.Func {
 	return WaitForCondition(name, namespace, func(object k8s.Object) bool {
 		pod, isPod := object.(*corev1.Pod)
+
 		return isPod && (pod.Status.Phase == corev1.PodRunning || pod.Status.Phase == corev1.PodSucceeded)
 	}, 10*time.Minute)
 	// Default of 5 minutes can be a bit too short for the ActiveGate to startup
@@ -50,6 +52,7 @@ func WaitForPodsDeletionWithOwner(ownerName string, namespace string) features.F
 
 		err := wait.For(conditions.New(resources).ResourcesDeleted(&targetPods), wait.WithTimeout(5*time.Minute))
 		require.NoError(t, err)
+
 		return ctx
 	}
 }
