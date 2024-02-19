@@ -23,9 +23,9 @@ type ActiveGateAuthTokenInfo struct {
 
 type ActiveGateAuthTokenParams struct {
 	Name           string `json:"name"`
-	SeedToken      bool   `json:"seedToken"`
 	ActiveGateType string `json:"activeGateType"`
 	ExpirationDate string `json:"expirationDate"`
+	SeedToken      bool   `json:"seedToken"`
 }
 
 func (dtc *dynatraceClient) GetActiveGateAuthToken(ctx context.Context, dynakubeName string) (*ActiveGateAuthTokenInfo, error) {

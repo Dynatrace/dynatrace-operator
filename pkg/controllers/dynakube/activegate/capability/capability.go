@@ -27,10 +27,10 @@ type Capability interface {
 }
 
 type capabilityBase struct {
-	enabled    bool
+	properties *dynatracev1beta1.CapabilityProperties
 	shortName  string
 	argName    string
-	properties *dynatracev1beta1.CapabilityProperties
+	enabled    bool
 }
 
 func (capability *capabilityBase) Enabled() bool {

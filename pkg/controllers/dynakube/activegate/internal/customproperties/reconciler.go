@@ -28,8 +28,8 @@ type Reconciler struct {
 	client                    client.Client
 	scheme                    *runtime.Scheme
 	customPropertiesSource    *dynatracev1beta1.DynaKubeValueSource
-	customPropertiesOwnerName string
 	instance                  *dynatracev1beta1.DynaKube
+	customPropertiesOwnerName string
 }
 
 func NewReconciler(clt client.Client, instance *dynatracev1beta1.DynaKube, customPropertiesOwnerName string, scheme *runtime.Scheme, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) *Reconciler {

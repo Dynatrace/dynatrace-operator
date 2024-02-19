@@ -8,8 +8,8 @@ linters-settings:
       # Disabled, because we still support deprecated feature flags, which would cause the linter to complain
       - "-SA1019"
   govet:
-#    enable:
-#      - fieldalignment
+    enable:
+      - fieldalignment
     disable:
       # Disable checking for copied locks since it causes a lot of annoying false-positives
       - copylocks
@@ -314,6 +314,7 @@ issues:
         - wsl
         - thelper
         - perfsprint
+        - govet
     - path: _(test|gen)\.go
       linters:
         - govet

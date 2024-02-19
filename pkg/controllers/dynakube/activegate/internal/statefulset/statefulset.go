@@ -27,11 +27,11 @@ const defaultEnvPriority = prioritymap.DefaultPriority
 const customEnvPriority = prioritymap.HighPriority
 
 type Builder struct {
+	capability capability.Capability
+	envMap     *prioritymap.Map
 	kubeUID    types.UID
 	configHash string
 	dynakube   dynatracev1beta1.DynaKube
-	capability capability.Capability
-	envMap     *prioritymap.Map
 }
 
 func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dynakube dynatracev1beta1.DynaKube, capability capability.Capability) Builder {

@@ -16,11 +16,11 @@ import (
 )
 
 type OneAgentPodMutator struct {
+	client           client.Client
+	apiReader        client.Reader
 	image            string
 	clusterID        string
 	webhookNamespace string
-	client           client.Client
-	apiReader        client.Reader
 }
 
 var _ dtwebhook.PodMutator = &OneAgentPodMutator{}

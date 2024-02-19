@@ -100,19 +100,17 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 type Controller struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the api-server
-	client            client.Client
-	apiReader         client.Reader
-	scheme            *runtime.Scheme
-	fs                afero.Afero
-	config            *rest.Config
-	operatorNamespace string
-	clusterID         string
-
-	requeueAfter time.Duration
+	client    client.Client
+	apiReader client.Reader
 
 	dynatraceClientBuilder dynatraceclient.Builder
-	istioClientBuilder     istio.ClientBuilder
-	registryClientBuilder  registry.ClientBuilder
+
+	fs     afero.Afero
+	scheme *runtime.Scheme
+	config *rest.Config
+
+	istioClientBuilder    istio.ClientBuilder
+	registryClientBuilder registry.ClientBuilder
 
 	deploymentMetadataReconcilerBuilder deploymentmetadata.ReconcilerBuilder
 	versionReconcilerBuilder            version.ReconcilerBuilder
@@ -121,6 +119,11 @@ type Controller struct {
 	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
 	injectionReconcilerBuilder          injection.ReconcilerBuilder
 	istioReconcilerBuilder              istio.ReconcilerBuilder
+
+	operatorNamespace string
+	clusterID         string
+
+	requeueAfter time.Duration
 }
 
 // Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read

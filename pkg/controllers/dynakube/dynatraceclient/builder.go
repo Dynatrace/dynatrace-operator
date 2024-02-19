@@ -24,8 +24,8 @@ type Builder interface {
 type builder struct {
 	ctx       context.Context
 	apiReader client.Reader
-	dynakube  dynatracev1beta1.DynaKube
 	tokens    token.Tokens
+	dynakube  dynatracev1beta1.DynaKube
 }
 
 func NewBuilder(apiReader client.Reader) Builder {

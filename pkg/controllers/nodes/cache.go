@@ -14,18 +14,18 @@ var ErrNotFound = errors.New("not found")
 
 // CacheEntry contains information about a Node.
 type CacheEntry struct {
-	Instance                 string    `json:"instance"`
-	IPAddress                string    `json:"ip"`
 	LastSeen                 time.Time `json:"seen"`
 	LastMarkedForTermination time.Time `json:"marked"`
+	Instance                 string    `json:"instance"`
+	IPAddress                string    `json:"ip"`
 }
 
 // Cache manages information about Nodes.
 type Cache struct {
 	Obj          *corev1.ConfigMap
+	timeProvider *timeprovider.Provider
 	Create       bool
 	upd          bool
-	timeProvider *timeprovider.Provider
 }
 
 // Get returns the information about node, or error if not found or failed to unmarshall the data.

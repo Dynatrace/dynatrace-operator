@@ -47,18 +47,19 @@ func AddPodMutationWebhookToManager(mgr manager.Manager, ns string) error {
 
 // podMutatorWebhook executes mutators on Pods
 type podMutatorWebhook struct {
-	apiReader client.Reader
-	decoder   admission.Decoder
-	recorder  podMutatorEventRecorder
+	decoder  admission.Decoder
+	recorder podMutatorEventRecorder
+
+	apiReader      client.Reader
+	requestCounter metric.Int64Counter
 
 	webhookImage     string
 	webhookNamespace string
 	clusterID        string
-	apmExists        bool
-	deployedViaOLM   bool
 
 	mutators       []dtwebhook.PodMutator
-	requestCounter metric.Int64Counter
+	apmExists      bool
+	deployedViaOLM bool
 }
 
 func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.Request) admission.Response {

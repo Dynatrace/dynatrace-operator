@@ -17,8 +17,8 @@ import (
 type CorrectnessChecker struct {
 	apiReader client.Reader
 	fs        afero.Fs
-	path      PathResolver
 	access    Access
+	path      PathResolver
 }
 
 func NewCorrectnessChecker(cl client.Reader, access Access, opts dtcsi.CSIOptions) *CorrectnessChecker {

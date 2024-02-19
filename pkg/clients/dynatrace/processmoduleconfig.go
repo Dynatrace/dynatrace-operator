@@ -18,8 +18,8 @@ const (
 )
 
 type ProcessModuleConfig struct {
-	Revision   uint                    `json:"revision"`
 	Properties []ProcessModuleProperty `json:"properties"`
+	Revision   uint                    `json:"revision"`
 }
 
 type ProcessModuleProperty struct {

@@ -15,9 +15,9 @@ import (
 type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
-	dynakube  dynatracev1beta1.DynaKube
-	clusterID string
 	scheme    *runtime.Scheme
+	clusterID string
+	dynakube  dynatracev1beta1.DynaKube
 }
 
 type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube dynatracev1beta1.DynaKube, clusterID string) controllers.Reconciler

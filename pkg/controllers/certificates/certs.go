@@ -30,14 +30,14 @@ const (
 
 // Certs handles creation and renewal of CA and SSL/TLS server certificates.
 type Certs struct {
-	Domain  string
+	Now time.Time
+
 	SrcData map[string][]byte
 	Data    map[string][]byte
 
-	Now time.Time
-
 	rootPrivateKey *ecdsa.PrivateKey
 	rootPublicCert *x509.Certificate
+	Domain         string
 }
 
 // ValidateCerts checks for certificates and keys on cs.SrcData and renews them if needed. The existing (or new)

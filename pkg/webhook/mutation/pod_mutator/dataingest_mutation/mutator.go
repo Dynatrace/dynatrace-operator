@@ -15,10 +15,10 @@ import (
 )
 
 type DataIngestPodMutator struct {
-	webhookNamespace string
 	client           client.Client
 	metaClient       client.Client
 	apiReader        client.Reader
+	webhookNamespace string
 }
 
 func NewDataIngestPodMutator(webhookNamespace string, client client.Client, apiReader client.Reader, metaClient client.Client) *DataIngestPodMutator {

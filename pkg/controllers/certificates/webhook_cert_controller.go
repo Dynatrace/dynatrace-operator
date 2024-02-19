@@ -54,9 +54,9 @@ func newWebhookCertificateController(mgr manager.Manager, cancelMgr context.Canc
 type WebhookCertificateController struct {
 	client        client.Client
 	apiReader     client.Reader
-	namespace     string
 	cancelMgrFunc context.CancelFunc
 	scheme        *runtime.Scheme
+	namespace     string
 }
 
 func (controller *WebhookCertificateController) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

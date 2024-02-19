@@ -15,11 +15,11 @@ import (
 )
 
 type postKubernetesSettings struct {
-	Label            string `json:"label"`
-	ClusterIdEnabled bool   `json:"clusterIdEnabled"`
-	ClusterId        string `json:"clusterId"`
-	Enabled          bool   `json:"enabled"`
 	*MonitoringSettings
+	Label            string `json:"label"`
+	ClusterId        string `json:"clusterId"`
+	ClusterIdEnabled bool   `json:"clusterIdEnabled"`
+	Enabled          bool   `json:"enabled"`
 }
 
 type MonitoringSettings struct {
@@ -31,10 +31,10 @@ type MonitoringSettings struct {
 }
 
 type postKubernetesSettingsBody struct {
+	Value         interface{} `json:"value"`
 	SchemaId      string      `json:"schemaId"`
 	SchemaVersion string      `json:"schemaVersion"`
 	Scope         string      `json:"scope,omitempty"`
-	Value         interface{} `json:"value"`
 }
 
 type postKubernetesAppSettings struct {
@@ -45,9 +45,9 @@ type kubernetesAppOptionsSettings struct {
 }
 
 type monitoredEntitiesResponse struct {
+	Entities   []MonitoredEntity `json:"entities"`
 	TotalCount int               `json:"totalCount"`
 	PageSize   int               `json:"pageSize"`
-	Entities   []MonitoredEntity `json:"entities"`
 }
 
 type MonitoredEntity struct {
@@ -69,9 +69,9 @@ type getSettingsErrorResponse struct {
 }
 
 type getSettingsError struct {
-	Code                 int
 	Message              string
 	ConstraintViolations constraintViolations `json:"constraintViolations,omitempty"`
+	Code                 int
 }
 
 type constraintViolations []struct {

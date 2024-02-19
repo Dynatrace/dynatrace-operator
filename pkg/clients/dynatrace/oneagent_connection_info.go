@@ -26,8 +26,8 @@ type OneAgentConnectionInfo struct {
 type oneAgentConnectionInfoJsonResponse struct {
 	TenantUUID                      string   `json:"tenantUUID"`
 	TenantToken                     string   `json:"tenantToken"`
-	CommunicationEndpoints          []string `json:"communicationEndpoints"`
 	FormattedCommunicationEndpoints string   `json:"formattedCommunicationEndpoints"`
+	CommunicationEndpoints          []string `json:"communicationEndpoints"`
 }
 
 func (dtc *dynatraceClient) GetOneAgentConnectionInfo(ctx context.Context) (OneAgentConnectionInfo, error) {

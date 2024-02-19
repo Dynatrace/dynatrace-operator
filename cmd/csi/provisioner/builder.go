@@ -22,9 +22,9 @@ var probeAddress string
 type CommandBuilder struct {
 	configProvider  config.Provider
 	managerProvider cmdManager.Provider
-	namespace       string
 	filesystem      afero.Fs
 	csiOptions      *dtcsi.CSIOptions
+	namespace       string
 }
 
 func NewCsiProvisionerCommandBuilder() CommandBuilder {

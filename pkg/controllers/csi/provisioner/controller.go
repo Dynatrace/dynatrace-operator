@@ -60,17 +60,17 @@ type imageInstallerBuilder func(afero.Fs, *image.Properties) (installer.Installe
 type OneAgentProvisioner struct {
 	client    client.Client
 	apiReader client.Reader
-	opts      dtcsi.CSIOptions
 	fs        afero.Fs
 	recorder  record.EventRecorder
 	db        metadata.Access
-	path      metadata.PathResolver
 	gc        reconcile.Reconciler
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	urlInstallerBuilder    urlInstallerBuilder
 	imageInstallerBuilder  imageInstallerBuilder
 	registryClientBuilder  registry.ClientBuilder
+	opts                   dtcsi.CSIOptions
+	path                   metadata.PathResolver
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner

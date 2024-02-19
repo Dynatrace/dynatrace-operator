@@ -25,12 +25,12 @@ const (
 )
 
 type k8sResourceCollector struct {
-	collectorCommon
-	context    context.Context
-	namespace  string
-	appName    string
-	apiReader  client.Reader
 	kubeConfig rest.Config
+	collectorCommon
+	context   context.Context
+	apiReader client.Reader
+	namespace string
+	appName   string
 }
 
 func newK8sObjectCollector(context context.Context, log logr.Logger, supportArchive archiver, namespace string, appName string, apiReader client.Reader, kubeConfig rest.Config) collector { //nolint:revive // argument-limit doesn't apply to constructors

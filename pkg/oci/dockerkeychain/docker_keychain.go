@@ -16,8 +16,8 @@ import (
 )
 
 type DockerKeychain struct {
-	mutex        sync.Mutex
 	dockerConfig *configfile.ConfigFile
+	mutex        sync.Mutex
 }
 
 func NewDockerKeychain(ctx context.Context, apiReader client.Reader, pullSecret corev1.Secret) (authn.Keychain, error) {

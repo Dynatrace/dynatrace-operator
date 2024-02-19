@@ -28,11 +28,11 @@ import (
 type Controller struct {
 	client                 client.Client
 	apiReader              client.Reader
-	scheme                 *runtime.Scheme
 	dynatraceClientBuilder dynatraceclient.Builder
-	runLocal               bool
-	podNamespace           string
+	scheme                 *runtime.Scheme
 	timeProvider           *timeprovider.Provider
+	podNamespace           string
+	runLocal               bool
 }
 
 type CachedNodeInfo struct {

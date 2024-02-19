@@ -53,11 +53,10 @@ var ActiveGateDisplayNames = map[CapabilityDisplayName]struct{}{
 
 type ActiveGateSpec struct {
 
-	// Activegate capabilities enabled (routing, kubernetes-monitoring, metrics-ingest, dynatrace-api)
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Capabilities",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
-	Capabilities []CapabilityDisplayName `json:"capabilities,omitempty"`
-
-	CapabilityProperties `json:",inline"`
+	// Adds additional annotations to the ActiveGate pods
+	// +optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Annotations",order=27,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	Annotations map[string]string `json:"annotations,omitempty"`
 
 	// The name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.
 	// server.p12: certificate+key pair in pkcs12 format
@@ -77,10 +76,11 @@ type ActiveGateSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Priority Class name",order=23,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:PriorityClass"}
 	PriorityClassName string `json:"priorityClassName,omitempty"`
 
-	// Adds additional annotations to the ActiveGate pods
-	// +optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Annotations",order=27,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
-	Annotations map[string]string `json:"annotations,omitempty"`
+	CapabilityProperties `json:",inline"`
+
+	// Activegate capabilities enabled (routing, kubernetes-monitoring, metrics-ingest, dynatrace-api)
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Capabilities",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	Capabilities []CapabilityDisplayName `json:"capabilities,omitempty"`
 }
 
 // CapabilityProperties is a struct which can be embedded by ActiveGate capabilities

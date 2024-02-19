@@ -22,11 +22,11 @@ type Properties struct {
 	Type          string
 	Flavor        string
 	TargetVersion string
-	Technologies  []string
 	Url           string // if this is set all settings before it will be ignored
-	SkipMetadata  bool
 
 	PathResolver metadata.PathResolver
+	Technologies []string
+	SkipMetadata bool
 }
 
 func (props *Properties) fillEmptyWithDefaults() {

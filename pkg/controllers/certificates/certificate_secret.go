@@ -23,9 +23,9 @@ import (
 type certificateSecret struct {
 	secret          *corev1.Secret
 	certificates    *Certs
-	existsInCluster bool
 	owner           *appsv1.Deployment
 	scheme          *runtime.Scheme
+	existsInCluster bool
 }
 
 func newCertificateSecret(scheme *runtime.Scheme, deployment *appsv1.Deployment) *certificateSecret {

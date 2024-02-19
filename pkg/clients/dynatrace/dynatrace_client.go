@@ -31,6 +31,14 @@ type hostInfo struct {
 
 // client implements the Client interface.
 type dynatraceClient struct {
+
+	// Set for testing purposes, leave the default zero value to use the current time.
+	now time.Time
+
+	httpClient *http.Client
+
+	hostCache map[string]hostInfo
+
 	url       string
 	apiToken  string
 	paasToken string
@@ -38,13 +46,6 @@ type dynatraceClient struct {
 	networkZone string
 
 	hostGroup string
-
-	httpClient *http.Client
-
-	hostCache map[string]hostInfo
-
-	// Set for testing purposes, leave the default zero value to use the current time.
-	now time.Time
 }
 
 type tokenType int
@@ -208,15 +209,15 @@ func (dtc *dynatraceClient) buildHostCache(ctx context.Context) error {
 }
 
 type hostInfoResponse struct {
-	IPAddresses  []string
 	AgentVersion *struct {
+		Timestamp string
 		Major     int
 		Minor     int
 		Revision  int
-		Timestamp string
 	}
 	EntityID          string
 	NetworkZoneID     string
+	IPAddresses       []string
 	LastSeenTimestamp int64
 }
 
@@ -292,8 +293,8 @@ type serverErrorResponse struct {
 
 // ServerError represents an error returned from the server (e.g. authentication failure).
 type ServerError struct {
-	Code    int
 	Message string
+	Code    int
 }
 
 // Error formats the server error code and message.

@@ -25,10 +25,10 @@ type CommandBuilder struct {
 	configProvider           config.Provider
 	bootstrapManagerProvider cmdManager.Provider
 	operatorManagerProvider  cmdManager.Provider
-	namespace                string
-	podName                  string
 	signalHandler            context.Context
 	client                   client.Client
+	namespace                string
+	podName                  string
 }
 
 func NewOperatorCommandBuilder() CommandBuilder {
