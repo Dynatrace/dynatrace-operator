@@ -15,8 +15,9 @@ const (
 
 	// These architectures are for the Image Registry
 
-	AMDImageArch = "amd64"
-	ARMImageArch = "arm64"
+	AMDImageArch   = "amd64"
+	ARMImageArch   = "arm64"
+	PPCLEImageArch = "ppc64le"
 
 	DefaultImageOS = "linux"
 )
