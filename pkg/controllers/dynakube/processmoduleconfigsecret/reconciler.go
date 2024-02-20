@@ -131,7 +131,10 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 		return nil, err
 	}
 
-	tenantToken, err := r.getAgentTenantToken(ctx)
+	tenantToken, err := secret.GetDataFromSecretName(r.apiReader, types.NamespacedName{
+		Name:      r.dynakube.OneagentTenantSecret(),
+		Namespace: r.dynakube.Namespace,
+	}, connectioninfo.TenantTokenName, log)
 	if err != nil {
 		return nil, err
 	}
@@ -169,22 +172,6 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 		secret.NewDataModifier(map[string][]byte{SecretKeyProcessModuleConfig: marshaled}))
 
 	return newSecret, err
-}
-
-func (r *Reconciler) getAgentTenantToken(ctx context.Context) (string, error) {
-	query := secret.NewQuery(ctx, r.client, r.apiReader, log)
-
-	tenantSecret, err := query.Get(types.NamespacedName{Namespace: r.dynakube.Namespace, Name: r.dynakube.OneagentTenantSecret()})
-	if err != nil {
-		return "", errors.Wrapf(err, "OneAgent tenant token secret %s/%s not found", r.dynakube.Namespace, r.dynakube.OneagentTenantSecret())
-	}
-
-	tokenData, ok := tenantSecret.Data[connectioninfo.TenantTokenName]
-	if !ok {
-		return "", errors.Errorf("OneAgent tenant token not found in secret %s/%s", r.dynakube.Namespace, r.dynakube.OneagentTenantSecret())
-	}
-
-	return string(tokenData), nil
 }
 
 func GetSecretData(ctx context.Context, apiReader client.Reader, dynakubeName string, dynakubeNamespace string) (*dtclient.ProcessModuleConfig, error) {
