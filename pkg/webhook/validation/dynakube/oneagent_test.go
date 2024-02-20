@@ -373,6 +373,38 @@ func TestOneAgentHostGroup(t *testing.T) {
 			1,
 			createDynakubeWithHostGroup([]string{"--set-host-group=arg"}, "field"),
 			&defaultCSIDaemonSet)
+
+		assertAllowedResponseWithWarnings(t,
+			1,
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					OneAgent: dynatracev1beta1.OneAgentSpec{
+						ClassicFullStack: &dynatracev1beta1.HostInjectSpec{
+							Args: []string{"--set-host-group=arg"},
+						},
+						HostGroup: "",
+					},
+				},
+			},
+			&defaultCSIDaemonSet)
+
+		assertAllowedResponseWithWarnings(t,
+			1,
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					OneAgent: dynatracev1beta1.OneAgentSpec{
+						HostMonitoring: &dynatracev1beta1.HostInjectSpec{
+							Args: []string{"--set-host-group=arg"},
+						},
+						HostGroup: "",
+					},
+				},
+			},
+			&defaultCSIDaemonSet)
 	})
 }
 

@@ -38,9 +38,7 @@ func (dsInfo *builderInfo) arguments() ([]string, error) {
 
 	dsInfo.appendHostInjectArgs(argMap)
 
-	if dsInfo.dynakube.CloudNativeFullstackMode() {
-		dsInfo.appendHostGroupArg(argMap)
-	}
+	dsInfo.appendHostGroupArg(argMap)
 
 	return argMap.AsKeyValueStrings(), nil
 }
