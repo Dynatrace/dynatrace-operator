@@ -134,6 +134,7 @@ func TestGetSecretData(t *testing.T) {
 		reconciler := NewReconciler(mockK8sClient,
 			mockK8sClient, createMockDtClient(t, 0), dynakube, scheme.Scheme, mockTime)
 		err := reconciler.Reconcile(context.Background())
+		require.NoError(t, err)
 
 		got, err := GetSecretData(context.Background(), mockK8sClient, testName, testNamespace)
 		require.NoError(t, err)
