@@ -3,14 +3,14 @@ package dynakube
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/pkg/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // DynaKubeStatus defines the observed state of DynaKube
@@ -153,6 +153,7 @@ func (dk *DynaKube) UpdateStatus(ctx context.Context, client client.Client) erro
 
 	if err != nil && k8serrors.IsConflict(err) {
 		log.Info("could not update dynakube due to conflict", "name", dk.Name)
+
 		return nil
 	}
 

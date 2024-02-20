@@ -3,8 +3,6 @@ package dynakube
 import (
 	"context"
 	goerrors "errors"
-	agconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/activegate"
-	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"os"
 	"time"
 
@@ -13,6 +11,8 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
+	agconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/activegate"
+	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
@@ -100,17 +100,13 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 type Controller struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the api-server
-	client            client.Client
-	apiReader         client.Reader
-	scheme            *runtime.Scheme
-	fs                afero.Afero
-	config            *rest.Config
-	operatorNamespace string
-	clusterID         string
-
-	requeueAfter time.Duration
+	client    client.Client
+	apiReader client.Reader
+	fs        afero.Afero
 
 	dynatraceClientBuilder dynatraceclient.Builder
+	scheme                 *runtime.Scheme
+	config                 *rest.Config
 	istioClientBuilder     istio.ClientBuilder
 	registryClientBuilder  registry.ClientBuilder
 
@@ -121,6 +117,10 @@ type Controller struct {
 	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
 	injectionReconcilerBuilder          injection.ReconcilerBuilder
 	istioReconcilerBuilder              istio.ReconcilerBuilder
+	operatorNamespace                   string
+	clusterID                           string
+
+	requeueAfter time.Duration
 }
 
 // Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read

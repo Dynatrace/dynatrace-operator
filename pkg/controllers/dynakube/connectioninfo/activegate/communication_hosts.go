@@ -1,12 +1,13 @@
 package activegate
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/pkg/errors"
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/pkg/errors"
 )
 
 const (

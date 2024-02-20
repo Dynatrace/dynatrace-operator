@@ -2,6 +2,7 @@ package connectioninfo
 
 import (
 	"context"
+
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/go-logr/logr"
@@ -39,6 +40,7 @@ func SecretNotPresent(ctx context.Context, apiReader client.Reader, secretNamesp
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("creating secret, because missing", "secretName", secretNamespacedName.Name)
+
 			return true, nil
 		}
 

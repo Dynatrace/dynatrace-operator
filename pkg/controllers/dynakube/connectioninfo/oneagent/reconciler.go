@@ -63,11 +63,13 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 	secretNamespacedName := types.NamespacedName{Name: r.dynakube.OneagentTenantSecret(), Namespace: r.dynakube.Namespace}
 	isOutdated := r.dynakube.IsOneAgentConnectionInfoUpdateAllowed(r.timeProvider)
+
 	if !isOutdated {
 		needsUpdate, err := connectioninfo.SecretNotPresent(ctx, r.apiReader, secretNamespacedName, log)
 		if err != nil {
 			return err
 		}
+
 		if !needsUpdate {
 			log.Info(dynatracev1beta1.GetCacheValidMessage(
 				"OneAgent connection info update",
@@ -98,6 +100,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 
 	if len(connectionInfo.CommunicationHosts) == 0 {
 		log.Info("no OneAgent communication hosts received, tenant API requests not yet throttled")
+
 		return NoOneAgentCommunicationHostsError
 	}
 
@@ -142,6 +145,7 @@ func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName str
 	err = query.CreateOrUpdate(*secret)
 	if err != nil {
 		log.Info("could not create or update secret for connection info", "name", secret.Name)
+
 		return err
 	}
 

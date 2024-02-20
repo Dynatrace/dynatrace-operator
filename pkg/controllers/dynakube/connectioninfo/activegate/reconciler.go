@@ -2,6 +2,7 @@ package activegate
 
 import (
 	"context"
+
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
@@ -62,11 +63,13 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 	secretNamespacedName := types.NamespacedName{Name: r.dynakube.ActivegateTenantSecret(), Namespace: r.dynakube.Namespace}
 	isOutdated := r.dynakube.IsActiveGateConnectionInfoUpdateAllowed(r.timeProvider)
+
 	if !isOutdated {
 		needsUpdate, err := connectioninfo.SecretNotPresent(ctx, r.apiReader, secretNamespacedName, log)
 		if err != nil {
 			return err
 		}
+
 		if !needsUpdate {
 			log.Info(dynatracev1beta1.GetCacheValidMessage(
 				"activegate connection info update",
@@ -76,9 +79,11 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 			return nil
 		}
 	}
+
 	connectionInfo, err := r.dtc.GetActiveGateConnectionInfo(ctx)
 	if err != nil {
 		log.Info("failed to get activegate connection info")
+
 		return err
 	}
 
@@ -118,6 +123,7 @@ func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName str
 	err = query.CreateOrUpdate(*secret)
 	if err != nil {
 		log.Info("could not create or update secret for connection info", "name", secret.Name)
+
 		return err
 	}
 

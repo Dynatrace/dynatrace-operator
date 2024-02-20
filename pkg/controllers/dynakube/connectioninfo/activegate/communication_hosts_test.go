@@ -1,10 +1,11 @@
 package activegate
 
 import (
+	"testing"
+
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"testing"
 )
 
 func TestParseCommunicationHostsFromActiveGateEndpoints(t *testing.T) {
