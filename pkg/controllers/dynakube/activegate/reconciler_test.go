@@ -12,10 +12,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	mocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	controllerMocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	connectioninfoMocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/connectioninfo"
+	istioMocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/istio"
 	versionMocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -67,6 +69,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
+				EnableIstio: true,
 				ActiveGate: dynatracev1beta1.ActiveGateSpec{
 					Capabilities: []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.RoutingCapability.DisplayName},
 				},
@@ -77,6 +80,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, dtc, nil).(*Reconciler)
 		r.connectionReconciler = createConnectionInfoReconcilerMock(t)
 		r.versionReconciler = createVersionReconcilerMock(t)
+		r.istioReconciler = createIstioReconcilerMock(t)
 
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
@@ -371,4 +375,13 @@ func createVersionReconcilerMock(t *testing.T) version.Reconciler {
 		mock.AnythingOfType("*dynakube.DynaKube")).Return(nil).Once()
 
 	return versionReconciler
+}
+
+func createIstioReconcilerMock(t *testing.T) istio.Reconciler {
+	reconciler := istioMocks.NewReconciler(t)
+	reconciler.On("ReconcileActiveGateCommunicationHosts",
+		mock.AnythingOfType("context.backgroundCtx"),
+		mock.AnythingOfType("*dynakube.DynaKube")).Return(nil).Once()
+
+	return reconciler
 }
