@@ -348,7 +348,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling ActiveGate")
 
-	err := controller.reconcileActiveGate(ctx, dynakube, dynatraceClient, istioClient, connectionInfoReconciler, versionReconciler)
+	err := controller.reconcileActiveGate(ctx, dynakube, dynatraceClient, istioClient)
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
 
