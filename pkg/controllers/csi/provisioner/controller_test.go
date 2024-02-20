@@ -644,7 +644,7 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		ruxitAgentProcPath := filepath.Join("test", "codemodules", "test", "agent", "conf", "ruxitagentproc.conf")
 		sourceRuxitAgentProcPath := filepath.Join("test", "codemodules", "test", "agent", "conf", "_ruxitagentproc.conf")
 
-		prepTestConfFs(provisioner.fs, ruxitAgentProcPath, sourceRuxitAgentProcPath)
+		setUpFS(provisioner.fs, ruxitAgentProcPath, sourceRuxitAgentProcPath)
 
 		mockRegistryClient(t, provisioner, "test")
 
@@ -721,7 +721,7 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		ruxitAgentProcPath := filepath.Join("test", "codemodules", "agent", "conf", "ruxitagentproc.conf")
 		sourceRuxitAgentProcPath := filepath.Join("test", "codemodules", "agent", "conf", "_ruxitagentproc.conf")
 
-		prepTestConfFs(provisioner.fs, ruxitAgentProcPath, sourceRuxitAgentProcPath)
+		setUpFS(provisioner.fs, ruxitAgentProcPath, sourceRuxitAgentProcPath)
 
 		mockRegistryClient(t, provisioner, "test")
 
@@ -809,7 +809,7 @@ func enableCodeModules(dynakube *dynatracev1beta1.DynaKube) {
 	}
 }
 
-func prepTestConfFs(fs afero.Fs, ruxitAgentProcPath string, sourceRuxitAgentProcPath string) {
+func setUpFS(fs afero.Fs, ruxitAgentProcPath string, sourceRuxitAgentProcPath string) {
 	_ = fs.MkdirAll(filepath.Base(sourceRuxitAgentProcPath), 0755)
 	_ = fs.MkdirAll(filepath.Base(ruxitAgentProcPath), 0755)
 	usedConf, _ := fs.OpenFile(ruxitAgentProcPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
