@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	clientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
@@ -21,8 +22,11 @@ import (
 )
 
 const (
-	testName      = "test-name"
-	testNamespace = "test-namespace"
+	testName                   = "test-name"
+	testNamespace              = "test-namespace"
+	testTokenValue             = "test-token"
+	tenantTokenKey             = "tenantToken"
+	oneAgentTenantSecretSuffix = "oneagent-tenant-secret"
 )
 
 func TestReconciler_Reconcile(t *testing.T) {
@@ -31,6 +35,15 @@ func TestReconciler_Reconcile(t *testing.T) {
 			CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}})
 
 		mockK8sClient := fake.NewClient(dynakube)
+		mockK8sClient.Create(context.Background(),
+			&corev1.Secret{
+				Data: map[string][]byte{connectioninfo.TenantTokenName: []byte(testTokenValue)},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      strings.Join([]string{testName, oneAgentTenantSecretSuffix}, "-"),
+					Namespace: testNamespace,
+				},
+			},
+		)
 		mockTime := timeprovider.New().Freeze()
 
 		reconciler := NewReconciler(mockK8sClient,
@@ -108,14 +121,27 @@ func TestGetSecretData(t *testing.T) {
 		dynakube := createDynakube(dynatracev1beta1.OneAgentSpec{
 			CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}})
 		mockK8sClient := fake.NewClient(dynakube)
+		mockK8sClient.Create(context.Background(),
+			&corev1.Secret{
+				Data: map[string][]byte{connectioninfo.TenantTokenName: []byte(testTokenValue)},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      strings.Join([]string{testName, oneAgentTenantSecretSuffix}, "-"),
+					Namespace: testNamespace,
+				},
+			},
+		)
 		mockTime := timeprovider.New().Freeze()
 		reconciler := NewReconciler(mockK8sClient,
 			mockK8sClient, createMockDtClient(t, 0), dynakube, scheme.Scheme, mockTime)
-		reconciler.Reconcile(context.Background())
+		err := reconciler.Reconcile(context.Background())
 
 		got, err := GetSecretData(context.Background(), mockK8sClient, testName, testNamespace)
 		require.NoError(t, err)
-		assert.Equal(t, &dtclient.ProcessModuleConfig{Revision: 0, Properties: nil}, got)
+		assert.Contains(t, got.Properties, dtclient.ProcessModuleProperty{
+			Section: "general",
+			Key:     "tenantToken",
+			Value:   "test-token",
+		})
 	})
 	t.Run("error when secret not found", func(t *testing.T) {
 		got, err := GetSecretData(context.Background(), fake.NewClient(), testName, testNamespace)

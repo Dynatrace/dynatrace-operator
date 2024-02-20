@@ -6,12 +6,15 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -128,6 +131,31 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 		return nil, err
 	}
 
+	tenantToken, err := r.getAgentTenantToken(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	pmc = pmc.
+		AddHostGroup(r.dynakube.HostGroup()).
+		AddConnectionInfo(r.dynakube.Status.OneAgent.ConnectionInfoStatus, tenantToken).
+		// set proxy explicitly empty, so old proxy settings get deleted where necessary
+		AddProxy("")
+
+	if r.dynakube.NeedsOneAgentProxy() {
+		proxy, err := r.dynakube.Proxy(ctx, r.apiReader)
+		if err != nil {
+			return nil, err
+		}
+
+		pmc.AddProxy(proxy)
+
+		if r.dynakube.NeedsActiveGate() {
+			multiCap := capability.NewMultiCapability(r.dynakube)
+			pmc.AddNoProxy(capability.BuildDNSEntryPointWithoutEnvVars(r.dynakube.Name, r.dynakube.Namespace, multiCap))
+		}
+	}
+
 	marshaled, err := json.Marshal(pmc)
 	if err != nil {
 		log.Info("could not marshal process module config")
@@ -141,6 +169,22 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 		secret.NewDataModifier(map[string][]byte{SecretKeyProcessModuleConfig: marshaled}))
 
 	return newSecret, err
+}
+
+func (r *Reconciler) getAgentTenantToken(ctx context.Context) (string, error) {
+	query := secret.NewQuery(ctx, r.client, r.apiReader, log)
+
+	tenantSecret, err := query.Get(types.NamespacedName{Namespace: r.dynakube.Namespace, Name: r.dynakube.OneagentTenantSecret()})
+	if err != nil {
+		return "", errors.Wrapf(err, "OneAgent tenant token secret %s/%s not found", r.dynakube.Namespace, r.dynakube.OneagentTenantSecret())
+	}
+
+	tokenData, ok := tenantSecret.Data[connectioninfo.TenantTokenName]
+	if !ok {
+		return "", errors.Errorf("OneAgent tenant token not found in secret %s/%s", r.dynakube.Namespace, r.dynakube.OneagentTenantSecret())
+	}
+
+	return string(tokenData), nil
 }
 
 func GetSecretData(ctx context.Context, apiReader client.Reader, dynakubeName string, dynakubeNamespace string) (*dtclient.ProcessModuleConfig, error) {

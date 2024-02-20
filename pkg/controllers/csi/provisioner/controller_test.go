@@ -26,12 +26,19 @@ import (
 )
 
 const (
-	testAPIURL   = "http://test-uid/api"
-	tenantUUID   = "test-uid"
-	dkName       = "dynakube-test"
-	otherDkName  = "other-dk"
-	errorMsg     = "test-error"
-	agentVersion = "12345"
+	testAPIURL    = "http://test-uid/api"
+	tenantUUID    = "test-uid"
+	dkName        = "dynakube-test"
+	testNamespace = "test-namespace"
+	testVersion   = "1.2.3"
+	testImageID   = "test-image-id"
+	otherDkName   = "other-dk"
+	errorMsg      = "test-error"
+	agentVersion  = "12345"
+	testRuxitConf = `
+[general]
+key value
+`
 )
 
 type mkDirAllErrorFs struct {
