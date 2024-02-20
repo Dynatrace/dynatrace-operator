@@ -17,7 +17,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	dtClientMock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
-	mockedinstaller "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 	reconcilermock "github.com/Dynatrace/dynatrace-operator/test/mocks/sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -625,7 +624,7 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		require.NoError(t, err)
 
 		mockK8sClient := createMockK8sClient(ctx, dynakube)
-		installerMock := mockedinstaller.NewInstaller(t)
+		installerMock := installermock.NewInstaller(t)
 		installerMock.
 			On("InstallAgent", ctx, "test/codemodules/test").
 			Return(true, nil)
@@ -667,7 +666,7 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		require.NoError(t, err)
 
 		mockK8sClient := createMockK8sClient(ctx, dynakube)
-		installerMock := mockedinstaller.NewInstaller(t)
+		installerMock := installermock.NewInstaller(t)
 		installerMock.
 			On("InstallAgent", ctx, "test/codemodules/test").
 			Return(true, nil)
@@ -703,7 +702,7 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		require.NoError(t, err)
 
 		mockK8sClient := createMockK8sClient(ctx, dynakube)
-		installerMock := mockedinstaller.NewInstaller(t)
+		installerMock := installermock.NewInstaller(t)
 		installerMock.
 			On("InstallAgent", ctx, "test/codemodules").
 			Return(true, nil)
@@ -743,7 +742,7 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		require.NoError(t, err)
 
 		mockK8sClient := createMockK8sClient(ctx, dynakube)
-		installerMock := mockedinstaller.NewInstaller(t)
+		installerMock := installermock.NewInstaller(t)
 		installerMock.
 			On("InstallAgent", ctx, "test/codemodules").
 			Return(true, nil)
