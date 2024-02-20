@@ -11,29 +11,30 @@ import (
 )
 
 type SecretConfig struct {
+	MonitoringNodes map[string]string `json:"monitoringNodes"`
 	// For the client
-	ApiUrl        string `json:"apiUrl"`
-	ApiToken      string `json:"apiToken"`
-	PaasToken     string `json:"paasToken"`
-	Proxy         string `json:"proxy"`
-	NoProxy       string `json:"noProxy"`
-	NetworkZone   string `json:"networkZone"`
-	TrustedCAs    string `json:"trustedCAs"`
-	SkipCertCheck bool   `json:"skipCertCheck"`
+	ApiUrl      string `json:"apiUrl"`
+	ApiToken    string `json:"apiToken"`
+	PaasToken   string `json:"paasToken"`
+	Proxy       string `json:"proxy"`
+	NoProxy     string `json:"noProxy"`
+	NetworkZone string `json:"networkZone"`
+	TrustedCAs  string `json:"trustedCAs"`
 
 	// oneAgent
 	OneAgentNoProxy string `json:"oneAgentNoProxy"`
 
 	// For the injection
-	TenantUUID          string            `json:"tenantUUID"`
-	HasHost             bool              `json:"hasHost"`
-	MonitoringNodes     map[string]string `json:"monitoringNodes"`
-	TlsCert             string            `json:"tlsCert"`
-	HostGroup           string            `json:"hostGroup"`
-	InitialConnectRetry int               `json:"initialConnectRetry"`
-	EnforcementMode     bool              `json:"enforcementMode"`
-	CSIMode             bool              `json:"csiMode"`
-	ReadOnlyCSIDriver   bool              `json:"readOnlyCSIDriver"`
+	TenantUUID          string `json:"tenantUUID"`
+	TlsCert             string `json:"tlsCert"`
+	HostGroup           string `json:"hostGroup"`
+	InitialConnectRetry int    `json:"initialConnectRetry"`
+	SkipCertCheck       bool   `json:"skipCertCheck"`
+
+	HasHost           bool `json:"hasHost"`
+	EnforcementMode   bool `json:"enforcementMode"`
+	CSIMode           bool `json:"csiMode"`
+	ReadOnlyCSIDriver bool `json:"readOnlyCSIDriver"`
 }
 
 func (secret SecretConfig) logContent() {

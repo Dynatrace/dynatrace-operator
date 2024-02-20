@@ -421,6 +421,7 @@ func mockHandleEntitiesRequest(request *http.Request, writer http.ResponseWriter
 	if request.Method == http.MethodGet {
 		if !strings.Contains(request.Form.Get("entitySelector"), "type(KUBERNETES_CLUSTER)") {
 			writer.WriteHeader(http.StatusBadRequest)
+
 			return
 		}
 
@@ -447,6 +448,7 @@ func mockHandleSettingsRequest(request *http.Request, writer http.ResponseWriter
 	case http.MethodGet:
 		if request.Form.Get("schemaIds") != "builtin:cloud.kubernetes" || request.Form.Get("scopes") == "" {
 			writer.WriteHeader(http.StatusBadRequest)
+
 			return
 		}
 
@@ -460,6 +462,7 @@ func mockHandleSettingsRequest(request *http.Request, writer http.ResponseWriter
 	case http.MethodPost:
 		if request.Body == nil {
 			writer.WriteHeader(http.StatusBadRequest)
+
 			return
 		}
 
@@ -496,6 +499,7 @@ func mockDynatraceServerEntitiesHandler(entities []MonitoredEntity, isError bool
 	return func(w http.ResponseWriter, r *http.Request) {
 		if isError {
 			writeError(w, http.StatusBadRequest)
+
 			return
 		}
 
@@ -518,6 +522,7 @@ func mockDynatraceServerSettingsHandler(totalCount int, objectId string, status 
 	return func(w http.ResponseWriter, r *http.Request) {
 		if status != http.StatusOK {
 			writeError(w, status)
+
 			return
 		}
 

@@ -25,10 +25,10 @@ type CommandBuilder struct {
 	configProvider           config.Provider
 	bootstrapManagerProvider cmdManager.Provider
 	operatorManagerProvider  cmdManager.Provider
-	namespace                string
-	podName                  string
 	signalHandler            context.Context
 	client                   client.Client
+	namespace                string
+	podName                  string
 }
 
 func NewOperatorCommandBuilder() CommandBuilder {
@@ -37,36 +37,43 @@ func NewOperatorCommandBuilder() CommandBuilder {
 
 func (builder CommandBuilder) SetConfigProvider(provider config.Provider) CommandBuilder {
 	builder.configProvider = provider
+
 	return builder
 }
 
 func (builder CommandBuilder) setOperatorManagerProvider(provider cmdManager.Provider) CommandBuilder {
 	builder.operatorManagerProvider = provider
+
 	return builder
 }
 
 func (builder CommandBuilder) setBootstrapManagerProvider(provider cmdManager.Provider) CommandBuilder {
 	builder.bootstrapManagerProvider = provider
+
 	return builder
 }
 
 func (builder CommandBuilder) SetNamespace(namespace string) CommandBuilder {
 	builder.namespace = namespace
+
 	return builder
 }
 
 func (builder CommandBuilder) SetPodName(podName string) CommandBuilder {
 	builder.podName = podName
+
 	return builder
 }
 
 func (builder CommandBuilder) setSignalHandler(ctx context.Context) CommandBuilder {
 	builder.signalHandler = ctx
+
 	return builder
 }
 
 func (builder CommandBuilder) setClient(client client.Client) CommandBuilder {
 	builder.client = client
+
 	return builder
 }
 
@@ -131,6 +138,7 @@ func (builder CommandBuilder) buildRun() func(cmd *cobra.Command, args []string)
 
 		if kubesystem.IsRunLocally() {
 			log.Info("running locally in debug mode")
+
 			return builder.runLocally(kubeCfg)
 		}
 

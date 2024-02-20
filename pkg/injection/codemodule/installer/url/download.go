@@ -62,6 +62,7 @@ func (installer Installer) downloadOneAgentWithVersion(ctx context.Context, tmpF
 		)
 		if getVersionsError != nil {
 			log.Info("failed to get available versions", "err", getVersionsError)
+
 			return errors.WithStack(getVersionsError)
 		}
 
@@ -75,5 +76,6 @@ func (installer Installer) downloadOneAgentWithVersion(ctx context.Context, tmpF
 
 func (installer Installer) downloadOneAgentViaInstallerUrl(ctx context.Context, tmpFile afero.File) error {
 	log.Info("downloading OneAgent package using provided url, all other properties are ignored", "url", installer.props.Url)
+
 	return installer.dtc.GetAgentViaInstallerUrl(ctx, installer.props.Url, tmpFile)
 }

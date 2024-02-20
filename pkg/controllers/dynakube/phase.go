@@ -16,16 +16,19 @@ func (controller *Controller) determineDynaKubePhase(dynakube *dynatracev1beta1.
 		activeGatePods, err := controller.numberOfMissingActiveGatePods(dynakube)
 		if err != nil {
 			log.Error(err, "activegate statefulset could not be accessed", "dynakube", dynakube.Name)
+
 			return status.Error
 		}
 
 		if activeGatePods > 0 {
 			log.Info("activegate statefulset is still deploying", "dynakube", dynakube.Name)
+
 			return status.Deploying
 		}
 
 		if activeGatePods < 0 {
 			log.Info("activegate statefulset not yet available", "dynakube", dynakube.Name)
+
 			return status.Deploying
 		}
 	}
@@ -34,16 +37,19 @@ func (controller *Controller) determineDynaKubePhase(dynakube *dynatracev1beta1.
 		oneAgentPods, err := controller.numberOfMissingOneagentPods(dynakube)
 		if k8serrors.IsNotFound(err) {
 			log.Info("oneagent daemonset not yet available", "dynakube", dynakube.Name)
+
 			return status.Deploying
 		}
 
 		if err != nil {
 			log.Error(err, "oneagent daemonset could not be accessed", "dynakube", dynakube.Name)
+
 			return status.Error
 		}
 
 		if oneAgentPods > 0 {
 			log.Info("oneagent daemonset is still deploying", "dynakube", dynakube.Name)
+
 			return status.Deploying
 		}
 	}

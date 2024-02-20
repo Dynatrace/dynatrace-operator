@@ -57,10 +57,10 @@ func NewVolume(id, podName, version, tenantUUID string, mountAttempts int) *Volu
 }
 
 type OsAgentVolume struct {
+	LastModified *time.Time `json:"lastModified"`
 	VolumeID     string     `json:"volumeID"`
 	TenantUUID   string     `json:"tenantUUID"`
 	Mounted      bool       `json:"mounted"`
-	LastModified *time.Time `json:"lastModified"`
 }
 
 // NewOsAgentVolume returns a new volume if all fields are set.
@@ -69,7 +69,7 @@ func NewOsAgentVolume(volumeID, tenantUUID string, mounted bool, timeStamp *time
 		return nil
 	}
 
-	return &OsAgentVolume{volumeID, tenantUUID, mounted, timeStamp}
+	return &OsAgentVolume{VolumeID: volumeID, TenantUUID: tenantUUID, Mounted: mounted, LastModified: timeStamp}
 }
 
 type Access interface {

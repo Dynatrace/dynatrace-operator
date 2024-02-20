@@ -22,11 +22,11 @@ type Properties struct {
 	Type          string
 	Flavor        string
 	TargetVersion string
-	Technologies  []string
 	Url           string // if this is set all settings before it will be ignored
-	SkipMetadata  bool
 
 	PathResolver metadata.PathResolver
+	Technologies []string
+	SkipMetadata bool
 }
 
 func (props *Properties) fillEmptyWithDefaults() {
@@ -56,12 +56,14 @@ func (installer Installer) InstallAgent(ctx context.Context, targetDir string) (
 
 	if installer.isAlreadyDownloaded(targetDir) {
 		log.Info("agent already installed", "target dir", targetDir)
+
 		return false, nil
 	}
 
 	err := installer.fs.MkdirAll(installer.props.PathResolver.AgentSharedBinaryDirBase(), common.MkDirFileMode)
 	if err != nil {
 		log.Info("failed to create the base shared agent directory", "err", err)
+
 		return false, errors.WithStack(err)
 	}
 
@@ -98,6 +100,7 @@ func (installer Installer) installAgent(ctx context.Context, targetDir string) e
 	tmpFile, err := afero.TempFile(fs, path, "download")
 	if err != nil {
 		log.Info("failed to create temp file download", "err", err)
+
 		return errors.WithStack(err)
 	}
 

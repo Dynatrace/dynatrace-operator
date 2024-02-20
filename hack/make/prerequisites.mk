@@ -42,6 +42,7 @@ prerequisites/go-linting:
 	go install golang.org/x/tools/cmd/goimports@$(golang_tools_version)
 	go install github.com/bombsimon/wsl/v4/cmd...@master
 	go install golang.org/x/tools/cmd/deadcode@$(golang_tools_version)
+	go install github.com/dkorunic/betteralign/cmd/betteralign@latest
 
 ## Install 'helm' if it is missing
 ## TODO: Have version accessible by renovate?

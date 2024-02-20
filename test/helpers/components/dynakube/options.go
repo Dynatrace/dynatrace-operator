@@ -22,6 +22,7 @@ func New(opts ...Option) *dynakubev1beta1.DynaKube {
 	for _, opt := range opts {
 		opt(dynakube)
 	}
+
 	return dynakube
 }
 

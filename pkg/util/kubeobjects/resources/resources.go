@@ -14,5 +14,6 @@ func NewResourceList(cpu, memory string) corev1.ResourceList {
 
 func NewQuantity(serialized string) *resource.Quantity {
 	parsed := resource.MustParse(serialized)
+
 	return &parsed
 }

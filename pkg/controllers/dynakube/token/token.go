@@ -37,11 +37,13 @@ func (token Token) setApiTokenScopes(dynakube dynatracev1beta1.DynaKube, hasPaas
 
 func (token Token) setPaasTokenScopes() Token {
 	token.RequiredScopes = []string{dtclient.TokenScopeInstallerDownload}
+
 	return token
 }
 
 func (token Token) setDataIngestScopes() Token {
 	token.RequiredScopes = []string{dtclient.TokenScopeMetricsIngest}
+
 	return token
 }
 

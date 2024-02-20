@@ -475,6 +475,7 @@ func (dk *DynaKube) HostGroupAsParam() string {
 		key, value := splitArg(arg)
 		if key == "--set-host-group" {
 			hostGroup = value
+
 			break
 		}
 	}

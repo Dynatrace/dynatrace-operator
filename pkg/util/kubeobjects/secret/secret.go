@@ -133,6 +133,7 @@ func (query Query) createOrUpdateForNamespaces(newSecret corev1.Secret, namespac
 				err := query.update(newSecret)
 				if err != nil {
 					errs = append(errs, errors.WithMessagef(err, "failed to update secret %s for namespace %s", newSecret.Name, namespace.Name))
+
 					continue
 				}
 
@@ -142,6 +143,7 @@ func (query Query) createOrUpdateForNamespaces(newSecret corev1.Secret, namespac
 			err := query.create(newSecret)
 			if err != nil {
 				errs = append(errs, errors.WithMessagef(err, "failed to create secret %s for namespace %s", newSecret.Name, namespace.Name))
+
 				continue
 			}
 
@@ -168,6 +170,7 @@ func ExtractToken(secret *corev1.Secret, key string) (string, error) {
 	value, hasKey := secret.Data[key]
 	if !hasKey {
 		err := errors.Errorf("missing token %s", key)
+
 		return "", err
 	}
 
@@ -240,6 +243,7 @@ func (mod NameModifier) Enabled() bool {
 
 func (mod NameModifier) Modify(secret *corev1.Secret) error {
 	secret.Name = mod.name
+
 	return nil
 }
 
@@ -259,6 +263,7 @@ func (mod NamespaceModifier) Enabled() bool {
 
 func (mod NamespaceModifier) Modify(secret *corev1.Secret) error {
 	secret.Namespace = mod.namespaceName
+
 	return nil
 }
 
@@ -278,6 +283,7 @@ func (mod DataModifier) Enabled() bool {
 
 func (mod DataModifier) Modify(secret *corev1.Secret) error {
 	secret.Data = mod.data
+
 	return nil
 }
 
@@ -297,6 +303,7 @@ func (mod TypeModifier) Enabled() bool {
 
 func (mod TypeModifier) Modify(secret *corev1.Secret) error {
 	secret.Type = mod.secretType
+
 	return nil
 }
 
@@ -316,5 +323,6 @@ func (mod LabelsModifier) Enabled() bool {
 
 func (mod LabelsModifier) Modify(secret *corev1.Secret) error {
 	secret.Labels = mod.labels
+
 	return nil
 }

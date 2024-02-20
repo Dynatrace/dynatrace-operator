@@ -27,10 +27,10 @@ type Capability interface {
 }
 
 type capabilityBase struct {
-	enabled    bool
+	properties *dynatracev1beta1.CapabilityProperties
 	shortName  string
 	argName    string
-	properties *dynatracev1beta1.CapabilityProperties
+	enabled    bool
 }
 
 func (capability *capabilityBase) Enabled() bool {
@@ -179,6 +179,7 @@ func BuildServiceName(dynakubeName string, module string) string {
 // For more information see: https://kubernetes.io/docs/concepts/services-networking/service/
 func BuildServiceHostName(dynakubeName string, module string) string {
 	serviceName := BuildServiceNameUnderscore(dynakubeName, module)
+
 	return fmt.Sprintf("$(%s_SERVICE_HOST):$(%s_SERVICE_PORT)", serviceName, serviceName)
 }
 

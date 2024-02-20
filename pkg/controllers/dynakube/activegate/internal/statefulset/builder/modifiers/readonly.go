@@ -21,9 +21,9 @@ func NewReadOnlyModifier(dynakube dynatracev1beta1.DynaKube) ReadOnlyModifier {
 }
 
 type ReadOnlyModifier struct {
-	dynakube       dynatracev1beta1.DynaKube
 	presentVolumes []corev1.Volume
 	presentMounts  []corev1.VolumeMount
+	dynakube       dynatracev1beta1.DynaKube
 }
 
 func (mod ReadOnlyModifier) Enabled() bool {

@@ -386,6 +386,7 @@ func createFakeServer(t *testing.T, stable metav1.APIResourceList, dk metav1.API
 		output, err := json.Marshal(list)
 		if err != nil {
 			t.Errorf("unexpected encoding error: %v", err)
+
 			return
 		}
 

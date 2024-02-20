@@ -28,8 +28,8 @@ type InitGenerator struct {
 }
 
 type nodeInfo struct {
-	nodes   []corev1.Node
 	imNodes map[string]string
+	nodes   []corev1.Node
 }
 
 func NewInitGenerator(client client.Client, apiReader client.Reader, namespace string) *InitGenerator {
@@ -271,7 +271,7 @@ func (g *InitGenerator) initIMNodes() (nodeInfo, error) {
 		imNodes[node.Name] = consts.AgentNoHostTenant
 	}
 
-	return nodeInfo{nodeList.Items, imNodes}, nil
+	return nodeInfo{nodes: nodeList.Items, imNodes: imNodes}, nil
 }
 
 func (g *InitGenerator) createSecretData(secretConfig *startup.SecretConfig) (map[string][]byte, error) {

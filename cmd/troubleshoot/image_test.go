@@ -47,12 +47,14 @@ func setupDockerMocker(handleUrls []string) (*httptest.Server, *corev1.Secret, s
 	parsedServerUrl, err := url.Parse(dockerServer.URL)
 	if err != nil {
 		dockerServer.Close()
+
 		return nil, nil, "", err
 	}
 
 	secret, err := createSecret(defaultAuths(parsedServerUrl.Host))
 	if err != nil {
 		dockerServer.Close()
+
 		return nil, nil, "", err
 	}
 
@@ -441,6 +443,7 @@ func testDockerServerHandler(method string, serverUrls []string) http.HandlerFun
 		for _, serverUrl := range serverUrls {
 			if request.Method == method && request.URL.Path == serverUrl {
 				writer.WriteHeader(http.StatusOK)
+
 				return
 			}
 		}

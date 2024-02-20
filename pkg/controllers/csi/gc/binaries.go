@@ -16,6 +16,7 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, t
 	usedVersions, err := gc.db.GetUsedVersions(ctx, tenantUUID)
 	if err != nil {
 		log.Info("failed to get used versions", "error", err)
+
 		return
 	}
 
@@ -24,6 +25,7 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, t
 	storedVersions, err := gc.getStoredVersions(fs, tenantUUID)
 	if err != nil {
 		log.Info("failed to get stored versions", "error", err)
+
 		return
 	}
 
@@ -40,6 +42,7 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, t
 		shouldDelete := shouldDeleteVersion(version, usedVersions) && !isPinnedVersion
 		if !shouldDelete {
 			log.Info("skipped, version should not be deleted", "version", version)
+
 			continue
 		}
 
@@ -55,6 +58,7 @@ func (gc *CSIGarbageCollector) getStoredVersions(fs *afero.Afero, tenantUUID str
 
 	if os.IsNotExist(err) {
 		log.Info("no versions stored")
+
 		return versions, nil
 	} else if err != nil {
 		return nil, errors.WithStack(err)

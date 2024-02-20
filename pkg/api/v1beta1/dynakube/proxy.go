@@ -69,6 +69,7 @@ func (dk *DynaKube) proxyUrlFromUserSecret(ctx context.Context, kubeReader clien
 	proxy, hasKey := proxySecret.Data[ProxyKey]
 	if !hasKey {
 		err := errors.Errorf("missing token %s in proxy secret %s", ProxyKey, secretName)
+
 		return "", err
 	}
 

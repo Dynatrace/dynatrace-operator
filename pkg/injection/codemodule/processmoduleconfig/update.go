@@ -42,6 +42,7 @@ func CreateAgentConfigDir(fs afero.Fs, targetDir, sourceDir string, processModul
 
 		if err != nil {
 			log.Info("failed to create directory for destination process module config", "path", filepath.Dir(destinationProcessModuleConfigPath))
+
 			return errors.WithStack(err)
 		}
 

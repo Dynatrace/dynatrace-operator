@@ -85,6 +85,7 @@ func GetSingleTenantSecret(t *testing.T) Secret {
 	if err != nil {
 		t.Fatal("Couldn't read tenant secret from filesystem", err)
 	}
+
 	return secret
 }
 
@@ -93,6 +94,7 @@ func GetMultiTenantSecret(t *testing.T) []Secret {
 	if err != nil {
 		t.Fatal("Couldn't read tenant secret from filesystem", err)
 	}
+
 	return secrets
 }
 
@@ -109,6 +111,7 @@ func GetEdgeConnectTenantSecret(t *testing.T) EdgeConnectSecret {
 	if err != nil {
 		t.Fatal("Couldn't unmarshal edgeconnect tenant secret from file", err)
 	}
+
 	return result
 }
 
@@ -128,6 +131,7 @@ func CreateTenantSecret(secretConfig Secret, name, namespace string) features.Fu
 
 		if k8serrors.IsAlreadyExists(err) {
 			require.NoError(t, envConfig.Client().Resources().Update(ctx, &defaultSecret))
+
 			return ctx
 		}
 
@@ -154,6 +158,7 @@ func CreateClientSecret(secretConfig EdgeConnectSecret, name, namespace string) 
 
 		if k8serrors.IsAlreadyExists(err) {
 			require.NoError(t, envConfig.Client().Resources().Update(ctx, &defaultSecret))
+
 			return ctx
 		}
 
@@ -191,6 +196,7 @@ func CreateOtelSecret(namespace string) env.Func {
 		if k8serrors.IsAlreadyExists(err) {
 			return ctx, envConfig.Client().Resources().Update(ctx, &defaultSecret)
 		}
+
 		return ctx, err
 	}
 }

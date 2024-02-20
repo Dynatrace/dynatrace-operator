@@ -51,6 +51,7 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("check whether public registry images are used", checkPublicRegistryUsage(testDynakube))
 	builder.Assess("check whether correct image has been downloaded", checkCSIProvisionerEvent(testDynakube))
 	dynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
+
 	return builder.Feature()
 }
 
@@ -127,6 +128,7 @@ func checkCSIProvisionerEvent(dynakube dynakubev1beta1.DynaKube) features.Func {
 					return true, nil
 				}
 			}
+
 			return false, errors.New("csi-provisioner event not found")
 		}, wait.WithTimeout(5*time.Minute))
 

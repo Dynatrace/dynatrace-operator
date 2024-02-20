@@ -147,6 +147,7 @@ func edgeConnectCreateServerHandler(errorBadRequest bool) http.HandlerFunc {
 			if !errorBadRequest {
 				if !isManagedByOperator(request) {
 					writeError(writer, http.StatusBadRequest)
+
 					return
 				}
 
@@ -243,6 +244,7 @@ func edgeConnectUpdateServerHandler() http.HandlerFunc {
 		case fmt.Sprintf("/edge-connects/%s", EdgeConnectID):
 			if !isManagedByOperator(request) {
 				writeError(writer, http.StatusBadRequest)
+
 				return
 			}
 

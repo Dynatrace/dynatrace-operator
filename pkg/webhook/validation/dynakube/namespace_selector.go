@@ -31,9 +31,11 @@ func conflictingNamespaceSelector(ctx context.Context, dv *dynakubeValidator, dy
 	if err != nil && err.Error() == mapper.ErrorConflictingNamespace {
 		if dynakube.NamespaceSelector().MatchExpressions == nil && dynakube.NamespaceSelector().MatchLabels == nil {
 			log.Info("requested dynakube has conflicting namespaceSelector", "name", dynakube.Name, "namespace", dynakube.Namespace)
+
 			return errorConflictingNamespaceSelectorNoSelector
 		} else {
 			log.Info("requested dynakube has conflicting namespaceSelector", "name", dynakube.Name, "namespace", dynakube.Namespace)
+
 			return errorConflictingNamespaceSelector
 		}
 	}

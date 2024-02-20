@@ -80,7 +80,7 @@ func TestUnpublishVolume(t *testing.T) {
 		response, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
 
 		require.NoError(t, err)
-		assert.Nil(t, response)
+		assert.NotNil(t, response)
 		assert.NotEmpty(t, mounter.MountPoints)
 
 		volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(context.TODO(), testVolumeId)

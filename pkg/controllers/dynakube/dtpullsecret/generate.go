@@ -67,6 +67,7 @@ func (r *Reconciler) GenerateData() (map[string][]byte, error) {
 
 func (r *Reconciler) buildAuthString(tenantUUID string, registryToken string) string {
 	auth := fmt.Sprintf("%s:%s", tenantUUID, registryToken)
+
 	return b64.StdEncoding.EncodeToString([]byte(auth))
 }
 

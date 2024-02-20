@@ -28,6 +28,7 @@ func checkProxySettings(ctx context.Context, baseLog logr.Logger, apiReader clie
 		proxyURL, err = getProxyURL(ctx, apiReader, dynakube)
 		if err != nil {
 			logErrorf(log, "Unexpected error when reading proxy settings from Dynakube: %v", err)
+
 			return nil
 		}
 	}

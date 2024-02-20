@@ -163,6 +163,7 @@ func (dk *DynaKube) FeatureIgnoredNamespaces() []string {
 	err := json.Unmarshal([]byte(raw), ignoredNamespaces)
 	if err != nil {
 		log.Error(err, "failed to unmarshal ignoredNamespaces feature-flag")
+
 		return dk.getDefaultIgnoredNamespaces()
 	}
 

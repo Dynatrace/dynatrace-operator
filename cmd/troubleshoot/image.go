@@ -51,6 +51,7 @@ func verifyImageIsAvailable(log logr.Logger, pullImage ImagePullFunc, dynakube *
 	image, isCustomImage := comp.getImage(dynakube)
 	if comp.SkipImageCheck(image) {
 		logErrorf(log, "Unknown %s image", comp.String())
+
 		return
 	}
 
@@ -59,6 +60,7 @@ func verifyImageIsAvailable(log logr.Logger, pullImage ImagePullFunc, dynakube *
 
 	if image == "" {
 		logInfof(log, "No %s image configured", componentName)
+
 		return
 	}
 

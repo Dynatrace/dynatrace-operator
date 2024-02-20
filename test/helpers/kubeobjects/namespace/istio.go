@@ -36,6 +36,7 @@ func AddIstioNetworkAttachment(namespace corev1.Namespace) func(ctx context.Cont
 				return ctx, err
 			}
 		}
+
 		return ctx, nil
 	}
 }

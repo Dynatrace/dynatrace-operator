@@ -132,6 +132,7 @@ func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, agentI
 
 	if err != nil {
 		eventRecorder.sendFailedInstallAgentVersionEvent(targetVersion, tenantUUID)
+
 		return err
 	}
 

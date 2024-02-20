@@ -16,6 +16,8 @@ const (
 )
 
 type VersionStatus struct {
+	// Indicates when the last check for a new version was performed
+	LastProbeTimestamp *metav1.Time `json:"lastProbeTimestamp,omitempty"`
 	// Source of the image (tenant-registry, public-registry, ...)
 	Source VersionSource `json:"source,omitempty"`
 	// Image ID
@@ -24,6 +26,4 @@ type VersionStatus struct {
 	Version string `json:"version,omitempty"`
 	// Image type
 	Type string `json:"type,omitempty"`
-	// Indicates when the last check for a new version was performed
-	LastProbeTimestamp *metav1.Time `json:"lastProbeTimestamp,omitempty"`
 }

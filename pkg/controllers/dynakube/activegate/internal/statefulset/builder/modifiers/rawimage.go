@@ -25,8 +25,8 @@ func NewRawImageModifier(dynakube dynatracev1beta1.DynaKube, envMap *prioritymap
 }
 
 type RawImageModifier struct {
-	dynakube dynatracev1beta1.DynaKube
 	envMap   *prioritymap.Map
+	dynakube dynatracev1beta1.DynaKube
 }
 
 func (mod RawImageModifier) Enabled() bool {

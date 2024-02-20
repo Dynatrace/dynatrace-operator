@@ -50,11 +50,13 @@ func NewWebhookCommandBuilder() CommandBuilder {
 
 func (builder CommandBuilder) SetConfigProvider(provider config.Provider) CommandBuilder {
 	builder.configProvider = provider
+
 	return builder
 }
 
 func (builder CommandBuilder) SetManagerProvider(provider cmdManager.Provider) CommandBuilder {
 	builder.managerProvider = provider
+
 	return builder
 }
 
@@ -68,11 +70,13 @@ func (builder CommandBuilder) GetManagerProvider() cmdManager.Provider {
 
 func (builder CommandBuilder) SetNamespace(namespace string) CommandBuilder {
 	builder.namespace = namespace
+
 	return builder
 }
 
 func (builder CommandBuilder) SetPodName(podName string) CommandBuilder {
 	builder.podName = podName
+
 	return builder
 }
 

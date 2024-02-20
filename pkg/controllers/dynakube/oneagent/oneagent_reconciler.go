@@ -71,6 +71,7 @@ type Reconciler struct {
 func (r *Reconciler) Reconcile(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	if !dynakube.NeedsOneAgent() {
 		log.Info("removing OneAgent daemonSet")
+
 		return r.removeOneAgentDaemonSet(ctx, dynakube)
 	}
 
@@ -142,6 +143,7 @@ func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 	err = query.CreateOrUpdate(*configMap)
 	if err != nil {
 		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
+
 		return err
 	}
 
@@ -167,6 +169,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context, dynakube *dynatracev1
 	dsDesired, err := r.buildDesiredDaemonSet(dynakube)
 	if err != nil {
 		log.Info("failed to get desired daemonset")
+
 		return err
 	}
 
@@ -178,6 +181,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context, dynakube *dynatracev1
 	updated, err := k8sdaemonset.CreateOrUpdateDaemonSet(r.client, log, dsDesired)
 	if err != nil {
 		log.Info("failed to roll out new OneAgent DaemonSet")
+
 		return err
 	}
 
@@ -196,6 +200,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context, dynakube *dynatracev1
 			log.Info("removed oneagent daemonset with feature in name")
 		} else if !k8serrors.IsNotFound(err) {
 			log.Info("failed to remove oneagent daemonset with feature in name")
+
 			return err
 		}
 	}
@@ -260,6 +265,7 @@ func (r *Reconciler) reconcileInstanceStatuses(ctx context.Context, dynakube *dy
 
 	if dynakube.Status.OneAgent.Instances == nil || !reflect.DeepEqual(dynakube.Status.OneAgent.Instances, instanceStatuses) {
 		dynakube.Status.OneAgent.Instances = instanceStatuses
+
 		return err
 	}
 
@@ -268,6 +274,7 @@ func (r *Reconciler) reconcileInstanceStatuses(ctx context.Context, dynakube *dy
 
 func (r *Reconciler) removeOneAgentDaemonSet(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	oneAgentDaemonSet := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dynakube.OneAgentDaemonsetName(), Namespace: dynakube.Namespace}}
+
 	return object.Delete(ctx, r.client, &oneAgentDaemonSet)
 }
 

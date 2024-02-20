@@ -45,6 +45,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		err := r.reconcilePullSecret(ctx)
 		if err != nil {
 			log.Info("could not reconcile pull secret")
+
 			return errors.WithStack(err)
 		}
 	}
@@ -72,6 +73,7 @@ func (r *Reconciler) createPullSecretIfNotExists(ctx context.Context, pullSecret
 	err := r.apiReader.Get(ctx, client.ObjectKey{Name: extendWithPullSecretSuffix(r.dynakube.Name), Namespace: r.dynakube.Namespace}, &config)
 	if k8serrors.IsNotFound(err) {
 		log.Info("creating pull secret")
+
 		return r.createPullSecret(ctx, pullSecretData)
 	}
 

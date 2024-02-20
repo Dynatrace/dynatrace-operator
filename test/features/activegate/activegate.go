@@ -81,6 +81,7 @@ func Feature(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.F
 
 	// Register operator + dynakube uninstall
 	dynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
+
 	return builder.Feature()
 }
 
@@ -127,6 +128,7 @@ func checkActiveModules(testDynakube *dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		log := activegate.ReadActiveGateLog(ctx, t, envConfig, testDynakube, agComponentName)
 		assertExpectedModulesAreActive(t, log)
+
 		return ctx
 	}
 }
@@ -135,6 +137,7 @@ func checkIfProxyUsed(testDynakube *dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		log := activegate.ReadActiveGateLog(ctx, t, envConfig, testDynakube, agComponentName)
 		assertProxyUsed(t, log, testDynakube.Spec.Proxy.Value)
+
 		return ctx
 	}
 }
@@ -236,6 +239,7 @@ func initMap(srcMap *map[string]bool) map[string]bool {
 	for k, v := range *srcMap {
 		dstMap[k] = v
 	}
+
 	return dstMap
 }
 
@@ -257,6 +261,7 @@ func checkReadOnlySettings(testDynakube *dynatracev1beta1.DynaKube) features.Fun
 		assertReadOnlyRootFilesystems(t, activeGatePod)
 		assertReadOnlyVolumes(t, activeGatePod)
 		assertReadOnlyVolumeMounts(t, activeGatePod)
+
 		return ctx
 	}
 }

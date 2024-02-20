@@ -32,6 +32,7 @@ func NewQuery(ctx context.Context, resource *resources.Resources, objectKey clie
 func (query *Query) Get() (appsv1.DaemonSet, error) {
 	var daemonSet appsv1.DaemonSet
 	err := query.resource.Get(query.ctx, query.objectKey.Name, query.objectKey.Namespace, &daemonSet)
+
 	return daemonSet, err
 }
 
@@ -40,6 +41,7 @@ func (query *Query) Delete() error {
 	if err != nil && !k8sErrors.IsNotFound(err) {
 		return err
 	}
+
 	return query.resource.Delete(query.ctx, &daemonSet)
 }
 

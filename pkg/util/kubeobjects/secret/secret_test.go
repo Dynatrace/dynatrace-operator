@@ -183,14 +183,17 @@ func TestMultipleSecrets(t *testing.T) {
 		boomClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 			Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
 				requestCounter++
+
 				return errors.New("BOOM")
 			},
 			Delete: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
 				requestCounter++
+
 				return errors.New("BOOM")
 			},
 			Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
 				requestCounter++
+
 				return errors.New("BOOM")
 			},
 		})

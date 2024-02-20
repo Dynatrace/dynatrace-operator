@@ -12,6 +12,7 @@ func SetKubeSystemUUIDInStatus(ctx context.Context, dynakube *dynatracev1beta1.D
 	uid, err := kubesystem.GetUID(ctx, apiReader)
 	if err != nil {
 		log.Info("could not get cluster ID")
+
 		return err
 	}
 

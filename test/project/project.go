@@ -29,6 +29,7 @@ func init() {
 		goModPath := path.Join(dir, "go.mod")
 		if _, err := os.Stat(goModPath); err == nil {
 			rootDir = dir
+
 			return
 		}
 

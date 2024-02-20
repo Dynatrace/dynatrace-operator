@@ -220,7 +220,7 @@ func TestUnpublishVolume(t *testing.T) {
 		response, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
 
 		require.NoError(t, err)
-		require.Nil(t, response)
+		require.NotNil(t, response)
 		require.NotEmpty(t, mounter.MountPoints)
 		assertNoReferencesForUnpublishedVolume(t, &publisher)
 	})

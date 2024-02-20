@@ -43,6 +43,7 @@ func GetRandomName(opts ...Options) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return options.prefix + encode(b)[:options.length], nil
 }
 
@@ -53,5 +54,6 @@ func encode(randBytes []byte) string {
 	for _, b := range randBytes {
 		result = append(result, letterRunes[b%byte(len(letterRunes))])
 	}
+
 	return string(result)
 }

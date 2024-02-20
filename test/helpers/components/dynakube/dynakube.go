@@ -73,6 +73,7 @@ func WaitForPhase(dynakube dynakubev1beta1.DynaKube, phase status.DeploymentPhas
 		const timeout = 5 * time.Minute
 		err := wait.For(conditions.New(resources).ResourceMatch(&dynakube, func(object k8s.Object) bool {
 			dynakube, isDynakube := object.(*dynakubev1beta1.DynaKube)
+
 			return isDynakube && dynakube.Status.Phase == phase
 		}), wait.WithTimeout(timeout))
 
@@ -86,6 +87,7 @@ func create(dynakube dynakubev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		require.NoError(t, dynatracev1beta1.AddToScheme(envConfig.Client().Resources().GetScheme()))
 		require.NoError(t, envConfig.Client().Resources().Create(ctx, &dynakube))
+
 		return ctx
 	}
 }
@@ -97,6 +99,7 @@ func update(dynakube dynakubev1beta1.DynaKube) features.Func {
 		require.NoError(t, envConfig.Client().Resources().Get(ctx, dynakube.Name, dynakube.Namespace, &dk))
 		dynakube.ResourceVersion = dk.ResourceVersion
 		require.NoError(t, envConfig.Client().Resources().Update(ctx, &dynakube))
+
 		return ctx
 	}
 }
@@ -121,6 +124,7 @@ func remove(dynakube dynakubev1beta1.DynaKube) features.Func {
 
 		err = wait.For(conditions.New(resources).ResourceDeleted(&dynakube), wait.WithTimeout(1*time.Minute))
 		require.NoError(t, err)
+
 		return ctx
 	}
 }

@@ -56,6 +56,7 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 			log.Info("initial status update in progress with no auto update", "updater", updater.Name())
 		} else if previousSource == currentSource {
 			log.Info("status updated skipped, due to no auto update", "updater", updater.Name())
+
 			return nil
 		}
 	}
@@ -87,6 +88,7 @@ func (r *reconciler) processPublicRegistry(ctx context.Context, updater StatusUp
 	publicImage, err := updater.LatestImageInfo(ctx)
 	if err != nil {
 		log.Info("could not get public image", "updater", updater.Name())
+
 		return err
 	}
 
@@ -204,6 +206,7 @@ func isDowngrade(updaterName, previousVersion, latestVersion string) (bool, erro
 			return false, err
 		} else if downgrade {
 			log.Info("downgrade detected, which is not allowed in this configuration", "updater", updaterName, "from", previousVersion, "to", latestVersion)
+
 			return true, err
 		}
 	}

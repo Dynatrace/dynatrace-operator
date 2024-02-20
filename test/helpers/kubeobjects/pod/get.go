@@ -25,6 +25,7 @@ func GetPodsForOwner(ctx context.Context, t *testing.T, resource *resources.Reso
 			targetPods.Items = append(targetPods.Items, pod)
 		}
 	}
+
 	return targetPods
 }
 
@@ -38,5 +39,6 @@ func GetPodsForNamespace(ctx context.Context, t *testing.T, resource *resources.
 		}
 		require.NoError(t, err)
 	}
+
 	return pods
 }

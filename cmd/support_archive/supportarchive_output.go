@@ -11,8 +11,8 @@ const (
 )
 
 type supportArchiveOutputCollector struct {
-	collectorCommon
 	output io.Reader
+	collectorCommon
 }
 
 func newSupportArchiveOutputCollector(log logr.Logger, supportArchive archiver, logBuffer io.Reader) collector {

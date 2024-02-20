@@ -332,6 +332,7 @@ func TestIsProxyAsEnvVarDeprecated(t *testing.T) {
 			got, err := isProxyAsEnvVarDeprecated(tt.oneAgentVersion)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("isProxyAsEnvVarDeprecated() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 
