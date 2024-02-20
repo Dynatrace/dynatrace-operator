@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -12,16 +14,20 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	dtClientMock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
+	mockedinstaller "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 	reconcilermock "github.com/Dynatrace/dynatrace-operator/test/mocks/sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -604,4 +610,208 @@ func TestHandleMetadata(t *testing.T) {
 	require.NotNil(t, dynakubeMetadata)
 	require.NotNil(t, oldMetadata)
 	require.Equal(t, 5, dynakubeMetadata.MaxFailedMountAttempts)
+}
+
+func TestUpdateAgentInstallation(t *testing.T) {
+	ctx := context.Background()
+	t.Run("updateAgentInstallation with codeModules enabled", func(t *testing.T) {
+		dynakube := getDynakube()
+		enableCodeModules(dynakube)
+
+		mockDtcBuilder := dtClientMock.NewBuilder(t)
+		var dtc dtclient.Client
+		mockDtcBuilder.On("Build").Return(dtc, nil)
+		dtc, err := mockDtcBuilder.Build()
+		require.NoError(t, err)
+
+		mockK8sClient := createMockK8sClient(ctx, dynakube)
+		installerMock := mockedinstaller.NewInstaller(t)
+		installerMock.
+			On("InstallAgent", ctx, "test/codemodules/test").
+			Return(true, nil)
+
+		provisioner := &OneAgentProvisioner{
+			db:                     metadata.FakeMemoryDB(),
+			dynatraceClientBuilder: mockDtcBuilder,
+			apiReader:              mockK8sClient,
+			client:                 mockK8sClient,
+			path:                   metadata.PathResolver{RootDir: "test"},
+			fs:                     afero.NewMemMapFs(),
+			imageInstallerBuilder:  mockImageInstallerBuilder(installerMock),
+			recorder:               &record.FakeRecorder{},
+		}
+
+		ruxitAgentProcPath := filepath.Join("test", "codemodules", "test", "agent", "conf", "ruxitagentproc.conf")
+		sourceRuxitAgentProcPath := filepath.Join("test", "codemodules", "test", "agent", "conf", "_ruxitagentproc.conf")
+
+		prepTestConfFs(provisioner.fs, ruxitAgentProcPath, sourceRuxitAgentProcPath)
+
+		mockRegistryClient(t, provisioner, "test")
+
+		dynakubeMetadata := metadata.Dynakube{TenantUUID: tenantUUID, LatestVersion: agentVersion, Name: dkName}
+		isRequeue, err := provisioner.updateAgentInstallation(ctx, dtc, &dynakubeMetadata, dynakube)
+		require.NoError(t, err)
+
+		require.Equal(t, "", dynakubeMetadata.LatestVersion)
+		require.Equal(t, "test", dynakubeMetadata.ImageDigest)
+		assert.False(t, isRequeue)
+	})
+	t.Run("updateAgentInstallation with codeModules enabled errors and requeues", func(t *testing.T) {
+		dynakube := getDynakube()
+		enableCodeModules(dynakube)
+
+		mockDtcBuilder := dtClientMock.NewBuilder(t)
+		var dtc dtclient.Client
+		mockDtcBuilder.On("Build").Return(dtc, nil)
+		dtc, err := mockDtcBuilder.Build()
+		require.NoError(t, err)
+
+		mockK8sClient := createMockK8sClient(ctx, dynakube)
+		installerMock := mockedinstaller.NewInstaller(t)
+		installerMock.
+			On("InstallAgent", ctx, "test/codemodules/test").
+			Return(true, nil)
+
+		provisioner := &OneAgentProvisioner{
+			db:                     metadata.FakeMemoryDB(),
+			dynatraceClientBuilder: mockDtcBuilder,
+			apiReader:              mockK8sClient,
+			client:                 mockK8sClient,
+			path:                   metadata.PathResolver{RootDir: "test"},
+			fs:                     afero.NewMemMapFs(),
+			imageInstallerBuilder:  mockImageInstallerBuilder(installerMock),
+			recorder:               &record.FakeRecorder{},
+		}
+
+		mockRegistryClient(t, provisioner, "test")
+
+		dynakubeMetadata := metadata.Dynakube{TenantUUID: tenantUUID, LatestVersion: agentVersion, Name: dkName}
+		isRequeue, err := provisioner.updateAgentInstallation(ctx, dtc, &dynakubeMetadata, dynakube)
+		require.NoError(t, err)
+
+		require.Equal(t, "12345", dynakubeMetadata.LatestVersion)
+		require.Equal(t, "", dynakubeMetadata.ImageDigest)
+		assert.True(t, isRequeue)
+	})
+	t.Run("updateAgentInstallation without codeModules", func(t *testing.T) {
+		dynakube := getDynakube()
+
+		mockDtcBuilder := dtClientMock.NewBuilder(t)
+		var dtc dtclient.Client
+		mockDtcBuilder.On("Build").Return(dtc, nil)
+		dtc, err := mockDtcBuilder.Build()
+		require.NoError(t, err)
+
+		mockK8sClient := createMockK8sClient(ctx, dynakube)
+		installerMock := mockedinstaller.NewInstaller(t)
+		installerMock.
+			On("InstallAgent", ctx, "test/codemodules").
+			Return(true, nil)
+
+		provisioner := &OneAgentProvisioner{
+			db:                     metadata.FakeMemoryDB(),
+			dynatraceClientBuilder: mockDtcBuilder,
+			apiReader:              mockK8sClient,
+			client:                 mockK8sClient,
+			path:                   metadata.PathResolver{RootDir: "test"},
+			fs:                     afero.NewMemMapFs(),
+			recorder:               &record.FakeRecorder{},
+			urlInstallerBuilder:    mockUrlInstallerBuilder(installerMock),
+		}
+		ruxitAgentProcPath := filepath.Join("test", "codemodules", "agent", "conf", "ruxitagentproc.conf")
+		sourceRuxitAgentProcPath := filepath.Join("test", "codemodules", "agent", "conf", "_ruxitagentproc.conf")
+
+		prepTestConfFs(provisioner.fs, ruxitAgentProcPath, sourceRuxitAgentProcPath)
+
+		mockRegistryClient(t, provisioner, "test")
+
+		dynakubeMetadata := metadata.Dynakube{TenantUUID: tenantUUID, LatestVersion: agentVersion, Name: dkName}
+		isRequeue, err := provisioner.updateAgentInstallation(ctx, dtc, &dynakubeMetadata, dynakube)
+		require.NoError(t, err)
+
+		require.Equal(t, "12345", dynakubeMetadata.LatestVersion)
+		require.Equal(t, "", dynakubeMetadata.ImageDigest)
+		assert.False(t, isRequeue)
+	})
+	t.Run("updateAgentInstallation without codeModules errors and requeues", func(t *testing.T) {
+		dynakube := getDynakube()
+
+		mockDtcBuilder := dtClientMock.NewBuilder(t)
+		var dtc dtclient.Client
+		mockDtcBuilder.On("Build").Return(dtc, nil)
+		dtc, err := mockDtcBuilder.Build()
+		require.NoError(t, err)
+
+		mockK8sClient := createMockK8sClient(ctx, dynakube)
+		installerMock := mockedinstaller.NewInstaller(t)
+		installerMock.
+			On("InstallAgent", ctx, "test/codemodules").
+			Return(true, nil)
+
+		provisioner := &OneAgentProvisioner{
+			db:                     metadata.FakeMemoryDB(),
+			dynatraceClientBuilder: mockDtcBuilder,
+			apiReader:              mockK8sClient,
+			client:                 mockK8sClient,
+			path:                   metadata.PathResolver{RootDir: "test"},
+			fs:                     afero.NewMemMapFs(),
+			recorder:               &record.FakeRecorder{},
+			urlInstallerBuilder:    mockUrlInstallerBuilder(installerMock),
+		}
+
+		mockRegistryClient(t, provisioner, "test")
+
+		dynakubeMetadata := metadata.Dynakube{TenantUUID: tenantUUID, LatestVersion: agentVersion, Name: dkName}
+		isRequeue, err := provisioner.updateAgentInstallation(ctx, dtc, &dynakubeMetadata, dynakube)
+		require.NoError(t, err)
+
+		require.Equal(t, "12345", dynakubeMetadata.LatestVersion)
+		require.Equal(t, "", dynakubeMetadata.ImageDigest)
+		assert.True(t, isRequeue)
+	})
+}
+
+func createMockK8sClient(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) client.Client {
+	mockK8sClient := fake.NewClient(dynakube)
+	mockK8sClient.Create(ctx,
+		&corev1.Secret{
+			Data: map[string][]byte{processmoduleconfigsecret.SecretKeyProcessModuleConfig: []byte(`{"revision":0,"properties":[]}`)},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      strings.Join([]string{dkName, "pmc-secret"}, "-"),
+				Namespace: "test-namespace",
+			},
+		},
+	)
+	return mockK8sClient
+}
+
+func getDynakube() *dynatracev1beta1.DynaKube {
+	return &dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dkName,
+			Namespace: testNamespace,
+		},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL:   testAPIURL,
+			OneAgent: dynatracev1beta1.OneAgentSpec{},
+		},
+	}
+}
+
+func enableCodeModules(dynakube *dynatracev1beta1.DynaKube) {
+	dynakube.Status = dynatracev1beta1.DynaKubeStatus{
+		CodeModules: dynatracev1beta1.CodeModulesStatus{
+			VersionStatus: status.VersionStatus{
+				Version: testVersion,
+				ImageID: testImageID,
+			},
+		},
+	}
+}
+
+func prepTestConfFs(fs afero.Fs, ruxitAgentProcPath string, sourceRuxitAgentProcPath string) {
+	_ = fs.MkdirAll(filepath.Base(sourceRuxitAgentProcPath), 0755)
+	_ = fs.MkdirAll(filepath.Base(ruxitAgentProcPath), 0755)
+	usedConf, _ := fs.OpenFile(ruxitAgentProcPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	_, _ = usedConf.WriteString(testRuxitConf)
 }
