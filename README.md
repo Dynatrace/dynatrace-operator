@@ -73,7 +73,7 @@ contain parameters for various Dynatrace capabilities (OneAgent deployment mode,
 
 > Note: `.spec.tokens` denotes the name of the secret holding access tokens.
 >
-> If not specified Dynatrace Operator searches for a secret called like the DynaKube custom resource `.metadata.name`.
+> If not specified, Dynatrace Operator searches for a secret called the DynaKube custom resource `.metadata.name`.
 
 The recommended approach is using classic Fullstack injection to roll out Dynatrace to your cluster, available as [classicFullStack sample](assets/samples/dynakube/classicFullStack.yaml).
 In case you want to have adjustments please have a look at [our DynaKube Custom Resource examples](assets/samples/dynakube).
