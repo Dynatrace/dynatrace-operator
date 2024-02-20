@@ -1,11 +1,11 @@
 package daemonset
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	k8senv "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
@@ -175,7 +175,7 @@ func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynat
 		env.ValueFrom.ConfigMapKeyRef.Name,
 	)
 	assert.Equal(t,
-		connectioninfo.TenantUUIDName,
+		connectioninfo.TenantUUIDKey,
 		env.ValueFrom.ConfigMapKeyRef.Key,
 	)
 
@@ -186,7 +186,7 @@ func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynat
 		env.ValueFrom.ConfigMapKeyRef.Name,
 	)
 	assert.Equal(t,
-		connectioninfo.CommunicationEndpointsName,
+		connectioninfo.CommunicationEndpointsKey,
 		env.ValueFrom.ConfigMapKeyRef.Key,
 	)
 }

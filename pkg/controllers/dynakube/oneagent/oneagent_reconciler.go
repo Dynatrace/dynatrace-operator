@@ -3,13 +3,13 @@ package oneagent
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"os"
 	"reflect"
 	"strconv"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
@@ -154,11 +154,11 @@ func extractPublicData(dynakube *dynatracev1beta1.DynaKube) map[string]string {
 	data := map[string]string{}
 
 	if dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID != "" {
-		data[connectioninfo.TenantUUIDName] = dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID
+		data[connectioninfo.TenantUUIDKey] = dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID
 	}
 
 	if dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints != "" {
-		data[connectioninfo.CommunicationEndpointsName] = dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints
+		data[connectioninfo.CommunicationEndpointsKey] = dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints
 	}
 
 	return data

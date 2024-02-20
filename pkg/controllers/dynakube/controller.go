@@ -3,6 +3,8 @@ package dynakube
 import (
 	"context"
 	goerrors "errors"
+	agconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/activegate"
+	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"os"
 	"time"
 
@@ -11,7 +13,6 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
@@ -77,7 +78,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		// move these builders after refactoring the reconciler logic of the controller
 		deploymentMetadataReconcilerBuilder: deploymentmetadata.NewReconciler,
 		versionReconcilerBuilder:            version.NewReconciler,
-		connectionInfoReconcilerBuilder:     connectioninfo.NewReconciler,
+		oaConnectionInfoReconcilerBuilder:   oaconnectioninfo.NewReconciler,
 		activeGateReconcilerBuilder:         activegate.NewReconciler,
 		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
 		injectionReconcilerBuilder:          injection.NewReconciler,
@@ -115,7 +116,7 @@ type Controller struct {
 
 	deploymentMetadataReconcilerBuilder deploymentmetadata.ReconcilerBuilder
 	versionReconcilerBuilder            version.ReconcilerBuilder
-	connectionInfoReconcilerBuilder     connectioninfo.ReconcilerBuilder
+	oaConnectionInfoReconcilerBuilder   oaconnectioninfo.ReconcilerBuilder
 	activeGateReconcilerBuilder         activegate.ReconcilerBuilder
 	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
 	injectionReconcilerBuilder          injection.ReconcilerBuilder
@@ -317,10 +318,10 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 	// it's important to setup app injection before AG so that it is already working when AG pods start, in case code modules shall get
 	// injected into AG for self-monitoring reasons
 	versionReconciler := controller.versionReconcilerBuilder(controller.apiReader, dynatraceClient, controller.fs, timeprovider.New().Freeze())
-	connectionInfoReconciler := controller.connectionInfoReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient)
-	injectionReconciler := controller.injectionReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient, istioClient, controller.fs, dynakube)
+	oaConnectionInfoReconciler := controller.oaConnectionInfoReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient, dynakube)
+	injectionReconciler := controller.injectionReconcilerBuilder(controller.client, controller.apiReader, dynatraceClient, istioClient, controller.fs, dynakube)
 
-	componentErrors := []error{}
+	var componentErrors []error
 
 	log.Info("start reconciling ActiveGate")
 
@@ -339,8 +340,8 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 	}
 
 	if dynakube.NeedsOneAgent() || dynakube.ApplicationMonitoringMode() { // TODO: improve check
-		err := connectionInfoReconciler.ReconcileOneAgent(ctx, dynakube)
-		if errors.Is(err, connectioninfo.NoOneAgentCommunicationHostsError) {
+		err := oaConnectionInfoReconciler.Reconcile(ctx)
+		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
 			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
 			// this situation will clear itself after AG has been started
 			controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)

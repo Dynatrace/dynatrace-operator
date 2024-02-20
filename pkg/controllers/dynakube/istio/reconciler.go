@@ -2,11 +2,12 @@ package istio
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"net"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -59,7 +60,7 @@ func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, 
 		return errors.New("can't reconcile oneagent communication hosts of nil dynakube")
 	}
 
-	oneAgentCommunicationHosts := connectioninfo.GetOneAgentCommunicationHosts(dynakube)
+	oneAgentCommunicationHosts := oaconnectioninfo.GetCommunicationHosts(dynakube)
 
 	err := r.reconcileCommunicationHostsForComponent(ctx, oneAgentCommunicationHosts, OneAgentComponent)
 	if err != nil {
@@ -76,7 +77,7 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 		return errors.New("can't reconcile oneagent communication hosts of nil dynakube")
 	}
 
-	activeGateEndpoints := connectioninfo.GetActiveGateEndpointsAsCommunicationHosts(dynakube)
+	activeGateEndpoints := activegate.GetEndpointsAsCommunicationHosts(dynakube)
 
 	err := r.reconcileCommunicationHostsForComponent(ctx, activeGateEndpoints, ActiveGateComponent)
 	if err != nil {

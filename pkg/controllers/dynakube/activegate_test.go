@@ -10,6 +10,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
 	mockcontroller "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
+	mockversion "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,7 +43,7 @@ func TestReconcileActiveGate(t *testing.T) {
 			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
 		}
 
-		err := controller.reconcileActiveGate(ctx, dynakube, nil, nil)
+		err := controller.reconcileActiveGate(ctx, dynakube, nil, nil, nil)
 		require.NoError(t, err)
 	})
 	t.Run("no active-gate configured => active-gate reconcile returns error => returns error", func(t *testing.T) {
@@ -89,14 +90,20 @@ func TestReconcileActiveGate(t *testing.T) {
 
 		mockClient := createDTMockClient(t, dtclient.TokenScopes{}, dtclient.TokenScopes{})
 
+		mockAgConnectionInfoReconciler := mockcontroller.NewReconciler(t)
+		mockAgConnectionInfoReconciler.On("Reconcile", mock.Anything).Return(nil)
+
+		mockVersionReconciler := mockversion.NewReconciler(t)
+		mockVersionReconciler.On("ReconcileActiveGate", mock.Anything, mock.Anything).Return(nil)
+
 		mockActiveGateReconciler := mockcontroller.NewReconciler(t)
 		mockActiveGateReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(nil)
 
 		controller := &Controller{
-			client:                         fakeClient,
-			apiReader:                      fakeClient,
-			activeGateReconcilerBuilder:    createActivegateReconcilerBuilder(mockActiveGateReconciler),
-			apiMonitoringReconcilerBuilder: apimonitoring.NewReconciler, // TODO: actually mock it
+			client:                            fakeClient,
+			apiReader:                         fakeClient,
+			activeGateReconcilerBuilder:       createActivegateReconcilerBuilder(mockActiveGateReconciler),
+			apiMonitoringReconcilerBuilder:    apimonitoring.NewReconciler, // TODO: actually mock it
 		}
 
 		err := controller.reconcileActiveGate(ctx, instance, mockClient, nil)

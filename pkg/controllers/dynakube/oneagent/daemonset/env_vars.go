@@ -89,14 +89,14 @@ func (dsInfo *builderInfo) addConnectionInfoEnvs(envVarMap *prioritymap.Map) {
 		LocalObjectReference: corev1.LocalObjectReference{
 			Name: dsInfo.dynakube.OneAgentConnectionInfoConfigMapName(),
 		},
-		Key:      connectioninfo.TenantUUIDName,
+		Key:      connectioninfo.TenantUUIDKey,
 		Optional: address.Of(false),
 	}})
 	addDefaultValueSource(envVarMap, connectioninfo.EnvDtServer, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 		LocalObjectReference: corev1.LocalObjectReference{
 			Name: dsInfo.dynakube.OneAgentConnectionInfoConfigMapName(),
 		},
-		Key:      connectioninfo.CommunicationEndpointsName,
+		Key:      connectioninfo.CommunicationEndpointsKey,
 		Optional: address.Of(false),
 	}})
 }

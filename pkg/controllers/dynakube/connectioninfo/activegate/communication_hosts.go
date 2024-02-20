@@ -1,33 +1,19 @@
-package connectioninfo
+package activegate
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/pkg/errors"
 	"net/url"
 	"strconv"
 	"strings"
-
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/pkg/errors"
 )
 
 const (
 	DefaultHttpPort = uint32(80)
 )
 
-func GetOneAgentCommunicationHosts(dynakube *dynatracev1beta1.DynaKube) []dtclient.CommunicationHost {
-	communicationHosts := make([]dtclient.CommunicationHost, 0, len(dynakube.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts))
-	for _, host := range dynakube.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts {
-		communicationHosts = append(communicationHosts, dtclient.CommunicationHost{
-			Protocol: host.Protocol,
-			Host:     host.Host,
-			Port:     host.Port,
-		})
-	}
-
-	return communicationHosts
-}
-
-func GetActiveGateEndpointsAsCommunicationHosts(dynakube *dynatracev1beta1.DynaKube) []dtclient.CommunicationHost {
+func GetEndpointsAsCommunicationHosts(dynakube *dynakube.DynaKube) []dtclient.CommunicationHost {
 	activegateEndpointsString := dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints
 	if activegateEndpointsString == "" {
 		return []dtclient.CommunicationHost{}
@@ -64,7 +50,7 @@ func parseEndpointToCommunicationHost(endpointString string) (dtclient.Communica
 		return dtclient.CommunicationHost{}, err
 	}
 
-	port, err := GetPortOrDefault(parsedEndpoint, DefaultHttpPort)
+	port, err := getPortOrDefault(parsedEndpoint, DefaultHttpPort)
 	if err != nil {
 		return dtclient.CommunicationHost{}, err
 	}
@@ -76,7 +62,7 @@ func parseEndpointToCommunicationHost(endpointString string) (dtclient.Communica
 	}, nil
 }
 
-func GetPortOrDefault(u *url.URL, defaultPort uint32) (uint32, error) {
+func getPortOrDefault(u *url.URL, defaultPort uint32) (uint32, error) {
 	portString := u.Port()
 
 	if portString == "" {

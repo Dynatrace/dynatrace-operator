@@ -2,6 +2,8 @@ package dynakube
 
 import (
 	"context"
+	agconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"net/http"
 	"testing"
 
@@ -13,7 +15,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
@@ -482,7 +483,8 @@ func createFakeClientAndReconciler(t *testing.T, mockClient dtclient.Client, ins
 		fs:                                  afero.Afero{Fs: afero.NewMemMapFs()},
 		deploymentMetadataReconcilerBuilder: deploymentmetadata.NewReconciler,
 		versionReconcilerBuilder:            version.NewReconciler,
-		connectionInfoReconcilerBuilder:     connectioninfo.NewReconciler,
+		oaConnectionInfoReconcilerBuilder:   oaconnectioninfo.NewReconciler,
+		agConnectionInfoReconcilerBuilder:   agconnectioninfo.NewReconciler,
 		activeGateReconcilerBuilder:         activegate.NewReconciler,
 		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
 		injectionReconcilerBuilder:          injection.NewReconciler,

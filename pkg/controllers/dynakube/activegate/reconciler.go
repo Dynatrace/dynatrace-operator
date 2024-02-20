@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	agconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
@@ -32,7 +33,7 @@ type Reconciler struct {
 	scheme                            *runtime.Scheme
 	authTokenReconciler               controllers.Reconciler
 	istioReconciler                   istio.Reconciler
-	connectionReconciler              connectioninfo.Reconciler
+	connectionReconciler              controllers.Reconciler
 	versionReconciler                 version.Reconciler
 	newStatefulsetReconcilerFunc      statefulset.NewReconcilerFunc
 	newCapabilityReconcilerFunc       capabilityInternal.NewReconcilerFunc
@@ -54,7 +55,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 
 	authTokenReconciler := authtoken.NewReconciler(clt, apiReader, scheme, dynakube, dtc)
 	versionReconciler := version.NewReconciler(apiReader, dtc, fs, time)
-	connectionInfoReconciler := connectioninfo.NewReconciler(clt, apiReader, scheme, dtc)
+	connectionInfoReconciler := agconnectioninfo.NewReconciler(clt, apiReader, scheme, dtc, dynakube)
 
 	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) controllers.Reconciler {
 		return customproperties.NewReconciler(clt, dynakube, customPropertiesOwnerName, scheme, customPropertiesSource)
@@ -82,7 +83,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if r.dynakube.NeedsActiveGate() {
-		err = r.connectionReconciler.ReconcileActiveGate(ctx, r.dynakube)
+		err = r.connectionReconciler.Reconcile(ctx)
 		if err != nil {
 			return err
 		}
@@ -152,11 +153,11 @@ func extractPublicData(dynakube *dynatracev1beta1.DynaKube) map[string]string {
 	data := map[string]string{}
 
 	if dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID != "" {
-		data[connectioninfo.TenantUUIDName] = dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID
+		data[connectioninfo.TenantUUIDKey] = dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID
 	}
 
 	if dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints != "" {
-		data[connectioninfo.CommunicationEndpointsName] = dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints
+		data[connectioninfo.CommunicationEndpointsKey] = dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints
 	}
 
 	return data

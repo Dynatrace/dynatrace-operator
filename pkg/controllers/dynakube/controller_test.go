@@ -2,6 +2,8 @@ package dynakube
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"net/http"
 	"strings"
 	"testing"
@@ -14,7 +16,6 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
@@ -24,7 +25,6 @@ import (
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	mockcontroller "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
-	mockconnectioninfo "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/connectioninfo"
 	dtClientMock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	mockinjection "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/injection"
 	mockversion "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
@@ -338,8 +338,8 @@ func TestReconcileComponents(t *testing.T) {
 		dynakube := dynakubeBase.DeepCopy()
 		fakeClient := fake.NewClientWithIndex(dynakube)
 		// ReconcileCodeModuleCommunicationHosts
-		mockConnectionInfoReconciler := mockconnectioninfo.NewReconciler(t)
-		mockConnectionInfoReconciler.On("ReconcileOneAgent", mock.Anything, dynakube).Return(nil)
+		mockOAConnectionInfoReconciler := mockcontroller.NewReconciler(t)
+		mockOAConnectionInfoReconciler.On("Reconcile", mock.Anything).Return(nil)
 
 		mockVersionReconciler := mockversion.NewReconciler(t)
 		mockVersionReconciler.On("ReconcileOneAgent", mock.Anything, mock.Anything).Return(errors.New("BOOM"))
@@ -357,10 +357,10 @@ func TestReconcileComponents(t *testing.T) {
 			fs:                    afero.Afero{Fs: afero.NewMemMapFs()},
 			registryClientBuilder: createFakeRegistryClientBuilder(t),
 
-			versionReconcilerBuilder:        createVersionReconcilerBuilder(mockVersionReconciler),
-			connectionInfoReconcilerBuilder: createConnectionInfoReconcilerBuilder(mockConnectionInfoReconciler),
-			activeGateReconcilerBuilder:     createActivegateReconcilerBuilder(mockActiveGateReconciler),
-			injectionReconcilerBuilder:      createInjectionReconcilerBuilder(mockInjectionReconciler),
+			versionReconcilerBuilder:          createVersionReconcilerBuilder(mockVersionReconciler),
+			oaConnectionInfoReconcilerBuilder: mockOaConnectionInfoReconcilerBuilder(mockOAConnectionInfoReconciler),
+			activeGateReconcilerBuilder:       createActivegateReconcilerBuilder(mockActiveGateReconciler),
+			injectionReconcilerBuilder:        createInjectionReconcilerBuilder(mockInjectionReconciler),
 		}
 		mockedDtc := mockedclient.NewClient(t)
 		err := controller.reconcileComponents(ctx, mockedDtc, nil, dynakube)
@@ -374,8 +374,11 @@ func TestReconcileComponents(t *testing.T) {
 		dynakube := dynakubeBase.DeepCopy()
 		fakeClient := fake.NewClientWithIndex(dynakube)
 
-		mockConnectionInfoReconciler := mockconnectioninfo.NewReconciler(t)
-		mockConnectionInfoReconciler.On("ReconcileOneAgent", mock.Anything, dynakube).Return(connectioninfo.NoOneAgentCommunicationHostsError)
+		mockAgConnectionInfoReconciler := mockcontroller.NewReconciler(t)
+		mockAgConnectionInfoReconciler.On("Reconcile", mock.Anything).Return(nil)
+
+		mockOAConnectionInfoReconciler := mockcontroller.NewReconciler(t)
+		mockOAConnectionInfoReconciler.On("Reconcile", mock.Anything).Return(oaconnectioninfo.NoOneAgentCommunicationHostsError)
 
 		mockVersionReconciler := mockversion.NewReconciler(t)
 		mockActiveGateReconciler := mockcontroller.NewReconciler(t)
@@ -384,15 +387,15 @@ func TestReconcileComponents(t *testing.T) {
 		mockInjectionReconciler := mockinjection.NewReconciler(t)
 
 		controller := &Controller{
-			client:                          fakeClient,
-			apiReader:                       fakeClient,
-			scheme:                          scheme.Scheme,
-			fs:                              afero.Afero{Fs: afero.NewMemMapFs()},
-			registryClientBuilder:           createFakeRegistryClientBuilder(t),
-			versionReconcilerBuilder:        createVersionReconcilerBuilder(mockVersionReconciler),
-			connectionInfoReconcilerBuilder: createConnectionInfoReconcilerBuilder(mockConnectionInfoReconciler),
-			activeGateReconcilerBuilder:     createActivegateReconcilerBuilder(mockActiveGateReconciler),
-			injectionReconcilerBuilder:      createInjectionReconcilerBuilder(mockInjectionReconciler),
+			client:                            fakeClient,
+			apiReader:                         fakeClient,
+			scheme:                            scheme.Scheme,
+			fs:                                afero.Afero{Fs: afero.NewMemMapFs()},
+			registryClientBuilder:             createFakeRegistryClientBuilder(t),
+			versionReconcilerBuilder:          createVersionReconcilerBuilder(mockVersionReconciler),
+			oaConnectionInfoReconcilerBuilder: mockOaConnectionInfoReconcilerBuilder(mockOAConnectionInfoReconciler),
+			activeGateReconcilerBuilder:       createActivegateReconcilerBuilder(mockActiveGateReconciler),
+			injectionReconcilerBuilder:        createInjectionReconcilerBuilder(mockInjectionReconciler),
 		}
 		mockedDtc := mockedclient.NewClient(t)
 		err := controller.reconcileComponents(ctx, mockedDtc, nil, dynakube)
@@ -405,8 +408,8 @@ func TestReconcileComponents(t *testing.T) {
 		dynakube := dynakubeBase.DeepCopy()
 		fakeClient := fake.NewClientWithIndex(dynakube)
 
-		mockConnectionInfoReconciler := mockconnectioninfo.NewReconciler(t)
-		mockConnectionInfoReconciler.On("ReconcileOneAgent", mock.Anything, dynakube).Return(errors.New("BOOM"))
+		mockOaConnectionInfoReconciler := mockcontroller.NewReconciler(t)
+		mockOaConnectionInfoReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
 		mockActiveGateReconciler := mockcontroller.NewReconciler(t)
 		mockActiveGateReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(errors.New("BOOM"))
@@ -415,15 +418,15 @@ func TestReconcileComponents(t *testing.T) {
 		mockInjectionReconciler := mockinjection.NewReconciler(t)
 
 		controller := &Controller{
-			client:                          fakeClient,
-			apiReader:                       fakeClient,
-			scheme:                          scheme.Scheme,
-			fs:                              afero.Afero{Fs: afero.NewMemMapFs()},
-			registryClientBuilder:           createFakeRegistryClientBuilder(t),
-			versionReconcilerBuilder:        createVersionReconcilerBuilder(mockVersionReconciler),
-			connectionInfoReconcilerBuilder: createConnectionInfoReconcilerBuilder(mockConnectionInfoReconciler),
-			injectionReconcilerBuilder:      createInjectionReconcilerBuilder(mockInjectionReconciler),
-			activeGateReconcilerBuilder:     createActivegateReconcilerBuilder(mockActiveGateReconciler),
+			client:                            fakeClient,
+			apiReader:                         fakeClient,
+			scheme:                            scheme.Scheme,
+			fs:                                afero.Afero{Fs: afero.NewMemMapFs()},
+			registryClientBuilder:             createFakeRegistryClientBuilder(t),
+			versionReconcilerBuilder:          createVersionReconcilerBuilder(mockVersionReconciler),
+			oaConnectionInfoReconcilerBuilder: mockOaConnectionInfoReconcilerBuilder(mockOaConnectionInfoReconciler),
+			injectionReconcilerBuilder:        createInjectionReconcilerBuilder(mockInjectionReconciler),
+			activeGateReconcilerBuilder:       createActivegateReconcilerBuilder(mockActiveGateReconciler),
 		}
 		mockedDtc := mockedclient.NewClient(t)
 		err := controller.reconcileComponents(ctx, mockedDtc, nil, dynakube)
@@ -435,25 +438,25 @@ func TestReconcileComponents(t *testing.T) {
 }
 
 func createActivegateReconcilerBuilder(reconciler controllers.Reconciler) activegate.ReconcilerBuilder {
-	return func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client, istioClient *istio.Client) controllers.Reconciler {
+	return func(_ client.Client, _ client.Reader, _ *runtime.Scheme, _ *dynatracev1beta1.DynaKube, _ dtclient.Client, _ *istio.Client) controllers.Reconciler {
 		return reconciler
 	}
 }
 
-func createConnectionInfoReconcilerBuilder(reconciler *mockconnectioninfo.Reconciler) connectioninfo.ReconcilerBuilder {
-	return func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client) connectioninfo.Reconciler {
+func mockOaConnectionInfoReconcilerBuilder(reconciler controllers.Reconciler) oaconnectioninfo.ReconcilerBuilder {
+	return func(_ client.Client, _ client.Reader, _ *runtime.Scheme, _ dtclient.Client, _ *dynatracev1beta1.DynaKube) controllers.Reconciler {
 		return reconciler
 	}
 }
 
 func createVersionReconcilerBuilder(reconciler *mockversion.Reconciler) version.ReconcilerBuilder {
-	return func(apiReader client.Reader, dtClient dtclient.Client, fs afero.Afero, timeProvider *timeprovider.Provider) version.Reconciler {
+	return func(_ client.Reader, _ dtclient.Client, _ afero.Afero, _ *timeprovider.Provider) version.Reconciler {
 		return reconciler
 	}
 }
 
 func createInjectionReconcilerBuilder(reconciler *mockinjection.Reconciler) injection.ReconcilerBuilder {
-	return func(_ client.Client, _ client.Reader, _ *runtime.Scheme, _ dtclient.Client, _ *istio.Client, fs afero.Afero, _ *dynatracev1beta1.DynaKube) controllers.Reconciler {
+	return func(_ client.Client, _ client.Reader, _ dtclient.Client, _ *istio.Client, _ afero.Afero, _ *dynatracev1beta1.DynaKube) controllers.Reconciler {
 		return reconciler
 	}
 }
@@ -510,7 +513,7 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything).Return(mockClient, nil)
 
-		mockConnectionInfoReconciler := mockconnectioninfo.NewReconciler(t)
+		mockOaConnectionInfoReconciler := mockcontroller.NewReconciler(t)
 
 		mockVersionReconciler := mockversion.NewReconciler(t)
 
@@ -531,7 +534,7 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 			registryClientBuilder:               createFakeRegistryClientBuilder(t),
 			deploymentMetadataReconcilerBuilder: createDeploymentMetadataReconcilerBuilder(mockReconciler),
 			versionReconcilerBuilder:            createVersionReconcilerBuilder(mockVersionReconciler),
-			connectionInfoReconcilerBuilder:     createConnectionInfoReconcilerBuilder(mockConnectionInfoReconciler),
+			oaConnectionInfoReconcilerBuilder:   mockOaConnectionInfoReconcilerBuilder(mockOaConnectionInfoReconciler),
 			activeGateReconcilerBuilder:         createActivegateReconcilerBuilder(mockActiveGateReconciler),
 			injectionReconcilerBuilder:          createInjectionReconcilerBuilder(mockInjectionReconciler),
 		}
@@ -815,7 +818,7 @@ func createTenantSecrets(dynakube *dynatracev1beta1.DynaKube) []client.Object {
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				connectioninfo.TenantTokenName: []byte("test-token"),
+				connectioninfo.TenantTokenKey: []byte("test-token"),
 			},
 		},
 		&corev1.Secret{
@@ -824,7 +827,7 @@ func createTenantSecrets(dynakube *dynatracev1beta1.DynaKube) []client.Object {
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				connectioninfo.TenantTokenName: []byte("test-token"),
+				connectioninfo.TenantTokenKey: []byte("test-token"),
 			},
 		},
 	}

@@ -3,6 +3,7 @@ package csiprovisioner
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"os"
 	"path/filepath"
 	"strings"
@@ -373,7 +374,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						Name: dynakube.OneagentTenantSecret(),
 					},
 					Data: map[string][]byte{
-						connectioninfo.TenantTokenName: []byte("tenant-token"),
+						connectioninfo.TenantTokenKey: []byte("tenant-token"),
 					},
 				},
 			),
