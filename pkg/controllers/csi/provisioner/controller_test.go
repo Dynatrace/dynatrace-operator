@@ -781,6 +781,7 @@ func createMockK8sClient(ctx context.Context, dynakube *dynatracev1beta1.DynaKub
 			},
 		},
 	)
+
 	return mockK8sClient
 }
 
