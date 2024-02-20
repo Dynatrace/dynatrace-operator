@@ -531,7 +531,7 @@ func buildValidApplicationMonitoringSpec(_ *testing.T) *dynatracev1beta1.Applica
 }
 
 func TestProvisioner_CreateDynakube(t *testing.T) {
-	ctx := context.TODO()
+	ctx := context.Background()
 	db := metadata.FakeMemoryDB()
 	expectedOtherDynakube := metadata.NewDynakube(otherDkName, tenantUUID, "v1", "", 0)
 	_ = db.InsertDynakube(ctx, expectedOtherDynakube)
@@ -557,7 +557,7 @@ func TestProvisioner_CreateDynakube(t *testing.T) {
 }
 
 func TestProvisioner_UpdateDynakube(t *testing.T) {
-	ctx := context.TODO()
+	ctx := context.Background()
 	db := metadata.FakeMemoryDB()
 	oldDynakube := metadata.NewDynakube(dkName, tenantUUID, "v1", "", 0)
 	_ = db.InsertDynakube(ctx, oldDynakube)
@@ -584,8 +584,8 @@ func TestProvisioner_UpdateDynakube(t *testing.T) {
 }
 
 func TestHandleMetadata(t *testing.T) {
-	ctx := context.TODO()
-	instance := &dynatracev1beta1.DynaKube{
+	ctx := context.Background()
+	dynakube := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: dkName,
 		},
@@ -596,15 +596,15 @@ func TestHandleMetadata(t *testing.T) {
 	provisioner := &OneAgentProvisioner{
 		db: metadata.FakeMemoryDB(),
 	}
-	dynakubeMetadata, oldMetadata, err := provisioner.handleMetadata(ctx, instance)
+	dynakubeMetadata, oldMetadata, err := provisioner.handleMetadata(ctx, dynakube)
 
 	require.NoError(t, err)
 	require.NotNil(t, dynakubeMetadata)
 	require.NotNil(t, oldMetadata)
 	require.Equal(t, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts, dynakubeMetadata.MaxFailedMountAttempts)
 
-	instance.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureMaxFailedCsiMountAttempts: "5"}
-	dynakubeMetadata, oldMetadata, err = provisioner.handleMetadata(ctx, instance)
+	dynakube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureMaxFailedCsiMountAttempts: "5"}
+	dynakubeMetadata, oldMetadata, err = provisioner.handleMetadata(ctx, dynakube)
 
 	require.NoError(t, err)
 	require.NotNil(t, dynakubeMetadata)
