@@ -261,14 +261,14 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 
 	log.Info("start reconciling process module config")
 
-	err = processmoduleconfigsecret.NewReconciler(
-		controller.client, controller.apiReader, dynatraceClient, dynakube, controller.scheme, timeprovider.New()).
-		Reconcile(ctx)
+	err = controller.reconcileComponents(ctx, dynatraceClient, istioClient, dynakube)
 	if err != nil {
 		return err
 	}
 
-	return controller.reconcileComponents(ctx, dynatraceClient, istioClient, dynakube)
+	return processmoduleconfigsecret.NewReconciler(
+		controller.client, controller.apiReader, dynatraceClient, dynakube, controller.scheme, timeprovider.New()).
+		Reconcile(ctx)
 }
 
 func (controller *Controller) setupIstioClient(dynakube *dynatracev1beta1.DynaKube) (*istio.Client, error) {
