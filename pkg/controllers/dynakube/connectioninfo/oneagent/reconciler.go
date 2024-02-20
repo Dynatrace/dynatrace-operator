@@ -65,12 +65,12 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 	isOutdated := r.dynakube.IsOneAgentConnectionInfoUpdateAllowed(r.timeProvider)
 
 	if !isOutdated {
-		needsUpdate, err := connectioninfo.SecretNotPresent(ctx, r.apiReader, secretNamespacedName, log)
+		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.apiReader, secretNamespacedName, log)
 		if err != nil {
 			return err
 		}
 
-		if !needsUpdate {
+		if isSecretPresent {
 			log.Info(dynatracev1beta1.GetCacheValidMessage(
 				"OneAgent connection info update",
 				r.dynakube.Status.OneAgent.ConnectionInfoStatus.LastRequest,
@@ -128,14 +128,8 @@ func copyCommunicationHosts(dest *dynatracev1beta1.OneAgentConnectionInfoStatus,
 	}
 }
 
-// TODO: Generalize
 func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName string, owner metav1.Object, connectionInfo dtclient.ConnectionInfo) error {
-	secretData := connectioninfo.ExtractSensitiveData(connectionInfo)
-
-	secret, err := k8ssecret.Create(r.scheme, owner,
-		k8ssecret.NewNameModifier(secretName),
-		k8ssecret.NewNamespaceModifier(owner.GetNamespace()),
-		k8ssecret.NewDataModifier(secretData))
+	secret, err := connectioninfo.BuildTenantSecret(owner, r.scheme, secretName, connectionInfo)
 	if err != nil {
 		return errors.WithStack(err)
 	}
