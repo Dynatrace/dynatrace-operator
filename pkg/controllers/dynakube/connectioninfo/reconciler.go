@@ -53,7 +53,7 @@ func (r *reconciler) ReconcileActiveGate(ctx context.Context, dynakube *dynatrac
 	if err != nil {
 		return errors.WithMessage(err, "failed to compare connection info status hashes")
 	} else if needStatusUpdate {
-		err = r.updateDynakubeStatus(ctx, dynakube)
+		err = dynakube.UpdateStatus(ctx, r.client)
 	}
 
 	return err
@@ -71,7 +71,7 @@ func (r *reconciler) ReconcileOneAgent(ctx context.Context, dynakube *dynatracev
 	if err != nil {
 		return errors.WithMessage(err, "failed to compare connection info status hashes")
 	} else if needStatusUpdate {
-		err = r.updateDynakubeStatus(ctx, dynakube)
+		err = dynakube.UpdateStatus(ctx, r.client)
 	}
 
 	return err
@@ -92,19 +92,6 @@ func (r *reconciler) needsUpdate(ctx context.Context, secretNamespacedName types
 	}
 
 	return isAllowedFunc(r.timeProvider), nil
-}
-
-func (r reconciler) updateDynakubeStatus(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	dynakube.Status.UpdatedTimestamp = metav1.Now()
-	err := r.client.Status().Update(ctx, dynakube)
-
-	if err != nil {
-		log.Info("could not update dynakube status", "name", dynakube.Name)
-
-		return err
-	}
-
-	return nil
 }
 
 func (r *reconciler) reconcileOneAgentConnectionInfo(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {

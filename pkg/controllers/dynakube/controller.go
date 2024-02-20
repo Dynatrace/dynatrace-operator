@@ -99,17 +99,19 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 type Controller struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the api-server
-	client    client.Client
-	apiReader client.Reader
+	client            client.Client
+	apiReader         client.Reader
+	scheme            *runtime.Scheme
+	fs                afero.Afero
+	config            *rest.Config
+	operatorNamespace string
+	clusterID         string
+
+	requeueAfter time.Duration
 
 	dynatraceClientBuilder dynatraceclient.Builder
-
-	fs     afero.Afero
-	scheme *runtime.Scheme
-	config *rest.Config
-
-	istioClientBuilder    istio.ClientBuilder
-	registryClientBuilder registry.ClientBuilder
+	istioClientBuilder     istio.ClientBuilder
+	registryClientBuilder  registry.ClientBuilder
 
 	deploymentMetadataReconcilerBuilder deploymentmetadata.ReconcilerBuilder
 	versionReconcilerBuilder            version.ReconcilerBuilder
@@ -118,11 +120,6 @@ type Controller struct {
 	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
 	injectionReconcilerBuilder          injection.ReconcilerBuilder
 	istioReconcilerBuilder              istio.ReconcilerBuilder
-
-	operatorNamespace string
-	clusterID         string
-
-	requeueAfter time.Duration
 }
 
 // Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read
@@ -199,7 +196,7 @@ func (controller *Controller) handleError(
 		log.Info("status changed, updating DynaKube")
 		controller.setRequeueAfterIfNewIsShorter(changesUpdateInterval)
 
-		if errClient := controller.updateDynakubeStatus(ctx, dynaKube); errClient != nil {
+		if errClient := dynaKube.UpdateStatus(ctx, controller.client); errClient != nil {
 			return reconcile.Result{}, errors.WithMessagef(errClient, "failed to update DynaKube after failure, original error: %s", err)
 		}
 	}
@@ -215,19 +212,6 @@ func (controller *Controller) setRequeueAfterIfNewIsShorter(requeueAfter time.Du
 	if controller.requeueAfter > requeueAfter {
 		controller.requeueAfter = requeueAfter
 	}
-}
-
-func (controller *Controller) updateDynakubeStatus(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	dynakube.Status.UpdatedTimestamp = metav1.Now()
-	err := controller.client.Status().Update(ctx, dynakube)
-
-	if err != nil && k8serrors.IsConflict(err) {
-		log.Info("could not update dynakube due to conflict", "name", dynakube.Name)
-
-		return nil
-	}
-
-	return errors.WithStack(err)
 }
 
 func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {

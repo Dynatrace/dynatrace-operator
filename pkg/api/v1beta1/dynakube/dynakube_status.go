@@ -1,7 +1,11 @@
 package dynakube
 
 import (
+	"context"
 	"fmt"
+	"github.com/pkg/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -141,4 +145,16 @@ func (dk *DynaKubeStatus) SetPhase(phase status.DeploymentPhase) bool {
 	dk.Phase = phase
 
 	return upd
+}
+
+func (dk *DynaKube) UpdateStatus(ctx context.Context, client client.Client) error {
+	dk.Status.UpdatedTimestamp = metav1.Now()
+	err := client.Status().Update(ctx, dk)
+
+	if err != nil && k8serrors.IsConflict(err) {
+		log.Info("could not update dynakube due to conflict", "name", dk.Name)
+		return nil
+	}
+
+	return errors.WithStack(err)
 }
