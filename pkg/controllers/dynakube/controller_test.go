@@ -711,6 +711,7 @@ func TestSetupIstio(t *testing.T) {
 			EnableIstio: true,
 		},
 	}
+
 	t.Run("no istio installed + EnableIstio: true => error", func(t *testing.T) {
 		dynakube := dynakubeBase.DeepCopy()
 		fakeIstio := fakeistio.NewSimpleClientset()
