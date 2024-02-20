@@ -36,6 +36,7 @@ func (builder *dtclientBuilder) setOptions() {
 	builder.addCertCheck()
 	builder.addProxy()
 	builder.addNetworkZone()
+	builder.addHostGroup()
 	builder.addTrustedCerts()
 }
 
@@ -56,6 +57,12 @@ func (builder *dtclientBuilder) addProxy() {
 func (builder *dtclientBuilder) addNetworkZone() {
 	if builder.config.NetworkZone != "" {
 		builder.options = append(builder.options, dtclient.NetworkZone(builder.config.NetworkZone))
+	}
+}
+
+func (builder *dtclientBuilder) addHostGroup() {
+	if builder.config.HostGroup != "" {
+		builder.options = append(builder.options, dtclient.HostGroup(builder.config.HostGroup))
 	}
 }
 
