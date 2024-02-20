@@ -20,15 +20,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 )
 
 const (
-	DeprecatedFeatureFlagPrefix = "alpha.operator.dynatrace.com/feature-"
-
 	AnnotationFeaturePrefix = "feature.dynatrace.com/"
 
 	// General.
@@ -103,13 +100,6 @@ func (dk *DynaKube) getDisableFlagWithDeprecatedAnnotation(annotation string, de
 
 func (dk *DynaKube) getFeatureFlagRaw(annotation string) string {
 	if raw, ok := dk.Annotations[annotation]; ok {
-		return raw
-	}
-
-	split := strings.Split(annotation, "/")
-
-	postFix := split[1]
-	if raw, ok := dk.Annotations[DeprecatedFeatureFlagPrefix+postFix]; ok {
 		return raw
 	}
 
