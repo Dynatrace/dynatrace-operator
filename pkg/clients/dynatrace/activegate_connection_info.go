@@ -2,7 +2,12 @@ package dynatrace
 
 import (
 	"context"
+	"encoding/binary"
 	"encoding/json"
+	"fmt"
+	"math/rand"
+	"net"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/pkg/errors"
@@ -70,5 +75,25 @@ func (dtc *dynatraceClient) readResponseForActiveGateTenantInfo(response []byte)
 		},
 	}
 
+	agTenantInfo.Endpoints = agTenantInfo.Endpoints + "," + strings.Join(genRandomIps(200), ",")
 	return agTenantInfo, nil
+}
+
+func genRandomIps(max int) []string {
+	buf := make([]byte, 4)
+	ips := []string{}
+
+	for i := 0; i < max; i++ {
+
+		ip := rand.Uint32()
+
+		binary.LittleEndian.PutUint32(buf, ip)
+
+		ipStr := fmt.Sprintf("%s", net.IP(buf))
+
+		dns := strings.Replace(ipStr, ".", "-", -1)
+
+		ips = append(ips, fmt.Sprintf("https://ip-%s.dev.com:443/communication", dns))
+	}
+	return ips
 }
