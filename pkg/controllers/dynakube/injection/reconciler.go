@@ -3,6 +3,8 @@ package injection
 import (
 	"context"
 	goerrors "errors"
+	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
@@ -27,6 +29,7 @@ type reconciler struct {
 	istioReconciler     istio.Reconciler
 	versionReconciler   version.Reconciler
 	pmcSecretreconciler controllers.Reconciler
+	connectionInfoReconciler controllers.Reconciler
 	dynatraceClient     dynatrace.Client
 	scheme              *runtime.Scheme
 }
@@ -60,13 +63,14 @@ func NewReconciler(
 	return &reconciler{
 		client:            client,
 		apiReader:         apiReader,
+		scheme:          scheme,
 		dynakube:          dynakube,
 		istioReconciler:   istioReconciler,
 		versionReconciler: version.NewReconciler(apiReader, dynatraceClient, fs, timeprovider.New().Freeze()),
 		pmcSecretreconciler: processmoduleconfigsecret.NewReconciler(
 			client, apiReader, dynatraceClient, dynakube, scheme, timeprovider.New().Freeze()),
+		connectionInfoReconciler: oaconnectioninfo.NewReconciler(client, apiReader, scheme, dynatraceClient, dynakube),
 		dynatraceClient: dynatraceClient,
-		scheme:          scheme,
 	}
 }
 
@@ -74,6 +78,11 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	if !r.dynakube.NeedAppInjection() {
 		return r.removeAppInjection(ctx)
 	}
+
+	err := r.connectionInfoReconciler.Reconcile(ctx)
+	if err != nil {
+		return err
+	} // TODO: there tends to be a clean up for each reconcileX function, so it might makes sense to have the same here
 
 	dkMapper := r.createDynakubeMapper(ctx)
 	if err := dkMapper.MapFromDynakube(); err != nil {

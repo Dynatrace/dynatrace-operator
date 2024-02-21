@@ -318,8 +318,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 	// it's important to setup app injection before AG so that it is already working when AG pods start, in case code modules shall get
 	// injected into AG for self-monitoring reasons
 	versionReconciler := controller.versionReconcilerBuilder(controller.apiReader, dynatraceClient, controller.fs, timeprovider.New().Freeze())
-	oaConnectionInfoReconciler := controller.oaConnectionInfoReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient, dynakube)
-	injectionReconciler := controller.injectionReconcilerBuilder(controller.client, controller.apiReader, dynatraceClient, istioClient, controller.fs, dynakube)
+	injectionReconciler := controller.injectionReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient, istioClient, controller.fs, dynakube)
 
 	var componentErrors []error
 
@@ -339,25 +338,18 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		return err
 	}
 
-	if dynakube.NeedsOneAgent() || dynakube.ApplicationMonitoringMode() { // TODO: improve check
-		err := oaConnectionInfoReconciler.Reconcile(ctx)
+	log.Info("start reconciling app injection")
+
+	err = injectionReconciler.Reconcile(ctx)
+	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
 			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
 			// this situation will clear itself after AG has been started
 			controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
 
 			return goerrors.Join(componentErrors...)
-		} else if err != nil {
-			componentErrors = append(componentErrors, err)
-
-			return goerrors.Join(componentErrors...)
 		}
-	} // TODO: there tends to be a clean up for each reconcileX function, so it might makes sense to have the same here
 
-	log.Info("start reconciling app injection")
-
-	err = injectionReconciler.Reconcile(ctx)
-	if err != nil {
 		log.Info("could not reconcile app injection")
 
 		componentErrors = append(componentErrors, err)
@@ -367,6 +359,13 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	err = controller.reconcileOneAgent(ctx, dynakube, versionReconciler)
 	if err != nil {
+		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
+			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
+			// this situation will clear itself after AG has been started
+			controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
+
+			return goerrors.Join(componentErrors...)
+		}
 		log.Info("could not reconcile OneAgent")
 
 		componentErrors = append(componentErrors, err)
