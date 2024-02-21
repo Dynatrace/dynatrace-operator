@@ -1,8 +1,13 @@
 name: e2e-tests
 
+# on:
+#   schedule:
+#     - cron: 0 0 * * 1-5 # every work day at 00:00
+
 on:
-  schedule:
-    - cron: 0 0 * * 1-5 # every work day at 00:00
+  push:
+    branches:
+      - "github-action-running-e2e-tests"
 
 env:
   NAMESPACE: dto-k8s-ondemand
