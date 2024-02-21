@@ -11,7 +11,6 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
-	agconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/activegate"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
@@ -19,10 +18,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
@@ -77,9 +77,8 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		registryClientBuilder:  registry.NewClient,
 		// move these builders after refactoring the reconciler logic of the controller
 		deploymentMetadataReconcilerBuilder: deploymentmetadata.NewReconciler,
-		versionReconcilerBuilder:            version.NewReconciler,
-		oaConnectionInfoReconcilerBuilder:   oaconnectioninfo.NewReconciler,
 		activeGateReconcilerBuilder:         activegate.NewReconciler,
+		oneAgentReconcilerBuilder:           oneagent.NewReconciler,
 		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
 		injectionReconcilerBuilder:          injection.NewReconciler,
 		istioReconcilerBuilder:              istio.NewReconciler,
@@ -111,9 +110,8 @@ type Controller struct {
 	registryClientBuilder  registry.ClientBuilder
 
 	deploymentMetadataReconcilerBuilder deploymentmetadata.ReconcilerBuilder
-	versionReconcilerBuilder            version.ReconcilerBuilder
-	oaConnectionInfoReconcilerBuilder   oaconnectioninfo.ReconcilerBuilder
 	activeGateReconcilerBuilder         activegate.ReconcilerBuilder
+	oneAgentReconcilerBuilder           oneagent.ReconcilerBuilder
 	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
 	injectionReconcilerBuilder          injection.ReconcilerBuilder
 	istioReconcilerBuilder              istio.ReconcilerBuilder
@@ -315,7 +313,6 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube
 }
 
 func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioClient *istio.Client, dynakube *dynatracev1beta1.DynaKube) error {
-	versionReconciler := controller.versionReconcilerBuilder(controller.apiReader, dynatraceClient, controller.fs, timeprovider.New().Freeze())
 	var componentErrors []error
 
 	log.Info("start reconciling ActiveGate")
@@ -336,7 +333,6 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling app injection")
 
-	err = injectionReconciler.Reconcile(ctx)
 	err = controller.injectionReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient, istioClient, dynakube).
 		Reconcile(ctx)
 	if err != nil {
@@ -355,7 +351,8 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling OneAgent")
 
-	err = controller.reconcileOneAgent(ctx, dynakube, versionReconciler)
+	err = controller.oneAgentReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient, dynakube, controller.clusterID).
+		Reconcile(ctx)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
 			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
@@ -364,6 +361,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 			return goerrors.Join(componentErrors...)
 		}
+
 		log.Info("could not reconcile OneAgent")
 
 		componentErrors = append(componentErrors, err)

@@ -3,18 +3,19 @@ package oneagent
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
-	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"os"
 	"reflect"
 	"strconv"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent/daemonset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
 	k8sdaemonset "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
@@ -37,21 +38,24 @@ const (
 	oldDsName             = "classic"
 )
 
+var _ ReconcilerBuilder = NewReconciler
+
 type ReconcilerBuilder func(
 	client client.Client,
 	apiReader client.Reader,
 	scheme *runtime.Scheme,
 	dtClient dynatrace.Client,
-	clusterID string) *Reconciler
+	dynakube *dynatracev1beta1.DynaKube,
+	clusterID string) controllers.Reconciler
 
-// NewOneAgentReconciler initializes a new ReconcileOneAgent instance
-func NewOneAgentReconciler(
+// NewReconciler initializes a new ReconcileOneAgent instance
+func NewReconciler( //nolint: revive
 	client client.Client,
 	apiReader client.Reader,
 	scheme *runtime.Scheme,
 	dtClient dynatrace.Client,
 	dynakube *dynatracev1beta1.DynaKube,
-	clusterID string) *Reconciler {
+	clusterID string) controllers.Reconciler {
 	return &Reconciler{
 		client:                   client,
 		apiReader:                apiReader,
@@ -59,6 +63,7 @@ func NewOneAgentReconciler(
 		clusterID:                clusterID,
 		dynakube:                 dynakube,
 		connectionInfoReconciler: oaconnectioninfo.NewReconciler(client, apiReader, scheme, dtClient, dynakube),
+		versionReconciler:        version.NewReconciler(apiReader, dtClient, timeprovider.New().Freeze()),
 	}
 }
 
@@ -69,6 +74,7 @@ type Reconciler struct {
 	apiReader                client.Reader
 	scheme                   *runtime.Scheme
 	connectionInfoReconciler controllers.Reconciler
+	versionReconciler        version.Reconciler
 	dynakube                 *dynatracev1beta1.DynaKube
 	clusterID                string
 }
@@ -87,19 +93,27 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	log.Info("reconciling OneAgent")
 
-	if !r.dynakube.IsOneAgentCommunicationRouteClear() {
+	err := r.versionReconciler.ReconcileOneAgent(ctx, r.dynakube)
+	if err != nil {
+		return err
+	}
+
+	err = r.connectionInfoReconciler.Reconcile(ctx)
+	if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) { // This only informational
 		log.Info("OneAgent were not yet able to communicate with tenant, no direct route or ready ActiveGate available, postponing OneAgent deployment")
 
 		if len(r.dynakube.Spec.NetworkZone) > 0 {
 			log.Info("A network zone has been configured for DynaKube, check that there a working ActiveGate ready for that network zone", "network zone", r.dynakube.Spec.NetworkZone, "dynakube", r.dynakube.Name)
 		}
+	}
 
-		return nil
+	if err != nil {
+		return err
 	}
 
 	log.Info("At least one ActiveGate is operational, deploying OneAgent")
 
-	err := r.createOneAgentTenantConnectionInfoConfigMap(ctx)
+	err = r.createOneAgentTenantConnectionInfoConfigMap(ctx)
 	if err != nil {
 		return err
 	}

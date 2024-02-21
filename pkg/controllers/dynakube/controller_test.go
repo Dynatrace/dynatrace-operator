@@ -18,16 +18,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	mockcontroller "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	dtClientMock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	mockinjection "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/injection"
-	mockversion "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
 	registrymock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/oci/registry"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	fakecontainer "github.com/google/go-containerregistry/pkg/v1/fake"
@@ -37,7 +34,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	fakeistio "istio.io/client-go/pkg/clientset/versioned/fake"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -338,11 +334,8 @@ func TestReconcileComponents(t *testing.T) {
 		dynakube := dynakubeBase.DeepCopy()
 		fakeClient := fake.NewClientWithIndex(dynakube)
 		// ReconcileCodeModuleCommunicationHosts
-		mockOAConnectionInfoReconciler := mockcontroller.NewReconciler(t)
-		mockOAConnectionInfoReconciler.On("Reconcile", mock.Anything).Return(nil)
-
-		mockVersionReconciler := mockversion.NewReconciler(t)
-		mockVersionReconciler.On("ReconcileOneAgent", mock.Anything, mock.Anything).Return(errors.New("BOOM"))
+		mockOneAgentReconciler := mockcontroller.NewReconciler(t)
+		mockOneAgentReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
 		mockActiveGateReconciler := mockcontroller.NewReconciler(t)
 		mockActiveGateReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
@@ -357,10 +350,9 @@ func TestReconcileComponents(t *testing.T) {
 			fs:                    afero.Afero{Fs: afero.NewMemMapFs()},
 			registryClientBuilder: createFakeRegistryClientBuilder(t),
 
-			versionReconcilerBuilder:          createVersionReconcilerBuilder(mockVersionReconciler),
-			oaConnectionInfoReconcilerBuilder: mockOaConnectionInfoReconcilerBuilder(mockOAConnectionInfoReconciler),
-			activeGateReconcilerBuilder:       createActivegateReconcilerBuilder(mockActiveGateReconciler),
-			injectionReconcilerBuilder:        createInjectionReconcilerBuilder(mockInjectionReconciler),
+			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
+			injectionReconcilerBuilder:  createInjectionReconcilerBuilder(mockInjectionReconciler),
+			oneAgentReconcilerBuilder:   createOneAgentReconcilerBuilder(mockOneAgentReconciler),
 		}
 		mockedDtc := mockedclient.NewClient(t)
 		err := controller.reconcileComponents(ctx, mockedDtc, nil, dynakube)
@@ -374,28 +366,20 @@ func TestReconcileComponents(t *testing.T) {
 		dynakube := dynakubeBase.DeepCopy()
 		fakeClient := fake.NewClientWithIndex(dynakube)
 
-		mockAgConnectionInfoReconciler := mockcontroller.NewReconciler(t)
-		mockAgConnectionInfoReconciler.On("Reconcile", mock.Anything).Return(nil)
-
-		mockOAConnectionInfoReconciler := mockcontroller.NewReconciler(t)
-		mockOAConnectionInfoReconciler.On("Reconcile", mock.Anything).Return(oaconnectioninfo.NoOneAgentCommunicationHostsError)
-
-		mockVersionReconciler := mockversion.NewReconciler(t)
 		mockActiveGateReconciler := mockcontroller.NewReconciler(t)
-		mockActiveGateReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(errors.New("BOOM"))
+		mockActiveGateReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
 		mockInjectionReconciler := mockinjection.NewReconciler(t)
+		mockInjectionReconciler.On("Reconcile", mock.Anything).Return(oaconnectioninfo.NoOneAgentCommunicationHostsError)
 
 		controller := &Controller{
-			client:                            fakeClient,
-			apiReader:                         fakeClient,
-			scheme:                            scheme.Scheme,
-			fs:                                afero.Afero{Fs: afero.NewMemMapFs()},
-			registryClientBuilder:             createFakeRegistryClientBuilder(t),
-			versionReconcilerBuilder:          createVersionReconcilerBuilder(mockVersionReconciler),
-			oaConnectionInfoReconcilerBuilder: mockOaConnectionInfoReconcilerBuilder(mockOAConnectionInfoReconciler),
-			activeGateReconcilerBuilder:       createActivegateReconcilerBuilder(mockActiveGateReconciler),
-			injectionReconcilerBuilder:        createInjectionReconcilerBuilder(mockInjectionReconciler),
+			client:                      fakeClient,
+			apiReader:                   fakeClient,
+			scheme:                      scheme.Scheme,
+			fs:                          afero.Afero{Fs: afero.NewMemMapFs()},
+			registryClientBuilder:       createFakeRegistryClientBuilder(t),
+			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
+			injectionReconcilerBuilder:  createInjectionReconcilerBuilder(mockInjectionReconciler),
 		}
 		mockedDtc := mockedclient.NewClient(t)
 		err := controller.reconcileComponents(ctx, mockedDtc, nil, dynakube)
@@ -403,37 +387,6 @@ func TestReconcileComponents(t *testing.T) {
 		require.Error(t, err)
 		// goerrors.Join concats errors with \n
 		assert.Len(t, strings.Split(err.Error(), "\n"), 1) // ActiveGate, no OneAgent connection info is not an error
-	})
-	t.Run("exit early in case of error for oneagent connection info", func(t *testing.T) {
-		dynakube := dynakubeBase.DeepCopy()
-		fakeClient := fake.NewClientWithIndex(dynakube)
-
-		mockOaConnectionInfoReconciler := mockcontroller.NewReconciler(t)
-		mockOaConnectionInfoReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
-
-		mockActiveGateReconciler := mockcontroller.NewReconciler(t)
-		mockActiveGateReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(errors.New("BOOM"))
-
-		mockVersionReconciler := mockversion.NewReconciler(t)
-		mockInjectionReconciler := mockinjection.NewReconciler(t)
-
-		controller := &Controller{
-			client:                            fakeClient,
-			apiReader:                         fakeClient,
-			scheme:                            scheme.Scheme,
-			fs:                                afero.Afero{Fs: afero.NewMemMapFs()},
-			registryClientBuilder:             createFakeRegistryClientBuilder(t),
-			versionReconcilerBuilder:          createVersionReconcilerBuilder(mockVersionReconciler),
-			oaConnectionInfoReconcilerBuilder: mockOaConnectionInfoReconcilerBuilder(mockOaConnectionInfoReconciler),
-			injectionReconcilerBuilder:        createInjectionReconcilerBuilder(mockInjectionReconciler),
-			activeGateReconcilerBuilder:       createActivegateReconcilerBuilder(mockActiveGateReconciler),
-		}
-		mockedDtc := mockedclient.NewClient(t)
-		err := controller.reconcileComponents(ctx, mockedDtc, nil, dynakube)
-
-		require.Error(t, err)
-		// goerrors.Join concats errors with \n
-		assert.Len(t, strings.Split(err.Error(), "\n"), 2) // ActiveGate, OneAgent connection info error
 	})
 }
 
@@ -443,120 +396,15 @@ func createActivegateReconcilerBuilder(reconciler controllers.Reconciler) active
 	}
 }
 
-func mockOaConnectionInfoReconcilerBuilder(reconciler controllers.Reconciler) oaconnectioninfo.ReconcilerBuilder {
-	return func(_ client.Client, _ client.Reader, _ *runtime.Scheme, _ dtclient.Client, _ *dynatracev1beta1.DynaKube) controllers.Reconciler {
-		return reconciler
-	}
-}
-
-func createVersionReconcilerBuilder(reconciler *mockversion.Reconciler) version.ReconcilerBuilder {
-	return func(_ client.Reader, _ dtclient.Client, _ afero.Afero, _ *timeprovider.Provider) version.Reconciler {
+func createOneAgentReconcilerBuilder(reconciler controllers.Reconciler) oneagent.ReconcilerBuilder {
+	return func(_ client.Client, _ client.Reader, _ *runtime.Scheme, _ dtclient.Client, _ *dynatracev1beta1.DynaKube, _ string) controllers.Reconciler {
 		return reconciler
 	}
 }
 
 func createInjectionReconcilerBuilder(reconciler *mockinjection.Reconciler) injection.ReconcilerBuilder {
-	return func(_ client.Client, _ client.Reader, _ dtclient.Client, _ *istio.Client, _ afero.Afero, _ *dynatracev1beta1.DynaKube) controllers.Reconciler {
+	return func(_ client.Client, _ client.Reader, _ *runtime.Scheme, _ dtclient.Client, _ *istio.Client, _ *dynatracev1beta1.DynaKube) controllers.Reconciler {
 		return reconciler
-	}
-}
-
-func TestRemoveOneAgentDaemonset(t *testing.T) {
-	t.Run(`Create validates apiToken correctly if apiToken with "InstallerDownload"-scope is provided`, func(t *testing.T) {
-		mockClient := createDTMockClient(t, dtclient.TokenScopes{}, dtclient.TokenScopes{
-			dtclient.TokenScopeDataExport,
-			dtclient.TokenScopeInstallerDownload,
-			dtclient.TokenScopeActiveGateTokenCreate})
-
-		dynakube := &dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				APIURL: testApiUrl,
-			},
-			Status: *getTestDynkubeStatus(),
-		}
-		data := map[string][]byte{
-			dtclient.ApiToken: []byte(testAPIToken),
-		}
-
-		objects := []client.Object{
-			dynakube,
-			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      testName,
-					Namespace: testNamespace,
-				},
-				Data: data},
-			&corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: kubesystem.Namespace,
-					UID:  testUID,
-				},
-			},
-			&appsv1.DaemonSet{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      dynakube.OneAgentDaemonsetName(),
-					Namespace: testNamespace,
-				},
-			},
-		}
-		objects = append(objects, createTenantSecrets(dynakube)...)
-
-		fakeClient := fake.NewClient(objects...)
-
-		mockDtcBuilder := dtClientMock.NewBuilder(t)
-		mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
-		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
-		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
-		mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything).Return(mockClient, nil)
-
-		mockOaConnectionInfoReconciler := mockcontroller.NewReconciler(t)
-
-		mockVersionReconciler := mockversion.NewReconciler(t)
-
-		mockActiveGateReconciler := mockcontroller.NewReconciler(t)
-		mockActiveGateReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(nil)
-
-		mockReconciler := mockcontroller.NewReconciler(t)
-		mockReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(nil)
-
-		mockInjectionReconciler := mockinjection.NewReconciler(t)
-		mockInjectionReconciler.On("Reconcile", mock.Anything).Return(nil)
-
-		controller := &Controller{
-			client:                              fakeClient,
-			apiReader:                           fakeClient,
-			scheme:                              scheme.Scheme,
-			dynatraceClientBuilder:              mockDtcBuilder,
-			registryClientBuilder:               createFakeRegistryClientBuilder(t),
-			deploymentMetadataReconcilerBuilder: createDeploymentMetadataReconcilerBuilder(mockReconciler),
-			versionReconcilerBuilder:            createVersionReconcilerBuilder(mockVersionReconciler),
-			oaConnectionInfoReconcilerBuilder:   mockOaConnectionInfoReconcilerBuilder(mockOaConnectionInfoReconciler),
-			activeGateReconcilerBuilder:         createActivegateReconcilerBuilder(mockActiveGateReconciler),
-			injectionReconcilerBuilder:          createInjectionReconcilerBuilder(mockInjectionReconciler),
-		}
-
-		result, err := controller.Reconcile(context.Background(), reconcile.Request{
-			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
-		})
-
-		require.NoError(t, err)
-		assert.NotNil(t, result)
-
-		var daemonSet appsv1.DaemonSet
-
-		err = controller.client.Get(context.Background(), client.ObjectKey{Name: dynakube.OneAgentDaemonsetName(), Namespace: testNamespace}, &daemonSet)
-
-		require.Error(t, err)
-	})
-}
-
-func createDeploymentMetadataReconcilerBuilder(mockReconciler *mockcontroller.Reconciler) func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube dynatracev1beta1.DynaKube, clusterID string) controllers.Reconciler {
-	return func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube dynatracev1beta1.DynaKube, clusterID string) controllers.Reconciler {
-		return mockReconciler
 	}
 }
 
@@ -734,11 +582,15 @@ func TestSetupIstio(t *testing.T) {
 			scheme:             scheme.Scheme,
 		}
 		istioClient, err := controller.setupIstioClient(dynakube)
+		require.NoError(t, err)
+		require.NotNil(t, istioClient)
+
 		istioReconciler := istio.NewReconciler(istioClient)
-		istioReconciler.ReconcileAPIUrl(ctx, dynakube)
+		require.NotNil(t, istioClient)
+
+		err = istioReconciler.ReconcileAPIUrl(ctx, dynakube)
 
 		require.NoError(t, err)
-		assert.NotNil(t, istioClient)
 
 		expectedName := istio.BuildNameForFQDNServiceEntry(dynakube.GetName(), istio.OperatorComponent)
 		serviceEntry, err := fakeIstio.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
