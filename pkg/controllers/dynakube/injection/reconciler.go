@@ -9,12 +9,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/spf13/afero"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -24,6 +26,8 @@ type reconciler struct {
 	dynakube          *dynatracev1beta1.DynaKube
 	istioReconciler   istio.Reconciler
 	versionReconciler version.Reconciler
+	dynatraceClient   dynatrace.Client
+	scheme            *runtime.Scheme
 }
 
 type ReconcilerBuilder func(
@@ -33,6 +37,7 @@ type ReconcilerBuilder func(
 	istioClient *istio.Client,
 	fs afero.Afero,
 	dynakube *dynatracev1beta1.DynaKube,
+	scheme *runtime.Scheme,
 ) controllers.Reconciler
 
 //nolint:revive
@@ -43,6 +48,7 @@ func NewReconciler(
 	istioClient *istio.Client,
 	fs afero.Afero,
 	dynakube *dynatracev1beta1.DynaKube,
+	scheme *runtime.Scheme,
 ) controllers.Reconciler {
 	var istioReconciler istio.Reconciler = nil
 
@@ -56,6 +62,8 @@ func NewReconciler(
 		dynakube:          dynakube,
 		istioReconciler:   istioReconciler,
 		versionReconciler: version.NewReconciler(apiReader, dynatraceClient, fs, timeprovider.New().Freeze()),
+		dynatraceClient:   dynatraceClient,
+		scheme:            scheme,
 	}
 }
 
@@ -76,6 +84,13 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if err := r.setupEnrichmentInjection(ctx); err != nil {
+		setupErrors = append(setupErrors, err)
+	}
+
+	err := processmoduleconfigsecret.NewReconciler(
+		r.client, r.apiReader, r.dynatraceClient, r.dynakube, r.scheme, timeprovider.New()).
+		Reconcile(ctx)
+	if err != nil {
 		setupErrors = append(setupErrors, err)
 	}
 
