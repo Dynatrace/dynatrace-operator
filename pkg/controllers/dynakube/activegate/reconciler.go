@@ -17,7 +17,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/object"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -45,16 +44,13 @@ var _ controllers.Reconciler = (*Reconciler)(nil)
 type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client, istioClient *istio.Client) controllers.Reconciler
 
 func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client, istioClient *istio.Client) controllers.Reconciler { //nolint: revive
-	time := timeprovider.New().Freeze()
-	fs := afero.Afero{Fs: afero.NewOsFs()}
-
 	var istioReconciler istio.Reconciler
 	if istioClient != nil {
 		istioReconciler = istio.NewReconciler(istioClient)
 	}
 
 	authTokenReconciler := authtoken.NewReconciler(clt, apiReader, scheme, dynakube, dtc)
-	versionReconciler := version.NewReconciler(apiReader, dtc, fs, time)
+	versionReconciler := version.NewReconciler(apiReader, dtc, timeprovider.New().Freeze())
 	connectionInfoReconciler := agconnectioninfo.NewReconciler(clt, apiReader, scheme, dtc, dynakube)
 
 	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) controllers.Reconciler {

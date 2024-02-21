@@ -315,11 +315,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube
 }
 
 func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioClient *istio.Client, dynakube *dynatracev1beta1.DynaKube) error {
-	// it's important to setup app injection before AG so that it is already working when AG pods start, in case code modules shall get
-	// injected into AG for self-monitoring reasons
 	versionReconciler := controller.versionReconcilerBuilder(controller.apiReader, dynatraceClient, controller.fs, timeprovider.New().Freeze())
-	injectionReconciler := controller.injectionReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient, istioClient, controller.fs, dynakube)
-
 	var componentErrors []error
 
 	log.Info("start reconciling ActiveGate")
@@ -341,6 +337,8 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 	log.Info("start reconciling app injection")
 
 	err = injectionReconciler.Reconcile(ctx)
+	err = controller.injectionReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient, istioClient, dynakube).
+		Reconcile(ctx)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
 			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP

@@ -17,8 +17,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
-	"github.com/spf13/afero"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -40,7 +38,6 @@ type ReconcilerBuilder func(
 	scheme *runtime.Scheme,
 	dynatraceClient dynatrace.Client,
 	istioClient *istio.Client,
-	fs afero.Afero,
 	dynakube *dynatracev1beta1.DynaKube,
 ) controllers.Reconciler
 
@@ -51,7 +48,6 @@ func NewReconciler(
 	scheme *runtime.Scheme,
 	dynatraceClient dynatrace.Client,
 	istioClient *istio.Client,
-	fs afero.Afero,
 	dynakube *dynatracev1beta1.DynaKube,
 ) controllers.Reconciler {
 	var istioReconciler istio.Reconciler = nil
@@ -66,7 +62,7 @@ func NewReconciler(
 		scheme:          scheme,
 		dynakube:          dynakube,
 		istioReconciler:   istioReconciler,
-		versionReconciler: version.NewReconciler(apiReader, dynatraceClient, fs, timeprovider.New().Freeze()),
+		versionReconciler: version.NewReconciler(apiReader, dynatraceClient, timeprovider.New().Freeze()),
 		pmcSecretreconciler: processmoduleconfigsecret.NewReconciler(
 			client, apiReader, dynatraceClient, dynakube, scheme, timeprovider.New().Freeze()),
 		connectionInfoReconciler: oaconnectioninfo.NewReconciler(client, apiReader, scheme, dynatraceClient, dynakube),
@@ -100,7 +96,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		setupErrors = append(setupErrors, err)
 	}
 
-	err := r.pmcSecretreconciler.Reconcile(ctx)
+	err = r.pmcSecretreconciler.Reconcile(ctx)
 	if err != nil {
 		setupErrors = append(setupErrors, err)
 	}

@@ -8,7 +8,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
-	"github.com/spf13/afero"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -22,16 +21,14 @@ type reconciler struct {
 	dtClient     dtclient.Client
 	timeProvider *timeprovider.Provider
 
-	fs        afero.Afero
 	apiReader client.Reader
 }
 
-type ReconcilerBuilder func(apiReader client.Reader, dtClient dtclient.Client, fs afero.Afero, timeProvider *timeprovider.Provider) Reconciler
+type ReconcilerBuilder func(apiReader client.Reader, dtClient dtclient.Client, timeProvider *timeprovider.Provider) Reconciler
 
-func NewReconciler(apiReader client.Reader, dtClient dtclient.Client, fs afero.Afero, timeProvider *timeprovider.Provider) Reconciler {
+func NewReconciler(apiReader client.Reader, dtClient dtclient.Client, timeProvider *timeprovider.Provider) Reconciler {
 	return &reconciler{
 		apiReader:    apiReader,
-		fs:           fs,
 		timeProvider: timeProvider,
 		dtClient:     dtClient,
 	}
