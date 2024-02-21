@@ -1,0 +1,27 @@
+name: e2e-tests
+
+on:
+  schedule:
+    - cron: 0 0 * * 1-5 # every work day at 00:00
+
+env:
+  NAMESPACE: dto-k8s-ondemand
+  ENVIRONMENT: dto-k8s-1-27
+
+jobs:
+  use-flightcontrol:
+    name: Use flightcontrol
+    runs-on:
+    - self-hosted
+    - operator-e2e
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v3
+    - name: Create cluster
+      run: scripts/create-cluster.sh # trigger creation, wait for completion and return kubeconfig
+    - name: Run test
+      run: scripts/run-test.sh # use kubeconfig
+    - name: Destroy cluster
+      run: scripts/destroy-cluster.sh # cleanup
