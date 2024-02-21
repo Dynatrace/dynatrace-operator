@@ -25,8 +25,8 @@ jobs:
     - name: Install kubectl
       uses: azure/setup-kubectl@v3
     - name: Create cluster
-      run: scripts/create-cluster.sh # trigger creation, wait for completion and return kubeconfig
+      run: .github/scripts/create-cluster.sh # trigger creation, wait for completion and return kubeconfig
     - name: Run test
-      run: scripts/run-test.sh # use kubeconfig
+      run: .github/scripts/run-test.sh # use kubeconfig
     - name: Destroy cluster
-      run: scripts/destroy-cluster.sh # cleanup
+      run: .github/scripts/destroy-cluster.sh # cleanup
