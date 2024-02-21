@@ -27,6 +27,6 @@ jobs:
     - name: Create cluster
       run: .github/scripts/create-cluster.sh # trigger creation, wait for completion and return kubeconfig
     - name: Run test
-      run: .github/scripts/run-test.sh # use kubeconfig
+      run: .github/scripts/run-e2e.sh
     - name: Destroy cluster
       run: .github/scripts/destroy-cluster.sh # cleanup
