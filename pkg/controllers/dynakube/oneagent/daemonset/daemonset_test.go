@@ -840,3 +840,75 @@ func TestOneAgentHostGroup(t *testing.T) {
 		assert.Equal(t, "--set-host-group=newgroup", daemonset.Spec.Template.Spec.Containers[0].Args[0])
 	})
 }
+
+func TestDefaultArguments(t *testing.T) {
+	const (
+		namespace = "dynatrace"
+		name      = "dynakube"
+	)
+
+	base := dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
+			Tokens: name,
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+			},
+		},
+	}
+	base.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynatracev1beta1.CommunicationHostStatus{
+		{
+			Protocol: "http",
+			Host:     "dummyhost",
+			Port:     666,
+		},
+	}
+
+	t.Run("test customized OneAgent arguments", func(t *testing.T) {
+		dk := base.DeepCopy()
+		args := []string{
+			"--set-app-log-content-access=true",
+			"--set-host-id-source=fqdn",
+			"--set-host-group=APP_LUSTIG_PETER",
+			"--set-server=https://hyper.super.com:9999",
+		}
+		dk.Spec.OneAgent.ClassicFullStack.Args = args
+		dsInfo := NewClassicFullStack(dk, testClusterID)
+		ds, err := dsInfo.BuildDaemonSet()
+		require.NoError(t, err)
+
+		expectedDefaultArguments := []string{
+			"--set-app-log-content-access=true",
+			"--set-host-group=APP_LUSTIG_PETER",
+			"--set-host-id-source=fqdn",
+			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+			"--set-server=https://hyper.super.com:9999",
+			"--set-tenant=$(DT_TENANT)",
+		}
+		assert.Equal(t, expectedDefaultArguments, ds.Spec.Template.Spec.Containers[0].Args)
+	})
+
+	t.Run("test default OneAgent arguments", func(t *testing.T) {
+		dk := base.DeepCopy()
+		args := []string{
+			"--set-app-log-content-access=true",
+			"--set-host-group=APP_LUSTIG_PETER",
+			"--set-server=https://hyper.super.com:9999",
+		}
+		dk.Spec.OneAgent.ClassicFullStack.Args = args
+		dsInfo := NewClassicFullStack(dk, testClusterID)
+		ds, err := dsInfo.BuildDaemonSet()
+		require.NoError(t, err)
+
+		expectedDefaultArguments := []string{
+			"--set-app-log-content-access=true",
+			"--set-host-group=APP_LUSTIG_PETER",
+			"--set-host-id-source=auto",
+			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+			"--set-server=https://hyper.super.com:9999",
+			"--set-tenant=$(DT_TENANT)",
+		}
+		assert.Equal(t, expectedDefaultArguments, ds.Spec.Template.Spec.Containers[0].Args)
+	})
+}

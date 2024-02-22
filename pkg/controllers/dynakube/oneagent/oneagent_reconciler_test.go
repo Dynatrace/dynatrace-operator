@@ -142,34 +142,6 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 	mock.AssertExpectationsForObjects(t, dtClient)
 }
 
-func TestReconcile_PhaseSetCorrectly(t *testing.T) {
-	namespace := "dynatrace"
-	dkName := "dynakube"
-
-	base := dynatracev1beta1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
-			Tokens: dkName,
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
-			},
-		},
-	}
-	meta.SetStatusCondition(&base.Status.Conditions, metav1.Condition{
-		Type:    dynatracev1beta1.APITokenConditionType,
-		Status:  metav1.ConditionTrue,
-		Reason:  dynatracev1beta1.ReasonTokenReady,
-		Message: "Ready",
-	})
-	meta.SetStatusCondition(&base.Status.Conditions, metav1.Condition{
-		Type:    dynatracev1beta1.PaaSTokenConditionType,
-		Status:  metav1.ConditionTrue,
-		Reason:  dynatracev1beta1.ReasonTokenReady,
-		Message: "Ready",
-	})
-}
-
 func TestReconcile_PostponeOnEmptyCommunicationHosts(t *testing.T) {
 	const (
 		namespace = "dynatrace"
@@ -286,54 +258,6 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		assert.NotNil(t, dk.Status.OneAgent.Instances)
 		assert.NotEmpty(t, dk.Status.OneAgent.Instances)
 	})
-
-	t.Run("test customized OneAgent arguments", func(t *testing.T) {
-		dk := base.DeepCopy()
-		args := []string{
-			"--set-app-log-content-access=true",
-			"--set-host-id-source=fqdn",
-			"--set-host-group=APP_LUSTIG_PETER",
-			"--set-server=https://hyper.super.com:9999",
-		}
-		dk.Spec.OneAgent.ClassicFullStack.Args = args
-		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
-		ds, err := dsInfo.BuildDaemonSet()
-		require.NoError(t, err)
-
-		expectedDefaultArguments := []string{
-			"--set-app-log-content-access=true",
-			"--set-host-group=APP_LUSTIG_PETER",
-			"--set-host-id-source=fqdn",
-			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
-			"--set-server=https://hyper.super.com:9999",
-			"--set-tenant=$(DT_TENANT)",
-		}
-		assert.Equal(t, expectedDefaultArguments, ds.Spec.Template.Spec.Containers[0].Args)
-	})
-
-	t.Run("test default OneAgent arguments", func(t *testing.T) {
-		dk := base.DeepCopy()
-		args := []string{
-			"--set-app-log-content-access=true",
-			"--set-host-group=APP_LUSTIG_PETER",
-			"--set-server=https://hyper.super.com:9999",
-		}
-		dk.Spec.OneAgent.ClassicFullStack.Args = args
-		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
-		ds, err := dsInfo.BuildDaemonSet()
-		require.NoError(t, err)
-
-		expectedDefaultArguments := []string{
-			"--set-app-log-content-access=true",
-			"--set-host-group=APP_LUSTIG_PETER",
-			"--set-host-id-source=auto",
-			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
-			"--set-server=https://hyper.super.com:9999",
-			"--set-tenant=$(DT_TENANT)",
-		}
-		assert.Equal(t, expectedDefaultArguments, ds.Spec.Template.Spec.Containers[0].Args)
-	})
-
 	t.Run("reconcileImpl Instances set, if agentUpdateDisabled is true", func(t *testing.T) {
 		dk := base.DeepCopy()
 		autoUpdate := false
