@@ -7,9 +7,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent/daemonset"
 	versions "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
@@ -19,13 +19,13 @@ import (
 	mocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	controllerMocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	versionMocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -36,14 +36,8 @@ const (
 	testClusterID = "test-cluster-id"
 )
 
-var sampleKubeSystemNS = &corev1.Namespace{
-	ObjectMeta: metav1.ObjectMeta{
-		Name: "kube-system",
-		UID:  "01234-5678-9012-3456",
-	},
-}
-
 func TestReconcile(t *testing.T) {
+	ctx := context.Background()
 	namespace := "dynatrace"
 	dkName := "dynakube"
 
@@ -58,11 +52,11 @@ func TestReconcile(t *testing.T) {
 			dynakube:  dynakube,
 		}
 
-		err := reconciler.Reconcile(context.Background())
+		err := reconciler.Reconcile(ctx)
 		require.NoError(t, err)
 
 		dsActual := &appsv1.DaemonSet{}
-		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: dynakube.OneAgentDaemonsetName(), Namespace: namespace}, dsActual)
+		err = fakeClient.Get(ctx, types.NamespacedName{Name: dynakube.OneAgentDaemonsetName(), Namespace: namespace}, dsActual)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
@@ -78,8 +72,68 @@ func TestReconcile(t *testing.T) {
 			dynakube:  dynakube,
 		}
 
-		err := reconciler.Reconcile(context.Background())
+		err := reconciler.Reconcile(ctx)
 		require.NoError(t, err)
+	})
+
+	t.Run("NoOneAgentCommunicationHostsError => bubble up error", func(t *testing.T) {
+		dynaKube := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL:      "https://ENVIRONMENTID.live.dynatrace.com/api",
+				NetworkZone: "test",
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+				},
+			},
+		}
+
+		connectionInfoReconciler := controllerMocks.NewReconciler(t)
+		connectionInfoReconciler.On("Reconcile",
+			mock.AnythingOfType("context.backgroundCtx")).Return(oaconnectioninfo.NoOneAgentCommunicationHostsError).Once()
+
+		fakeClient := fake.NewClient()
+		reconciler := &Reconciler{
+			client:                   fakeClient,
+			apiReader:                fakeClient,
+			scheme:                   scheme.Scheme,
+			dynakube:                 &dynaKube,
+			connectionInfoReconciler: connectionInfoReconciler,
+			versionReconciler:        createVersionReconcilerMock(t),
+		}
+
+		err := reconciler.Reconcile(ctx)
+		require.ErrorIs(t, err, oaconnectioninfo.NoOneAgentCommunicationHostsError)
+	})
+
+	t.Run("version reconcile fail => return immediately and bubble up error", func(t *testing.T) {
+		dynaKube := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+				},
+			},
+		}
+
+		versionReconciler := versionMocks.NewReconciler(t)
+		versionReconciler.On("ReconcileOneAgent",
+			mock.AnythingOfType("context.backgroundCtx"),
+			mock.AnythingOfType("*dynakube.DynaKube")).Return(errors.New("BOOM")).Once()
+
+		fakeClient := fake.NewClient()
+		reconciler := &Reconciler{
+			client:                   fakeClient,
+			apiReader:                fakeClient,
+			scheme:                   scheme.Scheme,
+			dynakube:                 &dynaKube,
+			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
+			versionReconciler:        versionReconciler,
+		}
+
+		err := reconciler.Reconcile(ctx)
+		require.Error(t, err)
 	})
 }
 
@@ -114,11 +168,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		},
 	}
 
-	fakeClient := fake.NewClient(
-		dynakube,
-		NewSecret(dkName, namespace, map[string]string{dtclient.PaasToken: "42", dtclient.ApiToken: "84"}),
-		sampleKubeSystemNS)
-
+	fakeClient := fake.NewClient()
 	dtClient := mocks.NewClient(t)
 
 	reconciler := &Reconciler{
@@ -140,46 +190,6 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 	assert.Equal(t, dynakube.OneAgentDaemonsetName(), dsActual.GetObjectMeta().GetName(), "wrong name")
 	assert.Equal(t, corev1.DNSClusterFirstWithHostNet, dsActual.Spec.Template.Spec.DNSPolicy, "wrong policy")
 	mock.AssertExpectationsForObjects(t, dtClient)
-}
-
-func TestReconcile_PostponeOnEmptyCommunicationHosts(t *testing.T) {
-	const (
-		namespace = "dynatrace"
-		name      = "dynakube"
-	)
-
-	dynaKube := dynatracev1beta1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
-			Tokens: name,
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
-					HostInjectSpec:   dynatracev1beta1.HostInjectSpec{},
-					AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{},
-				},
-			},
-		},
-	}
-
-	c := fake.NewClient(
-		NewSecret(name, namespace, map[string]string{dtclient.PaasToken: "42", dtclient.ApiToken: "84"}),
-		sampleKubeSystemNS)
-
-	reconciler := &Reconciler{
-		client:                   c,
-		apiReader:                c,
-		scheme:                   scheme.Scheme,
-		dynakube:                 &dynaKube,
-		connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
-		versionReconciler:        createVersionReconcilerMock(t),
-	}
-
-	err := reconciler.Reconcile(context.Background())
-
-	require.NoError(t, err)
-	assert.Empty(t, dynaKube.Status.OneAgent.Instances)
-	assert.Empty(t, dynaKube.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts)
 }
 
 func TestReconcile_InstancesSet(t *testing.T) {
@@ -208,9 +218,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		},
 	}
 
-	c := fake.NewClient(
-		NewSecret(name, namespace, map[string]string{dtclient.PaasToken: "42", dtclient.ApiToken: "84"}),
-		sampleKubeSystemNS)
+	c := fake.NewClient()
 	oldComponentVersion := "1.186.0.0-0"
 	hostIP := "1.2.3.4"
 
@@ -228,7 +236,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		labels.AppManagedByLabel: version.AppName,
 	}
 
-	t.Run("reconcileImp Instances set, if autoUpdate is true", func(t *testing.T) {
+	t.Run("Status.OneAgent.Instances set, if autoUpdate is true", func(t *testing.T) {
 		dk := base.DeepCopy()
 		reconciler.dynakube = dk
 		reconciler.connectionInfoReconciler = createConnectionInfoReconcilerMock(t)
@@ -258,7 +266,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		assert.NotNil(t, dk.Status.OneAgent.Instances)
 		assert.NotEmpty(t, dk.Status.OneAgent.Instances)
 	})
-	t.Run("reconcileImpl Instances set, if agentUpdateDisabled is true", func(t *testing.T) {
+	t.Run("Status.OneAgent.Instances set, if autoUpdate is false", func(t *testing.T) {
 		dk := base.DeepCopy()
 		autoUpdate := false
 		reconciler.dynakube = dk
@@ -291,15 +299,6 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		assert.NotNil(t, dk.Status.OneAgent.Instances)
 		assert.NotEmpty(t, dk.Status.OneAgent.Instances)
 	})
-}
-
-func NewSecret(name, namespace string, kv map[string]string) *corev1.Secret {
-	data := make(map[string][]byte)
-	for k, v := range kv {
-		data[k] = []byte(v)
-	}
-
-	return &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}, Data: data}
 }
 
 func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
@@ -605,9 +604,7 @@ func TestInstanceStatus(t *testing.T) {
 
 	fakeClient := fake.NewClient(
 		dynakube,
-		pod,
-		NewSecret(dkName, namespace, map[string]string{dtclient.PaasToken: "42", dtclient.ApiToken: "84"}),
-		sampleKubeSystemNS)
+		pod)
 
 	reconciler := &Reconciler{
 		client:    fakeClient,
@@ -658,9 +655,7 @@ func TestEmptyInstancesWithWrongLabels(t *testing.T) {
 
 	fakeClient := fake.NewClient(
 		dynakube,
-		pod,
-		NewSecret(dkName, namespace, map[string]string{dtclient.PaasToken: "42", dtclient.ApiToken: "84"}),
-		sampleKubeSystemNS)
+		pod)
 
 	reconciler := &Reconciler{
 		client:    fakeClient,
@@ -701,9 +696,7 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 	}
 
 	fakeClient := fake.NewClient(
-		dynakube,
-		NewSecret(dynakube.Name, dynakube.Namespace, map[string]string{dtclient.PaasToken: "42", dtclient.ApiToken: "84"}),
-		sampleKubeSystemNS)
+		dynakube)
 
 	t.Run(`create OneAgent connection info ConfigMap`, func(t *testing.T) {
 		reconciler := Reconciler{
