@@ -26,7 +26,7 @@ type reconciler struct {
 	dynakube            *dynatracev1beta1.DynaKube
 	istioReconciler     istio.Reconciler
 	versionReconciler   version.Reconciler
-	pmcSecretreconciler processmoduleconfigsecret.Reconciler
+	pmcSecretreconciler controllers.Reconciler
 	dynatraceClient     dynatrace.Client
 	scheme              *runtime.Scheme
 }
@@ -63,7 +63,7 @@ func NewReconciler(
 		dynakube:          dynakube,
 		istioReconciler:   istioReconciler,
 		versionReconciler: version.NewReconciler(apiReader, dynatraceClient, fs, timeprovider.New().Freeze()),
-		pmcSecretreconciler: *processmoduleconfigsecret.NewReconciler(
+		pmcSecretreconciler: processmoduleconfigsecret.NewReconciler(
 			client, apiReader, dynatraceClient, dynakube, scheme, timeprovider.New().Freeze()),
 		dynatraceClient: dynatraceClient,
 		scheme:          scheme,
