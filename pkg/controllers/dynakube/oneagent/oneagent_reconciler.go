@@ -102,7 +102,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) { // This only informational
 		log.Info("OneAgent were not yet able to communicate with tenant, no direct route or ready ActiveGate available, postponing OneAgent deployment")
 
-		if len(r.dynakube.Spec.NetworkZone) > 0 {
+		if r.dynakube.Spec.NetworkZone != "" {
 			log.Info("A network zone has been configured for DynaKube, check that there a working ActiveGate ready for that network zone", "network zone", r.dynakube.Spec.NetworkZone, "dynakube", r.dynakube.Name)
 		}
 	}
@@ -111,7 +111,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	log.Info("At least one ActiveGate is operational, deploying OneAgent")
+	log.Info("At least one communication host is provided, deploying OneAgent")
 
 	err = r.createOneAgentTenantConnectionInfoConfigMap(ctx)
 	if err != nil {
