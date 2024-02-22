@@ -21,34 +21,35 @@ import (
 )
 
 type reconciler struct {
-	client            client.Client
-	apiReader         client.Reader
-	dynakube          *dynatracev1beta1.DynaKube
-	istioReconciler   istio.Reconciler
-	versionReconciler version.Reconciler
-	dynatraceClient   dynatrace.Client
-	scheme            *runtime.Scheme
+	client              client.Client
+	apiReader           client.Reader
+	dynakube            *dynatracev1beta1.DynaKube
+	istioReconciler     istio.Reconciler
+	versionReconciler   version.Reconciler
+	pmcSecretreconciler processmoduleconfigsecret.Reconciler
+	dynatraceClient     dynatrace.Client
+	scheme              *runtime.Scheme
 }
 
 type ReconcilerBuilder func(
 	client client.Client,
 	apiReader client.Reader,
+	scheme *runtime.Scheme,
 	dynatraceClient dynatrace.Client,
 	istioClient *istio.Client,
 	fs afero.Afero,
 	dynakube *dynatracev1beta1.DynaKube,
-	scheme *runtime.Scheme,
 ) controllers.Reconciler
 
 //nolint:revive
 func NewReconciler(
 	client client.Client,
 	apiReader client.Reader,
+	scheme *runtime.Scheme,
 	dynatraceClient dynatrace.Client,
 	istioClient *istio.Client,
 	fs afero.Afero,
 	dynakube *dynatracev1beta1.DynaKube,
-	scheme *runtime.Scheme,
 ) controllers.Reconciler {
 	var istioReconciler istio.Reconciler = nil
 
@@ -62,8 +63,10 @@ func NewReconciler(
 		dynakube:          dynakube,
 		istioReconciler:   istioReconciler,
 		versionReconciler: version.NewReconciler(apiReader, dynatraceClient, fs, timeprovider.New().Freeze()),
-		dynatraceClient:   dynatraceClient,
-		scheme:            scheme,
+		pmcSecretreconciler: *processmoduleconfigsecret.NewReconciler(
+			client, apiReader, dynatraceClient, dynakube, scheme, timeprovider.New().Freeze()),
+		dynatraceClient: dynatraceClient,
+		scheme:          scheme,
 	}
 }
 
@@ -87,9 +90,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		setupErrors = append(setupErrors, err)
 	}
 
-	err := processmoduleconfigsecret.NewReconciler(
-		r.client, r.apiReader, r.dynatraceClient, r.dynakube, r.scheme, timeprovider.New()).
-		Reconcile(ctx)
+	err := r.pmcSecretreconciler.Reconcile(ctx)
 	if err != nil {
 		setupErrors = append(setupErrors, err)
 	}
