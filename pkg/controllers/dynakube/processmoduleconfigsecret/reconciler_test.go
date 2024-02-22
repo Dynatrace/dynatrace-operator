@@ -37,13 +37,14 @@ func TestReconciler_Reconcile(t *testing.T) {
 		mockK8sClient := fake.NewClient(dynakube)
 		mockK8sClient.Create(context.Background(),
 			&corev1.Secret{
-				Data: map[string][]byte{connectioninfo.TenantTokenName: []byte(testTokenValue)},
+				Data: map[string][]byte{connectioninfo.TenantTokenKey: []byte(testTokenValue)},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      strings.Join([]string{testName, oneAgentTenantSecretSuffix}, "-"),
 					Namespace: testNamespace,
 				},
 			},
 		)
+
 		mockTime := timeprovider.New().Freeze()
 
 		reconciler := NewReconciler(mockK8sClient,
@@ -123,13 +124,14 @@ func TestGetSecretData(t *testing.T) {
 		mockK8sClient := fake.NewClient(dynakube)
 		mockK8sClient.Create(context.Background(),
 			&corev1.Secret{
-				Data: map[string][]byte{connectioninfo.TenantTokenName: []byte(testTokenValue)},
+				Data: map[string][]byte{connectioninfo.TenantTokenKey: []byte(testTokenValue)},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      strings.Join([]string{testName, oneAgentTenantSecretSuffix}, "-"),
 					Namespace: testNamespace,
 				},
 			},
 		)
+
 		mockTime := timeprovider.New().Freeze()
 		reconciler := NewReconciler(mockK8sClient,
 			mockK8sClient, createMockDtClient(t, 0), dynakube, scheme.Scheme, mockTime)

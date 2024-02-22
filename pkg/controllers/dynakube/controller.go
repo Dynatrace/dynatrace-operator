@@ -11,23 +11,22 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	appsv1 "k8s.io/api/apps/v1"
@@ -76,9 +75,8 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		registryClientBuilder:  registry.NewClient,
 		// move these builders after refactoring the reconciler logic of the controller
 		deploymentMetadataReconcilerBuilder: deploymentmetadata.NewReconciler,
-		versionReconcilerBuilder:            version.NewReconciler,
-		connectionInfoReconcilerBuilder:     connectioninfo.NewReconciler,
 		activeGateReconcilerBuilder:         activegate.NewReconciler,
+		oneAgentReconcilerBuilder:           oneagent.NewReconciler,
 		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
 		injectionReconcilerBuilder:          injection.NewReconciler,
 		istioReconcilerBuilder:              istio.NewReconciler,
@@ -101,26 +99,22 @@ type Controller struct {
 	// that reads objects from the cache and writes to the api-server
 	client    client.Client
 	apiReader client.Reader
+	fs        afero.Afero
 
 	dynatraceClientBuilder dynatraceclient.Builder
-
-	fs     afero.Afero
-	scheme *runtime.Scheme
-	config *rest.Config
-
-	istioClientBuilder    istio.ClientBuilder
-	registryClientBuilder registry.ClientBuilder
+	scheme                 *runtime.Scheme
+	config                 *rest.Config
+	istioClientBuilder     istio.ClientBuilder
+	registryClientBuilder  registry.ClientBuilder
 
 	deploymentMetadataReconcilerBuilder deploymentmetadata.ReconcilerBuilder
-	versionReconcilerBuilder            version.ReconcilerBuilder
-	connectionInfoReconcilerBuilder     connectioninfo.ReconcilerBuilder
 	activeGateReconcilerBuilder         activegate.ReconcilerBuilder
+	oneAgentReconcilerBuilder           oneagent.ReconcilerBuilder
 	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
 	injectionReconcilerBuilder          injection.ReconcilerBuilder
 	istioReconcilerBuilder              istio.ReconcilerBuilder
-
-	operatorNamespace string
-	clusterID         string
+	operatorNamespace                   string
+	clusterID                           string
 
 	requeueAfter time.Duration
 }
@@ -199,7 +193,7 @@ func (controller *Controller) handleError(
 		log.Info("status changed, updating DynaKube")
 		controller.setRequeueAfterIfNewIsShorter(changesUpdateInterval)
 
-		if errClient := controller.updateDynakubeStatus(ctx, dynaKube); errClient != nil {
+		if errClient := dynaKube.UpdateStatus(ctx, controller.client); errClient != nil {
 			return reconcile.Result{}, errors.WithMessagef(errClient, "failed to update DynaKube after failure, original error: %s", err)
 		}
 	}
@@ -215,19 +209,6 @@ func (controller *Controller) setRequeueAfterIfNewIsShorter(requeueAfter time.Du
 	if controller.requeueAfter > requeueAfter {
 		controller.requeueAfter = requeueAfter
 	}
-}
-
-func (controller *Controller) updateDynakubeStatus(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	dynakube.Status.UpdatedTimestamp = metav1.Now()
-	err := controller.client.Status().Update(ctx, dynakube)
-
-	if err != nil && k8serrors.IsConflict(err) {
-		log.Info("could not update dynakube due to conflict", "name", dynakube.Name)
-
-		return nil
-	}
-
-	return errors.WithStack(err)
 }
 
 func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
@@ -330,13 +311,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube
 }
 
 func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioClient *istio.Client, dynakube *dynatracev1beta1.DynaKube) error {
-	// it's important to setup app injection before AG so that it is already working when AG pods start, in case code modules shall get
-	// injected into AG for self-monitoring reasons
-	versionReconciler := controller.versionReconcilerBuilder(controller.apiReader, dynatraceClient, controller.fs, timeprovider.New().Freeze())
-	connectionInfoReconciler := controller.connectionInfoReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient)
-	injectionReconciler := controller.injectionReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient, istioClient, controller.fs, dynakube)
-
-	componentErrors := []error{}
+	var componentErrors []error
 
 	log.Info("start reconciling ActiveGate")
 
@@ -354,25 +329,19 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		return err
 	}
 
-	if dynakube.NeedsOneAgent() || dynakube.ApplicationMonitoringMode() { // TODO: improve check
-		err := connectionInfoReconciler.ReconcileOneAgent(ctx, dynakube)
-		if errors.Is(err, connectioninfo.NoOneAgentCommunicationHostsError) {
+	log.Info("start reconciling app injection")
+
+	err = controller.injectionReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient, istioClient, dynakube).
+		Reconcile(ctx)
+	if err != nil {
+		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
 			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
 			// this situation will clear itself after AG has been started
 			controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
 
 			return goerrors.Join(componentErrors...)
-		} else if err != nil {
-			componentErrors = append(componentErrors, err)
-
-			return goerrors.Join(componentErrors...)
 		}
-	} // TODO: there tends to be a clean up for each reconcileX function, so it might makes sense to have the same here
 
-	log.Info("start reconciling app injection")
-
-	err = injectionReconciler.Reconcile(ctx)
-	if err != nil {
 		log.Info("could not reconcile app injection")
 
 		componentErrors = append(componentErrors, err)
@@ -380,8 +349,17 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling OneAgent")
 
-	err = controller.reconcileOneAgent(ctx, dynakube, versionReconciler)
+	err = controller.oneAgentReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient, dynakube, controller.clusterID).
+		Reconcile(ctx)
 	if err != nil {
+		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
+			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
+			// this situation will clear itself after AG has been started
+			controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
+
+			return goerrors.Join(componentErrors...)
+		}
+
 		log.Info("could not reconcile OneAgent")
 
 		componentErrors = append(componentErrors, err)

@@ -373,7 +373,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						Name: dynakube.OneagentTenantSecret(),
 					},
 					Data: map[string][]byte{
-						connectioninfo.TenantTokenName: []byte("tenant-token"),
+						connectioninfo.TenantTokenKey: []byte("tenant-token"),
 					},
 				},
 			),
@@ -613,12 +613,15 @@ func TestHandleMetadata(t *testing.T) {
 
 func TestUpdateAgentInstallation(t *testing.T) {
 	ctx := context.Background()
+
 	t.Run("updateAgentInstallation with codeModules enabled", func(t *testing.T) {
 		dynakube := getDynakube()
 		enableCodeModules(dynakube)
 
 		mockDtcBuilder := dtClientMock.NewBuilder(t)
+
 		var dtc dtclient.Client
+
 		mockDtcBuilder.On("Build").Return(dtc, nil)
 		dtc, err := mockDtcBuilder.Build()
 		require.NoError(t, err)
@@ -660,7 +663,9 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		enableCodeModules(dynakube)
 
 		mockDtcBuilder := dtClientMock.NewBuilder(t)
+
 		var dtc dtclient.Client
+
 		mockDtcBuilder.On("Build").Return(dtc, nil)
 		dtc, err := mockDtcBuilder.Build()
 		require.NoError(t, err)
@@ -696,7 +701,9 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		dynakube := getDynakube()
 
 		mockDtcBuilder := dtClientMock.NewBuilder(t)
+
 		var dtc dtclient.Client
+
 		mockDtcBuilder.On("Build").Return(dtc, nil)
 		dtc, err := mockDtcBuilder.Build()
 		require.NoError(t, err)
@@ -736,7 +743,9 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		dynakube := getDynakube()
 
 		mockDtcBuilder := dtClientMock.NewBuilder(t)
+
 		var dtc dtclient.Client
+
 		mockDtcBuilder.On("Build").Return(dtc, nil)
 		dtc, err := mockDtcBuilder.Build()
 		require.NoError(t, err)

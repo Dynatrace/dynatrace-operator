@@ -13,11 +13,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	semVersion "github.com/Dynatrace/dynatrace-operator/pkg/version"
@@ -481,11 +480,10 @@ func createFakeClientAndReconciler(t *testing.T, mockClient dtclient.Client, ins
 		dynatraceClientBuilder:              mockDtcBuilder,
 		fs:                                  afero.Afero{Fs: afero.NewMemMapFs()},
 		deploymentMetadataReconcilerBuilder: deploymentmetadata.NewReconciler,
-		versionReconcilerBuilder:            version.NewReconciler,
-		connectionInfoReconcilerBuilder:     connectioninfo.NewReconciler,
 		activeGateReconcilerBuilder:         activegate.NewReconciler,
 		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
 		injectionReconcilerBuilder:          injection.NewReconciler,
+		oneAgentReconcilerBuilder:           oneagent.NewReconciler,
 	}
 
 	return controller

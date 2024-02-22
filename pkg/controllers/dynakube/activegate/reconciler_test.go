@@ -16,7 +16,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	mocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	controllerMocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
-	connectioninfoMocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/connectioninfo"
 	istioMocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/istio"
 	versionMocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
 	"github.com/stretchr/testify/assert"
@@ -354,16 +353,15 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 		var actual corev1.ConfigMap
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.ActiveGateConnectionInfoConfigMapName(), Namespace: testNamespace}, &actual)
 		require.NoError(t, err)
-		assert.Equal(t, testTenantUUID, actual.Data[connectioninfo.TenantUUIDName])
-		assert.Equal(t, testTenantEndpoints, actual.Data[connectioninfo.CommunicationEndpointsName])
+		assert.Equal(t, testTenantUUID, actual.Data[connectioninfo.TenantUUIDKey])
+		assert.Equal(t, testTenantEndpoints, actual.Data[connectioninfo.CommunicationEndpointsKey])
 	})
 }
 
-func createConnectionInfoReconcilerMock(t *testing.T) connectioninfo.Reconciler {
-	connectionInfoReconciler := connectioninfoMocks.NewReconciler(t)
-	connectionInfoReconciler.On("ReconcileActiveGate",
-		mock.AnythingOfType("context.backgroundCtx"),
-		mock.AnythingOfType("*dynakube.DynaKube")).Return(nil).Once()
+func createConnectionInfoReconcilerMock(t *testing.T) controllers.Reconciler {
+	connectionInfoReconciler := controllerMocks.NewReconciler(t)
+	connectionInfoReconciler.On("Reconcile",
+		mock.AnythingOfType("context.backgroundCtx")).Return(nil).Once()
 
 	return connectionInfoReconciler
 }

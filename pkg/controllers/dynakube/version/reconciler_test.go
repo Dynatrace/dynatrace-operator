@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -55,7 +54,6 @@ func TestReconcile(t *testing.T) {
 		versionReconciler := reconciler{
 			dtClient:     mockClient,
 			apiReader:    fake.NewClient(),
-			fs:           afero.Afero{Fs: afero.NewMemMapFs()},
 			timeProvider: timeprovider.New().Freeze(),
 		}
 		err := versionReconciler.ReconcileActiveGate(ctx, dynakubeTemplate.DeepCopy())
@@ -78,7 +76,6 @@ func TestReconcile(t *testing.T) {
 
 		versionReconciler := reconciler{
 			apiReader:    fakeClient,
-			fs:           afero.Afero{Fs: afero.NewMemMapFs()},
 			timeProvider: timeProvider,
 			dtClient:     mockClient,
 		}
@@ -126,7 +123,6 @@ func TestReconcile(t *testing.T) {
 
 		versionReconciler := reconciler{
 			apiReader:    fakeClient,
-			fs:           afero.Afero{Fs: afero.NewMemMapFs()},
 			timeProvider: timeprovider.New().Freeze(),
 			dtClient:     mockClient,
 		}
