@@ -18,7 +18,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -273,13 +272,6 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 
 	log.Info("start reconciling process module config")
 
-	err = processmoduleconfigsecret.NewReconciler(
-		controller.client, controller.apiReader, dynatraceClient, dynakube, controller.scheme, timeprovider.New()).
-		Reconcile(ctx)
-	if err != nil {
-		return err
-	}
-
 	return controller.reconcileComponents(ctx, dynatraceClient, istioClient, dynakube)
 }
 
@@ -342,7 +334,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 	// injected into AG for self-monitoring reasons
 	versionReconciler := controller.versionReconcilerBuilder(controller.apiReader, dynatraceClient, controller.fs, timeprovider.New().Freeze())
 	connectionInfoReconciler := controller.connectionInfoReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient)
-	injectionReconciler := controller.injectionReconcilerBuilder(controller.client, controller.apiReader, dynatraceClient, istioClient, controller.fs, dynakube)
+	injectionReconciler := controller.injectionReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient, istioClient, controller.fs, dynakube)
 
 	componentErrors := []error{}
 

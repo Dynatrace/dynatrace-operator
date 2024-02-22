@@ -9,26 +9,32 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/spf13/afero"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type reconciler struct {
-	client            client.Client
-	apiReader         client.Reader
-	dynakube          *dynatracev1beta1.DynaKube
-	istioReconciler   istio.Reconciler
-	versionReconciler version.Reconciler
+	client              client.Client
+	apiReader           client.Reader
+	dynakube            *dynatracev1beta1.DynaKube
+	istioReconciler     istio.Reconciler
+	versionReconciler   version.Reconciler
+	pmcSecretreconciler controllers.Reconciler
+	dynatraceClient     dynatrace.Client
+	scheme              *runtime.Scheme
 }
 
 type ReconcilerBuilder func(
 	client client.Client,
 	apiReader client.Reader,
+	scheme *runtime.Scheme,
 	dynatraceClient dynatrace.Client,
 	istioClient *istio.Client,
 	fs afero.Afero,
@@ -39,6 +45,7 @@ type ReconcilerBuilder func(
 func NewReconciler(
 	client client.Client,
 	apiReader client.Reader,
+	scheme *runtime.Scheme,
 	dynatraceClient dynatrace.Client,
 	istioClient *istio.Client,
 	fs afero.Afero,
@@ -56,6 +63,10 @@ func NewReconciler(
 		dynakube:          dynakube,
 		istioReconciler:   istioReconciler,
 		versionReconciler: version.NewReconciler(apiReader, dynatraceClient, fs, timeprovider.New().Freeze()),
+		pmcSecretreconciler: processmoduleconfigsecret.NewReconciler(
+			client, apiReader, dynatraceClient, dynakube, scheme, timeprovider.New().Freeze()),
+		dynatraceClient: dynatraceClient,
+		scheme:          scheme,
 	}
 }
 
@@ -77,6 +88,11 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if err := r.setupEnrichmentInjection(ctx); err != nil {
+		setupErrors = append(setupErrors, err)
+	}
+
+	err := r.pmcSecretreconciler.Reconcile(ctx)
+	if err != nil {
 		setupErrors = append(setupErrors, err)
 	}
 

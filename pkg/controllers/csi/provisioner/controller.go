@@ -26,8 +26,6 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csigc "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/gc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -35,7 +33,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -219,31 +216,6 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 		return false, err
 	}
 
-	tenantToken, err := provisioner.getAgentTenantToken(ctx, dk)
-	if err != nil {
-		return false, err
-	}
-
-	latestProcessModuleConfig = latestProcessModuleConfig.
-		AddHostGroup(dk.HostGroup()).
-		AddConnectionInfo(dk.Status.OneAgent.ConnectionInfoStatus, tenantToken).
-		// set proxy explicitly empty, so old proxy settings get deleted where necessary
-		AddProxy("")
-
-	if dk.NeedsOneAgentProxy() {
-		proxy, err := dk.Proxy(ctx, provisioner.apiReader)
-		if err != nil {
-			return false, err
-		}
-
-		latestProcessModuleConfig.AddProxy(proxy)
-
-		if dk.NeedsActiveGate() {
-			multiCap := capability.NewMultiCapability(dk)
-			latestProcessModuleConfig.AddNoProxy(capability.BuildDNSEntryPointWithoutEnvVars(dk.Name, dk.Namespace, multiCap))
-		}
-	}
-
 	if dk.CodeModulesImage() != "" {
 		updatedDigest, err := provisioner.installAgentImage(ctx, *dk, latestProcessModuleConfig)
 		if err != nil {
@@ -267,22 +239,6 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 	}
 
 	return false, nil
-}
-
-func (provisioner *OneAgentProvisioner) getAgentTenantToken(ctx context.Context, dk *dynatracev1beta1.DynaKube) (string, error) {
-	query := secret.NewQuery(ctx, provisioner.client, provisioner.apiReader, log)
-
-	tenantSecret, err := query.Get(types.NamespacedName{Namespace: dk.Namespace, Name: dk.OneagentTenantSecret()})
-	if err != nil {
-		return "", errors.Wrapf(err, "OneAgent tenant token secret %s/%s not found", dk.Namespace, dk.OneagentTenantSecret())
-	}
-
-	tokenData, ok := tenantSecret.Data[connectioninfo.TenantTokenName]
-	if !ok {
-		return "", errors.Errorf("OneAgent tenant token not found in secret %s/%s", dk.Namespace, dk.OneagentTenantSecret())
-	}
-
-	return string(tokenData), nil
 }
 
 func (provisioner *OneAgentProvisioner) handleMetadata(ctx context.Context, dk *dynatracev1beta1.DynaKube) (*metadata.Dynakube, metadata.Dynakube, error) {
