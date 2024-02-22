@@ -47,18 +47,19 @@ func AddPodMutationWebhookToManager(mgr manager.Manager, ns string) error {
 
 // podMutatorWebhook executes mutators on Pods
 type podMutatorWebhook struct {
-	apiReader client.Reader
-	decoder   admission.Decoder
-	recorder  podMutatorEventRecorder
+	decoder  admission.Decoder
+	recorder podMutatorEventRecorder
+
+	apiReader      client.Reader
+	requestCounter metric.Int64Counter
 
 	webhookImage     string
 	webhookNamespace string
 	clusterID        string
-	apmExists        bool
-	deployedViaOLM   bool
 
 	mutators       []dtwebhook.PodMutator
-	requestCounter metric.Int64Counter
+	apmExists      bool
+	deployedViaOLM bool
 }
 
 func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.Request) admission.Response {
@@ -80,6 +81,7 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 
 	if mutationRequest == nil {
 		emptyPatch.Result.Message = "injection into pod not required"
+
 		return emptyPatch
 	}
 
@@ -173,6 +175,7 @@ func (webhook *podMutatorWebhook) handlePodMutation(ctx context.Context, mutatio
 
 	if !podNeedsInjection(mutationRequest) {
 		log.Info("no mutation is needed, all containers are excluded from injection.")
+
 		return nil
 	}
 
@@ -194,6 +197,7 @@ func (webhook *podMutatorWebhook) handlePodMutation(ctx context.Context, mutatio
 
 	if !isMutated {
 		log.Info("no mutation is enabled")
+
 		return nil
 	}
 

@@ -25,6 +25,7 @@ func InstallFromFile(path string, options ...decoder.DecodeOption) env.Func {
 		if err != nil {
 			return ctx, err
 		}
+
 		return ctx, nil
 	}
 }
@@ -42,6 +43,7 @@ func UninstallFromFile(path string, options ...decoder.DecodeOption) env.Func {
 		if err != nil {
 			return ctx, err
 		}
+
 		return ctx, nil
 	}
 }

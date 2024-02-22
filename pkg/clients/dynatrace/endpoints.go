@@ -5,12 +5,14 @@ import "fmt"
 func (dtc *dynatraceClient) getAgentUrl(os, installerType, flavor, arch, version string, technologies []string, skipMetadata bool) string {
 	url := fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/version/%s?flavor=%s&arch=%s&bitness=64&skipMetadata=%t",
 		dtc.url, os, installerType, version, flavor, arch, skipMetadata)
+
 	return appendTechnologies(url, technologies)
 }
 
 func (dtc *dynatraceClient) getLatestAgentUrl(os, installerType, flavor, arch string, technologies []string, skipMetadata bool) string {
 	url := fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest?bitness=64&flavor=%s&arch=%s&skipMetadata=%t",
 		dtc.url, os, installerType, flavor, arch, skipMetadata)
+
 	return appendTechnologies(url, technologies)
 }
 

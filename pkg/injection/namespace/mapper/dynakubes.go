@@ -15,12 +15,12 @@ type DynakubeMapper struct {
 	ctx        context.Context
 	client     client.Client
 	apiReader  client.Reader
-	operatorNs string
 	dk         *dynatracev1beta1.DynaKube
+	operatorNs string
 }
 
 func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.Reader, operatorNs string, dk *dynatracev1beta1.DynaKube) DynakubeMapper {
-	return DynakubeMapper{ctx, clt, apiReader, operatorNs, dk}
+	return DynakubeMapper{ctx: ctx, client: clt, apiReader: apiReader, operatorNs: operatorNs, dk: dk}
 }
 
 // MapFromDynakube checks all the namespaces to all the dynakubes

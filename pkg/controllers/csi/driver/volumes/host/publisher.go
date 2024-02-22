@@ -98,7 +98,7 @@ func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volum
 	}
 
 	if volume == nil {
-		return nil, nil
+		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 
 	publisher.umountOneAgent(volumeInfo.TargetPath)
@@ -135,6 +135,7 @@ func (publisher *HostVolumePublisher) mountOneAgent(tenantUUID string, volumeCfg
 
 	if err := publisher.mounter.Mount(hostDir, volumeCfg.TargetPath, "", []string{"bind"}); err != nil {
 		_ = publisher.mounter.Unmount(hostDir)
+
 		return err
 	}
 

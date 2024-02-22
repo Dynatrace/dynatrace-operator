@@ -26,11 +26,9 @@ type environment struct {
 	FailurePolicy string `json:"failurePolicy"`
 	InstallerUrl  string `json:"installerUrl"`
 
-	InstallerFlavor string          `json:"installerFlavor"`
-	InstallVersion  string          `json:"installVersion"`
-	InstallerTech   []string        `json:"installerTech"`
-	InstallPath     string          `json:"installPath"`
-	Containers      []containerInfo `json:"containers"`
+	InstallerFlavor string `json:"installerFlavor"`
+	InstallVersion  string `json:"installVersion"`
+	InstallPath     string `json:"installPath"`
 
 	K8NodeName    string `json:"k8NodeName"`
 	K8PodName     string `json:"k8PodName"`
@@ -41,6 +39,9 @@ type environment struct {
 
 	WorkloadKind string `json:"workloadKind"`
 	WorkloadName string `json:"workloadName"`
+
+	InstallerTech []string        `json:"installerTech"`
+	Containers    []containerInfo `json:"containers"`
 
 	OneAgentInjected   bool `json:"oneAgentInjected"`
 	DataIngestInjected bool `json:"dataIngestInjected"`

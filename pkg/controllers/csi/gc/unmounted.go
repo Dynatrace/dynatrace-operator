@@ -17,6 +17,7 @@ func (gc *CSIGarbageCollector) runUnmountedVolumeGarbageCollection(tenantUUID st
 	unmountedVolumes, err := gc.getUnmountedVolumes(tenantUUID)
 	if err != nil {
 		log.Info("failed to get unmounted volume information", "error", err)
+
 		return
 	}
 
@@ -32,6 +33,7 @@ func (gc *CSIGarbageCollector) getUnmountedVolumes(tenantUUID string) ([]os.File
 	if err != nil {
 		if os.IsNotExist(err) {
 			log.Info("no mount directories found for this tenant, moving on", "tenantUUID", tenantUUID, "path", mountsDirectoryPath)
+
 			return nil, nil
 		}
 
@@ -44,6 +46,7 @@ func (gc *CSIGarbageCollector) getUnmountedVolumes(tenantUUID string) ([]os.File
 
 		if err != nil {
 			log.Info("failed to check if directory is empty, skipping", "folder", mappedDir, "error", err)
+
 			continue
 		}
 
@@ -78,11 +81,13 @@ func determineMaxUnmountedVolumeAge(maxAgeEnvValue string) time.Duration {
 	maxAge, err := strconv.Atoi(maxAgeEnvValue)
 	if err != nil {
 		log.Error(err, "failed to parse MaxUnmountedCsiVolumeAge from", "env", maxUnmountedCsiVolumeAgeEnv, "value", maxAgeEnvValue)
+
 		return defaultMaxUnmountedCsiVolumeAge
 	}
 
 	if maxAge <= 0 {
 		log.Info("max unmounted csi volume age is set to 0, files will be deleted immediately")
+
 		return 0
 	}
 

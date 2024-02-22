@@ -91,9 +91,11 @@ func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, monitoredEn
 				transitionSchemaObjectID, err := r.dtc.CreateOrUpdateKubernetesAppSetting(ctx, meID)
 				if err != nil {
 					log.Info("schema app-transition.kubernetes failed to set", "meID", meID, "err", err)
+
 					return "", err
 				} else {
 					log.Info("schema app-transition.kubernetes set to true", "meID", meID, "transitionSchemaObjectID", transitionSchemaObjectID)
+
 					return transitionSchemaObjectID, nil
 				}
 			}

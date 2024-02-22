@@ -339,13 +339,13 @@ func TestReconcileComponents(t *testing.T) {
 		fakeClient := fake.NewClientWithIndex(dynakube)
 		// ReconcileCodeModuleCommunicationHosts
 		mockConnectionInfoReconciler := mockconnectioninfo.NewReconciler(t)
-		mockConnectionInfoReconciler.On("ReconcileActiveGate", mock.Anything, mock.Anything).Return(errors.New("BOOM"))
 		mockConnectionInfoReconciler.On("ReconcileOneAgent", mock.Anything, dynakube).Return(nil)
 
 		mockVersionReconciler := mockversion.NewReconciler(t)
 		mockVersionReconciler.On("ReconcileOneAgent", mock.Anything, mock.Anything).Return(errors.New("BOOM"))
 
 		mockActiveGateReconciler := mockcontroller.NewReconciler(t)
+		mockActiveGateReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
 		mockInjectionReconciler := mockinjection.NewReconciler(t)
 		mockInjectionReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
@@ -375,12 +375,9 @@ func TestReconcileComponents(t *testing.T) {
 		fakeClient := fake.NewClientWithIndex(dynakube)
 
 		mockConnectionInfoReconciler := mockconnectioninfo.NewReconciler(t)
-		mockConnectionInfoReconciler.On("ReconcileActiveGate", mock.Anything, mock.Anything).Return(nil)
 		mockConnectionInfoReconciler.On("ReconcileOneAgent", mock.Anything, dynakube).Return(connectioninfo.NoOneAgentCommunicationHostsError)
 
 		mockVersionReconciler := mockversion.NewReconciler(t)
-		mockVersionReconciler.On("ReconcileActiveGate", mock.Anything, mock.Anything).Return(nil)
-
 		mockActiveGateReconciler := mockcontroller.NewReconciler(t)
 		mockActiveGateReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(errors.New("BOOM"))
 
@@ -409,12 +406,12 @@ func TestReconcileComponents(t *testing.T) {
 		fakeClient := fake.NewClientWithIndex(dynakube)
 
 		mockConnectionInfoReconciler := mockconnectioninfo.NewReconciler(t)
-		mockConnectionInfoReconciler.On("ReconcileActiveGate", mock.Anything, mock.Anything).Return(errors.New("BOOM"))
-
-		mockVersionReconciler := mockversion.NewReconciler(t)
-
 		mockConnectionInfoReconciler.On("ReconcileOneAgent", mock.Anything, dynakube).Return(errors.New("BOOM"))
 
+		mockActiveGateReconciler := mockcontroller.NewReconciler(t)
+		mockActiveGateReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(errors.New("BOOM"))
+
+		mockVersionReconciler := mockversion.NewReconciler(t)
 		mockInjectionReconciler := mockinjection.NewReconciler(t)
 
 		controller := &Controller{
@@ -426,6 +423,7 @@ func TestReconcileComponents(t *testing.T) {
 			versionReconcilerBuilder:        createVersionReconcilerBuilder(mockVersionReconciler),
 			connectionInfoReconcilerBuilder: createConnectionInfoReconcilerBuilder(mockConnectionInfoReconciler),
 			injectionReconcilerBuilder:      createInjectionReconcilerBuilder(mockInjectionReconciler),
+			activeGateReconcilerBuilder:     createActivegateReconcilerBuilder(mockActiveGateReconciler),
 		}
 		mockedDtc := mockedclient.NewClient(t)
 		err := controller.reconcileComponents(ctx, mockedDtc, nil, dynakube)
@@ -437,7 +435,7 @@ func TestReconcileComponents(t *testing.T) {
 }
 
 func createActivegateReconcilerBuilder(reconciler controllers.Reconciler) activegate.ReconcilerBuilder {
-	return func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) controllers.Reconciler {
+	return func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client, istioClient *istio.Client) controllers.Reconciler {
 		return reconciler
 	}
 }
@@ -712,14 +710,6 @@ func TestSetupIstio(t *testing.T) {
 		},
 	}
 
-	t.Run("EnableIstio: false => do nothing + nil", func(t *testing.T) {
-		dynakube := dynakubeBase.DeepCopy()
-		dynakube.Spec.EnableIstio = false
-		controller := &Controller{}
-		istioClient, err := controller.setupIstioClient(dynakube)
-		require.NoError(t, err)
-		assert.Nil(t, istioClient)
-	})
 	t.Run("no istio installed + EnableIstio: true => error", func(t *testing.T) {
 		dynakube := dynakubeBase.DeepCopy()
 		fakeIstio := fakeistio.NewSimpleClientset()

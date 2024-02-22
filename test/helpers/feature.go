@@ -30,6 +30,7 @@ func ToFeatureFunc(envFunc env.Func, isFatal bool) features.Func {
 			}
 			require.NoError(t, err)
 		}
+
 		return ctx
 	}
 }

@@ -57,17 +57,17 @@ type imageInstallerBuilder func(afero.Fs, *image.Properties) (installer.Installe
 type OneAgentProvisioner struct {
 	client    client.Client
 	apiReader client.Reader
-	opts      dtcsi.CSIOptions
 	fs        afero.Fs
 	recorder  record.EventRecorder
 	db        metadata.Access
-	path      metadata.PathResolver
 	gc        reconcile.Reconciler
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	urlInstallerBuilder    urlInstallerBuilder
 	imageInstallerBuilder  imageInstallerBuilder
 	registryClientBuilder  registry.ClientBuilder
+	opts                   dtcsi.CSIOptions
+	path                   metadata.PathResolver
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
@@ -108,6 +108,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 
 	if !dk.NeedsCSIDriver() {
 		log.Info("CSI driver provisioner not needed")
+
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.db.DeleteDynakube(ctx, request.Name)
 	}
 
@@ -123,11 +124,13 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 
 	if !dk.NeedAppInjection() {
 		log.Info("app injection not necessary, skip agent codemodule download", "dynakube", dk.Name)
+
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
 	}
 
 	if dk.CodeModulesImage() == "" && dk.CodeModulesVersion() == "" {
 		log.Info("dynakube status is not yet ready, requeuing", "dynakube", dk.Name)
+
 		return reconcile.Result{RequeueAfter: shortRequeueDuration}, err
 	}
 
@@ -152,6 +155,7 @@ func (provisioner *OneAgentProvisioner) setupFileSystem(dk *dynatracev1beta1.Dyn
 
 	if err := provisioner.createCSIDirectories(tenantUUID); err != nil {
 		log.Error(err, "error when creating csi directories", "path", provisioner.path.TenantDir(tenantUUID))
+
 		return errors.WithStack(err)
 	}
 
@@ -173,6 +177,7 @@ func (provisioner *OneAgentProvisioner) setupDynakubeMetadata(ctx context.Contex
 
 func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, request reconcile.Request) error {
 	_, err := provisioner.gc.Reconcile(ctx, request)
+
 	return err
 }
 
@@ -273,6 +278,7 @@ func (provisioner *OneAgentProvisioner) createOrUpdateDynakubeMetadata(ctx conte
 
 		if oldDynakube == (metadata.Dynakube{}) {
 			log.Info("adding dynakube to db", "tenantUUID", dynakube.TenantUUID, "version", dynakube.LatestVersion)
+
 			return provisioner.db.InsertDynakube(ctx, dynakube)
 		} else {
 			log.Info("updating dynakube in db",

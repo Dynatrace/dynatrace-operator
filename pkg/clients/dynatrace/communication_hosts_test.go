@@ -39,6 +39,7 @@ func TestReadCommunicationHosts(t *testing.T) {
 
 	readFromString := func(json string) (OneAgentConnectionInfo, error) {
 		response := []byte(json)
+
 		return dc.readResponseForOneAgentConnectionInfo(response)
 	}
 

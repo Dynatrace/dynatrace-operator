@@ -44,6 +44,7 @@ func createUninstallDaemonSet(dynakube dynatracev1beta1.DynaKube) features.Func 
 		uninstallDaemonSet.Spec.Template.Spec.Tolerations = dynakube.Spec.OneAgent.ClassicFullStack.Tolerations
 		resource := envConfig.Client().Resources()
 		require.NoError(t, resource.Create(ctx, uninstallDaemonSet))
+
 		return ctx
 	}
 }
@@ -59,6 +60,7 @@ func executeUninstall(namespace string) features.Func {
 			Name:      uninstallOneAgentDaemonSetName,
 			Namespace: namespace,
 		}).ForEachPod(cleanUpNodeConsumer(ctx, t, resource)))
+
 		return ctx
 	}
 }
@@ -70,6 +72,7 @@ func removeUninstallDaemonset(namespace string) features.Func {
 			Name:      uninstallOneAgentDaemonSetName,
 			Namespace: namespace,
 		}).Delete())
+
 		return ctx
 	}
 }

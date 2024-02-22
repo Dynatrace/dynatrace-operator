@@ -74,6 +74,7 @@ func (query Query) CreateOrUpdate(configMap corev1.ConfigMap) error {
 
 	if AreConfigMapsEqual(configMap, currentConfigMap) {
 		query.Log.Info("configMap unchanged", "name", configMap.Name, "namespace", configMap.Namespace)
+
 		return nil
 	}
 
@@ -139,6 +140,7 @@ func (mod Modifier) Enabled() bool {
 
 func (mod Modifier) Modify(configMap *corev1.ConfigMap) error {
 	configMap.Name = mod.name
+
 	return nil
 }
 
@@ -158,6 +160,7 @@ func (mod NamespaceModifier) Enabled() bool {
 
 func (mod NamespaceModifier) Modify(configMap *corev1.ConfigMap) error {
 	configMap.Namespace = mod.namespaceName
+
 	return nil
 }
 
@@ -177,5 +180,6 @@ func (mod DataModifier) Enabled() bool {
 
 func (mod DataModifier) Modify(configMap *corev1.ConfigMap) error {
 	configMap.Data = mod.data
+
 	return nil
 }

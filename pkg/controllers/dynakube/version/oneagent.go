@@ -68,6 +68,7 @@ func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 		latestVersion, err = updater.dtClient.GetLatestAgentVersion(ctx, dtclient.OsUnix, dtclient.InstallerTypeDefault)
 		if err != nil {
 			log.Info("failed to determine image version")
+
 			return err
 		}
 	}
@@ -95,6 +96,7 @@ func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, e
 	switch updater.Target().Source {
 	case status.TenantRegistryVersionSource:
 		previousVersion = updater.Target().Version
+
 		return isDowngrade(updater.Name(), previousVersion, latestVersion)
 	case status.PublicRegistryVersionSource:
 		previousVersion, err = getTagFromImageID(imageID)

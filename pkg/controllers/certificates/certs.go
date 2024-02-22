@@ -30,14 +30,14 @@ const (
 
 // Certs handles creation and renewal of CA and SSL/TLS server certificates.
 type Certs struct {
-	Domain  string
+	Now time.Time
+
 	SrcData map[string][]byte
 	Data    map[string][]byte
 
-	Now time.Time
-
 	rootPrivateKey *ecdsa.PrivateKey
 	rootPublicCert *x509.Certificate
+	Domain         string
 }
 
 // ValidateCerts checks for certificates and keys on cs.SrcData and renews them if needed. The existing (or new)
@@ -72,6 +72,7 @@ func (cs *Certs) ValidateCerts() error {
 func (cs *Certs) validateRootCerts(now time.Time) bool {
 	if cs.Data[RootKey] == nil || cs.Data[RootCert] == nil {
 		log.Info("no root certificates found, creating")
+
 		return true
 	}
 
@@ -79,20 +80,25 @@ func (cs *Certs) validateRootCerts(now time.Time) bool {
 
 	if block, _ := pem.Decode(cs.Data[RootCert]); block == nil {
 		log.Info("failed to parse root certificates, renewing", "error", "can't decode PEM file")
+
 		return true
 	} else if cs.rootPublicCert, err = x509.ParseCertificate(block.Bytes); err != nil {
 		log.Info("failed to parse root certificates, renewing", "error", err)
+
 		return true
 	} else if now.After(cs.rootPublicCert.NotAfter.Add(-renewalThreshold)) {
 		log.Info("root certificates are about to expire, renewing", "current", now, "expiration", cs.rootPublicCert.NotAfter)
+
 		return true
 	}
 
 	if block, _ := pem.Decode(cs.Data[RootKey]); block == nil {
 		log.Info("failed to parse root key, renewing", "error", "can't decode PEM file")
+
 		return true
 	} else if cs.rootPrivateKey, err = x509.ParseECPrivateKey(block.Bytes); err != nil {
 		log.Info("failed to parse root key, renewing", "error", err)
+
 		return true
 	}
 
@@ -102,12 +108,14 @@ func (cs *Certs) validateRootCerts(now time.Time) bool {
 func (cs *Certs) validateServerCerts(now time.Time) bool {
 	if cs.Data[ServerKey] == nil || cs.Data[ServerCert] == nil {
 		log.Info("no server certificates found, creating")
+
 		return true
 	}
 
 	isValid, err := certificates.ValidateCertificateExpiration(cs.Data[ServerCert], renewalThreshold, now, log)
 	if err != nil || !isValid {
 		log.Info("server certificate failed to parse or is outdated")
+
 		return true
 	}
 

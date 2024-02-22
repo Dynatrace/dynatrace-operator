@@ -25,5 +25,6 @@ func NewQuery(ctx context.Context, resource *resources.Resources, objectKey clie
 func (query *Query) Get() (appsv1.StatefulSet, error) {
 	var stateFulSet appsv1.StatefulSet
 	err := query.resource.Get(query.ctx, query.objectKey.Name, query.objectKey.Namespace, &stateFulSet)
+
 	return stateFulSet, err
 }

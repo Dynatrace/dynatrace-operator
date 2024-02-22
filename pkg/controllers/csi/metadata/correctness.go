@@ -17,8 +17,8 @@ import (
 type CorrectnessChecker struct {
 	apiReader client.Reader
 	fs        afero.Fs
-	path      PathResolver
 	access    Access
+	path      PathResolver
 }
 
 func NewCorrectnessChecker(cl client.Reader, access Access, opts dtcsi.CSIOptions) *CorrectnessChecker {
@@ -55,6 +55,7 @@ func (checker *CorrectnessChecker) CorrectCSI(ctx context.Context) error {
 func (checker *CorrectnessChecker) removeVolumesForMissingPods(ctx context.Context) error {
 	if checker.apiReader == nil {
 		log.Info("no kubernetes client configured, skipping orphaned volume metadata cleanup")
+
 		return nil
 	}
 
@@ -88,6 +89,7 @@ func (checker *CorrectnessChecker) removeVolumesForMissingPods(ctx context.Conte
 func (checker *CorrectnessChecker) removeMissingDynakubes(ctx context.Context) error {
 	if checker.apiReader == nil {
 		log.Info("no kubernetes client configured, skipping orphaned dynakube metadata cleanup")
+
 		return nil
 	}
 
@@ -155,12 +157,14 @@ func (checker *CorrectnessChecker) safelyLinkCodeModule(deprecatedBin, currentBi
 		linker, ok := checker.fs.(afero.Linker)
 		if !ok {
 			log.Info("symlinking not possible", "path", deprecatedBin)
+
 			return false, nil
 		}
 
 		err := checker.fs.MkdirAll(filepath.Dir(currentBin), 0755)
 		if err != nil {
 			log.Info("failed to create parent dir for new path", "path", currentBin)
+
 			return false, errors.WithStack(err)
 		}
 
@@ -168,6 +172,7 @@ func (checker *CorrectnessChecker) safelyLinkCodeModule(deprecatedBin, currentBi
 
 		if err := linker.SymlinkIfPossible(deprecatedBin, currentBin); err != nil {
 			log.Info("symlinking failed", "path", deprecatedBin)
+
 			return false, errors.WithStack(err)
 		}
 

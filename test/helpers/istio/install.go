@@ -42,8 +42,10 @@ func AssertIstioNamespace() func(ctx context.Context, envConfig *envconf.Config,
 		err := envConfig.Client().Resources().Get(ctx, istioNamespace, "", &namespace)
 		if err != nil && !enforceIstio() {
 			t.Skip("skipping istio test, istio namespace is not present")
+
 			return ctx, nil
 		}
+
 		return ctx, errors.WithStack(err)
 	}
 }
@@ -54,8 +56,10 @@ func AssertIstiodDeployment() func(ctx context.Context, envConfig *envconf.Confi
 		err := envConfig.Client().Resources().Get(ctx, "istiod", "istio-system", &deployment)
 		if err != nil && !enforceIstio() {
 			t.Skip("skipping istio test, istiod deployment is not present")
+
 			return ctx, nil
 		}
+
 		return ctx, errors.WithStack(err)
 	}
 }
@@ -72,6 +76,7 @@ func checkSampleAppIstioInitContainers(sampleApp sample.App, testDynakube dynatr
 		resources := envConfig.Client().Resources()
 		pods := sampleApp.GetPods(ctx, t, resources)
 		assertIstioInitContainer(t, pods, testDynakube)
+
 		return ctx
 	}
 }
@@ -83,6 +88,7 @@ func checkOperatorIstioInitContainers(testDynakube dynatracev1beta1.DynaKube) fe
 		require.NoError(t, resources.WithNamespace(testDynakube.Namespace).List(ctx, &pods))
 
 		assertIstioInitContainer(t, pods, testDynakube)
+
 		return ctx
 	}
 }
@@ -109,6 +115,7 @@ func assertIstioInitContainer(t *testing.T, pods corev1.PodList, testDynakube dy
 		for _, initContainer := range podItem.Spec.InitContainers {
 			if initContainer.Name == istioInitName {
 				istioInitFound = true
+
 				break
 			}
 		}
@@ -123,6 +130,7 @@ func determineIstioInitContainerName(t *testing.T) string {
 	if isOpenshift {
 		istioInitName = openshiftIstioInitContainerName
 	}
+
 	return istioInitName
 }
 
@@ -165,6 +173,7 @@ func checkServiceEntryForApiUrl(dynakube dynatracev1beta1.DynaKube) features.Fun
 func istioClient(t *testing.T, restConfig *rest.Config) *istioclientset.Clientset {
 	client, err := istioclientset.NewForConfig(restConfig)
 	require.NoError(t, err, "istio: failed to initialize client")
+
 	return client
 }
 

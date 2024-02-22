@@ -99,19 +99,17 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 type Controller struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the api-server
-	client            client.Client
-	apiReader         client.Reader
-	scheme            *runtime.Scheme
-	fs                afero.Afero
-	config            *rest.Config
-	operatorNamespace string
-	clusterID         string
-
-	requeueAfter time.Duration
+	client    client.Client
+	apiReader client.Reader
 
 	dynatraceClientBuilder dynatraceclient.Builder
-	istioClientBuilder     istio.ClientBuilder
-	registryClientBuilder  registry.ClientBuilder
+
+	fs     afero.Afero
+	scheme *runtime.Scheme
+	config *rest.Config
+
+	istioClientBuilder    istio.ClientBuilder
+	registryClientBuilder registry.ClientBuilder
 
 	deploymentMetadataReconcilerBuilder deploymentmetadata.ReconcilerBuilder
 	versionReconcilerBuilder            version.ReconcilerBuilder
@@ -120,6 +118,11 @@ type Controller struct {
 	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
 	injectionReconcilerBuilder          injection.ReconcilerBuilder
 	istioReconcilerBuilder              istio.ReconcilerBuilder
+
+	operatorNamespace string
+	clusterID         string
+
+	requeueAfter time.Duration
 }
 
 // Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read
@@ -136,6 +139,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, err
 	} else if dynaKube == nil {
 		log.Info("reconciling DynaKube finished, no dynakube available", "namespace", request.Namespace, "name", request.Name, "result", "empty")
+
 		return reconcile.Result{}, nil
 	}
 
@@ -219,6 +223,7 @@ func (controller *Controller) updateDynakubeStatus(ctx context.Context, dynakube
 
 	if err != nil && k8serrors.IsConflict(err) {
 		log.Info("could not update dynakube due to conflict", "name", dynakube.Name)
+
 		return nil
 	}
 
@@ -226,7 +231,13 @@ func (controller *Controller) updateDynakubeStatus(ctx context.Context, dynakube
 }
 
 func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	istioClient, err := controller.setupIstioClient(dynakube)
+	var istioClient *istio.Client
+
+	var err error
+	if dynakube.Spec.EnableIstio {
+		istioClient, err = controller.setupIstioClient(dynakube)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -248,6 +259,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 	err = status.SetKubeSystemUUIDInStatus(ctx, dynakube, controller.apiReader) // TODO: We should only do this once, as it shouldn't change overtime
 	if err != nil {
 		log.Info("could not set kube-system UUID in Dynakube status")
+
 		return err
 	}
 
@@ -264,10 +276,6 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 }
 
 func (controller *Controller) setupIstioClient(dynakube *dynatracev1beta1.DynaKube) (*istio.Client, error) {
-	if !dynakube.Spec.EnableIstio {
-		return nil, nil
-	}
-
 	istioClient, err := controller.istioClientBuilder(controller.config, controller.scheme, dynakube)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize istio client")
@@ -289,6 +297,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube
 	tokens, err := tokenReader.ReadTokens(ctx)
 	if err != nil {
 		controller.setConditionTokenError(dynakube, err)
+
 		return nil, err
 	}
 
@@ -300,6 +309,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube
 	dynatraceClient, err := dynatraceClientBuilder.BuildWithTokenVerification(&dynakube.Status)
 	if err != nil {
 		controller.setConditionTokenError(dynakube, err)
+
 		return nil, err
 	}
 
@@ -312,6 +322,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube
 		Reconcile(ctx)
 	if err != nil {
 		log.Info("could not reconcile Dynatrace pull secret")
+
 		return nil, err
 	}
 
@@ -329,7 +340,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling ActiveGate")
 
-	err := controller.reconcileActiveGate(ctx, dynakube, dynatraceClient, istioClient, connectionInfoReconciler, versionReconciler)
+	err := controller.reconcileActiveGate(ctx, dynakube, dynatraceClient, istioClient)
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
 
@@ -349,9 +360,11 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
 			// this situation will clear itself after AG has been started
 			controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
+
 			return goerrors.Join(componentErrors...)
 		} else if err != nil {
 			componentErrors = append(componentErrors, err)
+
 			return goerrors.Join(componentErrors...)
 		}
 	} // TODO: there tends to be a clean up for each reconcileX function, so it might makes sense to have the same here
@@ -379,5 +392,6 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 func (controller *Controller) createDynakubeMapper(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) *mapper.DynakubeMapper {
 	dkMapper := mapper.NewDynakubeMapper(ctx, controller.client, controller.apiReader, controller.operatorNamespace, dynakube)
+
 	return &dkMapper
 }

@@ -62,6 +62,7 @@ func (tokens Tokens) VerifyScopes(ctx context.Context, dtc dtclient.Client) erro
 		scopes, err := dtc.GetTokenScopes(ctx, token.Value)
 		if err != nil {
 			scopeErrors = append(scopeErrors, err)
+
 			continue
 		}
 

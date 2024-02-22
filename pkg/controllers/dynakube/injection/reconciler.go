@@ -78,6 +78,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	dkMapper := r.createDynakubeMapper(ctx)
 	if err := dkMapper.MapFromDynakube(); err != nil {
 		log.Info("update of a map of namespaces failed")
+
 		return err
 	}
 
@@ -109,6 +110,7 @@ func (r *reconciler) removeAppInjection(ctx context.Context) (err error) {
 
 	if err := dkMapper.UnmapFromDynaKube(); err != nil {
 		log.Info("could not unmap DynaKube from namespace")
+
 		return err
 	}
 
@@ -117,6 +119,7 @@ func (r *reconciler) removeAppInjection(ctx context.Context) (err error) {
 	err = endpointSecretGenerator.RemoveEndpointSecrets(ctx, r.dynakube)
 	if err != nil {
 		log.Info("could not remove data-ingest secret")
+
 		return err
 	}
 	// TODO: remove initgeneration secret as well + handle errors jointly
@@ -144,6 +147,7 @@ func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
 	err = initgeneration.NewInitGenerator(r.client, r.apiReader, r.dynakube.Namespace).GenerateForDynakube(ctx, r.dynakube)
 	if err != nil {
 		log.Info("failed to generate init secret")
+
 		return err
 	}
 
@@ -164,6 +168,7 @@ func (r *reconciler) setupEnrichmentInjection(ctx context.Context) error {
 	err := endpointSecretGenerator.GenerateForDynakube(ctx, r.dynakube)
 	if err != nil {
 		log.Info("failed to generate data-ingest secret")
+
 		return err
 	}
 

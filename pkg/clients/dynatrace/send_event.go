@@ -18,11 +18,11 @@ const (
 // EventData struct which defines what event payload should contain
 type EventData struct {
 	EventType     string               `json:"eventType"`
+	Description   string               `json:"description"`
+	Source        string               `json:"source"`
+	AttachRules   EventDataAttachRules `json:"attachRules"`
 	StartInMillis uint64               `json:"start"`
 	EndInMillis   uint64               `json:"end"`
-	Description   string               `json:"description"`
-	AttachRules   EventDataAttachRules `json:"attachRules"`
-	Source        string               `json:"source"`
 }
 
 type EventDataAttachRules struct {

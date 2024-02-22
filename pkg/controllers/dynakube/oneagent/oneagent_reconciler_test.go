@@ -600,6 +600,7 @@ func newResourceRequirements() corev1.ResourceRequirements {
 
 func parseQuantity(s string) resource.Quantity {
 	q, _ := resource.ParseQuantity(s)
+
 	return q
 }
 

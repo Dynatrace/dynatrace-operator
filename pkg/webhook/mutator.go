@@ -28,8 +28,8 @@ type PodMutator interface {
 // BaseRequest is the base request for all mutation requests
 type BaseRequest struct {
 	Pod       *corev1.Pod
-	DynaKube  dynatracev1beta1.DynaKube
 	Namespace corev1.Namespace
+	DynaKube  dynatracev1beta1.DynaKube
 }
 
 func (req BaseRequest) PodName() string {

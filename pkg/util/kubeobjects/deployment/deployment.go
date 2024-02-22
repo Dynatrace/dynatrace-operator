@@ -55,6 +55,7 @@ func CreateOrUpdateDeployment(c client.Client, logger logr.Logger, desiredDeploy
 	currentDeployment, err := getDeployment(c, desiredDeployment)
 	if err != nil && k8serrors.IsNotFound(errors.Cause(err)) {
 		logger.Info("creating new deployment", "name", desiredDeployment.Name)
+
 		return true, c.Create(context.TODO(), desiredDeployment)
 	} else if err != nil {
 		return false, err
@@ -66,6 +67,7 @@ func CreateOrUpdateDeployment(c client.Client, logger logr.Logger, desiredDeploy
 
 	if labels.NotEqual(currentDeployment.Spec.Selector.MatchLabels, desiredDeployment.Spec.Selector.MatchLabels) {
 		logger.Info("immutable section changed on deployment, deleting and recreating", "name", desiredDeployment.Name)
+
 		return recreateDeployment(c, logger, currentDeployment, desiredDeployment)
 	}
 

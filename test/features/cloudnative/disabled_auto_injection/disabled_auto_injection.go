@@ -51,6 +51,7 @@ func Feature(t *testing.T) features.Feature {
 	// Register sample, dynakube and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())
 	dynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
+
 	return builder.Feature()
 }
 

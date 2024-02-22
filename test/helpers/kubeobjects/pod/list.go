@@ -15,5 +15,6 @@ func List(t *testing.T, ctx context.Context, resource *resources.Resources, name
 	var pods corev1.PodList
 
 	require.NoError(t, resource.WithNamespace(namespaceName).List(ctx, &pods))
+
 	return pods
 }

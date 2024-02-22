@@ -24,8 +24,8 @@ type Builder interface {
 type builder struct {
 	ctx       context.Context
 	apiReader client.Reader
-	dynakube  dynatracev1beta1.DynaKube
 	tokens    token.Tokens
+	dynakube  dynatracev1beta1.DynaKube
 }
 
 func NewBuilder(apiReader client.Reader) Builder {
@@ -36,16 +36,19 @@ func NewBuilder(apiReader client.Reader) Builder {
 
 func (dynatraceClientBuilder builder) SetContext(ctx context.Context) Builder {
 	dynatraceClientBuilder.ctx = ctx
+
 	return dynatraceClientBuilder
 }
 
 func (dynatraceClientBuilder builder) SetDynakube(dynakube dynatracev1beta1.DynaKube) Builder {
 	dynatraceClientBuilder.dynakube = dynakube
+
 	return dynatraceClientBuilder
 }
 
 func (dynatraceClientBuilder builder) SetTokens(tokens token.Tokens) Builder {
 	dynatraceClientBuilder.tokens = tokens
+
 	return dynatraceClientBuilder
 }
 

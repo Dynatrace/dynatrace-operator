@@ -54,11 +54,13 @@ func handleTokenScopes(request *http.Request, writer http.ResponseWriter) {
 	err := json.Unmarshal(d, &model)
 	if err != nil {
 		writeError(writer, http.StatusInternalServerError)
+
 		return
 	}
 
 	if request.Method != http.MethodPost {
 		writeError(writer, http.StatusMethodNotAllowed)
+
 		return
 	}
 

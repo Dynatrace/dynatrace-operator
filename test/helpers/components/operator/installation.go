@@ -29,6 +29,7 @@ func InstallViaMake(withCSI bool) env.Func {
 			return ctx, err
 		}
 		ctx, err = VerifyInstall(ctx, envConfig)
+
 		return ctx, err
 	}
 }
@@ -39,6 +40,7 @@ func InstallViaHelm(releaseTag string, withCsi bool, namespace string) env.Func 
 		if err != nil {
 			return ctx, err
 		}
+
 		return VerifyInstall(ctx, envConfig)
 	}
 }
@@ -52,6 +54,7 @@ func UninstallViaMake(withCSI bool) env.Func {
 				return ctx, err
 			}
 		}
+
 		return ctx, execMakeCommand(rootDir, "undeploy/helm", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
 	}
 }
@@ -69,6 +72,7 @@ func VerifyInstall(ctx context.Context, envConfig *envconf.Config) (context.Cont
 	if err != nil {
 		return ctx, err
 	}
+
 	return ctx, nil
 }
 

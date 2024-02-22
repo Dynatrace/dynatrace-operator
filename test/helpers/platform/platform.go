@@ -31,6 +31,7 @@ func (p *Resolver) IsOpenshift() (bool, error) {
 	}
 
 	_, err = client.ServerResourcesForGroupVersion(openshiftSecurityGVR)
+
 	return !k8serrors.IsNotFound(err), nil
 }
 
@@ -42,6 +43,7 @@ func (p *Resolver) GetPlatform() (string, error) {
 	if isOpenshift {
 		return openshiftPlatformEnvValue, nil
 	}
+
 	return kubernetesPlatformEnvValue, nil
 }
 

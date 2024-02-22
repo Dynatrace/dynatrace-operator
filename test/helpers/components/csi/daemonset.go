@@ -22,6 +22,7 @@ const (
 func CleanUpEachPod(namespace string) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		resource := envConfig.Client().Resources()
+
 		return ctx, daemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      DaemonSetName,
 			Namespace: namespace,

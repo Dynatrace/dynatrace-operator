@@ -14,5 +14,6 @@ import (
 func List(t *testing.T, ctx context.Context, resource *resources.Resources, namespaceName string) corev1.ServiceList {
 	var services corev1.ServiceList
 	require.NoError(t, resource.WithNamespace(namespaceName).List(ctx, &services))
+
 	return services
 }

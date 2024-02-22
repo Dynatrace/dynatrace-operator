@@ -12,8 +12,15 @@ import (
 // DynaKubeStatus defines the observed state of DynaKube
 // +k8s:openapi-gen=true
 type DynaKubeStatus struct { //nolint:revive
-	// Defines the current state (Running, Updating, Error, ...)
-	Phase status.DeploymentPhase `json:"phase,omitempty"`
+
+	// Observed state of OneAgent
+	OneAgent OneAgentStatus `json:"oneAgent,omitempty"`
+
+	// Observed state of ActiveGate
+	ActiveGate ActiveGateStatus `json:"activeGate,omitempty"`
+
+	// Observed state of Code Modules
+	CodeModules CodeModulesStatus `json:"codeModules,omitempty"`
 
 	// UpdatedTimestamp indicates when the instance was last updated
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
@@ -21,27 +28,21 @@ type DynaKubeStatus struct { //nolint:revive
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors.x-descriptors="urn:alm:descriptor:text"
 	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty"`
 
+	// Observed state of Dynatrace API
+	DynatraceApi DynatraceApiStatus `json:"dynatraceApi,omitempty"`
+
 	// LastTokenProbeTimestamp tracks when the last request for the API token validity was sent
 	// +kubebuilder:deprecatedversion:warning="Use DynatraceApiStatus.LastTokenScopeRequest instead"
 	LastTokenProbeTimestamp *metav1.Time `json:"lastTokenProbeTimestamp,omitempty"`
+
+	// Defines the current state (Running, Updating, Error, ...)
+	Phase status.DeploymentPhase `json:"phase,omitempty"`
 
 	// KubeSystemUUID contains the UUID of the current Kubernetes cluster
 	KubeSystemUUID string `json:"kubeSystemUUID,omitempty"`
 
 	// Conditions includes status about the current state of the instance
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
-
-	// Observed state of ActiveGate
-	ActiveGate ActiveGateStatus `json:"activeGate,omitempty"`
-
-	// Observed state of OneAgent
-	OneAgent OneAgentStatus `json:"oneAgent,omitempty"`
-
-	// Observed state of Code Modules
-	CodeModules CodeModulesStatus `json:"codeModules,omitempty"`
-
-	// Observed state of Dynatrace API
-	DynatraceApi DynatraceApiStatus `json:"dynatraceApi,omitempty"`
 }
 
 type DynatraceApiStatus struct {
@@ -59,14 +60,14 @@ func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time,
 }
 
 type ConnectionInfoStatus struct {
+
+	// Time of the last connection request
+	LastRequest metav1.Time `json:"lastRequest,omitempty"`
 	// UUID of the tenant, received from the tenant
 	TenantUUID string `json:"tenantUUID,omitempty"`
 
 	// Available connection endpoints
 	Endpoints string `json:"endpoints,omitempty"`
-
-	// Time of the last connection request
-	LastRequest metav1.Time `json:"lastRequest,omitempty"`
 }
 
 type OneAgentConnectionInfoStatus struct {
@@ -116,14 +117,14 @@ type OneAgentStatus struct {
 	// Time of the last process module config update
 	LastProcessModuleConfigUpdate *metav1.Time `json:"lastProcessModuleConfigUpdate,omitempty"`
 
-	// Information about OneAgent's connections
-	ConnectionInfoStatus OneAgentConnectionInfoStatus `json:"connectionInfoStatus,omitempty"`
-
 	// Commands used for OneAgent's readiness probe
 	// +kubebuilder:validation:Type=object
 	// +kubebuilder:validation:Schemaless
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Healthcheck *containerv1.HealthConfig `json:"healthcheck,omitempty"`
+
+	// Information about OneAgent's connections
+	ConnectionInfoStatus OneAgentConnectionInfoStatus `json:"connectionInfoStatus,omitempty"`
 }
 
 type OneAgentInstance struct {

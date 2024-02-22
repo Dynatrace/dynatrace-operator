@@ -22,9 +22,9 @@ var nodeId, probeAddress, endpoint string
 type CommandBuilder struct {
 	configProvider  config.Provider
 	managerProvider cmdManager.Provider
-	namespace       string
 	filesystem      afero.Fs
 	csiOptions      *dtcsi.CSIOptions
+	namespace       string
 }
 
 func NewCsiServerCommandBuilder() CommandBuilder {
@@ -33,26 +33,31 @@ func NewCsiServerCommandBuilder() CommandBuilder {
 
 func (builder CommandBuilder) SetConfigProvider(provider config.Provider) CommandBuilder {
 	builder.configProvider = provider
+
 	return builder
 }
 
 func (builder CommandBuilder) setManagerProvider(provider cmdManager.Provider) CommandBuilder {
 	builder.managerProvider = provider
+
 	return builder
 }
 
 func (builder CommandBuilder) SetNamespace(namespace string) CommandBuilder {
 	builder.namespace = namespace
+
 	return builder
 }
 
 func (builder CommandBuilder) setCsiOptions(csiOptions dtcsi.CSIOptions) CommandBuilder {
 	builder.csiOptions = &csiOptions
+
 	return builder
 }
 
 func (builder CommandBuilder) setFilesystem(filesystem afero.Fs) CommandBuilder {
 	builder.filesystem = filesystem
+
 	return builder
 }
 

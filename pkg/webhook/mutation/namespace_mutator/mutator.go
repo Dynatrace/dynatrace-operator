@@ -68,6 +68,7 @@ func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Reques
 	updatedNamespace, err := nsMapper.MapFromNamespace(ctx)
 	if err != nil {
 		span.RecordError(err)
+
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 

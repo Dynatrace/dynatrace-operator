@@ -54,12 +54,14 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 
 	if !dynakube.NeedAppInjection() {
 		log.Info("app injection not enabled, skip garbage collection", "dynakube", dynakube.Name)
+
 		return defaultReconcileResult, nil
 	}
 
 	tenantUUID, err := dynakube.TenantUUIDFromApiUrl()
 	if err != nil {
 		log.Info("failed to get tenantUUID of DynaKube, checking later")
+
 		return defaultReconcileResult, err
 	}
 
@@ -81,6 +83,7 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 
 	if err := gc.runSharedBinaryGarbageCollection(ctx); err != nil {
 		log.Info("failed to garbage collect the shared images")
+
 		return defaultReconcileResult, err
 	}
 
@@ -92,7 +95,8 @@ func getDynakubeFromRequest(ctx context.Context, apiReader client.Reader, reques
 	if err := apiReader.Get(ctx, request.NamespacedName, &dynakube); err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("given DynaKube object not found")
-			return nil, nil
+
+			return nil, nil //nolint: nilnil
 		}
 
 		log.Info("failed to get DynaKube object")

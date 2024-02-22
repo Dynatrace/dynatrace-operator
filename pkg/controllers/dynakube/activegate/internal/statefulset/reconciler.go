@@ -59,6 +59,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	err := r.manageStatefulSet(ctx)
 	if err != nil {
 		log.Error(err, "could not reconcile stateful set")
+
 		return errors.WithStack(err)
 	}
 
@@ -126,6 +127,7 @@ func (r *Reconciler) createStatefulSetIfNotExists(ctx context.Context, desiredSt
 	_, err := r.getStatefulSet(ctx, desiredSts)
 	if err != nil && k8serrors.IsNotFound(errors.Cause(err)) {
 		log.Info("creating new stateful set for " + r.capability.ShortName())
+
 		return true, r.client.Create(ctx, desiredSts)
 	}
 

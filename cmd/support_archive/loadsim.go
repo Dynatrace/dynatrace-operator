@@ -13,11 +13,11 @@ import (
 const loadSimCollectorName = "loadSimCollector"
 
 type loadSimCollector struct {
+	context context.Context
+	pods    clientgocorev1.PodInterface
 	collectorCommon
-	context   context.Context
 	fileSize  int
 	fileCount int
-	pods      clientgocorev1.PodInterface
 }
 
 func newLoadSimCollector(ctx context.Context, log logr.Logger, supportArchive archiver, fileSize int, fileCount int, pods clientgocorev1.PodInterface) collector { //nolint:revive // argument-limit doesn't apply to constructors
@@ -59,6 +59,7 @@ func (collector loadSimCollector) createSimulatedLogFiles() {
 		err := collector.supportArchive.addFile(fileName, &lg)
 		if err != nil {
 			logErrorf(collector.log, err, "error writing simulated load to zip")
+
 			return
 		}
 

@@ -23,6 +23,7 @@ func (dtc *dynatraceClient) GetLatestOneAgentImage(ctx context.Context) (*Latest
 	latestImageInfo, err := dtc.processLatestImageRequest(ctx, dtc.getLatestOneAgentImageUrl())
 	if err != nil {
 		log.Info("failed to process latest image response")
+
 		return nil, err
 	}
 
@@ -33,6 +34,7 @@ func (dtc *dynatraceClient) GetLatestCodeModulesImage(ctx context.Context) (*Lat
 	latestImageInfo, err := dtc.processLatestImageRequest(ctx, dtc.getLatestCodeModulesImageUrl())
 	if err != nil {
 		log.Info("failed to process latest image response")
+
 		return nil, err
 	}
 
@@ -43,6 +45,7 @@ func (dtc *dynatraceClient) GetLatestActiveGateImage(ctx context.Context) (*Late
 	latestImageInfo, err := dtc.processLatestImageRequest(ctx, dtc.getLatestActiveGateImageUrl())
 	if err != nil {
 		log.Info("failed to process latest image response")
+
 		return nil, err
 	}
 
@@ -58,6 +61,7 @@ func (dtc *dynatraceClient) processLatestImageRequest(ctx context.Context, url s
 	response, err := dtc.httpClient.Do(request)
 	if err != nil {
 		log.Info("failed to retrieve latest image")
+
 		return nil, err
 	}
 
@@ -66,6 +70,7 @@ func (dtc *dynatraceClient) processLatestImageRequest(ctx context.Context, url s
 	latestImageInfo, err := dtc.handleLatestImageResponse(response)
 	if err != nil {
 		log.Info("failed to handle latest image response")
+
 		return nil, err
 	}
 
@@ -122,6 +127,7 @@ func (dtc *dynatraceClient) readResponseForLatestImage(response []byte) (*Latest
 	err := json.Unmarshal(response, latestImageInfo)
 	if err != nil {
 		log.Error(err, "error unmarshalling LatestImageInfo", "response", string(response))
+
 		return nil, err
 	}
 

@@ -58,6 +58,7 @@ func Update(fs afero.Fs, sourcePath, destPath string, conf dtclient.ConfMap) err
 
 	if err := scanner.Err(); err != nil {
 		sourceFile.Close()
+
 		return err
 	}
 
@@ -103,6 +104,7 @@ func storeFile(fs afero.Fs, destPath string, fileMode fs.FileMode, content []str
 
 		if err != nil {
 			file.Close()
+
 			return err
 		}
 	}

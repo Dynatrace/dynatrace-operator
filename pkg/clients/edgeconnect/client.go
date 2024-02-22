@@ -19,10 +19,10 @@ const (
 )
 
 type client struct {
-	ctx        context.Context
-	baseURL    string
-	httpClient *http.Client
 	clientcredentials.Config
+	ctx        context.Context
+	httpClient *http.Client
+	baseURL    string
 }
 
 // Option can be passed to NewClient and customizes the created client instance.
@@ -80,9 +80,9 @@ func WithContext(ctx context.Context) func(*client) {
 
 // ServerError represents an error returned from the server (e.g. authentication failure).
 type ServerError struct {
-	Code    int          `json:"code,omitempty"`
 	Message string       `json:"message,omitempty"`
 	Details DetailsError `json:"details"`
+	Code    int          `json:"code,omitempty"`
 }
 
 // DetailsError represents details of errors
