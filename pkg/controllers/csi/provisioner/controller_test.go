@@ -14,7 +14,6 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	dtClientMock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
@@ -614,12 +613,15 @@ func TestHandleMetadata(t *testing.T) {
 
 func TestUpdateAgentInstallation(t *testing.T) {
 	ctx := context.Background()
+
 	t.Run("updateAgentInstallation with codeModules enabled", func(t *testing.T) {
 		dynakube := getDynakube()
 		enableCodeModules(dynakube)
 
 		mockDtcBuilder := dtClientMock.NewBuilder(t)
+
 		var dtc dtclient.Client
+
 		mockDtcBuilder.On("Build").Return(dtc, nil)
 		dtc, err := mockDtcBuilder.Build()
 		require.NoError(t, err)
@@ -661,7 +663,9 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		enableCodeModules(dynakube)
 
 		mockDtcBuilder := dtClientMock.NewBuilder(t)
+
 		var dtc dtclient.Client
+
 		mockDtcBuilder.On("Build").Return(dtc, nil)
 		dtc, err := mockDtcBuilder.Build()
 		require.NoError(t, err)
@@ -697,7 +701,9 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		dynakube := getDynakube()
 
 		mockDtcBuilder := dtClientMock.NewBuilder(t)
+
 		var dtc dtclient.Client
+
 		mockDtcBuilder.On("Build").Return(dtc, nil)
 		dtc, err := mockDtcBuilder.Build()
 		require.NoError(t, err)
@@ -737,7 +743,9 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		dynakube := getDynakube()
 
 		mockDtcBuilder := dtClientMock.NewBuilder(t)
+
 		var dtc dtclient.Client
+
 		mockDtcBuilder.On("Build").Return(dtc, nil)
 		dtc, err := mockDtcBuilder.Build()
 		require.NoError(t, err)

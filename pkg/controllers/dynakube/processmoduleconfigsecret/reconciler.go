@@ -135,7 +135,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 	tenantToken, err := secret.GetDataFromSecretName(r.apiReader, types.NamespacedName{
 		Name:      r.dynakube.OneagentTenantSecret(),
 		Namespace: r.dynakube.Namespace,
-	}, connectioninfo.TenantTokenName, log)
+	}, connectioninfo.TenantTokenKey, log)
 	if err != nil {
 		return nil, err
 	}

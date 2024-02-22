@@ -21,15 +21,15 @@ import (
 )
 
 type reconciler struct {
-	client              client.Client
-	apiReader           client.Reader
-	dynakube            *dynatracev1beta1.DynaKube
-	istioReconciler     istio.Reconciler
-	versionReconciler   version.Reconciler
-	pmcSecretreconciler controllers.Reconciler
+	client                   client.Client
+	apiReader                client.Reader
+	dynakube                 *dynatracev1beta1.DynaKube
+	istioReconciler          istio.Reconciler
+	versionReconciler        version.Reconciler
+	pmcSecretreconciler      controllers.Reconciler
 	connectionInfoReconciler controllers.Reconciler
-	dynatraceClient     dynatrace.Client
-	scheme              *runtime.Scheme
+	dynatraceClient          dynatrace.Client
+	scheme                   *runtime.Scheme
 }
 
 type ReconcilerBuilder func(
@@ -59,14 +59,14 @@ func NewReconciler(
 	return &reconciler{
 		client:            client,
 		apiReader:         apiReader,
-		scheme:          scheme,
+		scheme:            scheme,
 		dynakube:          dynakube,
 		istioReconciler:   istioReconciler,
 		versionReconciler: version.NewReconciler(apiReader, dynatraceClient, timeprovider.New().Freeze()),
 		pmcSecretreconciler: processmoduleconfigsecret.NewReconciler(
 			client, apiReader, dynatraceClient, dynakube, scheme, timeprovider.New().Freeze()),
 		connectionInfoReconciler: oaconnectioninfo.NewReconciler(client, apiReader, scheme, dynatraceClient, dynakube),
-		dynatraceClient: dynatraceClient,
+		dynatraceClient:          dynatraceClient,
 	}
 }
 

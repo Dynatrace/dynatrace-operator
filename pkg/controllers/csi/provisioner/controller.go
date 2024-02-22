@@ -26,8 +26,6 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csigc "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/gc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
