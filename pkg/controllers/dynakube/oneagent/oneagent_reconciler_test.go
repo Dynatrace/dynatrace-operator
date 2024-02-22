@@ -128,7 +128,7 @@ func TestReconcile(t *testing.T) {
 			apiReader:                fakeClient,
 			scheme:                   scheme.Scheme,
 			dynakube:                 &dynaKube,
-			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
+			connectionInfoReconciler: controllerMocks.NewReconciler(t),
 			versionReconciler:        versionReconciler,
 		}
 
