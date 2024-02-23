@@ -86,7 +86,7 @@ func TestBuilder(t *testing.T) {
 		modifierMock0.AssertNumberOfCalls(t, "Modify", 2)
 		modifierMock1.AssertNumberOfCalls(t, "Modify", 1)
 
-		expected := mocks.DataMock{}
+		expected := buildermock.DataMock{}
 		assert.Equal(t, expected, actual)
 	})
 }
