@@ -8,7 +8,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
-	mocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
+	versionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -283,14 +283,14 @@ func enablePublicRegistry(dynakube *dynatracev1beta1.DynaKube) *dynatracev1beta1
 	return dynakube
 }
 
-func newCustomImageUpdater(t *testing.T, target *status.VersionStatus, image string) *mocks.StatusUpdater {
+func newCustomImageUpdater(t *testing.T, target *status.VersionStatus, image string) *versionmock.StatusUpdater {
 	updater := newBaseUpdater(t, target, true)
 	updater.On("CustomImage").Maybe().Return(image)
 
 	return updater
 }
 
-func newCustomVersionUpdater(t *testing.T, target *status.VersionStatus, version string, autoUpdate bool) *mocks.StatusUpdater {
+func newCustomVersionUpdater(t *testing.T, target *status.VersionStatus, version string, autoUpdate bool) *versionmock.StatusUpdater {
 	updater := newBaseUpdater(t, target, autoUpdate)
 	updater.On("CustomImage").Maybe().Return("")
 	updater.On("IsPublicRegistryEnabled").Maybe().Maybe().Return(false)
@@ -299,7 +299,7 @@ func newCustomVersionUpdater(t *testing.T, target *status.VersionStatus, version
 	return updater
 }
 
-func newDefaultUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool) *mocks.StatusUpdater {
+func newDefaultUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool) *versionmock.StatusUpdater {
 	updater := newBaseUpdater(t, target, autoUpdate)
 	updater.On("CustomImage").Maybe().Return("")
 	updater.On("IsPublicRegistryEnabled").Maybe().Return(false)
@@ -309,7 +309,7 @@ func newDefaultUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bo
 	return updater
 }
 
-func newPublicRegistryUpdater(t *testing.T, target *status.VersionStatus, imageInfo *dtclient.LatestImageInfo, autoUpdate bool) *mocks.StatusUpdater {
+func newPublicRegistryUpdater(t *testing.T, target *status.VersionStatus, imageInfo *dtclient.LatestImageInfo, autoUpdate bool) *versionmock.StatusUpdater {
 	updater := newBaseUpdater(t, target, autoUpdate)
 	updater.On("CustomImage").Maybe().Return("")
 	updater.On("IsPublicRegistryEnabled").Maybe().Return(true)
@@ -318,15 +318,15 @@ func newPublicRegistryUpdater(t *testing.T, target *status.VersionStatus, imageI
 	return updater
 }
 
-func newClassicFullStackUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool) *mocks.StatusUpdater {
+func newClassicFullStackUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool) *versionmock.StatusUpdater {
 	updater := newBaseUpdater(t, target, autoUpdate)
 	updater.On("IsPublicRegistryEnabled").Maybe().Return(false)
 
 	return updater
 }
 
-func newBaseUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool) *mocks.StatusUpdater {
-	updater := mocks.NewStatusUpdater(t)
+func newBaseUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool) *versionmock.StatusUpdater {
+	updater := versionmock.NewStatusUpdater(t)
 	updater.On("Name").Maybe().Return("mock")
 	updater.On("Target").Maybe().Return(target)
 	updater.On("IsEnabled").Maybe().Return(true)

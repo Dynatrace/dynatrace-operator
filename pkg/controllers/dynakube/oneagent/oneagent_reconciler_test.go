@@ -16,9 +16,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
-	mocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
-	controllerMocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
-	versionMocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
+	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
+	versionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -88,7 +88,7 @@ func TestReconcile(t *testing.T) {
 			},
 		}
 
-		connectionInfoReconciler := controllerMocks.NewReconciler(t)
+		connectionInfoReconciler := controllermock.NewReconciler(t)
 		connectionInfoReconciler.On("Reconcile",
 			mock.AnythingOfType("context.backgroundCtx")).Return(oaconnectioninfo.NoOneAgentCommunicationHostsError).Once()
 
@@ -117,7 +117,7 @@ func TestReconcile(t *testing.T) {
 			},
 		}
 
-		versionReconciler := versionMocks.NewReconciler(t)
+		versionReconciler := versionmock.NewReconciler(t)
 		versionReconciler.On("ReconcileOneAgent",
 			mock.AnythingOfType("context.backgroundCtx"),
 			mock.AnythingOfType("*dynakube.DynaKube")).Return(errors.New("BOOM")).Once()
@@ -128,7 +128,7 @@ func TestReconcile(t *testing.T) {
 			apiReader:                fakeClient,
 			scheme:                   scheme.Scheme,
 			dynakube:                 &dynaKube,
-			connectionInfoReconciler: controllerMocks.NewReconciler(t),
+			connectionInfoReconciler: controllermock.NewReconciler(t),
 			versionReconciler:        versionReconciler,
 		}
 
@@ -169,7 +169,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 	}
 
 	fakeClient := fake.NewClient()
-	dtClient := mocks.NewClient(t)
+	dtClient := dtclientmock.NewClient(t)
 
 	reconciler := &Reconciler{
 		client:                   fakeClient,
@@ -720,7 +720,7 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 }
 
 func createConnectionInfoReconcilerMock(t *testing.T) controllers.Reconciler {
-	connectionInfoReconciler := controllerMocks.NewReconciler(t)
+	connectionInfoReconciler := controllermock.NewReconciler(t)
 	connectionInfoReconciler.On("Reconcile",
 		mock.AnythingOfType("context.backgroundCtx")).Return(nil).Once()
 
@@ -728,7 +728,7 @@ func createConnectionInfoReconcilerMock(t *testing.T) controllers.Reconciler {
 }
 
 func createVersionReconcilerMock(t *testing.T) versions.Reconciler {
-	versionReconciler := versionMocks.NewReconciler(t)
+	versionReconciler := versionmock.NewReconciler(t)
 	versionReconciler.On("ReconcileOneAgent",
 		mock.AnythingOfType("context.backgroundCtx"),
 		mock.AnythingOfType("*dynakube.DynaKube")).Return(nil).Once()

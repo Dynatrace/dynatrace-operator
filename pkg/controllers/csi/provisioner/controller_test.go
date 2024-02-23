@@ -15,7 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
-	dtClientMock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
+	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 	reconcilermock "github.com/Dynatrace/dynatrace-operator/test/mocks/sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"github.com/spf13/afero"
@@ -193,7 +193,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				},
 			},
 		)
-		mockDtcBuilder := dtClientMock.NewBuilder(t)
+		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 
 		gc := reconcilermock.NewReconciler(t)
 		db := metadata.FakeMemoryDB()
@@ -252,7 +252,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	})
 	t.Run("error when creating dynatrace client", func(t *testing.T) {
 		gc := reconcilermock.NewReconciler(t)
-		mockDtcBuilder := dtClientMock.NewBuilder(t)
+		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 		mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
@@ -303,7 +303,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		errorfs := &mkDirAllErrorFs{
 			Fs: afero.NewMemMapFs(),
 		}
-		mockDtcBuilder := dtClientMock.NewBuilder(t)
+		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -343,7 +343,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run("error getting latest agent version", func(t *testing.T) {
 		gc := reconcilermock.NewReconciler(t)
 		memFs := afero.NewMemMapFs()
-		mockDtcBuilder := dtClientMock.NewBuilder(t)
+		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 		dynakube := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: dkName,
@@ -402,7 +402,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run("error getting dynakube from db", func(t *testing.T) {
 		gc := reconcilermock.NewReconciler(t)
 		memFs := afero.NewMemMapFs()
-		mockDtcBuilder := dtClientMock.NewBuilder(t)
+		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
@@ -618,7 +618,7 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		dynakube := getDynakube()
 		enableCodeModules(dynakube)
 
-		mockDtcBuilder := dtClientMock.NewBuilder(t)
+		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 
 		var dtc dtclient.Client
 
@@ -662,7 +662,7 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		dynakube := getDynakube()
 		enableCodeModules(dynakube)
 
-		mockDtcBuilder := dtClientMock.NewBuilder(t)
+		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 
 		var dtc dtclient.Client
 
@@ -700,7 +700,7 @@ func TestUpdateAgentInstallation(t *testing.T) {
 	t.Run("updateAgentInstallation without codeModules", func(t *testing.T) {
 		dynakube := getDynakube()
 
-		mockDtcBuilder := dtClientMock.NewBuilder(t)
+		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 
 		var dtc dtclient.Client
 
@@ -742,7 +742,7 @@ func TestUpdateAgentInstallation(t *testing.T) {
 	t.Run("updateAgentInstallation without codeModules errors and requeues", func(t *testing.T) {
 		dynakube := getDynakube()
 
-		mockDtcBuilder := dtClientMock.NewBuilder(t)
+		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 
 		var dtc dtclient.Client
 

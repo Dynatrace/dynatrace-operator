@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	corev1mocks "github.com/Dynatrace/dynatrace-operator/pkg/util/testing/mocks/k8s.io/client-go/kubernetes/typed/core/v1"
+	corev1mock "github.com/Dynatrace/dynatrace-operator/pkg/util/testing/mocks/k8s.io/client-go/kubernetes/typed/core/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -106,7 +106,7 @@ func TestLogCollectorPodListError(t *testing.T) {
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 	defer assertNoErrorOnClose(t, supportArchive)
 
-	mockedPods := corev1mocks.NewPodInterface(t)
+	mockedPods := corev1mock.NewPodInterface(t)
 	mockedPods.EXPECT().
 		List(ctx, createPodListOptions(labels.AppNameLabel)).
 		Return(nil, assert.AnError)
@@ -139,7 +139,7 @@ func TestLogCollectorGetPodFail(t *testing.T) {
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 	defer assertNoErrorOnClose(t, supportArchive)
 
-	mockedPods := corev1mocks.NewPodInterface(t)
+	mockedPods := corev1mock.NewPodInterface(t)
 	listOptionsAppName := createPodListOptions(labels.AppNameLabel)
 	listOptionsManagedByOperator := createPodListOptions(labels.AppManagedByLabel)
 
@@ -177,7 +177,7 @@ func TestLogCollectorGetLogsFail(t *testing.T) {
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 	defer assertNoErrorOnClose(t, supportArchive)
 
-	mockedPods := corev1mocks.NewPodInterface(t)
+	mockedPods := corev1mock.NewPodInterface(t)
 	listOptionsAppName := createPodListOptions(labels.AppNameLabel)
 	listOptionsManagedByOperator := createPodListOptions(labels.AppManagedByLabel)
 
@@ -253,7 +253,7 @@ func TestLogCollectorNoAbortOnError(t *testing.T) {
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
-	mockedPods := corev1mocks.NewPodInterface(t)
+	mockedPods := corev1mock.NewPodInterface(t)
 	listOptionsAppName := createPodListOptions(labels.AppNameLabel)
 	listOptionsManagedByOperator := createPodListOptions(labels.AppManagedByLabel)
 	getOptions := metav1.GetOptions{}

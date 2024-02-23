@@ -10,7 +10,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
-	"github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -36,7 +36,7 @@ func TestReconcile(t *testing.T) {
 			Name:      testName,
 		}}
 
-	dtc := mocks.NewClient(t)
+	dtc := dtclientmock.NewClient(t)
 	dtc.On("GetActiveGateConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestActiveGateConnectionInfo(), nil).Maybe()
 
 	t.Run(`store ActiveGate connection info to DynaKube status`, func(t *testing.T) {
@@ -107,7 +107,7 @@ func TestReconcile_TenantSecret(t *testing.T) {
 			Namespace: testNamespace,
 			Name:      testName,
 		}}
-	dtc := mocks.NewClient(t)
+	dtc := dtclientmock.NewClient(t)
 	dtc.On("GetActiveGateConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestActiveGateConnectionInfo(), nil)
 
 	t.Run(`create activegate secret`, func(t *testing.T) {

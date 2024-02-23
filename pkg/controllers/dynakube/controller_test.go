@@ -21,10 +21,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
-	mockcontroller "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
-	dtClientMock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
-	mockinjection "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/injection"
+	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
+	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
+	injectionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/injection"
 	registrymock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/oci/registry"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	fakecontainer "github.com/google/go-containerregistry/pkg/v1/fake"
@@ -249,7 +249,7 @@ func TestSetupTokensAndClient(t *testing.T) {
 		}
 		fakeClient := fake.NewClientWithIndex(dynakube, tokens)
 
-		mockDtcBuilder := dtClientMock.NewBuilder(t)
+		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 		mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
@@ -282,9 +282,9 @@ func TestSetupTokensAndClient(t *testing.T) {
 		}
 		fakeClient := fake.NewClientWithIndex(dynakube, tokens)
 
-		mockedDtc := mockedclient.NewClient(t)
+		mockedDtc := dtclientmock.NewClient(t)
 
-		mockDtcBuilder := dtClientMock.NewBuilder(t)
+		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 		mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
@@ -334,13 +334,13 @@ func TestReconcileComponents(t *testing.T) {
 		dynakube := dynakubeBase.DeepCopy()
 		fakeClient := fake.NewClientWithIndex(dynakube)
 		// ReconcileCodeModuleCommunicationHosts
-		mockOneAgentReconciler := mockcontroller.NewReconciler(t)
+		mockOneAgentReconciler := controllermock.NewReconciler(t)
 		mockOneAgentReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
-		mockActiveGateReconciler := mockcontroller.NewReconciler(t)
+		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
-		mockInjectionReconciler := mockinjection.NewReconciler(t)
+		mockInjectionReconciler := injectionmock.NewReconciler(t)
 		mockInjectionReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
 		controller := &Controller{
@@ -354,7 +354,7 @@ func TestReconcileComponents(t *testing.T) {
 			injectionReconcilerBuilder:  createInjectionReconcilerBuilder(mockInjectionReconciler),
 			oneAgentReconcilerBuilder:   createOneAgentReconcilerBuilder(mockOneAgentReconciler),
 		}
-		mockedDtc := mockedclient.NewClient(t)
+		mockedDtc := dtclientmock.NewClient(t)
 		err := controller.reconcileComponents(ctx, mockedDtc, nil, dynakube)
 
 		require.Error(t, err)
@@ -366,10 +366,10 @@ func TestReconcileComponents(t *testing.T) {
 		dynakube := dynakubeBase.DeepCopy()
 		fakeClient := fake.NewClientWithIndex(dynakube)
 
-		mockActiveGateReconciler := mockcontroller.NewReconciler(t)
+		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
-		mockInjectionReconciler := mockinjection.NewReconciler(t)
+		mockInjectionReconciler := injectionmock.NewReconciler(t)
 		mockInjectionReconciler.On("Reconcile", mock.Anything).Return(oaconnectioninfo.NoOneAgentCommunicationHostsError)
 
 		controller := &Controller{
@@ -381,7 +381,7 @@ func TestReconcileComponents(t *testing.T) {
 			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
 			injectionReconcilerBuilder:  createInjectionReconcilerBuilder(mockInjectionReconciler),
 		}
-		mockedDtc := mockedclient.NewClient(t)
+		mockedDtc := dtclientmock.NewClient(t)
 		err := controller.reconcileComponents(ctx, mockedDtc, nil, dynakube)
 
 		require.Error(t, err)
@@ -402,7 +402,7 @@ func createOneAgentReconcilerBuilder(reconciler controllers.Reconciler) oneagent
 	}
 }
 
-func createInjectionReconcilerBuilder(reconciler *mockinjection.Reconciler) injection.ReconcilerBuilder {
+func createInjectionReconcilerBuilder(reconciler *injectionmock.Reconciler) injection.ReconcilerBuilder {
 	return func(_ client.Client, _ client.Reader, _ *runtime.Scheme, _ dtclient.Client, _ *istio.Client, _ *dynatracev1beta1.DynaKube) controllers.Reconciler {
 		return reconciler
 	}
@@ -527,8 +527,8 @@ func TestTokenConditions(t *testing.T) {
 				dtclient.ApiToken: []byte(testAPIToken),
 			},
 		})
-		mockClient := mockedclient.NewClient(t)
-		mockDtcBuilder := dtClientMock.NewBuilder(t)
+		mockClient := dtclientmock.NewClient(t)
+		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 		mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
