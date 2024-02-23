@@ -20,8 +20,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	semVersion "github.com/Dynatrace/dynatrace-operator/pkg/version"
-	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
-	dtClientMock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
+	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -384,8 +384,8 @@ func TestAPIError(t *testing.T) {
 	})
 }
 
-func createDTMockClient(t *testing.T, paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *mockedclient.Client {
-	mockClient := mockedclient.NewClient(t)
+func createDTMockClient(t *testing.T, paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *dtclientmock.Client {
+	mockClient := dtclientmock.NewClient(t)
 
 	mockClient.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
 		Protocol: testProtocol,
@@ -466,7 +466,7 @@ func createFakeClientAndReconciler(t *testing.T, mockClient dtclient.Client, ins
 
 	fakeClient := fake.NewClientWithIndex(objects...)
 
-	mockDtcBuilder := dtClientMock.NewBuilder(t)
+	mockDtcBuilder := dtbuildermock.NewBuilder(t)
 	mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)

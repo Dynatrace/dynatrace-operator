@@ -17,8 +17,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	t_utils "github.com/Dynatrace/dynatrace-operator/pkg/util/testing"
-	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
-	mockedinstaller "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
+	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 	registrymock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/oci/registry"
 	"github.com/opencontainers/go-digest"
 	"github.com/spf13/afero"
@@ -47,14 +47,14 @@ func TestUpdateAgent(t *testing.T) {
 
 		var revision uint = 3
 		processModule := createTestProcessModuleConfig(revision)
-		installerMock := mockedinstaller.NewInstaller(t)
+		installerMock := installermock.NewInstaller(t)
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testVersion))
 
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentZip(ctx, dk, mockedclient.NewClient(t), processModule)
+		currentVersion, err := provisioner.installAgentZip(ctx, dk, dtclientmock.NewClient(t), processModule)
 		require.NoError(t, err)
 		assert.Equal(t, testVersion, currentVersion)
 		t_utils.AssertEvents(t,
@@ -81,14 +81,14 @@ func TestUpdateAgent(t *testing.T) {
 
 		var revision uint = 3
 		processModule := createTestProcessModuleConfig(revision)
-		installerMock := mockedinstaller.NewInstaller(t)
+		installerMock := installermock.NewInstaller(t)
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), newTargetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, newVersion))
 
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentZip(ctx, dk, mockedclient.NewClient(t), processModule)
+		currentVersion, err := provisioner.installAgentZip(ctx, dk, dtclientmock.NewClient(t), processModule)
 		require.NoError(t, err)
 		assert.Equal(t, newVersion, currentVersion)
 	})
@@ -102,13 +102,13 @@ func TestUpdateAgent(t *testing.T) {
 
 		var revision uint = 3
 		processModule := createTestProcessModuleConfig(revision)
-		installerMock := mockedinstaller.NewInstaller(t)
+		installerMock := installermock.NewInstaller(t)
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).
 			Return(false, nil)
 
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
-		currentVersion, err := provisioner.installAgentZip(ctx, dk, mockedclient.NewClient(t), processModule)
+		currentVersion, err := provisioner.installAgentZip(ctx, dk, dtclientmock.NewClient(t), processModule)
 
 		require.NoError(t, err)
 		assert.Equal(t, testVersion, currentVersion)
@@ -121,7 +121,7 @@ func TestUpdateAgent(t *testing.T) {
 		var revision uint = 3
 		processModule := createTestProcessModuleConfig(revision)
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(testImageDigest)
-		installerMock := mockedinstaller.NewInstaller(t)
+		installerMock := installermock.NewInstaller(t)
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).
 			Return(false, fmt.Errorf("BOOM"))
@@ -151,7 +151,7 @@ func TestUpdateAgent(t *testing.T) {
 		dk := createTestDynaKubeWithImage(testImageDigest)
 		provisioner := createTestProvisioner(createMockedPullSecret(dk, dockerconfigjsonContent))
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(testImageDigest)
-		installerMock := mockedinstaller.NewInstaller(t)
+		installerMock := installermock.NewInstaller(t)
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
@@ -174,7 +174,7 @@ func TestUpdateAgent(t *testing.T) {
 
 		provisioner := createTestProvisioner(createMockedPullSecret(dk, dockerconfigjsonContent))
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(testImageDigest)
-		installerMock := mockedinstaller.NewInstaller(t)
+		installerMock := installermock.NewInstaller(t)
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
@@ -222,7 +222,7 @@ NK85cEJwyxQ+wahdNGUD
 
 		provisioner := createTestProvisioner(createMockedPullSecret(dk, dockerconfigjsonContent), createMockedCAConfigMap(dk, customCertContent))
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(testImageDigest)
-		installerMock := mockedinstaller.NewInstaller(t)
+		installerMock := installermock.NewInstaller(t)
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
@@ -337,13 +337,13 @@ func mockRegistryClient(t *testing.T, provisioner *OneAgentProvisioner, imageDig
 	}
 }
 
-func mockImageInstallerBuilder(mock *mockedinstaller.Installer) imageInstallerBuilder {
+func mockImageInstallerBuilder(mock *installermock.Installer) imageInstallerBuilder {
 	return func(_ afero.Fs, _ *image.Properties) (installer.Installer, error) {
 		return mock, nil
 	}
 }
 
-func mockUrlInstallerBuilder(mock *mockedinstaller.Installer) urlInstallerBuilder {
+func mockUrlInstallerBuilder(mock *installermock.Installer) urlInstallerBuilder {
 	return func(_ afero.Fs, _ dtclient.Client, _ *url.Properties) installer.Installer {
 		return mock
 	}
