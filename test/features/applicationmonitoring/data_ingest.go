@@ -160,5 +160,8 @@ func assessOnlyDataIngestIsInjected(t *testing.T) deployment.PodConsumer {
 		assert.True(t, env.IsIn(envVars, consts.EnrichmentInjectedEnv))
 
 		assert.False(t, env.IsIn(envVars, consts.AgentInjectedEnv))
+
+		assert.Contains(t, pod.Annotations, webhook.AnnotationWorkloadKind)
+		assert.Contains(t, pod.Annotations, webhook.AnnotationWorkloadName)
 	}
 }

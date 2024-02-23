@@ -66,6 +66,7 @@ func (mutator *DataIngestPodMutator) Mutate(ctx context.Context, request *dtwebh
 	mutateUserContainers(request.BaseRequest)
 	updateInstallContainer(request.InstallContainer, workload)
 	setInjectedAnnotation(request.Pod)
+	setWorkloadAnnotations(request.Pod, workload)
 
 	return nil
 }
@@ -116,6 +117,15 @@ func setInjectedAnnotation(pod *corev1.Pod) {
 	}
 
 	pod.Annotations[dtwebhook.AnnotationDataIngestInjected] = "true"
+}
+
+func setWorkloadAnnotations(pod *corev1.Pod, workload *workloadInfo) {
+	if pod.Annotations == nil {
+		pod.Annotations = make(map[string]string)
+	}
+
+	pod.Annotations[dtwebhook.AnnotationWorkloadKind] = workload.kind
+	pod.Annotations[dtwebhook.AnnotationWorkloadName] = workload.name
 }
 
 func containerIsInjected(container *corev1.Container) bool {
