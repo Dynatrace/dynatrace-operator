@@ -12,14 +12,29 @@ import (
 
 // ActiveGateStatus defines the observed state of ActiveGate.
 type ActiveGateStatus struct { //nolint:revive
-	// Defines the current state (Running, Updating, Error, ...)
-	DeploymentPhase status.DeploymentPhase `json:"phase,omitempty"`
 
 	// Indicates when the resource was last updated
 	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty"`
 
+	status.VersionStatus `json:",inline"`
+
+	// Information about Active Gate's connections
+	ConnectionInfoStatus ConnectionInfoStatus `json:"connectionInfoStatus,omitempty"`
+	// Defines the current state (Running, Updating, Error, ...)
+	DeploymentPhase status.DeploymentPhase `json:"phase,omitempty"`
+
 	// Conditions includes status about the current state of the instance
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+}
+
+type ConnectionInfoStatus struct {
+	// Time of the last connection request
+	LastRequest metav1.Time `json:"lastRequest,omitempty"`
+	// UUID of the tenant, received from the tenant
+	TenantUUID string `json:"tenantUUID,omitempty"`
+
+	// Available connection endpoints
+	Endpoints string `json:"endpoints,omitempty"`
 }
 
 // SetPhase sets the status phase on the ActiveGate object.

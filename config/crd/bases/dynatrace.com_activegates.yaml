@@ -606,13 +606,44 @@ spec:
                   - type
                   type: object
                 type: array
+              connectionInfoStatus:
+                description: Information about Active Gate's connections
+                properties:
+                  endpoints:
+                    description: Available connection endpoints
+                    type: string
+                  lastRequest:
+                    description: Time of the last connection request
+                    format: date-time
+                    type: string
+                  tenantUUID:
+                    description: UUID of the tenant, received from the tenant
+                    type: string
+                type: object
+              imageID:
+                description: Image ID
+                type: string
+              lastProbeTimestamp:
+                description: Indicates when the last check for a new version was performed
+                format: date-time
+                type: string
               phase:
                 description: Defines the current state (Running, Updating, Error,
                   ...)
                 type: string
+              source:
+                description: Source of the image (tenant-registry, public-registry,
+                  ...)
+                type: string
+              type:
+                description: Image type
+                type: string
               updatedTimestamp:
                 description: Indicates when the resource was last updated
                 format: date-time
+                type: string
+              version:
+                description: Image version
                 type: string
             type: object
         type: object

@@ -11,25 +11,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type CapabilityDisplayName string
-
-type Capability struct {
-	// The name of the capability known by the user, mainly used in the CR
-	DisplayName CapabilityDisplayName
-
-	// The name used for marking the pod for given capability
-	ShortName string
-
-	// The string passed to the active gate image to enable a given capability
-	ArgumentName string
-}
-
 type SpecBasis struct {
-	GeneralSpec  GeneralSpec  `json:",inline"`
-	SpecificSpec SpecificSpec `json:",inline"`
+	Common   CommonSpec   `json:",inline"`
+	Specific SpecificSpec `json:",inline"`
 }
 
-type GeneralSpec struct {
+type CommonSpec struct {
 	// Set custom proxy settings either directly or from a secret with the field proxy.
 	// Note: Applies to Dynatrace Operator, ActiveGate, and OneAgents.
 	// +optional
