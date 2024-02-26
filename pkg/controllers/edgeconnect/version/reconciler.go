@@ -36,6 +36,7 @@ func (reconciler *Reconciler) Reconcile(ctx context.Context) error {
 
 		if updater.RequiresReconcile() {
 			log.Debug("reconcile required", "updater", updater.Name())
+
 			return updater.Update(ctx)
 		}
 

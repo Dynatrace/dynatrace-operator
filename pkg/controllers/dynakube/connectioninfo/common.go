@@ -5,7 +5,7 @@ import (
 
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
-	"github.com/go-logr/logr"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,7 +28,7 @@ const (
 	EnvDtTenant = "DT_TENANT"
 )
 
-func IsTenantSecretPresent(ctx context.Context, apiReader client.Reader, secretNamespacedName types.NamespacedName, log logr.Logger) (bool, error) {
+func IsTenantSecretPresent(ctx context.Context, apiReader client.Reader, secretNamespacedName types.NamespacedName, log logger.DtLogger) (bool, error) {
 	query := k8ssecret.NewQuery(ctx, nil, apiReader, log)
 
 	_, err := query.Get(secretNamespacedName)
