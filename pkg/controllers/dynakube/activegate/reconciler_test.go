@@ -14,11 +14,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
-	mocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
-	controllerMocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
-	connectioninfoMocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/connectioninfo"
-	istioMocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/istio"
-	versionMocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
+	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
+	istiomock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/istio"
+	versionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -48,7 +47,7 @@ var (
 )
 
 func TestReconciler_Reconcile(t *testing.T) {
-	dtc := mocks.NewClient(t)
+	dtc := dtclientmock.NewClient(t)
 	dtc.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
 	t.Run(`Create works with minimal setup`, func(t *testing.T) {
@@ -118,7 +117,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient()
-		fakeReconciler := controllerMocks.NewReconciler(t)
+		fakeReconciler := controllermock.NewReconciler(t)
 		fakeReconciler.On("Reconcile", mock.Anything).Return(nil)
 		proxyReconciler := Reconciler{
 			client:              fakeClient,
@@ -198,7 +197,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 }
 
 func TestServiceCreation(t *testing.T) {
-	dynatraceClient := mocks.NewClient(t)
+	dynatraceClient := dtclientmock.NewClient(t)
 	dynatraceClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
 	dynakube := &dynatracev1beta1.DynaKube{
@@ -326,7 +325,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 	}
 
 	t.Run(`create activegate ConfigMap`, func(t *testing.T) {
-		fakeReconciler := controllerMocks.NewReconciler(t)
+		fakeReconciler := controllermock.NewReconciler(t)
 		fakeReconciler.On("Reconcile", mock.Anything).Return(nil)
 
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
@@ -354,22 +353,21 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 		var actual corev1.ConfigMap
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.ActiveGateConnectionInfoConfigMapName(), Namespace: testNamespace}, &actual)
 		require.NoError(t, err)
-		assert.Equal(t, testTenantUUID, actual.Data[connectioninfo.TenantUUIDName])
-		assert.Equal(t, testTenantEndpoints, actual.Data[connectioninfo.CommunicationEndpointsName])
+		assert.Equal(t, testTenantUUID, actual.Data[connectioninfo.TenantUUIDKey])
+		assert.Equal(t, testTenantEndpoints, actual.Data[connectioninfo.CommunicationEndpointsKey])
 	})
 }
 
-func createConnectionInfoReconcilerMock(t *testing.T) connectioninfo.Reconciler {
-	connectionInfoReconciler := connectioninfoMocks.NewReconciler(t)
-	connectionInfoReconciler.On("ReconcileActiveGate",
-		mock.AnythingOfType("context.backgroundCtx"),
-		mock.AnythingOfType("*dynakube.DynaKube")).Return(nil).Once()
+func createConnectionInfoReconcilerMock(t *testing.T) controllers.Reconciler {
+	connectionInfoReconciler := controllermock.NewReconciler(t)
+	connectionInfoReconciler.On("Reconcile",
+		mock.AnythingOfType("context.backgroundCtx")).Return(nil).Once()
 
 	return connectionInfoReconciler
 }
 
 func createVersionReconcilerMock(t *testing.T) version.Reconciler {
-	versionReconciler := versionMocks.NewReconciler(t)
+	versionReconciler := versionmock.NewReconciler(t)
 	versionReconciler.On("ReconcileActiveGate",
 		mock.AnythingOfType("context.backgroundCtx"),
 		mock.AnythingOfType("*dynakube.DynaKube")).Return(nil).Once()
@@ -378,7 +376,7 @@ func createVersionReconcilerMock(t *testing.T) version.Reconciler {
 }
 
 func createIstioReconcilerMock(t *testing.T) istio.Reconciler {
-	reconciler := istioMocks.NewReconciler(t)
+	reconciler := istiomock.NewReconciler(t)
 	reconciler.On("ReconcileActiveGateCommunicationHosts",
 		mock.AnythingOfType("context.backgroundCtx"),
 		mock.AnythingOfType("*dynakube.DynaKube")).Return(nil).Once()

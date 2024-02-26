@@ -8,8 +8,8 @@ import (
 
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
-	mockedinstaller "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
+	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -143,10 +143,10 @@ func TestInstallOneAgent(t *testing.T) {
 		runner := createMockedRunner(t)
 		_, err := runner.fs.Create(filepath.Join(consts.AgentBinDirMount, "agent/conf/ruxitagentproc.conf"))
 		require.NoError(t, err)
-		runner.dtclient.(*mockedclient.Client).
+		runner.dtclient.(*dtclientmock.Client).
 			On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), uint(0)).
 			Return(getTestProcessModuleConfig(), nil)
-		runner.installer.(*mockedinstaller.Installer).
+		runner.installer.(*installermock.Installer).
 			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), consts.AgentBinDirMount).
 			Return(true, nil)
 
@@ -156,7 +156,7 @@ func TestInstallOneAgent(t *testing.T) {
 	})
 	t.Run("sad install -> install fail", func(t *testing.T) {
 		runner := createMockedRunner(t)
-		runner.installer.(*mockedinstaller.Installer).
+		runner.installer.(*installermock.Installer).
 			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), consts.AgentBinDirMount).
 			Return(false, fmt.Errorf("BOOM"))
 
@@ -166,10 +166,10 @@ func TestInstallOneAgent(t *testing.T) {
 	})
 	t.Run("sad install -> ruxitagent update fail", func(t *testing.T) {
 		runner := createMockedRunner(t)
-		runner.dtclient.(*mockedclient.Client).
+		runner.dtclient.(*dtclientmock.Client).
 			On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), uint(0)).
 			Return(getTestProcessModuleConfig(), nil)
-		runner.installer.(*mockedinstaller.Installer).
+		runner.installer.(*installermock.Installer).
 			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), consts.AgentBinDirMount).
 			Return(true, nil)
 
@@ -179,10 +179,10 @@ func TestInstallOneAgent(t *testing.T) {
 	})
 	t.Run("sad install -> ruxitagent endpoint fail", func(t *testing.T) {
 		runner := createMockedRunner(t)
-		runner.dtclient.(*mockedclient.Client).
+		runner.dtclient.(*dtclientmock.Client).
 			On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), uint(0)).
 			Return(&dtclient.ProcessModuleConfig{}, fmt.Errorf("BOOM"))
-		runner.installer.(*mockedinstaller.Installer).
+		runner.installer.(*installermock.Installer).
 			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), consts.AgentBinDirMount).
 			Return(true, nil)
 
@@ -197,7 +197,7 @@ func TestRun(t *testing.T) {
 	runner.config.HasHost = false
 	runner.env.OneAgentInjected = true
 	runner.env.DataIngestInjected = true
-	runner.dtclient.(*mockedclient.Client).
+	runner.dtclient.(*dtclientmock.Client).
 		On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), uint(0)).
 		Return(getTestProcessModuleConfig(), nil)
 
@@ -214,7 +214,7 @@ func TestRun(t *testing.T) {
 		assertIfReadOnlyCSIFilesExists(t, *runner)
 	})
 	t.Run("install + config generation", func(t *testing.T) {
-		runner.installer.(*mockedinstaller.Installer).
+		runner.installer.(*installermock.Installer).
 			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), consts.AgentBinDirMount).
 			Return(true, nil)
 
@@ -294,7 +294,7 @@ func TestGetProcessModuleConfig(t *testing.T) {
 
 	t.Run("error if api call fails", func(t *testing.T) {
 		runner := createMockedRunner(t)
-		runner.dtclient.(*mockedclient.Client).
+		runner.dtclient.(*dtclientmock.Client).
 			On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), uint(0)).
 			Return(&dtclient.ProcessModuleConfig{}, fmt.Errorf("BOOM"))
 
@@ -308,7 +308,7 @@ func TestGetProcessModuleConfig(t *testing.T) {
 
 		runner := createMockedRunner(t)
 		runner.config.Proxy = proxy
-		runner.dtclient.(*mockedclient.Client).
+		runner.dtclient.(*dtclientmock.Client).
 			On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), uint(0)).
 			Return(getTestProcessModuleConfig(), nil)
 
@@ -328,7 +328,7 @@ func TestGetProcessModuleConfig(t *testing.T) {
 
 		runner := createMockedRunner(t)
 		runner.config.OneAgentNoProxy = oneAgentNoProxy
-		runner.dtclient.(*mockedclient.Client).
+		runner.dtclient.(*dtclientmock.Client).
 			On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), uint(0)).
 			Return(getTestProcessModuleConfig(), nil)
 
@@ -506,8 +506,8 @@ func createTestRunner(t *testing.T) *Runner {
 
 func createMockedRunner(t *testing.T) *Runner {
 	runner := createTestRunner(t)
-	runner.installer = mockedinstaller.NewInstaller(t)
-	runner.dtclient = mockedclient.NewClient(t)
+	runner.installer = installermock.NewInstaller(t)
+	runner.dtclient = dtclientmock.NewClient(t)
 
 	return runner
 }

@@ -9,7 +9,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
-	mockcontroller "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
+	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,7 +33,7 @@ func TestReconcileActiveGate(t *testing.T) {
 
 		fakeClient := fake.NewClientWithIndex(dynakube)
 
-		mockActiveGateReconciler := mockcontroller.NewReconciler(t)
+		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(nil)
 
 		controller := &Controller{
@@ -51,7 +51,7 @@ func TestReconcileActiveGate(t *testing.T) {
 
 		fakeClient := fake.NewClientWithIndex(dynakube)
 
-		mockActiveGateReconciler := mockcontroller.NewReconciler(t)
+		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(errors.New("BOOM"))
 
 		controller := &Controller{
@@ -89,7 +89,7 @@ func TestReconcileActiveGate(t *testing.T) {
 
 		mockClient := createDTMockClient(t, dtclient.TokenScopes{}, dtclient.TokenScopes{})
 
-		mockActiveGateReconciler := mockcontroller.NewReconciler(t)
+		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(nil)
 
 		controller := &Controller{
@@ -141,7 +141,7 @@ func TestReconcileActiveGate(t *testing.T) {
 			mock.AnythingOfType("string"),
 			mock.AnythingOfType("string")).Return(testUID, nil)
 
-		mockActiveGateReconciler := mockcontroller.NewReconciler(t)
+		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(nil)
 
 		controller := &Controller{

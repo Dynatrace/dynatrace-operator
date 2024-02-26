@@ -37,9 +37,6 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio:
     interfaces:
       Reconciler:
-  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo:
-    interfaces:
-      Reconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata:
     interfaces:
       Reconciler:

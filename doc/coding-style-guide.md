@@ -181,6 +181,8 @@ runtime.goexit
 - Abstract the setup/assert phase as much as possible so it can be reused in other tests in the package.
 - Use `t.Run` and give a title that describes what you are testing in that run.
 - Use `context.Background` when a context is needed, use `context.TODO` ONLY for actual TODOs. (example: you want to create a special context here later to test something specific)
+- Use `<...>mock` as package import alias, in all cases, even if no alias would strictly be necessary.
+  - Examples: `dtclientmock`, `controllermock`, `dtbuildermock`, `injectionmock`, `registrymock`
 - Use this structure: (or table-tests)
 
 ```go

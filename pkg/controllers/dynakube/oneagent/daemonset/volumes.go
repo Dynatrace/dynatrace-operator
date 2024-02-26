@@ -56,7 +56,7 @@ func getOneAgentSecretVolumeMount() corev1.VolumeMount {
 		Name:      connectioninfo.TenantSecretVolumeName,
 		ReadOnly:  true,
 		MountPath: connectioninfo.TenantTokenMountPoint,
-		SubPath:   connectioninfo.TenantTokenName,
+		SubPath:   connectioninfo.TenantTokenKey,
 	}
 }
 

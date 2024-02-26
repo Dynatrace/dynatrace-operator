@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/zip"
-	"github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -51,7 +51,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 	})
 	t.Run(`error when downloading latest agent`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		dtc := mocks.NewClient(t)
+		dtc := dtclientmock.NewClient(t)
 		dtc.
 			On("GetAgent", mock.AnythingOfType("context.backgroundCtx"), dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro,
 				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("[]string"),
@@ -77,7 +77,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 	t.Run(`error unzipping file`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 
-		dtc := mocks.NewClient(t)
+		dtc := dtclientmock.NewClient(t)
 		dtc.
 			On("GetAgent", mock.AnythingOfType("context.backgroundCtx"), dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro,
 				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("[]string"),
@@ -109,7 +109,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 	})
 	t.Run(`downloading and unzipping agent via version`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		dtc := mocks.NewClient(t)
+		dtc := dtclientmock.NewClient(t)
 		dtc.On("GetAgent",
 			mock.AnythingOfType("context.backgroundCtx"),
 			dtclient.OsUnix,
@@ -150,7 +150,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 	})
 	t.Run(`downloading and unzipping latest agent`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		dtc := mocks.NewClient(t)
+		dtc := dtclientmock.NewClient(t)
 		dtc.
 			On("GetLatestAgent", mock.AnythingOfType("context.backgroundCtx"), dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro,
 				mock.AnythingOfType("string"), mock.AnythingOfType("[]string"), mock.AnythingOfType("bool"),
@@ -184,7 +184,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 	})
 	t.Run(`downloading and unzipping agent via url`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		dtc := mocks.NewClient(t)
+		dtc := dtclientmock.NewClient(t)
 		dtc.
 			On("GetAgentViaInstallerUrl", mock.AnythingOfType("context.backgroundCtx"), testUrl, mock.AnythingOfType("*mem.File")).
 			Run(func(args mock.Arguments) {
