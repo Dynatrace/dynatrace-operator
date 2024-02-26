@@ -42,7 +42,7 @@ const (
 	AuthTokenSecretSuffix                   = "-activegate-authtoken-secret"
 	PodNameOsAgent                          = "oneagent"
 
-	defaultActiveGateImage = "/linux/activegate:latest"
+	defaultActiveGateImage = "/linux/activegate:raw"
 )
 
 // ApiUrl is a getter for dk.Spec.APIURL.
@@ -379,7 +379,7 @@ func (dk *DynaKube) DefaultOneAgentImage() string {
 		return ""
 	}
 
-	tag := api.LatestTag
+	tag := api.RawTag
 
 	if version := dk.CustomOneAgentVersion(); version != "" {
 		truncatedVersion := truncateBuildDate(version)
