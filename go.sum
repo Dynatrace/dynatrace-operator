@@ -192,6 +192,8 @@ github.com/yusufpapurcu/wmi v1.2.3 h1:E1ctvB7uKFMOJw3fdOW32DwGE9I7t++CRUEMKvFoFi
 github.com/yusufpapurcu/wmi v1.2.3/go.mod h1:SBZ9tNy3G9/m5Oi98Zks0QjeHVDvuK0qfxQmPyzfmi0=
 go.opentelemetry.io/contrib/instrumentation/host v0.48.0 h1:eVDLR/hletJcctz4rSWwb3QVzRnEQKuTVi6qAm7fsWs=
 go.opentelemetry.io/contrib/instrumentation/host v0.48.0/go.mod h1:dWSGvPpaGKwBh/dpLJs6pczyOc82hBnxa1YTQZCic0I=
+go.opentelemetry.io/contrib/instrumentation/host v0.49.0 h1:PHK4Cnis16iENFfqnzvuak5vfRl5L0UaTG2Z03vr3iI=
+go.opentelemetry.io/contrib/instrumentation/host v0.49.0/go.mod h1:0XQuDAhohvWG6+cdmjX6aFbC4mGMjYf1xILFh5OUcEg=
 go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.48.0 h1:ZeW4++xt1VrFSdnd0pFXz0PkrjLb89/VPOUOyPDJG/g=
 go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.48.0/go.mod h1:ZdzuQW6m/OEtOLWWJs+k5ddZXsUq9xs2vx+ZT9G9eJ0=
 go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.49.0 h1:RtcvQ4iw3w9NBB5yRwgA4sSa82rfId7n4atVpvKx3bY=
