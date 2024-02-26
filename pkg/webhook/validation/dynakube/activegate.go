@@ -25,6 +25,7 @@ Make sure you don't duplicate an Activegate capability in your custom resource.
 func conflictingActiveGateConfiguration(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.DeprecatedActiveGateMode() && dynakube.ActiveGateMode() {
 		log.Info("requested dynakube has conflicting active gate configuration", "name", dynakube.Name, "namespace", dynakube.Namespace)
+
 		return errorConflictingActiveGateSections
 	}
 
@@ -39,6 +40,7 @@ func duplicateActiveGateCapabilities(_ context.Context, _ *dynakubeValidator, dy
 		for _, capability := range capabilities {
 			if duplicateChecker[capability] {
 				log.Info("requested dynakube has duplicates in the active gate capabilities section", "name", dynakube.Name, "namespace", dynakube.Namespace)
+
 				return fmt.Sprintf(errorDuplicateActiveGateCapability, capability)
 			}
 
@@ -55,6 +57,7 @@ func invalidActiveGateCapabilities(_ context.Context, _ *dynakubeValidator, dyna
 		for _, capability := range capabilities {
 			if _, ok := dynatracev1beta1.ActiveGateDisplayNames[capability]; !ok {
 				log.Info("requested dynakube has invalid active gate capability", "name", dynakube.Name, "namespace", dynakube.Namespace)
+
 				return fmt.Sprintf(errorInvalidActiveGateCapability, capability)
 			}
 		}

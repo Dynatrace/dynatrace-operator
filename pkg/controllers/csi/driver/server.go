@@ -43,13 +43,13 @@ import (
 
 type Server struct {
 	client  client.Client
-	opts    dtcsi.CSIOptions
 	fs      afero.Afero
 	mounter mount.Interface
 	db      metadata.Access
-	path    metadata.PathResolver
 
 	publishers map[string]csivolumes.Publisher
+	opts       dtcsi.CSIOptions
+	path       metadata.PathResolver
 }
 
 var _ csi.IdentityServer = &Server{}

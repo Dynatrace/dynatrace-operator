@@ -59,5 +59,6 @@ func Feature(t *testing.T) features.Feature {
 	builder.Teardown(sampleAppClassicFullStack.Uninstall())
 	// tear down
 	dynakube.Delete(builder, helpers.LevelTeardown, dynakubeCloudNative)
+
 	return builder.Feature()
 }

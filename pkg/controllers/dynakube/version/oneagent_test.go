@@ -9,7 +9,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
-	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -33,7 +33,7 @@ func TestOneAgentUpdater(t *testing.T) {
 				},
 			},
 		}
-		mockClient := mockedclient.NewClient(t)
+		mockClient := dtclientmock.NewClient(t)
 		mockOneAgentImageInfo(mockClient, testImage)
 
 		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient)
@@ -65,7 +65,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 		}
 		expectedImage := dynakube.DefaultOneAgentImage()
 
-		mockClient := mockedclient.NewClient(t)
+		mockClient := dtclientmock.NewClient(t)
 
 		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient)
 
@@ -85,7 +85,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 		}
 		expectedImage := dynakube.DefaultOneAgentImage()
 
-		mockClient := mockedclient.NewClient(t)
+		mockClient := dtclientmock.NewClient(t)
 		mockLatestAgentVersion(mockClient, testVersion)
 
 		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient)
@@ -115,7 +115,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 			},
 		}
 
-		mockClient := mockedclient.NewClient(t)
+		mockClient := dtclientmock.NewClient(t)
 		mockLatestAgentVersion(mockClient, testVersion)
 
 		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient)

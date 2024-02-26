@@ -15,10 +15,10 @@ import (
 )
 
 type DataIngestPodMutator struct {
-	webhookNamespace string
 	client           client.Client
 	metaClient       client.Client
 	apiReader        client.Reader
+	webhookNamespace string
 }
 
 func NewDataIngestPodMutator(webhookNamespace string, client client.Client, apiReader client.Reader, metaClient client.Client) *DataIngestPodMutator {
@@ -51,12 +51,14 @@ func (mutator *DataIngestPodMutator) Mutate(ctx context.Context, request *dtwebh
 	workload, err := mutator.retrieveWorkload(request)
 	if err != nil {
 		span.RecordError(err)
+
 		return err
 	}
 
 	err = mutator.ensureDataIngestSecret(request)
 	if err != nil {
 		span.RecordError(err)
+
 		return err
 	}
 
@@ -94,12 +96,14 @@ func (mutator *DataIngestPodMutator) ensureDataIngestSecret(request *dtwebhook.M
 		err := endpointGenerator.GenerateForNamespace(request.Context, request.DynaKube.Name, request.Namespace.Name)
 		if err != nil && !k8serrors.IsAlreadyExists(err) {
 			log.Info("failed to create the data-ingest endpoint secret before pod injection")
+
 			return err
 		}
 
 		log.Info("ensured that the data-ingest endpoint secret is present before pod injection")
 	} else if err != nil {
 		log.Info("failed to query the data-ingest endpoint secret before pod injection")
+
 		return err
 	}
 

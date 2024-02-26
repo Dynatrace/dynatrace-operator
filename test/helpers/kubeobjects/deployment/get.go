@@ -31,6 +31,7 @@ func NewQuery(ctx context.Context, resource *resources.Resources, objectKey clie
 func (query *Query) Get() (appsv1.Deployment, error) {
 	var deployment appsv1.Deployment
 	err := query.resource.Get(query.ctx, query.objectKey.Name, query.objectKey.Namespace, &deployment)
+
 	return deployment, err
 }
 

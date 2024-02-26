@@ -25,8 +25,8 @@ func NewRawImageModifier(dynakube dynatracev1beta1.DynaKube, envMap *prioritymap
 }
 
 type RawImageModifier struct {
-	dynakube dynatracev1beta1.DynaKube
 	envMap   *prioritymap.Map
+	dynakube dynatracev1beta1.DynaKube
 }
 
 func (mod RawImageModifier) Enabled() bool {
@@ -61,7 +61,7 @@ func (mod RawImageModifier) getVolumeMounts() []corev1.VolumeMount {
 			Name:      connectioninfo.TenantSecretVolumeName,
 			ReadOnly:  true,
 			MountPath: connectioninfo.TenantTokenMountPoint,
-			SubPath:   connectioninfo.TenantTokenName,
+			SubPath:   connectioninfo.TenantTokenKey,
 		},
 	}
 }
@@ -81,7 +81,7 @@ func (mod RawImageModifier) tenantUUIDEnvVar() corev1.EnvVar {
 			LocalObjectReference: corev1.LocalObjectReference{
 				Name: mod.dynakube.ActiveGateConnectionInfoConfigMapName(),
 			},
-			Key:      connectioninfo.TenantUUIDName,
+			Key:      connectioninfo.TenantUUIDKey,
 			Optional: address.Of(false),
 		}}}
 }
@@ -93,7 +93,7 @@ func (mod RawImageModifier) communicationEndpointEnvVar() corev1.EnvVar {
 			LocalObjectReference: corev1.LocalObjectReference{
 				Name: mod.dynakube.ActiveGateConnectionInfoConfigMapName(),
 			},
-			Key:      connectioninfo.CommunicationEndpointsName,
+			Key:      connectioninfo.CommunicationEndpointsKey,
 			Optional: address.Of(false),
 		}},
 	}

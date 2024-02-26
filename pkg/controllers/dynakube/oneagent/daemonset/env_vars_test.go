@@ -175,7 +175,7 @@ func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynat
 		env.ValueFrom.ConfigMapKeyRef.Name,
 	)
 	assert.Equal(t,
-		connectioninfo.TenantUUIDName,
+		connectioninfo.TenantUUIDKey,
 		env.ValueFrom.ConfigMapKeyRef.Key,
 	)
 
@@ -186,7 +186,7 @@ func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynat
 		env.ValueFrom.ConfigMapKeyRef.Name,
 	)
 	assert.Equal(t,
-		connectioninfo.CommunicationEndpointsName,
+		connectioninfo.CommunicationEndpointsKey,
 		env.ValueFrom.ConfigMapKeyRef.Key,
 	)
 }
@@ -332,6 +332,7 @@ func TestIsProxyAsEnvVarDeprecated(t *testing.T) {
 			got, err := isProxyAsEnvVarDeprecated(tt.oneAgentVersion)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("isProxyAsEnvVarDeprecated() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 

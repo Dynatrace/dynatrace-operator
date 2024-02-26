@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	mocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook"
+	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -230,7 +230,7 @@ func TestHandlePodReinvocation(t *testing.T) {
 }
 
 func assertPodMutatorCalls(t *testing.T, mutator dtwebhook.PodMutator, expectedCalls int) {
-	mock, ok := mutator.(*mocks.PodMutator)
+	mock, ok := mutator.(*webhookmock.PodMutator)
 	if !ok {
 		t.Fatalf("assertPodMutatorCalls: mutator is not a mock")
 	}
@@ -273,8 +273,8 @@ func createTestWebhook(mutators []dtwebhook.PodMutator, objects []client.Object)
 	}
 }
 
-func createSimplePodMutatorMock(t *testing.T) *mocks.PodMutator {
-	mutator := mocks.NewPodMutator(t)
+func createSimplePodMutatorMock(t *testing.T) *webhookmock.PodMutator {
+	mutator := webhookmock.NewPodMutator(t)
 	mutator.On("Enabled", mock.Anything).Return(true).Maybe()
 	mutator.On("Injected", mock.Anything).Return(false).Maybe()
 	mutator.On("Mutate", mock.Anything, mock.Anything).Return(nil).Maybe()
@@ -283,8 +283,8 @@ func createSimplePodMutatorMock(t *testing.T) *mocks.PodMutator {
 	return mutator
 }
 
-func createAlreadyInjectedPodMutatorMock(t *testing.T) *mocks.PodMutator {
-	mutator := mocks.NewPodMutator(t)
+func createAlreadyInjectedPodMutatorMock(t *testing.T) *webhookmock.PodMutator {
+	mutator := webhookmock.NewPodMutator(t)
 	mutator.On("Enabled", mock.Anything).Return(true).Maybe()
 	mutator.On("Injected", mock.Anything).Return(true).Maybe()
 	mutator.On("Mutate", mock.Anything, mock.Anything).Return(nil).Maybe()
@@ -293,8 +293,8 @@ func createAlreadyInjectedPodMutatorMock(t *testing.T) *mocks.PodMutator {
 	return mutator
 }
 
-func createFailPodMutatorMock(t *testing.T) *mocks.PodMutator {
-	mutator := mocks.NewPodMutator(t)
+func createFailPodMutatorMock(t *testing.T) *webhookmock.PodMutator {
+	mutator := webhookmock.NewPodMutator(t)
 	mutator.On("Enabled", mock.Anything).Return(true).Maybe()
 	mutator.On("Injected", mock.Anything).Return(false).Maybe()
 	mutator.On("Mutate", mock.Anything, mock.Anything).Return(fmt.Errorf("BOOM")).Maybe()

@@ -16,6 +16,7 @@ func List(t *testing.T, ctx context.Context, resource *resources.Resources, name
 	var replicasets appsv1.ReplicaSetList
 
 	require.NoError(t, resource.WithNamespace(namespaceName).List(ctx, &replicasets))
+
 	return replicasets
 }
 
@@ -31,6 +32,7 @@ func GetReplicaSetsForOwner(ctx context.Context, t *testing.T, resource *resourc
 			return &replicaset
 		}
 	}
+
 	return nil
 }
 
@@ -44,5 +46,6 @@ func GetReplicaSetsForNamespace(ctx context.Context, t *testing.T, resource *res
 		}
 		require.NoError(t, err)
 	}
+
 	return replicasets
 }

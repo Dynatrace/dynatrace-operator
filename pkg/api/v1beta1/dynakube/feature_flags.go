@@ -20,15 +20,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 )
 
 const (
-	DeprecatedFeatureFlagPrefix = "alpha.operator.dynatrace.com/feature-"
-
 	AnnotationFeaturePrefix = "feature.dynatrace.com/"
 
 	// General.
@@ -106,13 +103,6 @@ func (dk *DynaKube) getFeatureFlagRaw(annotation string) string {
 		return raw
 	}
 
-	split := strings.Split(annotation, "/")
-
-	postFix := split[1]
-	if raw, ok := dk.Annotations[DeprecatedFeatureFlagPrefix+postFix]; ok {
-		return raw
-	}
-
 	return ""
 }
 
@@ -173,6 +163,7 @@ func (dk *DynaKube) FeatureIgnoredNamespaces() []string {
 	err := json.Unmarshal([]byte(raw), ignoredNamespaces)
 	if err != nil {
 		log.Error(err, "failed to unmarshal ignoredNamespaces feature-flag")
+
 		return dk.getDefaultIgnoredNamespaces()
 	}
 

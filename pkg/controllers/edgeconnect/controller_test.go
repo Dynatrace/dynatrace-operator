@@ -14,7 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
-	mocksedgeconnect "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/edgeconnect"
+	edgeconnectmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/edgeconnect"
 	registrymock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/oci/registry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -141,7 +141,7 @@ func TestReconcileProvisionerCreate(t *testing.T) {
 	t.Run("create EdgeConnect", func(t *testing.T) {
 		instance := createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
 
-		edgeConnectClient := mocksedgeconnect.NewClient(t)
+		edgeConnectClient := edgeconnectmock.NewClient(t)
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
@@ -198,7 +198,7 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 	t.Run("recreate EdgeConnect due to missing client secret", func(t *testing.T) {
 		instance := createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
 
-		edgeConnectClient := mocksedgeconnect.NewClient(t)
+		edgeConnectClient := edgeconnectmock.NewClient(t)
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
@@ -254,7 +254,7 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 	t.Run("recreate EdgeConnect due to invalid id", func(t *testing.T) {
 		instance := createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
 
-		edgeConnectClient := mocksedgeconnect.NewClient(t)
+		edgeConnectClient := edgeconnectmock.NewClient(t)
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
@@ -313,7 +313,7 @@ func TestReconcileProvisionerDelete(t *testing.T) {
 	t.Run("delete EdgeConnect", func(t *testing.T) {
 		instance := createEdgeConnectProvisionerCR([]string{finalizerName}, &metav1.Time{Time: time.Now()}, testHostPatterns)
 
-		edgeConnectClient := mocksedgeconnect.NewClient(t)
+		edgeConnectClient := edgeconnectmock.NewClient(t)
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
@@ -340,7 +340,7 @@ func TestReconcileProvisionerDelete(t *testing.T) {
 	t.Run("delete EdgeConnect - missing client secret", func(t *testing.T) {
 		instance := createEdgeConnectProvisionerCR([]string{finalizerName}, &metav1.Time{Time: time.Now()}, testHostPatterns)
 
-		edgeConnectClient := mocksedgeconnect.NewClient(t)
+		edgeConnectClient := edgeconnectmock.NewClient(t)
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
@@ -366,7 +366,7 @@ func TestReconcileProvisionerDelete(t *testing.T) {
 	t.Run("delete EdgeConnect - missing EdgeConnect on the tenant", func(t *testing.T) {
 		instance := createEdgeConnectProvisionerCR([]string{finalizerName}, &metav1.Time{Time: time.Now()}, testHostPatterns)
 
-		edgeConnectClient := mocksedgeconnect.NewClient(t)
+		edgeConnectClient := edgeconnectmock.NewClient(t)
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
@@ -395,7 +395,7 @@ func TestReconcileProvisionerUpdate(t *testing.T) {
 	t.Run("update EdgeConnect", func(t *testing.T) {
 		instance := createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns2)
 
-		edgeConnectClient := mocksedgeconnect.NewClient(t)
+		edgeConnectClient := edgeconnectmock.NewClient(t)
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
@@ -516,7 +516,7 @@ func createFakeClientAndReconcilerForProvisioner(t *testing.T, instance *edgecon
 	return controller
 }
 
-func mockNewEdgeConnectClientCreate(edgeConnectClient *mocksedgeconnect.Client) func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error) {
+func mockNewEdgeConnectClientCreate(edgeConnectClient *edgeconnectmock.Client) func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error) {
 	return func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error) {
 		edgeConnectClient.On("GetEdgeConnects", testName).Return(
 			edgeconnect.ListResponse{
@@ -542,7 +542,7 @@ func mockNewEdgeConnectClientCreate(edgeConnectClient *mocksedgeconnect.Client) 
 	}
 }
 
-func mockNewEdgeConnectClientRecreate(edgeConnectClient *mocksedgeconnect.Client, id string) func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error) {
+func mockNewEdgeConnectClientRecreate(edgeConnectClient *edgeconnectmock.Client, id string) func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error) {
 	return func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error) {
 		edgeConnectClient.On("GetEdgeConnects", testName).Return(
 			edgeconnect.ListResponse{
@@ -578,7 +578,7 @@ func mockNewEdgeConnectClientRecreate(edgeConnectClient *mocksedgeconnect.Client
 	}
 }
 
-func mockNewEdgeConnectClientDelete(edgeConnectClient *mocksedgeconnect.Client) func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error) {
+func mockNewEdgeConnectClientDelete(edgeConnectClient *edgeconnectmock.Client) func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error) {
 	return func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error) {
 		edgeConnectClient.On("GetEdgeConnects", testName).Return(
 			edgeconnect.ListResponse{
@@ -601,7 +601,7 @@ func mockNewEdgeConnectClientDelete(edgeConnectClient *mocksedgeconnect.Client) 
 	}
 }
 
-func mockNewEdgeConnectClientDeleteNotFoundOnTenant(edgeConnectClient *mocksedgeconnect.Client) func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error) {
+func mockNewEdgeConnectClientDeleteNotFoundOnTenant(edgeConnectClient *edgeconnectmock.Client) func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error) {
 	return func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error) {
 		edgeConnectClient.On("GetEdgeConnects", testName).Return(
 			edgeconnect.ListResponse{
@@ -615,7 +615,7 @@ func mockNewEdgeConnectClientDeleteNotFoundOnTenant(edgeConnectClient *mocksedge
 	}
 }
 
-func mockNewEdgeConnectClientUpdate(edgeConnectClient *mocksedgeconnect.Client) func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error) {
+func mockNewEdgeConnectClientUpdate(edgeConnectClient *edgeconnectmock.Client) func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error) {
 	return func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error) {
 		edgeConnectClient.On("GetEdgeConnects", testName).Return(
 			edgeconnect.ListResponse{

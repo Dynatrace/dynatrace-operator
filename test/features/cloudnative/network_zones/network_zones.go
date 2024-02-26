@@ -108,6 +108,7 @@ func Feature(t *testing.T) features.Feature {
 
 	builder.Teardown(activegate.WaitForStatefulSetPodsDeletion(&testDynakube, "activegate"))
 	builder.Teardown(tenant.WaitForNetworkZoneDeletion(secretConfig, networkZone))
+
 	return builder.Feature()
 }
 
@@ -129,6 +130,7 @@ func checkInjectionAnnotations(sampleApp *sample.App, injected string, reason st
 				assert.Equal(t, reason, pod.Annotations[annotationReason])
 			}
 		}
+
 		return ctx
 	}
 }
@@ -143,11 +145,13 @@ func checkOneAgentPodsDoNotStart(testDynakube dynakubev1beta1.DynaKube, timeout 
 			},
 		}, func(object k8s.Object) bool {
 			daemonset, isDaemonset := object.(*appsv1.DaemonSet)
+
 			return isDaemonset && daemonset.Status.DesiredNumberScheduled == daemonset.Status.UpdatedNumberScheduled &&
 				daemonset.Status.DesiredNumberScheduled == daemonset.Status.NumberReady
 		}), wait.WithTimeout(timeout))
 
 		require.Error(t, err)
+
 		return ctx
 	}
 }

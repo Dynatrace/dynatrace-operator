@@ -15,11 +15,11 @@ import (
 )
 
 type postKubernetesSettings struct {
-	Label            string `json:"label"`
-	ClusterIdEnabled bool   `json:"clusterIdEnabled"`
-	ClusterId        string `json:"clusterId"`
-	Enabled          bool   `json:"enabled"`
 	*MonitoringSettings
+	Label            string `json:"label"`
+	ClusterId        string `json:"clusterId"`
+	ClusterIdEnabled bool   `json:"clusterIdEnabled"`
+	Enabled          bool   `json:"enabled"`
 }
 
 type MonitoringSettings struct {
@@ -31,10 +31,10 @@ type MonitoringSettings struct {
 }
 
 type postKubernetesSettingsBody struct {
+	Value         interface{} `json:"value"`
 	SchemaId      string      `json:"schemaId"`
 	SchemaVersion string      `json:"schemaVersion"`
 	Scope         string      `json:"scope,omitempty"`
-	Value         interface{} `json:"value"`
 }
 
 type postKubernetesAppSettings struct {
@@ -45,9 +45,9 @@ type kubernetesAppOptionsSettings struct {
 }
 
 type monitoredEntitiesResponse struct {
+	Entities   []MonitoredEntity `json:"entities"`
 	TotalCount int               `json:"totalCount"`
 	PageSize   int               `json:"pageSize"`
-	Entities   []MonitoredEntity `json:"entities"`
 }
 
 type MonitoredEntity struct {
@@ -69,9 +69,9 @@ type getSettingsErrorResponse struct {
 }
 
 type getSettingsError struct {
-	Code                 int
 	Message              string
 	ConstraintViolations constraintViolations `json:"constraintViolations,omitempty"`
+	Code                 int
 }
 
 type constraintViolations []struct {
@@ -192,6 +192,7 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(ctx context.Context,
 	if err != nil {
 		if strings.Contains(err.Error(), strconv.Itoa(http.StatusNotFound)) {
 			body = createV1KubernetesSettingsBody(clusterLabel, kubeSystemUUID, scope)
+
 			return dtc.performCreateOrUpdateKubernetesSetting(ctx, body)
 		} else {
 			return "", err
@@ -221,6 +222,7 @@ func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(ctx context.Co
 	res, err := dtc.httpClient.Do(req)
 	if err != nil {
 		log.Info("check if ME exists failed")
+
 		return nil, err
 	}
 
@@ -259,6 +261,7 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(ctx context.Context,
 	res, err := dtc.httpClient.Do(req)
 	if err != nil {
 		log.Info("failed to retrieve MEs")
+
 		return GetSettingsResponse{}, err
 	}
 

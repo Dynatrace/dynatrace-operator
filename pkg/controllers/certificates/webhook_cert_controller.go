@@ -54,9 +54,9 @@ func newWebhookCertificateController(mgr manager.Manager, cancelMgr context.Canc
 type WebhookCertificateController struct {
 	client        client.Client
 	apiReader     client.Reader
-	namespace     string
 	cancelMgrFunc context.CancelFunc
 	scheme        *runtime.Scheme
+	namespace     string
 }
 
 func (controller *WebhookCertificateController) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -70,6 +70,7 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 	err := controller.apiReader.Get(ctx, types.NamespacedName{Name: webhook.DeploymentName, Namespace: controller.namespace}, &webhookDeployment)
 	if k8serrors.IsNotFound(err) {
 		log.Info("no webhook deployment found, skipping webhook certificate generation")
+
 		return reconcile.Result{}, nil
 	} else if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
@@ -80,6 +81,7 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 	crd, err := controller.getCrd(ctx)
 	if err != nil {
 		log.Info("could not find CRD configuration")
+
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
@@ -239,6 +241,7 @@ func (controller *WebhookCertificateController) updateCRDConfiguration(ctx conte
 
 	if !hasConversionWebhook(crd) {
 		log.Info("no conversion webhook config, no cert will be provided")
+
 		return nil
 	}
 

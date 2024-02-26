@@ -27,6 +27,7 @@ func WaitFor(name string, namespace string) env.Func {
 				Namespace: namespace,
 			},
 		}
+
 		return ctx, WaitUntilReady(resources, deployment)
 	}
 }

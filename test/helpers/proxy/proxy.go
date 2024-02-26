@@ -129,6 +129,7 @@ func CheckRuxitAgentProcFileHasProxySetting(sampleApp sample.App, proxySpec *dyn
 		})
 
 		require.NoError(t, err)
+
 		return ctx
 	}
 }

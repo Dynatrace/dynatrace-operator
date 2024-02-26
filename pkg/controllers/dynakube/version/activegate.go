@@ -68,6 +68,7 @@ func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {
 	latestVersion, err := updater.dtClient.GetLatestActiveGateVersion(ctx, dtclient.OsUnix)
 	if err != nil {
 		log.Info("failed to determine image version", "error", err)
+
 		return err
 	}
 

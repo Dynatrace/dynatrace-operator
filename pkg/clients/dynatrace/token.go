@@ -67,6 +67,7 @@ func (dtc *dynatraceClient) readResponseForTokenScopes(response []byte) (TokenSc
 
 	if err := json.Unmarshal(response, &jr); err != nil {
 		log.Error(err, "unable to unmarshal token scopes response", "response", string(response))
+
 		return nil, err
 	}
 

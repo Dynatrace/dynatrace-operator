@@ -48,6 +48,7 @@ func installActiveGateCurlPod(podName, serviceUrl string, dynakube dynatracev1be
 
 		curlPod := curl.NewPod(podName, curlNamespace(dynakube), curlTarget, curl.WithProxy(dynakube))
 		require.NoError(t, envConfig.Client().Resources().Create(ctx, curlPod))
+
 		return ctx
 	}
 }
@@ -61,6 +62,7 @@ func removeActiveGateCurlPod(podName, serviceUrl string, dynakube dynatracev1bet
 		if !k8sErrors.IsNotFound(err) {
 			require.NoError(t, err)
 		}
+
 		return ctx
 	}
 }
@@ -84,15 +86,18 @@ func curlNamespace(dynakube dynatracev1beta1.DynaKube) string {
 	if dynakube.HasProxy() {
 		return proxyNamespaceName
 	}
+
 	return dynakube.Namespace
 }
 
 func getActiveGateHttpsServiceUrl(dynakube dynatracev1beta1.DynaKube) string {
 	serviceName := capability.BuildServiceName(dynakube.Name, consts.MultiActiveGateName)
+
 	return fmt.Sprintf("https://%s.%s.svc.cluster.local", serviceName, dynakube.Namespace)
 }
 
 func getActiveGateHttpServiceUrl(dynakube dynatracev1beta1.DynaKube) string {
 	serviceName := capability.BuildServiceName(dynakube.Name, consts.MultiActiveGateName)
+
 	return fmt.Sprintf("http://%s.%s.svc.cluster.local", serviceName, dynakube.Namespace)
 }

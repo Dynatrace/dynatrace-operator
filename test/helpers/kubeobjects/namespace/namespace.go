@@ -31,6 +31,7 @@ func New(name string, opts ...Option) *corev1.Namespace {
 	for _, opt := range opts {
 		opt(namespace)
 	}
+
 	return namespace
 }
 
@@ -72,6 +73,7 @@ func Delete(namespaceName string) features.Func {
 				err = nil
 			}
 			require.NoError(t, err)
+
 			return ctx
 		}
 
@@ -96,6 +98,7 @@ func CreateForEnv(namespace corev1.Namespace) env.Func {
 		if err != nil {
 			return ctx, err
 		}
+
 		return AddIstioNetworkAttachment(namespace)(ctx, envConfig)
 	}
 }

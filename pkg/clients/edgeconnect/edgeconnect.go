@@ -5,13 +5,13 @@ import "time"
 type OauthClientStatus int
 
 type Metadata struct {
-	Instances         []Instance `json:"instances"`
 	OauthClientStatus string     `json:"oauthClientStatus"`
+	Instances         []Instance `json:"instances"`
 }
 
 type ModificationInfo struct {
-	LastModifiedBy   string     `json:"lastModifiedBy,omitempty"`
 	LastModifiedTime *time.Time `json:"lastModifiedTime,omitempty"`
+	LastModifiedBy   string     `json:"lastModifiedBy,omitempty"`
 }
 
 type Instance struct {
@@ -20,12 +20,12 @@ type Instance struct {
 }
 
 type GetResponse struct {
-	ID                         string           `json:"id,omitempty"`
-	Name                       string           `json:"name"`
-	HostPatterns               []string         `json:"hostPatterns"`
-	OauthClientId              string           `json:"oauthClientId"`
 	ModificationInfo           ModificationInfo `json:"modificationInfo"`
 	Metadata                   Metadata         `json:"metadata"`
+	ID                         string           `json:"id,omitempty"`
+	Name                       string           `json:"name"`
+	OauthClientId              string           `json:"oauthClientId"`
+	HostPatterns               []string         `json:"hostPatterns"`
 	ManagedByDynatraceOperator bool             `json:"managedByDynatraceOperator,omitempty"`
 }
 
@@ -35,21 +35,21 @@ type ListResponse struct {
 }
 
 type CreateResponse struct {
+	ModificationInfo           ModificationInfo `json:"modificationInfo"`
+	Metadata                   Metadata         `json:"metadata"`
 	ID                         string           `json:"id,omitempty"`
 	Name                       string           `json:"name"`
-	HostPatterns               []string         `json:"hostPatterns"`
 	OauthClientId              string           `json:"oauthClientId"`
 	OauthClientSecret          string           `json:"oauthClientSecret"`
 	OauthClientResource        string           `json:"oauthClientResource"`
-	ModificationInfo           ModificationInfo `json:"modificationInfo"`
-	Metadata                   Metadata         `json:"metadata"`
+	HostPatterns               []string         `json:"hostPatterns"`
 	ManagedByDynatraceOperator bool             `json:"managedByDynatraceOperator,omitempty"`
 }
 
 type Request struct {
 	Name                       string   `json:"name"`
-	HostPatterns               []string `json:"hostPatterns"`
 	OauthClientId              string   `json:"oauthClientId,omitempty"`
+	HostPatterns               []string `json:"hostPatterns"`
 	ManagedByDynatraceOperator bool     `json:"managedByDynatraceOperator,omitempty"`
 }
 

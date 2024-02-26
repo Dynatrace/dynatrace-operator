@@ -47,12 +47,14 @@ func setupDockerMocker(handleUrls []string) (*httptest.Server, *corev1.Secret, s
 	parsedServerUrl, err := url.Parse(dockerServer.URL)
 	if err != nil {
 		dockerServer.Close()
+
 		return nil, nil, "", err
 	}
 
 	secret, err := createSecret(defaultAuths(parsedServerUrl.Host))
 	if err != nil {
 		dockerServer.Close()
+
 		return nil, nil, "", err
 	}
 
@@ -79,13 +81,13 @@ func TestImagePullable(t *testing.T) {
 	dockerServer, secret, server, err := setupDockerMocker(
 		[]string{
 			"/v2/",
-			"/v2/" + testOneAgentImage + "/manifests/" + "latest",
+			"/v2/" + testOneAgentImage + "/manifests/" + "raw",
 			"/v2/" + testOneAgentImage + "/manifests/" + testVersion,
 			"/v2/" + testCustomOneAgentImage + "/manifests/" + "latest",
 			"/v2/" + testCustomOneAgentImage + "/manifests/" + testVersion,
 			"/v2/" + testOneAgentCodeModulesImage + "/manifests/latest",
 			"/v2/" + testOneAgentCodeModulesImage + "/manifests/" + testVersion,
-			"/v2/" + testActiveGateImage + "/manifests/" + "latest",
+			"/v2/" + testActiveGateImage + "/manifests/" + "raw",
 			"/v2/" + testActiveGateImage + "/manifests/" + testVersion,
 			"/v2/" + testActiveGateCustomImage + "/manifests/" + "latest",
 			"/v2/" + testActiveGateCustomImage + "/manifests/" + testVersion,
@@ -441,6 +443,7 @@ func testDockerServerHandler(method string, serverUrls []string) http.HandlerFun
 		for _, serverUrl := range serverUrls {
 			if request.Method == method && request.URL.Path == serverUrl {
 				writer.WriteHeader(http.StatusOK)
+
 				return
 			}
 		}

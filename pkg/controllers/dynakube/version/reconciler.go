@@ -8,7 +8,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
-	"github.com/spf13/afero"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -22,16 +21,14 @@ type reconciler struct {
 	dtClient     dtclient.Client
 	timeProvider *timeprovider.Provider
 
-	fs        afero.Afero
 	apiReader client.Reader
 }
 
-type ReconcilerBuilder func(apiReader client.Reader, dtClient dtclient.Client, fs afero.Afero, timeProvider *timeprovider.Provider) Reconciler
+type ReconcilerBuilder func(apiReader client.Reader, dtClient dtclient.Client, timeProvider *timeprovider.Provider) Reconciler
 
-func NewReconciler(apiReader client.Reader, dtClient dtclient.Client, fs afero.Afero, timeProvider *timeprovider.Provider) Reconciler {
+func NewReconciler(apiReader client.Reader, dtClient dtclient.Client, timeProvider *timeprovider.Provider) Reconciler {
 	return &reconciler{
 		apiReader:    apiReader,
-		fs:           fs,
 		timeProvider: timeProvider,
 		dtClient:     dtClient,
 	}
@@ -92,11 +89,13 @@ func (r *reconciler) updateVersionStatuses(ctx context.Context, updater StatusUp
 func (r *reconciler) needsUpdate(updater StatusUpdater, dynakube *dynatracev1beta1.DynaKube) bool {
 	if !updater.IsEnabled() {
 		log.Info("skipping version status update for disabled section", "updater", updater.Name())
+
 		return false
 	}
 
 	if updater.Target().Source != determineSource(updater) {
 		log.Info("source changed, update for version status is needed", "updater", updater.Name())
+
 		return true
 	}
 
@@ -106,6 +105,7 @@ func (r *reconciler) needsUpdate(updater StatusUpdater, dynakube *dynatracev1bet
 
 	if !r.timeProvider.IsOutdated(updater.Target().LastProbeTimestamp, dynakube.FeatureApiRequestThreshold()) {
 		log.Info("status timestamp still valid, skipping version status updater", "updater", updater.Name())
+
 		return false
 	}
 
@@ -121,6 +121,7 @@ func hasCustomFieldChanged(updater StatusUpdater) bool {
 		// or the 2 images are different
 		if !strings.HasPrefix(oldImage, newImage) {
 			log.Info("custom image value changed, update for version status is needed", "updater", updater.Name(), "oldImage", oldImage, "newImage", newImage)
+
 			return true
 		}
 	} else if updater.Target().Source == status.CustomVersionVersionSource {
@@ -129,6 +130,7 @@ func hasCustomFieldChanged(updater StatusUpdater) bool {
 
 		if oldVersion != newVersion {
 			log.Info("custom version value changed, update for version status is needed", "updater", updater.Name(), "oldVersion", oldVersion, "newVersion", newVersion)
+
 			return true
 		}
 	}

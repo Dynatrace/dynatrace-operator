@@ -10,10 +10,10 @@ import (
 )
 
 type SemanticVersion struct {
+	timestamp string
 	major     int
 	minor     int
 	release   int
-	timestamp string
 }
 
 var versionRegex = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)\.(\d+-\d+)$`)
@@ -65,7 +65,7 @@ func ExtractSemanticVersion(versionString string) (SemanticVersion, error) {
 		return SemanticVersion{}, err
 	}
 
-	return SemanticVersion{major, minor, release, version[4]}, nil
+	return SemanticVersion{major: major, minor: minor, release: release, timestamp: version[4]}, nil
 }
 
 func (version SemanticVersion) String() string {

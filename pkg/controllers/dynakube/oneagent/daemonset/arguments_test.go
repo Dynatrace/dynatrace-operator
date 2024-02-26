@@ -19,6 +19,10 @@ const (
 	testClusterID = "test-cluster-id"
 	testURL       = "https://testing.dev.dynatracelabs.com/api"
 	testName      = "test-name"
+
+	testNewHostGroupName     = "newhostgroup"
+	testOldHostGroupArgument = "--set-host-group=oldhostgroup"
+	testNewHostGroupArgument = "--set-host-group=newhostgroup"
 )
 
 func TestArguments(t *testing.T) {
@@ -231,5 +235,71 @@ func TestPodSpec_Arguments(t *testing.T) {
 		daemonset, _ := dsInfo.BuildDaemonSet()
 		podSpecs := daemonset.Spec.Template.Spec
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-id-source=k8s-node-name")
+	})
+	t.Run(`has host-group for classicFullstack`, func(t *testing.T) {
+		classicInstance := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					HostGroup: testNewHostGroupName,
+					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{
+						Args: []string{testOldHostGroupArgument},
+					},
+				},
+			},
+		}
+
+		dsInfo := HostMonitoring{
+			builderInfo{
+				dynakube:       classicInstance,
+				hostInjectSpec: classicInstance.Spec.OneAgent.ClassicFullStack,
+			},
+		}
+		arguments, err := dsInfo.arguments()
+		require.NoError(t, err)
+		assert.Contains(t, arguments, testNewHostGroupArgument)
+	})
+	t.Run(`has host-group for cloudNativeFullstack`, func(t *testing.T) {
+		cloudNativeInstance := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					HostGroup: testNewHostGroupName,
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+						HostInjectSpec: dynatracev1beta1.HostInjectSpec{Args: []string{testOldHostGroupArgument}},
+					},
+				},
+			},
+		}
+
+		dsInfo := HostMonitoring{
+			builderInfo{
+				dynakube:       cloudNativeInstance,
+				hostInjectSpec: &cloudNativeInstance.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
+			},
+		}
+		arguments, err := dsInfo.arguments()
+		require.NoError(t, err)
+		assert.Contains(t, arguments, testNewHostGroupArgument)
+	})
+	t.Run(`has host-group for HostMonitoring`, func(t *testing.T) {
+		hostMonitoringInstance := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					HostGroup: testNewHostGroupName,
+					HostMonitoring: &dynatracev1beta1.HostInjectSpec{
+						Args: []string{testOldHostGroupArgument},
+					},
+				},
+			},
+		}
+
+		dsInfo := HostMonitoring{
+			builderInfo{
+				dynakube:       hostMonitoringInstance,
+				hostInjectSpec: hostMonitoringInstance.Spec.OneAgent.HostMonitoring,
+			},
+		}
+		arguments, err := dsInfo.arguments()
+		require.NoError(t, err)
+		assert.Contains(t, arguments, testNewHostGroupArgument)
 	})
 }

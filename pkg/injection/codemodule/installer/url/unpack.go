@@ -16,6 +16,7 @@ func (installer Installer) unpackOneAgentZip(targetDir string, tmpFile afero.Fil
 
 	if err := installer.extractor.ExtractZip(tmpFile, targetDir); err != nil {
 		log.Info("failed to unzip OneAgent package", "err", err)
+
 		return errors.WithStack(err)
 	}
 

@@ -8,10 +8,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 )
 
-const (
-	featureDeprecatedWarningMessage = `DEPRECATED: %s`
-)
-
 func getDeprecatedFeatureFlagsWillBeRemoved() []string {
 	return []string{
 		dynatracev1beta1.AnnotationInjectionFailurePolicy,
@@ -26,19 +22,6 @@ func getDeprecatedFeatureFlagsWillBeMovedCRD() []string {
 		dynatracev1beta1.AnnotationFeatureActiveGateUpdates,
 		dynatracev1beta1.AnnotationFeatureLabelVersionDetection,
 	}
-}
-
-func deprecatedFeatureFlagFormat(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	if dynakube.Annotations == nil {
-		return ""
-	}
-
-	deprecatedPrefix := dynatracev1beta1.DeprecatedFeatureFlagPrefix
-	if len(dynatracev1beta1.FlagsWithPrefix(dynakube, deprecatedPrefix)) > 0 {
-		return fmt.Sprintf(featureDeprecatedWarningMessage, "'alpha.operator.dynatrace.com/feature-' prefix will be replaced with the 'feature.dynatrace.com/' prefix for dynakube feature-flags")
-	}
-
-	return ""
 }
 
 func deprecatedFeatureFlagDisableActiveGateUpdates(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
@@ -83,6 +66,7 @@ func deprecatedFeatureFlagMovedCRDField(_ context.Context, _ *dynakubeValidator,
 
 func isDeprecatedFeatureFlagUsed(dynakube *dynatracev1beta1.DynaKube, annotation string) bool {
 	_, ok := dynakube.Annotations[annotation]
+
 	return ok
 }
 

@@ -23,12 +23,14 @@ func Start(ctx context.Context, otelServiceName string, apiReader client.Reader,
 	endpoint, apiToken, err := getOtelConfig(ctx, apiReader, webhookNamespace)
 	if err != nil {
 		log.Info("failed to read OpenTelementry config secret", "err", err.Error())
+
 		return setupNoopOTel()
 	}
 
 	shutdown, err := setupOtlpOTel(ctx, otelServiceName, endpoint, apiToken)
 	if err != nil {
 		log.Error(err, "failed to setup OTLP OpenTelementry")
+
 		return setupNoopOTel()
 	}
 
@@ -49,6 +51,7 @@ func setupOtlpOTel(ctx context.Context, otelServiceName string, endpoint string,
 	meterProvider, metricsShutdownFn, err := setupMetricsWithOtlp(ctx, otelResource, endpoint, apiToken)
 	if err != nil {
 		_ = tracesShutdownFn(ctx)
+
 		return nil, err
 	}
 

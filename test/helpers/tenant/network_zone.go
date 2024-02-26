@@ -60,6 +60,7 @@ func WaitForNetworkZoneDeletion(secret Secret, networkZone string) features.Func
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		err := wait.For(deleteNetworkZone(secret, networkZone), wait.WithTimeout(10*time.Minute), wait.WithInterval(30*time.Second))
 		require.NoError(t, err)
+
 		return ctx
 	}
 }
@@ -68,6 +69,7 @@ func WaitForNetworkZone(secret Secret, networkZone string, fallbackMode Fallback
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		err := wait.For(checkNetworkZone(secret, networkZone, fallbackMode), wait.WithTimeout(2*time.Minute), wait.WithInterval(5*time.Second))
 		require.NoError(t, err)
+
 		return ctx
 	}
 }

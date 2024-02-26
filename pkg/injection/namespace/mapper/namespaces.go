@@ -16,12 +16,12 @@ import (
 type NamespaceMapper struct {
 	client     client.Client
 	apiReader  client.Reader
-	operatorNs string
 	targetNs   *corev1.Namespace
+	operatorNs string
 }
 
 func NewNamespaceMapper(clt client.Client, apiReader client.Reader, operatorNs string, targetNs *corev1.Namespace) NamespaceMapper {
-	return NamespaceMapper{controller_runtime.NewClient(clt), apiReader, operatorNs, targetNs}
+	return NamespaceMapper{client: controller_runtime.NewClient(clt), apiReader: apiReader, operatorNs: operatorNs, targetNs: targetNs}
 }
 
 // MapFromNamespace adds the labels to the targetNs if there is a matching Dynakube
@@ -32,6 +32,7 @@ func (nm NamespaceMapper) MapFromNamespace(ctx context.Context) (bool, error) {
 	updatedNamespace, err := nm.updateNamespace(ctx)
 	if err != nil {
 		span.RecordError(err)
+
 		return false, err
 	}
 
@@ -47,6 +48,7 @@ func (nm NamespaceMapper) updateNamespace(ctx context.Context) (bool, error) {
 	err := nm.client.List(ctx, deployedDynakubes)
 	if err != nil {
 		span.RecordError(err)
+
 		return false, errors.Cause(err)
 	}
 

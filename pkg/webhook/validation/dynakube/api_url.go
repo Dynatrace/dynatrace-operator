@@ -27,11 +27,13 @@ func NoApiUrl(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta
 
 	if apiUrl == ExampleApiUrl {
 		log.Info("api url is an example url", "apiUrl", apiUrl)
+
 		return errorNoApiUrl
 	}
 
 	if apiUrl == "" {
 		log.Info("requested dynakube has no api url", "name", dynakube.Name, "namespace", dynakube.Namespace)
+
 		return errorNoApiUrl
 	}
 
@@ -43,12 +45,14 @@ func IsInvalidApiUrl(_ context.Context, _ *dynakubeValidator, dynakube *dynatrac
 
 	if !strings.HasSuffix(apiUrl, "/api") {
 		log.Info("api url does not end with /api", "apiUrl", apiUrl)
+
 		return errorInvalidApiUrl
 	}
 
 	parsedUrl, err := url.Parse(apiUrl)
 	if err != nil {
 		log.Info("API URL is not a valid URL", "err", err.Error())
+
 		return errorInvalidApiUrl
 	}
 
@@ -59,6 +63,7 @@ func IsInvalidApiUrl(_ context.Context, _ *dynakubeValidator, dynakube *dynatrac
 
 	if len(hostnameWithDomains) < 1 || len(hostnameWithDomains[0]) == 0 {
 		log.Info("invalid hostname in the api url", "hostname", hostname)
+
 		return errorInvalidApiUrl
 	}
 

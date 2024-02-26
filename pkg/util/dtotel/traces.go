@@ -21,6 +21,7 @@ func StartSpan[T any](ctx context.Context, tracer T, opts ...trace.SpanStartOpti
 	realTracer := resolveTracer(tracer)
 	if realTracer == nil {
 		log.Info("failed to start span, no valid tracer given", "spanTitle", spanTitle, "tracer", fmt.Sprintf("%v", tracer))
+
 		return ctx, noopSpan{}
 	}
 

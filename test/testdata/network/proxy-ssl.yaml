@@ -85,7 +85,7 @@ spec:
     spec:
       serviceAccountName: proxy
       containers:
-      - image: ghcr.io/b4tman/squid-ssl-bump
+      - image: ghcr.io/b4tman/squid-ssl-bump:6.6
         name: squid
         env:
           - name: SQUID_CONFIG_FILE

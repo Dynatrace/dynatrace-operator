@@ -7,8 +7,8 @@ import (
 )
 
 type entry struct {
-	delimiter string
 	value     any
+	delimiter string
 	priority  int
 }
 

@@ -9,9 +9,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
-	mockcontroller "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
-	mockconnectioninfo "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/connectioninfo"
-	mockversion "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
+	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,7 +33,7 @@ func TestReconcileActiveGate(t *testing.T) {
 
 		fakeClient := fake.NewClientWithIndex(dynakube)
 
-		mockActiveGateReconciler := mockcontroller.NewReconciler(t)
+		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(nil)
 
 		controller := &Controller{
@@ -44,7 +42,7 @@ func TestReconcileActiveGate(t *testing.T) {
 			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
 		}
 
-		err := controller.reconcileActiveGate(ctx, dynakube, nil, nil, nil, nil)
+		err := controller.reconcileActiveGate(ctx, dynakube, nil, nil)
 		require.NoError(t, err)
 	})
 	t.Run("no active-gate configured => active-gate reconcile returns error => returns error", func(t *testing.T) {
@@ -53,7 +51,7 @@ func TestReconcileActiveGate(t *testing.T) {
 
 		fakeClient := fake.NewClientWithIndex(dynakube)
 
-		mockActiveGateReconciler := mockcontroller.NewReconciler(t)
+		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(errors.New("BOOM"))
 
 		controller := &Controller{
@@ -62,7 +60,7 @@ func TestReconcileActiveGate(t *testing.T) {
 			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
 		}
 
-		err := controller.reconcileActiveGate(ctx, dynakube, nil, nil, nil, nil)
+		err := controller.reconcileActiveGate(ctx, dynakube, nil, nil)
 		require.Error(t, err)
 		require.Equal(t, "failed to reconcile ActiveGate: BOOM", err.Error())
 	})
@@ -91,13 +89,7 @@ func TestReconcileActiveGate(t *testing.T) {
 
 		mockClient := createDTMockClient(t, dtclient.TokenScopes{}, dtclient.TokenScopes{})
 
-		mockConnectionInfoReconciler := mockconnectioninfo.NewReconciler(t)
-		mockConnectionInfoReconciler.On("ReconcileActiveGate", mock.Anything, mock.Anything).Return(nil)
-
-		mockVersionReconciler := mockversion.NewReconciler(t)
-		mockVersionReconciler.On("ReconcileActiveGate", mock.Anything, mock.Anything).Return(nil)
-
-		mockActiveGateReconciler := mockcontroller.NewReconciler(t)
+		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(nil)
 
 		controller := &Controller{
@@ -107,7 +99,7 @@ func TestReconcileActiveGate(t *testing.T) {
 			apiMonitoringReconcilerBuilder: apimonitoring.NewReconciler, // TODO: actually mock it
 		}
 
-		err := controller.reconcileActiveGate(ctx, instance, mockClient, nil, mockConnectionInfoReconciler, mockVersionReconciler)
+		err := controller.reconcileActiveGate(ctx, instance, mockClient, nil)
 		require.NoError(t, err)
 		mockClient.AssertCalled(t, "CreateOrUpdateKubernetesSetting",
 			mock.AnythingOfType("context.backgroundCtx"),
@@ -149,13 +141,7 @@ func TestReconcileActiveGate(t *testing.T) {
 			mock.AnythingOfType("string"),
 			mock.AnythingOfType("string")).Return(testUID, nil)
 
-		mockConnectionInfoReconciler := mockconnectioninfo.NewReconciler(t)
-		mockConnectionInfoReconciler.On("ReconcileActiveGate", mock.Anything, mock.Anything).Return(nil)
-
-		mockVersionReconciler := mockversion.NewReconciler(t)
-		mockVersionReconciler.On("ReconcileActiveGate", mock.Anything, mock.Anything).Return(nil)
-
-		mockActiveGateReconciler := mockcontroller.NewReconciler(t)
+		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(nil)
 
 		controller := &Controller{
@@ -165,7 +151,7 @@ func TestReconcileActiveGate(t *testing.T) {
 			apiMonitoringReconcilerBuilder: apimonitoring.NewReconciler, // TODO: actually mock it
 		}
 
-		err := controller.reconcileActiveGate(ctx, instance, mockClient, nil, mockConnectionInfoReconciler, mockVersionReconciler)
+		err := controller.reconcileActiveGate(ctx, instance, mockClient, nil)
 		require.NoError(t, err)
 		mockClient.AssertCalled(t, "CreateOrUpdateKubernetesSetting",
 			mock.AnythingOfType("context.backgroundCtx"),

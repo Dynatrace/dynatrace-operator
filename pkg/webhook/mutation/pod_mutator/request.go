@@ -21,18 +21,21 @@ func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context,
 	pod, err := getPodFromRequest(request, webhook.decoder)
 	if err != nil {
 		span.RecordError(err)
+
 		return nil, err
 	}
 
 	namespace, err := getNamespaceFromRequest(ctx, webhook.apiReader, request)
 	if err != nil {
 		span.RecordError(err)
+
 		return nil, err
 	}
 
 	dynakubeName, err := getDynakubeName(*namespace)
 	if err != nil && !webhook.deployedViaOLM {
 		span.RecordError(err)
+
 		return nil, err
 	} else if err != nil {
 		// in case of olm deployment, all pods are sent to us
@@ -40,12 +43,14 @@ func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context,
 		// therefore their namespace might not have a dynakube assigned
 		// in which case we don't need to do anything
 		span.RecordError(err)
-		return nil, nil
+
+		return nil, nil //nolint: nilnil
 	}
 
 	dynakube, err := webhook.getDynakube(ctx, dynakubeName)
 	if err != nil {
 		span.RecordError(err)
+
 		return nil, err
 	}
 
@@ -60,6 +65,7 @@ func getPodFromRequest(req admission.Request, decoder admission.Decoder) (*corev
 	err := decoder.Decode(req, pod)
 	if err != nil {
 		log.Error(err, "failed to decode the request for pod injection")
+
 		return nil, err
 	}
 
@@ -71,6 +77,7 @@ func getNamespaceFromRequest(ctx context.Context, apiReader client.Reader, req a
 
 	if err := apiReader.Get(ctx, client.ObjectKey{Name: req.Namespace}, &namespace); err != nil {
 		log.Error(err, "failed to query the namespace before pod injection")
+
 		return nil, err
 	}
 
@@ -92,6 +99,7 @@ func (webhook *podMutatorWebhook) getDynakube(ctx context.Context, dynakubeName 
 	err := webhook.apiReader.Get(ctx, client.ObjectKey{Name: dynakubeName, Namespace: webhook.webhookNamespace}, &dk)
 	if k8serrors.IsNotFound(err) {
 		webhook.recorder.sendMissingDynaKubeEvent(webhook.webhookNamespace, dynakubeName)
+
 		return nil, err
 	} else if err != nil {
 		return nil, err

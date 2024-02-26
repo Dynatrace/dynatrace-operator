@@ -81,6 +81,7 @@ func checkInjection(deployment *sample.App) features.Func {
 			require.NotNil(t, item.Spec.InitContainers)
 			require.Equal(t, "install-oneagent", item.Spec.InitContainers[0].Name)
 		}
+
 		return ctx
 	}
 }

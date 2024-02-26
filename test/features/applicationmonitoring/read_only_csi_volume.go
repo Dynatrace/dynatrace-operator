@@ -51,6 +51,7 @@ func ReadOnlyCSIVolume(t *testing.T) features.Feature {
 	builder.WithTeardown("removing sample namespace", sampleDeployment.Uninstall())
 
 	dynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
+
 	return builder.Feature()
 }
 
@@ -69,6 +70,7 @@ func checkMountedVolumes(sampleApp *sample.App) features.Func {
 			assert.Contains(t, result.StdOut.String(), codemodules.RuxitAgentProcFile)
 		})
 		require.NoError(t, err)
+
 		return ctx
 	}
 }

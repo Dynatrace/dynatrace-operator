@@ -19,6 +19,7 @@ import (
 func InstallCutOffCurlPod(podName, namespaceName, curlTarget string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		require.NoError(t, envConfig.Client().Resources().Create(ctx, buildCutOffCurlPod(podName, namespaceName, curlTarget)))
+
 		return ctx
 	}
 }
@@ -37,6 +38,7 @@ func DeleteCutOffCurlPod(podName, namespaceName, curlTarget string) features.Fun
 		if !k8sErrors.IsNotFound(err) {
 			require.NoError(t, err)
 		}
+
 		return ctx
 	}
 }
@@ -60,5 +62,6 @@ func buildCutOffCurlPod(podName, namespaceName, curlTarget string) *corev1.Pod {
 		WithReadinessProbe(&probe),
 		WithRestartPolicy(corev1.RestartPolicyNever),
 	}
+
 	return NewPod(podName, namespaceName, curlTarget, options...)
 }

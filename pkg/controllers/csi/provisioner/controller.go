@@ -26,8 +26,6 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csigc "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/gc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -35,7 +33,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -60,17 +57,17 @@ type imageInstallerBuilder func(afero.Fs, *image.Properties) (installer.Installe
 type OneAgentProvisioner struct {
 	client    client.Client
 	apiReader client.Reader
-	opts      dtcsi.CSIOptions
 	fs        afero.Fs
 	recorder  record.EventRecorder
 	db        metadata.Access
-	path      metadata.PathResolver
 	gc        reconcile.Reconciler
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	urlInstallerBuilder    urlInstallerBuilder
 	imageInstallerBuilder  imageInstallerBuilder
 	registryClientBuilder  registry.ClientBuilder
+	opts                   dtcsi.CSIOptions
+	path                   metadata.PathResolver
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
@@ -111,6 +108,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 
 	if !dk.NeedsCSIDriver() {
 		log.Info("CSI driver provisioner not needed")
+
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.db.DeleteDynakube(ctx, request.Name)
 	}
 
@@ -126,11 +124,13 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 
 	if !dk.NeedAppInjection() {
 		log.Info("app injection not necessary, skip agent codemodule download", "dynakube", dk.Name)
+
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
 	}
 
 	if dk.CodeModulesImage() == "" && dk.CodeModulesVersion() == "" {
 		log.Info("dynakube status is not yet ready, requeuing", "dynakube", dk.Name)
+
 		return reconcile.Result{RequeueAfter: shortRequeueDuration}, err
 	}
 
@@ -155,6 +155,7 @@ func (provisioner *OneAgentProvisioner) setupFileSystem(dk *dynatracev1beta1.Dyn
 
 	if err := provisioner.createCSIDirectories(tenantUUID); err != nil {
 		log.Error(err, "error when creating csi directories", "path", provisioner.path.TenantDir(tenantUUID))
+
 		return errors.WithStack(err)
 	}
 
@@ -176,6 +177,7 @@ func (provisioner *OneAgentProvisioner) setupDynakubeMetadata(ctx context.Contex
 
 func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, request reconcile.Request) error {
 	_, err := provisioner.gc.Reconcile(ctx, request)
+
 	return err
 }
 
@@ -214,31 +216,6 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 		return false, err
 	}
 
-	tenantToken, err := provisioner.getAgentTenantToken(ctx, dk)
-	if err != nil {
-		return false, err
-	}
-
-	latestProcessModuleConfig = latestProcessModuleConfig.
-		AddHostGroup(dk.HostGroup()).
-		AddConnectionInfo(dk.Status.OneAgent.ConnectionInfoStatus, tenantToken).
-		// set proxy explicitly empty, so old proxy settings get deleted where necessary
-		AddProxy("")
-
-	if dk.NeedsOneAgentProxy() {
-		proxy, err := dk.Proxy(ctx, provisioner.apiReader)
-		if err != nil {
-			return false, err
-		}
-
-		latestProcessModuleConfig.AddProxy(proxy)
-
-		if dk.NeedsActiveGate() {
-			multiCap := capability.NewMultiCapability(dk)
-			latestProcessModuleConfig.AddNoProxy(capability.BuildDNSEntryPointWithoutEnvVars(dk.Name, dk.Namespace, multiCap))
-		}
-	}
-
 	if dk.CodeModulesImage() != "" {
 		updatedDigest, err := provisioner.installAgentImage(ctx, *dk, latestProcessModuleConfig)
 		if err != nil {
@@ -262,22 +239,6 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 	}
 
 	return false, nil
-}
-
-func (provisioner *OneAgentProvisioner) getAgentTenantToken(ctx context.Context, dk *dynatracev1beta1.DynaKube) (string, error) {
-	query := secret.NewQuery(ctx, provisioner.client, provisioner.apiReader, log)
-
-	tenantSecret, err := query.Get(types.NamespacedName{Namespace: dk.Namespace, Name: dk.OneagentTenantSecret()})
-	if err != nil {
-		return "", errors.Wrapf(err, "OneAgent tenant token secret %s/%s not found", dk.Namespace, dk.OneagentTenantSecret())
-	}
-
-	tokenData, ok := tenantSecret.Data[connectioninfo.TenantTokenName]
-	if !ok {
-		return "", errors.Errorf("OneAgent tenant token not found in secret %s/%s", dk.Namespace, dk.OneagentTenantSecret())
-	}
-
-	return string(tokenData), nil
 }
 
 func (provisioner *OneAgentProvisioner) handleMetadata(ctx context.Context, dk *dynatracev1beta1.DynaKube) (*metadata.Dynakube, metadata.Dynakube, error) {
@@ -317,6 +278,7 @@ func (provisioner *OneAgentProvisioner) createOrUpdateDynakubeMetadata(ctx conte
 
 		if oldDynakube == (metadata.Dynakube{}) {
 			log.Info("adding dynakube to db", "tenantUUID", dynakube.TenantUUID, "version", dynakube.LatestVersion)
+
 			return provisioner.db.InsertDynakube(ctx, dynakube)
 		} else {
 			log.Info("updating dynakube in db",

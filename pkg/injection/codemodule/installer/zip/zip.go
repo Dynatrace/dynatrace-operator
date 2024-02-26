@@ -25,12 +25,14 @@ func (extractor OneAgentExtractor) ExtractZip(sourceFile afero.File, targetDir s
 	fileInfo, err := sourceFile.Stat()
 	if err != nil {
 		log.Info("failed to get file info", "err", err)
+
 		return errors.WithStack(err)
 	}
 
 	reader, err := zip.NewReader(sourceFile, fileInfo.Size())
 	if err != nil {
 		log.Info("failed to create zip reader", "err", err)
+
 		return errors.WithStack(err)
 	}
 
@@ -42,6 +44,7 @@ func (extractor OneAgentExtractor) ExtractZip(sourceFile afero.File, targetDir s
 	err = extractFilesFromZip(fs, extractDest, reader)
 	if err != nil {
 		log.Info("failed to extract files from zip", "err", err)
+
 		return err
 	}
 
@@ -49,6 +52,7 @@ func (extractor OneAgentExtractor) ExtractZip(sourceFile afero.File, targetDir s
 		err := extractor.moveToTargetDir(targetDir)
 		if err != nil {
 			log.Info("failed to move file to final destination", "err", err)
+
 			return err
 		}
 	}

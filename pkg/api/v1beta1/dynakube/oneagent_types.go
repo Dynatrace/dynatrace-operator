@@ -35,8 +35,8 @@ type OneAgentSpec struct {
 }
 
 type CloudNativeFullStackSpec struct {
-	HostInjectSpec   `json:",inline"`
 	AppInjectionSpec `json:",inline"`
+	HostInjectSpec   `json:",inline"`
 }
 
 type HostInjectSpec struct {
@@ -111,26 +111,26 @@ type HostInjectSpec struct {
 type ApplicationMonitoringSpec struct {
 	AppInjectionSpec `json:",inline"`
 
+	// Set if you want to use the CSIDriver. Don't enable it if you do not have access to Kubernetes nodes or if you lack privileges.
+	// +optional
+	UseCSIDriver *bool `json:"useCSIDriver,omitempty"`
+
 	// The OneAgent version to be used.
 	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent version",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Version string `json:"version,omitempty"`
-
-	// Set if you want to use the CSIDriver. Don't enable it if you do not have access to Kubernetes nodes or if you lack privileges.
-	// +optional
-	UseCSIDriver *bool `json:"useCSIDriver,omitempty"`
 }
 
 type AppInjectionSpec struct {
-
-	// The OneAgent image that is used to inject into Pods.
-	// +optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="CodeModulesImage",order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
-	CodeModulesImage string `json:"codeModulesImage,omitempty"`
 
 	// Define resources requests and limits for the initContainer. For details, see Managing resources for containers
 	// (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers).
 	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=15,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
 	InitResources *corev1.ResourceRequirements `json:"initResources,omitempty"`
+
+	// The OneAgent image that is used to inject into Pods.
+	// +optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="CodeModulesImage",order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	CodeModulesImage string `json:"codeModulesImage,omitempty"`
 }

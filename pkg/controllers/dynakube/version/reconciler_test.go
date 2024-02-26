@@ -12,8 +12,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
-	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
-	"github.com/spf13/afero"
+	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -49,13 +48,12 @@ func TestReconcile(t *testing.T) {
 	}
 
 	t.Run("no update if hash provider returns error", func(t *testing.T) {
-		mockClient := mockedclient.NewClient(t)
+		mockClient := dtclientmock.NewClient(t)
 		mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return("", errors.New("Something wrong happened"))
 
 		versionReconciler := reconciler{
 			dtClient:     mockClient,
 			apiReader:    fake.NewClient(),
-			fs:           afero.Afero{Fs: afero.NewMemMapFs()},
 			timeProvider: timeprovider.New().Freeze(),
 		}
 		err := versionReconciler.ReconcileActiveGate(ctx, dynakubeTemplate.DeepCopy())
@@ -72,13 +70,12 @@ func TestReconcile(t *testing.T) {
 		setupPullSecret(t, fakeClient, *dynakube)
 
 		dkStatus := &dynakube.Status
-		mockClient := mockedclient.NewClient(t)
+		mockClient := dtclientmock.NewClient(t)
 		mockLatestAgentVersion(mockClient, latestAgentVersion)
 		mockLatestActiveGateVersion(mockClient, latestActiveGateVersion)
 
 		versionReconciler := reconciler{
 			apiReader:    fakeClient,
-			fs:           afero.Afero{Fs: afero.NewMemMapFs()},
 			timeProvider: timeProvider,
 			dtClient:     mockClient,
 		}
@@ -119,14 +116,13 @@ func TestReconcile(t *testing.T) {
 
 		dkStatus := &dynakube.Status
 
-		mockClient := mockedclient.NewClient(t)
+		mockClient := dtclientmock.NewClient(t)
 		mockActiveGateImageInfo(mockClient, testActiveGateImage)
 		mockCodeModulesImageInfo(mockClient, testCodeModulesImage)
 		mockOneAgentImageInfo(mockClient, testOneAgentImage)
 
 		versionReconciler := reconciler{
 			apiReader:    fakeClient,
-			fs:           afero.Afero{Fs: afero.NewMemMapFs()},
 			timeProvider: timeprovider.New().Freeze(),
 			dtClient:     mockClient,
 		}
@@ -326,22 +322,22 @@ func createTestPullSecret(fakeClient client.Client, dynakube dynatracev1beta1.Dy
 	})
 }
 
-func mockActiveGateImageInfo(mockClient *mockedclient.Client, imageInfo dtclient.LatestImageInfo) {
+func mockActiveGateImageInfo(mockClient *dtclientmock.Client, imageInfo dtclient.LatestImageInfo) {
 	mockClient.On("GetLatestActiveGateImage", mock.AnythingOfType("context.backgroundCtx")).Return(&imageInfo, nil)
 }
 
-func mockCodeModulesImageInfo(mockClient *mockedclient.Client, imageInfo dtclient.LatestImageInfo) {
+func mockCodeModulesImageInfo(mockClient *dtclientmock.Client, imageInfo dtclient.LatestImageInfo) {
 	mockClient.On("GetLatestCodeModulesImage", mock.AnythingOfType("context.backgroundCtx")).Return(&imageInfo, nil)
 }
 
-func mockOneAgentImageInfo(mockClient *mockedclient.Client, imageInfo dtclient.LatestImageInfo) {
+func mockOneAgentImageInfo(mockClient *dtclientmock.Client, imageInfo dtclient.LatestImageInfo) {
 	mockClient.On("GetLatestOneAgentImage", mock.AnythingOfType("context.backgroundCtx")).Return(&imageInfo, nil)
 }
 
-func mockLatestAgentVersion(mockClient *mockedclient.Client, latestVersion string) {
+func mockLatestAgentVersion(mockClient *dtclientmock.Client, latestVersion string) {
 	mockClient.On("GetLatestAgentVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything, mock.Anything).Return(latestVersion, nil)
 }
 
-func mockLatestActiveGateVersion(mockClient *mockedclient.Client, latestVersion string) {
+func mockLatestActiveGateVersion(mockClient *dtclientmock.Client, latestVersion string) {
 	mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(latestVersion, nil)
 }

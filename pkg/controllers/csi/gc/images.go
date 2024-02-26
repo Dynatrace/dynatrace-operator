@@ -16,6 +16,7 @@ func (gc *CSIGarbageCollector) runSharedBinaryGarbageCollection(ctx context.Cont
 
 	if len(imageDirs) == 0 {
 		log.Info("no shared binary dirs on node")
+
 		return nil
 	}
 
@@ -26,6 +27,7 @@ func (gc *CSIGarbageCollector) runSharedBinaryGarbageCollection(ctx context.Cont
 
 	if len(binsToDelete) == 0 {
 		log.Info("no shared binary dirs to delete on the node")
+
 		return nil
 	}
 
@@ -40,6 +42,7 @@ func (gc *CSIGarbageCollector) getSharedBinDirs() ([]os.FileInfo, error) {
 
 	if err != nil {
 		log.Info("failed to read shared image directory")
+
 		return nil, errors.WithStack(err)
 	}
 
@@ -52,12 +55,14 @@ func (gc *CSIGarbageCollector) collectUnusedAgentBins(ctx context.Context, image
 	usedAgentVersions, err := gc.db.GetLatestVersions(ctx)
 	if err != nil {
 		log.Info("failed to get the used image versions")
+
 		return nil, err
 	}
 
 	usedAgentDigest, err := gc.db.GetUsedImageDigests(ctx)
 	if err != nil {
 		log.Info("failed to get the used image digests")
+
 		return nil, err
 	}
 
@@ -67,6 +72,7 @@ func (gc *CSIGarbageCollector) collectUnusedAgentBins(ctx context.Context, image
 	mountedAgentBins, err := gc.db.GetAllUsedVersions(ctx)
 	if err != nil {
 		log.Info("failed to get all mounted versions")
+
 		return nil, err
 	}
 
@@ -87,6 +93,7 @@ func deleteSharedBinDirs(fs afero.Fs, imageDirs []string) error {
 		err := fs.RemoveAll(dir)
 		if err != nil {
 			log.Info("failed to delete image cache", "dir", dir)
+
 			return errors.WithStack(err)
 		}
 	}

@@ -23,9 +23,9 @@ type ActiveGateAuthTokenInfo struct {
 
 type ActiveGateAuthTokenParams struct {
 	Name           string `json:"name"`
-	SeedToken      bool   `json:"seedToken"`
 	ActiveGateType string `json:"activeGateType"`
 	ExpirationDate string `json:"expirationDate"`
+	SeedToken      bool   `json:"seedToken"`
 }
 
 func (dtc *dynatraceClient) GetActiveGateAuthToken(ctx context.Context, dynakubeName string) (*ActiveGateAuthTokenInfo, error) {
@@ -39,12 +39,14 @@ func (dtc *dynatraceClient) GetActiveGateAuthToken(ctx context.Context, dynakube
 
 	if err != nil {
 		log.Info("failed to retrieve ag-auth-token")
+
 		return nil, err
 	}
 
 	authTokenInfo, err := dtc.handleAuthTokenResponse(response)
 	if err != nil {
 		log.Info("failed to handle ag-auth-token response")
+
 		return nil, err
 	}
 
@@ -98,6 +100,7 @@ func (dtc *dynatraceClient) readResponseForActiveGateAuthToken(response []byte) 
 	err := json.Unmarshal(response, agAuthToken)
 	if err != nil {
 		log.Error(err, "error unmarshalling ActiveGateAuthTokenInfo", "response", string(response))
+
 		return nil, err
 	}
 

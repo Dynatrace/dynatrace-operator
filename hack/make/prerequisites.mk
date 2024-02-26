@@ -3,17 +3,17 @@ kustomize_version=v5.3.0
 #renovate depName=sigs.k8s.io/controller-tools/cmd
 controller_gen_version=v0.14.0
 # renovate depName=github.com/golangci/golangci-lint
-golang_ci_cmd_version=v1.56.1
+golang_ci_cmd_version=v1.56.2
 # renovate depName=github.com/daixiang0/gci
-gci_version=v0.12.1
+gci_version=v0.12.3
 # renovate depName=golang.org/x/tools
 golang_tools_version=v0.18.0
 # renovate depName=github.com/vektra/mockery
-mockery_version=v2.41.0
+mockery_version=v2.42.0
 # renovate depName=github.com/igorshubovych/markdownlint-cli
 markdownlint_cli_version=v0.39.0
 # renovate depName=github.com/helm-unittest/helm-unittest
-helmunittest_version=v0.4.1
+helmunittest_version=v0.4.2
 # renovate depName=github.com/princjef/gomarkdoc
 gomarkdoc_version=v1.1.0
 
@@ -42,6 +42,7 @@ prerequisites/go-linting:
 	go install golang.org/x/tools/cmd/goimports@$(golang_tools_version)
 	go install github.com/bombsimon/wsl/v4/cmd...@master
 	go install golang.org/x/tools/cmd/deadcode@$(golang_tools_version)
+	go install github.com/dkorunic/betteralign/cmd/betteralign@latest
 
 ## Install 'helm' if it is missing
 ## TODO: Have version accessible by renovate?

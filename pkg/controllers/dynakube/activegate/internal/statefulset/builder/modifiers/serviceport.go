@@ -24,9 +24,9 @@ func NewServicePortModifier(dynakube dynatracev1beta1.DynaKube, capability capab
 }
 
 type ServicePortModifier struct {
-	dynakube   dynatracev1beta1.DynaKube
 	capability capability.Capability
 	envMap     *prioritymap.Map
+	dynakube   dynatracev1beta1.DynaKube
 }
 
 func (mod ServicePortModifier) Enabled() bool {

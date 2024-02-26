@@ -75,6 +75,7 @@ func ResilienceFeature(t *testing.T) features.Feature {
 
 	builder.Teardown(sampleApp.Uninstall())
 	dynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
+
 	return builder.Feature()
 }
 
@@ -103,11 +104,13 @@ func checkForDummyVolume(sampleApp *sample.App) features.Func {
 				require.NoError(t, err)
 				buffer := new(bytes.Buffer)
 				_, err = io.Copy(buffer, logStream)
+
 				return strings.Contains(buffer.String(), ldPreloadError), err
 			}, wait.WithTimeout(2*time.Minute))
 
 			require.NoError(t, err)
 		}
+
 		return ctx
 	}
 }

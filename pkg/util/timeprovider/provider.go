@@ -28,6 +28,7 @@ func (timeProvider *Provider) Now() *metav1.Time {
 
 func (timeProvider *Provider) Freeze() *Provider {
 	timeProvider.now = Now()
+
 	return timeProvider
 }
 
@@ -45,5 +46,6 @@ func TimeoutReached(previous, current *metav1.Time, timeout time.Duration) bool 
 
 func Now() *metav1.Time {
 	now := metav1.Now()
+
 	return &now
 }

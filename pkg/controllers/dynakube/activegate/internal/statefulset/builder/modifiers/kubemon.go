@@ -36,8 +36,8 @@ func NewKubernetesMonitoringModifier(dynakube dynatracev1beta1.DynaKube, capabil
 }
 
 type KubernetesMonitoringModifier struct {
-	dynakube   dynatracev1beta1.DynaKube
 	capability capability.Capability
+	dynakube   dynatracev1beta1.DynaKube
 }
 
 func (mod KubernetesMonitoringModifier) Enabled() bool {

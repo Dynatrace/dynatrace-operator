@@ -25,8 +25,8 @@ func NewCustomPropertiesModifier(dynakube dynatracev1beta1.DynaKube, capability 
 }
 
 type CustomPropertiesModifier struct {
-	dynakube   dynatracev1beta1.DynaKube
 	capability capability.Capability
+	dynakube   dynatracev1beta1.DynaKube
 }
 
 func (mod CustomPropertiesModifier) Enabled() bool {
