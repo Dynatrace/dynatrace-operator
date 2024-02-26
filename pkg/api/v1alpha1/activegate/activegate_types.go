@@ -5,7 +5,6 @@
 package activegate
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	corev1 "k8s.io/api/core/v1"
@@ -147,26 +146,6 @@ type CapabilityProperties struct {
 	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="topologySpreadConstraints",order=40,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
 	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
-}
-
-// ActiveGateStatus defines the observed state of ActiveGate.
-type ActiveGateStatus struct { //nolint:revive
-	// Defines the current state (Running, Updating, Error, ...)
-	DeploymentPhase status.DeploymentPhase `json:"phase,omitempty"`
-
-	// Indicates when the resource was last updated
-	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty"`
-
-	// Conditions includes status about the current state of the instance
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
-}
-
-// SetPhase sets the status phase on the ActiveGate object.
-func (dk *ActiveGateStatus) SetPhase(phase status.DeploymentPhase) bool {
-	upd := phase != dk.DeploymentPhase
-	dk.DeploymentPhase = phase
-
-	return upd
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

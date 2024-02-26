@@ -20,8 +20,8 @@ package activegate
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -99,7 +99,7 @@ func (in *ActiveGateStatus) DeepCopyInto(out *ActiveGateStatus) {
 
 	if in.Conditions != nil {
 		in, out := &in.Conditions, &out.Conditions
-		*out = make([]metav1.Condition, len(*in))
+		*out = make([]v1.Condition, len(*in))
 
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
@@ -164,7 +164,7 @@ func (in *CapabilityProperties) DeepCopyInto(out *CapabilityProperties) {
 
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
-		*out = make([]v1.Toleration, len(*in))
+		*out = make([]corev1.Toleration, len(*in))
 
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
@@ -182,7 +182,7 @@ func (in *CapabilityProperties) DeepCopyInto(out *CapabilityProperties) {
 
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
-		*out = make([]v1.EnvVar, len(*in))
+		*out = make([]corev1.EnvVar, len(*in))
 
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
@@ -191,7 +191,7 @@ func (in *CapabilityProperties) DeepCopyInto(out *CapabilityProperties) {
 
 	if in.TopologySpreadConstraints != nil {
 		in, out := &in.TopologySpreadConstraints, &out.TopologySpreadConstraints
-		*out = make([]v1.TopologySpreadConstraint, len(*in))
+		*out = make([]corev1.TopologySpreadConstraint, len(*in))
 
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
