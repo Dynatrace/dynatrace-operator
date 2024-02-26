@@ -8,7 +8,7 @@ require (
 	github.com/evanphx/json-patch v5.9.0+incompatible
 	github.com/go-logr/logr v1.4.1
 	github.com/google/go-containerregistry v0.19.0
-	github.com/klauspost/compress v1.17.6
+	github.com/klauspost/compress v1.17.7
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/pkg/errors v0.9.1
