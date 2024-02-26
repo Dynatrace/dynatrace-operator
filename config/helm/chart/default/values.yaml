@@ -87,7 +87,7 @@ webhook:
   validatingWebhook:
     timeoutSeconds: 10
   mutatingWebhook:
-    timeoutSeconds: 2
+    timeoutSeconds: 10
 
 csidriver:
   enabled: true
