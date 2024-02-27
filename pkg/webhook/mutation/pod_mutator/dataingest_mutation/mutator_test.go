@@ -6,7 +6,9 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,9 +18,12 @@ import (
 )
 
 const (
-	testPodName       = "test-pod"
-	testNamespaceName = "test-namespace"
-	testDynakubeName  = "test-dynakube"
+	testPodName          = "test-pod"
+	testNamespaceName    = "test-namespace"
+	testDynakubeName     = "test-dynakube"
+	testApiUrl           = "http://test-endpoint/api"
+	testWorkloadInfoName = "test-name"
+	testWorkloadInfoKind = "test-kind"
 )
 
 func TestEnabled(t *testing.T) {
@@ -99,7 +104,7 @@ func TestMutate(t *testing.T) {
 
 		assert.Len(t, request.Pod.Spec.Volumes, initialNumberOfVolumesLen+2)
 		assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen+2)
-		assert.Len(t, request.Pod.Annotations, initialAnnotationsLen+1)
+		assert.Len(t, request.Pod.Annotations, initialAnnotationsLen+3)
 
 		assert.Len(t, request.InstallContainer.Env, 3)
 		assert.Len(t, request.InstallContainer.VolumeMounts, 1)
@@ -143,6 +148,17 @@ func TestEnsureDataIngestSecret(t *testing.T) {
 		err := mutator.ensureDataIngestSecret(request)
 		require.NoError(t, err)
 	})
+
+	t.Run("should create init secret", func(t *testing.T) {
+		mutator := createTestPodMutator([]client.Object{getTestDynakube(), getTestTokensSecret()})
+		request := createTestMutationRequest(getTestDynakube(), nil)
+
+		err := mutator.ensureDataIngestSecret(request)
+		require.NoError(t, err)
+		var secret corev1.Secret
+		err = mutator.apiReader.Get(context.Background(), client.ObjectKey{Name: consts.EnrichmentEndpointSecretName, Namespace: testNamespaceName}, &secret)
+		require.NoError(t, err)
+	})
 }
 
 func TestSetInjectedAnnotation(t *testing.T) {
@@ -154,6 +170,18 @@ func TestSetInjectedAnnotation(t *testing.T) {
 		setInjectedAnnotation(request.Pod)
 		require.Len(t, request.Pod.Annotations, 1)
 		require.True(t, mutator.Injected(request.BaseRequest))
+	})
+}
+
+func TestWorkloadAnnotations(t *testing.T) {
+	t.Run("should add annotation to nil map", func(t *testing.T) {
+		request := createTestMutationRequest(nil, nil)
+
+		require.Equal(t, "not-found", maputils.GetField(request.Pod.Annotations, dtwebhook.AnnotationWorkloadName, "not-found"))
+		setWorkloadAnnotations(request.Pod, &workloadInfo{name: testWorkloadInfoName, kind: testWorkloadInfoKind})
+		require.Len(t, request.Pod.Annotations, 2)
+		assert.Equal(t, testWorkloadInfoName, maputils.GetField(request.Pod.Annotations, dtwebhook.AnnotationWorkloadName, "not-found"))
+		assert.Equal(t, testWorkloadInfoKind, maputils.GetField(request.Pod.Annotations, dtwebhook.AnnotationWorkloadKind, "not-found"))
 	})
 }
 
@@ -204,10 +232,12 @@ func createTestReinvocationRequest(dynakube *dynatracev1beta1.DynaKube, annotati
 }
 
 func createTestPodMutator(objects []client.Object) *DataIngestPodMutator {
+	fakeClient := fake.NewClient(objects...)
+
 	return &DataIngestPodMutator{
-		client:           fake.NewClient(objects...),
-		apiReader:        fake.NewClient(objects...),
-		metaClient:       fake.NewClient(objects...),
+		client:           fakeClient,
+		apiReader:        fakeClient,
+		metaClient:       fakeClient,
 		webhookNamespace: testNamespaceName,
 	}
 }
@@ -259,6 +289,18 @@ func getTestInitSecret() *corev1.Secret {
 	}
 }
 
+func getTestTokensSecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testDynakubeName,
+			Namespace: testNamespaceName,
+		},
+		Data: map[string][]byte{
+			dtclient.DataIngestToken: []byte("test"),
+		},
+	}
+}
+
 func getTestDynakube() *dynatracev1beta1.DynaKube {
 	return &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -266,6 +308,7 @@ func getTestDynakube() *dynatracev1beta1.DynaKube {
 			Namespace: testNamespaceName,
 		},
 		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: testApiUrl,
 			OneAgent: dynatracev1beta1.OneAgentSpec{
 				ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
 			},

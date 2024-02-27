@@ -58,4 +58,9 @@ const (
 
 	// InstallContainerName is the name used for the install container
 	InstallContainerName = "install-oneagent"
+
+	// AnnotationWorkloadKind is added to any injected pods when the data-ingest feature is enabled
+	AnnotationWorkloadKind = "metadata.dynatrace.com/k8s.workload.kind"
+	// AnnotationWorkloadName is added to any injected pods when the data-ingest feature is enabled
+	AnnotationWorkloadName = "metadata.dynatrace.com/k8s.workload.name"
 )
