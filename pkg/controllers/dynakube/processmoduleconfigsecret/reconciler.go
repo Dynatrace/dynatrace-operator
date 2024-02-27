@@ -3,6 +3,7 @@ package processmoduleconfigsecret
 import (
 	"context"
 	"encoding/json"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -90,12 +91,12 @@ func (r *Reconciler) createSecret(ctx context.Context) error {
 	}
 
 	if err = r.client.Create(ctx, newSecret); err != nil {
-		r.setKubeApiErrorCondition(err)
+		conditions.SetKubeApiErrorCondition(r.dynakube.Conditions(), conditionType, err)
 
 		return err
 	}
 
-	r.setSecretCreatedCondition()
+	conditions.SetSecretCreatedCondition(r.dynakube.Conditions(), conditionType, newSecret.Name+" created")
 
 	return nil
 }
@@ -107,13 +108,13 @@ func (r *Reconciler) ensureSecret(ctx context.Context) error {
 
 		return r.createSecret(ctx)
 	} else if err != nil {
-		r.setKubeApiErrorCondition(err)
+		conditions.SetKubeApiErrorCondition(r.dynakube.Conditions(), conditionType, err)
 
 		return err
 	}
 
 	if r.isSecretOutdated() {
-		r.setSecretOutdatedCondition() // Necessary to update the LastTransitionTime, also it is a nice failsafe
+		conditions.SetSecretOutdatedCondition(r.dynakube.Conditions(), conditionType, oldSecret.Name+" is outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
 
 		return r.updateSecret(ctx, oldSecret)
 	}
@@ -131,12 +132,12 @@ func (r *Reconciler) updateSecret(ctx context.Context, oldSecret *corev1.Secret)
 
 	oldSecret.Data = newSecret.Data
 	if err = r.client.Update(ctx, oldSecret); err != nil {
-		r.setKubeApiErrorCondition(err)
+		conditions.SetKubeApiErrorCondition(r.dynakube.Conditions(), conditionType, err)
 
 		return err
 	}
 
-	r.setSecretUpdatedCondition()
+	conditions.SetSecretUpdatedCondition(r.dynakube.Conditions(), conditionType, newSecret.Name+" updated")
 
 	return nil
 }
@@ -159,7 +160,7 @@ func (r *Reconciler) isSecretOutdated() bool {
 func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) {
 	pmc, err := r.dtClient.GetProcessModuleConfig(ctx, 0)
 	if err != nil {
-		r.setDynatraceApiErrorCondition(err)
+		conditions.SetDynatraceApiErrorCondition(r.dynakube.Conditions(), conditionType, err)
 
 		return nil, err
 	}
@@ -169,7 +170,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 		Namespace: r.dynakube.Namespace,
 	}, connectioninfo.TenantTokenKey, log)
 	if err != nil {
-		r.setKubeApiErrorCondition(err)
+		conditions.SetKubeApiErrorCondition(r.dynakube.Conditions(), conditionType, err)
 
 		return nil, err
 	}
@@ -183,7 +184,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 	if r.dynakube.NeedsOneAgentProxy() {
 		proxy, err := r.dynakube.Proxy(ctx, r.apiReader)
 		if err != nil {
-			r.setKubeApiErrorCondition(err)
+			conditions.SetKubeApiErrorCondition(r.dynakube.Conditions(), conditionType, err)
 
 			return nil, err
 		}
@@ -210,7 +211,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 		secrets.NewDataModifier(map[string][]byte{SecretKeyProcessModuleConfig: marshaled}))
 
 	if err != nil {
-		r.setKubeApiErrorCondition(err)
+		conditions.SetKubeApiErrorCondition(r.dynakube.Conditions(), conditionType, err)
 
 		return nil, err
 	}

@@ -155,6 +155,7 @@ func TestEnsureDataIngestSecret(t *testing.T) {
 
 		err := mutator.ensureDataIngestSecret(request)
 		require.NoError(t, err)
+
 		var secret corev1.Secret
 		err = mutator.apiReader.Get(context.Background(), client.ObjectKey{Name: consts.EnrichmentEndpointSecretName, Namespace: testNamespaceName}, &secret)
 		require.NoError(t, err)
