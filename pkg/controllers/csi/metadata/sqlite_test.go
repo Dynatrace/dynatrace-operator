@@ -646,8 +646,7 @@ func TestDeleteVolume(t *testing.T) {
 
 func TestSchemaMigration(t *testing.T) {
 	// new schema
-	conn, err := NewDBAccess("/Users/andrii.soldatenko/work/dynatrace-operator/csi.sqlite")
-	//conn, err := NewDBAccess("file:csi_testdb?mode=memory")
+	conn, err := NewDBAccess("file:csi_testdb?mode=memory")
 	require.NoError(t, err)
 	// new migrations
 	err = conn.SchemaMigration(context.Background())

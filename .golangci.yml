@@ -135,6 +135,7 @@ linters-settings:
           - "github.com/stretchr/testify"
           - "github.com/google/go-containerregistry"
           - "github.com/docker/cli"
+          - "github.com/go-gormigrate/gormigrate"
 
           # Allowed packages in container-based builder.
         deny:

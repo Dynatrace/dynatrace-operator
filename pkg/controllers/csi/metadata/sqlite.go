@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"strconv"
+	"strings"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
@@ -196,7 +197,14 @@ type DBConn struct {
 // NewDBAccess creates a new gorm db connection to the database.
 func NewDBAccess(path string) (DBConn, error) {
 	// we should explicitly enable foreign_keys for sqlite
-	db, err := gorm.Open(sqlite.Open(path+"?_foreign_keys=on"), &gorm.Config{Logger: logger.Default})
+	if strings.Contains(path, "?") {
+		path += "&_foreign_keys=on"
+	} else {
+		path += "?_foreign_keys=on"
+	}
+
+	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{Logger: logger.Default})
+
 	if err != nil {
 		return DBConn{}, err
 	}
