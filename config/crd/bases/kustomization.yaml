@@ -1,4 +1,5 @@
 resources:
+- dynatrace.com_activegates.yaml
 - dynatrace.com_dynakubes.yaml
 - dynatrace.com_edgeconnects.yaml
 

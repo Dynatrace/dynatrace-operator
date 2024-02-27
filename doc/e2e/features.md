@@ -191,7 +191,7 @@ func AssessSampleInitContainers(builder *features.FeatureBuilder, sampleApp *sam
 
 <a name="DefaultCloudNativeSpec"></a>
 
-## func [DefaultCloudNativeSpec](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/init_containers.go#L81>)
+## func [DefaultCloudNativeSpec](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/init_containers.go#L82>)
 
 ```go
 func DefaultCloudNativeSpec() *dynatracev1beta1.CloudNativeFullStackSpec
@@ -253,7 +253,7 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/networ
 
 <a name="Feature"></a>
 
-## func [Feature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/network_zones/network_zones.go#L50>)
+## func [Feature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/network_zones/network_zones.go#L53>)
 
 ```go
 func Feature(t *testing.T) features.Feature
@@ -297,7 +297,7 @@ Verification that the storage in the CSI driver directory does not increase when
 
 <a name="WithProxy"></a>
 
-## func [WithProxy](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L129>)
+## func [WithProxy](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L130>)
 
 ```go
 func WithProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Feature
@@ -313,7 +313,7 @@ Connectivity in the dynatrace namespace and sample application namespace is rest
 
 <a name="WithProxyCA"></a>
 
-## func [WithProxyCA](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L177>)
+## func [WithProxyCA](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L178>)
 
 ```go
 func WithProxyCA(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Feature

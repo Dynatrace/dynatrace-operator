@@ -12,18 +12,16 @@ import "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube/tmp"
 
 ## Constants
 
-<a name="DeprecatedFeatureFlagPrefix"></a>
+<a name="AnnotationFeaturePrefix"></a>
 
 ```go
 const (
-    DeprecatedFeatureFlagPrefix = "alpha.operator.dynatrace.com/feature-"
-
     AnnotationFeaturePrefix = "feature.dynatrace.com/"
 
-    // General
+    // General.
     AnnotationFeaturePublicRegistry = AnnotationFeaturePrefix + "public-registry"
 
-    // Deprecated: AnnotationFeatureDisableActiveGateUpdates use AnnotationFeatureActiveGateUpdates instead
+    // Deprecated: AnnotationFeatureDisableActiveGateUpdates use AnnotationFeatureActiveGateUpdates instead.
     AnnotationFeatureDisableActiveGateUpdates = AnnotationFeaturePrefix + "disable-activegate-updates"
 
     AnnotationFeatureActiveGateUpdates = AnnotationFeaturePrefix + "activegate-updates"
@@ -44,7 +42,7 @@ const (
     AnnotationFeatureRunOneAgentContainerPrivileged = AnnotationFeaturePrefix + "oneagent-privileged"
     AnnotationFeatureOneAgentSecCompProfile         = AnnotationFeaturePrefix + "oneagent-seccomp-profile"
 
-    // Deprecated: AnnotationFeatureDisableMetadataEnrichment use AnnotationFeatureMetadataEnrichment instead
+    // Deprecated: AnnotationFeatureDisableMetadataEnrichment use AnnotationFeatureMetadataEnrichment instead.
     AnnotationFeatureDisableMetadataEnrichment = AnnotationFeaturePrefix + "disable-metadata-enrichment"
 
     AnnotationFeatureMetadataEnrichment = AnnotationFeaturePrefix + "metadata-enrichment"
@@ -57,7 +55,7 @@ const (
     AnnotationFeatureInitContainerSeccomp  = AnnotationFeaturePrefix + "init-container-seccomp-profile"
     AnnotationFeatureEnforcementMode       = AnnotationFeaturePrefix + "enforcement-mode"
 
-    // CSI
+    // CSI.
     AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
     AnnotationFeatureReadOnlyCsiVolume         = AnnotationFeaturePrefix + "injection-readonly-volume"
 )
