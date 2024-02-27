@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// TODO: Move these conditions related consts to a place where they are used, so we don't bloat this package further
+// TODO: Move these conditions related consts to a place where they are used, so we don't bloat this package further.
 const (
 	// TokenConditionType identifies the token validity condition.
 	TokenConditionType string = "Tokens"

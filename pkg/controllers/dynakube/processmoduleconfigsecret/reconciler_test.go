@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -35,7 +36,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}})
 
 		mockK8sClient := fake.NewClient(dynakube)
-		mockK8sClient.Create(context.Background(),
+		_ = mockK8sClient.Create(context.Background(),
 			&corev1.Secret{
 				Data: map[string][]byte{connectioninfo.TenantTokenKey: []byte(testTokenValue)},
 				ObjectMeta: metav1.ObjectMeta{
@@ -53,16 +54,22 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		checkSecretForValue(t, mockK8sClient, "\"revision\":0")
-		require.Equal(t, dynakube.Status.OneAgent.LastProcessModuleConfigUpdate.Time, mockTime.Now().Time)
+
+		condition := meta.FindStatusCondition(*dynakube.Conditions(), conditionType)
+		oldTransitionTime := condition.LastTransitionTime
+		require.NotNil(t, condition)
+		require.NotEmpty(t, oldTransitionTime)
 
 		// update should be blocked by timeout
-		mockTime.Set(timeprovider.Now())
-
 		reconciler.dtClient = createMockDtClient(t, 1)
 		err = reconciler.Reconcile(context.Background())
+
 		require.NoError(t, err)
 		checkSecretForValue(t, mockK8sClient, "\"revision\":0")
-		require.NotEqual(t, dynakube.Status.OneAgent.LastProcessModuleConfigUpdate.Time, mockTime.Now().Time)
+
+		condition = meta.FindStatusCondition(*dynakube.Conditions(), conditionType)
+		require.NotNil(t, condition)
+		require.Equal(t, condition.LastTransitionTime, oldTransitionTime)
 
 		// go forward in time => should update again
 		futureTime := metav1.NewTime(time.Now().Add(time.Hour))
@@ -71,7 +78,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = reconciler.Reconcile(context.Background())
 		require.NoError(t, err)
 		checkSecretForValue(t, mockK8sClient, "\"revision\":1")
-		require.Equal(t, dynakube.Status.OneAgent.LastProcessModuleConfigUpdate.Time, futureTime.Time)
+
+		condition = meta.FindStatusCondition(*dynakube.Conditions(), conditionType)
+		require.NotNil(t, condition)
+		require.Greater(t, condition.LastTransitionTime.Time, oldTransitionTime.Time)
 	})
 	t.Run("Only runs when required", func(t *testing.T) {
 		dynakube := createDynakube(dynatracev1beta1.OneAgentSpec{
@@ -122,7 +132,7 @@ func TestGetSecretData(t *testing.T) {
 		dynakube := createDynakube(dynatracev1beta1.OneAgentSpec{
 			CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}})
 		mockK8sClient := fake.NewClient(dynakube)
-		mockK8sClient.Create(context.Background(),
+		_ = mockK8sClient.Create(context.Background(),
 			&corev1.Secret{
 				Data: map[string][]byte{connectioninfo.TenantTokenKey: []byte(testTokenValue)},
 				ObjectMeta: metav1.ObjectMeta{
@@ -153,7 +163,7 @@ func TestGetSecretData(t *testing.T) {
 	})
 	t.Run("error when unmarshaling secret data", func(t *testing.T) {
 		fakeClient := fake.NewClient()
-		fakeClient.Create(context.Background(),
+		_ = fakeClient.Create(context.Background(),
 			&corev1.Secret{
 				Data:       map[string][]byte{SecretKeyProcessModuleConfig: []byte("WRONG VALUE!")},
 				ObjectMeta: metav1.ObjectMeta{Name: extendWithSuffix(testName), Namespace: testNamespace},

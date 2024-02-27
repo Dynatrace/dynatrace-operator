@@ -8,11 +8,12 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	secrets "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -57,6 +58,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return errors.WithStack(err)
 		}
 	} else {
+		meta.RemoveStatusCondition(&r.dynakube.Status.Conditions, conditionType)
+		// TODO: Add cleanup here
 		log.Info("skipping process module config secret reconciler")
 	}
 
@@ -64,43 +67,63 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) reconcileSecret(ctx context.Context) error {
-	secret, err := r.getOrCreateSecretIfNotExists(ctx)
-	if err != nil {
-		return errors.WithMessage(err, "could not get or create secret")
+	if r.isFirstRun() {
+		err := r.createSecret(ctx)
+		if err != nil {
+			return errors.WithMessage(err, "could not get or create secret")
+		}
 	}
 
-	if err := r.updateSecretIfOutdated(ctx, secret); err != nil {
+	if err := r.ensureSecret(ctx); err != nil {
 		return errors.WithMessage(err, "could not update secret")
 	}
 
 	return nil
 }
 
-func (r *Reconciler) getOrCreateSecretIfNotExists(ctx context.Context) (*corev1.Secret, error) {
-	config, err := getSecret(ctx, r.apiReader, r.dynakube.Name, r.dynakube.Namespace)
-	if k8serrors.IsNotFound(err) {
-		log.Info("creating process module config secret")
+func (r *Reconciler) createSecret(ctx context.Context) error {
+	log.Info("creating process module config secret")
 
-		newSecret, err := r.prepareSecret(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		if err = r.client.Create(ctx, newSecret); err != nil {
-			return nil, err
-		}
-
-		r.dynakube.Status.OneAgent.LastProcessModuleConfigUpdate = r.timeProvider.Now()
-
-		return newSecret, nil
-	} else if err != nil {
-		return nil, err
+	newSecret, err := r.prepareSecret(ctx)
+	if err != nil {
+		return err
 	}
 
-	return config, nil
+	if err = r.client.Create(ctx, newSecret); err != nil {
+		r.setKubeApiErrorCondition(err)
+
+		return err
+	}
+
+	r.setSecretCreatedCondition()
+
+	return nil
+}
+
+func (r *Reconciler) ensureSecret(ctx context.Context) error {
+	oldSecret, err := getSecret(ctx, r.apiReader, r.dynakube.Name, r.dynakube.Namespace)
+	if k8serrors.IsNotFound(err) {
+		log.Info("secret was removed unexpectedly, ensuring process module config secret")
+
+		return r.createSecret(ctx)
+	} else if err != nil {
+		r.setKubeApiErrorCondition(err)
+
+		return err
+	}
+
+	if r.isSecretOutdated() {
+		r.setSecretOutdatedCondition() // Necessary to update the LastTransitionTime, also it is a nice failsafe
+
+		return r.updateSecret(ctx, oldSecret)
+	}
+
+	return nil
 }
 
 func (r *Reconciler) updateSecret(ctx context.Context, oldSecret *corev1.Secret) error {
+	log.Info("updating process module config secret")
+
 	newSecret, err := r.prepareSecret(ctx)
 	if err != nil {
 		return err
@@ -108,35 +131,46 @@ func (r *Reconciler) updateSecret(ctx context.Context, oldSecret *corev1.Secret)
 
 	oldSecret.Data = newSecret.Data
 	if err = r.client.Update(ctx, oldSecret); err != nil {
+		r.setKubeApiErrorCondition(err)
+
 		return err
 	}
 
-	r.dynakube.Status.OneAgent.LastProcessModuleConfigUpdate = r.timeProvider.Now()
+	r.setSecretUpdatedCondition()
 
 	return nil
 }
 
-func (r *Reconciler) updateSecretIfOutdated(ctx context.Context, oldSecret *corev1.Secret) error {
-	if r.timeProvider.IsOutdated(r.dynakube.Status.OneAgent.LastProcessModuleConfigUpdate, r.dynakube.FeatureApiRequestThreshold()) {
-		return r.updateSecret(ctx, oldSecret)
-	} else {
-		log.Info("skipping updating process module config due to min request threshold")
+func (r *Reconciler) isFirstRun() bool {
+	condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, conditionType)
+
+	return condition == nil
+}
+
+func (r *Reconciler) isSecretOutdated() bool {
+	condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, conditionType)
+	if condition == nil {
+		return true
 	}
 
-	return nil
+	return r.timeProvider.IsOutdated(&condition.LastTransitionTime, r.dynakube.FeatureApiRequestThreshold())
 }
 
 func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) {
 	pmc, err := r.dtClient.GetProcessModuleConfig(ctx, 0)
 	if err != nil {
+		r.setDynatraceApiErrorCondition(err)
+
 		return nil, err
 	}
 
-	tenantToken, err := secret.GetDataFromSecretName(r.apiReader, types.NamespacedName{
+	tenantToken, err := secrets.GetDataFromSecretName(r.apiReader, types.NamespacedName{
 		Name:      r.dynakube.OneagentTenantSecret(),
 		Namespace: r.dynakube.Namespace,
 	}, connectioninfo.TenantTokenKey, log)
 	if err != nil {
+		r.setKubeApiErrorCondition(err)
+
 		return nil, err
 	}
 
@@ -149,6 +183,8 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 	if r.dynakube.NeedsOneAgentProxy() {
 		proxy, err := r.dynakube.Proxy(ctx, r.apiReader)
 		if err != nil {
+			r.setKubeApiErrorCondition(err)
+
 			return nil, err
 		}
 
@@ -167,11 +203,17 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 		return nil, err
 	}
 
-	newSecret, err := secret.Create(r.scheme, r.dynakube,
-		secret.NewNameModifier(extendWithSuffix(r.dynakube.Name)),
-		secret.NewNamespaceModifier(r.dynakube.Namespace),
-		secret.NewTypeModifier(corev1.SecretTypeOpaque),
-		secret.NewDataModifier(map[string][]byte{SecretKeyProcessModuleConfig: marshaled}))
+	newSecret, err := secrets.Create(r.scheme, r.dynakube,
+		secrets.NewNameModifier(extendWithSuffix(r.dynakube.Name)),
+		secrets.NewNamespaceModifier(r.dynakube.Namespace),
+		secrets.NewTypeModifier(corev1.SecretTypeOpaque),
+		secrets.NewDataModifier(map[string][]byte{SecretKeyProcessModuleConfig: marshaled}))
+
+	if err != nil {
+		r.setKubeApiErrorCondition(err)
+
+		return nil, err
+	}
 
 	return newSecret, err
 }
