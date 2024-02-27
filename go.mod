@@ -6,6 +6,7 @@ require (
 	github.com/container-storage-interface/spec v1.9.0
 	github.com/docker/cli v25.0.3+incompatible
 	github.com/evanphx/json-patch v5.9.0+incompatible
+	github.com/go-gormigrate/gormigrate/v2 v2.1.1
 	github.com/go-logr/logr v1.4.1
 	github.com/google/go-containerregistry v0.19.0
 	github.com/klauspost/compress v1.17.7
@@ -36,6 +37,8 @@ require (
 	golang.org/x/oauth2 v0.17.0
 	golang.org/x/sys v0.17.0
 	google.golang.org/grpc v1.62.0
+	gorm.io/driver/sqlite v1.5.5
+	gorm.io/gorm v1.25.7
 	istio.io/api v1.20.2
 	istio.io/client-go v1.20.2
 	k8s.io/api v0.29.2
@@ -121,8 +124,6 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	gorm.io/driver/sqlite v1.5.5 // indirect
-	gorm.io/gorm v1.25.7 // indirect
 	k8s.io/component-base v0.29.2 // indirect
 	k8s.io/klog/v2 v2.110.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect

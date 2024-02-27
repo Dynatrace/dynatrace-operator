@@ -13,9 +13,10 @@ type TimeStampedModel struct {
 }
 
 type TenantConfig struct {
-	UID                        string `gorm:"primaryKey" json:"UID,omitempty"`
-	Name                       string `gorm:"not null"`
-	TenantUUID                 string `gorm:"not null"`
+	UID        string `gorm:"primaryKey" json:"UID,omitempty"`
+	Name       string `gorm:"not null"`
+	TenantUUID string
+	//OSMount                    OSMount
 	DowloadedCodeModuleVersion string
 	ConfigDirPath              string `gorm:"not null"`
 	MaxFailedMountAttempts     int64  `gorm:"default:10"`
@@ -32,7 +33,8 @@ type CodeModule struct {
 // OSMount keeps track of our mounts to OS oneAgents, can be "remounted", which causes annoyances
 type OSMount struct {
 	TenantUUID    string `gorm:"primaryKey" json:"tenantUUID,omitempty"`
-	VolumeID      string
+	VolumeMetaID  string
+	VolumeMeta    VolumeMeta
 	Location      string `gorm:"not null"`
 	MountAttempts int64  `gorm:"not null"`
 	TimeStampedModel
@@ -40,14 +42,16 @@ type OSMount struct {
 
 // AppMount keeps track of our mounts to user applications, where we provide the codemodules
 type AppMount struct {
-	VolumeID          string `gorm:"primaryKey" json:"volumeID,omitempty"`
+	VolumeMetaID      string
 	CodeModuleVersion string
 	Location          string `gorm:"not null"`
 	MountAttempts     int64  `gorm:"not null"`
+	VolumeMeta        VolumeMeta
 	TimeStampedModel
 }
 
-type Volumes struct {
+// VolumeMeta
+type VolumeMeta struct {
 	ID                string `gorm:"primaryKey" json:"id,omitempty"`
 	PodUid            string `gorm:"not null"`
 	PodName           string `gorm:"not null"`
