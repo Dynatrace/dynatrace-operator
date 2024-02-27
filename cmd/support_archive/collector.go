@@ -8,6 +8,6 @@ type collector interface {
 }
 
 type collectorCommon struct {
-	log            logger.DtLogger
 	supportArchive archiver
+	log            logger.DtLogger
 }
