@@ -26,6 +26,7 @@ rules:
     resources:
       - dynakubes
       - edgeconnects
+      - activegates
     verbs:
       - get
       - list
