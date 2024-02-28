@@ -59,7 +59,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return errors.WithStack(err)
 		}
 	} else {
-		meta.RemoveStatusCondition(&r.dynakube.Status.Conditions, conditionType)
+		_ = meta.RemoveStatusCondition(&r.dynakube.Status.Conditions, conditionType)
 		// TODO: Add cleanup here
 		log.Info("skipping process module config secret reconciler")
 	}
