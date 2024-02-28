@@ -74,6 +74,17 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
+		// new schema
+		conn, err := metadata.NewDBAccess(dtcsi.MetadataAccessPath)
+		if err != nil {
+			return err
+		}
+		// new migrations
+		err = conn.SchemaMigration(signalHandler)
+		if err != nil {
+			return err
+		}
+
 		csiOptions := dtcsi.CSIOptions{
 			NodeId:   nodeId,
 			Endpoint: endpoint,

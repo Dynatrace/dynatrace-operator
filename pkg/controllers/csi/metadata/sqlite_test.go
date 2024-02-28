@@ -643,3 +643,12 @@ func TestDeleteVolume(t *testing.T) {
 	assert.Len(t, podNames, 1)
 	assert.Equal(t, testVolume1.VolumeID, podNames[testVolume1.PodName])
 }
+
+func TestSchemaMigration(t *testing.T) {
+	// new schema
+	conn, err := NewDBAccess("file:csi_testdb?mode=memory")
+	require.NoError(t, err)
+	// new migrations
+	err = conn.SchemaMigration(context.Background())
+	require.NoError(t, err)
+}
