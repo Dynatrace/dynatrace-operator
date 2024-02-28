@@ -250,11 +250,7 @@ func (collector k8sResourceCollector) getCRDName(resourceMeta unstructured.Unstr
 		return "default"
 	}
 
-	if strings.Contains(objectMeta.Name, "dynakube") {
-		return "dynakube"
-	}
-
-	return "edgeconnect"
+	return strings.Split(objectMeta.Name, ".")[0]
 }
 
 func (collector k8sResourceCollector) createFileName(kind string, resourceMeta unstructured.Unstructured) string {
