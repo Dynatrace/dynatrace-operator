@@ -2,12 +2,12 @@ package version
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"k8s.io/apimachinery/pkg/api/meta"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"k8s.io/apimachinery/pkg/api/meta"
 )
 
 const (
@@ -34,7 +34,9 @@ func (updater codeModulesUpdater) IsEnabled() bool {
 	if updater.dynakube.NeedAppInjection() {
 		return true
 	}
+
 	_ = meta.RemoveStatusCondition(updater.dynakube.Conditions(), cmConditionType)
+
 	return false
 }
 
@@ -47,6 +49,7 @@ func (updater codeModulesUpdater) CustomImage() string {
 	if customImage != "" {
 		setVerificationSkippedReasonCondition(updater.dynakube.Conditions(), cmConditionType)
 	}
+
 	return customImage
 }
 
@@ -63,6 +66,7 @@ func (updater codeModulesUpdater) IsPublicRegistryEnabled() bool {
 	if isPublicRegistry {
 		setVerifiedCondition(updater.dynakube.Conditions(), cmConditionType) // Bit hacky, as things can still go wrong, but if so we will just overwrite this is LatestImageInfo.
 	}
+
 	return isPublicRegistry
 }
 
@@ -71,6 +75,7 @@ func (updater codeModulesUpdater) LatestImageInfo(ctx context.Context) (*dtclien
 	if err != nil {
 		conditions.SetDynatraceApiErrorCondition(updater.dynakube.Conditions(), cmConditionType, err)
 	}
+
 	return imgInfo, err
 }
 

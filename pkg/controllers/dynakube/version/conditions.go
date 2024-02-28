@@ -23,7 +23,7 @@ func setVerifiedCondition(conditions *[]metav1.Condition, conditionType string) 
 func setVerificationSkippedReasonCondition(conditions *[]metav1.Condition, conditionType string) {
 	condition := metav1.Condition{
 		Type:    conditionType,
-		Status:  metav1.ConditionFalse,
+		Status:  metav1.ConditionTrue,
 		Reason:  verificationSkippedReason,
 		Message: "Version verification skipped, due to custom setup.",
 	}
