@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -eu -o pipefail
 
 ENVIRONMENT_KUBECONFIG="$RUNNER_TEMP/environment-kubeconfig"
 ENVIRONMENT_SECRET_NAME="$ENVIRONMENT-kubeconfig"
