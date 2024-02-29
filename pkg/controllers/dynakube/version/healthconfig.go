@@ -1,22 +1,16 @@
 package version
 
 import (
-	"strings"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/pkg/errors"
 	"golang.org/x/mod/semver"
 )
 
 const (
 	semverPrefix = "v"
-	semverSep    = "."
-
-	// relevantVersionLength defines how many segments of the semver we care about, for-example:
-	// in case of 3, we only care about major.minor.patch and the rest is ignored.
-	relevantSemverLength = 3
 
 	// healthCheckVersionThreshold hold the semver after which point the binary-based health-check can be used.
 	healthCheckVersionThreshold = semverPrefix + "1.276"
@@ -47,9 +41,9 @@ func getOneAgentHealthConfig(agentVersion string) (*containerv1.HealthConfig, er
 	var testCommand []string
 
 	if agentVersion != "" && agentVersion != string(status.CustomImageVersionSource) {
-		agentSemver := agentVersionToSemver(agentVersion)
-		if !semver.IsValid(agentSemver) {
-			return nil, errors.Errorf("provided oneagent version %s is not a valid semver", agentVersion)
+		agentSemver, err := dtversion.ToSemver(agentVersion)
+		if err != nil {
+			return nil, err
 		}
 		// threshold > agentSemver == 1
 		// threshold < agentSemver == -1
@@ -65,26 +59,4 @@ func getOneAgentHealthConfig(agentVersion string) (*containerv1.HealthConfig, er
 	}
 
 	return newHealthConfig(testCommand), nil
-}
-
-func agentVersionToSemver(agentVersion string) string {
-	if agentVersion == "" {
-		return ""
-	}
-
-	split := strings.Split(agentVersion, semverSep)
-
-	var agentSemver string
-
-	if len(split) > relevantSemverLength {
-		agentSemver = strings.Join(split[:relevantSemverLength], semverSep)
-	} else {
-		agentSemver = strings.Join(split, semverSep)
-	}
-
-	if !strings.HasPrefix(agentSemver, semverPrefix) {
-		agentSemver = semverPrefix + agentSemver
-	}
-
-	return semver.Canonical(agentSemver)
 }
