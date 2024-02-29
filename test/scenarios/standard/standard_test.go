@@ -3,7 +3,6 @@
 package standard
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/test/features/publicregistry"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/features/activegate"
@@ -16,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/network_zones"
 	cloudToClassic "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/switch_modes"
 	"github.com/Dynatrace/dynatrace-operator/test/features/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/test/features/publicregistry"
 	supportArchive "github.com/Dynatrace/dynatrace-operator/test/features/support_archive"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
