@@ -3,6 +3,7 @@
 package standard
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/test/features/publicregistry"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/features/activegate"
@@ -49,6 +50,7 @@ func TestStandard(t *testing.T) {
 		applicationmonitoring.ReadOnlyCSIVolume(t),
 		applicationmonitoring.WithoutCSI(t),
 		codemodules.InstallFromImage(t),
+		publicregistry.Feature(t),
 		disabledAutoInjection.Feature(t),
 		supportArchive.Feature(t),
 		edgeconnect.Feature(t),
