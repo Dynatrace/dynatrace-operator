@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/network_zones"
 	cloudToClassic "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/switch_modes"
 	"github.com/Dynatrace/dynatrace-operator/test/features/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/test/features/publicregistry"
 	supportArchive "github.com/Dynatrace/dynatrace-operator/test/features/support_archive"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
@@ -49,6 +50,7 @@ func TestStandard(t *testing.T) {
 		applicationmonitoring.ReadOnlyCSIVolume(t),
 		applicationmonitoring.WithoutCSI(t),
 		codemodules.InstallFromImage(t),
+		publicregistry.Feature(t),
 		disabledAutoInjection.Feature(t),
 		supportArchive.Feature(t),
 		edgeconnect.Feature(t),

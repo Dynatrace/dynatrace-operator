@@ -71,6 +71,12 @@ func WithActiveGate() Option {
 	}
 }
 
+func WithCustomActiveGateImage(imageURI string) Option {
+	return func(dynakube *dynakubev1beta1.DynaKube) {
+		dynakube.Spec.ActiveGate.Image = imageURI
+	}
+}
+
 func WithNameBasedNamespaceSelector() Option {
 	return func(dynakube *dynakubev1beta1.DynaKube) {
 		dynakube.Spec.NamespaceSelector = metav1.LabelSelector{
