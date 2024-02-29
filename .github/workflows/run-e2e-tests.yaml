@@ -2,7 +2,9 @@ name: Run E2E tests
 
 on:
   schedule:
-    - cron: 4 0 * * 1-5 # every work day at 4:00 AM
+    # every work day at 5:00 AM
+    - cron: 5 0 * * 1-5
+  workflow_dispatch:
 
 jobs:
   run-in-k8s:
