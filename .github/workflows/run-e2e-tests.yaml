@@ -3,16 +3,22 @@ name: Run E2E tests
 on:
   schedule:
     # every work day at 5:00 AM
-    - cron: 5 0 * * 1-5
+    - cron: 0 0 * * 1-5
   workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target branch to run E2E tests over'
+        required: true
+        default: 'main'
 
 jobs:
   run-in-k8s:
-    name: Run in Kubernetes
+    name: Run in Kubernetes (${{ github.event.inputs.target }})
     environment: E2E
     env:
-      NAMESPACE: dto-k8s-ondemand
-      ENVIRONMENT: dto-k8s-1-26
+      FLC_NAMESPACE: dto-k8s-ondemand
+      FLC_ENVIRONMENT: dto-k8s-1-26
+      TARGET_BRANCH: ${{ github.event.inputs.target }}
       TENANT1_NAME: ${{ secrets.TENANT1_NAME }}
       TENANT1_APITOKEN: ${{ secrets.TENANT1_APITOKEN }}
       TENANT1_OTELTOKEN: ${{ secrets.TENANT1_OTELTOKEN }}
@@ -24,30 +30,38 @@ jobs:
     - self-hosted
     - operator-e2e
     steps:
-    - name: Checkout
+    - name: Checkout workflow scripts from ref branch
       uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        path: ref
+    - name: Checkout target branch
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        ref: ${{ github.event.inputs.target }}
+        path: target
     - name: Set up kubectl
       uses: azure/setup-kubectl@3e0aec4d80787158d308d7b364cb1b702e7feb7f # v4.0.0
     - name: Set up go
       uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
       with:
-        go-version-file: "${{ github.workspace }}/go.mod"
+        go-version-file: "${{ github.workspace }}/target/go.mod"
     - name: Set up helm
       uses: azure/setup-helm@5119fcb9089d432beecbf79bb2c7915207344b78 # v3.5
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Create cluster
-      run: .github/scripts/create-cluster.sh
+      run: ref/.github/scripts/create-cluster.sh
     - name: Run tests
-      run: .github/scripts/run-test.sh
+      run: ref/.github/scripts/run-e2e-tests.sh
     - name: Destroy cluster
-      run: .github/scripts/destroy-cluster.sh
+      run: ref/.github/scripts/destroy-cluster.sh
   run-in-ocp:
-    name: Run in Openshift
+    name: Run in Openshift (${{ github.event.inputs.target }})
     environment: E2E
     env:
-      NAMESPACE: dto-ocp-ondemand
-      ENVIRONMENT: dto-ocp-4-14
+      FLC_NAMESPACE: dto-ocp-ondemand
+      FLC_ENVIRONMENT: dto-ocp-4-14
+      TARGET_BRANCH: ${{ github.event.inputs.target }}
       TENANT1_NAME: ${{ secrets.TENANT1_NAME }}
       TENANT1_APITOKEN: ${{ secrets.TENANT1_APITOKEN }}
       TENANT1_OTELTOKEN: ${{ secrets.TENANT1_OTELTOKEN }}
@@ -59,21 +73,28 @@ jobs:
     - self-hosted
     - operator-e2e
     steps:
-    - name: Checkout
+    - name: Checkout workflow scripts from ref branch
       uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        path: ref
+    - name: Checkout target branch
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        ref: ${{ github.event.inputs.target }}
+        path: target
     - name: Set up kubectl
       uses: azure/setup-kubectl@3e0aec4d80787158d308d7b364cb1b702e7feb7f # v4.0.0
     - name: Set up go
       uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
       with:
-        go-version-file: "${{ github.workspace }}/go.mod"
+        go-version-file: "${{ github.workspace }}/target/go.mod"
     - name: Set up helm
       uses: azure/setup-helm@5119fcb9089d432beecbf79bb2c7915207344b78 # v3.5
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Create cluster
-      run: .github/scripts/create-cluster.sh
+      run: ref/.github/scripts/create-cluster.sh
     - name: Run tests
-      run: .github/scripts/run-test.sh
+      run: ref/.github/scripts/run-e2e-tests.sh
     - name: Destroy cluster
-      run: .github/scripts/destroy-cluster.sh
+      run: ref/.github/scripts/destroy-cluster.sh
