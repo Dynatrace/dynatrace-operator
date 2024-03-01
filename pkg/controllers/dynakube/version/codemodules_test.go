@@ -112,7 +112,7 @@ func TestCodeModulesUseDefault(t *testing.T) {
 				CodeModules: oldCodeModulesStatus(),
 			},
 		}
-		updater := newCodeModulesUpdater(dynakube, createBoomDTClient(t))
+		updater := newCodeModulesUpdater(dynakube, createErrorDTClient(t))
 
 		err := updater.UseTenantRegistry(ctx)
 		require.Error(t, err)
@@ -181,7 +181,7 @@ func TestCodeModulesLatestImageInfo(t *testing.T) {
 			},
 		}
 
-		updater := newCodeModulesUpdater(dynakube, createBoomDTClient(t))
+		updater := newCodeModulesUpdater(dynakube, createErrorDTClient(t))
 
 		_, err := updater.LatestImageInfo(context.Background())
 		require.Error(t, err)

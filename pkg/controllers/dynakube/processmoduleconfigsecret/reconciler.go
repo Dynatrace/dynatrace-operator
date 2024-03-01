@@ -59,7 +59,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return errors.WithStack(err)
 		}
 	} else {
-		_ = meta.RemoveStatusCondition(&r.dynakube.Status.Conditions, conditionType)
+		_ = meta.RemoveStatusCondition(&r.dynakube.Status.Conditions, pmcConditionType)
 		// TODO: Add cleanup here
 		log.Info("skipping process module config secret reconciler")
 	}
@@ -91,12 +91,12 @@ func (r *Reconciler) createSecret(ctx context.Context) error {
 	}
 
 	if err = r.client.Create(ctx, newSecret); err != nil {
-		conditions.SetKubeApiErrorCondition(r.dynakube.Conditions(), conditionType, err)
+		conditions.SetKubeApiErrorCondition(r.dynakube.Conditions(), pmcConditionType, err)
 
 		return err
 	}
 
-	conditions.SetSecretCreatedCondition(r.dynakube.Conditions(), conditionType, newSecret.Name+" created")
+	conditions.SetSecretCreatedCondition(r.dynakube.Conditions(), pmcConditionType, newSecret.Name+" created")
 
 	return nil
 }
@@ -108,13 +108,13 @@ func (r *Reconciler) ensureSecret(ctx context.Context) error {
 
 		return r.createSecret(ctx)
 	} else if err != nil {
-		conditions.SetKubeApiErrorCondition(r.dynakube.Conditions(), conditionType, err)
+		conditions.SetKubeApiErrorCondition(r.dynakube.Conditions(), pmcConditionType, err)
 
 		return err
 	}
 
 	if r.isSecretOutdated() {
-		conditions.SetSecretOutdatedCondition(r.dynakube.Conditions(), conditionType, oldSecret.Name+" is outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
+		conditions.SetSecretOutdatedCondition(r.dynakube.Conditions(), pmcConditionType, oldSecret.Name+" is outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
 
 		return r.updateSecret(ctx, oldSecret)
 	}
@@ -132,24 +132,24 @@ func (r *Reconciler) updateSecret(ctx context.Context, oldSecret *corev1.Secret)
 
 	oldSecret.Data = newSecret.Data
 	if err = r.client.Update(ctx, oldSecret); err != nil {
-		conditions.SetKubeApiErrorCondition(r.dynakube.Conditions(), conditionType, err)
+		conditions.SetKubeApiErrorCondition(r.dynakube.Conditions(), pmcConditionType, err)
 
 		return err
 	}
 
-	conditions.SetSecretUpdatedCondition(r.dynakube.Conditions(), conditionType, newSecret.Name+" updated")
+	conditions.SetSecretUpdatedCondition(r.dynakube.Conditions(), pmcConditionType, newSecret.Name+" updated")
 
 	return nil
 }
 
 func (r *Reconciler) isFirstRun() bool {
-	condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, conditionType)
+	condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, pmcConditionType)
 
 	return condition == nil
 }
 
 func (r *Reconciler) isSecretOutdated() bool {
-	condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, conditionType)
+	condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, pmcConditionType)
 	if condition == nil {
 		return true
 	}
@@ -160,7 +160,7 @@ func (r *Reconciler) isSecretOutdated() bool {
 func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) {
 	pmc, err := r.dtClient.GetProcessModuleConfig(ctx, 0)
 	if err != nil {
-		conditions.SetDynatraceApiErrorCondition(r.dynakube.Conditions(), conditionType, err)
+		conditions.SetDynatraceApiErrorCondition(r.dynakube.Conditions(), pmcConditionType, err)
 
 		return nil, err
 	}
@@ -170,7 +170,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 		Namespace: r.dynakube.Namespace,
 	}, connectioninfo.TenantTokenKey, log)
 	if err != nil {
-		conditions.SetKubeApiErrorCondition(r.dynakube.Conditions(), conditionType, err)
+		conditions.SetKubeApiErrorCondition(r.dynakube.Conditions(), pmcConditionType, err)
 
 		return nil, err
 	}
@@ -184,7 +184,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 	if r.dynakube.NeedsOneAgentProxy() {
 		proxy, err := r.dynakube.Proxy(ctx, r.apiReader)
 		if err != nil {
-			conditions.SetKubeApiErrorCondition(r.dynakube.Conditions(), conditionType, err)
+			conditions.SetKubeApiErrorCondition(r.dynakube.Conditions(), pmcConditionType, err)
 
 			return nil, err
 		}
@@ -211,7 +211,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 		secrets.NewDataModifier(map[string][]byte{SecretKeyProcessModuleConfig: marshaled}))
 
 	if err != nil {
-		conditions.SetKubeApiErrorCondition(r.dynakube.Conditions(), conditionType, err)
+		conditions.SetKubeApiErrorCondition(r.dynakube.Conditions(), pmcConditionType, err)
 
 		return nil, err
 	}
