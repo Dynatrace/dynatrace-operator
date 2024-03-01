@@ -2,8 +2,6 @@
 
 set -x
 
-pwd
-
 DEFAULT_TIMEOUT="60m" # K8s takes <10min, Openshift >40min
 
 kubectl version
