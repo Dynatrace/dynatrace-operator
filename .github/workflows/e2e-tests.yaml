@@ -1,4 +1,4 @@
-name: Run E2E tests
+name: E2E tests
 
 on:
   schedule:
@@ -13,7 +13,7 @@ on:
 
 jobs:
   run-in-k8s:
-    name: Run in Kubernetes (${{ github.event.inputs.target }})
+    name: Run in Kubernetes 1.26 (${{ github.event.inputs.target }})
     environment: E2E
     env:
       FLC_NAMESPACE: dto-k8s-ondemand
@@ -56,7 +56,7 @@ jobs:
     - name: Destroy cluster
       run: ref/.github/scripts/destroy-cluster.sh
   run-in-ocp:
-    name: Run in Openshift (${{ github.event.inputs.target }})
+    name: Run in OpenShift 4.14 (${{ github.event.inputs.target }})
     environment: E2E
     env:
       FLC_NAMESPACE: dto-ocp-ondemand
