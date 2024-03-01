@@ -5,18 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/mount"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -33,7 +28,7 @@ func TestPublishVolume(t *testing.T) {
 
 		mockDynakube(t, &publisher)
 
-		response, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
+		response, err := publisher.PublishVolume(context.Background(), createTestVolumeConfig())
 
 		require.NoError(t, err)
 		assert.NotNil(t, response)
@@ -46,7 +41,7 @@ func TestPublishVolume(t *testing.T) {
 
 		mockDynakubeWithoutVersion(t, &publisher)
 
-		response, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
+		response, err := publisher.PublishVolume(context.Background(), createTestVolumeConfig())
 
 		require.NoError(t, err)
 		assert.NotNil(t, response)
@@ -63,7 +58,7 @@ func TestUnpublishVolume(t *testing.T) {
 		publisher := newPublisherForTesting(mounter)
 		mockPublishedvolume(t, &publisher)
 
-		response, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
+		response, err := publisher.UnpublishVolume(context.Background(), createTestVolumeInfo())
 
 		require.NoError(t, err)
 		assert.NotNil(t, response)
@@ -77,13 +72,13 @@ func TestUnpublishVolume(t *testing.T) {
 		})
 		publisher := newPublisherForTesting(mounter)
 
-		response, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
+		response, err := publisher.UnpublishVolume(context.Background(), createTestVolumeInfo())
 
 		require.NoError(t, err)
 		assert.NotNil(t, response)
 		assert.NotEmpty(t, mounter.MountPoints)
 
-		volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(context.TODO(), testVolumeId)
+		volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(context.Background(), testVolumeId)
 		require.NoError(t, err)
 		assert.Nil(t, volume)
 	})
@@ -94,14 +89,14 @@ func TestNodePublishAndUnpublishVolume(t *testing.T) {
 	publisher := newPublisherForTesting(mounter)
 	mockDynakube(t, &publisher)
 
-	publishResponse, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
+	publishResponse, err := publisher.PublishVolume(context.Background(), createTestVolumeConfig())
 	require.NoError(t, err)
 
 	assert.NotNil(t, publishResponse)
 	assert.NotEmpty(t, mounter.MountPoints)
 	assertReferencesForPublishedVolume(t, &publisher, mounter)
 
-	unpublishResponse, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
+	unpublishResponse, err := publisher.UnpublishVolume(context.Background(), createTestVolumeInfo())
 
 	require.NoError(t, err)
 	assert.NotNil(t, unpublishResponse)
@@ -110,30 +105,11 @@ func TestNodePublishAndUnpublishVolume(t *testing.T) {
 }
 
 func newPublisherForTesting(mounter *mount.FakeMounter) HostVolumePublisher {
-	objects := []client.Object{
-		&dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: testDynakubeName,
-			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
-				},
-			},
-		},
-		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: testDynakubeName,
-			},
-		},
-	}
-
 	csiOptions := dtcsi.CSIOptions{RootDir: "/"}
 
 	tmpFs := afero.NewMemMapFs()
 
 	return HostVolumePublisher{
-		client:  fake.NewClient(objects...),
 		fs:      afero.Afero{Fs: tmpFs},
 		mounter: mounter,
 		db:      metadata.FakeMemoryDB(),
@@ -145,24 +121,24 @@ func mockPublishedvolume(t *testing.T, publisher *HostVolumePublisher) {
 	mockDynakube(t, publisher)
 
 	now := time.Now()
-	err := publisher.db.InsertOsAgentVolume(context.TODO(), metadata.NewOsAgentVolume(testVolumeId, testTenantUUID, true, &now))
+	err := publisher.db.InsertOsAgentVolume(context.Background(), metadata.NewOsAgentVolume(testVolumeId, testTenantUUID, true, &now))
 	require.NoError(t, err)
 }
 
 func mockDynakube(t *testing.T, publisher *HostVolumePublisher) {
-	err := publisher.db.InsertDynakube(context.TODO(), metadata.NewDynakube(testDynakubeName, testTenantUUID, "some-version", "", 0))
+	err := publisher.db.InsertDynakube(context.Background(), metadata.NewDynakube(testDynakubeName, testTenantUUID, "some-version", "", 0))
 	require.NoError(t, err)
 }
 
 func mockDynakubeWithoutVersion(t *testing.T, publisher *HostVolumePublisher) {
-	err := publisher.db.InsertDynakube(context.TODO(), metadata.NewDynakube(testDynakubeName, testTenantUUID, "", "", 0))
+	err := publisher.db.InsertDynakube(context.Background(), metadata.NewDynakube(testDynakubeName, testTenantUUID, "", "", 0))
 	require.NoError(t, err)
 }
 
 func assertReferencesForPublishedVolume(t *testing.T, publisher *HostVolumePublisher, mounter *mount.FakeMounter) {
 	assert.NotEmpty(t, mounter.MountPoints)
 
-	volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(context.TODO(), testVolumeId)
+	volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(context.Background(), testVolumeId)
 	require.NoError(t, err)
 	assert.Equal(t, testVolumeId, volume.VolumeID)
 	assert.Equal(t, testTenantUUID, volume.TenantUUID)
@@ -170,7 +146,7 @@ func assertReferencesForPublishedVolume(t *testing.T, publisher *HostVolumePubli
 }
 
 func assertReferencesForUnpublishedVolume(t *testing.T, publisher *HostVolumePublisher) {
-	volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(context.TODO(), testVolumeId)
+	volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(context.Background(), testVolumeId)
 	require.NoError(t, err)
 	assert.NotNil(t, volume)
 	assert.False(t, volume.Mounted)
