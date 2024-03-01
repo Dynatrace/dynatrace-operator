@@ -34,12 +34,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/utils/mount"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func NewAppVolumePublisher(client client.Client, fs afero.Afero, mounter mount.Interface, db metadata.Access, path metadata.PathResolver) csivolumes.Publisher {
+func NewAppVolumePublisher(fs afero.Afero, mounter mount.Interface, db metadata.Access, path metadata.PathResolver) csivolumes.Publisher {
 	return &AppVolumePublisher{
-		client:  client,
 		fs:      fs,
 		mounter: mounter,
 		db:      db,
@@ -48,7 +46,6 @@ func NewAppVolumePublisher(client client.Client, fs afero.Afero, mounter mount.I
 }
 
 type AppVolumePublisher struct {
-	client  client.Client
 	fs      afero.Afero
 	mounter mount.Interface
 	db      metadata.Access

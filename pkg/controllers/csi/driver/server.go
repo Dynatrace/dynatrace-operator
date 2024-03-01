@@ -38,11 +38,9 @@ import (
 	"google.golang.org/grpc/status"
 	"k8s.io/utils/mount"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Server struct {
-	client  client.Client
 	fs      afero.Afero
 	mounter mount.Interface
 	db      metadata.Access
@@ -55,9 +53,8 @@ type Server struct {
 var _ csi.IdentityServer = &Server{}
 var _ csi.NodeServer = &Server{}
 
-func NewServer(client client.Client, opts dtcsi.CSIOptions, db metadata.Access) *Server {
+func NewServer(opts dtcsi.CSIOptions, db metadata.Access) *Server {
 	return &Server{
-		client:  client,
 		opts:    opts,
 		fs:      afero.Afero{Fs: afero.NewOsFs()},
 		mounter: mount.New(""),
@@ -85,8 +82,8 @@ func (svr *Server) Start(ctx context.Context) error {
 	}
 
 	svr.publishers = map[string]csivolumes.Publisher{
-		appvolumes.Mode:  appvolumes.NewAppVolumePublisher(svr.client, svr.fs, svr.mounter, svr.db, svr.path),
-		hostvolumes.Mode: hostvolumes.NewHostVolumePublisher(svr.client, svr.fs, svr.mounter, svr.db, svr.path),
+		appvolumes.Mode:  appvolumes.NewAppVolumePublisher(svr.fs, svr.mounter, svr.db, svr.path),
+		hostvolumes.Mode: hostvolumes.NewHostVolumePublisher(svr.fs, svr.mounter, svr.db, svr.path),
 	}
 
 	log.Info("starting listener", "protocol", proto, "address", addr)

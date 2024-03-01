@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
@@ -14,10 +13,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/mount"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -37,7 +33,7 @@ func TestPublishVolume(t *testing.T) {
 		mockUrlDynakubeMetadata(t, &publisher)
 		mockSharedRuxitAgentProcConf(t, &publisher)
 
-		response, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
+		response, err := publisher.PublishVolume(context.Background(), createTestVolumeConfig())
 		require.NoError(t, err)
 		assert.NotNil(t, response)
 
@@ -70,7 +66,7 @@ func TestPublishVolume(t *testing.T) {
 		mockImageDynakubeMetadata(t, &publisher)
 		mockSharedRuxitAgentProcConf(t, &publisher)
 
-		response, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
+		response, err := publisher.PublishVolume(context.Background(), createTestVolumeConfig())
 		require.NoError(t, err)
 		assert.NotNil(t, response)
 
@@ -102,7 +98,7 @@ func TestPublishVolume(t *testing.T) {
 		publisher := newPublisherForTesting(mounter)
 		mockFailedPublishedVolume(t, &publisher)
 
-		response, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
+		response, err := publisher.PublishVolume(context.Background(), createTestVolumeConfig())
 		require.NoError(t, err)
 		assert.NotNil(t, response)
 
@@ -158,12 +154,12 @@ func TestHasTooManyMountAttempts(t *testing.T) {
 		}
 		volumeCfg := createTestVolumeConfig()
 
-		hasTooManyAttempts, err := publisher.hasTooManyMountAttempts(context.TODO(), bindCfg, volumeCfg)
+		hasTooManyAttempts, err := publisher.hasTooManyMountAttempts(context.Background(), bindCfg, volumeCfg)
 
 		require.NoError(t, err)
 		assert.False(t, hasTooManyAttempts)
 
-		volume, err := publisher.db.GetVolume(context.TODO(), volumeCfg.VolumeID)
+		volume, err := publisher.db.GetVolume(context.Background(), volumeCfg.VolumeID)
 		require.NoError(t, err)
 		require.NotNil(t, volume)
 		assert.Equal(t, 1, volume.MountAttempts)
@@ -176,7 +172,7 @@ func TestHasTooManyMountAttempts(t *testing.T) {
 			MaxMountAttempts: dynatracev1beta1.DefaultMaxFailedCsiMountAttempts,
 		}
 
-		hasTooManyAttempts, err := publisher.hasTooManyMountAttempts(context.TODO(), bindCfg, createTestVolumeConfig())
+		hasTooManyAttempts, err := publisher.hasTooManyMountAttempts(context.Background(), bindCfg, createTestVolumeConfig())
 
 		require.NoError(t, err)
 		assert.True(t, hasTooManyAttempts)
@@ -197,7 +193,7 @@ func TestUnpublishVolume(t *testing.T) {
 		assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
 		assert.InEpsilon(t, 1, testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(testAgentVersion)), 0.01)
 
-		response, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
+		response, err := publisher.UnpublishVolume(context.Background(), createTestVolumeInfo())
 		require.NoError(t, err)
 
 		assert.Equal(t, 0, testutil.CollectAndCount(agentsVersionsMetric))
@@ -217,7 +213,7 @@ func TestUnpublishVolume(t *testing.T) {
 		})
 		publisher := newPublisherForTesting(mounter)
 
-		response, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
+		response, err := publisher.UnpublishVolume(context.Background(), createTestVolumeInfo())
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
@@ -232,7 +228,7 @@ func TestUnpublishVolume(t *testing.T) {
 		publisher := newPublisherForTesting(mounter)
 		mockFailedPublishedVolume(t, &publisher)
 
-		response, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
+		response, err := publisher.UnpublishVolume(context.Background(), createTestVolumeInfo())
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
@@ -248,7 +244,7 @@ func TestNodePublishAndUnpublishVolume(t *testing.T) {
 	mockUrlDynakubeMetadata(t, &publisher)
 	mockSharedRuxitAgentProcConf(t, &publisher)
 
-	publishResponse, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
+	publishResponse, err := publisher.PublishVolume(context.Background(), createTestVolumeConfig())
 
 	require.NoError(t, err)
 	assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
@@ -259,7 +255,7 @@ func TestNodePublishAndUnpublishVolume(t *testing.T) {
 	assert.NotEmpty(t, mounter.MountPoints)
 	assertReferencesForPublishedVolume(t, &publisher, mounter)
 
-	unpublishResponse, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
+	unpublishResponse, err := publisher.UnpublishVolume(context.Background(), createTestVolumeInfo())
 
 	assert.Equal(t, 0, testutil.CollectAndCount(agentsVersionsMetric))
 	assert.InDelta(t, 0, testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(testAgentVersion)), 0.01)
@@ -281,9 +277,9 @@ func TestStoreAndLoadPodInfo(t *testing.T) {
 
 	volumeCfg := createTestVolumeConfig()
 
-	err := publisher.storeVolume(context.TODO(), bindCfg, volumeCfg)
+	err := publisher.storeVolume(context.Background(), bindCfg, volumeCfg)
 	require.NoError(t, err)
-	volume, err := publisher.loadVolume(context.TODO(), volumeCfg.VolumeID)
+	volume, err := publisher.loadVolume(context.Background(), volumeCfg.VolumeID)
 	require.NoError(t, err)
 	require.NotNil(t, volume)
 	assert.Equal(t, testVolumeId, volume.VolumeID)
@@ -296,7 +292,7 @@ func TestLoadPodInfo_Empty(t *testing.T) {
 	mounter := mount.NewFakeMounter([]mount.MountPoint{})
 	publisher := newPublisherForTesting(mounter)
 
-	volume, err := publisher.loadVolume(context.TODO(), testVolumeId)
+	volume, err := publisher.loadVolume(context.Background(), testVolumeId)
 	require.NoError(t, err)
 	require.Nil(t, volume)
 }
@@ -311,36 +307,17 @@ func TestMountIfDBHasError(t *testing.T) {
 		MaxMountAttempts: dynatracev1beta1.DefaultMaxFailedCsiMountAttempts,
 	}
 
-	err := publisher.ensureMountSteps(context.TODO(), bindCfg, createTestVolumeConfig())
+	err := publisher.ensureMountSteps(context.Background(), bindCfg, createTestVolumeConfig())
 	require.Error(t, err)
 	require.Empty(t, mounter.MountPoints)
 }
 
 func newPublisherForTesting(mounter *mount.FakeMounter) AppVolumePublisher {
-	objects := []client.Object{
-		&dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: testDynakubeName,
-			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
-				},
-			},
-		},
-		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: testDynakubeName,
-			},
-		},
-	}
-
 	csiOptions := dtcsi.CSIOptions{RootDir: "/"}
 
 	tmpFs := afero.NewMemMapFs()
 
 	return AppVolumePublisher{
-		client:  fake.NewClient(objects...),
 		fs:      afero.Afero{Fs: tmpFs},
 		mounter: mounter,
 		db:      metadata.FakeMemoryDB(),
@@ -350,19 +327,19 @@ func newPublisherForTesting(mounter *mount.FakeMounter) AppVolumePublisher {
 
 func mockPublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
 	mockUrlDynakubeMetadata(t, publisher)
-	err := publisher.db.InsertVolume(context.TODO(), metadata.NewVolume(testVolumeId, testPodUID, testAgentVersion, testTenantUUID, 0))
+	err := publisher.db.InsertVolume(context.Background(), metadata.NewVolume(testVolumeId, testPodUID, testAgentVersion, testTenantUUID, 0))
 	require.NoError(t, err)
 	agentsVersionsMetric.WithLabelValues(testAgentVersion).Inc()
 }
 
 func mockFailedPublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
 	mockUrlDynakubeMetadata(t, publisher)
-	err := publisher.db.InsertVolume(context.TODO(), metadata.NewVolume(testVolumeId, testPodUID, testAgentVersion, testTenantUUID, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts+1))
+	err := publisher.db.InsertVolume(context.Background(), metadata.NewVolume(testVolumeId, testPodUID, testAgentVersion, testTenantUUID, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts+1))
 	require.NoError(t, err)
 }
 
 func mockUrlDynakubeMetadata(t *testing.T, publisher *AppVolumePublisher) {
-	err := publisher.db.InsertDynakube(context.TODO(), metadata.NewDynakube(testDynakubeName, testTenantUUID, testAgentVersion, "", 0))
+	err := publisher.db.InsertDynakube(context.Background(), metadata.NewDynakube(testDynakubeName, testTenantUUID, testAgentVersion, "", 0))
 	require.NoError(t, err)
 }
 
@@ -378,14 +355,14 @@ func mockSharedRuxitAgentProcConf(t *testing.T, publisher *AppVolumePublisher, c
 }
 
 func mockImageDynakubeMetadata(t *testing.T, publisher *AppVolumePublisher) {
-	err := publisher.db.InsertDynakube(context.TODO(), metadata.NewDynakube(testDynakubeName, testTenantUUID, "", testImageDigest, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts))
+	err := publisher.db.InsertDynakube(context.Background(), metadata.NewDynakube(testDynakubeName, testTenantUUID, "", testImageDigest, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts))
 	require.NoError(t, err)
 }
 
 func assertReferencesForPublishedVolume(t *testing.T, publisher *AppVolumePublisher, mounter *mount.FakeMounter) {
 	assert.NotEmpty(t, mounter.MountPoints)
 
-	volume, err := publisher.loadVolume(context.TODO(), testVolumeId)
+	volume, err := publisher.loadVolume(context.Background(), testVolumeId)
 	require.NoError(t, err)
 	assert.Equal(t, testVolumeId, volume.VolumeID)
 	assert.Equal(t, testPodUID, volume.PodName)
@@ -396,7 +373,7 @@ func assertReferencesForPublishedVolume(t *testing.T, publisher *AppVolumePublis
 func assertReferencesForPublishedVolumeWithCodeModulesImage(t *testing.T, publisher *AppVolumePublisher, mounter *mount.FakeMounter) {
 	assert.NotEmpty(t, mounter.MountPoints)
 
-	volume, err := publisher.loadVolume(context.TODO(), testVolumeId)
+	volume, err := publisher.loadVolume(context.Background(), testVolumeId)
 	require.NoError(t, err)
 	assert.Equal(t, testVolumeId, volume.VolumeID)
 	assert.Equal(t, testPodUID, volume.PodName)
@@ -405,7 +382,7 @@ func assertReferencesForPublishedVolumeWithCodeModulesImage(t *testing.T, publis
 }
 
 func assertNoReferencesForUnpublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
-	volume, err := publisher.loadVolume(context.TODO(), testVolumeId)
+	volume, err := publisher.loadVolume(context.Background(), testVolumeId)
 	require.NoError(t, err)
 	require.Nil(t, volume)
 }
