@@ -102,7 +102,6 @@ spec:
           periodSeconds: 5
           successThreshold: 1
           timeoutSeconds: 1
-        {{- include "dynatrace-operator.startupProbe" . | nindent 8 }}
         ports:
         - containerPort: 10080
           name: livez
@@ -142,6 +141,7 @@ spec:
           - name: MAX_UNMOUNTED_VOLUME_AGE
             value: "{{ .Values.csidriver.maxUnmountedVolumeAge}}"
           {{- end }}
+        {{- include "dynatrace-operator.startupProbe" . | nindent 8 }}
         livenessProbe:
           failureThreshold: 3
           httpGet:
