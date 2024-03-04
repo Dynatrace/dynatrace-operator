@@ -13,7 +13,8 @@ import (
 
 const (
 	// the attribute key needs to be added to the allow list on the receiving tenant.
-	mutatedPodNameKey = "webhook.mutationrequest.pod.name"
+	mutatedPodNameKey            = "webhook.mutationrequest.pod.name"
+	podMutationHandledMetricName = "handledPodMutationRequests"
 )
 
 var envPodName string
@@ -28,7 +29,7 @@ func getWebhookPodName() string {
 }
 
 func countHandleMutationRequest(ctx context.Context, mutatedPodName string) {
-	dtotel.Count(ctx, webhookotel.Meter(), "handledPodMutationRequests", int64(1),
+	dtotel.Count(ctx, webhookotel.Meter(), podMutationHandledMetricName, int64(1),
 		attribute.String(webhookotel.WebhookPodNameKey, getWebhookPodName()),
 		attribute.String(mutatedPodNameKey, mutatedPodName))
 }
