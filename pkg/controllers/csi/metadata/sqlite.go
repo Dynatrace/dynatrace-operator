@@ -4,11 +4,16 @@ import (
 	"context"
 	"database/sql"
 	"strconv"
+	"strings"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	"github.com/go-gormigrate/gormigrate/v2"
 	"github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var (
@@ -183,6 +188,28 @@ const (
 
 type SqliteAccess struct {
 	conn *sql.DB
+}
+
+type DBConn struct {
+	db *gorm.DB
+}
+
+// NewDBAccess creates a new gorm db connection to the database.
+func NewDBAccess(path string) (DBConn, error) {
+	// we should explicitly enable foreign_keys for sqlite
+	if strings.Contains(path, "?") {
+		path += "&_foreign_keys=on"
+	} else {
+		path += "?_foreign_keys=on"
+	}
+
+	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{Logger: logger.Default})
+
+	if err != nil {
+		return DBConn{}, err
+	}
+
+	return DBConn{db: db}, nil
 }
 
 // NewAccess creates a new SqliteAccess, connects to the database.
@@ -744,4 +771,29 @@ func (access *SqliteAccess) querySimpleStatement(ctx context.Context, statement,
 	}
 
 	return nil
+}
+
+// SchemaMigration runs gormigrate migrations to create tables
+func (conn *DBConn) SchemaMigration(ctx context.Context) error {
+	m := gormigrate.New(conn.db, gormigrate.DefaultOptions, []*gormigrate.Migration{
+		// your migrations here
+	})
+
+	m.InitSchema(func(tx *gorm.DB) error {
+		err := tx.AutoMigrate(
+			&TenantConfig{},
+			&CodeModule{},
+			&OSMount{},
+			&AppMount{},
+			&VolumeMeta{},
+		)
+		if err != nil {
+			return err
+		}
+
+		// all other constraints, indexes, etc...
+		return nil
+	})
+
+	return m.Migrate()
 }

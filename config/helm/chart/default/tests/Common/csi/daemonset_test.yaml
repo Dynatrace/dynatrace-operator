@@ -170,14 +170,6 @@ tests:
                   periodSeconds: 5
                   successThreshold: 1
                   timeoutSeconds: 1
-                startupProbe:
-                  exec:
-                    command:
-                      - /usr/local/bin/dynatrace-operator
-                      - startup-probe
-                  periodSeconds: 10
-                  timeoutSeconds: 5
-                  failureThreshold: 1
                 name: server
                 ports:
                   - containerPort: 10080
@@ -224,6 +216,14 @@ tests:
                         fieldPath: metadata.namespace
                 image: image-name
                 imagePullPolicy: Always
+                startupProbe:
+                  exec:
+                    command:
+                      - /usr/local/bin/dynatrace-operator
+                      - startup-probe
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 1
                 livenessProbe:
                   failureThreshold: 3
                   httpGet:

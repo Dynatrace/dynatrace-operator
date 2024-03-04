@@ -73,10 +73,6 @@ test/e2e/cloudnative/network-zone: manifests/crd/helm
 test/e2e/cloudnative/proxy: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/istio -args --labels "name=cloudnative-proxy" $(SKIPCLEANUP)
 
-## Runs CloudNative public registry e2e test only
-test/e2e/cloudnative/publicregistry: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=cloudnative-public-registry" $(SKIPCLEANUP)
-
 ## Runs Classic/CloudNative mode switching tests
 test/e2e/cloudnative/switchmodes: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=cloudnative-to-classic" $(SKIPCLEANUP)
@@ -100,6 +96,10 @@ test/e2e/applicationmonitoring/readonlycsivolume: manifests/crd/helm
 ## Runs Application Monitoring without CSI e2e test only
 test/e2e/applicationmonitoring/withoutcsi: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=app-without-csi" $(SKIPCLEANUP)
+
+## Runs public registry images e2e test only
+test/e2e/publicregistry: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=public-registry-images" $(SKIPCLEANUP)
 
 ## Runs SupportArchive e2e test only
 test/e2e/supportarchive: manifests/crd/helm

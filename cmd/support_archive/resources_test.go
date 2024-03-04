@@ -139,7 +139,7 @@ func TestManifestCollector_Success(t *testing.T) {
 	defer server.Close()
 	rc := &rest.Config{Host: server.URL}
 
-	ctx := context.TODO()
+	ctx := context.Background()
 	require.NoError(t, newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, *rc).Do())
 	assertNoErrorOnClose(t, supportArchive)
 
@@ -154,8 +154,8 @@ func TestManifestCollector_Success(t *testing.T) {
 		fmt.Sprintf("%s/edgeconnect/edgeconnect1%s", testOperatorNamespace, manifestExtension),
 		fmt.Sprintf("%s/mutatingwebhookconfiguration%s", "webhook_configurations", manifestExtension),
 		fmt.Sprintf("%s/validatingwebhookconfiguration%s", "webhook_configurations", manifestExtension),
-		fmt.Sprintf("%s/customresourcedefinition-dynakube%s", "crds", manifestExtension),
-		fmt.Sprintf("%s/customresourcedefinition-edgeconnect%s", "crds", manifestExtension),
+		fmt.Sprintf("%s/customresourcedefinition-dynakubes%s", "crds", manifestExtension),
+		fmt.Sprintf("%s/customresourcedefinition-edgeconnects%s", "crds", manifestExtension),
 	}
 
 	sort.Strings(expectedFiles)
@@ -259,7 +259,7 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 		},
 	)
 
-	ctx := context.TODO()
+	ctx := context.Background()
 
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
@@ -292,9 +292,9 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 
 	crds := []string{zipReader.File[6].Name, zipReader.File[7].Name}
 	sort.Strings(crds)
-	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/customresourcedefinition-dynakube%s", "crds", manifestExtension)), crds[0])
+	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/customresourcedefinition-dynakubes%s", "crds", manifestExtension)), crds[0])
 
-	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/customresourcedefinition-edgeconnect%s", "crds", manifestExtension)), crds[1])
+	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/customresourcedefinition-edgeconnects%s", "crds", manifestExtension)), crds[1])
 }
 
 func typeMeta(kind string) metav1.TypeMeta {
@@ -340,13 +340,22 @@ func getResourceLists() []metav1.APIResourceList {
 		},
 	}
 
+	ag := metav1.APIResourceList{
+		GroupVersion: crdNameSuffix + "/" + "v1alpha1",
+		APIResources: []metav1.APIResource{
+			{Version: "v1alpha1", Group: crdNameSuffix, Name: "activegates", Namespaced: true, Kind: "ActiveGate"},
+		},
+	}
+
 	return []metav1.APIResourceList{
 		stable,
 		dk,
 		ec,
+		ag,
 	}
 }
 
+// TODO: Remove this, by allowing the mocking of the DiscoveryClient in the Collector's struct
 func createFakeServer(t *testing.T, stable metav1.APIResourceList, dk metav1.APIResourceList, ec metav1.APIResourceList) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		var list any

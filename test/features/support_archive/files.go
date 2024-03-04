@@ -257,14 +257,21 @@ func (r requiredFiles) getRequiredCRDFiles() []string {
 		fmt.Sprintf("%s/%s/%s%s",
 			support_archive.ManifestsDirectoryName,
 			support_archive.CRDDirectoryName,
-			strings.Join([]string{strings.ToLower(support_archive.CRDKindName), "dynakube"}, "-"),
+			strings.Join([]string{strings.ToLower(support_archive.CRDKindName), "dynakubes"}, "-"),
 			support_archive.ManifestsFileExtension))
 
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/%s%s",
 			support_archive.ManifestsDirectoryName,
 			support_archive.CRDDirectoryName,
-			strings.Join([]string{strings.ToLower(support_archive.CRDKindName), "edgeconnect"}, "-"),
+			strings.Join([]string{strings.ToLower(support_archive.CRDKindName), "edgeconnects"}, "-"),
+			support_archive.ManifestsFileExtension))
+
+	requiredFiles = append(requiredFiles,
+		fmt.Sprintf("%s/%s/%s%s",
+			support_archive.ManifestsDirectoryName,
+			support_archive.CRDDirectoryName,
+			strings.Join([]string{strings.ToLower(support_archive.CRDKindName), "activegates"}, "-"),
 			support_archive.ManifestsFileExtension))
 
 	return requiredFiles
