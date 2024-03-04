@@ -90,7 +90,7 @@ our [official help page](https://www.dynatrace.com/support/help/shortlink/full-s
 ## Uninstall dynatrace-operator
 
 > For instructions on how to uninstall the dynatrace-operator on Openshift,
-> head to the [official help page](https://www.dynatrace.com/support/help/shortlink/full-stack-dto-k8#uninstall-dynatrace-operator)
+> head to the [official help page](https://docs.dynatrace.com/docs/setup-and-configuration/setup-on-k8s/guides/operation/update-uninstall-operator#uninstall-dynatrace-operator)
 
 Clean-up all Dynatrace Operator specific objects:
 
