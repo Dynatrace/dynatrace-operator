@@ -27,6 +27,7 @@ func (controller *Controller) setConditionTokenReady(dynakube *dynatracev1beta1.
 	controller.setAndLogCondition(dynakube, tokenErrorCondition)
 }
 
+// TODO: Probably should be removed, as most of this is done inside meta.SetStatusCondition (except the logging) the removeDeprecatedConditionTypes already did its job, as it has been in since forever
 func (controller *Controller) setAndLogCondition(dynakube *dynatracev1beta1.DynaKube, newCondition metav1.Condition) {
 	controller.removeDeprecatedConditionTypes(dynakube)
 	statusCondition := meta.FindStatusCondition(dynakube.Status.Conditions, newCondition.Type)

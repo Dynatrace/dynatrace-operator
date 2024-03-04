@@ -71,11 +71,16 @@ func NewReconciler(
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
+	err := r.versionReconciler.ReconcileCodeModules(ctx, r.dynakube) // Handles their cleanup on their own, like all things should
+	if err != nil {
+		return err
+	}
+
 	if !r.dynakube.NeedAppInjection() {
 		return r.removeAppInjection(ctx)
 	}
 
-	err := r.connectionInfoReconciler.Reconcile(ctx)
+	err = r.connectionInfoReconciler.Reconcile(ctx)
 	if err != nil {
 		return err
 	} // TODO: there tends to be a clean up for each reconcileX function, so it might makes sense to have the same here
@@ -144,12 +149,7 @@ func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
 		}
 	}
 
-	err := r.versionReconciler.ReconcileCodeModules(ctx, r.dynakube)
-	if err != nil {
-		return err
-	}
-
-	err = initgeneration.NewInitGenerator(r.client, r.apiReader, r.dynakube.Namespace).GenerateForDynakube(ctx, r.dynakube)
+	err := initgeneration.NewInitGenerator(r.client, r.apiReader, r.dynakube.Namespace).GenerateForDynakube(ctx, r.dynakube)
 	if err != nil {
 		log.Info("failed to generate init secret")
 
