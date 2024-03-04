@@ -7,7 +7,6 @@
 - Use a local logger with pre-configured key/values to avoid duplication
 - Be careful to not accidentally log confidential info like passwords or tokens.
 
-
 ## Examples for debug logs
 
 ### Show the flow
@@ -39,7 +38,6 @@ if len(ecs.EdgeConnects) > 1 {
 
 ```
 
-
 ### Pre-configured local logger
 
 ```go
@@ -47,12 +45,12 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
     llog := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name)
 
     ...
-	llog.Debug("foobar happened")
+    llog.Debug("foobar happened")
 
-	llog = llog.WithValues("foobarReaseon", "hurga")
+    llog = llog.WithValues("foobarReaseon", "hurga")
 
-	...
-	llog.Debug("foobar happened again")
+    ...
+    llog.Debug("foobar happened again")
     ...
 }
 
