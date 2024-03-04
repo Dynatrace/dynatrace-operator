@@ -11,11 +11,12 @@ import (
 
 const (
 	// the attribute key needs to be added to the allow list on the receiving tenant
-	mutatedNamespaceNameKey = "webhook.mutationrequest.namespace.name"
+	mutatedNamespaceNameKey            = "webhook.mutationrequest.namespace.name"
+	namespaceMutationHandledMetricName = "handledNamespaceMutationRequests"
 )
 
 func countHandleMutationRequest(ctx context.Context, namespace string) {
-	dtotel.Count(ctx, webhookotel.Meter(), "handledPodMutationRequests", int64(1),
+	dtotel.Count(ctx, webhookotel.Meter(), namespaceMutationHandledMetricName, int64(1),
 		attribute.String(webhookotel.WebhookPodNameKey, webhookotel.GetWebhookPodName()),
 		attribute.String(mutatedNamespaceNameKey, namespace))
 }
