@@ -6,6 +6,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"k8s.io/apimachinery/pkg/api/meta"
+)
+
+const (
+	cmConditionType = "CodeModulesVersion"
 )
 
 type codeModulesUpdater struct {
@@ -25,7 +31,13 @@ func (updater codeModulesUpdater) Name() string {
 }
 
 func (updater codeModulesUpdater) IsEnabled() bool {
-	return updater.dynakube.NeedAppInjection()
+	if updater.dynakube.NeedAppInjection() {
+		return true
+	}
+
+	_ = meta.RemoveStatusCondition(updater.dynakube.Conditions(), cmConditionType)
+
+	return false
 }
 
 func (updater *codeModulesUpdater) Target() *status.VersionStatus {
@@ -33,7 +45,12 @@ func (updater *codeModulesUpdater) Target() *status.VersionStatus {
 }
 
 func (updater codeModulesUpdater) CustomImage() string {
-	return updater.dynakube.CustomCodeModulesImage()
+	customImage := updater.dynakube.CustomCodeModulesImage()
+	if customImage != "" {
+		setVerificationSkippedReasonCondition(updater.dynakube.Conditions(), cmConditionType)
+	}
+
+	return customImage
 }
 
 func (updater codeModulesUpdater) CustomVersion() string {
@@ -45,11 +62,21 @@ func (updater codeModulesUpdater) IsAutoUpdateEnabled() bool {
 }
 
 func (updater codeModulesUpdater) IsPublicRegistryEnabled() bool {
-	return updater.dynakube.FeaturePublicRegistry()
+	isPublicRegistry := updater.dynakube.FeaturePublicRegistry()
+	if isPublicRegistry {
+		setVerifiedCondition(updater.dynakube.Conditions(), cmConditionType) // Bit hacky, as things can still go wrong, but if so we will just overwrite this is LatestImageInfo.
+	}
+
+	return isPublicRegistry
 }
 
 func (updater codeModulesUpdater) LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error) {
-	return updater.dtClient.GetLatestCodeModulesImage(ctx)
+	imgInfo, err := updater.dtClient.GetLatestCodeModulesImage(ctx)
+	if err != nil {
+		conditions.SetDynatraceApiErrorCondition(updater.dynakube.Conditions(), cmConditionType, err)
+	}
+
+	return imgInfo, err
 }
 
 func (updater *codeModulesUpdater) CheckForDowngrade(_ string) (bool, error) {
@@ -64,6 +91,7 @@ func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error 
 				Version: customVersion,
 			},
 		}
+		setVerificationSkippedReasonCondition(updater.dynakube.Conditions(), cmConditionType)
 
 		return nil
 	}
@@ -72,6 +100,7 @@ func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error 
 		dtclient.OsUnix, dtclient.InstallerTypePaaS)
 	if err != nil {
 		log.Info("could not get agent paas unix version")
+		conditions.SetDynatraceApiErrorCondition(updater.dynakube.Conditions(), cmConditionType, err)
 
 		return err
 	}
@@ -81,6 +110,7 @@ func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error 
 			Version: latestAgentVersionUnixPaas,
 		},
 	}
+	setVerifiedCondition(updater.dynakube.Conditions(), cmConditionType)
 
 	return nil
 }

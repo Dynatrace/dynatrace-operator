@@ -341,3 +341,14 @@ func mockLatestAgentVersion(mockClient *dtclientmock.Client, latestVersion strin
 func mockLatestActiveGateVersion(mockClient *dtclientmock.Client, latestVersion string) {
 	mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(latestVersion, nil)
 }
+
+func createErrorDTClient(t *testing.T) dtclient.Client {
+	mockClient := dtclientmock.NewClient(t)
+	mockClient.On("GetLatestAgentVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything, mock.Anything).Return("", errors.New("BOOM")).Maybe()
+	mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return("", errors.New("BOOM")).Maybe()
+	mockClient.On("GetLatestOneAgentImage", mock.AnythingOfType("context.backgroundCtx")).Return(nil, errors.New("BOOM")).Maybe()
+	mockClient.On("GetLatestCodeModulesImage", mock.AnythingOfType("context.backgroundCtx")).Return(nil, errors.New("BOOM")).Maybe()
+	mockClient.On("GetLatestActiveGateImage", mock.AnythingOfType("context.backgroundCtx")).Return(nil, errors.New("BOOM")).Maybe()
+
+	return mockClient
+}

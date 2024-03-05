@@ -11,31 +11,34 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	clientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 const (
 	testName                   = "test-name"
 	testNamespace              = "test-namespace"
 	testTokenValue             = "test-token"
-	tenantTokenKey             = "tenantToken"
 	oneAgentTenantSecretSuffix = "oneagent-tenant-secret"
 )
 
-func TestReconciler_Reconcile(t *testing.T) {
+func TestReconcile(t *testing.T) {
 	t.Run("Create and update works with minimal setup", func(t *testing.T) {
 		dynakube := createDynakube(dynatracev1beta1.OneAgentSpec{
 			CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}})
 
 		mockK8sClient := fake.NewClient(dynakube)
-		mockK8sClient.Create(context.Background(),
+		_ = mockK8sClient.Create(context.Background(),
 			&corev1.Secret{
 				Data: map[string][]byte{connectioninfo.TenantTokenKey: []byte(testTokenValue)},
 				ObjectMeta: metav1.ObjectMeta{
@@ -53,16 +56,24 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		checkSecretForValue(t, mockK8sClient, "\"revision\":0")
-		require.Equal(t, dynakube.Status.OneAgent.LastProcessModuleConfigUpdate.Time, mockTime.Now().Time)
+
+		condition := meta.FindStatusCondition(*dynakube.Conditions(), pmcConditionType)
+		oldTransitionTime := condition.LastTransitionTime
+		require.NotNil(t, condition)
+		require.NotEmpty(t, oldTransitionTime)
+		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 
 		// update should be blocked by timeout
-		mockTime.Set(timeprovider.Now())
-
 		reconciler.dtClient = createMockDtClient(t, 1)
 		err = reconciler.Reconcile(context.Background())
+
 		require.NoError(t, err)
 		checkSecretForValue(t, mockK8sClient, "\"revision\":0")
-		require.NotEqual(t, dynakube.Status.OneAgent.LastProcessModuleConfigUpdate.Time, mockTime.Now().Time)
+
+		condition = meta.FindStatusCondition(*dynakube.Conditions(), pmcConditionType)
+		require.NotNil(t, condition)
+		require.Equal(t, condition.LastTransitionTime, oldTransitionTime)
 
 		// go forward in time => should update again
 		futureTime := metav1.NewTime(time.Now().Add(time.Hour))
@@ -71,16 +82,72 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = reconciler.Reconcile(context.Background())
 		require.NoError(t, err)
 		checkSecretForValue(t, mockK8sClient, "\"revision\":1")
-		require.Equal(t, dynakube.Status.OneAgent.LastProcessModuleConfigUpdate.Time, futureTime.Time)
+
+		condition = meta.FindStatusCondition(*dynakube.Conditions(), pmcConditionType)
+		require.NotNil(t, condition)
+		require.Greater(t, condition.LastTransitionTime.Time, oldTransitionTime.Time)
+		assert.Equal(t, conditions.SecretUpdatedReason, condition.Reason)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 	})
-	t.Run("Only runs when required", func(t *testing.T) {
+	t.Run("Only runs when required, and cleans up condition", func(t *testing.T) {
 		dynakube := createDynakube(dynatracev1beta1.OneAgentSpec{
 			ClassicFullStack: &dynatracev1beta1.HostInjectSpec{}})
+		conditions.SetSecretCreatedCondition(dynakube.Conditions(), pmcConditionType, "this is a test")
 
 		reconciler := NewReconciler(nil, nil, nil, dynakube, scheme.Scheme, timeprovider.New())
 		err := reconciler.Reconcile(context.Background())
 
 		require.NoError(t, err)
+		assert.Empty(t, *dynakube.Conditions())
+	})
+
+	t.Run("problem with k8s request => visible in conditions", func(t *testing.T) {
+		dynakube := createDynakube(dynatracev1beta1.OneAgentSpec{
+			CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}})
+
+		boomClient := createBOOMK8sClient()
+
+		mockTime := timeprovider.New().Freeze()
+
+		reconciler := NewReconciler(boomClient,
+			boomClient, createMockDtClient(t, 0), dynakube, scheme.Scheme, mockTime)
+
+		err := reconciler.Reconcile(context.Background())
+
+		require.Error(t, err)
+		require.Len(t, *dynakube.Conditions(), 1)
+		condition := meta.FindStatusCondition(*dynakube.Conditions(), pmcConditionType)
+		assert.Equal(t, conditions.KubeApiErrorReason, condition.Reason)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+	})
+
+	t.Run("problem with dynatrace request => visible in conditions", func(t *testing.T) {
+		dynakube := createDynakube(dynatracev1beta1.OneAgentSpec{
+			CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}})
+
+		mockK8sClient := fake.NewClient(dynakube)
+		_ = mockK8sClient.Create(context.Background(),
+			&corev1.Secret{
+				Data: map[string][]byte{connectioninfo.TenantTokenKey: []byte(testTokenValue)},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      strings.Join([]string{testName, oneAgentTenantSecretSuffix}, "-"),
+					Namespace: testNamespace,
+				},
+			},
+		)
+
+		mockTime := timeprovider.New().Freeze()
+
+		reconciler := NewReconciler(mockK8sClient,
+			mockK8sClient, createBOOMDtClient(t), dynakube, scheme.Scheme, mockTime)
+
+		err := reconciler.Reconcile(context.Background())
+
+		require.Error(t, err)
+		require.Len(t, *dynakube.Conditions(), 1)
+		condition := meta.FindStatusCondition(*dynakube.Conditions(), pmcConditionType)
+		assert.Equal(t, conditions.DynatraceApiErrorReason, condition.Reason)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 }
 
@@ -116,13 +183,39 @@ func createMockDtClient(t *testing.T, revision uint) *clientmock.Client {
 	return mockClient
 }
 
+func createBOOMDtClient(t *testing.T) *clientmock.Client {
+	mockClient := clientmock.NewClient(t)
+	mockClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(nil, errors.New("BOOM"))
+
+	return mockClient
+}
+
+func createBOOMK8sClient() client.Client {
+	boomClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+		Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+			return errors.New("BOOM")
+		},
+		Delete: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+			return errors.New("BOOM")
+		},
+		Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+			return errors.New("BOOM")
+		},
+		Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+			return errors.New("BOOM")
+		},
+	})
+
+	return boomClient
+}
+
 func TestGetSecretData(t *testing.T) {
 	t.Run("unmarshal secret data into struct", func(t *testing.T) {
 		// use Reconcile to automatically create the secret to test
 		dynakube := createDynakube(dynatracev1beta1.OneAgentSpec{
 			CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}})
 		mockK8sClient := fake.NewClient(dynakube)
-		mockK8sClient.Create(context.Background(),
+		_ = mockK8sClient.Create(context.Background(),
 			&corev1.Secret{
 				Data: map[string][]byte{connectioninfo.TenantTokenKey: []byte(testTokenValue)},
 				ObjectMeta: metav1.ObjectMeta{
@@ -153,7 +246,7 @@ func TestGetSecretData(t *testing.T) {
 	})
 	t.Run("error when unmarshaling secret data", func(t *testing.T) {
 		fakeClient := fake.NewClient()
-		fakeClient.Create(context.Background(),
+		_ = fakeClient.Create(context.Background(),
 			&corev1.Secret{
 				Data:       map[string][]byte{SecretKeyProcessModuleConfig: []byte("WRONG VALUE!")},
 				ObjectMeta: metav1.ObjectMeta{Name: extendWithSuffix(testName), Namespace: testNamespace},

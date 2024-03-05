@@ -2,18 +2,22 @@
 
 set -eu -o pipefail
 
-ENVIRONMENT_KUBECONFIG="$RUNNER_TEMP/environment-kubeconfig"
-ENVIRONMENT_SECRET_NAME="$ENVIRONMENT-kubeconfig"
+echo "Switching to target branch directory..."
+cd target
 
-echo "Loading kubeconfig from secret for environment '$ENVIRONMENT' from namespace '$NAMESPACE'"
-kubectl get secret --namespace "$NAMESPACE" "$ENVIRONMENT_SECRET_NAME" -o jsonpath='{.data.kubeconfig}' | base64 --decode > "$ENVIRONMENT_KUBECONFIG"
+FLC_ENVIRONMENT_KUBECONFIG="$RUNNER_TEMP/environment-kubeconfig"
+FLC_ENVIRONMENT_SECRET_NAME="$FLC_ENVIRONMENT-kubeconfig"
 
-echo "Switching to test cluster for environment '$ENVIRONMENT'!"
-export KUBECONFIG="$ENVIRONMENT_KUBECONFIG"
+echo "Loading kubeconfig from secret for environment '$FLC_ENVIRONMENT' from namespace '$FLC_NAMESPACE'"
+kubectl get secret --namespace "$FLC_NAMESPACE" "$FLC_ENVIRONMENT_SECRET_NAME" -o jsonpath='{.data.kubeconfig}' | base64 --decode > "$FLC_ENVIRONMENT_KUBECONFIG"
+
+echo "Switching to test cluster for environment '$FLC_ENVIRONMENT'!"
+export KUBECONFIG="$FLC_ENVIRONMENT_KUBECONFIG"
 
 kubectl version
 kubectl config view
 
+echo "Preparing test secrets..."
 mkdir -p test/testdata/secrets/
 
 pushd test/testdata/secrets/
@@ -49,7 +53,7 @@ EOF
 
 popd
 
-echo "Running tests for environment '$ENVIRONMENT' ..."
-make BRANCH="${GITHUB_REF##*/}" test/e2e # use current branch image to run tests
+echo "Running tests for environment '$FLC_ENVIRONMENT' ..."
+make BRANCH="$TARGET_BRANCH" test/e2e
 
 echo "Test run completed!"

@@ -29,14 +29,12 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/utils/mount"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const failedToGetOsAgentVolumePrefix = "failed to get osagent volume info from database: "
 
-func NewHostVolumePublisher(client client.Client, fs afero.Afero, mounter mount.Interface, db metadata.Access, path metadata.PathResolver) csivolumes.Publisher {
+func NewHostVolumePublisher(fs afero.Afero, mounter mount.Interface, db metadata.Access, path metadata.PathResolver) csivolumes.Publisher {
 	return &HostVolumePublisher{
-		client:  client,
 		fs:      fs,
 		mounter: mounter,
 		db:      db,
@@ -45,7 +43,6 @@ func NewHostVolumePublisher(client client.Client, fs afero.Afero, mounter mount.
 }
 
 type HostVolumePublisher struct {
-	client  client.Client
 	fs      afero.Afero
 	mounter mount.Interface
 	db      metadata.Access
