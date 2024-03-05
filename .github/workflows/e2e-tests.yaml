@@ -18,7 +18,7 @@ jobs:
     env:
       FLC_NAMESPACE: dto-k8s-ondemand
       FLC_ENVIRONMENT: dto-k8s-1-26
-      TARGET_BRANCH: ${{ github.event.inputs.target }}
+      TARGET_BRANCH: ${{ github.event.inputs.target || 'main' }}
       TENANT1_NAME: ${{ secrets.TENANT1_NAME }}
       TENANT1_APITOKEN: ${{ secrets.TENANT1_APITOKEN }}
       TENANT1_OTELTOKEN: ${{ secrets.TENANT1_OTELTOKEN }}
@@ -61,7 +61,7 @@ jobs:
     env:
       FLC_NAMESPACE: dto-ocp-ondemand
       FLC_ENVIRONMENT: dto-ocp-4-14
-      TARGET_BRANCH: ${{ github.event.inputs.target }}
+      TARGET_BRANCH: ${{ github.event.inputs.target || 'main' }}
       TENANT1_NAME: ${{ secrets.TENANT1_NAME }}
       TENANT1_APITOKEN: ${{ secrets.TENANT1_APITOKEN }}
       TENANT1_OTELTOKEN: ${{ secrets.TENANT1_OTELTOKEN }}
