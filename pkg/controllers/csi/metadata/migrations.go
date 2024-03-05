@@ -23,7 +23,7 @@ func dataMigration(tx *gorm.DB) error {
 
 		result := tx.Create(&tc)
 		if result.Error != nil {
-			return result.Error
+			log.Error(result.Error, "failed to create TenantConfig")
 		}
 
 		cm := CodeModule{
@@ -31,6 +31,10 @@ func dataMigration(tx *gorm.DB) error {
 			Location: filepath.Join(dtcsi.DataPath, dtcsi.SharedAgentBinDir),
 		}
 		tx.Create(&cm)
+
+		if result.Error != nil {
+			log.Error(result.Error, "failed to create CodeModule")
+		}
 	}
 
 	var volumes []Volume
@@ -44,7 +48,11 @@ func dataMigration(tx *gorm.DB) error {
 			PodName:      v.PodName,
 			PodNamespace: "",
 		}
-		tx.Create(&vm)
+
+		result := tx.Create(&vm)
+		if result.Error != nil {
+			log.Error(result.Error, "failed to create VolumeMeta")
+		}
 
 		am := AppMount{
 			CodeModuleVersion: v.Version,
@@ -52,7 +60,11 @@ func dataMigration(tx *gorm.DB) error {
 			Location:          filepath.Join(filepath.Join(filepath.Join(dtcsi.DataPath, v.TenantUUID), dtcsi.AgentRunDir), vm.ID),
 			MountAttempts:     int64(v.MountAttempts),
 		}
-		tx.Create(&am)
+
+		result = tx.Create(&am)
+		if result.Error != nil {
+			log.Error(result.Error, "failed to create AppMount")
+		}
 	}
 
 	var osAgentVolumnes []OsAgentVolume
@@ -70,7 +82,11 @@ func dataMigration(tx *gorm.DB) error {
 			VolumeMetaID:  ov.VolumeID,
 			MountAttempts: mountAttempts,
 		}
-		tx.Create(&om)
+
+		result := tx.Create(&om)
+		if result.Error != nil {
+			log.Error(result.Error, "failed to create OSMount")
+		}
 	}
 
 	return nil

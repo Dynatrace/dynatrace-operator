@@ -45,9 +45,9 @@ type OSMount struct {
 // AppMount keeps track of our mounts to user applications, where we provide the codemodules.
 type AppMount struct {
 	VolumeMeta VolumeMeta
-	CodeModule CodeModule `gorm:"foreignKey:CodeModuleVersion;references:Version"`
+	CodeModule CodeModule `gorm:"foreignKey:CodeModuleVersion"`
 	TimeStampedModel
-	VolumeMetaID      string
+	VolumeMetaID      string `gorm:"primaryKey"`
 	CodeModuleVersion string
 	Location          string `gorm:"not null"`
 	MountAttempts     int64  `gorm:"not null"`
