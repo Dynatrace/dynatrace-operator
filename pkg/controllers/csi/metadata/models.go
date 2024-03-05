@@ -14,15 +14,15 @@ type TimeStampedModel struct {
 
 // TenantConfig holds info about a given configuration for a tenant.
 type TenantConfig struct {
-	CodeModule CodeModule `gorm:"foreignKey:DowloadedCodeModuleVersion;references:Version"`
+	CodeModule CodeModule `gorm:"foreignKey:DownloadedCodeModuleVersion;references:Version"`
 	TimeStampedModel
-	UID                        string  `gorm:"primaryKey" json:"UID,omitempty"`
-	Name                       string  `gorm:"not null"`
-	DowloadedCodeModuleVersion string  `gorm:"not null"`
-	ConfigDirPath              string  `gorm:"not null"`
-	TenantUUID                 string  `gorm:"not null"`
-	OSMount                    OSMount `gorm:"foreignKey:TenantUUID;references:TenantUUID"`
-	MaxFailedMountAttempts     int64   `gorm:"default:10"`
+	UID                         string  `gorm:"primaryKey" json:"UID,omitempty"`
+	Name                        string  `gorm:"not null"`
+	DownloadedCodeModuleVersion string  `gorm:"not null"`
+	ConfigDirPath               string  `gorm:"not null"`
+	TenantUUID                  string  `gorm:"not null"`
+	OSMount                     OSMount `gorm:"foreignKey:TenantUUID;references:TenantUUID"`
+	MaxFailedMountAttempts      int64   `gorm:"default:10"`
 }
 
 // CodeModule holds what codemodules we have downloaded and available.

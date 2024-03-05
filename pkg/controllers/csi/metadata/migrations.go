@@ -14,11 +14,11 @@ func dataMigration(tx *gorm.DB) error {
 
 	for _, d := range dynakubes {
 		tc := TenantConfig{
-			Name:                       d.Name,
-			TenantUUID:                 d.TenantUUID,
-			ConfigDirPath:              filepath.Join(filepath.Join(dtcsi.DataPath, d.TenantUUID), d.Name, dtcsi.SharedAgentConfigDir),
-			DowloadedCodeModuleVersion: d.LatestVersion,
-			MaxFailedMountAttempts:     int64(d.MaxFailedMountAttempts),
+			Name:                        d.Name,
+			TenantUUID:                  d.TenantUUID,
+			ConfigDirPath:               filepath.Join(filepath.Join(dtcsi.DataPath, d.TenantUUID), d.Name, dtcsi.SharedAgentConfigDir),
+			DownloadedCodeModuleVersion: d.LatestVersion,
+			MaxFailedMountAttempts:      int64(d.MaxFailedMountAttempts),
 		}
 
 		result := tx.Create(&tc)
