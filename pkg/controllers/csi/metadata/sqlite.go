@@ -776,7 +776,13 @@ func (access *SqliteAccess) querySimpleStatement(ctx context.Context, statement,
 // SchemaMigration runs gormigrate migrations to create tables
 func (conn *DBConn) SchemaMigration(ctx context.Context) error {
 	m := gormigrate.New(conn.db, gormigrate.DefaultOptions, []*gormigrate.Migration{
-		// your migrations here
+		{
+			ID:      "202403041200",
+			Migrate: dataMigration,
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
 	})
 
 	m.InitSchema(func(tx *gorm.DB) error {

@@ -14,20 +14,20 @@ type TimeStampedModel struct {
 
 // TenantConfig holds info about a given configuration for a tenant.
 type TenantConfig struct {
-	CodeModule CodeModule `gorm:"foreignKey:Version;references:DowloadedCodeModuleVersion"`
+	CodeModule CodeModule `gorm:"foreignKey:DowloadedCodeModuleVersion;references:Version"`
 	TimeStampedModel
-	UID                        string `gorm:"primaryKey" json:"UID,omitempty"`
-	Name                       string `gorm:"not null"`
-	DowloadedCodeModuleVersion string
-	ConfigDirPath              string `gorm:"not null"`
-	TenantUUID                 string
+	UID                        string  `gorm:"primaryKey" json:"UID,omitempty"`
+	Name                       string  `gorm:"not null"`
+	DowloadedCodeModuleVersion string  `gorm:"not null"`
+	ConfigDirPath              string  `gorm:"not null"`
+	TenantUUID                 string  `gorm:"not null"`
 	OSMount                    OSMount `gorm:"foreignKey:TenantUUID;references:TenantUUID"`
 	MaxFailedMountAttempts     int64   `gorm:"default:10"`
 }
 
 // CodeModule holds what codemodules we have downloaded and available.
 type CodeModule struct {
-	Version  string `gorm:"primaryKey" json:"version,omitempty"`
+	Version  string `gorm:"primaryKey"`
 	Location string `gorm:"not null"`
 	TimeStampedModel
 }
@@ -37,7 +37,7 @@ type OSMount struct {
 	VolumeMeta VolumeMeta
 	TimeStampedModel
 	TenantUUID    string `gorm:"primaryKey" json:"tenantUUID,omitempty"`
-	VolumeMetaID  string
+	VolumeMetaID  string `gorm:"not null"`
 	Location      string `gorm:"not null"`
 	MountAttempts int64  `gorm:"not null"`
 }
@@ -45,7 +45,7 @@ type OSMount struct {
 // AppMount keeps track of our mounts to user applications, where we provide the codemodules.
 type AppMount struct {
 	VolumeMeta VolumeMeta
-	CodeModule CodeModule `gorm:"foreignKey:Version;references:CodeModuleVersion"`
+	CodeModule CodeModule `gorm:"foreignKey:CodeModuleVersion;references:Version"`
 	TimeStampedModel
 	VolumeMetaID      string
 	CodeModuleVersion string
@@ -55,7 +55,7 @@ type AppMount struct {
 
 // VolumeMeta keeps metadata we get from kubernetes about the volume.
 type VolumeMeta struct {
-	ID                string `gorm:"primaryKey" json:"id,omitempty"`
+	ID                string `gorm:"primaryKey"`
 	PodUid            string `gorm:"not null"`
 	PodName           string `gorm:"not null"`
 	PodNamespace      string `gorm:"not null"`
