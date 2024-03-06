@@ -1,8 +1,6 @@
 package metadata
 
 import (
-	"path/filepath"
-
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"gorm.io/gorm"
 )
@@ -11,6 +9,8 @@ func dataMigration(tx *gorm.DB) error {
 	var dynakubes []Dynakube
 
 	tx.Table("dynakubes").Find(&dynakubes)
+
+	pr := PathResolver{RootDir: dtcsi.DataPath}
 
 	for _, d := range dynakubes {
 		var version string
@@ -23,7 +23,7 @@ func dataMigration(tx *gorm.DB) error {
 		tc := TenantConfig{
 			Name:                        d.Name,
 			TenantUUID:                  d.TenantUUID,
-			ConfigDirPath:               filepath.Join(filepath.Join(dtcsi.DataPath, d.TenantUUID), d.Name, dtcsi.SharedAgentConfigDir),
+			ConfigDirPath:               pr.AgentConfigDir(d.TenantUUID, d.Name),
 			DownloadedCodeModuleVersion: version,
 			MaxFailedMountAttempts:      int64(d.MaxFailedMountAttempts),
 		}
@@ -35,7 +35,7 @@ func dataMigration(tx *gorm.DB) error {
 
 		cm := CodeModule{
 			Version:  version,
-			Location: filepath.Join(dtcsi.DataPath, dtcsi.SharedAgentBinDir),
+			Location: pr.AgentSharedBinaryDirBase(),
 		}
 		tx.Create(&cm)
 
@@ -64,7 +64,7 @@ func dataMigration(tx *gorm.DB) error {
 		am := AppMount{
 			CodeModuleVersion: v.Version,
 			VolumeMetaID:      vm.ID,
-			Location:          filepath.Join(filepath.Join(filepath.Join(dtcsi.DataPath, v.TenantUUID), dtcsi.AgentRunDir), vm.ID),
+			Location:          pr.AgentRunDirForVolume(v.TenantUUID, vm.ID),
 			MountAttempts:     int64(v.MountAttempts),
 		}
 
