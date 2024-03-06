@@ -98,3 +98,20 @@ jobs:
       run: ref/.github/scripts/run-e2e-tests.sh
     - name: Destroy cluster
       run: ref/.github/scripts/destroy-cluster.sh
+  notify-failure:
+    name: Notify failure in Slack
+    environment: E2E
+    needs: ["run-in-k8s", "run-in-ocp"]
+    runs-on:
+    - self-hosted
+    - operator-e2e
+    if: failure()
+    steps:
+    - name: Notify failure in Slack
+      id: slack
+      uses: slackapi/slack-github-action@v1.25.0
+      with:
+        channel-id: 'int-cp-operator'
+        slack-message: ":warning: E2E tests failed on ${{ github.event.inputs.target || 'main' }} branch: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
