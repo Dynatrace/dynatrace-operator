@@ -35,7 +35,7 @@ func dataMigration(tx *gorm.DB) error {
 
 		cm := CodeModule{
 			Version:  version,
-			Location: pr.AgentSharedBinaryDirBase(),
+			Location: pr.AgentSharedBinaryDirForAgent(version),
 		}
 		tx.Create(&cm)
 
@@ -87,13 +87,10 @@ func dataMigration(tx *gorm.DB) error {
 		om := OSMount{
 			TenantUUID:    ov.TenantUUID,
 			VolumeMetaID:  ov.VolumeID,
+			Location:      pr.AgentRunDirForVolume(ov.TenantUUID, ov.VolumeID),
 			MountAttempts: mountAttempts,
 		}
-
-		result := tx.Create(&om)
-		if result.Error != nil {
-			log.Error(result.Error, "failed to create OSMount")
-		}
+		tx.Create(&om)
 	}
 
 	return nil
