@@ -13,11 +13,18 @@ func dataMigration(tx *gorm.DB) error {
 	tx.Table("dynakubes").Find(&dynakubes)
 
 	for _, d := range dynakubes {
+		var version string
+		if d.LatestVersion != "" {
+			version = d.LatestVersion
+		} else if d.ImageDigest != "" {
+			version = d.ImageDigest
+		}
+
 		tc := TenantConfig{
 			Name:                        d.Name,
 			TenantUUID:                  d.TenantUUID,
 			ConfigDirPath:               filepath.Join(filepath.Join(dtcsi.DataPath, d.TenantUUID), d.Name, dtcsi.SharedAgentConfigDir),
-			DownloadedCodeModuleVersion: d.LatestVersion,
+			DownloadedCodeModuleVersion: version,
 			MaxFailedMountAttempts:      int64(d.MaxFailedMountAttempts),
 		}
 
@@ -27,7 +34,7 @@ func dataMigration(tx *gorm.DB) error {
 		}
 
 		cm := CodeModule{
-			Version:  d.LatestVersion,
+			Version:  version,
 			Location: filepath.Join(dtcsi.DataPath, dtcsi.SharedAgentBinDir),
 		}
 		tx.Create(&cm)
