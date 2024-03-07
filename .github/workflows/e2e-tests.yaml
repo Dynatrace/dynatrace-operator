@@ -55,6 +55,7 @@ jobs:
       run: ref/.github/scripts/run-e2e-tests.sh
     - name: Destroy cluster
       run: ref/.github/scripts/destroy-cluster.sh
+      if: always()
   run-in-ocp:
     name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }})
     environment: E2E
