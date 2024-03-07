@@ -38,7 +38,7 @@ EOF
 cat << EOF > edgeconnect-tenant.yaml
 name: e2e-test
 tenantUid: $TENANT1_NAME
-apiServer: $TENANT1_NAME.dev.apps.dynatracelabs.com/api
+apiServer: $TENANT1_NAME.dev.apps.dynatracelabs.com
 oAuthClientId: $TENANT1_OAUTH_CLIENT_ID
 oAuthClientSecret: $TENANT1_OAUTH_SECRET
 EOF
