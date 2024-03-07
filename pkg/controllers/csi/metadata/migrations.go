@@ -5,17 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func volumeIn(volumeID string, volumes []Volume) bool {
-	for _, v := range volumes {
-		if volumeID == v.VolumeID {
-			return true
-		}
-	}
-
-	return false
-}
-
-func dataMigration(tx *gorm.DB) error {
+func migrateDynakubes(tx *gorm.DB) error {
 	var dynakubes []Dynakube
 
 	tx.Table("dynakubes").Find(&dynakubes)
@@ -54,7 +44,19 @@ func dataMigration(tx *gorm.DB) error {
 		}
 	}
 
+	return nil
+}
+
+func migrateVolumes(tx *gorm.DB) error {
+	// Old `Volumes` tables is where we store the information about the mounted volumes that are used
+	// for Application monitoring (codemodules)
+	// the reason the names is so generic is that originally that was the only kind of volume
+	//
+	// New `AppMount` table is where we store information that is ONLY relevant for volumes that
+	// are for Application monitoring.
 	var volumes []Volume
+
+	pr := PathResolver{RootDir: dtcsi.DataPath}
 
 	tx.Table("volumes").Find(&volumes)
 
@@ -84,14 +86,34 @@ func dataMigration(tx *gorm.DB) error {
 		}
 	}
 
+	return nil
+}
+
+func migrateOsAgentVolumes(tx *gorm.DB) error {
+	// Old `OsAgentVolume` table is where we store the information about the mounted volumes that
+	// are used for the OsAgent this was just bolted on,
+	// because they need to be handled differently (and was not properly finished)
+	//
+	// New `OsMount` table is where we store information that is ONLY relevant for volumes that are
+	// for the OsAgent.
 	var osAgentVolumnes []OsAgentVolume
+
+	pr := PathResolver{RootDir: dtcsi.DataPath}
 
 	tx.Table("osagent_volumes").Find(&osAgentVolumnes)
 
 	for _, ov := range osAgentVolumnes {
-		// skip if volume is not old volumes table
-		if !volumeIn(ov.VolumeID, volumes) {
+		if !ov.Mounted {
 			continue
+		}
+
+		vm := VolumeMeta{
+			ID: ov.VolumeID,
+		}
+
+		result := tx.Create(&vm)
+		if result.Error != nil {
+			log.Error(result.Error, "failed to create VolumeMeta")
 		}
 
 		var mountAttempts int64
@@ -109,4 +131,16 @@ func dataMigration(tx *gorm.DB) error {
 	}
 
 	return nil
+}
+
+func dataMigration(tx *gorm.DB) error {
+	if err := migrateDynakubes(tx); err != nil {
+		return err
+	}
+
+	if err := migrateVolumes(tx); err != nil {
+		return err
+	}
+
+	return migrateOsAgentVolumes(tx)
 }
