@@ -2,7 +2,7 @@ name: E2E tests
 
 on:
   schedule:
-    # every work day at 5:00 AM
+    # every work day at 00:00 UTC
     - cron: 0 0 * * 1-5
   workflow_dispatch:
     inputs:
@@ -13,11 +13,11 @@ on:
 
 jobs:
   run-in-k8s:
-    name: Run in Kubernetes 1.26 (${{ github.event.inputs.target }})
+    name: Run in Kubernetes latest (${{ github.event.inputs.target || 'main' }})
     environment: E2E
     env:
-      FLC_NAMESPACE: dto-k8s-ondemand
-      FLC_ENVIRONMENT: dto-k8s-1-26
+      FLC_NAMESPACE: dto-daily
+      FLC_ENVIRONMENT: dto-k8s-latest-flc
       TARGET_BRANCH: ${{ github.event.inputs.target || 'main' }}
       TENANT1_NAME: ${{ secrets.TENANT1_NAME }}
       TENANT1_APITOKEN: ${{ secrets.TENANT1_APITOKEN }}
@@ -37,7 +37,7 @@ jobs:
     - name: Checkout target branch
       uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       with:
-        ref: ${{ github.event.inputs.target }}
+        ref: ${{ github.event.inputs.target || 'main' }}
         path: target
     - name: Set up kubectl
       uses: azure/setup-kubectl@3e0aec4d80787158d308d7b364cb1b702e7feb7f # v4.0.0
@@ -55,12 +55,13 @@ jobs:
       run: ref/.github/scripts/run-e2e-tests.sh
     - name: Destroy cluster
       run: ref/.github/scripts/destroy-cluster.sh
+      if: always()
   run-in-ocp:
-    name: Run in OpenShift 4.14 (${{ github.event.inputs.target }})
+    name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }})
     environment: E2E
     env:
-      FLC_NAMESPACE: dto-ocp-ondemand
-      FLC_ENVIRONMENT: dto-ocp-4-14
+      FLC_NAMESPACE: dto-daily
+      FLC_ENVIRONMENT: dto-ocp-latest-flc
       TARGET_BRANCH: ${{ github.event.inputs.target || 'main' }}
       TENANT1_NAME: ${{ secrets.TENANT1_NAME }}
       TENANT1_APITOKEN: ${{ secrets.TENANT1_APITOKEN }}
@@ -80,7 +81,7 @@ jobs:
     - name: Checkout target branch
       uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       with:
-        ref: ${{ github.event.inputs.target }}
+        ref: ${{ github.event.inputs.target || 'main' }}
         path: target
     - name: Set up kubectl
       uses: azure/setup-kubectl@3e0aec4d80787158d308d7b364cb1b702e7feb7f # v4.0.0
@@ -98,6 +99,7 @@ jobs:
       run: ref/.github/scripts/run-e2e-tests.sh
     - name: Destroy cluster
       run: ref/.github/scripts/destroy-cluster.sh
+      if: always()
   notify-failure:
     name: Notify failure in Slack
     environment: E2E
