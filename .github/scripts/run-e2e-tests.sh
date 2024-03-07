@@ -14,10 +14,7 @@ kubectl get secret --namespace "$FLC_NAMESPACE" "$FLC_ENVIRONMENT_SECRET_NAME" -
 echo "Switching to test cluster for environment '$FLC_ENVIRONMENT'!"
 export KUBECONFIG="$FLC_ENVIRONMENT_KUBECONFIG"
 
-kubectl version
-kubectl config view
-
-echo "Preparing test secrets..."
+echo "Preparing test tenant secrets..."
 mkdir -p test/testdata/secrets/
 
 pushd test/testdata/secrets/
@@ -41,7 +38,7 @@ EOF
 cat << EOF > edgeconnect-tenant.yaml
 name: e2e-test
 tenantUid: $TENANT1_NAME
-apiServer: $TENANT1_NAME.dev.apps.dynatracelabs.com/api
+apiServer: $TENANT1_NAME.dev.apps.dynatracelabs.com
 oAuthClientId: $TENANT1_OAUTH_CLIENT_ID
 oAuthClientSecret: $TENANT1_OAUTH_SECRET
 EOF
@@ -53,7 +50,7 @@ EOF
 
 popd
 
-echo "Running tests for environment '$FLC_ENVIRONMENT' ..."
+echo "Running tests for environment '$FLC_ENVIRONMENT'..."
 make BRANCH="$TARGET_BRANCH" test/e2e
 
-echo "Test run completed!"
+echo "Success!"
