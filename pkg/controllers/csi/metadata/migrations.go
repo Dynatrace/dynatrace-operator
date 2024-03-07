@@ -5,6 +5,16 @@ import (
 	"gorm.io/gorm"
 )
 
+func volumeIn(volumeID string, volumes []Volume) bool {
+	for _, v := range volumes {
+		if volumeID == v.VolumeID {
+			return true
+		}
+	}
+
+	return false
+}
+
 func dataMigration(tx *gorm.DB) error {
 	var dynakubes []Dynakube
 
@@ -79,6 +89,11 @@ func dataMigration(tx *gorm.DB) error {
 	tx.Table("osagent_volumes").Find(&osAgentVolumnes)
 
 	for _, ov := range osAgentVolumnes {
+		// skip if volume is not old volumes table
+		if !volumeIn(ov.VolumeID, volumes) {
+			continue
+		}
+
 		var mountAttempts int64
 		if ov.Mounted {
 			mountAttempts = 1

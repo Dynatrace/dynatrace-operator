@@ -775,16 +775,7 @@ func (access *SqliteAccess) querySimpleStatement(ctx context.Context, statement,
 
 // SchemaMigration runs gormigrate migrations to create tables
 func (conn *DBConn) SchemaMigration(ctx context.Context) error {
-	m := gormigrate.New(conn.db, gormigrate.DefaultOptions, []*gormigrate.Migration{
-		{
-			ID:      "202403041200",
-			Migrate: dataMigration,
-			Rollback: func(tx *gorm.DB) error {
-				return nil
-			},
-		},
-	})
-
+	m := gormigrate.New(conn.db, gormigrate.DefaultOptions, []*gormigrate.Migration{})
 	m.InitSchema(func(tx *gorm.DB) error {
 		err := tx.AutoMigrate(
 			&TenantConfig{},
@@ -796,10 +787,18 @@ func (conn *DBConn) SchemaMigration(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-
 		// all other constraints, indexes, etc...
 		return nil
 	})
+	m.Migrate()
 
-	return m.Migrate()
+	return gormigrate.New(conn.db, gormigrate.DefaultOptions, []*gormigrate.Migration{
+		{
+			ID:      "202403041200",
+			Migrate: dataMigration,
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
+	}).Migrate()
 }
