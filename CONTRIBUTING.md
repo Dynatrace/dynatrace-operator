@@ -52,7 +52,7 @@
     ```
 
     >**NOTE:**
-    > When building on ARM machines (such as Apple M#) podman./docker uses the local architecture if not specified otherwise.
+    > When building on ARM machines (such as Apple M1) podman/docker uses the local architecture if not specified otherwise.
     > To override set the ENV var OPERATOR_DEV_MAC to the desired platform (e.g. linux/amd64).
 
 7. Create a pull request from the fork ([see guide](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)), with a proper title and fill out the description template. Once everything is ready, set the PR ready for review.
