@@ -26,9 +26,9 @@ else
   CONTAINER_CMD=docker
 fi
 
-if [ -n "$OPERATOR_DEV_MAC" ];then
-  echo "overriding platform to ${OPERATOR_DEV_MAC}"
-  PLATFORM="--platform=${OPERATOR_DEV_MAC} "
+if [ -n "OPERATOR_DEV_BUILD_PLATFORM" ];then
+  echo "overriding platform to ${OPERATOR_DEV_BUILD_PLATFORM}"
+  PLATFORM="--platform=${OPERATOR_DEV_BUILD_PLATFORM} "
 else
   PLATFORM=""
 fi
