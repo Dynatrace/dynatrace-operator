@@ -127,7 +127,10 @@ func migrateOsAgentVolumes(tx *gorm.DB) error {
 			Location:      pr.AgentRunDirForVolume(ov.TenantUUID, ov.VolumeID),
 			MountAttempts: mountAttempts,
 		}
-		tx.Create(&om)
+		result = tx.Create(&om)
+		if result.Error != nil {
+			log.Error(result.Error, "failed to create OSMount")
+		}
 	}
 
 	return nil
