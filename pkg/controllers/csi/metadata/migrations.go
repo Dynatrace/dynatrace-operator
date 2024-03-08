@@ -21,7 +21,8 @@ func migrateDynakubes(tx *gorm.DB) error {
 		}
 
 		tc := TenantConfig{
-			Name:                        d.Name,
+			Name: d.Name,
+
 			TenantUUID:                  d.TenantUUID,
 			ConfigDirPath:               pr.AgentConfigDir(d.TenantUUID, d.Name),
 			DownloadedCodeModuleVersion: version,
@@ -121,13 +122,18 @@ func migrateOsAgentVolumes(tx *gorm.DB) error {
 			mountAttempts = 1
 		}
 
+		tc := TenantConfig{TenantUUID: ov.TenantUUID}
+		tx.First(&tc)
+
 		om := OSMount{
-			TenantUUID:    ov.TenantUUID,
-			VolumeMetaID:  ov.VolumeID,
-			Location:      pr.AgentRunDirForVolume(ov.TenantUUID, ov.VolumeID),
-			MountAttempts: mountAttempts,
+			TenantConfigUID: tc.UID,
+			TenantUUID:      ov.TenantUUID,
+			VolumeMetaID:    vm.ID,
+			Location:        pr.AgentRunDirForVolume(ov.TenantUUID, ov.VolumeID),
+			MountAttempts:   mountAttempts,
 		}
 		result = tx.Create(&om)
+
 		if result.Error != nil {
 			log.Error(result.Error, "failed to create OSMount")
 		}
