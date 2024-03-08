@@ -56,7 +56,7 @@
     > To override set the ENV var OPERATOR_DEV_BUILD_PLATFORM to the desired platform (e.g. linux/amd64).
     >
     > ```shell
-    >    OPERATOR_DEV_BUILD_PLATFORM=linux/amd64
+    >    export OPERATOR_DEV_BUILD_PLATFORM=linux/amd64
     > ```
 
 7. Create a pull request from the fork ([see guide](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)), with a proper title and fill out the description template. Once everything is ready, set the PR ready for review.
