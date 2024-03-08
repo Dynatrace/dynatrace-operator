@@ -36,8 +36,13 @@ func TestStartSpan(t *testing.T) {
 	t.Run("nil tracer", func(t *testing.T) {
 		ctx, span := StartSpan(context.Background(), trace.Tracer(nil))
 
-		assert.IsType(t, noopSpan{}, span)
 		assert.Equal(t, context.Background(), ctx)
+
+		assert.IsType(t, noopSpan{}, span)
+		noopSpan, ok := span.(noopSpan)
+		require.True(t, ok)
+		assert.Contains(t, noopSpan.spanTitle, "dtotel.TestStartSpan.func")
+		assert.NotContains(t, noopSpan.spanTitle, "dtotel.StartSpan")
 	})
 }
 

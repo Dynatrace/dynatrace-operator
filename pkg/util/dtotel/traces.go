@@ -16,13 +16,14 @@ import (
 )
 
 func StartSpan[T any](ctx context.Context, tracer T, opts ...trace.SpanStartOption) (context.Context, trace.Span) {
-	spanTitle := getCaller(1)
+	const spanTitleCallerDepth = 2
+	spanTitle := getCaller(spanTitleCallerDepth)
 
 	realTracer := resolveTracer(tracer)
 	if realTracer == nil {
 		log.Info("failed to start span, no valid tracer given", "spanTitle", spanTitle, "tracer", fmt.Sprintf("%v", tracer))
 
-		return ctx, noopSpan{}
+		return ctx, noopSpan{spanTitle: spanTitle}
 	}
 
 	return realTracer.Start(ctx, spanTitle, opts...)
@@ -91,8 +92,13 @@ func getCaller(i int) string {
 
 type noopSpan struct {
 	trace.Span
+	spanTitle string
 }
 
 var _ trace.Span = noopSpan{}
 
 func (noopSpan) End(...trace.SpanEndOption) {}
+
+func (s noopSpan) String() string {
+	return s.spanTitle
+}
