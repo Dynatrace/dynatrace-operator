@@ -44,8 +44,8 @@
 
 6. To test your changes on a cluster use
 
-    * kubectl to connect to a cluster
-    * Use make commands to build and deploy your operator as follows:
+    1. kubectl to connect to a cluster
+    2. Use make commands to build and deploy your operator as follows:
 
     ```sh
     make build && make deploy
