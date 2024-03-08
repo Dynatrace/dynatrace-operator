@@ -122,6 +122,8 @@ func migrateOsAgentVolumes(tx *gorm.DB) error {
 			mountAttempts = 1
 		}
 
+		// This is a workaround for not having enough information in the current database tables to migrate 100% correctly.
+		// This is fine as we don't currently use this information for anything.
 		tc := TenantConfig{TenantUUID: ov.TenantUUID}
 		tx.First(&tc)
 
