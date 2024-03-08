@@ -41,10 +41,19 @@ git checkout -b feature/your-branch
 make go/test
 make test/e2e/<scope_of_the_changes>
 ```
+6. To test your changes on a cluster use
+* kubectl to connect to a cluster
+* Use make commands to build and deploy your operator as follows:
+```sh
+make build && make deploy
+```
+>**NOTE:**
+> When building on ARM machines (such as Apple M#) podman./docker uses the local architecture if not specified otherwise.
+> To override set the ENV var OPERATOR_DEV_MAC to the desired platform (e.g. linux/amd64).
 
-6. Create a pull request from the fork ([see guide](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)), with a proper title and fill out the description template. Once everything is ready, set the PR ready for review.
+1. Create a pull request from the fork ([see guide](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)), with a proper title and fill out the description template. Once everything is ready, set the PR ready for review.
 
-7. A maintainer will review the pull request and make comments. Prefer adding additional commits over amending and force-pushing since it can be difficult to follow code reviews when the commit history changes. Commits will be squashed when they're merged.
+2. A maintainer will review the pull request and make comments. Prefer adding additional commits over amending and force-pushing since it can be difficult to follow code reviews when the commit history changes. Commits will be squashed when they're merged.
 
 ## Unit tests
 
