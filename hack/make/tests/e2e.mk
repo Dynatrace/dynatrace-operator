@@ -1,3 +1,9 @@
+GOTESTCMD:=go test
+
+## Start a test and save the result to an xml file
+test/e2e/%/publish:
+	@make GOTESTCMD='gotestsum --junitfile results/$(notdir $(@D)).xml --' $(@D)
+
 ## Start a test and skip TEARDOWN steps if it fails
 test/e2e/%/debug:
 	@make SKIPCLEANUP="--fail-fast" $(@D)
@@ -10,17 +16,25 @@ test/e2e:
 	make test/e2e/release || RC=1; \
 	exit $$RC
 
+## Run standard, istio and release e2e tests
+test/e2e-publish:
+	RC=0; \
+	make test/e2e/standard/publish || RC=1; \
+	make test/e2e/istio/publish || RC=1; \
+	make test/e2e/release/publish || RC=1; \
+	exit $$RC
+
 ## Run standard e2e test only
 test/e2e/standard: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 200m -count=1 ./test/scenarios/standard -args --skip-labels "name=cloudnative-network-zone" $(SKIPCLEANUP)
+	$(GOTESTCMD) -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 200m -count=1 ./test/scenarios/standard -args --skip-labels "name=cloudnative-network-zone" $(SKIPCLEANUP)
 
 ## Run istio e2e test only
 test/e2e/istio: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 200m -count=1 ./test/scenarios/istio -args $(SKIPCLEANUP)
+	$(GOTESTCMD) -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 200m -count=1 ./test/scenarios/istio -args $(SKIPCLEANUP)
 
 ## Run release e2e test only
 test/e2e/release: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/release -args $(SKIPCLEANUP)
+	$(GOTESTCMD) -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/release -args $(SKIPCLEANUP)
 
 ## Runs ActiveGate e2e test only
 test/e2e/activegate: manifests/crd/helm
