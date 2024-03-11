@@ -3667,10 +3667,6 @@ spec:
                       performed
                     format: date-time
                     type: string
-                  lastProcessModuleConfigUpdate:
-                    description: Time of the last process module config update
-                    format: date-time
-                    type: string
                   source:
                     description: Source of the image (tenant-registry, public-registry,
                       ...)
