@@ -89,3 +89,52 @@ func TestToSemver(t *testing.T) {
 		})
 	}
 }
+
+func TestToImageTag(t *testing.T) {
+	type test struct {
+		title         string
+		inputVersion  string
+		outputVersion string
+	}
+
+	testCases := []test{
+		{
+			title:         "full version",
+			inputVersion:  "1.267.209.20231204-134602",
+			outputVersion: "1.267.209",
+		},
+		{
+			title:         "partial version works - no dash part at the end",
+			inputVersion:  "1.277.209.20231204",
+			outputVersion: "1.277.209",
+		},
+		{
+			title:         "partial version works - only till patch version",
+			inputVersion:  "1.277.209",
+			outputVersion: "1.277.209",
+		},
+		{
+			title:         "partial version works - only till minor version",
+			inputVersion:  "1.277",
+			outputVersion: "1.277",
+		},
+		{
+			title:         "partial version works - only till mayor version",
+			inputVersion:  "1",
+			outputVersion: "1",
+		},
+		{
+			title:         "empty version works",
+			inputVersion:  "",
+			outputVersion: "",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.title, func(t *testing.T) {
+			actual := ToImageTag(testCase.inputVersion)
+
+			require.Equal(t, testCase.outputVersion, actual)
+		})
+	}
+}
