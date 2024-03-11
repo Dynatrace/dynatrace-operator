@@ -45,8 +45,11 @@ const (
 	AnnotationFeatureNoProxy             = AnnotationFeaturePrefix + "no-proxy"
 	AnnotationFeatureApiRequestThreshold = AnnotationFeaturePrefix + "dynatrace-api-request-threshold"
 
-	falsePhrase                       = "false"
-	truePhrase                        = "true"
+	falsePhrase = "false"
+	truePhrase  = "true"
+)
+
+const (
 	DefaultMinRequestThresholdMinutes = 15
 )
 
