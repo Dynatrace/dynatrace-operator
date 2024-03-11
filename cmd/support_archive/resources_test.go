@@ -5,10 +5,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
-	"net/http/httptest"
 	"sort"
 	"testing"
 
@@ -24,7 +21,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/rest"
+	fakediscovery "k8s.io/client-go/discovery/fake"
+	fakeclientset "k8s.io/client-go/kubernetes/fake"
 )
 
 const testOperatorNamespace = "dynatrace"
@@ -132,15 +130,14 @@ func TestManifestCollector_Success(t *testing.T) {
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
+	client := fakeclientset.NewSimpleClientset()
+
 	apiResourceLists := getResourceLists()
-
-	server := createFakeServer(t, apiResourceLists[0], apiResourceLists[1], apiResourceLists[2])
-
-	defer server.Close()
-	rc := &rest.Config{Host: server.URL}
+	client.Resources = apiResourceLists[:3]
+	fakeDiscovery, _ := client.Discovery().(*fakediscovery.FakeDiscovery)
 
 	ctx := context.Background()
-	require.NoError(t, newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, *rc).Do())
+	require.NoError(t, newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, fakeDiscovery).Do())
 	assertNoErrorOnClose(t, supportArchive)
 
 	expectedFiles := []string{
@@ -189,7 +186,10 @@ func TestManifestCollector_NoManifestsAvailable(t *testing.T) {
 
 	ctx := context.TODO()
 
-	err := newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, rest.Config{}).Do()
+	client := fakeclientset.NewSimpleClientset()
+	fakeDiscovery, _ := client.Discovery().(*fakediscovery.FakeDiscovery)
+
+	err := newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, fakeDiscovery).Do()
 	require.NoError(t, err)
 	assertNoErrorOnClose(t, supportArchive)
 
@@ -264,14 +264,14 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
+	client := fakeclientset.NewSimpleClientset()
+
 	apiResourceLists := getResourceLists()
+	client.Resources = apiResourceLists[:3]
 
-	server := createFakeServer(t, apiResourceLists[0], apiResourceLists[1], apiResourceLists[2])
+	fakeDiscovery := client.Discovery().(*fakediscovery.FakeDiscovery)
 
-	defer server.Close()
-	rc := &rest.Config{Host: server.URL}
-
-	collector := newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, *rc)
+	collector := newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, fakeDiscovery)
 	require.NoError(t, collector.Do())
 	assertNoErrorOnClose(t, supportArchive)
 
@@ -318,7 +318,7 @@ func expectedFilename(objname string) string {
 	return fmt.Sprintf("%s/%s", ManifestsDirectoryName, objname)
 }
 
-func getResourceLists() []metav1.APIResourceList {
+func getResourceLists() []*metav1.APIResourceList {
 	stable := metav1.APIResourceList{
 		GroupVersion: "v1",
 		APIResources: []metav1.APIResource{
@@ -347,60 +347,10 @@ func getResourceLists() []metav1.APIResourceList {
 		},
 	}
 
-	return []metav1.APIResourceList{
-		stable,
-		dk,
-		ec,
-		ag,
+	return []*metav1.APIResourceList{
+		&stable,
+		&dk,
+		&ec,
+		&ag,
 	}
-}
-
-// TODO: Remove this, by allowing the mocking of the DiscoveryClient in the Collector's struct
-func createFakeServer(t *testing.T, stable metav1.APIResourceList, dk metav1.APIResourceList, ec metav1.APIResourceList) *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		var list any
-
-		switch req.URL.Path {
-		case "/api/v1":
-			list = &stable
-		case "/api":
-			list = &metav1.APIVersions{
-				Versions: []string{
-					"v1",
-				},
-			}
-		case "/apis":
-			list = &metav1.APIGroupList{
-				Groups: []metav1.APIGroup{
-					{
-						Name: "dynatrace.com",
-						Versions: []metav1.GroupVersionForDiscovery{
-							{GroupVersion: "dynatrace.com/v1beta1", Version: "v1beta1"},
-							{GroupVersion: "dynatrace.com/v1alpha1", Version: "v1alpha1"},
-						},
-					},
-				},
-			}
-		case "/apis/dynatrace.com/v1beta1":
-			list = &dk
-		case "/apis/dynatrace.com/v1alpha1":
-			list = &ec
-		default:
-			t.Logf("unexpected request: %s", req.URL.Path)
-			w.WriteHeader(http.StatusNotFound)
-
-			return
-		}
-
-		output, err := json.Marshal(list)
-		if err != nil {
-			t.Errorf("unexpected encoding error: %v", err)
-
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(output)
-	}))
 }
