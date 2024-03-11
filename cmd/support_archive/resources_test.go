@@ -132,8 +132,7 @@ func TestManifestCollector_Success(t *testing.T) {
 
 	client := fakeclientset.NewSimpleClientset()
 
-	apiResourceLists := getResourceLists()
-	client.Resources = apiResourceLists[:3]
+	client.Resources = getResourceLists()
 	fakeDiscovery, _ := client.Discovery().(*fakediscovery.FakeDiscovery)
 
 	ctx := context.Background()
@@ -266,8 +265,7 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 
 	client := fakeclientset.NewSimpleClientset()
 
-	apiResourceLists := getResourceLists()
-	client.Resources = apiResourceLists[:3]
+	client.Resources = getResourceLists()
 
 	fakeDiscovery := client.Discovery().(*fakediscovery.FakeDiscovery)
 
@@ -340,17 +338,9 @@ func getResourceLists() []*metav1.APIResourceList {
 		},
 	}
 
-	ag := metav1.APIResourceList{
-		GroupVersion: crdNameSuffix + "/" + "v1alpha1",
-		APIResources: []metav1.APIResource{
-			{Version: "v1alpha1", Group: crdNameSuffix, Name: "activegates", Namespaced: true, Kind: "ActiveGate"},
-		},
-	}
-
 	return []*metav1.APIResourceList{
 		&stable,
 		&dk,
 		&ec,
-		&ag,
 	}
 }
