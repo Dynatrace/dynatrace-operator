@@ -142,7 +142,7 @@ type CapabilityProperties struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=activegates,scope=Namespaced,categories=dynatrace
-// +kubebuilder:printcolumn:name="ApiServer",type=string,JSONPath=`.spec.apiServer`
+// +kubebuilder:printcolumn:name="ApiUrl",type=string,JSONPath=`.spec.apiUrl`
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:storageversion

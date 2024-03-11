@@ -17,8 +17,8 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .spec.apiServer
-      name: ApiServer
+    - jsonPath: .spec.apiUrl
+      name: ApiUrl
       type: string
     - jsonPath: .status.phase
       name: Status
