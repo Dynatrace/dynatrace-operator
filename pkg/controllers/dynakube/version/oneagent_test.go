@@ -63,7 +63,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 				},
 			},
 		}
-		expectedImage := dynakube.DefaultOneAgentImage()
+		expectedImage := dynakube.DefaultOneAgentImage(testVersion)
 
 		mockClient := dtclientmock.NewClient(t)
 
@@ -83,7 +83,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 				},
 			},
 		}
-		expectedImage := dynakube.DefaultOneAgentImage()
+		expectedImage := dynakube.DefaultOneAgentImage(testVersion)
 
 		mockClient := dtclientmock.NewClient(t)
 		mockLatestAgentVersion(mockClient, testVersion)

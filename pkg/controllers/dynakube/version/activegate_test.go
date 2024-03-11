@@ -71,8 +71,8 @@ func TestActiveGateUseDefault(t *testing.T) {
 				},
 			},
 		}
-		expectedImage := dynakube.DefaultActiveGateImage()
 		expectedVersion := "1.2.3.4-5"
+		expectedImage := dynakube.DefaultActiveGateImage(expectedVersion)
 		mockClient := dtclientmock.NewClient(t)
 
 		mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(expectedVersion, nil)

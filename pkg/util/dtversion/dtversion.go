@@ -1,8 +1,10 @@
-// Package dtversion's purpose is to convert the component/image versions used by Dynatrace into semver
+// Package dtversion's purpose is to convert the component/image versions used by Dynatrace into semver or a valid image-tag.
 // - Example version used by Dynatrace:
 //   - 1.283.132.20240205-143805 (this translates to [version-number].[sprint-number].[quick-fix].[build-date]-[build-timestamp])
 //   - The operator does not care about the [build-date] and [build-timestamp] parts, so we can ignore those, and after that converting it to semver is trivial
 //   - As semver: v1.283.132
+//   - The same is true for the Dynatrace Environment's image registry and the public-registries used by Dynatrace, however they are still technically not semver.
+//   - As image-tag: 1.283.132
 package dtversion
 
 import (
@@ -47,4 +49,15 @@ func ToSemver(version string) (string, error) {
 	}
 
 	return result, nil
+}
+
+func ToImageTag(version string) string {
+	if strings.Count(version, semverSep) >= relevantSemverLength {
+		splitVersion := strings.Split(version, semverSep)
+		truncatedVersion := strings.Join(splitVersion[:relevantSemverLength], semverSep)
+
+		return truncatedVersion
+	}
+
+	return version
 }
