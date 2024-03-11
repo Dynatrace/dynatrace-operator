@@ -11,6 +11,9 @@ on:
         required: true
         default: 'main'
 
+permissions:
+  checks: write
+
 jobs:
   run-in-k8s:
     name: Run in Kubernetes latest (${{ github.event.inputs.target || 'main' }})
@@ -49,12 +52,19 @@ jobs:
       uses: azure/setup-helm@5119fcb9089d432beecbf79bb2c7915207344b78 # v3.5
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Install gotestsum
+      run: go install gotest.tools/gotestsum@latest
     - name: Create cluster
       run: ref/.github/scripts/create-cluster.sh
     - name: Run tests
       run: ref/.github/scripts/run-e2e-tests.sh
     - name: Destroy cluster
       run: ref/.github/scripts/destroy-cluster.sh
+      if: always()
+    - name: Publish test results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      with:
+        files: target/results/*.xml
       if: always()
   run-in-ocp:
     name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }})
@@ -93,12 +103,19 @@ jobs:
       uses: azure/setup-helm@5119fcb9089d432beecbf79bb2c7915207344b78 # v3.5
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Install gotestsum
+      run: go install gotest.tools/gotestsum@latest
     - name: Create cluster
       run: ref/.github/scripts/create-cluster.sh
     - name: Run tests
       run: ref/.github/scripts/run-e2e-tests.sh
     - name: Destroy cluster
       run: ref/.github/scripts/destroy-cluster.sh
+      if: always()
+    - name: Publish test results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      with:
+        files: target/results/*.xml
       if: always()
   notify-failure:
     name: Notify failure in Slack
