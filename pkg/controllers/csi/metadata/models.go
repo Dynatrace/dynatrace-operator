@@ -3,6 +3,7 @@ package metadata
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -14,40 +15,46 @@ type TimeStampedModel struct {
 
 // TenantConfig holds info about a given configuration for a tenant.
 type TenantConfig struct {
-	CodeModule CodeModule `gorm:"foreignKey:Version;references:DowloadedCodeModuleVersion"`
 	TimeStampedModel
-	UID                        string `gorm:"primaryKey" json:"UID,omitempty"`
-	Name                       string `gorm:"not null"`
-	DowloadedCodeModuleVersion string
-	ConfigDirPath              string `gorm:"not null"`
-	TenantUUID                 string
-	OSMount                    OSMount `gorm:"foreignKey:TenantUUID;references:TenantUUID"`
-	MaxFailedMountAttempts     int64   `gorm:"default:10"`
+	UID                         string `gorm:"primaryKey"`
+	Name                        string `gorm:"not null"`
+	DownloadedCodeModuleVersion string
+	ConfigDirPath               string `gorm:"not null"`
+	TenantUUID                  string `gorm:"not null"`
+	MaxFailedMountAttempts      int64  `gorm:"default:10"`
+}
+
+func (tc *TenantConfig) BeforeCreate(tx *gorm.DB) error {
+	tc.UID = uuid.NewString()
+
+	return nil
 }
 
 // CodeModule holds what codemodules we have downloaded and available.
 type CodeModule struct {
-	Version  string `gorm:"primaryKey" json:"version,omitempty"`
+	Version  string `gorm:"primaryKey"`
 	Location string `gorm:"not null"`
 	TimeStampedModel
 }
 
 // OSMount keeps track of our mounts to OS oneAgents, can be "remounted", which causes annoyances.
 type OSMount struct {
-	VolumeMeta VolumeMeta
+	VolumeMeta VolumeMeta `gorm:"foreignKey:VolumeMetaID"`
 	TimeStampedModel
-	TenantUUID    string `gorm:"primaryKey" json:"tenantUUID,omitempty"`
-	VolumeMetaID  string
-	Location      string `gorm:"not null"`
-	MountAttempts int64  `gorm:"not null"`
+	TenantConfigUID string       `gorm:"not null"`
+	TenantUUID      string       `gorm:"primaryKey"`
+	VolumeMetaID    string       `gorm:"not null"`
+	Location        string       `gorm:"not null"`
+	TenantConfig    TenantConfig `gorm:"foreignKey:TenantConfigUID"`
+	MountAttempts   int64        `gorm:"not null"`
 }
 
 // AppMount keeps track of our mounts to user applications, where we provide the codemodules.
 type AppMount struct {
 	VolumeMeta VolumeMeta
-	CodeModule CodeModule `gorm:"foreignKey:Version;references:CodeModuleVersion"`
+	CodeModule CodeModule `gorm:"foreignKey:CodeModuleVersion"`
 	TimeStampedModel
-	VolumeMetaID      string
+	VolumeMetaID      string `gorm:"primaryKey"`
 	CodeModuleVersion string
 	Location          string `gorm:"not null"`
 	MountAttempts     int64  `gorm:"not null"`
@@ -55,7 +62,7 @@ type AppMount struct {
 
 // VolumeMeta keeps metadata we get from kubernetes about the volume.
 type VolumeMeta struct {
-	ID                string `gorm:"primaryKey" json:"id,omitempty"`
+	ID                string `gorm:"primaryKey"`
 	PodUid            string `gorm:"not null"`
 	PodName           string `gorm:"not null"`
 	PodNamespace      string `gorm:"not null"`

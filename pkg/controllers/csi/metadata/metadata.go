@@ -30,7 +30,7 @@ func NewDynakube(dynakubeName, tenantUUID, latestVersion, imageDigest string, ma
 }
 
 type Volume struct {
-	VolumeID      string `json:"volumeID"`
+	VolumeID      string `json:"volumeID" gorm:"column:ID"`
 	PodName       string `json:"podName"`
 	Version       string `json:"version"`
 	TenantUUID    string `json:"tenantUUID"`
