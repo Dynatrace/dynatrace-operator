@@ -135,8 +135,7 @@ func TestManifestCollector_Success(t *testing.T) {
 	client.Resources = getResourceLists()
 	fakeDiscovery, _ := client.Discovery().(*fakediscovery.FakeDiscovery)
 
-	ctx := context.Background()
-	require.NoError(t, newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, fakeDiscovery).Do())
+	require.NoError(t, newK8sObjectCollector(context.Background(), log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, fakeDiscovery).Do())
 	assertNoErrorOnClose(t, supportArchive)
 
 	expectedFiles := []string{
@@ -183,12 +182,10 @@ func TestManifestCollector_NoManifestsAvailable(t *testing.T) {
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
-	ctx := context.TODO()
-
 	client := fakeclientset.NewSimpleClientset()
 	fakeDiscovery, _ := client.Discovery().(*fakediscovery.FakeDiscovery)
 
-	err := newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, fakeDiscovery).Do()
+	err := newK8sObjectCollector(context.Background(), log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, fakeDiscovery).Do()
 	require.NoError(t, err)
 	assertNoErrorOnClose(t, supportArchive)
 
@@ -258,8 +255,6 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 		},
 	)
 
-	ctx := context.Background()
-
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
@@ -269,7 +264,7 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 
 	fakeDiscovery := client.Discovery().(*fakediscovery.FakeDiscovery)
 
-	collector := newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, fakeDiscovery)
+	collector := newK8sObjectCollector(context.Background(), log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, fakeDiscovery)
 	require.NoError(t, collector.Do())
 	assertNoErrorOnClose(t, supportArchive)
 
