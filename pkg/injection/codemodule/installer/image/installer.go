@@ -2,10 +2,6 @@ package image
 
 import (
 	"context"
-	"net/http"
-	"os"
-	"path/filepath"
-
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
@@ -17,6 +13,9 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
+	"net/http"
+	"os"
+	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -116,7 +115,7 @@ func (installer *Installer) installAgentFromImage(targetDir string) error {
 		return errors.WithStack(err)
 	}
 
-	imageCacheDir := getCacheDirPath(installer.props.ImageDigest)
+	imageCacheDir := getCacheDirPath(image) //targetDir)
 	if err != nil {
 		log.Info("failed to get destination information", "image", image, "imageCacheDir", imageCacheDir)
 
@@ -143,6 +142,6 @@ func (installer *Installer) isAlreadyPresent(targetDir string) bool {
 	return !os.IsNotExist(err)
 }
 
-func getCacheDirPath(digest string) string {
-	return filepath.Join(CacheDir, digest)
+func getCacheDirPath(imageUri string) string {
+	return filepath.Join(CacheDir, imageUri)
 }
