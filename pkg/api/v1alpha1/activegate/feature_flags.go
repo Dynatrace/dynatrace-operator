@@ -45,13 +45,25 @@ const (
 	AnnotationFeatureNoProxy             = AnnotationFeaturePrefix + "no-proxy"
 	AnnotationFeatureApiRequestThreshold = AnnotationFeaturePrefix + "dynatrace-api-request-threshold"
 
-	falsePhrase = "false"
-	truePhrase  = "true"
-)
-
-const (
+	falsePhrase                       = "false"
+	truePhrase                        = "true"
 	DefaultMinRequestThresholdMinutes = 15
 )
+
+func allFeatureFlags() []string {
+	return []string{
+		AnnotationFeaturePublicRegistry,
+		AnnotationFeatureDisableActiveGateUpdates,
+		AnnotationFeatureActiveGateUpdates,
+		AnnotationFeatureActiveGateAppArmor,
+		AnnotationFeatureAutomaticK8sApiMonitoring,
+		AnnotationFeatureAutomaticK8sApiMonitoringClusterName,
+		AnnotationFeatureK8sAppEnabled,
+		AnnotationFeatureActiveGateIgnoreProxy,
+		AnnotationFeatureNoProxy,
+		AnnotationFeatureApiRequestThreshold,
+	}
+}
 
 // FeatureDisableActiveGateUpdates is a feature flag to disable ActiveGate updates.
 func (activeGate *ActiveGate) FeatureDisableActiveGateUpdates() bool {

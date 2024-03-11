@@ -21,6 +21,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/status"
+	activegatesub "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/subcr/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
@@ -253,7 +254,20 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 
 	log.Info("start reconciling process module config")
 
+	log.Info("start creating custom resources")
+
+	err = controller.reconcileCustomResources(ctx, dynakube)
+	if err != nil {
+		return err
+	}
+
 	return controller.reconcileComponents(ctx, dynatraceClient, istioClient, dynakube)
+}
+
+func (controller *Controller) reconcileCustomResources(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+	activeGateCrReconciler := activegatesub.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube)
+
+	return activeGateCrReconciler.Reconcile(ctx)
 }
 
 func (controller *Controller) setupIstioClient(dynakube *dynatracev1beta1.DynaKube) (*istio.Client, error) {

@@ -18,6 +18,7 @@ package scheme
 
 import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
+	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/activegate"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dynakube"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1"

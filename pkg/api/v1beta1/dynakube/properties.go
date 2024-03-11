@@ -38,6 +38,7 @@ const (
 	ActiveGateTenantSecretSuffix            = "-activegate-tenant-secret"
 	OneAgentTenantSecretSuffix              = "-oneagent-tenant-secret"
 	OneAgentConnectionInfoConfigMapSuffix   = "-oneagent-connection-info"
+	ActiveGateCRSuffix                      = "-activegate"
 	ActiveGateConnectionInfoConfigMapSuffix = "-activegate-connection-info"
 	AuthTokenSecretSuffix                   = "-activegate-authtoken-secret"
 	PodNameOsAgent                          = "oneagent"
@@ -68,6 +69,10 @@ func (dk *DynaKube) ApiUrlHost() string {
 func (dk *DynaKube) NeedsActiveGate() bool {
 	return dk.DeprecatedActiveGateMode() ||
 		dk.ActiveGateMode()
+}
+
+func (dk *DynaKube) DefaultActiveGateCRName() string {
+	return dk.Name + ActiveGateCRSuffix
 }
 
 // ApplicationMonitoringMode returns true when application only section is used.

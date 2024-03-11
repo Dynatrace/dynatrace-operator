@@ -12,8 +12,8 @@ import (
 )
 
 type SpecBasis struct {
-	Common   CommonSpec   `json:",inline"`
-	Specific SpecificSpec `json:",inline"`
+	CommonSpec   `json:",inline"`
+	SpecificSpec `json:",inline"`
 }
 
 type CommonSpec struct {
@@ -164,6 +164,80 @@ type ActiveGateList struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []ActiveGate `json:"items"`
+}
+
+func FromDynakube(dynakube *dynatracev1beta1.DynaKube) *ActiveGate {
+	object := &ActiveGate{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        dynakube.DefaultActiveGateCRName(),
+			Namespace:   dynakube.Namespace,
+			Annotations: map[string]string{},
+		},
+	}
+	copyActiveGateRelatedFeatureFlags(dynakube, object)
+
+	if !dynakube.ActiveGateMode() {
+		return object
+	}
+
+	spec := dynakube.Spec
+	activeGate := spec.ActiveGate
+
+	object.Spec = SpecBasis{
+		CommonSpec: CommonSpec{
+			Proxy:         spec.Proxy,
+			APIURL:        spec.APIURL,
+			Tokens:        spec.Tokens,
+			NetworkZone:   spec.NetworkZone,
+			SkipCertCheck: spec.SkipCertCheck,
+		},
+		SpecificSpec: SpecificSpec{
+			Annotations:       activeGate.Annotations,
+			TlsSecretName:     activeGate.TlsSecretName,
+			DNSPolicy:         activeGate.DNSPolicy,
+			PriorityClassName: activeGate.PriorityClassName,
+			CapabilityProperties: CapabilityProperties{
+				Replicas:                  activeGate.Replicas,
+				Image:                     activeGate.Image,
+				Group:                     activeGate.Group,
+				Resources:                 activeGate.Resources,
+				NodeSelector:              activeGate.NodeSelector,
+				Tolerations:               activeGate.Tolerations,
+				Labels:                    activeGate.Labels,
+				Env:                       activeGate.Env,
+				TopologySpreadConstraints: activeGate.TopologySpreadConstraints,
+			},
+			Capabilities: castCapabilities(activeGate.Capabilities),
+		},
+	}
+
+	if activeGate.CustomProperties != nil {
+		object.Spec.SpecificSpec.CapabilityProperties.CustomProperties = &ValueSource{
+			Value:     activeGate.CustomProperties.Value,
+			ValueFrom: activeGate.CustomProperties.ValueFrom,
+		}
+	}
+
+	return object
+}
+
+func copyActiveGateRelatedFeatureFlags(src *dynatracev1beta1.DynaKube, dst *ActiveGate) {
+	featureFlags := allFeatureFlags()
+
+	for _, flag := range featureFlags {
+		if val, ok := src.Annotations[flag]; ok {
+			dst.Annotations[flag] = val
+		}
+	}
+}
+
+func castCapabilities(capabilities []dynatracev1beta1.CapabilityDisplayName) []CapabilityDisplayName {
+	result := make([]CapabilityDisplayName, 0, len(capabilities))
+	for _, capability := range capabilities {
+		result = append(result, CapabilityDisplayName(capability))
+	}
+
+	return result
 }
 
 func init() {

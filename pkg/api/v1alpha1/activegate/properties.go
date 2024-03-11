@@ -18,7 +18,7 @@ const (
 
 // ApiUrl is a getter for activeGate.Spec.Specific.APIURL.
 func (activeGate *ActiveGate) ApiUrl() string {
-	return activeGate.Spec.Common.APIURL
+	return activeGate.Spec.CommonSpec.APIURL
 }
 
 // ApiUrlHost returns the host of activeGate.Spec.Specific.APIURL
@@ -34,11 +34,11 @@ func (activeGate *ActiveGate) ApiUrlHost() string {
 }
 
 func (activeGate *ActiveGate) ActiveGateMode() bool {
-	return len(activeGate.Spec.Specific.Capabilities) > 0
+	return len(activeGate.Spec.SpecificSpec.Capabilities) > 0
 }
 
 func (activeGate *ActiveGate) IsActiveGateMode(mode CapabilityDisplayName) bool {
-	for _, capability := range activeGate.Spec.Specific.Capabilities {
+	for _, capability := range activeGate.Spec.SpecificSpec.Capabilities {
 		if capability == mode {
 			return true
 		}
@@ -74,7 +74,7 @@ func (activeGate *ActiveGate) NeedsActiveGateService() bool {
 }
 
 func (activeGate *ActiveGate) HasActiveGateCaCert() bool {
-	return activeGate.ActiveGateMode() && activeGate.Spec.Specific.TlsSecretName != ""
+	return activeGate.ActiveGateMode() && activeGate.Spec.SpecificSpec.TlsSecretName != ""
 }
 
 // ActivegateTenantSecret returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate.
@@ -111,12 +111,12 @@ func (activeGate *ActiveGate) DefaultActiveGateImage() string {
 
 // CustomActiveGateImage provides the image reference for the ActiveGate provided in the Spec.
 func (activeGate *ActiveGate) CustomActiveGateImage() string {
-	return activeGate.Spec.Specific.Image
+	return activeGate.Spec.SpecificSpec.Image
 }
 
 // Tokens returns the name of the Secret to be used for tokens.
 func (activeGate *ActiveGate) Tokens() string {
-	if tkns := activeGate.Spec.Common.Tokens; tkns != "" {
+	if tkns := activeGate.Spec.CommonSpec.Tokens; tkns != "" {
 		return tkns
 	}
 
@@ -125,7 +125,7 @@ func (activeGate *ActiveGate) Tokens() string {
 
 // TenantUUIDFromApiUrl gets the tenantUUID from the ApiUrl present in the struct, if the tenant is aliased then the alias will be returned.
 func (activeGate *ActiveGate) TenantUUIDFromApiUrl() (string, error) {
-	return tenantUUID(activeGate.Spec.Common.APIURL)
+	return tenantUUID(activeGate.Spec.CommonSpec.APIURL)
 }
 
 func runeIs(wanted rune) func(rune) bool {
