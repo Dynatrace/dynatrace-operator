@@ -15,36 +15,53 @@
 
 2. Fork the dynatrace-operator repository and get the source code:
 
-```sh
-git clone https://github.com/<your_username>/dynatrace-operator
-cd dynatrace-operator
-```
+    ```sh
+    git clone https://github.com/<your_username>/dynatrace-operator
+    cd dynatrace-operator
+    ```
 
 3. Install development prerequisites:
 
-```sh
-make prerequisites
-```
+   ```sh
+   make prerequisites
+   ```
 
 4. Create a new branch to work on:
 
-```sh
-git checkout -b feature/your-branch
-```
+   ```sh
+   git checkout -b feature/your-branch
+   ```
 
 5. Once the changes are finished, make sure there are no warnings on the code. For debugging you can [run the unit tests](#unit-tests) and [end-to-end tests](#e2e-tests).
 
-> **NOTE:**
-> Unit tests are always executed via pre-commit hook (installed on previous steps). Meaning, you can only commit code that passes all unit tests.
+    > **NOTE:**
+    > Unit tests are always executed via pre-commit hook (installed on previous steps). Meaning, you can only commit code that passes all unit tests.
 
-```sh
-make go/test
-make test/e2e/<scope_of_the_changes>
-```
+    ```sh
+    make go/test
+    make test/e2e/<scope_of_the_changes>
+    ```
 
-6. Create a pull request from the fork ([see guide](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)), with a proper title and fill out the description template. Once everything is ready, set the PR ready for review.
+6. To test your changes on a cluster use
 
-7. A maintainer will review the pull request and make comments. Prefer adding additional commits over amending and force-pushing since it can be difficult to follow code reviews when the commit history changes. Commits will be squashed when they're merged.
+    1. kubectl to connect to a cluster
+    2. Use make commands to build and deploy your operator as follows:
+
+    ```sh
+    make build && make deploy
+    ```
+
+    >**NOTE:**
+    > When building on ARM machines (such as Apple M1) podman/docker uses the local architecture if not specified otherwise.
+    > To override set the ENV var OPERATOR_DEV_BUILD_PLATFORM to the desired platform (e.g. linux/amd64).
+    >
+    > ```shell
+    >    export OPERATOR_DEV_BUILD_PLATFORM=linux/amd64
+    > ```
+
+7. Create a pull request from the fork ([see guide](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)), with a proper title and fill out the description template. Once everything is ready, set the PR ready for review.
+
+8. A maintainer will review the pull request and make comments. Prefer adding additional commits over amending and force-pushing since it can be difficult to follow code reviews when the commit history changes. Commits will be squashed when they're merged.
 
 ## Unit tests
 
