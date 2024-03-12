@@ -2,38 +2,22 @@ package metadata
 
 import (
 	"context"
-	"io"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	MEM           = ":memory:"
-	TMP           = "test.db"
-	PostReconcile = "reconcile.db"
-	PostPublish   = "publish.db"
-)
+func TestCreateTenantConfig(t *testing.T) {
+	db, err := setupDB()
+	require.NoError(t, err)
 
-func createTestTenant() *TenantConfig {
-	return &TenantConfig{
+	tc := &TenantConfig{
 		Name:                        "somename",
 		ConfigDirPath:               "somewhere",
 		DownloadedCodeModuleVersion: "1.2.3",
 		TenantUUID:                  "abc123",
 	}
-}
-
-func TestCreateTenantConfig(t *testing.T) {
-	db, err := setupSqLiteDB(MEM)
-	require.NoError(t, err)
-
-	err = db.SchemaMigration(context.Background())
-	require.NoError(t, err)
-
-	tc := createTestTenant()
 	err = db.CreateTenantConfig(context.Background(), tc)
 	require.NoError(t, err)
 
@@ -45,7 +29,9 @@ func TestCreateTenantConfig(t *testing.T) {
 }
 
 func TestReadTenantConfig(t *testing.T) {
-	db, err := setupSqLiteDB(PostReconcile)
+	db, err := setupDB()
+	setupPostReconcileData(context.Background(), db)
+
 	require.NoError(t, err)
 
 	tc, err := db.ReadTenantConfigByTenantUUID(context.Background(), "abc123")
@@ -62,11 +48,14 @@ func TestReadTenantConfig(t *testing.T) {
 }
 
 func TestUpdateTenantConfig(t *testing.T) {
-	db, err := setupSqLiteDB(PostPublish)
+	db, err := setupDB()
 	require.NoError(t, err)
+
+	setupPostReconcileData(context.Background(), db)
 
 	tenantConfig, err := db.ReadTenantConfigByTenantUUID(context.Background(), "abc123")
 	require.NoError(t, err)
+
 	tenantConfig.DownloadedCodeModuleVersion = "2.3.4"
 	err = db.UpdateTenantConfig(context.Background(), tenantConfig)
 	require.NoError(t, err)
@@ -79,8 +68,10 @@ func TestUpdateTenantConfig(t *testing.T) {
 }
 
 func TestSoftDeleteTenantConfig(t *testing.T) {
-	db, err := setupSqLiteDB(PostPublish)
+	db, err := setupDB()
 	require.NoError(t, err)
+
+	setupPostPublishData(context.Background(), db)
 
 	tenantConfig, err := db.ReadTenantConfigByTenantUUID(context.Background(), "abc123")
 	require.NoError(t, err)
@@ -96,7 +87,7 @@ func TestSoftDeleteTenantConfig(t *testing.T) {
 }
 
 func TestCreateCodeModule(t *testing.T) {
-	db, err := setupSqLiteDB(MEM)
+	db, err := setupDB()
 	require.NoError(t, err)
 
 	err = db.SchemaMigration(context.Background())
@@ -117,8 +108,10 @@ func TestCreateCodeModule(t *testing.T) {
 }
 
 func TestReadCodeModule(t *testing.T) {
-	db, err := setupSqLiteDB(PostReconcile)
+	db, err := setupDB()
 	require.NoError(t, err)
+
+	setupPostReconcileData(context.Background(), db)
 
 	codeModule, err := db.ReadCodeModuleByVersion(context.Background(), "1.2.3")
 	require.NoError(t, err)
@@ -134,8 +127,10 @@ func TestReadCodeModule(t *testing.T) {
 }
 
 func TestSoftDeleteCodeModule(t *testing.T) {
-	db, err := setupSqLiteDB(PostPublish)
+	db, err := setupDB()
 	require.NoError(t, err)
+
+	setupPostReconcileData(context.Background(), db)
 
 	codeModule, err := db.ReadCodeModuleByVersion(context.Background(), "1.2.3")
 	require.NoError(t, err)
@@ -154,8 +149,10 @@ func TestSoftDeleteCodeModule(t *testing.T) {
 }
 
 func TestCreateOsMount(t *testing.T) {
-	db, err := setupSqLiteDB(PostReconcile)
+	db, err := setupDB()
 	require.NoError(t, err)
+
+	setupPostReconcileData(context.Background(), db)
 
 	tenant, err := db.ReadTenantConfigByTenantUUID(context.Background(), "abc123")
 	require.NoError(t, err)
@@ -184,8 +181,10 @@ func TestCreateOsMount(t *testing.T) {
 }
 
 func TestReadOSMount(t *testing.T) {
-	db, err := setupSqLiteDB(PostPublish)
+	db, err := setupDB()
 	require.NoError(t, err)
+
+	setupPostPublishData(context.Background(), db)
 
 	appMount, err := db.ReadOSMountByTenantUUID(context.Background(), "abc123")
 	require.NoError(t, err)
@@ -201,8 +200,10 @@ func TestReadOSMount(t *testing.T) {
 }
 
 func TestUpdateOsMount(t *testing.T) {
-	db, err := setupSqLiteDB(PostPublish)
+	db, err := setupDB()
 	require.NoError(t, err)
+
+	setupPostPublishData(context.Background(), db)
 
 	osMount, err := db.ReadOSMountByTenantUUID(context.Background(), "abc123")
 	require.NoError(t, err)
@@ -220,8 +221,10 @@ func TestUpdateOsMount(t *testing.T) {
 }
 
 func TestSoftDeleteOSMount(t *testing.T) {
-	db, err := setupSqLiteDB(PostPublish)
+	db, err := setupDB()
 	require.NoError(t, err)
+
+	setupPostPublishData(context.Background(), db)
 
 	osMount, err := db.ReadOSMountByTenantUUID(context.Background(), "abc123")
 	require.NoError(t, err)
@@ -240,8 +243,10 @@ func TestSoftDeleteOSMount(t *testing.T) {
 }
 
 func TestCreateAppMount(t *testing.T) {
-	db, err := setupSqLiteDB(PostReconcile)
+	db, err := setupDB()
 	require.NoError(t, err)
+
+	setupPostReconcileData(context.Background(), db)
 
 	tenantConfig, err := db.ReadTenantConfigByTenantUUID(context.Background(), "abc123")
 	require.NoError(t, err)
@@ -272,8 +277,10 @@ func TestCreateAppMount(t *testing.T) {
 }
 
 func TestReadAppMounts(t *testing.T) {
-	db, err := setupSqLiteDB(PostPublish)
+	db, err := setupDB()
 	require.NoError(t, err)
+
+	setupPostPublishData(context.Background(), db)
 
 	appMounts, err := db.ReadAppMounts(context.Background())
 	require.NoError(t, err)
@@ -284,8 +291,10 @@ func TestReadAppMounts(t *testing.T) {
 }
 
 func TestReadAppMount(t *testing.T) {
-	db, err := setupSqLiteDB(PostPublish)
+	db, err := setupDB()
 	require.NoError(t, err)
+
+	setupPostPublishData(context.Background(), db)
 
 	appMount, err := db.ReadAppMountByVolumeMetaID(context.Background(), "appmount1")
 	require.NoError(t, err)
@@ -301,8 +310,10 @@ func TestReadAppMount(t *testing.T) {
 }
 
 func TestUpdateAppMount(t *testing.T) {
-	db, err := setupSqLiteDB(PostPublish)
+	db, err := setupDB()
 	require.NoError(t, err)
+
+	setupPostPublishData(context.Background(), db)
 
 	appMount, err := db.ReadAppMountByVolumeMetaID(context.Background(), "appmount1")
 	require.NoError(t, err)
@@ -320,8 +331,10 @@ func TestUpdateAppMount(t *testing.T) {
 }
 
 func TestSoftDeleteAppMount(t *testing.T) {
-	db, err := setupSqLiteDB(PostPublish)
+	db, err := setupDB()
 	require.NoError(t, err)
+
+	setupPostPublishData(context.Background(), db)
 
 	appMount, err := db.ReadAppMountByVolumeMetaID(context.Background(), "appmount1")
 	require.NoError(t, err)
@@ -339,54 +352,40 @@ func TestSoftDeleteAppMount(t *testing.T) {
 	assert.True(t, result[0].DeletedAt.Valid)
 }
 
-func setupSqLiteDB(templateDB string) (*DBConn, error) {
-	if templateDB == MEM {
-		db, err := NewDBAccess("file:csi_testdb?mode=memory")
-		if err != nil {
-			return nil, err
-		}
-
-		err = db.SchemaMigration(context.Background())
-		if err != nil {
-			return nil, err
-		}
-
-		return &db, nil
-	}
-
-	_ = os.Remove(TMP)
-
-	err := copyFile(templateDB, TMP)
+func setupDB() (*DBConn, error) {
+	db, err := NewDBAccess("file:csi_testdb?mode=memory")
 	if err != nil {
 		return nil, err
 	}
 
-	db, err := NewDBAccess(TMP)
+	err = db.SchemaMigration(context.Background())
 
-	return &db, err
+	if err != nil {
+		return nil, err
+	}
+
+	return &db, nil
 }
 
-func copyFile(source, dest string) error {
-	from, err := os.Open(source)
-	if err != nil {
-		return err
-	}
-	defer func(from *os.File) {
-		_ = from.Close()
-	}(from)
+func setupPostReconcileData(ctx context.Context, conn *DBConn) {
+	ctxDB := conn.db.WithContext(ctx)
+	ctxDB.Exec("INSERT INTO code_modules (version, location, created_at, updated_at, deleted_at) VALUES ('1.2.3', 'someplace', '2024-03-11 17:07:43.038661+01:00', '2024-03-11 17:07:43.038661+01:00', null);")
+	ctxDB.Exec("INSERT INTO tenant_configs (created_at, updated_at, deleted_at, uid, name, downloaded_code_module_version, config_dir_path, tenant_uuid, max_failed_mount_attempts) VALUES ('2024-03-11 16:42:39.323198+01:00', '2024-03-11 16:42:39.323198+01:00', null, '033dcff9-5c76-4b3a-9e3a-ea0a78bf0b3f', 'somename', '1.2.3', 'somewhere', 'abc123', 10);")
+}
 
-	to, err := os.OpenFile(dest, os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		return err
-	}
-	defer func(to *os.File) {
-		_ = to.Close()
-	}(to)
+func setupPostPublishData(ctx context.Context, conn *DBConn) {
+	setupPostReconcileData(ctx, conn)
 
-	_, err = io.Copy(to, from)
-	if err != nil {
-		return err
-	}
+	ctxDB := conn.db.WithContext(ctx)
 
-	return nil
+	ctxDB.Exec("INSERT INTO volume_meta (id, pod_uid, pod_name, pod_namespace, pod_service_account, created_at, updated_at, deleted_at) VALUES ('osmount1', 'pod1', 'podi', 'testnamespace', 'podsa', '2024-03-12 07:49:37.943527+01:00', '2024-03-12 07:49:37.943527+01:00', null);")
+	ctxDB.Exec("INSERT INTO volume_meta (id, pod_uid, pod_name, pod_namespace, pod_service_account, created_at, updated_at, deleted_at) VALUES ('appmount1', 'pod111', 'podiv', 'testnamespace', 'podsa', '2024-03-12 07:53:39.906052+01:00', '2024-03-12 07:53:39.906052+01:00', null);")
+	ctxDB.Exec("INSERT INTO volume_meta (id, pod_uid, pod_name, pod_namespace, pod_service_account, created_at, updated_at, deleted_at) VALUES ('appmount2', 'pod121', 'podii', 'testnamespace', 'podsa', '2024-03-12 07:54:12.65411+01:00', '2024-03-12 07:54:12.65411+01:00', null);")
+	ctxDB.Exec("INSERT INTO volume_meta (id, pod_uid, pod_name, pod_namespace, pod_service_account, created_at, updated_at, deleted_at) VALUES ('appmount3', 'pod113', 'podiii', 'testnamespace', 'podsa', '2024-03-12 07:54:31.114752+01:00', '2024-03-12 07:54:31.114752+01:00', null);")
+
+	ctxDB.Exec("INSERT INTO os_mounts (created_at, updated_at, deleted_at, tenant_config_uid, tenant_uuid, volume_meta_id, location, mount_attempts) VALUES ('2024-03-12 07:49:37.94492+01:00', '2024-03-12 07:49:37.94492+01:00', null, '033dcff9-5c76-4b3a-9e3a-ea0a78bf0b3f', 'abc123', 'osmount1', 'somewhere', 0);")
+
+	ctxDB.Exec("INSERT INTO app_mounts (created_at, updated_at, deleted_at, volume_meta_id, code_module_version, location, mount_attempts) VALUES ('2024-03-12 07:53:39.906761+01:00', '2024-03-12 07:53:39.906761+01:00', null, 'appmount1', '1.2.3', 'loc1', 0);")
+	ctxDB.Exec("INSERT INTO app_mounts (created_at, updated_at, deleted_at, volume_meta_id, code_module_version, location, mount_attempts) VALUES ('2024-03-12 07:54:12.654891+01:00', '2024-03-12 07:54:12.654891+01:00', null, 'appmount2', '1.2.3', 'loc2', 0);")
+	ctxDB.Exec("INSERT INTO app_mounts (created_at, updated_at, deleted_at, volume_meta_id, code_module_version, location, mount_attempts) VALUES ('2024-03-12 07:54:31.115563+01:00', '2024-03-12 07:54:31.115563+01:00', null, 'appmount3', '1.2.3', 'loc3', 0);")
 }
