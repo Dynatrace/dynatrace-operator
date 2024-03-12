@@ -16,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	clientgocorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
@@ -159,6 +160,11 @@ func (builder CommandBuilder) runCollectors(log logr.Logger, supportArchive arch
 		return err
 	}
 
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(kubeConfig)
+	if err != nil {
+		return err
+	}
+
 	pods := clientSet.CoreV1().Pods(namespaceFlagValue)
 	appName := getAppNameLabel(ctx, pods)
 
@@ -168,7 +174,7 @@ func (builder CommandBuilder) runCollectors(log logr.Logger, supportArchive arch
 	collectors := []collector{
 		newOperatorVersionCollector(log, supportArchive),
 		newLogCollector(ctx, log, supportArchive, pods, appName, collectManagedLogsFlagValue),
-		newK8sObjectCollector(ctx, log, supportArchive, namespaceFlagValue, appName, apiReader, *kubeConfig),
+		newK8sObjectCollector(ctx, log, supportArchive, namespaceFlagValue, appName, apiReader, discoveryClient),
 		newTroubleshootCollector(ctx, log, supportArchive, namespaceFlagValue, apiReader, *kubeConfig),
 		newLoadSimCollector(ctx, log, supportArchive, fileSize, loadsimFilesFlagValue, clientSet.CoreV1().Pods(namespaceFlagValue)),
 	}
