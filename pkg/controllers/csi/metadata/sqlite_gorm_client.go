@@ -20,7 +20,6 @@ type DBAccess interface {
 
 	CreateCodeModule(ctx context.Context, codeModule *CodeModule) error
 	ReadCodeModuleByVersion(ctx context.Context, version string) (*CodeModule, error)
-	ReadCodeModuleByTenantUUID(ctx context.Context, tenantUUID string) (*CodeModule, error)
 	DeleteCodeModule(ctx context.Context, codeModule *CodeModule) error
 
 	CreateOSMount(ctx context.Context, osMount *OSMount) error
@@ -60,7 +59,7 @@ func NewDBAccess(path string) (DBConn, error) {
 }
 
 // SchemaMigration runs gormigrate migrations to create tables
-func (conn *DBConn) SchemaMigration(ctx context.Context) error {
+func (conn *DBConn) SchemaMigration(_ context.Context) error {
 	m := gormigrate.New(conn.db, gormigrate.DefaultOptions, []*gormigrate.Migration{})
 	m.InitSchema(func(tx *gorm.DB) error {
 		err := tx.AutoMigrate(
@@ -76,7 +75,8 @@ func (conn *DBConn) SchemaMigration(ctx context.Context) error {
 		// all other constraints, indexes, etc...
 		return nil
 	})
-	m.Migrate()
+
+	_ = m.Migrate()
 
 	return gormigrate.New(conn.db, gormigrate.DefaultOptions, []*gormigrate.Migration{
 		{
@@ -109,17 +109,6 @@ func (conn *DBConn) ReadCodeModuleByVersion(ctx context.Context, version string)
 	var codeModule CodeModule
 
 	result := conn.db.WithContext(ctx).First(&codeModule, "version = ?", version)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-
-	return &codeModule, nil
-}
-
-func (conn *DBConn) ReadCodeModuleByTenantUUID(ctx context.Context, tenantUUID string) (*CodeModule, error) {
-	var codeModule CodeModule
-
-	result := conn.db.WithContext(ctx).InnerJoins("INNER JOIN tenant_configs ON code_modules.version = tenant_configs.downloaded_code_module_version AND tenant_configs.tenant_uuid = ?", tenantUUID).First(&codeModule)
 	if result.Error != nil {
 		return nil, result.Error
 	}
