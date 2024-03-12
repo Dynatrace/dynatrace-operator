@@ -1,4 +1,5 @@
 #!/bin/bash
+set -ex
 
 if [[ ! "${1}" ]]; then
   echo "first param is not set, should be the image without the tag"
@@ -33,7 +34,7 @@ else
   PLATFORM=""
 fi
 
-${CONTAINER_CMD} build "${PLATFORM}" . -f ./Dockerfile -t "${out_image}" \
+${CONTAINER_CMD} build ${PLATFORM} . -f ./Dockerfile -t "${out_image}" \
   --build-arg "GO_LINKER_ARGS=${go_linker_args}" \
   --build-arg "GO_BUILD_TAGS=${go_build_tags}" \
   --label "quay.expires-after=14d"
