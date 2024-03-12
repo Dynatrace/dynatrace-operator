@@ -30,8 +30,6 @@ fi
 if [ -n "${OPERATOR_DEV_BUILD_PLATFORM}" ]; then
   echo "overriding platform to ${OPERATOR_DEV_BUILD_PLATFORM}"
   PLATFORM="--platform=${OPERATOR_DEV_BUILD_PLATFORM}"
-else
-  PLATFORM=""
 fi
 
 ${CONTAINER_CMD} build ${PLATFORM} . -f ./Dockerfile -t "${out_image}" \
