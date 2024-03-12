@@ -86,8 +86,8 @@ func TestReconcile(t *testing.T) {
 		err = versionReconciler.ReconcileOneAgent(ctx, dynakube)
 		require.NoError(t, err)
 
-		assertStatusBasedOnTenantRegistry(t, dynakube.DefaultActiveGateImage(), testActiveGateImage.Tag, dkStatus.ActiveGate.VersionStatus)
-		assertStatusBasedOnTenantRegistry(t, dynakube.DefaultOneAgentImage(), testOneAgentImage.Tag, dkStatus.OneAgent.VersionStatus)
+		assertStatusBasedOnTenantRegistry(t, dynakube.DefaultActiveGateImage(testActiveGateImage.Tag), testActiveGateImage.Tag, dkStatus.ActiveGate.VersionStatus)
+		assertStatusBasedOnTenantRegistry(t, dynakube.DefaultOneAgentImage(testOneAgentImage.Tag), testOneAgentImage.Tag, dkStatus.OneAgent.VersionStatus)
 		assert.Equal(t, latestAgentVersion, dkStatus.CodeModules.VersionStatus.Version)
 
 		// no change if probe not old enough

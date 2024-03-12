@@ -21,12 +21,10 @@ import (
 )
 
 const (
-	testActiveGateImage          = "linux/activegate"
-	testOneAgentImage            = "linux/oneagent"
 	testOneAgentCodeModulesImage = "custom_dir/customcodemodules"
 	testActiveGateCustomImage    = "customag"
 	testCustomOneAgentImage      = "customoa"
-	testVersion                  = "1.248"
+	testVersion                  = "1.248.3"
 )
 
 func defaultAuths(server string) Auths {
@@ -81,15 +79,10 @@ func TestImagePullable(t *testing.T) {
 	dockerServer, secret, server, err := setupDockerMocker(
 		[]string{
 			"/v2/",
-			"/v2/" + testOneAgentImage + "/manifests/" + "raw",
-			"/v2/" + testOneAgentImage + "/manifests/" + testVersion,
-			"/v2/" + testCustomOneAgentImage + "/manifests/" + "latest",
+			"/v2" + dynatracev1beta1.DefaultOneAgentImageRegistrySubPath + "/manifests/" + testVersion + "-raw",
 			"/v2/" + testCustomOneAgentImage + "/manifests/" + testVersion,
-			"/v2/" + testOneAgentCodeModulesImage + "/manifests/latest",
 			"/v2/" + testOneAgentCodeModulesImage + "/manifests/" + testVersion,
-			"/v2/" + testActiveGateImage + "/manifests/" + "raw",
-			"/v2/" + testActiveGateImage + "/manifests/" + testVersion,
-			"/v2/" + testActiveGateCustomImage + "/manifests/" + "latest",
+			"/v2" + dynatracev1beta1.DefaultActiveGateImageRegistrySubPath + "/manifests/" + testVersion + "-raw",
 			"/v2/" + testActiveGateCustomImage + "/manifests/" + testVersion,
 		})
 	require.NoError(t, err)
@@ -104,93 +97,39 @@ func TestImagePullable(t *testing.T) {
 	}{
 		// standard OneAgent images
 		{
-			name:         "TestOneAgentImagePullable/OneAgent image",
+			name:         "Default CloudNative OneAgent image",
 			dynaKube:     dynakubeBuilder(dockerServer.URL).withCloudNativeFullStack().build(),
 			component:    componentOneAgent,
 			proxyWarning: false,
 		},
 		{
-			name:         "TestOneAgentImagePullable/OneAgent versioned image for CloudNativeFullStack",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withCloudNativeFullStackImageVersion(testVersion).build(),
-			component:    componentOneAgent,
-			proxyWarning: false,
-		},
-		{
-			name:         "TestOneAgentImagePullable/OneAgent latest image for ClassicFullStack",
+			name:         "Default ClassicFullstack OneAgent image",
 			dynaKube:     dynakubeBuilder(dockerServer.URL).withClassicFullStack().build(),
 			component:    componentOneAgent,
 			proxyWarning: false,
 		},
 		{
-			name:         "TestOneAgentImagePullable/OneAgent versioned image for ClassicFullStack",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withClassicFullStackImageVersion(testVersion).build(),
-			component:    componentOneAgent,
-			proxyWarning: false,
-		},
-		{
-			name:         "TestOneAgentImagePullable/OneAgent latest image for HostMonitoring",
+			name:         "Default HostMonitoring OneAgent image",
 			dynaKube:     dynakubeBuilder(dockerServer.URL).withHostMonitoring().build(),
-			component:    componentOneAgent,
-			proxyWarning: false,
-		},
-		{
-			name:         "TestOneAgentImagePullable/OneAgent versioned image for HostMonitoring",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withHostMonitoringImageVersion(testVersion).build(),
 			component:    componentOneAgent,
 			proxyWarning: false,
 		},
 
 		// custom OneAgent images
 		{
-			name:         "TestCustomOneAgentImagePullable/OneAgent CloudNativeFullStack unversioned custom image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withCloudNativeFullStackCustomImage(server + "/" + testCustomOneAgentImage).build(),
-			component:    componentOneAgent,
-			proxyWarning: false,
-		},
-		{
-			name:         "TestCustomOneAgentImagePullable/OneAgent CloudNativeFullStack latest custom image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withCloudNativeFullStackCustomImage(server + "/" + testCustomOneAgentImage + ":latest").build(),
-			component:    componentOneAgent,
-			proxyWarning: false,
-		},
-		{
-			name:         "TestCustomOneAgentImagePullable/OneAgent CloudNativeFullStack versioned custom image",
+			name:         "Custom CloudNative OneAgent image",
 			dynaKube:     dynakubeBuilder(dockerServer.URL).withCloudNativeFullStackCustomImage(server + "/" + testCustomOneAgentImage + ":" + testVersion).build(),
 			component:    componentOneAgent,
 			proxyWarning: false,
 		},
 		{
-			name:         "TestCustomOneAgentImagePullable/OneAgent ClassicFullStack custom image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withClassicFullStackCustomImage(server + "/" + testCustomOneAgentImage).build(),
-			component:    componentOneAgent,
-			proxyWarning: false,
-		},
-		{
-			name:         "TestCustomOneAgentImagePullable/OneAgent ClassicFullStack latest custom image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withClassicFullStackCustomImage(server + "/" + testCustomOneAgentImage + ":latest").build(),
-			component:    componentOneAgent,
-			proxyWarning: false,
-		},
-		{
-			name:         "TestCustomOneAgentImagePullable/OneAgent ClassicFullStack versioned custom image",
+			name:         "Custom ClassicFullstack OneAgent image",
 			dynaKube:     dynakubeBuilder(dockerServer.URL).withClassicFullStackCustomImage(server + "/" + testCustomOneAgentImage + ":" + testVersion).build(),
 			component:    componentOneAgent,
 			proxyWarning: false,
 		},
 		{
-			name:         "TestCustomOneAgentImagePullable/OneAgent HostMonitoring custom image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withHostMonitoringCustomImage(server + "/" + testCustomOneAgentImage).build(),
-			component:    componentOneAgent,
-			proxyWarning: false,
-		},
-		{
-			name:         "TestCustomOneAgentImagePullable/OneAgent HostMonitoring latest custom image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withHostMonitoringCustomImage(server + "/" + testCustomOneAgentImage + ":latest").build(),
-			component:    componentOneAgent,
-			proxyWarning: false,
-		},
-		{
-			name:         "TestCustomOneAgentImagePullable/OneAgent HostMonitoring versioned custom image",
+			name:         "Custom HostMonitoring OneAgent image",
 			dynaKube:     dynakubeBuilder(dockerServer.URL).withHostMonitoringCustomImage(server + "/" + testCustomOneAgentImage + ":" + testVersion).build(),
 			component:    componentOneAgent,
 			proxyWarning: false,
@@ -198,74 +137,26 @@ func TestImagePullable(t *testing.T) {
 
 		// OneAgent code modules images
 		{
-			name:         "TestOneAgentCodeModulesImagePullable/OneAgent code modules image",
+			name:         "Custom CloudNative CodeModulesImage",
 			dynaKube:     dynakubeBuilder(dockerServer.URL).withCloudNativeCodeModulesImage(server + "/" + testOneAgentCodeModulesImage + ":" + testVersion).build(),
-			component:    componentOneAgent,
+			component:    componentCodeModules,
 			proxyWarning: true,
 		},
 		{
-			name:         "TestOneAgentCodeModulesImagePullable/CloudNativeFullStack OneAgent code modules image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withCloudNativeCodeModulesImage(server + "/" + testOneAgentCodeModulesImage + ":" + testVersion).build(),
-			component:    componentOneAgent,
-			proxyWarning: true,
-		},
-		{
-			name:         "TestOneAgentCodeModulesImagePullable/CloudNativeFullStack OneAgent code modules latest image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withCloudNativeCodeModulesImage(server + "/" + testOneAgentCodeModulesImage + ":latest").build(),
-			component:    componentOneAgent,
-			proxyWarning: true,
-		},
-		{
-			name:         "TestOneAgentCodeModulesImagePullable/CloudNativeFullStack OneAgent code modules unversioned image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withCloudNativeCodeModulesImage(server + "/" + testOneAgentCodeModulesImage).build(),
-			component:    componentOneAgent,
-			proxyWarning: true,
-		},
-		{
-			name:         "TestOneAgentCodeModulesImagePullable/ApplicationMonitoring OneAgent code modules image",
+			name:         "Custom ApplicationMonitoring CodeModulesImage",
 			dynaKube:     dynakubeBuilder(dockerServer.URL).withApplicationMonitoringCodeModulesImage(server + "/" + testOneAgentCodeModulesImage + ":" + testVersion).build(),
-			component:    componentOneAgent,
-			proxyWarning: true,
-		},
-		{
-			name:         "TestOneAgentCodeModulesImagePullable/ApplicationMonitoring OneAgent code modules latest image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withApplicationMonitoringCodeModulesImage(server + "/" + testOneAgentCodeModulesImage + ":latest").build(),
-			component:    componentOneAgent,
-			proxyWarning: true,
-		},
-		{
-			name:         "TestOneAgentCodeModulesImagePullable/ApplicationMonitoring OneAgent code modules unversioned image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withApplicationMonitoringCodeModulesImage(server + "/" + testOneAgentCodeModulesImage).build(),
-			component:    componentOneAgent,
-			proxyWarning: true,
-		},
-		{
-			name:         "TestOneAgentCodeModulesImagePullable/OneAgent code modules with non-existing image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withCloudNativeCodeModulesImage(server + "/non-existing-image").build(),
-			component:    componentOneAgent,
+			component:    componentCodeModules,
 			proxyWarning: true,
 		},
 		// Active Gate images
 		{
-			name:         "TestActiveGateImagePullable/ActiveGate image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).build(),
+			name:         "ActiveGate default image",
+			dynaKube:     dynakubeBuilder(dockerServer.URL).withActiveGateCapability(dynatracev1beta1.RoutingCapability.DisplayName).build(),
 			component:    componentActiveGate,
 			proxyWarning: false,
 		},
 		{
-			name:         "TestActiveGateImagePullable/ActiveGate custom image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withActiveGateCustomImage(server + "/" + testActiveGateCustomImage).build(),
-			component:    componentActiveGate,
-			proxyWarning: false,
-		},
-		{
-			name:         "TestActiveGateImagePullable/ActiveGate latest custom image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withActiveGateCustomImage(server + "/" + testActiveGateCustomImage + ":latest").build(),
-			component:    componentActiveGate,
-			proxyWarning: false,
-		},
-		{
-			name:         "TestActiveGateImagePullable/ActiveGate versioned custom image",
+			name:         "ActiveGate custom image",
 			dynaKube:     dynakubeBuilder(dockerServer.URL).withActiveGateCustomImage(server + "/" + testActiveGateCustomImage + ":" + testVersion).build(),
 			component:    componentActiveGate,
 			proxyWarning: false,
@@ -340,8 +231,10 @@ func TestImageNotPullable(t *testing.T) {
 			component: componentOneAgent,
 		},
 		{
-			name:      "ActiveGate image",
-			dynaKube:  dynakubeBuilder(dockerServer.URL).build(),
+			name: "ActiveGate image",
+			dynaKube: dynakubeBuilder(dockerServer.URL).
+				withActiveGateCapability(dynatracev1beta1.RoutingCapability.DisplayName).
+				build(),
 			component: componentActiveGate,
 		},
 		{

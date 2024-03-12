@@ -34,12 +34,25 @@ const testAPIURL = "http://test-endpoint/api"
 func TestDefaultActiveGateImage(t *testing.T) {
 	t.Run(`ActiveGateImage with no API URL`, func(t *testing.T) {
 		dk := DynaKube{}
-		assert.Equal(t, "", dk.DefaultActiveGateImage())
+		assert.Equal(t, "", dk.DefaultActiveGateImage(""))
 	})
 
-	t.Run(`ActiveGateImage with API URL`, func(t *testing.T) {
+	t.Run(`ActiveGateImage adds raw postfix`, func(t *testing.T) {
 		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
-		assert.Equal(t, "test-endpoint/linux/activegate:raw", dk.DefaultActiveGateImage())
+		assert.Equal(t, "test-endpoint/linux/activegate:1.234.5-raw", dk.DefaultActiveGateImage("1.234.5"))
+	})
+
+	t.Run("ActiveGateImage doesn't add 'raw' postfix if present", func(t *testing.T) {
+		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
+		assert.Equal(t, "test-endpoint/linux/activegate:1.234.5-raw", dk.DefaultActiveGateImage("1.234.5-raw"))
+	})
+
+	t.Run(`ActiveGateImage truncates build date`, func(t *testing.T) {
+		version := "1.239.14.20220325-164521"
+		expectedImage := "test-endpoint/linux/activegate:1.239.14-raw"
+		dynakube := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
+
+		assert.Equal(t, expectedImage, dynakube.DefaultActiveGateImage(version))
 	})
 }
 
@@ -93,38 +106,25 @@ func TestDynaKube_UseCSIDriver(t *testing.T) {
 func TestDefaultOneAgentImage(t *testing.T) {
 	t.Run(`OneAgentImage with no API URL`, func(t *testing.T) {
 		dk := DynaKube{}
-		assert.Equal(t, "", dk.DefaultOneAgentImage())
+		assert.Equal(t, "", dk.DefaultOneAgentImage(""))
 	})
 
-	t.Run(`OneAgentImage with API URL`, func(t *testing.T) {
+	t.Run(`OneAgentImage adds raw postfix`, func(t *testing.T) {
 		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
-		assert.Equal(t, "test-endpoint/linux/oneagent:raw", dk.DefaultOneAgentImage())
+		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5-raw", dk.DefaultOneAgentImage("1.234.5"))
 	})
 
-	t.Run(`OneAgentImage with API URL and custom version`, func(t *testing.T) {
-		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL, OneAgent: OneAgentSpec{ClassicFullStack: &HostInjectSpec{Version: "1.234.5"}}}}
-		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5", dk.DefaultOneAgentImage())
+	t.Run(`OneAgentImage doesn't add 'raw' postfix if present`, func(t *testing.T) {
+		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
+		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5-raw", dk.DefaultOneAgentImage("1.234.5-raw"))
 	})
 
 	t.Run(`OneAgentImage with custom version truncates build date`, func(t *testing.T) {
 		version := "1.239.14.20220325-164521"
-		expectedImage := "test-endpoint/linux/oneagent:1.239.14"
+		expectedImage := "test-endpoint/linux/oneagent:1.239.14-raw"
+		dynakube := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
 
-		dynakube := DynaKube{
-			Spec: DynaKubeSpec{
-				APIURL: testAPIURL,
-				OneAgent: OneAgentSpec{
-					CloudNativeFullStack: &CloudNativeFullStackSpec{
-						HostInjectSpec: HostInjectSpec{
-							Version: version,
-						},
-					},
-				},
-			},
-		}
-
-		assert.Equal(t, expectedImage, dynakube.DefaultOneAgentImage())
-		assert.Equal(t, version, dynakube.CustomOneAgentVersion())
+		assert.Equal(t, expectedImage, dynakube.DefaultOneAgentImage(version))
 	})
 }
 

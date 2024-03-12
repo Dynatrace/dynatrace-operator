@@ -39,7 +39,7 @@ func (c component) getImage(dynakube *dynatracev1beta1.DynaKube) (string, bool) 
 			return dynakube.CustomOneAgentImage(), true
 		}
 
-		return dynakube.DefaultOneAgentImage(), false
+		return dynakube.OneAgentImage(), false
 	case componentCodeModules:
 		return dynakube.CustomCodeModulesImage(), true
 	case componentActiveGate:
@@ -47,7 +47,7 @@ func (c component) getImage(dynakube *dynatracev1beta1.DynaKube) (string, bool) 
 			return dynakube.CustomActiveGateImage(), true
 		}
 
-		return dynakube.DefaultActiveGateImage(), false
+		return dynakube.ActiveGateImage(), false
 	}
 
 	return "", false

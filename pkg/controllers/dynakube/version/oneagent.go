@@ -78,7 +78,7 @@ func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 		return err
 	}
 
-	defaultImage := updater.dynakube.DefaultOneAgentImage()
+	defaultImage := updater.dynakube.DefaultOneAgentImage(latestVersion)
 
 	return updateVersionStatusForTenantRegistry(updater.Target(), defaultImage, latestVersion)
 }

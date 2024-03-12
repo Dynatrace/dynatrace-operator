@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -42,7 +43,8 @@ const (
 	AuthTokenSecretSuffix                   = "-activegate-authtoken-secret"
 	PodNameOsAgent                          = "oneagent"
 
-	defaultActiveGateImage = "/linux/activegate:raw"
+	DefaultActiveGateImageRegistrySubPath = "/linux/activegate"
+	DefaultOneAgentImageRegistrySubPath   = "/linux/oneagent"
 )
 
 // ApiUrl is a getter for dk.Spec.APIURL.
@@ -272,16 +274,27 @@ func (dk *DynaKube) ActiveGateImage() string {
 	return dk.Status.ActiveGate.ImageID
 }
 
+// ActiveGateVersion provides version set in Status for the ActiveGate.
+func (dk *DynaKube) ActiveGateVersion() string {
+	return dk.Status.ActiveGate.Version
+}
+
 // DefaultActiveGateImage provides the image reference for the ActiveGate from tenant registry.
 // Format: repo:tag.
-func (dk *DynaKube) DefaultActiveGateImage() string {
+func (dk *DynaKube) DefaultActiveGateImage(version string) string {
 	apiUrlHost := dk.ApiUrlHost()
-
 	if apiUrlHost == "" {
 		return ""
 	}
 
-	return apiUrlHost + defaultActiveGateImage
+	truncatedVersion := dtversion.ToImageTag(version)
+	tag := truncatedVersion
+
+	if !strings.Contains(tag, api.RawTag) {
+		tag += "-" + api.RawTag
+	}
+
+	return apiUrlHost + DefaultActiveGateImageRegistrySubPath + ":" + tag
 }
 
 func (dk *DynaKube) deprecatedActiveGateImage() string {
@@ -376,39 +389,20 @@ func (dk *DynaKube) CustomOneAgentImage() string {
 }
 
 // DefaultOneAgentImage provides the image reference for the OneAgent from tenant registry.
-func (dk *DynaKube) DefaultOneAgentImage() string {
-	if dk.Spec.APIURL == "" {
-		return ""
-	}
-
-	tag := api.RawTag
-
-	if version := dk.CustomOneAgentVersion(); version != "" {
-		truncatedVersion := truncateBuildDate(version)
-		tag = truncatedVersion
-	}
-
+func (dk *DynaKube) DefaultOneAgentImage(version string) string {
 	apiUrlHost := dk.ApiUrlHost()
 	if apiUrlHost == "" {
 		return ""
 	}
 
-	return fmt.Sprintf("%s/linux/oneagent:%s", apiUrlHost, tag)
-}
+	truncatedVersion := dtversion.ToImageTag(version)
+	tag := truncatedVersion
 
-func truncateBuildDate(version string) string {
-	const versionSeparator = "."
-
-	const buildDateIndex = 3
-
-	if strings.Count(version, versionSeparator) >= buildDateIndex {
-		splitVersion := strings.Split(version, versionSeparator)
-		truncatedVersion := strings.Join(splitVersion[:buildDateIndex], versionSeparator)
-
-		return truncatedVersion
+	if !strings.Contains(tag, api.RawTag) {
+		tag += "-" + api.RawTag
 	}
 
-	return version
+	return apiUrlHost + DefaultOneAgentImageRegistrySubPath + ":" + tag
 }
 
 // Tokens returns the name of the Secret to be used for tokens.

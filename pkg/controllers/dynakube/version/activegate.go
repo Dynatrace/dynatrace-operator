@@ -72,7 +72,7 @@ func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {
 		return err
 	}
 
-	defaultImage := updater.dynakube.DefaultActiveGateImage()
+	defaultImage := updater.dynakube.DefaultActiveGateImage(latestVersion)
 
 	return updateVersionStatusForTenantRegistry(updater.Target(), defaultImage, latestVersion)
 }
