@@ -40,7 +40,7 @@ go/test:
 	go test ./... -coverprofile=coverage.txt -covermode=atomic -tags "$(shell ./hack/build/create_go_build_tags.sh false)"
 
 ## Runs all go unit tests and opens coverage report in a browser
-go/testhtml: go/test
+go/coverage: go/test
 	go tool cover -html=./coverage.txt
 
 ## Runs go integration test
