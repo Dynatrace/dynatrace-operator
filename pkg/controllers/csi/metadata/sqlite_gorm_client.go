@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/go-gormigrate/gormigrate/v2"
+	"github.com/pkg/errors"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -38,10 +39,10 @@ type DBConn struct {
 	db *gorm.DB
 }
 
-var _ DBAccess = (*DBConn)(nil)
+var _ DBAccess = &DBConn{}
 
 // NewDBAccess creates a new gorm db connection to the database.
-func NewDBAccess(path string) (DBConn, error) {
+func NewDBAccess(path string) (*DBConn, error) {
 	// we should explicitly enable foreign_keys for sqlite
 	if strings.Contains(path, "?") {
 		path += "&_foreign_keys=on"
@@ -52,10 +53,10 @@ func NewDBAccess(path string) (DBConn, error) {
 	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{Logger: logger.Default})
 
 	if err != nil {
-		return DBConn{}, err
+		return &DBConn{}, err
 	}
 
-	return DBConn{db: db}, nil
+	return &DBConn{db: db}, nil
 }
 
 // SchemaMigration runs gormigrate migrations to create tables
@@ -106,6 +107,10 @@ func (conn *DBConn) CreateCodeModule(ctx context.Context, codeModule *CodeModule
 }
 
 func (conn *DBConn) ReadCodeModuleByVersion(ctx context.Context, version string) (*CodeModule, error) {
+	if version == "" {
+		return nil, errors.New("Cannot read data identified by empty string parameter")
+	}
+
 	var codeModule CodeModule
 
 	result := conn.db.WithContext(ctx).First(&codeModule, "version = ?", version)
@@ -151,11 +156,25 @@ func (conn *DBConn) ReadOSMountByTenantUUID(ctx context.Context, tenantUUID stri
 }
 
 func (conn *DBConn) DeleteOSMount(ctx context.Context, osMount *OSMount) error {
-	if osMount.VolumeMeta != (VolumeMeta{}) {
-		conn.db.WithContext(ctx).Delete(&osMount.VolumeMeta)
+	if osMount != nil && osMount.VolumeMetaID != "" {
+		volumeMeta, err := conn.ReadVolumeMetaByID(ctx, osMount.VolumeMetaID)
+		if err == nil {
+			conn.db.WithContext(ctx).Delete(volumeMeta)
+		}
 	}
 
 	return conn.db.WithContext(ctx).Delete(osMount).Error
+}
+
+func (conn *DBConn) ReadVolumeMetaByID(ctx context.Context, id string) (*VolumeMeta, error) {
+	var volumeMeta VolumeMeta
+
+	result := conn.db.WithContext(ctx).First(&volumeMeta, "ID = ?", id)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return &volumeMeta, nil
 }
 
 func (conn *DBConn) CreateAppMount(ctx context.Context, appMount *AppMount) error {
@@ -189,8 +208,11 @@ func (conn *DBConn) ReadAppMounts(ctx context.Context) ([]AppMount, error) {
 }
 
 func (conn *DBConn) DeleteAppMount(ctx context.Context, appMount *AppMount) error {
-	if appMount.VolumeMeta != (VolumeMeta{}) {
-		conn.db.WithContext(ctx).Delete(&appMount.VolumeMeta)
+	if appMount != nil && appMount.VolumeMetaID != "" {
+		volumeMeta, err := conn.ReadVolumeMetaByID(ctx, appMount.VolumeMetaID)
+		if err == nil {
+			conn.db.WithContext(ctx).Delete(volumeMeta)
+		}
 	}
 
 	return conn.db.WithContext(ctx).Delete(appMount).Error
