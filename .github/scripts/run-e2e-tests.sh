@@ -51,6 +51,6 @@ EOF
 popd
 
 echo "Running tests for environment '$FLC_ENVIRONMENT'..."
-make BRANCH="$TARGET_BRANCH" test/e2e
+make BRANCH="$TARGET_BRANCH" test/e2e-publish
 
 echo "Success!"

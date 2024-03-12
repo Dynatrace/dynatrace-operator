@@ -136,6 +136,7 @@ linters-settings:
           - "github.com/google/go-containerregistry"
           - "github.com/docker/cli"
           - "github.com/go-gormigrate/gormigrate"
+          - "github.com/google/uuid"
 
           # Allowed packages in container-based builder.
         deny:
