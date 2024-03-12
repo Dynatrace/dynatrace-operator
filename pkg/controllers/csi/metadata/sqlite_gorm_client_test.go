@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	MEM            = ":memory:"
-	TMP            = "test.db"
-	POST_RECONCILE = "reconcile.db"
-	POST_PUBLISH   = "publish.db"
+	MEM           = ":memory:"
+	TMP           = "test.db"
+	PostReconcile = "reconcile.db"
+	PostPublish   = "publish.db"
 )
 
 func createTestTenant() *TenantConfig {
@@ -28,7 +28,6 @@ func createTestTenant() *TenantConfig {
 
 func TestCreateTenantConfig(t *testing.T) {
 	db, err := setupSqLiteDB(MEM)
-	// db, err := NewDBAccess(POST_RECONCILE) //todo
 	require.NoError(t, err)
 
 	err = db.SchemaMigration(context.Background())
@@ -46,7 +45,7 @@ func TestCreateTenantConfig(t *testing.T) {
 }
 
 func TestReadTenantConfig(t *testing.T) {
-	db, err := setupSqLiteDB(POST_RECONCILE)
+	db, err := setupSqLiteDB(PostReconcile)
 	require.NoError(t, err)
 
 	tc, err := db.ReadTenantConfigByTenantUUID(context.Background(), "abc123")
@@ -63,7 +62,7 @@ func TestReadTenantConfig(t *testing.T) {
 }
 
 func TestUpdateTenantConfig(t *testing.T) {
-	db, err := setupSqLiteDB(POST_PUBLISH)
+	db, err := setupSqLiteDB(PostPublish)
 	require.NoError(t, err)
 
 	tenantConfig, err := db.ReadTenantConfigByTenantUUID(context.Background(), "abc123")
@@ -80,7 +79,7 @@ func TestUpdateTenantConfig(t *testing.T) {
 }
 
 func TestSoftDeleteTenantConfig(t *testing.T) {
-	db, err := setupSqLiteDB(POST_PUBLISH)
+	db, err := setupSqLiteDB(PostPublish)
 	require.NoError(t, err)
 
 	tenantConfig, err := db.ReadTenantConfigByTenantUUID(context.Background(), "abc123")
@@ -98,7 +97,6 @@ func TestSoftDeleteTenantConfig(t *testing.T) {
 
 func TestCreateCodeModule(t *testing.T) {
 	db, err := setupSqLiteDB(MEM)
-	// db, err := NewDBAccess(POST_RECONCILE) //todo
 	require.NoError(t, err)
 
 	err = db.SchemaMigration(context.Background())
@@ -119,7 +117,7 @@ func TestCreateCodeModule(t *testing.T) {
 }
 
 func TestReadCodeModule(t *testing.T) {
-	db, err := setupSqLiteDB(POST_RECONCILE)
+	db, err := setupSqLiteDB(PostReconcile)
 	require.NoError(t, err)
 
 	codeModule, err := db.ReadCodeModuleByVersion(context.Background(), "1.2.3")
@@ -133,14 +131,10 @@ func TestReadCodeModule(t *testing.T) {
 
 	_, err = db.ReadCodeModuleByVersion(context.Background(), "unknown")
 	require.Error(t, err)
-
-	codeModule, err = db.ReadCodeModuleByTenantUUID(context.Background(), "abc123")
-	require.NoError(t, err)
-	assert.Equal(t, "someplace", codeModule.Location)
 }
 
 func TestSoftDeleteCodeModule(t *testing.T) {
-	db, err := setupSqLiteDB(POST_PUBLISH)
+	db, err := setupSqLiteDB(PostPublish)
 	require.NoError(t, err)
 
 	codeModule, err := db.ReadCodeModuleByVersion(context.Background(), "1.2.3")
@@ -160,8 +154,7 @@ func TestSoftDeleteCodeModule(t *testing.T) {
 }
 
 func TestCreateOsMount(t *testing.T) {
-	db, err := setupSqLiteDB(POST_RECONCILE)
-	// db, err := NewDBAccess(TMP) //todo
+	db, err := setupSqLiteDB(PostReconcile)
 	require.NoError(t, err)
 
 	tenant, err := db.ReadTenantConfigByTenantUUID(context.Background(), "abc123")
@@ -191,7 +184,7 @@ func TestCreateOsMount(t *testing.T) {
 }
 
 func TestReadOSMount(t *testing.T) {
-	db, err := setupSqLiteDB(POST_PUBLISH)
+	db, err := setupSqLiteDB(PostPublish)
 	require.NoError(t, err)
 
 	appMount, err := db.ReadOSMountByTenantUUID(context.Background(), "abc123")
@@ -208,7 +201,7 @@ func TestReadOSMount(t *testing.T) {
 }
 
 func TestUpdateOsMount(t *testing.T) {
-	db, err := setupSqLiteDB(POST_PUBLISH)
+	db, err := setupSqLiteDB(PostPublish)
 	require.NoError(t, err)
 
 	osMount, err := db.ReadOSMountByTenantUUID(context.Background(), "abc123")
@@ -227,7 +220,7 @@ func TestUpdateOsMount(t *testing.T) {
 }
 
 func TestSoftDeleteOSMount(t *testing.T) {
-	db, err := setupSqLiteDB(POST_PUBLISH)
+	db, err := setupSqLiteDB(PostPublish)
 	require.NoError(t, err)
 
 	osMount, err := db.ReadOSMountByTenantUUID(context.Background(), "abc123")
@@ -247,14 +240,13 @@ func TestSoftDeleteOSMount(t *testing.T) {
 }
 
 func TestCreateAppMount(t *testing.T) {
-	db, err := setupSqLiteDB(POST_RECONCILE)
-	// db, err := NewDBAccess(TMP) //todo
-	require.NoError(t, err)
-	// todo
-	_, err = db.ReadTenantConfigByTenantUUID(context.Background(), "abc123")
+	db, err := setupSqLiteDB(PostReconcile)
 	require.NoError(t, err)
 
-	cm, err := db.ReadCodeModuleByTenantUUID(context.Background(), "abc123")
+	tenantConfig, err := db.ReadTenantConfigByTenantUUID(context.Background(), "abc123")
+	require.NoError(t, err)
+
+	cm, err := db.ReadCodeModuleByVersion(context.Background(), tenantConfig.DownloadedCodeModuleVersion)
 	require.NoError(t, err)
 
 	appMount := &AppMount{
@@ -280,7 +272,7 @@ func TestCreateAppMount(t *testing.T) {
 }
 
 func TestReadAppMounts(t *testing.T) {
-	db, err := setupSqLiteDB(POST_PUBLISH)
+	db, err := setupSqLiteDB(PostPublish)
 	require.NoError(t, err)
 
 	appMounts, err := db.ReadAppMounts(context.Background())
@@ -292,7 +284,7 @@ func TestReadAppMounts(t *testing.T) {
 }
 
 func TestReadAppMount(t *testing.T) {
-	db, err := setupSqLiteDB(POST_PUBLISH)
+	db, err := setupSqLiteDB(PostPublish)
 	require.NoError(t, err)
 
 	appMount, err := db.ReadAppMountByVolumeMetaID(context.Background(), "appmount1")
@@ -309,7 +301,7 @@ func TestReadAppMount(t *testing.T) {
 }
 
 func TestUpdateAppMount(t *testing.T) {
-	db, err := setupSqLiteDB(POST_PUBLISH)
+	db, err := setupSqLiteDB(PostPublish)
 	require.NoError(t, err)
 
 	appMount, err := db.ReadAppMountByVolumeMetaID(context.Background(), "appmount1")
@@ -328,7 +320,7 @@ func TestUpdateAppMount(t *testing.T) {
 }
 
 func TestSoftDeleteAppMount(t *testing.T) {
-	db, err := setupSqLiteDB(POST_PUBLISH)
+	db, err := setupSqLiteDB(PostPublish)
 	require.NoError(t, err)
 
 	appMount, err := db.ReadAppMountByVolumeMetaID(context.Background(), "appmount1")
