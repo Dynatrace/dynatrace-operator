@@ -6,8 +6,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	oaConditionType = "OneAgentVersion"
 )
 
 type oneAgentUpdater struct {
@@ -33,6 +39,12 @@ func (updater oneAgentUpdater) Name() string {
 }
 
 func (updater oneAgentUpdater) IsEnabled() bool {
+	if updater.dynakube.NeedsOneAgent() {
+		return true
+	}
+
+	_ = meta.RemoveStatusCondition(updater.dynakube.Conditions(), oaConditionType)
+
 	return updater.dynakube.NeedsOneAgent()
 }
 
@@ -41,7 +53,12 @@ func (updater *oneAgentUpdater) Target() *status.VersionStatus {
 }
 
 func (updater oneAgentUpdater) CustomImage() string {
-	return updater.dynakube.CustomOneAgentImage()
+	customImage := updater.dynakube.CustomOneAgentImage()
+	if customImage != "" {
+		setVerificationSkippedReasonCondition(updater.dynakube.Conditions(), oaConditionType)
+	}
+
+	return customImage
 }
 
 func (updater oneAgentUpdater) CustomVersion() string {
@@ -53,21 +70,34 @@ func (updater oneAgentUpdater) IsAutoUpdateEnabled() bool {
 }
 
 func (updater oneAgentUpdater) IsPublicRegistryEnabled() bool {
-	return updater.dynakube.FeaturePublicRegistry() && !updater.dynakube.ClassicFullStackMode()
+	isPublicRegistry := updater.dynakube.FeaturePublicRegistry() && !updater.dynakube.ClassicFullStackMode()
+	if isPublicRegistry {
+		setVerifiedCondition(updater.dynakube.Conditions(), oaConditionType) // Bit hacky, as things can still go wrong, but if so we will just overwrite this is LatestImageInfo.
+	}
+
+	return isPublicRegistry
 }
 
 func (updater oneAgentUpdater) LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error) {
-	return updater.dtClient.GetLatestOneAgentImage(ctx)
+	imageInfo, err := updater.dtClient.GetLatestOneAgentImage(ctx)
+	if err != nil {
+		conditions.SetDynatraceApiErrorCondition(updater.dynakube.Conditions(), oaConditionType, err)
+	}
+
+	return imageInfo, err
 }
 
 func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 	var err error
 
+	// Not using setVerificationSkippedReasonCondition here because technically we do some verification.
 	latestVersion := updater.CustomVersion()
+
 	if latestVersion == "" {
 		latestVersion, err = updater.dtClient.GetLatestAgentVersion(ctx, dtclient.OsUnix, dtclient.InstallerTypeDefault)
 		if err != nil {
 			log.Info("failed to determine image version")
+			conditions.SetDynatraceApiErrorCondition(updater.dynakube.Conditions(), oaConditionType, err)
 
 			return err
 		}
@@ -80,7 +110,14 @@ func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 
 	defaultImage := updater.dynakube.DefaultOneAgentImage(latestVersion)
 
-	return updateVersionStatusForTenantRegistry(updater.Target(), defaultImage, latestVersion)
+	err = updateVersionStatusForTenantRegistry(updater.Target(), defaultImage, latestVersion)
+	if err != nil {
+		return err
+	}
+
+	setVerifiedCondition(updater.dynakube.Conditions(), oaConditionType)
+
+	return nil
 }
 
 func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, error) {
@@ -96,18 +133,25 @@ func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, e
 	switch updater.Target().Source {
 	case status.TenantRegistryVersionSource:
 		previousVersion = updater.Target().Version
-
-		return isDowngrade(updater.Name(), previousVersion, latestVersion)
 	case status.PublicRegistryVersionSource:
 		previousVersion, err = getTagFromImageID(imageID)
 		if err != nil {
+			setVerificationFailedReasonCondition(updater.dynakube.Conditions(), oaConditionType, err)
+
 			return false, err
 		}
-
-		return isDowngrade(updater.Name(), previousVersion, latestVersion)
 	}
 
-	return false, nil
+	downgrade, err := isDowngrade(updater.Name(), previousVersion, latestVersion)
+	if downgrade {
+		setDowngradeCondition(updater.dynakube.Conditions(), oaConditionType, previousVersion, latestVersion)
+	}
+
+	if err != nil {
+		setVerificationFailedReasonCondition(updater.dynakube.Conditions(), oaConditionType, err)
+	}
+
+	return downgrade, err
 }
 
 func (updater oneAgentUpdater) ValidateStatus() error {
