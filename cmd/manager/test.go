@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -39,7 +39,7 @@ func (mgr *TestManager) GetCache() cache.Cache {
 }
 
 func (mgr *TestManager) GetLogger() logr.Logger {
-	return logger.Get().WithName("test-manager").Logger
+	return logd.Get().WithName("test-manager").Logger
 }
 
 func (mgr *TestManager) GetRESTMapper() meta.RESTMapper {

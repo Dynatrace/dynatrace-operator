@@ -1,7 +1,7 @@
 package pod_mutator
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
 )
 
 const (
@@ -16,5 +16,5 @@ const (
 )
 
 var (
-	log = logger.Get().WithName("pod-mutation")
+	log = logd.Get().WithName("pod-mutation")
 )

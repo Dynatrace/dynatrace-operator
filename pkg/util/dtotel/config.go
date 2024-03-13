@@ -3,7 +3,7 @@ package dtotel
 import (
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
 )
 
 const (
@@ -20,4 +20,4 @@ const (
 	otelMetricsUrl = "/v1/metrics"
 )
 
-var log = logger.Get().WithName("open-telemetry")
+var log = logd.Get().WithName("open-telemetry")

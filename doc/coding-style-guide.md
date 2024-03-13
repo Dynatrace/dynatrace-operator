@@ -12,6 +12,7 @@
 - [Logging](#logging)
   - [Do's](#dos-1)
   - [Don'ts](#donts-1)
+  - [Debugging](#debugging)
 - [Testing](#testing)
   - [Do's](#dos-2)
   - [Don'ts](#donts-2)
@@ -137,16 +138,16 @@ if err != nil {
     return reconcile.Result{}, err
 }
 // Will result in: (shortened it a bit so its not huge)
-{"level":"info","ts":"2023-11-20T09:25:16.261Z","logger":"automatic-api-monitoring","msg":"kubernetes cluster setting already exists","clusterLabel":"dynakube","cluster":"a9ef1d81-6950-4260-a3d4-8e969c590b8c"}
-{"level":"info","ts":"2023-11-20T09:25:16.273Z","logger":"dynakube","msg":"activegate statefulset is still deploying","dynakube":"dynakube"}
-{"error":"BOOM!","level":"error","logger":"dynakube","msg":"it happened","stacktrace":"BOOM!
+{"level":"info","ts":"2023-11-20T09:25:16.261Z","logd":"automatic-api-monitoring","msg":"kubernetes cluster setting already exists","clusterLabel":"dynakube","cluster":"a9ef1d81-6950-4260-a3d4-8e969c590b8c"}
+{"level":"info","ts":"2023-11-20T09:25:16.273Z","logd":"dynakube","msg":"activegate statefulset is still deploying","dynakube":"dynakube"}
+{"error":"BOOM!","level":"error","logd":"dynakube","msg":"it happened","stacktrace":"BOOM!
 github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube.(*Controller).reconcile
 github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynakube_controller.go:168
    <...>
 sigs.k8s.io/controller-runtime@v0.16.3/pkg/internal/controller/controller.go:227
 runtime.goexit
 runtime/asm_amd64.s:1650","ts":"2023-11-20T09:25:16.273Z"}
-{"DynaKube":{"name":"dynakube","namespace":"dynatrace"},"controller":"dynakube","controllerGroup":"dynatrace.com","controllerKind":"DynaKube","error":"BOOM!","level":"error","logger":"main","msg":"Reconciler error","name":"dynakube","namespace":"dynatrace","reconcileID":"5d67fe9e-b6f0-4ad4-8634-aa66838aa685","stacktrace":"BOOM!
+{"DynaKube":{"name":"dynakube","namespace":"dynatrace"},"controller":"dynakube","controllerGroup":"dynatrace.com","controllerKind":"DynaKube","error":"BOOM!","level":"error","logd":"main","msg":"Reconciler error","name":"dynakube","namespace":"dynatrace","reconcileID":"5d67fe9e-b6f0-4ad4-8634-aa66838aa685","stacktrace":"BOOM!
 github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube.(*Controller).reconcile
 github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynakube_controller.go:168
    <...>
@@ -170,6 +171,62 @@ runtime.goexit
 - Don't use `fmt.Sprintf` for creating log messages, the values you wish to replace via `Sprintf` should be provided to the logger as key-value pairs.
   - Example: `log.Info("deleted volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)`
 - Don't start a log message with uppercase characters, unless it's a name of an exact proper noun.
+
+### Debugging
+
+- Do not log errors that bubble up to the controller runtime. They will be logged anyway, and we do not want to log errors multiple times because it's confusing.
+- Use debug logs to show the flow.
+- Provide metadata so that logs can be related to objects under reconciliation
+- Provide additional information that might be helpful for troubleshoot in key/values of log (e.g. values of variables at that point)
+- Use a local logger with pre-configured key/values to avoid duplication
+- Be careful not to log confidential info like passwords or tokens accidentally.
+
+#### Show the flow
+
+```go
+log.Debug("reconcile required", "updater", updater.Name())
+```
+
+#### Something's wrong
+
+```go
+if err != nil {
+    log.Debug("could not create or update deployment for EdgeConnect", "name", desiredDeployment.Name)
+
+    return err
+}
+
+log.Debug("EdgeConnect deployment created/updated", "name", edgeConnect.Name)
+```
+
+#### Logging additional info
+
+```go
+if len(ecs.EdgeConnects) > 1 {
+    log.Debug("Found multiple EdgeConnect objects with the same name", "count", ecs.EdgeConnects)
+
+    return edgeconnect.GetResponse{}, errors.New("many EdgeConnects have the same name")
+}
+
+```
+
+#### Pre-configured local logger
+
+```go
+func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
+    _log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name)
+
+    ...
+    _log.Debug("foobar happened")
+
+    _log = _log.WithValues("foobarReason", "hurga")
+
+    ...
+    _log.Debug("foobar happened again")
+    ...
+}
+
+```
 
 ## Testing
 
@@ -251,6 +308,9 @@ So here are some basic guidelines:
   - This eliminates lots of hardcoded strings and such
 - Don't reinvent the wheel, try to use what is already there.
   - If a helper function is almost fits your use case then first just try to "renovate the wheel" and make what is already there better :)
+
+
+## Logs
 
 ## Code Review
 

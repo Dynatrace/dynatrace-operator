@@ -14,7 +14,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/dockerkeychain"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -165,7 +165,7 @@ func TestImagePullable(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			logOutput := runWithTestLogger(func(log logger.DtLogger) {
+			logOutput := runWithTestLogger(func(log logd.Logger) {
 				ctx := context.Background()
 				clt := fake.NewClient(secret)
 				pullSecret, _ := checkDynakube(ctx, log, clt, test.dynaKube)
@@ -257,7 +257,7 @@ func TestImageNotPullable(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			logOutput := runWithTestLogger(func(log logger.DtLogger) {
+			logOutput := runWithTestLogger(func(log logd.Logger) {
 				ctx := context.Background()
 				clt := fake.NewClient(secret)
 				pullSecret, _ := checkDynakube(ctx, log, clt, test.dynaKube)
@@ -297,7 +297,7 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeCodeModulesImage("myunknownserver.com/myrepo/mymissingcodemodules").
 			build()
-		logOutput := runWithTestLogger(func(log logger.DtLogger) {
+		logOutput := runWithTestLogger(func(log logd.Logger) {
 			ctx := context.Background()
 			clt := fake.NewClient(secret)
 			pullSecret, _ := checkDynakube(ctx, log, clt, &dynakube)
@@ -318,7 +318,7 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 			withCloudNativeCodeModulesImage("").
 			build()
 
-		logOutput := runWithTestLogger(func(log logger.DtLogger) {
+		logOutput := runWithTestLogger(func(log logd.Logger) {
 			ctx := context.Background()
 			clt := fake.NewClient(secret)
 			pullSecret, _ := checkDynakube(ctx, log, clt, &dynakube)

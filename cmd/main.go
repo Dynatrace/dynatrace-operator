@@ -28,14 +28,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/cmd/troubleshoot"
 	"github.com/Dynatrace/dynatrace-operator/cmd/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var (
-	log = logger.Get().WithName("main")
+	log = logd.Get().WithName("main")
 )
 
 func newRootCommand() *cobra.Command {

@@ -1,7 +1,7 @@
 package operator
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
 )
 
-var log = logger.Get().WithName("operator-command")
+var log = logd.Get().WithName("operator-command")

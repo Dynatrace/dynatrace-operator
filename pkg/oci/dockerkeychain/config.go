@@ -1,9 +1,9 @@
 package dockerkeychain
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
 )
 
 var (
-	log = logger.Get().WithName("docker-keychain")
+	log = logd.Get().WithName("docker-keychain")
 )

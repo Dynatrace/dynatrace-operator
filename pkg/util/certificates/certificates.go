@@ -5,10 +5,10 @@ import (
 	"encoding/pem"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
 )
 
-func ValidateCertificateExpiration(certData []byte, renewalThreshold time.Duration, now time.Time, log logger.DtLogger) (bool, error) {
+func ValidateCertificateExpiration(certData []byte, renewalThreshold time.Duration, now time.Time, log logd.Logger) (bool, error) {
 	if block, _ := pem.Decode(certData); block == nil {
 		log.Info("failed to parse certificate", "error", "can't decode PEM file")
 

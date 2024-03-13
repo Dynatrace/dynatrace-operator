@@ -1,4 +1,4 @@
-package logger
+package logd
 
 import (
 	"bytes"
@@ -10,11 +10,18 @@ import (
 
 func TestDefaultLogLevel(t *testing.T) {
 	logLevel := readLogLevelFromEnv()
-	assert.Equal(t, zapcore.DebugLevel, logLevel)
+	assert.Equal(t, zapcore.InfoLevel, logLevel)
 }
 
 func TestLogLevelFromEnv(t *testing.T) {
-	t.Setenv(LogLevelEnv, "info")
+	t.Setenv(LogLevelEnv, "debug")
+
+	logLevel := readLogLevelFromEnv()
+	assert.Equal(t, zapcore.DebugLevel, logLevel)
+}
+
+func TestLogLevelFromEnvEmptyString(t *testing.T) {
+	t.Setenv(LogLevelEnv, "unknown")
 
 	logLevel := readLogLevelFromEnv()
 	assert.Equal(t, zapcore.InfoLevel, logLevel)
@@ -51,7 +58,7 @@ func TestLogger(t *testing.T) {
 		log.Debug("Debug message")
 
 		assert.Contains(t, logBuffer.String(), "Info message")
-		assert.Contains(t, logBuffer.String(), "Debug message")
+		assert.NotContains(t, logBuffer.String(), "Debug message")
 		assert.NotContains(t, logBuffer.String(), "dpanic")
 	})
 }

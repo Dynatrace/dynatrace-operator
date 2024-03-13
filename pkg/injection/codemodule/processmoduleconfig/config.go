@@ -1,9 +1,9 @@
 package processmoduleconfig
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
 )
 
 var (
-	log = logger.Get().WithName("processmoduleconfig")
+	log = logd.Get().WithName("processmoduleconfig")
 )

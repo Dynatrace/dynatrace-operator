@@ -1,9 +1,7 @@
 package metadata
 
-import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
-)
+import "github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
 
 var (
-	log = logger.Get().WithName("csi-metadata")
+	log = logd.Get().WithName("csi-metadata")
 )

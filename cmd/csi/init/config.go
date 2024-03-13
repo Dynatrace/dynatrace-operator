@@ -1,7 +1,7 @@
 package init
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
 )
 
-var log = logger.Get().WithName("csi-init")
+var log = logd.Get().WithName("csi-init")

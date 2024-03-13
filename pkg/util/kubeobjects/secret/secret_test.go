@@ -6,7 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,7 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
-var secretLog = logger.Get().WithName("test-secret")
+var secretLog = logd.Get().WithName("test-secret")
 
 const (
 	testDeploymentName = "deployment-as-owner-of-secret"
@@ -363,7 +363,7 @@ func TestGetDataFromSecretName(t *testing.T) {
 	fakeClient.Create(context.Background(), testSecret.DeepCopy())
 
 	t.Run("get secret data", func(t *testing.T) {
-		data, _ := GetDataFromSecretName(fakeClient, types.NamespacedName{Name: testSecretName, Namespace: testNamespace}, testSecretDataKey, logger.DtLogger{})
+		data, _ := GetDataFromSecretName(fakeClient, types.NamespacedName{Name: testSecretName, Namespace: testNamespace}, testSecretDataKey, logd.Logger{})
 		assert.Equal(t, string(dataValue), data)
 	})
 }

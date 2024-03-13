@@ -90,7 +90,7 @@ func (u updater) Update(ctx context.Context) error {
 func (u updater) combineImageWithDigest(digest digest.Digest) (string, error) {
 	imageRef, err := name.ParseReference(u.edgeConnect.Image())
 	if err != nil {
-		log.Debug("unable to parse EdgeConnect image reference", "error", err.Error())
+		log.Debug("unable to parse EdgeConnect image reference")
 
 		return "", errors.WithStack(err)
 	}

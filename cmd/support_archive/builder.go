@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -147,7 +147,7 @@ func getAppNameLabel(ctx context.Context, pods clientgocorev1.PodInterface) stri
 	return defaultOperatorAppName
 }
 
-func (builder CommandBuilder) runCollectors(log logger.DtLogger, supportArchive archiver) error {
+func (builder CommandBuilder) runCollectors(log logd.Logger, supportArchive archiver) error {
 	ctx := context.Background()
 
 	kubeConfig, err := builder.configProvider.GetConfig()
@@ -204,7 +204,7 @@ func getK8sClients(kubeConfig *rest.Config) (*kubernetes.Clientset, client.Reade
 	return clientSet, apiReader, nil
 }
 
-func printCopyCommand(log logger.DtLogger, tarballToStdout bool, tarFileName string) {
+func printCopyCommand(log logd.Logger, tarballToStdout bool, tarFileName string) {
 	podNamespace := os.Getenv(env.PodNamespace)
 	podName := os.Getenv(env.PodName)
 

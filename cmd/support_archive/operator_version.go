@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 )
 
@@ -15,7 +15,7 @@ type operatorVersionCollector struct {
 	collectorCommon
 }
 
-func newOperatorVersionCollector(log logger.DtLogger, supportArchive archiver) collector {
+func newOperatorVersionCollector(log logd.Logger, supportArchive archiver) collector {
 	return operatorVersionCollector{
 		collectorCommon{
 			log:            log,

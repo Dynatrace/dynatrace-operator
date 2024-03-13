@@ -1,7 +1,7 @@
 package symlink
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
 )
 
 const (
@@ -11,5 +11,5 @@ const (
 )
 
 var (
-	log = logger.Get().WithName("oneagent-symlink")
+	log = logd.Get().WithName("oneagent-symlink")
 )

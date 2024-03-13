@@ -5,12 +5,12 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func runWithTestLogger(function func(log logger.DtLogger)) string {
+func runWithTestLogger(function func(log logd.Logger)) string {
 	logBuffer := bytes.Buffer{}
 	logger := NewTroubleshootLoggerToWriter(&logBuffer)
 	function(logger)
@@ -18,7 +18,7 @@ func runWithTestLogger(function func(log logger.DtLogger)) string {
 	return logBuffer.String()
 }
 
-func getNullLogger(t *testing.T) logger.DtLogger {
+func getNullLogger(t *testing.T) logd.Logger {
 	devNull, err := os.Open(os.DevNull)
 	require.NoError(t, err)
 
@@ -28,7 +28,7 @@ func getNullLogger(t *testing.T) logger.DtLogger {
 func TestTroubleshootLogger(t *testing.T) {
 	const testLogOutput = "test log output"
 
-	logOutput := runWithTestLogger(func(log logger.DtLogger) {
+	logOutput := runWithTestLogger(func(log logd.Logger) {
 		logInfof(log, testLogOutput)
 	})
 

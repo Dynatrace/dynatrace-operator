@@ -4,14 +4,14 @@ import (
 	"context"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
 )
 
 const oneagentEnableVolumeStorageEnvVarName = "ONEAGENT_ENABLE_VOLUME_STORAGE"
 const oneagentInstallerScriptUrlEnvVarName = "ONEAGENT_INSTALLER_SCRIPT_URL"
 const oneagentInstallerTokenEnvVarName = "ONEAGENT_INSTALLER_TOKEN"
 
-var log = logger.Get().WithName("dynakube-validation")
+var log = logd.Get().WithName("dynakube-validation")
 
 type validator func(ctx context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string
 
@@ -46,6 +46,6 @@ var warnings = []validator{
 	conflictingHostGroupSettings,
 }
 
-func SetLogger(logger logger.DtLogger) {
+func SetLogger(logger logd.Logger) {
 	log = logger
 }
