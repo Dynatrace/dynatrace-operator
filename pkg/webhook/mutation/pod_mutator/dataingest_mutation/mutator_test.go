@@ -184,6 +184,12 @@ func TestWorkloadAnnotations(t *testing.T) {
 		assert.Equal(t, testWorkloadInfoName, maputils.GetField(request.Pod.Annotations, dtwebhook.AnnotationWorkloadName, "not-found"))
 		assert.Equal(t, testWorkloadInfoKind, maputils.GetField(request.Pod.Annotations, dtwebhook.AnnotationWorkloadKind, "not-found"))
 	})
+	t.Run("should lower case kind annotation", func(t *testing.T) {
+		request := createTestMutationRequest(nil, nil)
+		setWorkloadAnnotations(request.Pod, &workloadInfo{name: testWorkloadInfoName, kind: "SuperWorkload"})
+		assert.Contains(t, request.Pod.Annotations, dtwebhook.AnnotationWorkloadKind)
+		assert.Equal(t, "superworkload", request.Pod.Annotations[dtwebhook.AnnotationWorkloadKind])
+	})
 }
 
 func TestContainerIsInjected(t *testing.T) {
