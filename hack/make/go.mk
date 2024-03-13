@@ -39,6 +39,10 @@ go/lint: prerequisites/go-linting go/format go/vet go/wsl go/betteralign go/gola
 go/test:
 	go test ./... -coverprofile=coverage.txt -covermode=atomic -tags "$(shell ./hack/build/create_go_build_tags.sh false)"
 
+## Runs all go unit tests and opens coverage report in a browser
+go/testhtml: go/test
+	go tool cover -html=./coverage.txt
+
 ## Runs go integration test
 go/integration_test:
 	go test -ldflags="-X 'github.com/Dynatrace/dynatrace-operator/pkg/version.Commit=$(shell git rev-parse HEAD)' -X 'github.com/Dynatrace/dynatrace-operator/pkg/version.Version=$(shell git branch --show-current)'" ./cmd/integration/*

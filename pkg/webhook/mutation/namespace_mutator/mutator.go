@@ -49,9 +49,8 @@ func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Reques
 	}
 
 	log.Info("namespace request", "namespace", request.Name, "operation", request.Operation)
-	ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: request.Namespace}}
-	nsMapper := mapper.NewNamespaceMapper(nm.client, nm.apiReader, nm.namespace, &ns)
 
+	ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: request.Namespace}}
 	if err := decodeRequestToNamespace(request, &ns); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
@@ -64,6 +63,8 @@ func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Reques
 	}
 
 	log.Info("checking namespace labels", "namespace", request.Name)
+
+	nsMapper := mapper.NewNamespaceMapper(nm.client, nm.apiReader, nm.namespace, &ns)
 
 	updatedNamespace, err := nsMapper.MapFromNamespace(ctx)
 	if err != nil {
