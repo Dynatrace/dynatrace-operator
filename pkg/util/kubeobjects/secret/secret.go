@@ -127,6 +127,12 @@ func (query Query) createOrUpdateForNamespaces(newSecret corev1.Secret, namespac
 	var errs []error
 
 	for _, namespace := range namespaces {
+		if namespace.Status.Phase == corev1.NamespaceTerminating {
+			query.Log.Info("skipping terminating namespace", "namespace", namespace.Name)
+
+			continue
+		}
+
 		newSecret.Namespace = namespace.Name
 		if oldSecret, ok := namespacesContainingSecret[namespace.Name]; ok {
 			if !AreSecretsEqual(oldSecret, newSecret) {
