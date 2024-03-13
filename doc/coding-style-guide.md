@@ -309,8 +309,6 @@ So here are some basic guidelines:
 - Don't reinvent the wheel, try to use what is already there.
   - If a helper function is almost fits your use case then first just try to "renovate the wheel" and make what is already there better :)
 
-## Logs
-
 ## Code Review
 
 [Common guidelines](https://github.com/golang/go/wiki/CodeReview)
