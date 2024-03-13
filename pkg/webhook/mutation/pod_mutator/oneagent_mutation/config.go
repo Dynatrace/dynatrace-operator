@@ -1,7 +1,7 @@
 package oneagent_mutation
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 var (

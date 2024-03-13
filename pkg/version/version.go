@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 var (

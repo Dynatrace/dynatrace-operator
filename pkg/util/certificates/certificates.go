@@ -5,7 +5,7 @@ import (
 	"encoding/pem"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 func ValidateCertificateExpiration(certData []byte, renewalThreshold time.Duration, now time.Time, log logd.Logger) (bool, error) {

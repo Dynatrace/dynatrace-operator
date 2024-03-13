@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 var (

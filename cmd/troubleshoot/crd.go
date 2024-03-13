@@ -1,7 +1,7 @@
 package troubleshoot
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 )

@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

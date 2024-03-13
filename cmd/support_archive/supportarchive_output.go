@@ -3,7 +3,7 @@ package support_archive
 import (
 	"io"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 const (

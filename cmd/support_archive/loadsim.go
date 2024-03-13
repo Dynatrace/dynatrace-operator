@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"golang.org/x/exp/rand"
 	clientgocorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )

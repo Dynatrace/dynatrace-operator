@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 var (

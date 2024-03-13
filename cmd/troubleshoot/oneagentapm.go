@@ -3,7 +3,7 @@ package troubleshoot
 import (
 	"errors"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oneagentapm"
 	"k8s.io/client-go/rest"
 )

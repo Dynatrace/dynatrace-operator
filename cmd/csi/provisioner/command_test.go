@@ -5,7 +5,7 @@ import (
 
 	dtfake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	configmock "github.com/Dynatrace/dynatrace-operator/test/mocks/cmd/config"
 	providermock "github.com/Dynatrace/dynatrace-operator/test/mocks/cmd/manager"
 	managermock "github.com/Dynatrace/dynatrace-operator/test/mocks/sigs.k8s.io/controller-runtime/pkg/manager"

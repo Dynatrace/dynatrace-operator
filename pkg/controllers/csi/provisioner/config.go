@@ -1,7 +1,7 @@
 package csiprovisioner
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 const (

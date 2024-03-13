@@ -4,7 +4,7 @@ import (
 	"context"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"golang.org/x/net/http/httpproxy"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

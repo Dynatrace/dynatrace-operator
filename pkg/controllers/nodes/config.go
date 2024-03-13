@@ -3,7 +3,7 @@ package nodes
 import (
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 const (

@@ -4,9 +4,9 @@ import (
 	"context"
 	"reflect"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/query"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

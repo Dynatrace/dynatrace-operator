@@ -9,9 +9,9 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"

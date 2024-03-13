@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 )
 

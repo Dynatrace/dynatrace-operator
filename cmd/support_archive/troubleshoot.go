@@ -5,7 +5,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/troubleshoot"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

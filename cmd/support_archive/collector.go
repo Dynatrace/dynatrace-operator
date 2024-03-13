@@ -1,6 +1,8 @@
 package support_archive
 
-import "github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
+import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+)
 
 type collector interface {
 	Name() string

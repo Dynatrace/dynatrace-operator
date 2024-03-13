@@ -3,7 +3,7 @@ package query
 import (
 	"context"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
