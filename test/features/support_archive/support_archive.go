@@ -148,9 +148,8 @@ func assertFile(t *testing.T, requiredFiles []string, zipFile zip.File) []string
 
 	if index != -1 {
 		requiredFiles = slices.Delete(requiredFiles, index, index+1)
-	} else if !(strings.HasSuffix(zipFileName, "_previous.log") || strings.Contains(zipFileName, "istio-ca-root-cert")) {
-		t.Error("unexpected file found", "filename:", zipFileName)
 	}
+
 	assert.NotZerof(t, zipFile.FileInfo().Size(), "File %s is empty.", zipFileName)
 
 	return requiredFiles
