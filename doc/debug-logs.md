@@ -1,12 +1,11 @@
 # Rules for debug logging
 
-- Do not log errors that bubble up to the controller runtime. They will be logged anyways and we do not want to log errors multiple times because it's confusing.
+- Do not log errors that bubble up to the controller runtime. They will be logged anyway, and we do not want to log errors multiple times because it's confusing.
 - Use debug logs to show the flow.
-- Provide meta data so that logs can be related to objects under reconciliation
+- Provide metadata so that logs can be related to objects under reconciliation
 - Provide additional information that might be helpful for troubleshoot in key/values of log (e.g. values of variables at that point)
 - Use a local logger with pre-configured key/values to avoid duplication
 - Be careful not to log confidential info like passwords or tokens accidentally.
-
 
 ## Examples for debug logs
 
@@ -48,7 +47,7 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
     ...
     llog.Debug("foobar happened")
 
-    llog = llog.WithValues("foobarReaseon", "hurga")
+    llog = llog.WithValues("foobarReason", "hurga")
 
     ...
     llog.Debug("foobar happened again")
