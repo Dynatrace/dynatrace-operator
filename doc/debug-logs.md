@@ -5,7 +5,8 @@
 - Provide meta data so that logs can be related to objects under reconciliation
 - Provide additional information that might be helpful for troubleshoot in key/values of log (e.g. values of variables at that point)
 - Use a local logger with pre-configured key/values to avoid duplication
-- Be careful to not accidentally log confidential info like passwords or tokens.
+- Be careful not to log confidential info like passwords or tokens accidentally.
+
 
 ## Examples for debug logs
 
