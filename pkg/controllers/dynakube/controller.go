@@ -157,7 +157,12 @@ func (controller *Controller) getDynakubeOrCleanup(ctx context.Context, dkName, 
 	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: dynakube.Name, Namespace: dynakube.Namespace}, dynakube)
 
 	if k8serrors.IsNotFound(err) {
-		return nil, controller.createDynakubeMapper(ctx, dynakube).UnmapFromDynaKube()
+		namespaces, err := mapper.GetNamespacesForDynakube(ctx, controller.apiReader, dkName)
+		if err != nil {
+			return nil, errors.WithMessagef(err, "failed to list namespaces for dynakube %s", dkName)
+		}
+
+		return nil, controller.createDynakubeMapper(ctx, dynakube).UnmapFromDynaKube(namespaces)
 	} else if err != nil {
 		return nil, errors.WithStack(err)
 	}

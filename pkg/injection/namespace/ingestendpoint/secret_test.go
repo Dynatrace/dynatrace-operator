@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -240,9 +241,12 @@ func TestRemoveEndpointSecrets(t *testing.T) {
 	dk := buildTestDynakube()
 	fakeClient := buildTestClientAfterGenerate(dk)
 
+	namespaces, err := mapper.GetNamespacesForDynakube(context.Background(), fakeClient, dk.Name)
+	require.NoError(t, err)
+
 	endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, dk.Namespace)
 
-	err := endpointSecretGenerator.RemoveEndpointSecrets(context.TODO(), dk)
+	err = endpointSecretGenerator.RemoveEndpointSecrets(context.TODO(), namespaces)
 	require.NoError(t, err)
 
 	checkTestSecretDoesntExist(t, fakeClient, types.NamespacedName{Namespace: testNamespace1, Name: consts.EnrichmentEndpointSecretName})

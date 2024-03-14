@@ -113,13 +113,8 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 	return nil
 }
 
-func (g *EndpointSecretGenerator) RemoveEndpointSecrets(ctx context.Context, dk *dynatracev1beta1.DynaKube) error {
-	nsList, err := mapper.GetNamespacesForDynakube(ctx, g.apiReader, dk.Name)
-	if err != nil {
-		return err
-	}
-
-	for _, targetNs := range nsList {
+func (g *EndpointSecretGenerator) RemoveEndpointSecrets(ctx context.Context, namespaces []corev1.Namespace) error {
+	for _, targetNs := range namespaces {
 		endpointSecret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      consts.EnrichmentEndpointSecretName,

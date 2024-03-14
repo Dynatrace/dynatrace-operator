@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -116,9 +117,14 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *reconciler) removeAppInjection(ctx context.Context) (err error) {
+	namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, r.dynakube.Name)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to list namespaces for dynakube %s", r.dynakube.Name)
+	}
+
 	dkMapper := r.createDynakubeMapper(ctx)
 
-	if err := dkMapper.UnmapFromDynaKube(); err != nil {
+	if err := dkMapper.UnmapFromDynaKube(namespaces); err != nil {
 		log.Info("could not unmap DynaKube from namespace")
 
 		return err
@@ -126,19 +132,20 @@ func (r *reconciler) removeAppInjection(ctx context.Context) (err error) {
 
 	endpointSecretGenerator := ingestendpoint.NewEndpointSecretGenerator(r.client, r.apiReader, r.dynakube.Namespace)
 
-	err = endpointSecretGenerator.RemoveEndpointSecrets(ctx, r.dynakube)
+	err = endpointSecretGenerator.RemoveEndpointSecrets(ctx, namespaces)
 	if err != nil {
 		log.Info("could not remove data-ingest secret")
 
 		return err
 	}
+	// TODO: remove istio Service, VirtualService entries
 	// TODO: remove initgeneration secret as well + handle errors jointly
 
 	return nil
 }
 
 func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
-	if !r.dynakube.ApplicationMonitoringMode() && !r.dynakube.CloudNativeFullstackMode() {
+	if !r.dynakube.NeedAppInjection() {
 		return nil
 	}
 
