@@ -49,8 +49,8 @@ func (dm DynakubeMapper) MatchingNamespaces() ([]*corev1.Namespace, error) {
 	return dm.mapFromDynakube(nsList, dkList)
 }
 
-func (dm DynakubeMapper) UnmapFromDynaKube(nsList []corev1.Namespace) error {
-	for _, ns := range nsList {
+func (dm DynakubeMapper) UnmapFromDynaKube(namespaces []corev1.Namespace) error {
+	for _, ns := range namespaces {
 		delete(ns.Labels, dtwebhook.InjectionInstanceLabel)
 		ns := ns
 		setUpdatedViaDynakubeAnnotation(&ns)

@@ -149,21 +149,21 @@ func TestUnmapFromDynaKube(t *testing.T) {
 	t.Run("Remove from no ns => no error", func(t *testing.T) {
 		clt := fake.NewClient()
 
-		nsList, err := GetNamespacesForDynakube(context.Background(), clt, dk.Name)
+		namespaces, err := GetNamespacesForDynakube(context.Background(), clt, dk.Name)
 		require.NoError(t, err)
 
 		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
-		err = dm.UnmapFromDynaKube(nsList)
+		err = dm.UnmapFromDynaKube(namespaces)
 		require.NoError(t, err)
 	})
 	t.Run("Remove from everywhere, multiple entries", func(t *testing.T) {
 		clt := fake.NewClient(namespace, namespace2)
 
-		nsList, err := GetNamespacesForDynakube(context.Background(), clt, dk.Name)
+		namespaces, err := GetNamespacesForDynakube(context.Background(), clt, dk.Name)
 		require.NoError(t, err)
 
 		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
-		err = dm.UnmapFromDynaKube(nsList)
+		err = dm.UnmapFromDynaKube(namespaces)
 		require.NoError(t, err)
 
 		var ns corev1.Namespace

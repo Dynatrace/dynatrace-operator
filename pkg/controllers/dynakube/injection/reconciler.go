@@ -117,14 +117,14 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *reconciler) removeAppInjection(ctx context.Context) (err error) {
-	nsList, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, r.dynakube.Name)
+	namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, r.dynakube.Name)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to list namespaces for dynakube %s", r.dynakube.Name)
 	}
 
 	dkMapper := r.createDynakubeMapper(ctx)
 
-	if err := dkMapper.UnmapFromDynaKube(nsList); err != nil {
+	if err := dkMapper.UnmapFromDynaKube(namespaces); err != nil {
 		log.Info("could not unmap DynaKube from namespace")
 
 		return err
@@ -132,7 +132,7 @@ func (r *reconciler) removeAppInjection(ctx context.Context) (err error) {
 
 	endpointSecretGenerator := ingestendpoint.NewEndpointSecretGenerator(r.client, r.apiReader, r.dynakube.Namespace)
 
-	err = endpointSecretGenerator.RemoveEndpointSecrets(ctx, nsList)
+	err = endpointSecretGenerator.RemoveEndpointSecrets(ctx, namespaces)
 	if err != nil {
 		log.Info("could not remove data-ingest secret")
 
