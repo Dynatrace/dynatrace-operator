@@ -26,6 +26,7 @@ type DBAccess interface {
 	CreateOSMount(ctx context.Context, osMount *OSMount) error
 	UpdateOSMount(ctx context.Context, osMount *OSMount) error
 	DeleteOSMount(ctx context.Context, osMount *OSMount) error
+	RestoreOSMount(ctx context.Context, osMount *OSMount) error
 	ReadOSMountByTenantUUID(ctx context.Context, tenantUUID string) (*OSMount, error)
 
 	CreateAppMount(ctx context.Context, appMount *AppMount) error
@@ -141,13 +142,30 @@ func (conn *DBConn) CreateOSMount(ctx context.Context, osMount *OSMount) error {
 }
 
 func (conn *DBConn) UpdateOSMount(ctx context.Context, osMount *OSMount) error {
+	err := conn.RestoreOSMount(ctx, osMount)
+	if err != nil {
+		return err
+	}
+
 	return conn.db.WithContext(ctx).Updates(osMount).Error
+}
+
+func (conn *DBConn) RestoreOSMount(ctx context.Context, osMount *OSMount) error {
+	if osMount == nil {
+		return errors.New("Cannot restore nil OSMount")
+	}
+
+	if !osMount.DeletedAt.Valid {
+		return nil
+	}
+
+	return conn.db.WithContext(ctx).Unscoped().Model(osMount).Where("tenant_uuid = ?", osMount.TenantUUID).Update("deleted_at", nil).Error
 }
 
 func (conn *DBConn) ReadOSMountByTenantUUID(ctx context.Context, tenantUUID string) (*OSMount, error) {
 	var osMount OSMount
 
-	result := conn.db.WithContext(ctx).Preload("VolumeMeta").First(&osMount, "tenant_uuid = ?", tenantUUID)
+	result := conn.db.WithContext(ctx).Unscoped().Preload("VolumeMeta").First(&osMount, "tenant_uuid = ?", tenantUUID)
 	if result.Error != nil {
 		return nil, result.Error
 	}
