@@ -35,7 +35,7 @@ func (edgeConnect *EdgeConnect) IsCustomImage() bool {
 	return edgeConnect.Spec.ImageRef.Repository != ""
 }
 
-func (edgeConnect *EdgeConnect) PullSecretWithoutData() corev1.Secret {
+func (edgeConnect *EdgeConnect) EmptyPullSecret() corev1.Secret {
 	return corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      edgeConnect.Spec.CustomPullSecret,

@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -15,8 +15,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var deploymentLog = logger.Get().WithName("test-deployment")
-var daemonSetLog = logger.Get().WithName("test-daemonset")
+var deploymentLog = logd.Get().WithName("test-deployment")
+var daemonSetLog = logd.Get().WithName("test-daemonset")
 
 func createTestDeploymentWithMatchLabels(name, namespace string, annotations, matchLabels map[string]string) appsv1.Deployment {
 	return appsv1.Deployment{

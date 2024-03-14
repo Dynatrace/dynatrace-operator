@@ -3,7 +3,7 @@ package nodes
 import (
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 const (
@@ -13,6 +13,6 @@ const (
 )
 
 var (
-	log                 = logger.Get().WithName("nodes")
+	log                 = logd.Get().WithName("nodes")
 	unschedulableTaints = []string{"ToBeDeletedByClusterAutoscaler"}
 )

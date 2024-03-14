@@ -1,13 +1,13 @@
 package csigc
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/prometheus/client_golang/prometheus"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
 var (
-	log = logger.Get().WithName("csi-gc")
+	log = logd.Get().WithName("csi-gc")
 
 	reclaimedMemoryMetric = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "dynatrace",

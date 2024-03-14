@@ -22,7 +22,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 const (
@@ -90,7 +90,7 @@ const (
 )
 
 var (
-	log = logger.Get().WithName("dynakube-api")
+	log = logd.Get().WithName("dynakube-api")
 )
 
 func (dk *DynaKube) getDisableFlagWithDeprecatedAnnotation(annotation string, deprecatedAnnotation string) bool {

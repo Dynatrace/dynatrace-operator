@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/query"
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -23,7 +23,7 @@ type Query struct {
 	query.KubeQuery
 }
 
-func NewQuery(ctx context.Context, kubeClient client.Client, kubeReader client.Reader, log logr.Logger) Query {
+func NewQuery(ctx context.Context, kubeClient client.Client, kubeReader client.Reader, log logd.Logger) Query {
 	return Query{
 		query.New(ctx, kubeClient, kubeReader, log),
 	}
@@ -183,7 +183,7 @@ func ExtractToken(secret *corev1.Secret, key string) (string, error) {
 	return strings.TrimSpace(string(value)), nil
 }
 
-func GetDataFromSecretName(apiReader client.Reader, namespacedName types.NamespacedName, dataKey string, log logr.Logger) (string, error) {
+func GetDataFromSecretName(apiReader client.Reader, namespacedName types.NamespacedName, dataKey string, log logd.Logger) (string, error) {
 	query := NewQuery(context.TODO(), nil, apiReader, log)
 
 	secret, err := query.Get(namespacedName)

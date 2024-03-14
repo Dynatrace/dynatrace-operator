@@ -1,6 +1,8 @@
 package support_archive
 
-import "github.com/go-logr/logr"
+import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+)
 
 type collector interface {
 	Name() string
@@ -9,5 +11,5 @@ type collector interface {
 
 type collectorCommon struct {
 	supportArchive archiver
-	log            logr.Logger
+	log            logd.Logger
 }

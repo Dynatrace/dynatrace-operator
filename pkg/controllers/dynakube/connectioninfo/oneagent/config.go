@@ -1,9 +1,9 @@
 package oaconnectioninfo
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 var (
-	log = logger.Get().WithName("oneagent-connectioninfo")
+	log = logd.Get().WithName("oneagent-connectioninfo")
 )

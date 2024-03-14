@@ -1,7 +1,7 @@
 package csiprovisioner
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 const (
@@ -10,5 +10,5 @@ const (
 )
 
 var (
-	log = logger.Get().WithName("csi-provisioner")
+	log = logd.Get().WithName("csi-provisioner")
 )

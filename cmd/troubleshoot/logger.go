@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/go-logr/logr"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -24,7 +24,7 @@ const (
 	colorReset   = "\033[0m"
 )
 
-func NewTroubleshootLoggerToWriter(out io.Writer) logr.Logger {
+func NewTroubleshootLoggerToWriter(out io.Writer) logd.Logger {
 	config := zap.NewProductionEncoderConfig()
 	config.TimeKey = ""
 	config.LevelKey = ""
@@ -32,42 +32,42 @@ func NewTroubleshootLoggerToWriter(out io.Writer) logr.Logger {
 	config.EncodeTime = zapcore.ISO8601TimeEncoder
 	config.EncodeName = loggerNameEncoder
 
-	logger := ctrlzap.New(
-		ctrlzap.WriteTo(out),
-		ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).
-		// need to use non-empty name for root logger, otherwise name printing is omitted completely
-		WithName(" ")
-
-	return logger
+	return logd.Logger{
+		Logger: ctrlzap.New(
+			ctrlzap.WriteTo(out),
+			ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).
+			// need to use non-empty name for root logd, otherwise name printing is omitted completely
+			WithName(" "),
+	}
 }
 
 func loggerNameEncoder(name string, encoder zapcore.PrimitiveArrayEncoder) {
-	// trim space from root logger name and dot added by logr to keep only actual test name
+	// trim space from root logd name and dot added by logr to keep only actual test name
 	testName := fmt.Sprintf("[%-10s] ", strings.Trim(name, " ."))
 	encoder.AppendString(testName)
 }
 
-func logNewCheckf(log logr.Logger, format string, v ...any) {
+func logNewCheckf(log logd.Logger, format string, v ...any) {
 	log.Info(prefixNewTest + fmt.Sprintf(format, v...))
 }
 
-func logNewDynakubef(log logr.Logger, format string, v ...any) {
+func logNewDynakubef(log logd.Logger, format string, v ...any) {
 	log.Info(fmt.Sprintf(format, v...))
 }
 
-func logInfof(log logr.Logger, format string, v ...any) {
+func logInfof(log logd.Logger, format string, v ...any) {
 	log.Info(prefixInfo + fmt.Sprintf(format, v...))
 }
 
-func logOkf(log logr.Logger, format string, v ...any) {
+func logOkf(log logd.Logger, format string, v ...any) {
 	log.Info(withSuccessPrefix(fmt.Sprintf(format, v...)))
 }
 
-func logWarningf(log logr.Logger, format string, v ...any) {
+func logWarningf(log logd.Logger, format string, v ...any) {
 	log.Info(withWarningPrefix(fmt.Sprintf(format, v...)))
 }
 
-func logErrorf(log logr.Logger, format string, v ...any) {
+func logErrorf(log logd.Logger, format string, v ...any) {
 	log.Info(withErrorPrefix(fmt.Sprintf(format, v...)))
 }
 

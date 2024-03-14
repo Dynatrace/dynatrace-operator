@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-logr/logr"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +32,7 @@ type k8sResourceCollector struct {
 	appName         string
 }
 
-func newK8sObjectCollector(context context.Context, log logr.Logger, supportArchive archiver, namespace string, appName string, apiReader client.Reader, discoveryClient discovery.DiscoveryInterface) collector { //nolint:revive // argument-limit doesn't apply to constructors
+func newK8sObjectCollector(context context.Context, log logd.Logger, supportArchive archiver, namespace string, appName string, apiReader client.Reader, discoveryClient discovery.DiscoveryInterface) collector { //nolint:revive // argument-limit doesn't apply to constructors
 	return k8sResourceCollector{
 		collectorCommon: collectorCommon{
 			log:            log,

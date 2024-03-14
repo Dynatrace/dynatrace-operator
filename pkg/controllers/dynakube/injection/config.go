@@ -1,9 +1,9 @@
 package injection
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 var (
-	log = logger.Get().WithName("dynakube-injection")
+	log = logd.Get().WithName("dynakube-injection")
 )

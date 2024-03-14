@@ -1,7 +1,7 @@
 package mapper
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 const (
@@ -11,5 +11,5 @@ const (
 )
 
 var (
-	log = logger.Get().WithName("namespace-mapper")
+	log = logd.Get().WithName("namespace-mapper")
 )

@@ -1,7 +1,7 @@
 package deploymentmetadata
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 const (
@@ -25,5 +25,5 @@ const (
 )
 
 var (
-	log = logger.Get().WithName("dynakube-deployment-metadata")
+	log = logd.Get().WithName("dynakube-deployment-metadata")
 )

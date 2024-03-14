@@ -4,11 +4,11 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 var (
-	log = logger.Get().WithName("oneagent-zip")
+	log = logd.Get().WithName("oneagent-zip")
 )
 
 // Checks if a file is under /agent/conf

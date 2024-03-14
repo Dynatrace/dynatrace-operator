@@ -1,7 +1,9 @@
 package activegate
 
-import "github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+)
 
 var (
-	log = logger.Get().WithName("activegate-connectioninfo")
+	log = logd.Get().WithName("activegate-connectioninfo")
 )

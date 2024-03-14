@@ -1,9 +1,9 @@
 package customproperties
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 var (
-	log = logger.Get().WithName("activegate-customproperties")
+	log = logd.Get().WithName("activegate-customproperties")
 )

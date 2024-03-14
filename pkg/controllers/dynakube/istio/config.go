@@ -3,11 +3,11 @@ package istio
 import (
 	"fmt"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 var (
-	log = logger.Get().WithName("dynakube-istio")
+	log = logd.Get().WithName("dynakube-istio")
 )
 
 const (
