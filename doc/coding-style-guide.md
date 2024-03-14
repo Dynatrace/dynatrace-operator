@@ -155,6 +155,8 @@ sigs.k8s.io/controller-runtime@v0.16.3/pkg/internal/controller/controller.go:227
 runtime.goexit
 ```
 
+- Wrap errors with stack `errors.WithStack(err)` only when error is created or third party call was made.
+
 ## Logging
 
 ### Do's
