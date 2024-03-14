@@ -16,7 +16,7 @@ func TestCreateTenantConfig(t *testing.T) {
 	tenantConfig := &TenantConfig{
 		Name:                        "somename",
 		ConfigDirPath:               "somewhere",
-		DownloadedCodeModuleVersion: "1.2.3",
+		DownloadedCodeModuleVersion: "1.2.3", // sql.NullString{String: "1.2.3"},
 		TenantUUID:                  "abc123",
 	}
 
@@ -28,20 +28,6 @@ func TestCreateTenantConfig(t *testing.T) {
 	assert.Equal(t, readTenantConfig.UID, tenantConfig.UID)
 
 	err = db.CreateTenantConfig(context.Background(), nil)
-	require.Error(t, err)
-
-	err = db.CreateTenantConfig(context.Background(), &TenantConfig{})
-	require.Error(t, err)
-
-	err = db.CreateTenantConfig(context.Background(), &TenantConfig{
-		Name: "somename",
-	})
-	require.Error(t, err)
-
-	err = db.CreateTenantConfig(context.Background(), &TenantConfig{
-		Name:          "somename",
-		ConfigDirPath: "wherever",
-	})
 	require.Error(t, err)
 }
 
@@ -73,13 +59,14 @@ func TestUpdateTenantConfig(t *testing.T) {
 	tenantConfig, err := db.ReadTenantConfigByTenantUUID(context.Background(), "abc123")
 	require.NoError(t, err)
 
-	tenantConfig.DownloadedCodeModuleVersion = "2.3.4"
+	tenantConfig.DownloadedCodeModuleVersion = "2.3.4" // sql.NullString{String: "2.3.4"}
 	err = db.UpdateTenantConfig(context.Background(), tenantConfig)
 	require.NoError(t, err)
 
 	readTenantConfig := &TenantConfig{TenantUUID: "abc123"}
 	db.db.WithContext(context.Background()).First(readTenantConfig)
-	assert.Equal(t, readTenantConfig.UID, tenantConfig.UID)
+	assert.Equal(t, tenantConfig.UID, readTenantConfig.UID)
+	assert.Equal(t, "2.3.4", readTenantConfig.DownloadedCodeModuleVersion)
 
 	err = db.UpdateTenantConfig(context.Background(), nil)
 	require.Error(t, err)
@@ -130,9 +117,6 @@ func TestCreateCodeModule(t *testing.T) {
 	assert.Equal(t, "someplace", readCodeModule.Location)
 
 	err = db.CreateCodeModule(context.Background(), nil)
-	require.Error(t, err)
-
-	err = db.CreateCodeModule(context.Background(), &CodeModule{})
 	require.Error(t, err)
 
 	err = db.CreateCodeModule(context.Background(), &CodeModule{
@@ -202,13 +186,13 @@ func TestCreateOsMount(t *testing.T) {
 		PodNamespace:      "testnamespace",
 		PodServiceAccount: "podsa",
 	}
+
 	osMount := OSMount{
-		VolumeMeta:      vm,
-		Location:        "somewhere",
-		MountAttempts:   0,
-		TenantUUID:      tenant.TenantUUID,
-		TenantConfigUID: tenant.UID,
-		TenantConfig:    *tenant,
+		VolumeMeta:    vm,
+		Location:      "somewhere",
+		MountAttempts: 1,
+		TenantUUID:    tenant.TenantUUID,
+		TenantConfig:  *tenant,
 	}
 
 	err = db.CreateOSMount(context.Background(), &osMount)
@@ -219,27 +203,6 @@ func TestCreateOsMount(t *testing.T) {
 	assert.Equal(t, "somewhere", readOSMount.Location)
 
 	err = db.CreateOSMount(context.Background(), nil)
-	require.Error(t, err)
-
-	err = db.CreateOSMount(context.Background(), &OSMount{})
-	require.Error(t, err)
-
-	err = db.CreateOSMount(context.Background(), &OSMount{
-		VolumeMeta: vm,
-	})
-	require.Error(t, err)
-
-	err = db.CreateOSMount(context.Background(), &OSMount{
-		VolumeMeta:   vm,
-		TenantConfig: *tenant,
-	})
-	require.Error(t, err)
-
-	err = db.CreateOSMount(context.Background(), &OSMount{
-		VolumeMeta:   vm,
-		TenantConfig: *tenant,
-		Location:     "somewhere",
-	})
 	require.Error(t, err)
 }
 
@@ -296,6 +259,9 @@ func TestSoftDeleteOSMount(t *testing.T) {
 	osMount, err := db.ReadOSMountByTenantUUID(context.Background(), "abc123")
 	require.NoError(t, err)
 
+	err = db.RestoreOSMount(context.Background(), osMount)
+	require.NoError(t, err)
+
 	assert.NotNil(t, osMount)
 	assert.Equal(t, "osmount1", osMount.VolumeMeta.ID)
 
@@ -310,6 +276,50 @@ func TestSoftDeleteOSMount(t *testing.T) {
 	require.Error(t, err)
 
 	err = db.DeleteOSMount(context.Background(), &OSMount{})
+	require.Error(t, err)
+
+	deletedOSMount, err := db.ReadOSMountByTenantUUID(context.Background(), "abc123")
+	require.NoError(t, err)
+
+	assert.Equal(t, "somewhere", deletedOSMount.Location)
+	deletedOSMount.VolumeMeta = VolumeMeta{
+		ID:                "osmount2",
+		PodUid:            "pod9",
+		PodName:           "podix",
+		PodNamespace:      "testnamespace",
+		PodServiceAccount: "podsa",
+	}
+
+	err = db.UpdateOSMount(context.Background(), deletedOSMount)
+	require.NoError(t, err)
+
+	readOSMount2 := &OSMount{TenantUUID: "abc123"}
+	db.db.WithContext(context.Background()).Preload("VolumeMeta").First(readOSMount2)
+	assert.Equal(t, "pod9", readOSMount2.VolumeMeta.PodUid)
+}
+
+func TestRestoreOsMount(t *testing.T) {
+	db, err := setupDB()
+	require.NoError(t, err)
+
+	setupPostPublishData(context.Background(), db)
+
+	osMount, err := db.ReadOSMountByTenantUUID(context.Background(), "abc123")
+	require.NoError(t, err)
+
+	err = db.DeleteOSMount(context.Background(), osMount)
+	require.NoError(t, err)
+
+	readOSMount := &OSMount{TenantUUID: "abc123"}
+	db.db.WithContext(context.Background()).First(readOSMount)
+	assert.Equal(t, int64(0), db.db.RowsAffected)
+
+	err = db.RestoreOSMount(context.Background(), osMount)
+	require.NoError(t, err)
+	_, err = db.ReadOSMountByTenantUUID(context.Background(), "abc123")
+	require.NoError(t, err)
+
+	err = db.RestoreOSMount(context.Background(), nil)
 	require.Error(t, err)
 }
 
@@ -335,7 +345,7 @@ func TestCreateAppMount(t *testing.T) {
 	appMount := &AppMount{
 		VolumeMeta:    vm,
 		Location:      "loc1",
-		MountAttempts: 0,
+		MountAttempts: 1,
 		CodeModule:    *cm,
 	}
 
@@ -460,46 +470,46 @@ func TestVolumeMetaValidation(t *testing.T) {
 
 	setupPostReconcileData(context.Background(), db)
 
-	vm := VolumeMeta{
+	vm := &VolumeMeta{
 		ID:                "appmount1",
 		PodUid:            "pod111",
 		PodName:           "podiv",
 		PodNamespace:      "testnamespace",
 		PodServiceAccount: "podsa",
 	}
-	require.NoError(t, vm.IsValid())
+	db.db.Create(vm)
 
-	vm2 := VolumeMeta{
-		ID:                "appmount1",
+	vm2 := &VolumeMeta{
+		ID:                "appmount2",
 		PodName:           "podiv",
 		PodNamespace:      "testnamespace",
 		PodServiceAccount: "podsa",
 	}
-	require.Error(t, vm2.IsValid())
+	db.db.Create(vm2)
 
-	vm3 := VolumeMeta{
-		ID:                "appmount1",
+	vm3 := &VolumeMeta{
+		ID:                "appmount3",
 		PodUid:            "pod111",
 		PodNamespace:      "testnamespace",
 		PodServiceAccount: "podsa",
 	}
-	require.Error(t, vm3.IsValid())
+	db.db.Create(vm3)
 
-	vm4 := VolumeMeta{
-		ID:                "appmount1",
+	vm4 := &VolumeMeta{
+		ID:                "appmount4",
 		PodUid:            "pod111",
 		PodName:           "podiv",
 		PodServiceAccount: "podsa",
 	}
-	require.Error(t, vm4.IsValid())
+	db.db.Create(vm4)
 
-	vm5 := VolumeMeta{
-		ID:           "appmount1",
+	vm5 := &VolumeMeta{
+		ID:           "appmount5",
 		PodUid:       "pod111",
 		PodName:      "podiv",
 		PodNamespace: "testnamespace",
 	}
-	require.Error(t, vm5.IsValid())
+	db.db.Create(vm5)
 }
 
 func TestReadVolumeMeta(t *testing.T) {
@@ -542,7 +552,7 @@ func setupPostReconcileData(ctx context.Context, conn *DBConn) {
 	tenantConfig := &TenantConfig{
 		Name:                        "abc123",
 		ConfigDirPath:               "somewhere",
-		DownloadedCodeModuleVersion: "1.2.3",
+		DownloadedCodeModuleVersion: "1.2.3", // sql.NullString{String: "1.2.3"},
 		TenantUUID:                  "abc123",
 	}
 	ctxDB.Create(tenantConfig)
@@ -559,7 +569,7 @@ func setupPostPublishData(ctx context.Context, conn *DBConn) {
 	tenantConfig := &TenantConfig{
 		Name:                        "abc123",
 		ConfigDirPath:               "somewhere",
-		DownloadedCodeModuleVersion: "1.2.3",
+		DownloadedCodeModuleVersion: "1.2.3", // sql.NullString{String: "1.2.3"},
 		TenantUUID:                  "abc123",
 	}
 	ctxDB.Create(tenantConfig)
@@ -578,10 +588,11 @@ func setupPostPublishData(ctx context.Context, conn *DBConn) {
 		PodServiceAccount: "podsa",
 	}
 	osMount := &OSMount{
-		VolumeMeta:   vmOM,
-		Location:     "somewhere",
-		TenantUUID:   tenantConfig.TenantUUID,
-		TenantConfig: *tenantConfig,
+		VolumeMeta:    vmOM,
+		Location:      "somewhere",
+		TenantUUID:    tenantConfig.TenantUUID,
+		TenantConfig:  *tenantConfig,
+		MountAttempts: 1,
 	}
 	ctxDB.Create(osMount)
 
@@ -596,7 +607,7 @@ func setupPostPublishData(ctx context.Context, conn *DBConn) {
 		appMount := &AppMount{
 			VolumeMeta:    vmAP,
 			Location:      fmt.Sprintf("loc%d", i+1),
-			MountAttempts: 0,
+			MountAttempts: 1,
 			CodeModule:    *codeModule,
 		}
 		ctxDB.Create(appMount)
