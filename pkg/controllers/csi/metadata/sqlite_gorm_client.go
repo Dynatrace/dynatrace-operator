@@ -155,7 +155,9 @@ func (conn *DBConn) RestoreOSMount(ctx context.Context, osMount *OSMount) error 
 		return nil
 	}
 
-	return conn.db.WithContext(ctx).Unscoped().Model(osMount).Where("tenant_uuid = ?", osMount.TenantUUID).Update("deleted_at", nil).Error
+	osMount.DeletedAt.Valid = false
+
+	return conn.db.WithContext(ctx).Unscoped().Updates(osMount).Error
 }
 
 func (conn *DBConn) ReadOSMountByTenantUUID(ctx context.Context, tenantUUID string) (*OSMount, error) {

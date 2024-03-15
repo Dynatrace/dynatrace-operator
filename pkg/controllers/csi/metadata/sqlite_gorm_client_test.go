@@ -316,6 +316,7 @@ func TestRestoreOsMount(t *testing.T) {
 
 	err = db.RestoreOSMount(context.Background(), osMount)
 	require.NoError(t, err)
+
 	_, err = db.ReadOSMountByTenantUUID(context.Background(), "abc123")
 	require.NoError(t, err)
 
