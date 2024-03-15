@@ -147,6 +147,14 @@ func TestMultipleSecrets(t *testing.T) {
 					Name: "nsNotYetExisting",
 				},
 			},
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "nsTerminating",
+				},
+				Status: corev1.NamespaceStatus{
+					Phase: corev1.NamespaceTerminating,
+				},
+			},
 		}
 
 		secret := corev1.Secret{
