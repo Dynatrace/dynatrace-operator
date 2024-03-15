@@ -16,7 +16,7 @@ func TestCreateTenantConfig(t *testing.T) {
 	tenantConfig := &TenantConfig{
 		Name:                        "somename",
 		ConfigDirPath:               "somewhere",
-		DownloadedCodeModuleVersion: "1.2.3", // sql.NullString{String: "1.2.3"},
+		DownloadedCodeModuleVersion: "1.2.3",
 		TenantUUID:                  "abc123",
 	}
 
@@ -59,7 +59,7 @@ func TestUpdateTenantConfig(t *testing.T) {
 	tenantConfig, err := db.ReadTenantConfigByTenantUUID(context.Background(), "abc123")
 	require.NoError(t, err)
 
-	tenantConfig.DownloadedCodeModuleVersion = "2.3.4" // sql.NullString{String: "2.3.4"}
+	tenantConfig.DownloadedCodeModuleVersion = "2.3.4"
 	err = db.UpdateTenantConfig(context.Background(), tenantConfig)
 	require.NoError(t, err)
 
@@ -553,7 +553,7 @@ func setupPostReconcileData(ctx context.Context, conn *DBConn) {
 	tenantConfig := &TenantConfig{
 		Name:                        "abc123",
 		ConfigDirPath:               "somewhere",
-		DownloadedCodeModuleVersion: "1.2.3", // sql.NullString{String: "1.2.3"},
+		DownloadedCodeModuleVersion: "1.2.3",
 		TenantUUID:                  "abc123",
 	}
 	ctxDB.Create(tenantConfig)
@@ -570,7 +570,7 @@ func setupPostPublishData(ctx context.Context, conn *DBConn) {
 	tenantConfig := &TenantConfig{
 		Name:                        "abc123",
 		ConfigDirPath:               "somewhere",
-		DownloadedCodeModuleVersion: "1.2.3", // sql.NullString{String: "1.2.3"},
+		DownloadedCodeModuleVersion: "1.2.3",
 		TenantUUID:                  "abc123",
 	}
 	ctxDB.Create(tenantConfig)
