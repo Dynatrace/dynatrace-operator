@@ -108,14 +108,19 @@ func (conn *DBConn) CreateCodeModule(ctx context.Context, codeModule *CodeModule
 }
 
 func (conn *DBConn) ReadCodeModuleByVersion(ctx context.Context, version string) (*CodeModule, error) {
-	var codeModule CodeModule
+	if version == "" {
+		return nil, errors.New("Key must not be empty string!")
+	} // TODO: check will be obsolete with move to sql.NullString
 
-	result := conn.db.WithContext(ctx).First(&codeModule, "version = ?", version)
-	if result.Error != nil {
-		return nil, result.Error
+	codeModule := &CodeModule{Version: version}
+
+	err := conn.db.WithContext(ctx).First(codeModule).Error
+
+	if err != nil {
+		return nil, err
 	}
 
-	return &codeModule, nil
+	return codeModule, nil
 }
 
 func (conn *DBConn) DeleteCodeModule(ctx context.Context, codeModule *CodeModule) error {
@@ -161,14 +166,18 @@ func (conn *DBConn) RestoreOSMount(ctx context.Context, osMount *OSMount) error 
 }
 
 func (conn *DBConn) ReadOSMountByTenantUUID(ctx context.Context, tenantUUID string) (*OSMount, error) {
-	var osMount OSMount
+	if tenantUUID == "" {
+		return nil, errors.New("Key must not be empty string!")
+	} // TODO: check will be obsolete with move to sql.NullString
 
-	result := conn.db.WithContext(ctx).Unscoped().Preload("VolumeMeta").First(&osMount, "tenant_uuid = ?", tenantUUID)
-	if result.Error != nil {
-		return nil, result.Error
+	osMount := &OSMount{TenantUUID: tenantUUID}
+
+	err := conn.db.WithContext(ctx).Unscoped().Preload("VolumeMeta").First(osMount).Error
+	if err != nil {
+		return nil, err
 	}
 
-	return &osMount, nil
+	return osMount, nil
 }
 
 func (conn *DBConn) DeleteOSMount(ctx context.Context, osMount *OSMount) error {
@@ -183,14 +192,18 @@ func (conn *DBConn) DeleteOSMount(ctx context.Context, osMount *OSMount) error {
 }
 
 func (conn *DBConn) ReadVolumeMetaByID(ctx context.Context, id string) (*VolumeMeta, error) {
-	var volumeMeta VolumeMeta
+	if id == "" {
+		return nil, errors.New("Key must not be empty string!")
+	} // TODO: check will be obsolete with move to sql.NullString
 
-	result := conn.db.WithContext(ctx).First(&volumeMeta, "ID = ?", id)
+	volumeMeta := &VolumeMeta{ID: id}
+
+	result := conn.db.WithContext(ctx).First(volumeMeta)
 	if result.Error != nil {
 		return nil, result.Error
 	}
 
-	return &volumeMeta, nil
+	return volumeMeta, nil
 }
 
 func (conn *DBConn) CreateAppMount(ctx context.Context, appMount *AppMount) error {
@@ -202,14 +215,18 @@ func (conn *DBConn) UpdateAppMount(ctx context.Context, appMount *AppMount) erro
 }
 
 func (conn *DBConn) ReadAppMountByVolumeMetaID(ctx context.Context, volumeMetaID string) (*AppMount, error) {
-	var appMount AppMount
+	if volumeMetaID == "" {
+		return nil, errors.New("Key must not be empty string!")
+	} // TODO: check will be obsolete with move to sql.NullString
+
+	appMount := &AppMount{VolumeMetaID: volumeMetaID}
 
 	result := conn.db.WithContext(ctx).Preload("VolumeMeta").First(&appMount, "volume_meta_id = ?", volumeMetaID)
 	if result.Error != nil {
 		return nil, result.Error
 	}
 
-	return &appMount, nil
+	return appMount, nil
 }
 
 func (conn *DBConn) ReadAppMounts(ctx context.Context) ([]AppMount, error) {
@@ -224,7 +241,7 @@ func (conn *DBConn) ReadAppMounts(ctx context.Context) ([]AppMount, error) {
 }
 
 func (conn *DBConn) DeleteAppMount(ctx context.Context, appMount *AppMount) error {
-	if appMount != nil && appMount.VolumeMetaID != "" {
+	if appMount != nil {
 		volumeMeta, err := conn.ReadVolumeMetaByID(ctx, appMount.VolumeMetaID)
 		if err == nil {
 			conn.db.WithContext(ctx).Delete(volumeMeta)
