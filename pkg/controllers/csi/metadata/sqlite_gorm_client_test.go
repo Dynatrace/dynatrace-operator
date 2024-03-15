@@ -212,11 +212,11 @@ func TestReadOSMount(t *testing.T) {
 
 	setupPostPublishData(context.Background(), db)
 
-	appMount, err := db.ReadOSMountByTenantUUID(context.Background(), "abc123")
+	osMount, err := db.ReadOSMountByTenantUUID(context.Background(), "abc123")
 	require.NoError(t, err)
 
-	assert.NotNil(t, appMount)
-	assert.Equal(t, "osmount1", appMount.VolumeMeta.ID)
+	assert.NotNil(t, osMount)
+	assert.Equal(t, "osmount1", osMount.VolumeMeta.ID)
 
 	_, err = db.ReadOSMountByTenantUUID(context.Background(), "")
 	require.Error(t, err)
