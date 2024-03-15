@@ -108,10 +108,6 @@ func (conn *DBConn) CreateCodeModule(ctx context.Context, codeModule *CodeModule
 }
 
 func (conn *DBConn) ReadCodeModuleByVersion(ctx context.Context, version string) (*CodeModule, error) {
-	if version == "" {
-		return nil, errors.New("Cannot read data identified by empty string parameter")
-	}
-
 	var codeModule CodeModule
 
 	result := conn.db.WithContext(ctx).First(&codeModule, "version = ?", version)
