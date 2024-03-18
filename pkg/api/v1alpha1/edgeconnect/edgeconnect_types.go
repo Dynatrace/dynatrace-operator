@@ -111,7 +111,7 @@ type ProxySpec struct {
 	// specifying hosts that should be excluded from proxying.
 	NoProxy string `json:"noProxy,omitempty"`
 
-	// Secret name which represents username and password for authentication with the proxy, using the
+	// Secret name which contains the username and password used for authentication with the proxy, using the
 	// "Basic" HTTP authentication scheme.
 	AuthRef string `json:"authRef,omitempty"`
 
