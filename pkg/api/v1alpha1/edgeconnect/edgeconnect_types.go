@@ -101,7 +101,7 @@ type ImageRefSpec struct {
 
 type ProxySpec struct {
 	// Proxy scheme.
-	Scheme string `json:"repository,omitempty"`
+	Scheme string `json:"scheme,omitempty"`
 
 	// Server address (hostname or IP address) of the proxy.
 	Host string `json:"host,omitempty"`

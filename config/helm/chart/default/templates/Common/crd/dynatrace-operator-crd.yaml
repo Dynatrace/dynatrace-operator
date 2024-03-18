@@ -4622,7 +4622,7 @@ spec:
                     description: Port of the proxy.
                     format: int32
                     type: integer
-                  repository:
+                  scheme:
                     description: Proxy scheme.
                     type: string
                 type: object
