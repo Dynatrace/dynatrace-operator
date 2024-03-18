@@ -1,142 +1,142 @@
 {
-  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
-  extends: [
-    'config:base',
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base",
   ],
   labels: [
-    'dependencies',
+    "dependencies",
   ],
   digest: {
     enabled: false,
   },
   baseBranches: [
-    '$default',
-    'release-0.14',
-    'release-0.15',
-    'release-1.0',
+    "$default",
+    "release-0.14",
+    "release-0.15",
+    "release-1.0",
   ],
   enabledManagers: [
-    'regex',
-    'dockerfile',
-    'gomod',
-    'github-actions',
+    "regex",
+    "dockerfile",
+    "gomod",
+    "github-actions",
   ],
   postUpdateOptions: [
-    'gomodTidy',
-    'gomodTidy1.17',
+    "gomodTidy",
+    "gomodTidy1.17",
   ],
   regexManagers: [
     {
       fileMatch: [
-        '(^|/|\\.)prerequisites.mk$',
-        '(^|/|\\.)third-party-licenses.sh$',
+        "(^|/|\\.)prerequisites.mk$",
+        "(^|/|\\.)third-party-licenses.sh$",
       ],
       matchStrings: [
-        'depName=(?<depName>.*?)\\s.*?_version=(?<currentValue>.*)\\s',
+        "depName=(?<depName>.*?)\\s.*?_version=(?<currentValue>.*)\\s",
       ],
-      datasourceTemplate: 'go',
+      datasourceTemplate: "go",
     },
     {
       fileMatch: [
-        '(^|/|\\.)ci.yaml$',
+        "(^|/|\\.)ci.yaml$",
       ],
       matchStrings: [
-        'depName=(?<depName>.*?)\\s.*?version\\:\\s(?<currentValue>.*)\\s',
+        "depName=(?<depName>.*?)\\s.*?version\\:\\s(?<currentValue>.*)\\s",
       ],
-      datasourceTemplate: 'go',
+      datasourceTemplate: "go",
     },
   ],
   packageRules: [
     {
       matchBaseBranches: [
-        '$default',
-        'release-0.14',
-        'release-0.15',
-        'release-1.0'
+        "$default",
+        "release-0.14",
+        "release-0.15",
+        "release-1.0",
       ],
       matchUpdateTypes: [
-        'major',
-        'minor',
+        "major",
+        "minor",
       ],
       enabled: false,
     },
     {
       matchManagers: [
-        'dockerfile',
+        "dockerfile",
       ],
       matchBaseBranches: [
-        '$default',
+        "$default",
       ],
-      commitMessagePrefix: 'Docker:',
+      commitMessagePrefix: "Docker:",
       enabled: true,
-      allowedVersions: '/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/',
+      allowedVersions: "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/",
     },
     {
       matchManagers: [
-        'gomod',
+        "gomod",
       ],
       matchBaseBranches: [
-        '$default',
+        "$default",
       ],
-      commitMessagePrefix: 'Go:',
+      commitMessagePrefix: "Go:",
       enabled: true,
-      allowedVersions: '/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/',
+      allowedVersions: "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/",
     },
     {
       matchManagers: [
-        'gomod',
+        "gomod",
       ],
       matchDepTypes: [
-        'indirect',
+        "indirect",
       ],
       enabled: false,
     },
     {
       matchManagers: [
-        'github-actions',
+        "github-actions",
       ],
       matchBaseBranches: [
-        '$default',
+        "$default",
       ],
-      commitMessagePrefix: 'Actions:',
+      commitMessagePrefix: "Actions:",
       enabled: true,
-      allowedVersions: '/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/',
+      allowedVersions: "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/",
     },
     {
       matchManagers: [
-        'regex',
+        "regex",
       ],
       matchBaseBranches: [
-        '$default',
+        "$default",
       ],
-      commitMessagePrefix: 'Dev:',
+      commitMessagePrefix: "Dev:",
       enabled: true,
     },
     {
       matchPackageNames: [
-        'k8s.io/client-go',
+        "k8s.io/client-go",
       ],
       matchBaseBranches: [
-        '$default',
+        "$default",
       ],
     },
     {
       matchPackageNames: [
-        'markdownlint-cli',
+        "markdownlint-cli",
       ],
       pinVersions: true,
       enabled: true,
     },
     {
       packageNames: [
-        'helm-unittest',
+        "helm-unittest",
       ],
       enabled: true,
       pinVersions: true,
     },
     {
       packageNames: [
-        'gomarkdoc',
+        "gomarkdoc",
       ],
       enabled: true,
       pinVersions: true,
