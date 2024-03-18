@@ -7,7 +7,7 @@
 |annotations|Adds additional annotations to the EdgeConnect pods|-|object|
 |apiServer|Location of the Dynatrace API to connect to, including your specific environment UUID|-|string|
 |autoUpdate|Enables automatic restarts of EdgeConnect pods in case a new version is available (the default value is: true)|True|boolean|
-|caCertsRef|Adds custom root certificate from a configmap.|-|string|
+|caCertsRef|Adds custom root certificate from a configmap. Put the certificate under certs within your configmap.|-|string|
 |customPullSecret|Pull secret for your private registry|-|string|
 |env|Adds additional environment variables to the EdgeConnect pods|-|array|
 |hostPatterns|Host patterns to be set in the tenant, only considered when provisioning is enabled.|-|array|
@@ -32,11 +32,11 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
-|authRef|Secret name which represents username and password for authentication with the proxy, using the "Basic" HTTP authentication scheme.|-|string|
+|authRef|Secret name which contains the username and password used for authentication with the proxy, using the "Basic" HTTP authentication scheme.|-|string|
 |host|Server address (hostname or IP address) of the proxy.|-|string|
 |noProxy|NoProxy represents the NO_PROXY or no_proxy environment variable. It specifies a string that contains comma-separated values specifying hosts that should be excluded from proxying.|-|string|
 |port|Port of the proxy.|-|integer|
-|scheme|Proxy scheme.|-|string|
+|scheme|Proxy scheme (<`http` or `https`>).|-|string|
 
 ### .spec.imageRef
 

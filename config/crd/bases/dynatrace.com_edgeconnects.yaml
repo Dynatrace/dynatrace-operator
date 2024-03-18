@@ -66,7 +66,8 @@ spec:
                   a new version is available (the default value is: true)'
                 type: boolean
               caCertsRef:
-                description: Adds custom root certificate from a configmap.
+                description: Adds custom root certificate from a configmap. Put the
+                  certificate under certs within your configmap.
                 type: string
               customPullSecret:
                 description: Pull secret for your private registry
@@ -242,11 +243,11 @@ spec:
                 - resource
                 type: object
               proxy:
-                description: Set custom proxy settings.
+                description: General configurations for proxy settings.
                 properties:
                   authRef:
                     description: |-
-                      Secret name which represents username and password for authentication with the proxy, using the
+                      Secret name which contains the username and password used for authentication with the proxy, using the
                       "Basic" HTTP authentication scheme.
                     type: string
                   host:
@@ -263,7 +264,7 @@ spec:
                     format: int32
                     type: integer
                   scheme:
-                    description: Proxy scheme.
+                    description: Proxy scheme (`http` or `https`).
                     type: string
                 type: object
               replicas:
