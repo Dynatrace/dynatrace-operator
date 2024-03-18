@@ -30,7 +30,7 @@ type EdgeConnectSpec struct { //nolint:revive
 
 	// Set custom proxy settings.
 	// +kubebuilder:validation:Optional
-	Proxy ProxySpec `json:"proxy"`
+	Proxy ProxySpec `json:"proxy,omitempty"`
 
 	// Overrides the default image
 	ImageRef ImageRefSpec `json:"imageRef,omitempty"`
