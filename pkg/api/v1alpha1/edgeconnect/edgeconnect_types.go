@@ -28,7 +28,7 @@ type EdgeConnectSpec struct { //nolint:revive
 	// Node selector to control the selection of nodes for the EdgeConnect pods
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
-	// Set custom proxy settings.
+	// General configurations for proxy settings.
 	// +kubebuilder:validation:Optional
 	Proxy ProxySpec `json:"proxy,omitempty"`
 
