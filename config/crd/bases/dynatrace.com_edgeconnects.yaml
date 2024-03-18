@@ -65,6 +65,9 @@ spec:
                 description: 'Enables automatic restarts of EdgeConnect pods in case
                   a new version is available (the default value is: true)'
                 type: boolean
+              caCertsRef:
+                description: Adds custom root certificate from a configmap.
+                type: string
               customPullSecret:
                 description: Pull secret for your private registry
                 type: string
@@ -237,6 +240,31 @@ spec:
                 - clientSecret
                 - endpoint
                 - resource
+                type: object
+              proxy:
+                description: Set custom proxy settings.
+                properties:
+                  authRef:
+                    description: |-
+                      Secret name which represents username and password for authentication with the proxy, using the
+                      "Basic" HTTP authentication scheme.
+                    type: string
+                  host:
+                    description: Server address (hostname or IP address) of the proxy.
+                    type: string
+                  noProxy:
+                    description: |-
+                      NoProxy represents the NO_PROXY or no_proxy environment
+                      variable. It specifies a string that contains comma-separated values
+                      specifying hosts that should be excluded from proxying.
+                    type: string
+                  port:
+                    description: Port of the proxy.
+                    format: int32
+                    type: integer
+                  repository:
+                    description: Proxy scheme.
+                    type: string
                 type: object
               replicas:
                 default: 1
