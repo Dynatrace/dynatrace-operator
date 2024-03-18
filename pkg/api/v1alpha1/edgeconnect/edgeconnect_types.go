@@ -46,7 +46,7 @@ type EdgeConnectSpec struct { //nolint:revive
 	// Pull secret for your private registry
 	CustomPullSecret string `json:"customPullSecret,omitempty"`
 
-	// Adds custom root certificate from a configmap.
+	// Adds custom root certificate from a configmap. Put the certificate under certs within your configmap.
 	// +kubebuilder:validation:Optional
 	CaCertsRef string `json:"caCertsRef,omitempty"`
 
