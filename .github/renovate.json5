@@ -1,100 +1,145 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [ "config:base" ],
-  "labels": [ "dependencies" ],
-  "digest": { "enabled": false },
-  "baseBranches": ["$default", "release-0.14", "release-0.15", "release-1.0"],
-  "enabledManagers": [ "regex", "dockerfile", "gomod", "github-actions" ],
-  "postUpdateOptions": ["gomodTidy", "gomodTidy1.17"],
-  "regexManagers": [
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base",
+  ],
+  labels: [
+    "dependencies",
+  ],
+  digest: {
+    enabled: false,
+  },
+  baseBranches: [
+    "$default",
+    "release-0.14",
+    "release-0.15",
+    "release-1.0",
+  ],
+  enabledManagers: [
+    "regex",
+    "dockerfile",
+    "gomod",
+    "github-actions",
+  ],
+  postUpdateOptions: [
+    "gomodTidy",
+    "gomodTidy1.17",
+  ],
+  regexManagers: [
     {
-      "fileMatch": [ "(^|/|\\.)prerequisites.mk$", "(^|/|\\.)third-party-licenses.sh$" ],
-      "matchStrings": [
-        "depName=(?<depName>.*?)\\s.*?_version=(?<currentValue>.*)\\s"
+      fileMatch: [
+        "(^|/|\\.)prerequisites.mk$",
+        "(^|/|\\.)third-party-licenses.sh$",
       ],
-      "datasourceTemplate": "go"
+      matchStrings: [
+        "depName=(?<depName>.*?)\\s.*?_version=(?<currentValue>.*)\\s",
+      ],
+      datasourceTemplate: "go",
     },
     {
-      "fileMatch": [ "(^|/|\\.)ci.yaml$"],
-      "matchStrings": [
+      fileMatch: [
+        "(^|/|\\.)ci.yaml$",
+      ],
+      matchStrings: [
         "depName=(?<depName>.*?)\\s.*?version\\:\\s(?<currentValue>.*)\\s",
       ],
-      "datasourceTemplate": "go"
-    }
+      datasourceTemplate: "go",
+    },
   ],
-  "packageRules": [
+  packageRules: [
     {
-      "matchBaseBranches": [
+      matchBaseBranches: [
+        "$default",
         "release-0.14",
         "release-0.15",
-        "release-1.0"
+        "release-1.0",
       ],
-      "matchUpdateTypes": [
+      matchUpdateTypes: [
         "major",
-        "minor"
+        "minor",
       ],
-      "enabled": false,
+      enabled: false,
     },
     {
-      "matchManagers": ["dockerfile"],
-      "matchBaseBranches": [
-        "$default"
+      matchManagers: [
+        "dockerfile",
       ],
-      "commitMessagePrefix": "Docker:",
-      "enabled": true,
-      "allowedVersions": "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/"
-    },
-    {
-      "matchManagers": ["gomod"],
-      "matchBaseBranches": [
-        "$default"
+      matchBaseBranches: [
+        "$default",
       ],
-      "commitMessagePrefix": "Go:",
-      "enabled": true,
-      "allowedVersions": "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/",
+      commitMessagePrefix: "Docker:",
+      enabled: true,
+      allowedVersions: "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/",
     },
     {
-      "matchManagers": ["gomod"],
-      "matchDepTypes": ["indirect"],
-      "enabled": false
-    },
-    {
-      "matchManagers": ["github-actions"],
-      "matchBaseBranches": [
-        "$default"
+      matchManagers: [
+        "gomod",
       ],
-      "commitMessagePrefix": "Actions:",
-      "enabled": true,
-      "allowedVersions": "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/"
-    },
-    {
-      "matchManagers": ["regex"],
-      "matchBaseBranches": [
-        "$default"
+      matchBaseBranches: [
+        "$default",
       ],
-      "commitMessagePrefix": "Dev:",
-      "enabled": true
+      commitMessagePrefix: "Go:",
+      enabled: true,
+      allowedVersions: "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/",
     },
     {
-      "matchPackageNames": ["k8s.io/client-go"],
-      "matchBaseBranches": [
-        "$default"
+      matchManagers: [
+        "gomod",
+      ],
+      matchDepTypes: [
+        "indirect",
+      ],
+      enabled: false,
+    },
+    {
+      matchManagers: [
+        "github-actions",
+      ],
+      matchBaseBranches: [
+        "$default",
+      ],
+      commitMessagePrefix: "Actions:",
+      enabled: true,
+      allowedVersions: "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/",
+    },
+    {
+      matchManagers: [
+        "regex",
+      ],
+      matchBaseBranches: [
+        "$default",
+      ],
+      commitMessagePrefix: "Dev:",
+      enabled: true,
+    },
+    {
+      matchPackageNames: [
+        "k8s.io/client-go",
+      ],
+      matchBaseBranches: [
+        "$default",
       ],
     },
     {
-      "matchPackageNames": ["markdownlint-cli"],
-      "pinVersions": true,
-      "enabled": true
+      matchPackageNames: [
+        "markdownlint-cli",
+      ],
+      pinVersions: true,
+      enabled: true,
     },
     {
-      "packageNames": ["helm-unittest"],
-      "enabled": true,
-      "pinVersions": true,
+      packageNames: [
+        "helm-unittest",
+      ],
+      enabled: true,
+      pinVersions: true,
     },
     {
-      "packageNames": ["gomarkdoc"],
-      "enabled": true,
-      "pinVersions": true,
-    }
+      packageNames: [
+        "gomarkdoc",
+      ],
+      enabled: true,
+      pinVersions: true,
+    },
   ],
 }

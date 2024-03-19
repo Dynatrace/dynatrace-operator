@@ -28,6 +28,10 @@ type EdgeConnectSpec struct { //nolint:revive
 	// Node selector to control the selection of nodes for the EdgeConnect pods
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
+	// General configurations for proxy settings.
+	// +kubebuilder:validation:Optional
+	Proxy ProxySpec `json:"proxy,omitempty"`
+
 	// Overrides the default image
 	ImageRef ImageRefSpec `json:"imageRef,omitempty"`
 
@@ -41,6 +45,10 @@ type EdgeConnectSpec struct { //nolint:revive
 
 	// Pull secret for your private registry
 	CustomPullSecret string `json:"customPullSecret,omitempty"`
+
+	// Adds custom root certificate from a configmap. Put the certificate under certs within your configmap.
+	// +kubebuilder:validation:Optional
+	CaCertsRef string `json:"caCertsRef,omitempty"`
 
 	// EdgeConnect uses the OAuth client to authenticate itself with the Dynatrace platform.
 	// +kubebuilder:validation:Required
@@ -91,6 +99,26 @@ type ImageRefSpec struct {
 	Tag string `json:"tag,omitempty"`
 }
 
+type ProxySpec struct {
+	// Proxy scheme (`http` or `https`).
+	Scheme string `json:"scheme,omitempty"`
+
+	// Server address (hostname or IP address) of the proxy.
+	Host string `json:"host,omitempty"`
+
+	// NoProxy represents the NO_PROXY or no_proxy environment
+	// variable. It specifies a string that contains comma-separated values
+	// specifying hosts that should be excluded from proxying.
+	NoProxy string `json:"noProxy,omitempty"`
+
+	// Secret name which contains the username and password used for authentication with the proxy, using the
+	// "Basic" HTTP authentication scheme.
+	AuthRef string `json:"authRef,omitempty"`
+
+	// Port of the proxy.
+	Port uint32 `json:"port,omitempty"`
+}
+
 // EdgeConnectStatus defines the observed state of EdgeConnect.
 type EdgeConnectStatus struct { //nolint:revive
 	// Defines the current state (Running, Updating, Error, ...)
@@ -130,8 +158,7 @@ type EdgeConnect struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Status EdgeConnectStatus `json:"status,omitempty"`
-
-	Spec EdgeConnectSpec `json:"spec,omitempty"`
+	Spec   EdgeConnectSpec   `json:"spec,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
