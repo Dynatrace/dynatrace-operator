@@ -128,14 +128,18 @@ func (conn *DBConn) DeleteCodeModule(ctx context.Context, codeModule *CodeModule
 }
 
 func (conn *DBConn) ReadTenantConfigByTenantUUID(ctx context.Context, uid string) (*TenantConfig, error) {
-	var tenantConfig TenantConfig
+	if uid == "" {
+		return nil, errors.New("error")
+	} // TODO: check will be obsolete with move to sql.NullString
 
-	result := conn.db.WithContext(ctx).First(&tenantConfig, "tenant_uuid = ?", uid)
+	tenantConfig := &TenantConfig{TenantUUID: uid}
+
+	result := conn.db.WithContext(ctx).Where(tenantConfig).First(tenantConfig)
 	if result.Error != nil {
 		return nil, result.Error
 	}
 
-	return &tenantConfig, nil
+	return tenantConfig, nil
 }
 
 func (conn *DBConn) CreateOSMount(ctx context.Context, osMount *OSMount) error {
