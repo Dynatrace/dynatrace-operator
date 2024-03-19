@@ -13,7 +13,7 @@ mockery_version=v2.40.2
 # renovate depName=github.com/igorshubovych/markdownlint-cli
 markdownlint_cli_version=v0.39.0
 # renovate depName=github.com/helm-unittest/helm-unittest
-helmunittest_version=v0.4.2
+helmunittest_version=v0.4.3
 # renovate depName=github.com/princjef/gomarkdoc
 gomarkdoc_version=v1.1.0
 
