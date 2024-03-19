@@ -24,8 +24,8 @@ type TenantConfig struct {
 	MaxFailedMountAttempts      int64  `gorm:"default:10"`
 }
 
-func (tenantConfig *TenantConfig) BeforeCreate(_ *gorm.DB) error {
-	tenantConfig.UID = uuid.NewString()
+func (tc *TenantConfig) BeforeCreate(_ *gorm.DB) error {
+	tc.UID = uuid.NewString()
 
 	return nil
 }
