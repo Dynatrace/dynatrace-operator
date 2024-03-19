@@ -221,7 +221,7 @@ func (conn *DBConn) ReadAppMountByVolumeMetaID(ctx context.Context, volumeMetaID
 
 	appMount := &AppMount{VolumeMetaID: volumeMetaID}
 
-	result := conn.db.WithContext(ctx).Preload("VolumeMeta").First(&appMount, "volume_meta_id = ?", volumeMetaID)
+	result := conn.db.WithContext(ctx).Preload("VolumeMeta").First(&appMount)
 	if result.Error != nil {
 		return nil, result.Error
 	}
