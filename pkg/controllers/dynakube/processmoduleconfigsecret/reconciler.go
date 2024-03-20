@@ -113,7 +113,7 @@ func (r *Reconciler) ensureSecret(ctx context.Context) error {
 		return err
 	}
 
-	if r.isSecretOutdated() {
+	if conditions.IsOutdated(r.timeProvider, r.dynakube, pmcConditionType) {
 		conditions.SetSecretOutdatedCondition(r.dynakube.Conditions(), pmcConditionType, oldSecret.Name+" is outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
 
 		return r.updateSecret(ctx, oldSecret)
@@ -146,15 +146,6 @@ func (r *Reconciler) isFirstRun() bool {
 	condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, pmcConditionType)
 
 	return condition == nil
-}
-
-func (r *Reconciler) isSecretOutdated() bool {
-	condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, pmcConditionType)
-	if condition == nil {
-		return true
-	}
-
-	return r.timeProvider.IsOutdated(&condition.LastTransitionTime, r.dynakube.FeatureApiRequestThreshold())
 }
 
 func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) {

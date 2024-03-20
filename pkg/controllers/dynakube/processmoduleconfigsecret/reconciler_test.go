@@ -76,8 +76,7 @@ func TestReconcile(t *testing.T) {
 		require.Equal(t, condition.LastTransitionTime, oldTransitionTime)
 
 		// go forward in time => should update again
-		futureTime := metav1.NewTime(time.Now().Add(time.Hour))
-		mockTime.Set(&futureTime)
+		mockTime.Set(time.Now().Add(time.Hour))
 
 		err = reconciler.Reconcile(context.Background())
 		require.NoError(t, err)
