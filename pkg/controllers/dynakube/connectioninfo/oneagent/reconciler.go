@@ -5,11 +5,13 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -43,6 +45,13 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 var NoOneAgentCommunicationHostsError = errors.New("no communication hosts for OneAgent are available")
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
+	if !r.dynakube.NeedAppInjection() || !r.dynakube.NeedsOneAgent() {
+		meta.RemoveStatusCondition(r.dynakube.Conditions(), oaConnectionInfoConditionType)
+		r.dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta1.OneAgentConnectionInfoStatus{}
+		// TODO: Delete secret if there
+		return nil
+	}
+
 	oldStatus := r.dynakube.Status.DeepCopy()
 
 	err := r.reconcileConnectionInfo(ctx)
@@ -62,35 +71,34 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 
 func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 	secretNamespacedName := types.NamespacedName{Name: r.dynakube.OneagentTenantSecret(), Namespace: r.dynakube.Namespace}
-	isOutdated := r.dynakube.IsOneAgentConnectionInfoUpdateAllowed(r.timeProvider)
 
-	if !isOutdated {
+	if !conditions.IsOutdated(r.timeProvider, r.dynakube, oaConnectionInfoConditionType) {
 		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.apiReader, secretNamespacedName, log)
 		if err != nil {
 			return err
 		}
 
+		condition := meta.FindStatusCondition(*r.dynakube.Conditions(), oaConnectionInfoConditionType)
 		if isSecretPresent {
 			log.Info(dynatracev1beta1.GetCacheValidMessage(
 				"OneAgent connection info update",
-				r.dynakube.Status.OneAgent.ConnectionInfoStatus.LastRequest,
+				condition.LastTransitionTime,
 				r.dynakube.FeatureApiRequestThreshold()))
 
 			return nil
 		}
 	}
 
+	conditions.SetSecretOutdatedCondition(r.dynakube.Conditions(), oaConnectionInfoConditionType, secretNamespacedName.Name+" is not present or outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
+
 	connectionInfo, err := r.dtc.GetOneAgentConnectionInfo(ctx)
 	if err != nil {
+		conditions.SetDynatraceApiErrorCondition(r.dynakube.Conditions(), oaConnectionInfoConditionType, err)
+
 		return errors.WithMessage(err, "failed to get OneAgent connection info")
 	}
 
 	r.setDynakubeStatus(connectionInfo)
-
-	err = r.createTenantTokenSecret(ctx, r.dynakube.OneagentTenantSecret(), r.dynakube, connectionInfo.ConnectionInfo)
-	if err != nil {
-		return err
-	}
 
 	log.Info("OneAgent connection info updated")
 
@@ -100,13 +108,17 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 
 	if len(connectionInfo.CommunicationHosts) == 0 {
 		log.Info("no OneAgent communication hosts received, tenant API requests not yet throttled")
+		setEmptyCommunicationHostsCondition(r.dynakube.Conditions())
 
 		return NoOneAgentCommunicationHostsError
 	}
 
-	log.Info("received OneAgent communication hosts", "communication hosts", connectionInfo.CommunicationHosts, "tenant", connectionInfo.TenantUUID)
+	err = r.createTenantTokenSecret(ctx, r.dynakube.OneagentTenantSecret(), r.dynakube, connectionInfo.ConnectionInfo)
+	if err != nil {
+		return err
+	}
 
-	r.dynakube.Status.OneAgent.ConnectionInfoStatus.LastRequest = metav1.Now()
+	log.Info("received OneAgent communication hosts", "communication hosts", connectionInfo.CommunicationHosts, "tenant", connectionInfo.TenantUUID)
 
 	return nil
 }
@@ -139,9 +151,12 @@ func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName str
 	err = query.CreateOrUpdate(*secret)
 	if err != nil {
 		log.Info("could not create or update secret for connection info", "name", secret.Name)
+		conditions.SetKubeApiErrorCondition(r.dynakube.Conditions(), oaConnectionInfoConditionType, err)
 
 		return err
 	}
+
+	conditions.SetSecretCreatedCondition(r.dynakube.Conditions(), oaConnectionInfoConditionType, secret.Name+" created")
 
 	return nil
 }
