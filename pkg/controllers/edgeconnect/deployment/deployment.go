@@ -1,7 +1,10 @@
 package deployment
 
 import (
+	"context"
+
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/config"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -9,9 +12,11 @@ import (
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -21,15 +26,15 @@ const (
 	unprivilegedGroup  = int64(1000)
 )
 
-func NewRegular(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
-	return create(instance, instance.Spec.OAuth.ClientSecret, instance.Spec.OAuth.Resource)
+func NewRegular(instance *edgeconnectv1alpha1.EdgeConnect, apiReader client.Reader) *appsv1.Deployment {
+	return create(instance, apiReader, instance.Spec.OAuth.ClientSecret, instance.Spec.OAuth.Resource)
 }
 
-func NewProvisioner(instance *edgeconnectv1alpha1.EdgeConnect, clientSecretName string, resource string) *appsv1.Deployment {
-	return create(instance, clientSecretName, resource)
+func NewProvisioner(instance *edgeconnectv1alpha1.EdgeConnect, apiReader client.Reader, clientSecretName string, resource string) *appsv1.Deployment {
+	return create(instance, apiReader, clientSecretName, resource)
 }
 
-func create(instance *edgeconnectv1alpha1.EdgeConnect, clientSecretName string, resource string) *appsv1.Deployment {
+func create(instance *edgeconnectv1alpha1.EdgeConnect, apiReader client.Reader, clientSecretName string, resource string) *appsv1.Deployment {
 	appLabels := buildAppLabels(instance)
 	labels := maputils.MergeMap(
 		instance.Labels,
@@ -121,6 +126,53 @@ func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect, resource
 	prioritymap.Append(envMap, instance.Spec.Env, prioritymap.WithPriority(customEnvPriority))
 
 	return envMap.AsEnvVars()
+}
+
+func prepareEdgeConnectConfigFile(instance *edgeconnectv1alpha1.EdgeConnect, apiReader client.Reader) (string, error) {
+	cfg := config.EdgeConnect{
+		Name:            instance.ObjectMeta.Name,
+		ApiEndpointHost: instance.Spec.ApiServer,
+		OAuth: config.OAuth{
+			Endpoint: instance.Spec.OAuth.Endpoint,
+			Resource: instance.Spec.OAuth.Resource,
+			// TODO: revisit when we need it
+			//ClientID:     instance.Spec.OAuth.,
+			//ClientSecret: instance.Spec.OAuth.ClientSecret,
+		},
+		RestrictHostsTo: instance.Spec.HostRestrictions,
+	}
+
+	if instance.Spec.CaCertsRef != "" {
+		cfg.RootCertificatePaths = append(cfg.RootCertificatePaths, instance.Spec.CaCertsRef)
+	}
+
+	if instance.Spec.Proxy != nil {
+		cfg.Proxy = config.Proxy{
+			Server:     instance.Spec.Proxy.Host,
+			Port:       instance.Spec.Proxy.Port,
+			Exceptions: instance.Spec.Proxy.NoProxy,
+		}
+
+		if instance.Spec.Proxy.AuthRef != "" {
+			user, pass, err := instance.ProxyAuth(context.Background(), apiReader)
+			if err != nil {
+				return "", err
+			}
+
+			cfg.Proxy.Auth.User = user
+			cfg.Proxy.Auth.Password = pass
+		}
+	}
+
+	edgeConnectYaml, err := yaml.Marshal(cfg)
+
+	if err != nil {
+		log.Error(err, "test")
+	}
+
+	log.Debug(string(edgeConnectYaml))
+
+	return string(edgeConnectYaml), err
 }
 
 func buildAppLabels(instance *edgeconnectv1alpha1.EdgeConnect) *labels.AppLabels {

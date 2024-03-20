@@ -314,7 +314,7 @@ func (controller *Controller) updateEdgeConnectStatus(ctx context.Context, edgeC
 }
 
 func (controller *Controller) reconcileEdgeConnectRegular(edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
-	desiredDeployment := deployment.NewRegular(edgeConnect)
+	desiredDeployment := deployment.NewRegular(edgeConnect, controller.apiReader)
 
 	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name, "deploymentName", desiredDeployment.Name)
 
@@ -637,7 +637,7 @@ func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Co
 		return err
 	}
 
-	desiredDeployment := deployment.NewProvisioner(edgeConnect, clientSecretName, resource)
+	desiredDeployment := deployment.NewProvisioner(edgeConnect, controller.apiReader, clientSecretName, resource)
 	_log = _log.WithValues("deploymentName", desiredDeployment.Name)
 
 	if err := controllerutil.SetControllerReference(edgeConnect, desiredDeployment, controller.scheme); err != nil {

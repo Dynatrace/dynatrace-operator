@@ -4,11 +4,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -20,6 +22,7 @@ const (
 
 func TestNew(t *testing.T) {
 	t.Run("Create new edgeconnect deployment", func(t *testing.T) {
+		kubeReader := fake.NewClient()
 		instance := &edgeconnectv1alpha1.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -33,7 +36,7 @@ func TestNew(t *testing.T) {
 			},
 		}
 
-		deployment := NewRegular(instance)
+		deployment := NewRegular(instance, kubeReader)
 
 		assert.NotNil(t, deployment)
 	})
@@ -200,5 +203,45 @@ func Test_prepareResourceRequirements(t *testing.T) {
 		assert.Equal(t, customResources.Requests, resourceRequirements.Requests)
 		// check that we use default requests when not provided
 		assert.Equal(t, resources.NewResourceList("100m", "128Mi"), resourceRequirements.Limits)
+	})
+}
+
+func Test_prepareEdgeConnectConfigFile(t *testing.T) {
+	testEdgeConnect := &edgeconnectv1alpha1.EdgeConnect{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+		Spec: edgeconnectv1alpha1.EdgeConnectSpec{
+			ApiServer: "abc12345.dynatrace.com",
+			OAuth: edgeconnectv1alpha1.OAuthSpec{
+				ClientSecret: "secret-name",
+				Endpoint:     "https://sso-dev.dynatracelabs.com/sso/oauth2/token",
+				Resource:     "urn:dtenvironment:test12345",
+			},
+		},
+	}
+
+	t.Run("Create basic config", func(t *testing.T) {
+		kubeReader := fake.NewClient()
+
+		//&corev1.Secret{
+		//			ObjectMeta: metav1.ObjectMeta{Name: testProxyName},
+		//			Data: map[string][]byte{
+		//				dynakube.ProxyKey: []byte(testProxyData),
+		//			}}
+		cfg, err := prepareEdgeConnectConfigFile(testEdgeConnect, kubeReader)
+
+		require.NoError(t, err)
+
+		expected := `name: test-name-edgeconnectv1alpha1
+api_endpoint_host: abc12345.dynatrace.com
+oauth:
+    endpoint: https://sso-dev.dynatracelabs.com/sso/oauth2/token
+    client_id: ""
+    client_secret: ""
+    resource: urn:dtenvironment:test12345
+`
+		assert.Equal(t, cfg, expected)
 	})
 }

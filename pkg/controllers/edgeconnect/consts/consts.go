@@ -6,6 +6,7 @@ const (
 	EdgeConnectServiceAccountName = "dynatrace-edgeconnect"
 	EdgeConnectMountPath          = "/etc/edge_connect"
 	EdgeConnectVolumeMountName    = "oauth-secret"
+	EdgeConnectConfigName         = "edgeConnect.yaml"
 
 	EnvEdgeConnectName            = "EDGE_CONNECT_NAME"
 	EnvEdgeConnectApiEndpointHost = "EDGE_CONNECT_API_ENDPOINT_HOST"
