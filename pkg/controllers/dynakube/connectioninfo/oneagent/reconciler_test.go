@@ -43,7 +43,7 @@ func TestReconcile(t *testing.T) {
 				Endpoints:  testOutdated,
 			},
 		}
-		conditions.SetSecretCreatedCondition(dynakube.Conditions(), oaConnectionInfoConditionType, "testing")
+		conditions.SetSecretCreated(dynakube.Conditions(), oaConnectionInfoConditionType, "testing")
 
 		dynakube.Spec = dynatracev1beta1.DynaKubeSpec{}
 
@@ -124,7 +124,7 @@ func TestReconcile(t *testing.T) {
 				Endpoints:  testOutdated,
 			},
 		}
-		conditions.SetSecretCreatedCondition(dynakube.Conditions(), oaConnectionInfoConditionType, "testing")
+		conditions.SetSecretCreated(dynakube.Conditions(), oaConnectionInfoConditionType, "testing")
 
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc, dynakube)
 		rec := r.(*reconciler)
@@ -157,7 +157,7 @@ func TestReconcile(t *testing.T) {
 				Endpoints:  testOutdated,
 			},
 		}
-		conditions.SetSecretCreatedCondition(dynakube.Conditions(), oaConnectionInfoConditionType, "testing")
+		conditions.SetSecretCreated(dynakube.Conditions(), oaConnectionInfoConditionType, "testing")
 
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc, dynakube)
 		err := r.Reconcile(ctx)
@@ -189,7 +189,7 @@ func TestReconcile(t *testing.T) {
 				Endpoints:  testOutdated,
 			},
 		}
-		conditions.SetSecretCreatedCondition(dynakube.Conditions(), oaConnectionInfoConditionType, "testing")
+		conditions.SetSecretCreated(dynakube.Conditions(), oaConnectionInfoConditionType, "testing")
 
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc, dynakube)
 		err := r.Reconcile(ctx)

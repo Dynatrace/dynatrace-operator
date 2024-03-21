@@ -170,7 +170,7 @@ func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 	err = query.CreateOrUpdate(*configMap)
 	if err != nil {
 		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
-		conditions.SetKubeApiErrorCondition(r.dynakube.Conditions(), oaConditionType, err)
+		conditions.SetKubeApiError(r.dynakube.Conditions(), oaConditionType, err)
 
 		return err
 	}
@@ -210,7 +210,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context) error {
 	updated, err := k8sdaemonset.CreateOrUpdateDaemonSet(ctx, r.client, log, dsDesired)
 	if err != nil {
 		log.Info("failed to roll out new OneAgent DaemonSet")
-		conditions.SetKubeApiErrorCondition(r.dynakube.Conditions(), oaConditionType, err)
+		conditions.SetKubeApiError(r.dynakube.Conditions(), oaConditionType, err)
 
 		return err
 	}
@@ -232,7 +232,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context) error {
 			log.Info("removed oneagent daemonset with feature in name")
 		} else if !k8serrors.IsNotFound(err) {
 			log.Info("failed to remove oneagent daemonset with feature in name")
-			conditions.SetKubeApiErrorCondition(r.dynakube.Conditions(), oaConditionType, err)
+			conditions.SetKubeApiError(r.dynakube.Conditions(), oaConditionType, err)
 
 			return err
 		}

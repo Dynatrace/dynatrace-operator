@@ -11,7 +11,7 @@ const (
 	SecretOutdatedReason = "SecretOutdated"
 )
 
-func SetSecretCreatedCondition(conditions *[]metav1.Condition, conditionType, message string) {
+func SetSecretCreated(conditions *[]metav1.Condition, conditionType, message string) {
 	condition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionTrue,
@@ -21,7 +21,7 @@ func SetSecretCreatedCondition(conditions *[]metav1.Condition, conditionType, me
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func SetSecretUpdatedCondition(conditions *[]metav1.Condition, conditionType, message string) {
+func SetSecretUpdated(conditions *[]metav1.Condition, conditionType, message string) {
 	condition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionTrue,
@@ -31,7 +31,7 @@ func SetSecretUpdatedCondition(conditions *[]metav1.Condition, conditionType, me
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func SetSecretOutdatedCondition(conditions *[]metav1.Condition, conditionType, message string) {
+func SetSecretOutdated(conditions *[]metav1.Condition, conditionType, message string) {
 	condition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,

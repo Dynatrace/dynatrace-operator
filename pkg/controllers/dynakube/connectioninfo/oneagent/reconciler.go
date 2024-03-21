@@ -89,11 +89,11 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 		}
 	}
 
-	conditions.SetSecretOutdatedCondition(r.dynakube.Conditions(), oaConnectionInfoConditionType, secretNamespacedName.Name+" is not present or outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
+	conditions.SetSecretOutdated(r.dynakube.Conditions(), oaConnectionInfoConditionType, secretNamespacedName.Name+" is not present or outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
 
 	connectionInfo, err := r.dtc.GetOneAgentConnectionInfo(ctx)
 	if err != nil {
-		conditions.SetDynatraceApiErrorCondition(r.dynakube.Conditions(), oaConnectionInfoConditionType, err)
+		conditions.SetDynatraceApiError(r.dynakube.Conditions(), oaConnectionInfoConditionType, err)
 
 		return errors.WithMessage(err, "failed to get OneAgent connection info")
 	}
@@ -151,12 +151,12 @@ func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName str
 	err = query.CreateOrUpdate(*secret)
 	if err != nil {
 		log.Info("could not create or update secret for connection info", "name", secret.Name)
-		conditions.SetKubeApiErrorCondition(r.dynakube.Conditions(), oaConnectionInfoConditionType, err)
+		conditions.SetKubeApiError(r.dynakube.Conditions(), oaConnectionInfoConditionType, err)
 
 		return err
 	}
 
-	conditions.SetSecretCreatedCondition(r.dynakube.Conditions(), oaConnectionInfoConditionType, secret.Name+" created")
+	conditions.SetSecretCreated(r.dynakube.Conditions(), oaConnectionInfoConditionType, secret.Name+" created")
 
 	return nil
 }

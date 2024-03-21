@@ -24,7 +24,7 @@ func TestIsOutdated(t *testing.T) {
 		tp := timeprovider.New()
 		dk := &dynatracev1beta1.DynaKube{}
 
-		SetDynatraceApiErrorCondition(dk.Conditions(), testingConditionType, errors.New("boom"))
+		SetDynatraceApiError(dk.Conditions(), testingConditionType, errors.New("boom"))
 
 		assert.True(t, IsOutdated(tp, dk, testingConditionType))
 	})
@@ -33,7 +33,7 @@ func TestIsOutdated(t *testing.T) {
 		tp := timeprovider.New()
 		dk := &dynatracev1beta1.DynaKube{}
 
-		SetSecretCreatedCondition(dk.Conditions(), testingConditionType, "")
+		SetSecretCreated(dk.Conditions(), testingConditionType, "")
 
 		assert.False(t, IsOutdated(tp, dk, testingConditionType))
 	})
@@ -42,7 +42,7 @@ func TestIsOutdated(t *testing.T) {
 		tp := timeprovider.New()
 		dk := &dynatracev1beta1.DynaKube{}
 
-		SetSecretCreatedCondition(dk.Conditions(), testingConditionType, "")
+		SetSecretCreated(dk.Conditions(), testingConditionType, "")
 		tp.Set(tp.Now().Add(time.Minute * 60))
 
 		assert.True(t, IsOutdated(tp, dk, testingConditionType))

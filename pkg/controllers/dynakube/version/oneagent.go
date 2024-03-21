@@ -81,7 +81,7 @@ func (updater oneAgentUpdater) IsPublicRegistryEnabled() bool {
 func (updater oneAgentUpdater) LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error) {
 	imageInfo, err := updater.dtClient.GetLatestOneAgentImage(ctx)
 	if err != nil {
-		conditions.SetDynatraceApiErrorCondition(updater.dynakube.Conditions(), oaConditionType, err)
+		conditions.SetDynatraceApiError(updater.dynakube.Conditions(), oaConditionType, err)
 	}
 
 	return imageInfo, err
@@ -97,7 +97,7 @@ func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 		latestVersion, err = updater.dtClient.GetLatestAgentVersion(ctx, dtclient.OsUnix, dtclient.InstallerTypeDefault)
 		if err != nil {
 			log.Info("failed to determine image version")
-			conditions.SetDynatraceApiErrorCondition(updater.dynakube.Conditions(), oaConditionType, err)
+			conditions.SetDynatraceApiError(updater.dynakube.Conditions(), oaConditionType, err)
 
 			return err
 		}
