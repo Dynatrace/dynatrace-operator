@@ -21,12 +21,14 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 
 	const daemonsetName = "my-daemonset"
 
+	ctx := context.Background()
+
 	t.Run("create when not exists", func(t *testing.T) {
 		fakeClient := fake.NewClient()
 		annotations := map[string]string{hasher.AnnotationHash: "hash"}
 		daemonSet := createTestDaemonSetWithMatchLabels(daemonsetName, namespaceName, annotations, nil)
 
-		created, err := CreateOrUpdateDaemonSet(fakeClient, daemonSetLog, &daemonSet)
+		created, err := CreateOrUpdateDaemonSet(ctx, fakeClient, daemonSetLog, &daemonSet)
 
 		require.NoError(t, err)
 		assert.True(t, created)
@@ -38,7 +40,7 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 		newDaemonSet := createTestDaemonSetWithMatchLabels(daemonsetName, namespaceName, newAnnotations, nil)
 		fakeClient := fake.NewClient(&oldDaemonSet)
 
-		updated, err := CreateOrUpdateDaemonSet(fakeClient, daemonSetLog, &newDaemonSet)
+		updated, err := CreateOrUpdateDaemonSet(ctx, fakeClient, daemonSetLog, &newDaemonSet)
 
 		require.NoError(t, err)
 		assert.True(t, updated)
@@ -49,7 +51,7 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 
 		fakeClient := fake.NewClient(&oldDaemonSet)
 
-		updated, err := CreateOrUpdateDaemonSet(fakeClient, daemonSetLog, &oldDaemonSet)
+		updated, err := CreateOrUpdateDaemonSet(ctx, fakeClient, daemonSetLog, &oldDaemonSet)
 		require.NoError(t, err)
 		assert.False(t, updated)
 	})
@@ -63,7 +65,7 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 		newDaemonSet := createTestDaemonSetWithMatchLabels(daemonsetName, namespaceName, newAnnotations, newMatchLabels)
 		fakeClient := fake.NewClient(&oldDaemonSet)
 
-		updated, err := CreateOrUpdateDaemonSet(fakeClient, daemonSetLog, &newDaemonSet)
+		updated, err := CreateOrUpdateDaemonSet(ctx, fakeClient, daemonSetLog, &newDaemonSet)
 
 		require.NoError(t, err)
 		assert.True(t, updated)

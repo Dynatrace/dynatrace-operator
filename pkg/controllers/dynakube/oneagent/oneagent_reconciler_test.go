@@ -26,6 +26,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -41,8 +42,9 @@ func TestReconcile(t *testing.T) {
 	namespace := "dynatrace"
 	dkName := "dynakube"
 
-	t.Run("remove DaemonSet in case OneAgent is not needed", func(t *testing.T) {
+	t.Run("remove DaemonSet in case OneAgent is not needed + remove condition", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace}}
+		setDaemonSetCreatedCondition(dynakube.Conditions())
 		fakeClient := fake.NewClient(dynakube, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dynakube.OneAgentDaemonsetName(), Namespace: dynakube.Namespace}})
 
 		reconciler := &Reconciler{
@@ -59,6 +61,8 @@ func TestReconcile(t *testing.T) {
 		err = fakeClient.Get(ctx, types.NamespacedName{Name: dynakube.OneAgentDaemonsetName(), Namespace: namespace}, dsActual)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
+
+		assert.Nil(t, meta.FindStatusCondition(*dynakube.Conditions(), oaConditionType))
 	})
 
 	t.Run("removing DaemonSet is safe even if its missing", func(t *testing.T) {
@@ -190,6 +194,11 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 	assert.Equal(t, dynakube.OneAgentDaemonsetName(), dsActual.GetObjectMeta().GetName(), "wrong name")
 	assert.Equal(t, corev1.DNSClusterFirstWithHostNet, dsActual.Spec.Template.Spec.DNSPolicy, "wrong policy")
 	mock.AssertExpectationsForObjects(t, dtClient)
+
+	condition := meta.FindStatusCondition(*dynakube.Conditions(), oaConditionType)
+	require.NotNil(t, condition)
+	assert.Equal(t, metav1.ConditionTrue, condition.Status)
+	assert.Equal(t, daemonSetCreatedReason, condition.Reason)
 }
 
 func TestReconcile_InstancesSet(t *testing.T) {

@@ -306,8 +306,7 @@ func setupPullSecret(t *testing.T, fakeClient client.Client, dynakube dynatracev
 }
 
 func changeTime(timeProvider *timeprovider.Provider, duration time.Duration) {
-	newTime := metav1.NewTime(timeProvider.Now().Add(duration))
-	timeProvider.Set(&newTime)
+	timeProvider.Set(timeProvider.Now().Add(duration))
 }
 
 func createTestPullSecret(fakeClient client.Client, dynakube dynatracev1beta1.DynaKube) error {
