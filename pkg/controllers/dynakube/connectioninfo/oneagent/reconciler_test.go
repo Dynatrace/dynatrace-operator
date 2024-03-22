@@ -59,6 +59,32 @@ func TestReconcile(t *testing.T) {
 		require.Nil(t, condition)
 	})
 
+	t.Run("does not cleanup when only host oneagent is needed", func(t *testing.T) {
+		dynakube := getTestDynakube()
+		dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta1.OneAgentConnectionInfoStatus{
+			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+				TenantUUID: testOutdated,
+				Endpoints:  testOutdated,
+			},
+		}
+		dynakube.Spec = dynatracev1beta1.DynaKubeSpec{}
+		dynakube.Spec.OneAgent.ClassicFullStack = &dynatracev1beta1.HostInjectSpec{}
+
+		conditions.SetSecretCreated(dynakube.Conditions(), oaConnectionInfoConditionType, "testing")
+
+		fakeClient := fake.NewClient(dynakube)
+		dtc := dtclientmock.NewClient(t)
+		dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestOneAgentConnectionInfo(), nil)
+
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc, dynakube)
+		err := r.Reconcile(ctx)
+		require.NoError(t, err)
+		assert.NotEmpty(t, dynakube.Status.OneAgent.ConnectionInfoStatus)
+
+		condition := meta.FindStatusCondition(*dynakube.Conditions(), oaConnectionInfoConditionType)
+		require.NotNil(t, condition)
+	})
+
 	t.Run("set correct condition on dynatrace-client error", func(t *testing.T) {
 		dynakube := getTestDynakube()
 		fakeClient := fake.NewClient()
