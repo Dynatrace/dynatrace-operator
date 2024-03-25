@@ -12,7 +12,7 @@
 |proxy|Set custom proxy settings either directly or from a secret with the field proxy. Note: Applies to Dynatrace Operator, ActiveGate, and OneAgents.|-|object|
 |skipCertCheck|Disable certificate check for the connection between Dynatrace Operator and the Dynatrace Cluster. Set to true if you want to skip certification validation checks.|-|boolean|
 |tokens|Name of the secret holding the tokens used for connecting to Dynatrace.|-|string|
-|trustedCAs|Adds custom RootCAs from a configmap. Put the certificate under certs within your configmap. Note: Applies only to Dynatrace Operator and OneAgent, not to ActiveGate.|-|string|
+|trustedCAs|Adds custom RootCAs from a configmap. Put the certificate under certs within your configmap. Note: Applies to Dynatrace Operator, OneAgent and ActiveGate.|-|string|
 
 ### .spec.oneAgent
 

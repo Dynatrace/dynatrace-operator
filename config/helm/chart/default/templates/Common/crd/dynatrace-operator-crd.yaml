@@ -4117,7 +4117,7 @@ spec:
               trustedCAs:
                 description: |-
                   Adds custom RootCAs from a configmap. Put the certificate under certs within your configmap.
-                  Note: Applies only to Dynatrace Operator and OneAgent, not to ActiveGate.
+                  Note: Applies to Dynatrace Operator, OneAgent and ActiveGate.
                 type: string
             required:
             - apiUrl

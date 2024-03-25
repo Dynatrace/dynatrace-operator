@@ -29,7 +29,9 @@ type initContainerModifier interface {
 func GenerateAllModifiers(dynakube dynatracev1beta1.DynaKube, capability capability.Capability, agBaseContainerEnvMap *prioritymap.Map) []builder.Modifier {
 	return []builder.Modifier{
 		NewAuthTokenModifier(dynakube),
+		NewSSLVolumeModifier(dynakube),
 		NewCertificatesModifier(dynakube),
+		NewTrustedCAsVolumeModifier(dynakube),
 		NewCustomPropertiesModifier(dynakube, capability),
 		NewProxyModifier(dynakube),
 		NewRawImageModifier(dynakube, agBaseContainerEnvMap),
