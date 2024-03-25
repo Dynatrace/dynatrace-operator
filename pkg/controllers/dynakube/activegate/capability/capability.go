@@ -87,7 +87,7 @@ func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 	mc.properties = &dk.Spec.ActiveGate.CapabilityProperties
 	capabilityNames := []string{}
 	capabilityDisplayNames := make([]string, len(dk.Spec.ActiveGate.Capabilities))
-	
+
 	for i, capName := range dk.Spec.ActiveGate.Capabilities {
 		capabilityGenerator, ok := activeGateCapabilities[capName]
 		if !ok {
@@ -100,7 +100,7 @@ func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 	}
 
 	mc.argName = strings.Join(capabilityNames, ",")
-	mc.displayName = strings.Join(capabilityDisplayNames, ",")
+	mc.displayName = strings.Join(capabilityDisplayNames, ", ")
 
 	return &mc
 }
