@@ -45,7 +45,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 var NoOneAgentCommunicationHostsError = errors.New("no communication hosts for OneAgent are available")
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	if !r.dynakube.NeedAppInjection() || !r.dynakube.NeedsOneAgent() {
+	if !r.dynakube.NeedAppInjection() && !r.dynakube.NeedsOneAgent() {
 		meta.RemoveStatusCondition(r.dynakube.Conditions(), oaConnectionInfoConditionType)
 		r.dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta1.OneAgentConnectionInfoStatus{}
 		// TODO: Delete secret if there
