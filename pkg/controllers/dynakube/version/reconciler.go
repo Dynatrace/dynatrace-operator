@@ -70,7 +70,13 @@ func (r *reconciler) updateVersionStatuses(ctx context.Context, updater StatusUp
 
 	err := r.run(ctx, updater)
 	if err != nil {
-		return err
+		if updater.Target().ImageID == "" && updater.Target().Version == "" {
+			log.Info("unable to set version info, no previous version to fallback to", "component", updater.Name())
+
+			return err
+		}
+
+		log.Error(err, "unable to refresh version info, moving on with version from previous run", "component", updater.Name())
 	}
 
 	_, ok := updater.(*oneAgentUpdater)
