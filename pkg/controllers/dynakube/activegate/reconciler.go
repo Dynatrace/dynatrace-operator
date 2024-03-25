@@ -103,10 +103,10 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
 		}
 	} else {
-		conditions := r.dynakube.Status.Conditions
-		meta.RemoveStatusCondition(&conditions, dynatracev1beta1.ActiveGateConnectionInfoConditionType)
-		meta.RemoveStatusCondition(&conditions, dynatracev1beta1.ActiveGateStatefulSetConditionType)
-		meta.RemoveStatusCondition(&conditions, dynatracev1beta1.ActiveGateVersionConditionType)
+		conditions := &r.dynakube.Status.Conditions
+		meta.RemoveStatusCondition(conditions, dynatracev1beta1.ActiveGateConnectionInfoConditionType)
+		meta.RemoveStatusCondition(conditions, dynatracev1beta1.ActiveGateStatefulSetConditionType)
+		meta.RemoveStatusCondition(conditions, dynatracev1beta1.ActiveGateVersionConditionType)
 	}
 
 	for _, agCapability := range capability.GenerateActiveGateCapabilities(r.dynakube) {
