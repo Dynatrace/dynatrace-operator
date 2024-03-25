@@ -3,10 +3,12 @@ package daemonset
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	"golang.org/x/mod/semver"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -42,6 +44,8 @@ const (
 
 	probeMaxInitialDelay         = int32(90)
 	probeDefaultSuccessThreshold = int32(1)
+
+	readOnlyRootFsVersionThreshold = "v1.289"
 )
 
 type HostMonitoring struct {
@@ -313,6 +317,10 @@ func (dsInfo *builderInfo) securityContext() *corev1.SecurityContext {
 		securityContext.RunAsGroup = address.Of(int64(1000))
 	}
 
+	if dsInfo.isRootFsReadonly() {
+		securityContext.ReadOnlyRootFilesystem = address.Of(true)
+	}
+
 	if dsInfo.dynakube != nil && dsInfo.dynakube.NeedsOneAgentPrivileged() {
 		securityContext.Privileged = address.Of(true)
 	} else {
@@ -379,4 +387,24 @@ func (dsInfo *builderInfo) getReadinessProbe() *corev1.Probe {
 	}
 
 	return defaultProbe
+}
+
+// isRootFsReadonly checks if the given version of the OneAgent supports the `ReadOnlyRootFilesystem` securityContext setting.
+// if the version is not set, ie.: unknown, we  consider the OneAgent to support `ReadOnlyRootFilesystem`.
+func (dsInfo *builderInfo) isRootFsReadonly() bool {
+	if dsInfo.dynakube != nil &&
+		dsInfo.dynakube.NeedsReadOnlyOneAgents() &&
+		dsInfo.dynakube.OneAgentVersion() != "" {
+
+		agentSemver, err := dtversion.ToSemver(dsInfo.dynakube.OneAgentVersion())
+		if err != nil {
+			log.Error(err, "Unable to determine OneAgent version to enable readonly pod filesystem, skipping")
+
+			return true
+		}
+
+		return semver.Compare(readOnlyRootFsVersionThreshold, agentSemver) != 1 // if threshold <= agent-version
+	}
+
+	return true
 }
