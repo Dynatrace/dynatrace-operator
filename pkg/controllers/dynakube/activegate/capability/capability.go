@@ -23,14 +23,16 @@ type Capability interface {
 	Enabled() bool
 	ShortName() string
 	ArgName() string
+	DisplayName() string
 	Properties() *dynatracev1beta1.CapabilityProperties
 }
 
 type capabilityBase struct {
-	properties *dynatracev1beta1.CapabilityProperties
-	shortName  string
-	argName    string
-	enabled    bool
+	properties  *dynatracev1beta1.CapabilityProperties
+	shortName   string
+	argName     string
+	displayName string
+	enabled     bool
 }
 
 func (capability *capabilityBase) Enabled() bool {
@@ -47,6 +49,10 @@ func (capability *capabilityBase) ShortName() string {
 
 func (capability *capabilityBase) ArgName() string {
 	return capability.argName
+}
+
+func (capability *capabilityBase) DisplayName() string {
+	return capability.displayName
 }
 
 func CalculateStatefulSetName(capability Capability, dynakubeName string) string {
@@ -80,8 +86,9 @@ func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 	mc.enabled = true
 	mc.properties = &dk.Spec.ActiveGate.CapabilityProperties
 	capabilityNames := []string{}
-
-	for _, capName := range dk.Spec.ActiveGate.Capabilities {
+	capabilityDisplayNames := make([]string, len(dk.Spec.ActiveGate.Capabilities))
+	
+	for i, capName := range dk.Spec.ActiveGate.Capabilities {
 		capabilityGenerator, ok := activeGateCapabilities[capName]
 		if !ok {
 			continue
@@ -89,9 +96,11 @@ func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 
 		capGen := capabilityGenerator()
 		capabilityNames = append(capabilityNames, capGen.argName)
+		capabilityDisplayNames[i] = capGen.displayName
 	}
 
 	mc.argName = strings.Join(capabilityNames, ",")
+	mc.displayName = strings.Join(capabilityDisplayNames, ",")
 
 	return &mc
 }
@@ -128,8 +137,9 @@ func NewRoutingCapability(dk *dynatracev1beta1.DynaKube) *RoutingCapability {
 
 func kubeMonBase() *capabilityBase {
 	c := capabilityBase{
-		shortName: dynatracev1beta1.KubeMonCapability.ShortName,
-		argName:   dynatracev1beta1.KubeMonCapability.ArgumentName,
+		shortName:   dynatracev1beta1.KubeMonCapability.ShortName,
+		argName:     dynatracev1beta1.KubeMonCapability.ArgumentName,
+		displayName: string(dynatracev1beta1.KubeMonCapability.DisplayName),
 	}
 
 	return &c
@@ -137,8 +147,9 @@ func kubeMonBase() *capabilityBase {
 
 func routingBase() *capabilityBase {
 	c := capabilityBase{
-		shortName: dynatracev1beta1.RoutingCapability.ShortName,
-		argName:   dynatracev1beta1.RoutingCapability.ArgumentName,
+		shortName:   dynatracev1beta1.RoutingCapability.ShortName,
+		argName:     dynatracev1beta1.RoutingCapability.ArgumentName,
+		displayName: string(dynatracev1beta1.RoutingCapability.DisplayName),
 	}
 
 	return &c
@@ -146,8 +157,9 @@ func routingBase() *capabilityBase {
 
 func metricsIngestBase() *capabilityBase {
 	c := capabilityBase{
-		shortName: dynatracev1beta1.MetricsIngestCapability.ShortName,
-		argName:   dynatracev1beta1.MetricsIngestCapability.ArgumentName,
+		shortName:   dynatracev1beta1.MetricsIngestCapability.ShortName,
+		argName:     dynatracev1beta1.MetricsIngestCapability.ArgumentName,
+		displayName: string(dynatracev1beta1.MetricsIngestCapability.DisplayName),
 	}
 
 	return &c
@@ -155,8 +167,9 @@ func metricsIngestBase() *capabilityBase {
 
 func dynatraceApiBase() *capabilityBase {
 	c := capabilityBase{
-		shortName: dynatracev1beta1.DynatraceApiCapability.ShortName,
-		argName:   dynatracev1beta1.DynatraceApiCapability.ArgumentName,
+		shortName:   dynatracev1beta1.DynatraceApiCapability.ShortName,
+		argName:     dynatracev1beta1.DynatraceApiCapability.ArgumentName,
+		displayName: string(dynatracev1beta1.DynatraceApiCapability.DisplayName),
 	}
 
 	return &c

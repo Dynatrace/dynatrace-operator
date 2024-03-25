@@ -2,6 +2,7 @@ package activegate
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -15,8 +16,10 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 const (
@@ -45,6 +48,10 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
+		condition := meta.FindStatusCondition(dynakube.Status.Conditions, dynatracev1beta1.ActiveGateConnectionInfoConditionType)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
+		assert.Equal(t, dynatracev1beta1.ReasonCreated, condition.Reason)
+
 		assert.Equal(t, testTenantUUID, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
 		assert.Equal(t, testTenantEndpoints, dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints)
 	})
@@ -63,6 +70,10 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
+		condition := meta.FindStatusCondition(dynakube.Status.Conditions, dynatracev1beta1.ActiveGateConnectionInfoConditionType)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
+		assert.Equal(t, dynatracev1beta1.ReasonCreated, condition.Reason)
+
 		assert.Equal(t, testTenantUUID, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
 		assert.Equal(t, testTenantEndpoints, dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints)
 	})
@@ -80,8 +91,27 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
+		condition := meta.FindStatusCondition(dynakube.Status.Conditions, dynatracev1beta1.ActiveGateConnectionInfoConditionType)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
+		assert.Equal(t, dynatracev1beta1.ReasonCreated, condition.Reason)
+
 		assert.Equal(t, testTenantUUID, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
 		assert.Equal(t, testTenantEndpoints, dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints)
+	})
+	t.Run(`ActiveGate connection info error shown in conditions`, func(t *testing.T) {
+		fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+				return fmt.Errorf("BOOM")
+			},
+		})
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc, &dynakube)
+		err := r.Reconcile(ctx)
+		require.Error(t, err)
+
+		condition := meta.FindStatusCondition(dynakube.Status.Conditions, dynatracev1beta1.ActiveGateConnectionInfoConditionType)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+		assert.Equal(t, dynatracev1beta1.ReasonUnexpectedError, condition.Reason)
+		assert.Equal(t, err.Error(), condition.Message)
 	})
 }
 

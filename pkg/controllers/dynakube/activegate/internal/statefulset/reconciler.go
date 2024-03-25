@@ -1,6 +1,7 @@
 package statefulset
 
 import (
+	"fmt"
 	"hash/fnv"
 	"reflect"
 	"strconv"
@@ -19,6 +20,8 @@ import (
 	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -60,8 +63,15 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if err != nil {
 		log.Error(err, "could not reconcile stateful set")
 
-		return errors.WithStack(err)
+		return errors.WithStack(r.dynakube.SetActiveGateStatefulSetErrorCondition(err))
 	}
+
+	meta.SetStatusCondition(&r.dynakube.Status.Conditions, metav1.Condition{
+		Type:    dynatracev1beta1.ActiveGateStatefulSetConditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  dynatracev1beta1.ReasonCreated,
+		Message: fmt.Sprintf("StatefulSet for %s has been created", r.capability.DisplayName()),
+	})
 
 	return nil
 }

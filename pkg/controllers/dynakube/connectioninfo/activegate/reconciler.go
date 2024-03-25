@@ -45,7 +45,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 func (r *reconciler) Reconcile(ctx context.Context) error {
 	oldStatus := r.dynakube.Status.DeepCopy()
 
-	err := r.reconcileConnectionInfo(ctx)
+	err := r.dynakube.SetActiveGateConnectionInfoCondition(r.reconcileConnectionInfo(ctx))
 	if err != nil {
 		return err
 	}

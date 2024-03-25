@@ -2,9 +2,11 @@ package statefulset
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
+	dynafake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
@@ -16,9 +18,11 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -86,6 +90,11 @@ func TestReconcile(t *testing.T) {
 
 		assert.NotNil(t, statefulSet)
 		require.NoError(t, err)
+
+		condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, dynatracev1beta1.ActiveGateStatefulSetConditionType)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
+		assert.Equal(t, dynatracev1beta1.ReasonCreated, condition.Reason)
+		assert.Equal(t, "StatefulSet for routing has been created", condition.Message)
 	})
 	t.Run(`update stateful set`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
@@ -119,6 +128,28 @@ func TestReconcile(t *testing.T) {
 		}
 
 		assert.Equal(t, 1, found)
+
+		condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, dynatracev1beta1.ActiveGateStatefulSetConditionType)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
+		assert.Equal(t, dynatracev1beta1.ReasonCreated, condition.Reason)
+		assert.Equal(t, "StatefulSet for routing has been created", condition.Message)
+	})
+	t.Run(`stateful set error is logged in condition`, func(t *testing.T) {
+		r := createDefaultReconciler(t)
+		fakeClient := dynafake.NewClientWithInterceptors(interceptor.Funcs{
+			Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+				return fmt.Errorf("BOOM")
+			},
+		})
+		r.client = fakeClient
+		err := r.Reconcile(context.Background())
+
+		require.Error(t, err)
+
+		condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, dynatracev1beta1.ActiveGateStatefulSetConditionType)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+		assert.Equal(t, dynatracev1beta1.ReasonError, condition.Reason)
+		assert.Equal(t, err.Error(), condition.Message)
 	})
 }
 
