@@ -27,6 +27,8 @@ import (
 const (
 	use                            = "support-archive"
 	namespaceFlagName              = "namespace"
+	injectedPods                   = "injected-pods"
+	specificNodeName               = "node-name"
 	archiveToStdoutFlagName        = "stdout"
 	delayFlagName                  = "delay"
 	defaultSupportArchiveTargetDir = "/tmp/dynatrace-operator"
@@ -44,6 +46,8 @@ const (
 )
 
 var (
+	injectedPodsFlagValue       bool
+	specificNodeValue           string
 	namespaceFlagValue          string
 	archiveToStdoutFlagValue    bool
 	loadsimFilesFlagValue       int
@@ -82,6 +86,8 @@ func (builder CommandBuilder) Build() *cobra.Command {
 }
 
 func addFlags(cmd *cobra.Command) {
+	cmd.PersistentFlags().BoolVar(&injectedPodsFlagValue, injectedPods, false, "enable collecting of application pod.")
+	cmd.PersistentFlags().StringVar(&specificNodeValue, specificNodeName, "", "Name of a node from which injected pods should be collected.")
 	cmd.PersistentFlags().StringVar(&namespaceFlagValue, namespaceFlagName, env.DefaultNamespace(), "Specify a different Namespace.")
 	cmd.PersistentFlags().BoolVar(&archiveToStdoutFlagValue, archiveToStdoutFlagName, false, "Write tarball to stdout.")
 	cmd.PersistentFlags().IntVar(&loadsimFileSizeFlagValue, loadsimFileSizeFlagName, defaultSimFileSize, "Simulated log files, size in MiB (default 10)")
@@ -173,7 +179,7 @@ func (builder CommandBuilder) runCollectors(log logd.Logger, supportArchive arch
 	fileSize := loadsimFileSizeFlagValue * Mebi
 	collectors := []collector{
 		newOperatorVersionCollector(log, supportArchive),
-		newLogCollector(ctx, log, supportArchive, pods, appName, collectManagedLogsFlagValue),
+		newLogCollector(ctx, log, supportArchive, pods, appName, collectManagedLogsFlagValue, injectedPodsFlagValue, specificNodeValue, namespaceFlagValue),
 		newK8sObjectCollector(ctx, log, supportArchive, namespaceFlagValue, appName, apiReader, discoveryClient),
 		newTroubleshootCollector(ctx, log, supportArchive, namespaceFlagValue, apiReader, *kubeConfig),
 		newLoadSimCollector(ctx, log, supportArchive, fileSize, loadsimFilesFlagValue, clientSet.CoreV1().Pods(namespaceFlagValue)),

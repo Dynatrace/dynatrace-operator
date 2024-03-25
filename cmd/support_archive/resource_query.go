@@ -1,13 +1,13 @@
 package support_archive
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"reflect"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1"
 	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -26,14 +26,20 @@ type resourceQuery struct {
 	filters          []client.ListOption
 }
 
-func getQueries(namespace string, appName string) []resourceQuery {
+func getQueries(namespace string, appName string, collectInjectedPods bool, nodeName string) []resourceQuery {
 	allQueries := make([]resourceQuery, 0)
-	allQueries = append(allQueries, getInjectedNamespaceQueryGroup().getQueries()...)
-	allQueries = append(allQueries, getOperatorNamespaceQueryGroup(namespace).getQueries()...)
-	allQueries = append(allQueries, getComponentsQueryGroup(namespace, appName, labels.AppNameLabel).getQueries()...)
-	allQueries = append(allQueries, getComponentsQueryGroup(namespace, appName, labels.AppManagedByLabel).getQueries()...)
-	allQueries = append(allQueries, getCustomResourcesQueryGroup(namespace).getQueries()...)
-	allQueries = append(allQueries, getConfigMapQueryGroup(namespace).getQueries()...)
+	if !collectInjectedPods && nodeName == "" {
+		allQueries = append(allQueries, getInjectedNamespaceQueryGroup().getQueries()...)
+		allQueries = append(allQueries, getOperatorNamespaceQueryGroup(namespace).getQueries()...)
+		allQueries = append(allQueries, getComponentsQueryGroup(namespace, appName, labels.AppNameLabel).getQueries()...)
+		allQueries = append(allQueries, getComponentsQueryGroup(namespace, appName, labels.AppManagedByLabel).getQueries()...)
+		allQueries = append(allQueries, getCustomResourcesQueryGroup(namespace).getQueries()...)
+		allQueries = append(allQueries, getConfigMapQueryGroup(namespace).getQueries()...)
+	} else if nodeName != "" {
+		allQueries = append(allQueries, getPodsFromSpecificNode(nodeName, namespace).getQueries()...)
+	} else {
+		allQueries = append(allQueries, getInjectedPods(namespace).getQueries()...)
+	}
 
 	return allQueries
 }
@@ -60,6 +66,34 @@ func getOperatorNamespaceQueryGroup(namespace string) resourceQueryGroup {
 			&client.ListOptions{
 				FieldSelector: fields.OneTermEqualSelector("metadata.name", namespace),
 			},
+		},
+	}
+}
+
+func getPodsFromSpecificNode(nodeName, namespace string) resourceQueryGroup {
+	return resourceQueryGroup{
+		resources: []schema.GroupVersionKind{
+			toGroupVersionKind(corev1.SchemeGroupVersion, corev1.Pod{}),
+		},
+		filters: []client.ListOption{
+			&client.ListOptions{
+				FieldSelector: fields.OneTermEqualSelector("spec.nodeName", nodeName),
+			},
+			client.InNamespace(namespace),
+		},
+	}
+}
+
+func getInjectedPods(namespace string) resourceQueryGroup {
+	return resourceQueryGroup{
+		resources: []schema.GroupVersionKind{
+			toGroupVersionKind(corev1.SchemeGroupVersion, corev1.Pod{}),
+		},
+		filters: []client.ListOption{
+			&client.ListOptions{
+				FieldSelector: fields.OneTermEqualSelector("metadata.namespace", namespace),
+			},
+			client.InNamespace(namespace),
 		},
 	}
 }

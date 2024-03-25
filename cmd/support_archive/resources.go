@@ -51,7 +51,7 @@ func (collector k8sResourceCollector) Do() error {
 
 	numberOfStorages := 0
 
-	for _, query := range getQueries(collector.namespace, collector.appName) {
+	for _, query := range getQueries(collector.namespace, collector.appName, injectedPodsFlagValue, specificNodeValue) {
 		resourceList, err := collector.readObjectsList(query.groupVersionKind, query.filters)
 		if err != nil {
 			logErrorf(collector.log, err, "could not get manifest for %s", query.groupVersionKind.String())
@@ -66,7 +66,7 @@ func (collector k8sResourceCollector) Do() error {
 		}
 	}
 
-	if numberOfStorages > 0 {
+	if numberOfStorages > 0 && !injectedPodsFlagValue && specificNodeValue == "" {
 		webhookConfigurations, err := collector.readWebhookConfigurations()
 		if err != nil {
 			logErrorf(collector.log, err, "could not read webhook configurations")
