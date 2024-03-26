@@ -32,19 +32,9 @@ inputs:
   tenant2-apitoken:
     description: The API token of Tenant 2
     required: true
+
 runs:
   using: composite
-  env:
-    FLC_NAMESPACE: ${{ inputs.flc-namespace }}
-    FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
-    TARGET_BRANCH: ${{ inputs.target-branch || 'main' }}
-    TENANT1_NAME: ${{ inputs.tenant1-name }}
-    TENANT1_APITOKEN: ${{ inputs.tenant1-apitoken }}
-    TENANT1_OTELTOKEN: ${{ inputs.tenant1-oteltoken }}
-    TENANT1_OAUTH_CLIENT_ID: ${{ inputs.tenant1-oauth-client-id }}
-    TENANT1_OAUTH_SECRET: ${{ inputs.tenant1-oauth-secret }}
-    TENANT2_NAME: ${{ inputs.tenant2-name }}
-    TENANT2_APITOKEN: ${{ inputs.tenant2-apitoken }}
   steps:
     - name: Checkout workflow scripts from ref branch
       uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -69,10 +59,27 @@ runs:
       run: go install gotest.tools/gotestsum@latest
     - name: Create cluster
       run: ref/.github/scripts/create-cluster.sh
+      env:
+        FLC_NAMESPACE: ${{ inputs.flc-namespace }}
+        FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
     - name: Run tests
       run: ref/.github/scripts/run-e2e-tests.sh
+      env:
+        FLC_NAMESPACE: ${{ inputs.flc-namespace }}
+        FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
+        TARGET_BRANCH: ${{ inputs.target-branch || 'main' }}
+        TENANT1_NAME: ${{ inputs.tenant1-name }}
+        TENANT1_APITOKEN: ${{ inputs.tenant1-apitoken }}
+        TENANT1_OTELTOKEN: ${{ inputs.tenant1-oteltoken }}
+        TENANT1_OAUTH_CLIENT_ID: ${{ inputs.tenant1-oauth-client-id }}
+        TENANT1_OAUTH_SECRET: ${{ inputs.tenant1-oauth-secret }}
+        TENANT2_NAME: ${{ inputs.tenant2-name }}
+        TENANT2_APITOKEN: ${{ inputs.tenant2-apitoken }}
     - name: Destroy cluster
       run: ref/.github/scripts/destroy-cluster.sh
+      env:
+        FLC_NAMESPACE: ${{ inputs.flc-namespace }}
+        FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
       if: always()
     - name: Publish test results
       uses: EnricoMi/publish-unit-test-result-action@v2
