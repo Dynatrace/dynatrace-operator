@@ -9,6 +9,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
@@ -62,14 +63,15 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	err := r.manageStatefulSet(ctx)
 	if err != nil {
 		log.Error(err, "could not reconcile stateful set")
+		conditions.SetActiveGateStatefulSetErrorCondition(&r.dynakube.Status.Conditions, err)
 
-		return errors.WithStack(r.dynakube.SetActiveGateStatefulSetErrorCondition(err))
+		return errors.WithStack(err)
 	}
 
 	meta.SetStatusCondition(&r.dynakube.Status.Conditions, metav1.Condition{
-		Type:    dynatracev1beta1.ActiveGateStatefulSetConditionType,
+		Type:    conditions.ActiveGateStatefulSetConditionType,
 		Status:  metav1.ConditionTrue,
-		Reason:  dynatracev1beta1.ReasonCreated,
+		Reason:  conditions.ReasonCreated,
 		Message: fmt.Sprintf("StatefulSet for %s has been created", r.capability.DisplayName()),
 	})
 

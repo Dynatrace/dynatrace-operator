@@ -5,6 +5,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	capabilityInternal "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
@@ -103,10 +104,10 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
 		}
 	} else {
-		conditions := &r.dynakube.Status.Conditions
-		meta.RemoveStatusCondition(conditions, dynatracev1beta1.ActiveGateConnectionInfoConditionType)
-		meta.RemoveStatusCondition(conditions, dynatracev1beta1.ActiveGateStatefulSetConditionType)
-		meta.RemoveStatusCondition(conditions, dynatracev1beta1.ActiveGateVersionConditionType)
+		statusconditions := &r.dynakube.Status.Conditions
+		meta.RemoveStatusCondition(statusconditions, conditions.ActiveGateConnectionInfoConditionType)
+		meta.RemoveStatusCondition(statusconditions, conditions.ActiveGateStatefulSetConditionType)
+		meta.RemoveStatusCondition(statusconditions, conditions.ActiveGateVersionConditionType)
 	}
 
 	for _, agCapability := range capability.GenerateActiveGateCapabilities(r.dynakube) {
