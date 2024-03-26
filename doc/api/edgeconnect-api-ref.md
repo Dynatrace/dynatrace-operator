@@ -36,7 +36,6 @@
 |host|Server address (hostname or IP address) of the proxy.|-|string|
 |noProxy|NoProxy represents the NO_PROXY or no_proxy environment variable. It specifies a string that contains comma-separated values specifying hosts that should be excluded from proxying.|-|string|
 |port|Port of the proxy.|-|integer|
-|scheme|Proxy scheme (<`http` or `https`>).|-|string|
 
 ### .spec.imageRef
 
