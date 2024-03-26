@@ -29,20 +29,18 @@ inputs:
     description: The API token of Tenant 2
     required: true
 runs:
-  name: Run in Kubernetes latest (${{ github.event.inputs.target || 'main' }})
-  environment: E2E
   using: composite
   env:
     FLC_NAMESPACE: ${{ inputs.flc-namespace }}
     FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
     TARGET_BRANCH: ${{ github.event.inputs.target || 'main' }}
-    TENANT1_NAME: ${{ secrets.tenant1-name }}
-    TENANT1_APITOKEN: ${{ secrets.tenant1-apitoken }}
-    TENANT1_OTELTOKEN: ${{ secrets.tenant1-oteltoken }}
-    TENANT1_OAUTH_CLIENT_ID: ${{ secrets.tenant1-oauth-client-id }}
-    TENANT1_OAUTH_SECRET: ${{ secrets.tenant1-oauth-secret }}
-    TENANT2_NAME: ${{ secrets.tenant2-name }}
-    TENANT2_APITOKEN: ${{ secrets.tenant2-apitoken }}
+    TENANT1_NAME: ${{ inputs.tenant1-name }}
+    TENANT1_APITOKEN: ${{ inputs.tenant1-apitoken }}
+    TENANT1_OTELTOKEN: ${{ inputs.tenant1-oteltoken }}
+    TENANT1_OAUTH_CLIENT_ID: ${{ inputs.tenant1-oauth-client-id }}
+    TENANT1_OAUTH_SECRET: ${{ inputs.tenant1-oauth-secret }}
+    TENANT2_NAME: ${{ inputs.tenant2-name }}
+    TENANT2_APITOKEN: ${{ inputs.tenant2-apitoken }}
   runs-on:
     - self-hosted
     - operator-e2e
