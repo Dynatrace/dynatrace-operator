@@ -37,6 +37,7 @@ jobs:
           tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
   run-in-ocp2:
     name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }})
     environment: E2E
@@ -59,6 +60,7 @@ jobs:
           tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
 #  notify-failure:
 #    name: Notify failure in Slack
