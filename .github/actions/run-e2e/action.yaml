@@ -32,6 +32,9 @@ inputs:
   tenant2-apitoken:
     description: The API token of Tenant 2
     required: true
+  github-token:
+    description: The GitHub token
+    required: true
 
 runs:
   using: composite
@@ -54,7 +57,7 @@ runs:
     - name: Set up helm
       uses: azure/setup-helm@5119fcb9089d432beecbf79bb2c7915207344b78 # v3.5
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ inputs.github-token }}
     - name: Install gotestsum
       run: go install gotest.tools/gotestsum@latest
     - name: Create cluster
