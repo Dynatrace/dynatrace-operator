@@ -15,121 +15,62 @@ permissions:
   checks: write
 
 jobs:
-  run-in-k8s:
+  run-in-k8s2:
     name: Run in Kubernetes latest (${{ github.event.inputs.target || 'main' }})
     environment: E2E
-    env:
-      FLC_NAMESPACE: dto-daily
-      FLC_ENVIRONMENT: dto-k8s-latest-flc
-      TARGET_BRANCH: ${{ github.event.inputs.target || 'main' }}
-      TENANT1_NAME: ${{ secrets.TENANT1_NAME }}
-      TENANT1_APITOKEN: ${{ secrets.TENANT1_APITOKEN }}
-      TENANT1_OTELTOKEN: ${{ secrets.TENANT1_OTELTOKEN }}
-      TENANT1_OAUTH_CLIENT_ID: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
-      TENANT1_OAUTH_SECRET: ${{ secrets.TENANT1_OAUTH_SECRET }}
-      TENANT2_NAME: ${{ secrets.TENANT2_NAME }}
-      TENANT2_APITOKEN: ${{ secrets.TENANT2_APITOKEN }}
     runs-on:
-    - self-hosted
-    - operator-e2e
+      - self-hosted
+      - operator-e2e
     steps:
-    - name: Checkout workflow scripts from ref branch
-      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      with:
-        path: ref
-    - name: Checkout target branch
-      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      with:
-        ref: ${{ github.event.inputs.target || 'main' }}
-        path: target
-    - name: Set up kubectl
-      uses: azure/setup-kubectl@3e0aec4d80787158d308d7b364cb1b702e7feb7f # v4.0.0
-    - name: Set up go
-      uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
-      with:
-        go-version-file: "${{ github.workspace }}/target/go.mod"
-    - name: Set up helm
-      uses: azure/setup-helm@5119fcb9089d432beecbf79bb2c7915207344b78 # v3.5
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-    - name: Install gotestsum
-      run: go install gotest.tools/gotestsum@latest
-    - name: Create cluster
-      run: ref/.github/scripts/create-cluster.sh
-    - name: Run tests
-      run: ref/.github/scripts/run-e2e-tests.sh
-    - name: Destroy cluster
-      run: ref/.github/scripts/destroy-cluster.sh
-      if: always()
-    - name: Publish test results
-      uses: EnricoMi/publish-unit-test-result-action@v2
-      with:
-        files: target/results/*.xml
-      if: always()
-  run-in-ocp:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - name: Run e2e test
+        uses: ./.github/actions/run-e2e
+        with:
+          flc-namespace: dto-daily
+          flc-environment: dto-k8s-latest-flc
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-oteltoken: ${{ secrets.TENANT1_OTELTOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+  run-in-ocp2:
     name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }})
     environment: E2E
-    env:
-      FLC_NAMESPACE: dto-daily
-      FLC_ENVIRONMENT: dto-ocp-latest-flc
-      TARGET_BRANCH: ${{ github.event.inputs.target || 'main' }}
-      TENANT1_NAME: ${{ secrets.TENANT1_NAME }}
-      TENANT1_APITOKEN: ${{ secrets.TENANT1_APITOKEN }}
-      TENANT1_OTELTOKEN: ${{ secrets.TENANT1_OTELTOKEN }}
-      TENANT1_OAUTH_CLIENT_ID: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
-      TENANT1_OAUTH_SECRET: ${{ secrets.TENANT1_OAUTH_SECRET }}
-      TENANT2_NAME: ${{ secrets.TENANT2_NAME }}
-      TENANT2_APITOKEN: ${{ secrets.TENANT2_APITOKEN }}
     runs-on:
-    - self-hosted
-    - operator-e2e
+      - self-hosted
+      - operator-e2e
     steps:
-    - name: Checkout workflow scripts from ref branch
-      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      with:
-        path: ref
-    - name: Checkout target branch
-      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      with:
-        ref: ${{ github.event.inputs.target || 'main' }}
-        path: target
-    - name: Set up kubectl
-      uses: azure/setup-kubectl@3e0aec4d80787158d308d7b364cb1b702e7feb7f # v4.0.0
-    - name: Set up go
-      uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
-      with:
-        go-version-file: "${{ github.workspace }}/target/go.mod"
-    - name: Set up helm
-      uses: azure/setup-helm@5119fcb9089d432beecbf79bb2c7915207344b78 # v3.5
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-    - name: Install gotestsum
-      run: go install gotest.tools/gotestsum@latest
-    - name: Create cluster
-      run: ref/.github/scripts/create-cluster.sh
-    - name: Run tests
-      run: ref/.github/scripts/run-e2e-tests.sh
-    - name: Destroy cluster
-      run: ref/.github/scripts/destroy-cluster.sh
-      if: always()
-    - name: Publish test results
-      uses: EnricoMi/publish-unit-test-result-action@v2
-      with:
-        files: target/results/*.xml
-      if: always()
-  notify-failure:
-    name: Notify failure in Slack
-    environment: E2E
-    needs: ["run-in-k8s", "run-in-ocp"]
-    if: ${{ failure() || cancelled() }}
-    runs-on:
-    - self-hosted
-    - operator-e2e
-    steps:
-    - name: Notify failure in Slack
-      uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001 # v1.25.0
-      with:
-        channel-id: 'int-cp-operator'
-        slack-message: ":x: E2E tests failed on ${{ github.event.inputs.target || 'main' }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
-      env:
-        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - name: Run e2e test
+        uses: ./.github/actions/run-e2e
+        with:
+          flc-namespace: dto-daily
+          flc-environment: dto-ocp-latest-flc
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-oteltoken: ${{ secrets.TENANT1_OTELTOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+
+#  notify-failure:
+#    name: Notify failure in Slack
+#    environment: E2E
+#    needs: ["run-in-k8s", "run-in-ocp"]
+#    if: ${{ failure() || cancelled() }}
+#    runs-on:
+#    - self-hosted
+#    - operator-e2e
+#    steps:
+#    - name: Notify failure in Slack
+#      uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001 # v1.25.0
+#      with:
+#        channel-id: 'int-cp-operator'
+#        slack-message: ":x: E2E tests failed on ${{ github.event.inputs.target || 'main' }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+#      env:
+#        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
