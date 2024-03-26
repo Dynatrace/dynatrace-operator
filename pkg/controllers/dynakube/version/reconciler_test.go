@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
@@ -61,9 +62,9 @@ func TestReconcile(t *testing.T) {
 		err := versionReconciler.ReconcileActiveGate(ctx, dynakube)
 		require.Error(t, err)
 
-		condition := meta.FindStatusCondition(dynakube.Status.Conditions, dynatracev1beta1.ActiveGateVersionConditionType)
+		condition := meta.FindStatusCondition(dynakube.Status.Conditions, conditions.ActiveGateVersionConditionType)
 		require.Equal(t, metav1.ConditionFalse, condition.Status)
-		require.Equal(t, dynatracev1beta1.ReasonError, condition.Reason)
+		require.Equal(t, conditions.ReasonError, condition.Reason)
 	})
 
 	t.Run("all image versions were updated", func(t *testing.T) {
@@ -92,9 +93,9 @@ func TestReconcile(t *testing.T) {
 		err = versionReconciler.ReconcileOneAgent(ctx, dynakube)
 		require.NoError(t, err)
 
-		condition := meta.FindStatusCondition(dynakube.Status.Conditions, dynatracev1beta1.ActiveGateVersionConditionType)
+		condition := meta.FindStatusCondition(dynakube.Status.Conditions, conditions.ActiveGateVersionConditionType)
 		require.Equal(t, metav1.ConditionTrue, condition.Status)
-		require.Equal(t, dynatracev1beta1.ReasonUpToDate, condition.Reason)
+		require.Equal(t, conditions.ReasonUpToDate, condition.Reason)
 		require.Equal(t, dkStatus.ActiveGate.VersionStatus.ImageID, condition.Message)
 
 		assertStatusBasedOnTenantRegistry(t, dynakube.DefaultActiveGateImage(testActiveGateImage.Tag), testActiveGateImage.Tag, dkStatus.ActiveGate.VersionStatus)
@@ -145,9 +146,9 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, err)
 
-		condition := meta.FindStatusCondition(dynakube.Status.Conditions, dynatracev1beta1.ActiveGateVersionConditionType)
+		condition := meta.FindStatusCondition(dynakube.Status.Conditions, conditions.ActiveGateVersionConditionType)
 		require.Equal(t, metav1.ConditionTrue, condition.Status)
-		require.Equal(t, dynatracev1beta1.ReasonUpToDate, condition.Reason)
+		require.Equal(t, conditions.ReasonUpToDate, condition.Reason)
 		require.Equal(t, dkStatus.ActiveGate.VersionStatus.ImageID, condition.Message)
 
 		assert.Equal(t, testActiveGateImage.String(), dkStatus.ActiveGate.VersionStatus.ImageID)

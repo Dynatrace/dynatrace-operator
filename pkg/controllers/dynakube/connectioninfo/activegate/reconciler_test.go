@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
@@ -48,9 +49,9 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
-		condition := meta.FindStatusCondition(dynakube.Status.Conditions, dynatracev1beta1.ActiveGateConnectionInfoConditionType)
+		condition := meta.FindStatusCondition(dynakube.Status.Conditions, conditions.ActiveGateConnectionInfoConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, dynatracev1beta1.ReasonCreated, condition.Reason)
+		assert.Equal(t, conditions.ReasonCreated, condition.Reason)
 
 		assert.Equal(t, testTenantUUID, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
 		assert.Equal(t, testTenantEndpoints, dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints)
@@ -70,9 +71,9 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
-		condition := meta.FindStatusCondition(dynakube.Status.Conditions, dynatracev1beta1.ActiveGateConnectionInfoConditionType)
+		condition := meta.FindStatusCondition(dynakube.Status.Conditions, conditions.ActiveGateConnectionInfoConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, dynatracev1beta1.ReasonCreated, condition.Reason)
+		assert.Equal(t, conditions.ReasonCreated, condition.Reason)
 
 		assert.Equal(t, testTenantUUID, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
 		assert.Equal(t, testTenantEndpoints, dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints)
@@ -91,9 +92,9 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
-		condition := meta.FindStatusCondition(dynakube.Status.Conditions, dynatracev1beta1.ActiveGateConnectionInfoConditionType)
+		condition := meta.FindStatusCondition(dynakube.Status.Conditions, conditions.ActiveGateConnectionInfoConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, dynatracev1beta1.ReasonCreated, condition.Reason)
+		assert.Equal(t, conditions.ReasonCreated, condition.Reason)
 
 		assert.Equal(t, testTenantUUID, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
 		assert.Equal(t, testTenantEndpoints, dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints)
@@ -108,9 +109,9 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.Error(t, err)
 
-		condition := meta.FindStatusCondition(dynakube.Status.Conditions, dynatracev1beta1.ActiveGateConnectionInfoConditionType)
+		condition := meta.FindStatusCondition(dynakube.Status.Conditions, conditions.ActiveGateConnectionInfoConditionType)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
-		assert.Equal(t, dynatracev1beta1.ReasonUnexpectedError, condition.Reason)
+		assert.Equal(t, conditions.ReasonUnexpectedError, condition.Reason)
 		assert.Equal(t, err.Error(), condition.Message)
 	})
 }

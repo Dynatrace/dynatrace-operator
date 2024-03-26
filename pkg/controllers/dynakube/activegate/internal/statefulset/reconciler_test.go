@@ -9,6 +9,7 @@ import (
 	dynafake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
@@ -91,9 +92,9 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, statefulSet)
 		require.NoError(t, err)
 
-		condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, dynatracev1beta1.ActiveGateStatefulSetConditionType)
+		condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, conditions.ActiveGateStatefulSetConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, dynatracev1beta1.ReasonCreated, condition.Reason)
+		assert.Equal(t, conditions.ReasonCreated, condition.Reason)
 		assert.Equal(t, "StatefulSet for routing has been created", condition.Message)
 	})
 	t.Run(`update stateful set`, func(t *testing.T) {
@@ -129,9 +130,9 @@ func TestReconcile(t *testing.T) {
 
 		assert.Equal(t, 1, found)
 
-		condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, dynatracev1beta1.ActiveGateStatefulSetConditionType)
+		condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, conditions.ActiveGateStatefulSetConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, dynatracev1beta1.ReasonCreated, condition.Reason)
+		assert.Equal(t, conditions.ReasonCreated, condition.Reason)
 		assert.Equal(t, "StatefulSet for routing has been created", condition.Message)
 	})
 	t.Run(`stateful set error is logged in condition`, func(t *testing.T) {
@@ -146,9 +147,9 @@ func TestReconcile(t *testing.T) {
 
 		require.Error(t, err)
 
-		condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, dynatracev1beta1.ActiveGateStatefulSetConditionType)
+		condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, conditions.ActiveGateStatefulSetConditionType)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
-		assert.Equal(t, dynatracev1beta1.ReasonError, condition.Reason)
+		assert.Equal(t, conditions.ReasonError, condition.Reason)
 		assert.Equal(t, err.Error(), condition.Message)
 	})
 }

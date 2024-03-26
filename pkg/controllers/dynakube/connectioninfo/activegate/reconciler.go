@@ -6,6 +6,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -42,7 +43,9 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	err := r.dynakube.SetActiveGateConnectionInfoCondition(r.reconcileConnectionInfo(ctx))
+	err := r.reconcileConnectionInfo(ctx)
+	conditions.SetActiveGateConnectionInfoCondition(&r.dynakube.Status.Conditions, err)
+
 	if err != nil {
 		return err
 	}
