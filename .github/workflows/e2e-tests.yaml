@@ -29,6 +29,7 @@ jobs:
         with:
           flc-namespace: dto-daily
           flc-environment: dto-k8s-latest-flc
+          target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
           tenant1-oteltoken: ${{ secrets.TENANT1_OTELTOKEN }}
@@ -50,6 +51,7 @@ jobs:
         with:
           flc-namespace: dto-daily
           flc-environment: dto-ocp-latest-flc
+          target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
           tenant1-oteltoken: ${{ secrets.TENANT1_OTELTOKEN }}
