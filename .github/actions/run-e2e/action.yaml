@@ -1,0 +1,82 @@
+name: Run e2e tests
+description: Runs the e2e test in the specified environment
+inputs:
+  flc-namespace:
+    description: The namespace FLC uses
+    required: true
+  flc-environment:
+    description: The environment FLC uses
+    required: true
+  tenant1-name:
+    description: The name of Tenant 1
+    required: true
+  tenant1-apitoken:
+    description: The API token of Tenant 1
+    required: true
+  tenant1-oteltoken:
+    description: The OTel token of Tenant 1
+    required: true
+  tenant1-oauth-client-id:
+    description: The OAuth client ID of Tenant 1
+    required: true
+  tenant1-oauth-secret:
+    description: The OAuth secret of Tenant 1
+    required: true
+  tenant2-name:
+    description: The name of Tenant 2
+    required: true
+  tenant2-apitoken:
+    description: The API token of Tenant 2
+    required: true
+runs:
+  name: Run in Kubernetes latest (${{ github.event.inputs.target || 'main' }})
+  environment: E2E
+  using: composite
+  env:
+    FLC_NAMESPACE: ${{ inputs.flc-namespace }}
+    FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
+    TARGET_BRANCH: ${{ github.event.inputs.target || 'main' }}
+    TENANT1_NAME: ${{ secrets.tenant1-name }}
+    TENANT1_APITOKEN: ${{ secrets.tenant1-apitoken }}
+    TENANT1_OTELTOKEN: ${{ secrets.tenant1-oteltoken }}
+    TENANT1_OAUTH_CLIENT_ID: ${{ secrets.tenant1-oauth-client-id }}
+    TENANT1_OAUTH_SECRET: ${{ secrets.tenant1-oauth-secret }}
+    TENANT2_NAME: ${{ secrets.tenant2-name }}
+    TENANT2_APITOKEN: ${{ secrets.tenant2-apitoken }}
+  runs-on:
+    - self-hosted
+    - operator-e2e
+  steps:
+    - name: Checkout workflow scripts from ref branch
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        path: ref
+    - name: Checkout target branch
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        ref: ${{ github.event.inputs.target || 'main' }}
+        path: target
+    - name: Set up kubectl
+      uses: azure/setup-kubectl@3e0aec4d80787158d308d7b364cb1b702e7feb7f # v4.0.0
+    - name: Set up go
+      uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+      with:
+        go-version-file: "${{ github.workspace }}/target/go.mod"
+    - name: Set up helm
+      uses: azure/setup-helm@5119fcb9089d432beecbf79bb2c7915207344b78 # v3.5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Install gotestsum
+      run: go install gotest.tools/gotestsum@latest
+    - name: Create cluster
+      run: ref/.github/scripts/create-cluster.sh
+    - name: Run tests
+      run: ref/.github/scripts/run-e2e-tests.sh
+    - name: Destroy cluster
+      run: ref/.github/scripts/destroy-cluster.sh
+      if: always()
+    - name: Publish test results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      with:
+        files: target/results/*.xml
+      if: always()
