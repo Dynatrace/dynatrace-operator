@@ -184,6 +184,9 @@ linters-settings:
       - '1234'
   dupl:
     threshold: 150
+  godot:
+    exclude:
+      - '^\ \+'
 
 linters:
   disable-all: true
