@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -53,13 +54,12 @@ func (r *reconciler) ReconcileOneAgent(ctx context.Context, dynakube *dynatracev
 }
 
 func (r *reconciler) ReconcileActiveGate(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	updaters := []StatusUpdater{
-		newActiveGateUpdater(dynakube, r.apiReader, r.dtClient),
-	}
-	for _, updater := range updaters {
-		if r.needsUpdate(updater, dynakube) {
-			return r.updateVersionStatuses(ctx, updater, dynakube)
-		}
+	updater := newActiveGateUpdater(dynakube, r.apiReader, r.dtClient)
+	if r.needsUpdate(updater, dynakube) {
+		err := r.updateVersionStatuses(ctx, updater, dynakube)
+		conditions.SetActiveGateVersionCondition(&dynakube.Status.Conditions, dynakube.Status.ActiveGate.ImageID, err)
+
+		return err
 	}
 
 	return nil

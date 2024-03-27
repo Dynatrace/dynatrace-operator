@@ -1,6 +1,7 @@
 package statefulset
 
 import (
+	"fmt"
 	"hash/fnv"
 	"reflect"
 	"strconv"
@@ -8,6 +9,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
@@ -19,6 +21,8 @@ import (
 	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -59,9 +63,17 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	err := r.manageStatefulSet(ctx)
 	if err != nil {
 		log.Error(err, "could not reconcile stateful set")
+		conditions.SetActiveGateStatefulSetErrorCondition(&r.dynakube.Status.Conditions, err)
 
 		return errors.WithStack(err)
 	}
+
+	meta.SetStatusCondition(&r.dynakube.Status.Conditions, metav1.Condition{
+		Type:    conditions.ActiveGateStatefulSetConditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  conditions.ReasonCreated,
+		Message: fmt.Sprintf("StatefulSet for %s has been created", r.capability.DisplayName()),
+	})
 
 	return nil
 }
