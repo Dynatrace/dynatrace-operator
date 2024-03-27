@@ -12,13 +12,13 @@ manifests/kubernetes/csi:
 ## Generates a Kubernetes manifest with a CRD
 manifests/kubernetes/core: manifests/crd/helm
 	helm template dynatrace-operator config/helm/chart/default \
-          --namespace dynatrace \
-          --set csidriver.enabled=false \
-          --set installCRD=true \
-          --set platform="kubernetes" \
-          --set manifests=true \
-          --set olm="${OLM}" \
-          --set image="$(IMAGE_URI)" > "$(KUBERNETES_CORE_YAML)"
+		  --namespace dynatrace \
+		  --set csidriver.enabled=false \
+		  --set installCRD=true \
+		  --set platform="kubernetes" \
+		  --set manifests=true \
+		  --set olm="${OLM}" \
+		  --set image="$(IMAGE_URI)" > "$(KUBERNETES_CORE_YAML)"
 
 ## Generates a Kubernetes manifest with a CRD for gke-autopilot
 manifests/kubernetes/gke-autopilot: manifests/crd/helm
