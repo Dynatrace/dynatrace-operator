@@ -1,0 +1,53 @@
+name: Renovate
+on:
+  push:
+    branches:
+      - release-*
+
+jobs:
+  renovate:
+    name: Renovate
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - name: Install Python
+        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
+        with:
+          python-version: '3.12'
+      - name: Install python requirements
+        run: pip install -r hack/requirements.txt
+      - name: Find last 3 release branches
+        run: |
+          git fetch --prune --tags
+          git branch -r --list 'origin/release-*' | sort --version-sort | tail -n 3 | tr -d ' ' > release-branches.txt
+
+          echo latest branches:
+          cat release-branches.txt
+      - name: Update renovate file
+        run: |
+          python3 hack/build/ci/update-renovate-json5.py release-branches.txt .github/renovate.json5
+      - name: Create pull request for adding new release branches to renovate.json5
+        uses: peter-evans/create-pull-request@v6
+        with:
+          base: main
+          delete-branch: true
+          branch: create-pull-request/update-renovate-json5
+          branch-suffix: short-commit-hash
+          add-paths: |
+            .github/renovate.json5
+          title: '[Automatic] Update renovate config for ${{ github.ref }}'
+          labels: 'ci'
+          commit-message: Update renovate.json5
+          committer: GitHub <noreply@github.com>
+          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          body: |
+            # Description
+            Upgrade `renovate.json5` to include last 3 release branches.
+            ## How can this be tested?
+            Check renovate app.
+            ## Checklist
+            - [x] PR is labeled accordingly

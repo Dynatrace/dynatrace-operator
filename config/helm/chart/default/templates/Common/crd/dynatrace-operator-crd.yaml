@@ -4117,7 +4117,7 @@ spec:
               trustedCAs:
                 description: |-
                   Adds custom RootCAs from a configmap. Put the certificate under certs within your configmap.
-                  Note: Applies only to Dynatrace Operator and OneAgent, not to ActiveGate.
+                  Note: Applies to Dynatrace Operator, OneAgent and ActiveGate.
                 type: string
             required:
             - apiUrl
@@ -4425,6 +4425,10 @@ spec:
                 description: 'Enables automatic restarts of EdgeConnect pods in case
                   a new version is available (the default value is: true)'
                 type: boolean
+              caCertsRef:
+                description: Adds custom root certificate from a configmap. Put the
+                  certificate under certs within your configmap.
+                type: string
               customPullSecret:
                 description: Pull secret for your private registry
                 type: string
@@ -4597,6 +4601,28 @@ spec:
                 - clientSecret
                 - endpoint
                 - resource
+                type: object
+              proxy:
+                description: General configurations for proxy settings.
+                properties:
+                  authRef:
+                    description: |-
+                      Secret name which contains the username and password used for authentication with the proxy, using the
+                      "Basic" HTTP authentication scheme.
+                    type: string
+                  host:
+                    description: Server address (hostname or IP address) of the proxy.
+                    type: string
+                  noProxy:
+                    description: |-
+                      NoProxy represents the NO_PROXY or no_proxy environment
+                      variable. It specifies a string that contains comma-separated values
+                      specifying hosts that should be excluded from proxying.
+                    type: string
+                  port:
+                    description: Port of the proxy.
+                    format: int32
+                    type: integer
                 type: object
               replicas:
                 default: 1

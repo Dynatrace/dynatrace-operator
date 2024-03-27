@@ -13,13 +13,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func CreateOrUpdateDaemonSet(kubernetesClient client.Client, logger logd.Logger, desiredDaemonSet *appsv1.DaemonSet) (bool, error) {
+func CreateOrUpdateDaemonSet(ctx context.Context, kubernetesClient client.Client, logger logd.Logger, desiredDaemonSet *appsv1.DaemonSet) (bool, error) {
 	currentDaemonSet, err := getDaemonSet(kubernetesClient, desiredDaemonSet)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			logger.Info("creating new daemonset", "name", desiredDaemonSet.Name)
 
-			return true, kubernetesClient.Create(context.TODO(), desiredDaemonSet)
+			return true, kubernetesClient.Create(ctx, desiredDaemonSet)
 		}
 
 		return false, err
@@ -30,22 +30,22 @@ func CreateOrUpdateDaemonSet(kubernetesClient client.Client, logger logd.Logger,
 	}
 
 	if labels.NotEqual(currentDaemonSet.Spec.Selector.MatchLabels, desiredDaemonSet.Spec.Selector.MatchLabels) {
-		return recreateDaemonSet(kubernetesClient, logger, currentDaemonSet, desiredDaemonSet)
+		return recreateDaemonSet(ctx, kubernetesClient, logger, currentDaemonSet, desiredDaemonSet)
 	}
 
 	logger.Info("updating existing daemonset", "name", desiredDaemonSet.Name)
 
-	if err = kubernetesClient.Update(context.TODO(), desiredDaemonSet); err != nil {
+	if err = kubernetesClient.Update(ctx, desiredDaemonSet); err != nil {
 		return false, err
 	}
 
 	return true, err
 }
 
-func recreateDaemonSet(kubernetesClient client.Client, logger logd.Logger, currentDs, desiredDaemonSet *appsv1.DaemonSet) (bool, error) {
+func recreateDaemonSet(ctx context.Context, kubernetesClient client.Client, logger logd.Logger, currentDs, desiredDaemonSet *appsv1.DaemonSet) (bool, error) {
 	logger.Info("immutable section changed on daemonset, deleting and recreating", "name", desiredDaemonSet.Name)
 
-	err := kubernetesClient.Delete(context.TODO(), currentDs)
+	err := kubernetesClient.Delete(ctx, currentDs)
 	if err != nil {
 		return false, err
 	}
@@ -53,7 +53,7 @@ func recreateDaemonSet(kubernetesClient client.Client, logger logd.Logger, curre
 	logger.Info("deleted daemonset")
 	logger.Info("recreating daemonset", "name", desiredDaemonSet.Name)
 
-	return true, kubernetesClient.Create(context.TODO(), desiredDaemonSet)
+	return true, kubernetesClient.Create(ctx, desiredDaemonSet)
 }
 
 func getDaemonSet(kubernetesClient client.Client, desiredDaemonSet *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {

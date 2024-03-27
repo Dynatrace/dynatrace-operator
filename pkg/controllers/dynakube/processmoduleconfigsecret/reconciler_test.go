@@ -76,8 +76,7 @@ func TestReconcile(t *testing.T) {
 		require.Equal(t, condition.LastTransitionTime, oldTransitionTime)
 
 		// go forward in time => should update again
-		futureTime := metav1.NewTime(time.Now().Add(time.Hour))
-		mockTime.Set(&futureTime)
+		mockTime.Set(time.Now().Add(time.Hour))
 
 		err = reconciler.Reconcile(context.Background())
 		require.NoError(t, err)
@@ -92,7 +91,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("Only runs when required, and cleans up condition", func(t *testing.T) {
 		dynakube := createDynakube(dynatracev1beta1.OneAgentSpec{
 			ClassicFullStack: &dynatracev1beta1.HostInjectSpec{}})
-		conditions.SetSecretCreatedCondition(dynakube.Conditions(), pmcConditionType, "this is a test")
+		conditions.SetSecretCreated(dynakube.Conditions(), pmcConditionType, "this is a test")
 
 		reconciler := NewReconciler(nil, nil, nil, dynakube, scheme.Scheme, timeprovider.New())
 		err := reconciler.Reconcile(context.Background())

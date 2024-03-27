@@ -143,6 +143,43 @@ func TestReconcile(t *testing.T) {
 	})
 }
 
+func TestUpdateVersionStatuses(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("empty version info + failing reconcile => return error", func(t *testing.T) {
+		mockClient := dtclientmock.NewClient(t)
+		versionReconciler := reconciler{
+			dtClient:     mockClient,
+			apiReader:    fake.NewClient(),
+			timeProvider: timeprovider.New().Freeze(),
+		}
+		err := versionReconciler.updateVersionStatuses(ctx, newFailingUpdater(t, &status.VersionStatus{}), &dynatracev1beta1.DynaKube{})
+		require.Error(t, err)
+	})
+
+	t.Run("version info (.Version) set + failing reconcile => return nil", func(t *testing.T) {
+		mockClient := dtclientmock.NewClient(t)
+		versionReconciler := reconciler{
+			dtClient:     mockClient,
+			apiReader:    fake.NewClient(),
+			timeProvider: timeprovider.New().Freeze(),
+		}
+		err := versionReconciler.updateVersionStatuses(ctx, newFailingUpdater(t, &status.VersionStatus{Version: "1.2.3"}), &dynatracev1beta1.DynaKube{})
+		require.NoError(t, err)
+	})
+
+	t.Run("version info (.ImageID) set + failing reconcile => return nil", func(t *testing.T) {
+		mockClient := dtclientmock.NewClient(t)
+		versionReconciler := reconciler{
+			dtClient:     mockClient,
+			apiReader:    fake.NewClient(),
+			timeProvider: timeprovider.New().Freeze(),
+		}
+		err := versionReconciler.updateVersionStatuses(ctx, newFailingUpdater(t, &status.VersionStatus{ImageID: "1.2.3"}), &dynatracev1beta1.DynaKube{})
+		require.NoError(t, err)
+	})
+}
+
 func TestNeedsUpdate(t *testing.T) {
 	timeProvider := timeprovider.New().Freeze()
 
@@ -306,8 +343,7 @@ func setupPullSecret(t *testing.T, fakeClient client.Client, dynakube dynatracev
 }
 
 func changeTime(timeProvider *timeprovider.Provider, duration time.Duration) {
-	newTime := metav1.NewTime(timeProvider.Now().Add(duration))
-	timeProvider.Set(&newTime)
+	timeProvider.Set(timeProvider.Now().Add(duration))
 }
 
 func createTestPullSecret(fakeClient client.Client, dynakube dynatracev1beta1.DynaKube) error {

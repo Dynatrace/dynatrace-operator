@@ -73,7 +73,7 @@ func (updater codeModulesUpdater) IsPublicRegistryEnabled() bool {
 func (updater codeModulesUpdater) LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error) {
 	imgInfo, err := updater.dtClient.GetLatestCodeModulesImage(ctx)
 	if err != nil {
-		conditions.SetDynatraceApiErrorCondition(updater.dynakube.Conditions(), cmConditionType, err)
+		conditions.SetDynatraceApiError(updater.dynakube.Conditions(), cmConditionType, err)
 	}
 
 	return imgInfo, err
@@ -100,7 +100,7 @@ func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error 
 		dtclient.OsUnix, dtclient.InstallerTypePaaS)
 	if err != nil {
 		log.Info("could not get agent paas unix version")
-		conditions.SetDynatraceApiErrorCondition(updater.dynakube.Conditions(), cmConditionType, err)
+		conditions.SetDynatraceApiError(updater.dynakube.Conditions(), cmConditionType, err)
 
 		return err
 	}

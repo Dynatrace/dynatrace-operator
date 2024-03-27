@@ -10,7 +10,7 @@ const (
 	DynatraceApiErrorReason = "DynatraceApiError"
 )
 
-func SetKubeApiErrorCondition(conditions *[]metav1.Condition, conditionType string, err error) {
+func SetKubeApiError(conditions *[]metav1.Condition, conditionType string, err error) {
 	condition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
@@ -20,7 +20,7 @@ func SetKubeApiErrorCondition(conditions *[]metav1.Condition, conditionType stri
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func SetDynatraceApiErrorCondition(conditions *[]metav1.Condition, conditionType string, err error) {
+func SetDynatraceApiError(conditions *[]metav1.Condition, conditionType string, err error) {
 	condition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
