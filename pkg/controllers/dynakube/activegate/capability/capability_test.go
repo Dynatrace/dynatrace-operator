@@ -78,7 +78,7 @@ func TestNewMultiCapability(t *testing.T) {
 }
 
 func TestBuildServiceHostNameForDNSEntryPoint(t *testing.T) {
-	actual := BuildServiceHostName("test-name", "test-component-feature")
+	actual := buildServiceHostName("test-name", "test-component-feature")
 	assert.NotEmpty(t, actual)
 
 	expected := "$(TEST_NAME_TEST_COMPONENT_FEATURE_SERVICE_HOST):$(TEST_NAME_TEST_COMPONENT_FEATURE_SERVICE_PORT)"
@@ -87,12 +87,12 @@ func TestBuildServiceHostNameForDNSEntryPoint(t *testing.T) {
 	testStringName := "this---test_string"
 	testStringFeature := "SHOULD--_--PaRsEcORrEcTlY"
 	expected = "$(THIS___TEST_STRING_SHOULD_____PARSECORRECTLY_SERVICE_HOST):$(THIS___TEST_STRING_SHOULD_____PARSECORRECTLY_SERVICE_PORT)"
-	actual = BuildServiceHostName(testStringName, testStringFeature)
+	actual = buildServiceHostName(testStringName, testStringFeature)
 	assert.Equal(t, expected, actual)
 }
 
 func TestBuildServiceDomainNameForDNSEntryPoint(t *testing.T) {
-	actual := BuildServiceDomainName("test-name", "test-namespace", "test-component-feature")
+	actual := buildServiceDomainName("test-name", "test-namespace", "test-component-feature")
 	assert.NotEmpty(t, actual)
 
 	expected := "test-name-test-component-feature.test-namespace:$(TEST_NAME_TEST_COMPONENT_FEATURE_SERVICE_PORT)"
@@ -102,6 +102,6 @@ func TestBuildServiceDomainNameForDNSEntryPoint(t *testing.T) {
 	testNamespace := "this_is---namespace_string"
 	testStringFeature := "SHOULD--_--PaRsEcORrEcTlY"
 	expected = "this---dynakube_string-SHOULD--_--PaRsEcORrEcTlY.this_is---namespace_string:$(THIS___DYNAKUBE_STRING_SHOULD_____PARSECORRECTLY_SERVICE_PORT)"
-	actual = BuildServiceDomainName(testStringName, testNamespace, testStringFeature)
+	actual = buildServiceDomainName(testStringName, testNamespace, testStringFeature)
 	assert.Equal(t, expected, actual)
 }
