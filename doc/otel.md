@@ -1,4 +1,4 @@
-# Open Telemetry in the operator
+# OpenTelemetry in the operator
 
 *Note:* This guide is still work-in-progress and will evolve as we learn more about OpenTelemetry instrumentation best practices.
 
