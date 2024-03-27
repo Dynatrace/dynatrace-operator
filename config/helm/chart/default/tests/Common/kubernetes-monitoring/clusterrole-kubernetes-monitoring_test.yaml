@@ -85,6 +85,17 @@ tests:
       - contains:
           path: rules
           content:
+            apiGroups:
+              - dynatrace.com
+            resources:
+              - dynakubes
+            verbs:
+              - list
+              - watch
+              - get
+      - contains:
+          path: rules
+          content:
             nonResourceURLs:
               - /metrics
               - /version
