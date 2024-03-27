@@ -55,9 +55,15 @@ func TestReconcile(t *testing.T) {
 			},
 			Spec: edgeconnectv1alpha1.EdgeConnectSpec{
 				ApiServer: "abc12345.dynatrace.com",
+				OAuth: edgeconnectv1alpha1.OAuthSpec{
+					Endpoint:     "https://sso-dev.dynatracelabs.com/sso/oauth2/token",
+					Resource:     "urn:dtenvironment:test12345",
+					ClientSecret: testOauthClientSecret,
+					Provisioner:  false,
+				},
 			},
 		}
-		controller := createFakeClientAndReconciler(t, instance)
+		controller := createFakeClientAndReconciler(t, instance, createClientSecret(testOauthClientSecret, instance.Namespace))
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -75,6 +81,12 @@ func TestReconcile(t *testing.T) {
 			},
 			Spec: edgeconnectv1alpha1.EdgeConnectSpec{
 				ApiServer: "abc12345.dynatrace.com",
+				OAuth: edgeconnectv1alpha1.OAuthSpec{
+					Endpoint:     "https://sso-dev.dynatracelabs.com/sso/oauth2/token",
+					Resource:     "urn:dtenvironment:test12345",
+					ClientSecret: testOauthClientSecret,
+					Provisioner:  false,
+				},
 			},
 			Status: edgeconnectv1alpha1.EdgeConnectStatus{
 				UpdatedTimestamp: metav1.NewTime(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)),
@@ -85,7 +97,7 @@ func TestReconcile(t *testing.T) {
 			},
 		}
 
-		controller := createFakeClientAndReconciler(t, instance)
+		controller := createFakeClientAndReconciler(t, instance, createClientSecret(testOauthClientSecret, instance.Namespace))
 		controller.timeProvider.Freeze()
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
@@ -108,9 +120,15 @@ func TestReconcile(t *testing.T) {
 			},
 			Spec: edgeconnectv1alpha1.EdgeConnectSpec{
 				ApiServer: "abc12345.dynatrace.com",
+				OAuth: edgeconnectv1alpha1.OAuthSpec{
+					Endpoint:     "https://sso-dev.dynatracelabs.com/sso/oauth2/token",
+					Resource:     "urn:dtenvironment:test12345",
+					ClientSecret: testOauthClientSecret,
+					Provisioner:  false,
+				},
 			},
 		}
-		controller := createFakeClientAndReconciler(t, instance)
+		controller := createFakeClientAndReconciler(t, instance, createClientSecret(testOauthClientSecret, instance.Namespace))
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -161,19 +179,19 @@ func TestReconcileProvisionerCreate(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, edgeConnectCR.Finalizers)
 
-		edgeConnectOauthClientID, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: edgeConnectClientSecretName(instance.Name), Namespace: instance.Namespace}, consts.KeyEdgeConnectOauthClientID, log)
+		edgeConnectOauthClientID, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: instance.ClientSecretName(), Namespace: instance.Namespace}, consts.KeyEdgeConnectOauthClientID, log)
 		require.NoError(t, err)
 		assert.Equal(t, testCreatedOauthClientId, edgeConnectOauthClientID)
 
-		edgeConnectOauthClientSecret, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: edgeConnectClientSecretName(instance.Name), Namespace: instance.Namespace}, consts.KeyEdgeConnectOauthClientSecret, log)
+		edgeConnectOauthClientSecret, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: instance.ClientSecretName(), Namespace: instance.Namespace}, consts.KeyEdgeConnectOauthClientSecret, log)
 		require.NoError(t, err)
 		assert.Equal(t, testCreatedOauthClientSecret, edgeConnectOauthClientSecret)
 
-		edgeConnectOauthResource, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: edgeConnectClientSecretName(instance.Name), Namespace: instance.Namespace}, consts.KeyEdgeConnectOauthResource, log)
+		edgeConnectOauthResource, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: instance.ClientSecretName(), Namespace: instance.Namespace}, consts.KeyEdgeConnectOauthResource, log)
 		require.NoError(t, err)
 		assert.Equal(t, testCreatedOauthClientResource, edgeConnectOauthResource)
 
-		edgeConnectId, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: edgeConnectClientSecretName(instance.Name), Namespace: instance.Namespace}, consts.KeyEdgeConnectId, log)
+		edgeConnectId, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: instance.ClientSecretName(), Namespace: instance.Namespace}, consts.KeyEdgeConnectId, log)
 		require.NoError(t, err)
 		assert.Equal(t, testCreatedId, edgeConnectId)
 
@@ -218,19 +236,19 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, edgeConnectCR.Finalizers)
 
-		edgeConnectOauthClientID, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: edgeConnectClientSecretName(instance.Name), Namespace: instance.Namespace}, consts.KeyEdgeConnectOauthClientID, log)
+		edgeConnectOauthClientID, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: instance.ClientSecretName(), Namespace: instance.Namespace}, consts.KeyEdgeConnectOauthClientID, log)
 		require.NoError(t, err)
 		assert.Equal(t, testCreatedOauthClientId, edgeConnectOauthClientID)
 
-		edgeConnectOauthClientSecret, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: edgeConnectClientSecretName(instance.Name), Namespace: instance.Namespace}, consts.KeyEdgeConnectOauthClientSecret, log)
+		edgeConnectOauthClientSecret, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: instance.ClientSecretName(), Namespace: instance.Namespace}, consts.KeyEdgeConnectOauthClientSecret, log)
 		require.NoError(t, err)
 		assert.Equal(t, testCreatedOauthClientSecret, edgeConnectOauthClientSecret)
 
-		edgeConnectOauthResource, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: edgeConnectClientSecretName(instance.Name), Namespace: instance.Namespace}, consts.KeyEdgeConnectOauthResource, log)
+		edgeConnectOauthResource, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: instance.ClientSecretName(), Namespace: instance.Namespace}, consts.KeyEdgeConnectOauthResource, log)
 		require.NoError(t, err)
 		assert.Equal(t, testCreatedOauthClientResource, edgeConnectOauthResource)
 
-		edgeConnectId, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: edgeConnectClientSecretName(instance.Name), Namespace: instance.Namespace}, consts.KeyEdgeConnectId, log)
+		edgeConnectId, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: instance.ClientSecretName(), Namespace: instance.Namespace}, consts.KeyEdgeConnectId, log)
 		require.NoError(t, err)
 		assert.Equal(t, testCreatedId, edgeConnectId)
 
@@ -261,7 +279,7 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 			instance,
 			mockNewEdgeConnectClientRecreate(edgeConnectClient, testRecreatedInvalidId),
 			createOauthSecret(instance.Spec.OAuth.ClientSecret, instance.Namespace),
-			createClientSecret(instance.Name, instance.Namespace),
+			createClientSecret(instance.ClientSecretName(), instance.Namespace),
 		)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
@@ -275,19 +293,19 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, edgeConnectCR.Finalizers)
 
-		edgeConnectOauthClientID, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: edgeConnectClientSecretName(instance.Name), Namespace: instance.Namespace}, consts.KeyEdgeConnectOauthClientID, log)
+		edgeConnectOauthClientID, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: instance.ClientSecretName(), Namespace: instance.Namespace}, consts.KeyEdgeConnectOauthClientID, log)
 		require.NoError(t, err)
 		assert.Equal(t, testCreatedOauthClientId, edgeConnectOauthClientID)
 
-		edgeConnectOauthClientSecret, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: edgeConnectClientSecretName(instance.Name), Namespace: instance.Namespace}, consts.KeyEdgeConnectOauthClientSecret, log)
+		edgeConnectOauthClientSecret, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: instance.ClientSecretName(), Namespace: instance.Namespace}, consts.KeyEdgeConnectOauthClientSecret, log)
 		require.NoError(t, err)
 		assert.Equal(t, testCreatedOauthClientSecret, edgeConnectOauthClientSecret)
 
-		edgeConnectOauthResource, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: edgeConnectClientSecretName(instance.Name), Namespace: instance.Namespace}, consts.KeyEdgeConnectOauthResource, log)
+		edgeConnectOauthResource, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: instance.ClientSecretName(), Namespace: instance.Namespace}, consts.KeyEdgeConnectOauthResource, log)
 		require.NoError(t, err)
 		assert.Equal(t, testCreatedOauthClientResource, edgeConnectOauthResource)
 
-		edgeConnectId, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: edgeConnectClientSecretName(instance.Name), Namespace: instance.Namespace}, consts.KeyEdgeConnectId, log)
+		edgeConnectId, err := k8ssecret.GetDataFromSecretName(controller.apiReader, types.NamespacedName{Name: instance.ClientSecretName(), Namespace: instance.Namespace}, consts.KeyEdgeConnectId, log)
 		require.NoError(t, err)
 		assert.Equal(t, testCreatedId, edgeConnectId)
 
@@ -320,7 +338,7 @@ func TestReconcileProvisionerDelete(t *testing.T) {
 			instance,
 			mockNewEdgeConnectClientDelete(edgeConnectClient),
 			createOauthSecret(instance.Spec.OAuth.ClientSecret, instance.Namespace),
-			createClientSecret(instance.Name, instance.Namespace),
+			createClientSecret(instance.ClientSecretName(), instance.Namespace),
 		)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
@@ -373,7 +391,7 @@ func TestReconcileProvisionerDelete(t *testing.T) {
 			instance,
 			mockNewEdgeConnectClientDeleteNotFoundOnTenant(edgeConnectClient),
 			createOauthSecret(instance.Spec.OAuth.ClientSecret, instance.Namespace),
-			createClientSecret(instance.Name, instance.Namespace),
+			createClientSecret(instance.ClientSecretName(), instance.Namespace),
 		)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
@@ -402,7 +420,7 @@ func TestReconcileProvisionerUpdate(t *testing.T) {
 			instance,
 			mockNewEdgeConnectClientUpdate(edgeConnectClient),
 			createOauthSecret(instance.Spec.OAuth.ClientSecret, instance.Namespace),
-			createClientSecret(instance.Name, instance.Namespace),
+			createClientSecret(instance.ClientSecretName(), instance.Namespace),
 		)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
@@ -427,7 +445,7 @@ func createOauthSecret(name string, namespace string) *corev1.Secret {
 }
 
 func createClientSecret(name string, namespace string) *corev1.Secret {
-	return newSecret(edgeConnectClientSecretName(name), namespace, map[string]string{
+	return newSecret(name, namespace, map[string]string{
 		consts.KeyEdgeConnectId:                testCreatedId,
 		consts.KeyEdgeConnectOauthClientID:     testCreatedOauthClientId,
 		consts.KeyEdgeConnectOauthClientSecret: testCreatedOauthClientSecret,
@@ -458,10 +476,13 @@ func getEdgeConnectCR(apiReader client.Reader, name string, namespace string) (e
 	return edgeConnectCR, err
 }
 
-func createFakeClientAndReconciler(t *testing.T, instance *edgeconnectv1alpha1.EdgeConnect) *Controller {
+func createFakeClientAndReconciler(t *testing.T, instance *edgeconnectv1alpha1.EdgeConnect, objects ...client.Object) *Controller {
 	fakeClient := fake.NewClientWithIndex()
+
 	if instance != nil {
-		fakeClient = fake.NewClientWithIndex(instance)
+		objs := []client.Object{instance}
+		objs = append(objs, objects...)
+		fakeClient = fake.NewClientWithIndex(objs...)
 	}
 
 	mockImageGetter := registrymock.NewImageGetter(t)
@@ -661,7 +682,7 @@ func createEdgeConnectProvisionerCR(finalizers []string, deletionTimestamp *meta
 		Spec: edgeconnectv1alpha1.EdgeConnectSpec{
 			ApiServer: "abc12345.dynatrace.com",
 			OAuth: edgeconnectv1alpha1.OAuthSpec{
-				ClientSecret: "client-secret",
+				ClientSecret: testName + "client",
 				Provisioner:  true,
 			},
 			HostPatterns: hostPatterns,

@@ -1,9 +1,6 @@
 package config
 
 type EdgeConnect struct {
-	Proxy Proxy `yaml:"proxy,omitempty"`
-	OAuth OAuth `yaml:"oauth"`
-
 	// The technical identifier of the EdgeConnect.
 	// This has to match the name that was specified in the configuration added in the app.
 	Name string `yaml:"name"`
@@ -11,12 +8,18 @@ type EdgeConnect struct {
 	// Your environment base URL.
 	ApiEndpointHost string `yaml:"api_endpoint_host"`
 
+	// OAuth related section.
+	OAuth OAuth `yaml:"oauth"`
+
 	// Restricts outgoing HTTP requests to specified hosts.
 	RestrictHostsTo string `yaml:"restrict_hosts_to,omitempty"`
 
 	// For communication over TLS-encrypted channels (HTTPS and secure WebSockets),
 	// EdgeConnect verifies the identity of a host based on its certificate.
 	RootCertificatePaths []string `yaml:"root_certificate_paths,omitempty"`
+
+	// Proxy related section.
+	Proxy Proxy `yaml:"proxy,omitempty"`
 }
 
 type OAuth struct {

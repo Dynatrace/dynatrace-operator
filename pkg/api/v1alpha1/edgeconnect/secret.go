@@ -10,9 +10,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (ec *EdgeConnect) getOAuthClientFromSecret(ctx context.Context, kubeReader client.Reader) (string, string, error) {
-	secretName := ec.Spec.OAuth.ClientSecret
+func (ec *EdgeConnect) ClientSecretName() string {
+	return ec.Name + "-client"
+}
 
+func (ec *EdgeConnect) GetOAuthClientFromSecret(ctx context.Context, kubeReader client.Reader, secretName string) (string, string, error) {
 	var clientSecret corev1.Secret
 
 	err := kubeReader.Get(ctx, client.ObjectKey{Name: secretName, Namespace: ec.Namespace}, &clientSecret)
