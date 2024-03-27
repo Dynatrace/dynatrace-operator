@@ -37,25 +37,6 @@ type Volume struct {
 	MountAttempts int    `json:"mountAttempts"`
 }
 
-// NewVolume returns a new Volume if all fields (except version) are set.
-func NewVolume(id, podName, version, tenantUUID string, mountAttempts int) *Volume {
-	if id == "" || podName == "" || tenantUUID == "" {
-		return nil
-	}
-
-	if mountAttempts < 0 {
-		mountAttempts = 0
-	}
-
-	return &Volume{
-		VolumeID:      id,
-		PodName:       podName,
-		Version:       version,
-		TenantUUID:    tenantUUID,
-		MountAttempts: mountAttempts,
-	}
-}
-
 type OsAgentVolume struct {
 	LastModified *time.Time `json:"lastModified"`
 	VolumeID     string     `json:"volumeID"`
@@ -98,44 +79,4 @@ type Access interface {
 	GetLatestVersions(ctx context.Context) (map[string]bool, error)
 	GetUsedImageDigests(ctx context.Context) (map[string]bool, error)
 	IsImageDigestUsed(ctx context.Context, imageDigest string) (bool, error)
-}
-
-type AccessOverview struct {
-	Volumes        []*Volume        `json:"volumes"`
-	Dynakubes      []*Dynakube      `json:"dynakubes"`
-	OsAgentVolumes []*OsAgentVolume `json:"osAgentVolumes"`
-}
-
-func NewAccessOverview(access Access) (*AccessOverview, error) {
-	ctx := context.Background()
-
-	volumes, err := access.GetAllVolumes(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	dynakubes, err := access.GetAllDynakubes(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	osVolumes, err := access.GetAllOsAgentVolumes(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return &AccessOverview{
-		Volumes:        volumes,
-		Dynakubes:      dynakubes,
-		OsAgentVolumes: osVolumes,
-	}, nil
-}
-
-func LogAccessOverview(access Access) {
-	overview, err := NewAccessOverview(access)
-	if err != nil {
-		log.Error(err, "Failed to get an overview of the stored csi metadata")
-	}
-
-	log.Info("The current overview of the csi metadata", "overview", overview)
 }

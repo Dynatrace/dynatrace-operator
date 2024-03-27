@@ -5,15 +5,14 @@ import (
 	"database/sql"
 )
 
-func emptyMemoryDB() *SqliteAccess {
-	db := SqliteAccess{}
-	_ = db.connect(sqliteDriverName, ":memory:")
+func emptyMemoryDB() *DBConn {
+	db := DBConn{}
 
 	return &db
 }
 
-func FakeMemoryDB() *SqliteAccess {
-	db := SqliteAccess{}
+func FakeMemoryDB() *DBConn {
+	db := DBConn{}
 	ctx := context.Background()
 	_ = db.Setup(ctx, ":memory:")
 	_ = db.createTables(ctx)
@@ -21,7 +20,7 @@ func FakeMemoryDB() *SqliteAccess {
 	return &db
 }
 
-func checkIfTablesExist(db *SqliteAccess) bool {
+func checkIfTablesExist(db *DBConn) bool {
 	var volumesTable string
 
 	row := db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", volumesTableName)
