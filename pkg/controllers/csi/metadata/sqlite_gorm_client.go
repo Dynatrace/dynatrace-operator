@@ -16,24 +16,31 @@ type DBAccess interface {
 
 	CreateTenantConfig(ctx context.Context, tenantConfig *TenantConfig) error
 	UpdateTenantConfig(ctx context.Context, tenantConfig *TenantConfig) error
-	DeleteTenantConfig(ctx context.Context, tenantConfig *TenantConfig) error
-	ReadTenantConfigByTenantUUID(ctx context.Context, uid string) (*TenantConfig, error)
+	DeleteTenantConfig(ctx context.Context, tenantConfig *TenantConfig, cascade bool) error
+	ReadTenantConfigByName(ctx context.Context, tenantUUID string) (*TenantConfig, error)
+	ReadTenantConfigByTenantUUID(ctx context.Context, tenantUUID string) (*TenantConfig, error)
+	ReadTenantConfigs(ctx context.Context) ([]TenantConfig, error)
 
 	CreateCodeModule(ctx context.Context, codeModule *CodeModule) error
 	ReadCodeModuleByVersion(ctx context.Context, version string) (*CodeModule, error)
 	DeleteCodeModule(ctx context.Context, codeModule *CodeModule) error
+	ReadCodeModules(ctx context.Context) ([]CodeModule, error)
+	IsCodeModuleOrphaned(ctx context.Context, codeModule *CodeModule) bool
 
 	CreateOSMount(ctx context.Context, osMount *OSMount) error
 	UpdateOSMount(ctx context.Context, osMount *OSMount) error
 	DeleteOSMount(ctx context.Context, osMount *OSMount) error
 	RestoreOSMount(ctx context.Context, osMount *OSMount) error
-	ReadOSMountByTenantUUID(ctx context.Context, tenantUUID string) (*OSMount, error)
+	ReadOSMounts(ctx context.Context) ([]OSMount, error)
+	ReadOSMount(ctx context.Context, osMount OSMount) (*OSMount, error)
 
 	CreateAppMount(ctx context.Context, appMount *AppMount) error
 	UpdateAppMount(ctx context.Context, appMount *AppMount) error
 	DeleteAppMount(ctx context.Context, appMount *AppMount) error
-	ReadAppMountByVolumeMetaID(ctx context.Context, volumeMetaID string) (*AppMount, error)
+	ReadAppMount(ctx context.Context, appMount AppMount) (*AppMount, error)
 	ReadAppMounts(ctx context.Context) ([]AppMount, error)
+
+	ReadVolumeMetas(ctx context.Context) ([]VolumeMeta, error)
 }
 
 type DBConn struct {
@@ -99,8 +106,25 @@ func (conn *DBConn) UpdateTenantConfig(ctx context.Context, tenantConfig *Tenant
 	return conn.db.WithContext(ctx).Updates(tenantConfig).Error
 }
 
-func (conn *DBConn) DeleteTenantConfig(ctx context.Context, tenantConfig *TenantConfig) error {
-	return conn.db.WithContext(ctx).Delete(tenantConfig).Error
+func (conn *DBConn) DeleteTenantConfig(ctx context.Context, tenantConfig *TenantConfig, cascade bool) error {
+	err := conn.db.WithContext(ctx).First(tenantConfig).Error
+	if err != nil {
+		return err
+	}
+
+	codeModuleVersion := tenantConfig.DownloadedCodeModuleVersion
+
+	err = conn.db.WithContext(ctx).Delete(tenantConfig).Error
+	if err != nil {
+		return err
+	}
+
+	if cascade {
+		if conn.IsCodeModuleOrphaned(ctx, &CodeModule{Version: codeModuleVersion}) {
+			err = conn.DeleteCodeModule(ctx, &CodeModule{Version: codeModuleVersion})
+		}
+	}
+	return err
 }
 
 func (conn *DBConn) CreateCodeModule(ctx context.Context, codeModule *CodeModule) error {
@@ -127,12 +151,41 @@ func (conn *DBConn) DeleteCodeModule(ctx context.Context, codeModule *CodeModule
 	return conn.db.WithContext(ctx).Delete(codeModule).Error
 }
 
-func (conn *DBConn) ReadTenantConfigByTenantUUID(ctx context.Context, uid string) (*TenantConfig, error) {
-	if uid == "" {
+func (conn *DBConn) ReadCodeModules(ctx context.Context) ([]CodeModule, error) {
+	var codeModules []CodeModule
+
+	result := conn.db.WithContext(ctx).Find(&codeModules)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return codeModules, nil
+}
+
+func (conn *DBConn) IsCodeModuleOrphaned(ctx context.Context, codeModule *CodeModule) bool {
+
+	var tenantConfigResults []*TenantConfig
+	conn.db.WithContext(ctx).Where(&TenantConfig{DownloadedCodeModuleVersion: codeModule.Version}).Find(tenantConfigResults)
+
+	if tenantConfigResults == nil || len(tenantConfigResults) == 0 {
+
+		var appMountResults []*AppMount
+		conn.db.WithContext(ctx).Where(&AppMount{CodeModule: CodeModule{Version: codeModule.Version}}).Find(appMountResults)
+
+		if appMountResults == nil || len(appMountResults) == 0 {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (conn *DBConn) ReadTenantConfigByName(ctx context.Context, name string) (*TenantConfig, error) {
+	if name == "" {
 		return nil, errors.New("error")
 	} // TODO: check will be obsolete with move to sql.NullString
 
-	tenantConfig := &TenantConfig{TenantUUID: uid}
+	tenantConfig := &TenantConfig{Name: name}
 
 	result := conn.db.WithContext(ctx).Where(tenantConfig).First(tenantConfig)
 	if result.Error != nil {
@@ -140,6 +193,32 @@ func (conn *DBConn) ReadTenantConfigByTenantUUID(ctx context.Context, uid string
 	}
 
 	return tenantConfig, nil
+}
+
+func (conn *DBConn) ReadTenantConfigByTenantUUID(ctx context.Context, tenantUUID string) (*TenantConfig, error) {
+	if tenantUUID == "" {
+		return nil, errors.New("error")
+	} // TODO: check will be obsolete with move to sql.NullString
+
+	tenantConfig := &TenantConfig{TenantUUID: tenantUUID}
+
+	result := conn.db.WithContext(ctx).Where(tenantConfig).First(tenantConfig)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return tenantConfig, nil
+}
+
+func (conn *DBConn) ReadTenantConfigs(ctx context.Context) ([]TenantConfig, error) {
+	var tenantConfigs []TenantConfig
+
+	result := conn.db.WithContext(ctx).Find(&tenantConfigs)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return tenantConfigs, nil
 }
 
 func (conn *DBConn) CreateOSMount(ctx context.Context, osMount *OSMount) error {
@@ -167,6 +246,17 @@ func (conn *DBConn) RestoreOSMount(ctx context.Context, osMount *OSMount) error 
 	osMount.DeletedAt.Valid = false
 
 	return conn.db.WithContext(ctx).Unscoped().Updates(osMount).Error
+}
+
+func (conn *DBConn) ReadOSMounts(ctx context.Context) ([]OSMount, error) {
+	var osMounts []OSMount
+
+	result := conn.db.WithContext(ctx).Preload("VolumeMeta").Find(&osMounts)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return osMounts, nil
 }
 
 func (conn *DBConn) ReadOSMountByTenantUUID(ctx context.Context, tenantUUID string) (*OSMount, error) {
@@ -253,4 +343,69 @@ func (conn *DBConn) DeleteAppMount(ctx context.Context, appMount *AppMount) erro
 	}
 
 	return conn.db.WithContext(ctx).Delete(appMount).Error
+}
+
+func (conn *DBConn) ReadVolumeMetas(ctx context.Context) ([]VolumeMeta, error) {
+	var volumeMetas []VolumeMeta
+
+	result := conn.db.WithContext(ctx).Preload("VolumeMeta").Find(&volumeMetas)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return volumeMetas, nil
+}
+
+type AccessOverview struct {
+	VolumeMetas   []VolumeMeta   `json:"volumeMetas"`
+	AppMounts     []AppMount     `json:"appMounts"`
+	TenantConfigs []TenantConfig `json:"tenantConfigs"`
+	CodeModules   []CodeModule   `json:"codeModules"`
+	OSMounts      []OSMount      `json:"osMounts"`
+}
+
+func NewAccessOverview(access DBAccess) (*AccessOverview, error) {
+	ctx := context.Background()
+
+	volumeMetas, err := access.ReadVolumeMetas(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	appMounts, err := access.ReadAppMounts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	tenantConfigs, err := access.ReadTenantConfigs(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	codeModules, err := access.ReadCodeModules(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	osMounts, err := access.ReadOSMounts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AccessOverview{
+		VolumeMetas:   volumeMetas,
+		AppMounts:     appMounts,
+		TenantConfigs: tenantConfigs,
+		CodeModules:   codeModules,
+		OSMounts:      osMounts,
+	}, nil
+}
+
+func LogAccessOverview(access DBAccess) {
+	overview, err := NewAccessOverview(access)
+	if err != nil {
+		log.Error(err, "Failed to get an overview of the stored csi metadata")
+	}
+
+	log.Info("The current overview of the csi metadata", "overview", overview)
 }

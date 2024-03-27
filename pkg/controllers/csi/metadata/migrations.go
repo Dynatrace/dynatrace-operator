@@ -21,8 +21,7 @@ func migrateDynakubes(tx *gorm.DB) error {
 		}
 
 		tc := TenantConfig{
-			Name: d.Name,
-
+			Name:                        d.Name,
 			TenantUUID:                  d.TenantUUID,
 			ConfigDirPath:               pr.AgentConfigDir(d.TenantUUID, d.Name),
 			DownloadedCodeModuleVersion: version,

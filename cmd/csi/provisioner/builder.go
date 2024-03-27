@@ -127,7 +127,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		access, err := metadata.NewAccess(signalHandler, dtcsi.MetadataAccessPath)
+		access, err := metadata.NewDBAccess(dtcsi.MetadataAccessPath)
 		if err != nil {
 			return err
 		}

@@ -36,7 +36,7 @@ import (
 	"k8s.io/utils/mount"
 )
 
-func NewAppVolumePublisher(fs afero.Afero, mounter mount.Interface, db metadata.Access, path metadata.PathResolver) csivolumes.Publisher {
+func NewAppVolumePublisher(fs afero.Afero, mounter mount.Interface, db metadata.DBAccess, path metadata.PathResolver) csivolumes.Publisher {
 	return &AppVolumePublisher{
 		fs:      fs,
 		mounter: mounter,
@@ -48,7 +48,7 @@ func NewAppVolumePublisher(fs afero.Afero, mounter mount.Interface, db metadata.
 type AppVolumePublisher struct {
 	fs      afero.Afero
 	mounter mount.Interface
-	db      metadata.Access
+	db      metadata.DBAccess
 	path    metadata.PathResolver
 }
 
@@ -100,13 +100,13 @@ func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volume
 	if volume.Version == "" {
 		log.Info("requester has a dummy volume, no node-level unmount is needed")
 
-		return &csi.NodeUnpublishVolumeResponse{}, publisher.db.DeleteVolume(ctx, volume.VolumeID)
+		return &csi.NodeUnpublishVolumeResponse{}, publisher.db.DeleteOSMount(ctx, &metadata.OSMount{VolumeMeta: metadata.VolumeMeta{ID: volume.VolumeID}})
 	}
 
 	overlayFSPath := publisher.path.AgentRunDirForVolume(volume.TenantUUID, volumeInfo.VolumeID)
 	publisher.umountOneAgent(volumeInfo.TargetPath, overlayFSPath)
 
-	if err = publisher.db.DeleteVolume(ctx, volume.VolumeID); err != nil {
+	if err = publisher.db.DeleteOSMount(ctx, &metadata.OSMount{VolumeMeta: metadata.VolumeMeta{ID: volume.VolumeID}}); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -124,12 +124,12 @@ func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volume
 }
 
 func (publisher *AppVolumePublisher) CanUnpublishVolume(ctx context.Context, volumeInfo *csivolumes.VolumeInfo) (bool, error) {
-	volume, err := publisher.loadVolume(ctx, volumeInfo.VolumeID)
+	osMount, err := publisher.db.ReadOSMountByTenantUUID(ctx, volumeInfo.VolumeID)
 	if err != nil {
-		return false, status.Error(codes.Internal, "failed to get volume info from database: "+err.Error())
+		return false, err
 	}
 
-	return volume != nil, nil
+	return osMount != nil, nil
 }
 
 func (publisher *AppVolumePublisher) fireVolumeUnpublishedMetric(volume metadata.Volume) {
@@ -270,45 +270,40 @@ func (publisher *AppVolumePublisher) ensureMountSteps(ctx context.Context, bindC
 }
 
 func (publisher *AppVolumePublisher) hasTooManyMountAttempts(ctx context.Context, bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) (bool, error) {
-	volume, err := publisher.loadVolume(ctx, volumeCfg.VolumeID)
+	osMount, err := publisher.db.ReadOSMountByTenantUUID(ctx, bindCfg.TenantUUID)
 	if err != nil {
 		return false, err
 	}
 
-	if volume == nil {
-		volume = createNewVolume(bindCfg, volumeCfg)
+	if osMount == nil {
+		osMount = createNewOSMount(bindCfg, volumeCfg)
 	}
 
-	if volume.MountAttempts > bindCfg.MaxMountAttempts {
+	if int(osMount.MountAttempts) > bindCfg.MaxMountAttempts {
 		return true, nil
 	}
 
-	volume.MountAttempts += 1
+	osMount.MountAttempts += 1
 
-	return false, publisher.db.InsertVolume(ctx, volume)
+	return false, publisher.db.CreateOSMount(ctx, osMount)
 }
 
 func (publisher *AppVolumePublisher) storeVolume(ctx context.Context, bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
-	volume := createNewVolume(bindCfg, volumeCfg)
-	log.Info("inserting volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
+	osMount := createNewOSMount(bindCfg, volumeCfg)
+	log.Info("inserting OSMont: %v", osMount)
 
-	return publisher.db.InsertVolume(ctx, volume)
+	return publisher.db.CreateOSMount(ctx, osMount)
 }
 
-func (publisher *AppVolumePublisher) loadVolume(ctx context.Context, volumeID string) (*metadata.Volume, error) {
-	volume, err := publisher.db.GetVolume(ctx, volumeID)
-	if err != nil {
-		return nil, err
+func createNewOSMount(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) *metadata.OSMount {
+	pr := metadata.PathResolver{RootDir: dtcsi.DataPath}
+
+	osMount := metadata.OSMount{
+		VolumeMeta: metadata.VolumeMeta{
+			PodName: volumeCfg.PodName,
+		},
+		TenantUUID: bindCfg.TenantUUID,
+		Location:   pr.AgentRunDirForVolume(bindCfg.TenantUUID, volumeCfg.VolumeID),
 	}
-
-	return volume, nil
-}
-
-func createNewVolume(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) *metadata.Volume {
-	version := bindCfg.Version
-	if bindCfg.ImageDigest != "" {
-		version = bindCfg.ImageDigest
-	}
-
-	return metadata.NewVolume(volumeCfg.VolumeID, volumeCfg.PodName, version, bindCfg.TenantUUID, 0)
+	return &osMount
 }

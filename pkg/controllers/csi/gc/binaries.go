@@ -8,47 +8,26 @@ import (
 	"github.com/spf13/afero"
 )
 
-func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, tenantUUID string) {
+func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context) {
 	fs := &afero.Afero{Fs: gc.fs}
 
 	gcRunsMetric.Inc()
 
-	usedVersions, err := gc.db.GetUsedVersions(ctx, tenantUUID)
+	codeModules, err := gc.db.ReadCodeModules(ctx)
 	if err != nil {
-		log.Info("failed to get used versions", "error", err)
-
+		log.Error(err, "failed to read codemodules")
 		return
 	}
+	for _, codeModule := range codeModules {
+		if gc.db.IsCodeModuleOrphaned(ctx, &codeModule) {
+			removeUnusedVersion(fs, codeModule.Location)
 
-	log.Info("got all used versions (in deprecated location)", "tenantUUID", tenantUUID, "len(usedVersions)", len(usedVersions))
-
-	storedVersions, err := gc.getStoredVersions(fs, tenantUUID)
-	if err != nil {
-		log.Info("failed to get stored versions", "error", err)
-
-		return
-	}
-
-	log.Info("got all stored versions (in deprecated location)", "tenantUUID", tenantUUID, "len(storedVersions)", len(storedVersions))
-
-	setAgentBins, err := gc.db.GetLatestVersions(ctx)
-	if err != nil {
-		log.Error(err, "failed to get the set image digests")
-	}
-
-	for _, version := range storedVersions {
-		_, isPinnedVersion := setAgentBins[version]
-
-		shouldDelete := shouldDeleteVersion(version, usedVersions) && !isPinnedVersion
-		if !shouldDelete {
-			log.Info("skipped, version should not be deleted", "version", version)
-
-			continue
+			err := gc.db.DeleteCodeModule(ctx, &codeModule)
+			if err != nil {
+				log.Error(err, "failed to delete codemodule")
+				return
+			}
 		}
-
-		binaryPath := gc.path.AgentBinaryDirForVersion(tenantUUID, version)
-		log.Info("deleting unused version (in deprecated location)", "version", version, "path", binaryPath)
-		removeUnusedVersion(fs, binaryPath)
 	}
 }
 

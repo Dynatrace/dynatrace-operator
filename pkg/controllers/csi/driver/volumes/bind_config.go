@@ -17,22 +17,22 @@ type BindConfig struct {
 	MaxMountAttempts int
 }
 
-func NewBindConfig(ctx context.Context, access metadata.Access, volumeCfg *VolumeConfig) (*BindConfig, error) {
-	dynakube, err := access.GetDynakube(ctx, volumeCfg.DynakubeName)
+func NewBindConfig(ctx context.Context, access metadata.DBAccess, volumeCfg *VolumeConfig) (*BindConfig, error) {
+	tenantConfig, err := access.ReadTenantConfigByName(ctx, volumeCfg.DynakubeName)
 	if err != nil {
 		return nil, status.Error(codes.Unavailable, fmt.Sprintf("failed to extract tenant for DynaKube %s: %s", volumeCfg.DynakubeName, err.Error()))
 	}
 
-	if dynakube == nil {
+	if tenantConfig == nil {
 		return nil, status.Error(codes.Unavailable, fmt.Sprintf("dynakube (%s) is missing from metadata database", volumeCfg.DynakubeName))
 	}
 
 	return &BindConfig{
-		TenantUUID:       dynakube.TenantUUID,
-		Version:          dynakube.LatestVersion,
-		ImageDigest:      dynakube.ImageDigest,
-		DynakubeName:     dynakube.Name,
-		MaxMountAttempts: dynakube.MaxFailedMountAttempts,
+		TenantUUID:       tenantConfig.TenantUUID,
+		Version:          tenantConfig.DownloadedCodeModuleVersion,
+		ImageDigest:      tenantConfig.DownloadedCodeModuleVersion, // ?
+		DynakubeName:     tenantConfig.Name,
+		MaxMountAttempts: int(tenantConfig.MaxFailedMountAttempts),
 	}, nil
 }
 
