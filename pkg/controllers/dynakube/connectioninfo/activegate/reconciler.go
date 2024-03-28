@@ -43,6 +43,18 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
+	if !r.dynakube.NeedsActiveGate() {
+		r.dynakube.Status.ActiveGate.ConnectionInfoStatus = dynatracev1beta1.ActiveGateConnectionInfoStatus{}
+		query := k8ssecret.NewQuery(ctx, r.client, r.apiReader, log)
+
+		err := query.Delete(r.dynakube.ActivegateTenantSecret(), r.dynakube.Namespace)
+		if err != nil {
+			log.Error(err, "failed to clean-up ActiveGate tenant-secret")
+		}
+
+		return nil // clean-up shouldn't cause a failure
+	}
+
 	oldStatus := r.dynakube.Status.DeepCopy()
 
 	err := r.reconcileConnectionInfo(ctx)

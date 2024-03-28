@@ -87,13 +87,6 @@ type Reconciler struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !r.dynakube.NeedsOneAgent() {
-		log.Info("removing OneAgent daemonSet")
-		meta.RemoveStatusCondition(r.dynakube.Conditions(), oaConditionType)
-
-		return r.removeOneAgentDaemonSet(ctx, r.dynakube)
-	}
-
 	log.Info("reconciling OneAgent")
 
 	err := r.versionReconciler.ReconcileOneAgent(ctx, r.dynakube)
@@ -112,6 +105,13 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	if err != nil {
 		return err
+	}
+
+	if !r.dynakube.NeedsOneAgent() {
+		log.Info("removing OneAgent daemonSet")
+		meta.RemoveStatusCondition(r.dynakube.Conditions(), oaConditionType)
+
+		return r.removeOneAgentDaemonSet(ctx, r.dynakube)
 	}
 
 	log.Info("At least one communication host is provided, deploying OneAgent")

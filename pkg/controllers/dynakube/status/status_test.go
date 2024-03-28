@@ -19,6 +19,7 @@ const (
 
 func TestSetDynakubeStatus(t *testing.T) {
 	ctx := context.Background()
+
 	t.Run("set status", func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{}
 		clt := fake.NewClient(&corev1.Namespace{

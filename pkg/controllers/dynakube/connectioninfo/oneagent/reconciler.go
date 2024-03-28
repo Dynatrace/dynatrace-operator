@@ -48,8 +48,15 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	if !r.dynakube.NeedAppInjection() && !r.dynakube.NeedsOneAgent() {
 		meta.RemoveStatusCondition(r.dynakube.Conditions(), oaConnectionInfoConditionType)
 		r.dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta1.OneAgentConnectionInfoStatus{}
-		// TODO: Delete secret if there
-		return nil
+
+		query := k8ssecret.NewQuery(ctx, r.client, r.apiReader, log)
+		err := query.Delete(r.dynakube.OneagentTenantSecret(), r.dynakube.Namespace)
+
+		if err != nil {
+			log.Error(err, "failed to clean-up OneAgent tenant-secret")
+		}
+
+		return nil // clean-up shouldn't cause a failure
 	}
 
 	oldStatus := r.dynakube.Status.DeepCopy()
