@@ -83,12 +83,12 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if r.dynakube.NeedsActiveGate() {
-		err = r.versionReconciler.ReconcileActiveGate(ctx, r.dynakube)
-		if err != nil {
-			return err
-		}
+	err = r.versionReconciler.ReconcileActiveGate(ctx, r.dynakube)
+	if err != nil {
+		return err
+	}
 
+	if r.dynakube.NeedsActiveGate() {
 		if r.istioReconciler != nil {
 			err = r.istioReconciler.ReconcileActiveGateCommunicationHosts(ctx, r.dynakube)
 			if err != nil {

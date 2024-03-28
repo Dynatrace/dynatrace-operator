@@ -35,6 +35,7 @@ func (updater codeModulesUpdater) IsEnabled() bool {
 		return true
 	}
 
+	updater.dynakube.Status.CodeModules.VersionStatus = status.VersionStatus{}
 	_ = meta.RemoveStatusCondition(updater.dynakube.Conditions(), cmConditionType)
 
 	return false
