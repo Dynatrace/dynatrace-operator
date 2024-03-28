@@ -56,7 +56,6 @@ func Add(mgr manager.Manager, _ string) error {
 	return NewController(mgr, string(kubeSysUID)).SetupWithManager(mgr)
 }
 
-// NewController returns a new ReconcileDynaKube
 func NewController(mgr manager.Manager, clusterID string) *Controller {
 	return NewDynaKubeController(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetScheme(), mgr.GetConfig(), clusterID)
 }
@@ -73,7 +72,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
 		istioClientBuilder:     istio.NewClient,
 		registryClientBuilder:  registry.NewClient,
-		// move these builders after refactoring the reconciler logic of the controller
+
 		deploymentMetadataReconcilerBuilder: deploymentmetadata.NewReconciler,
 		activeGateReconcilerBuilder:         activegate.NewReconciler,
 		oneAgentReconcilerBuilder:           oneagent.NewReconciler,
@@ -242,7 +241,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
-	err = status.SetKubeSystemUUIDInStatus(ctx, dynakube, controller.apiReader) // TODO: We should only do this once, as it shouldn't change overtime
+	err = status.SetKubeSystemUUIDInStatus(ctx, dynakube, controller.apiReader)
 	if err != nil {
 		log.Info("could not set kube-system UUID in Dynakube status")
 

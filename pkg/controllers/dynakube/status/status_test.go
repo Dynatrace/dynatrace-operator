@@ -18,7 +18,8 @@ const (
 )
 
 func TestSetDynakubeStatus(t *testing.T) {
-	t.Run(`set status`, func(t *testing.T) {
+	ctx := context.Background()
+	t.Run("set status", func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{}
 		clt := fake.NewClient(&corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
@@ -26,16 +27,25 @@ func TestSetDynakubeStatus(t *testing.T) {
 				UID:  testUUID,
 			},
 		})
-		err := SetKubeSystemUUIDInStatus(context.Background(), instance, clt)
+		err := SetKubeSystemUUIDInStatus(ctx, instance, clt)
 
 		require.NoError(t, err)
 		assert.Equal(t, testUUID, instance.Status.KubeSystemUUID)
 	})
-	t.Run(`error querying kube system uid`, func(t *testing.T) {
+	t.Run("error querying kube system uid", func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{}
 		clt := fake.NewClient()
 
-		err := SetKubeSystemUUIDInStatus(context.Background(), instance, clt)
+		err := SetKubeSystemUUIDInStatus(ctx, instance, clt)
 		require.EqualError(t, err, "namespaces \"kube-system\" not found")
+	})
+
+	t.Run("don't query kube system uid if already set", func(t *testing.T) {
+		instance := &dynatracev1beta1.DynaKube{}
+		instance.Status.KubeSystemUUID = testUUID
+		clt := fake.NewClient()
+
+		err := SetKubeSystemUUIDInStatus(ctx, instance, clt)
+		require.NoError(t, err)
 	})
 }
