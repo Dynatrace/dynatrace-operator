@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -47,7 +48,7 @@ func TestReconcile(t *testing.T) {
 
 		dynakube.Spec = dynatracev1beta1.DynaKubeSpec{}
 
-		fakeClient := fake.NewClient()
+		fakeClient := fake.NewClient(&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dynakube.OneagentTenantSecret(), Namespace: dynakube.Namespace}})
 		dtc := dtclientmock.NewClient(t)
 
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc, dynakube)
@@ -57,6 +58,11 @@ func TestReconcile(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*dynakube.Conditions(), oaConnectionInfoConditionType)
 		require.Nil(t, condition)
+
+		var actualSecret corev1.Secret
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dynakube.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		require.Error(t, err)
+		assert.True(t, k8serrors.IsNotFound(err))
 	})
 
 	t.Run("does not cleanup when only host oneagent is needed", func(t *testing.T) {
@@ -129,7 +135,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, getTestCommunicationHosts(), dynakube.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts)
 
 		var actualSecret corev1.Secret
-		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: dynakube.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dynakube.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 
@@ -163,7 +169,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, testTenantEndpoints, dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints)
 
 		var actualSecret corev1.Secret
-		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: dynakube.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dynakube.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 
@@ -193,7 +199,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, testOutdated, dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints)
 
 		var actualSecret corev1.Secret
-		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: dynakube.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dynakube.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testOutdated), actualSecret.Data[connectioninfo.TenantTokenKey])
 
@@ -225,7 +231,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, testTenantEndpoints, dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints)
 
 		var actualSecret corev1.Secret
-		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: dynakube.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dynakube.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 
@@ -258,7 +264,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, testTenantEndpoints, dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints)
 
 		var actualSecret corev1.Secret
-		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: dynakube.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dynakube.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 

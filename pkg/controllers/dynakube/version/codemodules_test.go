@@ -125,7 +125,15 @@ func TestCodeModulesUseDefault(t *testing.T) {
 
 func TestCodeModulesIsEnabled(t *testing.T) {
 	t.Run("cleans up condition if not enabled", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{}
+		dynakube := &dynatracev1beta1.DynaKube{
+			Status: dynatracev1beta1.DynaKubeStatus{
+				CodeModules: dynatracev1beta1.CodeModulesStatus{
+					VersionStatus: status.VersionStatus{
+						Version: "prev",
+					},
+				},
+			},
+		}
 		setVerifiedCondition(dynakube.Conditions(), cmConditionType)
 
 		updater := newCodeModulesUpdater(dynakube, nil)
@@ -135,6 +143,8 @@ func TestCodeModulesIsEnabled(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*dynakube.Conditions(), cmConditionType)
 		assert.Nil(t, condition)
+
+		assert.Empty(t, updater.Target())
 	})
 }
 

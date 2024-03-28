@@ -33,7 +33,13 @@ func (updater activeGateUpdater) Name() string {
 }
 
 func (updater activeGateUpdater) IsEnabled() bool {
-	return updater.dynakube.NeedsActiveGate()
+	if updater.dynakube.NeedsActiveGate() {
+		return true
+	}
+
+	updater.dynakube.Status.ActiveGate.VersionStatus = status.VersionStatus{}
+
+	return false
 }
 
 func (updater *activeGateUpdater) Target() *status.VersionStatus {

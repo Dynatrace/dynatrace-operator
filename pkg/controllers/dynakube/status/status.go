@@ -8,7 +8,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func SetKubeSystemUUIDInStatus(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader) error {
+func SetKubeSystemUUIDInStatus(ctx context.Context, dk *dynatracev1beta1.DynaKube, apiReader client.Reader) error {
+	// The UUID of the kube-system namespace should never change
+	if dk.Status.KubeSystemUUID != "" {
+		return nil
+	}
+
 	uid, err := kubesystem.GetUID(ctx, apiReader)
 	if err != nil {
 		log.Info("could not get cluster ID")
@@ -16,7 +21,7 @@ func SetKubeSystemUUIDInStatus(ctx context.Context, dynakube *dynatracev1beta1.D
 		return err
 	}
 
-	dynakube.Status.KubeSystemUUID = string(uid)
+	dk.Status.KubeSystemUUID = string(uid)
 
 	return nil
 }

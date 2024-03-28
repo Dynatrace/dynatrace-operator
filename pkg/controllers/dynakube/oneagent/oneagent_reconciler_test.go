@@ -48,10 +48,12 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient(dynakube, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dynakube.OneAgentDaemonsetName(), Namespace: dynakube.Namespace}})
 
 		reconciler := &Reconciler{
-			client:    fakeClient,
-			apiReader: fakeClient,
-			scheme:    scheme.Scheme,
-			dynakube:  dynakube,
+			client:                   fakeClient,
+			apiReader:                fakeClient,
+			scheme:                   scheme.Scheme,
+			dynakube:                 dynakube,
+			versionReconciler:        createVersionReconcilerMock(t),
+			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		}
 
 		err := reconciler.Reconcile(ctx)
@@ -70,10 +72,12 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient(dynakube)
 
 		reconciler := &Reconciler{
-			client:    fakeClient,
-			apiReader: fakeClient,
-			scheme:    scheme.Scheme,
-			dynakube:  dynakube,
+			client:                   fakeClient,
+			apiReader:                fakeClient,
+			scheme:                   scheme.Scheme,
+			dynakube:                 dynakube,
+			versionReconciler:        createVersionReconcilerMock(t),
+			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		}
 
 		err := reconciler.Reconcile(ctx)

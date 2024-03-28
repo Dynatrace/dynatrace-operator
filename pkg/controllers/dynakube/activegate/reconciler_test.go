@@ -90,6 +90,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		// remove AG from spec
 		instance.Spec.ActiveGate = dynatracev1beta1.ActiveGateSpec{}
+		r.connectionReconciler = createConnectionInfoReconcilerMock(t)
+		r.versionReconciler = createVersionReconcilerMock(t)
 		err = r.Reconcile(context.Background())
 		require.NoError(t, err)
 
