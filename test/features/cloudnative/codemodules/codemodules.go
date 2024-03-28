@@ -48,7 +48,7 @@ import (
 const (
 	codeModulesVersion = "1.246.0.20220627-183412"
 	codeModulesImage   = "quay.io/dynatrace/codemodules:" + codeModulesVersion
-	diskUsageKiBDelta  = 100000
+	diskUsageKiBDelta  = 1000000
 
 	dataPath                 = "/data/"
 	provisionerContainerName = "provisioner"
