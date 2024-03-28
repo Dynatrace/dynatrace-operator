@@ -2,6 +2,7 @@ package activegate
 
 import (
 	"context"
+
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
@@ -44,7 +45,6 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 func (r *reconciler) Reconcile(ctx context.Context) error {
 	if !r.dynakube.NeedsActiveGate() {
 		// TODO: Add check to only clean up if condition is not nil (condition is added in another change)
-
 		r.dynakube.Status.ActiveGate.ConnectionInfoStatus = dynatracev1beta1.ActiveGateConnectionInfoStatus{}
 		query := k8ssecret.NewQuery(ctx, r.client, r.apiReader, log)
 
