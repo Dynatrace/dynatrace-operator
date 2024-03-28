@@ -44,16 +44,6 @@ func TestAddReadOnlyCSIVolumeMounts(t *testing.T) {
 	})
 }
 
-func TestAddCertVolumeMounts(t *testing.T) {
-	t.Run("should add cert volume mounts", func(t *testing.T) {
-		container := &corev1.Container{}
-
-		addCertVolumeMounts(container)
-		require.Len(t, container.VolumeMounts, 1)
-		assert.Equal(t, customCertFileName, container.VolumeMounts[0].SubPath)
-	})
-}
-
 func TestAddCurlOptionsVolumeMount(t *testing.T) {
 	t.Run("should add cert volume mounts", func(t *testing.T) {
 		container := &corev1.Container{}
@@ -70,13 +60,13 @@ func TestAddInitVolumeMounts(t *testing.T) {
 		container := &corev1.Container{}
 
 		addInitVolumeMounts(container, *getTestDynakube())
-		require.Len(t, container.VolumeMounts, 2)
+		require.Len(t, container.VolumeMounts, 3)
 	})
 	t.Run("if readonly csi, should add extra init volume mounts for readonly csi", func(t *testing.T) {
 		container := &corev1.Container{}
 
 		addInitVolumeMounts(container, *getTestReadOnlyCSIDynakube())
-		require.Len(t, container.VolumeMounts, 3)
+		require.Len(t, container.VolumeMounts, 4)
 
 		mount, err := volumes.GetVolumeMountByName(container.VolumeMounts, oneagentConfVolumeName)
 		require.NoError(t, err)

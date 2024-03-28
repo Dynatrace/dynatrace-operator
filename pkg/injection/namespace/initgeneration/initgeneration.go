@@ -121,7 +121,20 @@ func (g *InitGenerator) generate(ctx context.Context, dk *dynatracev1beta1.DynaK
 		return nil, err
 	}
 
-	data, err := g.createSecretData(secretConfig)
+	tlsCerts, err := dk.ActiveGateTlsCert(ctx, g.apiReader)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	trustedCAs, err := dk.TrustedCAs(ctx, g.apiReader)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	cas := []byte(tlsCerts)
+	cas = append(cas, trustedCAs...)
+
+	data, err := g.createSecretData(secretConfig, cas)
 	if err != nil {
 		return nil, err
 	}
@@ -145,16 +158,6 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 		}
 	}
 
-	trustedCAs, err := dynakube.TrustedCAs(ctx, g.apiReader)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	tlsCert, err := dynakube.ActiveGateTlsCert(ctx, g.apiReader)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
 	oneAgentNoProxy := ""
 
 	if dynakube.NeedsActiveGate() {
@@ -171,11 +174,9 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 		NoProxy:             dynakube.FeatureNoProxy(),
 		OneAgentNoProxy:     oneAgentNoProxy,
 		NetworkZone:         dynakube.Spec.NetworkZone,
-		TrustedCAs:          string(trustedCAs),
 		SkipCertCheck:       dynakube.Spec.SkipCertCheck,
 		HasHost:             dynakube.CloudNativeFullstackMode(),
 		MonitoringNodes:     hostMonitoringNodes,
-		TlsCert:             tlsCert,
 		HostGroup:           dynakube.HostGroup(),
 		InitialConnectRetry: dynakube.FeatureAgentInitialConnectRetry(),
 		EnforcementMode:     dynakube.FeatureEnforcementMode(),
@@ -274,7 +275,7 @@ func (g *InitGenerator) initIMNodes() (nodeInfo, error) {
 	return nodeInfo{nodes: nodeList.Items, imNodes: imNodes}, nil
 }
 
-func (g *InitGenerator) createSecretData(secretConfig *startup.SecretConfig) (map[string][]byte, error) {
+func (g *InitGenerator) createSecretData(secretConfig *startup.SecretConfig, cas []byte) (map[string][]byte, error) {
 	jsonContent, err := json.Marshal(*secretConfig)
 	if err != nil {
 		return nil, err
@@ -283,5 +284,6 @@ func (g *InitGenerator) createSecretData(secretConfig *startup.SecretConfig) (ma
 	return map[string][]byte{
 		consts.AgentInitSecretConfigField: jsonContent,
 		dynatracev1beta1.ProxyKey:         []byte(secretConfig.Proxy), // needed so that it can be mounted to the user's pod without directly reading the secret
+		consts.TrustedCAsInitSecretField:  cas,
 	}, nil
 }

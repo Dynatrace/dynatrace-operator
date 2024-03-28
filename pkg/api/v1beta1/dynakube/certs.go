@@ -17,17 +17,23 @@ limitations under the License.
 package dynakube
 
 import (
+	"bytes"
 	"context"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"software.sslmate.com/src/go-pkcs12"
 )
 
 const (
-	TrustedCAKey = "certs"
-	TlsCertKey   = "server.crt"
+	TrustedCAKey      = "certs"
+	TlsCertKey        = "server.crt"
+	TlsP12Key         = "server.p12"
+	TlsP12PasswordKey = "password"
 )
 
 func (dk *DynaKube) TrustedCAs(ctx context.Context, kubeReader client.Reader) ([]byte, error) {
@@ -57,7 +63,35 @@ func (dk *DynaKube) ActiveGateTlsCert(ctx context.Context, kubeReader client.Rea
 			return "", errors.WithMessage(err, fmt.Sprintf("failed to get activeGate tlsCert from %s secret", secretName))
 		}
 
-		return string(tlsSecret.Data[TlsCertKey]), nil
+		// simply return server.crt certificates if provided by user
+		if tlsCertKey, ok := tlsSecret.Data[TlsCertKey]; ok {
+			return string(tlsCertKey), nil
+		}
+
+		// otherwise extract AG certificate (+ chain of root certificates) from server.p12 file (which is directly consumed by AG)
+
+		// ignore privateKey
+		_, certificate, caCerts, err := pkcs12.DecodeChain(tlsSecret.Data[TlsP12Key], string(tlsSecret.Data[TlsP12PasswordKey]))
+		if err != nil {
+			return "", err
+		}
+
+		cas := []*x509.Certificate{
+			certificate,
+		}
+		cas = append(cas, caCerts...)
+
+		certs := bytes.NewBufferString("")
+		for _, ca := range cas {
+			err = pem.Encode(certs, &pem.Block{Type: "CERTIFICATE", Bytes: ca.Raw})
+			if err != nil {
+				return "", err
+			}
+
+			certs.WriteString("\n")
+		}
+
+		return certs.String(), nil
 	}
 
 	return "", nil

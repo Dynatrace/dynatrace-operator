@@ -24,7 +24,7 @@ func TestConfigureInitContainer(t *testing.T) {
 		mutator.configureInitContainer(request, installerInfo)
 
 		require.Len(t, request.InstallContainer.Env, expectedBaseInitContainerEnvCount)
-		assert.Len(t, request.InstallContainer.VolumeMounts, 2)
+		assert.Len(t, request.InstallContainer.VolumeMounts, 3)
 	})
 
 	t.Run("add envs and volume mounts (csi)", func(t *testing.T) {
@@ -35,7 +35,7 @@ func TestConfigureInitContainer(t *testing.T) {
 		mutator.configureInitContainer(request, installerInfo)
 
 		require.Len(t, request.InstallContainer.Env, expectedBaseInitContainerEnvCount)
-		assert.Len(t, request.InstallContainer.VolumeMounts, 2)
+		assert.Len(t, request.InstallContainer.VolumeMounts, 3)
 	})
 	t.Run("add envs and volume mounts (readonly-csi)", func(t *testing.T) {
 		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
@@ -45,7 +45,7 @@ func TestConfigureInitContainer(t *testing.T) {
 		mutator.configureInitContainer(request, installerInfo)
 
 		require.Len(t, request.InstallContainer.Env, expectedBaseInitContainerEnvCount)
-		assert.Len(t, request.InstallContainer.VolumeMounts, 3)
+		assert.Len(t, request.InstallContainer.VolumeMounts, 4)
 	})
 }
 
@@ -62,7 +62,7 @@ func TestMutateUserContainers(t *testing.T) {
 			name:                               "add envs and volume mounts (simple dynakube)",
 			dynakube:                           *getTestDynakube(),
 			expectedAdditionalEnvCount:         2, // 1 deployment-metadata + 1 preload
-			expectedAdditionalVolumeMountCount: 3, // 3 oneagent mounts(preload,bin,conf)
+			expectedAdditionalVolumeMountCount: 4, // 3 oneagent mounts(preload,bin,conf) + 1 cert mount
 		},
 		{
 			name:                               "add envs and volume mounts (complex dynakube)",
@@ -74,7 +74,7 @@ func TestMutateUserContainers(t *testing.T) {
 			name:                               "add envs and volume mounts (readonly-csi)",
 			dynakube:                           *getTestReadOnlyCSIDynakube(),
 			expectedAdditionalEnvCount:         2, // 1 deployment-metadata + 1 preload
-			expectedAdditionalVolumeMountCount: 6, // 3 oneagent mounts(preload,bin,conf) +3 oneagent mounts for readonly csi (agent-conf,data-storage,agent-log)
+			expectedAdditionalVolumeMountCount: 7, // 3 oneagent mounts(preload,bin,conf) + 1 cert mount + 3 oneagent mounts for readonly csi (agent-conf,data-storage,agent-log)
 		},
 	}
 	for index, testCase := range testCases {
@@ -101,7 +101,7 @@ func TestReinvokeUserContainers(t *testing.T) {
 			name:                               "add envs and volume mounts (simple dynakube)",
 			dynakube:                           *getTestDynakube(),
 			expectedAdditionalEnvCount:         2, // 1 deployment-metadata + 1 preload
-			expectedAdditionalVolumeMountCount: 3, // 3 oneagent mounts(preload,bin,conf)
+			expectedAdditionalVolumeMountCount: 4, // 3 oneagent mounts(preload,bin,conf) + 1 cert mount
 		},
 		{
 			name:                               "add envs and volume mounts (complex dynakube)",
@@ -113,7 +113,7 @@ func TestReinvokeUserContainers(t *testing.T) {
 			name:                               "add envs and volume mounts (readonly-csi)",
 			dynakube:                           *getTestReadOnlyCSIDynakube(),
 			expectedAdditionalEnvCount:         2, // 1 deployment-metadata + 1 preload
-			expectedAdditionalVolumeMountCount: 6, // 3 oneagent mounts(preload,bin,conf) +3 oneagent mounts for readonly csi (agent-conf,data-storage,agent-log)
+			expectedAdditionalVolumeMountCount: 7, // 3 oneagent mounts(preload,bin,conf) + 1 cert mount + 3 oneagent mounts for readonly csi (agent-conf,data-storage,agent-log)
 		},
 	}
 	for index, testCase := range testCases {
@@ -170,7 +170,7 @@ func TestContainerExclusion(t *testing.T) {
 			name:                               "container exclusion on dynakube level, do not exclude",
 			dynakube:                           *getTestDynakubeWithContainerExclusion(),
 			expectedAdditionalEnvCount:         2,
-			expectedAdditionalVolumeMountCount: 3,
+			expectedAdditionalVolumeMountCount: 4,
 			expectedInitContainerEnvCount:      5,
 			dynakubeAnnotations: map[string]string{
 				dtwebhook.AnnotationContainerInjection + "/sidecar-container": "true",
@@ -190,7 +190,7 @@ func TestContainerExclusion(t *testing.T) {
 			name:                               "container exclusion on pod level, do not exclude",
 			dynakube:                           *getTestDynakube(),
 			expectedAdditionalEnvCount:         2,
-			expectedAdditionalVolumeMountCount: 3,
+			expectedAdditionalVolumeMountCount: 4,
 			expectedInitContainerEnvCount:      5,
 			podAnnotations: map[string]string{
 				dtwebhook.AnnotationContainerInjection + "/sidecar-container": "true",

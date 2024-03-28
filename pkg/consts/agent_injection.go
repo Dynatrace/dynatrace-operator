@@ -29,4 +29,7 @@ const (
 	AgentShareDirMount    = "/mnt/share"
 	AgentConfigDirMount   = "/mnt/config"
 	AgentConfInitDirMount = "/mnt/agent-conf"
+
+	TrustedCAsAgentInitDirMount = "/mnt/trustedcas"
+	TrustedCAsInitSecretField   = "trustedcas"
 )
