@@ -46,7 +46,7 @@ func (builder *dtclientBuilder) setOptions() {
 func (builder *dtclientBuilder) addCertCheck() {
 	if builder.config.SkipCertCheck {
 		log.Info("skip cert check is enabled")
-		
+
 		builder.options = append(builder.options, dtclient.SkipCertificateValidation(true))
 	}
 }
