@@ -19,7 +19,6 @@ func newDTClientBuilder(config *SecretConfig) *dtclientBuilder {
 func (builder *dtclientBuilder) createClient() (dtclient.Client, error) {
 	log.Info("creating dtclient")
 	builder.setOptions()
-
 	client, err := dtclient.NewClient(
 		builder.config.ApiUrl,
 		builder.config.ApiToken,
@@ -29,9 +28,7 @@ func (builder *dtclientBuilder) createClient() (dtclient.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	log.Info("dtclient created successfully")
-
 	return client, nil
 }
 
@@ -46,7 +43,6 @@ func (builder *dtclientBuilder) setOptions() {
 func (builder *dtclientBuilder) addCertCheck() {
 	if builder.config.SkipCertCheck {
 		log.Info("skip cert check is enabled")
-
 		builder.options = append(builder.options, dtclient.SkipCertificateValidation(true))
 	}
 }
@@ -54,6 +50,7 @@ func (builder *dtclientBuilder) addCertCheck() {
 func (builder *dtclientBuilder) addProxy() {
 	if builder.config.Proxy != "" {
 		log.Info("dtclient started using a proxy")
+		
 		builder.options = append(builder.options, dtclient.Proxy(builder.config.Proxy, builder.config.NoProxy))
 	}
 }
@@ -73,7 +70,6 @@ func (builder *dtclientBuilder) addHostGroup() {
 func (builder *dtclientBuilder) addTrustedCerts() {
 	if builder.config.TrustedCAs != "" {
 		log.Info("using TrustedCAs, check the secret for more details")
-
 		builder.options = append(builder.options, dtclient.Certs([]byte(builder.config.TrustedCAs)))
 	}
 }
