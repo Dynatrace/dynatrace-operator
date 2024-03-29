@@ -60,6 +60,7 @@ func TestOneAgentIsEnabled(t *testing.T) {
 					VersionStatus: status.VersionStatus{
 						Version: "prev",
 					},
+					Healthcheck: newHealthConfig([]string{"run", "this"}),
 				},
 			},
 		}
@@ -74,6 +75,7 @@ func TestOneAgentIsEnabled(t *testing.T) {
 		assert.Nil(t, condition)
 
 		assert.Empty(t, updater.Target())
+		assert.Empty(t, dynakube.Status.OneAgent.Healthcheck)
 	})
 }
 

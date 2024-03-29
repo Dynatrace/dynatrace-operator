@@ -46,8 +46,7 @@ var NoOneAgentCommunicationHostsError = errors.New("no communication hosts for O
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
 	if !r.dynakube.NeedAppInjection() && !r.dynakube.NeedsOneAgent() {
-		cond := meta.FindStatusCondition(*r.dynakube.Conditions(), oaConnectionInfoConditionType)
-		if cond == nil {
+		if meta.FindStatusCondition(*r.dynakube.Conditions(), oaConnectionInfoConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}
 

@@ -95,7 +95,6 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 				return err
 			}
 		}
-		// TODO: have a cleanup for things that we create above
 
 		err := r.authTokenReconciler.Reconcile(ctx)
 		if err != nil {

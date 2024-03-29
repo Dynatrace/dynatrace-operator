@@ -44,6 +44,7 @@ func (updater oneAgentUpdater) IsEnabled() bool {
 	}
 
 	updater.dynakube.Status.OneAgent.VersionStatus = status.VersionStatus{}
+	updater.dynakube.Status.OneAgent.Healthcheck = nil
 	_ = meta.RemoveStatusCondition(updater.dynakube.Conditions(), oaConditionType)
 
 	return updater.dynakube.NeedsOneAgent()

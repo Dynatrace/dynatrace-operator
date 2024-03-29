@@ -138,7 +138,6 @@ func (r *reconciler) removeAppInjection(ctx context.Context) (err error) {
 
 		return err
 	}
-	// TODO: remove istio Service, VirtualService entries
 	// TODO: remove initgeneration secret as well + handle errors jointly
 
 	return nil
