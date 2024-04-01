@@ -53,7 +53,8 @@ func (builder *dtclientBuilder) addCertCheck() {
 
 func (builder *dtclientBuilder) addProxy() {
 	if builder.config.Proxy != "" {
-		log.Info("using the following proxy", "proxy", builder.config.Proxy)
+		log.Info("dtclient started using a proxy")
+
 		builder.options = append(builder.options, dtclient.Proxy(builder.config.Proxy, builder.config.NoProxy))
 	}
 }
