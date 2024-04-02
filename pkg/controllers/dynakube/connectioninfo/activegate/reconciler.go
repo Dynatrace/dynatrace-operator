@@ -45,7 +45,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
 	if !r.dynakube.NeedsActiveGate() {
-		meta.RemoveStatusCondition(&r.dynakube.Status.Conditions, activeGateConnectionInfoConditionType)
+		meta.RemoveStatusCondition(r.dynakube.Conditions(), activeGateConnectionInfoConditionType)
 
 		return nil
 	}

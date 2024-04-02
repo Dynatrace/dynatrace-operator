@@ -89,17 +89,19 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if r.istioReconciler != nil {
-		err = r.istioReconciler.ReconcileActiveGateCommunicationHosts(ctx, r.dynakube)
-		if err != nil {
-			return err
+	if r.dynakube.NeedsActiveGate() {
+		if r.istioReconciler != nil {
+			err = r.istioReconciler.ReconcileActiveGateCommunicationHosts(ctx, r.dynakube)
+			if err != nil {
+				return err
+			}
 		}
-	}
-	// TODO: have a cleanup for things that we create above
+		// TODO: have a cleanup for things that we create above
 
-	err = r.authTokenReconciler.Reconcile(ctx)
-	if err != nil {
-		return errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
+		err = r.authTokenReconciler.Reconcile(ctx)
+		if err != nil {
+			return errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
+		}
 	}
 
 	for _, agCapability := range capability.GenerateActiveGateCapabilities(r.dynakube) {
@@ -113,7 +115,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	// TODO: move cleanup to ActiveGate reconciler
-	meta.RemoveStatusCondition(&r.dynakube.Status.Conditions, statefulset.ActiveGateStatefulSetConditionType)
+	meta.RemoveStatusCondition(r.dynakube.Conditions(), statefulset.ActiveGateStatefulSetConditionType)
 
 	return nil
 }
