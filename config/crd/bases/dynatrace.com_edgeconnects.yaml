@@ -263,9 +263,6 @@ spec:
                     description: Port of the proxy.
                     format: int32
                     type: integer
-                  scheme:
-                    description: Proxy scheme (`http` or `https`).
-                    type: string
                 type: object
               replicas:
                 default: 1

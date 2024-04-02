@@ -9,6 +9,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	versionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -295,6 +296,16 @@ func newCustomVersionUpdater(t *testing.T, target *status.VersionStatus, version
 	updater.On("CustomImage").Maybe().Return("")
 	updater.On("IsPublicRegistryEnabled").Maybe().Maybe().Return(false)
 	updater.On("CustomVersion").Maybe().Return(version)
+
+	return updater
+}
+
+func newFailingUpdater(t *testing.T, target *status.VersionStatus) *versionmock.StatusUpdater {
+	updater := newBaseUpdater(t, target, true)
+	updater.On("CustomImage").Maybe().Return("")
+	updater.On("IsPublicRegistryEnabled").Maybe().Return(false)
+	updater.On("CustomVersion").Maybe().Return("")
+	updater.On("UseTenantRegistry", mock.Anything).Maybe().Return(errors.New("BOOM"))
 
 	return updater
 }

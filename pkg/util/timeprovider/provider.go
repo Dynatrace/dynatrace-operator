@@ -23,17 +23,18 @@ func (timeProvider *Provider) Now() *metav1.Time {
 		return timeProvider.now
 	}
 
-	return Now()
+	return now()
 }
 
 func (timeProvider *Provider) Freeze() *Provider {
-	timeProvider.now = Now()
+	timeProvider.now = now()
 
 	return timeProvider
 }
 
-func (timeProvider *Provider) Set(now *metav1.Time) {
-	timeProvider.now = now
+func (timeProvider *Provider) Set(now time.Time) {
+	_now := metav1.NewTime(now)
+	timeProvider.now = &_now
 }
 
 func (timeProvider *Provider) IsOutdated(previous *metav1.Time, timeout time.Duration) bool {
@@ -44,7 +45,7 @@ func TimeoutReached(previous, current *metav1.Time, timeout time.Duration) bool 
 	return previous == nil || current == nil || !previous.Add(timeout).After(current.Time)
 }
 
-func Now() *metav1.Time {
+func now() *metav1.Time {
 	now := metav1.Now()
 
 	return &now

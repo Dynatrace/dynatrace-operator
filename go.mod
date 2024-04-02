@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/container-storage-interface/spec v1.9.0
-	github.com/docker/cli v25.0.4+incompatible
+	github.com/docker/cli v26.0.0+incompatible
 	github.com/evanphx/json-patch v5.9.0+incompatible
 	github.com/go-gormigrate/gormigrate/v2 v2.1.2
 	github.com/go-logr/logr v1.4.1
@@ -39,7 +39,7 @@ require (
 	golang.org/x/sys v0.18.0
 	google.golang.org/grpc v1.62.1
 	gorm.io/driver/sqlite v1.5.5
-	gorm.io/gorm v1.25.8
+	gorm.io/gorm v1.25.9
 	istio.io/api v1.21.0
 	istio.io/client-go v1.21.0
 	k8s.io/api v0.29.3

@@ -8,10 +8,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestOneAgentUpdater(t *testing.T) {
@@ -49,6 +52,76 @@ func TestOneAgentUpdater(t *testing.T) {
 	})
 }
 
+func TestOneAgentIsEnabled(t *testing.T) {
+	t.Run("cleans up condition if not enabled", func(t *testing.T) {
+		dynakube := &dynatracev1beta1.DynaKube{}
+		setVerifiedCondition(dynakube.Conditions(), oaConditionType)
+
+		updater := newOneAgentUpdater(dynakube, nil, nil)
+
+		isEnabled := updater.IsEnabled()
+		require.False(t, isEnabled)
+
+		condition := meta.FindStatusCondition(*dynakube.Conditions(), oaConditionType)
+		assert.Nil(t, condition)
+	})
+}
+
+func TestOneAgentPublicRegistry(t *testing.T) {
+	t.Run("sets condition if enabled", func(t *testing.T) {
+		dynakube := &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dynatracev1beta1.AnnotationFeaturePublicRegistry: "true",
+				},
+			},
+		}
+
+		updater := newOneAgentUpdater(dynakube, nil, nil)
+
+		isEnabled := updater.IsPublicRegistryEnabled()
+		require.True(t, isEnabled)
+
+		condition := meta.FindStatusCondition(*dynakube.Conditions(), oaConditionType)
+		require.NotNil(t, condition)
+		assert.Equal(t, verifiedReason, condition.Reason)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
+	})
+	t.Run("ignores conditions if not enabled", func(t *testing.T) {
+		dynakube := &dynatracev1beta1.DynaKube{}
+
+		updater := newOneAgentUpdater(dynakube, nil, nil)
+
+		isEnabled := updater.IsPublicRegistryEnabled()
+		require.False(t, isEnabled)
+
+		condition := meta.FindStatusCondition(*dynakube.Conditions(), oaConditionType)
+		require.Nil(t, condition)
+	})
+}
+
+func TestOneAgentLatestImageInfo(t *testing.T) {
+	t.Run("problem with Dynatrace request => visible in conditions", func(t *testing.T) {
+		dynakube := &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dynatracev1beta1.AnnotationFeaturePublicRegistry: "true",
+				},
+			},
+		}
+
+		updater := newOneAgentUpdater(dynakube, nil, createErrorDTClient(t))
+
+		_, err := updater.LatestImageInfo(context.Background())
+		require.Error(t, err)
+
+		condition := meta.FindStatusCondition(*dynakube.Conditions(), oaConditionType)
+		require.NotNil(t, condition)
+		assert.Equal(t, conditions.DynatraceApiErrorReason, condition.Reason)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+	})
+}
+
 func TestOneAgentUseDefault(t *testing.T) {
 	testVersion := "1.2.3.4-5"
 
@@ -73,6 +146,9 @@ func TestOneAgentUseDefault(t *testing.T) {
 
 		require.NoError(t, err)
 		assertStatusBasedOnTenantRegistry(t, expectedImage, testVersion, dynakube.Status.OneAgent.VersionStatus)
+		condition := meta.FindStatusCondition(*dynakube.Conditions(), oaConditionType)
+		assert.Equal(t, verifiedReason, condition.Reason)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 	})
 	t.Run("Set according to default", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
@@ -94,6 +170,9 @@ func TestOneAgentUseDefault(t *testing.T) {
 
 		require.NoError(t, err)
 		assertStatusBasedOnTenantRegistry(t, expectedImage, testVersion, dynakube.Status.OneAgent.VersionStatus)
+		condition := meta.FindStatusCondition(*dynakube.Conditions(), oaConditionType)
+		assert.Equal(t, verifiedReason, condition.Reason)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 	})
 	t.Run("Don't allow downgrades", func(t *testing.T) {
 		previousVersion := "999.999.999.999-999"
@@ -123,6 +202,74 @@ func TestOneAgentUseDefault(t *testing.T) {
 		err := updater.UseTenantRegistry(context.Background())
 		require.NoError(t, err) // we only log the downgrade problem, not fail the reconcile
 		assert.Equal(t, previousVersion, dynakube.Status.OneAgent.Version)
+
+		condition := meta.FindStatusCondition(*dynakube.Conditions(), oaConditionType)
+		assert.Equal(t, downgradeReason, condition.Reason)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+	})
+
+	t.Run("Verification fails due to malformed version", func(t *testing.T) {
+		previousVersion := "1.2.3.4444-555"
+		dynakube := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testApiUrl,
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+				},
+			},
+			Status: dynatracev1beta1.DynaKubeStatus{
+				OneAgent: dynatracev1beta1.OneAgentStatus{
+					VersionStatus: status.VersionStatus{
+						ImageID: "some.registry.com:" + previousVersion,
+						Version: previousVersion,
+						Source:  status.TenantRegistryVersionSource,
+					},
+				},
+			},
+		}
+
+		mockClient := dtclientmock.NewClient(t)
+		mockLatestAgentVersion(mockClient, "BOOM")
+
+		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient)
+
+		err := updater.UseTenantRegistry(context.Background())
+		require.Error(t, err)
+		assert.Equal(t, previousVersion, dynakube.Status.OneAgent.Version)
+
+		condition := meta.FindStatusCondition(*dynakube.Conditions(), oaConditionType)
+		assert.Equal(t, verificationFailedReason, condition.Reason)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+	})
+	t.Run("Verification fails due to malformed ImageID", func(t *testing.T) {
+		dynakube := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testApiUrl,
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+				},
+			},
+			Status: dynatracev1beta1.DynaKubeStatus{
+				OneAgent: dynatracev1beta1.OneAgentStatus{
+					VersionStatus: status.VersionStatus{
+						ImageID: "BOOM",
+						Source:  status.PublicRegistryVersionSource,
+					},
+				},
+			},
+		}
+
+		mockClient := dtclientmock.NewClient(t)
+		mockLatestAgentVersion(mockClient, testVersion)
+
+		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient)
+
+		err := updater.UseTenantRegistry(context.Background())
+		require.Error(t, err)
+
+		condition := meta.FindStatusCondition(*dynakube.Conditions(), oaConditionType)
+		assert.Equal(t, verificationFailedReason, condition.Reason)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 }
 

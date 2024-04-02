@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
 	k8sdaemonset "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
@@ -26,6 +27,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -87,6 +89,7 @@ type Reconciler struct {
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if !r.dynakube.NeedsOneAgent() {
 		log.Info("removing OneAgent daemonSet")
+		meta.RemoveStatusCondition(r.dynakube.Conditions(), oaConditionType)
 
 		return r.removeOneAgentDaemonSet(ctx, r.dynakube)
 	}
@@ -167,6 +170,7 @@ func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 	err = query.CreateOrUpdate(*configMap)
 	if err != nil {
 		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
+		conditions.SetKubeApiError(r.dynakube.Conditions(), oaConditionType, err)
 
 		return err
 	}
@@ -193,6 +197,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context) error {
 	dsDesired, err := r.buildDesiredDaemonSet(r.dynakube)
 	if err != nil {
 		log.Info("failed to get desired daemonset")
+		setDaemonSetGenerationFailedCondition(r.dynakube.Conditions(), err)
 
 		return err
 	}
@@ -202,15 +207,18 @@ func (r *Reconciler) reconcileRollout(ctx context.Context) error {
 		return err
 	}
 
-	updated, err := k8sdaemonset.CreateOrUpdateDaemonSet(r.client, log, dsDesired)
+	updated, err := k8sdaemonset.CreateOrUpdateDaemonSet(ctx, r.client, log, dsDesired)
 	if err != nil {
 		log.Info("failed to roll out new OneAgent DaemonSet")
+		conditions.SetKubeApiError(r.dynakube.Conditions(), oaConditionType, err)
 
 		return err
 	}
 
 	if updated {
 		log.Info("rolled out new OneAgent DaemonSet")
+		setDaemonSetCreatedCondition(r.dynakube.Conditions())
+
 		// remove old daemonset with feature in name
 		oldClassicDaemonset := &appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
@@ -224,6 +232,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context) error {
 			log.Info("removed oneagent daemonset with feature in name")
 		} else if !k8serrors.IsNotFound(err) {
 			log.Info("failed to remove oneagent daemonset with feature in name")
+			conditions.SetKubeApiError(r.dynakube.Conditions(), oaConditionType, err)
 
 			return err
 		}

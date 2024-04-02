@@ -73,6 +73,14 @@ rules:
       - list
       - watch
       - get
+  - apiGroups:
+      - dynatrace.com
+    resources:
+      - dynakubes
+    verbs:
+      - list
+      - watch
+      - get
   - nonResourceURLs:
       - /metrics
       - /version
