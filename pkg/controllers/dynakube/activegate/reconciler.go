@@ -112,6 +112,9 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		}
 	}
 
+	// TODO: move cleanup to ActiveGate reconciler
+	meta.RemoveStatusCondition(&r.dynakube.Status.Conditions, statefulset.ActiveGateStatefulSetConditionType)
+
 	return nil
 }
 
@@ -200,8 +203,6 @@ func (r *Reconciler) deleteStatefulset(ctx context.Context, agCapability capabil
 			Namespace: r.dynakube.Namespace,
 		},
 	}
-
-	meta.RemoveStatusCondition(&r.dynakube.Status.Conditions, statefulset.ActiveGateStatefulSetConditionType)
 
 	return object.Delete(ctx, r.client, &sts)
 }

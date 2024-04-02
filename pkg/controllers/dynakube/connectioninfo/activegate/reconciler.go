@@ -125,7 +125,7 @@ func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName str
 		return err
 	}
 
-	conditions.SetSecretCreated(r.dynakube.Conditions(), activeGateConnectionInfoConditionType, secret.Name+" created")
+	conditions.SetSecretCreated(r.dynakube.Conditions(), activeGateConnectionInfoConditionType, secret.Name)
 
 	return nil
 }
