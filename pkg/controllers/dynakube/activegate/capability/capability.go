@@ -6,6 +6,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
+	"k8s.io/utils/net"
 )
 
 type baseFunc func() *capabilityBase
@@ -181,13 +182,15 @@ func BuildDNSEntryPointWithoutEnvVars(dynakubeName, dynakubeNamespace string, ca
 func BuildDNSEntryPoint(dk dynatracev1beta1.DynaKube, capability Capability) string {
 	entries := []string{}
 
-	serviceHost := buildServiceHostName(dk.Name, capability.ShortName())
-	if dk.Spec.ActiveGate.IPv6 {
-		serviceHost = "[" + serviceHost + "]"
-	}
+	for _, ip := range dk.Status.ActiveGate.ServiceIPs {
+		serviceHost := ip
+		if net.IsIPv6String(ip) {
+			serviceHost = "[" + serviceHost + "]"
+		}
 
-	serviceHostEntry := buildDNSEntry(serviceHost)
-	entries = append(entries, serviceHostEntry)
+		serviceHostEntry := buildDNSEntry(buildServiceHostName(serviceHost))
+		entries = append(entries, serviceHostEntry)
+	}
 
 	if dk.IsRoutingActiveGateEnabled() {
 		serviceDomain := buildServiceDomainName(dk.Name, dk.Namespace, capability.ShortName())
@@ -198,27 +201,12 @@ func BuildDNSEntryPoint(dk dynatracev1beta1.DynaKube, capability Capability) str
 	return strings.Join(entries, ",")
 }
 
-// buildServiceHostName converts the name returned by BuildServiceName
-// into the variable name which Kubernetes uses to reference the associated service.
-// For more information see: https://kubernetes.io/docs/concepts/services-networking/service/
-func buildServiceHostName(dynakubeName string, module string) string {
-	serviceName := buildServiceNameUnderscore(dynakubeName, module)
-
-	return fmt.Sprintf("$(%s_SERVICE_HOST):$(%s_SERVICE_PORT)", serviceName, serviceName)
+func buildServiceHostName(host string) string {
+	return fmt.Sprintf("%s:%d", host, consts.HttpsServicePort)
 }
 
-// buildServiceDomainName builds service domain name
 func buildServiceDomainName(dynakubeName string, namespaceName string, module string) string {
-	return fmt.Sprintf("%s.%s:$(%s_SERVICE_PORT)", BuildServiceName(dynakubeName, module), namespaceName, buildServiceNameUnderscore(dynakubeName, module))
-}
-
-// buildServiceNameUnderscore converts result of BuildServiceName by replacing dashes with underscores
-// to make it env variable compatible because it's only special symbol it supports
-func buildServiceNameUnderscore(dynakubeName string, module string) string {
-	return strings.ReplaceAll(
-		strings.ToUpper(
-			BuildServiceName(dynakubeName, module)),
-		"-", "_")
+	return fmt.Sprintf("%s.%s:%d", BuildServiceName(dynakubeName, module), namespaceName, consts.HttpsServicePort)
 }
 
 func buildDNSEntry(host string) string {

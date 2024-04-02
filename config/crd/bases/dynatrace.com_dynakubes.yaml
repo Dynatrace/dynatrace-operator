@@ -1246,10 +1246,6 @@ spec:
                     description: The ActiveGate container image. Defaults to the latest
                       ActiveGate image provided by the registry on the tenant
                     type: string
-                  ipv6:
-                    description: If enabled, the ActiveGate will be configured in
-                      a way to work in a cluster that uses IPv6 instead of IPv4.
-                    type: boolean
                   labels:
                     additionalProperties:
                       type: string
@@ -3489,6 +3485,12 @@ spec:
                       performed
                     format: date-time
                     type: string
+                  serviceIPs:
+                    description: The ClusterIPs set by Kubernetes on the ActiveGate
+                      Service created by the Operator
+                    items:
+                      type: string
+                    type: array
                   source:
                     description: Source of the image (tenant-registry, public-registry,
                       ...)

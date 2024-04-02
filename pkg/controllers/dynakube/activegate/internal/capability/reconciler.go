@@ -46,13 +46,30 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if r.dynakube.NeedsActiveGateService() {
 		err = r.createOrUpdateService(ctx)
 		if err != nil {
-			return errors.WithStack(err)
+			return err
 		}
+		err = r.setAGServiceIPs(ctx)
+		if err != nil {
+			return err
+		}
+	} else {
+		r.dynakube.Status.ActiveGate.ServiceIPs = []string{}
 	}
 
 	err = r.statefulsetReconciler.Reconcile(ctx)
 
 	return errors.WithStack(err)
+}
+
+func (r *Reconciler) setAGServiceIPs(ctx context.Context) error {
+	template := CreateService(r.dynakube, r.capability.ShortName())
+	present := &corev1.Service{}
+	err := r.client.Get(ctx, object.Key(template), present)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	r.dynakube.Status.ActiveGate.ServiceIPs = present.Spec.ClusterIPs
+	return nil
 }
 
 func (r *Reconciler) createOrUpdateService(ctx context.Context) error {

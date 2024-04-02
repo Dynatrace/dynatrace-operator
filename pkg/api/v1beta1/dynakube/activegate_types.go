@@ -81,11 +81,6 @@ type ActiveGateSpec struct {
 	// Activegate capabilities enabled (routing, kubernetes-monitoring, metrics-ingest, dynatrace-api)
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Capabilities",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Capabilities []CapabilityDisplayName `json:"capabilities,omitempty"`
-
-	// If enabled, the ActiveGate will be configured in a way to work in a cluster that uses IPv6 instead of IPv4.
-	// +optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="IPv6",order=23,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:PriorityClass"}
-	IPv6 bool `json:"ipv6,omitempty"`
 }
 
 // CapabilityProperties is a struct which can be embedded by ActiveGate capabilities
