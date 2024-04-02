@@ -16,7 +16,7 @@ func SetStatefulSetCreated(conditions *[]metav1.Condition, conditionType, name s
 		Type:    conditionType,
 		Status:  metav1.ConditionTrue,
 		Reason:  StatefulSetCreatedReason,
-		Message: appendCreatedSuffix(name), // TODO: maybe only pass the name of the StatefulSet, and have the rest of the message more general?
+		Message: appendCreatedSuffix(name),
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
