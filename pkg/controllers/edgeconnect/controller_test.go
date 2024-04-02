@@ -39,6 +39,7 @@ const (
 	testCreatedOauthClientResource = "created-client-resource"
 	testCreatedId                  = "id"
 	testRecreatedInvalidId         = "id-somehow-different"
+	testCAConfigMapName            = "test-ca-name"
 )
 
 var (
@@ -146,6 +147,37 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run(`Reconciles doesn't fail if edgeconnect not found`, func(t *testing.T) {
 		controller := createFakeClientAndReconciler(t, nil)
+
+		_, err := controller.Reconcile(context.TODO(), reconcile.Request{
+			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
+		})
+
+		require.NoError(t, err)
+	})
+	t.Run(`Reconciles custom CA provided`, func(t *testing.T) {
+		instance := &edgeconnectv1alpha1.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: edgeconnectv1alpha1.EdgeConnectSpec{
+				ApiServer: "abc12345.dynatrace.com",
+				OAuth: edgeconnectv1alpha1.OAuthSpec{
+					Endpoint:     "https://sso-dev.dynatracelabs.com/sso/oauth2/token",
+					Resource:     "urn:dtenvironment:test12345",
+					ClientSecret: testOauthClientSecret,
+					Provisioner:  false,
+				},
+				CaCertsRef: testCAConfigMapName,
+			},
+		}
+
+		data := make(map[string]string)
+		data[consts.EdgeConnectCAConfigMapKey] = "dummy"
+		customCA := newConfigMap(testCAConfigMapName, instance.Namespace, data)
+		clientSecret := createClientSecret(testOauthClientSecret, instance.Namespace)
+
+		controller := createFakeClientAndReconciler(t, instance, clientSecret, customCA)
 
 		_, err := controller.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -460,6 +492,10 @@ func newSecret(name, namespace string, kv map[string]string) *corev1.Secret {
 	}
 
 	return &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}, Data: data}
+}
+
+func newConfigMap(name, namespace string, data map[string]string) *corev1.ConfigMap {
+	return &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}, Data: data}
 }
 
 func getEdgeConnectCR(apiReader client.Reader, name string, namespace string) (edgeconnectv1alpha1.EdgeConnect, error) {

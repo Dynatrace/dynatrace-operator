@@ -133,7 +133,7 @@ func prepareVolumes(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.Volume {
 					},
 					Items: []corev1.KeyToPath{
 						{
-							Key:  "certs",
+							Key:  consts.EdgeConnectCAConfigMapKey,
 							Path: consts.EdgeConnectCustomCertificateName,
 						},
 					},

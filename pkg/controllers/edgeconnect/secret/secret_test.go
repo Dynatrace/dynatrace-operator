@@ -22,6 +22,7 @@ const (
 	testCreatedOauthClientSecret   = "created-client-secret"
 	testCreatedOauthClientResource = "created-client-resource"
 	testCreatedId                  = "id"
+	testProxyAuthRef               = "proxy-auth-ref"
 )
 
 func Test_prepareEdgeConnectConfigFile(t *testing.T) {
@@ -76,11 +77,16 @@ oauth:
 					Host:    "proxy.com",
 					NoProxy: "*.internal.com",
 					Port:    443,
+					AuthRef: testProxyAuthRef,
 				},
 			},
 		}
 		testSecretName := "test-secret"
-		kubeReader := fake.NewClient(createClientSecret(testSecretName, testNamespace))
+		authRef := newSecret(testProxyAuthRef, testEdgeConnect.Namespace, map[string]string{
+			edgeconnectv1alpha1.ProxyAuthUserKey:     "user",
+			edgeconnectv1alpha1.ProxyAuthPasswordKey: "pass",
+		})
+		kubeReader := fake.NewClient(createClientSecret(testSecretName, testNamespace), authRef)
 		cfg, err := PrepareConfigFile(testEdgeConnect, kubeReader)
 
 		require.NoError(t, err)
@@ -95,6 +101,9 @@ oauth:
 root_certificate_paths:
     - /etc/ssl/certificate.cer
 proxy:
+    auth:
+        user: user
+        password: pass
     server: proxy.com
     exceptions: '*.internal.com'
     port: 443

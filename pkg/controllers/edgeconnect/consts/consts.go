@@ -10,6 +10,7 @@ const (
 	EdgeConnectConfigName            = "edgeConnect.yaml"
 	EdgeConnectConfigPath            = EdgeConnectConfigName
 	EdgeConnectConfigVolumeMountName = "edge-connect-config-yaml"
+	EdgeConnectCAConfigMapKey        = "certs"
 
 	EnvEdgeConnectName            = "EDGE_CONNECT_NAME"
 	EnvEdgeConnectApiEndpointHost = "EDGE_CONNECT_API_ENDPOINT_HOST"
