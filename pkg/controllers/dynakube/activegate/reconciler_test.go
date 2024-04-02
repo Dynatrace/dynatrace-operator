@@ -79,7 +79,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, dtc, nil).(*Reconciler)
 		r.connectionReconciler = createConnectionInfoReconcilerMock(t, false)
 		r.versionReconciler = createVersionReconcilerMock(t, false)
-		r.istioReconciler = createIstioReconcilerMock(t, false)
+		r.istioReconciler = createIstioReconcilerMock(t)
 
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
@@ -376,7 +376,7 @@ func createVersionReconcilerMock(t *testing.T, once bool) version.Reconciler {
 	versionReconciler := versionmock.NewReconciler(t)
 	call := versionReconciler.On("ReconcileActiveGate",
 		mock.AnythingOfType("context.backgroundCtx"),
-		mock.AnythingOfType("*dynakube.DynaKube")).Return(nil).Once()
+		mock.AnythingOfType("*dynakube.DynaKube")).Return(nil)
 
 	if once {
 		call.Once()
@@ -387,17 +387,11 @@ func createVersionReconcilerMock(t *testing.T, once bool) version.Reconciler {
 	return versionReconciler
 }
 
-func createIstioReconcilerMock(t *testing.T, once bool) istio.Reconciler {
+func createIstioReconcilerMock(t *testing.T) istio.Reconciler {
 	reconciler := istiomock.NewReconciler(t)
-	call := reconciler.On("ReconcileActiveGateCommunicationHosts",
+	reconciler.On("ReconcileActiveGateCommunicationHosts",
 		mock.AnythingOfType("context.backgroundCtx"),
 		mock.AnythingOfType("*dynakube.DynaKube")).Return(nil).Once()
-
-	if once {
-		call.Once()
-	} else {
-		call.Twice()
-	}
 
 	return reconciler
 }

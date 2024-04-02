@@ -201,7 +201,7 @@ func TestReconcile(t *testing.T) {
 		require.NotNil(t, condition)
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, "testing", condition.Message)
+		assert.Equal(t, "testing created", condition.Message)
 	})
 	t.Run("update OneAgent connection info if tenant secret is missing, ignore timestamp", func(t *testing.T) {
 		dynakube := getTestDynakube()
