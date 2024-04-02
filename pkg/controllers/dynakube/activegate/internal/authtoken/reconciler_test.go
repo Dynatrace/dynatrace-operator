@@ -40,6 +40,11 @@ func newTestReconcilerWithInstance(t *testing.T, client client.Client) *Reconcil
 		},
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: "https://testing.dev.dynatracelabs.com/api",
+			ActiveGate: dynatracev1beta1.ActiveGateSpec{
+				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+					dynatracev1beta1.RoutingCapability.DisplayName,
+				},
+			},
 		},
 	}
 	dtc := dtclientmock.NewClient(t)

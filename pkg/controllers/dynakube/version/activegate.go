@@ -6,8 +6,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	activeGateVersionConditionType string = "ActiveGateVersion"
 )
 
 type activeGateUpdater struct {
@@ -33,7 +39,13 @@ func (updater activeGateUpdater) Name() string {
 }
 
 func (updater activeGateUpdater) IsEnabled() bool {
-	return updater.dynakube.NeedsActiveGate()
+	if updater.dynakube.NeedsActiveGate() {
+		return true
+	}
+
+	_ = meta.RemoveStatusCondition(updater.dynakube.Conditions(), activeGateVersionConditionType)
+
+	return false
 }
 
 func (updater *activeGateUpdater) Target() *status.VersionStatus {
@@ -41,7 +53,12 @@ func (updater *activeGateUpdater) Target() *status.VersionStatus {
 }
 
 func (updater activeGateUpdater) CustomImage() string {
-	return updater.dynakube.CustomActiveGateImage()
+	customImage := updater.dynakube.CustomActiveGateImage()
+	if customImage != "" {
+		setVerificationSkippedReasonCondition(updater.dynakube.Conditions(), activeGateVersionConditionType)
+	}
+
+	return customImage
 }
 
 func (updater activeGateUpdater) CustomVersion() string {
@@ -53,11 +70,21 @@ func (updater activeGateUpdater) IsAutoUpdateEnabled() bool {
 }
 
 func (updater activeGateUpdater) IsPublicRegistryEnabled() bool {
-	return updater.dynakube.FeaturePublicRegistry()
+	isPublicRegistry := updater.dynakube.FeaturePublicRegistry() && !updater.dynakube.ClassicFullStackMode()
+	if isPublicRegistry {
+		setVerifiedCondition(updater.dynakube.Conditions(), activeGateVersionConditionType) // Bit hacky, as things can still go wrong, but if so we will just overwrite this is LatestImageInfo.
+	}
+
+	return isPublicRegistry
 }
 
 func (updater activeGateUpdater) LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error) {
-	return updater.dtClient.GetLatestActiveGateImage(ctx)
+	imageInfo, err := updater.dtClient.GetLatestActiveGateImage(ctx)
+	if err != nil {
+		conditions.SetDynatraceApiError(updater.dynakube.Conditions(), activeGateVersionConditionType, err)
+	}
+
+	return imageInfo, err
 }
 
 func (updater *activeGateUpdater) CheckForDowngrade(_ string) (bool, error) {
@@ -68,13 +95,21 @@ func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {
 	latestVersion, err := updater.dtClient.GetLatestActiveGateVersion(ctx, dtclient.OsUnix)
 	if err != nil {
 		log.Info("failed to determine image version", "error", err)
+		conditions.SetDynatraceApiError(updater.dynakube.Conditions(), activeGateVersionConditionType, err)
 
 		return err
 	}
 
 	defaultImage := updater.dynakube.DefaultActiveGateImage(latestVersion)
 
-	return updateVersionStatusForTenantRegistry(updater.Target(), defaultImage, latestVersion)
+	err = updateVersionStatusForTenantRegistry(updater.Target(), defaultImage, latestVersion)
+	if err != nil {
+		return err
+	}
+
+	setVerifiedCondition(updater.dynakube.Conditions(), activeGateVersionConditionType)
+
+	return nil
 }
 
 func (updater activeGateUpdater) ValidateStatus() error {

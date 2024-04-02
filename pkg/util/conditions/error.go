@@ -11,6 +11,10 @@ const (
 )
 
 func SetKubeApiError(conditions *[]metav1.Condition, conditionType string, err error) {
+	if err == nil {
+		return
+	}
+
 	condition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
@@ -21,6 +25,10 @@ func SetKubeApiError(conditions *[]metav1.Condition, conditionType string, err e
 }
 
 func SetDynatraceApiError(conditions *[]metav1.Condition, conditionType string, err error) {
+	if err == nil {
+		return
+	}
+
 	condition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,

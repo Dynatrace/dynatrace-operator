@@ -10,8 +10,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -34,29 +34,38 @@ const (
 
 func TestReconcile(t *testing.T) {
 	ctx := context.Background()
-	dynakube := dynatracev1beta1.DynaKube{
+	originalDynakube := dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,
-		}}
+		},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			ActiveGate: dynatracev1beta1.ActiveGateSpec{
+				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+					dynatracev1beta1.RoutingCapability.DisplayName},
+			}},
+	}
 
 	dtc := dtclientmock.NewClient(t)
 	dtc.On("GetActiveGateConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestActiveGateConnectionInfo(), nil).Maybe()
 
 	t.Run(`store ActiveGate connection info to DynaKube status`, func(t *testing.T) {
+		dynakube := *originalDynakube.DeepCopy()
 		fakeClient := fake.NewClient(&dynakube)
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc, &dynakube)
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
-		condition := meta.FindStatusCondition(dynakube.Status.Conditions, conditions.ActiveGateConnectionInfoConditionType)
+		condition := meta.FindStatusCondition(dynakube.Status.Conditions, activeGateConnectionInfoConditionType)
+		require.NotNil(t, condition)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, conditions.ReasonCreated, condition.Reason)
+		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 
 		assert.Equal(t, testTenantUUID, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
 		assert.Equal(t, testTenantEndpoints, dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints)
 	})
 	t.Run(`update ActiveGate connection info`, func(t *testing.T) {
+		dynakube := *originalDynakube.DeepCopy()
 		fakeClient := fake.NewClient(&dynakube)
 		dynakube.Status.ActiveGate.ConnectionInfoStatus = dynatracev1beta1.ActiveGateConnectionInfoStatus{
 			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
@@ -71,14 +80,15 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
-		condition := meta.FindStatusCondition(dynakube.Status.Conditions, conditions.ActiveGateConnectionInfoConditionType)
+		condition := meta.FindStatusCondition(dynakube.Status.Conditions, activeGateConnectionInfoConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, conditions.ReasonCreated, condition.Reason)
+		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 
 		assert.Equal(t, testTenantUUID, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
 		assert.Equal(t, testTenantEndpoints, dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints)
 	})
 	t.Run(`update ActiveGate connection info if tenant secret is missing, ignore timestamp`, func(t *testing.T) {
+		dynakube := *originalDynakube.DeepCopy()
 		fakeClient := fake.NewClient(&dynakube)
 		dynakube.Status.ActiveGate.ConnectionInfoStatus = dynatracev1beta1.ActiveGateConnectionInfoStatus{
 			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
@@ -92,14 +102,15 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
-		condition := meta.FindStatusCondition(dynakube.Status.Conditions, conditions.ActiveGateConnectionInfoConditionType)
+		condition := meta.FindStatusCondition(dynakube.Status.Conditions, activeGateConnectionInfoConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, conditions.ReasonCreated, condition.Reason)
+		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 
 		assert.Equal(t, testTenantUUID, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
 		assert.Equal(t, testTenantEndpoints, dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints)
 	})
 	t.Run(`ActiveGate connection info error shown in conditions`, func(t *testing.T) {
+		dynakube := *originalDynakube.DeepCopy()
 		fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 			Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 				return fmt.Errorf("BOOM")
@@ -109,10 +120,10 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.Error(t, err)
 
-		condition := meta.FindStatusCondition(dynakube.Status.Conditions, conditions.ActiveGateConnectionInfoConditionType)
+		condition := meta.FindStatusCondition(dynakube.Status.Conditions, activeGateConnectionInfoConditionType)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
-		assert.Equal(t, conditions.ReasonUnexpectedError, condition.Reason)
-		assert.Equal(t, err.Error(), condition.Message)
+		assert.Equal(t, conditions.KubeApiErrorReason, condition.Reason)
+		assert.Equal(t, "A problem occurred when using the Kubernetes API: "+err.Error(), condition.Message)
 	})
 }
 
@@ -129,6 +140,12 @@ func getTestActiveGateConnectionInfo() dtclient.ActiveGateConnectionInfo {
 func resetCachedTimestamps(dynakubeStatus *dynatracev1beta1.DynaKubeStatus) {
 	dynakubeStatus.DynatraceApi.LastTokenScopeRequest = metav1.Time{}
 	dynakubeStatus.ActiveGate.ConnectionInfoStatus.LastRequest = metav1.Time{}
+
+	if dynakubeStatus.Conditions != nil {
+		for i := range dynakubeStatus.Conditions {
+			dynakubeStatus.Conditions[i].LastTransitionTime = metav1.Time{}
+		}
+	}
 }
 
 func TestReconcile_TenantSecret(t *testing.T) {
@@ -137,7 +154,15 @@ func TestReconcile_TenantSecret(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,
-		}}
+		},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			ActiveGate: dynatracev1beta1.ActiveGateSpec{
+				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+					dynatracev1beta1.RoutingCapability.DisplayName,
+				},
+			},
+		},
+	}
 	dtc := dtclientmock.NewClient(t)
 	dtc.On("GetActiveGateConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestActiveGateConnectionInfo(), nil)
 

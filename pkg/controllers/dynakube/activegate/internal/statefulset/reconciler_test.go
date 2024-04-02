@@ -9,9 +9,9 @@ import (
 	dynafake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -50,7 +50,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		}).
 		WithObjects(&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      dynatracev1beta1.AuthTokenSecretSuffix,
+				Name:      testName + dynatracev1beta1.AuthTokenSecretSuffix,
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
@@ -65,6 +65,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
+			Name:      testName,
 		}}
 
 	capability.NewRoutingCapability(instance)
@@ -92,10 +93,10 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, statefulSet)
 		require.NoError(t, err)
 
-		condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, conditions.ActiveGateStatefulSetConditionType)
+		condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, ActiveGateStatefulSetConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, conditions.ReasonCreated, condition.Reason)
-		assert.Equal(t, "StatefulSet for routing has been created", condition.Message)
+		assert.Equal(t, conditions.StatefulSetCreatedReason, condition.Reason)
+		assert.Equal(t, fmt.Sprintf("%s-routing created", testName), condition.Message)
 	})
 	t.Run(`update stateful set`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
@@ -130,10 +131,10 @@ func TestReconcile(t *testing.T) {
 
 		assert.Equal(t, 1, found)
 
-		condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, conditions.ActiveGateStatefulSetConditionType)
+		condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, ActiveGateStatefulSetConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, conditions.ReasonCreated, condition.Reason)
-		assert.Equal(t, "StatefulSet for routing has been created", condition.Message)
+		assert.Equal(t, conditions.StatefulSetUpdatedReason, condition.Reason)
+		assert.Equal(t, testName+"-routing updated", condition.Message)
 	})
 	t.Run(`stateful set error is logged in condition`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
@@ -147,10 +148,10 @@ func TestReconcile(t *testing.T) {
 
 		require.Error(t, err)
 
-		condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, conditions.ActiveGateStatefulSetConditionType)
+		condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, ActiveGateStatefulSetConditionType)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
-		assert.Equal(t, conditions.ReasonError, condition.Reason)
-		assert.Equal(t, err.Error(), condition.Message)
+		assert.Equal(t, conditions.KubeApiErrorReason, condition.Reason)
+		assert.Equal(t, "A problem occurred when using the Kubernetes API: "+err.Error(), condition.Message)
 	})
 }
 

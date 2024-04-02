@@ -5,7 +5,6 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	capabilityInternal "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
@@ -75,47 +74,39 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if r.dynakube.NeedsActiveGate() {
-		err := r.createActiveGateTenantConnectionInfoConfigMap(ctx)
+	err := r.createActiveGateTenantConnectionInfoConfigMap(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = r.connectionReconciler.Reconcile(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = r.versionReconciler.ReconcileActiveGate(ctx, r.dynakube)
+	if err != nil {
+		return err
+	}
+
+	if r.istioReconciler != nil {
+		err = r.istioReconciler.ReconcileActiveGateCommunicationHosts(ctx, r.dynakube)
 		if err != nil {
 			return err
 		}
+	}
+	// TODO: have a cleanup for things that we create above
 
-		err = r.connectionReconciler.Reconcile(ctx)
-		if err != nil {
-			return err
-		}
-
-		err = r.versionReconciler.ReconcileActiveGate(ctx, r.dynakube)
-		if err != nil {
-			return err
-		}
-
-		if r.istioReconciler != nil {
-			err = r.istioReconciler.ReconcileActiveGateCommunicationHosts(ctx, r.dynakube)
-			if err != nil {
-				return err
-			}
-		}
-		// TODO: have a cleanup for things that we create above
-
-		err = r.authTokenReconciler.Reconcile(ctx)
-		if err != nil {
-			return errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
-		}
-	} else {
-		statusconditions := &r.dynakube.Status.Conditions
-		meta.RemoveStatusCondition(statusconditions, conditions.ActiveGateConnectionInfoConditionType)
-		meta.RemoveStatusCondition(statusconditions, conditions.ActiveGateStatefulSetConditionType)
-		meta.RemoveStatusCondition(statusconditions, conditions.ActiveGateVersionConditionType)
+	err = r.authTokenReconciler.Reconcile(ctx)
+	if err != nil {
+		return errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
 	}
 
 	for _, agCapability := range capability.GenerateActiveGateCapabilities(r.dynakube) {
 		if agCapability.Enabled() {
 			return r.createCapability(ctx, agCapability)
 		} else {
-			err := r.deleteCapability(ctx, agCapability)
-			if err != nil {
+			if err := r.deleteCapability(ctx, agCapability); err != nil {
 				return err
 			}
 		}
@@ -209,6 +200,8 @@ func (r *Reconciler) deleteStatefulset(ctx context.Context, agCapability capabil
 			Namespace: r.dynakube.Namespace,
 		},
 	}
+
+	meta.RemoveStatusCondition(&r.dynakube.Status.Conditions, statefulset.ActiveGateStatefulSetConditionType)
 
 	return object.Delete(ctx, r.client, &sts)
 }
