@@ -220,7 +220,7 @@ func (controller *Controller) reconcileEdgeConnectCR(ctx context.Context, edgeCo
 
 	_log.Debug("reconcile regular EdgeConnect")
 
-	return controller.reconcileEdgeConnectRegular(edgeConnect)
+	return controller.reconcileEdgeConnectRegular(ctx, edgeConnect)
 }
 
 func (controller *Controller) getEdgeConnect(ctx context.Context, name, namespace string) (*edgeconnectv1alpha1.EdgeConnect, error) {
@@ -314,7 +314,7 @@ func (controller *Controller) updateEdgeConnectStatus(ctx context.Context, edgeC
 	return nil
 }
 
-func (controller *Controller) reconcileEdgeConnectRegular(edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
+func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
 	desiredDeployment := deployment.New(edgeConnect)
 
 	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name, "deploymentName", desiredDeployment.Name)
@@ -332,7 +332,7 @@ func (controller *Controller) reconcileEdgeConnectRegular(edgeConnect *edgeconne
 
 	desiredDeployment.Annotations[hasher.AnnotationHash] = ddHash
 
-	if err := controller.createOrUpdateEdgeConnectConfigSecret(context.Background(), edgeConnect); err != nil {
+	if err := controller.createOrUpdateEdgeConnectConfigSecret(ctx, edgeConnect); err != nil {
 		return err
 	}
 
@@ -662,7 +662,7 @@ func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Co
 }
 
 func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
-	configFile, err := secret.PrepareConfigFile(edgeConnect, controller.apiReader)
+	configFile, err := secret.PrepareConfigFile(ctx, edgeConnect, controller.apiReader)
 	if err != nil {
 		return err
 	}

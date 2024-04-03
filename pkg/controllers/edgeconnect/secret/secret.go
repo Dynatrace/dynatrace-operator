@@ -10,7 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func PrepareConfigFile(instance *edgeconnectv1alpha1.EdgeConnect, apiReader client.Reader) ([]byte, error) {
+func PrepareConfigFile(ctx context.Context, instance *edgeconnectv1alpha1.EdgeConnect, apiReader client.Reader) ([]byte, error) {
 	cfg := config.EdgeConnect{
 		Name:            instance.ObjectMeta.Name,
 		ApiEndpointHost: instance.Spec.ApiServer,
@@ -23,7 +23,7 @@ func PrepareConfigFile(instance *edgeconnectv1alpha1.EdgeConnect, apiReader clie
 
 	// For provisioned we need to read another secret, which later we mount to EdgeConnect pod
 	if instance.Spec.OAuth.Provisioner {
-		clientID, clientSecret, err := instance.GetOAuthClientFromSecret(context.Background(), apiReader, instance.ClientSecretName())
+		clientID, clientSecret, err := instance.GetOAuthClientFromSecret(ctx, apiReader, instance.ClientSecretName())
 		if err != nil {
 			return []byte{}, err
 		}
@@ -32,7 +32,7 @@ func PrepareConfigFile(instance *edgeconnectv1alpha1.EdgeConnect, apiReader clie
 		cfg.OAuth.ClientSecret = clientSecret
 	} else {
 		// For regular, we use default secret
-		clientID, clientSecret, err := instance.GetOAuthClientFromSecret(context.Background(), apiReader, instance.Spec.OAuth.ClientSecret)
+		clientID, clientSecret, err := instance.GetOAuthClientFromSecret(ctx, apiReader, instance.Spec.OAuth.ClientSecret)
 		if err != nil {
 			return []byte{}, err
 		}

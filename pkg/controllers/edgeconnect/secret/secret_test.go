@@ -1,6 +1,7 @@
 package secret
 
 import (
+	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -44,7 +45,7 @@ func Test_prepareEdgeConnectConfigFile(t *testing.T) {
 
 		testSecretName := "test-secret"
 		kubeReader := fake.NewClient(createClientSecret(testSecretName, testNamespace))
-		cfg, err := PrepareConfigFile(testEdgeConnect, kubeReader)
+		cfg, err := PrepareConfigFile(context.Background(), testEdgeConnect, kubeReader)
 
 		require.NoError(t, err)
 
@@ -87,7 +88,7 @@ oauth:
 			edgeconnectv1alpha1.ProxyAuthPasswordKey: "pass",
 		})
 		kubeReader := fake.NewClient(createClientSecret(testSecretName, testNamespace), authRef)
-		cfg, err := PrepareConfigFile(testEdgeConnect, kubeReader)
+		cfg, err := PrepareConfigFile(context.Background(), testEdgeConnect, kubeReader)
 
 		require.NoError(t, err)
 
