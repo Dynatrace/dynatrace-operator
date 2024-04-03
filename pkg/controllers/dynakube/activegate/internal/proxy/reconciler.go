@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"net/url"
+	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
@@ -116,6 +117,11 @@ func (r *Reconciler) createProxyMap(ctx context.Context, dynakube *dynatracev1be
 }
 
 func parseProxyUrl(proxy string) (host, port, username, password string, err error) { //nolint:revive // maximum number of return results per function exceeded; max 3 but got 5
+	if !strings.HasPrefix(strings.ToLower(proxy), "http://") && !strings.HasPrefix(strings.ToLower(proxy), "https://") {
+		log.Info("proxy url has no scheme. The default 'http://' scheme used")
+		proxy = "http://" + proxy
+	}
+
 	proxyUrl, err := url.Parse(proxy)
 	if err != nil {
 		return "", "", "", "", errors.New("could not parse proxy URL")
