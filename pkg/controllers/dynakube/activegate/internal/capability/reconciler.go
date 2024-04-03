@@ -48,6 +48,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+
 		err = r.setAGServiceIPs(ctx)
 		if err != nil {
 			return err
@@ -64,11 +65,14 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 func (r *Reconciler) setAGServiceIPs(ctx context.Context) error {
 	template := CreateService(r.dynakube, r.capability.ShortName())
 	present := &corev1.Service{}
+
 	err := r.client.Get(ctx, object.Key(template), present)
 	if err != nil {
 		return errors.WithStack(err)
 	}
+
 	r.dynakube.Status.ActiveGate.ServiceIPs = present.Spec.ClusterIPs
+
 	return nil
 }
 

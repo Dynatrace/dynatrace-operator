@@ -68,7 +68,7 @@ type MultiCapability struct {
 	capabilityBase
 }
 
-func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
+func NewMultiCapability(dk *dynatracev1beta1.DynaKube) Capability {
 	mc := MultiCapability{
 		capabilityBase{
 			shortName: consts.MultiActiveGateName,
@@ -98,7 +98,7 @@ func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 }
 
 // Deprecated
-func NewKubeMonCapability(dk *dynatracev1beta1.DynaKube) *KubeMonCapability {
+func NewKubeMonCapability(dk *dynatracev1beta1.DynaKube) Capability {
 	c := &KubeMonCapability{
 		*kubeMonBase(),
 	}
@@ -113,7 +113,7 @@ func NewKubeMonCapability(dk *dynatracev1beta1.DynaKube) *KubeMonCapability {
 }
 
 // Deprecated
-func NewRoutingCapability(dk *dynatracev1beta1.DynaKube) *RoutingCapability {
+func NewRoutingCapability(dk *dynatracev1beta1.DynaKube) Capability {
 	c := &RoutingCapability{
 		*routingBase(),
 	}

@@ -77,31 +77,196 @@ func TestNewMultiCapability(t *testing.T) {
 	})
 }
 
-func TestBuildServiceHostNameForDNSEntryPoint(t *testing.T) {
-	actual := buildServiceHostName("test-name", "test-component-feature")
-	assert.NotEmpty(t, actual)
-
-	expected := "$(TEST_NAME_TEST_COMPONENT_FEATURE_SERVICE_HOST):$(TEST_NAME_TEST_COMPONENT_FEATURE_SERVICE_PORT)"
-	assert.Equal(t, expected, actual)
-
-	testStringName := "this---test_string"
-	testStringFeature := "SHOULD--_--PaRsEcORrEcTlY"
-	expected = "$(THIS___TEST_STRING_SHOULD_____PARSECORRECTLY_SERVICE_HOST):$(THIS___TEST_STRING_SHOULD_____PARSECORRECTLY_SERVICE_PORT)"
-	actual = buildServiceHostName(testStringName, testStringFeature)
-	assert.Equal(t, expected, actual)
-}
-
 func TestBuildServiceDomainNameForDNSEntryPoint(t *testing.T) {
 	actual := buildServiceDomainName("test-name", "test-namespace", "test-component-feature")
 	assert.NotEmpty(t, actual)
 
-	expected := "test-name-test-component-feature.test-namespace:$(TEST_NAME_TEST_COMPONENT_FEATURE_SERVICE_PORT)"
+	expected := "test-name-test-component-feature.test-namespace:443"
 	assert.Equal(t, expected, actual)
 
 	testStringName := "this---dynakube_string"
 	testNamespace := "this_is---namespace_string"
 	testStringFeature := "SHOULD--_--PaRsEcORrEcTlY"
-	expected = "this---dynakube_string-SHOULD--_--PaRsEcORrEcTlY.this_is---namespace_string:$(THIS___DYNAKUBE_STRING_SHOULD_____PARSECORRECTLY_SERVICE_PORT)"
+	expected = "this---dynakube_string-SHOULD--_--PaRsEcORrEcTlY.this_is---namespace_string:443"
 	actual = buildServiceDomainName(testStringName, testNamespace, testStringFeature)
 	assert.Equal(t, expected, actual)
+}
+
+func TestBuildDNSEntryPoint(t *testing.T) {
+	type capabilityBuilder func(*dynatracev1beta1.DynaKube) Capability
+
+	type testCase struct {
+		title       string
+		dk          *dynatracev1beta1.DynaKube
+		capability  capabilityBuilder
+		expectedDNS string
+	}
+
+	testCases := []testCase{
+		{
+			title: "DNSEntryPoint for ActiveGate routing capability",
+			dk: &dynatracev1beta1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: "dynatrace",
+				},
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					ActiveGate: dynatracev1beta1.ActiveGateSpec{
+						Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+							dynatracev1beta1.RoutingCapability.DisplayName,
+						},
+					},
+				},
+				Status: dynatracev1beta1.DynaKubeStatus{
+					ActiveGate: dynatracev1beta1.ActiveGateStatus{
+						ServiceIPs: []string{"1.2.3.4"},
+					},
+				},
+			},
+			capability:  NewMultiCapability,
+			expectedDNS: "https://1.2.3.4:443/communication,https://dynakube-activegate.dynatrace:443/communication",
+		},
+		{
+			title: "DNSEntryPoint with multiple service IPs",
+			dk: &dynatracev1beta1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: "dynatrace",
+				},
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					ActiveGate: dynatracev1beta1.ActiveGateSpec{
+						Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+							dynatracev1beta1.RoutingCapability.DisplayName,
+						},
+					},
+				},
+				Status: dynatracev1beta1.DynaKubeStatus{
+					ActiveGate: dynatracev1beta1.ActiveGateStatus{
+						ServiceIPs: []string{"1.2.3.4", "4.3.2.1"},
+					},
+				},
+			},
+			capability:  NewMultiCapability,
+			expectedDNS: "https://1.2.3.4:443/communication,https://4.3.2.1:443/communication,https://dynakube-activegate.dynatrace:443/communication",
+		},
+		{
+			title: "DNSEntryPoint with multiple service IPs, dual-stack",
+			dk: &dynatracev1beta1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: "dynatrace",
+				},
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					ActiveGate: dynatracev1beta1.ActiveGateSpec{
+						Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+							dynatracev1beta1.RoutingCapability.DisplayName,
+						},
+					},
+				},
+				Status: dynatracev1beta1.DynaKubeStatus{
+					ActiveGate: dynatracev1beta1.ActiveGateStatus{
+						ServiceIPs: []string{"1.2.3.4", "2600:2d00:0:4:f9b7:bd67:1d97:5994", "4.3.2.1", "2600:2d00:0:4:f9b7:bd67:1d97:5996"},
+					},
+				},
+			},
+			capability:  NewMultiCapability,
+			expectedDNS: "https://1.2.3.4:443/communication,https://[2600:2d00:0:4:f9b7:bd67:1d97:5994]:443/communication,https://4.3.2.1:443/communication,https://[2600:2d00:0:4:f9b7:bd67:1d97:5996]/communication,https://dynakube-activegate.dynatrace:443/communication",
+		},
+		{
+			title: "DNSEntryPoint for ActiveGate k8s monitoring capability",
+			dk: &dynatracev1beta1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: "dynatrace",
+				},
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					ActiveGate: dynatracev1beta1.ActiveGateSpec{
+						Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+							dynatracev1beta1.KubeMonCapability.DisplayName,
+						},
+					},
+				},
+				Status: dynatracev1beta1.DynaKubeStatus{
+					ActiveGate: dynatracev1beta1.ActiveGateStatus{
+						ServiceIPs: []string{"1.2.3.4"},
+					},
+				},
+			},
+			capability:  NewMultiCapability,
+			expectedDNS: "https://1.2.3.4:443/communication",
+		},
+		{
+			title: "DNSEntryPoint for ActiveGate routing+kubemon capabilities",
+			dk: &dynatracev1beta1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: "dynatrace",
+				},
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					ActiveGate: dynatracev1beta1.ActiveGateSpec{
+						Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+							dynatracev1beta1.KubeMonCapability.DisplayName,
+							dynatracev1beta1.RoutingCapability.DisplayName,
+						},
+					},
+				},
+				Status: dynatracev1beta1.DynaKubeStatus{
+					ActiveGate: dynatracev1beta1.ActiveGateStatus{
+						ServiceIPs: []string{"1.2.3.4"},
+					},
+				},
+			},
+			capability:  NewMultiCapability,
+			expectedDNS: "https://1.2.3.4:443/communication,https://dynakube-activegate.dynatrace:443/communication",
+		},
+		{
+			title: "DNSEntryPoint for deprecated routing ActiveGate",
+			dk: &dynatracev1beta1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: "dynatrace",
+				},
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					Routing: dynatracev1beta1.RoutingSpec{
+						Enabled: true,
+					},
+				},
+				Status: dynatracev1beta1.DynaKubeStatus{
+					ActiveGate: dynatracev1beta1.ActiveGateStatus{
+						ServiceIPs: []string{"1.2.3.4"},
+					},
+				},
+			},
+			capability:  NewRoutingCapability,
+			expectedDNS: "https://1.2.3.4:443/communication,https://dynakube-routing.dynatrace:443/communication",
+		},
+		{
+			title: "DNSEntryPoint for deprecated kubernetes monitoring ActiveGate",
+			dk: &dynatracev1beta1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: "dynatrace",
+				},
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					KubernetesMonitoring: dynatracev1beta1.KubernetesMonitoringSpec{
+						Enabled: true,
+					},
+				},
+				Status: dynatracev1beta1.DynaKubeStatus{
+					ActiveGate: dynatracev1beta1.ActiveGateStatus{
+						ServiceIPs: []string{"1.2.3.4"},
+					},
+				},
+			},
+			capability:  NewKubeMonCapability,
+			expectedDNS: "https://1.2.3.4:443/communication",
+		},
+	}
+	for _, test := range testCases {
+		t.Run(test.title, func(t *testing.T) {
+			capability := test.capability(test.dk)
+			dnsEntryPoint := BuildDNSEntryPoint(*test.dk, capability)
+			assert.Equal(t, test.expectedDNS, dnsEntryPoint)
+		})
+	}
 }
