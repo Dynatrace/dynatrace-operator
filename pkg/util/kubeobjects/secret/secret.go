@@ -49,7 +49,7 @@ func (query Query) Update(secret corev1.Secret) error {
 }
 
 func (query Query) Delete(name, namespace string) error {
-	query.Log.Info("updating secret", "name", name, "namespace", namespace)
+	query.Log.Info("removing secret", "name", name, "namespace", namespace)
 	tmp := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}}
 
 	err := query.KubeClient.Delete(query.Ctx, tmp)
