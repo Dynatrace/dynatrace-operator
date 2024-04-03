@@ -302,6 +302,8 @@ service:
   golangci-lint-version: 1.55.x # use the fixed version to not introduce new linters unexpectedly
 
 issues:
+  exclude-dirs:
+    - pkg/api/v1alpha1/dynakube # legacy version, should not be changed
   exclude-rules:
     # Exclude duplicate code and function length and complexity checking in test
     # files (due to common repeats and long functions in test code)
@@ -337,7 +339,3 @@ issues:
     - path-except: 'pkg/api/(.+)\.go'
       linters:
         - godot
-
-run:
-  skip-dirs:
-    - pkg/api/v1alpha1/dynakube # legacy version, should not be changed
