@@ -7,6 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/pkg/errors"
+	"github.com/spf13/afero"
 )
 
 const (
@@ -95,7 +96,7 @@ func (runner *Runner) createJsonEnrichmentFile() error {
 	)
 	jsonPath := filepath.Join(consts.EnrichmentMountPath, fmt.Sprintf(consts.EnrichmentFilenameTemplate, "json"))
 
-	return runner.createConfFile(jsonPath, jsonContent)
+	return runner.createConfigFile(jsonPath, jsonContent, true)
 }
 
 func (runner *Runner) createPropsEnrichmentFile() error {
@@ -109,23 +110,38 @@ func (runner *Runner) createPropsEnrichmentFile() error {
 	)
 	propsPath := filepath.Join(consts.EnrichmentMountPath, fmt.Sprintf(consts.EnrichmentFilenameTemplate, "properties"))
 
-	return runner.createConfFile(propsPath, propsContent)
+	return runner.createConfigFile(propsPath, propsContent, true)
 }
 
 func (runner *Runner) createCurlOptionsFile() error {
 	content := runner.getCurlOptionsContent()
 	path := filepath.Join(consts.AgentShareDirMount, consts.AgentCurlOptionsFileName)
 
-	return runner.createConfFile(path, content)
+	return runner.createConfigFile(path, content, true)
 }
 
-func (runner *Runner) createConfFile(path string, content string) error {
-	err := runner.fs.MkdirAll(filepath.Dir(path), onlyReadAllFileMode)
+func (runner *Runner) createConfigFile(path string, content string, verbose bool) error {
+	err := createFile(runner.fs, path, content)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	file, err := runner.fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, onlyReadAllFileMode)
+	if verbose {
+		log.Info("created file", "filePath", path, "content", content)
+	} else {
+		log.Info("created file", "filePath", path)
+	}
+
+	return nil
+}
+
+func createFile(fs afero.Fs, path string, content string) error {
+	err := fs.MkdirAll(filepath.Dir(path), onlyReadAllFileMode)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	file, err := fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, onlyReadAllFileMode)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -134,8 +150,6 @@ func (runner *Runner) createConfFile(path string, content string) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-
-	log.Info("created file", "filePath", path, "content", content)
 
 	return nil
 }

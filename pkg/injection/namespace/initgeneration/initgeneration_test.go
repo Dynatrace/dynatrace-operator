@@ -224,11 +224,9 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 		Proxy:               "",
 		NoProxy:             "",
 		NetworkZone:         "",
-		TrustedCAs:          "",
 		SkipCertCheck:       false,
 		HasHost:             true,
 		MonitoringNodes:     nil,
-		TlsCert:             "",
 		HostGroup:           "",
 		InitialConnectRetry: -1,
 		CSIMode:             true,
@@ -255,15 +253,26 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 
 		caValue := "ca-test"
 		caConfigMap := createTestCaConfigMap(dynakube, caValue)
-		expectedSecretConfig.TrustedCAs = caValue
 
 		testNamespace := createTestInjectedNamespace(dynakube, "test")
 		clt := fake.NewClientWithIndex(testNamespace, apiTokenSecret.DeepCopy(), getKubeNamespace().DeepCopy(), caConfigMap.DeepCopy())
 		ig := NewInitGenerator(clt, clt, dynakube.Namespace)
 
-		secretConfig, err := ig.createSecretConfigForDynaKube(context.TODO(), dynakube, nil)
+		secretData, err := ig.generate(context.TODO(), dynakube)
 		require.NoError(t, err)
-		assert.Equal(t, expectedSecretConfig, *secretConfig)
+
+		_, ok := secretData[consts.AgentInitSecretConfigField]
+		require.True(t, ok)
+
+		var secretConfig startup.SecretConfig
+		err = json.Unmarshal(secretData[consts.AgentInitSecretConfigField], &secretConfig)
+		require.NoError(t, err)
+
+		require.Empty(t, secretConfig.MonitoringNodes)
+		secretConfig.MonitoringNodes = nil
+
+		assert.Equal(t, expectedSecretConfig, secretConfig)
+		assert.Equal(t, caValue, string(secretData[consts.TrustedCAsInitSecretField]))
 	})
 
 	t.Run("Create SecretConfig with proxy", func(t *testing.T) {
@@ -340,7 +349,7 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 		expectedSecretConfig := *baseExpectedSecretConfig
 		tlsValue := "tls-test-value"
 		tlsSecret := createTestTlsSecret(dynakube, tlsValue)
-		expectedSecretConfig.TlsCert = tlsValue
+
 		// since we have ActiveGate we add it by default as noProxy
 		expectedSecretConfig.OneAgentNoProxy = "dynakube-test-activegate.dynatrace-test"
 
@@ -348,9 +357,18 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 		clt := fake.NewClientWithIndex(testNamespace, apiTokenSecret.DeepCopy(), getKubeNamespace().DeepCopy(), tlsSecret)
 		ig := NewInitGenerator(clt, clt, dynakube.Namespace)
 
-		secretConfig, err := ig.createSecretConfigForDynaKube(context.TODO(), dynakube, nil)
+		secretData, err := ig.generate(context.TODO(), dynakube)
 		require.NoError(t, err)
-		assert.Equal(t, expectedSecretConfig, *secretConfig)
+
+		var secretConfig startup.SecretConfig
+		err = json.Unmarshal(secretData[consts.AgentInitSecretConfigField], &secretConfig)
+		require.NoError(t, err)
+
+		require.Empty(t, secretConfig.MonitoringNodes)
+		secretConfig.MonitoringNodes = nil
+
+		assert.Equal(t, expectedSecretConfig, secretConfig)
+		assert.Equal(t, tlsValue, string(secretData[consts.ActiveGateCAsInitSecretField]))
 	})
 
 	t.Run("Create SecretConfig with networkZone", func(t *testing.T) {
@@ -544,7 +562,7 @@ func retrieveInitSecret(t *testing.T, clt client.Client, namespaceName string) c
 	var initSecret corev1.Secret
 	err := clt.Get(context.TODO(), types.NamespacedName{Name: consts.AgentInitSecretName, Namespace: namespaceName}, &initSecret)
 	require.NoError(t, err)
-	assert.Len(t, initSecret.Data, 2)
+	assert.Len(t, initSecret.Data, 4) // agcerts, config, proxy, trustedcas
 
 	return initSecret
 }
