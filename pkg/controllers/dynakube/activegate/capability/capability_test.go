@@ -170,7 +170,7 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 				},
 			},
 			capability:  NewMultiCapability,
-			expectedDNS: "https://1.2.3.4:443/communication,https://[2600:2d00:0:4:f9b7:bd67:1d97:5994]:443/communication,https://4.3.2.1:443/communication,https://[2600:2d00:0:4:f9b7:bd67:1d97:5996]/communication,https://dynakube-activegate.dynatrace:443/communication",
+			expectedDNS: "https://1.2.3.4:443/communication,https://[2600:2d00:0:4:f9b7:bd67:1d97:5994]:443/communication,https://4.3.2.1:443/communication,https://[2600:2d00:0:4:f9b7:bd67:1d97:5996]:443/communication,https://dynakube-activegate.dynatrace:443/communication",
 		},
 		{
 			title: "DNSEntryPoint for ActiveGate k8s monitoring capability",
