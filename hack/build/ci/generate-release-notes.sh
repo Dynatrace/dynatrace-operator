@@ -27,11 +27,6 @@ kubernetes_manifests="kubectl apply -f https://github.com/Dynatrace/dynatrace-op
 openshift_manifests="oc apply -f https://github.com/Dynatrace/dynatrace-operator/releases/download/${tag}/openshift.yaml"
 
 if [ "${pre_release}" = false ] ; then
-  kubernetes_manifests="${kubernetes_manifests}
-kubectl apply -f https://github.com/Dynatrace/dynatrace-operator/releases/download/${tag}/kubernetes-csi.yaml"
-  openshift_manifests="${openshift_manifests}
-oc apply -f https://github.com/Dynatrace/dynatrace-operator/releases/download/${tag}/openshift-csi.yaml"
-
   footer="${release_footer}"
 else
   footer="${pre_release_footer}"
@@ -44,10 +39,10 @@ For information on how to install the [latest dynatrace-operator](https://github
 
 #### Helm (recommended)
 \`\`\`sh
-helm upgrade dynatrace-operator oci://public.ecr.aws/dynatrace/dynatrace-operator \
-  --version ${tag_without_leading_v} \
-  --create-namespace --namespace dynatrace \
-  --install \
+helm upgrade dynatrace-operator oci://public.ecr.aws/dynatrace/dynatrace-operator \\
+  --version ${tag_without_leading_v} \\
+  --create-namespace --namespace dynatrace \\
+  --install \\
   --atomic
 \`\`\`
 
