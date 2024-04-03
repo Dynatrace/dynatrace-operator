@@ -22,9 +22,7 @@ const (
 	oneAgentShareVolumeName   = "oneagent-share"
 	injectionConfigVolumeName = "injection-config"
 
-	oneAgentCustomKeysPath  = "/var/lib/dynatrace/oneagent/agent/customkeys"
-	customCertFileName      = "custom.pem"
-	customProxyCertFileName = "custom_proxy.pem"
+	oneAgentCustomKeysPath = "/var/lib/dynatrace/oneagent/agent/customkeys"
 
 	preloadPath       = "/etc/ld.so.preload"
 	containerConfPath = "/var/lib/dynatrace/oneagent/agent/config/container.conf"

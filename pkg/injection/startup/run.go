@@ -260,7 +260,7 @@ func (runner *Runner) configureOneAgent() error {
 }
 
 func (runner *Runner) setLDPreload() error {
-	return runner.createConfFile(filepath.Join(consts.AgentShareDirMount, consts.LdPreloadFilename), filepath.Join(runner.env.InstallPath, consts.LibAgentProcPath))
+	return runner.createConfigFile(filepath.Join(consts.AgentShareDirMount, consts.LdPreloadFilename), filepath.Join(runner.env.InstallPath, consts.LibAgentProcPath), true)
 }
 
 func (runner *Runner) createContainerConfigurationFiles() error {
@@ -281,7 +281,7 @@ func (runner *Runner) createContainerConfigurationFiles() error {
 			}
 		}
 
-		if err := runner.createConfFile(confFilePath, content); err != nil {
+		if err := runner.createConfigFile(confFilePath, content, true); err != nil {
 			return err
 		}
 	}
@@ -305,7 +305,7 @@ func (runner *Runner) propagateTLSCert() error {
 	if runner.agCerts != "" || runner.trustedCAs != "" {
 		log.Info("propagating tls certificates to agent")
 
-		if err := runner.createConfFileWithShortMessage(filepath.Join(consts.AgentShareDirMount, consts.CustomCertsFileName), runner.agCerts+"\n"+runner.trustedCAs); err != nil {
+		if err := runner.createConfigFile(filepath.Join(consts.AgentShareDirMount, consts.CustomCertsFileName), runner.agCerts+"\n"+runner.trustedCAs, false); err != nil {
 			return err
 		}
 	}
@@ -313,7 +313,7 @@ func (runner *Runner) propagateTLSCert() error {
 	if runner.trustedCAs != "" {
 		log.Info("propagating tls certificates to agent proxy configuration")
 
-		if err := runner.createConfFileWithShortMessage(filepath.Join(consts.AgentShareDirMount, consts.CustomProxyCertsFileName), runner.trustedCAs); err != nil {
+		if err := runner.createConfigFile(filepath.Join(consts.AgentShareDirMount, consts.CustomProxyCertsFileName), runner.trustedCAs, false); err != nil {
 			return err
 		}
 	}

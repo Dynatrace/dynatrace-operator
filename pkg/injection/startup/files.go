@@ -96,7 +96,7 @@ func (runner *Runner) createJsonEnrichmentFile() error {
 	)
 	jsonPath := filepath.Join(consts.EnrichmentMountPath, fmt.Sprintf(consts.EnrichmentFilenameTemplate, "json"))
 
-	return runner.createConfFile(jsonPath, jsonContent)
+	return runner.createConfigFile(jsonPath, jsonContent, true)
 }
 
 func (runner *Runner) createPropsEnrichmentFile() error {
@@ -110,39 +110,32 @@ func (runner *Runner) createPropsEnrichmentFile() error {
 	)
 	propsPath := filepath.Join(consts.EnrichmentMountPath, fmt.Sprintf(consts.EnrichmentFilenameTemplate, "properties"))
 
-	return runner.createConfFile(propsPath, propsContent)
+	return runner.createConfigFile(propsPath, propsContent, true)
 }
 
 func (runner *Runner) createCurlOptionsFile() error {
 	content := runner.getCurlOptionsContent()
 	path := filepath.Join(consts.AgentShareDirMount, consts.AgentCurlOptionsFileName)
 
-	return runner.createConfFile(path, content)
+	return runner.createConfigFile(path, content, true)
 }
 
-func (runner *Runner) createConfFile(path string, content string) error {
-	err := createConfigFile(runner.fs, path, content)
+func (runner *Runner) createConfigFile(path string, content string, verbose bool) error {
+	err := createFile(runner.fs, path, content)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	log.Info("created file", "filePath", path, "content", content)
-
-	return nil
-}
-
-func (runner *Runner) createConfFileWithShortMessage(path string, content string) error {
-	err := createConfigFile(runner.fs, path, content)
-	if err != nil {
-		return errors.WithStack(err)
+	if verbose {
+		log.Info("created file", "filePath", path, "content", content)
+	} else {
+		log.Info("created file", "filePath", path)
 	}
 
-	log.Info("created file", "filePath", path)
-
 	return nil
 }
 
-func createConfigFile(fs afero.Fs, path string, content string) error {
+func createFile(fs afero.Fs, path string, content string) error {
 	err := fs.MkdirAll(filepath.Dir(path), onlyReadAllFileMode)
 	if err != nil {
 		return errors.WithStack(err)

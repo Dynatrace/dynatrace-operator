@@ -67,8 +67,8 @@ func addCertVolumeMounts(container *corev1.Container, dynakube dynatracev1beta1.
 		container.VolumeMounts = append(container.VolumeMounts,
 			corev1.VolumeMount{
 				Name:      oneAgentShareVolumeName,
-				MountPath: filepath.Join(oneAgentCustomKeysPath, customCertFileName),
-				SubPath:   customCertFileName,
+				MountPath: filepath.Join(oneAgentCustomKeysPath, consts.CustomCertsFileName),
+				SubPath:   consts.CustomCertsFileName,
 			})
 	}
 
@@ -76,8 +76,8 @@ func addCertVolumeMounts(container *corev1.Container, dynakube dynatracev1beta1.
 		container.VolumeMounts = append(container.VolumeMounts,
 			corev1.VolumeMount{
 				Name:      oneAgentShareVolumeName,
-				MountPath: filepath.Join(oneAgentCustomKeysPath, customProxyCertFileName),
-				SubPath:   customProxyCertFileName,
+				MountPath: filepath.Join(oneAgentCustomKeysPath, consts.CustomProxyCertsFileName),
+				SubPath:   consts.CustomProxyCertsFileName,
 			})
 	}
 }

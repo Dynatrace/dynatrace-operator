@@ -63,8 +63,8 @@ func TestAddCertVolumeMounts(t *testing.T) {
 
 		addCertVolumeMounts(container, dynakube)
 		require.Len(t, container.VolumeMounts, 2) // custom.pem, custom_proxy.pem
-		assert.Equal(t, customCertFileName, container.VolumeMounts[0].SubPath)
-		assert.Equal(t, customProxyCertFileName, container.VolumeMounts[1].SubPath)
+		assert.Equal(t, consts.CustomCertsFileName, container.VolumeMounts[0].SubPath)
+		assert.Equal(t, consts.CustomProxyCertsFileName, container.VolumeMounts[1].SubPath)
 	})
 	t.Run("shouldn't add proxy cert volume mounts", func(t *testing.T) {
 		dynakube := dynatracev1beta1.DynaKube{
@@ -81,7 +81,7 @@ func TestAddCertVolumeMounts(t *testing.T) {
 
 		addCertVolumeMounts(container, dynakube)
 		require.Len(t, container.VolumeMounts, 1)
-		assert.Equal(t, customCertFileName, container.VolumeMounts[0].SubPath)
+		assert.Equal(t, consts.CustomCertsFileName, container.VolumeMounts[0].SubPath)
 	})
 }
 
