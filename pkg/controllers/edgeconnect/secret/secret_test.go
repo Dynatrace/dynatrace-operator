@@ -36,7 +36,7 @@ func Test_prepareEdgeConnectConfigFile(t *testing.T) {
 			Spec: edgeconnectv1alpha1.EdgeConnectSpec{
 				ApiServer: "abc12345.dynatrace.com",
 				OAuth: edgeconnectv1alpha1.OAuthSpec{
-					Endpoint:     "https://sso-dev.dynatracelabs.com/sso/oauth2/token",
+					Endpoint:     "https://test.com/sso/oauth2/token",
 					Resource:     "urn:dtenvironment:test12345",
 					ClientSecret: "test-secret",
 				},
@@ -52,7 +52,7 @@ func Test_prepareEdgeConnectConfigFile(t *testing.T) {
 		expected := `name: test-name-edgeconnectv1alpha1
 api_endpoint_host: abc12345.dynatrace.com
 oauth:
-    endpoint: https://sso-dev.dynatracelabs.com/sso/oauth2/token
+    endpoint: https://test.com/sso/oauth2/token
     client_id: created-client-id
     client_secret: created-client-secret
     resource: urn:dtenvironment:test12345
@@ -69,7 +69,7 @@ oauth:
 			Spec: edgeconnectv1alpha1.EdgeConnectSpec{
 				ApiServer: "abc12345.dynatrace.com",
 				OAuth: edgeconnectv1alpha1.OAuthSpec{
-					Endpoint:     "https://sso-dev.dynatracelabs.com/sso/oauth2/token",
+					Endpoint:     "https://test.com/sso/oauth2/token",
 					Resource:     "urn:dtenvironment:test12345",
 					ClientSecret: "test-secret",
 				},
@@ -95,7 +95,7 @@ oauth:
 		expected := `name: test-name-edgeconnectv1alpha1
 api_endpoint_host: abc12345.dynatrace.com
 oauth:
-    endpoint: https://sso-dev.dynatracelabs.com/sso/oauth2/token
+    endpoint: https://test.com/sso/oauth2/token
     client_id: created-client-id
     client_secret: created-client-secret
     resource: urn:dtenvironment:test12345

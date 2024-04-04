@@ -48,7 +48,7 @@ func Test_buildAppLabels(t *testing.T) {
 			ApiServer: "abc12345.dynatrace.com",
 			OAuth: edgeconnectv1alpha1.OAuthSpec{
 				ClientSecret: "secret-name",
-				Endpoint:     "https://sso-dev.dynatracelabs.com/sso/oauth2/token",
+				Endpoint:     "https://test.com/sso/oauth2/token",
 				Resource:     "urn:dtenvironment:test12345",
 			},
 		},
@@ -76,7 +76,7 @@ func Test_prepareResourceRequirements(t *testing.T) {
 			ApiServer: "abc12345.dynatrace.com",
 			OAuth: edgeconnectv1alpha1.OAuthSpec{
 				ClientSecret: "secret-name",
-				Endpoint:     "https://sso-dev.dynatracelabs.com/sso/oauth2/token",
+				Endpoint:     "https://test.com/sso/oauth2/token",
 				Resource:     "urn:dtenvironment:test12345",
 			},
 		},

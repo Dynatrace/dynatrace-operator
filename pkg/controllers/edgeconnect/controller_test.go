@@ -57,7 +57,7 @@ func TestReconcile(t *testing.T) {
 			Spec: edgeconnectv1alpha1.EdgeConnectSpec{
 				ApiServer: "abc12345.dynatrace.com",
 				OAuth: edgeconnectv1alpha1.OAuthSpec{
-					Endpoint:     "https://sso-dev.dynatracelabs.com/sso/oauth2/token",
+					Endpoint:     "https://test.com/sso/oauth2/token",
 					Resource:     "urn:dtenvironment:test12345",
 					ClientSecret: testOauthClientSecret,
 					Provisioner:  false,
@@ -83,7 +83,7 @@ func TestReconcile(t *testing.T) {
 			Spec: edgeconnectv1alpha1.EdgeConnectSpec{
 				ApiServer: "abc12345.dynatrace.com",
 				OAuth: edgeconnectv1alpha1.OAuthSpec{
-					Endpoint:     "https://sso-dev.dynatracelabs.com/sso/oauth2/token",
+					Endpoint:     "https://test.com/sso/oauth2/token",
 					Resource:     "urn:dtenvironment:test12345",
 					ClientSecret: testOauthClientSecret,
 					Provisioner:  false,
@@ -122,7 +122,7 @@ func TestReconcile(t *testing.T) {
 			Spec: edgeconnectv1alpha1.EdgeConnectSpec{
 				ApiServer: "abc12345.dynatrace.com",
 				OAuth: edgeconnectv1alpha1.OAuthSpec{
-					Endpoint:     "https://sso-dev.dynatracelabs.com/sso/oauth2/token",
+					Endpoint:     "https://test.com/sso/oauth2/token",
 					Resource:     "urn:dtenvironment:test12345",
 					ClientSecret: testOauthClientSecret,
 					Provisioner:  false,
@@ -163,7 +163,7 @@ func TestReconcile(t *testing.T) {
 			Spec: edgeconnectv1alpha1.EdgeConnectSpec{
 				ApiServer: "abc12345.dynatrace.com",
 				OAuth: edgeconnectv1alpha1.OAuthSpec{
-					Endpoint:     "https://sso-dev.dynatracelabs.com/sso/oauth2/token",
+					Endpoint:     "https://test.com/sso/oauth2/token",
 					Resource:     "urn:dtenvironment:test12345",
 					ClientSecret: testOauthClientSecret,
 					Provisioner:  false,
