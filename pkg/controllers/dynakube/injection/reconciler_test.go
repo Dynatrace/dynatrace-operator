@@ -130,9 +130,6 @@ func TestReconciler(t *testing.T) {
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
-				},
 				NamespaceSelector: metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						testNamespaceSelectorLabel: testDynakube,

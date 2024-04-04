@@ -48,6 +48,18 @@ func (query Query) Update(secret corev1.Secret) error {
 	return query.update(secret)
 }
 
+func (query Query) Delete(name, namespace string) error {
+	query.Log.Info("removing secret", "name", name, "namespace", namespace)
+	tmp := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}}
+
+	err := query.KubeClient.Delete(query.Ctx, tmp)
+	if k8serrors.IsNotFound(err) {
+		return nil
+	}
+
+	return errors.WithStack(err)
+}
+
 func (query Query) create(secret corev1.Secret) error {
 	return errors.WithStack(query.KubeClient.Create(query.Ctx, &secret))
 }

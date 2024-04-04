@@ -54,7 +54,16 @@ func TestOneAgentUpdater(t *testing.T) {
 
 func TestOneAgentIsEnabled(t *testing.T) {
 	t.Run("cleans up condition if not enabled", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{}
+		dynakube := &dynatracev1beta1.DynaKube{
+			Status: dynatracev1beta1.DynaKubeStatus{
+				OneAgent: dynatracev1beta1.OneAgentStatus{
+					VersionStatus: status.VersionStatus{
+						Version: "prev",
+					},
+					Healthcheck: newHealthConfig([]string{"run", "this"}),
+				},
+			},
+		}
 		setVerifiedCondition(dynakube.Conditions(), oaConditionType)
 
 		updater := newOneAgentUpdater(dynakube, nil, nil)
@@ -64,6 +73,9 @@ func TestOneAgentIsEnabled(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*dynakube.Conditions(), oaConditionType)
 		assert.Nil(t, condition)
+
+		assert.Empty(t, updater.Target())
+		assert.Empty(t, dynakube.Status.OneAgent.Healthcheck)
 	})
 }
 
