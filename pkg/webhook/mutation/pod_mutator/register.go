@@ -13,7 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oneagentapm"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/internal/otel"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/dataingest_mutation"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/oneagent_mutation"
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
@@ -90,7 +90,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 				kubeClient,
 				apiReader,
 			),
-			dataingest_mutation.NewDataIngestPodMutator(
+			metadata.NewMutator(
 				webhookNamespace,
 				kubeClient,
 				apiReader,

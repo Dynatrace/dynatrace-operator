@@ -18,10 +18,10 @@ const (
 
 	EmptyConnectionInfoReason = "EmptyConnectionInfo"
 
-	DataIngestPrefix = "data-ingest"
-	// AnnotationDataIngestInject can be set at pod level to enable/disable data-ingest injection.
-	AnnotationDataIngestInject   = DataIngestPrefix + ".dynatrace.com/inject"
-	AnnotationDataIngestInjected = DataIngestPrefix + ".dynatrace.com/injected"
+	MetricsEnrichmentPrefix = "metrics-enrichment"
+	// AnnotationMetadataEnrichmentInject can be set at pod level to enable/disable data-ingest injection.
+	AnnotationMetadataEnrichmentInject   = MetricsEnrichmentPrefix + ".dynatrace.com/inject"
+	AnnotationMetadataEnrichmentInjected = MetricsEnrichmentPrefix + ".dynatrace.com/injected"
 
 	// AnnotationFlavor can be set on a Pod to configure which code modules flavor to download. It's set to "default"
 	// if not set.

@@ -55,15 +55,15 @@ func DataIngest(t *testing.T) features.Feature {
 		sample.WithName("deploy-app"),
 		sample.AsDeployment(),
 		sample.WithAnnotations(map[string]string{
-			webhook.AnnotationOneAgentInject:   "false",
-			webhook.AnnotationDataIngestInject: "true",
+			webhook.AnnotationOneAgentInject:           "false",
+			webhook.AnnotationMetadataEnrichmentInject: "true",
 		}))
 
 	samplePod := sample.NewApp(t, &testDynakube,
 		sample.WithName("pod-app"),
 		sample.WithAnnotations(map[string]string{
-			webhook.AnnotationOneAgentInject:   "false",
-			webhook.AnnotationDataIngestInject: "true",
+			webhook.AnnotationOneAgentInject:           "false",
+			webhook.AnnotationMetadataEnrichmentInject: "true",
 		}))
 
 	// dynakube install

@@ -56,7 +56,7 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 	t.Run(`data-ingest endpoint secret created but not updated`, func(t *testing.T) {
 		instance := buildTestDynakube()
 		fakeClient := buildTestClientBeforeGenerate(instance)
-		endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace)
+		endpointSecretGenerator := NewSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace)
 
 		{
 			err := endpointSecretGenerator.GenerateForNamespace(context.TODO(), testDynakubeName, testNamespace1)
@@ -78,7 +78,7 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 	t.Run(`data-ingest endpoint secret created and token updated`, func(t *testing.T) {
 		instance := buildTestDynakube()
 		fakeClient := buildTestClientBeforeGenerate(instance)
-		endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace)
+		endpointSecretGenerator := NewSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace)
 
 		{
 			err := endpointSecretGenerator.GenerateForNamespace(context.TODO(), testDynakubeName, testNamespace1)
@@ -103,7 +103,7 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 	t.Run(`data-ingest endpoint secret created and apiUrl updated`, func(t *testing.T) {
 		instance := buildTestDynakube()
 		fakeClient := buildTestClientBeforeGenerate(instance)
-		endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace)
+		endpointSecretGenerator := NewSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace)
 
 		{
 			err := endpointSecretGenerator.GenerateForNamespace(context.TODO(), testDynakubeName, testNamespace1)
@@ -231,7 +231,7 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 }
 
 func testGenerateEndpointsSecret(t *testing.T, instance *dynatracev1beta1.DynaKube, fakeClient client.Client) {
-	endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace)
+	endpointSecretGenerator := NewSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace)
 
 	err := endpointSecretGenerator.GenerateForDynakube(context.TODO(), instance)
 	require.NoError(t, err)
@@ -244,7 +244,7 @@ func TestRemoveEndpointSecrets(t *testing.T) {
 	namespaces, err := mapper.GetNamespacesForDynakube(context.Background(), fakeClient, dk.Name)
 	require.NoError(t, err)
 
-	endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, dk.Namespace)
+	endpointSecretGenerator := NewSecretGenerator(fakeClient, fakeClient, dk.Namespace)
 
 	err = endpointSecretGenerator.RemoveEndpointSecrets(context.TODO(), namespaces)
 	require.NoError(t, err)

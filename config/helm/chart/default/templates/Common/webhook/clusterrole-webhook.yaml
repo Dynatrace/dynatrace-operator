@@ -48,13 +48,13 @@ rules:
       - secrets
     resourceNames:
       - dynatrace-dynakube-config
-      - dynatrace-data-ingest-endpoint
+      - dynatrace-metadata-enrichment-endpoint
     verbs:
       - get
       - list
       - watch
       - update
-  # data-ingest workload owner lookup
+  # metadata-enrichment workload owner lookup
   - apiGroups:
       - ""
     resources:

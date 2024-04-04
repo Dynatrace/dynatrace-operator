@@ -1,4 +1,4 @@
-package dataingest_mutation
+package metadata
 
 import (
 	"context"

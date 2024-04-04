@@ -1,4 +1,4 @@
-package dataingest_mutation
+package metadata
 
 import (
 	"context"
@@ -30,8 +30,8 @@ func newUnknownWorkloadInfo() workloadInfo {
 	}
 }
 
-func (mutator *DataIngestPodMutator) retrieveWorkload(request *dtwebhook.MutationRequest) (*workloadInfo, error) {
-	workload, err := findRootOwnerOfPod(request.Context, mutator.metaClient, request.Pod, request.Namespace.Name)
+func (mut *Mutator) retrieveWorkload(request *dtwebhook.MutationRequest) (*workloadInfo, error) {
+	workload, err := findRootOwnerOfPod(request.Context, mut.metaClient, request.Pod, request.Namespace.Name)
 	if err != nil {
 		return nil, err
 	}

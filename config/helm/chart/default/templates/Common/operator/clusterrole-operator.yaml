@@ -49,7 +49,7 @@ rules:
       - secrets
     resourceNames:
       - dynatrace-dynakube-config
-      - dynatrace-data-ingest-endpoint
+      - dynatrace-metadata-enrichment-endpoint
       - dynatrace-internal-proxy
     verbs:
       - get

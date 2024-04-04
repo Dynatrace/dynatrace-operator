@@ -1,4 +1,4 @@
-package dataingest_mutation
+package metadata
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"

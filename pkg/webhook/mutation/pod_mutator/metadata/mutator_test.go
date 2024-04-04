@@ -1,4 +1,4 @@
-package dataingest_mutation
+package metadata
 
 import (
 	"context"
@@ -29,7 +29,7 @@ const (
 func TestEnabled(t *testing.T) {
 	t.Run("turned off", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
-		request := createTestMutationRequest(nil, map[string]string{dtwebhook.AnnotationDataIngestInject: "false"})
+		request := createTestMutationRequest(nil, map[string]string{dtwebhook.AnnotationMetadataEnrichmentInject: "false"})
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -75,7 +75,7 @@ func TestEnabled(t *testing.T) {
 func TestInjected(t *testing.T) {
 	t.Run("already marked", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
-		request := createTestMutationRequest(nil, map[string]string{dtwebhook.AnnotationDataIngestInjected: "true"})
+		request := createTestMutationRequest(nil, map[string]string{dtwebhook.AnnotationMetadataEnrichmentInjected: "true"})
 
 		enabled := mutator.Injected(request.BaseRequest)
 
@@ -114,7 +114,7 @@ func TestMutate(t *testing.T) {
 func TestReinvoke(t *testing.T) {
 	t.Run("should only mutate the containers in the pod", func(t *testing.T) {
 		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
-		request := createTestReinvocationRequest(getTestDynakube(), map[string]string{dtwebhook.AnnotationDataIngestInjected: "true"})
+		request := createTestReinvocationRequest(getTestDynakube(), map[string]string{dtwebhook.AnnotationMetadataEnrichmentInjected: "true"})
 
 		initialContainerVolumeMountsLen := len(request.Pod.Spec.Containers[0].VolumeMounts)
 
@@ -130,7 +130,7 @@ func TestReinvoke(t *testing.T) {
 				DynaKube: *getTestDynakube(),
 				Pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						Annotations: map[string]string{dtwebhook.AnnotationDataIngestInjected: "true"},
+						Annotations: map[string]string{dtwebhook.AnnotationMetadataEnrichmentInjected: "true"},
 					},
 				},
 			},
@@ -145,7 +145,7 @@ func TestEnsureDataIngestSecret(t *testing.T) {
 		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
 		request := createTestMutationRequest(getTestDynakube(), nil)
 
-		err := mutator.ensureDataIngestSecret(request)
+		err := mutator.ensureIngestEndpointSecret(request)
 		require.NoError(t, err)
 	})
 
@@ -153,7 +153,7 @@ func TestEnsureDataIngestSecret(t *testing.T) {
 		mutator := createTestPodMutator([]client.Object{getTestDynakube(), getTestTokensSecret()})
 		request := createTestMutationRequest(getTestDynakube(), nil)
 
-		err := mutator.ensureDataIngestSecret(request)
+		err := mutator.ensureIngestEndpointSecret(request)
 		require.NoError(t, err)
 
 		var secret corev1.Secret
@@ -238,10 +238,10 @@ func createTestReinvocationRequest(dynakube *dynatracev1beta1.DynaKube, annotati
 	return request
 }
 
-func createTestPodMutator(objects []client.Object) *DataIngestPodMutator {
+func createTestPodMutator(objects []client.Object) *Mutator {
 	fakeClient := fake.NewClient(objects...)
 
-	return &DataIngestPodMutator{
+	return &Mutator{
 		client:           fakeClient,
 		apiReader:        fakeClient,
 		metaClient:       fakeClient,

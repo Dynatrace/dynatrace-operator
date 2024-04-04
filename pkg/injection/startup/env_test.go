@@ -39,7 +39,7 @@ func TestNewEnv(t *testing.T) {
 		assert.NotEmpty(t, env.WorkloadName)
 
 		assert.True(t, env.OneAgentInjected)
-		assert.True(t, env.DataIngestInjected)
+		assert.True(t, env.MetadataEnrichmentInjected)
 	})
 	t.Run(`create new env for only data-ingest injection`, func(t *testing.T) {
 		resetEnv := prepDataIngestTestEnv(t, false)
@@ -69,7 +69,7 @@ func TestNewEnv(t *testing.T) {
 		assert.NotEmpty(t, env.WorkloadName)
 
 		assert.False(t, env.OneAgentInjected)
-		assert.True(t, env.DataIngestInjected)
+		assert.True(t, env.MetadataEnrichmentInjected)
 	})
 	t.Run(`create new env for only data-ingest injection with unknown owner workload`, func(t *testing.T) {
 		resetEnv := prepDataIngestTestEnv(t, true)
@@ -86,7 +86,7 @@ func TestNewEnv(t *testing.T) {
 		assert.Empty(t, env.WorkloadName)
 
 		assert.False(t, env.OneAgentInjected)
-		assert.True(t, env.DataIngestInjected)
+		assert.True(t, env.MetadataEnrichmentInjected)
 	})
 	t.Run(`create new env for only oneagent`, func(t *testing.T) {
 		resetEnv := prepOneAgentTestEnv(t)
@@ -116,7 +116,7 @@ func TestNewEnv(t *testing.T) {
 		assert.Empty(t, env.WorkloadName)
 
 		assert.True(t, env.OneAgentInjected)
-		assert.False(t, env.DataIngestInjected)
+		assert.False(t, env.MetadataEnrichmentInjected)
 	})
 }
 

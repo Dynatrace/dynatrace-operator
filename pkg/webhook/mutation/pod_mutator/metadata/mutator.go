@@ -1,4 +1,4 @@
-package dataingest_mutation
+package metadata
 
 import (
 	"context"
@@ -15,15 +15,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type DataIngestPodMutator struct {
+type Mutator struct {
 	client           client.Client
 	metaClient       client.Client
 	apiReader        client.Reader
 	webhookNamespace string
 }
 
-func NewDataIngestPodMutator(webhookNamespace string, client client.Client, apiReader client.Reader, metaClient client.Client) *DataIngestPodMutator {
-	return &DataIngestPodMutator{
+func NewMutator(webhookNamespace string, client client.Client, apiReader client.Reader, metaClient client.Client) *Mutator {
+	return &Mutator{
 		client:           client,
 		apiReader:        apiReader,
 		metaClient:       metaClient,
@@ -31,32 +31,32 @@ func NewDataIngestPodMutator(webhookNamespace string, client client.Client, apiR
 	}
 }
 
-func (mutator *DataIngestPodMutator) Enabled(request *dtwebhook.BaseRequest) bool {
-	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationDataIngestInject,
+func (mut *Mutator) Enabled(request *dtwebhook.BaseRequest) bool {
+	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationMetadataEnrichmentInject,
 		request.DynaKube.FeatureAutomaticInjection())
 	enabledOnDynakube := !request.DynaKube.FeatureDisableMetadataEnrichment()
 
 	return enabledOnPod && enabledOnDynakube
 }
 
-func (mutator *DataIngestPodMutator) Injected(request *dtwebhook.BaseRequest) bool {
-	return maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationDataIngestInjected, false)
+func (mut *Mutator) Injected(request *dtwebhook.BaseRequest) bool {
+	return maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationMetadataEnrichmentInjected, false)
 }
 
-func (mutator *DataIngestPodMutator) Mutate(ctx context.Context, request *dtwebhook.MutationRequest) error {
+func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationRequest) error {
 	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
 	defer span.End()
 
-	log.Info("injecting data-ingest into pod", "podName", request.PodName())
+	log.Info("injecting metadata-enrichment into pod", "podName", request.PodName())
 
-	workload, err := mutator.retrieveWorkload(request)
+	workload, err := mut.retrieveWorkload(request)
 	if err != nil {
 		span.RecordError(err)
 
 		return err
 	}
 
-	err = mutator.ensureDataIngestSecret(request)
+	err = mut.ensureIngestEndpointSecret(request)
 	if err != nil {
 		span.RecordError(err)
 
@@ -72,8 +72,8 @@ func (mutator *DataIngestPodMutator) Mutate(ctx context.Context, request *dtwebh
 	return nil
 }
 
-func (mutator *DataIngestPodMutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
-	if !mutator.Injected(request.BaseRequest) {
+func (mut *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
+	if !mut.Injected(request.BaseRequest) {
 		return false
 	}
 
@@ -82,12 +82,12 @@ func (mutator *DataIngestPodMutator) Reinvoke(request *dtwebhook.ReinvocationReq
 	return reinvokeUserContainers(request.BaseRequest)
 }
 
-func (mutator *DataIngestPodMutator) ensureDataIngestSecret(request *dtwebhook.MutationRequest) error {
-	endpointGenerator := dtingestendpoint.NewEndpointSecretGenerator(mutator.client, mutator.apiReader, mutator.webhookNamespace)
+func (mut *Mutator) ensureIngestEndpointSecret(request *dtwebhook.MutationRequest) error {
+	endpointGenerator := dtingestendpoint.NewSecretGenerator(mut.client, mut.apiReader, mut.webhookNamespace)
 
 	var endpointSecret corev1.Secret
 
-	err := mutator.apiReader.Get(
+	err := mut.apiReader.Get(
 		request.Context,
 		client.ObjectKey{
 			Name:      consts.EnrichmentEndpointSecretName,
@@ -97,14 +97,14 @@ func (mutator *DataIngestPodMutator) ensureDataIngestSecret(request *dtwebhook.M
 	if k8serrors.IsNotFound(err) {
 		err := endpointGenerator.GenerateForNamespace(request.Context, request.DynaKube.Name, request.Namespace.Name)
 		if err != nil && !k8serrors.IsAlreadyExists(err) {
-			log.Info("failed to create the data-ingest endpoint secret before pod injection")
+			log.Info("failed to create the ingest endpoint secret before pod injection")
 
 			return err
 		}
 
-		log.Info("ensured that the data-ingest endpoint secret is present before pod injection")
+		log.Info("ensured that the ingest endpoint secret is present before pod injection")
 	} else if err != nil {
-		log.Info("failed to query the data-ingest endpoint secret before pod injection")
+		log.Info("failed to query the ingest endpoint secret before pod injection")
 
 		return err
 	}
@@ -117,7 +117,7 @@ func setInjectedAnnotation(pod *corev1.Pod) {
 		pod.Annotations = make(map[string]string)
 	}
 
-	pod.Annotations[dtwebhook.AnnotationDataIngestInjected] = "true"
+	pod.Annotations[dtwebhook.AnnotationMetadataEnrichmentInjected] = "true"
 }
 
 func setWorkloadAnnotations(pod *corev1.Pod, workload *workloadInfo) {

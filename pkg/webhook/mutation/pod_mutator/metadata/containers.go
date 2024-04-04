@@ -1,4 +1,4 @@
-package dataingest_mutation
+package metadata
 
 import (
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"

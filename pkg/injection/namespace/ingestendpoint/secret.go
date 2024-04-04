@@ -27,25 +27,25 @@ const (
 	configFile              = "endpoint.properties"
 )
 
-// EndpointSecretGenerator manages the mint endpoint secret generation for the user namespaces.
-type EndpointSecretGenerator struct {
+// SecretGenerator manages the mint endpoint secret generation for the user namespaces.
+type SecretGenerator struct {
 	client    client.Client
 	apiReader client.Reader
 	namespace string
 }
 
-func NewEndpointSecretGenerator(client client.Client, apiReader client.Reader, ns string) *EndpointSecretGenerator {
-	return &EndpointSecretGenerator{
+func NewSecretGenerator(client client.Client, apiReader client.Reader, ns string) *SecretGenerator {
+	return &SecretGenerator{
 		client:    client,
 		apiReader: apiReader,
 		namespace: ns,
 	}
 }
 
-// GenerateForNamespace creates the data-ingest-endpoint secret for namespace while only having the name of the corresponding dynakube
+// GenerateForNamespace creates the metadata-enrichment-endpoint secret for namespace while only having the name of the corresponding dynakube
 // Used by the podInjection webhook in case the namespace lacks the secret.
-func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkName, targetNs string) error {
-	log.Info("reconciling data-ingest endpoint secret for", "namespace", targetNs)
+func (g *SecretGenerator) GenerateForNamespace(ctx context.Context, dkName, targetNs string) error {
+	log.Info("reconciling metadata-enrichment endpoint secret for", "namespace", targetNs)
 
 	var dk dynatracev1beta1.DynaKube
 	if err := g.client.Get(ctx, client.ObjectKey{Name: dkName, Namespace: g.namespace}, &dk); err != nil {
@@ -75,10 +75,10 @@ func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkNa
 	return errors.WithStack(err)
 }
 
-// GenerateForDynakube creates/updates the data-ingest-endpoint secret for EVERY namespace for the given dynakube.
+// GenerateForDynakube creates/updates the metadata-enrichment-endpoint secret for EVERY namespace for the given dynakube.
 // Used by the dynakube controller during reconcile.
-func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1beta1.DynaKube) error {
-	log.Info("reconciling data-ingest endpoint secret for", "dynakube", dk.Name)
+func (g *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1beta1.DynaKube) error {
+	log.Info("reconciling metadata-enrichment endpoint secret for", "dynakube", dk.Name)
 
 	data, err := g.prepare(ctx, dk)
 	if err != nil {
@@ -108,12 +108,12 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 		return err
 	}
 
-	log.Info("done updating data-ingest endpoint secrets")
+	log.Info("done updating metadata-enrichment endpoint secrets")
 
 	return nil
 }
 
-func (g *EndpointSecretGenerator) RemoveEndpointSecrets(ctx context.Context, namespaces []corev1.Namespace) error {
+func (g *SecretGenerator) RemoveEndpointSecrets(ctx context.Context, namespaces []corev1.Namespace) error {
 	for _, targetNs := range namespaces {
 		endpointSecret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -129,7 +129,7 @@ func (g *EndpointSecretGenerator) RemoveEndpointSecrets(ctx context.Context, nam
 	return nil
 }
 
-func (g *EndpointSecretGenerator) prepare(ctx context.Context, dk *dynatracev1beta1.DynaKube) (map[string][]byte, error) {
+func (g *SecretGenerator) prepare(ctx context.Context, dk *dynatracev1beta1.DynaKube) (map[string][]byte, error) {
 	fields, err := g.PrepareFields(ctx, dk)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -154,7 +154,7 @@ func (g *EndpointSecretGenerator) prepare(ctx context.Context, dk *dynatracev1be
 	return data, nil
 }
 
-func (g *EndpointSecretGenerator) PrepareFields(ctx context.Context, dk *dynatracev1beta1.DynaKube) (map[string]string, error) {
+func (g *SecretGenerator) PrepareFields(ctx context.Context, dk *dynatracev1beta1.DynaKube) (map[string]string, error) {
 	fields := make(map[string]string)
 
 	var tokens corev1.Secret
@@ -167,24 +167,24 @@ func (g *EndpointSecretGenerator) PrepareFields(ctx context.Context, dk *dynatra
 			fields[MetricsTokenSecretField] = string(token)
 		}
 
-		if dataIngestUrl, err := dataIngestUrlFor(dk); err != nil {
+		if ingestUrl, err := ingestUrlFor(dk); err != nil {
 			return nil, err
 		} else {
-			fields[MetricsUrlSecretField] = dataIngestUrl
+			fields[MetricsUrlSecretField] = ingestUrl
 		}
 	}
 
 	return fields, nil
 }
 
-func dataIngestUrlFor(dk *dynatracev1beta1.DynaKube) (string, error) {
+func ingestUrlFor(dk *dynatracev1beta1.DynaKube) (string, error) {
 	switch {
 	case dk.IsActiveGateMode(dynatracev1beta1.MetricsIngestCapability.DisplayName):
 		return metricsIngestUrlForClusterActiveGate(dk)
 	case len(dk.Spec.APIURL) > 0:
 		return metricsIngestUrlForDynatraceActiveGate(dk)
 	default:
-		return "", errors.New("failed to create data-ingest endpoint, DynaKube.spec.apiUrl is empty")
+		return "", errors.New("failed to create metadata-enrichment endpoint, DynaKube.spec.apiUrl is empty")
 	}
 }
 
