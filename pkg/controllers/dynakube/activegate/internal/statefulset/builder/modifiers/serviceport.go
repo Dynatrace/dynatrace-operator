@@ -73,5 +73,5 @@ func (mod ServicePortModifier) getEnvs() []corev1.EnvVar {
 }
 
 func (mod ServicePortModifier) buildDNSEntryPoint() string {
-	return capability.BuildDNSEntryPoint(mod.dynakube.Name, mod.dynakube.Namespace, mod.capability)
+	return capability.BuildDNSEntryPoint(mod.dynakube, mod.capability)
 }

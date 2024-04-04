@@ -23,7 +23,6 @@ const (
 	injectionConfigVolumeName = "injection-config"
 
 	oneAgentCustomKeysPath = "/var/lib/dynatrace/oneagent/agent/customkeys"
-	customCertFileName     = "custom.pem"
 
 	preloadPath       = "/etc/ld.so.preload"
 	containerConfPath = "/var/lib/dynatrace/oneagent/agent/config/container.conf"

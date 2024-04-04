@@ -6,6 +6,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
+	"k8s.io/utils/net"
 )
 
 type baseFunc func() *capabilityBase
@@ -67,7 +68,7 @@ type MultiCapability struct {
 	capabilityBase
 }
 
-func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
+func NewMultiCapability(dk *dynatracev1beta1.DynaKube) Capability {
 	mc := MultiCapability{
 		capabilityBase{
 			shortName: consts.MultiActiveGateName,
@@ -97,7 +98,7 @@ func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 }
 
 // Deprecated
-func NewKubeMonCapability(dk *dynatracev1beta1.DynaKube) *KubeMonCapability {
+func NewKubeMonCapability(dk *dynatracev1beta1.DynaKube) Capability {
 	c := &KubeMonCapability{
 		*kubeMonBase(),
 	}
@@ -112,7 +113,7 @@ func NewKubeMonCapability(dk *dynatracev1beta1.DynaKube) *KubeMonCapability {
 }
 
 // Deprecated
-func NewRoutingCapability(dk *dynatracev1beta1.DynaKube) *RoutingCapability {
+func NewRoutingCapability(dk *dynatracev1beta1.DynaKube) Capability {
 	c := &RoutingCapability{
 		*routingBase(),
 	}
@@ -174,40 +175,40 @@ func BuildServiceName(dynakubeName string, module string) string {
 	return dynakubeName + "-" + module
 }
 
-// BuildServiceHostName converts the name returned by BuildServiceName
-// into the variable name which Kubernetes uses to reference the associated service.
-// For more information see: https://kubernetes.io/docs/concepts/services-networking/service/
-func BuildServiceHostName(dynakubeName string, module string) string {
-	serviceName := BuildServiceNameUnderscore(dynakubeName, module)
-
-	return fmt.Sprintf("$(%s_SERVICE_HOST):$(%s_SERVICE_PORT)", serviceName, serviceName)
-}
-
-// BuildServiceDomainName builds service domain name
-func BuildServiceDomainName(dynakubeName string, namespaceName string, module string) string {
-	return fmt.Sprintf("%s.%s:$(%s_SERVICE_PORT)", BuildServiceName(dynakubeName, module), namespaceName, BuildServiceNameUnderscore(dynakubeName, module))
-}
-
-// BuildServiceNameUnderscore converts result of BuildServiceName by replacing dashes with underscores
-// to make it env variable compatible because it's only special symbol it supports
-func BuildServiceNameUnderscore(dynakubeName string, module string) string {
-	return strings.ReplaceAll(
-		strings.ToUpper(
-			BuildServiceName(dynakubeName, module)),
-		"-", "_")
-}
-
-// BuildDNSEntryPoint for give capability
-func BuildDNSEntryPoint(dynakubeName, dynakubeNamespace string, capability Capability) string {
-	if capability.ShortName() == consts.MultiActiveGateName && strings.Contains(capability.ArgName(), dynatracev1beta1.RoutingCapability.ArgumentName) ||
-		capability.ShortName() == dynatracev1beta1.RoutingCapability.ShortName {
-		return fmt.Sprintf("https://%s/communication,https://%s/communication", BuildServiceHostName(dynakubeName, capability.ShortName()), BuildServiceDomainName(dynakubeName, dynakubeNamespace, capability.ShortName()))
-	}
-
-	return fmt.Sprintf("https://%s/communication", BuildServiceHostName(dynakubeName, capability.ShortName()))
-}
-
-// BuildDNSEntryPointWithoutEnvVars for give capability
 func BuildDNSEntryPointWithoutEnvVars(dynakubeName, dynakubeNamespace string, capability Capability) string {
 	return fmt.Sprintf("%s.%s", BuildServiceName(dynakubeName, capability.ShortName()), dynakubeNamespace)
+}
+
+func BuildDNSEntryPoint(dk dynatracev1beta1.DynaKube, capability Capability) string {
+	entries := []string{}
+
+	for _, ip := range dk.Status.ActiveGate.ServiceIPs {
+		serviceHost := ip
+		if net.IsIPv6String(ip) {
+			serviceHost = "[" + serviceHost + "]"
+		}
+
+		serviceHostEntry := buildDNSEntry(buildServiceHostName(serviceHost))
+		entries = append(entries, serviceHostEntry)
+	}
+
+	if dk.IsRoutingActiveGateEnabled() {
+		serviceDomain := buildServiceDomainName(dk.Name, dk.Namespace, capability.ShortName())
+		serviceDomainEntry := buildDNSEntry(serviceDomain)
+		entries = append(entries, serviceDomainEntry)
+	}
+
+	return strings.Join(entries, ",")
+}
+
+func buildServiceHostName(host string) string {
+	return fmt.Sprintf("%s:%d", host, consts.HttpsServicePort)
+}
+
+func buildServiceDomainName(dynakubeName string, namespaceName string, module string) string {
+	return fmt.Sprintf("%s.%s:%d", BuildServiceName(dynakubeName, module), namespaceName, consts.HttpsServicePort)
+}
+
+func buildDNSEntry(host string) string {
+	return fmt.Sprintf("https://%s/communication", host)
 }
