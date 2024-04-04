@@ -7,8 +7,8 @@ const (
 	EdgeConnectMountPath             = "/etc/ssl"
 	EdgeConnectCustomCertificateName = "certificate.cer"
 	EdgeConnectCustomCAVolumeName    = "ca-certs"
-	EdgeConnectConfigName            = "edgeConnect.yaml"
-	EdgeConnectConfigPath            = EdgeConnectConfigName
+	EdgeConnectConfigFileName        = "edgeConnect.yaml"
+	EdgeConnectConfigPath            = "/" + EdgeConnectConfigFileName
 	EdgeConnectConfigVolumeMountName = "edge-connect-config-yaml"
 	EdgeConnectCAConfigMapKey        = "certs"
 

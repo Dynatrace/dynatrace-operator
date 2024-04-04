@@ -147,7 +147,7 @@ func prepareVolumes(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.Volume {
 
 func prepareVolumeMounts(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
-		{MountPath: consts.EdgeConnectConfigPath, Name: consts.EdgeConnectConfigVolumeMountName},
+		{MountPath: consts.EdgeConnectConfigPath, SubPath: consts.EdgeConnectConfigFileName, Name: consts.EdgeConnectConfigVolumeMountName},
 	}
 
 	if instance.Spec.CaCertsRef != "" {
@@ -164,7 +164,7 @@ func prepareConfigVolume() corev1.Volume {
 			Secret: &corev1.SecretVolumeSource{
 				SecretName: consts.EdgeConnectConfigVolumeMountName,
 				Items: []corev1.KeyToPath{
-					{Key: consts.EdgeConnectConfigName, Path: consts.EdgeConnectConfigPath},
+					{Key: consts.EdgeConnectConfigFileName, Path: consts.EdgeConnectConfigFileName},
 				},
 			},
 		},
