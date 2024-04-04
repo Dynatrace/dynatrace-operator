@@ -121,7 +121,7 @@ func edgeConnectContainer(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Cont
 }
 
 func prepareVolumes(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.Volume {
-	volumes := []corev1.Volume{prepareConfigVolume()}
+	volumes := []corev1.Volume{prepareConfigVolume(instance)}
 
 	if instance.Spec.CaCertsRef != "" {
 		volumes = append(volumes, corev1.Volume{
@@ -147,7 +147,7 @@ func prepareVolumes(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.Volume {
 
 func prepareVolumeMounts(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
-		{MountPath: consts.EdgeConnectConfigPath, SubPath: consts.EdgeConnectConfigFileName, Name: consts.EdgeConnectConfigVolumeMountName},
+		{MountPath: consts.EdgeConnectConfigPath, SubPath: consts.EdgeConnectConfigFileName, Name: instance.Name + "-" + consts.EdgeConnectConfigVolumeMountName},
 	}
 
 	if instance.Spec.CaCertsRef != "" {
@@ -157,12 +157,12 @@ func prepareVolumeMounts(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.Vol
 	return volumeMounts
 }
 
-func prepareConfigVolume() corev1.Volume {
+func prepareConfigVolume(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Volume {
 	return corev1.Volume{
-		Name: consts.EdgeConnectConfigVolumeMountName,
+		Name: instance.Name + "-" + consts.EdgeConnectConfigVolumeMountName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: consts.EdgeConnectConfigVolumeMountName,
+				SecretName: instance.Name + "-" + consts.EdgeConnectSecretSuffix,
 				Items: []corev1.KeyToPath{
 					{Key: consts.EdgeConnectConfigFileName, Path: consts.EdgeConnectConfigFileName},
 				},

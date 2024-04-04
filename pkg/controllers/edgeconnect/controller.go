@@ -671,7 +671,7 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 	secretData[consts.EdgeConnectConfigFileName] = configFile
 
 	secretConfig, err := k8ssecret.Create(controller.scheme, edgeConnect,
-		k8ssecret.NewNameModifier(consts.EdgeConnectConfigVolumeMountName),
+		k8ssecret.NewNameModifier(edgeConnect.Name+"-"+consts.EdgeConnectSecretSuffix),
 		k8ssecret.NewNamespaceModifier(edgeConnect.Namespace),
 		k8ssecret.NewDataModifier(secretData))
 

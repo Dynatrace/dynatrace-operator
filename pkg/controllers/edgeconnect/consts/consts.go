@@ -9,14 +9,9 @@ const (
 	EdgeConnectCustomCAVolumeName    = "ca-certs"
 	EdgeConnectConfigFileName        = "edgeConnect.yaml"
 	EdgeConnectConfigPath            = "/" + EdgeConnectConfigFileName
-	EdgeConnectConfigVolumeMountName = "edge-connect-config-yaml"
+	EdgeConnectConfigVolumeMountName = "ec-vm"
+	EdgeConnectSecretSuffix          = "ec-yaml"
 	EdgeConnectCAConfigMapKey        = "certs"
-
-	EnvEdgeConnectName            = "EDGE_CONNECT_NAME"
-	EnvEdgeConnectApiEndpointHost = "EDGE_CONNECT_API_ENDPOINT_HOST"
-	EnvEdgeConnectOauthEndpoint   = "EDGE_CONNECT_OAUTH__ENDPOINT"
-	EnvEdgeConnectOauthResource   = "EDGE_CONNECT_OAUTH__RESOURCE"
-	EnvEdgeConnectRestrictHostsTo = "EDGE_CONNECT_RESTRICT_HOSTS_TO"
 
 	KeyEdgeConnectOauthClientID     = "oauth-client-id"
 	KeyEdgeConnectOauthClientSecret = "oauth-client-secret"
