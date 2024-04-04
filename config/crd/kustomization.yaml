@@ -2,6 +2,7 @@ resources:
 - bases
 #+kubebuilder:scaffold:crdkustomizeresource
 
-patchesStrategicMerge:
-- patches/webhook_in_dynakubes.yaml
-#+kubebuilder:scaffold:crdkustomizewebhookpatch
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+patches:
+- path: patches/webhook_in_dynakubes.yaml
