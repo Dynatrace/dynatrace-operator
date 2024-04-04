@@ -3,6 +3,7 @@ package startup
 import (
 	"encoding/json"
 	"io"
+	"os"
 	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -19,14 +20,12 @@ type SecretConfig struct {
 	Proxy       string `json:"proxy"`
 	NoProxy     string `json:"noProxy"`
 	NetworkZone string `json:"networkZone"`
-	TrustedCAs  string `json:"trustedCAs"`
 
 	// oneAgent
 	OneAgentNoProxy string `json:"oneAgentNoProxy"`
 
 	// For the injection
 	TenantUUID          string `json:"tenantUUID"`
-	TlsCert             string `json:"tlsCert"`
 	HostGroup           string `json:"hostGroup"`
 	InitialConnectRetry int    `json:"initialConnectRetry"`
 	SkipCertCheck       bool   `json:"skipCertCheck"`
@@ -47,14 +46,6 @@ func (secret SecretConfig) logContent() {
 		secret.PaasToken = asterisks
 	}
 
-	if secret.TrustedCAs != "" {
-		secret.TrustedCAs = asterisks
-	}
-
-	if secret.TlsCert != "" {
-		secret.TlsCert = asterisks
-	}
-
 	log.Info("contents of secret config", "content", secret)
 }
 
@@ -63,6 +54,7 @@ func newSecretConfigViaFs(fs afero.Fs) (*SecretConfig, error) {
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+	defer file.Close()
 
 	rawJson, err := io.ReadAll(file)
 	if err != nil {
@@ -80,4 +72,27 @@ func newSecretConfigViaFs(fs afero.Fs) (*SecretConfig, error) {
 	config.logContent()
 
 	return &config, nil
+}
+
+func newCertificatesViaFs(fs afero.Fs, filename string) (string, error) {
+	filePem, err := fs.Open(filepath.Join(consts.AgentConfigDirMount, filename))
+	if err != nil {
+		if os.IsNotExist(err) {
+			log.Info("read certificates from filesystem - file not found", "filename", filename)
+
+			return "", nil
+		}
+
+		return "", errors.WithStack(err)
+	}
+	defer filePem.Close()
+
+	raw, err := io.ReadAll(filePem)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	log.Info("read certificates from filesystem", "content", "***", "filename", filename)
+
+	return string(raw), nil
 }
