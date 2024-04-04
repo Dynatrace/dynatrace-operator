@@ -21,10 +21,22 @@ _Full changelog will be published with the final release, including bugfixes and
 release_footer="### What's Changed
 Release Notes can be found in our [official Documentation](https://docs.dynatrace.com/docs/whats-new/release-notes/dynatrace-operator)."
 
-footer=""
-
 kubernetes_manifests="kubectl apply -f https://github.com/Dynatrace/dynatrace-operator/releases/download/${tag}/kubernetes.yaml"
 openshift_manifests="oc apply -f https://github.com/Dynatrace/dynatrace-operator/releases/download/${tag}/openshift.yaml"
+
+kubernetes_manifests="${kubernetes_manifests}
+kubectl apply -f https://github.com/Dynatrace/dynatrace-operator/releases/download/${tag}/kubernetes-csi.yaml"
+
+openshift_manifests="${openshift_manifests}
+oc apply -f https://github.com/Dynatrace/dynatrace-operator/releases/download/${tag}/openshift-csi.yaml"
+
+if [ "${pre_release}" = false ] ; then
+  footer="${release_footer}"
+else
+  footer="${pre_release_footer}"
+fi
+
+footer=""
 
 if [ "${pre_release}" = false ] ; then
   footer="${release_footer}"
