@@ -23,23 +23,47 @@ type entry struct {
 	allowDuplicates bool
 }
 
-type Option func(a *entry)
+type Option func(key string, a *entry)
 
 func WithPriority(priority int) Option {
-	return func(a *entry) {
+	return func(_ string, a *entry) {
 		a.priority = priority
 	}
 }
 
 func WithSeparator(separator string) Option {
-	return func(a *entry) {
+	return func(_ string, a *entry) {
 		a.delimiter = separator
 	}
 }
 
 func WithAllowDuplicates() Option {
-	return func(a *entry) {
+	return func(_ string, a *entry) {
 		a.allowDuplicates = true
+	}
+}
+
+func WithForbidDuplicates() Option {
+	return func(_ string, a *entry) {
+		a.allowDuplicates = false
+	}
+}
+
+func WithAllowDuplicatesForKey(allowedKey string) Option {
+	return func(key string, a *entry) {
+		// at this point key could still have a pre- or postfix
+		if strings.Contains(key, allowedKey) {
+			a.allowDuplicates = true
+		}
+	}
+}
+
+func WithForbidDuplicatesForKey(allowedKey string) Option {
+	return func(key string, a *entry) {
+		// at this point key could still have a pre- or postfix
+		if strings.Contains(key, allowedKey) {
+			a.allowDuplicates = false
+		}
 	}
 }
 
@@ -64,11 +88,11 @@ func (m Map) Append(key string, value any, opts ...Option) {
 	}
 
 	for _, opt := range m.defaultOptions {
-		opt(&newArg)
+		opt(key, &newArg)
 	}
 
 	for _, opt := range opts {
-		opt(&newArg)
+		opt(key, &newArg)
 	}
 
 	key, _ = strings.CutSuffix(key, newArg.delimiter)

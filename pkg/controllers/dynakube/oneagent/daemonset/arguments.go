@@ -16,7 +16,14 @@ func (dsInfo *builderInfo) arguments() ([]string, error) {
 	argMap := prioritymap.New(
 		prioritymap.WithSeparator(prioritymap.DefaultSeparator),
 		prioritymap.WithPriority(defaultArgumentPriority),
-		prioritymap.WithAllowDuplicates())
+		prioritymap.WithAllowDuplicates(),
+		prioritymap.WithForbidDuplicatesForKey("set-server"),
+		prioritymap.WithForbidDuplicatesForKey("set-tenant"),
+		prioritymap.WithForbidDuplicatesForKey("set-host-id-source"),
+		prioritymap.WithForbidDuplicatesForKey("set-host-group"),
+		prioritymap.WithForbidDuplicatesForKey("set-network-zone"),
+		prioritymap.WithForbidDuplicatesForKey("set-proxy"),
+	)
 
 	isProxyAsEnvDeprecated, err := isProxyAsEnvVarDeprecated(dsInfo.dynakube.OneAgentVersion())
 	if err != nil {
