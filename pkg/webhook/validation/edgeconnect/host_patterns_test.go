@@ -5,11 +5,16 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestHostPatternsRequired(t *testing.T) {
 	t.Run(`hostPatters optional - no error when provisioner false`, func(t *testing.T) {
 		edgeConnect := &edgeconnect.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
 			Spec: edgeconnect.EdgeConnectSpec{
 				ApiServer: "tenantid-test.dev.apps.dynatracelabs.com",
 				OAuth: edgeconnect.OAuthSpec{
@@ -17,9 +22,10 @@ func TestHostPatternsRequired(t *testing.T) {
 					Endpoint:     "endpoint",
 					Resource:     "resource",
 				},
+				ServiceAccountName: testServiceAccountName,
 			},
 		}
-		response := handleRequest(t, edgeConnect)
+		response := handleRequest(t, edgeConnect, prepareTestServiceAccount(testServiceAccountName, testNamespace))
 		assert.True(t, response.Allowed)
 		assert.Empty(t, response.Warnings)
 	})

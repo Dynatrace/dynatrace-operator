@@ -7,6 +7,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
+const (
+	testServiceAccountName = "test"
+)
+
 var log = logd.Get().WithName("edgeconnect-validation")
 
 type validator func(ctx context.Context, dv *edgeconnectValidator, edgeConnect *edgeconnect.EdgeConnect) string
@@ -15,4 +19,6 @@ var validators = []validator{
 	isInvalidApiServer,
 	nameTooLong,
 	checkHostPatternsValue,
+	isInvalidServiceName,
+	doesServiceAccountExist,
 }
