@@ -1,4 +1,4 @@
-package pod_mutator
+package pod
 
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
@@ -7,31 +7,31 @@ import (
 	"k8s.io/client-go/tools/record"
 )
 
-type podMutatorEventRecorder struct {
+type eventRecorder struct {
 	dynakube *dynatracev1beta1.DynaKube
 	pod      *corev1.Pod
 	recorder record.EventRecorder
 }
 
-func newPodMutatorEventRecorder(recorder record.EventRecorder) podMutatorEventRecorder {
-	return podMutatorEventRecorder{recorder: recorder}
+func newPodMutatorEventRecorder(recorder record.EventRecorder) eventRecorder {
+	return eventRecorder{recorder: recorder}
 }
 
-func (event *podMutatorEventRecorder) sendPodInjectEvent() {
+func (event *eventRecorder) sendPodInjectEvent() {
 	event.recorder.Eventf(event.dynakube,
 		corev1.EventTypeNormal,
 		injectEvent,
 		"Injecting the necessary info into pod %s in namespace %s", event.pod.GenerateName, event.pod.Namespace)
 }
 
-func (event *podMutatorEventRecorder) sendPodUpdateEvent() {
+func (event *eventRecorder) sendPodUpdateEvent() {
 	event.recorder.Eventf(event.dynakube,
 		corev1.EventTypeNormal,
 		updatePodEvent,
 		"Updating pod %s in namespace %s with missing containers", event.pod.GenerateName, event.pod.Namespace)
 }
 
-func (event *podMutatorEventRecorder) sendMissingDynaKubeEvent(namespaceName, dynakubeName string) {
+func (event *eventRecorder) sendMissingDynaKubeEvent(namespaceName, dynakubeName string) {
 	template := "Namespace '%s' is assigned to DynaKube instance '%s' but this instance doesn't exist"
 	event.recorder.Eventf(
 		&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dynakubeName, Namespace: namespaceName}},
@@ -40,7 +40,7 @@ func (event *podMutatorEventRecorder) sendMissingDynaKubeEvent(namespaceName, dy
 		template, namespaceName, dynakubeName)
 }
 
-func (event *podMutatorEventRecorder) sendOneAgentAPMWarningEvent(webhookPod *corev1.Pod) {
+func (event *eventRecorder) sendOneAgentAPMWarningEvent(webhookPod *corev1.Pod) {
 	event.recorder.Event(webhookPod,
 		corev1.EventTypeWarning,
 		IncompatibleCRDEvent,

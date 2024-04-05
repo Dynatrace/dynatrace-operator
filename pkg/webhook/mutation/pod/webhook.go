@@ -1,4 +1,4 @@
-package pod_mutator
+package pod
 
 import (
 	"context"
@@ -29,8 +29,7 @@ const (
 	ocDebugAnnotationsResource  = "debug.openshift.io/source-resource"
 )
 
-// AddPodMutationWebhookToManager adds the Webhook server to the Manager
-func AddPodMutationWebhookToManager(mgr manager.Manager, ns string) error {
+func AddWebhookToManager(mgr manager.Manager, ns string) error {
 	podName := os.Getenv(env.PodName)
 	if podName == "" {
 		log.Info("no Pod name set for webhook container")
@@ -45,10 +44,9 @@ func AddPodMutationWebhookToManager(mgr manager.Manager, ns string) error {
 	return nil
 }
 
-// podMutatorWebhook executes mutators on Pods
-type podMutatorWebhook struct {
+type webhook struct {
 	decoder  admission.Decoder
-	recorder podMutatorEventRecorder
+	recorder eventRecorder
 
 	apiReader      client.Reader
 	requestCounter metric.Int64Counter
@@ -62,14 +60,14 @@ type podMutatorWebhook struct {
 	deployedViaOLM bool
 }
 
-func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.Request) admission.Response {
+func (wh *webhook) Handle(ctx context.Context, request admission.Request) admission.Response {
 	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
 	defer span.End()
 
 	ctx = httptrace.WithClientTrace(ctx, otelhttptrace.NewClientTrace(ctx))
 
 	emptyPatch := admission.Patched("")
-	mutationRequest, err := webhook.createMutationRequestBase(ctx, request)
+	mutationRequest, err := wh.createMutationRequestBase(ctx, request)
 
 	if err != nil {
 		emptyPatch.Result.Message = fmt.Sprintf("unable to inject into pod (err=%s)", err.Error())
@@ -91,16 +89,16 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 	countHandleMutationRequest(ctx, podName)
 	span.SetAttributes(attribute.String(mutatedPodNameKey, podName))
 
-	if !mutationRequired(mutationRequest) || webhook.isOcDebugPod(mutationRequest.Pod) {
+	if !mutationRequired(mutationRequest) || wh.isOcDebugPod(mutationRequest.Pod) {
 		return emptyPatch
 	}
 
-	webhook.setupEventRecorder(ctx, mutationRequest)
+	wh.setupEventRecorder(ctx, mutationRequest)
 
-	if webhook.isInjected(ctx, mutationRequest) {
-		if webhook.handlePodReinvocation(ctx, mutationRequest) {
+	if wh.isInjected(ctx, mutationRequest) {
+		if wh.handlePodReinvocation(ctx, mutationRequest) {
 			log.Info("reinvocation policy applied", "podName", podName)
-			webhook.recorder.sendPodUpdateEvent()
+			wh.recorder.sendPodUpdateEvent()
 
 			return createResponseForPod(ctx, mutationRequest.Pod, request)
 		}
@@ -110,7 +108,7 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 		return emptyPatch
 	}
 
-	if err := webhook.handlePodMutation(ctx, mutationRequest); err != nil {
+	if err := wh.handlePodMutation(ctx, mutationRequest); err != nil {
 		return silentErrorResponse(ctx, mutationRequest.Pod, err)
 	}
 
@@ -127,19 +125,19 @@ func mutationRequired(mutationRequest *dtwebhook.MutationRequest) bool {
 	return maputils.GetFieldBool(mutationRequest.Pod.Annotations, dtwebhook.AnnotationDynatraceInject, true)
 }
 
-func (webhook *podMutatorWebhook) setupEventRecorder(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) {
+func (wh *webhook) setupEventRecorder(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) {
 	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
 	defer span.End()
 
-	webhook.recorder.dynakube = &mutationRequest.DynaKube
-	webhook.recorder.pod = mutationRequest.Pod
+	wh.recorder.dynakube = &mutationRequest.DynaKube
+	wh.recorder.pod = mutationRequest.Pod
 }
 
-func (webhook *podMutatorWebhook) isInjected(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) bool {
+func (wh *webhook) isInjected(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) bool {
 	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
 	defer span.End()
 
-	for _, mutator := range webhook.mutators {
+	for _, mutator := range wh.mutators {
 		if mutator.Injected(mutationRequest.BaseRequest) {
 			return true
 		}
@@ -148,7 +146,7 @@ func (webhook *podMutatorWebhook) isInjected(ctx context.Context, mutationReques
 	return false
 }
 
-func (webhook *podMutatorWebhook) isOcDebugPod(pod *corev1.Pod) bool {
+func (wh *webhook) isOcDebugPod(pod *corev1.Pod) bool {
 	annotations := []string{ocDebugAnnotationsContainer, ocDebugAnnotationsResource}
 
 	for _, annotation := range annotations {
@@ -169,7 +167,7 @@ func podNeedsInjection(mutationRequest *dtwebhook.MutationRequest) bool {
 	return needsInjection
 }
 
-func (webhook *podMutatorWebhook) handlePodMutation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) error {
+func (wh *webhook) handlePodMutation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) error {
 	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
 	defer span.End()
 
@@ -179,11 +177,11 @@ func (webhook *podMutatorWebhook) handlePodMutation(ctx context.Context, mutatio
 		return nil
 	}
 
-	mutationRequest.InstallContainer = createInstallInitContainerBase(webhook.webhookImage, webhook.clusterID, mutationRequest.Pod, mutationRequest.DynaKube)
+	mutationRequest.InstallContainer = createInstallInitContainerBase(wh.webhookImage, wh.clusterID, mutationRequest.Pod, mutationRequest.DynaKube)
 
 	isMutated := false
 
-	for _, mutator := range webhook.mutators {
+	for _, mutator := range wh.mutators {
 		if !mutator.Enabled(mutationRequest.BaseRequest) {
 			continue
 		}
@@ -202,13 +200,13 @@ func (webhook *podMutatorWebhook) handlePodMutation(ctx context.Context, mutatio
 	}
 
 	addInitContainerToPod(mutationRequest.Pod, mutationRequest.InstallContainer)
-	webhook.recorder.sendPodInjectEvent()
+	wh.recorder.sendPodInjectEvent()
 	setDynatraceInjectedAnnotation(mutationRequest)
 
 	return nil
 }
 
-func (webhook *podMutatorWebhook) handlePodReinvocation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) bool {
+func (wh *webhook) handlePodReinvocation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) bool {
 	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
 	defer span.End()
 
@@ -216,7 +214,7 @@ func (webhook *podMutatorWebhook) handlePodReinvocation(ctx context.Context, mut
 
 	reinvocationRequest := mutationRequest.ToReinvocationRequest()
 
-	for _, mutator := range webhook.mutators {
+	for _, mutator := range wh.mutators {
 		if mutator.Enabled(mutationRequest.BaseRequest) {
 			if update := mutator.Reinvoke(reinvocationRequest); update {
 				needsUpdate = true

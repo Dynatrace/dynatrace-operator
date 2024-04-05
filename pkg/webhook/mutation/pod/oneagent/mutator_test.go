@@ -1,4 +1,4 @@
-package oneagent_mutation
+package oneagent
 
 import (
 	"context"
@@ -258,8 +258,8 @@ func TestReinvoke(t *testing.T) {
 	})
 }
 
-func createTestPodMutator(objects []client.Object) *OneAgentPodMutator {
-	return &OneAgentPodMutator{
+func createTestPodMutator(objects []client.Object) *Mutator {
+	return &Mutator{
 		client:           fake.NewClient(objects...),
 		apiReader:        fake.NewClient(objects...),
 		image:            testImage,

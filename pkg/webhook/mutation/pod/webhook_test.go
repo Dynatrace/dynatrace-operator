@@ -1,4 +1,4 @@
-package pod_mutator
+package pod
 
 import (
 	"context"
@@ -166,7 +166,7 @@ func TestHandlePodMutation(t *testing.T) {
 		mutator2.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
 		mutator2.AssertCalled(t, "Mutate", mock.Anything, mutationRequest)
 	})
-	t.Run("should call 1 mutator, 1 error, no initContainer and annotation", func(t *testing.T) {
+	t.Run("should call 1 webhook, 1 error, no initContainer and annotation", func(t *testing.T) {
 		sadMutator := createFailPodMutatorMock(t)
 		happyMutator := createSimplePodMutatorMock(t)
 		dynakube := getTestDynakube()
@@ -200,7 +200,7 @@ func TestHandlePodReinvocation(t *testing.T) {
 		mutator2.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
 		mutator2.AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
 	})
-	t.Run("should call both mutator, only 1 update, updated == true", func(t *testing.T) {
+	t.Run("should call both webhook, only 1 update, updated == true", func(t *testing.T) {
 		failingMutator := createFailPodMutatorMock(t)
 		workingMutator := createAlreadyInjectedPodMutatorMock(t)
 		dynakube := getTestDynakube()
@@ -214,7 +214,7 @@ func TestHandlePodReinvocation(t *testing.T) {
 		workingMutator.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
 		workingMutator.AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
 	})
-	t.Run("should call mutator, no update", func(t *testing.T) {
+	t.Run("should call webhook, no update", func(t *testing.T) {
 		failingMutator := createFailPodMutatorMock(t)
 		dynakube := getTestDynakube()
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{failingMutator}, nil)
@@ -232,7 +232,7 @@ func TestHandlePodReinvocation(t *testing.T) {
 func assertPodMutatorCalls(t *testing.T, mutator dtwebhook.PodMutator, expectedCalls int) {
 	mock, ok := mutator.(*webhookmock.PodMutator)
 	if !ok {
-		t.Fatalf("assertPodMutatorCalls: mutator is not a mock")
+		t.Fatalf("assertPodMutatorCalls: webhook is not a mock")
 	}
 
 	mock.AssertNumberOfCalls(t, "Enabled", expectedCalls)
@@ -258,13 +258,13 @@ func getTestPodWithOcDebugPodAnnotations() *corev1.Pod {
 	return pod
 }
 
-func createTestWebhook(mutators []dtwebhook.PodMutator, objects []client.Object) *podMutatorWebhook {
+func createTestWebhook(mutators []dtwebhook.PodMutator, objects []client.Object) *webhook {
 	decoder := admission.NewDecoder(scheme.Scheme)
 
-	return &podMutatorWebhook{
+	return &webhook{
 		apiReader:        fake.NewClient(objects...),
 		decoder:          *decoder,
-		recorder:         podMutatorEventRecorder{recorder: record.NewFakeRecorder(10), pod: &corev1.Pod{}, dynakube: getTestDynakube()},
+		recorder:         eventRecorder{recorder: record.NewFakeRecorder(10), pod: &corev1.Pod{}, dynakube: getTestDynakube()},
 		webhookImage:     testImage,
 		webhookNamespace: testNamespaceName,
 		clusterID:        testClusterID,

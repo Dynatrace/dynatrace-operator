@@ -1,4 +1,4 @@
-package oneagent_mutation
+package oneagent
 
 import (
 	"net/url"

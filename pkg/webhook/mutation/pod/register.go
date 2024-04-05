@@ -1,4 +1,4 @@
-package pod_mutator
+package pod
 
 import (
 	"context"
@@ -13,14 +13,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oneagentapm"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/internal/otel"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/metadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/oneagent_mutation"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/metadata"
+	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	webhooks "sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -75,7 +75,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 		return errors.WithStack(err)
 	}
 
-	mgr.GetWebhookServer().Register("/inject", &webhook.Admission{Handler: &podMutatorWebhook{
+	mgr.GetWebhookServer().Register("/inject", &webhooks.Admission{Handler: &webhook{
 		apiReader:        controller_runtime.NewReader(apiReader),
 		webhookNamespace: webhookNamespace,
 		webhookImage:     webhookPodImage,
@@ -83,7 +83,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 		clusterID:        clusterID,
 		recorder:         eventRecorder,
 		mutators: []dtwebhook.PodMutator{
-			oneagent_mutation.NewOneAgentPodMutator(
+			oamutation.NewMutator(
 				webhookPodImage,
 				clusterID,
 				webhookNamespace,

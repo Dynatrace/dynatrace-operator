@@ -1,4 +1,4 @@
-package oneagent_mutation
+package oneagent
 
 import (
 	"context"
@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type OneAgentPodMutator struct {
+type Mutator struct {
 	client           client.Client
 	apiReader        client.Reader
 	image            string
@@ -23,10 +23,10 @@ type OneAgentPodMutator struct {
 	webhookNamespace string
 }
 
-var _ dtwebhook.PodMutator = &OneAgentPodMutator{}
+var _ dtwebhook.PodMutator = &Mutator{}
 
-func NewOneAgentPodMutator(image, clusterID, webhookNamespace string, client client.Client, apiReader client.Reader) *OneAgentPodMutator {
-	return &OneAgentPodMutator{
+func NewMutator(image, clusterID, webhookNamespace string, client client.Client, apiReader client.Reader) *Mutator {
+	return &Mutator{
 		image:            image,
 		clusterID:        clusterID,
 		webhookNamespace: webhookNamespace,
@@ -35,15 +35,15 @@ func NewOneAgentPodMutator(image, clusterID, webhookNamespace string, client cli
 	}
 }
 
-func (mutator *OneAgentPodMutator) Enabled(request *dtwebhook.BaseRequest) bool {
+func (mut *Mutator) Enabled(request *dtwebhook.BaseRequest) bool {
 	return maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOneAgentInject, request.DynaKube.FeatureAutomaticInjection())
 }
 
-func (mutator *OneAgentPodMutator) Injected(request *dtwebhook.BaseRequest) bool {
+func (mut *Mutator) Injected(request *dtwebhook.BaseRequest) bool {
 	return maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOneAgentInjected, false)
 }
 
-func (mutator *OneAgentPodMutator) Mutate(ctx context.Context, request *dtwebhook.MutationRequest) error {
+func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationRequest) error {
 	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
 	defer span.End()
 
@@ -56,39 +56,39 @@ func (mutator *OneAgentPodMutator) Mutate(ctx context.Context, request *dtwebhoo
 
 	log.Info("injecting OneAgent into pod", "podName", request.PodName())
 
-	if err := mutator.ensureInitSecret(request); err != nil {
+	if err := mut.ensureInitSecret(request); err != nil {
 		span.RecordError(err)
 
 		return err
 	}
 
 	installerInfo := getInstallerInfo(request.Pod, request.DynaKube)
-	mutator.addVolumes(request.Pod, request.DynaKube)
-	mutator.configureInitContainer(request, installerInfo)
-	injecteContainers := mutator.mutateUserContainers(request)
-	mutator.setContainerCount(request.InstallContainer, injecteContainers)
+	mut.addVolumes(request.Pod, request.DynaKube)
+	mut.configureInitContainer(request, installerInfo)
+	injectedContainers := mut.mutateUserContainers(request)
+	mut.setContainerCount(request.InstallContainer, injectedContainers)
 	addInjectionConfigVolumeMount(request.InstallContainer)
 	setInjectedAnnotation(request.Pod)
 
 	return nil
 }
 
-func (mutator *OneAgentPodMutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
-	if !mutator.Injected(request.BaseRequest) {
+func (mut *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
+	if !mut.Injected(request.BaseRequest) {
 		return false
 	}
 
 	log.Info("reinvoking", "podName", request.PodName())
 
-	return mutator.reinvokeUserContainers(request)
+	return mut.reinvokeUserContainers(request)
 }
 
-func (mutator *OneAgentPodMutator) ensureInitSecret(request *dtwebhook.MutationRequest) error {
+func (mut *Mutator) ensureInitSecret(request *dtwebhook.MutationRequest) error {
 	var initSecret corev1.Secret
 
 	secretObjectKey := client.ObjectKey{Name: consts.AgentInitSecretName, Namespace: request.Namespace.Name}
-	if err := mutator.apiReader.Get(request.Context, secretObjectKey, &initSecret); k8serrors.IsNotFound(err) {
-		initGenerator := initgeneration.NewInitGenerator(mutator.client, mutator.apiReader, mutator.webhookNamespace)
+	if err := mut.apiReader.Get(request.Context, secretObjectKey, &initSecret); k8serrors.IsNotFound(err) {
+		initGenerator := initgeneration.NewInitGenerator(mut.client, mut.apiReader, mut.webhookNamespace)
 
 		err := initGenerator.GenerateForNamespace(request.Context, request.DynaKube, request.Namespace.Name)
 		if err != nil && !k8serrors.IsAlreadyExists(err) {

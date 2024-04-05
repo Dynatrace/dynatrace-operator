@@ -1,4 +1,4 @@
-package namespace_mutator
+package namespace
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"

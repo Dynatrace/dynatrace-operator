@@ -1,4 +1,4 @@
-package oneagent_mutation
+package oneagent
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (mutator *OneAgentPodMutator) addVolumes(pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) {
+func (mut *Mutator) addVolumes(pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) {
 	addInjectionConfigVolume(pod)
 	addOneAgentVolumes(pod, dynakube)
 

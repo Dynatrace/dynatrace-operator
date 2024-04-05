@@ -1,4 +1,4 @@
-package namespace_mutator
+package namespace
 
 import (
 	"context"
@@ -43,7 +43,7 @@ func TestInjection(t *testing.T) {
 		},
 	}
 	clt := fake.NewClient(dk)
-	inj := &namespaceMutator{
+	inj := &webhook{
 		client:    clt,
 		apiReader: clt,
 		namespace: "dynatrace",

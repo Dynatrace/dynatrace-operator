@@ -1,4 +1,4 @@
-package oneagent_mutation
+package oneagent
 
 import (
 	"strconv"
@@ -11,17 +11,17 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (mutator *OneAgentPodMutator) configureInitContainer(request *dtwebhook.MutationRequest, installer installerInfo) {
+func (mut *Mutator) configureInitContainer(request *dtwebhook.MutationRequest, installer installerInfo) {
 	addInstallerInitEnvs(request.InstallContainer, installer)
 	addInitVolumeMounts(request.InstallContainer, request.DynaKube)
 }
 
-func (mutator *OneAgentPodMutator) setContainerCount(initContainer *corev1.Container, containerCount int) {
+func (mut *Mutator) setContainerCount(initContainer *corev1.Container, containerCount int) {
 	desiredContainerCountEnvVarValue := strconv.Itoa(containerCount)
 	initContainer.Env = env.AddOrUpdate(initContainer.Env, corev1.EnvVar{Name: consts.AgentContainerCountEnv, Value: desiredContainerCountEnvVarValue})
 }
 
-func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.MutationRequest) int {
+func (mut *Mutator) mutateUserContainers(request *dtwebhook.MutationRequest) int {
 	injectedContainers := 0
 
 	for i := range request.Pod.Spec.Containers {
@@ -34,7 +34,7 @@ func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.Mutat
 		}
 
 		addContainerInfoInitEnv(request.InstallContainer, i+1, container.Name, container.Image)
-		mutator.addOneAgentToContainer(request.ToReinvocationRequest(), container)
+		mut.addOneAgentToContainer(request.ToReinvocationRequest(), container)
 
 		injectedContainers++
 	}
@@ -45,7 +45,7 @@ func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.Mutat
 // reinvokeUserContainers mutates each user container that hasn't been injected yet.
 // It makes sure that the new containers will have an environment variable in the install-container
 // that doesn't conflict with the previous environment variables of the originally injected containers
-func (mutator *OneAgentPodMutator) reinvokeUserContainers(request *dtwebhook.ReinvocationRequest) bool {
+func (mut *Mutator) reinvokeUserContainers(request *dtwebhook.ReinvocationRequest) bool {
 	pod := request.Pod
 	oneAgentInstallContainer := findOneAgentInstallContainer(pod.Spec.InitContainers)
 	newContainers := []*corev1.Container{}
@@ -76,15 +76,15 @@ func (mutator *OneAgentPodMutator) reinvokeUserContainers(request *dtwebhook.Rei
 	for i := range newContainers {
 		currentContainer := newContainers[i]
 		addContainerInfoInitEnv(oneAgentInstallContainer, injectedContainers+i+1, currentContainer.Name, currentContainer.Image)
-		mutator.addOneAgentToContainer(request, currentContainer)
+		mut.addOneAgentToContainer(request, currentContainer)
 	}
 
-	mutator.setContainerCount(oneAgentInstallContainer, injectedContainers+len(newContainers))
+	mut.setContainerCount(oneAgentInstallContainer, injectedContainers+len(newContainers))
 
 	return true
 }
 
-func (mutator *OneAgentPodMutator) addOneAgentToContainer(request *dtwebhook.ReinvocationRequest, container *corev1.Container) {
+func (mut *Mutator) addOneAgentToContainer(request *dtwebhook.ReinvocationRequest, container *corev1.Container) {
 	log.Info("adding OneAgent to container", "name", container.Name)
 
 	installPath := maputils.GetField(request.Pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
@@ -92,7 +92,7 @@ func (mutator *OneAgentPodMutator) addOneAgentToContainer(request *dtwebhook.Rei
 	dynakube := request.DynaKube
 
 	addOneAgentVolumeMounts(container, installPath)
-	addDeploymentMetadataEnv(container, dynakube, mutator.clusterID)
+	addDeploymentMetadataEnv(container, dynakube, mut.clusterID)
 	addPreloadEnv(container, installPath)
 
 	addCertVolumeMounts(container, dynakube)

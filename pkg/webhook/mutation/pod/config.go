@@ -1,4 +1,4 @@
-package pod_mutator
+package pod
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"

@@ -1,4 +1,4 @@
-package namespace_mutator
+package namespace
 
 import (
 	"context"
@@ -14,20 +14,20 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	webhooks "sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-func AddNamespaceMutationWebhookToManager(manager ctrl.Manager, namespace string) error {
-	manager.GetWebhookServer().Register("/label-ns", &webhook.Admission{
+func AddWebhookToManager(manager ctrl.Manager, namespace string) error {
+	manager.GetWebhookServer().Register("/label-ns", &webhooks.Admission{
 		Handler: newNamespaceMutator(manager.GetClient(), manager.GetAPIReader(), namespace),
 	})
 
 	return nil
 }
 
-// namespaceMutator adds the necessary label to namespaces that match a dynakubes namespace selector
-type namespaceMutator struct {
+// webhook adds the necessary label to namespaces that match a dynakubes namespace selector
+type webhook struct {
 	client    client.Client
 	apiReader client.Reader
 	namespace string
@@ -39,12 +39,12 @@ type namespaceMutator struct {
 //     we would tag our own namespace which would cause the podInjector webhook to inject into our pods which can cause issues. (infra-monitoring pod injected into == bad)
 //  2. if the namespace was updated by the operator => don't do the mapping: we detect this using an annotation, we do this because the operator also does the mapping
 //     but from the dynakube's side (during dynakube reconcile) and we don't want to repeat ourselves. So we just remove the annotation.
-func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Request) admission.Response {
+func (wh *webhook) Handle(ctx context.Context, request admission.Request) admission.Response {
 	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
 	defer span.End()
 	countHandleMutationRequest(ctx, request.Namespace)
 
-	if nm.namespace == request.Namespace {
+	if wh.namespace == request.Namespace {
 		return admission.Patched("")
 	}
 
@@ -64,7 +64,7 @@ func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Reques
 
 	log.Info("checking namespace labels", "namespace", request.Name)
 
-	nsMapper := mapper.NewNamespaceMapper(nm.client, nm.apiReader, nm.namespace, &ns)
+	nsMapper := mapper.NewNamespaceMapper(wh.client, wh.apiReader, wh.namespace, &ns)
 
 	updatedNamespace, err := nsMapper.MapFromNamespace(ctx)
 	if err != nil {
@@ -94,7 +94,7 @@ func decodeRequestToNamespace(request admission.Request, namespace *corev1.Names
 }
 
 func newNamespaceMutator(client client.Client, apiReader client.Reader, namespace string) admission.Handler {
-	return &namespaceMutator{
+	return &webhook{
 		apiReader: apiReader,
 		namespace: namespace,
 		client:    client,

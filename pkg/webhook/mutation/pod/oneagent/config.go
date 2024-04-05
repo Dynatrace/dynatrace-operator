@@ -1,4 +1,4 @@
-package oneagent_mutation
+package oneagent
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"

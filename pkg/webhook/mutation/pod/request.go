@@ -1,4 +1,4 @@
-package pod_mutator
+package pod
 
 import (
 	"context"
@@ -14,18 +14,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context, request admission.Request) (*dtwebhook.MutationRequest, error) {
+func (wh *webhook) createMutationRequestBase(ctx context.Context, request admission.Request) (*dtwebhook.MutationRequest, error) {
 	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
 	defer span.End()
 
-	pod, err := getPodFromRequest(request, webhook.decoder)
+	pod, err := getPodFromRequest(request, wh.decoder)
 	if err != nil {
 		span.RecordError(err)
 
 		return nil, err
 	}
 
-	namespace, err := getNamespaceFromRequest(ctx, webhook.apiReader, request)
+	namespace, err := getNamespaceFromRequest(ctx, wh.apiReader, request)
 	if err != nil {
 		span.RecordError(err)
 
@@ -33,7 +33,7 @@ func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context,
 	}
 
 	dynakubeName, err := getDynakubeName(*namespace)
-	if err != nil && !webhook.deployedViaOLM {
+	if err != nil && !wh.deployedViaOLM {
 		span.RecordError(err)
 
 		return nil, err
@@ -47,7 +47,7 @@ func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context,
 		return nil, nil //nolint: nilnil
 	}
 
-	dynakube, err := webhook.getDynakube(ctx, dynakubeName)
+	dynakube, err := wh.getDynakube(ctx, dynakubeName)
 	if err != nil {
 		span.RecordError(err)
 
@@ -93,12 +93,12 @@ func getDynakubeName(namespace corev1.Namespace) (string, error) {
 	return dynakubeName, nil
 }
 
-func (webhook *podMutatorWebhook) getDynakube(ctx context.Context, dynakubeName string) (*dynatracev1beta1.DynaKube, error) {
+func (wh *webhook) getDynakube(ctx context.Context, dynakubeName string) (*dynatracev1beta1.DynaKube, error) {
 	var dk dynatracev1beta1.DynaKube
 
-	err := webhook.apiReader.Get(ctx, client.ObjectKey{Name: dynakubeName, Namespace: webhook.webhookNamespace}, &dk)
+	err := wh.apiReader.Get(ctx, client.ObjectKey{Name: dynakubeName, Namespace: wh.webhookNamespace}, &dk)
 	if k8serrors.IsNotFound(err) {
-		webhook.recorder.sendMissingDynaKubeEvent(webhook.webhookNamespace, dynakubeName)
+		wh.recorder.sendMissingDynaKubeEvent(wh.webhookNamespace, dynakubeName)
 
 		return nil, err
 	} else if err != nil {
