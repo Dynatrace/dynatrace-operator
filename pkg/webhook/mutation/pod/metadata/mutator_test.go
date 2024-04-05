@@ -140,8 +140,8 @@ func TestReinvoke(t *testing.T) {
 	})
 }
 
-func TestEnsureDataIngestSecret(t *testing.T) {
-	t.Run("shouldn't create init secret if already there", func(t *testing.T) {
+func TestIngestEndpointSecret(t *testing.T) {
+	t.Run("shouldn't create ingest secret if already there", func(t *testing.T) {
 		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
 		request := createTestMutationRequest(getTestDynakube(), nil)
 
@@ -149,7 +149,7 @@ func TestEnsureDataIngestSecret(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("should create init secret", func(t *testing.T) {
+	t.Run("should create ingest secret", func(t *testing.T) {
 		mutator := createTestPodMutator([]client.Object{getTestDynakube(), getTestTokensSecret()})
 		request := createTestMutationRequest(getTestDynakube(), nil)
 

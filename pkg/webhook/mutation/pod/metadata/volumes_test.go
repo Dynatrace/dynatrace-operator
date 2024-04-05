@@ -9,7 +9,7 @@ import (
 )
 
 func TestSetupVolumes(t *testing.T) {
-	t.Run("should add dataingest volumes", func(t *testing.T) {
+	t.Run("should add metadata enrichment volumes", func(t *testing.T) {
 		pod := &corev1.Pod{}
 
 		setupVolumes(pod)
@@ -20,7 +20,7 @@ func TestSetupVolumes(t *testing.T) {
 }
 
 func TestSetupVolumeMountsForUserContainer(t *testing.T) {
-	t.Run("should add dataingest volume-mounts", func(t *testing.T) {
+	t.Run("should add metadata enrichment volume-mounts", func(t *testing.T) {
 		container := &corev1.Container{}
 
 		setupVolumeMountsForUserContainer(container)

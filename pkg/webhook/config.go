@@ -18,10 +18,10 @@ const (
 
 	EmptyConnectionInfoReason = "EmptyConnectionInfo"
 
-	MetricsEnrichmentPrefix = "metrics-enrichment"
-	// AnnotationMetadataEnrichmentInject can be set at pod level to enable/disable data-ingest injection.
-	AnnotationMetadataEnrichmentInject   = MetricsEnrichmentPrefix + ".dynatrace.com/inject"
-	AnnotationMetadataEnrichmentInjected = MetricsEnrichmentPrefix + ".dynatrace.com/injected"
+	MetadataEnrichmentPrefix = "metrics-enrichment"
+	// AnnotationMetadataEnrichmentInject can be set at pod level to enable/disable metadata-enrichment injection.
+	AnnotationMetadataEnrichmentInject   = MetadataEnrichmentPrefix + ".dynatrace.com/inject"
+	AnnotationMetadataEnrichmentInjected = MetadataEnrichmentPrefix + ".dynatrace.com/injected"
 
 	// AnnotationFlavor can be set on a Pod to configure which code modules flavor to download. It's set to "default"
 	// if not set.
@@ -59,8 +59,8 @@ const (
 	// InstallContainerName is the name used for the install container
 	InstallContainerName = "install-oneagent"
 
-	// AnnotationWorkloadKind is added to any injected pods when the data-ingest feature is enabled
+	// AnnotationWorkloadKind is added to any injected pods when the metadata-enrichment feature is enabled
 	AnnotationWorkloadKind = "metadata.dynatrace.com/k8s.workload.kind"
-	// AnnotationWorkloadName is added to any injected pods when the data-ingest feature is enabled
+	// AnnotationWorkloadName is added to any injected pods when the metadata-enrichment feature is enabled
 	AnnotationWorkloadName = "metadata.dynatrace.com/k8s.workload.name"
 )

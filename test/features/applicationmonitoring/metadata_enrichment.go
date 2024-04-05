@@ -37,12 +37,12 @@ type metadata struct {
 	WorkloadName string `json:"dt.kubernetes.workload.name,omitempty"`
 }
 
-// Verification of the data ingest part of the operator. The test checks that
+// Verification of the metadata enrichment part of the operator. The test checks that
 // enrichment variables are added to the initContainer and dt_metadata.json
 // file contains required fields.
-func DataIngest(t *testing.T) features.Feature {
-	builder := features.New("data-ingest")
-	builder.WithLabel("name", "app-data-ingest")
+func MetadataEnrichment(t *testing.T) features.Feature {
+	builder := features.New("metadata-enrichment")
+	builder.WithLabel("name", "app-metadata-enrichment")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	testDynakube := *dynakube.New(
 		dynakube.WithApiUrl(secretConfig.ApiUrl),
@@ -72,8 +72,8 @@ func DataIngest(t *testing.T) features.Feature {
 	// Register actual test
 	builder.Assess("install sample deployment and wait till ready", sampleDeployment.Install())
 	builder.Assess("install sample pod  and wait till ready", samplePod.Install())
-	builder.Assess("deployment pods only have data ingest", deploymentPodsHaveOnlyDataIngestInitContainer(sampleDeployment))
-	builder.Assess("pod only has data ingest", podHasOnlyDataIngestInitContainer(samplePod))
+	builder.Assess("deployment pods only have metadata enrichment", deploymentPodsHaveOnlyMetadataEnrichmentInitContainer(sampleDeployment))
+	builder.Assess("pod only has metadata enrichment", podHasOnlyMetadataEnrichmentInitContainer(samplePod))
 
 	builder.WithTeardown("removing samples", sampleDeployment.Uninstall())
 	builder.WithTeardown("removing samples", samplePod.Uninstall())
@@ -82,35 +82,35 @@ func DataIngest(t *testing.T) features.Feature {
 	return builder.Feature()
 }
 
-func podHasOnlyDataIngestInitContainer(samplePod *sample.App) features.Func {
+func podHasOnlyMetadataEnrichmentInitContainer(samplePod *sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		testPod := samplePod.GetPods(ctx, t, envConfig.Client().Resources()).Items[0]
 
-		assessOnlyDataIngestIsInjected(t)(testPod)
-		assessPodHasDataIngestFile(ctx, t, envConfig.Client().Resources(), testPod)
+		assessOnlyMetadataEnrichmentIsInjected(t)(testPod)
+		assessPodHasMetadataEnrichmentFile(ctx, t, envConfig.Client().Resources(), testPod)
 
 		return ctx
 	}
 }
 
-func assessPodHasDataIngestFile(ctx context.Context, t *testing.T, resource *resources.Resources, testPod corev1.Pod) {
-	dataIngestMetadata := getDataIngestMetadataFromPod(ctx, t, resource, testPod)
+func assessPodHasMetadataEnrichmentFile(ctx context.Context, t *testing.T, resource *resources.Resources, testPod corev1.Pod) {
+	enrichmentMetadata := getMetadataEnrichmentMetadataFromPod(ctx, t, resource, testPod)
 
-	assert.Equal(t, "Pod", dataIngestMetadata.WorkloadKind)
-	assert.Equal(t, testPod.Name, dataIngestMetadata.WorkloadName)
+	assert.Equal(t, "Pod", enrichmentMetadata.WorkloadKind)
+	assert.Equal(t, testPod.Name, enrichmentMetadata.WorkloadName)
 }
 
-func deploymentPodsHaveOnlyDataIngestInitContainer(sampleApp *sample.App) features.Func {
+func deploymentPodsHaveOnlyMetadataEnrichmentInitContainer(sampleApp *sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		query := deployment.NewQuery(ctx, envConfig.Client().Resources(), client.ObjectKey{
 			Name:      sampleApp.Name(),
 			Namespace: sampleApp.Namespace(),
 		})
-		err := query.ForEachPod(assessOnlyDataIngestIsInjected(t))
+		err := query.ForEachPod(assessOnlyMetadataEnrichmentIsInjected(t))
 
 		require.NoError(t, err)
 
-		err = query.ForEachPod(assessDeploymentHasDataIngestFile(ctx, t, envConfig.Client().Resources(), sampleApp.Name()))
+		err = query.ForEachPod(assessDeploymentHasMetadataEnrichmentFile(ctx, t, envConfig.Client().Resources(), sampleApp.Name()))
 
 		require.NoError(t, err)
 
@@ -118,35 +118,35 @@ func deploymentPodsHaveOnlyDataIngestInitContainer(sampleApp *sample.App) featur
 	}
 }
 
-func assessDeploymentHasDataIngestFile(ctx context.Context, t *testing.T, resource *resources.Resources, deploymentName string) deployment.PodConsumer {
+func assessDeploymentHasMetadataEnrichmentFile(ctx context.Context, t *testing.T, resource *resources.Resources, deploymentName string) deployment.PodConsumer {
 	return func(pod corev1.Pod) {
-		dataIngestMetadata := getDataIngestMetadataFromPod(ctx, t, resource, pod)
+		enrichmentMetadata := getMetadataEnrichmentMetadataFromPod(ctx, t, resource, pod)
 
-		assert.Equal(t, "Deployment", dataIngestMetadata.WorkloadKind)
-		assert.Equal(t, deploymentName, dataIngestMetadata.WorkloadName)
+		assert.Equal(t, "Deployment", enrichmentMetadata.WorkloadKind)
+		assert.Equal(t, deploymentName, enrichmentMetadata.WorkloadName)
 	}
 }
 
-func getDataIngestMetadataFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, dataIngestPod corev1.Pod) metadata {
-	require.NotEmpty(t, dataIngestPod.Spec.Containers)
-	dataIngestContainer := dataIngestPod.Spec.Containers[0].Name
+func getMetadataEnrichmentMetadataFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod corev1.Pod) metadata {
+	require.NotEmpty(t, enrichedPod.Spec.Containers)
+	enrichedContainer := enrichedPod.Spec.Containers[0].Name
 	readMetadataCommand := shell.ReadFile(metadataFile)
-	result, err := pod.Exec(ctx, resource, dataIngestPod, dataIngestContainer, readMetadataCommand...)
+	result, err := pod.Exec(ctx, resource, enrichedPod, enrichedContainer, readMetadataCommand...)
 
 	require.NoError(t, err)
 
 	assert.Zero(t, result.StdErr.Len())
 	assert.NotEmpty(t, result.StdOut)
 
-	var dataIngestMetadata metadata
-	err = json.Unmarshal(result.StdOut.Bytes(), &dataIngestMetadata)
+	var enrichmentMetadata metadata
+	err = json.Unmarshal(result.StdOut.Bytes(), &enrichmentMetadata)
 
 	require.NoError(t, err)
 
-	return dataIngestMetadata
+	return enrichmentMetadata
 }
 
-func assessOnlyDataIngestIsInjected(t *testing.T) deployment.PodConsumer {
+func assessOnlyMetadataEnrichmentIsInjected(t *testing.T) deployment.PodConsumer {
 	return func(pod corev1.Pod) {
 		initContainers := pod.Spec.InitContainers
 

@@ -126,7 +126,7 @@ func (env *environment) setOptionalFields() {
 
 func (env *environment) setMutationTypeFields() {
 	env.addOneAgentInjected()
-	env.addDataIngestInjected()
+	env.addMetadataEnrichmentInjected()
 }
 
 func (env *environment) addFailurePolicy() error {
@@ -314,9 +314,9 @@ func (env *environment) addOneAgentInjected() {
 	env.OneAgentInjected = oneAgentInjected == trueStatement
 }
 
-func (env *environment) addDataIngestInjected() {
-	dataIngestInjected, _ := checkEnvVar(consts.EnrichmentInjectedEnv)
-	env.MetadataEnrichmentInjected = dataIngestInjected == trueStatement
+func (env *environment) addMetadataEnrichmentInjected() {
+	metadataEnrichmentInjected, _ := checkEnvVar(consts.EnrichmentInjectedEnv)
+	env.MetadataEnrichmentInjected = metadataEnrichmentInjected == trueStatement
 }
 
 func (env *environment) addK8ClusterID() error {

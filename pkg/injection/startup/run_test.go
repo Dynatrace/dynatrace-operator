@@ -33,7 +33,7 @@ func getTestProcessModuleConfig() *dtclient.ProcessModuleConfig {
 
 func TestNewRunner(t *testing.T) {
 	fs := prepTestFs(t)
-	t.Run("create runner with oneagent and data-ingest injection", func(t *testing.T) {
+	t.Run("create runner with oneagent and metadata-enrichment injection", func(t *testing.T) {
 		resetEnv := prepCombinedTestEnv(t)
 		runner, err := NewRunner(fs)
 
@@ -62,8 +62,8 @@ func TestNewRunner(t *testing.T) {
 		assert.NotNil(t, runner.installer)
 		assert.Empty(t, runner.hostTenant)
 	})
-	t.Run("create runner with only data-ingest injection", func(t *testing.T) {
-		resetEnv := prepDataIngestTestEnv(t, false)
+	t.Run("create runner with only metadata-enrichment injection", func(t *testing.T) {
+		resetEnv := prepMetadataEnrichmentTestEnv(t, false)
 		runner, err := NewRunner(fs)
 
 		resetEnv()
