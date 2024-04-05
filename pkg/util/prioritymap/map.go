@@ -6,20 +6,21 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-type entry struct {
-	value     any
-	delimiter string
-	priority  int
-}
-
 const DefaultPriority = LowPriority
 const LowPriority = 1
 const MediumPriority = 5
 const HighPriority = 10
 
 type Map struct {
-	entries        map[string]entry
+	entries        map[string][]entry
 	defaultOptions []Option
+}
+
+type entry struct {
+	value           any
+	delimiter       string
+	priority        int
+	allowDuplicates bool
 }
 
 type Option func(a *entry)
@@ -36,9 +37,15 @@ func WithSeparator(separator string) Option {
 	}
 }
 
+func WithAllowDuplicates() Option {
+	return func(a *entry) {
+		a.allowDuplicates = true
+	}
+}
+
 func New(defaultOptions ...Option) *Map {
 	m := &Map{
-		entries:        make(map[string]entry),
+		entries:        make(map[string][]entry),
 		defaultOptions: defaultOptions,
 	}
 
@@ -51,8 +58,9 @@ func (m Map) Append(key string, value any, opts ...Option) {
 	}
 
 	newArg := entry{
-		value:    value,
-		priority: DefaultPriority,
+		value:           value,
+		priority:        DefaultPriority,
+		allowDuplicates: false,
 	}
 
 	for _, opt := range m.defaultOptions {
@@ -65,8 +73,12 @@ func (m Map) Append(key string, value any, opts ...Option) {
 
 	key, _ = strings.CutSuffix(key, newArg.delimiter)
 
-	if existingArg, exists := m.entries[key]; !exists || newArg.priority > existingArg.priority {
-		m.entries[key] = newArg
+	if existingArg, exists := m.entries[key]; !exists || newArg.allowDuplicates || newArg.priority > existingArg[0].priority {
+		if !exists || !newArg.allowDuplicates {
+			m.entries[key] = make([]entry, 0)
+		}
+
+		m.entries[key] = append(m.entries[key], newArg)
 	}
 }
 

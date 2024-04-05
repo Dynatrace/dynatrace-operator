@@ -79,7 +79,7 @@ func TestArguments(t *testing.T) {
 		}
 		assert.Equal(t, expectedDefaultArguments, arguments)
 	})
-	t.Run("when injected arguments are provided then they take precedence", func(t *testing.T) {
+	t.Run("when injected arguments are provided then they come last", func(t *testing.T) {
 		args := []string{
 			"--set-app-log-content-access=true",
 			"--set-host-id-source=lustiglustig",
@@ -98,6 +98,7 @@ func TestArguments(t *testing.T) {
 			"--set-host-group=APP_LUSTIG_PETER",
 			"--set-host-id-source=lustiglustig",
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+			"--set-server={$(DT_SERVER)}",
 			"--set-server=https://hyper.super.com:9999",
 			"--set-tenant=$(DT_TENANT)",
 		}
@@ -120,6 +121,37 @@ func TestArguments(t *testing.T) {
 		expectedDefaultArguments := []string{
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
 			"--set-server={$(DT_SERVER)}",
+			"--set-tenant=$(DT_TENANT)",
+		}
+		assert.Equal(t, expectedDefaultArguments, arguments)
+	})
+	t.Run("multiple set-host-property entries are possible", func(t *testing.T) {
+		args := []string{
+			"--set-app-log-content-access=true",
+			"--set-host-id-source=lustiglustig",
+			"--set-host-group=APP_LUSTIG_PETER",
+			"--set-server=https://hyper.super.com:9999",
+			"--set-host-property=item0=value0",
+			"--set-host-property=item1=value1",
+			"--set-host-property=item2=value2",
+		}
+		builder := builderInfo{
+			dynakube:       &dynatracev1beta1.DynaKube{},
+			hostInjectSpec: &dynatracev1beta1.HostInjectSpec{Args: args},
+		}
+
+		arguments, _ := builder.arguments()
+
+		expectedDefaultArguments := []string{
+			"--set-app-log-content-access=true",
+			"--set-host-group=APP_LUSTIG_PETER",
+			"--set-host-id-source=lustiglustig",
+			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+			"--set-host-property=item0=value0",
+			"--set-host-property=item1=value1",
+			"--set-host-property=item2=value2",
+			"--set-server={$(DT_SERVER)}",
+			"--set-server=https://hyper.super.com:9999",
 			"--set-tenant=$(DT_TENANT)",
 		}
 		assert.Equal(t, expectedDefaultArguments, arguments)
