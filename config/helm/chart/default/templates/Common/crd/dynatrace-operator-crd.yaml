@@ -4580,7 +4580,7 @@ spec:
                 description: KubernetesApiAutomation enables Automation workflows
                 properties:
                   enabled:
-                    description: Enabled enables kubernetes automation
+                    description: Enables kubernetes automation
                     type: boolean
                 type: object
               labels:

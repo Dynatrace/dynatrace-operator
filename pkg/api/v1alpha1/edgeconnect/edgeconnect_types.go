@@ -124,7 +124,7 @@ type ProxySpec struct {
 }
 
 type KubernetesApiAutomationSpec struct {
-	// Enabled enables kubernetes automation
+	// Enables kubernetes automation
 	Enabled bool `json:"enabled,omitempty"`
 }
 
