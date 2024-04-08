@@ -129,7 +129,7 @@ func (wh *webhook) setupEventRecorder(ctx context.Context, mutationRequest *dtwe
 	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
 	defer span.End()
 
-	wh.recorder.dynakube = &mutationRequest.DynaKube
+	wh.recorder.dk = &mutationRequest.DynaKube
 	wh.recorder.pod = mutationRequest.Pod
 }
 

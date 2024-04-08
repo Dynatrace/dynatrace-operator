@@ -8,7 +8,7 @@ import (
 )
 
 type eventRecorder struct {
-	dynakube *dynatracev1beta1.DynaKube
+	dk       *dynatracev1beta1.DynaKube
 	pod      *corev1.Pod
 	recorder record.EventRecorder
 }
@@ -17,31 +17,31 @@ func newPodMutatorEventRecorder(recorder record.EventRecorder) eventRecorder {
 	return eventRecorder{recorder: recorder}
 }
 
-func (event *eventRecorder) sendPodInjectEvent() {
-	event.recorder.Eventf(event.dynakube,
+func (er *eventRecorder) sendPodInjectEvent() {
+	er.recorder.Eventf(er.dk,
 		corev1.EventTypeNormal,
 		injectEvent,
-		"Injecting the necessary info into pod %s in namespace %s", event.pod.GenerateName, event.pod.Namespace)
+		"Injecting the necessary info into pod %s in namespace %s", er.pod.GenerateName, er.pod.Namespace)
 }
 
-func (event *eventRecorder) sendPodUpdateEvent() {
-	event.recorder.Eventf(event.dynakube,
+func (er *eventRecorder) sendPodUpdateEvent() {
+	er.recorder.Eventf(er.dk,
 		corev1.EventTypeNormal,
 		updatePodEvent,
-		"Updating pod %s in namespace %s with missing containers", event.pod.GenerateName, event.pod.Namespace)
+		"Updating pod %s in namespace %s with missing containers", er.pod.GenerateName, er.pod.Namespace)
 }
 
-func (event *eventRecorder) sendMissingDynaKubeEvent(namespaceName, dynakubeName string) {
+func (er *eventRecorder) sendMissingDynaKubeEvent(namespaceName, dynakubeName string) {
 	template := "Namespace '%s' is assigned to DynaKube instance '%s' but this instance doesn't exist"
-	event.recorder.Eventf(
+	er.recorder.Eventf(
 		&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dynakubeName, Namespace: namespaceName}},
 		corev1.EventTypeWarning,
 		missingDynakubeEvent,
 		template, namespaceName, dynakubeName)
 }
 
-func (event *eventRecorder) sendOneAgentAPMWarningEvent(webhookPod *corev1.Pod) {
-	event.recorder.Event(webhookPod,
+func (er *eventRecorder) sendOneAgentAPMWarningEvent(webhookPod *corev1.Pod) {
+	er.recorder.Event(webhookPod,
 		corev1.EventTypeWarning,
 		IncompatibleCRDEvent,
 		"Unsupported OneAgentAPM CRD still present in cluster, please remove to proceed")
