@@ -50,7 +50,7 @@ tests:
               - ""
             resourceNames:
               - dynatrace-dynakube-config
-              - dynatrace-data-ingest-endpoint
+              - dynatrace-metadata-enrichment-endpoint
             resources:
               - secrets
             verbs:

@@ -130,11 +130,11 @@ func (r *reconciler) removeAppInjection(ctx context.Context) (err error) {
 		return err
 	}
 
-	endpointSecretGenerator := ingestendpoint.NewEndpointSecretGenerator(r.client, r.apiReader, r.dynakube.Namespace)
+	endpointSecretGenerator := ingestendpoint.NewSecretGenerator(r.client, r.apiReader, r.dynakube.Namespace)
 
 	err = endpointSecretGenerator.RemoveEndpointSecrets(ctx, namespaces)
 	if err != nil {
-		log.Info("could not remove data-ingest secret")
+		log.Info("could not remove metadata-enrichment secret")
 
 		return err
 	}
@@ -174,11 +174,11 @@ func (r *reconciler) setupEnrichmentInjection(ctx context.Context) error {
 		return nil
 	}
 
-	endpointSecretGenerator := ingestendpoint.NewEndpointSecretGenerator(r.client, r.apiReader, r.dynakube.Namespace)
+	endpointSecretGenerator := ingestendpoint.NewSecretGenerator(r.client, r.apiReader, r.dynakube.Namespace)
 
 	err := endpointSecretGenerator.GenerateForDynakube(ctx, r.dynakube)
 	if err != nil {
-		log.Info("failed to generate data-ingest secret")
+		log.Info("failed to generate the metadata-enrichment secret")
 
 		return err
 	}

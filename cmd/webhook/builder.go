@@ -13,8 +13,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/namespace_mutator"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator"
+	namespacemutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/namespace"
+	podmutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod"
 	dynakubevalidationhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/validation/dynakube"
 	edgeconnectvalidationhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/validation/edgeconnect"
 	"github.com/pkg/errors"
@@ -143,12 +143,12 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		err = namespace_mutator.AddNamespaceMutationWebhookToManager(webhookManager, builder.namespace)
+		err = namespacemutator.AddWebhookToManager(webhookManager, builder.namespace)
 		if err != nil {
 			return err
 		}
 
-		err = pod_mutator.AddPodMutationWebhookToManager(webhookManager, builder.namespace)
+		err = podmutator.AddWebhookToManager(webhookManager, builder.namespace)
 		if err != nil {
 			return err
 		}
