@@ -693,9 +693,8 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 		OneAgent: dynatracev1beta1.OneAgentStatus{
 			ConnectionInfoStatus: dynatracev1beta1.OneAgentConnectionInfoStatus{
 				ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
-					TenantUUID:  testTenantUUID,
-					Endpoints:   testTenantEndpoints,
-					LastRequest: metav1.Time{},
+					TenantUUID: testTenantUUID,
+					Endpoints:  testTenantEndpoints,
 				},
 				CommunicationHosts: []dynatracev1beta1.CommunicationHostStatus{
 					{

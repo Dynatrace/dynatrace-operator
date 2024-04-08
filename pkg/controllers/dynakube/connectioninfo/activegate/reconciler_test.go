@@ -93,9 +93,8 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient(dynakube, buildActiveGateSecret(*dynakube, testTenantUUID))
 		dynakube.Status.ActiveGate.ConnectionInfoStatus = dynatracev1beta1.ActiveGateConnectionInfoStatus{
 			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
-				TenantUUID:  testOutdated,
-				Endpoints:   testOutdated,
-				LastRequest: metav1.NewTime(time.Now()),
+				TenantUUID: testOutdated,
+				Endpoints:  testOutdated,
 			},
 		}
 
@@ -128,9 +127,8 @@ func TestReconcile(t *testing.T) {
 
 		dynakube.Status.ActiveGate.ConnectionInfoStatus = dynatracev1beta1.ActiveGateConnectionInfoStatus{
 			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
-				TenantUUID:  testOutdated,
-				Endpoints:   testOutdated,
-				LastRequest: metav1.NewTime(time.Now()),
+				TenantUUID: testOutdated,
+				Endpoints:  testOutdated,
 			},
 		}
 

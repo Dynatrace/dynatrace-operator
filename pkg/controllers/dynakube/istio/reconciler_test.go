@@ -358,9 +358,8 @@ func createTestDynaKube() *dynatracev1beta1.DynaKube {
 			ActiveGate: dynatracev1beta1.ActiveGateStatus{
 				ConnectionInfoStatus: dynatracev1beta1.ActiveGateConnectionInfoStatus{
 					ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
-						TenantUUID:  "test-tenant",
-						Endpoints:   endpoints,
-						LastRequest: metav1.Time{},
+						TenantUUID: "test-tenant",
+						Endpoints:  endpoints,
 					},
 				},
 			},
