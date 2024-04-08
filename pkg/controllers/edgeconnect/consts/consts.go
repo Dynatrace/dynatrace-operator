@@ -1,6 +1,7 @@
 package consts
 
 const (
+	EdgeConnectAnnotationSecretHash  = "my-secret-hash"
 	EdgeConnectUserProvisioned       = "user-provisioned"
 	EdgeConnectContainerName         = "edge-connect"
 	EdgeConnectServiceAccountName    = "dynatrace-edgeconnect"

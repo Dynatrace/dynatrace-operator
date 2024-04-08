@@ -323,6 +323,13 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 		return errors.WithStack(err)
 	}
 
+	secretHash, err := controller.createOrUpdateEdgeConnectConfigSecret(ctx, edgeConnect)
+	if err != nil {
+		return err
+	}
+
+	desiredDeployment.Spec.Template.Annotations = map[string]string{consts.EdgeConnectAnnotationSecretHash: secretHash}
+
 	ddHash, err := hasher.GenerateHash(desiredDeployment)
 	if err != nil {
 		_log.Debug("Unable to generate hash for EdgeConnect deployment")
@@ -331,10 +338,6 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 	}
 
 	desiredDeployment.Annotations[hasher.AnnotationHash] = ddHash
-
-	if err := controller.createOrUpdateEdgeConnectConfigSecret(ctx, edgeConnect); err != nil {
-		return err
-	}
 
 	_, err = k8sdeployment.CreateOrUpdateDeployment(controller.client, log, desiredDeployment)
 	if err != nil {
@@ -626,12 +629,14 @@ func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Co
 
 	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name, "clientSecretName", clientSecretName)
 
-	err := controller.createOrUpdateEdgeConnectConfigSecret(ctx, edgeConnect)
+	secretHash, err := controller.createOrUpdateEdgeConnectConfigSecret(ctx, edgeConnect)
 	if err != nil {
 		return err
 	}
 
 	desiredDeployment := deployment.New(edgeConnect)
+
+	desiredDeployment.Spec.Template.Annotations = map[string]string{consts.EdgeConnectAnnotationSecretHash: secretHash}
 	_log = _log.WithValues("deploymentName", desiredDeployment.Name)
 
 	if err := controllerutil.SetControllerReference(edgeConnect, desiredDeployment, controller.scheme); err != nil {
@@ -661,10 +666,10 @@ func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Co
 	return nil
 }
 
-func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
+func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) (string, error) {
 	configFile, err := secret.PrepareConfigFile(ctx, edgeConnect, controller.apiReader)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	secretData := make(map[string][]byte)
@@ -676,7 +681,7 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 		k8ssecret.NewDataModifier(secretData))
 
 	if err != nil {
-		return errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 
 	query := k8ssecret.NewQuery(ctx, controller.client, controller.apiReader, log)
@@ -685,8 +690,8 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 	if err != nil {
 		log.Info("could not create or update secret for edgeConnect.yaml", "name", secretConfig.Name)
 
-		return err
+		return "", err
 	}
 
-	return nil
+	return hasher.GenerateHash(secretConfig)
 }
