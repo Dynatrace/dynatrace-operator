@@ -43,7 +43,8 @@ func (updater activeGateUpdater) IsEnabled() bool {
 		return true
 	}
 
-	_ = meta.RemoveStatusCondition(updater.dynakube.Conditions(), activeGateVersionConditionType)
+	meta.RemoveStatusCondition(updater.dynakube.Conditions(), activeGateVersionConditionType)
+	updater.dynakube.Status.ActiveGate.VersionStatus = status.VersionStatus{}
 
 	return false
 }

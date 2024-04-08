@@ -103,6 +103,9 @@ type ActiveGateStatus struct {
 
 	// Information about Active Gate's connections
 	ConnectionInfoStatus ActiveGateConnectionInfoStatus `json:"connectionInfoStatus,omitempty"`
+
+	// The ClusterIPs set by Kubernetes on the ActiveGate Service created by the Operator
+	ServiceIPs []string `json:"serviceIPs,omitempty"`
 }
 
 type CodeModulesStatus struct {

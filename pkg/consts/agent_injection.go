@@ -29,4 +29,9 @@ const (
 	AgentShareDirMount    = "/mnt/share"
 	AgentConfigDirMount   = "/mnt/config"
 	AgentConfInitDirMount = "/mnt/agent-conf"
+
+	TrustedCAsInitSecretField    = "trustedcas"
+	ActiveGateCAsInitSecretField = "agcerts"
+	CustomCertsFileName          = "custom.pem"
+	CustomProxyCertsFileName     = "custom_proxy.pem"
 )

@@ -46,10 +46,21 @@ var NoOneAgentCommunicationHostsError = errors.New("no communication hosts for O
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
 	if !r.dynakube.NeedAppInjection() && !r.dynakube.NeedsOneAgent() {
+		if meta.FindStatusCondition(*r.dynakube.Conditions(), oaConnectionInfoConditionType) == nil {
+			return nil // no condition == nothing is there to clean up
+		}
+
+		query := k8ssecret.NewQuery(ctx, r.client, r.apiReader, log)
+		err := query.Delete(r.dynakube.OneagentTenantSecret(), r.dynakube.Namespace)
+
+		if err != nil {
+			log.Error(err, "failed to clean-up OneAgent tenant-secret")
+		}
+
 		meta.RemoveStatusCondition(r.dynakube.Conditions(), oaConnectionInfoConditionType)
 		r.dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta1.OneAgentConnectionInfoStatus{}
-		// TODO: Delete secret if there
-		return nil
+
+		return nil // clean-up shouldn't cause a failure
 	}
 
 	oldStatus := r.dynakube.Status.DeepCopy()

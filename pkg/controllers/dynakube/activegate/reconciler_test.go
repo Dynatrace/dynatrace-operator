@@ -77,8 +77,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, dtc, nil).(*Reconciler)
-		r.connectionReconciler = createConnectionInfoReconcilerMock(t, false)
-		r.versionReconciler = createVersionReconcilerMock(t, false)
+		r.connectionReconciler = createConnectionInfoReconcilerMock(t)
+		r.versionReconciler = createVersionReconcilerMock(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
 
 		err := r.Reconcile(context.Background())
@@ -90,6 +90,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		// remove AG from spec
 		instance.Spec.ActiveGate = dynatracev1beta1.ActiveGateSpec{}
+		r.connectionReconciler = createConnectionInfoReconcilerMock(t)
+		r.versionReconciler = createVersionReconcilerMock(t)
 		err = r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -134,8 +136,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 			newCustomPropertiesReconcilerFunc: func(_ string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) controllers.Reconciler {
 				return fakeReconciler
 			},
-			connectionReconciler: createConnectionInfoReconcilerMock(t, true),
-			versionReconciler:    createVersionReconcilerMock(t, true),
+			connectionReconciler: createConnectionInfoReconcilerMock(t),
+			versionReconciler:    createVersionReconcilerMock(t),
 		}
 		err := proxyReconciler.Reconcile(context.Background())
 		require.NoError(t, err)
@@ -155,8 +157,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 			newCustomPropertiesReconcilerFunc: func(_ string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) controllers.Reconciler {
 				return fakeReconciler
 			},
-			connectionReconciler: createConnectionInfoReconcilerMock(t, true),
-			versionReconciler:    createVersionReconcilerMock(t, true),
+			connectionReconciler: createConnectionInfoReconcilerMock(t),
+			versionReconciler:    createVersionReconcilerMock(t),
 		}
 		err = noProxyReconciler.Reconcile(context.Background())
 		require.NoError(t, err)
@@ -176,8 +178,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, dtc, nil).(*Reconciler)
-		r.connectionReconciler = createConnectionInfoReconcilerMock(t, true)
-		r.versionReconciler = createVersionReconcilerMock(t, true)
+		r.connectionReconciler = createConnectionInfoReconcilerMock(t)
+		r.versionReconciler = createVersionReconcilerMock(t)
 
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
@@ -229,8 +231,8 @@ func TestServiceCreation(t *testing.T) {
 			fakeClient := fake.NewClient(testKubeSystemNamespace)
 
 			reconciler := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, dynatraceClient, nil).(*Reconciler)
-			reconciler.connectionReconciler = createConnectionInfoReconcilerMock(t, true)
-			reconciler.versionReconciler = createVersionReconcilerMock(t, true)
+			reconciler.connectionReconciler = createConnectionInfoReconcilerMock(t)
+			reconciler.versionReconciler = createVersionReconcilerMock(t)
 
 			dynakube.Spec.ActiveGate.Capabilities = []dynatracev1beta1.CapabilityDisplayName{
 				capName,
@@ -256,8 +258,8 @@ func TestServiceCreation(t *testing.T) {
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 
 		reconciler := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, dynatraceClient, nil).(*Reconciler)
-		reconciler.connectionReconciler = createConnectionInfoReconcilerMock(t, true)
-		reconciler.versionReconciler = createVersionReconcilerMock(t, true)
+		reconciler.connectionReconciler = createConnectionInfoReconcilerMock(t)
+		reconciler.versionReconciler = createVersionReconcilerMock(t)
 
 		dynakube.Spec.ActiveGate.Capabilities = []dynatracev1beta1.CapabilityDisplayName{
 			dynatracev1beta1.RoutingCapability.DisplayName,
@@ -344,8 +346,8 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 			newCustomPropertiesReconcilerFunc: func(_ string, _ *dynatracev1beta1.DynaKubeValueSource) controllers.Reconciler {
 				return fakeReconciler
 			},
-			connectionReconciler: createConnectionInfoReconcilerMock(t, true),
-			versionReconciler:    createVersionReconcilerMock(t, true),
+			connectionReconciler: createConnectionInfoReconcilerMock(t),
+			versionReconciler:    createVersionReconcilerMock(t),
 		}
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
@@ -358,31 +360,19 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 	})
 }
 
-func createConnectionInfoReconcilerMock(t *testing.T, once bool) controllers.Reconciler {
+func createConnectionInfoReconcilerMock(t *testing.T) controllers.Reconciler {
 	connectionInfoReconciler := controllermock.NewReconciler(t)
-	call := connectionInfoReconciler.On("Reconcile",
-		mock.AnythingOfType("context.backgroundCtx")).Return(nil)
-
-	if once {
-		call.Once()
-	} else {
-		call.Twice()
-	}
+	connectionInfoReconciler.On("Reconcile",
+		mock.AnythingOfType("context.backgroundCtx")).Return(nil).Once()
 
 	return connectionInfoReconciler
 }
 
-func createVersionReconcilerMock(t *testing.T, once bool) version.Reconciler {
+func createVersionReconcilerMock(t *testing.T) version.Reconciler {
 	versionReconciler := versionmock.NewReconciler(t)
-	call := versionReconciler.On("ReconcileActiveGate",
+	versionReconciler.On("ReconcileActiveGate",
 		mock.AnythingOfType("context.backgroundCtx"),
-		mock.AnythingOfType("*dynakube.DynaKube")).Return(nil)
-
-	if once {
-		call.Once()
-	} else {
-		call.Twice()
-	}
+		mock.AnythingOfType("*dynakube.DynaKube")).Return(nil).Once()
 
 	return versionReconciler
 }
