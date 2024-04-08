@@ -9,18 +9,18 @@ const (
 	outdatedSuffix = "outdated"
 )
 
-func appendCreatedSuffix(conditionType string) string {
-	return fmt.Sprintf("%s %s", conditionType, createdSuffix)
+func appendCreatedSuffix(name string) string {
+	return fmt.Sprintf("%s %s", name, createdSuffix)
 }
 
-func appendUpdatedSuffix(conditionType string) string {
-	return fmt.Sprintf("%s %s", conditionType, updatedSuffix)
+func appendUpdatedSuffix(name string) string {
+	return fmt.Sprintf("%s %s", name, updatedSuffix)
 }
 
-func appendDeletedSuffix(conditionType string) string {
-	return fmt.Sprintf("%s %s", conditionType, deletedSuffix)
+func appendDeletedSuffix(name string) string {
+	return fmt.Sprintf("%s %s", name, deletedSuffix)
 }
 
-func appendOutdatedSuffix(conditionType string) string {
-	return fmt.Sprintf("%s %s", conditionType, outdatedSuffix)
+func appendOutdatedSuffix(name string) string {
+	return fmt.Sprintf("%s %s", name, outdatedSuffix)
 }
