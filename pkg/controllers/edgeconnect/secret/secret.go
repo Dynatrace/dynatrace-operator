@@ -23,22 +23,23 @@ func PrepareConfigFile(ctx context.Context, instance *edgeconnectv1alpha1.EdgeCo
 
 	// For provisioned we need to read another secret, which later we mount to EdgeConnect pod
 	if instance.Spec.OAuth.Provisioner {
-		clientID, clientSecret, err := instance.GetOAuthClientFromSecret(ctx, apiReader, instance.ClientSecretName())
+		oAuth, err := instance.GetOAuthClientFromSecret(ctx, apiReader, instance.ClientSecretName())
 		if err != nil {
 			return []byte{}, err
 		}
 
-		cfg.OAuth.ClientID = clientID
-		cfg.OAuth.ClientSecret = clientSecret
+		cfg.OAuth.ClientID = oAuth.ClientID
+		cfg.OAuth.ClientSecret = oAuth.ClientSecret
+		cfg.OAuth.Resource = oAuth.Resource
 	} else {
 		// For regular, we use default secret
-		clientID, clientSecret, err := instance.GetOAuthClientFromSecret(ctx, apiReader, instance.Spec.OAuth.ClientSecret)
+		oAuth, err := instance.GetOAuthClientFromSecret(ctx, apiReader, instance.Spec.OAuth.ClientSecret)
 		if err != nil {
 			return []byte{}, err
 		}
 
-		cfg.OAuth.ClientID = clientID
-		cfg.OAuth.ClientSecret = clientSecret
+		cfg.OAuth.ClientID = oAuth.ClientID
+		cfg.OAuth.ClientSecret = oAuth.ClientSecret
 	}
 
 	if instance.Spec.CaCertsRef != "" {
