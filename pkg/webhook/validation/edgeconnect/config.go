@@ -20,5 +20,4 @@ var validators = []validator{
 	nameTooLong,
 	checkHostPatternsValue,
 	isInvalidServiceName,
-	doesServiceAccountExist,
 }

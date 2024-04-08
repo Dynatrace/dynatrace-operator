@@ -17,28 +17,6 @@ func TestServiceAccountName(t *testing.T) {
 		}
 		assertDeniedResponse(t, []string{errorInvalidServiceName}, edgeConnect)
 	})
-	t.Run("exists", func(t *testing.T) {
-		edgeConnect := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Spec: edgeconnect.EdgeConnectSpec{
-				ApiServer:          "tenantid-test.dev.apps.dynatracelabs.com",
-				ServiceAccountName: testServiceAccountName,
-			},
-		}
-		assertAllowedResponse(t, edgeConnect, prepareTestServiceAccount(testServiceAccountName, testNamespace))
-	})
-	t.Run("not exists", func(t *testing.T) {
-		edgeConnect := &edgeconnect.EdgeConnect{
-			Spec: edgeconnect.EdgeConnectSpec{
-				ApiServer:          "tenantid-test.dev.apps.dynatracelabs.com",
-				ServiceAccountName: testServiceAccountName,
-			},
-		}
-		assertDeniedResponse(t, []string{errorServiceAccountNotExist}, edgeConnect)
-	})
 }
 
 func prepareTestServiceAccount(name string, namespace string) *corev1.ServiceAccount {
