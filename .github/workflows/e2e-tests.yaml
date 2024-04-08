@@ -65,16 +65,16 @@ jobs:
   notify-failure:
     name: Notify failure in Slack
     environment: E2E
-    needs: ["run-in-k8s", "run-in-ocp"]
+    needs: [ "run-in-k8s", "run-in-ocp" ]
     if: ${{ failure() || cancelled() }}
     runs-on:
-    - self-hosted
-    - operator-e2e
+      - self-hosted
+      - operator-e2e
     steps:
-    - name: Notify failure in Slack
-      uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001 # v1.25.0
-      with:
-        channel-id: 'int-cp-operator'
-        slack-message: ":x: E2E tests failed on ${{ github.event.inputs.target || 'main' }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
-      env:
-        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      - name: Notify failure in Slack
+        uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001 # v1.25.0
+        with:
+          channel-id: 'int-cp-operator'
+          slack-message: ":x: E2E tests failed on ${{ github.event.inputs.target || 'main' }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
