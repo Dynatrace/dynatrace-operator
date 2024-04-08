@@ -72,7 +72,12 @@ func NewReconciler(
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	err := r.versionReconciler.ReconcileCodeModules(ctx, r.dynakube) // Handles their cleanup on their own, like all things should
+	err := r.versionReconciler.ReconcileCodeModules(ctx, r.dynakube)
+	if err != nil {
+		return err
+	}
+
+	err = r.connectionInfoReconciler.Reconcile(ctx)
 	if err != nil {
 		return err
 	}
@@ -80,11 +85,6 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	if !r.dynakube.NeedAppInjection() {
 		return r.removeAppInjection(ctx)
 	}
-
-	err = r.connectionInfoReconciler.Reconcile(ctx)
-	if err != nil {
-		return err
-	} // TODO: there tends to be a clean up for each reconcileX function, so it might makes sense to have the same here
 
 	dkMapper := r.createDynakubeMapper(ctx)
 	if err := dkMapper.MapFromDynakube(); err != nil {
@@ -130,15 +130,14 @@ func (r *reconciler) removeAppInjection(ctx context.Context) (err error) {
 		return err
 	}
 
-	endpointSecretGenerator := ingestendpoint.NewEndpointSecretGenerator(r.client, r.apiReader, r.dynakube.Namespace)
+	endpointSecretGenerator := ingestendpoint.NewSecretGenerator(r.client, r.apiReader, r.dynakube.Namespace)
 
 	err = endpointSecretGenerator.RemoveEndpointSecrets(ctx, namespaces)
 	if err != nil {
-		log.Info("could not remove data-ingest secret")
+		log.Info("could not remove metadata-enrichment secret")
 
 		return err
 	}
-	// TODO: remove istio Service, VirtualService entries
 	// TODO: remove initgeneration secret as well + handle errors jointly
 
 	return nil
@@ -175,11 +174,11 @@ func (r *reconciler) setupEnrichmentInjection(ctx context.Context) error {
 		return nil
 	}
 
-	endpointSecretGenerator := ingestendpoint.NewEndpointSecretGenerator(r.client, r.apiReader, r.dynakube.Namespace)
+	endpointSecretGenerator := ingestendpoint.NewSecretGenerator(r.client, r.apiReader, r.dynakube.Namespace)
 
 	err := endpointSecretGenerator.GenerateForDynakube(ctx, r.dynakube)
 	if err != nil {
-		log.Info("failed to generate data-ingest secret")
+		log.Info("failed to generate the metadata-enrichment secret")
 
 		return err
 	}

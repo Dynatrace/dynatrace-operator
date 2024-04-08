@@ -78,24 +78,23 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
+	err = r.connectionReconciler.Reconcile(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = r.versionReconciler.ReconcileActiveGate(ctx, r.dynakube)
+	if err != nil {
+		return err
+	}
+
 	if r.dynakube.NeedsActiveGate() {
-		err = r.connectionReconciler.Reconcile(ctx)
-		if err != nil {
-			return err
-		}
-
-		err = r.versionReconciler.ReconcileActiveGate(ctx, r.dynakube)
-		if err != nil {
-			return err
-		}
-
 		if r.istioReconciler != nil {
 			err = r.istioReconciler.ReconcileActiveGateCommunicationHosts(ctx, r.dynakube)
 			if err != nil {
 				return err
 			}
 		}
-		// TODO: have a cleanup for things that we create above
 
 		err := r.authTokenReconciler.Reconcile(ctx)
 		if err != nil {

@@ -95,9 +95,9 @@ test/e2e/cloudnative/switchmodes: manifests/crd/helm
 test/e2e/cloudnative/upgrade: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/release -args --labels "name=cloudnative-upgrade" $(SKIPCLEANUP)
 
-## Runs Application Monitoring data-ingest e2e test only
-test/e2e/applicationmonitoring/dataingest: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=app-data-ingest"  $(SKIPCLEANUP)
+## Runs Application Monitoring metadata-enrichment e2e test only
+test/e2e/applicationmonitoring/metadataenrichment: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=app-metadata-enrichment"  $(SKIPCLEANUP)
 
 ## Runs Application Monitoring label versio detection e2e test only
 test/e2e/applicationmonitoring/labelversion: manifests/crd/helm
@@ -125,11 +125,11 @@ test/e2e/edgeconnect: manifests/crd/helm
 
 ## Runs e2e tests on gke-autopilot
 test/e2e/gke-autopilot: manifests/kubernetes/gke-autopilot
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=app-data-ingest,name=app-read-only-csi-volume,name=app-read-only-csi-volume,name=app-without-csi,name=activegate-default" $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=app-metadata-enrichment,name=app-read-only-csi-volume,name=app-read-only-csi-volume,name=app-without-csi,name=activegate-default" $(SKIPCLEANUP)
 
-## Runs Application Monitoring data-ingest e2e test only on gke-autopilot
-test/e2e/gke-autopilot/applicationmonitoring/dataingest: manifests/kubernetes/gke-autopilot
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=app-data-ingest"  $(SKIPCLEANUP)
+## Runs Application Monitoring metadata-enrichment e2e test only on gke-autopilot
+test/e2e/gke-autopilot/applicationmonitoring/metadataenrichment: manifests/kubernetes/gke-autopilot
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=app-metadata-enrichment"  $(SKIPCLEANUP)
 
 ## Runs Application Monitoring label versio detection e2e test only on gke-autopilot
 test/e2e/gke-autopilot/applicationmonitoring/labelversion: manifests/kubernetes/gke-autopilot

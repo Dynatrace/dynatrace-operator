@@ -43,13 +43,11 @@ func getTestSecretConfig() *SecretConfig {
 		OneAgentNoProxy: testOneAgentNoProxy,
 		TenantUUID:      testTenantUUID,
 		NetworkZone:     testNetworkZone,
-		TrustedCAs:      testTrustedCA,
 		SkipCertCheck:   true,
 		HasHost:         true,
 		MonitoringNodes: map[string]string{
 			testNodeName: testTenantUUID,
 		},
-		TlsCert:             testTlsCert,
 		HostGroup:           testHostGroup,
 		InitialConnectRetry: testInitialConnectRetry,
 	}
@@ -70,13 +68,20 @@ func TestNewSecretConfigViaFs(t *testing.T) {
 	assert.Equal(t, testProxy, config.Proxy)
 	assert.Equal(t, testOneAgentNoProxy, config.OneAgentNoProxy)
 	assert.Equal(t, testNetworkZone, config.NetworkZone)
-	assert.Equal(t, testTrustedCA, config.TrustedCAs)
 	assert.True(t, config.SkipCertCheck)
 	assert.True(t, config.HasHost)
-	assert.Equal(t, testTlsCert, config.TlsCert)
 	assert.Equal(t, testHostGroup, config.HostGroup)
 	assert.Len(t, config.MonitoringNodes, 1)
 	assert.Equal(t, testInitialConnectRetry, config.InitialConnectRetry)
+}
+
+func TestNewCertificatesViaFs(t *testing.T) {
+	fs := prepTestFs(t)
+
+	certificates, err := newCertificatesViaFs(fs, consts.CustomCertsFileName)
+
+	require.NoError(t, err)
+	assert.Equal(t, testTrustedCA, certificates)
 }
 
 func prepTestFs(t *testing.T) afero.Fs {
@@ -91,6 +96,16 @@ func prepTestFs(t *testing.T) afero.Fs {
 	require.NoError(t, err)
 
 	_, err = file.Write(rawJson)
+	require.NoError(t, err)
+
+	err = file.Close()
+	require.NoError(t, err)
+
+	file, err = fs.OpenFile(filepath.Join(consts.AgentConfigDirMount, consts.CustomCertsFileName), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0770)
+	require.NoError(t, err)
+	require.NotNil(t, file)
+
+	_, err = file.Write([]byte(testTrustedCA))
 	require.NoError(t, err)
 
 	err = file.Close()

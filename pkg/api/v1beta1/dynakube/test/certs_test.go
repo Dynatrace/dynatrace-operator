@@ -22,7 +22,8 @@ const (
 
 func TestCerts(t *testing.T) {
 	t.Run(`get trusted certificate authorities`, trustedCAsTester)
-	t.Run(`get tls certificates`, activeGateTlsCertTester)
+	t.Run(`get no tls certificates`, activeGateTlsNoCertificateTester)
+	activeGateTlsCertificate(t)
 }
 
 func trustedCAsTester(t *testing.T) {
@@ -53,13 +54,7 @@ func trustedCAsTester(t *testing.T) {
 	assert.Empty(t, trustedCAs)
 }
 
-func activeGateTlsCertTester(t *testing.T) {
-	kubeReader := fake.NewClient(&corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{Name: testSecretName},
-		Data: map[string][]byte{
-			dynakube.TlsCertKey: []byte(testSecretValue),
-		}})
-
+func activeGateTlsNoCertificateTester(t *testing.T) {
 	dk := dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
 			ActiveGate: dynakube.ActiveGateSpec{
@@ -68,13 +63,9 @@ func activeGateTlsCertTester(t *testing.T) {
 			},
 		},
 	}
+
+	kubeReader := fake.NewClient()
 	tlsCert, err := dk.ActiveGateTlsCert(context.TODO(), kubeReader)
-
-	require.NoError(t, err)
-	assert.Equal(t, testSecretValue, tlsCert)
-
-	kubeReader = fake.NewClient()
-	tlsCert, err = dk.ActiveGateTlsCert(context.TODO(), kubeReader)
 
 	require.Error(t, err)
 	assert.Empty(t, tlsCert)
@@ -84,4 +75,32 @@ func activeGateTlsCertTester(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Empty(t, tlsCert)
+}
+
+func activeGateTlsCertificate(t *testing.T) {
+	testFunc := func(t *testing.T, data map[string][]byte) {
+		kubeReader := fake.NewClient(&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{Name: testSecretName},
+			Data:       data,
+		})
+
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: dynakube.ActiveGateSpec{
+					Capabilities:  []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName},
+					TlsSecretName: testSecretName,
+				},
+			},
+		}
+		tlsCert, err := dk.ActiveGateTlsCert(context.TODO(), kubeReader)
+
+		require.NoError(t, err)
+		assert.Equal(t, testSecretValue, string(tlsCert))
+	}
+
+	t.Run("get tls certificates from server.crt", func(t *testing.T) {
+		testFunc(t, map[string][]byte{
+			dynakube.TlsCertKey: []byte(testSecretValue),
+		})
+	})
 }

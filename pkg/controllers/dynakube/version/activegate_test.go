@@ -85,3 +85,24 @@ func TestActiveGateUseDefault(t *testing.T) {
 		assert.Equal(t, expectedVersion, dynakube.Status.ActiveGate.Version)
 	})
 }
+
+func TestActiveGateIsEnabled(t *testing.T) {
+	t.Run("cleans up if not enabled", func(t *testing.T) {
+		dynakube := &dynatracev1beta1.DynaKube{
+			Status: dynatracev1beta1.DynaKubeStatus{
+				ActiveGate: dynatracev1beta1.ActiveGateStatus{
+					VersionStatus: status.VersionStatus{
+						Version: "prev",
+					},
+				},
+			},
+		}
+
+		updater := newActiveGateUpdater(dynakube, nil, nil)
+
+		isEnabled := updater.IsEnabled()
+		require.False(t, isEnabled)
+
+		assert.Empty(t, updater.Target())
+	})
+}

@@ -1,9 +1,9 @@
 package consts
 
 const (
-	EnrichmentEndpointSecretName = "dynatrace-data-ingest-endpoint"
+	EnrichmentEndpointSecretName = "dynatrace-metadata-enrichment-endpoint"
 	EnrichmentFilenameTemplate   = "dt_metadata.%s"
-	EnrichmentInjectedEnv        = "DATA_INGEST_INJECTED"
+	EnrichmentInjectedEnv        = "METADATA_ENRICHMENT_INJECTED"
 	EnrichmentWorkloadKindEnv    = "DT_WORKLOAD_KIND"
 	EnrichmentWorkloadNameEnv    = "DT_WORKLOAD_NAME"
 	EnrichmentUnknownWorkload    = "UNKNOWN"

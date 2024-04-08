@@ -87,13 +87,6 @@ type Reconciler struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !r.dynakube.NeedsOneAgent() {
-		log.Info("removing OneAgent daemonSet")
-		meta.RemoveStatusCondition(r.dynakube.Conditions(), oaConditionType)
-
-		return r.removeOneAgentDaemonSet(ctx, r.dynakube)
-	}
-
 	log.Info("reconciling OneAgent")
 
 	err := r.versionReconciler.ReconcileOneAgent(ctx, r.dynakube)
@@ -114,6 +107,10 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
+	if !r.dynakube.NeedsOneAgent() {
+		return r.cleanUp(ctx)
+	}
+
 	log.Info("At least one communication host is provided, deploying OneAgent")
 
 	err = r.createOneAgentTenantConnectionInfoConfigMap(ctx)
@@ -126,6 +123,39 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
+	err = r.updateInstancesStatus(ctx)
+	if err != nil {
+		return err
+	}
+
+	log.Info("reconciled " + deploymentmetadata.GetOneAgentDeploymentType(*r.dynakube))
+
+	return nil
+}
+
+func (r *Reconciler) cleanUp(ctx context.Context) error {
+	log.Info("removing OneAgent daemonSet")
+
+	if meta.FindStatusCondition(*r.dynakube.Conditions(), oaConditionType) == nil {
+		return nil // no condition == nothing is there to clean up
+	}
+
+	err := r.deleteOneAgentTenantConnectionInfoConfigMap(ctx)
+	if err != nil {
+		log.Error(err, "failed to cleanup oneagent connection-info configmap") // error shouldn't block another cleanup
+	}
+
+	meta.RemoveStatusCondition(r.dynakube.Conditions(), oaConditionType)
+
+	// be careful with OneAgent Status cleanup, as some things (ConnectionInfo) are shared with injection.
+	// only cleanup things that are directly set in THIS reconciler
+	r.dynakube.Status.OneAgent.Instances = nil
+	r.dynakube.Status.OneAgent.LastInstanceStatusUpdate = nil
+
+	return r.removeOneAgentDaemonSet(ctx, r.dynakube)
+}
+
+func (r *Reconciler) updateInstancesStatus(ctx context.Context) error {
 	updInterval := defaultUpdateInterval
 
 	if val := os.Getenv(updateEnvVar); val != "" {
@@ -139,7 +169,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	now := metav1.Now()
 	if timeprovider.TimeoutReached(r.dynakube.Status.OneAgent.LastInstanceStatusUpdate, &now, updInterval) {
-		err = r.reconcileInstanceStatuses(ctx, r.dynakube)
+		err := r.reconcileInstanceStatuses(ctx, r.dynakube)
 		if err != nil {
 			return err
 		}
@@ -148,8 +178,6 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 		log.Info("oneagent instance statuses reconciled")
 	}
-
-	log.Info("reconciled " + deploymentmetadata.GetOneAgentDeploymentType(*r.dynakube))
 
 	return nil
 }
@@ -176,6 +204,15 @@ func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 	}
 
 	return nil
+}
+
+func (r *Reconciler) deleteOneAgentTenantConnectionInfoConfigMap(ctx context.Context) error {
+	cm, _ := configmap.CreateConfigMap(r.scheme, r.dynakube,
+		configmap.NewModifier(r.dynakube.OneAgentConnectionInfoConfigMapName()),
+		configmap.NewNamespaceModifier(r.dynakube.Namespace))
+	query := configmap.NewQuery(ctx, r.client, r.apiReader, log)
+
+	return query.Delete(*cm)
 }
 
 func extractPublicData(dynakube *dynatracev1beta1.DynaKube) map[string]string {

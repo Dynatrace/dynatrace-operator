@@ -19,7 +19,7 @@ func TestCreateConfFile(t *testing.T) {
 	t.Run(`create file`, func(t *testing.T) {
 		path := "test"
 
-		err := runner.createConfFile(path, "test")
+		err := runner.createConfigFile(path, "test", true)
 
 		require.NoError(t, err)
 
@@ -32,7 +32,7 @@ func TestCreateConfFile(t *testing.T) {
 	t.Run(`create nested file`, func(t *testing.T) {
 		path := filepath.Join("dir1", "dir2", "test")
 
-		err := runner.createConfFile(path, "test")
+		err := runner.createConfigFile(path, "test", true)
 
 		require.NoError(t, err)
 

@@ -12,7 +12,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/oneagent_mutation"
+	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/curl"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
@@ -121,7 +121,7 @@ func CheckRuxitAgentProcFileHasProxySetting(sampleApp sample.App, proxySpec *dyn
 			Name:      sampleApp.Name(),
 			Namespace: sampleApp.Namespace(),
 		}).ForEachPod(func(podItem corev1.Pod) {
-			dir := filepath.Join(oneagent_mutation.OneAgentConfMountPath, common.RuxitConfFileName)
+			dir := filepath.Join(oamutation.OneAgentConfMountPath, common.RuxitConfFileName)
 			readFileCommand := shell.ReadFile(dir)
 			result, err := pod.Exec(ctx, resources, podItem, sampleApp.ContainerName(), readFileCommand...)
 			assert.Contains(t, result.StdOut.String(), fmt.Sprintf("proxy %s", proxySpec.Value))

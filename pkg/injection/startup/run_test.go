@@ -2,7 +2,9 @@ package startup
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -31,7 +33,7 @@ func getTestProcessModuleConfig() *dtclient.ProcessModuleConfig {
 
 func TestNewRunner(t *testing.T) {
 	fs := prepTestFs(t)
-	t.Run("create runner with oneagent and data-ingest injection", func(t *testing.T) {
+	t.Run("create runner with oneagent and metadata-enrichment injection", func(t *testing.T) {
 		resetEnv := prepCombinedTestEnv(t)
 		runner, err := NewRunner(fs)
 
@@ -60,8 +62,8 @@ func TestNewRunner(t *testing.T) {
 		assert.NotNil(t, runner.installer)
 		assert.Empty(t, runner.hostTenant)
 	})
-	t.Run("create runner with only data-ingest injection", func(t *testing.T) {
-		resetEnv := prepDataIngestTestEnv(t, false)
+	t.Run("create runner with only metadata-enrichment injection", func(t *testing.T) {
+		resetEnv := prepMetadataEnrichmentTestEnv(t, false)
 		runner, err := NewRunner(fs)
 
 		resetEnv()
@@ -191,12 +193,13 @@ func TestInstallOneAgent(t *testing.T) {
 		require.Error(t, err)
 	})
 }
+
 func TestRun(t *testing.T) {
 	ctx := context.Background()
 	runner := createMockedRunner(t)
 	runner.config.HasHost = false
 	runner.env.OneAgentInjected = true
-	runner.env.DataIngestInjected = true
+	runner.env.MetadataEnrichmentInjected = true
 	runner.dtclient.(*dtclientmock.Client).
 		On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), uint(0)).
 		Return(getTestProcessModuleConfig(), nil)
@@ -239,7 +242,7 @@ func TestConfigureInstallation(t *testing.T) {
 	t.Run("create all config files", func(t *testing.T) {
 		runner.fs = prepReadOnlyCSIFilesystem(t, afero.NewMemMapFs())
 		runner.env.OneAgentInjected = true
-		runner.env.DataIngestInjected = true
+		runner.env.MetadataEnrichmentInjected = true
 		runner.config.ReadOnlyCSIDriver = true
 
 		err := runner.configureInstallation()
@@ -252,7 +255,7 @@ func TestConfigureInstallation(t *testing.T) {
 	t.Run("create only container confs", func(t *testing.T) {
 		runner.fs = afero.NewMemMapFs()
 		runner.env.OneAgentInjected = true
-		runner.env.DataIngestInjected = false
+		runner.env.MetadataEnrichmentInjected = false
 		runner.config.ReadOnlyCSIDriver = false
 
 		err := runner.configureInstallation()
@@ -264,7 +267,7 @@ func TestConfigureInstallation(t *testing.T) {
 	t.Run("create only container confs with readonly csi", func(t *testing.T) {
 		runner.fs = prepReadOnlyCSIFilesystem(t, afero.NewMemMapFs())
 		runner.env.OneAgentInjected = true
-		runner.env.DataIngestInjected = false
+		runner.env.MetadataEnrichmentInjected = false
 		runner.config.ReadOnlyCSIDriver = true
 
 		err := runner.configureInstallation()
@@ -277,7 +280,7 @@ func TestConfigureInstallation(t *testing.T) {
 	t.Run("create only enrichment file", func(t *testing.T) {
 		runner.fs = afero.NewMemMapFs()
 		runner.env.OneAgentInjected = false
-		runner.env.DataIngestInjected = true
+		runner.env.MetadataEnrichmentInjected = true
 		runner.config.ReadOnlyCSIDriver = false
 
 		err := runner.configureInstallation()
@@ -458,18 +461,69 @@ func TestEnrichMetadata(t *testing.T) {
 }
 
 func TestPropagateTLSCert(t *testing.T) {
-	runner := createMockedRunner(t)
-	runner.config.HasHost = false
+	prepOneAgentTestEnv(t)
 
-	t.Run("create tls custom.pem", func(t *testing.T) {
-		runner.fs = afero.NewMemMapFs()
+	initSecretConfig := getTestSecretConfig()
+	initSecretData, err := json.Marshal(initSecretConfig)
+	require.NoError(t, err)
 
-		err := runner.propagateTLSCert()
-
+	t.Run("propagate combined certificates to custom.pem and custom_proxy.pem", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		fs = prepTestFile(t, fs, consts.AgentConfigDirMount, consts.AgentInitSecretConfigField, string(initSecretData))
+		fs = prepTestFile(t, fs, consts.AgentConfigDirMount, consts.ActiveGateCAsInitSecretField, "not empty")
+		fs = prepTestFile(t, fs, consts.AgentConfigDirMount, consts.TrustedCAsInitSecretField, "not empty")
+		runner, err := NewRunner(fs)
 		require.NoError(t, err)
-		assertIfFileExists(t,
-			runner.fs,
-			filepath.Join(consts.AgentShareDirMount, "custom.pem"))
+		require.NotNil(t, runner)
+
+		err = runner.propagateTLSCert()
+		require.NoError(t, err)
+
+		assertIfFileExists(t, runner.fs, filepath.Join(consts.AgentShareDirMount, consts.CustomCertsFileName))
+		assertIfFileExists(t, runner.fs, filepath.Join(consts.AgentShareDirMount, consts.CustomProxyCertsFileName))
+	})
+	t.Run("create custom.pem only containing AG cert", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		fs = prepTestFile(t, fs, consts.AgentConfigDirMount, consts.AgentInitSecretConfigField, string(initSecretData))
+		fs = prepTestFile(t, fs, consts.AgentConfigDirMount, consts.ActiveGateCAsInitSecretField, "not empty")
+		runner, err := NewRunner(fs)
+		require.NoError(t, err)
+		require.NotNil(t, runner)
+
+		err = runner.propagateTLSCert()
+		require.NoError(t, err)
+
+		assertIfFileExists(t, runner.fs, filepath.Join(consts.AgentShareDirMount, consts.CustomCertsFileName))
+		assertIfFileNotExists(t, runner.fs, filepath.Join(consts.AgentShareDirMount, consts.CustomProxyCertsFileName))
+	})
+	t.Run("propagate trustedCAs certificates to custom.pem and custom_proxy.pem", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		fs = prepTestFile(t, fs, consts.AgentConfigDirMount, consts.AgentInitSecretConfigField, string(initSecretData))
+		fs = prepTestFile(t, fs, consts.AgentConfigDirMount, consts.TrustedCAsInitSecretField, "not empty")
+		runner, err := NewRunner(fs)
+		require.NoError(t, err)
+		require.NotNil(t, runner)
+
+		err = runner.propagateTLSCert()
+		require.NoError(t, err)
+
+		assertIfFileExists(t, runner.fs, filepath.Join(consts.AgentShareDirMount, consts.CustomCertsFileName))
+		assertIfFileExists(t, runner.fs, filepath.Join(consts.AgentShareDirMount, consts.CustomProxyCertsFileName))
+	})
+	t.Run("don't create cert files", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		fs = prepTestFile(t, fs, consts.AgentConfigDirMount, consts.AgentInitSecretConfigField, string(initSecretData))
+		fs = prepTestFile(t, fs, consts.AgentConfigDirMount, consts.ActiveGateCAsInitSecretField, "")
+		fs = prepTestFile(t, fs, consts.AgentConfigDirMount, consts.TrustedCAsInitSecretField, "")
+		runner, err := NewRunner(fs)
+		require.NoError(t, err)
+		require.NotNil(t, runner)
+
+		err = runner.propagateTLSCert()
+		require.NoError(t, err)
+
+		assertIfFileNotExists(t, runner.fs, filepath.Join(consts.AgentShareDirMount, consts.CustomCertsFileName))
+		assertIfFileNotExists(t, runner.fs, filepath.Join(consts.AgentShareDirMount, consts.CustomProxyCertsFileName))
 	})
 }
 
@@ -525,10 +579,6 @@ func assertIfAgentFilesExists(t *testing.T, runner Runner) {
 	assertIfFileExists(t,
 		runner.fs,
 		filepath.Join(consts.AgentShareDirMount, consts.LdPreloadFilename))
-	// tls cert
-	assertIfFileExists(t,
-		runner.fs,
-		filepath.Join(consts.AgentShareDirMount, "custom.pem"))
 }
 
 func assertIfEnrichmentFilesExists(t *testing.T, runner Runner) {
@@ -596,4 +646,20 @@ func assertIfFileNotExists(t *testing.T, fs afero.Fs, path string) {
 	fileInfo, err := fs.Stat(path)
 	require.Error(t, err)
 	assert.Nil(t, fileInfo)
+}
+
+func prepTestFile(t *testing.T, fs afero.Fs, dirname string, filename string, content string) afero.Fs {
+	require.NoError(t, fs.MkdirAll(dirname, 0770))
+
+	file, err := fs.OpenFile(filepath.Join(dirname, filename), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0770)
+	require.NoError(t, err)
+	require.NotNil(t, file)
+
+	_, err = file.Write([]byte(content))
+	require.NoError(t, err)
+
+	err = file.Close()
+	require.NoError(t, err)
+
+	return fs
 }
