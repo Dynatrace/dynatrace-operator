@@ -95,6 +95,8 @@ func (r *Reconciler) manageStatefulSet(ctx context.Context) error {
 		return errors.WithStack(err)
 	} else if deleted {
 		conditions.SetStatefulSetDeleted(r.dynakube.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
+
+		return r.manageStatefulSet(ctx)
 	}
 
 	updated, err := r.updateStatefulSetIfOutdated(ctx, desiredSts)

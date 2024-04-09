@@ -357,7 +357,7 @@ func TestManageStatefulSet(t *testing.T) {
 		assert.NotNil(t, actualStatefulSet)
 		assert.Contains(t, actualStatefulSet.Labels, testName)
 	})
-	t.Run("delete statefulset if selector differs", func(t *testing.T) {
+	t.Run("update statefulset if selector differs", func(t *testing.T) {
 		r := createDefaultReconciler(t)
 		desiredStatefulSet, err := r.buildDesiredStatefulSet(context.Background())
 
@@ -379,8 +379,9 @@ func TestManageStatefulSet(t *testing.T) {
 		require.NoError(t, err)
 
 		actualStatefulSet, err = r.getStatefulSet(context.Background(), desiredStatefulSet)
-		require.Error(t, err)
-		assert.Nil(t, actualStatefulSet)
-		assert.True(t, k8serrors.IsNotFound(err))
+		require.NoError(t, err)
+
+		_, ok := actualStatefulSet.Spec.Selector.MatchLabels["activegate"]
+		assert.False(t, ok)
 	})
 }
