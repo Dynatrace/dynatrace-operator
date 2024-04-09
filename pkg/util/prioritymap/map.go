@@ -1,7 +1,6 @@
 package prioritymap
 
 import (
-	"fmt"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -78,10 +77,6 @@ func (m Map) Append(key string, value any, opts ...Option) {
 	if existingArg, exists := m.entries[key]; !exists || newArg.allowDuplicates || newArg.priority > existingArg[0].priority {
 		if !exists || !newArg.allowDuplicates {
 			m.entries[key] = make([]entry, 0)
-		}
-
-		if !newArg.allowDuplicates {
-			log.Info(fmt.Sprintf("value for %s replaced by %s", key, newArg.value))
 		}
 
 		m.entries[key] = append(m.entries[key], newArg)
