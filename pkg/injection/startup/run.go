@@ -211,7 +211,7 @@ func (runner *Runner) configureInstallation() error {
 		}
 	}
 
-	if runner.env.DataIngestInjected {
+	if runner.env.MetadataEnrichmentInjected {
 		log.Info("creating enrichment files")
 
 		if err := runner.enrichMetadata(); err != nil {

@@ -11,7 +11,7 @@ import (
 )
 
 func TestNewEnv(t *testing.T) {
-	t.Run(`create new env for oneagent and data-ingest injection`, func(t *testing.T) {
+	t.Run(`create new env for oneagent and metadata-enrichment injection`, func(t *testing.T) {
 		resetEnv := prepCombinedTestEnv(t)
 
 		env, err := newEnv()
@@ -39,10 +39,10 @@ func TestNewEnv(t *testing.T) {
 		assert.NotEmpty(t, env.WorkloadName)
 
 		assert.True(t, env.OneAgentInjected)
-		assert.True(t, env.DataIngestInjected)
+		assert.True(t, env.MetadataEnrichmentInjected)
 	})
-	t.Run(`create new env for only data-ingest injection`, func(t *testing.T) {
-		resetEnv := prepDataIngestTestEnv(t, false)
+	t.Run(`create new env for only metadata-enrichment injection`, func(t *testing.T) {
+		resetEnv := prepMetadataEnrichmentTestEnv(t, false)
 
 		env, err := newEnv()
 
@@ -69,10 +69,10 @@ func TestNewEnv(t *testing.T) {
 		assert.NotEmpty(t, env.WorkloadName)
 
 		assert.False(t, env.OneAgentInjected)
-		assert.True(t, env.DataIngestInjected)
+		assert.True(t, env.MetadataEnrichmentInjected)
 	})
-	t.Run(`create new env for only data-ingest injection with unknown owner workload`, func(t *testing.T) {
-		resetEnv := prepDataIngestTestEnv(t, true)
+	t.Run(`create new env for only metadata-enrichment injection with unknown owner workload`, func(t *testing.T) {
+		resetEnv := prepMetadataEnrichmentTestEnv(t, true)
 
 		env, err := newEnv()
 
@@ -86,7 +86,7 @@ func TestNewEnv(t *testing.T) {
 		assert.Empty(t, env.WorkloadName)
 
 		assert.False(t, env.OneAgentInjected)
-		assert.True(t, env.DataIngestInjected)
+		assert.True(t, env.MetadataEnrichmentInjected)
 	})
 	t.Run(`create new env for only oneagent`, func(t *testing.T) {
 		resetEnv := prepOneAgentTestEnv(t)
@@ -116,7 +116,7 @@ func TestNewEnv(t *testing.T) {
 		assert.Empty(t, env.WorkloadName)
 
 		assert.True(t, env.OneAgentInjected)
-		assert.False(t, env.DataIngestInjected)
+		assert.False(t, env.MetadataEnrichmentInjected)
 	})
 }
 
@@ -129,7 +129,7 @@ func TestFailurePolicyModes(t *testing.T) {
 	}
 	for configuredMode, expectedMode := range modes {
 		t.Run(`injection failure policy: `+configuredMode, func(t *testing.T) {
-			resetEnv := prepDataIngestTestEnv(t, true)
+			resetEnv := prepMetadataEnrichmentTestEnv(t, true)
 
 			t.Setenv(consts.InjectionFailurePolicyEnv, configuredMode)
 
@@ -146,11 +146,11 @@ func TestFailurePolicyModes(t *testing.T) {
 }
 
 func prepCombinedTestEnv(t *testing.T) func() {
-	resetDataIngestEnvs := prepDataIngestTestEnv(t, false)
+	resetMetadataEnrichmentEnvs := prepMetadataEnrichmentTestEnv(t, false)
 	resetOneAgentEnvs := prepOneAgentTestEnv(t)
 
 	return func() {
-		resetDataIngestEnvs()
+		resetMetadataEnrichmentEnvs()
 		resetOneAgentEnvs()
 	}
 }
@@ -194,7 +194,7 @@ func prepOneAgentTestEnv(t *testing.T) func() {
 	return resetTestEnv(envs)
 }
 
-func prepDataIngestTestEnv(t *testing.T, isUnknownWorkload bool) func() {
+func prepMetadataEnrichmentTestEnv(t *testing.T, isUnknownWorkload bool) func() {
 	envs := []string{
 		consts.EnrichmentWorkloadKindEnv,
 		consts.EnrichmentWorkloadNameEnv,
