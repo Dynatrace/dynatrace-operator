@@ -693,5 +693,5 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 		return "", err
 	}
 
-	return hasher.GenerateHash(secretConfig)
+	return hasher.GenerateHash(secretConfig.Data)
 }
