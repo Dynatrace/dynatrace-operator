@@ -53,7 +53,7 @@ type EdgeConnectSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	CaCertsRef string `json:"caCertsRef,omitempty"`
 
-	// ServiceAccountName allows to perform operations defined by Automation workflows inside the Kubernetes cluster
+	// ServiceAccountName allows EdgeConnect to perform required operations inside the Kubernetes cluster
 	// +kubebuilder:default:=dynatrace-edgeconnect
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 
