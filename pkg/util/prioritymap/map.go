@@ -1,6 +1,7 @@
 package prioritymap
 
 import (
+	"fmt"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -37,18 +38,21 @@ func WithSeparator(separator string) Option {
 	}
 }
 
+// WithAllowDuplicatesForKey allows to add multiple values for the same key (covers all keys)
 func WithAllowDuplicates() Option {
 	return func(_ string, a *entry) {
 		a.allowDuplicates = true
 	}
 }
 
-func WithForbidDuplicates() Option {
+// WithAvoidDuplicates makes sure that only the last value added per key is kept in the map (covers all keys in map).
+func WithAvoidDuplicates() Option {
 	return func(_ string, a *entry) {
 		a.allowDuplicates = false
 	}
 }
 
+// WithAllowDuplicatesForKey allows to add multiple values for the same key
 func WithAllowDuplicatesForKey(allowedKey string) Option {
 	return func(key string, a *entry) {
 		// at this point key could still have a pre- or postfix
@@ -58,7 +62,8 @@ func WithAllowDuplicatesForKey(allowedKey string) Option {
 	}
 }
 
-func WithForbidDuplicatesForKey(allowedKey string) Option {
+// WithAvoidDuplicatesForKey makes sure that only the last value added for a given key is kept in the map
+func WithAvoidDuplicatesForKey(allowedKey string) Option {
 	return func(key string, a *entry) {
 		// at this point key could still have a pre- or postfix
 		if strings.Contains(key, allowedKey) {
@@ -100,6 +105,10 @@ func (m Map) Append(key string, value any, opts ...Option) {
 	if existingArg, exists := m.entries[key]; !exists || newArg.allowDuplicates || newArg.priority > existingArg[0].priority {
 		if !exists || !newArg.allowDuplicates {
 			m.entries[key] = make([]entry, 0)
+		}
+
+		if !newArg.allowDuplicates {
+			log.Info(fmt.Sprintf("value for %s replaced by %s", key, newArg.value))
 		}
 
 		m.entries[key] = append(m.entries[key], newArg)
