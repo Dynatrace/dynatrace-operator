@@ -16,6 +16,7 @@
 |nodeSelector|Node selector to control the selection of nodes for the EdgeConnect pods|-|object|
 |replicas|Amount of replicas for your EdgeConnect (the default value is: 1)|1|integer|
 |resources|Defines resources requests and limits for single pods|-|object|
+|serviceAccountName|ServiceAccountName allows to perform operations defined by Automation workflows inside the Kubernetes cluster|dynatrace-edgeconnect|string|
 |tolerations|Sets tolerations for the EdgeConnect pods|-|array|
 |topologySpreadConstraints|Sets topology spread constraints for the EdgeConnect pods|-|array|
 
@@ -43,3 +44,9 @@
 |:-|:-|:-|:-|
 |repository|Custom EdgeConnect image repository|-|string|
 |tag|Indicates version of the EdgeConnect image to use|-|string|
+
+### .spec.kubernetesApiAutomation
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|enabled|Enables kubernetes automation|-|boolean|
