@@ -1,6 +1,8 @@
 // +kubebuilder:object:generate=true
 // +groupName=dynatrace.com
 // +versionName=v1alpha1
+//
+//nolint:revive
 package dynakube
 
 import (
