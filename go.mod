@@ -40,7 +40,7 @@ require (
 	google.golang.org/grpc v1.63.2
 	gorm.io/driver/sqlite v1.5.5
 	gorm.io/gorm v1.25.9
-	istio.io/api v1.21.1-0.20240404235206-c5bbf8925ab4
+	istio.io/api v1.21.1
 	istio.io/client-go v1.21.1
 	k8s.io/api v0.29.3
 	k8s.io/apiextensions-apiserver v0.29.3
