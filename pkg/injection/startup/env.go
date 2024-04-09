@@ -43,8 +43,8 @@ type environment struct {
 	InstallerTech []string        `json:"installerTech"`
 	Containers    []containerInfo `json:"containers"`
 
-	OneAgentInjected   bool `json:"oneAgentInjected"`
-	DataIngestInjected bool `json:"dataIngestInjected"`
+	OneAgentInjected           bool `json:"oneAgentInjected"`
+	MetadataEnrichmentInjected bool `json:"metadataEnrichmentInjected"`
 }
 
 func newEnv() (*environment, error) {
@@ -74,8 +74,8 @@ func (env *environment) setRequiredFields() error {
 		requiredFieldSetters = append(requiredFieldSetters, env.getOneAgentFieldSetters()...)
 	}
 
-	if env.DataIngestInjected {
-		requiredFieldSetters = append(requiredFieldSetters, env.getDataIngestFieldSetters()...)
+	if env.MetadataEnrichmentInjected {
+		requiredFieldSetters = append(requiredFieldSetters, env.getMetadataEnrichmentFieldSetters()...)
 	}
 
 	for _, setField := range requiredFieldSetters {
@@ -111,7 +111,7 @@ func (env *environment) getOneAgentFieldSetters() []func() error {
 	)
 }
 
-func (env *environment) getDataIngestFieldSetters() []func() error {
+func (env *environment) getMetadataEnrichmentFieldSetters() []func() error {
 	return append(env.getCommonFieldSetters(),
 		env.addWorkloadKind,
 		env.addWorkloadName,
@@ -126,7 +126,7 @@ func (env *environment) setOptionalFields() {
 
 func (env *environment) setMutationTypeFields() {
 	env.addOneAgentInjected()
-	env.addDataIngestInjected()
+	env.addMetadataEnrichmentInjected()
 }
 
 func (env *environment) addFailurePolicy() error {
@@ -314,9 +314,9 @@ func (env *environment) addOneAgentInjected() {
 	env.OneAgentInjected = oneAgentInjected == trueStatement
 }
 
-func (env *environment) addDataIngestInjected() {
-	dataIngestInjected, _ := checkEnvVar(consts.EnrichmentInjectedEnv)
-	env.DataIngestInjected = dataIngestInjected == trueStatement
+func (env *environment) addMetadataEnrichmentInjected() {
+	metadataEnrichmentInjected, _ := checkEnvVar(consts.EnrichmentInjectedEnv)
+	env.MetadataEnrichmentInjected = metadataEnrichmentInjected == trueStatement
 }
 
 func (env *environment) addK8ClusterID() error {

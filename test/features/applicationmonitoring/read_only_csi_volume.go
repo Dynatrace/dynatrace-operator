@@ -9,7 +9,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/oneagent_mutation"
+	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/codemodules"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
@@ -63,7 +63,7 @@ func checkMountedVolumes(sampleApp *sample.App) features.Func {
 			Name:      sampleApp.Name(),
 			Namespace: sampleApp.Namespace(),
 		}).ForEachPod(func(podItem corev1.Pod) {
-			listCommand := shell.ListDirectory(oneagent_mutation.OneAgentConfMountPath)
+			listCommand := shell.ListDirectory(oamutation.OneAgentConfMountPath)
 			result, err := pod.Exec(ctx, resources, podItem, sampleApp.ContainerName(), listCommand...)
 
 			require.NoError(t, err)

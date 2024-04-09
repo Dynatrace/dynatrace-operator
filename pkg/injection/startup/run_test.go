@@ -33,7 +33,7 @@ func getTestProcessModuleConfig() *dtclient.ProcessModuleConfig {
 
 func TestNewRunner(t *testing.T) {
 	fs := prepTestFs(t)
-	t.Run("create runner with oneagent and data-ingest injection", func(t *testing.T) {
+	t.Run("create runner with oneagent and metadata-enrichment injection", func(t *testing.T) {
 		resetEnv := prepCombinedTestEnv(t)
 		runner, err := NewRunner(fs)
 
@@ -62,8 +62,8 @@ func TestNewRunner(t *testing.T) {
 		assert.NotNil(t, runner.installer)
 		assert.Empty(t, runner.hostTenant)
 	})
-	t.Run("create runner with only data-ingest injection", func(t *testing.T) {
-		resetEnv := prepDataIngestTestEnv(t, false)
+	t.Run("create runner with only metadata-enrichment injection", func(t *testing.T) {
+		resetEnv := prepMetadataEnrichmentTestEnv(t, false)
 		runner, err := NewRunner(fs)
 
 		resetEnv()
@@ -199,7 +199,7 @@ func TestRun(t *testing.T) {
 	runner := createMockedRunner(t)
 	runner.config.HasHost = false
 	runner.env.OneAgentInjected = true
-	runner.env.DataIngestInjected = true
+	runner.env.MetadataEnrichmentInjected = true
 	runner.dtclient.(*dtclientmock.Client).
 		On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), uint(0)).
 		Return(getTestProcessModuleConfig(), nil)
@@ -242,7 +242,7 @@ func TestConfigureInstallation(t *testing.T) {
 	t.Run("create all config files", func(t *testing.T) {
 		runner.fs = prepReadOnlyCSIFilesystem(t, afero.NewMemMapFs())
 		runner.env.OneAgentInjected = true
-		runner.env.DataIngestInjected = true
+		runner.env.MetadataEnrichmentInjected = true
 		runner.config.ReadOnlyCSIDriver = true
 
 		err := runner.configureInstallation()
@@ -255,7 +255,7 @@ func TestConfigureInstallation(t *testing.T) {
 	t.Run("create only container confs", func(t *testing.T) {
 		runner.fs = afero.NewMemMapFs()
 		runner.env.OneAgentInjected = true
-		runner.env.DataIngestInjected = false
+		runner.env.MetadataEnrichmentInjected = false
 		runner.config.ReadOnlyCSIDriver = false
 
 		err := runner.configureInstallation()
@@ -267,7 +267,7 @@ func TestConfigureInstallation(t *testing.T) {
 	t.Run("create only container confs with readonly csi", func(t *testing.T) {
 		runner.fs = prepReadOnlyCSIFilesystem(t, afero.NewMemMapFs())
 		runner.env.OneAgentInjected = true
-		runner.env.DataIngestInjected = false
+		runner.env.MetadataEnrichmentInjected = false
 		runner.config.ReadOnlyCSIDriver = true
 
 		err := runner.configureInstallation()
@@ -280,7 +280,7 @@ func TestConfigureInstallation(t *testing.T) {
 	t.Run("create only enrichment file", func(t *testing.T) {
 		runner.fs = afero.NewMemMapFs()
 		runner.env.OneAgentInjected = false
-		runner.env.DataIngestInjected = true
+		runner.env.MetadataEnrichmentInjected = true
 		runner.config.ReadOnlyCSIDriver = false
 
 		err := runner.configureInstallation()
