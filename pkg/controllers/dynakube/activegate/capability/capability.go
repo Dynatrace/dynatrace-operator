@@ -183,12 +183,11 @@ func BuildDNSEntryPoint(dk dynatracev1beta1.DynaKube, capability Capability) str
 	entries := []string{}
 
 	for _, ip := range dk.Status.ActiveGate.ServiceIPs {
-		serviceHost := ip
 		if net.IsIPv6String(ip) {
-			serviceHost = "[" + serviceHost + "]"
+			ip = "[" + ip + "]"
 		}
 
-		serviceHostEntry := buildDNSEntry(buildServiceHostName(serviceHost))
+		serviceHostEntry := buildDNSEntry(buildServiceHostName(ip))
 		entries = append(entries, serviceHostEntry)
 	}
 
