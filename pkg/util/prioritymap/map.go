@@ -45,33 +45,6 @@ func WithAllowDuplicates() Option {
 	}
 }
 
-// WithAvoidDuplicates makes sure that only the last value added per key is kept in the map (covers all keys in map).
-func WithAvoidDuplicates() Option {
-	return func(_ string, a *entry) {
-		a.allowDuplicates = false
-	}
-}
-
-// WithAllowDuplicatesForKey allows to add multiple values for the same key
-func WithAllowDuplicatesForKey(allowedKey string) Option {
-	return func(key string, a *entry) {
-		// at this point key could still have a pre- or postfix
-		if strings.Contains(key, allowedKey) {
-			a.allowDuplicates = true
-		}
-	}
-}
-
-// WithAvoidDuplicatesForKey makes sure that only the last value added for a given key is kept in the map
-func WithAvoidDuplicatesForKey(allowedKey string) Option {
-	return func(key string, a *entry) {
-		// at this point key could still have a pre- or postfix
-		if strings.Contains(key, allowedKey) {
-			a.allowDuplicates = false
-		}
-	}
-}
-
 func New(defaultOptions ...Option) *Map {
 	m := &Map{
 		entries:        make(map[string][]entry),

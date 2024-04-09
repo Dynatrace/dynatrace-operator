@@ -98,6 +98,7 @@ func TestArguments(t *testing.T) {
 			"--set-host-group=APP_LUSTIG_PETER",
 			"--set-host-id-source=lustiglustig",
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+			"--set-server={$(DT_SERVER)}",
 			"--set-server=https://hyper.super.com:9999",
 			"--set-tenant=$(DT_TENANT)",
 		}
@@ -149,6 +150,7 @@ func TestArguments(t *testing.T) {
 			"--set-host-property=item0=value0",
 			"--set-host-property=item1=value1",
 			"--set-host-property=item2=value2",
+			"--set-server={$(DT_SERVER)}",
 			"--set-server=https://hyper.super.com:9999",
 			"--set-tenant=$(DT_TENANT)",
 		}
