@@ -432,12 +432,12 @@ func TestDynaKube_ShallUpdateActiveGateConnectionInfo(t *testing.T) {
 			},
 			OneAgent: OneAgentStatus{
 				ConnectionInfoStatus: OneAgentConnectionInfoStatus{
-					ConnectionInfoStatus: ConnectionInfoStatus{LastRequest: metav1.Time{}},
+					ConnectionInfoStatus: ConnectionInfoStatus{},
 				},
 			},
 			ActiveGate: ActiveGateStatus{
 				ConnectionInfoStatus: ActiveGateConnectionInfoStatus{
-					ConnectionInfoStatus: ConnectionInfoStatus{LastRequest: metav1.Time{}},
+					ConnectionInfoStatus: ConnectionInfoStatus{},
 				},
 			},
 		},
@@ -503,12 +503,8 @@ func TestDynaKube_ShallUpdateActiveGateConnectionInfo(t *testing.T) {
 			}
 
 			lastRequestTime := timeProvider.Now().Add(time.Duration(test.lastRequestTimeDeltaMinutes) * time.Minute)
-			dk.Status.OneAgent.ConnectionInfoStatus.LastRequest.Time = lastRequestTime
-			dk.Status.ActiveGate.ConnectionInfoStatus.LastRequest.Time = lastRequestTime
 			dk.Status.DynatraceApi.LastTokenScopeRequest.Time = lastRequestTime
 
-			assert.Equal(t, test.updateExpected, dk.IsOneAgentConnectionInfoUpdateAllowed(timeProvider))
-			assert.Equal(t, test.updateExpected, dk.IsActiveGateConnectionInfoUpdateAllowed(timeProvider))
 			assert.Equal(t, test.updateExpected, dk.IsTokenScopeVerificationAllowed(timeProvider))
 		})
 	}

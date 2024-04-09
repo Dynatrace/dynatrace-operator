@@ -96,7 +96,7 @@ func (r *Reconciler) createSecret(ctx context.Context) error {
 		return err
 	}
 
-	conditions.SetSecretCreated(r.dynakube.Conditions(), pmcConditionType, newSecret.Name+" created")
+	conditions.SetSecretCreated(r.dynakube.Conditions(), pmcConditionType, newSecret.Name)
 
 	return nil
 }
@@ -137,7 +137,7 @@ func (r *Reconciler) updateSecret(ctx context.Context, oldSecret *corev1.Secret)
 		return err
 	}
 
-	conditions.SetSecretUpdated(r.dynakube.Conditions(), pmcConditionType, newSecret.Name+" updated")
+	conditions.SetSecretUpdated(r.dynakube.Conditions(), pmcConditionType, newSecret.Name)
 
 	return nil
 }
