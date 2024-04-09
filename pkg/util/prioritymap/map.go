@@ -24,23 +24,23 @@ type entry struct {
 	allowDuplicates bool
 }
 
-type Option func(key string, a *entry)
+type Option func(a *entry)
 
 func WithPriority(priority int) Option {
-	return func(_ string, a *entry) {
+	return func(a *entry) {
 		a.priority = priority
 	}
 }
 
 func WithSeparator(separator string) Option {
-	return func(_ string, a *entry) {
+	return func(a *entry) {
 		a.delimiter = separator
 	}
 }
 
 // WithAllowDuplicatesForKey allows to add multiple values for the same key (covers all keys)
 func WithAllowDuplicates() Option {
-	return func(_ string, a *entry) {
+	return func(a *entry) {
 		a.allowDuplicates = true
 	}
 }
@@ -66,11 +66,11 @@ func (m Map) Append(key string, value any, opts ...Option) {
 	}
 
 	for _, opt := range m.defaultOptions {
-		opt(key, &newArg)
+		opt(&newArg)
 	}
 
 	for _, opt := range opts {
-		opt(key, &newArg)
+		opt(&newArg)
 	}
 
 	key, _ = strings.CutSuffix(key, newArg.delimiter)
