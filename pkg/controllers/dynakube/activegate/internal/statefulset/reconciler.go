@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
@@ -77,18 +78,34 @@ func (r *Reconciler) manageStatefulSet(ctx context.Context) error {
 	}
 
 	created, err := r.createStatefulSetIfNotExists(ctx, desiredSts)
-	if created || err != nil {
+	if err != nil {
+		conditions.SetKubeApiError(r.dynakube.Conditions(), ActiveGateStatefulSetConditionType, err)
+
 		return errors.WithStack(err)
+	} else if created {
+		conditions.SetStatefulSetCreated(r.dynakube.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
+
+		return nil
 	}
 
 	deleted, err := r.deleteStatefulSetIfSelectorChanged(ctx, desiredSts)
-	if deleted || err != nil {
+	if err != nil {
+		conditions.SetKubeApiError(r.dynakube.Conditions(), ActiveGateStatefulSetConditionType, err)
+
 		return errors.WithStack(err)
+	} else if deleted {
+		conditions.SetStatefulSetDeleted(r.dynakube.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
+
+		return r.manageStatefulSet(ctx)
 	}
 
 	updated, err := r.updateStatefulSetIfOutdated(ctx, desiredSts)
-	if updated || err != nil {
+	if err != nil {
+		conditions.SetKubeApiError(r.dynakube.Conditions(), ActiveGateStatefulSetConditionType, err)
+
 		return errors.WithStack(err)
+	} else if updated {
+		conditions.SetStatefulSetUpdated(r.dynakube.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
 	}
 
 	return nil
