@@ -22,8 +22,10 @@ func FakeMemoryDB() *DBConn {
 
 	dbConn := &DBConn{db: db}
 
-	err = dbConn.SchemaMigration(context.Background())
+	err = dbConn.InitGormSchema()
 	if err != nil {
+		log.Error(err, "Couldn't initialize GORM schema")
+
 		return nil
 	}
 
