@@ -2,13 +2,16 @@ package statefulset
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
+	dynafake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -16,9 +19,11 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -45,7 +50,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		}).
 		WithObjects(&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      dynatracev1beta1.AuthTokenSecretSuffix,
+				Name:      testName + dynatracev1beta1.AuthTokenSecretSuffix,
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
@@ -60,6 +65,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
+			Name:      testName,
 		}}
 
 	capability.NewRoutingCapability(instance)
@@ -86,6 +92,11 @@ func TestReconcile(t *testing.T) {
 
 		assert.NotNil(t, statefulSet)
 		require.NoError(t, err)
+
+		condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, ActiveGateStatefulSetConditionType)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
+		assert.Equal(t, conditions.StatefulSetCreatedReason, condition.Reason)
+		assert.Equal(t, fmt.Sprintf("%s-routing created", testName), condition.Message)
 	})
 	t.Run(`update stateful set`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
@@ -119,6 +130,28 @@ func TestReconcile(t *testing.T) {
 		}
 
 		assert.Equal(t, 1, found)
+
+		condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, ActiveGateStatefulSetConditionType)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
+		assert.Equal(t, conditions.StatefulSetUpdatedReason, condition.Reason)
+		assert.Equal(t, testName+"-routing updated", condition.Message)
+	})
+	t.Run(`stateful set error is logged in condition`, func(t *testing.T) {
+		r := createDefaultReconciler(t)
+		fakeClient := dynafake.NewClientWithInterceptors(interceptor.Funcs{
+			Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+				return fmt.Errorf("BOOM")
+			},
+		})
+		r.client = fakeClient
+		err := r.Reconcile(context.Background())
+
+		require.Error(t, err)
+
+		condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, ActiveGateStatefulSetConditionType)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+		assert.Equal(t, conditions.KubeApiErrorReason, condition.Reason)
+		assert.Equal(t, "A problem occurred when using the Kubernetes API: "+err.Error(), condition.Message)
 	})
 }
 
@@ -324,7 +357,7 @@ func TestManageStatefulSet(t *testing.T) {
 		assert.NotNil(t, actualStatefulSet)
 		assert.Contains(t, actualStatefulSet.Labels, testName)
 	})
-	t.Run("delete statefulset if selector differs", func(t *testing.T) {
+	t.Run("update statefulset if selector differs", func(t *testing.T) {
 		r := createDefaultReconciler(t)
 		desiredStatefulSet, err := r.buildDesiredStatefulSet(context.Background())
 
@@ -346,8 +379,9 @@ func TestManageStatefulSet(t *testing.T) {
 		require.NoError(t, err)
 
 		actualStatefulSet, err = r.getStatefulSet(context.Background(), desiredStatefulSet)
-		require.Error(t, err)
-		assert.Nil(t, actualStatefulSet)
-		assert.True(t, k8serrors.IsNotFound(err))
+		require.NoError(t, err)
+
+		_, ok := actualStatefulSet.Spec.Selector.MatchLabels["activegate"]
+		assert.False(t, ok)
 	})
 }

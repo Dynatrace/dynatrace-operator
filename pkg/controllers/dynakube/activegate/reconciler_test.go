@@ -317,9 +317,8 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 			ActiveGate: dynatracev1beta1.ActiveGateStatus{
 				ConnectionInfoStatus: dynatracev1beta1.ActiveGateConnectionInfoStatus{
 					ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
-						TenantUUID:  testTenantUUID,
-						Endpoints:   testTenantEndpoints,
-						LastRequest: metav1.Time{},
+						TenantUUID: testTenantUUID,
+						Endpoints:  testTenantEndpoints,
 					},
 				},
 			},

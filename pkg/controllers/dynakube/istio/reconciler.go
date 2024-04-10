@@ -77,6 +77,10 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 		return errors.New("can't reconcile oneagent communication hosts of nil dynakube")
 	}
 
+	if !dynakube.NeedsActiveGate() {
+		return nil
+	}
+
 	activeGateEndpoints := activegate.GetEndpointsAsCommunicationHosts(dynakube)
 
 	err := r.reconcileCommunicationHostsForComponent(ctx, activeGateEndpoints, ActiveGateComponent)

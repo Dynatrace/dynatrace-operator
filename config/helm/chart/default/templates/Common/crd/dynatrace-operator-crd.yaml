@@ -677,6 +677,9 @@ spec:
     kind: DynaKube
     listKind: DynaKubeList
     plural: dynakubes
+    shortNames:
+    - dk
+    - dks
     singular: dynakube
   preserveUnknownFields: false
   scope: Namespaced

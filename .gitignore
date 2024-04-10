@@ -104,3 +104,5 @@ kind-logs-*
 test/testdata/secrets/*
 
 local/
+
+permissions.md

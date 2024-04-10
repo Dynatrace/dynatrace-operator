@@ -11,12 +11,14 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -56,8 +58,13 @@ func TestReconcile(t *testing.T) {
 			apiReader:    fake.NewClient(),
 			timeProvider: timeprovider.New().Freeze(),
 		}
-		err := versionReconciler.ReconcileActiveGate(ctx, dynakubeTemplate.DeepCopy())
+		dynakube := dynakubeTemplate.DeepCopy()
+		err := versionReconciler.ReconcileActiveGate(ctx, dynakube)
 		require.Error(t, err)
+
+		condition := meta.FindStatusCondition(dynakube.Status.Conditions, activeGateVersionConditionType)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+		assert.Equal(t, conditions.DynatraceApiErrorReason, condition.Reason)
 	})
 
 	t.Run("all image versions were updated", func(t *testing.T) {
@@ -85,6 +92,11 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		err = versionReconciler.ReconcileOneAgent(ctx, dynakube)
 		require.NoError(t, err)
+
+		condition := meta.FindStatusCondition(dynakube.Status.Conditions, activeGateVersionConditionType)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
+		assert.Equal(t, verifiedReason, condition.Reason)
+		assert.Equal(t, "Version verified for component.", condition.Message)
 
 		assertStatusBasedOnTenantRegistry(t, dynakube.DefaultActiveGateImage(testActiveGateImage.Tag), testActiveGateImage.Tag, dkStatus.ActiveGate.VersionStatus)
 		assertStatusBasedOnTenantRegistry(t, dynakube.DefaultOneAgentImage(testOneAgentImage.Tag), testOneAgentImage.Tag, dkStatus.OneAgent.VersionStatus)
@@ -133,6 +145,11 @@ func TestReconcile(t *testing.T) {
 		err = versionReconciler.ReconcileOneAgent(ctx, dynakube)
 		require.NoError(t, err)
 		require.NoError(t, err)
+
+		condition := meta.FindStatusCondition(dynakube.Status.Conditions, activeGateVersionConditionType)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
+		assert.Equal(t, verifiedReason, condition.Reason)
+		assert.Equal(t, "Version verified for component.", condition.Message)
 
 		assert.Equal(t, testActiveGateImage.String(), dkStatus.ActiveGate.VersionStatus.ImageID)
 		assert.Equal(t, testActiveGateImage.Tag, dkStatus.ActiveGate.VersionStatus.Version)
