@@ -11,9 +11,9 @@
   },
   baseBranches: [
     "$default",
-    "release-0.14",
     "release-0.15",
     "release-1.0",
+    "release-1.1",
   ],
   enabledManagers: [
     "regex",
@@ -50,9 +50,9 @@
     {
       matchBaseBranches: [
         "$default",
-        "release-0.14",
         "release-0.15",
         "release-1.0",
+        "release-1.1",
       ],
       matchUpdateTypes: [
         "major",
