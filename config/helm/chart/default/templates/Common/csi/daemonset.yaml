@@ -120,6 +120,12 @@ spec:
         - mountPath: {{ include "dynatrace-operator.CSIMountPointDir" . }}
           mountPropagation: Bidirectional
           name: mountpoint-dir
+        - mountPath: /sys/fs/selinux
+          mountPropagation: Bidirectional
+          name: selinux-dir
+        - mountPath: /etc/selinux
+          mountPropagation: Bidirectional
+          name: selinux-config-dir
         - mountPath: /data
           name: data-dir
           mountPropagation: Bidirectional
@@ -248,6 +254,15 @@ spec:
       - name: mountpoint-dir
         hostPath:
           path: {{ include "dynatrace-operator.CSIMountPointDir" . }}
+          type: DirectoryOrCreate
+        # This volume is where the driver mounts volumes
+      - name: selinux-dir
+        hostPath:
+          path: /sys/fs/selinux
+          type: DirectoryOrCreate
+      - name: selinux-config-dir
+        hostPath:
+          path: /etc/selinux
           type: DirectoryOrCreate
         # Used by the registrar to create its lockfile
       - name: lockfile-dir

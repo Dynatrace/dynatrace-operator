@@ -25,6 +25,7 @@ metadata:
 spec:
   attachRequired: false
   podInfoOnMount: true
+  seLinuxMount: true
   volumeLifecycleModes:
     - Ephemeral
 {{- end -}}
