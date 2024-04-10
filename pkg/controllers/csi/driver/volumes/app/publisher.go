@@ -104,7 +104,7 @@ func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volume
 		return &csi.NodeUnpublishVolumeResponse{}, publisher.db.DeleteAppMount(ctx, &metadata.AppMount{VolumeMetaID: appMount.VolumeMetaID})
 	}
 
-	publisher.umountOneAgent(volumeInfo.TargetPath, appMount.Location)
+	publisher.unmountOneAgent(volumeInfo.TargetPath, appMount.Location)
 
 	if err = publisher.db.DeleteAppMount(ctx, appMount); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -234,7 +234,7 @@ func (publisher *AppVolumePublisher) mountOneAgent(bindCfg *csivolumes.BindConfi
 	return nil
 }
 
-func (publisher *AppVolumePublisher) umountOneAgent(targetPath string, overlayFSPath string) {
+func (publisher *AppVolumePublisher) unmountOneAgent(targetPath string, overlayFSPath string) {
 	if err := publisher.mounter.Unmount(targetPath); err != nil {
 		log.Error(err, "Unmount failed", "path", targetPath)
 	}
@@ -254,7 +254,7 @@ func (publisher *AppVolumePublisher) ensureMountSteps(ctx context.Context, bindC
 
 	if err := publisher.storeVolume(ctx, bindCfg, volumeCfg); err != nil {
 		overlayFSPath := publisher.path.AgentRunDirForVolume(bindCfg.TenantUUID, volumeCfg.VolumeID)
-		publisher.umountOneAgent(volumeCfg.TargetPath, overlayFSPath)
+		publisher.unmountOneAgent(volumeCfg.TargetPath, overlayFSPath)
 
 		return status.Error(codes.Internal, fmt.Sprintf("Failed to store volume info: %s", err))
 	}

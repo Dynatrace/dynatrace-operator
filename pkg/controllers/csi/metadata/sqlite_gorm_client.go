@@ -68,6 +68,23 @@ func NewDBAccess(path string) (*DBConn, error) {
 
 // SchemaMigration runs gormigrate migrations to create tables
 func (conn *DBConn) SchemaMigration(_ context.Context) error {
+	err := conn.InitGormSchema()
+	if err != nil {
+		return err
+	}
+
+	return gormigrate.New(conn.db, gormigrate.DefaultOptions, []*gormigrate.Migration{
+		{
+			ID:      "202403041200",
+			Migrate: dataMigration,
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
+	}).Migrate()
+}
+
+func (conn *DBConn) InitGormSchema() error {
 	m := gormigrate.New(conn.db, gormigrate.DefaultOptions, []*gormigrate.Migration{})
 	m.InitSchema(func(tx *gorm.DB) error {
 		err := tx.AutoMigrate(
@@ -86,15 +103,7 @@ func (conn *DBConn) SchemaMigration(_ context.Context) error {
 
 	_ = m.Migrate()
 
-	return gormigrate.New(conn.db, gormigrate.DefaultOptions, []*gormigrate.Migration{
-		{
-			ID:      "202403041200",
-			Migrate: dataMigration,
-			Rollback: func(tx *gorm.DB) error {
-				return nil
-			},
-		},
-	}).Migrate()
+	return nil
 }
 
 func (conn *DBConn) CreateTenantConfig(ctx context.Context, tenantConfig *TenantConfig) error {

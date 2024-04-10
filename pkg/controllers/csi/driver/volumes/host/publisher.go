@@ -104,7 +104,7 @@ func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volum
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 
-	publisher.umountOneAgent(volumeInfo.TargetPath)
+	publisher.unmountOneAgent(volumeInfo.TargetPath)
 
 	if err := publisher.db.DeleteOSMount(ctx, osMount); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to update osagent volume info to database. info: %v err: %s", osMount, err.Error()))
@@ -141,7 +141,7 @@ func (publisher *HostVolumePublisher) mountOneAgent(tenantUUID string, volumeCfg
 	return nil
 }
 
-func (publisher *HostVolumePublisher) umountOneAgent(targetPath string) {
+func (publisher *HostVolumePublisher) unmountOneAgent(targetPath string) {
 	if err := publisher.mounter.Unmount(targetPath); err != nil {
 		log.Error(err, "Unmount failed", "path", targetPath)
 	}
