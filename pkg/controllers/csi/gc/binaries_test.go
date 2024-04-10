@@ -32,7 +32,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 
 		gc := NewMockGarbageCollector()
 
-		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID)
+		gc.runBinaryGarbageCollection(context.TODO())
 
 		assert.InDelta(t, 1, testutil.ToFloat64(gcRunsMetric), 0.01)
 		assert.InDelta(t, 0, testutil.ToFloat64(foldersRemovedMetric), 0.01)
@@ -44,7 +44,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		gc := NewMockGarbageCollector()
 		_ = gc.fs.MkdirAll(testBinaryDir, 0770)
 
-		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID)
+		gc.runBinaryGarbageCollection(context.TODO())
 
 		assert.InDelta(t, 1, testutil.ToFloat64(gcRunsMetric), 0.01)
 		assert.InDelta(t, 0, testutil.ToFloat64(foldersRemovedMetric), 0.01)
@@ -56,7 +56,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		gc := NewMockGarbageCollector()
 		gc.mockUnusedVersions(testVersion1, testVersion2, testVersion3)
 
-		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID)
+		gc.runBinaryGarbageCollection(context.TODO())
 
 		assert.InDelta(t, 1, testutil.ToFloat64(gcRunsMetric), 0.01)
 		assert.InDelta(t, 3, testutil.ToFloat64(foldersRemovedMetric), 0.01)
@@ -69,7 +69,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		gc := NewMockGarbageCollector()
 		gc.mockUsedVersions(testVersion1, testVersion2, testVersion3)
 
-		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID)
+		gc.runBinaryGarbageCollection(context.TODO())
 
 		assert.InDelta(t, 1, testutil.ToFloat64(gcRunsMetric), 0.01)
 		assert.InDelta(t, 0, testutil.ToFloat64(foldersRemovedMetric), 0.01)
@@ -83,7 +83,7 @@ func TestBinaryGarbageCollector_getUsedVersions(t *testing.T) {
 	gc := NewMockGarbageCollector()
 	gc.mockUsedVersions(testVersion1, testVersion2, testVersion3)
 
-	usedVersions, err := gc.db.GetUsedVersions(context.TODO(), testTenantUUID)
+	usedVersions, err := gc.db.ReadCodeModules(context.TODO())
 	require.NoError(t, err)
 
 	assert.NotNil(t, usedVersions)
@@ -103,6 +103,7 @@ func NewMockGarbageCollector() *CSIGarbageCollector {
 func (gc *CSIGarbageCollector) mockUnusedVersions(versions ...string) {
 	_ = gc.fs.Mkdir(testBinaryDir, 0770)
 	for _, version := range versions {
+		gc.db.CreateCodeModule(context.Background(), &metadata.CodeModule{Version: version, Location: filepath.Join(testBinaryDir, version)})
 		_, _ = gc.fs.Create(filepath.Join(testBinaryDir, version))
 	}
 }
@@ -110,7 +111,13 @@ func (gc *CSIGarbageCollector) mockUsedVersions(versions ...string) {
 	_ = gc.fs.Mkdir(testBinaryDir, 0770)
 	for i, version := range versions {
 		_, _ = gc.fs.Create(filepath.Join(testBinaryDir, version))
-		_ = gc.db.InsertVolume(context.TODO(), metadata.NewVolume(fmt.Sprintf("pod%b", i), fmt.Sprintf("volume%b", i), version, testTenantUUID, 0))
+		appMount := metadata.AppMount{
+			VolumeMeta:        metadata.VolumeMeta{ID: fmt.Sprintf("volume%b", i), PodName: fmt.Sprintf("pod%b", i)},
+			VolumeMetaID:      fmt.Sprintf("volume%b", i),
+			CodeModuleVersion: version,
+			MountAttempts:     0,
+		}
+		_ = gc.db.CreateAppMount(context.TODO(), &appMount)
 	}
 }
 

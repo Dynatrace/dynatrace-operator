@@ -52,34 +52,20 @@ func (gc *CSIGarbageCollector) getSharedBinDirs() ([]os.FileInfo, error) {
 func (gc *CSIGarbageCollector) collectUnusedAgentBins(ctx context.Context, imageDirs []os.FileInfo) ([]string, error) {
 	var toDelete []string
 
-	usedAgentVersions, err := gc.db.GetLatestVersions(ctx)
+	codeModules, err := gc.db.ReadCodeModules(ctx)
 	if err != nil {
-		log.Info("failed to get the used image versions")
-
-		return nil, err
+		return []string{}, err
 	}
 
-	usedAgentDigest, err := gc.db.GetUsedImageDigests(ctx)
-	if err != nil {
-		log.Info("failed to get the used image digests")
-
-		return nil, err
-	}
-
-	// If a shared image was used during mount, the version of a Volume is the imageDigest.
-	// A Volume can still reference versions that are not imageDigests.
-	// However, this shouldn't cause issues as those versions don't matter in this context.
-	mountedAgentBins, err := gc.db.GetAllUsedVersions(ctx)
-	if err != nil {
-		log.Info("failed to get all mounted versions")
-
-		return nil, err
+	codeModuleBins := make(map[string]bool)
+	for _, codeModule := range codeModules {
+		codeModuleBins[codeModule.Location] = true
 	}
 
 	for _, imageDir := range imageDirs {
-		agentBin := imageDir.Name()
-		if !mountedAgentBins[agentBin] && !usedAgentVersions[agentBin] && !usedAgentDigest[agentBin] {
-			toDelete = append(toDelete, gc.path.AgentSharedBinaryDirForAgent(agentBin))
+		agentBinPath := gc.path.AgentSharedBinaryDirForAgent(imageDir.Name())
+		if !codeModuleBins[agentBinPath] {
+			toDelete = append(toDelete, agentBinPath)
 		}
 	}
 

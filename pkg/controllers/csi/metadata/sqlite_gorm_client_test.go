@@ -37,16 +37,16 @@ func TestReadTenantConfig(t *testing.T) {
 
 	require.NoError(t, err)
 
-	tc, err := db.ReadTenantConfigByTenantUUID(context.Background(), "abc123")
+	tc, err := db.ReadTenantConfig(context.Background(), TenantConfig{TenantUUID: "abc123"})
 	require.NoError(t, err)
 
 	assert.NotNil(t, tc)
 	assert.Equal(t, "abc123", tc.TenantUUID)
 
-	_, err = db.ReadTenantConfigByTenantUUID(context.Background(), "")
+	_, err = db.ReadTenantConfig(context.Background(), TenantConfig{})
 	require.Error(t, err)
 
-	_, err = db.ReadTenantConfigByTenantUUID(context.Background(), "unknown")
+	_, err = db.ReadTenantConfig(context.Background(), TenantConfig{TenantUUID: "unknown"})
 	require.Error(t, err)
 }
 
@@ -56,7 +56,7 @@ func TestUpdateTenantConfig(t *testing.T) {
 
 	setupPostReconcileData(context.Background(), db)
 
-	tenantConfig, err := db.ReadTenantConfigByTenantUUID(context.Background(), "abc123")
+	tenantConfig, err := db.ReadTenantConfig(context.Background(), TenantConfig{TenantUUID: "abc123"})
 	require.NoError(t, err)
 
 	tenantConfig.DownloadedCodeModuleVersion = "2.3.4"
@@ -81,20 +81,20 @@ func TestSoftDeleteTenantConfig(t *testing.T) {
 
 	setupPostPublishData(context.Background(), db)
 
-	tenantConfig, err := db.ReadTenantConfigByTenantUUID(context.Background(), "abc123")
+	tenantConfig, err := db.ReadTenantConfig(context.Background(), TenantConfig{TenantUUID: "abc123"})
 	require.NoError(t, err)
 
-	err = db.DeleteTenantConfig(context.Background(), tenantConfig)
+	err = db.DeleteTenantConfig(context.Background(), tenantConfig, false)
 	require.NoError(t, err)
 
 	readTenantConfig := &TenantConfig{TenantUUID: "abc123"}
 	db.db.WithContext(context.Background()).First(readTenantConfig)
 	assert.Equal(t, int64(0), db.db.RowsAffected)
 
-	err = db.DeleteTenantConfig(context.Background(), nil)
+	err = db.DeleteTenantConfig(context.Background(), nil, false)
 	require.Error(t, err)
 
-	err = db.DeleteTenantConfig(context.Background(), &TenantConfig{})
+	err = db.DeleteTenantConfig(context.Background(), &TenantConfig{}, false)
 	require.Error(t, err)
 }
 
@@ -131,16 +131,16 @@ func TestReadCodeModule(t *testing.T) {
 
 	setupPostReconcileData(context.Background(), db)
 
-	codeModule, err := db.ReadCodeModuleByVersion(context.Background(), "1.2.3")
+	codeModule, err := db.ReadCodeModule(context.Background(), CodeModule{Version: "1.2.3"})
 	require.NoError(t, err)
 
 	assert.NotNil(t, codeModule)
 	assert.Equal(t, "someplace", codeModule.Location)
 
-	_, err = db.ReadCodeModuleByVersion(context.Background(), "")
+	_, err = db.ReadCodeModule(context.Background(), CodeModule{Version: ""})
 	require.Error(t, err)
 
-	_, err = db.ReadCodeModuleByVersion(context.Background(), "unknown")
+	_, err = db.ReadCodeModule(context.Background(), CodeModule{Version: "unknown"})
 	require.Error(t, err)
 }
 
@@ -150,7 +150,7 @@ func TestSoftDeleteCodeModule(t *testing.T) {
 
 	setupPostReconcileData(context.Background(), db)
 
-	codeModule, err := db.ReadCodeModuleByVersion(context.Background(), "1.2.3")
+	codeModule, err := db.ReadCodeModule(context.Background(), CodeModule{Version: "1.2.3"})
 	require.NoError(t, err)
 
 	assert.NotNil(t, codeModule)
@@ -176,7 +176,7 @@ func TestCreateOsMount(t *testing.T) {
 
 	setupPostReconcileData(context.Background(), db)
 
-	tenant, err := db.ReadTenantConfigByTenantUUID(context.Background(), "abc123")
+	tenant, err := db.ReadTenantConfig(context.Background(), TenantConfig{TenantUUID: "abc123"})
 	require.NoError(t, err)
 
 	vm := VolumeMeta{
@@ -212,16 +212,16 @@ func TestReadOSMount(t *testing.T) {
 
 	setupPostPublishData(context.Background(), db)
 
-	osMount, err := db.ReadOSMountByTenantUUID(context.Background(), "abc123")
+	osMount, err := db.ReadOSMount(context.Background(), OSMount{TenantUUID: "abc123"})
 	require.NoError(t, err)
 
 	assert.NotNil(t, osMount)
 	assert.Equal(t, "osmount1", osMount.VolumeMeta.ID)
 
-	_, err = db.ReadOSMountByTenantUUID(context.Background(), "")
+	_, err = db.ReadOSMount(context.Background(), OSMount{TenantUUID: ""})
 	require.Error(t, err)
 
-	_, err = db.ReadOSMountByTenantUUID(context.Background(), "unknown")
+	_, err = db.ReadOSMount(context.Background(), OSMount{TenantUUID: "unknown"})
 	require.Error(t, err)
 }
 
@@ -231,7 +231,7 @@ func TestUpdateOsMount(t *testing.T) {
 
 	setupPostPublishData(context.Background(), db)
 
-	osMount, err := db.ReadOSMountByTenantUUID(context.Background(), "abc123")
+	osMount, err := db.ReadOSMount(context.Background(), OSMount{TenantUUID: "abc123"})
 	require.NoError(t, err)
 
 	osMount.MountAttempts = 5
@@ -250,78 +250,28 @@ func TestUpdateOsMount(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestSoftDeleteOSMount(t *testing.T) {
-	db, err := setupDB()
-	require.NoError(t, err)
-
-	setupPostPublishData(context.Background(), db)
-
-	osMount, err := db.ReadOSMountByTenantUUID(context.Background(), "abc123")
-	require.NoError(t, err)
-
-	err = db.RestoreOSMount(context.Background(), osMount)
-	require.NoError(t, err)
-
-	assert.NotNil(t, osMount)
-	assert.Equal(t, "osmount1", osMount.VolumeMeta.ID)
-
-	err = db.DeleteOSMount(context.Background(), osMount)
-	require.NoError(t, err)
-
-	readOSMount := &OSMount{TenantUUID: "abc123"}
-	db.db.WithContext(context.Background()).First(readOSMount)
-	assert.Equal(t, int64(0), db.db.RowsAffected)
-
-	err = db.DeleteOSMount(context.Background(), nil)
-	require.Error(t, err)
-
-	err = db.DeleteOSMount(context.Background(), &OSMount{})
-	require.Error(t, err)
-
-	deletedOSMount, err := db.ReadOSMountByTenantUUID(context.Background(), "abc123")
-	require.NoError(t, err)
-
-	assert.Equal(t, "somewhere", deletedOSMount.Location)
-	deletedOSMount.VolumeMeta = VolumeMeta{
-		ID:                "osmount2",
-		PodUid:            "pod9",
-		PodName:           "podix",
-		PodNamespace:      "testnamespace",
-		PodServiceAccount: "podsa",
-	}
-
-	err = db.UpdateOSMount(context.Background(), deletedOSMount)
-	require.NoError(t, err)
-
-	readOSMount2 := &OSMount{TenantUUID: "abc123"}
-	db.db.WithContext(context.Background()).Preload("VolumeMeta").First(readOSMount2)
-	assert.Equal(t, "pod9", readOSMount2.VolumeMeta.PodUid)
-}
-
 func TestRestoreOsMount(t *testing.T) {
 	db, err := setupDB()
 	require.NoError(t, err)
 
 	setupPostPublishData(context.Background(), db)
 
-	osMount, err := db.ReadOSMountByTenantUUID(context.Background(), "abc123")
+	baseOSMount := OSMount{TenantUUID: "abc123"}
+
+	osMount, err := db.ReadOSMount(context.Background(), baseOSMount)
 	require.NoError(t, err)
 
 	err = db.DeleteOSMount(context.Background(), osMount)
 	require.NoError(t, err)
 
-	readOSMount := &OSMount{TenantUUID: "abc123"}
-	db.db.WithContext(context.Background()).First(readOSMount)
-	assert.Equal(t, int64(0), db.db.RowsAffected)
-
-	err = db.RestoreOSMount(context.Background(), osMount)
-	require.NoError(t, err)
-
-	_, err = db.ReadOSMountByTenantUUID(context.Background(), "abc123")
-	require.NoError(t, err)
-
-	err = db.RestoreOSMount(context.Background(), nil)
+	_, err = db.ReadOSMount(context.Background(), baseOSMount)
 	require.Error(t, err)
+
+	err = db.restoreOSMount(context.Background(), &baseOSMount)
+	require.NoError(t, err)
+
+	_, err = db.ReadOSMount(context.Background(), baseOSMount)
+	require.NoError(t, err)
 }
 
 func TestCreateAppMount(t *testing.T) {
@@ -330,10 +280,10 @@ func TestCreateAppMount(t *testing.T) {
 
 	setupPostReconcileData(context.Background(), db)
 
-	tenantConfig, err := db.ReadTenantConfigByTenantUUID(context.Background(), "abc123")
+	tenantConfig, err := db.ReadTenantConfig(context.Background(), TenantConfig{TenantUUID: "abc123"})
 	require.NoError(t, err)
 
-	cm, err := db.ReadCodeModuleByVersion(context.Background(), tenantConfig.DownloadedCodeModuleVersion)
+	cm, err := db.ReadCodeModule(context.Background(), CodeModule{Version: tenantConfig.DownloadedCodeModuleVersion})
 	require.NoError(t, err)
 
 	vm := VolumeMeta{
@@ -402,16 +352,16 @@ func TestReadAppMount(t *testing.T) {
 
 	setupPostPublishData(context.Background(), db)
 
-	appMount, err := db.ReadAppMountByVolumeMetaID(context.Background(), "appmount1")
+	appMount, err := db.ReadAppMount(context.Background(), AppMount{VolumeMeta: VolumeMeta{ID: "appmount1"}})
 	require.NoError(t, err)
 
 	assert.NotNil(t, appMount)
 	assert.Equal(t, "appmount1", appMount.VolumeMeta.ID)
 
-	_, err = db.ReadAppMountByVolumeMetaID(context.Background(), "")
+	_, err = db.ReadAppMount(context.Background(), AppMount{VolumeMeta: VolumeMeta{ID: ""}})
 	require.Error(t, err)
 
-	_, err = db.ReadAppMountByVolumeMetaID(context.Background(), "unknown")
+	_, err = db.ReadAppMount(context.Background(), AppMount{VolumeMetaID: "unknown", VolumeMeta: VolumeMeta{ID: "unknown"}})
 	require.Error(t, err)
 }
 
@@ -421,7 +371,7 @@ func TestUpdateAppMount(t *testing.T) {
 
 	setupPostPublishData(context.Background(), db)
 
-	appMount, err := db.ReadAppMountByVolumeMetaID(context.Background(), "appmount1")
+	appMount, err := db.ReadAppMount(context.Background(), AppMount{VolumeMeta: VolumeMeta{ID: "appmount1"}})
 	require.NoError(t, err)
 
 	appMount.MountAttempts = 5
@@ -446,7 +396,7 @@ func TestSoftDeleteAppMount(t *testing.T) {
 
 	setupPostPublishData(context.Background(), db)
 
-	appMount, err := db.ReadAppMountByVolumeMetaID(context.Background(), "appmount1")
+	appMount, err := db.ReadAppMount(context.Background(), AppMount{VolumeMeta: VolumeMeta{ID: "appmount1"}})
 	require.NoError(t, err)
 
 	assert.NotNil(t, appMount)
@@ -519,16 +469,16 @@ func TestReadVolumeMeta(t *testing.T) {
 
 	setupPostPublishData(context.Background(), db)
 
-	appMount, err := db.ReadVolumeMetaByID(context.Background(), "appmount1")
+	appMount, err := db.ReadVolumeMeta(context.Background(), VolumeMeta{ID: "appmount1"})
 	require.NoError(t, err)
 
 	assert.NotNil(t, appMount)
 	assert.Equal(t, "appmount1", appMount.ID)
 
-	_, err = db.ReadVolumeMetaByID(context.Background(), "")
+	_, err = db.ReadVolumeMeta(context.Background(), VolumeMeta{ID: ""})
 	require.Error(t, err)
 
-	_, err = db.ReadVolumeMetaByID(context.Background(), "unknown")
+	_, err = db.ReadVolumeMeta(context.Background(), VolumeMeta{ID: "unknown"})
 	require.Error(t, err)
 }
 

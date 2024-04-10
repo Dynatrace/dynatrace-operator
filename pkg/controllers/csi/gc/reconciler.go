@@ -19,7 +19,7 @@ import (
 type CSIGarbageCollector struct {
 	apiReader client.Reader
 	fs        afero.Fs
-	db        metadata.Access
+	db        metadata.DBAccess
 	path      metadata.PathResolver
 
 	maxUnmountedVolumeAge time.Duration
@@ -28,7 +28,7 @@ type CSIGarbageCollector struct {
 var _ reconcile.Reconciler = (*CSIGarbageCollector)(nil)
 
 // NewCSIGarbageCollector returns a new CSIGarbageCollector
-func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollector {
+func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.DBAccess) *CSIGarbageCollector {
 	return &CSIGarbageCollector{
 		apiReader:             apiReader,
 		fs:                    afero.NewOsFs(),
@@ -66,7 +66,7 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 	}
 
 	log.Info("running binary garbage collection (for deprecated location)")
-	gc.runBinaryGarbageCollection(ctx, tenantUUID)
+	gc.runBinaryGarbageCollection(ctx)
 
 	if err := ctx.Err(); err != nil {
 		return defaultReconcileResult, err

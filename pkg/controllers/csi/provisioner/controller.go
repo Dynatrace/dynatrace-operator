@@ -59,7 +59,7 @@ type OneAgentProvisioner struct {
 	apiReader client.Reader
 	fs        afero.Fs
 	recorder  record.EventRecorder
-	db        metadata.Access
+	db        metadata.DBAccess
 	gc        reconcile.Reconciler
 
 	dynatraceClientBuilder dynatraceclient.Builder
@@ -71,7 +71,7 @@ type OneAgentProvisioner struct {
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
-func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.Access) *OneAgentProvisioner {
+func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.DBAccess) *OneAgentProvisioner {
 	return &OneAgentProvisioner{
 		client:                 mgr.GetClient(),
 		apiReader:              mgr.GetAPIReader(),
@@ -94,13 +94,19 @@ func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error
 		Complete(provisioner)
 }
 
+// cyclomatic: function (*OneAgentProvisioner).Reconcile has cyclomatic complexity 13 (> max enabled 12)
+//
+//nolint:revive
 func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "dynakube", request.Name)
 
 	dk, err := provisioner.getDynaKube(ctx, request.NamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			return reconcile.Result{}, provisioner.db.DeleteDynakube(ctx, request.Name)
+			err = provisioner.db.DeleteTenantConfig(ctx, &metadata.TenantConfig{Name: dk.Name}, true)
+			if err != nil && err.Error() != "record not found" {
+				return reconcile.Result{}, err
+			}
 		}
 
 		return reconcile.Result{}, err
@@ -109,7 +115,12 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	if !dk.NeedsCSIDriver() {
 		log.Info("CSI driver provisioner not needed")
 
-		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.db.DeleteDynakube(ctx, request.Name)
+		err = provisioner.db.DeleteTenantConfig(ctx, &metadata.TenantConfig{Name: dk.Name}, true)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		return reconcile.Result{RequeueAfter: longRequeueDuration}, err
 	}
 
 	err = provisioner.setupFileSystem(dk)
@@ -117,7 +128,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{}, err
 	}
 
-	dynakubeMetadata, err := provisioner.setupDynakubeMetadata(ctx, dk) // needed for the CSI-resilience feature
+	tenantConfig, err := provisioner.setupTenantConfig(ctx, dk) // needed for the CSI-resilience feature
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -134,7 +145,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{RequeueAfter: shortRequeueDuration}, err
 	}
 
-	err = provisioner.provisionCodeModules(ctx, dk, dynakubeMetadata)
+	err = provisioner.provisionCodeModules(ctx, dk, tenantConfig)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -164,15 +175,15 @@ func (provisioner *OneAgentProvisioner) setupFileSystem(dk *dynatracev1beta1.Dyn
 	return nil
 }
 
-func (provisioner *OneAgentProvisioner) setupDynakubeMetadata(ctx context.Context, dk *dynatracev1beta1.DynaKube) (*metadata.Dynakube, error) {
-	dynakubeMetadata, oldDynakubeMetadata, err := provisioner.handleMetadata(ctx, dk)
+func (provisioner *OneAgentProvisioner) setupTenantConfig(ctx context.Context, dk *dynatracev1beta1.DynaKube) (*metadata.TenantConfig, error) {
+	dynakubeMetadata, err := provisioner.handleMetadata(ctx, dk)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create/update the dynakubeMetadata entry while `LatestVersion` is not necessarily set
 	// so the host oneagent-storages can be mounted before the standalone agent binaries are ready to be mounted
-	return dynakubeMetadata, provisioner.createOrUpdateDynakubeMetadata(ctx, oldDynakubeMetadata, dynakubeMetadata)
+	return dynakubeMetadata, provisioner.db.UpdateTenantConfig(ctx, dynakubeMetadata)
 }
 
 func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, request reconcile.Request) error {
@@ -181,21 +192,20 @@ func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, requ
 	return err
 }
 
-func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context, dk *dynatracev1beta1.DynaKube, dynakubeMetadata *metadata.Dynakube) error {
-	oldDynakubeMetadata := *dynakubeMetadata
+func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context, dk *dynatracev1beta1.DynaKube, tenantConfig *metadata.TenantConfig) error {
 	// creates a dt client and checks tokens exist for the given dynakube
 	dtc, err := buildDtc(provisioner, ctx, dk)
 	if err != nil {
 		return err
 	}
 
-	requeue, err := provisioner.updateAgentInstallation(ctx, dtc, dynakubeMetadata, dk)
+	requeue, err := provisioner.updateAgentInstallation(ctx, dtc, tenantConfig, dk)
 	if requeue || err != nil {
 		return err
 	}
 
 	// Set/Update the `LatestVersion` field in the database entry
-	err = provisioner.createOrUpdateDynakubeMetadata(ctx, oldDynakubeMetadata, dynakubeMetadata)
+	err = provisioner.db.UpdateTenantConfig(ctx, tenantConfig)
 	if err != nil {
 		return err
 	}
@@ -205,7 +215,7 @@ func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context
 
 func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 	ctx context.Context, dtc dtclient.Client,
-	dynakubeMetadata *metadata.Dynakube,
+	tenantConfig *metadata.TenantConfig,
 	dk *dynatracev1beta1.DynaKube,
 ) (
 	requeue bool,
@@ -222,74 +232,41 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 			log.Info("error when updating agent from image", "error", err.Error())
 			// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
 			return true, nil
-		} else if updatedDigest != "" {
-			dynakubeMetadata.LatestVersion = ""
-			dynakubeMetadata.ImageDigest = updatedDigest
 		}
+
+		tenantConfig.DownloadedCodeModuleVersion = updatedDigest
 	} else {
 		updateVersion, err := provisioner.installAgentZip(ctx, *dk, dtc, latestProcessModuleConfig)
 		if err != nil {
 			log.Info("error when updating agent from zip", "error", err.Error())
 			// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
 			return true, nil
-		} else if updateVersion != "" {
-			dynakubeMetadata.LatestVersion = updateVersion
-			dynakubeMetadata.ImageDigest = ""
+		}
+
+		if updateVersion != "" {
+			tenantConfig.DownloadedCodeModuleVersion = updateVersion
 		}
 	}
 
 	return false, nil
 }
 
-func (provisioner *OneAgentProvisioner) handleMetadata(ctx context.Context, dk *dynatracev1beta1.DynaKube) (*metadata.Dynakube, metadata.Dynakube, error) {
-	dynakubeMetadata, err := provisioner.db.GetDynakube(ctx, dk.Name)
-	if err != nil {
-		return nil, metadata.Dynakube{}, errors.WithStack(err)
-	}
-
-	// In case of a new dynakubeMetadata
-	var oldDynakubeMetadata metadata.Dynakube
-	if dynakubeMetadata != nil {
-		oldDynakubeMetadata = *dynakubeMetadata
-	}
-
+func (provisioner *OneAgentProvisioner) handleMetadata(ctx context.Context, dk *dynatracev1beta1.DynaKube) (*metadata.TenantConfig, error) {
 	tenantUUID, err := dk.TenantUUIDFromApiUrl()
 	if err != nil {
-		return nil, metadata.Dynakube{}, err
+		return nil, err
 	}
 
-	dynakubeMetadata = metadata.NewDynakube(
-		dk.Name,
-		tenantUUID,
-		oldDynakubeMetadata.LatestVersion,
-		oldDynakubeMetadata.ImageDigest,
-		dk.FeatureMaxFailedCsiMountAttempts())
-
-	return dynakubeMetadata, oldDynakubeMetadata, nil
-}
-
-func (provisioner *OneAgentProvisioner) createOrUpdateDynakubeMetadata(ctx context.Context, oldDynakube metadata.Dynakube, dynakube *metadata.Dynakube) error {
-	if oldDynakube != *dynakube {
-		log.Info("dynakube has changed",
-			"name", dynakube.Name,
-			"tenantUUID", dynakube.TenantUUID,
-			"version", dynakube.LatestVersion,
-			"max mount attempts", dynakube.MaxFailedMountAttempts)
-
-		if oldDynakube == (metadata.Dynakube{}) {
-			log.Info("adding dynakube to db", "tenantUUID", dynakube.TenantUUID, "version", dynakube.LatestVersion)
-
-			return provisioner.db.InsertDynakube(ctx, dynakube)
-		} else {
-			log.Info("updating dynakube in db",
-				"old version", oldDynakube.LatestVersion, "new version", dynakube.LatestVersion,
-				"old tenantUUID", oldDynakube.TenantUUID, "new tenantUUID", dynakube.TenantUUID)
-
-			return provisioner.db.UpdateDynakube(ctx, dynakube)
-		}
+	newTenantConfig := &metadata.TenantConfig{
+		UID:                         string(dk.UID),
+		Name:                        dk.Name,
+		TenantUUID:                  tenantUUID,
+		DownloadedCodeModuleVersion: dk.CodeModulesVersion(),
+		MaxFailedMountAttempts:      int64(dk.FeatureMaxFailedCsiMountAttempts()),
+		// WIP other fields???
 	}
 
-	return nil
+	return newTenantConfig, nil
 }
 
 func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynatracev1beta1.DynaKube) (dtclient.Client, error) {
