@@ -45,8 +45,8 @@
 |repository|Custom EdgeConnect image repository|-|string|
 |tag|Indicates version of the EdgeConnect image to use|-|string|
 
-### .spec.kubernetesApiAutomation
+### .spec.kubernetesAutomation
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
-|enabled|Enables Kubernetes automation|-|boolean|
+|enabled|Enables Kubernetes Automation for Workflows|-|boolean|

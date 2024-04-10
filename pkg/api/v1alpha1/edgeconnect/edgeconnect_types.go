@@ -28,8 +28,8 @@ type EdgeConnectSpec struct { //nolint:revive
 	// Node selector to control the selection of nodes for the EdgeConnect pods
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
-	// KubernetesApiAutomation enables Automation workflows
-	KubernetesApiAutomation *KubernetesApiAutomationSpec `json:"kubernetesApiAutomation,omitempty"`
+	// KubernetesAutomation enables Kubernetes Automation for Workflows
+	KubernetesAutomation *KubernetesAutomationSpec `json:"kubernetesAutomation,omitempty"`
 
 	// General configurations for proxy settings.
 	// +kubebuilder:validation:Optional
@@ -123,8 +123,8 @@ type ProxySpec struct {
 	Port uint32 `json:"port,omitempty"`
 }
 
-type KubernetesApiAutomationSpec struct {
-	// Enables Kubernetes automation
+type KubernetesAutomationSpec struct {
+	// Enables Kubernetes Automation for Workflows
 	Enabled bool `json:"enabled,omitempty"`
 }
 
