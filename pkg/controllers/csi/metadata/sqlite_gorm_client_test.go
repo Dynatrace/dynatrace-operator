@@ -102,9 +102,6 @@ func TestCreateCodeModule(t *testing.T) {
 	db, err := setupDB()
 	require.NoError(t, err)
 
-	err = db.SchemaMigration(context.Background())
-	require.NoError(t, err)
-
 	codeModule := &CodeModule{
 		Version:  "1.2.3",
 		Location: "someplace",
@@ -488,7 +485,7 @@ func setupDB() (*DBConn, error) {
 		return nil, err
 	}
 
-	err = db.SchemaMigration(context.Background())
+	err = db.InitGormSchema()
 
 	if err != nil {
 		return nil, err
