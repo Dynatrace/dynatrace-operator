@@ -15,23 +15,22 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func createTestDynakube(index int) Dynakube {
-	return Dynakube{
-		TenantUUID:             fmt.Sprintf("asc%d", index),
-		LatestVersion:          strconv.Itoa(123 * index),
-		Name:                   fmt.Sprintf("dk%d", index),
-		ImageDigest:            fmt.Sprintf("sha256:%d", 123*index),
-		MaxFailedMountAttempts: index,
+func createTestTenantConfig(index int) TenantConfig {
+	return TenantConfig{
+		Name:                        fmt.Sprintf("dk%d", index),
+		TenantUUID:                  fmt.Sprintf("asc%d", index),
+		DownloadedCodeModuleVersion: fmt.Sprintf("sha256:%d", 123*index),
+		MaxFailedMountAttempts:      int64(index),
 	}
 }
 
-func createTestVolume(index int) Volume {
-	return Volume{
-		VolumeID:      fmt.Sprintf("vol-%d", index),
-		PodName:       fmt.Sprintf("pod%d", index),
-		Version:       createTestDynakube(index).LatestVersion,
-		TenantUUID:    createTestDynakube(index).TenantUUID,
-		MountAttempts: index,
+func createTestAppMount(index int) AppMount {
+	return AppMount{
+		VolumeMeta:        VolumeMeta{ID: fmt.Sprintf("vol-%d", index), PodName: fmt.Sprintf("pod%d", index)},
+		CodeModuleVersion: strconv.Itoa(123 * index),
+		CodeModule:        CodeModule{Version: strconv.Itoa(123 * index)},
+		VolumeMetaID:      fmt.Sprintf("vol-%d", index),
+		MountAttempts:     int64(index),
 	}
 }
 
@@ -57,37 +56,37 @@ func TestCorrectCSI(t *testing.T) {
 
 	t.Run("no error on nil apiReader, database is not cleaned", func(t *testing.T) {
 		ctx := context.TODO()
-		testVolume1 := createTestVolume(1)
-		testDynakube1 := createTestDynakube(1)
+		testAppMount1 := createTestAppMount(1)
+		testTenantConfig1 := createTestTenantConfig(1)
 		db := FakeMemoryDB()
-		db.InsertVolume(ctx, &testVolume1)
-		db.InsertDynakube(ctx, &testDynakube1)
+		db.CreateAppMount(ctx, &testAppMount1)
+		db.CreateTenantConfig(ctx, &testTenantConfig1)
 
 		checker := NewCorrectnessChecker(nil, db, dtcsi.CSIOptions{})
 
 		err := checker.CorrectCSI(context.TODO())
 
 		require.NoError(t, err)
-		vol, err := db.GetVolume(ctx, testVolume1.VolumeID)
+		vol, err := db.ReadAppMount(ctx, testAppMount1)
 		require.NoError(t, err)
-		assert.Equal(t, &testVolume1, vol)
+		assert.Equal(t, &testAppMount1, vol)
 
 		require.NoError(t, err)
-		dk, err := db.GetDynakube(ctx, testDynakube1.Name)
+		dk, err := db.ReadTenantConfig(ctx, TenantConfig{Name: testTenantConfig1.Name})
 		require.NoError(t, err)
-		assert.Equal(t, &testDynakube1, dk)
+		assert.Equal(t, &testTenantConfig1, dk)
 	})
 
 	t.Run("nothing to remove, everything is still correct", func(t *testing.T) {
 		ctx := context.TODO()
-		testVolume1 := createTestVolume(1)
-		testDynakube1 := createTestDynakube(1)
+		testAppMount1 := createTestAppMount(1)
+		testTenantConfig1 := createTestTenantConfig(1)
 		db := FakeMemoryDB()
-		db.InsertVolume(ctx, &testVolume1)
-		db.InsertDynakube(ctx, &testDynakube1)
+		db.CreateAppMount(ctx, &testAppMount1)
+		db.CreateTenantConfig(ctx, &testTenantConfig1)
 		client := fake.NewClient(
-			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testVolume1.PodName}},
-			&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
+			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testAppMount1.VolumeMeta.PodName}},
+			&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testTenantConfig1.Name}},
 		)
 
 		checker := NewCorrectnessChecker(client, db, dtcsi.CSIOptions{})
@@ -95,36 +94,36 @@ func TestCorrectCSI(t *testing.T) {
 		err := checker.CorrectCSI(ctx)
 
 		require.NoError(t, err)
-		vol, err := db.GetVolume(ctx, testVolume1.VolumeID)
+		vol, err := db.ReadAppMount(ctx, testAppMount1)
 		require.NoError(t, err)
-		assert.Equal(t, &testVolume1, vol)
+		assert.Equal(t, &testAppMount1, vol)
 
 		require.NoError(t, err)
-		dk, err := db.GetDynakube(ctx, testDynakube1.Name)
+		dk, err := db.ReadTenantConfig(ctx, TenantConfig{Name: testTenantConfig1.Name})
 		require.NoError(t, err)
-		assert.Equal(t, &testDynakube1, dk)
+		assert.Equal(t, &testTenantConfig1, dk)
 	})
 	t.Run("remove unnecessary entries in the filesystem", func(t *testing.T) {
 		ctx := context.TODO()
-		testVolume1 := createTestVolume(1)
-		testVolume2 := createTestVolume(2)
-		testVolume3 := createTestVolume(3)
+		testAppMount1 := createTestAppMount(1)
+		testAppMount2 := createTestAppMount(2)
+		testAppMount3 := createTestAppMount(3)
 
-		testDynakube1 := createTestDynakube(1)
-		testDynakube2 := createTestDynakube(2)
-		testDynakube3 := createTestDynakube(3)
+		testTenantConfig1 := createTestTenantConfig(1)
+		testTenantConfig2 := createTestTenantConfig(2)
+		testTenantConfig3 := createTestTenantConfig(3)
 
 		db := FakeMemoryDB()
-		db.InsertVolume(ctx, &testVolume1)
-		db.InsertVolume(ctx, &testVolume2)
-		db.InsertVolume(ctx, &testVolume3)
-		db.InsertDynakube(ctx, &testDynakube1)
-		db.InsertDynakube(ctx, &testDynakube2)
-		db.InsertDynakube(ctx, &testDynakube3)
+		db.CreateAppMount(ctx, &testAppMount1)
+		db.CreateAppMount(ctx, &testAppMount2)
+		db.CreateAppMount(ctx, &testAppMount3)
+		db.CreateTenantConfig(ctx, &testTenantConfig1)
+		db.CreateTenantConfig(ctx, &testTenantConfig2)
+		db.CreateTenantConfig(ctx, &testTenantConfig3)
 
 		client := fake.NewClient(
-			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testVolume1.PodName}},
-			&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
+			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testAppMount1.VolumeMeta.PodName}},
+			&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testTenantConfig1.Name}},
 		)
 
 		checker := NewCorrectnessChecker(client, db, dtcsi.CSIOptions{})
@@ -132,31 +131,31 @@ func TestCorrectCSI(t *testing.T) {
 		err := checker.CorrectCSI(ctx)
 		require.NoError(t, err)
 
-		vol, err := db.GetVolume(ctx, testVolume1.VolumeID)
+		vol, err := db.ReadAppMount(ctx, testAppMount1)
 		require.NoError(t, err)
-		assert.Equal(t, &testVolume1, vol)
+		assert.Equal(t, &testAppMount1, vol)
 
-		ten, err := db.GetDynakube(ctx, testDynakube1.Name)
+		ten, err := db.ReadTenantConfig(ctx, TenantConfig{Name: testTenantConfig1.Name})
 		require.NoError(t, err)
-		assert.Equal(t, &testDynakube1, ten)
+		assert.Equal(t, &testTenantConfig1, ten)
 
 		// PURGED
-		vol, err = db.GetVolume(ctx, testVolume2.VolumeID)
+		vol, err = db.ReadAppMount(ctx, testAppMount2)
 		require.NoError(t, err)
 		assert.Nil(t, vol)
 
 		// PURGED
-		vol, err = db.GetVolume(ctx, testVolume3.VolumeID)
+		vol, err = db.ReadAppMount(ctx, testAppMount3)
 		require.NoError(t, err)
 		assert.Nil(t, vol)
 
 		// PURGED
-		ten, err = db.GetDynakube(ctx, testDynakube2.TenantUUID)
+		ten, err = db.ReadTenantConfig(ctx, TenantConfig{Name: testTenantConfig2.TenantUUID})
 		require.NoError(t, err)
 		assert.Nil(t, ten)
 
 		// PURGED
-		ten, err = db.GetDynakube(ctx, testDynakube3.TenantUUID)
+		ten, err = db.ReadTenantConfig(ctx, TenantConfig{Name: testTenantConfig3.TenantUUID})
 		require.NoError(t, err)
 		assert.Nil(t, ten)
 	})

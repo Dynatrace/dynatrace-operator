@@ -14,46 +14,12 @@ type Dynakube struct {
 	MaxFailedMountAttempts int    `json:"maxFailedMountAttempts"`
 }
 
-// NewDynakube returns a new metadata.Dynakube if all fields are set.
-func NewDynakube(dynakubeName, tenantUUID, latestVersion, imageDigest string, maxFailedMountAttempts int) *Dynakube {
-	if tenantUUID == "" || dynakubeName == "" {
-		return nil
-	}
-
-	return &Dynakube{
-		Name:                   dynakubeName,
-		TenantUUID:             tenantUUID,
-		LatestVersion:          latestVersion,
-		ImageDigest:            imageDigest,
-		MaxFailedMountAttempts: maxFailedMountAttempts,
-	}
-}
-
 type Volume struct {
 	VolumeID      string `json:"volumeID" gorm:"column:ID"`
 	PodName       string `json:"podName"`
 	Version       string `json:"version"`
 	TenantUUID    string `json:"tenantUUID"`
 	MountAttempts int    `json:"mountAttempts"`
-}
-
-// NewVolume returns a new Volume if all fields (except version) are set.
-func NewVolume(id, podName, version, tenantUUID string, mountAttempts int) *Volume {
-	if id == "" || podName == "" || tenantUUID == "" {
-		return nil
-	}
-
-	if mountAttempts < 0 {
-		mountAttempts = 0
-	}
-
-	return &Volume{
-		VolumeID:      id,
-		PodName:       podName,
-		Version:       version,
-		TenantUUID:    tenantUUID,
-		MountAttempts: mountAttempts,
-	}
 }
 
 type OsAgentVolume struct {
@@ -98,44 +64,4 @@ type Access interface {
 	GetLatestVersions(ctx context.Context) (map[string]bool, error)
 	GetUsedImageDigests(ctx context.Context) (map[string]bool, error)
 	IsImageDigestUsed(ctx context.Context, imageDigest string) (bool, error)
-}
-
-type AccessOverview struct {
-	Volumes        []*Volume        `json:"volumes"`
-	Dynakubes      []*Dynakube      `json:"dynakubes"`
-	OsAgentVolumes []*OsAgentVolume `json:"osAgentVolumes"`
-}
-
-func NewAccessOverview(access Access) (*AccessOverview, error) {
-	ctx := context.Background()
-
-	volumes, err := access.GetAllVolumes(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	dynakubes, err := access.GetAllDynakubes(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	osVolumes, err := access.GetAllOsAgentVolumes(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return &AccessOverview{
-		Volumes:        volumes,
-		Dynakubes:      dynakubes,
-		OsAgentVolumes: osVolumes,
-	}, nil
-}
-
-func LogAccessOverview(access Access) {
-	overview, err := NewAccessOverview(access)
-	if err != nil {
-		log.Error(err, "Failed to get an overview of the stored csi metadata")
-	}
-
-	log.Info("The current overview of the csi metadata", "overview", overview)
 }

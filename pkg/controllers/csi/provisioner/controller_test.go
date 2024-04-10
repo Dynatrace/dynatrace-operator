@@ -74,20 +74,26 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run("dynakube deleted", func(t *testing.T) {
 		gc := reconcilermock.NewReconciler(t)
 		db := metadata.FakeMemoryDB()
-		dynakube := metadata.Dynakube{TenantUUID: tenantUUID, LatestVersion: agentVersion, Name: dkName}
-		_ = db.InsertDynakube(ctx, &dynakube)
+
+		tenantConfig := metadata.TenantConfig{
+			TenantUUID:                  tenantUUID,
+			Name:                        dkName,
+			DownloadedCodeModuleVersion: agentVersion,
+		}
+		_ = db.CreateTenantConfig(ctx, &tenantConfig)
+
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(),
 			db:        db,
 			gc:        gc,
 		}
-		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakube.Name}})
+		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: tenantConfig.Name}})
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, reconcile.Result{}, result)
 
-		ten, err := db.GetDynakube(ctx, dynakube.TenantUUID)
+		ten, err := db.ReadTenantConfig(ctx, metadata.TenantConfig{TenantUUID: tenantConfig.TenantUUID})
 		require.NoError(t, err)
 		require.Nil(t, ten)
 	})
@@ -142,7 +148,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run("csi driver disabled", func(t *testing.T) {
 		gc := reconcilermock.NewReconciler(t)
 		db := metadata.FakeMemoryDB()
-		_ = db.InsertDynakube(ctx, &metadata.Dynakube{Name: dynakubeName})
+		_ = db.CreateTenantConfig(ctx, &metadata.TenantConfig{Name: dynakubeName})
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -167,9 +173,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.NotNil(t, result)
 		require.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
 
-		dynakubeMetadatas, err := db.GetAllDynakubes(ctx)
+		tenantConfigs, err := db.ReadTenantConfigs(ctx)
 		require.NoError(t, err)
-		require.Empty(t, dynakubeMetadatas)
+		require.Empty(t, tenantConfigs)
 	})
 	t.Run("host monitoring used", func(t *testing.T) {
 		fakeClient := fake.NewClient(
@@ -213,9 +219,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.NotNil(t, result)
 		require.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
 
-		dynakubeMetadatas, err := db.GetAllDynakubes(ctx)
+		tenantConfigs, err := db.ReadTenantConfigs(ctx)
 		require.NoError(t, err)
-		require.Len(t, dynakubeMetadatas, 1)
+		require.Len(t, tenantConfigs, 1)
 	})
 	t.Run("no tokens", func(t *testing.T) {
 		gc := reconcilermock.NewReconciler(t)
@@ -529,57 +535,68 @@ func buildValidApplicationMonitoringSpec(_ *testing.T) *dynatracev1beta1.Applica
 	}
 }
 
-func TestProvisioner_CreateDynakube(t *testing.T) {
+func TestProvisioner_CreateTenantConfig(t *testing.T) {
 	ctx := context.Background()
 	db := metadata.FakeMemoryDB()
-	expectedOtherDynakube := metadata.NewDynakube(otherDkName, tenantUUID, "v1", "", 0)
-	_ = db.InsertDynakube(ctx, expectedOtherDynakube)
+
+	expectedOtherTenantConfig := metadata.TenantConfig{Name: otherDkName, TenantUUID: tenantUUID, DownloadedCodeModuleVersion: "v1", MaxFailedMountAttempts: 0}
+	db.CreateTenantConfig(ctx, &expectedOtherTenantConfig)
+
 	provisioner := &OneAgentProvisioner{
 		db: db,
 	}
 
-	oldDynakube := metadata.Dynakube{}
-	newDynakube := metadata.NewDynakube(dkName, tenantUUID, "v1", "", 0)
+	newTenantConfig := metadata.TenantConfig{Name: dkName, TenantUUID: tenantUUID, DownloadedCodeModuleVersion: "v1", MaxFailedMountAttempts: 0}
 
-	err := provisioner.createOrUpdateDynakubeMetadata(ctx, oldDynakube, newDynakube)
+	err := provisioner.db.UpdateTenantConfig(ctx, &newTenantConfig)
 	require.NoError(t, err)
 
-	dynakube, err := db.GetDynakube(ctx, dkName)
+	storedTenantConfig, err := db.ReadTenantConfig(ctx, metadata.TenantConfig{Name: dkName})
 	require.NoError(t, err)
-	require.NotNil(t, dynakube)
-	require.Equal(t, *newDynakube, *dynakube)
+	require.NotNil(t, storedTenantConfig)
+	newTenantConfig.TimeStampedModel = metadata.TimeStampedModel{}
+	storedTenantConfig.TimeStampedModel = metadata.TimeStampedModel{}
+	require.Equal(t, newTenantConfig, *storedTenantConfig)
 
-	otherDynakube, err := db.GetDynakube(ctx, otherDkName)
+	storedTenantConfig, err = db.ReadTenantConfig(ctx, metadata.TenantConfig{Name: otherDkName})
 	require.NoError(t, err)
-	require.NotNil(t, dynakube)
-	require.Equal(t, *expectedOtherDynakube, *otherDynakube)
+	require.NotNil(t, storedTenantConfig)
+	expectedOtherTenantConfig.TimeStampedModel = metadata.TimeStampedModel{}
+	storedTenantConfig.TimeStampedModel = metadata.TimeStampedModel{}
+	require.Equal(t, expectedOtherTenantConfig, *storedTenantConfig)
 }
 
 func TestProvisioner_UpdateDynakube(t *testing.T) {
 	ctx := context.Background()
 	db := metadata.FakeMemoryDB()
-	oldDynakube := metadata.NewDynakube(dkName, tenantUUID, "v1", "", 0)
-	_ = db.InsertDynakube(ctx, oldDynakube)
-	expectedOtherDynakube := metadata.NewDynakube(otherDkName, tenantUUID, "v1", "", 0)
-	_ = db.InsertDynakube(ctx, expectedOtherDynakube)
+
+	oldTenantConfig := metadata.TenantConfig{Name: dkName, TenantUUID: tenantUUID, DownloadedCodeModuleVersion: "v1", MaxFailedMountAttempts: 0}
+	_ = db.CreateTenantConfig(ctx, &oldTenantConfig)
+	expectedOtherTenantConfig := metadata.TenantConfig{Name: otherDkName, TenantUUID: tenantUUID, DownloadedCodeModuleVersion: "v1", MaxFailedMountAttempts: 0}
+	_ = db.CreateTenantConfig(ctx, &expectedOtherTenantConfig)
 
 	provisioner := &OneAgentProvisioner{
 		db: db,
 	}
-	newDynakube := metadata.NewDynakube(dkName, "new-uuid", "v2", "", 0)
+	newTenantConfig := metadata.TenantConfig{UID: oldTenantConfig.UID, Name: dkName, TenantUUID: "new-uuid", DownloadedCodeModuleVersion: "v2", MaxFailedMountAttempts: 0}
 
-	err := provisioner.createOrUpdateDynakubeMetadata(ctx, *oldDynakube, newDynakube)
+	err := provisioner.db.UpdateTenantConfig(ctx, &newTenantConfig)
+	// err := provisioner.createOrUpdateTenantConfig(ctx, oldTenantConfig, &newTenantConfig)
 	require.NoError(t, err)
 
-	dynakube, err := db.GetDynakube(ctx, dkName)
+	tenantConfig, err := db.ReadTenantConfig(ctx, metadata.TenantConfig{Name: dkName})
 	require.NoError(t, err)
-	require.NotNil(t, dynakube)
-	require.Equal(t, *newDynakube, *dynakube)
+	require.NotNil(t, tenantConfig)
+	newTenantConfig.TimeStampedModel = metadata.TimeStampedModel{}
+	tenantConfig.TimeStampedModel = metadata.TimeStampedModel{}
+	require.Equal(t, newTenantConfig, *tenantConfig)
 
-	otherDynakube, err := db.GetDynakube(ctx, otherDkName)
+	otherTenantConfig, err := db.ReadTenantConfig(ctx, metadata.TenantConfig{Name: otherDkName})
 	require.NoError(t, err)
-	require.NotNil(t, dynakube)
-	require.Equal(t, *expectedOtherDynakube, *otherDynakube)
+	require.NotNil(t, otherTenantConfig)
+	expectedOtherTenantConfig.TimeStampedModel = metadata.TimeStampedModel{}
+	otherTenantConfig.TimeStampedModel = metadata.TimeStampedModel{}
+	require.Equal(t, expectedOtherTenantConfig, *otherTenantConfig)
 }
 
 func TestHandleMetadata(t *testing.T) {
@@ -595,20 +612,18 @@ func TestHandleMetadata(t *testing.T) {
 	provisioner := &OneAgentProvisioner{
 		db: metadata.FakeMemoryDB(),
 	}
-	dynakubeMetadata, oldMetadata, err := provisioner.handleMetadata(ctx, dynakube)
+	dynakubeMetadata, err := provisioner.handleMetadata(ctx, dynakube)
 
 	require.NoError(t, err)
 	require.NotNil(t, dynakubeMetadata)
-	require.NotNil(t, oldMetadata)
-	require.Equal(t, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts, dynakubeMetadata.MaxFailedMountAttempts)
+	require.Equal(t, int64(dynatracev1beta1.DefaultMaxFailedCsiMountAttempts), dynakubeMetadata.MaxFailedMountAttempts)
 
 	dynakube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureMaxFailedCsiMountAttempts: "5"}
-	dynakubeMetadata, oldMetadata, err = provisioner.handleMetadata(ctx, dynakube)
+	dynakubeMetadata, err = provisioner.handleMetadata(ctx, dynakube)
 
 	require.NoError(t, err)
 	require.NotNil(t, dynakubeMetadata)
-	require.NotNil(t, oldMetadata)
-	require.Equal(t, 5, dynakubeMetadata.MaxFailedMountAttempts)
+	require.Equal(t, int64(5), dynakubeMetadata.MaxFailedMountAttempts)
 }
 
 func TestUpdateAgentInstallation(t *testing.T) {
@@ -650,12 +665,11 @@ func TestUpdateAgentInstallation(t *testing.T) {
 
 		mockRegistryClient(t, provisioner, "test")
 
-		dynakubeMetadata := metadata.Dynakube{TenantUUID: tenantUUID, LatestVersion: agentVersion, Name: dkName}
-		isRequeue, err := provisioner.updateAgentInstallation(ctx, dtc, &dynakubeMetadata, dynakube)
+		tenantConfig := metadata.TenantConfig{Name: dkName, TenantUUID: tenantUUID, DownloadedCodeModuleVersion: agentVersion}
+		isRequeue, err := provisioner.updateAgentInstallation(ctx, dtc, &tenantConfig, dynakube)
 		require.NoError(t, err)
 
-		require.Equal(t, "", dynakubeMetadata.LatestVersion)
-		require.Equal(t, "test", dynakubeMetadata.ImageDigest)
+		require.Equal(t, "test", tenantConfig.DownloadedCodeModuleVersion)
 		assert.False(t, isRequeue)
 	})
 	t.Run("updateAgentInstallation with codeModules enabled errors and requeues", func(t *testing.T) {
@@ -689,12 +703,11 @@ func TestUpdateAgentInstallation(t *testing.T) {
 
 		mockRegistryClient(t, provisioner, "test")
 
-		dynakubeMetadata := metadata.Dynakube{TenantUUID: tenantUUID, LatestVersion: agentVersion, Name: dkName}
-		isRequeue, err := provisioner.updateAgentInstallation(ctx, dtc, &dynakubeMetadata, dynakube)
+		tenantConfig := metadata.TenantConfig{TenantUUID: tenantUUID, DownloadedCodeModuleVersion: agentVersion, Name: dkName}
+		isRequeue, err := provisioner.updateAgentInstallation(ctx, dtc, &tenantConfig, dynakube)
 		require.NoError(t, err)
 
-		require.Equal(t, "12345", dynakubeMetadata.LatestVersion)
-		require.Equal(t, "", dynakubeMetadata.ImageDigest)
+		require.Equal(t, "12345", tenantConfig.DownloadedCodeModuleVersion)
 		assert.True(t, isRequeue)
 	})
 	t.Run("updateAgentInstallation without codeModules", func(t *testing.T) {
@@ -731,12 +744,11 @@ func TestUpdateAgentInstallation(t *testing.T) {
 
 		mockRegistryClient(t, provisioner, "test")
 
-		dynakubeMetadata := metadata.Dynakube{TenantUUID: tenantUUID, LatestVersion: agentVersion, Name: dkName}
-		isRequeue, err := provisioner.updateAgentInstallation(ctx, dtc, &dynakubeMetadata, dynakube)
+		tenantConfig := metadata.TenantConfig{TenantUUID: tenantUUID, DownloadedCodeModuleVersion: agentVersion, Name: dkName}
+		isRequeue, err := provisioner.updateAgentInstallation(ctx, dtc, &tenantConfig, dynakube)
 		require.NoError(t, err)
 
-		require.Equal(t, "12345", dynakubeMetadata.LatestVersion)
-		require.Equal(t, "", dynakubeMetadata.ImageDigest)
+		require.Equal(t, "12345", tenantConfig.DownloadedCodeModuleVersion)
 		assert.False(t, isRequeue)
 	})
 	t.Run("updateAgentInstallation without codeModules errors and requeues", func(t *testing.T) {
@@ -769,12 +781,11 @@ func TestUpdateAgentInstallation(t *testing.T) {
 
 		mockRegistryClient(t, provisioner, "test")
 
-		dynakubeMetadata := metadata.Dynakube{TenantUUID: tenantUUID, LatestVersion: agentVersion, Name: dkName}
-		isRequeue, err := provisioner.updateAgentInstallation(ctx, dtc, &dynakubeMetadata, dynakube)
+		tenantConfig := metadata.TenantConfig{TenantUUID: tenantUUID, DownloadedCodeModuleVersion: agentVersion, Name: dkName}
+		isRequeue, err := provisioner.updateAgentInstallation(ctx, dtc, &tenantConfig, dynakube)
 		require.NoError(t, err)
 
-		require.Equal(t, "12345", dynakubeMetadata.LatestVersion)
-		require.Equal(t, "", dynakubeMetadata.ImageDigest)
+		require.Equal(t, "12345", tenantConfig.DownloadedCodeModuleVersion)
 		assert.True(t, isRequeue)
 	})
 }

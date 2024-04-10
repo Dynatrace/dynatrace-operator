@@ -63,11 +63,10 @@ func TestRunSharedImagesGarbageCollection(t *testing.T) {
 			fs: fs,
 			db: metadata.FakeMemoryDB(),
 		}
-		gc.db.InsertDynakube(ctx, &metadata.Dynakube{
-			Name:          "test",
-			TenantUUID:    "test",
-			LatestVersion: "test",
-			ImageDigest:   testImageDigest,
+		gc.db.CreateTenantConfig(ctx, &metadata.TenantConfig{
+			Name:                        "test",
+			TenantUUID:                  "test",
+			DownloadedCodeModuleVersion: "test",
 		})
 
 		err := gc.runSharedBinaryGarbageCollection(ctx)
@@ -83,11 +82,10 @@ func TestRunSharedImagesGarbageCollection(t *testing.T) {
 			fs: fs,
 			db: metadata.FakeMemoryDB(),
 		}
-		gc.db.InsertVolume(ctx, &metadata.Volume{
-			VolumeID:   "test",
-			TenantUUID: "test",
-			Version:    testImageDigest,
-			PodName:    "test",
+		gc.db.CreateAppMount(ctx, &metadata.AppMount{
+			VolumeMeta:        metadata.VolumeMeta{ID: "test", PodName: "test"},
+			CodeModuleVersion: testImageDigest,
+			VolumeMetaID:      "test",
 		})
 
 		err := gc.runSharedBinaryGarbageCollection(ctx)
@@ -165,21 +163,12 @@ func TestCollectUnusedAgentBins(t *testing.T) {
 			db:   metadata.FakeMemoryDB(),
 			path: testPathResolver,
 		}
-		gc.db.InsertDynakube(ctx, &metadata.Dynakube{
-			Name:          "test",
-			TenantUUID:    "test",
-			LatestVersion: "test",
-			ImageDigest:   testImageDigest,
-		})
-		gc.db.InsertVolume(ctx, &metadata.Volume{
-			VolumeID:   "test",
-			TenantUUID: "test",
-			Version:    testVersion1,
-			PodName:    "test",
-		})
-
 		testImageDir := testPathResolver.AgentSharedBinaryDirForAgent(testImageDigest)
 		testZipDir := testPathResolver.AgentSharedBinaryDirForAgent(testVersion1)
+
+		gc.db.CreateCodeModule(ctx, &metadata.CodeModule{Version: testImageDigest, Location: testImageDir})
+		gc.db.CreateCodeModule(ctx, &metadata.CodeModule{Version: testVersion1, Location: testZipDir})
+
 		fs := createTestDirs(t, testImageDir, testZipDir)
 		imageDirInfo, err := fs.Stat(testImageDir)
 		require.NoError(t, err)

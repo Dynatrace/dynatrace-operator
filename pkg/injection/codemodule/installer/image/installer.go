@@ -25,7 +25,7 @@ type Properties struct {
 	ApiReader    client.Reader
 	Dynakube     *dynatracev1beta1.DynaKube
 	PathResolver metadata.PathResolver
-	Metadata     metadata.Access
+	Metadata     metadata.DBAccess
 	ImageDigest  string
 }
 
