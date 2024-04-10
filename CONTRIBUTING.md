@@ -27,7 +27,7 @@
    ```
 
 4. Create a new branch to work on:
-   - Group your branch into a category using a prefix for your branch name, like `feature/`, `ci/`, `bugfix/`, `doc/`. 
+   - Group your branch into a category using a prefix for your branch name, like `feature/`, `ci/`, `bugfix/`, `doc/`.
 
       ```sh
       git checkout -b feature/your-branch

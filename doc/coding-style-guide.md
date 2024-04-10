@@ -24,13 +24,13 @@
 - Use descriptive (variable) names
   - Shortnames for known Kubernetes Objects are fine. (`ns` for namespace)
   - Avoid "stuttering". (In the `beepboop` package don't call you `struct` `BeepBoopController`, but just `Controller`)
-    - Relevant for: folder/package, file, struct, func and const/variable names. 
+    - Relevant for: folder/package, file, struct, func and const/variable names.
   - Do NOT shadow builtin names and packages.
 - Avoid using `client.Client` for 'getting' resources, use `client.Reader` (also known as `apiReader`) instead.
   - `client.Client` uses a cache (or tries to) that requires more permissions than normally, and can also give you outdated results.
 - Avoid creating functions with more than 3 params, except constructors and factory functions. Structs and interfaces exist for a reason.
 - Avoid returning responses (e.g., reconcile.Result, admission.Patched) in anything but Reconcile or Handle functions.
-- Run the linters locally before opening a PR, it will save you time. 
+- Run the linters locally before opening a PR, it will save you time.
 
 ## Function Parameter and Return-Value Order
 
