@@ -31,6 +31,7 @@
 - Avoid creating functions with more than 3 params, except constructors and factory functions. Structs and interfaces exist for a reason.
 - Avoid returning responses (e.g., reconcile.Result, admission.Patched) in anything but Reconcile or Handle functions.
 - Run the linters locally before opening a PR, it will save you time.
+  - There is a pre-commit hook that you can configure via `make prerequisites/setup-pre-commit`
 
 ## Function Parameter and Return-Value Order
 
