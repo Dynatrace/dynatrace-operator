@@ -5,6 +5,7 @@ Please include the following:
 - A meaningful PR title [guidelines](https://github.com/kubernetes/community/blob/master/contributors/guide/pull-requests.md#use-imperative-mood-in-your-commit-message-subject)
 - A summary of the change
 - Which issue is fixed (if there is one)
+  - Link to the Github issue or Jira ticket
 - Relevant motivation and context
 
 ## How can this be tested?

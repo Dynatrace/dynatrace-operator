@@ -27,10 +27,11 @@
    ```
 
 4. Create a new branch to work on:
+   - Group your branch into a category using a prefix for your branch name, like `feature/`, `ci/`, `bugfix/`, `doc/`. 
 
-   ```sh
-   git checkout -b feature/your-branch
-   ```
+      ```sh
+      git checkout -b feature/your-branch
+      ```
 
 5. Once the changes are finished, make sure there are no warnings on the code. For debugging you can [run the unit tests](#unit-tests) and [end-to-end tests](#e2e-tests).
 
