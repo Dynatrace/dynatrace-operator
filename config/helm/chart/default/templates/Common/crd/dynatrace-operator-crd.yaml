@@ -4580,7 +4580,7 @@ spec:
                 description: KubernetesApiAutomation enables Automation workflows
                 properties:
                   enabled:
-                    description: Enables kubernetes automation
+                    description: Enables Kubernetes automation
                     type: boolean
                 type: object
               labels:
@@ -4703,8 +4703,8 @@ spec:
                 type: object
               serviceAccountName:
                 default: dynatrace-edgeconnect
-                description: ServiceAccountName allows EdgeConnect to perform required
-                  operations inside the Kubernetes cluster
+                description: ServiceAccountName that allows EdgeConnect to access
+                  the Kubernetes API
                 type: string
               tolerations:
                 description: Sets tolerations for the EdgeConnect pods
