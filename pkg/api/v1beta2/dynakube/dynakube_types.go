@@ -4,9 +4,10 @@
 package dynakube
 
 import (
+	"time"
+
 	v1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"time"
 )
 
 // TODO: Move these conditions related consts to a place where they are used, so we don't bloat this package further.
