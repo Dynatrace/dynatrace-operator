@@ -28,6 +28,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
@@ -51,6 +52,13 @@ const (
 
 	dataPath                 = "/data/"
 	provisionerContainerName = "provisioner"
+
+	agSecretName                    = "ag-ca"
+	configMapName                   = "proxy-ca"
+	proxyCertificate                = "custom-cas/custom.pem"
+	agCertificate                   = "custom-cas/agcrt.pem"
+	agCertificateAndPrivateKey      = "custom-cas/agcrtkey.p12"
+	agCertificateAndPrivateKeyField = "server.p12"
 )
 
 // Verification that the storage in the CSI driver directory does not increase when
@@ -136,6 +144,7 @@ func WithProxy(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) features
 		dynakube.WithName("codemodules-with-proxy"),
 		dynakube.WithApiUrl(secretConfigs[0].ApiUrl),
 		dynakube.WithCloudNativeSpec(codeModulesCloudNativeSpec()),
+		dynakube.WithActiveGate(),
 		dynakube.WithIstioIntegration(),
 		dynakube.WithProxy(proxySpec),
 	)
@@ -167,6 +176,10 @@ func WithProxy(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) features
 	builder.Assess("check env variables of oneagent pods", checkOneAgentEnvVars(cloudNativeDynakube))
 	builder.Assess("check proxy settings in ruxitagentproc.conf", proxy.CheckRuxitAgentProcFileHasProxySetting(*sampleApp, proxySpec))
 
+	cloudnative.AssessSampleContainer(builder, sampleApp, nil, nil)
+	cloudnative.AssessOneAgentContainer(builder, nil, nil)
+	cloudnative.AssessActiveGateContainer(builder, &cloudNativeDynakube, nil)
+
 	// Register sample, dynakube and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())
 	dynakube.Delete(builder, helpers.LevelTeardown, cloudNativeDynakube)
@@ -186,6 +199,7 @@ func WithProxyCA(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) featur
 		dynakube.WithApiUrl(secretConfigs[0].ApiUrl),
 		dynakube.WithCloudNativeSpec(codeModulesCloudNativeSpec()),
 		dynakube.WithCustomCAs(configMapName),
+		dynakube.WithActiveGate(),
 		dynakube.WithIstioIntegration(),
 		dynakube.WithProxy(proxySpec),
 	)
@@ -199,7 +213,7 @@ func WithProxyCA(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) featur
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Add customCA config map
-	trustedCa, _ := os.ReadFile(path.Join(project.TestDataDir(), "custom-cas/custom.pem"))
+	trustedCa, _ := os.ReadFile(path.Join(project.TestDataDir(), proxyCertificate))
 	caConfigMap := configmap.New(configMapName, cloudNativeDynakube.Namespace,
 		map[string]string{dynatracev1beta2.TrustedCAKey: string(trustedCa)})
 	builder.Assess("create trusted CAs config map", configmap.Create(caConfigMap))
@@ -220,6 +234,145 @@ func WithProxyCA(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) featur
 	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
 
 	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube.Namespace))
+
+	cloudnative.AssessSampleContainer(builder, sampleApp, nil, trustedCa)
+	cloudnative.AssessOneAgentContainer(builder, nil, trustedCa)
+	cloudnative.AssessActiveGateContainer(builder, &cloudNativeDynakube, trustedCa)
+
+	// Register sample, dynakube and operator uninstall
+	builder.Teardown(sampleApp.Uninstall())
+	dynakube.Delete(builder, helpers.LevelTeardown, cloudNativeDynakube)
+
+	return builder.Feature()
+}
+
+func WithProxyAndAGCert(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) features.Feature {
+	builder := features.New("codemodules injection with proxy and custom CA and AG certificate")
+	builder.WithLabel("name", "codemodules-with-proxy-and-ag-cert")
+	secretConfigs := tenant.GetMultiTenantSecret(t)
+	require.Len(t, secretConfigs, 2)
+
+	cloudNativeDynakube := *dynakube.New(
+		dynakube.WithName("codemodules-with-proxy-and-ag-cert"),
+		dynakube.WithApiUrl(secretConfigs[0].ApiUrl),
+		dynakube.WithCloudNativeSpec(codeModulesCloudNativeSpec()),
+		dynakube.WithActiveGate(),
+		dynakube.WithActiveGateTlsSecret(agSecretName),
+		dynakube.WithIstioIntegration(),
+		dynakube.WithProxy(proxySpec),
+	)
+
+	sampleNamespace := *namespace.New("codemodules-sample-with-proxy-custom-ca", namespace.WithIstio())
+	sampleApp := sample.NewApp(t, &cloudNativeDynakube,
+		sample.AsDeployment(),
+		sample.WithNamespace(sampleNamespace),
+	)
+
+	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
+
+	// Add ActiveGate TLS secret
+	// public certificate for OneAgents
+	agCrt, _ := os.ReadFile(path.Join(project.TestDataDir(), agCertificate))
+	// public certificate and private key for ActiveGate server
+	agP12, _ := os.ReadFile(path.Join(project.TestDataDir(), agCertificateAndPrivateKey))
+	agSecret := secret.New(agSecretName, cloudNativeDynakube.Namespace,
+		map[string][]byte{
+			dynatracev1beta1.TlsCertKey:     agCrt,
+			agCertificateAndPrivateKeyField: agP12,
+		})
+	builder.Assess("create AG TLS secret", secret.Create(agSecret))
+
+	// Register proxy create and delete
+	proxy.SetupProxyWithTeardown(t, builder, cloudNativeDynakube)
+	proxy.CutOffDynatraceNamespace(builder, proxySpec)
+	proxy.IsDynatraceNamespaceCutOff(builder, cloudNativeDynakube)
+
+	// Register dynakube install
+	dynakube.Install(builder, helpers.LevelAssess, &secretConfigs[0], cloudNativeDynakube)
+
+	// Register sample app install
+	builder.Assess("install sample app", sampleApp.Install())
+
+	// Register actual test
+	cloudnative.AssessSampleInitContainers(builder, sampleApp)
+	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
+
+	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube.Namespace))
+
+	cloudnative.AssessSampleContainer(builder, sampleApp, agCrt, nil)
+	cloudnative.AssessOneAgentContainer(builder, agCrt, nil)
+	cloudnative.AssessActiveGateContainer(builder, &cloudNativeDynakube, nil)
+
+	// Register sample, dynakube and operator uninstall
+	builder.Teardown(sampleApp.Uninstall())
+	dynakube.Delete(builder, helpers.LevelTeardown, cloudNativeDynakube)
+
+	return builder.Feature()
+}
+
+func WithProxyCAAndAGCert(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Feature {
+	builder := features.New("codemodules injection with proxy and custom CA and AG certificate")
+	builder.WithLabel("name", "codemodules-with-proxy-custom-ca-ag-cert")
+	secretConfigs := tenant.GetMultiTenantSecret(t)
+	require.Len(t, secretConfigs, 2)
+
+	cloudNativeDynakube := *dynakube.New(
+		dynakube.WithName("codemodules-with-proxy-custom-ca-ag-cert"),
+		dynakube.WithApiUrl(secretConfigs[0].ApiUrl),
+		dynakube.WithCloudNativeSpec(codeModulesCloudNativeSpec()),
+		dynakube.WithCustomCAs(configMapName),
+		dynakube.WithActiveGate(),
+		dynakube.WithActiveGateTlsSecret(agSecretName),
+		dynakube.WithIstioIntegration(),
+		dynakube.WithProxy(proxySpec),
+	)
+
+	sampleNamespace := *namespace.New("codemodules-sample-with-proxy-custom-ca", namespace.WithIstio())
+	sampleApp := sample.NewApp(t, &cloudNativeDynakube,
+		sample.AsDeployment(),
+		sample.WithNamespace(sampleNamespace),
+	)
+
+	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
+
+	// Add ActiveGate TLS secret
+	// public certificate for OneAgents
+	agCrt, _ := os.ReadFile(path.Join(project.TestDataDir(), agCertificate))
+	// public certificate and private key for ActiveGate server
+	agP12, _ := os.ReadFile(path.Join(project.TestDataDir(), agCertificateAndPrivateKey))
+	agSecret := secret.New(agSecretName, cloudNativeDynakube.Namespace,
+		map[string][]byte{
+			dynatracev1beta1.TlsCertKey:     agCrt,
+			agCertificateAndPrivateKeyField: agP12,
+		})
+	builder.Assess("create AG TLS secret", secret.Create(agSecret))
+
+	// Add customCA config map
+	trustedCa, _ := os.ReadFile(path.Join(project.TestDataDir(), proxyCertificate))
+	caConfigMap := configmap.New(configMapName, cloudNativeDynakube.Namespace,
+		map[string]string{dynatracev1beta1.TrustedCAKey: string(trustedCa)})
+	builder.Assess("create trusted CAs config map", configmap.Create(caConfigMap))
+
+	// Register proxy create and delete
+	proxy.SetupProxyWithCustomCAandTeardown(t, builder, cloudNativeDynakube)
+	proxy.CutOffDynatraceNamespace(builder, proxySpec)
+	proxy.IsDynatraceNamespaceCutOff(builder, cloudNativeDynakube)
+
+	// Register dynakube install
+	dynakube.Install(builder, helpers.LevelAssess, &secretConfigs[0], cloudNativeDynakube)
+
+	// Register sample app install
+	builder.Assess("install sample app", sampleApp.Install())
+
+	// Register actual test
+	cloudnative.AssessSampleInitContainers(builder, sampleApp)
+	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
+
+	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube.Namespace))
+
+	cloudnative.AssessSampleContainer(builder, sampleApp, agCrt, trustedCa)
+	cloudnative.AssessOneAgentContainer(builder, agCrt, trustedCa)
+	cloudnative.AssessActiveGateContainer(builder, &cloudNativeDynakube, trustedCa)
 
 	// Register sample, dynakube and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())

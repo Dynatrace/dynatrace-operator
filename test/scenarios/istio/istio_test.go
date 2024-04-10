@@ -49,6 +49,8 @@ func TestIstio(t *testing.T) {
 		cloudnativeDefault.Feature(t, true),
 		codemodules.WithProxy(t, proxy.ProxySpec),
 		codemodules.WithProxyCA(t, proxy.ProxySpec),
+		codemodules.WithProxyAndAGCert(t, proxy.ProxySpec),
+		codemodules.WithProxyCAAndAGCert(t, proxy.ProxySpec),
 	}
 	testEnv.Test(t, feats...)
 }

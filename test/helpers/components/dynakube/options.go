@@ -71,6 +71,12 @@ func WithActiveGate() Option {
 	}
 }
 
+func WithActiveGateTlsSecret(tlsSecretName string) Option {
+	return func(dynakube *dynakubev1beta2.DynaKube) {
+		dynakube.Spec.ActiveGate.TlsSecretName = tlsSecretName
+	}
+}
+
 func WithCustomActiveGateImage(imageURI string) Option {
 	return func(dynakube *dynakubev1beta2.DynaKube) {
 		dynakube.Spec.ActiveGate.Image = imageURI
