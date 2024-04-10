@@ -627,7 +627,7 @@ func assertIfEnrichmentFilesNotExists(t *testing.T, runner Runner) {
 }
 
 func assertIfReadOnlyCSIFilesExists(t *testing.T, runner Runner) {
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		assertIfFileExists(t,
 			runner.fs,
 			filepath.Join(

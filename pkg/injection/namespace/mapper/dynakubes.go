@@ -50,12 +50,11 @@ func (dm DynakubeMapper) MatchingNamespaces() ([]*corev1.Namespace, error) {
 }
 
 func (dm DynakubeMapper) UnmapFromDynaKube(namespaces []corev1.Namespace) error {
-	for _, ns := range namespaces {
+	for i, ns := range namespaces {
 		delete(ns.Labels, dtwebhook.InjectionInstanceLabel)
-		ns := ns
-		setUpdatedViaDynakubeAnnotation(&ns)
+		setUpdatedViaDynakubeAnnotation(&namespaces[i])
 
-		if err := dm.client.Update(dm.ctx, &ns); err != nil {
+		if err := dm.client.Update(dm.ctx, &namespaces[i]); err != nil {
 			return errors.WithMessagef(err, "failed to remove label %s from namespace %s", dtwebhook.InjectionInstanceLabel, ns.Name)
 		}
 	}

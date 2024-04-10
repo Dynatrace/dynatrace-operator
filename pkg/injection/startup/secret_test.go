@@ -117,12 +117,13 @@ func prepTestFs(t *testing.T) afero.Fs {
 func prepReadOnlyCSIFilesystem(t *testing.T, fs afero.Fs) afero.Fs {
 	require.NoError(t, fs.MkdirAll(getReadOnlyAgentConfMountPath(), 0770))
 
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		file, err := fs.OpenFile(filepath.Join(getReadOnlyAgentConfMountPath(), fmt.Sprintf("%d.conf", i)), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0444)
 		require.NoError(t, err)
 		err = file.Close()
 		require.NoError(t, err)
 	}
+
 	fs.Chmod(getReadOnlyAgentConfMountPath(), 0444)
 
 	require.NoError(t, fs.MkdirAll(consts.AgentConfInitDirMount, 0770))

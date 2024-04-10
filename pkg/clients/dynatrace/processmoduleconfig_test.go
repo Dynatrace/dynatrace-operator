@@ -150,7 +150,7 @@ func TestAdd(t *testing.T) {
 	t.Run("adds properties", func(t *testing.T) {
 		processModuleConfig := &ProcessModuleConfig{}
 
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			section := fmt.Sprintf("%s-%d", testSection, i)
 			key := fmt.Sprintf("%s-%d", testKey, i)
 			value := fmt.Sprintf("%s-%d", testValue, i)
@@ -184,7 +184,7 @@ func TestAdd(t *testing.T) {
 	t.Run("does not add same property multiple times", func(t *testing.T) {
 		processModuleConfig := &ProcessModuleConfig{}
 
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			processModuleConfig.Add(ProcessModuleProperty{
 				Section: testSection,
 				Key:     testKey,
@@ -200,7 +200,7 @@ func TestAdd(t *testing.T) {
 	t.Run("removes property", func(t *testing.T) {
 		processModuleConfig := &ProcessModuleConfig{}
 
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			section := fmt.Sprintf("%s-%d", testSection, i)
 			key := fmt.Sprintf("%s-%d", testKey, i)
 			value := fmt.Sprintf("%s-%d", testValue, i)
@@ -233,7 +233,7 @@ func TestAdd(t *testing.T) {
 	t.Run("updates property", func(t *testing.T) {
 		processModuleConfig := &ProcessModuleConfig{}
 
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			section := fmt.Sprintf("%s-%d", testSection, i)
 			key := fmt.Sprintf("%s-%d", testKey, i)
 			value := fmt.Sprintf("%s-%d", testValue, i)
@@ -266,7 +266,7 @@ func TestAdd(t *testing.T) {
 	t.Run("fixes broken cache", func(t *testing.T) {
 		processModuleConfig := &ProcessModuleConfig{}
 
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			section := fmt.Sprintf("%s-%d", testSection, i)
 			key := fmt.Sprintf("%s-%d", testKey, i)
 			value := fmt.Sprintf("%s-%d", testValue, i)
@@ -278,7 +278,7 @@ func TestAdd(t *testing.T) {
 			})
 		}
 
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			processModuleConfig.Properties = append(processModuleConfig.Properties, ProcessModuleProperty{
 				Section: testSection,
 				Key:     testKey,
