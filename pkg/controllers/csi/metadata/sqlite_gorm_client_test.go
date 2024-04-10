@@ -597,7 +597,7 @@ func setupPostPublishData(ctx context.Context, conn *DBConn) {
 	}
 	ctxDB.Create(osMount)
 
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		vmAP := VolumeMeta{
 			ID:                fmt.Sprintf("appmount%d", i+1),
 			PodUid:            fmt.Sprintf("pod%d", i+1),

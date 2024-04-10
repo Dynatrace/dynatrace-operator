@@ -195,6 +195,7 @@ linters:
   - asasalint                 # Check for pass []any as any in variadic func(...any).
   - asciicheck                # Checks that all code identifiers does not have non-ASCII symbols in the name.
   - bidichk                   # Checks for dangerous unicode character sequences.
+  - copyloopvar               # Copyloopvar is a linter detects places where loop variables are copied.
   - decorder                  # Check declaration order and count of types, constants, variables and functions.
   - depguard                  # Go linter that checks if package imports are in a list of acceptable packages
   - dogsled                   # Checks assignments with too many blank identifiers (e.g. x, _, _, _, := f())
@@ -223,6 +224,7 @@ linters:
   - grouper                   # Analyze expression groups.
   - importas                  # Enforces consistent import aliases.
   - ineffassign               # Detects when assignments to existing variables are not used
+  - intrange                  # Intrange is a linter to find places where for loops could make use of an integer range.
   - loggercheck               # Checks key value pairs for common logger libraries (kitlog,klog,logr,zap).
   - makezero                  # Finds slice declarations with non-zero initial length.
   - mirror                    # Reports wrong mirror patterns of bytes/strings usage.

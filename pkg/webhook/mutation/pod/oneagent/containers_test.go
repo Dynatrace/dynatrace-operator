@@ -222,7 +222,7 @@ func TestContainerExclusion(t *testing.T) {
 }
 
 func assertContainersNamesAndImages(t *testing.T, request *dtwebhook.ReinvocationRequest, installContainer *corev1.Container, containersNumber int) {
-	for containerIdx := 0; containerIdx < containersNumber; containerIdx++ {
+	for containerIdx := range containersNumber {
 		internalContainerIndex := 1 + containerIdx // starting from 1
 
 		containerNameEnvVarName := getContainerNameEnv(internalContainerIndex)
