@@ -224,6 +224,7 @@ linters:
   - grouper                   # Analyze expression groups.
   - importas                  # Enforces consistent import aliases.
   - ineffassign               # Detects when assignments to existing variables are not used
+  - intrange                  # Intrange is a linter to find places where for loops could make use of an integer range.
   - loggercheck               # Checks key value pairs for common logger libraries (kitlog,klog,logr,zap).
   - makezero                  # Finds slice declarations with non-zero initial length.
   - mirror                    # Reports wrong mirror patterns of bytes/strings usage.
