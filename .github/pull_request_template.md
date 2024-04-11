@@ -6,7 +6,7 @@ Thanks for opening a pull request! Here are some tips to get everything merged s
 
 2. If the PR is unfinished, raise it as a draft or prefix the title with "WIP:" so it's clear to everyone.
 
-3. Be sure to allow edits from maintainers so it's easier for us to help: https://help.github.com/en/articles/allowing-changes-to-a-pull-request-branch-created-from-a-fork
+3. Be sure to allow edits from maintainers, so it's easier for us to help: https://help.github.com/en/articles/allowing-changes-to-a-pull-request-branch-created-from-a-fork
 
 -->
 
