@@ -334,7 +334,7 @@ func mockPublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
 		VolumeMetaID:      testVolumeId,
 		CodeModuleVersion: testAgentVersion,
 		MountAttempts:     0,
-		Location:          "/a-tenant-uuid/run/a-volume",
+		Location:          publisher.path.AgentRunDirForVolume(testTenantUUID, testVolumeId),
 	}
 
 	err := publisher.db.CreateAppMount(context.Background(), &mockAppMount)
