@@ -251,8 +251,8 @@ func (dk *DynaKube) InitResources() *corev1.ResourceRequirements {
 	return nil
 }
 
-func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
-	return &dk.Spec.NamespaceSelector
+func (dk *DynaKube) MetaDataEnrichmentNamespaceSelector() *metav1.LabelSelector {
+	return &dk.Spec.MetaDataEnrichment.NamespaceSelector
 }
 
 func (dk *DynaKube) NodeSelector() map[string]string {

@@ -406,7 +406,7 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 
 	in.OneAgent.DeepCopyInto(&out.OneAgent)
 	in.ActiveGate.DeepCopyInto(&out.ActiveGate)
-	in.NamespaceSelector.DeepCopyInto(&out.NamespaceSelector)
+	in.MetaDataEnrichment.NamespaceSelector.DeepCopyInto(&out.MetaDataEnrichment.NamespaceSelector)
 	in.Routing.DeepCopyInto(&out.Routing)
 	in.KubernetesMonitoring.DeepCopyInto(&out.KubernetesMonitoring)
 }
