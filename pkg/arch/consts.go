@@ -15,10 +15,10 @@ const (
 
 	// These architectures are for the Image Registry
 
-	AMDImageArch   = "amd64"
-	ARMImageArch   = "arm64"
-	PPCLEImageArch = "ppc64le"
-	S390ImageArch  = "s390x"
+	AMDImage   = "amd64"
+	ARMImage   = "arm64"
+	PPCLEImage = "ppc64le"
+	S390Image  = "s390x"
 
 	DefaultImageOS = "linux"
 )

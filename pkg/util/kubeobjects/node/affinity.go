@@ -11,7 +11,7 @@ const (
 )
 
 func AffinityNodeRequirementForSupportedArches() []corev1.NodeSelectorRequirement {
-	return affinityNodeRequirementsForArches(arch.AMDImageArch, arch.ARMImageArch, arch.PPCLEImageArch, arch.S390ImageArch)
+	return affinityNodeRequirementsForArches(arch.AMDImage, arch.ARMImage, arch.PPCLEImage, arch.S390Image)
 }
 
 func affinityNodeRequirementsForArches(arches ...string) []corev1.NodeSelectorRequirement {

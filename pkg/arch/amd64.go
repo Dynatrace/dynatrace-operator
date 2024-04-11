@@ -3,5 +3,5 @@
 package arch
 
 const Arch = ArchX86
-const ImageArch = AMDImageArch
+const ImageArch = AMDImage
 const Flavor = FlavorMultidistro

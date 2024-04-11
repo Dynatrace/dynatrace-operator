@@ -4,4 +4,4 @@ package arch
 
 const Arch = ArchPPCLE
 const Flavor = FlavorDefault
-const ImageArch = PPCLEImageArch
+const ImageArch = PPCLEImage

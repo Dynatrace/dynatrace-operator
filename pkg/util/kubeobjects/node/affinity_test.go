@@ -9,7 +9,7 @@ import (
 )
 
 func TestAffinityNodeRequirement(t *testing.T) {
-	assert.Equal(t, AffinityNodeRequirementForSupportedArches(), affinityNodeRequirementsForArches(arch.AMDImageArch, arch.ARMImageArch, arch.PPCLEImageArch, arch.S390ImageArch))
+	assert.Equal(t, AffinityNodeRequirementForSupportedArches(), affinityNodeRequirementsForArches(arch.AMDImage, arch.ARMImage, arch.PPCLEImage, arch.S390Image))
 	assert.Contains(t, AffinityNodeRequirementForSupportedArches(), linuxRequirement())
 }
 
