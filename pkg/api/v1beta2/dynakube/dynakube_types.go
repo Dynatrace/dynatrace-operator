@@ -6,7 +6,7 @@ package dynakube
 import (
 	"time"
 
-	v1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

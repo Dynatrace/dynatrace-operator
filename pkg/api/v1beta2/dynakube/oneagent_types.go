@@ -33,6 +33,10 @@ type OneAgentSpec struct {
 	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Host Group",order=5,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	HostGroup string `json:"hostGroup,omitempty"`
+
+	// The SecComp Profile that will be configured in order to run in secure computing mode.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent SecComp Profile",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
+	SecCompProfile string `json:"secCompProfile,omitempty"`
 }
 
 type CloudNativeFullStackSpec struct {
@@ -107,10 +111,6 @@ type HostInjectSpec struct {
 	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=20,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
 	OneAgentResources corev1.ResourceRequirements `json:"oneAgentResources,omitempty"`
-
-	// The SecComp Profile that will be configured in order to run in secure computing mode.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent SecComp Profile",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
-	SecCompProfile string `json:"secCompProfile,omitempty"`
 }
 
 type ApplicationMonitoringSpec struct {
@@ -124,10 +124,6 @@ type ApplicationMonitoringSpec struct {
 	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent version",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Version string `json:"version,omitempty"`
-
-	// The SecComp Profile that will be configured in order to run in secure computing mode.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent SecComp Profile",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
-	SecCompProfile string `json:"secCompProfile,omitempty"`
 }
 
 type AppInjectionSpec struct {
