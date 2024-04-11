@@ -32,7 +32,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 
 		gc := NewMockGarbageCollector()
 
-		gc.runBinaryGarbageCollection(context.TODO())
+		gc.runBinaryGarbageCollection(context.Background())
 
 		assert.InDelta(t, 1, testutil.ToFloat64(gcRunsMetric), 0.01)
 		assert.InDelta(t, 0, testutil.ToFloat64(foldersRemovedMetric), 0.01)
@@ -44,7 +44,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		gc := NewMockGarbageCollector()
 		_ = gc.fs.MkdirAll(testBinaryDir, 0770)
 
-		gc.runBinaryGarbageCollection(context.TODO())
+		gc.runBinaryGarbageCollection(context.Background())
 
 		assert.InDelta(t, 1, testutil.ToFloat64(gcRunsMetric), 0.01)
 		assert.InDelta(t, 0, testutil.ToFloat64(foldersRemovedMetric), 0.01)
@@ -56,7 +56,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		gc := NewMockGarbageCollector()
 		gc.mockUnusedVersions(testVersion1, testVersion2, testVersion3)
 
-		gc.runBinaryGarbageCollection(context.TODO())
+		gc.runBinaryGarbageCollection(context.Background())
 
 		assert.InDelta(t, 1, testutil.ToFloat64(gcRunsMetric), 0.01)
 		assert.InDelta(t, 3, testutil.ToFloat64(foldersRemovedMetric), 0.01)
@@ -69,7 +69,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		gc := NewMockGarbageCollector()
 		gc.mockUsedVersions(testVersion1, testVersion2, testVersion3)
 
-		gc.runBinaryGarbageCollection(context.TODO())
+		gc.runBinaryGarbageCollection(context.Background())
 
 		assert.InDelta(t, 1, testutil.ToFloat64(gcRunsMetric), 0.01)
 		assert.InDelta(t, 0, testutil.ToFloat64(foldersRemovedMetric), 0.01)
@@ -83,7 +83,7 @@ func TestBinaryGarbageCollector_getUsedVersions(t *testing.T) {
 	gc := NewMockGarbageCollector()
 	gc.mockUsedVersions(testVersion1, testVersion2, testVersion3)
 
-	usedVersions, err := gc.db.ReadCodeModules(context.TODO())
+	usedVersions, err := gc.db.ReadCodeModules(context.Background())
 	require.NoError(t, err)
 
 	assert.NotNil(t, usedVersions)
@@ -117,7 +117,9 @@ func (gc *CSIGarbageCollector) mockUsedVersions(versions ...string) {
 			CodeModuleVersion: version,
 			MountAttempts:     0,
 		}
-		_ = gc.db.CreateAppMount(context.TODO(), &appMount)
+		_ = gc.db.CreateAppMount(context.Background(), &appMount)
+
+		gc.db.CreateCodeModule(context.Background(), &metadata.CodeModule{Version: version, Location: filepath.Join(testBinaryDir, version)})
 	}
 }
 

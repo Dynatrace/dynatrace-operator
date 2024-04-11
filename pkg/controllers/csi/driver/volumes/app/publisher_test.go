@@ -213,7 +213,6 @@ func TestUnpublishVolume(t *testing.T) {
 			{Path: fmt.Sprintf("/%s/run/%s/mapped", testTenantUUID, testVolumeId)},
 		})
 		publisher := newPublisherForTesting(mounter)
-		mockPublishedVolume(t, &publisher)
 
 		response, err := publisher.UnpublishVolume(context.Background(), createTestVolumeInfo())
 
@@ -335,7 +334,7 @@ func mockPublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
 		VolumeMetaID:      testVolumeId,
 		CodeModuleVersion: testAgentVersion,
 		MountAttempts:     0,
-		Location:          "/a-tenant-uuid/run/a-volume/mapped",
+		Location:          "/a-tenant-uuid/run/a-volume",
 	}
 
 	err := publisher.db.CreateAppMount(context.Background(), &mockAppMount)
