@@ -290,7 +290,7 @@ func (conn *DBConn) ReadOSMount(ctx context.Context, osMount OSMount) (*OSMount,
 	}
 
 	if (*record == OSMount{}) {
-		return nil, errors.New("OSMount not found")
+		return nil, gorm.ErrRecordNotFound
 	}
 
 	return record, nil

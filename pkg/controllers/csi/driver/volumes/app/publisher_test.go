@@ -344,6 +344,7 @@ func mockPublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
 
 func mockFailedPublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
 	mockUrlDynakubeMetadata(t, publisher)
+
 	appMount := &metadata.AppMount{
 		VolumeMeta:        metadata.VolumeMeta{ID: testVolumeId, PodUid: testPodUID},
 		CodeModuleVersion: testAgentVersion,

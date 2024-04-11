@@ -25,9 +25,11 @@ import (
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"gorm.io/gorm"
 	"k8s.io/utils/mount"
 )
 
@@ -60,7 +62,7 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 	}
 
 	osMount, err := publisher.db.ReadOSMount(ctx, metadata.OSMount{TenantUUID: bindCfg.TenantUUID})
-	if err != nil && err.Error() != "OSMount not found" {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, status.Error(codes.Internal, failedToGetOsAgentVolumePrefix+err.Error())
 	}
 
@@ -96,6 +98,11 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 
 func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volumeInfo *csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
 	osMount, err := publisher.db.ReadOSMount(ctx, metadata.OSMount{VolumeMeta: metadata.VolumeMeta{ID: volumeInfo.VolumeID}})
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return &csi.NodeUnpublishVolumeResponse{}, nil
+	}
+
 	if err != nil {
 		return nil, status.Error(codes.Internal, failedToGetOsAgentVolumePrefix+err.Error())
 	}

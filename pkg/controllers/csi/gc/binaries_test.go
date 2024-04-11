@@ -102,6 +102,7 @@ func NewMockGarbageCollector() *CSIGarbageCollector {
 
 func (gc *CSIGarbageCollector) mockUnusedVersions(versions ...string) {
 	_ = gc.fs.Mkdir(testBinaryDir, 0770)
+
 	for _, version := range versions {
 		gc.db.CreateCodeModule(context.Background(), &metadata.CodeModule{Version: version, Location: filepath.Join(testBinaryDir, version)})
 		_, _ = gc.fs.Create(filepath.Join(testBinaryDir, version))
