@@ -38,11 +38,6 @@ type OneAgentSpec struct {
 type CloudNativeFullStackSpec struct {
 	AppInjectionSpec `json:",inline"`
 	HostInjectSpec   `json:",inline"`
-
-	// Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.
-	// For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate).
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Namespace Selector",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
-	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 }
 
 type HostInjectSpec struct {

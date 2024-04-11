@@ -55,13 +55,6 @@ const (
 	AnnotationFeatureOneAgentInitialConnectRetry    = AnnotationFeaturePrefix + "oneagent-initial-connect-retry-ms"
 	AnnotationFeatureRunOneAgentContainerPrivileged = AnnotationFeaturePrefix + "oneagent-privileged"
 
-	// injection (webhook).
-
-	// Deprecated: AnnotationFeatureDisableMetadataEnrichment use AnnotationFeatureMetadataEnrichment instead.
-	AnnotationFeatureDisableMetadataEnrichment = AnnotationFeaturePrefix + "disable-metadata-enrichment"
-
-	AnnotationFeatureMetadataEnrichment = AnnotationFeaturePrefix + "metadata-enrichment"
-
 	AnnotationFeatureIgnoreUnknownState    = AnnotationFeaturePrefix + "ignore-unknown-state"
 	AnnotationFeatureIgnoredNamespaces     = AnnotationFeaturePrefix + "ignored-namespaces"
 	AnnotationFeatureAutomaticInjection    = AnnotationFeaturePrefix + "automatic-injection"
@@ -184,11 +177,6 @@ func (dk *DynaKube) FeatureAutomaticKubernetesApiMonitoringClusterName() string 
 // FeatureEnableK8sAppEnabled is a feature flag to enable automatically enable current Kubernetes cluster for the Kubernetes app.
 func (dk *DynaKube) FeatureEnableK8sAppEnabled() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureK8sAppEnabled) == truePhrase
-}
-
-// FeatureDisableMetadataEnrichment is a feature flag to disable metadata enrichment,.
-func (dk *DynaKube) FeatureDisableMetadataEnrichment() bool {
-	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureMetadataEnrichment, AnnotationFeatureDisableMetadataEnrichment)
 }
 
 // FeatureAutomaticInjection controls OneAgent is injected to pods in selected namespaces automatically ("automatic-injection=true" or flag not set)

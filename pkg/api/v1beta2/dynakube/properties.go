@@ -505,7 +505,7 @@ func (dk *DynaKube) ApiRequestThreshold() time.Duration {
 		interval = DefaultMinRequestThresholdMinutes
 	}
 
-	return interval * time.Minute
+	return time.Minute * interval
 }
 
 // +kubebuilder:object:generate=false
