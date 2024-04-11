@@ -4879,13 +4879,12 @@ spec:
                   Disabled by default.
                 type: boolean
               metaDataEnrichment:
-                description: |-
-                  Configuration for Metadata Enrichment.
-                  Enabled by default.
+                description: Configuration for Metadata Enrichment.
                 properties:
                   enabled:
+                    default: true
                     description: |-
-                      Enables MetaDataEnrichment
+                      Enables MetaDataEnrichment.
                       Enabled by default.
                     type: boolean
                   namespaceSelector:

@@ -7,8 +7,9 @@ type MetaDataEnrichment struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Namespace Selector",xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
 	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 
-	// Enables MetaDataEnrichment
+	// Enables MetaDataEnrichment.
 	// Enabled by default.
+	// +kubebuilder:default:=true
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="MetaDataEnrichment",xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
 	Enabled bool `json:"enabled,omitempty"`
 }
