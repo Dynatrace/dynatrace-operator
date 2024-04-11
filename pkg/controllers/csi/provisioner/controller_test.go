@@ -80,7 +80,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			Name:                        dkName,
 			DownloadedCodeModuleVersion: agentVersion,
 		}
-		_ = db.CreateTenantConfig(ctx, &tenantConfig)
+
+		err := db.CreateTenantConfig(ctx, &tenantConfig)
+		require.NoError(t, err)
 
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(),
@@ -94,7 +96,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.Equal(t, reconcile.Result{}, result)
 
 		ten, err := db.ReadTenantConfig(ctx, metadata.TenantConfig{TenantUUID: tenantConfig.TenantUUID})
-		require.NoError(t, err)
+		require.Error(t, err)
 		require.Nil(t, ten)
 	})
 	t.Run("application monitoring disabled", func(t *testing.T) {
