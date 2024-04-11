@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 )
 
 func TestCreateTenantConfig(t *testing.T) {
@@ -217,9 +218,11 @@ func TestReadOSMount(t *testing.T) {
 
 	_, err = db.ReadOSMount(context.Background(), OSMount{TenantUUID: ""})
 	require.Error(t, err)
+	assert.Equal(t, err.Error(), "Can't query for empty OSMount")
 
 	_, err = db.ReadOSMount(context.Background(), OSMount{TenantUUID: "unknown"})
 	require.Error(t, err)
+	assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 }
 
 func TestUpdateOsMount(t *testing.T) {

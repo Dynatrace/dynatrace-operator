@@ -554,6 +554,7 @@ func TestProvisioner_CreateTenantConfig(t *testing.T) {
 	storedTenantConfig, err := db.ReadTenantConfig(ctx, metadata.TenantConfig{Name: dkName})
 	require.NoError(t, err)
 	require.NotNil(t, storedTenantConfig)
+
 	newTenantConfig.TimeStampedModel = metadata.TimeStampedModel{}
 	storedTenantConfig.TimeStampedModel = metadata.TimeStampedModel{}
 	require.Equal(t, newTenantConfig, *storedTenantConfig)
@@ -561,6 +562,7 @@ func TestProvisioner_CreateTenantConfig(t *testing.T) {
 	storedTenantConfig, err = db.ReadTenantConfig(ctx, metadata.TenantConfig{Name: otherDkName})
 	require.NoError(t, err)
 	require.NotNil(t, storedTenantConfig)
+
 	expectedOtherTenantConfig.TimeStampedModel = metadata.TimeStampedModel{}
 	storedTenantConfig.TimeStampedModel = metadata.TimeStampedModel{}
 	require.Equal(t, expectedOtherTenantConfig, *storedTenantConfig)
@@ -587,6 +589,7 @@ func TestProvisioner_UpdateDynakube(t *testing.T) {
 	tenantConfig, err := db.ReadTenantConfig(ctx, metadata.TenantConfig{Name: dkName})
 	require.NoError(t, err)
 	require.NotNil(t, tenantConfig)
+
 	newTenantConfig.TimeStampedModel = metadata.TimeStampedModel{}
 	tenantConfig.TimeStampedModel = metadata.TimeStampedModel{}
 	require.Equal(t, newTenantConfig, *tenantConfig)
@@ -594,6 +597,7 @@ func TestProvisioner_UpdateDynakube(t *testing.T) {
 	otherTenantConfig, err := db.ReadTenantConfig(ctx, metadata.TenantConfig{Name: otherDkName})
 	require.NoError(t, err)
 	require.NotNil(t, otherTenantConfig)
+
 	expectedOtherTenantConfig.TimeStampedModel = metadata.TimeStampedModel{}
 	otherTenantConfig.TimeStampedModel = metadata.TimeStampedModel{}
 	require.Equal(t, expectedOtherTenantConfig, *otherTenantConfig)

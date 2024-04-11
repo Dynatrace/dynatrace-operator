@@ -79,7 +79,7 @@ func TestUnpublishVolume(t *testing.T) {
 		assert.NotEmpty(t, mounter.MountPoints)
 
 		appMount, err := publisher.db.ReadOSMount(context.Background(), metadata.OSMount{VolumeMetaID: testVolumeId})
-		require.NoError(t, err)
+		require.Error(t, err)
 		assert.Nil(t, appMount)
 	})
 }
@@ -120,7 +120,7 @@ func newPublisherForTesting(mounter *mount.FakeMounter) HostVolumePublisher {
 func mockPublishedvolume(t *testing.T, publisher *HostVolumePublisher) {
 	mockDynakube(t, publisher)
 
-	osMount := metadata.OSMount{VolumeMetaID: testVolumeId, TenantUUID: testTenantUUID}
+	osMount := metadata.OSMount{VolumeMetaID: testVolumeId, VolumeMeta: metadata.VolumeMeta{ID: testVolumeId}, TenantUUID: testTenantUUID}
 	err := publisher.db.CreateOSMount(context.Background(), &osMount)
 	require.NoError(t, err)
 }
