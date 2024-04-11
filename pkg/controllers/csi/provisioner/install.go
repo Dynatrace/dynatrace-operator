@@ -29,10 +29,6 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 		return "", err
 	}
 
-	if err != nil {
-		return "", err
-	}
-
 	targetImage := dynakube.CodeModulesImage()
 	imageDigest, err := provisioner.getDigest(ctx, dynakube, targetImage)
 

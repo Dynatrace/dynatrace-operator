@@ -21,7 +21,6 @@ const (
 )
 
 func TestPublishVolume(t *testing.T) {
-
 	t.Run(`ready dynakube`, func(t *testing.T) {
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		publisher := newPublisherForTesting(mounter)

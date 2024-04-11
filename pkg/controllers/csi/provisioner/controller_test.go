@@ -600,7 +600,6 @@ func TestProvisioner_UpdateDynakube(t *testing.T) {
 }
 
 func TestHandleMetadata(t *testing.T) {
-	ctx := context.Background()
 	dynakube := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: dkName,
@@ -612,14 +611,14 @@ func TestHandleMetadata(t *testing.T) {
 	provisioner := &OneAgentProvisioner{
 		db: metadata.FakeMemoryDB(),
 	}
-	dynakubeMetadata, err := provisioner.handleMetadata(ctx, dynakube)
+	dynakubeMetadata, err := provisioner.handleMetadata(dynakube)
 
 	require.NoError(t, err)
 	require.NotNil(t, dynakubeMetadata)
 	require.Equal(t, int64(dynatracev1beta1.DefaultMaxFailedCsiMountAttempts), dynakubeMetadata.MaxFailedMountAttempts)
 
 	dynakube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureMaxFailedCsiMountAttempts: "5"}
-	dynakubeMetadata, err = provisioner.handleMetadata(ctx, dynakube)
+	dynakubeMetadata, err = provisioner.handleMetadata(dynakube)
 
 	require.NoError(t, err)
 	require.NotNil(t, dynakubeMetadata)
