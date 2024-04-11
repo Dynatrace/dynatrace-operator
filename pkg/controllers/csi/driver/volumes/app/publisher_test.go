@@ -326,16 +326,17 @@ func newPublisherForTesting(mounter *mount.FakeMounter) AppVolumePublisher {
 	}
 }
 
-var mockAppMount = metadata.AppMount{
-	VolumeMeta:        metadata.VolumeMeta{ID: testVolumeId, PodUid: testPodUID},
-	CodeModule:        metadata.CodeModule{Version: testAgentVersion},
-	VolumeMetaID:      testVolumeId,
-	CodeModuleVersion: testAgentVersion,
-	MountAttempts:     0,
-}
-
 func mockPublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
 	mockUrlDynakubeMetadata(t, publisher)
+
+	mockAppMount := metadata.AppMount{
+		VolumeMeta:        metadata.VolumeMeta{ID: testVolumeId, PodUid: testPodUID},
+		CodeModule:        metadata.CodeModule{Version: testAgentVersion},
+		VolumeMetaID:      testVolumeId,
+		CodeModuleVersion: testAgentVersion,
+		MountAttempts:     0,
+		Location:          "/a-tenant-uuid/run/a-volume/mapped",
+	}
 
 	err := publisher.db.CreateAppMount(context.Background(), &mockAppMount)
 	require.NoError(t, err)
