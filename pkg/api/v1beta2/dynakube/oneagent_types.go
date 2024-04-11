@@ -102,28 +102,28 @@ type HostInjectSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Priority Class name",order=23,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:PriorityClass"}
 	PriorityClassName string `json:"priorityClassName,omitempty"`
 
+	// The SecComp Profile that will be configured in order to run in secure computing mode.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent SecComp Profile",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
+	SecCompProfile string `json:"secCompProfile,omitempty"`
+
 	// Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.
 	// Note: resource.requests shows the values needed to run; resource.limits shows the maximum limits for the pod.
 	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=20,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
 	OneAgentResources corev1.ResourceRequirements `json:"oneAgentResources,omitempty"`
-
-	// The SecComp Profile that will be configured in order to run in secure computing mode.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent SecComp Profile",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
-	SecCompProfile string `json:"secCompProfile,omitempty"`
 }
 
 type ApplicationMonitoringSpec struct {
 	AppInjectionSpec `json:",inline"`
 
-	// Set if you want to use the CSIDriver. Don't enable it if you do not have access to Kubernetes nodes or if you lack privileges.
-	// +optional
-	UseCSIDriver *bool `json:"useCSIDriver,omitempty"`
-
 	// The OneAgent version to be used.
 	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent version",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Version string `json:"version,omitempty"`
+
+	// Set if you want to use the CSIDriver. Don't enable it if you do not have access to Kubernetes nodes or if you lack privileges.
+	// +optional
+	UseCSIDriver *bool `json:"useCSIDriver,omitempty"`
 }
 
 type AppInjectionSpec struct {
