@@ -371,10 +371,10 @@ func (conn *DBConn) DeleteAppMount(ctx context.Context, appMount *AppMount) erro
 		return errors.New("Can't delete an empty AppMount")
 	}
 
-	volumeMeta, err := conn.ReadVolumeMeta(ctx, VolumeMeta{ID: appMount.VolumeMetaID})
-	if err == nil {
-		conn.db.WithContext(ctx).Delete(&VolumeMeta{}, volumeMeta)
-	}
+	// volumeMeta, err := conn.ReadVolumeMeta(ctx, VolumeMeta{ID: appMount.VolumeMetaID})
+	// if err == nil {
+	// 	conn.db.WithContext(ctx).Delete(&VolumeMeta{}, volumeMeta)
+	// }
 
 	return conn.db.WithContext(ctx).Delete(&AppMount{}, appMount).Error
 }

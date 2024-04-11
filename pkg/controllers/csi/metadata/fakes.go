@@ -10,9 +10,14 @@ import (
 )
 
 func emptyMemoryDB() *DBConn {
-	db := DBConn{}
+	db, err := gorm.Open(sqlite.Open("file::memory:"), &gorm.Config{})
+	if err != nil {
+		return nil
+	}
 
-	return &db
+	dbConn := &DBConn{db: db}
+
+	return dbConn
 }
 
 func FakeMemoryDB() *DBConn {

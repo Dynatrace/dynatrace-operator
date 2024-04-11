@@ -15,22 +15,24 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func createTestTenantConfig(index int) TenantConfig {
-	return TenantConfig{
+func createTestTenantConfig(index int) *TenantConfig {
+	return &TenantConfig{
 		Name:                        fmt.Sprintf("dk%d", index),
 		TenantUUID:                  fmt.Sprintf("asc%d", index),
 		DownloadedCodeModuleVersion: fmt.Sprintf("sha256:%d", 123*index),
 		MaxFailedMountAttempts:      int64(index),
+		TimeStampedModel:            TimeStampedModel{},
 	}
 }
 
-func createTestAppMount(index int) AppMount {
-	return AppMount{
+func createTestAppMount(index int) *AppMount {
+	return &AppMount{
 		VolumeMeta:        VolumeMeta{ID: fmt.Sprintf("vol-%d", index), PodName: fmt.Sprintf("pod%d", index)},
 		CodeModuleVersion: strconv.Itoa(123 * index),
 		CodeModule:        CodeModule{Version: strconv.Itoa(123 * index)},
 		VolumeMetaID:      fmt.Sprintf("vol-%d", index),
 		MountAttempts:     int64(index),
+		TimeStampedModel:  TimeStampedModel{},
 	}
 }
 
@@ -40,7 +42,7 @@ func TestCorrectCSI(t *testing.T) {
 
 		checker := NewCorrectnessChecker(nil, db, dtcsi.CSIOptions{})
 
-		err := checker.CorrectCSI(context.TODO())
+		err := checker.CorrectCSI(context.Background())
 
 		require.Error(t, err)
 	})
@@ -49,41 +51,45 @@ func TestCorrectCSI(t *testing.T) {
 
 		checker := NewCorrectnessChecker(nil, db, dtcsi.CSIOptions{})
 
-		err := checker.CorrectCSI(context.TODO())
+		err := checker.CorrectCSI(context.Background())
 
 		require.NoError(t, err)
 	})
 
 	t.Run("no error on nil apiReader, database is not cleaned", func(t *testing.T) {
-		ctx := context.TODO()
+		ctx := context.Background()
 		testAppMount1 := createTestAppMount(1)
 		testTenantConfig1 := createTestTenantConfig(1)
 		db := FakeMemoryDB()
-		db.CreateAppMount(ctx, &testAppMount1)
-		db.CreateTenantConfig(ctx, &testTenantConfig1)
+		db.CreateAppMount(ctx, testAppMount1)
+		db.CreateTenantConfig(ctx, testTenantConfig1)
 
 		checker := NewCorrectnessChecker(nil, db, dtcsi.CSIOptions{})
 
-		err := checker.CorrectCSI(context.TODO())
+		err := checker.CorrectCSI(context.Background())
 
 		require.NoError(t, err)
-		vol, err := db.ReadAppMount(ctx, testAppMount1)
+		appMount, err := db.ReadAppMount(ctx, *testAppMount1)
 		require.NoError(t, err)
-		assert.Equal(t, &testAppMount1, vol)
+		testAppMount1.TimeStampedModel = TimeStampedModel{}
+		appMount.TimeStampedModel = TimeStampedModel{}
+		assert.Equal(t, testAppMount1, appMount)
 
 		require.NoError(t, err)
-		dk, err := db.ReadTenantConfig(ctx, TenantConfig{Name: testTenantConfig1.Name})
+		tenantConfig, err := db.ReadTenantConfig(ctx, TenantConfig{Name: testTenantConfig1.Name})
 		require.NoError(t, err)
-		assert.Equal(t, &testTenantConfig1, dk)
+		testTenantConfig1.TimeStampedModel = TimeStampedModel{}
+		tenantConfig.TimeStampedModel = TimeStampedModel{}
+		assert.Equal(t, testTenantConfig1, tenantConfig)
 	})
 
 	t.Run("nothing to remove, everything is still correct", func(t *testing.T) {
-		ctx := context.TODO()
+		ctx := context.Background()
 		testAppMount1 := createTestAppMount(1)
 		testTenantConfig1 := createTestTenantConfig(1)
 		db := FakeMemoryDB()
-		db.CreateAppMount(ctx, &testAppMount1)
-		db.CreateTenantConfig(ctx, &testTenantConfig1)
+		db.CreateAppMount(ctx, testAppMount1)
+		db.CreateTenantConfig(ctx, testTenantConfig1)
 		client := fake.NewClient(
 			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testAppMount1.VolumeMeta.PodName}},
 			&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testTenantConfig1.Name}},
@@ -94,17 +100,17 @@ func TestCorrectCSI(t *testing.T) {
 		err := checker.CorrectCSI(ctx)
 
 		require.NoError(t, err)
-		vol, err := db.ReadAppMount(ctx, testAppMount1)
+		appMount, err := db.ReadAppMount(ctx, *testAppMount1)
 		require.NoError(t, err)
-		assert.Equal(t, &testAppMount1, vol)
+		assert.Equal(t, testAppMount1, appMount)
 
 		require.NoError(t, err)
-		dk, err := db.ReadTenantConfig(ctx, TenantConfig{Name: testTenantConfig1.Name})
+		tenantConfig, err := db.ReadTenantConfig(ctx, TenantConfig{Name: testTenantConfig1.Name})
 		require.NoError(t, err)
-		assert.Equal(t, &testTenantConfig1, dk)
+		assert.Equal(t, testTenantConfig1, tenantConfig)
 	})
 	t.Run("remove unnecessary entries in the filesystem", func(t *testing.T) {
-		ctx := context.TODO()
+		ctx := context.Background()
 		testAppMount1 := createTestAppMount(1)
 		testAppMount2 := createTestAppMount(2)
 		testAppMount3 := createTestAppMount(3)
@@ -114,12 +120,12 @@ func TestCorrectCSI(t *testing.T) {
 		testTenantConfig3 := createTestTenantConfig(3)
 
 		db := FakeMemoryDB()
-		db.CreateAppMount(ctx, &testAppMount1)
-		db.CreateAppMount(ctx, &testAppMount2)
-		db.CreateAppMount(ctx, &testAppMount3)
-		db.CreateTenantConfig(ctx, &testTenantConfig1)
-		db.CreateTenantConfig(ctx, &testTenantConfig2)
-		db.CreateTenantConfig(ctx, &testTenantConfig3)
+		db.CreateAppMount(ctx, testAppMount1)
+		db.CreateAppMount(ctx, testAppMount2)
+		db.CreateAppMount(ctx, testAppMount3)
+		db.CreateTenantConfig(ctx, testTenantConfig1)
+		db.CreateTenantConfig(ctx, testTenantConfig2)
+		db.CreateTenantConfig(ctx, testTenantConfig3)
 
 		client := fake.NewClient(
 			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testAppMount1.VolumeMeta.PodName}},
@@ -131,7 +137,7 @@ func TestCorrectCSI(t *testing.T) {
 		err := checker.CorrectCSI(ctx)
 		require.NoError(t, err)
 
-		vol, err := db.ReadAppMount(ctx, testAppMount1)
+		vol, err := db.ReadAppMount(ctx, *testAppMount1)
 		require.NoError(t, err)
 		assert.Equal(t, &testAppMount1, vol)
 
@@ -140,12 +146,12 @@ func TestCorrectCSI(t *testing.T) {
 		assert.Equal(t, &testTenantConfig1, ten)
 
 		// PURGED
-		vol, err = db.ReadAppMount(ctx, testAppMount2)
+		vol, err = db.ReadAppMount(ctx, *testAppMount2)
 		require.NoError(t, err)
 		assert.Nil(t, vol)
 
 		// PURGED
-		vol, err = db.ReadAppMount(ctx, testAppMount3)
+		vol, err = db.ReadAppMount(ctx, *testAppMount3)
 		require.NoError(t, err)
 		assert.Nil(t, vol)
 
