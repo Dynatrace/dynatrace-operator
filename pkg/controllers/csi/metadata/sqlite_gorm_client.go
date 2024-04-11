@@ -343,7 +343,7 @@ func (conn *DBConn) ReadAppMount(ctx context.Context, appMount AppMount) (*AppMo
 		return nil, errors.New("Can't query for empty AppMount")
 	}
 
-	result := conn.db.WithContext(ctx).Preload("VolumeMeta").Find(&record, appMount)
+	result := conn.db.WithContext(ctx).Preload("VolumeMeta").Preload("CodeModule").Find(&record, appMount)
 	if result.Error != nil {
 		return nil, result.Error
 	}

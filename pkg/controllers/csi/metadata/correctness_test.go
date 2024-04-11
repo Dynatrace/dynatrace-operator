@@ -3,16 +3,17 @@ package metadata
 import (
 	"context"
 	"fmt"
-	"strconv"
-	"testing"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
+	testutil "github.com/Dynatrace/dynatrace-operator/pkg/util/testing"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strconv"
+	"testing"
 )
 
 func createTestTenantConfig(index int) *TenantConfig {
@@ -37,6 +38,9 @@ func createTestAppMount(index int) *AppMount {
 }
 
 func TestCorrectCSI(t *testing.T) {
+	diffOptsAppMount := cmpopts.IgnoreFields(AppMount{}, "TimeStampedModel")
+	diffOptsTenantConfig := cmpopts.IgnoreFields(TenantConfig{}, "TimeStampedModel")
+
 	t.Run("error on no db or missing tables", func(t *testing.T) {
 		db := emptyMemoryDB()
 
@@ -71,16 +75,11 @@ func TestCorrectCSI(t *testing.T) {
 		require.NoError(t, err)
 		appMount, err := db.ReadAppMount(ctx, *testAppMount1)
 		require.NoError(t, err)
-		testAppMount1.TimeStampedModel = TimeStampedModel{}
-		appMount.TimeStampedModel = TimeStampedModel{}
-		assert.Equal(t, testAppMount1, appMount)
+		testutil.PartialEqual(t, testAppMount1, appMount, diffOptsAppMount)
 
-		require.NoError(t, err)
 		tenantConfig, err := db.ReadTenantConfig(ctx, TenantConfig{Name: testTenantConfig1.Name})
 		require.NoError(t, err)
-		testTenantConfig1.TimeStampedModel = TimeStampedModel{}
-		tenantConfig.TimeStampedModel = TimeStampedModel{}
-		assert.Equal(t, testTenantConfig1, tenantConfig)
+		testutil.PartialEqual(t, testTenantConfig1, tenantConfig, diffOptsTenantConfig)
 	})
 
 	t.Run("nothing to remove, everything is still correct", func(t *testing.T) {
@@ -98,16 +97,17 @@ func TestCorrectCSI(t *testing.T) {
 		checker := NewCorrectnessChecker(client, db, dtcsi.CSIOptions{})
 
 		err := checker.CorrectCSI(ctx)
-
 		require.NoError(t, err)
+
 		appMount, err := db.ReadAppMount(ctx, *testAppMount1)
 		require.NoError(t, err)
-		assert.Equal(t, testAppMount1, appMount)
+		testutil.PartialEqual(t, testAppMount1, appMount, diffOptsAppMount)
 
 		require.NoError(t, err)
 		tenantConfig, err := db.ReadTenantConfig(ctx, TenantConfig{Name: testTenantConfig1.Name})
 		require.NoError(t, err)
-		assert.Equal(t, testTenantConfig1, tenantConfig)
+
+		testutil.PartialEqual(t, testTenantConfig1, tenantConfig, diffOptsTenantConfig)
 	})
 	t.Run("remove unnecessary entries in the filesystem", func(t *testing.T) {
 		ctx := context.Background()
@@ -139,11 +139,11 @@ func TestCorrectCSI(t *testing.T) {
 
 		vol, err := db.ReadAppMount(ctx, *testAppMount1)
 		require.NoError(t, err)
-		assert.Equal(t, &testAppMount1, vol)
+		testutil.PartialEqual(t, &testAppMount1, vol, diffOptsAppMount)
 
 		ten, err := db.ReadTenantConfig(ctx, TenantConfig{Name: testTenantConfig1.Name})
 		require.NoError(t, err)
-		assert.Equal(t, &testTenantConfig1, ten)
+		testutil.PartialEqual(t, &testTenantConfig1, ten, diffOptsTenantConfig)
 
 		// PURGED
 		vol, err = db.ReadAppMount(ctx, *testAppMount2)
