@@ -43,14 +43,16 @@ func TestNameTooLong(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ec := &edgeconnect.EdgeConnect{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: strings.Repeat("a", test.crNameLength),
+					Name:      strings.Repeat("a", test.crNameLength),
+					Namespace: testNamespace,
 				},
 				Spec: edgeconnect.EdgeConnectSpec{
-					ApiServer: "id." + allowedSuffix[0],
+					ApiServer:          "id." + allowedSuffix[0],
+					ServiceAccountName: testServiceAccountName,
 				},
 			}
 			if test.allow {
-				assertAllowedResponse(t, ec)
+				assertAllowedResponse(t, ec, prepareTestServiceAccount(testServiceAccountName, testNamespace))
 			} else {
 				errorMessage := fmt.Sprintf(errorNameTooLong, edgeconnect.MaxNameLength)
 				assertDeniedResponse(t, []string{errorMessage}, ec)
