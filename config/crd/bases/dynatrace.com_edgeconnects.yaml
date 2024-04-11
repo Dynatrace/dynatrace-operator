@@ -207,6 +207,14 @@ spec:
                     description: Indicates version of the EdgeConnect image to use
                     type: string
                 type: object
+              kubernetesAutomation:
+                description: KubernetesAutomation enables Kubernetes Automation for
+                  Workflows
+                properties:
+                  enabled:
+                    description: Enables Kubernetes Automation for Workflows
+                    type: boolean
+                type: object
               labels:
                 additionalProperties:
                   type: string
@@ -325,6 +333,11 @@ spec:
                       More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                     type: object
                 type: object
+              serviceAccountName:
+                default: dynatrace-edgeconnect
+                description: ServiceAccountName that allows EdgeConnect to access
+                  the Kubernetes API
+                type: string
               tolerations:
                 description: Sets tolerations for the EdgeConnect pods
                 items:

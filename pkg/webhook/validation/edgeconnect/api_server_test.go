@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
 	admissionv1 "k8s.io/api/admission/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -25,6 +26,10 @@ func TestApiServer(t *testing.T) {
 	t.Run(`happy apiServer`, func(t *testing.T) {
 		for _, suffix := range allowedSuffix {
 			edgeConnect := &edgeconnect.EdgeConnect{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testName,
+					Namespace: testNamespace,
+				},
 				Spec: edgeconnect.EdgeConnectSpec{
 					ApiServer: "tenantid" + suffix,
 					OAuth: edgeconnect.OAuthSpec{
@@ -32,9 +37,10 @@ func TestApiServer(t *testing.T) {
 						Endpoint:     "endpoint",
 						Resource:     "resource",
 					},
+					ServiceAccountName: testServiceAccountName,
 				},
 			}
-			assertAllowedResponse(t, edgeConnect)
+			assertAllowedResponse(t, edgeConnect, prepareTestServiceAccount(testServiceAccountName, testNamespace))
 		}
 	})
 
@@ -67,7 +73,7 @@ func TestApiServer(t *testing.T) {
 
 func assertAllowedResponse(t *testing.T, edgeConnect *edgeconnect.EdgeConnect, other ...client.Object) {
 	response := handleRequest(t, edgeConnect, other...)
-	assert.True(t, response.Allowed, "it is a valid apiServer", "apiServer", edgeConnect.Spec.ApiServer)
+	assert.True(t, response.Allowed, response.Result.Message)
 	assert.Empty(t, response.Warnings)
 }
 

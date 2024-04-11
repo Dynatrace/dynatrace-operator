@@ -49,7 +49,7 @@ func (collector loadSimCollector) Name() string {
 }
 
 func (collector loadSimCollector) createSimulatedLogFiles() {
-	for i := 0; i < collector.fileCount; i++ {
+	for i := range collector.fileCount {
 		fileName := buildLoadsimFileName(i)
 
 		lg := loadGenerator{

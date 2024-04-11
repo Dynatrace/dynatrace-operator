@@ -13,7 +13,11 @@ const customArgumentPriority = 2
 const defaultArgumentPriority = 1
 
 func (dsInfo *builderInfo) arguments() ([]string, error) {
-	argMap := prioritymap.New(prioritymap.WithSeparator(prioritymap.DefaultSeparator), prioritymap.WithPriority(defaultArgumentPriority))
+	argMap := prioritymap.New(
+		prioritymap.WithSeparator(prioritymap.DefaultSeparator),
+		prioritymap.WithPriority(defaultArgumentPriority),
+		prioritymap.WithAllowDuplicates(),
+	)
 
 	isProxyAsEnvDeprecated, err := isProxyAsEnvVarDeprecated(dsInfo.dynakube.OneAgentVersion())
 	if err != nil {

@@ -63,7 +63,7 @@ type DynaKubeValueSource struct { //nolint:revive
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=dynakubes,scope=Namespaced,categories=dynatrace
+// +kubebuilder:resource:path=dynakubes,scope=Namespaced,categories=dynatrace,shortName={dk,dks}
 // +kubebuilder:printcolumn:name="ApiUrl",type=string,JSONPath=`.spec.apiUrl`
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`

@@ -164,16 +164,14 @@ func assertBuildLabels(sampleApp *sample.App, expectedBuildLabels map[string]bui
 		kubeResources := envConfig.Client().Resources()
 		pods := sampleApp.GetPods(ctx, t, kubeResources)
 
-		for _, podItem := range pods.Items {
-			podItem := podItem
-
+		for i, podItem := range pods.Items {
 			require.NotNil(t, podItem)
 			require.NotNil(t, podItem.Spec)
 
 			appContainer := podItem.Spec.Containers[0]
 			assert.Equal(t, sampleApp.ContainerName(), appContainer.Name, "%s namespace", sampleApp.Namespace())
 
-			assertReferences(t, &podItem, sampleApp, expectedBuildLabels)
+			assertReferences(t, &pods.Items[i], sampleApp, expectedBuildLabels)
 
 			assertValues(ctx, t, envConfig.Client().Resources(), podItem, sampleApp, expectedBuildLabels)
 		}
