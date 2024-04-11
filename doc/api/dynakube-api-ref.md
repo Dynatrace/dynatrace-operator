@@ -100,7 +100,7 @@
 |nodeSelector|Specify the node selector that controls on which nodes OneAgent will be deployed.|-|object|
 |oneAgentResources|Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR. Note: resource.requests shows the values needed to run; resource.limits shows the maximum limits for the pod.|-|object|
 |priorityClassName|Assign a priority class to the OneAgent pods. By default, no class is set. For details, see Pod Priority and Preemption (<https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/>).|-|string|
-|secCompProfile|The SecComp Profile that will be configured.|-|string|
+|secCompProfile|The SecComp Profile that will be configured in order to run in secure computing mode.|-|string|
 |tolerations|Tolerations to include with the OneAgent DaemonSet. For details, see Taints and Tolerations (<https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/>).|-|array|
 |version|The OneAgent version to be used.|-|string|
 
@@ -111,6 +111,5 @@
 |codeModulesImage|The OneAgent image that is used to inject into Pods.|-|string|
 |initResources|Define resources requests and limits for the initContainer. For details, see Managing resources for containers (<https://kubernetes.io/docs/concepts/configuration/manage-resources-containers>).|-|object|
 |namespaceSelector|Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject. For more information, see Configure monitoring for namespaces and pods (<https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate>).|-|object|
-|secCompProfile|The SecComp Profile that will be configured.|-|string|
 |useCSIDriver|Set if you want to use the CSIDriver. Don't enable it if you do not have access to Kubernetes nodes or if you lack privileges.|-|boolean|
 |version|The OneAgent version to be used.|-|string|
