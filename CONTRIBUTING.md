@@ -1,6 +1,7 @@
 # Contributing
 
-- [Steps](#steps)
+- [Pull requests](#pull-requests)
+- [Quick start](#quick-start)
 - [Unit tests](#unit-tests)
 - [E2E tests](#e2e-tests)
 - [Useful commands](#useful-commands)
@@ -9,7 +10,19 @@
   - [Add debug suffix on E2E tests to avoid removing pods](#add-debug-suffix-on-e2e-tests-to-avoid-removing-pods)
   - [Debug cluster nodes by opening a shell prompt (details here)](#debug-cluster-nodes-by-opening-a-shell-prompt)
 
-## Steps
+## Pull requests
+
+Make sure all the following are true when creating a pull-request:
+
+- The [coding style guide](doc/coding-style-guide.md) was followed when creating the change.
+- The PR has a meaningful title [guidelines](https://github.com/kubernetes/community/blob/master/contributors/guide/pull-requests.md#use-imperative-mood-in-your-commit-message-subject).
+- The PR is labeled accordingly with a **single** label.
+- Unit tests have been updated/added.
+- Relevant documentation has been updated/added.
+  - [ARCHITECTURE.md](https://github.com/Dynatrace/dynatrace-operator/blob/main/ARCHITECTURE.md)
+  - [Other docs](https://github.com/Dynatrace/dynatrace-operator/blob/main/doc)
+
+## Quick start
 
 1. Read the [coding style guide](doc/coding-style-guide.md).
 
