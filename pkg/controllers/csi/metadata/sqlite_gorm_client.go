@@ -349,7 +349,7 @@ func (conn *DBConn) ReadAppMount(ctx context.Context, appMount AppMount) (*AppMo
 	}
 
 	if (*record == AppMount{}) {
-		return nil, errors.New("AppMount not found")
+		return nil, gorm.ErrRecordNotFound
 	}
 
 	return record, nil

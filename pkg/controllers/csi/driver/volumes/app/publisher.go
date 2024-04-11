@@ -33,6 +33,7 @@ import (
 	"github.com/spf13/afero"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"gorm.io/gorm"
 	"k8s.io/utils/mount"
 )
 
@@ -264,8 +265,9 @@ func (publisher *AppVolumePublisher) ensureMountSteps(ctx context.Context, bindC
 
 func (publisher *AppVolumePublisher) hasTooManyMountAttempts(ctx context.Context, bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) (bool, error) {
 	appMount, err := publisher.db.ReadAppMount(ctx, metadata.AppMount{VolumeMetaID: volumeCfg.VolumeID})
-	if err != nil && err.Error() == "AppMount not found" {
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		appMount = createNewAppMount(bindCfg, volumeCfg)
+		publisher.db.CreateAppMount(ctx, appMount)
 	} else if err != nil {
 		return false, err
 	}
@@ -276,14 +278,25 @@ func (publisher *AppVolumePublisher) hasTooManyMountAttempts(ctx context.Context
 
 	appMount.MountAttempts += 1
 
-	return false, publisher.db.CreateAppMount(ctx, appMount)
+	return false, publisher.db.UpdateAppMount(ctx, appMount)
 }
 
 func (publisher *AppVolumePublisher) storeVolume(ctx context.Context, bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
-	appMount := createNewAppMount(bindCfg, volumeCfg)
-	log.Info("inserting AppMount", "appMount", appMount)
+	newAppMount := createNewAppMount(bindCfg, volumeCfg)
+	log.Info("inserting AppMount", "appMount", newAppMount)
 
-	return publisher.db.UpdateAppMount(ctx, appMount)
+	// check if it currently exists
+	readAppMount, err := publisher.db.ReadAppMount(ctx, *newAppMount)
+
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		return publisher.db.CreateAppMount(ctx, newAppMount)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	return publisher.db.UpdateAppMount(ctx, readAppMount)
 }
 
 func createNewAppMount(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) *metadata.AppMount {
