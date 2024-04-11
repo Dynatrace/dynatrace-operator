@@ -332,6 +332,11 @@ func createTestDynaKube() *dynatracev1beta1.DynaKube {
 		},
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: "https://test.dev.dynatracelabs.com/api",
+			ActiveGate: dynatracev1beta1.ActiveGateSpec{
+				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+					dynatracev1beta1.RoutingCapability.DisplayName,
+				},
+			},
 		},
 		Status: dynatracev1beta1.DynaKubeStatus{
 			OneAgent: dynatracev1beta1.OneAgentStatus{
@@ -353,9 +358,8 @@ func createTestDynaKube() *dynatracev1beta1.DynaKube {
 			ActiveGate: dynatracev1beta1.ActiveGateStatus{
 				ConnectionInfoStatus: dynatracev1beta1.ActiveGateConnectionInfoStatus{
 					ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
-						TenantUUID:  "test-tenant",
-						Endpoints:   endpoints,
-						LastRequest: metav1.Time{},
+						TenantUUID: "test-tenant",
+						Endpoints:  endpoints,
 					},
 				},
 			},

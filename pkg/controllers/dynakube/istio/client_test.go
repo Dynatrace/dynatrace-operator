@@ -236,7 +236,7 @@ func TestCreateOrUpdateVirtualService(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset(oldVirtualService)
 		client := newTestingClient(fakeClient, oldVirtualService.Namespace)
 
-		for i := 0; i < 2; i++ {
+		for range 2 {
 			err = client.CreateOrUpdateVirtualService(ctx, newVirtualService)
 			require.NoError(t, err)
 		}
@@ -503,7 +503,7 @@ func TestCreateOrUpdateServiceEntry(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset(oldServiceEntry)
 		client := newTestingClient(fakeClient, oldServiceEntry.Namespace)
 
-		for i := 0; i < 2; i++ {
+		for range 2 {
 			err = client.CreateOrUpdateServiceEntry(ctx, newServiceEntry)
 			require.NoError(t, err)
 		}

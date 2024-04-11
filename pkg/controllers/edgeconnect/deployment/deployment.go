@@ -21,15 +21,11 @@ const (
 	unprivilegedGroup  = int64(1000)
 )
 
-func NewRegular(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
-	return create(instance, instance.Spec.OAuth.ClientSecret, instance.Spec.OAuth.Resource)
+func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
+	return create(instance)
 }
 
-func NewProvisioner(instance *edgeconnectv1alpha1.EdgeConnect, clientSecretName string, resource string) *appsv1.Deployment {
-	return create(instance, clientSecretName, resource)
-}
-
-func create(instance *edgeconnectv1alpha1.EdgeConnect, clientSecretName string, resource string) *appsv1.Deployment {
+func create(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 	appLabels := buildAppLabels(instance)
 	labels := maputils.MergeMap(
 		instance.Labels,
@@ -55,11 +51,11 @@ func create(instance *edgeconnectv1alpha1.EdgeConnect, clientSecretName string, 
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
-					Containers:                    []corev1.Container{edgeConnectContainer(instance, resource)},
+					Containers:                    []corev1.Container{edgeConnectContainer(instance)},
 					ImagePullSecrets:              prepareImagePullSecrets(instance),
 					ServiceAccountName:            consts.EdgeConnectServiceAccountName,
 					TerminationGracePeriodSeconds: address.Of(int64(30)),
-					Volumes:                       []corev1.Volume{prepareVolume(clientSecretName)},
+					Volumes:                       prepareVolumes(instance),
 					NodeSelector:                  instance.Spec.NodeSelector,
 					Tolerations:                   instance.Spec.Tolerations,
 					TopologySpreadConstraints:     instance.Spec.TopologySpreadConstraints,
@@ -87,42 +83,6 @@ func prepareImagePullSecrets(instance *edgeconnectv1alpha1.EdgeConnect) []corev1
 	return nil
 }
 
-func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect, resource string) []corev1.EnvVar {
-	envMap := prioritymap.New(prioritymap.WithPriority(defaultEnvPriority))
-	prioritymap.Append(envMap, []corev1.EnvVar{
-		{
-			Name:  consts.EnvEdgeConnectName,
-			Value: instance.ObjectMeta.Name,
-		},
-		{
-			Name:  consts.EnvEdgeConnectApiEndpointHost,
-			Value: instance.Spec.ApiServer,
-		},
-
-		{
-			Name:  consts.EnvEdgeConnectOauthEndpoint,
-			Value: instance.Spec.OAuth.Endpoint,
-		},
-		{
-			Name:  consts.EnvEdgeConnectOauthResource,
-			Value: resource,
-		},
-	})
-
-	// Since HostRestrictions is optional we should not pass empty env var
-	// otherwise edge-connect will fail
-	if instance.Spec.HostRestrictions != "" {
-		prioritymap.Append(envMap, corev1.EnvVar{
-			Name:  consts.EnvEdgeConnectRestrictHostsTo,
-			Value: instance.Spec.HostRestrictions,
-		})
-	}
-
-	prioritymap.Append(envMap, instance.Spec.Env, prioritymap.WithPriority(customEnvPriority))
-
-	return envMap.AsEnvVars()
-}
-
 func buildAppLabels(instance *edgeconnectv1alpha1.EdgeConnect) *labels.AppLabels {
 	return labels.NewAppLabels(
 		labels.EdgeConnectComponentLabel,
@@ -141,12 +101,12 @@ func buildAnnotations(instance *edgeconnectv1alpha1.EdgeConnect) map[string]stri
 	return annotations
 }
 
-func edgeConnectContainer(instance *edgeconnectv1alpha1.EdgeConnect, resource string) corev1.Container {
+func edgeConnectContainer(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Container {
 	return corev1.Container{
 		Name:            consts.EdgeConnectContainerName,
 		Image:           instance.Status.Version.ImageID,
 		ImagePullPolicy: corev1.PullAlways,
-		Env:             prepareContainerEnvVars(instance, resource),
+		Env:             instance.Spec.Env,
 		Resources:       prepareResourceRequirements(instance),
 		SecurityContext: &corev1.SecurityContext{
 			AllowPrivilegeEscalation: address.Of(false),
@@ -156,21 +116,55 @@ func edgeConnectContainer(instance *edgeconnectv1alpha1.EdgeConnect, resource st
 			RunAsUser:                address.Of(unprivilegedUser),
 			RunAsNonRoot:             address.Of(true),
 		},
-		VolumeMounts: []corev1.VolumeMount{
-			{MountPath: consts.EdgeConnectMountPath, Name: consts.EdgeConnectVolumeMountName, ReadOnly: true},
-		},
+		VolumeMounts: prepareVolumeMounts(instance),
 	}
 }
 
-func prepareVolume(clientSecretName string) corev1.Volume {
+func prepareVolumes(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.Volume {
+	volumes := []corev1.Volume{prepareConfigVolume(instance)}
+
+	if instance.Spec.CaCertsRef != "" {
+		volumes = append(volumes, corev1.Volume{
+			Name: consts.EdgeConnectCustomCAVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: instance.Spec.CaCertsRef,
+					},
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.EdgeConnectCAConfigMapKey,
+							Path: consts.EdgeConnectCustomCertificateName,
+						},
+					},
+				},
+			},
+		})
+	}
+
+	return volumes
+}
+
+func prepareVolumeMounts(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.VolumeMount {
+	volumeMounts := []corev1.VolumeMount{
+		{MountPath: consts.EdgeConnectConfigPath, SubPath: consts.EdgeConnectConfigFileName, Name: instance.Name + "-" + consts.EdgeConnectConfigVolumeMountName},
+	}
+
+	if instance.Spec.CaCertsRef != "" {
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{MountPath: consts.EdgeConnectMountPath, Name: consts.EdgeConnectCustomCertificateName})
+	}
+
+	return volumeMounts
+}
+
+func prepareConfigVolume(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Volume {
 	return corev1.Volume{
-		Name: consts.EdgeConnectVolumeMountName,
+		Name: instance.Name + "-" + consts.EdgeConnectConfigVolumeMountName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: clientSecretName,
+				SecretName: instance.Name + "-" + consts.EdgeConnectSecretSuffix,
 				Items: []corev1.KeyToPath{
-					{Key: consts.KeyEdgeConnectOauthClientID, Path: consts.PathEdgeConnectOauthClientID},
-					{Key: consts.KeyEdgeConnectOauthClientSecret, Path: consts.PathEdgeConnectOauthClientSecret},
+					{Key: consts.EdgeConnectConfigFileName, Path: consts.EdgeConnectConfigFileName},
 				},
 			},
 		},

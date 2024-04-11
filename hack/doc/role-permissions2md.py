@@ -39,15 +39,21 @@ resourceTerms = {
     "virtualservices": "VirtualServices",
     "leases": "Leases",
     "endpoints": "EndPoints",
-    "securitycontextconstraints": "SecurityContextConstraints"
+    "securitycontextconstraints": "SecurityContextConstraints",
+    "edgeconnects": "EdgeConnects",
+    "edgeconnects/finalizers": "EdgeConnects/Finalizers",
+    "edgeconnects/status": "EdgeConnects/Status",
+    "activegates": "ActiveGates",
+    "activegates/finalizers": "ActiveGates/Finalizers",
+    "activegates/status": "ActiveGates/Status",
 }
 
 sectionTitles = {
     "dynatrace-operator": "Dynatrace Operator",
-    "dynatrace-kubernetes-monitoring": "Dynatrace Kubernetes Monitoring (ActiveGate)",
+    "dynatrace-kubernetes-monitoring": "Dynatrace Activegate (Kubernetes Monitoring)",
     "dynatrace-webhook": "Dynatrace webhook server",
     "dynatrace-oneagent-csi-driver": "Dynatrace CSI driver",
-    "dynatrace-activegate": "Dynatrace Kubernetes Monitoring (ActiveGate)",
+    "dynatrace-activegate": "Dynatrace ActiveGate (Default)",
     "dynatrace-dynakube-oneagent": "Dynatrace OneAgent"
 }
 
@@ -70,7 +76,7 @@ def multiline_codestyle_block(entries):
         if len(entry) > 0:
             result_string += f"`{entry}`"
         else:
-            result_string += f"`-`"
+            result_string += f"`\"\"`"
     return result_string
 
 def get_resource_names(rule):
@@ -95,8 +101,8 @@ def create_role_table(role):
             for resource in resources:
                 apis = get_apis(rule)
                 resource_names = get_resource_names(rule)
-                api_gropus = get_api_groups(rule)
-                print(f"|`{resourceTerms[resource]}` |{api_gropus} |{apis} |{resource_names} |")
+                api_groups = get_api_groups(rule)
+                print(f"|`{resourceTerms[resource]}` |{api_groups} |{apis} |{resource_names} |")
 
 def convert_cluster_roles_to_markdown(role):
     print(f"\n## {sectionTitles[role['metadata']['name']]} (cluster-wide)\n")

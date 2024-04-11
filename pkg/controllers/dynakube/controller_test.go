@@ -637,18 +637,16 @@ func getTestDynkubeStatus() *dynatracev1beta1.DynaKubeStatus {
 		ActiveGate: dynatracev1beta1.ActiveGateStatus{
 			ConnectionInfoStatus: dynatracev1beta1.ActiveGateConnectionInfoStatus{
 				ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
-					TenantUUID:  testUUID,
-					Endpoints:   "endpoint",
-					LastRequest: metav1.NewTime(time.Now()),
+					TenantUUID: testUUID,
+					Endpoints:  "endpoint",
 				},
 			},
 		},
 		OneAgent: dynatracev1beta1.OneAgentStatus{
 			ConnectionInfoStatus: dynatracev1beta1.OneAgentConnectionInfoStatus{
 				ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
-					TenantUUID:  testUUID,
-					Endpoints:   "endpoint",
-					LastRequest: metav1.NewTime(time.Now()),
+					TenantUUID: testUUID,
+					Endpoints:  "endpoint",
 				},
 				CommunicationHosts: []dynatracev1beta1.CommunicationHostStatus{
 					{

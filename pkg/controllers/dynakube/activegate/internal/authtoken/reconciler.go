@@ -44,6 +44,10 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
+	if !r.dynakube.NeedsActiveGate() {
+		return nil
+	}
+
 	err := r.reconcileAuthTokenSecret(ctx)
 	if err != nil {
 		return errors.WithMessage(err, "failed to create activeGateAuthToken secret")

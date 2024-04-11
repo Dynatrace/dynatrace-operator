@@ -11,22 +11,22 @@ const (
 	SecretOutdatedReason = "SecretOutdated"
 )
 
-func SetSecretCreated(conditions *[]metav1.Condition, conditionType, message string) {
+func SetSecretCreated(conditions *[]metav1.Condition, conditionType, name string) {
 	condition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionTrue,
 		Reason:  SecretCreatedReason,
-		Message: message, // TODO: maybe only pass the name of the secret, and have the rest of the message more general?
+		Message: appendCreatedSuffix(name),
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func SetSecretUpdated(conditions *[]metav1.Condition, conditionType, message string) {
+func SetSecretUpdated(conditions *[]metav1.Condition, conditionType, name string) {
 	condition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionTrue,
 		Reason:  SecretUpdatedReason,
-		Message: message,
+		Message: appendUpdatedSuffix(name),
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }

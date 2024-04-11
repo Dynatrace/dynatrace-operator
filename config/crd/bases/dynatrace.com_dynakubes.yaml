@@ -13,6 +13,9 @@ spec:
     kind: DynaKube
     listKind: DynaKubeList
     plural: dynakubes
+    shortNames:
+    - dk
+    - dks
     singular: dynakube
   scope: Namespaced
   versions:

@@ -20,6 +20,7 @@ import (
 	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -96,7 +97,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			}
 		}
 
-		err := r.authTokenReconciler.Reconcile(ctx)
+		err = r.authTokenReconciler.Reconcile(ctx)
 		if err != nil {
 			return errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
 		}
@@ -106,14 +107,16 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		if agCapability.Enabled() {
 			return r.createCapability(ctx, agCapability)
 		} else {
-			err = r.deleteCapability(ctx, agCapability)
-			if err != nil {
+			if err := r.deleteCapability(ctx, agCapability); err != nil {
 				return err
 			}
 		}
 	}
 
-	return err
+	// TODO: move cleanup to ActiveGate reconciler
+	meta.RemoveStatusCondition(r.dynakube.Conditions(), statefulset.ActiveGateStatefulSetConditionType)
+
+	return nil
 }
 
 func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.Context) error {
