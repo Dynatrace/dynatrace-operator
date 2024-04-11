@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
@@ -498,11 +499,20 @@ func (dk *DynaKube) GetOneAgentEnvironment() []corev1.EnvVar {
 	return []corev1.EnvVar{}
 }
 
+func (dk *DynaKube) ApiRequestThreshold() time.Duration {
+	interval := dk.Spec.DynatraceApiRequestThreshold
+	if interval < 0 {
+		interval = DefaultMinRequestThresholdMinutes
+	}
+
+	return interval * time.Minute
+}
+
 // +kubebuilder:object:generate=false
 type RequestAllowedChecker func(timeProvider *timeprovider.Provider) bool
 
 func (dk *DynaKube) IsTokenScopeVerificationAllowed(timeProvider *timeprovider.Provider) bool {
-	return timeProvider.IsOutdated(&dk.Status.DynatraceApi.LastTokenScopeRequest, dk.Spec.DynatraceApiRequestThreshold)
+	return timeProvider.IsOutdated(&dk.Status.DynatraceApi.LastTokenScopeRequest, dk.ApiRequestThreshold())
 }
 
 func (dk *DynaKube) IsOneAgentCommunicationRouteClear() bool {
