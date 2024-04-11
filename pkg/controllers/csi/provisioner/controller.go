@@ -103,10 +103,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	dk, err := provisioner.getDynaKube(ctx, request.NamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			err = provisioner.db.DeleteTenantConfig(ctx, &metadata.TenantConfig{Name: dk.Name}, true)
-			if err != nil && err.Error() != "record not found" {
-				return reconcile.Result{}, err
-			}
+			return reconcile.Result{}, provisioner.db.DeleteTenantConfig(ctx, &metadata.TenantConfig{Name: request.Name}, false)
 		}
 
 		return reconcile.Result{}, err

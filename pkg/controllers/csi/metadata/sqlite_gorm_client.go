@@ -120,7 +120,7 @@ func (conn *DBConn) UpdateTenantConfig(ctx context.Context, tenantConfig *Tenant
 
 func (conn *DBConn) DeleteTenantConfig(ctx context.Context, tenantConfig *TenantConfig, cascade bool) error {
 	if (tenantConfig == nil || *tenantConfig == TenantConfig{}) {
-		return errors.New("Can't delete an empty TenantConfig")
+		return nil
 	}
 
 	err := conn.db.WithContext(ctx).Delete(&TenantConfig{}, tenantConfig).Error
@@ -221,7 +221,7 @@ func (conn *DBConn) IsCodeModuleOrphaned(ctx context.Context, codeModule *CodeMo
 	var tenantConfigResults []*TenantConfig
 
 	if (codeModule == nil || *codeModule == CodeModule{}) {
-		return false, errors.New("Can't check orphaned on empty CodeModule")
+		return false, nil
 	}
 
 	err := conn.db.WithContext(ctx).Find(&tenantConfigResults, TenantConfig{DownloadedCodeModuleVersion: codeModule.Version}).Error

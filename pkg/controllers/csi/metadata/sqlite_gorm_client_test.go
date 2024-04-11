@@ -93,10 +93,10 @@ func TestSoftDeleteTenantConfig(t *testing.T) {
 	assert.Equal(t, int64(0), db.db.RowsAffected)
 
 	err = db.DeleteTenantConfig(context.Background(), nil, false)
-	require.Error(t, err)
+	require.NoError(t, err)
 
 	err = db.DeleteTenantConfig(context.Background(), &TenantConfig{}, false)
-	require.Error(t, err)
+	require.NoError(t, err)
 }
 
 func TestCreateCodeModule(t *testing.T) {
