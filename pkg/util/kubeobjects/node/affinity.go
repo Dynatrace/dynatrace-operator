@@ -1,21 +1,17 @@
 package node
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	corev1 "k8s.io/api/core/v1"
 )
 
 const (
 	kubernetesArch = "kubernetes.io/arch"
 	kubernetesOS   = "kubernetes.io/os"
-
-	amd64   = "amd64"
-	arm64   = "arm64"
-	ppc64le = "ppc64le"
-	linux   = "linux"
 )
 
 func AffinityNodeRequirementForSupportedArches() []corev1.NodeSelectorRequirement {
-	return affinityNodeRequirementsForArches(amd64, arm64, ppc64le)
+	return affinityNodeRequirementsForArches(arch.AMDImageArch, arch.ARMImageArch, arch.PPCLEImageArch, arch.S390ImageArch)
 }
 
 func affinityNodeRequirementsForArches(arches ...string) []corev1.NodeSelectorRequirement {
@@ -28,7 +24,7 @@ func affinityNodeRequirementsForArches(arches ...string) []corev1.NodeSelectorRe
 		{
 			Key:      kubernetesOS,
 			Operator: corev1.NodeSelectorOpIn,
-			Values:   []string{linux},
+			Values:   []string{arch.DefaultImageOS},
 		},
 	}
 }

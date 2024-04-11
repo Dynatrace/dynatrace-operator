@@ -18,6 +18,7 @@ const (
 	AMDImageArch   = "amd64"
 	ARMImageArch   = "arm64"
 	PPCLEImageArch = "ppc64le"
+	S390ImageArch  = "s390x"
 
 	DefaultImageOS = "linux"
 )
