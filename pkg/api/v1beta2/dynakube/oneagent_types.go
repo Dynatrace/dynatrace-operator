@@ -132,14 +132,14 @@ type AppInjectionSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Namespace Selector",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
 	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 
+	// The OneAgent image that is used to inject into Pods.
+	// +optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="CodeModulesImage",order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	CodeModulesImage string `json:"codeModulesImage,omitempty"`
+
 	// Define resources requests and limits for the initContainer. For details, see Managing resources for containers
 	// (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers).
 	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=15,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
 	InitResources *corev1.ResourceRequirements `json:"initResources,omitempty"`
-
-	// The OneAgent image that is used to inject into Pods.
-	// +optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="CodeModulesImage",order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
-	CodeModulesImage string `json:"codeModulesImage,omitempty"`
 }
