@@ -17,7 +17,6 @@ limitations under the License.
 package dynakube
 
 import (
-	"strconv"
 	"testing"
 	"time"
 
@@ -447,60 +446,58 @@ func TestDynaKube_ShallUpdateActiveGateConnectionInfo(t *testing.T) {
 	tests := map[string]struct {
 		lastRequestTimeDeltaMinutes int
 		updateExpected              bool
-		featureFlagValue            int
+		threshold                   int
 	}{
 		"Do not update after 10 minutes using default interval": {
 			lastRequestTimeDeltaMinutes: -10,
 			updateExpected:              false,
-			featureFlagValue:            -1,
+			threshold:                   -1,
 		},
 		"Do update after 20 minutes using default interval": {
 			lastRequestTimeDeltaMinutes: -20,
 			updateExpected:              true,
-			featureFlagValue:            -1,
+			threshold:                   -1,
 		},
 		"Do not update after 3 minutes using 5m interval": {
 			lastRequestTimeDeltaMinutes: -3,
 			updateExpected:              false,
-			featureFlagValue:            5,
+			threshold:                   5,
 		},
 		"Do update after 7 minutes using 5m interval": {
 			lastRequestTimeDeltaMinutes: -7,
 			updateExpected:              true,
-			featureFlagValue:            5,
+			threshold:                   5,
 		},
 		"Do not update after 17 minutes using 20m interval": {
 			lastRequestTimeDeltaMinutes: -17,
 			updateExpected:              false,
-			featureFlagValue:            20,
+			threshold:                   20,
 		},
 		"Do update after 22 minutes using 20m interval": {
 			lastRequestTimeDeltaMinutes: -22,
 			updateExpected:              true,
-			featureFlagValue:            20,
+			threshold:                   20,
 		},
 		"Do update immediately using 0m interval": {
 			lastRequestTimeDeltaMinutes: 0,
 			updateExpected:              true,
-			featureFlagValue:            0,
+			threshold:                   0,
 		},
 		"Do update after 1 minute using 0m interval": {
 			lastRequestTimeDeltaMinutes: -1,
 			updateExpected:              true,
-			featureFlagValue:            0,
+			threshold:                   0,
 		},
 		"Do update after 20 minutes using 0m interval": {
 			lastRequestTimeDeltaMinutes: -20,
 			updateExpected:              true,
-			featureFlagValue:            0,
+			threshold:                   0,
 		},
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			dk.ObjectMeta.Annotations = map[string]string{
-				AnnotationFeatureApiRequestThreshold: strconv.Itoa(test.featureFlagValue),
-			}
+			dk.Spec.DynatraceApiRequestThreshold = time.Duration(test.threshold)
 
 			lastRequestTime := timeProvider.Now().Add(time.Duration(test.lastRequestTimeDeltaMinutes) * time.Minute)
 			dk.Status.DynatraceApi.LastTokenScopeRequest.Time = lastRequestTime

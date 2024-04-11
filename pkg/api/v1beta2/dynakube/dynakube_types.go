@@ -129,20 +129,6 @@ type DynaKubeSpec struct { //nolint:revive
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="ActiveGate",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	ActiveGate ActiveGateSpec `json:"activeGate,omitempty"`
 
-	// Configuration for Routing
-	// +kubebuilder:deprecatedversion:warning="Deprecated property"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Routing"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	Routing RoutingSpec `json:"routing,omitempty"`
-
-	// Configuration for Kubernetes Monitoring
-	// +kubebuilder:deprecatedversion:warning="Deprecated property"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes Monitoring"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	KubernetesMonitoring KubernetesMonitoringSpec `json:"kubernetesMonitoring,omitempty"`
-
 	// Configuration for Metadata Enrichment.
 	// Enabled by default.
 	// +optional

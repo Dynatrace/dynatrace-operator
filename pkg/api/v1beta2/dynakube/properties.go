@@ -68,8 +68,7 @@ func (dk *DynaKube) ApiUrlHost() string {
 
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.
 func (dk *DynaKube) NeedsActiveGate() bool {
-	return dk.DeprecatedActiveGateMode() ||
-		dk.ActiveGateMode()
+	return dk.ActiveGateMode()
 }
 
 // ApplicationMonitoringMode returns true when application only section is used.
@@ -101,10 +100,6 @@ func (dk *DynaKube) OneAgentDaemonsetName() string {
 	return fmt.Sprintf("%s-%s", dk.Name, PodNameOsAgent)
 }
 
-func (dk *DynaKube) DeprecatedActiveGateMode() bool {
-	return dk.Spec.KubernetesMonitoring.Enabled || dk.Spec.Routing.Enabled
-}
-
 func (dk *DynaKube) ActiveGateMode() bool {
 	return len(dk.Spec.ActiveGate.Capabilities) > 0
 }
@@ -132,11 +127,11 @@ func (dk *DynaKube) ActiveGateServiceAccountName() string {
 }
 
 func (dk *DynaKube) IsKubernetesMonitoringActiveGateEnabled() bool {
-	return dk.IsActiveGateMode(KubeMonCapability.DisplayName) || dk.Spec.KubernetesMonitoring.Enabled
+	return dk.IsActiveGateMode(KubeMonCapability.DisplayName)
 }
 
 func (dk *DynaKube) IsRoutingActiveGateEnabled() bool {
-	return dk.IsActiveGateMode(RoutingCapability.DisplayName) || dk.Spec.Routing.Enabled
+	return dk.IsActiveGateMode(RoutingCapability.DisplayName)
 }
 
 func (dk *DynaKube) IsApiActiveGateEnabled() bool {
@@ -297,22 +292,8 @@ func (dk *DynaKube) DefaultActiveGateImage(version string) string {
 	return apiUrlHost + DefaultActiveGateImageRegistrySubPath + ":" + tag
 }
 
-func (dk *DynaKube) deprecatedActiveGateImage() string {
-	if dk.Spec.KubernetesMonitoring.Image != "" {
-		return dk.Spec.KubernetesMonitoring.Image
-	} else if dk.Spec.Routing.Image != "" {
-		return dk.Spec.Routing.Image
-	}
-
-	return ""
-}
-
 // CustomActiveGateImage provides the image reference for the ActiveGate provided in the Spec.
 func (dk *DynaKube) CustomActiveGateImage() string {
-	if dk.DeprecatedActiveGateMode() {
-		return dk.deprecatedActiveGateImage()
-	}
-
 	return dk.Spec.ActiveGate.Image
 }
 
@@ -521,7 +502,7 @@ func (dk *DynaKube) GetOneAgentEnvironment() []corev1.EnvVar {
 type RequestAllowedChecker func(timeProvider *timeprovider.Provider) bool
 
 func (dk *DynaKube) IsTokenScopeVerificationAllowed(timeProvider *timeprovider.Provider) bool {
-	return timeProvider.IsOutdated(&dk.Status.DynatraceApi.LastTokenScopeRequest, dk.FeatureApiRequestThreshold())
+	return timeProvider.IsOutdated(&dk.Status.DynatraceApi.LastTokenScopeRequest, dk.Spec.DynatraceApiRequestThreshold)
 }
 
 func (dk *DynaKube) IsOneAgentCommunicationRouteClear() bool {

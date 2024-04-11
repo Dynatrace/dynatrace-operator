@@ -33,10 +33,6 @@ type OneAgentSpec struct {
 	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Host Group",order=5,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	HostGroup string `json:"hostGroup,omitempty"`
-
-	// The SecComp Profile that will be configured in order to run in secure computing mode.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent SecComp Profile",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
-	SecCompProfile string `json:"secCompProfile,omitempty"`
 }
 
 type CloudNativeFullStackSpec struct {
@@ -116,6 +112,10 @@ type HostInjectSpec struct {
 	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=20,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
 	OneAgentResources corev1.ResourceRequirements `json:"oneAgentResources,omitempty"`
+
+	// The SecComp Profile that will be configured in order to run in secure computing mode.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent SecComp Profile",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
+	SecCompProfile string `json:"secCompProfile,omitempty"`
 }
 
 type ApplicationMonitoringSpec struct {
@@ -129,11 +129,6 @@ type ApplicationMonitoringSpec struct {
 	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent version",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Version string `json:"version,omitempty"`
-
-	// Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.
-	// For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate).
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Namespace Selector",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
-	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 }
 
 type AppInjectionSpec struct {
@@ -147,4 +142,9 @@ type AppInjectionSpec struct {
 	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="CodeModulesImage",order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	CodeModulesImage string `json:"codeModulesImage,omitempty"`
+
+	// Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.
+	// For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate).
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Namespace Selector",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
+	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 }

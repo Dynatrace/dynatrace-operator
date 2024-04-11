@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
@@ -46,8 +45,7 @@ const (
 
 	// dtClient.
 
-	AnnotationFeatureNoProxy             = AnnotationFeaturePrefix + "no-proxy"
-	AnnotationFeatureApiRequestThreshold = AnnotationFeaturePrefix + "dynatrace-api-request-threshold"
+	AnnotationFeatureNoProxy = AnnotationFeaturePrefix + "no-proxy"
 
 	// oneAgent.
 
@@ -56,7 +54,6 @@ const (
 	AnnotationFeatureOneAgentIgnoreProxy            = AnnotationFeaturePrefix + "oneagent-ignore-proxy"
 	AnnotationFeatureOneAgentInitialConnectRetry    = AnnotationFeaturePrefix + "oneagent-initial-connect-retry-ms"
 	AnnotationFeatureRunOneAgentContainerPrivileged = AnnotationFeaturePrefix + "oneagent-privileged"
-	AnnotationFeatureOneAgentSecCompProfile         = AnnotationFeaturePrefix + "oneagent-seccomp-profile"
 
 	// injection (webhook).
 
@@ -128,15 +125,6 @@ func (dk *DynaKube) FeatureDisableActiveGateUpdates() bool {
 // FeatureNoProxy is a feature flag to set the NO_PROXY value to be used by the dtClient.
 func (dk *DynaKube) FeatureNoProxy() string {
 	return dk.getFeatureFlagRaw(AnnotationFeatureNoProxy)
-}
-
-func (dk *DynaKube) FeatureApiRequestThreshold() time.Duration {
-	interval := dk.getFeatureFlagInt(AnnotationFeatureApiRequestThreshold, DefaultMinRequestThresholdMinutes)
-	if interval < 0 {
-		interval = DefaultMinRequestThresholdMinutes
-	}
-
-	return time.Duration(interval) * time.Minute
 }
 
 // FeatureOneAgentMaxUnavailable is a feature flag to configure maxUnavailable on the OneAgent DaemonSets rolling upgrades.
@@ -249,10 +237,6 @@ func (dk *DynaKube) FeatureAgentInitialConnectRetry() int {
 
 func (dk *DynaKube) FeatureOneAgentPrivileged() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureRunOneAgentContainerPrivileged) == truePhrase
-}
-
-func (dk *DynaKube) FeatureOneAgentSecCompProfile() string {
-	return dk.getFeatureFlagRaw(AnnotationFeatureOneAgentSecCompProfile)
 }
 
 func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
