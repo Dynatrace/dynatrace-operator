@@ -267,13 +267,6 @@ func (r requiredFiles) getRequiredCRDFiles() []string {
 			strings.Join([]string{strings.ToLower(support_archive.CRDKindName), "edgeconnects"}, "-"),
 			support_archive.ManifestsFileExtension))
 
-	requiredFiles = append(requiredFiles,
-		fmt.Sprintf("%s/%s/%s%s",
-			support_archive.ManifestsDirectoryName,
-			support_archive.CRDDirectoryName,
-			strings.Join([]string{strings.ToLower(support_archive.CRDKindName), "activegates"}, "-"),
-			support_archive.ManifestsFileExtension))
-
 	return requiredFiles
 }
 

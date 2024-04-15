@@ -4,7 +4,6 @@ doc: doc/api-ref doc/gen-gomarkdoc
 
 ## Generate API docs for custom resources
 doc/api-ref: manifests prerequisites/python
-	source local/.venv/bin/activate && python3 ./hack/doc/custom_resource_params_to_md.py ./config/crd/bases/dynatrace.com_activegates.yaml > ./doc/api/activegate-api-ref.md
 	source local/.venv/bin/activate && python3 ./hack/doc/custom_resource_params_to_md.py ./config/crd/bases/dynatrace.com_dynakubes.yaml > ./doc/api/dynakube-api-ref.md
 	source local/.venv/bin/activate && python3 ./hack/doc/custom_resource_params_to_md.py ./config/crd/bases/dynatrace.com_edgeconnects.yaml > ./doc/api/edgeconnect-api-ref.md
 
