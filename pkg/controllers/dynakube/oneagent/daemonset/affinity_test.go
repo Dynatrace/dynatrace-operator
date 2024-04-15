@@ -15,7 +15,7 @@ func TestAffinity(t *testing.T) {
 			{
 				Key:      "beta.kubernetes.io/arch",
 				Operator: corev1.NodeSelectorOpIn,
-				Values:   []string{"amd64", "arm64", "ppc64le"},
+				Values:   []string{"amd64", "arm64", "ppc64le", "s390x"},
 			},
 			{
 				Key:      "beta.kubernetes.io/os",
@@ -29,7 +29,7 @@ func TestAffinity(t *testing.T) {
 			{
 				Key:      "kubernetes.io/arch",
 				Operator: corev1.NodeSelectorOpIn,
-				Values:   []string{"amd64", "arm64", "ppc64le"},
+				Values:   []string{"amd64", "arm64", "ppc64le", "s390x"},
 			},
 			{
 				Key:      "kubernetes.io/os",

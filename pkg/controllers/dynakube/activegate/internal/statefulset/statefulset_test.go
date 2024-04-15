@@ -94,7 +94,7 @@ func TestGetBaseObjectMeta(t *testing.T) {
 					{
 						Key:      "kubernetes.io/arch",
 						Operator: corev1.NodeSelectorOpIn,
-						Values:   []string{"amd64", "arm64", "ppc64le"},
+						Values:   []string{"amd64", "arm64", "ppc64le", "s390x"},
 					},
 					{
 						Key:      "kubernetes.io/os",
