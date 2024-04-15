@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 	"k8s.io/utils/mount"
 )
 
@@ -42,11 +43,11 @@ func TestPublishVolume(t *testing.T) {
 		assert.Equal(t, "overlay", mounter.MountPoints[0].Device)
 		assert.Equal(t, "overlay", mounter.MountPoints[0].Type)
 		assert.Equal(t, []string{
-			"lowerdir=/codemodules/1.2-3",
-			"upperdir=/a-tenant-uuid/run/a-volume/var",
-			"workdir=/a-tenant-uuid/run/a-volume/work"},
+			"lowerdir=/data/codemodules/1.2-3",
+			"upperdir=/data/a-tenant-uuid/run/a-volume/var",
+			"workdir=/data/a-tenant-uuid/run/a-volume/work"},
 			mounter.MountPoints[0].Opts)
-		assert.Equal(t, "/a-tenant-uuid/run/a-volume/mapped", mounter.MountPoints[0].Path)
+		assert.Equal(t, "/data/a-tenant-uuid/run/a-volume/mapped", mounter.MountPoints[0].Path)
 
 		assert.Equal(t, "overlay", mounter.MountPoints[1].Device)
 		assert.Equal(t, "", mounter.MountPoints[1].Type)
@@ -75,11 +76,11 @@ func TestPublishVolume(t *testing.T) {
 		assert.Equal(t, "overlay", mounter.MountPoints[0].Device)
 		assert.Equal(t, "overlay", mounter.MountPoints[0].Type)
 		assert.Equal(t, []string{
-			"lowerdir=/codemodules/" + testAgentVersion,
-			"upperdir=/a-tenant-uuid/run/a-volume/var",
-			"workdir=/a-tenant-uuid/run/a-volume/work"},
+			"lowerdir=/data/codemodules/" + testAgentVersion,
+			"upperdir=/data/a-tenant-uuid/run/a-volume/var",
+			"workdir=/data/a-tenant-uuid/run/a-volume/work"},
 			mounter.MountPoints[0].Opts)
-		assert.Equal(t, "/a-tenant-uuid/run/a-volume/mapped", mounter.MountPoints[0].Path)
+		assert.Equal(t, "/data/a-tenant-uuid/run/a-volume/mapped", mounter.MountPoints[0].Path)
 
 		assert.Equal(t, "overlay", mounter.MountPoints[1].Device)
 		assert.Equal(t, "", mounter.MountPoints[1].Type)
@@ -186,7 +187,7 @@ func TestUnpublishVolume(t *testing.T) {
 
 		mounter := mount.NewFakeMounter([]mount.MountPoint{
 			{Path: testTargetPath},
-			{Path: fmt.Sprintf("/%s/run/%s/mapped", testTenantUUID, testVolumeId)},
+			{Path: fmt.Sprintf("/data/%s/run/%s/mapped", testTenantUUID, testVolumeId)},
 		})
 		publisher := newPublisherForTesting(mounter)
 		mockPublishedVolume(t, &publisher)
@@ -293,7 +294,7 @@ func TestLoadPodInfo_Empty(t *testing.T) {
 	publisher := newPublisherForTesting(mounter)
 
 	appMount, err := publisher.db.ReadAppMount(context.Background(), metadata.AppMount{VolumeMetaID: testVolumeId})
-	require.Error(t, err)
+	require.ErrorIs(t, err, gorm.ErrRecordNotFound)
 	require.Nil(t, appMount)
 }
 
@@ -313,7 +314,7 @@ func TestMountIfDBHasError(t *testing.T) {
 }
 
 func newPublisherForTesting(mounter *mount.FakeMounter) AppVolumePublisher {
-	csiOptions := dtcsi.CSIOptions{RootDir: "/"}
+	csiOptions := dtcsi.CSIOptions{RootDir: "/data/"}
 
 	tmpFs := afero.NewMemMapFs()
 

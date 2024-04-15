@@ -22,10 +22,6 @@ func NewBindConfig(ctx context.Context, access metadata.DBAccess, volumeCfg *Vol
 		return nil, status.Error(codes.Unavailable, fmt.Sprintf("failed to extract tenant for DynaKube %s: %s", volumeCfg.DynakubeName, err.Error()))
 	}
 
-	if tenantConfig == nil {
-		return nil, status.Error(codes.Unavailable, fmt.Sprintf("dynakube (%s) is missing from metadata database", volumeCfg.DynakubeName))
-	}
-
 	return &BindConfig{
 		TenantUUID:       tenantConfig.TenantUUID,
 		Version:          tenantConfig.DownloadedCodeModuleVersion,
