@@ -218,7 +218,7 @@ func TestReadOSMount(t *testing.T) {
 
 	_, err = db.ReadOSMount(context.Background(), OSMount{TenantUUID: ""})
 	require.Error(t, err)
-	assert.Equal(t, err.Error(), "Can't query for empty OSMount")
+	assert.Equal(t, "Can't query for empty OSMount", err.Error())
 
 	_, err = db.ReadOSMount(context.Background(), OSMount{TenantUUID: "unknown"})
 	require.Error(t, err)
