@@ -70,3 +70,7 @@ prerequisites/setup-pre-commit:
 ## Install 'gomarkdoc' if it is missing
 prerequisites/gomarkdoc:
 	go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@$(gomarkdoc_version)
+
+## Install python dependencies
+prerequisites/python:
+	python3 -m venv local/.venv && source local/.venv/bin/activate && pip3 install -r hack/requirements.txt
