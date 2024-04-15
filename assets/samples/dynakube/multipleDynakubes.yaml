@@ -44,11 +44,6 @@ spec:
     capabilities:
       - kubernetes-monitoring
 
-    # Optional: Sets how many ActiveGate pods are spawned by the StatefulSet
-    # Defaults to "1"
-    #
-    replicas: 3
-
     # Optional: Specifies resource settings for ActiveGate instances
     # Consumption of the ActiveGate heavily depends on the workload to monitor
     # The values should be adjusted according to the workload
@@ -116,11 +111,6 @@ spec:
     capabilities:
       - routing
       - dynatrace-api
-
-    # Optional: Sets how many ActiveGate pods are spawned by the StatefulSet
-    # Defaults to "1"
-    #
-    replicas: 2
 
     # Optional: Specifies resource settings for ActiveGate instances
     # Consumption of the ActiveGate heavily depends on the workload to monitor
