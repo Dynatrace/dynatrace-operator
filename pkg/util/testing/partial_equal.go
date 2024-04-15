@@ -2,6 +2,7 @@ package testing
 
 import (
 	"fmt"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,5 +28,4 @@ func PartialEqual(t require.TestingT, expected, actual any, diffOpts cmp.Option,
 	assert.Fail(t, fmt.Sprintf("Not equal: \n"+
 		"expected: %s\n"+
 		"actual  : %s%s", expected, actual, diff), msgAndArgs...)
-	return
 }

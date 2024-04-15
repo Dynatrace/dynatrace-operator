@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/afero"
 )
 
+//nolint:gosec
 func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context) {
 	fs := &afero.Afero{Fs: gc.fs}
 

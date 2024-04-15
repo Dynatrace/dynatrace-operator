@@ -94,9 +94,6 @@ func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error
 		Complete(provisioner)
 }
 
-// cyclomatic: function (*OneAgentProvisioner).Reconcile has cyclomatic complexity 13 (> max enabled 12)
-//
-//nolint:revive
 func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "dynakube", request.Name)
 
