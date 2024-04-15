@@ -3,6 +3,9 @@ package metadata
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"testing"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
@@ -10,10 +13,9 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strconv"
-	"testing"
 )
 
 func createTestTenantConfig(index int) *TenantConfig {
@@ -137,32 +139,34 @@ func TestCorrectCSI(t *testing.T) {
 		err := checker.CorrectCSI(ctx)
 		require.NoError(t, err)
 
-		vol, err := db.ReadAppMount(ctx, *testAppMount1)
+		testAppMount1.TimeStampedModel = TimeStampedModel{}
+		appMount, err := db.ReadAppMount(ctx, *testAppMount1)
 		require.NoError(t, err)
-		testutil.PartialEqual(t, &testAppMount1, vol, diffOptsAppMount)
+		testutil.PartialEqual(t, &testAppMount1, &appMount, diffOptsAppMount)
 
-		ten, err := db.ReadTenantConfig(ctx, TenantConfig{Name: testTenantConfig1.Name})
+		tenantConfig, err := db.ReadTenantConfig(ctx, TenantConfig{Name: testTenantConfig1.Name})
 		require.NoError(t, err)
-		testutil.PartialEqual(t, &testTenantConfig1, ten, diffOptsTenantConfig)
-
-		// PURGED
-		vol, err = db.ReadAppMount(ctx, *testAppMount2)
-		require.NoError(t, err)
-		assert.Nil(t, vol)
+		testutil.PartialEqual(t, &testTenantConfig1, &tenantConfig, diffOptsTenantConfig)
 
 		// PURGED
-		vol, err = db.ReadAppMount(ctx, *testAppMount3)
-		require.NoError(t, err)
-		assert.Nil(t, vol)
+		appMount, err = db.ReadAppMount(ctx, AppMount{VolumeMetaID: testAppMount2.VolumeMetaID})
+		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+		assert.Nil(t, appMount)
 
 		// PURGED
-		ten, err = db.ReadTenantConfig(ctx, TenantConfig{Name: testTenantConfig2.TenantUUID})
-		require.NoError(t, err)
-		assert.Nil(t, ten)
+		testAppMount3.TimeStampedModel = TimeStampedModel{}
+		appMount, err = db.ReadAppMount(ctx, *testAppMount3)
+		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+		assert.Nil(t, appMount)
 
 		// PURGED
-		ten, err = db.ReadTenantConfig(ctx, TenantConfig{Name: testTenantConfig3.TenantUUID})
-		require.NoError(t, err)
-		assert.Nil(t, ten)
+		tenantConfig, err = db.ReadTenantConfig(ctx, TenantConfig{Name: testTenantConfig2.TenantUUID})
+		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+		assert.Nil(t, tenantConfig)
+
+		// PURGED
+		tenantConfig, err = db.ReadTenantConfig(ctx, TenantConfig{Name: testTenantConfig3.TenantUUID})
+		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+		assert.Nil(t, tenantConfig)
 	})
 }

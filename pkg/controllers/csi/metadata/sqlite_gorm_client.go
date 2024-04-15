@@ -158,7 +158,7 @@ func (conn *DBConn) ReadTenantConfig(ctx context.Context, tenantConfig TenantCon
 	}
 
 	if (*record == TenantConfig{}) {
-		return nil, errors.New("TenantConfig not found")
+		return nil, gorm.ErrRecordNotFound
 	}
 
 	return record, nil
@@ -200,7 +200,7 @@ func (conn *DBConn) ReadCodeModule(ctx context.Context, codeModule CodeModule) (
 	}
 
 	if (*record == CodeModule{}) {
-		return nil, errors.New("CodeModule not found")
+		return nil, gorm.ErrRecordNotFound
 	}
 
 	return record, nil
@@ -312,7 +312,7 @@ func (conn *DBConn) DeleteOSMount(ctx context.Context, osMount *OSMount) error {
 		return errors.New("Can't delete an empty OSMount")
 	}
 
-	if osMount != nil && osMount.VolumeMetaID != "" {
+	if osMount.VolumeMetaID != "" {
 		volumeMeta, err := conn.ReadVolumeMeta(ctx, VolumeMeta{ID: osMount.VolumeMetaID})
 		if err == nil {
 			conn.db.WithContext(ctx).Delete(&VolumeMeta{}, volumeMeta)
@@ -387,7 +387,7 @@ func (conn *DBConn) ReadVolumeMeta(ctx context.Context, volumeMeta VolumeMeta) (
 	}
 
 	if (*record == VolumeMeta{}) {
-		return nil, errors.New("VolumeMeta not found")
+		return nil, gorm.ErrRecordNotFound
 	}
 
 	return record, nil
