@@ -122,7 +122,14 @@ func (conn *DBConn) DeleteTenantConfig(ctx context.Context, tenantConfig *Tenant
 		return nil
 	}
 
-	err := conn.db.WithContext(ctx).Delete(&TenantConfig{}, tenantConfig).Error
+	tenantConfig, err := conn.ReadTenantConfig(ctx, *tenantConfig)
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+
+	err = conn.db.WithContext(ctx).Delete(&tenantConfig).Error
 	if err != nil {
 		return err
 	}
