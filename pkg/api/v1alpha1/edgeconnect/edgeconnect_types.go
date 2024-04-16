@@ -28,6 +28,9 @@ type EdgeConnectSpec struct { //nolint:revive
 	// Node selector to control the selection of nodes for the EdgeConnect pods
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
+	// KubernetesAutomation enables Kubernetes Automation for Workflows
+	KubernetesAutomation *KubernetesAutomationSpec `json:"kubernetesAutomation,omitempty"`
+
 	// General configurations for proxy settings.
 	// +kubebuilder:validation:Optional
 	Proxy *ProxySpec `json:"proxy,omitempty"`
@@ -49,6 +52,10 @@ type EdgeConnectSpec struct { //nolint:revive
 	// Adds custom root certificate from a configmap. Put the certificate under certs within your configmap.
 	// +kubebuilder:validation:Optional
 	CaCertsRef string `json:"caCertsRef,omitempty"`
+
+	// ServiceAccountName that allows EdgeConnect to access the Kubernetes API
+	// +kubebuilder:default:=dynatrace-edgeconnect
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 
 	// EdgeConnect uses the OAuth client to authenticate itself with the Dynatrace platform.
 	// +kubebuilder:validation:Required
@@ -114,6 +121,11 @@ type ProxySpec struct {
 
 	// Port of the proxy.
 	Port uint32 `json:"port,omitempty"`
+}
+
+type KubernetesAutomationSpec struct {
+	// Enables Kubernetes Automation for Workflows
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // EdgeConnectStatus defines the observed state of EdgeConnect.

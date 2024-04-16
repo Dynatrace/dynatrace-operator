@@ -3,5 +3,5 @@
 package arch
 
 const Arch = ArchARM
-const ImageArch = ARMImageArch
+const ImageArch = ARMImage
 const Flavor = FlavorDefault
