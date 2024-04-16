@@ -33,7 +33,7 @@ func (mut *Mutator) mutateUserContainers(request *dtwebhook.MutationRequest) int
 			continue
 		}
 
-		addContainerInfoInitEnv(request.InstallContainer, i+1, container.Name, container.Image)
+		addContainerInfoInitEnv(request.InstallContainer, injectedContainers+1, container.Name, container.Image)
 		mut.addOneAgentToContainer(request.ToReinvocationRequest(), container)
 
 		injectedContainers++
