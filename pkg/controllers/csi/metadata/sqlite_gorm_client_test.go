@@ -10,6 +10,16 @@ import (
 	"gorm.io/gorm"
 )
 
+func TestSchemaMigration(t *testing.T) {
+	t.Run("run migration", func(t *testing.T) {
+		db, err := setupDB()
+		require.NoError(t, err)
+
+		err = db.SchemaMigration(context.Background())
+		require.NoError(t, err)
+	})
+}
+
 func TestCreateTenantConfig(t *testing.T) {
 	db, err := setupDB()
 	require.NoError(t, err)
@@ -140,6 +150,60 @@ func TestReadCodeModule(t *testing.T) {
 
 	_, err = db.ReadCodeModule(context.Background(), CodeModule{Version: "unknown"})
 	require.Error(t, err)
+}
+
+func TestIsCodeModuleOrphaned(t *testing.T) {
+	t.Run("is not orphaned because of existing TenantConfig", func(t *testing.T) {
+		db, err := setupDB()
+		require.NoError(t, err)
+
+		tenantConfig := &TenantConfig{
+			DownloadedCodeModuleVersion: "1.0",
+			UID:                         "1",
+		}
+		codeModule := &CodeModule{
+			Version: "1.0",
+		}
+		db.db.Create(tenantConfig)
+		db.db.Create(codeModule)
+
+		got, err := db.IsCodeModuleOrphaned(context.Background(), codeModule)
+		assert.False(t, got)
+		assert.NoError(t, err)
+	})
+
+	t.Run("is not orphaned because of existing AppMount", func(t *testing.T) {
+		db, err := setupDB()
+		require.NoError(t, err)
+
+		codeModule := &CodeModule{
+			Version: "1.0",
+		}
+		appMount := &AppMount{
+			CodeModuleVersion: "1.0",
+			VolumeMetaID:      "1",
+			CodeModule:        *codeModule,
+			VolumeMeta:        VolumeMeta{ID: "1"},
+		}
+		db.db.Create(appMount)
+
+		got, err := db.IsCodeModuleOrphaned(context.Background(), codeModule)
+		assert.False(t, got)
+		assert.NoError(t, err)
+	})
+	t.Run("is orphaned", func(t *testing.T) {
+		db, err := setupDB()
+		require.NoError(t, err)
+
+		codeModule := &CodeModule{
+			Version: "1.0",
+		}
+		db.db.Create(codeModule)
+
+		got, err := db.IsCodeModuleOrphaned(context.Background(), codeModule)
+		assert.True(t, got)
+		assert.NoError(t, err)
+	})
 }
 
 func TestSoftDeleteCodeModule(t *testing.T) {
@@ -415,6 +479,47 @@ func TestSoftDeleteAppMount(t *testing.T) {
 	err = db.DeleteAppMount(context.Background(), &AppMount{})
 	require.Error(t, err)
 }
+
+func TestNewAccessOverview(t *testing.T) {
+	t.Run("storing one of each models", func(t *testing.T) {
+		db, err := setupDB()
+		require.NoError(t, err)
+
+		var tenantConfig *TenantConfig
+
+		// create TenantConfig
+		db.db.Create(&TenantConfig{
+			TenantUUID: "uuid",
+		})
+
+		// create AppMount, CodeModule and VolumeMeta
+		db.db.Create(&AppMount{
+			CodeModuleVersion: "1.0",
+			VolumeMetaID:      "1",
+			CodeModule:        CodeModule{Version: "1.0"},
+			VolumeMeta:        VolumeMeta{ID: "1"},
+		})
+
+		// create OSMount (and reference TenantConfig and VolumeMeta)
+		db.db.WithContext(context.Background()).Find(&tenantConfig, TenantConfig{TenantUUID: "uuid"})
+		db.db.Create(&OSMount{
+			VolumeMeta:      VolumeMeta{ID: "1"},
+			TenantConfigUID: tenantConfig.UID,
+			TenantUUID:      "uuid",
+		})
+
+		got, err := NewAccessOverview(db)
+		assert.NotNil(t, got)
+		require.NoError(t, err)
+
+		assert.Len(t, got.AppMounts, 1)
+		assert.Len(t, got.CodeModules, 1)
+		assert.Len(t, got.OSMounts, 1)
+		assert.Len(t, got.TenantConfigs, 1)
+		assert.Len(t, got.VolumeMetas, 1)
+	})
+}
+
 func TestVolumeMetaValidation(t *testing.T) {
 	db, err := setupDB()
 	require.NoError(t, err)
@@ -461,25 +566,6 @@ func TestVolumeMetaValidation(t *testing.T) {
 		PodNamespace: "testnamespace",
 	}
 	db.db.Create(vm5)
-}
-
-func TestReadVolumeMeta(t *testing.T) {
-	db, err := setupDB()
-	require.NoError(t, err)
-
-	setupPostPublishData(context.Background(), db)
-
-	appMount, err := db.ReadVolumeMeta(context.Background(), VolumeMeta{ID: "appmount1"})
-	require.NoError(t, err)
-
-	assert.NotNil(t, appMount)
-	assert.Equal(t, "appmount1", appMount.ID)
-
-	_, err = db.ReadVolumeMeta(context.Background(), VolumeMeta{ID: ""})
-	require.Error(t, err)
-
-	_, err = db.ReadVolumeMeta(context.Background(), VolumeMeta{ID: "unknown"})
-	require.Error(t, err)
 }
 
 func setupDB() (*DBConn, error) {
