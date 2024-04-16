@@ -38,7 +38,6 @@ type DBAccess interface {
 	ReadAppMount(ctx context.Context, appMount AppMount) (*AppMount, error)
 	ReadAppMounts(ctx context.Context) ([]AppMount, error)
 
-	ReadVolumeMeta(ctx context.Context, volumeMeta VolumeMeta) (*VolumeMeta, error)
 	ReadVolumeMetas(ctx context.Context) ([]VolumeMeta, error)
 }
 
@@ -218,28 +217,26 @@ func (conn *DBConn) ReadCodeModules(ctx context.Context) ([]CodeModule, error) {
 }
 
 func (conn *DBConn) IsCodeModuleOrphaned(ctx context.Context, codeModule *CodeModule) (bool, error) {
-	var tenantConfigResults []*TenantConfig
+	var tenantConfigResults []TenantConfig
+
+	var appMountResults []AppMount
 
 	if (codeModule == nil || *codeModule == CodeModule{}) {
 		return false, nil
 	}
 
-	err := conn.db.WithContext(ctx).Find(&tenantConfigResults, TenantConfig{DownloadedCodeModuleVersion: codeModule.Version}).Error
+	err := conn.db.WithContext(ctx).Find(&tenantConfigResults, &TenantConfig{DownloadedCodeModuleVersion: codeModule.Version}).Error
 	if err != nil {
 		return false, err
 	}
 
-	if len(tenantConfigResults) == 0 {
-		var appMountResults []*AppMount
+	err = conn.db.WithContext(ctx).Find(&appMountResults, &AppMount{CodeModuleVersion: codeModule.Version}).Error
+	if err != nil {
+		return false, err
+	}
 
-		err = conn.db.WithContext(ctx).Find(&appMountResults, AppMount{CodeModule: CodeModule{Version: codeModule.Version}}).Error
-		if err != nil {
-			return false, err
-		}
-
-		if len(appMountResults) == 0 {
-			return true, nil
-		}
+	if len(tenantConfigResults) == 0 && len(appMountResults) == 0 {
+		return true, nil
 	}
 
 	return false, nil
@@ -312,13 +309,6 @@ func (conn *DBConn) DeleteOSMount(ctx context.Context, osMount *OSMount) error {
 		return errors.New("Can't delete an empty OSMount")
 	}
 
-	if osMount.VolumeMetaID != "" {
-		volumeMeta, err := conn.ReadVolumeMeta(ctx, VolumeMeta{ID: osMount.VolumeMetaID})
-		if err == nil {
-			conn.db.WithContext(ctx).Delete(&VolumeMeta{}, volumeMeta)
-		}
-	}
-
 	return conn.db.WithContext(ctx).Delete(&OSMount{}, osMount).Error
 }
 
@@ -374,29 +364,10 @@ func (conn *DBConn) DeleteAppMount(ctx context.Context, appMount *AppMount) erro
 	return conn.db.WithContext(ctx).Delete(&AppMount{}, appMount).Error
 }
 
-func (conn *DBConn) ReadVolumeMeta(ctx context.Context, volumeMeta VolumeMeta) (*VolumeMeta, error) {
-	var record *VolumeMeta
-
-	if (volumeMeta == VolumeMeta{}) {
-		return nil, errors.New("Can't query for empty VolumeMeta")
-	}
-
-	result := conn.db.WithContext(ctx).Find(&record, volumeMeta)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-
-	if (*record == VolumeMeta{}) {
-		return nil, gorm.ErrRecordNotFound
-	}
-
-	return record, nil
-}
-
 func (conn *DBConn) ReadVolumeMetas(ctx context.Context) ([]VolumeMeta, error) {
 	var volumeMetas []VolumeMeta
 
-	result := conn.db.WithContext(ctx).Preload("VolumeMeta").Find(&volumeMetas)
+	result := conn.db.WithContext(ctx).Find(&volumeMetas)
 	if result.Error != nil {
 		return nil, result.Error
 	}
