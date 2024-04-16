@@ -86,27 +86,58 @@ func TestUpdateTenantConfig(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestSoftDeleteTenantConfig(t *testing.T) {
-	db, err := setupDB()
-	require.NoError(t, err)
+func TestDeleteTenantConfig(t *testing.T) {
+	var tenantConfig *TenantConfig
+	var codeModules []CodeModule
 
-	setupPostPublishData(context.Background(), db)
+	t.Run("on cascade deletion true", func(t *testing.T) {
+		db, err := setupDB()
+		require.NoError(t, err)
 
-	tenantConfig, err := db.ReadTenantConfig(context.Background(), TenantConfig{TenantUUID: "abc123"})
-	require.NoError(t, err)
+		db.db.Create(&TenantConfig{
+			TenantUUID:                  "uuid",
+			DownloadedCodeModuleVersion: "1.0",
+		})
 
-	err = db.DeleteTenantConfig(context.Background(), tenantConfig, false)
-	require.NoError(t, err)
+		db.db.Create(&CodeModule{
+			Version: "1.0",
+		})
 
-	readTenantConfig := &TenantConfig{TenantUUID: "abc123"}
-	db.db.WithContext(context.Background()).First(readTenantConfig)
-	assert.Equal(t, int64(0), db.db.RowsAffected)
+		db.db.WithContext(context.Background()).Find(&tenantConfig, TenantConfig{TenantUUID: "uuid"})
 
-	err = db.DeleteTenantConfig(context.Background(), nil, false)
-	require.NoError(t, err)
+		db.DeleteTenantConfig(context.Background(), &TenantConfig{UID: tenantConfig.UID}, true)
 
-	err = db.DeleteTenantConfig(context.Background(), &TenantConfig{}, false)
-	require.NoError(t, err)
+		_, err = db.ReadTenantConfig(context.Background(), TenantConfig{UID: tenantConfig.UID})
+		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+
+		codeModules, err = db.ReadCodeModules(context.Background())
+		assert.Empty(t, codeModules)
+		require.NoError(t, err)
+	})
+	t.Run("on cascade deletion false", func(t *testing.T) {
+		db, err := setupDB()
+		require.NoError(t, err)
+
+		db.db.Create(&TenantConfig{
+			TenantUUID:                  "uuid",
+			DownloadedCodeModuleVersion: "1.0",
+		})
+
+		db.db.Create(&CodeModule{
+			Version: "1.0",
+		})
+
+		db.db.WithContext(context.Background()).Find(&tenantConfig, TenantConfig{TenantUUID: "uuid"})
+
+		db.DeleteTenantConfig(context.Background(), &TenantConfig{UID: tenantConfig.UID}, false)
+
+		_, err = db.ReadTenantConfig(context.Background(), TenantConfig{UID: tenantConfig.UID})
+		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+
+		codeModules, err = db.ReadCodeModules(context.Background())
+		assert.NotEmpty(t, codeModules)
+		require.NoError(t, err)
+	})
 }
 
 func TestCreateCodeModule(t *testing.T) {
