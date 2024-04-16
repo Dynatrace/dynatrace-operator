@@ -92,20 +92,10 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/applicationmonitor
 
 ## Index
 
-- [func DataIngest(t *testing.T) features.Feature](<#DataIngest>)
 - [func LabelVersionDetection(t *testing.T) features.Feature](<#LabelVersionDetection>)
+- [func MetadataEnrichment(t *testing.T) features.Feature](<#MetadataEnrichment>)
 - [func ReadOnlyCSIVolume(t *testing.T) features.Feature](<#ReadOnlyCSIVolume>)
 - [func WithoutCSI(t *testing.T) features.Feature](<#WithoutCSI>)
-
-<a name="DataIngest"></a>
-
-## func [DataIngest](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/applicationmonitoring/data_ingest.go#L43>)
-
-```go
-func DataIngest(t *testing.T) features.Feature
-```
-
-Verification of the data ingest part of the operator. The test checks that enrichment variables are added to the initContainer and dt_metadata.json file contains required fields.
 
 <a name="LabelVersionDetection"></a>
 
@@ -118,6 +108,16 @@ func LabelVersionDetection(t *testing.T) features.Feature
 Verification that build labels are created and set accordingly. The test checks:
 
 - default behavior - feature flag exists, but no additional configuration so the default variables are added - custom mapping - feature flag exists, with additional configuration so all 4 build variables are added - preserved values of existing variables - build variables exist, feature flag exists, with additional configuration, values of build variables not get overwritten - incorrect custom mapping - invalid name of BUILD VERSION label, reference exists but actual label doesn't exist
+
+<a name="MetadataEnrichment"></a>
+
+## func [MetadataEnrichment](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/applicationmonitoring/metadata_enrichment.go#L43>)
+
+```go
+func MetadataEnrichment(t *testing.T) features.Feature
+```
+
+Verification of the metadata enrichment part of the operator. The test checks that enrichment variables are added to the initContainer and dt_metadata.json file contains required fields.
 
 <a name="ReadOnlyCSIVolume"></a>
 
@@ -136,6 +136,32 @@ func WithoutCSI(t *testing.T) features.Feature
 ```
 
 ApplicationMonitoring deployment without CSI driver
+
+# publicregistry
+
+```go
+import "github.com/Dynatrace/dynatrace-operator/test/features/publicregistry"
+```
+
+## Index
+
+- [func Feature(t *testing.T) features.Feature](<#Feature>)
+
+<a name="Feature"></a>
+
+## func [Feature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/publicregistry/publicregistry.go#L39>)
+
+```go
+func Feature(t *testing.T) features.Feature
+```
+
+Feature defines the e2e test to verify that public-registry images can be deployed by the operator and that they function This includes:
+
+- ActiveGate StatefulSet gets ready
+- CodeModules can be downloaded and mounted
+- OneAgent DaemonSet gets ready
+
+It determines the latest version of each image using the registry.
 
 # support_archive
 
@@ -317,24 +343,6 @@ Connectivity in the dynatrace namespace and sample application namespace is rest
 
 ```go
 func WithProxyCA(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Feature
-```
-
-# public_registry
-
-```go
-import "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/public_registry"
-```
-
-## Index
-
-- [func Feature(t *testing.T) features.Feature](<#Feature>)
-
-<a name="Feature"></a>
-
-## func [Feature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/public_registry/public_registry.go#L36>)
-
-```go
-func Feature(t *testing.T) features.Feature
 ```
 
 # _default

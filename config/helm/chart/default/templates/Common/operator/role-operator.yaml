@@ -26,7 +26,6 @@ rules:
     resources:
       - dynakubes
       - edgeconnects
-      - activegates
     verbs:
       - get
       - list
@@ -40,8 +39,6 @@ rules:
       - dynakubes/status
       - edgeconnects/finalizers
       - edgeconnects/status
-      - activegates/finalizers
-      - activegates/status
     verbs:
       - update
 
