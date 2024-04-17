@@ -47,8 +47,8 @@ type DBConn struct {
 
 var _ DBAccess = &DBConn{}
 
-// NewDBAccess creates a new gorm db connection to the database.
-func NewDBAccess(path string) (*DBConn, error) {
+// NewAccess creates a new gorm db connection to the database.
+func NewAccess(path string) (*DBConn, error) {
 	// we need to explicitly enable foreign_keys for sqlite to have sqlite enforce this constraint
 	if strings.Contains(path, "?") {
 		path += "&_foreign_keys=on"

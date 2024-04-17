@@ -90,17 +90,17 @@ func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volume
 	appMount, err := publisher.db.ReadAppMount(ctx, metadata.AppMount{VolumeMetaID: volumeInfo.VolumeID})
 
 	if err != nil {
-		log.Info("failed to load volume info", "error", err.Error())
+		log.Info("failed to load AppMount", "error", err.Error())
 	}
 
 	if appMount == nil {
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 
-	log.Info("loaded volume info", "id", appMount.VolumeMetaID, "pod name", appMount.VolumeMeta.PodName, "version", appMount.CodeModuleVersion)
+	log.Info("loaded AppMount info", "id", appMount.VolumeMetaID, "pod name", appMount.VolumeMeta.PodName, "version", appMount.CodeModuleVersion)
 
 	if appMount.CodeModuleVersion == "" {
-		log.Info("requester has a dummy volume, no node-level unmount is needed")
+		log.Info("requester has a dummy AppMount, no node-level unmount is needed")
 
 		return &csi.NodeUnpublishVolumeResponse{}, publisher.db.DeleteAppMount(ctx, &metadata.AppMount{VolumeMetaID: appMount.VolumeMetaID})
 	}
@@ -111,7 +111,7 @@ func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volume
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	log.Info("deleted volume info", "ID", appMount.VolumeMetaID, "PodUID", appMount.VolumeMeta.PodName, "Version", appMount.CodeModuleVersion)
+	log.Info("deleted AppMount", "ID", appMount.VolumeMetaID, "PodUID", appMount.VolumeMeta.PodName, "Version", appMount.CodeModuleVersion)
 
 	if err = publisher.fs.RemoveAll(volumeInfo.TargetPath); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())

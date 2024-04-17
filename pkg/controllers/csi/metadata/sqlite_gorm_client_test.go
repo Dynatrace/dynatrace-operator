@@ -600,7 +600,7 @@ func TestVolumeMetaValidation(t *testing.T) {
 }
 
 func setupDB() (*DBConn, error) {
-	db, err := NewDBAccess("file:csi_testdb?mode=memory")
+	db, err := NewAccess("file:csi_testdb?mode=memory")
 	if err != nil {
 		return nil, err
 	}
