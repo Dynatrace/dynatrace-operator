@@ -31,7 +31,7 @@ func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.Mutat
 			continue
 		}
 
-		addContainerInfoInitEnv(request.InstallContainer, i+1, container.Name, container.Image)
+		addContainerInfoInitEnv(request.InstallContainer, injectedContainers+1, container.Name, container.Image)
 		mutator.addOneAgentToContainer(request.ToReinvocationRequest(), container)
 		injectedContainers++
 	}
