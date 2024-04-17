@@ -11,10 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	testImageDigest = "5f50f658891613c752d524b72fc"
-)
-
 var (
 	testPathResolver = metadata.PathResolver{
 		RootDir: "test",
@@ -25,7 +21,7 @@ func TestRunSharedImagesGarbageCollection(t *testing.T) {
 	ctx := context.TODO()
 
 	t.Run("bad database", func(t *testing.T) {
-		testDir := testPathResolver.AgentSharedBinaryDirForAgent(testImageDigest)
+		testDir := testPathResolver.AgentSharedBinaryDirForAgent(testVersion2)
 		fs := createTestDirs(t, testDir)
 		gc := CSIGarbageCollector{
 			fs:   fs,
@@ -43,7 +39,7 @@ func TestRunSharedImagesGarbageCollection(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("deletes unused", func(t *testing.T) {
-		testDir := testPathResolver.AgentSharedBinaryDirForAgent(testImageDigest)
+		testDir := testPathResolver.AgentSharedBinaryDirForAgent(testVersion2)
 		fs := createTestDirs(t, testDir)
 		gc := CSIGarbageCollector{
 			fs:   fs,
@@ -57,7 +53,7 @@ func TestRunSharedImagesGarbageCollection(t *testing.T) {
 		assert.True(t, os.IsNotExist(err))
 	})
 	t.Run("deletes nothing, because of dynakube metadata present", func(t *testing.T) {
-		testDir := testPathResolver.AgentSharedBinaryDirForAgent(testImageDigest)
+		testDir := testPathResolver.AgentSharedBinaryDirForAgent(testVersion2)
 		fs := createTestDirs(t, testDir)
 		gc := CSIGarbageCollector{
 			fs: fs,
@@ -76,7 +72,7 @@ func TestRunSharedImagesGarbageCollection(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("deletes nothing, because of volume metadata present", func(t *testing.T) {
-		testDir := testPathResolver.AgentSharedBinaryDirForAgent(testImageDigest)
+		testDir := testPathResolver.AgentSharedBinaryDirForAgent(testVersion2)
 		fs := createTestDirs(t, testDir)
 		gc := CSIGarbageCollector{
 			fs: fs,
@@ -84,7 +80,7 @@ func TestRunSharedImagesGarbageCollection(t *testing.T) {
 		}
 		gc.db.CreateAppMount(ctx, &metadata.AppMount{
 			VolumeMeta:        metadata.VolumeMeta{ID: "test", PodName: "test"},
-			CodeModuleVersion: testImageDigest,
+			CodeModuleVersion: testVersion2,
 			VolumeMetaID:      "test",
 		})
 
@@ -108,7 +104,7 @@ func TestGetSharedImageDirs(t *testing.T) {
 		assert.Nil(t, dirs)
 	})
 	t.Run("get image cache dirs", func(t *testing.T) {
-		testDir := testPathResolver.AgentSharedBinaryDirForAgent(testImageDigest)
+		testDir := testPathResolver.AgentSharedBinaryDirForAgent(testVersion2)
 		fs := createTestDirs(t, testDir)
 		gc := CSIGarbageCollector{
 			fs:   fs,
@@ -145,7 +141,7 @@ func TestCollectUnusedAgentBins(t *testing.T) {
 			db:   metadata.FakeMemoryDB(),
 			path: testPathResolver,
 		}
-		testImageDir := testPathResolver.AgentSharedBinaryDirForAgent(testImageDigest)
+		testImageDir := testPathResolver.AgentSharedBinaryDirForAgent(testVersion2)
 		testZipDir := testPathResolver.AgentSharedBinaryDirForAgent(testVersion1)
 		fs := createTestDirs(t, testImageDir, testZipDir)
 		imageDirInfo, err := fs.Stat(testImageDir)
@@ -163,10 +159,10 @@ func TestCollectUnusedAgentBins(t *testing.T) {
 			db:   metadata.FakeMemoryDB(),
 			path: testPathResolver,
 		}
-		testImageDir := testPathResolver.AgentSharedBinaryDirForAgent(testImageDigest)
+		testImageDir := testPathResolver.AgentSharedBinaryDirForAgent(testVersion2)
 		testZipDir := testPathResolver.AgentSharedBinaryDirForAgent(testVersion1)
 
-		gc.db.CreateCodeModule(ctx, &metadata.CodeModule{Version: testImageDigest, Location: testImageDir})
+		gc.db.CreateCodeModule(ctx, &metadata.CodeModule{Version: testVersion2, Location: testImageDir})
 		gc.db.CreateCodeModule(ctx, &metadata.CodeModule{Version: testVersion1, Location: testZipDir})
 
 		fs := createTestDirs(t, testImageDir, testZipDir)
@@ -183,7 +179,7 @@ func TestCollectUnusedAgentBins(t *testing.T) {
 
 func TestDeleteImageDirs(t *testing.T) {
 	t.Run("deletes, no panic/error", func(t *testing.T) {
-		testImageDir := testPathResolver.AgentSharedBinaryDirForAgent(testImageDigest)
+		testImageDir := testPathResolver.AgentSharedBinaryDirForAgent(testVersion2)
 		testZipDir := testPathResolver.AgentSharedBinaryDirForAgent(testVersion1)
 		fs := createTestDirs(t, testImageDir, testZipDir)
 		err := deleteSharedBinDirs(fs, []string{testImageDir, testZipDir})
@@ -195,7 +191,7 @@ func TestDeleteImageDirs(t *testing.T) {
 	})
 	t.Run("not exists, no panic/error", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		testDir := testPathResolver.AgentSharedBinaryDirForAgent(testImageDigest)
+		testDir := testPathResolver.AgentSharedBinaryDirForAgent(testVersion2)
 		err := deleteSharedBinDirs(fs, []string{testDir})
 		require.NoError(t, err)
 	})
