@@ -107,7 +107,7 @@ func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volume
 
 	publisher.unmountOneAgent(volumeInfo.TargetPath, appMount.Location)
 
-	if err = publisher.db.DeleteAppMount(ctx, appMount); err != nil {
+	if err = publisher.db.DeleteAppMount(ctx, &metadata.AppMount{VolumeMetaID: appMount.VolumeMetaID}); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -266,7 +266,7 @@ func (publisher *AppVolumePublisher) ensureMountSteps(ctx context.Context, bindC
 func (publisher *AppVolumePublisher) hasTooManyMountAttempts(ctx context.Context, bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) (bool, error) {
 	appMount, err := publisher.db.ReadAppMount(ctx, metadata.AppMount{VolumeMetaID: volumeCfg.VolumeID})
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
-		appMount = createNewAppMount(bindCfg, volumeCfg)
+		appMount = newAppMount(bindCfg, volumeCfg)
 		publisher.db.CreateAppMount(ctx, appMount)
 	} else if err != nil {
 		return false, err
@@ -282,7 +282,7 @@ func (publisher *AppVolumePublisher) hasTooManyMountAttempts(ctx context.Context
 }
 
 func (publisher *AppVolumePublisher) storeVolume(ctx context.Context, bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
-	newAppMount := createNewAppMount(bindCfg, volumeCfg)
+	newAppMount := newAppMount(bindCfg, volumeCfg)
 	log.Info("inserting AppMount", "appMount", newAppMount)
 
 	// check if it currently exists
@@ -299,7 +299,7 @@ func (publisher *AppVolumePublisher) storeVolume(ctx context.Context, bindCfg *c
 	return publisher.db.UpdateAppMount(ctx, readAppMount)
 }
 
-func createNewAppMount(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) *metadata.AppMount {
+func newAppMount(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) *metadata.AppMount {
 	pr := metadata.PathResolver{RootDir: dtcsi.DataPath}
 
 	appMount := metadata.AppMount{
