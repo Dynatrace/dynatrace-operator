@@ -302,7 +302,7 @@ func (publisher *AppVolumePublisher) storeVolume(ctx context.Context, bindCfg *c
 func newAppMount(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) *metadata.AppMount {
 	pr := metadata.PathResolver{RootDir: dtcsi.DataPath}
 
-	appMount := metadata.AppMount{
+	return &metadata.AppMount{
 		VolumeMeta:        metadata.VolumeMeta{ID: volumeCfg.VolumeID, PodName: volumeCfg.PodName},
 		CodeModule:        metadata.CodeModule{Version: bindCfg.Version},
 		VolumeMetaID:      volumeCfg.VolumeID,
@@ -310,6 +310,4 @@ func newAppMount(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeCon
 		Location:          pr.AgentRunDirForVolume(bindCfg.TenantUUID, volumeCfg.VolumeID),
 		MountAttempts:     int64(bindCfg.MaxMountAttempts),
 	}
-
-	return &appMount
 }
