@@ -15,15 +15,15 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: 1.0.0
+  publishedVersion: 1.0.1
   publishedVersionMetadata:
     releaseNote: '<!-- Release notes generated using configuration in .github/release.yml
-      at v1.0.0 -->
+      at v1.0.1 -->
 
 
 
 
-      **Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v1.0.0...v1.0.0'
+      **Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v1.0.1...v1.0.1'
     releaseTypes:
     - Feature
     recommended: true
