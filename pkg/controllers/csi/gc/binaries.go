@@ -25,7 +25,7 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context) {
 		if err != nil {
 			log.Error(err, "failed to check if codemodule is orphaned")
 
-			return
+			continue
 		}
 
 		if orphaned {
