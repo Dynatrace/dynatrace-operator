@@ -70,7 +70,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		signalHandler := ctrl.SetupSignalHandler()
 
 		// new schema
-		conn, err := metadata.NewDBAccess(dtcsi.MetadataAccessPath)
+		conn, err := metadata.NewAccess(dtcsi.MetadataAccessPath)
 		if err != nil {
 			return err
 		}
