@@ -33,7 +33,7 @@ import (
 	"k8s.io/utils/mount"
 )
 
-const failedToGetOsAgentVolumePrefix = "failed to get osagent volume info from database: "
+const failedToGetOsAgentVolumePrefix = "failed to get OSMount from database: "
 
 func NewHostVolumePublisher(fs afero.Afero, mounter mount.Interface, db metadata.DBAccess, path metadata.PathResolver) csivolumes.Publisher {
 	return &HostVolumePublisher{
@@ -58,7 +58,7 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 	}
 
 	if err := publisher.mountOneAgent(bindCfg.TenantUUID, volumeCfg); err != nil {
-		return nil, status.Error(codes.Internal, "failed to mount osagent volume: "+err.Error())
+		return nil, status.Error(codes.Internal, "failed to mount OSMount: "+err.Error())
 	}
 
 	osMount, err := publisher.db.ReadOSMount(ctx, metadata.OSMount{TenantUUID: bindCfg.TenantUUID})
@@ -97,7 +97,7 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 }
 
 func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volumeInfo *csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
-	osMount, err := publisher.db.ReadOSMount(ctx, metadata.OSMount{VolumeMeta: metadata.VolumeMeta{ID: volumeInfo.VolumeID}})
+	osMount, err := publisher.db.ReadOSMount(ctx, metadata.OSMount{VolumeMetaID: volumeInfo.VolumeID})
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return &csi.NodeUnpublishVolumeResponse{}, nil
@@ -114,16 +114,16 @@ func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volum
 	publisher.unmountOneAgent(volumeInfo.TargetPath)
 
 	if err := publisher.db.DeleteOSMount(ctx, osMount); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to update osagent volume info to database. info: %v err: %s", osMount, err.Error()))
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to update OSMount to database. info: %v err: %s", osMount, err.Error()))
 	}
 
-	log.Info("osagent volume has been unpublished", "targetPath", volumeInfo.TargetPath)
+	log.Info("OSMount has been unpublished", "targetPath", volumeInfo.TargetPath)
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
 func (publisher *HostVolumePublisher) CanUnpublishVolume(ctx context.Context, volumeInfo *csivolumes.VolumeInfo) (bool, error) {
-	volume, err := publisher.db.ReadOSMount(ctx, metadata.OSMount{VolumeMeta: metadata.VolumeMeta{ID: volumeInfo.VolumeID}})
+	volume, err := publisher.db.ReadOSMount(ctx, metadata.OSMount{VolumeMetaID: volumeInfo.VolumeID})
 	if err != nil {
 		return false, status.Error(codes.Internal, failedToGetOsAgentVolumePrefix+err.Error())
 	}
