@@ -9,18 +9,16 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func emptyMemoryDB() *DBConn {
+func emptyMemoryDB() *GormConn {
 	db, err := gorm.Open(sqlite.Open("file::memory:"), &gorm.Config{})
 	if err != nil {
 		return nil
 	}
 
-	dbConn := &DBConn{db: db}
-
-	return dbConn
+	return &GormConn{db: db}
 }
 
-func FakeMemoryDB() *DBConn {
+func FakeMemoryDB() *GormConn {
 	db, err := gorm.Open(sqlite.Open("file::memory:"), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
@@ -28,16 +26,16 @@ func FakeMemoryDB() *DBConn {
 		return nil
 	}
 
-	dbConn := &DBConn{db: db}
+	gormConn := &GormConn{db: db}
 
-	err = dbConn.InitGormSchema()
+	err = gormConn.InitGormSchema()
 	if err != nil {
 		log.Error(err, "Couldn't initialize GORM schema")
 
 		return nil
 	}
 
-	return dbConn
+	return gormConn
 }
 
 type FakeFailDB struct{}

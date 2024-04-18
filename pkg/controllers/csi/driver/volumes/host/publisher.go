@@ -35,7 +35,7 @@ import (
 
 const failedToGetOsAgentVolumePrefix = "failed to get OSMount from database: "
 
-func NewHostVolumePublisher(fs afero.Afero, mounter mount.Interface, db metadata.DBAccess, path metadata.PathResolver) csivolumes.Publisher {
+func NewHostVolumePublisher(fs afero.Afero, mounter mount.Interface, db metadata.GormAccess, path metadata.PathResolver) csivolumes.Publisher {
 	return &HostVolumePublisher{
 		fs:      fs,
 		mounter: mounter,
@@ -47,7 +47,7 @@ func NewHostVolumePublisher(fs afero.Afero, mounter mount.Interface, db metadata
 type HostVolumePublisher struct {
 	fs      afero.Afero
 	mounter mount.Interface
-	db      metadata.DBAccess
+	db      metadata.GormAccess
 	path    metadata.PathResolver
 }
 
