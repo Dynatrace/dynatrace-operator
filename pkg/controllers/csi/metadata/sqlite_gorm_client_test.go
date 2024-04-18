@@ -345,30 +345,6 @@ func TestUpdateOsMount(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestRestoreOsMount(t *testing.T) {
-	db, err := setupDB()
-	require.NoError(t, err)
-
-	setupPostPublishData(context.Background(), db)
-
-	baseOSMount := OSMount{TenantUUID: "abc123"}
-
-	osMount, err := db.ReadOSMount(context.Background(), baseOSMount)
-	require.NoError(t, err)
-
-	err = db.DeleteOSMount(context.Background(), osMount)
-	require.NoError(t, err)
-
-	_, err = db.ReadOSMount(context.Background(), baseOSMount)
-	require.Error(t, err)
-
-	err = db.restoreOSMount(context.Background(), &baseOSMount)
-	require.NoError(t, err)
-
-	_, err = db.ReadOSMount(context.Background(), baseOSMount)
-	require.NoError(t, err)
-}
-
 func TestCreateAppMount(t *testing.T) {
 	db, err := setupDB()
 	require.NoError(t, err)

@@ -265,11 +265,6 @@ func (conn *GormConn) UpdateOSMount(ctx context.Context, osMount *OSMount) error
 		return errors.New("Can't save an empty TenantConfig")
 	}
 
-	err := conn.restoreOSMount(ctx, osMount)
-	if err != nil {
-		return err
-	}
-
 	return conn.db.WithContext(ctx).Updates(osMount).Error
 }
 func (conn *GormConn) UpdateAppMount(ctx context.Context, appMount *AppMount) error {
@@ -362,21 +357,6 @@ func (conn *GormConn) IsCodeModuleOrphaned(ctx context.Context, codeModule *Code
 	}
 
 	return false, nil
-}
-
-func (conn *GormConn) restoreOSMount(ctx context.Context, osMount *OSMount) error {
-	result := conn.db.WithContext(ctx).Preload("VolumeMeta").Unscoped().Find(&osMount, osMount)
-	if result.Error != nil {
-		return result.Error
-	}
-
-	if osMount == nil {
-		return errors.New("Cannot restore nil OSMount")
-	}
-
-	osMount.DeletedAt.Valid = false
-
-	return conn.db.WithContext(ctx).Unscoped().Updates(osMount).Error
 }
 
 type AccessOverview struct {
