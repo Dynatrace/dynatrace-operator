@@ -66,7 +66,7 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 	}
 
 	log.Info("running binary garbage collection (for deprecated location)")
-	gc.runBinaryGarbageCollection(ctx)
+	gc.runBinaryGarbageCollection()
 
 	if err := ctx.Err(); err != nil {
 		return defaultReconcileResult, err
@@ -81,7 +81,7 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 
 	log.Info("running shared binary garbage collection")
 
-	if err := gc.runSharedBinaryGarbageCollection(ctx); err != nil {
+	if err := gc.runSharedBinaryGarbageCollection(); err != nil {
 		log.Info("failed to garbage collect the shared images")
 
 		return defaultReconcileResult, err

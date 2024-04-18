@@ -61,7 +61,7 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 		return nil, status.Error(codes.Internal, "failed to mount OSMount: "+err.Error())
 	}
 
-	osMount, err := publisher.db.ReadOSMount(ctx, metadata.OSMount{TenantUUID: bindCfg.TenantUUID})
+	osMount, err := publisher.db.ReadOSMount(metadata.OSMount{TenantUUID: bindCfg.TenantUUID})
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, status.Error(codes.Internal, failedToGetOsAgentVolumePrefix+err.Error())
 	}
@@ -76,13 +76,13 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 			Location:     pr.OsAgentDir(bindCfg.TenantUUID),
 		}
 
-		if err := publisher.db.CreateOSMount(ctx, &osMount); err != nil {
+		if err := publisher.db.CreateOSMount(&osMount); err != nil {
 			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to insert osmount to database. info: %v err: %s", osMount, err.Error()))
 		}
 	} else {
 		osMount.VolumeMetaID = volumeCfg.VolumeID
 
-		if err := publisher.db.UpdateOSMount(ctx, osMount); err != nil {
+		if err := publisher.db.UpdateOSMount(osMount); err != nil {
 			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to update osmount to database. info: %v err: %s", osMount, err.Error()))
 		}
 	}
@@ -91,7 +91,7 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 }
 
 func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volumeInfo *csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
-	osMount, err := publisher.db.ReadOSMount(ctx, metadata.OSMount{VolumeMetaID: volumeInfo.VolumeID})
+	osMount, err := publisher.db.ReadOSMount(metadata.OSMount{VolumeMetaID: volumeInfo.VolumeID})
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return &csi.NodeUnpublishVolumeResponse{}, nil
@@ -107,7 +107,7 @@ func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volum
 
 	publisher.unmountOneAgent(volumeInfo.TargetPath)
 
-	if err := publisher.db.DeleteOSMount(ctx, &metadata.OSMount{TenantUUID: osMount.TenantUUID}); err != nil {
+	if err := publisher.db.DeleteOSMount(&metadata.OSMount{TenantUUID: osMount.TenantUUID}); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to update OSMount to database. info: %v err: %s", osMount, err.Error()))
 	}
 
@@ -117,7 +117,7 @@ func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volum
 }
 
 func (publisher *HostVolumePublisher) CanUnpublishVolume(ctx context.Context, volumeInfo *csivolumes.VolumeInfo) (bool, error) {
-	volume, err := publisher.db.ReadOSMount(ctx, metadata.OSMount{VolumeMetaID: volumeInfo.VolumeID})
+	volume, err := publisher.db.ReadOSMount(metadata.OSMount{VolumeMetaID: volumeInfo.VolumeID})
 	if err != nil {
 		return false, status.Error(codes.Internal, failedToGetOsAgentVolumePrefix+err.Error())
 	}

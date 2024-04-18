@@ -1,14 +1,13 @@
 package csigc
 
 import (
-	"context"
 	"os"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
-func (gc *CSIGarbageCollector) runSharedBinaryGarbageCollection(ctx context.Context) error {
+func (gc *CSIGarbageCollector) runSharedBinaryGarbageCollection() error {
 	imageDirs, err := gc.getSharedBinDirs()
 	if err != nil {
 		return err
@@ -20,7 +19,7 @@ func (gc *CSIGarbageCollector) runSharedBinaryGarbageCollection(ctx context.Cont
 		return nil
 	}
 
-	binsToDelete, err := gc.collectUnusedAgentBins(ctx, imageDirs)
+	binsToDelete, err := gc.collectUnusedAgentBins(imageDirs)
 	if err != nil {
 		return err
 	}
@@ -49,10 +48,10 @@ func (gc *CSIGarbageCollector) getSharedBinDirs() ([]os.FileInfo, error) {
 	return imageDirs, nil
 }
 
-func (gc *CSIGarbageCollector) collectUnusedAgentBins(ctx context.Context, imageDirs []os.FileInfo) ([]string, error) {
+func (gc *CSIGarbageCollector) collectUnusedAgentBins(imageDirs []os.FileInfo) ([]string, error) {
 	var toDelete []string
 
-	codeModules, err := gc.db.ReadCodeModules(ctx)
+	codeModules, err := gc.db.ReadCodeModules()
 	if err != nil {
 		return []string{}, err
 	}

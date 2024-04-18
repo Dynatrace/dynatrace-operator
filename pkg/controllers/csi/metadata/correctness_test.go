@@ -63,23 +63,22 @@ func TestCorrectCSI(t *testing.T) {
 	})
 
 	t.Run("no error on nil apiReader, database is not cleaned", func(t *testing.T) {
-		ctx := context.Background()
 		testAppMount1 := createTestAppMount(1)
 		testTenantConfig1 := createTestTenantConfig(1)
 		db := FakeMemoryDB()
-		db.CreateAppMount(ctx, testAppMount1)
-		db.CreateTenantConfig(ctx, testTenantConfig1)
+		db.CreateAppMount(testAppMount1)
+		db.CreateTenantConfig(testTenantConfig1)
 
 		checker := NewCorrectnessChecker(nil, db, dtcsi.CSIOptions{})
 
 		err := checker.CorrectCSI(context.Background())
 
 		require.NoError(t, err)
-		appMount, err := db.ReadAppMount(ctx, *testAppMount1)
+		appMount, err := db.ReadAppMount(*testAppMount1)
 		require.NoError(t, err)
 		testutil.PartialEqual(t, testAppMount1, appMount, diffOptsAppMount)
 
-		tenantConfig, err := db.ReadTenantConfig(ctx, TenantConfig{Name: testTenantConfig1.Name})
+		tenantConfig, err := db.ReadTenantConfig(TenantConfig{Name: testTenantConfig1.Name})
 		require.NoError(t, err)
 		testutil.PartialEqual(t, testTenantConfig1, tenantConfig, diffOptsTenantConfig)
 	})
@@ -89,8 +88,8 @@ func TestCorrectCSI(t *testing.T) {
 		testAppMount1 := createTestAppMount(1)
 		testTenantConfig1 := createTestTenantConfig(1)
 		db := FakeMemoryDB()
-		db.CreateAppMount(ctx, testAppMount1)
-		db.CreateTenantConfig(ctx, testTenantConfig1)
+		db.CreateAppMount(testAppMount1)
+		db.CreateTenantConfig(testTenantConfig1)
 		client := fake.NewClient(
 			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testAppMount1.VolumeMeta.PodName}},
 			&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testTenantConfig1.Name}},
@@ -101,18 +100,17 @@ func TestCorrectCSI(t *testing.T) {
 		err := checker.CorrectCSI(ctx)
 		require.NoError(t, err)
 
-		appMount, err := db.ReadAppMount(ctx, *testAppMount1)
+		appMount, err := db.ReadAppMount(*testAppMount1)
 		require.NoError(t, err)
 		testutil.PartialEqual(t, testAppMount1, appMount, diffOptsAppMount)
 
 		require.NoError(t, err)
-		tenantConfig, err := db.ReadTenantConfig(ctx, TenantConfig{Name: testTenantConfig1.Name})
+		tenantConfig, err := db.ReadTenantConfig(TenantConfig{Name: testTenantConfig1.Name})
 		require.NoError(t, err)
 
 		testutil.PartialEqual(t, testTenantConfig1, tenantConfig, diffOptsTenantConfig)
 	})
 	t.Run("remove unnecessary entries in the filesystem", func(t *testing.T) {
-		ctx := context.Background()
 		testAppMount1 := createTestAppMount(1)
 		testAppMount2 := createTestAppMount(2)
 		testAppMount3 := createTestAppMount(3)
@@ -122,12 +120,12 @@ func TestCorrectCSI(t *testing.T) {
 		testTenantConfig3 := createTestTenantConfig(3)
 
 		db := FakeMemoryDB()
-		db.CreateAppMount(ctx, testAppMount1)
-		db.CreateAppMount(ctx, testAppMount2)
-		db.CreateAppMount(ctx, testAppMount3)
-		db.CreateTenantConfig(ctx, testTenantConfig1)
-		db.CreateTenantConfig(ctx, testTenantConfig2)
-		db.CreateTenantConfig(ctx, testTenantConfig3)
+		db.CreateAppMount(testAppMount1)
+		db.CreateAppMount(testAppMount2)
+		db.CreateAppMount(testAppMount3)
+		db.CreateTenantConfig(testTenantConfig1)
+		db.CreateTenantConfig(testTenantConfig2)
+		db.CreateTenantConfig(testTenantConfig3)
 
 		client := fake.NewClient(
 			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testAppMount1.VolumeMeta.PodName}},
@@ -136,36 +134,36 @@ func TestCorrectCSI(t *testing.T) {
 
 		checker := NewCorrectnessChecker(client, db, dtcsi.CSIOptions{})
 
-		err := checker.CorrectCSI(ctx)
+		err := checker.CorrectCSI(context.Background())
 		require.NoError(t, err)
 
 		testAppMount1.TimeStampedModel = TimeStampedModel{}
-		appMount, err := db.ReadAppMount(ctx, *testAppMount1)
+		appMount, err := db.ReadAppMount(*testAppMount1)
 		require.NoError(t, err)
 		testutil.PartialEqual(t, &testAppMount1, &appMount, diffOptsAppMount)
 
-		tenantConfig, err := db.ReadTenantConfig(ctx, TenantConfig{Name: testTenantConfig1.Name})
+		tenantConfig, err := db.ReadTenantConfig(TenantConfig{Name: testTenantConfig1.Name})
 		require.NoError(t, err)
 		testutil.PartialEqual(t, &testTenantConfig1, &tenantConfig, diffOptsTenantConfig)
 
 		// PURGED
-		appMount, err = db.ReadAppMount(ctx, AppMount{VolumeMetaID: testAppMount2.VolumeMetaID})
+		appMount, err = db.ReadAppMount(AppMount{VolumeMetaID: testAppMount2.VolumeMetaID})
 		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
 		assert.Nil(t, appMount)
 
 		// PURGED
 		testAppMount3.TimeStampedModel = TimeStampedModel{}
-		appMount, err = db.ReadAppMount(ctx, *testAppMount3)
+		appMount, err = db.ReadAppMount(*testAppMount3)
 		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
 		assert.Nil(t, appMount)
 
 		// PURGED
-		tenantConfig, err = db.ReadTenantConfig(ctx, TenantConfig{Name: testTenantConfig2.TenantUUID})
+		tenantConfig, err = db.ReadTenantConfig(TenantConfig{Name: testTenantConfig2.TenantUUID})
 		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
 		assert.Nil(t, tenantConfig)
 
 		// PURGED
-		tenantConfig, err = db.ReadTenantConfig(ctx, TenantConfig{Name: testTenantConfig3.TenantUUID})
+		tenantConfig, err = db.ReadTenantConfig(TenantConfig{Name: testTenantConfig3.TenantUUID})
 		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
 		assert.Nil(t, tenantConfig)
 	})

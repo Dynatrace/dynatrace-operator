@@ -101,7 +101,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	dk, err := provisioner.getDynaKube(ctx, request.NamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			return reconcile.Result{}, provisioner.db.DeleteTenantConfig(ctx, &metadata.TenantConfig{Name: request.Name}, false)
+			return reconcile.Result{}, provisioner.db.DeleteTenantConfig(&metadata.TenantConfig{Name: request.Name}, false)
 		}
 
 		return reconcile.Result{}, err
@@ -110,7 +110,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	if !dk.NeedsCSIDriver() {
 		log.Info("CSI driver provisioner not needed")
 
-		err = provisioner.db.DeleteTenantConfig(ctx, &metadata.TenantConfig{Name: dk.Name}, true)
+		err = provisioner.db.DeleteTenantConfig(&metadata.TenantConfig{Name: dk.Name}, true)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -123,7 +123,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{}, err
 	}
 
-	tenantConfig, err := provisioner.setupTenantConfig(ctx, dk) // needed for the CSI-resilience feature
+	tenantConfig, err := provisioner.setupTenantConfig(dk) // needed for the CSI-resilience feature
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -170,7 +170,7 @@ func (provisioner *OneAgentProvisioner) setupFileSystem(dk *dynatracev1beta1.Dyn
 	return nil
 }
 
-func (provisioner *OneAgentProvisioner) setupTenantConfig(ctx context.Context, dk *dynatracev1beta1.DynaKube) (*metadata.TenantConfig, error) {
+func (provisioner *OneAgentProvisioner) setupTenantConfig(dk *dynatracev1beta1.DynaKube) (*metadata.TenantConfig, error) {
 	metadataTenantConfig, err := provisioner.handleMetadata(dk)
 	if err != nil {
 		return nil, err
@@ -178,9 +178,9 @@ func (provisioner *OneAgentProvisioner) setupTenantConfig(ctx context.Context, d
 
 	// Create/update the Dynakube's metadata TenantConfig entry while `LatestVersion` is not necessarily set
 	// so the host oneagent-storages can be mounted before the standalone agent binaries are ready to be mounted
-	tenantConfig, err := provisioner.db.ReadTenantConfig(ctx, metadata.TenantConfig{Name: metadataTenantConfig.Name})
+	tenantConfig, err := provisioner.db.ReadTenantConfig(metadata.TenantConfig{Name: metadataTenantConfig.Name})
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
-		err = provisioner.db.CreateTenantConfig(ctx, metadataTenantConfig)
+		err = provisioner.db.CreateTenantConfig(metadataTenantConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -191,7 +191,7 @@ func (provisioner *OneAgentProvisioner) setupTenantConfig(ctx context.Context, d
 	}
 
 	metadataTenantConfig.UID = tenantConfig.UID
-	err = provisioner.db.UpdateTenantConfig(ctx, metadataTenantConfig)
+	err = provisioner.db.UpdateTenantConfig(metadataTenantConfig)
 
 	if err != nil {
 		return nil, err
@@ -219,7 +219,7 @@ func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context
 	}
 
 	// Set/Update the `LatestVersion` field in the database entry
-	err = provisioner.db.UpdateTenantConfig(ctx, tenantConfig)
+	err = provisioner.db.UpdateTenantConfig(tenantConfig)
 	if err != nil {
 		return err
 	}

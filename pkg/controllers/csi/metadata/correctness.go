@@ -44,7 +44,7 @@ func (checker *CorrectnessChecker) CorrectCSI(ctx context.Context) error {
 		return err
 	}
 
-	if err := checker.copyCodeModulesFromDeprecatedBin(ctx); err != nil {
+	if err := checker.copyCodeModulesFromDeprecatedBin(); err != nil {
 		return err
 	}
 
@@ -59,7 +59,7 @@ func (checker *CorrectnessChecker) removeVolumesForMissingPods(ctx context.Conte
 		return nil
 	}
 
-	appMounts, err := checker.access.ReadAppMounts(ctx)
+	appMounts, err := checker.access.ReadAppMounts()
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (checker *CorrectnessChecker) removeVolumesForMissingPods(ctx context.Conte
 
 		volumeID := appMount.VolumeMeta.ID
 
-		if err := checker.access.DeleteAppMount(ctx, &AppMount{VolumeMetaID: appMount.VolumeMetaID}); err != nil {
+		if err := checker.access.DeleteAppMount(&AppMount{VolumeMetaID: appMount.VolumeMetaID}); err != nil {
 			return err
 		}
 
@@ -95,7 +95,7 @@ func (checker *CorrectnessChecker) removeMissingDynakubes(ctx context.Context) e
 		return nil
 	}
 
-	tenantConfigs, err := checker.access.ReadTenantConfigs(ctx)
+	tenantConfigs, err := checker.access.ReadTenantConfigs()
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func (checker *CorrectnessChecker) removeMissingDynakubes(ctx context.Context) e
 			continue
 		}
 
-		if err := checker.access.DeleteTenantConfig(ctx, &TenantConfig{Name: tenantConfig.Name}, true); err != nil {
+		if err := checker.access.DeleteTenantConfig(&TenantConfig{Name: tenantConfig.Name}, true); err != nil {
 			return err
 		}
 
@@ -122,8 +122,8 @@ func (checker *CorrectnessChecker) removeMissingDynakubes(ctx context.Context) e
 	return nil
 }
 
-func (checker *CorrectnessChecker) copyCodeModulesFromDeprecatedBin(ctx context.Context) error {
-	tenantConfigs, err := checker.access.ReadTenantConfigs(ctx)
+func (checker *CorrectnessChecker) copyCodeModulesFromDeprecatedBin() error {
+	tenantConfigs, err := checker.access.ReadTenantConfigs()
 	if err != nil {
 		return err
 	}

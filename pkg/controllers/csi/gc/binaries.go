@@ -1,7 +1,6 @@
 package csigc
 
 import (
-	"context"
 	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
@@ -9,12 +8,12 @@ import (
 )
 
 //nolint:gosec
-func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context) {
+func (gc *CSIGarbageCollector) runBinaryGarbageCollection() {
 	fs := &afero.Afero{Fs: gc.fs}
 
 	gcRunsMetric.Inc()
 
-	codeModules, err := gc.db.ReadCodeModules(ctx)
+	codeModules, err := gc.db.ReadCodeModules()
 	if err != nil {
 		log.Error(err, "failed to read codemodules")
 
@@ -22,7 +21,7 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context) {
 	}
 
 	for _, codeModule := range codeModules {
-		orphaned, err := gc.db.IsCodeModuleOrphaned(ctx, &codeModule)
+		orphaned, err := gc.db.IsCodeModuleOrphaned(&codeModule)
 		if err != nil {
 			log.Error(err, "failed to check if codemodule is orphaned")
 
@@ -32,7 +31,7 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context) {
 		if orphaned {
 			removeUnusedVersion(fs, codeModule.Location)
 
-			err := gc.db.DeleteCodeModule(ctx, &metadata.CodeModule{Version: codeModule.Version})
+			err := gc.db.DeleteCodeModule(&metadata.CodeModule{Version: codeModule.Version})
 			if err != nil {
 				log.Error(err, "failed to delete codemodule")
 
