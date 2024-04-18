@@ -132,9 +132,9 @@ func (conn *GormConn) ReadCodeModule(ctx context.Context, codeModule CodeModule)
 		return nil, errors.New("Can't query for empty CodeModule")
 	}
 
-	err := conn.db.WithContext(ctx).Find(&record, codeModule).Error
-	if err != nil {
-		return nil, err
+	result := conn.db.WithContext(ctx).Find(&record, codeModule)
+	if result.Error != nil {
+		return nil, result.Error
 	}
 
 	if (*record == CodeModule{}) {
@@ -218,7 +218,7 @@ func (conn *GormConn) ReadOSMounts(ctx context.Context) ([]OSMount, error) {
 func (conn *GormConn) ReadAppMounts(ctx context.Context) ([]AppMount, error) {
 	var appMounts []AppMount
 
-	result := conn.db.WithContext(ctx).Preload("VolumeMeta").Find(&appMounts)
+	result := conn.db.WithContext(ctx).Preload("VolumeMeta").Preload("CodeModule").Find(&appMounts)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -249,9 +249,7 @@ func (conn *GormConn) CreateOSMount(ctx context.Context, osMount *OSMount) error
 	return conn.db.WithContext(ctx).Create(osMount).Error
 }
 func (conn *GormConn) CreateAppMount(ctx context.Context, appMount *AppMount) error {
-	result := conn.db.WithContext(ctx).Create(appMount)
-
-	return result.Error
+	return conn.db.WithContext(ctx).Create(appMount).Error
 }
 
 func (conn *GormConn) UpdateTenantConfig(ctx context.Context, tenantConfig *TenantConfig) error {
@@ -294,7 +292,7 @@ func (conn *GormConn) DeleteTenantConfig(ctx context.Context, tenantConfig *Tena
 		return err
 	}
 
-	err = conn.db.WithContext(ctx).Delete(&tenantConfig).Error
+	err = conn.db.WithContext(ctx).Delete(&TenantConfig{}, &tenantConfig).Error
 	if err != nil {
 		return err
 	}
