@@ -77,7 +77,7 @@ func (checker *CorrectnessChecker) removeVolumesForMissingPods(ctx context.Conte
 
 		volumeID := appMount.VolumeMeta.ID
 
-		if err := checker.access.DeleteAppMount(ctx, &appMount); err != nil {
+		if err := checker.access.DeleteAppMount(ctx, &AppMount{VolumeMetaID: appMount.VolumeMetaID}); err != nil {
 			return err
 		}
 

@@ -67,11 +67,6 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 	}
 
 	if osMount == nil {
-		tenantConfig, err := publisher.db.ReadTenantConfig(ctx, metadata.TenantConfig{TenantUUID: bindCfg.TenantUUID})
-		if err != nil {
-			return nil, err
-		}
-
 		volumeMeta := metadata.VolumeMeta{ID: volumeCfg.VolumeID}
 		pr := metadata.PathResolver{RootDir: dtcsi.DataPath}
 		osMount := metadata.OSMount{
@@ -79,7 +74,6 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 			VolumeMetaID: volumeCfg.VolumeID,
 			TenantUUID:   bindCfg.TenantUUID,
 			Location:     pr.OsAgentDir(bindCfg.TenantUUID),
-			TenantConfig: *tenantConfig,
 		}
 
 		if err := publisher.db.CreateOSMount(ctx, &osMount); err != nil {
@@ -113,7 +107,7 @@ func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volum
 
 	publisher.unmountOneAgent(volumeInfo.TargetPath)
 
-	if err := publisher.db.DeleteOSMount(ctx, osMount); err != nil {
+	if err := publisher.db.DeleteOSMount(ctx, &metadata.OSMount{TenantUUID: osMount.TenantUUID}); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to update OSMount to database. info: %v err: %s", osMount, err.Error()))
 	}
 
