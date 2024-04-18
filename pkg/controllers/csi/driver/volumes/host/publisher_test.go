@@ -78,7 +78,7 @@ func TestUnpublishVolume(t *testing.T) {
 		assert.NotNil(t, response)
 		assert.NotEmpty(t, mounter.MountPoints)
 
-		appMount, err := publisher.db.ReadOSMount(context.Background(), metadata.OSMount{VolumeMetaID: testVolumeId})
+		appMount, err := publisher.db.ReadOSMount(metadata.OSMount{VolumeMetaID: testVolumeId})
 		require.Error(t, err)
 		assert.Nil(t, appMount)
 	})
@@ -121,33 +121,33 @@ func mockPublishedvolume(t *testing.T, publisher *HostVolumePublisher) {
 	mockDynakube(t, publisher)
 
 	osMount := metadata.OSMount{VolumeMetaID: testVolumeId, VolumeMeta: metadata.VolumeMeta{ID: testVolumeId}, TenantUUID: testTenantUUID}
-	err := publisher.db.CreateOSMount(context.Background(), &osMount)
+	err := publisher.db.CreateOSMount(&osMount)
 	require.NoError(t, err)
 }
 
 func mockDynakube(t *testing.T, publisher *HostVolumePublisher) {
 	tenantConfig := metadata.TenantConfig{Name: testDynakubeName, TenantUUID: testTenantUUID, DownloadedCodeModuleVersion: "some-version", MaxFailedMountAttempts: 0}
-	err := publisher.db.CreateTenantConfig(context.Background(), &tenantConfig)
+	err := publisher.db.CreateTenantConfig(&tenantConfig)
 	require.NoError(t, err)
 }
 
 func mockDynakubeWithoutVersion(t *testing.T, publisher *HostVolumePublisher) {
 	tenantConfig := metadata.TenantConfig{Name: testDynakubeName, TenantUUID: testTenantUUID, DownloadedCodeModuleVersion: "", MaxFailedMountAttempts: 0}
-	err := publisher.db.CreateTenantConfig(context.Background(), &tenantConfig)
+	err := publisher.db.CreateTenantConfig(&tenantConfig)
 	require.NoError(t, err)
 }
 
 func assertReferencesForPublishedVolume(t *testing.T, publisher *HostVolumePublisher, mounter *mount.FakeMounter) {
 	assert.NotEmpty(t, mounter.MountPoints)
 
-	volume, err := publisher.db.ReadOSMount(context.Background(), metadata.OSMount{VolumeMetaID: testVolumeId})
+	volume, err := publisher.db.ReadOSMount(metadata.OSMount{VolumeMetaID: testVolumeId})
 	require.NoError(t, err)
 	assert.Equal(t, testVolumeId, volume.VolumeMetaID)
 	assert.Equal(t, testTenantUUID, volume.TenantUUID)
 }
 
 func assertReferencesForUnpublishedVolume(t *testing.T, publisher *HostVolumePublisher) {
-	volume, err := publisher.db.ReadOSMount(context.Background(), metadata.OSMount{VolumeMetaID: testVolumeId})
+	volume, err := publisher.db.ReadOSMount(metadata.OSMount{VolumeMetaID: testVolumeId})
 	require.Error(t, err)
 	assert.Nil(t, volume)
 }

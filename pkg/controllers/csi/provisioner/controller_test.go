@@ -55,7 +55,6 @@ func (fs *mkDirAllErrorFs) MkdirAll(_ string, _ os.FileMode) error {
 }
 
 func TestOneAgentProvisioner_Reconcile(t *testing.T) {
-	ctx := context.Background()
 	dynakubeName := "test-dk"
 
 	t.Run("no dynakube instance", func(t *testing.T) {
@@ -81,7 +80,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			DownloadedCodeModuleVersion: agentVersion,
 		}
 
-		err := db.CreateTenantConfig(ctx, &tenantConfig)
+		err := db.CreateTenantConfig(&tenantConfig)
 		require.NoError(t, err)
 
 		provisioner := &OneAgentProvisioner{
@@ -95,7 +94,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.NotNil(t, result)
 		require.Equal(t, reconcile.Result{}, result)
 
-		ten, err := db.ReadTenantConfig(ctx, metadata.TenantConfig{TenantUUID: tenantConfig.TenantUUID})
+		ten, err := db.ReadTenantConfig(metadata.TenantConfig{TenantUUID: tenantConfig.TenantUUID})
 		require.Error(t, err)
 		require.Nil(t, ten)
 	})
@@ -150,7 +149,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run("csi driver disabled", func(t *testing.T) {
 		gc := reconcilermock.NewReconciler(t)
 		db := metadata.FakeMemoryDB()
-		_ = db.CreateTenantConfig(ctx, &metadata.TenantConfig{Name: dynakubeName})
+		_ = db.CreateTenantConfig(&metadata.TenantConfig{Name: dynakubeName})
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -175,7 +174,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.NotNil(t, result)
 		require.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
 
-		tenantConfigs, err := db.ReadTenantConfigs(ctx)
+		tenantConfigs, err := db.ReadTenantConfigs()
 		require.NoError(t, err)
 		require.Empty(t, tenantConfigs)
 	})
@@ -221,7 +220,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.NotNil(t, result)
 		require.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
 
-		tenantConfigs, err := db.ReadTenantConfigs(ctx)
+		tenantConfigs, err := db.ReadTenantConfigs()
 		require.NoError(t, err)
 		require.Len(t, tenantConfigs, 1)
 	})
@@ -538,11 +537,10 @@ func buildValidApplicationMonitoringSpec(_ *testing.T) *dynatracev1beta1.Applica
 }
 
 func TestProvisioner_CreateTenantConfig(t *testing.T) {
-	ctx := context.Background()
 	db := metadata.FakeMemoryDB()
 
 	expectedOtherTenantConfig := metadata.TenantConfig{Name: otherDkName, TenantUUID: tenantUUID, DownloadedCodeModuleVersion: "v1", MaxFailedMountAttempts: 0}
-	db.CreateTenantConfig(ctx, &expectedOtherTenantConfig)
+	db.CreateTenantConfig(&expectedOtherTenantConfig)
 
 	provisioner := &OneAgentProvisioner{
 		db: db,
@@ -550,10 +548,10 @@ func TestProvisioner_CreateTenantConfig(t *testing.T) {
 
 	newTenantConfig := metadata.TenantConfig{Name: dkName, TenantUUID: tenantUUID, DownloadedCodeModuleVersion: "v1", MaxFailedMountAttempts: 0}
 
-	err := provisioner.db.UpdateTenantConfig(ctx, &newTenantConfig)
+	err := provisioner.db.UpdateTenantConfig(&newTenantConfig)
 	require.NoError(t, err)
 
-	storedTenantConfig, err := db.ReadTenantConfig(ctx, metadata.TenantConfig{Name: dkName})
+	storedTenantConfig, err := db.ReadTenantConfig(metadata.TenantConfig{Name: dkName})
 	require.NoError(t, err)
 	require.NotNil(t, storedTenantConfig)
 
@@ -561,7 +559,7 @@ func TestProvisioner_CreateTenantConfig(t *testing.T) {
 	storedTenantConfig.TimeStampedModel = metadata.TimeStampedModel{}
 	require.Equal(t, newTenantConfig, *storedTenantConfig)
 
-	storedTenantConfig, err = db.ReadTenantConfig(ctx, metadata.TenantConfig{Name: otherDkName})
+	storedTenantConfig, err = db.ReadTenantConfig(metadata.TenantConfig{Name: otherDkName})
 	require.NoError(t, err)
 	require.NotNil(t, storedTenantConfig)
 
@@ -571,24 +569,22 @@ func TestProvisioner_CreateTenantConfig(t *testing.T) {
 }
 
 func TestProvisioner_UpdateDynakube(t *testing.T) {
-	ctx := context.Background()
 	db := metadata.FakeMemoryDB()
 
 	oldTenantConfig := metadata.TenantConfig{Name: dkName, TenantUUID: tenantUUID, DownloadedCodeModuleVersion: "v1", MaxFailedMountAttempts: 0}
-	_ = db.CreateTenantConfig(ctx, &oldTenantConfig)
+	_ = db.CreateTenantConfig(&oldTenantConfig)
 	expectedOtherTenantConfig := metadata.TenantConfig{Name: otherDkName, TenantUUID: tenantUUID, DownloadedCodeModuleVersion: "v1", MaxFailedMountAttempts: 0}
-	_ = db.CreateTenantConfig(ctx, &expectedOtherTenantConfig)
+	_ = db.CreateTenantConfig(&expectedOtherTenantConfig)
 
 	provisioner := &OneAgentProvisioner{
 		db: db,
 	}
 	newTenantConfig := metadata.TenantConfig{UID: oldTenantConfig.UID, Name: dkName, TenantUUID: "new-uuid", DownloadedCodeModuleVersion: "v2", MaxFailedMountAttempts: 0}
 
-	err := provisioner.db.UpdateTenantConfig(ctx, &newTenantConfig)
-	// err := provisioner.createOrUpdateTenantConfig(ctx, oldTenantConfig, &newTenantConfig)
+	err := provisioner.db.UpdateTenantConfig(&newTenantConfig)
 	require.NoError(t, err)
 
-	tenantConfig, err := db.ReadTenantConfig(ctx, metadata.TenantConfig{Name: dkName})
+	tenantConfig, err := db.ReadTenantConfig(metadata.TenantConfig{Name: dkName})
 	require.NoError(t, err)
 	require.NotNil(t, tenantConfig)
 
@@ -596,7 +592,7 @@ func TestProvisioner_UpdateDynakube(t *testing.T) {
 	tenantConfig.TimeStampedModel = metadata.TimeStampedModel{}
 	require.Equal(t, newTenantConfig, *tenantConfig)
 
-	otherTenantConfig, err := db.ReadTenantConfig(ctx, metadata.TenantConfig{Name: otherDkName})
+	otherTenantConfig, err := db.ReadTenantConfig(metadata.TenantConfig{Name: otherDkName})
 	require.NoError(t, err)
 	require.NotNil(t, otherTenantConfig)
 

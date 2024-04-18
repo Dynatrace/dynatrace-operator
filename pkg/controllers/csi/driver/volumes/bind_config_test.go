@@ -39,9 +39,9 @@ func TestNewBindConfig(t *testing.T) {
 			DownloadedCodeModuleVersion: testAgentVersion,
 			MaxFailedMountAttempts:      1,
 		}
-		db.CreateTenantConfig(context.TODO(), &tenantConfig)
+		db.CreateTenantConfig(&tenantConfig)
 
-		bindCfg, err := NewBindConfig(context.TODO(), db, volumeCfg)
+		bindCfg, err := NewBindConfig(context.Background(), db, volumeCfg)
 
 		expected := BindConfig{
 			TenantUUID:       testTenantUUID,

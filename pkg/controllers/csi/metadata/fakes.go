@@ -15,7 +15,7 @@ func emptyMemoryDB() *GormConn {
 		return nil
 	}
 
-	return &GormConn{db: db}
+	return &GormConn{ctx: context.Background(), db: db}
 }
 
 func FakeMemoryDB() *GormConn {
@@ -26,7 +26,7 @@ func FakeMemoryDB() *GormConn {
 		return nil
 	}
 
-	gormConn := &GormConn{db: db}
+	gormConn := &GormConn{ctx: context.Background(), db: db}
 
 	err = gormConn.InitGormSchema()
 	if err != nil {
@@ -40,75 +40,73 @@ func FakeMemoryDB() *GormConn {
 
 type FakeFailDB struct{}
 
-func (f *FakeFailDB) Setup(_ context.Context, _ string) error { return sql.ErrTxDone }
-
-func (f *FakeFailDB) SchemaMigration(ctx context.Context) error {
+func (f *FakeFailDB) SchemaMigration() error {
 	return sql.ErrTxDone
 }
 
-func (f *FakeFailDB) CreateTenantConfig(ctx context.Context, tenantConfig *TenantConfig) error {
+func (f *FakeFailDB) CreateTenantConfig(tenantConfig *TenantConfig) error {
 	return sql.ErrTxDone
 }
-func (f *FakeFailDB) UpdateTenantConfig(ctx context.Context, tenantConfig *TenantConfig) error {
+func (f *FakeFailDB) UpdateTenantConfig(tenantConfig *TenantConfig) error {
 	return sql.ErrTxDone
 }
-func (f *FakeFailDB) DeleteTenantConfig(ctx context.Context, tenantConfig *TenantConfig, cascade bool) error {
+func (f *FakeFailDB) DeleteTenantConfig(tenantConfig *TenantConfig, cascade bool) error {
 	return sql.ErrTxDone
 }
-func (f *FakeFailDB) ReadTenantConfig(ctx context.Context, tenantConfig TenantConfig) (*TenantConfig, error) {
+func (f *FakeFailDB) ReadTenantConfig(tenantConfig TenantConfig) (*TenantConfig, error) {
 	return nil, sql.ErrTxDone
 }
-func (f *FakeFailDB) ReadTenantConfigs(ctx context.Context) ([]TenantConfig, error) {
+func (f *FakeFailDB) ReadTenantConfigs() ([]TenantConfig, error) {
 	return nil, sql.ErrTxDone
 }
-func (f *FakeFailDB) CreateCodeModule(ctx context.Context, codeModule *CodeModule) error {
+func (f *FakeFailDB) CreateCodeModule(codeModule *CodeModule) error {
 	return sql.ErrTxDone
 }
-func (f *FakeFailDB) DeleteCodeModule(ctx context.Context, codeModule *CodeModule) error {
+func (f *FakeFailDB) DeleteCodeModule(codeModule *CodeModule) error {
 	return sql.ErrTxDone
 }
-func (f *FakeFailDB) ReadCodeModule(ctx context.Context, codeModule CodeModule) (*CodeModule, error) {
+func (f *FakeFailDB) ReadCodeModule(codeModule CodeModule) (*CodeModule, error) {
 	return nil, sql.ErrTxDone
 }
-func (f *FakeFailDB) ReadCodeModules(ctx context.Context) ([]CodeModule, error) {
+func (f *FakeFailDB) ReadCodeModules() ([]CodeModule, error) {
 	return nil, sql.ErrTxDone
 }
-func (f *FakeFailDB) IsCodeModuleOrphaned(ctx context.Context, codeModule *CodeModule) (bool, error) {
+func (f *FakeFailDB) IsCodeModuleOrphaned(codeModule *CodeModule) (bool, error) {
 	return false, sql.ErrTxDone
 }
-func (f *FakeFailDB) CreateOSMount(ctx context.Context, osMount *OSMount) error {
+func (f *FakeFailDB) CreateOSMount(osMount *OSMount) error {
 	return sql.ErrTxDone
 }
-func (f *FakeFailDB) UpdateOSMount(ctx context.Context, osMount *OSMount) error {
+func (f *FakeFailDB) UpdateOSMount(osMount *OSMount) error {
 	return sql.ErrTxDone
 }
-func (f *FakeFailDB) DeleteOSMount(ctx context.Context, osMount *OSMount) error {
+func (f *FakeFailDB) DeleteOSMount(osMount *OSMount) error {
 	return sql.ErrTxDone
 }
-func (f *FakeFailDB) ReadOSMount(ctx context.Context, osMount OSMount) (*OSMount, error) {
+func (f *FakeFailDB) ReadOSMount(osMount OSMount) (*OSMount, error) {
 	return nil, sql.ErrTxDone
 }
-func (f *FakeFailDB) ReadOSMounts(ctx context.Context) ([]OSMount, error) {
+func (f *FakeFailDB) ReadOSMounts() ([]OSMount, error) {
 	return nil, sql.ErrTxDone
 }
-func (f *FakeFailDB) CreateAppMount(ctx context.Context, appMount *AppMount) error {
+func (f *FakeFailDB) CreateAppMount(appMount *AppMount) error {
 	return sql.ErrTxDone
 }
-func (f *FakeFailDB) UpdateAppMount(ctx context.Context, appMount *AppMount) error {
+func (f *FakeFailDB) UpdateAppMount(appMount *AppMount) error {
 	return sql.ErrTxDone
 }
-func (f *FakeFailDB) DeleteAppMount(ctx context.Context, appMount *AppMount) error {
+func (f *FakeFailDB) DeleteAppMount(appMount *AppMount) error {
 	return sql.ErrTxDone
 }
-func (f *FakeFailDB) ReadAppMount(ctx context.Context, appMount AppMount) (*AppMount, error) {
+func (f *FakeFailDB) ReadAppMount(appMount AppMount) (*AppMount, error) {
 	return nil, sql.ErrTxDone
 }
-func (f *FakeFailDB) ReadAppMounts(ctx context.Context) ([]AppMount, error) {
+func (f *FakeFailDB) ReadAppMounts() ([]AppMount, error) {
 	return nil, sql.ErrTxDone
 }
-func (f *FakeFailDB) ReadVolumeMeta(ctx context.Context, volumeMeta VolumeMeta) (*VolumeMeta, error) {
+func (f *FakeFailDB) ReadVolumeMeta(volumeMeta VolumeMeta) (*VolumeMeta, error) {
 	return nil, sql.ErrTxDone
 }
-func (f *FakeFailDB) ReadVolumeMetas(ctx context.Context) ([]VolumeMeta, error) {
+func (f *FakeFailDB) ReadVolumeMetas() ([]VolumeMeta, error) {
 	return nil, sql.ErrTxDone
 }
