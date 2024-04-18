@@ -52,8 +52,6 @@ func (checker *CorrectnessChecker) CorrectCSI(ctx context.Context) error {
 }
 
 // Removes volume entries if their pod is no longer exists
-//
-//nolint:gosec
 func (checker *CorrectnessChecker) removeVolumesForMissingPods(ctx context.Context) error {
 	if checker.apiReader == nil {
 		log.Info("no kubernetes client configured, skipping orphaned volume metadata cleanup")
