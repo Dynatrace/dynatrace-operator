@@ -67,13 +67,18 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 	}
 
 	if osMount == nil {
-		volumeMeta := metadata.VolumeMeta{ID: volumeCfg.VolumeID}
-		pr := metadata.PathResolver{RootDir: dtcsi.DataPath}
+		tenantConfig, err := publisher.db.ReadTenantConfig(metadata.TenantConfig{TenantUUID: bindCfg.TenantUUID})
+		if err != nil {
+			return nil, err
+		}
+
 		osMount := metadata.OSMount{
-			VolumeMeta:   volumeMeta,
-			VolumeMetaID: volumeCfg.VolumeID,
-			TenantUUID:   bindCfg.TenantUUID,
-			Location:     pr.OsAgentDir(bindCfg.TenantUUID),
+			VolumeMeta:      metadata.VolumeMeta{ID: volumeCfg.VolumeID, PodName: volumeCfg.PodName},
+			VolumeMetaID:    volumeCfg.VolumeID,
+			TenantUUID:      bindCfg.TenantUUID,
+			Location:        metadata.PathResolver{RootDir: dtcsi.DataPath}.OsAgentDir(bindCfg.TenantUUID),
+			MountAttempts:   0,
+			TenantConfigUID: tenantConfig.UID,
 		}
 
 		if err := publisher.db.CreateOSMount(&osMount); err != nil {
