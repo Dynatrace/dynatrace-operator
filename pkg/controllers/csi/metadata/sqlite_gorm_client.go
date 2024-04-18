@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-type DBAccess interface {
+type GormAccess interface {
 	SchemaMigration(ctx context.Context) error
 
 	CreateTenantConfig(ctx context.Context, tenantConfig *TenantConfig) error
@@ -41,14 +41,14 @@ type DBAccess interface {
 	ReadVolumeMetas(ctx context.Context) ([]VolumeMeta, error)
 }
 
-type DBConn struct {
+type GormConn struct {
 	db *gorm.DB
 }
 
-var _ DBAccess = &DBConn{}
+var _ GormAccess = &GormConn{}
 
 // NewAccess creates a new gorm db connection to the database.
-func NewAccess(path string) (*DBConn, error) {
+func NewAccess(path string) (*GormConn, error) {
 	// we need to explicitly enable foreign_keys for sqlite to have sqlite enforce this constraint
 	if strings.Contains(path, "?") {
 		path += "&_foreign_keys=on"
@@ -59,14 +59,14 @@ func NewAccess(path string) (*DBConn, error) {
 	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{Logger: logger.Default})
 
 	if err != nil {
-		return &DBConn{}, err
+		return &GormConn{}, err
 	}
 
-	return &DBConn{db: db}, nil
+	return &GormConn{db: db}, nil
 }
 
 // SchemaMigration runs gormigrate migrations to create tables
-func (conn *DBConn) SchemaMigration(_ context.Context) error {
+func (conn *GormConn) SchemaMigration(_ context.Context) error {
 	err := conn.InitGormSchema()
 	if err != nil {
 		return err
@@ -83,7 +83,7 @@ func (conn *DBConn) SchemaMigration(_ context.Context) error {
 	}).Migrate()
 }
 
-func (conn *DBConn) InitGormSchema() error {
+func (conn *GormConn) InitGormSchema() error {
 	m := gormigrate.New(conn.db, gormigrate.DefaultOptions, []*gormigrate.Migration{})
 	m.InitSchema(func(tx *gorm.DB) error {
 		err := tx.AutoMigrate(
@@ -105,11 +105,11 @@ func (conn *DBConn) InitGormSchema() error {
 	return nil
 }
 
-func (conn *DBConn) CreateTenantConfig(ctx context.Context, tenantConfig *TenantConfig) error {
+func (conn *GormConn) CreateTenantConfig(ctx context.Context, tenantConfig *TenantConfig) error {
 	return conn.db.WithContext(ctx).Create(tenantConfig).Error
 }
 
-func (conn *DBConn) UpdateTenantConfig(ctx context.Context, tenantConfig *TenantConfig) error {
+func (conn *GormConn) UpdateTenantConfig(ctx context.Context, tenantConfig *TenantConfig) error {
 	if (tenantConfig == nil || *tenantConfig == TenantConfig{}) {
 		return errors.New("Can't save an empty TenantConfig")
 	}
@@ -117,7 +117,7 @@ func (conn *DBConn) UpdateTenantConfig(ctx context.Context, tenantConfig *Tenant
 	return conn.db.WithContext(ctx).Save(tenantConfig).Error
 }
 
-func (conn *DBConn) DeleteTenantConfig(ctx context.Context, tenantConfig *TenantConfig, cascade bool) error {
+func (conn *GormConn) DeleteTenantConfig(ctx context.Context, tenantConfig *TenantConfig, cascade bool) error {
 	if (tenantConfig == nil || *tenantConfig == TenantConfig{}) {
 		return nil
 	}
@@ -151,7 +151,7 @@ func (conn *DBConn) DeleteTenantConfig(ctx context.Context, tenantConfig *Tenant
 	return nil
 }
 
-func (conn *DBConn) ReadTenantConfig(ctx context.Context, tenantConfig TenantConfig) (*TenantConfig, error) {
+func (conn *GormConn) ReadTenantConfig(ctx context.Context, tenantConfig TenantConfig) (*TenantConfig, error) {
 	var record *TenantConfig
 
 	if (tenantConfig == TenantConfig{}) {
@@ -170,7 +170,7 @@ func (conn *DBConn) ReadTenantConfig(ctx context.Context, tenantConfig TenantCon
 	return record, nil
 }
 
-func (conn *DBConn) ReadTenantConfigs(ctx context.Context) ([]TenantConfig, error) {
+func (conn *GormConn) ReadTenantConfigs(ctx context.Context) ([]TenantConfig, error) {
 	var tenantConfigs []TenantConfig
 
 	result := conn.db.WithContext(ctx).Find(&tenantConfigs)
@@ -181,11 +181,11 @@ func (conn *DBConn) ReadTenantConfigs(ctx context.Context) ([]TenantConfig, erro
 	return tenantConfigs, nil
 }
 
-func (conn *DBConn) CreateCodeModule(ctx context.Context, codeModule *CodeModule) error {
+func (conn *GormConn) CreateCodeModule(ctx context.Context, codeModule *CodeModule) error {
 	return conn.db.WithContext(ctx).Create(codeModule).Error
 }
 
-func (conn *DBConn) DeleteCodeModule(ctx context.Context, codeModule *CodeModule) error {
+func (conn *GormConn) DeleteCodeModule(ctx context.Context, codeModule *CodeModule) error {
 	if (codeModule == nil || *codeModule == CodeModule{}) {
 		return errors.New("Can't delete an empty CodeModule")
 	}
@@ -193,7 +193,7 @@ func (conn *DBConn) DeleteCodeModule(ctx context.Context, codeModule *CodeModule
 	return conn.db.WithContext(ctx).Delete(&CodeModule{}, codeModule).Error
 }
 
-func (conn *DBConn) ReadCodeModule(ctx context.Context, codeModule CodeModule) (*CodeModule, error) {
+func (conn *GormConn) ReadCodeModule(ctx context.Context, codeModule CodeModule) (*CodeModule, error) {
 	var record *CodeModule
 
 	if (codeModule == CodeModule{}) {
@@ -212,7 +212,7 @@ func (conn *DBConn) ReadCodeModule(ctx context.Context, codeModule CodeModule) (
 	return record, nil
 }
 
-func (conn *DBConn) ReadCodeModules(ctx context.Context) ([]CodeModule, error) {
+func (conn *GormConn) ReadCodeModules(ctx context.Context) ([]CodeModule, error) {
 	var codeModules []CodeModule
 
 	result := conn.db.WithContext(ctx).Find(&codeModules)
@@ -223,7 +223,7 @@ func (conn *DBConn) ReadCodeModules(ctx context.Context) ([]CodeModule, error) {
 	return codeModules, nil
 }
 
-func (conn *DBConn) IsCodeModuleOrphaned(ctx context.Context, codeModule *CodeModule) (bool, error) {
+func (conn *GormConn) IsCodeModuleOrphaned(ctx context.Context, codeModule *CodeModule) (bool, error) {
 	var tenantConfigResults []TenantConfig
 
 	var appMountResults []AppMount
@@ -249,11 +249,11 @@ func (conn *DBConn) IsCodeModuleOrphaned(ctx context.Context, codeModule *CodeMo
 	return false, nil
 }
 
-func (conn *DBConn) CreateOSMount(ctx context.Context, osMount *OSMount) error {
+func (conn *GormConn) CreateOSMount(ctx context.Context, osMount *OSMount) error {
 	return conn.db.WithContext(ctx).Create(osMount).Error
 }
 
-func (conn *DBConn) UpdateOSMount(ctx context.Context, osMount *OSMount) error {
+func (conn *GormConn) UpdateOSMount(ctx context.Context, osMount *OSMount) error {
 	if (osMount == nil || *osMount == OSMount{}) {
 		return errors.New("Can't save an empty TenantConfig")
 	}
@@ -266,7 +266,7 @@ func (conn *DBConn) UpdateOSMount(ctx context.Context, osMount *OSMount) error {
 	return conn.db.WithContext(ctx).Updates(osMount).Error
 }
 
-func (conn *DBConn) restoreOSMount(ctx context.Context, osMount *OSMount) error {
+func (conn *GormConn) restoreOSMount(ctx context.Context, osMount *OSMount) error {
 	result := conn.db.WithContext(ctx).Preload("VolumeMeta").Unscoped().Find(&osMount, osMount)
 	if result.Error != nil {
 		return result.Error
@@ -281,7 +281,7 @@ func (conn *DBConn) restoreOSMount(ctx context.Context, osMount *OSMount) error 
 	return conn.db.WithContext(ctx).Unscoped().Updates(osMount).Error
 }
 
-func (conn *DBConn) ReadOSMount(ctx context.Context, osMount OSMount) (*OSMount, error) {
+func (conn *GormConn) ReadOSMount(ctx context.Context, osMount OSMount) (*OSMount, error) {
 	var record *OSMount
 
 	if (osMount == OSMount{}) {
@@ -300,7 +300,7 @@ func (conn *DBConn) ReadOSMount(ctx context.Context, osMount OSMount) (*OSMount,
 	return record, nil
 }
 
-func (conn *DBConn) ReadOSMounts(ctx context.Context) ([]OSMount, error) {
+func (conn *GormConn) ReadOSMounts(ctx context.Context) ([]OSMount, error) {
 	var osMounts []OSMount
 
 	result := conn.db.WithContext(ctx).Preload("VolumeMeta").Find(&osMounts)
@@ -311,7 +311,7 @@ func (conn *DBConn) ReadOSMounts(ctx context.Context) ([]OSMount, error) {
 	return osMounts, nil
 }
 
-func (conn *DBConn) DeleteOSMount(ctx context.Context, osMount *OSMount) error {
+func (conn *GormConn) DeleteOSMount(ctx context.Context, osMount *OSMount) error {
 	if (osMount == nil || *osMount == OSMount{}) {
 		return errors.New("Can't delete an empty OSMount")
 	}
@@ -319,13 +319,13 @@ func (conn *DBConn) DeleteOSMount(ctx context.Context, osMount *OSMount) error {
 	return conn.db.WithContext(ctx).Delete(&OSMount{}, osMount).Error
 }
 
-func (conn *DBConn) CreateAppMount(ctx context.Context, appMount *AppMount) error {
+func (conn *GormConn) CreateAppMount(ctx context.Context, appMount *AppMount) error {
 	result := conn.db.WithContext(ctx).Create(appMount)
 
 	return result.Error
 }
 
-func (conn *DBConn) UpdateAppMount(ctx context.Context, appMount *AppMount) error {
+func (conn *GormConn) UpdateAppMount(ctx context.Context, appMount *AppMount) error {
 	if (appMount == nil || *appMount == AppMount{}) {
 		return errors.New("Can't save an empty AppMount")
 	}
@@ -333,7 +333,7 @@ func (conn *DBConn) UpdateAppMount(ctx context.Context, appMount *AppMount) erro
 	return conn.db.WithContext(ctx).Updates(appMount).Error
 }
 
-func (conn *DBConn) ReadAppMount(ctx context.Context, appMount AppMount) (*AppMount, error) {
+func (conn *GormConn) ReadAppMount(ctx context.Context, appMount AppMount) (*AppMount, error) {
 	var record *AppMount
 
 	if (appMount == AppMount{}) {
@@ -352,7 +352,7 @@ func (conn *DBConn) ReadAppMount(ctx context.Context, appMount AppMount) (*AppMo
 	return record, nil
 }
 
-func (conn *DBConn) ReadAppMounts(ctx context.Context) ([]AppMount, error) {
+func (conn *GormConn) ReadAppMounts(ctx context.Context) ([]AppMount, error) {
 	var appMounts []AppMount
 
 	result := conn.db.WithContext(ctx).Preload("VolumeMeta").Find(&appMounts)
@@ -363,7 +363,7 @@ func (conn *DBConn) ReadAppMounts(ctx context.Context) ([]AppMount, error) {
 	return appMounts, nil
 }
 
-func (conn *DBConn) DeleteAppMount(ctx context.Context, appMount *AppMount) error {
+func (conn *GormConn) DeleteAppMount(ctx context.Context, appMount *AppMount) error {
 	if (appMount == nil || *appMount == AppMount{}) {
 		return errors.New("Can't delete an empty AppMount")
 	}
@@ -371,7 +371,7 @@ func (conn *DBConn) DeleteAppMount(ctx context.Context, appMount *AppMount) erro
 	return conn.db.WithContext(ctx).Delete(&AppMount{}, appMount).Error
 }
 
-func (conn *DBConn) ReadVolumeMetas(ctx context.Context) ([]VolumeMeta, error) {
+func (conn *GormConn) ReadVolumeMetas(ctx context.Context) ([]VolumeMeta, error) {
 	var volumeMetas []VolumeMeta
 
 	result := conn.db.WithContext(ctx).Find(&volumeMetas)
@@ -390,7 +390,7 @@ type AccessOverview struct {
 	OSMounts      []OSMount      `json:"osMounts"`
 }
 
-func NewAccessOverview(access DBAccess) (*AccessOverview, error) {
+func NewAccessOverview(access GormAccess) (*AccessOverview, error) {
 	ctx := context.Background()
 
 	volumeMetas, err := access.ReadVolumeMetas(ctx)
@@ -427,7 +427,7 @@ func NewAccessOverview(access DBAccess) (*AccessOverview, error) {
 	}, nil
 }
 
-func LogAccessOverview(access DBAccess) {
+func LogAccessOverview(access GormAccess) {
 	overview, err := NewAccessOverview(access)
 	if err != nil {
 		log.Error(err, "Failed to get an overview of the stored csi metadata")

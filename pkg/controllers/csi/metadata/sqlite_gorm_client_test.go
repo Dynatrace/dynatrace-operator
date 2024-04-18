@@ -599,7 +599,7 @@ func TestVolumeMetaValidation(t *testing.T) {
 	db.db.Create(vm5)
 }
 
-func setupDB() (*DBConn, error) {
+func setupDB() (*GormConn, error) {
 	db, err := NewAccess("file:csi_testdb?mode=memory")
 	if err != nil {
 		return nil, err
@@ -614,7 +614,7 @@ func setupDB() (*DBConn, error) {
 	return db, nil
 }
 
-func setupPostReconcileData(ctx context.Context, conn *DBConn) {
+func setupPostReconcileData(ctx context.Context, conn *GormConn) {
 	ctxDB := conn.db.WithContext(ctx)
 
 	tenantConfig := &TenantConfig{
@@ -632,7 +632,7 @@ func setupPostReconcileData(ctx context.Context, conn *DBConn) {
 	ctxDB.Create(codeModule)
 }
 
-func setupPostPublishData(ctx context.Context, conn *DBConn) {
+func setupPostPublishData(ctx context.Context, conn *GormConn) {
 	ctxDB := conn.db.WithContext(ctx)
 	tenantConfig := &TenantConfig{
 		Name:                        "abc123",

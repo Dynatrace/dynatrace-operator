@@ -17,11 +17,11 @@ import (
 type CorrectnessChecker struct {
 	apiReader client.Reader
 	fs        afero.Fs
-	access    DBAccess
+	access    GormAccess
 	path      PathResolver
 }
 
-func NewCorrectnessChecker(cl client.Reader, access DBAccess, opts dtcsi.CSIOptions) *CorrectnessChecker {
+func NewCorrectnessChecker(cl client.Reader, access GormAccess, opts dtcsi.CSIOptions) *CorrectnessChecker {
 	return &CorrectnessChecker{
 		apiReader: cl,
 		fs:        afero.NewOsFs(),
