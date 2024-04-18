@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/spf13/afero"
 )
 
@@ -31,7 +32,7 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context) {
 		if orphaned {
 			removeUnusedVersion(fs, codeModule.Location)
 
-			err := gc.db.DeleteCodeModule(ctx, &codeModule)
+			err := gc.db.DeleteCodeModule(ctx, &metadata.CodeModule{Version: codeModule.Version})
 			if err != nil {
 				log.Error(err, "failed to delete codemodule")
 

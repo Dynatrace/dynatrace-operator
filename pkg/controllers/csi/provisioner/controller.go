@@ -35,6 +35,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
+	"gorm.io/gorm"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -170,14 +171,33 @@ func (provisioner *OneAgentProvisioner) setupFileSystem(dk *dynatracev1beta1.Dyn
 }
 
 func (provisioner *OneAgentProvisioner) setupTenantConfig(ctx context.Context, dk *dynatracev1beta1.DynaKube) (*metadata.TenantConfig, error) {
-	dynakubeMetadata, err := provisioner.handleMetadata(dk)
+	metadataTenantConfig, err := provisioner.handleMetadata(dk)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create/update the dynakubeMetadata entry while `LatestVersion` is not necessarily set
+	// Create/update the Dynakube's metadata TenantConfig entry while `LatestVersion` is not necessarily set
 	// so the host oneagent-storages can be mounted before the standalone agent binaries are ready to be mounted
-	return dynakubeMetadata, provisioner.db.UpdateTenantConfig(ctx, dynakubeMetadata)
+	tenantConfig, err := provisioner.db.ReadTenantConfig(ctx, metadata.TenantConfig{Name: metadataTenantConfig.Name})
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		err = provisioner.db.CreateTenantConfig(ctx, metadataTenantConfig)
+		if err != nil {
+			return nil, err
+		}
+
+		return metadataTenantConfig, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	metadataTenantConfig.UID = tenantConfig.UID
+	err = provisioner.db.UpdateTenantConfig(ctx, metadataTenantConfig)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return metadataTenantConfig, nil
 }
 
 func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, request reconcile.Request) error {

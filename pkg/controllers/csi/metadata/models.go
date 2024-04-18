@@ -16,7 +16,7 @@ type TimeStampedModel struct {
 // TenantConfig holds info about a given configuration for a tenant.
 type TenantConfig struct {
 	TimeStampedModel
-	UID                         string `gorm:"primaryKey"` // auto generated unique ID
+	UID                         string `gorm:"primaryKey"` // auto generated UID
 	Name                        string `gorm:"not null"`
 	DownloadedCodeModuleVersion string // can't be foreign key because of HostMonitoring edge case
 	ConfigDirPath               string `gorm:"not null"`
@@ -62,7 +62,7 @@ type AppMount struct {
 
 // VolumeMeta keeps metadata we get from kubernetes about the volume.
 type VolumeMeta struct {
-	ID                string `gorm:"primaryKey"` // auto generated unique ID
+	ID                string `gorm:"primaryKey"`
 	PodUid            string `gorm:"not null"`
 	PodName           string `gorm:"not null"`
 	PodNamespace      string `gorm:"not null"`

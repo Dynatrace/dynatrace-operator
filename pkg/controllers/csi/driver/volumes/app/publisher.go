@@ -286,7 +286,7 @@ func (publisher *AppVolumePublisher) storeVolume(ctx context.Context, bindCfg *c
 	log.Info("inserting AppMount", "appMount", newAppMount)
 
 	// check if it currently exists
-	readAppMount, err := publisher.db.ReadAppMount(ctx, metadata.AppMount{VolumeMetaID: newAppMount.VolumeMetaID})
+	_, err := publisher.db.ReadAppMount(ctx, metadata.AppMount{VolumeMetaID: newAppMount.VolumeMetaID})
 
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		return publisher.db.CreateAppMount(ctx, newAppMount)
@@ -296,7 +296,7 @@ func (publisher *AppVolumePublisher) storeVolume(ctx context.Context, bindCfg *c
 		return err
 	}
 
-	return publisher.db.UpdateAppMount(ctx, readAppMount)
+	return publisher.db.UpdateAppMount(ctx, newAppMount)
 }
 
 func newAppMount(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) *metadata.AppMount {
