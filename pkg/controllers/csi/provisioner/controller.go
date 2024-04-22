@@ -277,7 +277,6 @@ func (provisioner *OneAgentProvisioner) handleMetadata(dk *dynatracev1beta1.Dyna
 		TenantUUID:                  tenantUUID,
 		DownloadedCodeModuleVersion: dk.CodeModulesVersion(),
 		MaxFailedMountAttempts:      int64(dk.FeatureMaxFailedCsiMountAttempts()),
-		// WIP other fields???
 	}
 
 	return newTenantConfig, nil
