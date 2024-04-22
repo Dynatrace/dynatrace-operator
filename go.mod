@@ -4,7 +4,7 @@ go 1.22.2
 
 require (
 	github.com/container-storage-interface/spec v1.9.0
-	github.com/docker/cli v26.0.1+incompatible
+	github.com/docker/cli v26.0.2+incompatible
 	github.com/evanphx/json-patch v5.9.0+incompatible
 	github.com/go-gormigrate/gormigrate/v2 v2.1.2
 	github.com/go-logr/logr v1.4.1
@@ -43,10 +43,10 @@ require (
 	gorm.io/gorm v1.25.9
 	istio.io/api v1.21.1
 	istio.io/client-go v1.21.1
-	k8s.io/api v0.29.3
-	k8s.io/apiextensions-apiserver v0.29.3
-	k8s.io/apimachinery v0.29.3
-	k8s.io/client-go v0.29.3
+	k8s.io/api v0.29.4
+	k8s.io/apiextensions-apiserver v0.29.4
+	k8s.io/apimachinery v0.29.4
+	k8s.io/client-go v0.29.4
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 	sigs.k8s.io/controller-runtime v0.17.3
 	sigs.k8s.io/e2e-framework v0.3.0
@@ -122,7 +122,7 @@ require (
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/component-base v0.29.3 // indirect
+	k8s.io/component-base v0.29.4 // indirect
 	k8s.io/klog/v2 v2.110.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
