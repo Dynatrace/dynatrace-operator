@@ -314,7 +314,7 @@ func TestMountIfDBHasError(t *testing.T) {
 }
 
 func newPublisherForTesting(mounter *mount.FakeMounter) AppVolumePublisher {
-	csiOptions := dtcsi.CSIOptions{RootDir: "/data/"}
+	csiOptions := dtcsi.CSIOptions{RootDir: dtcsi.DataPath}
 
 	tmpFs := afero.NewMemMapFs()
 

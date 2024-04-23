@@ -235,13 +235,13 @@ func (publisher *AppVolumePublisher) mountOneAgent(bindCfg *csivolumes.BindConfi
 	return nil
 }
 
-func (publisher *AppVolumePublisher) unmountOneAgent(targetPath string, overlayFSPath string) {
+func (publisher *AppVolumePublisher) unmountOneAgent(targetPath string, appMountLocation string) {
 	if err := publisher.mounter.Unmount(targetPath); err != nil {
 		log.Error(err, "Unmount failed", "path", targetPath)
 	}
 
-	if filepath.IsAbs(overlayFSPath) {
-		agentDirectoryForPod := filepath.Join(overlayFSPath, dtcsi.OverlayMappedDirPath)
+	if filepath.IsAbs(appMountLocation) {
+		agentDirectoryForPod := filepath.Join(appMountLocation, dtcsi.OverlayMappedDirPath)
 		if err := publisher.mounter.Unmount(agentDirectoryForPod); err != nil {
 			log.Error(err, "Unmount failed", "path", agentDirectoryForPod)
 		}
@@ -254,7 +254,9 @@ func (publisher *AppVolumePublisher) ensureMountSteps(bindCfg *csivolumes.BindCo
 	}
 
 	if err := publisher.storeVolume(bindCfg, volumeCfg); err != nil {
+		// overlayFSPath := publisher.path.OverlayMappedDir(bindCfg.TenantUUID, volumeCfg.VolumeID)
 		overlayFSPath := publisher.path.AgentRunDirForVolume(bindCfg.TenantUUID, volumeCfg.VolumeID)
+
 		publisher.unmountOneAgent(volumeCfg.TargetPath, overlayFSPath)
 
 		return status.Error(codes.Internal, fmt.Sprintf("Failed to store volume info: %s", err))
@@ -300,14 +302,12 @@ func (publisher *AppVolumePublisher) storeVolume(bindCfg *csivolumes.BindConfig,
 }
 
 func newAppMount(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) *metadata.AppMount {
-	pr := metadata.PathResolver{RootDir: dtcsi.DataPath}
-
 	return &metadata.AppMount{
 		VolumeMeta:        metadata.VolumeMeta{ID: volumeCfg.VolumeID, PodName: volumeCfg.PodName},
 		CodeModule:        metadata.CodeModule{Version: bindCfg.Version},
 		VolumeMetaID:      volumeCfg.VolumeID,
 		CodeModuleVersion: bindCfg.Version,
-		Location:          pr.AgentRunDirForVolume(bindCfg.TenantUUID, volumeCfg.VolumeID),
+		Location:          metadata.PathResolver{RootDir: dtcsi.DataPath}.AgentRunDirForVolume(bindCfg.TenantUUID, volumeCfg.VolumeID),
 		MountAttempts:     int64(bindCfg.MaxMountAttempts),
 	}
 }
