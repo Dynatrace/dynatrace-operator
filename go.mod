@@ -4,7 +4,7 @@ go 1.22.2
 
 require (
 	github.com/container-storage-interface/spec v1.9.0
-	github.com/docker/cli v26.0.2+incompatible
+	github.com/docker/cli v26.1.0+incompatible
 	github.com/evanphx/json-patch v5.9.0+incompatible
 	github.com/go-gormigrate/gormigrate/v2 v2.1.2
 	github.com/go-logr/logr v1.4.1
@@ -41,7 +41,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/sqlite v1.5.5
 	gorm.io/gorm v1.25.9
-	istio.io/api v1.21.1
+	istio.io/api v1.21.2
 	istio.io/client-go v1.21.1
 	k8s.io/api v0.29.4
 	k8s.io/apiextensions-apiserver v0.29.4
