@@ -98,6 +98,7 @@ func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error
 
 func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "dynakube", request.Name)
+
 	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
 	defer span.End()
 
@@ -184,10 +185,12 @@ func (provisioner *OneAgentProvisioner) setupDynakubeMetadata(ctx context.Contex
 func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, request reconcile.Request) error {
 	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
 	defer span.End()
+
 	_, err := provisioner.gc.Reconcile(ctx, request)
 
 	if err != nil {
 		span.RecordError(err)
+
 		return err
 	}
 
@@ -226,7 +229,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 ) {
 	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
 	defer span.End()
-	
+
 	latestProcessModuleConfig, err := processmoduleconfigsecret.GetSecretData(ctx, provisioner.apiReader, dk.Name, dk.Namespace)
 	if err != nil {
 		span.RecordError(err)
@@ -266,6 +269,7 @@ func (provisioner *OneAgentProvisioner) handleMetadata(ctx context.Context, dk *
 	dynakubeMetadata, err := provisioner.db.GetDynakube(ctx, dk.Name)
 	if err != nil {
 		span.RecordError(err)
+
 		return nil, metadata.Dynakube{}, errors.WithStack(err)
 	}
 

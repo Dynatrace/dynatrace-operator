@@ -64,7 +64,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 	err = provisioner.installAgent(ctx, imageInstaller, dynakube, targetDir, targetImage, tenantUUID)
 	if err != nil {
 		span.RecordError(err)
-		
+
 		return "", err
 	}
 
@@ -119,8 +119,10 @@ func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dyn
 
 	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
 	defer span.End()
+
 	err = provisioner.installAgent(ctx, urlInstaller, dynakube, targetDir, targetVersion, tenantUUID)
 	if err != nil {
+
 		span.RecordError(err)
 		return "", err
 	}
