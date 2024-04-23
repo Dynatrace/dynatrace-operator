@@ -2,8 +2,6 @@ package token
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -11,66 +9,52 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Tokens map[string]Token
+type Tokens map[string]*Token
 
-func (tokens Tokens) ApiToken() Token {
+func (tokens Tokens) ApiToken() *Token {
 	return tokens.getToken(dtclient.ApiToken)
 }
 
-func (tokens Tokens) PaasToken() Token {
+func (tokens Tokens) PaasToken() *Token {
 	return tokens.getToken(dtclient.PaasToken)
 }
 
-func (tokens Tokens) DataIngestToken() Token {
+func (tokens Tokens) DataIngestToken() *Token {
 	return tokens.getToken(dtclient.DataIngestToken)
 }
 
-func (tokens Tokens) getToken(tokenName string) Token {
+func (tokens Tokens) getToken(tokenName string) *Token {
 	token, hasToken := tokens[tokenName]
 	if !hasToken {
-		token = Token{}
+		token = &Token{}
 	}
 
 	return token
 }
 
-func (tokens Tokens) SetScopesForDynakube(dynakube dynatracev1beta1.DynaKube) Tokens {
+func (tokens Tokens) AddFeatureScopesToTokens() Tokens {
 	_, hasPaasToken := tokens[dtclient.PaasToken]
 
-	for tokenType, token := range tokens {
-		switch tokenType {
+	for _, token := range tokens {
+		switch token.Type {
 		case dtclient.ApiToken:
-			tokens[dtclient.ApiToken] = token.setApiTokenScopes(dynakube, hasPaasToken)
+			token.addFeatures(getFeaturesForAPIToken(hasPaasToken))
 		case dtclient.PaasToken:
-			tokens[dtclient.PaasToken] = token.setPaasTokenScopes()
+			token.addFeatures(getFeaturesForPaaSToken())
 		case dtclient.DataIngestToken:
-			tokens[dtclient.DataIngestToken] = token.setDataIngestScopes()
+			token.addFeatures(getFeaturesForDataIngest())
 		}
 	}
 
 	return tokens
 }
 
-func (tokens Tokens) VerifyScopes(ctx context.Context, dtc dtclient.Client) error {
+func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient dtclient.Client, dynakube dynatracev1beta1.DynaKube) error {
 	scopeErrors := make([]error, 0)
 
-	for tokenType, token := range tokens {
-		if len(token.RequiredScopes) == 0 {
-			continue
-		}
-
-		scopes, err := dtc.GetTokenScopes(ctx, token.Value)
-		if err != nil {
+	for _, token := range tokens {
+		if err := token.verifyScopes(ctx, dtClient, dynakube); err != nil {
 			scopeErrors = append(scopeErrors, err)
-
-			continue
-		}
-
-		missingScopes := token.getMissingScopes(scopes)
-
-		if len(missingScopes) > 0 {
-			scopeErrors = append(scopeErrors,
-				errors.New(fmt.Sprintf("token '%s' is missing the following scopes: [ %s ]", tokenType, strings.Join(missingScopes, ", "))))
 		}
 	}
 
@@ -84,10 +68,10 @@ func (tokens Tokens) VerifyScopes(ctx context.Context, dtc dtclient.Client) erro
 func (tokens Tokens) VerifyValues() error {
 	valueErrors := make([]error, 0)
 
-	for tokenType, token := range tokens {
-		if strings.TrimSpace(token.Value) != token.Value {
-			valueErrors = append(valueErrors,
-				errors.Errorf("value of token '%s' contains whitespaces at the beginning or end of the value", tokenType))
+	for _, token := range tokens {
+		err := token.verifyValue()
+		if err != nil {
+			valueErrors = append(valueErrors, err)
 		}
 	}
 
