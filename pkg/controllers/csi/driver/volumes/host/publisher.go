@@ -76,7 +76,7 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 			VolumeMeta:      metadata.VolumeMeta{ID: volumeCfg.VolumeID, PodName: volumeCfg.PodName},
 			VolumeMetaID:    volumeCfg.VolumeID,
 			TenantUUID:      bindCfg.TenantUUID,
-			Location:        metadata.PathResolver{RootDir: dtcsi.DataPath}.OsAgentDir(bindCfg.TenantUUID),
+			Location:        metadata.PathResolver{RootDir: dtcsi.DataPath}.AgentRunDirForVolume(bindCfg.TenantUUID, volumeCfg.VolumeID),
 			MountAttempts:   0,
 			TenantConfigUID: tenantConfig.UID,
 		}
@@ -123,7 +123,7 @@ func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volum
 
 func (publisher *HostVolumePublisher) CanUnpublishVolume(ctx context.Context, volumeInfo *csivolumes.VolumeInfo) (bool, error) {
 	volume, err := publisher.db.ReadOSMount(metadata.OSMount{VolumeMetaID: volumeInfo.VolumeID})
-	if err != nil {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return false, status.Error(codes.Internal, failedToGetOsAgentVolumePrefix+err.Error())
 	}
 

@@ -130,7 +130,7 @@ func migrateOsAgentVolumes(tx *gorm.DB) error {
 			TenantConfigUID: tc.UID,
 			TenantUUID:      ov.TenantUUID,
 			VolumeMetaID:    vm.ID,
-			Location:        pr.AgentRunDirForVolume(ov.TenantUUID, ov.VolumeID),
+			Location:        pr.AgentRunDirForVolume(ov.TenantUUID, vm.ID),
 			MountAttempts:   mountAttempts,
 		}
 		result = tx.Create(&om)
