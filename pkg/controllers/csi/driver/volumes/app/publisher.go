@@ -89,7 +89,7 @@ func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCf
 func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volumeInfo *csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
 	appMount, err := publisher.db.ReadAppMount(metadata.AppMount{VolumeMetaID: volumeInfo.VolumeID})
 
-	if err != nil {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		log.Info("failed to load AppMount", "error", err.Error())
 	}
 
@@ -126,7 +126,7 @@ func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volume
 
 func (publisher *AppVolumePublisher) CanUnpublishVolume(ctx context.Context, volumeInfo *csivolumes.VolumeInfo) (bool, error) {
 	appMount, err := publisher.db.ReadAppMount(metadata.AppMount{VolumeMetaID: volumeInfo.VolumeID})
-	if err != nil {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return false, err
 	}
 

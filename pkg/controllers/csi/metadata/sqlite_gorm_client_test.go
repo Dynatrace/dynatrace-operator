@@ -311,13 +311,18 @@ func TestReadOSMount(t *testing.T) {
 	assert.NotNil(t, osMount)
 	assert.Equal(t, "osmount1", osMount.VolumeMeta.ID)
 
-	_, err = db.ReadOSMount(OSMount{TenantUUID: ""})
+	osMount, err = db.ReadOSMount(OSMount{TenantUUID: ""})
 	require.Error(t, err)
 	assert.Equal(t, "Can't query for empty OSMount", err.Error())
+	assert.Nil(t, osMount)
 
-	_, err = db.ReadOSMount(OSMount{TenantUUID: "unknown"})
-	require.Error(t, err)
-	assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
+	osMount, err = db.ReadOSMount(OSMount{TenantUUID: "unknown"})
+	require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+	assert.Nil(t, osMount)
+
+	osMount, err = db.ReadOSMount(OSMount{VolumeMetaID: "osmount1"})
+	require.NoError(t, err)
+	assert.NotNil(t, osMount)
 }
 
 func TestUpdateOsMount(t *testing.T) {
@@ -633,6 +638,7 @@ func setupPostPublishData(conn *GormConn) {
 	}
 	osMount := &OSMount{
 		VolumeMeta:    vmOM,
+		VolumeMetaID:  vmOM.ID,
 		Location:      "somewhere",
 		TenantUUID:    tenantConfig.TenantUUID,
 		TenantConfig:  *tenantConfig,
