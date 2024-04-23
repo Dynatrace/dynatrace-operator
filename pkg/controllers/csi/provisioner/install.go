@@ -2,20 +2,20 @@ package csiprovisioner
 
 import (
 	"context"
-	csiotel "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/internal/otel"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"net/http"
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	csiotel "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/internal/otel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 )
 
 func (provisioner *OneAgentProvisioner) installAgentImage(
@@ -60,9 +60,11 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 
 	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
 	defer span.End()
+
 	err = provisioner.installAgent(ctx, imageInstaller, dynakube, targetDir, targetImage, tenantUUID)
 	if err != nil {
 		span.RecordError(err)
+		
 		return "", err
 	}
 

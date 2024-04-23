@@ -19,14 +19,13 @@ package csiprovisioner
 import (
 	"context"
 	"fmt"
-	csiotel "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/internal/otel"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csigc "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/gc"
+	csiotel "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/internal/otel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
@@ -35,6 +34,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -104,6 +104,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	dk, err := provisioner.getDynaKube(ctx, request.NamespacedName)
 	if err != nil {
 		span.RecordError(err)
+
 		if k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, provisioner.db.DeleteDynakube(ctx, request.Name)
 		}
@@ -189,6 +190,7 @@ func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, requ
 		span.RecordError(err)
 		return err
 	}
+
 	return nil
 }
 
@@ -224,9 +226,11 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 ) {
 	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
 	defer span.End()
+	
 	latestProcessModuleConfig, err := processmoduleconfigsecret.GetSecretData(ctx, provisioner.apiReader, dk.Name, dk.Namespace)
 	if err != nil {
 		span.RecordError(err)
+
 		return false, err
 	}
 
@@ -258,6 +262,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 func (provisioner *OneAgentProvisioner) handleMetadata(ctx context.Context, dk *dynatracev1beta1.DynaKube) (*metadata.Dynakube, metadata.Dynakube, error) {
 	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
 	defer span.End()
+
 	dynakubeMetadata, err := provisioner.db.GetDynakube(ctx, dk.Name)
 	if err != nil {
 		span.RecordError(err)
