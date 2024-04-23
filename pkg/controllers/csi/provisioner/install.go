@@ -2,6 +2,8 @@ package csiprovisioner
 
 import (
 	"context"
+	csiotel "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/internal/otel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"net/http"
 	"strings"
 
@@ -56,8 +58,11 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(imageDigest)
 	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dynakube.GetName())
 
+	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	defer span.End()
 	err = provisioner.installAgent(ctx, imageInstaller, dynakube, targetDir, targetImage, tenantUUID)
 	if err != nil {
+		span.RecordError(err)
 		return "", err
 	}
 
@@ -110,8 +115,11 @@ func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dyn
 	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(targetVersion)
 	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dynakube.GetName())
 
+	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	defer span.End()
 	err = provisioner.installAgent(ctx, urlInstaller, dynakube, targetDir, targetVersion, tenantUUID)
 	if err != nil {
+		span.RecordError(err)
 		return "", err
 	}
 
