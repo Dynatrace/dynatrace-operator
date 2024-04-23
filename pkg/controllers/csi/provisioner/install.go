@@ -122,8 +122,8 @@ func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dyn
 
 	err = provisioner.installAgent(ctx, urlInstaller, dynakube, targetDir, targetVersion, tenantUUID)
 	if err != nil {
-
 		span.RecordError(err)
+
 		return "", err
 	}
 
