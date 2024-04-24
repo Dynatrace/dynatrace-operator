@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"os"
 
-	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -86,7 +85,7 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 			VolumeMeta:      metadata.VolumeMeta{ID: volumeCfg.VolumeID, PodName: volumeCfg.PodName},
 			VolumeMetaID:    volumeCfg.VolumeID,
 			TenantUUID:      bindCfg.TenantUUID,
-			Location:        metadata.PathResolver{RootDir: dtcsi.DataPath}.AgentRunDirForVolume(bindCfg.TenantUUID, volumeCfg.VolumeID),
+			Location:        publisher.path.AgentRunDirForVolume(bindCfg.TenantUUID, volumeCfg.VolumeID),
 			MountAttempts:   0,
 			TenantConfigUID: tenantConfig.UID,
 		}
