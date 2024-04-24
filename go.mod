@@ -41,7 +41,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/sqlite v1.5.5
 	gorm.io/gorm v1.25.9
-	istio.io/api v1.21.1
+	istio.io/api v1.21.2
 	istio.io/client-go v1.21.2
 	k8s.io/api v0.29.4
 	k8s.io/apiextensions-apiserver v0.29.4
