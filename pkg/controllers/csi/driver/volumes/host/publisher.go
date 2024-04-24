@@ -78,7 +78,7 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 	if osMount == nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		tenantConfig, err := publisher.db.ReadTenantConfig(metadata.TenantConfig{TenantUUID: bindCfg.TenantUUID})
 		if err != nil {
-			return nil, err
+			return nil, status.Error(codes.Internal, "failed to read TenantConfig: "+err.Error())
 		}
 
 		osMount := metadata.OSMount{
