@@ -51,10 +51,13 @@ type HostVolumePublisher struct {
 	path    metadata.PathResolver
 }
 
+// cyclomatic: function (*HostVolumePublisher).PublishVolume has cyclomatic complexity 13 (> max enabled 12) (revive)go-golangci-lint
+//
+//nolint:revive
 func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
 	bindCfg, err := csivolumes.NewBindConfig(ctx, publisher.db, volumeCfg)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, "failed to create new BindConfig: "+err.Error())
 	}
 
 	if err := publisher.mountOneAgent(bindCfg.TenantUUID, volumeCfg); err != nil {
@@ -69,11 +72,11 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 	if osMount != nil && osMount.DeletedAt.Valid {
 		osMount, err = publisher.db.RestoreOSMount(osMount)
 		if err != nil {
-			return nil, err
+			return nil, status.Error(codes.Internal, "failed to restore OSMount: "+err.Error())
 		}
 	}
 
-	if osMount == nil {
+	if osMount == nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		tenantConfig, err := publisher.db.ReadTenantConfig(metadata.TenantConfig{TenantUUID: bindCfg.TenantUUID})
 		if err != nil {
 			return nil, err
