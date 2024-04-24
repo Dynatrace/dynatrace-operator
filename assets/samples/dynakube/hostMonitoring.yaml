@@ -133,7 +133,7 @@ spec:
       # For a list of the limitations for OneAgents in Docker, see https://www.dynatrace.com/support/help/shortlink/oneagent-docker#limitations
       #
       args:
-        - --set-monitoring-mode=infra
+        - --set-monitoring-mode=infra-only
 
   # Configuration for ActiveGate instances.
   #

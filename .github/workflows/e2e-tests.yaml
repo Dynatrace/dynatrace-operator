@@ -23,7 +23,7 @@ jobs:
       - operator-e2e
     steps:
       - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
       - name: Run e2e test
         uses: ./.github/actions/run-e2e
         with:
@@ -46,7 +46,7 @@ jobs:
       - operator-e2e
     steps:
       - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
       - name: Run e2e test
         uses: ./.github/actions/run-e2e
         with:
@@ -72,7 +72,7 @@ jobs:
       - operator-e2e
     steps:
       - name: Notify failure in Slack
-        uses: slackapi/slack-github-action@6c661ce58804a1a20f6dc5fbee7f0381b469e001 # v1.25.0
+        uses: slackapi/slack-github-action@70cd7be8e40a46e8b0eced40b0de447bdb42f68e # v1.26.0
         with:
           channel-id: 'int-cp-operator'
           slack-message: ":x: E2E tests failed on ${{ github.event.inputs.target || 'main' }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"

@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
@@ -46,8 +45,7 @@ const (
 
 	// dtClient.
 
-	AnnotationFeatureNoProxy             = AnnotationFeaturePrefix + "no-proxy"
-	AnnotationFeatureApiRequestThreshold = AnnotationFeaturePrefix + "dynatrace-api-request-threshold"
+	AnnotationFeatureNoProxy = AnnotationFeaturePrefix + "no-proxy"
 
 	// oneAgent.
 
@@ -56,14 +54,6 @@ const (
 	AnnotationFeatureOneAgentIgnoreProxy            = AnnotationFeaturePrefix + "oneagent-ignore-proxy"
 	AnnotationFeatureOneAgentInitialConnectRetry    = AnnotationFeaturePrefix + "oneagent-initial-connect-retry-ms"
 	AnnotationFeatureRunOneAgentContainerPrivileged = AnnotationFeaturePrefix + "oneagent-privileged"
-	AnnotationFeatureOneAgentSecCompProfile         = AnnotationFeaturePrefix + "oneagent-seccomp-profile"
-
-	// injection (webhook).
-
-	// Deprecated: AnnotationFeatureDisableMetadataEnrichment use AnnotationFeatureMetadataEnrichment instead.
-	AnnotationFeatureDisableMetadataEnrichment = AnnotationFeaturePrefix + "disable-metadata-enrichment"
-
-	AnnotationFeatureMetadataEnrichment = AnnotationFeaturePrefix + "metadata-enrichment"
 
 	AnnotationFeatureIgnoreUnknownState    = AnnotationFeaturePrefix + "ignore-unknown-state"
 	AnnotationFeatureIgnoredNamespaces     = AnnotationFeaturePrefix + "ignored-namespaces"
@@ -130,15 +120,6 @@ func (dk *DynaKube) FeatureNoProxy() string {
 	return dk.getFeatureFlagRaw(AnnotationFeatureNoProxy)
 }
 
-func (dk *DynaKube) FeatureApiRequestThreshold() time.Duration {
-	interval := dk.getFeatureFlagInt(AnnotationFeatureApiRequestThreshold, DefaultMinRequestThresholdMinutes)
-	if interval < 0 {
-		interval = DefaultMinRequestThresholdMinutes
-	}
-
-	return time.Duration(interval) * time.Minute
-}
-
 // FeatureOneAgentMaxUnavailable is a feature flag to configure maxUnavailable on the OneAgent DaemonSets rolling upgrades.
 func (dk *DynaKube) FeatureOneAgentMaxUnavailable() int {
 	return dk.getFeatureFlagInt(AnnotationFeatureOneAgentMaxUnavailable, 1)
@@ -198,11 +179,6 @@ func (dk *DynaKube) FeatureEnableK8sAppEnabled() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureK8sAppEnabled) == truePhrase
 }
 
-// FeatureDisableMetadataEnrichment is a feature flag to disable metadata enrichment.
-func (dk *DynaKube) FeatureDisableMetadataEnrichment() bool {
-	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureMetadataEnrichment, AnnotationFeatureDisableMetadataEnrichment)
-}
-
 // FeatureAutomaticInjection controls OneAgent is injected to pods in selected namespaces automatically ("automatic-injection=true" or flag not set)
 // or if pods need to be opted-in one by one ("automatic-injection=false").
 func (dk *DynaKube) FeatureAutomaticInjection() bool {
@@ -249,10 +225,6 @@ func (dk *DynaKube) FeatureAgentInitialConnectRetry() int {
 
 func (dk *DynaKube) FeatureOneAgentPrivileged() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureRunOneAgentContainerPrivileged) == truePhrase
-}
-
-func (dk *DynaKube) FeatureOneAgentSecCompProfile() string {
-	return dk.getFeatureFlagRaw(AnnotationFeatureOneAgentSecCompProfile)
 }
 
 func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
