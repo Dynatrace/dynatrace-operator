@@ -17,6 +17,7 @@ type GormAccess interface {
 	ReadTenantConfig(tenantConfig TenantConfig) (*TenantConfig, error)
 	ReadCodeModule(codeModule CodeModule) (*CodeModule, error)
 	ReadOSMount(osMount OSMount) (*OSMount, error)
+	ReadUnscopedOSMount(osMount OSMount) (*OSMount, error)
 	ReadAppMount(appMount AppMount) (*AppMount, error)
 
 	ReadTenantConfigs() ([]TenantConfig, error)
@@ -40,6 +41,7 @@ type GormAccess interface {
 	DeleteAppMount(appMount *AppMount) error
 
 	IsCodeModuleOrphaned(codeModule *CodeModule) (bool, error)
+	RestoreOSMount(osMount *OSMount) (*OSMount, error)
 }
 
 type GormConn struct {
@@ -153,6 +155,25 @@ func (conn *GormConn) ReadOSMount(osMount OSMount) (*OSMount, error) {
 	}
 
 	result := conn.db.WithContext(conn.ctx).Preload("VolumeMeta").Find(&record, osMount)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	if (*record == OSMount{}) {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	return record, nil
+}
+
+func (conn *GormConn) ReadUnscopedOSMount(osMount OSMount) (*OSMount, error) {
+	var record *OSMount
+
+	if (osMount == OSMount{}) {
+		return nil, errors.New("Can't query for empty OSMount")
+	}
+
+	result := conn.db.WithContext(conn.ctx).Preload("VolumeMeta").Unscoped().Find(&record, osMount)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -358,6 +379,22 @@ func (conn *GormConn) IsCodeModuleOrphaned(codeModule *CodeModule) (bool, error)
 	}
 
 	return false, nil
+}
+
+func (conn *GormConn) RestoreOSMount(osMount *OSMount) (*OSMount, error) {
+	osMount, err := conn.ReadUnscopedOSMount(*osMount)
+	if err != nil {
+		return nil, err
+	}
+
+	osMount.DeletedAt.Valid = false
+
+	err = conn.db.WithContext(conn.ctx).Unscoped().Updates(osMount).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return osMount, nil
 }
 
 type AccessOverview struct {

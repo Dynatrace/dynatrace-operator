@@ -61,9 +61,16 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 		return nil, status.Error(codes.Internal, "failed to mount OSMount: "+err.Error())
 	}
 
-	osMount, err := publisher.db.ReadOSMount(metadata.OSMount{TenantUUID: bindCfg.TenantUUID})
+	osMount, err := publisher.db.ReadUnscopedOSMount(metadata.OSMount{TenantUUID: bindCfg.TenantUUID})
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, status.Error(codes.Internal, failedToGetOsAgentVolumePrefix+err.Error())
+	}
+
+	if osMount != nil && osMount.DeletedAt.Valid {
+		osMount, err = publisher.db.RestoreOSMount(osMount)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if osMount == nil {
