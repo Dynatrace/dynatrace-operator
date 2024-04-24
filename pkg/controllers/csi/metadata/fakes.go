@@ -86,6 +86,9 @@ func (f *FakeFailDB) DeleteOSMount(osMount *OSMount) error {
 func (f *FakeFailDB) ReadOSMount(osMount OSMount) (*OSMount, error) {
 	return nil, sql.ErrTxDone
 }
+func (f *FakeFailDB) ReadUnscopedOSMount(osMount OSMount) (*OSMount, error) {
+	return nil, sql.ErrTxDone
+}
 func (f *FakeFailDB) ReadOSMounts() ([]OSMount, error) {
 	return nil, sql.ErrTxDone
 }
@@ -108,5 +111,8 @@ func (f *FakeFailDB) ReadVolumeMeta(volumeMeta VolumeMeta) (*VolumeMeta, error) 
 	return nil, sql.ErrTxDone
 }
 func (f *FakeFailDB) ReadVolumeMetas() ([]VolumeMeta, error) {
+	return nil, sql.ErrTxDone
+}
+func (f *FakeFailDB) RestoreOSMount(osMount *OSMount) (*OSMount, error) {
 	return nil, sql.ErrTxDone
 }

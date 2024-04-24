@@ -237,6 +237,33 @@ func TestIsCodeModuleOrphaned(t *testing.T) {
 	})
 }
 
+func TestRestoreOSMount(t *testing.T) {
+	t.Run("Restore OSMount", func(t *testing.T) {
+		db, err := setupDB()
+		require.NoError(t, err)
+		setupPostPublishData(db)
+
+		err = db.DeleteOSMount(&OSMount{TenantUUID: "abc123"})
+		require.NoError(t, err)
+
+		osMount, err := db.ReadOSMount(OSMount{TenantUUID: "abc123"})
+		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+		assert.Nil(t, osMount)
+
+		osMount, err = db.ReadUnscopedOSMount(OSMount{TenantUUID: "abc123"})
+		require.NoError(t, err)
+		assert.NotNil(t, osMount)
+
+		osMount, err = db.RestoreOSMount(osMount)
+		require.NoError(t, err)
+		assert.NotNil(t, osMount)
+
+		osMount, err = db.ReadOSMount(OSMount{TenantUUID: "abc123"})
+		require.NoError(t, err)
+		assert.NotNil(t, osMount)
+	})
+}
+
 func TestSoftDeleteCodeModule(t *testing.T) {
 	db, err := setupDB()
 	require.NoError(t, err)
@@ -516,6 +543,7 @@ func TestNewAccessOverview(t *testing.T) {
 		db.db.WithContext(context.Background()).Find(&tenantConfig, TenantConfig{TenantUUID: "uuid"})
 		db.db.Create(&OSMount{
 			VolumeMeta:      VolumeMeta{ID: "1"},
+			VolumeMetaID:    "1",
 			TenantConfigUID: tenantConfig.UID,
 			TenantUUID:      "uuid",
 		})
