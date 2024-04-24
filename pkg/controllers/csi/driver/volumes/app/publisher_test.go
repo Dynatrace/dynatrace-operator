@@ -43,11 +43,11 @@ func TestPublishVolume(t *testing.T) {
 		assert.Equal(t, "overlay", mounter.MountPoints[0].Device)
 		assert.Equal(t, "overlay", mounter.MountPoints[0].Type)
 		assert.Equal(t, []string{
-			"lowerdir=/data/codemodules/1.2-3",
-			"upperdir=/data/a-tenant-uuid/run/a-volume/var",
-			"workdir=/data/a-tenant-uuid/run/a-volume/work"},
+			"lowerdir=/codemodules/1.2-3",
+			"upperdir=/a-tenant-uuid/run/a-volume/var",
+			"workdir=/a-tenant-uuid/run/a-volume/work"},
 			mounter.MountPoints[0].Opts)
-		assert.Equal(t, "/data/a-tenant-uuid/run/a-volume/mapped", mounter.MountPoints[0].Path)
+		assert.Equal(t, "/a-tenant-uuid/run/a-volume/mapped", mounter.MountPoints[0].Path)
 
 		assert.Equal(t, "overlay", mounter.MountPoints[1].Device)
 		assert.Equal(t, "", mounter.MountPoints[1].Type)
@@ -76,11 +76,11 @@ func TestPublishVolume(t *testing.T) {
 		assert.Equal(t, "overlay", mounter.MountPoints[0].Device)
 		assert.Equal(t, "overlay", mounter.MountPoints[0].Type)
 		assert.Equal(t, []string{
-			"lowerdir=/data/codemodules/" + testAgentVersion,
-			"upperdir=/data/a-tenant-uuid/run/a-volume/var",
-			"workdir=/data/a-tenant-uuid/run/a-volume/work"},
+			"lowerdir=/codemodules/" + testAgentVersion,
+			"upperdir=/a-tenant-uuid/run/a-volume/var",
+			"workdir=/a-tenant-uuid/run/a-volume/work"},
 			mounter.MountPoints[0].Opts)
-		assert.Equal(t, "/data/a-tenant-uuid/run/a-volume/mapped", mounter.MountPoints[0].Path)
+		assert.Equal(t, "/a-tenant-uuid/run/a-volume/mapped", mounter.MountPoints[0].Path)
 
 		assert.Equal(t, "overlay", mounter.MountPoints[1].Device)
 		assert.Equal(t, "", mounter.MountPoints[1].Type)
@@ -187,7 +187,7 @@ func TestUnpublishVolume(t *testing.T) {
 
 		mounter := mount.NewFakeMounter([]mount.MountPoint{
 			{Path: testTargetPath},
-			{Path: fmt.Sprintf("/data/%s/run/%s/mapped", testTenantUUID, testVolumeId)},
+			{Path: fmt.Sprintf("/%s/run/%s/mapped", testTenantUUID, testVolumeId)},
 		})
 		publisher := newPublisherForTesting(mounter)
 		mockPublishedVolume(t, &publisher)
@@ -314,7 +314,7 @@ func TestMountIfDBHasError(t *testing.T) {
 }
 
 func newPublisherForTesting(mounter *mount.FakeMounter) AppVolumePublisher {
-	csiOptions := dtcsi.CSIOptions{RootDir: dtcsi.DataPath}
+	csiOptions := dtcsi.CSIOptions{RootDir: "/"}
 
 	tmpFs := afero.NewMemMapFs()
 
