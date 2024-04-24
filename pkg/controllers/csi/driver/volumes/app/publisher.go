@@ -105,7 +105,8 @@ func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volume
 		return &csi.NodeUnpublishVolumeResponse{}, publisher.db.DeleteAppMount(&metadata.AppMount{VolumeMetaID: appMount.VolumeMetaID})
 	}
 
-	publisher.unmountOneAgent(volumeInfo.TargetPath, appMount.Location)
+	overlayFSPath := filepath.Join(appMount.Location, dtcsi.OverlayMappedDirPath)
+	publisher.unmountOneAgent(volumeInfo.TargetPath, overlayFSPath)
 
 	if err = publisher.db.DeleteAppMount(&metadata.AppMount{VolumeMetaID: appMount.VolumeMetaID}); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -235,15 +236,14 @@ func (publisher *AppVolumePublisher) mountOneAgent(bindCfg *csivolumes.BindConfi
 	return nil
 }
 
-func (publisher *AppVolumePublisher) unmountOneAgent(targetPath string, appMountLocation string) {
+func (publisher *AppVolumePublisher) unmountOneAgent(targetPath string, overlayFSPath string) {
 	if err := publisher.mounter.Unmount(targetPath); err != nil {
 		log.Error(err, "Unmount failed", "path", targetPath)
 	}
 
-	if filepath.IsAbs(appMountLocation) {
-		agentDirectoryForPod := filepath.Join(appMountLocation, dtcsi.OverlayMappedDirPath)
-		if err := publisher.mounter.Unmount(agentDirectoryForPod); err != nil {
-			log.Error(err, "Unmount failed", "path", agentDirectoryForPod)
+	if filepath.IsAbs(overlayFSPath) {
+		if err := publisher.mounter.Unmount(overlayFSPath); err != nil {
+			log.Error(err, "Unmount failed", "path", overlayFSPath)
 		}
 	}
 }
@@ -254,8 +254,8 @@ func (publisher *AppVolumePublisher) ensureMountSteps(bindCfg *csivolumes.BindCo
 	}
 
 	if err := publisher.storeVolume(bindCfg, volumeCfg); err != nil {
-		// overlayFSPath := publisher.path.OverlayMappedDir(bindCfg.TenantUUID, volumeCfg.VolumeID)
-		overlayFSPath := publisher.path.AgentRunDirForVolume(bindCfg.TenantUUID, volumeCfg.VolumeID)
+		agentRunDirForVolume := publisher.path.AgentRunDirForVolume(bindCfg.TenantUUID, volumeCfg.VolumeID)
+		overlayFSPath := filepath.Join(agentRunDirForVolume, dtcsi.OverlayMappedDirPath)
 
 		publisher.unmountOneAgent(volumeCfg.TargetPath, overlayFSPath)
 
