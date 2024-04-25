@@ -12,7 +12,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// TODO: Add kubebuilder tags
+// Package v1beta2 contains API Schema definitions for the dynatrace v1beta2 API group
+// +kubebuilder:object:generate=true
+// +groupName=dynatrace.com
 package v1beta2
 
 import (
