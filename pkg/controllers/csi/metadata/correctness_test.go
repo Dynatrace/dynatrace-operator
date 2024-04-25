@@ -22,7 +22,7 @@ func createTestTenantConfig(index int) *TenantConfig {
 	return &TenantConfig{
 		Name:                        fmt.Sprintf("dk%d", index),
 		TenantUUID:                  fmt.Sprintf("asc%d", index),
-		DownloadedCodeModuleVersion: fmt.Sprintf("sha256:%d", 123*index),
+		DownloadedCodeModuleVersion: fmt.Sprintf("%d", 123*index),
 		MaxFailedMountAttempts:      int64(index),
 		TimeStampedModel:            TimeStampedModel{},
 	}
