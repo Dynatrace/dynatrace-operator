@@ -117,7 +117,8 @@ func (gc *CSIGarbageCollector) mockUsedVersions(versions ...string) {
 			CodeModuleVersion: version,
 			MountAttempts:     0,
 		}
-		_ = gc.db.CreateAppMount(&appMount)
+		err := gc.db.CreateAppMount(&appMount)
+		require.NoError(err)
 
 		gc.db.CreateCodeModule(&metadata.CodeModule{Version: version, Location: filepath.Join(testBinaryDir, version)})
 	}
