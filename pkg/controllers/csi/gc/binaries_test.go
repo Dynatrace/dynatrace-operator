@@ -66,7 +66,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		resetMetrics()
 
 		gc := NewMockGarbageCollector()
-		gc.mockUsedVersions(testVersion1, testVersion2, testVersion3)
+		gc.mockUsedVersions(t, testVersion1, testVersion2, testVersion3)
 
 		gc.runBinaryGarbageCollection()
 
@@ -80,7 +80,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 
 func TestBinaryGarbageCollector_getUsedVersions(t *testing.T) {
 	gc := NewMockGarbageCollector()
-	gc.mockUsedVersions(testVersion1, testVersion2, testVersion3)
+	gc.mockUsedVersions(t, testVersion1, testVersion2, testVersion3)
 
 	usedVersions, err := gc.db.ReadCodeModules()
 	require.NoError(t, err)
@@ -107,7 +107,7 @@ func (gc *CSIGarbageCollector) mockUnusedVersions(versions ...string) {
 		_, _ = gc.fs.Create(filepath.Join(testBinaryDir, version))
 	}
 }
-func (gc *CSIGarbageCollector) mockUsedVersions(versions ...string) {
+func (gc *CSIGarbageCollector) mockUsedVersions(t *testing.T, versions ...string) {
 	_ = gc.fs.Mkdir(testBinaryDir, 0770)
 	for i, version := range versions {
 		_, _ = gc.fs.Create(filepath.Join(testBinaryDir, version))
@@ -118,7 +118,7 @@ func (gc *CSIGarbageCollector) mockUsedVersions(versions ...string) {
 			MountAttempts:     0,
 		}
 		err := gc.db.CreateAppMount(&appMount)
-		require.NoError(err)
+		require.NoError(t, err)
 
 		gc.db.CreateCodeModule(&metadata.CodeModule{Version: version, Location: filepath.Join(testBinaryDir, version)})
 	}

@@ -50,8 +50,6 @@ type HostVolumePublisher struct {
 	path    metadata.PathResolver
 }
 
-// cyclomatic: function (*HostVolumePublisher).PublishVolume has cyclomatic complexity 13 (> max enabled 12) (revive)go-golangci-lint
-//
 //nolint:revive
 func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
 	bindCfg, err := csivolumes.NewBindConfig(ctx, publisher.db, volumeCfg)
