@@ -1,6 +1,4 @@
-// +kubebuilder:object:generate=true
-// +groupName=dynatrace.com
-// +versionName=v1beta2
+// TODO: Add kubebuilder tags
 package dynakube
 
 import (
