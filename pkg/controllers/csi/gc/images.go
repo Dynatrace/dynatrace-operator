@@ -51,24 +51,63 @@ func (gc *CSIGarbageCollector) getSharedBinDirs() ([]os.FileInfo, error) {
 func (gc *CSIGarbageCollector) collectUnusedAgentBins(imageDirs []os.FileInfo) ([]string, error) {
 	var toDelete []string
 
-	codeModules, err := gc.db.ReadCodeModules()
+	usedAgentBinPaths, err := gc.getUsedAgentBinPaths()
 	if err != nil {
-		return []string{}, err
+		log.Info("failed to get the used agent bin paths")
+
+		return nil, err
 	}
 
-	codeModuleBins := make(map[string]bool)
-	for _, codeModule := range codeModules {
-		codeModuleBins[codeModule.Location] = true
+	codeModuleAgentBinPaths, err := gc.getCodeModuleAgentBinPaths()
+	if err != nil {
+		log.Info("failed to get CodeModule bin paths")
+
+		return nil, err
 	}
 
 	for _, imageDir := range imageDirs {
 		agentBinPath := gc.path.AgentSharedBinaryDirForAgent(imageDir.Name())
-		if !codeModuleBins[agentBinPath] {
+
+		if !codeModuleAgentBinPaths[agentBinPath] && !usedAgentBinPaths[agentBinPath] {
 			toDelete = append(toDelete, agentBinPath)
 		}
 	}
 
 	return toDelete, nil
+}
+
+// Returns a map with all agent bin paths based on existing TenantConfig.DownloadedCodeModuleVersion
+// (which is the latest downloaded CodeModule version from the tenant)
+func (gc *CSIGarbageCollector) getUsedAgentBinPaths() (map[string]bool, error) {
+	tenantConfigs, err := gc.db.ReadTenantConfigs()
+	if err != nil {
+		return nil, err
+	}
+
+	latestCodeModuleVersions := make(map[string]bool)
+
+	for _, tenantConfig := range tenantConfigs {
+		agentBinPath := gc.path.AgentSharedBinaryDirForAgent(tenantConfig.DownloadedCodeModuleVersion)
+		latestCodeModuleVersions[agentBinPath] = true
+	}
+
+	return latestCodeModuleVersions, nil
+}
+
+// Returns a map with all agent bin paths based on existing CodeModule entries
+func (gc *CSIGarbageCollector) getCodeModuleAgentBinPaths() (map[string]bool, error) {
+	codeModules, err := gc.db.ReadCodeModules()
+	if err != nil {
+		return nil, err
+	}
+
+	codeModuleBinPaths := make(map[string]bool)
+
+	for _, codeModule := range codeModules {
+		codeModuleBinPaths[codeModule.Location] = true
+	}
+
+	return codeModuleBinPaths, nil
 }
 
 func deleteSharedBinDirs(fs afero.Fs, imageDirs []string) error {
