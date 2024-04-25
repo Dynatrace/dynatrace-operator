@@ -75,7 +75,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 		// new migrations
-		err = conn.SchemaMigration()
+		err = access.SchemaMigration()
 		if err != nil {
 			return err
 		}
@@ -91,7 +91,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			apiReader = csiManager.GetAPIReader()
 		}
 
-		err = metadata.NewCorrectnessChecker(apiReader, conn, csiOptions).CorrectCSI(signalHandler)
+		err = metadata.NewCorrectnessChecker(apiReader, access, csiOptions).CorrectCSI(signalHandler)
 		if err != nil {
 			return err
 		}

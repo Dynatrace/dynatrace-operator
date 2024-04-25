@@ -19,7 +19,7 @@ import (
 type CSIGarbageCollector struct {
 	apiReader client.Reader
 	fs        afero.Fs
-	db        metadata.GormAccess
+	db        metadata.Access
 	path      metadata.PathResolver
 
 	maxUnmountedVolumeAge time.Duration
@@ -28,7 +28,7 @@ type CSIGarbageCollector struct {
 var _ reconcile.Reconciler = (*CSIGarbageCollector)(nil)
 
 // NewCSIGarbageCollector returns a new CSIGarbageCollector
-func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.GormAccess) *CSIGarbageCollector {
+func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollector {
 	return &CSIGarbageCollector{
 		apiReader:             apiReader,
 		fs:                    afero.NewOsFs(),

@@ -60,7 +60,7 @@ type OneAgentProvisioner struct {
 	apiReader client.Reader
 	fs        afero.Fs
 	recorder  record.EventRecorder
-	db        metadata.GormAccess
+	db        metadata.Access
 	gc        reconcile.Reconciler
 
 	dynatraceClientBuilder dynatraceclient.Builder
@@ -72,7 +72,7 @@ type OneAgentProvisioner struct {
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
-func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.GormAccess) *OneAgentProvisioner {
+func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.Access) *OneAgentProvisioner {
 	return &OneAgentProvisioner{
 		client:                 mgr.GetClient(),
 		apiReader:              mgr.GetAPIReader(),

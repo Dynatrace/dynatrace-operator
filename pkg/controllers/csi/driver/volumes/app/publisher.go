@@ -37,7 +37,7 @@ import (
 	"k8s.io/utils/mount"
 )
 
-func NewAppVolumePublisher(fs afero.Afero, mounter mount.Interface, db metadata.GormAccess, path metadata.PathResolver) csivolumes.Publisher {
+func NewAppVolumePublisher(fs afero.Afero, mounter mount.Interface, db metadata.Access, path metadata.PathResolver) csivolumes.Publisher {
 	return &AppVolumePublisher{
 		fs:      fs,
 		mounter: mounter,
@@ -49,7 +49,7 @@ func NewAppVolumePublisher(fs afero.Afero, mounter mount.Interface, db metadata.
 type AppVolumePublisher struct {
 	fs      afero.Afero
 	mounter mount.Interface
-	db      metadata.GormAccess
+	db      metadata.Access
 	path    metadata.PathResolver
 }
 

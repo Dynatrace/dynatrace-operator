@@ -16,7 +16,7 @@ type BindConfig struct {
 	MaxMountAttempts int
 }
 
-func NewBindConfig(ctx context.Context, access metadata.GormAccess, volumeCfg *VolumeConfig) (*BindConfig, error) {
+func NewBindConfig(ctx context.Context, access metadata.Access, volumeCfg *VolumeConfig) (*BindConfig, error) {
 	tenantConfig, err := access.ReadTenantConfig(metadata.TenantConfig{Name: volumeCfg.DynakubeName})
 	if err != nil {
 		return nil, status.Error(codes.Unavailable, fmt.Sprintf("failed to extract tenant for DynaKube %s: %s", volumeCfg.DynakubeName, err.Error()))

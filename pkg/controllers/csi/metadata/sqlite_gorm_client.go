@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-type GormAccess interface {
+type Access interface {
 	SchemaMigration() error
 
 	ReadTenantConfig(tenantConfig TenantConfig) (*TenantConfig, error)
@@ -49,7 +49,7 @@ type GormConn struct {
 	db  *gorm.DB
 }
 
-var _ GormAccess = &GormConn{}
+var _ Access = &GormConn{}
 
 // NewAccess creates a new gorm db connection to the database.
 func NewAccess(ctx context.Context, path string) (*GormConn, error) {
@@ -405,7 +405,7 @@ type AccessOverview struct {
 	OSMounts      []OSMount      `json:"osMounts"`
 }
 
-func NewAccessOverview(access GormAccess) (*AccessOverview, error) {
+func NewAccessOverview(access Access) (*AccessOverview, error) {
 	volumeMetas, err := access.ReadVolumeMetas()
 	if err != nil {
 		return nil, err
@@ -440,7 +440,7 @@ func NewAccessOverview(access GormAccess) (*AccessOverview, error) {
 	}, nil
 }
 
-func LogAccessOverview(access GormAccess) {
+func LogAccessOverview(access Access) {
 	overview, err := NewAccessOverview(access)
 	if err != nil {
 		log.Error(err, "Failed to get an overview of the stored csi metadata")

@@ -43,7 +43,7 @@ import (
 type Server struct {
 	fs      afero.Afero
 	mounter mount.Interface
-	db      metadata.GormAccess
+	db      metadata.Access
 
 	publishers map[string]csivolumes.Publisher
 	opts       dtcsi.CSIOptions
@@ -53,7 +53,7 @@ type Server struct {
 var _ csi.IdentityServer = &Server{}
 var _ csi.NodeServer = &Server{}
 
-func NewServer(opts dtcsi.CSIOptions, db metadata.GormAccess) *Server {
+func NewServer(opts dtcsi.CSIOptions, db metadata.Access) *Server {
 	return &Server{
 		opts:    opts,
 		fs:      afero.Afero{Fs: afero.NewOsFs()},
