@@ -14,7 +14,7 @@ The Dynatrace Operator supports rollout and lifecycle management of various Dyna
   * `applicationMonitoring` is a webhook based injection mechanism for automatic app-only injection
     * CSI Driver can be enabled to cache OneAgent downloads per node
   * `hostMonitoring` is only monitoring the hosts (i.e. nodes) in the cluster without app-only injection
-    * CSI Driver is used to provide a writeable volume for the Oneagent as it's running in read-only mode
+    * CSI Driver is used to provide a writable volume for the Oneagent as it's running in read-only mode
   * `cloudNativeFullStack` is a combination of `applicationMonitoring` and `hostMonitoring`
     * CSI Driver is used for both features
 * ActiveGate
