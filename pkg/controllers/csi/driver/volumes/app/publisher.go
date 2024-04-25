@@ -304,7 +304,7 @@ func (publisher *AppVolumePublisher) storeVolume(bindCfg *csivolumes.BindConfig,
 func (publisher *AppVolumePublisher) newAppMount(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) *metadata.AppMount {
 	return &metadata.AppMount{
 		VolumeMeta:        metadata.VolumeMeta{ID: volumeCfg.VolumeID, PodName: volumeCfg.PodName},
-		CodeModule:        metadata.CodeModule{Version: bindCfg.Version},
+		CodeModule:        metadata.CodeModule{Version: bindCfg.Version, Location: publisher.path.AgentSharedBinaryDirForAgent(bindCfg.Version)},
 		VolumeMetaID:      volumeCfg.VolumeID,
 		CodeModuleVersion: bindCfg.Version,
 		Location:          publisher.path.AgentRunDirForVolume(bindCfg.TenantUUID, volumeCfg.VolumeID),

@@ -361,20 +361,26 @@ func (conn *GormConn) IsCodeModuleOrphaned(codeModule *CodeModule) (bool, error)
 	var appMountResults []AppMount
 
 	if (codeModule == nil || *codeModule == CodeModule{}) {
+		log.Info("err Module")
 		return false, nil
 	}
 
 	err := conn.db.WithContext(conn.ctx).Find(&tenantConfigResults, &TenantConfig{DownloadedCodeModuleVersion: codeModule.Version}).Error
 	if err != nil {
+		log.Info("err tenant", "err", err)
 		return false, err
 	}
 
 	err = conn.db.WithContext(conn.ctx).Find(&appMountResults, &AppMount{CodeModuleVersion: codeModule.Version}).Error
 	if err != nil {
+		log.Info("err appMount", "err", err)
 		return false, err
 	}
+	log.Info("test", "test tenant", len(tenantConfigResults), "test appMount", len(appMountResults))
 
 	if len(tenantConfigResults) == 0 && len(appMountResults) == 0 {
+		log.Info("Return oprhaned true")
+
 		return true, nil
 	}
 

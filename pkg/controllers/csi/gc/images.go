@@ -59,11 +59,14 @@ func (gc *CSIGarbageCollector) collectUnusedAgentBins(imageDirs []os.FileInfo) (
 	codeModuleBins := make(map[string]bool)
 	for _, codeModule := range codeModules {
 		codeModuleBins[codeModule.Location] = true
+		log.Info("Location", "loc", codeModule.Location)
 	}
 
 	for _, imageDir := range imageDirs {
+		log.Info("imageDir", "dir", imageDir.Name())
 		agentBinPath := gc.path.AgentSharedBinaryDirForAgent(imageDir.Name())
 		if !codeModuleBins[agentBinPath] {
+			log.Info("agentBin", "path", agentBinPath)
 			toDelete = append(toDelete, agentBinPath)
 		}
 	}
