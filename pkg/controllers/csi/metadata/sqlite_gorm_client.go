@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 type Access interface {
@@ -60,7 +59,7 @@ func NewAccess(ctx context.Context, path string) (*GormConn, error) {
 		path += "?_foreign_keys=on"
 	}
 
-	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{Logger: logger.Default})
+	db, err := gorm.Open(sqlite.Open(path))
 
 	if err != nil {
 		return &GormConn{}, err
