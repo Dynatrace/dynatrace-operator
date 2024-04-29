@@ -13,7 +13,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -23,7 +22,6 @@ var _ controllers.Reconciler = &Reconciler{}
 type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
-	scheme    *runtime.Scheme
 	dynakube  *dynatracev1beta1.DynaKube
 }
 
@@ -35,11 +33,10 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	return r.ensureDeleted(ctx, r.dynakube)
 }
 
-func NewReconciler(client client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube) *Reconciler {
+func NewReconciler(client client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) *Reconciler {
 	return &Reconciler{
 		client:    client,
 		apiReader: apiReader,
-		scheme:    scheme,
 		dynakube:  dynakube,
 	}
 }
@@ -50,7 +47,7 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dynakube *dynatrac
 		return errors.WithStack(err)
 	}
 
-	secret, err := k8ssecret.Create(r.scheme, r.dynakube,
+	secret, err := k8ssecret.Create(r.dynakube,
 		k8ssecret.NewNameModifier(BuildSecretName(dynakube.Name)),
 		k8ssecret.NewNamespaceModifier(r.dynakube.Namespace),
 		k8ssecret.NewTypeModifier(corev1.SecretTypeOpaque),

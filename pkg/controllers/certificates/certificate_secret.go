@@ -15,7 +15,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -24,14 +23,12 @@ type certificateSecret struct {
 	secret          *corev1.Secret
 	certificates    *Certs
 	owner           *appsv1.Deployment
-	scheme          *runtime.Scheme
 	existsInCluster bool
 }
 
-func newCertificateSecret(scheme *runtime.Scheme, deployment *appsv1.Deployment) *certificateSecret {
+func newCertificateSecret(deployment *appsv1.Deployment) *certificateSecret {
 	return &certificateSecret{
-		owner:  deployment,
-		scheme: scheme,
+		owner: deployment,
 	}
 }
 
@@ -41,7 +38,7 @@ func (certSecret *certificateSecret) setSecretFromReader(ctx context.Context, ap
 
 	switch {
 	case k8serrors.IsNotFound(err):
-		certSecret.secret, err = k8ssecret.Create(certSecret.scheme, certSecret.owner,
+		certSecret.secret, err = k8ssecret.Create(certSecret.owner,
 			k8ssecret.NewNameModifier(buildSecretName()),
 			k8ssecret.NewNamespaceModifier(namespace),
 			k8ssecret.NewDataModifier(map[string][]byte{}))

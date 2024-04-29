@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
@@ -261,7 +260,7 @@ func TestSecretBuilder(t *testing.T) {
 	}
 
 	t.Run("create secret", func(t *testing.T) {
-		secret, err := Create(scheme.Scheme, createDeployment(),
+		secret, err := Create(createDeployment(),
 			NewNameModifier(testSecretName),
 			NewNamespaceModifier(testNamespace))
 		require.NoError(t, err)
@@ -273,7 +272,7 @@ func TestSecretBuilder(t *testing.T) {
 		assert.Empty(t, secret.Data)
 	})
 	t.Run("create secret with label", func(t *testing.T) {
-		secret, err := Create(scheme.Scheme, createDeployment(),
+		secret, err := Create(createDeployment(),
 			NewLabelsModifier(labels),
 			NewNameModifier(testSecretName),
 			NewNamespaceModifier(testNamespace),
@@ -288,7 +287,7 @@ func TestSecretBuilder(t *testing.T) {
 		assert.Empty(t, secret.Data)
 	})
 	t.Run("create secret with type", func(t *testing.T) {
-		secret, err := Create(scheme.Scheme, createDeployment(),
+		secret, err := Create(createDeployment(),
 			NewTypeModifier(corev1.SecretTypeDockercfg),
 			NewNameModifier(testSecretName),
 			NewNamespaceModifier(testNamespace),
@@ -303,7 +302,7 @@ func TestSecretBuilder(t *testing.T) {
 		assert.True(t, found)
 	})
 	t.Run("create secret with label and type", func(t *testing.T) {
-		secret, err := Create(scheme.Scheme, createDeployment(),
+		secret, err := Create(createDeployment(),
 			NewLabelsModifier(labels),
 			NewTypeModifier(corev1.SecretTypeDockercfg),
 			NewNameModifier(testSecretName),

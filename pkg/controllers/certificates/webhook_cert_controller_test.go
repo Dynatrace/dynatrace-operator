@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
@@ -185,7 +184,7 @@ func TestReconcile(t *testing.T) {
 				Namespace: testNamespace,
 			},
 		})
-		cs := newCertificateSecret(scheme.Scheme, &appsv1.Deployment{})
+		cs := newCertificateSecret(&appsv1.Deployment{})
 		_ = cs.setSecretFromReader(context.TODO(), fakeClient, testNamespace)
 		_ = cs.validateCertificates(testNamespace)
 		_ = cs.createOrUpdateIfNecessary(context.TODO(), fakeClient)
@@ -259,7 +258,6 @@ func prepareController(clt client.Client) (*WebhookCertificateController, reconc
 		client:    clt,
 		apiReader: clt,
 		namespace: testNamespace,
-		scheme:    scheme.Scheme,
 	}
 
 	request := reconcile.Request{

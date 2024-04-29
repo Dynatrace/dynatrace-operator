@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -41,7 +40,7 @@ func TestReconcile(t *testing.T) {
 	t.Run(`don't create anything, if no mode is configured`, func(t *testing.T) {
 		dynakube := createTestDynakube(nil)
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
+		r := NewReconciler(fakeClient, fakeClient, *dynakube, clusterID)
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -59,7 +58,7 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 		).Build()
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
+		r := NewReconciler(fakeClient, fakeClient, *dynakube, clusterID)
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -77,7 +76,7 @@ func TestReconcile(t *testing.T) {
 			})
 
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
+		r := NewReconciler(fakeClient, fakeClient, *dynakube, clusterID)
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -99,7 +98,7 @@ func TestReconcile(t *testing.T) {
 			})
 
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
+		r := NewReconciler(fakeClient, fakeClient, *dynakube, clusterID)
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -123,7 +122,7 @@ func TestReconcile(t *testing.T) {
 			})
 
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
+		r := NewReconciler(fakeClient, fakeClient, *dynakube, clusterID)
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 

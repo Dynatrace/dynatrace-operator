@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/query"
@@ -13,7 +14,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -214,23 +214,21 @@ func GetDataFromSecretName(apiReader client.Reader, namespacedName types.Namespa
 type secretBuilderData = corev1.Secret
 type secretBuilderModifier = builder.Modifier[secretBuilderData]
 
-func Create(scheme *runtime.Scheme, owner metav1.Object, mods ...secretBuilderModifier) (*corev1.Secret, error) {
+func Create(owner metav1.Object, mods ...secretBuilderModifier) (*corev1.Secret, error) {
 	builderOfSecret := builder.NewBuilder(corev1.Secret{})
-	secret, err := builderOfSecret.AddModifier(mods...).AddModifier(newSecretOwnerModifier(scheme, owner)).Build()
+	secret, err := builderOfSecret.AddModifier(mods...).AddModifier(newSecretOwnerModifier(owner)).Build()
 
 	return &secret, err
 }
 
-func newSecretOwnerModifier(scheme *runtime.Scheme, owner metav1.Object) secretOwnerModifier {
+func newSecretOwnerModifier(owner metav1.Object) secretOwnerModifier {
 	return secretOwnerModifier{
-		scheme: scheme,
-		owner:  owner,
+		owner: owner,
 	}
 }
 
 type secretOwnerModifier struct {
-	scheme *runtime.Scheme
-	owner  metav1.Object
+	owner metav1.Object
 }
 
 func (mod secretOwnerModifier) Enabled() bool {
@@ -238,7 +236,7 @@ func (mod secretOwnerModifier) Enabled() bool {
 }
 
 func (mod secretOwnerModifier) Modify(secret *corev1.Secret) error {
-	if err := controllerutil.SetControllerReference(mod.owner, secret, mod.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(mod.owner, secret, scheme.Scheme); err != nil {
 		return errors.WithStack(err)
 	}
 

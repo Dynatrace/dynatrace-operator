@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/stretchr/testify/assert"
@@ -304,7 +303,7 @@ func TestConfigMapBuilder(t *testing.T) {
 	}
 
 	t.Run("create config map", func(t *testing.T) {
-		configMap, err := CreateConfigMap(scheme.Scheme, createDeployment(),
+		configMap, err := CreateConfigMap(createDeployment(),
 			NewModifier(testConfigMapName),
 			NewNamespaceModifier(testNamespace))
 		require.NoError(t, err)
@@ -314,7 +313,7 @@ func TestConfigMapBuilder(t *testing.T) {
 		assert.Empty(t, configMap.Data)
 	})
 	t.Run("create config map with data", func(t *testing.T) {
-		configMap, err := CreateConfigMap(scheme.Scheme, createDeployment(),
+		configMap, err := CreateConfigMap(createDeployment(),
 			NewModifier(testConfigMapName),
 			NewNamespaceModifier(testNamespace),
 			NewConfigMapDataModifier(data))

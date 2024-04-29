@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
@@ -37,7 +36,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	fakediscovery "k8s.io/client-go/discovery/fake"
 	"k8s.io/client-go/rest"
@@ -346,7 +344,6 @@ func TestReconcileComponents(t *testing.T) {
 		controller := &Controller{
 			client:                fakeClient,
 			apiReader:             fakeClient,
-			scheme:                scheme.Scheme,
 			fs:                    afero.Afero{Fs: afero.NewMemMapFs()},
 			registryClientBuilder: createFakeRegistryClientBuilder(t),
 
@@ -375,7 +372,6 @@ func TestReconcileComponents(t *testing.T) {
 		controller := &Controller{
 			client:                      fakeClient,
 			apiReader:                   fakeClient,
-			scheme:                      scheme.Scheme,
 			fs:                          afero.Afero{Fs: afero.NewMemMapFs()},
 			registryClientBuilder:       createFakeRegistryClientBuilder(t),
 			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
@@ -391,19 +387,19 @@ func TestReconcileComponents(t *testing.T) {
 }
 
 func createActivegateReconcilerBuilder(reconciler controllers.Reconciler) activegate.ReconcilerBuilder {
-	return func(_ client.Client, _ client.Reader, _ *runtime.Scheme, _ *dynatracev1beta1.DynaKube, _ dtclient.Client, _ *istio.Client) controllers.Reconciler {
+	return func(_ client.Client, _ client.Reader, _ *dynatracev1beta1.DynaKube, _ dtclient.Client, _ *istio.Client) controllers.Reconciler {
 		return reconciler
 	}
 }
 
 func createOneAgentReconcilerBuilder(reconciler controllers.Reconciler) oneagent.ReconcilerBuilder {
-	return func(_ client.Client, _ client.Reader, _ *runtime.Scheme, _ dtclient.Client, _ *dynatracev1beta1.DynaKube, _ string) controllers.Reconciler {
+	return func(_ client.Client, _ client.Reader, _ dtclient.Client, _ *dynatracev1beta1.DynaKube, _ string) controllers.Reconciler {
 		return reconciler
 	}
 }
 
 func createInjectionReconcilerBuilder(reconciler *injectionmock.Reconciler) injection.ReconcilerBuilder {
-	return func(_ client.Client, _ client.Reader, _ *runtime.Scheme, _ dtclient.Client, _ *istio.Client, _ *dynatracev1beta1.DynaKube) controllers.Reconciler {
+	return func(_ client.Client, _ client.Reader, _ dtclient.Client, _ *istio.Client, _ *dynatracev1beta1.DynaKube) controllers.Reconciler {
 		return reconciler
 	}
 }
@@ -567,7 +563,6 @@ func TestSetupIstio(t *testing.T) {
 		isIstioInstalled := false
 		controller := &Controller{
 			istioClientBuilder: fakeIstioClientBuilder(t, fakeIstio, isIstioInstalled),
-			scheme:             scheme.Scheme,
 		}
 		istioClient, err := controller.setupIstioClient(dynakube)
 		require.Error(t, err)
@@ -579,7 +574,6 @@ func TestSetupIstio(t *testing.T) {
 		isIstioInstalled := true
 		controller := &Controller{
 			istioClientBuilder: fakeIstioClientBuilder(t, fakeIstio, isIstioInstalled),
-			scheme:             scheme.Scheme,
 		}
 		istioClient, err := controller.setupIstioClient(dynakube)
 		require.NoError(t, err)
@@ -604,7 +598,7 @@ func TestSetupIstio(t *testing.T) {
 }
 
 func fakeIstioClientBuilder(t *testing.T, fakeIstio *fakeistio.Clientset, isIstioInstalled bool) istio.ClientBuilder {
-	return func(_ *rest.Config, scheme *runtime.Scheme, owner metav1.Object) (*istio.Client, error) {
+	return func(_ *rest.Config, owner metav1.Object) (*istio.Client, error) {
 		if isIstioInstalled == true {
 			fakeDiscovery, ok := fakeIstio.Discovery().(*fakediscovery.FakeDiscovery)
 			fakeDiscovery.Resources = []*metav1.APIResourceList{{GroupVersion: istio.IstioGVR}}
@@ -616,7 +610,6 @@ func fakeIstioClientBuilder(t *testing.T, fakeIstio *fakeistio.Clientset, isIsti
 
 		return &istio.Client{
 			IstioClientset: fakeIstio,
-			Scheme:         scheme,
 			Owner:          owner,
 		}, nil
 	}
