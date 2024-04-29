@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/config"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -110,6 +111,24 @@ proxy:
     port: 443
 `
 		assert.Equal(t, expected, string(cfg))
+	})
+	t.Run("safeEdgeConnectCfg", func(t *testing.T) {
+		cfg := config.EdgeConnect{
+			Name:            "test",
+			ApiEndpointHost: "test",
+			OAuth: config.OAuth{
+				ClientSecret: "super secret",
+			},
+		}
+		expected := `name: test
+api_endpoint_host: test
+oauth:
+    endpoint: ""
+    client_id: ""
+    client_secret: '****'
+    resource: ""
+`
+		assert.Equal(t, expected, safeEdgeConnectCfg(cfg))
 	})
 }
 
