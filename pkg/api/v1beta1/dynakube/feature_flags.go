@@ -198,7 +198,7 @@ func (dk *DynaKube) FeatureEnableK8sAppEnabled() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureK8sAppEnabled) == truePhrase
 }
 
-// FeatureDisableMetadataEnrichment is a feature flag to disable metadata enrichment.
+// FeatureDisableMetadataEnrichment is a feature flag to disable metadata enrichment,.
 func (dk *DynaKube) FeatureDisableMetadataEnrichment() bool {
 	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureMetadataEnrichment, AnnotationFeatureDisableMetadataEnrichment)
 }
