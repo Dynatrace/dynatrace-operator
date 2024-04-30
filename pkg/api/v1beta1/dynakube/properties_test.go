@@ -31,7 +31,7 @@ import (
 
 const (
 	testAPIURL = "http://test-endpoint/api"
-	testName   = "test-dynakube"
+	testName   = "test-name"
 )
 
 func TestDefaultActiveGateImage(t *testing.T) {
