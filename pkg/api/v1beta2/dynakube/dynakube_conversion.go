@@ -91,8 +91,8 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 		}
 		dst.Status.OneAgent.Instances[key] = instance
 	}
-	dst.Status.Conditions = src.Status.Conditions
 
+	dst.Status.Conditions = src.Status.Conditions
 	dst.Status.OneAgent.Version = src.Status.OneAgent.Version
 
 	dst.Status.Phase = src.Status.Phase
