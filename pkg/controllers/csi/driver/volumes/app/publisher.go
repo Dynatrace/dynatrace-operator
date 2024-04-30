@@ -33,6 +33,7 @@ import (
 	"github.com/spf13/afero"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"gorm.io/gorm"
 	"k8s.io/utils/mount"
 )
 
@@ -58,7 +59,7 @@ func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCf
 		return nil, err
 	}
 
-	hasTooManyAttempts, err := publisher.hasTooManyMountAttempts(ctx, bindCfg, volumeCfg)
+	hasTooManyAttempts, err := publisher.hasTooManyMountAttempts(bindCfg, volumeCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -76,41 +77,42 @@ func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCf
 		)
 	}
 
-	if err := publisher.ensureMountSteps(ctx, bindCfg, volumeCfg); err != nil {
+	if err := publisher.ensureMountSteps(bindCfg, volumeCfg); err != nil {
 		return nil, err
 	}
 
-	agentsVersionsMetric.WithLabelValues(bindCfg.MetricVersionLabel()).Inc()
+	agentsVersionsMetric.WithLabelValues(bindCfg.Version).Inc()
 
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
 func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volumeInfo *csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
-	volume, err := publisher.loadVolume(ctx, volumeInfo.VolumeID)
-	if err != nil {
-		log.Info("failed to load volume info", "error", err.Error())
+	appMount, err := publisher.db.ReadAppMount(metadata.AppMount{VolumeMetaID: volumeInfo.VolumeID})
+
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		log.Info("failed to load AppMount", "error", err.Error())
 	}
 
-	if volume == nil {
+	if appMount == nil {
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 
-	log.Info("loaded volume info", "id", volume.VolumeID, "pod name", volume.PodName, "version", volume.Version, "dynakube", volume.TenantUUID)
+	log.Info("loaded AppMount info", "id", appMount.VolumeMetaID, "pod name", appMount.VolumeMeta.PodName, "version", appMount.CodeModuleVersion)
 
-	if volume.Version == "" {
-		log.Info("requester has a dummy volume, no node-level unmount is needed")
+	if appMount.CodeModuleVersion == "" {
+		log.Info("requester has a dummy AppMount, no node-level unmount is needed")
 
-		return &csi.NodeUnpublishVolumeResponse{}, publisher.db.DeleteVolume(ctx, volume.VolumeID)
+		return &csi.NodeUnpublishVolumeResponse{}, publisher.db.DeleteAppMount(&metadata.AppMount{VolumeMetaID: appMount.VolumeMetaID})
 	}
 
-	overlayFSPath := publisher.path.AgentRunDirForVolume(volume.TenantUUID, volumeInfo.VolumeID)
-	publisher.umountOneAgent(volumeInfo.TargetPath, overlayFSPath)
+	overlayFSPath := filepath.Join(appMount.Location, dtcsi.OverlayMappedDirPath)
+	publisher.unmountOneAgent(volumeInfo.TargetPath, overlayFSPath)
 
-	if err = publisher.db.DeleteVolume(ctx, volume.VolumeID); err != nil {
+	if err = publisher.db.DeleteAppMount(&metadata.AppMount{VolumeMetaID: appMount.VolumeMetaID}); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	log.Info("deleted volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
+	log.Info("deleted AppMount", "ID", appMount.VolumeMetaID, "PodUID", appMount.VolumeMeta.PodName, "Version", appMount.CodeModuleVersion)
 
 	if err = publisher.fs.RemoveAll(volumeInfo.TargetPath); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -118,45 +120,38 @@ func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volume
 
 	log.Info("volume has been unpublished", "targetPath", volumeInfo.TargetPath)
 
-	publisher.fireVolumeUnpublishedMetric(*volume)
+	publisher.fireVolumeUnpublishedMetric(appMount.CodeModuleVersion)
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
 func (publisher *AppVolumePublisher) CanUnpublishVolume(ctx context.Context, volumeInfo *csivolumes.VolumeInfo) (bool, error) {
-	volume, err := publisher.loadVolume(ctx, volumeInfo.VolumeID)
-	if err != nil {
-		return false, status.Error(codes.Internal, "failed to get volume info from database: "+err.Error())
+	appMount, err := publisher.db.ReadAppMount(metadata.AppMount{VolumeMetaID: volumeInfo.VolumeID})
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, err
 	}
 
-	return volume != nil, nil
+	return appMount != nil, nil
 }
 
-func (publisher *AppVolumePublisher) fireVolumeUnpublishedMetric(volume metadata.Volume) {
-	if len(volume.Version) > 0 {
-		agentsVersionsMetric.WithLabelValues(volume.Version).Dec()
+func (publisher *AppVolumePublisher) fireVolumeUnpublishedMetric(volumeVersion string) {
+	if len(volumeVersion) > 0 {
+		agentsVersionsMetric.WithLabelValues(volumeVersion).Dec()
 
 		var m = &dto.Metric{}
-		if err := agentsVersionsMetric.WithLabelValues(volume.Version).Write(m); err != nil {
+		if err := agentsVersionsMetric.WithLabelValues(volumeVersion).Write(m); err != nil {
 			log.Error(err, "failed to get the value of agent version metric")
 		}
 
 		if m.GetGauge().GetValue() <= float64(0) {
-			agentsVersionsMetric.DeleteLabelValues(volume.Version)
+			agentsVersionsMetric.DeleteLabelValues(volumeVersion)
 		}
 	}
 }
 
 func (publisher *AppVolumePublisher) buildLowerDir(bindCfg *csivolumes.BindConfig) string {
-	var binFolderName string
-	if bindCfg.ImageDigest == "" {
-		binFolderName = bindCfg.Version
-	} else {
-		binFolderName = bindCfg.ImageDigest
-	}
-
 	directories := []string{
-		publisher.path.AgentSharedBinaryDirForAgent(binFolderName),
+		publisher.path.AgentSharedBinaryDirForAgent(bindCfg.Version),
 	}
 
 	return strings.Join(directories, ":")
@@ -241,27 +236,28 @@ func (publisher *AppVolumePublisher) mountOneAgent(bindCfg *csivolumes.BindConfi
 	return nil
 }
 
-func (publisher *AppVolumePublisher) umountOneAgent(targetPath string, overlayFSPath string) {
+func (publisher *AppVolumePublisher) unmountOneAgent(targetPath string, overlayFSPath string) {
 	if err := publisher.mounter.Unmount(targetPath); err != nil {
 		log.Error(err, "Unmount failed", "path", targetPath)
 	}
 
 	if filepath.IsAbs(overlayFSPath) {
-		agentDirectoryForPod := filepath.Join(overlayFSPath, dtcsi.OverlayMappedDirPath)
-		if err := publisher.mounter.Unmount(agentDirectoryForPod); err != nil {
-			log.Error(err, "Unmount failed", "path", agentDirectoryForPod)
+		if err := publisher.mounter.Unmount(overlayFSPath); err != nil {
+			log.Error(err, "Unmount failed", "path", overlayFSPath)
 		}
 	}
 }
 
-func (publisher *AppVolumePublisher) ensureMountSteps(ctx context.Context, bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
+func (publisher *AppVolumePublisher) ensureMountSteps(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
 	if err := publisher.mountOneAgent(bindCfg, volumeCfg); err != nil {
 		return status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err))
 	}
 
-	if err := publisher.storeVolume(ctx, bindCfg, volumeCfg); err != nil {
-		overlayFSPath := publisher.path.AgentRunDirForVolume(bindCfg.TenantUUID, volumeCfg.VolumeID)
-		publisher.umountOneAgent(volumeCfg.TargetPath, overlayFSPath)
+	if err := publisher.storeVolume(bindCfg, volumeCfg); err != nil {
+		agentRunDirForVolume := publisher.path.AgentRunDirForVolume(bindCfg.TenantUUID, volumeCfg.VolumeID)
+		overlayFSPath := filepath.Join(agentRunDirForVolume, dtcsi.OverlayMappedDirPath)
+
+		publisher.unmountOneAgent(volumeCfg.TargetPath, overlayFSPath)
 
 		return status.Error(codes.Internal, fmt.Sprintf("Failed to store volume info: %s", err))
 	}
@@ -269,46 +265,49 @@ func (publisher *AppVolumePublisher) ensureMountSteps(ctx context.Context, bindC
 	return nil
 }
 
-func (publisher *AppVolumePublisher) hasTooManyMountAttempts(ctx context.Context, bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) (bool, error) {
-	volume, err := publisher.loadVolume(ctx, volumeCfg.VolumeID)
-	if err != nil {
+func (publisher *AppVolumePublisher) hasTooManyMountAttempts(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) (bool, error) {
+	appMount, err := publisher.db.ReadAppMount(metadata.AppMount{VolumeMetaID: volumeCfg.VolumeID})
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		appMount = publisher.newAppMount(bindCfg, volumeCfg)
+		publisher.db.CreateAppMount(appMount)
+	} else if err != nil {
 		return false, err
 	}
 
-	if volume == nil {
-		volume = createNewVolume(bindCfg, volumeCfg)
-	}
-
-	if volume.MountAttempts > bindCfg.MaxMountAttempts {
+	if int(appMount.MountAttempts) > bindCfg.MaxMountAttempts {
 		return true, nil
 	}
 
-	volume.MountAttempts += 1
+	appMount.MountAttempts += 1
 
-	return false, publisher.db.InsertVolume(ctx, volume)
+	return false, publisher.db.UpdateAppMount(appMount)
 }
 
-func (publisher *AppVolumePublisher) storeVolume(ctx context.Context, bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
-	volume := createNewVolume(bindCfg, volumeCfg)
-	log.Info("inserting volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
+func (publisher *AppVolumePublisher) storeVolume(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
+	newAppMount := publisher.newAppMount(bindCfg, volumeCfg)
+	log.Info("inserting AppMount", "appMount", newAppMount)
 
-	return publisher.db.InsertVolume(ctx, volume)
-}
+	// check if it currently exists
+	appMount, err := publisher.db.ReadAppMount(metadata.AppMount{VolumeMetaID: newAppMount.VolumeMetaID})
 
-func (publisher *AppVolumePublisher) loadVolume(ctx context.Context, volumeID string) (*metadata.Volume, error) {
-	volume, err := publisher.db.GetVolume(ctx, volumeID)
+	if appMount == nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		return publisher.db.CreateAppMount(newAppMount)
+	}
+
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return volume, nil
+	return publisher.db.UpdateAppMount(newAppMount)
 }
 
-func createNewVolume(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) *metadata.Volume {
-	version := bindCfg.Version
-	if bindCfg.ImageDigest != "" {
-		version = bindCfg.ImageDigest
+func (publisher *AppVolumePublisher) newAppMount(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) *metadata.AppMount {
+	return &metadata.AppMount{
+		VolumeMeta:        metadata.VolumeMeta{ID: volumeCfg.VolumeID, PodName: volumeCfg.PodName},
+		CodeModule:        metadata.CodeModule{Version: bindCfg.Version, Location: publisher.path.AgentSharedBinaryDirForAgent(bindCfg.Version)},
+		VolumeMetaID:      volumeCfg.VolumeID,
+		CodeModuleVersion: bindCfg.Version,
+		Location:          publisher.path.AgentRunDirForVolume(bindCfg.TenantUUID, volumeCfg.VolumeID),
+		MountAttempts:     int64(bindCfg.MaxMountAttempts),
 	}
-
-	return metadata.NewVolume(volumeCfg.VolumeID, volumeCfg.PodName, version, bindCfg.TenantUUID, 0)
 }

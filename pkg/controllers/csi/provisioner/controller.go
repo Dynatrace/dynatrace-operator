@@ -35,6 +35,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
+	"gorm.io/gorm"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -100,7 +101,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	dk, err := provisioner.getDynaKube(ctx, request.NamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			return reconcile.Result{}, provisioner.db.DeleteDynakube(ctx, request.Name)
+			return reconcile.Result{}, provisioner.db.DeleteTenantConfig(&metadata.TenantConfig{Name: request.Name}, false)
 		}
 
 		return reconcile.Result{}, err
@@ -109,7 +110,12 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	if !dk.NeedsCSIDriver() {
 		log.Info("CSI driver provisioner not needed")
 
-		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.db.DeleteDynakube(ctx, request.Name)
+		err = provisioner.db.DeleteTenantConfig(&metadata.TenantConfig{Name: dk.Name}, true)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		return reconcile.Result{RequeueAfter: longRequeueDuration}, err
 	}
 
 	err = provisioner.setupFileSystem(dk)
@@ -117,7 +123,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{}, err
 	}
 
-	dynakubeMetadata, err := provisioner.setupDynakubeMetadata(ctx, dk) // needed for the CSI-resilience feature
+	tenantConfig, err := provisioner.setupTenantConfig(dk) // needed for the CSI-resilience feature
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -134,7 +140,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{RequeueAfter: shortRequeueDuration}, err
 	}
 
-	err = provisioner.provisionCodeModules(ctx, dk, dynakubeMetadata)
+	err = provisioner.provisionCodeModules(ctx, dk, tenantConfig)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -164,15 +170,34 @@ func (provisioner *OneAgentProvisioner) setupFileSystem(dk *dynatracev1beta1.Dyn
 	return nil
 }
 
-func (provisioner *OneAgentProvisioner) setupDynakubeMetadata(ctx context.Context, dk *dynatracev1beta1.DynaKube) (*metadata.Dynakube, error) {
-	dynakubeMetadata, oldDynakubeMetadata, err := provisioner.handleMetadata(ctx, dk)
+func (provisioner *OneAgentProvisioner) setupTenantConfig(dk *dynatracev1beta1.DynaKube) (*metadata.TenantConfig, error) {
+	metadataTenantConfig, err := provisioner.handleMetadata(dk)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create/update the dynakubeMetadata entry while `LatestVersion` is not necessarily set
+	// Create/update the Dynakube's metadata TenantConfig entry while `LatestVersion` is not necessarily set
 	// so the host oneagent-storages can be mounted before the standalone agent binaries are ready to be mounted
-	return dynakubeMetadata, provisioner.createOrUpdateDynakubeMetadata(ctx, oldDynakubeMetadata, dynakubeMetadata)
+	tenantConfig, err := provisioner.db.ReadTenantConfig(metadata.TenantConfig{Name: metadataTenantConfig.Name})
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		err = provisioner.db.CreateTenantConfig(metadataTenantConfig)
+		if err != nil {
+			return nil, err
+		}
+
+		return metadataTenantConfig, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	metadataTenantConfig.UID = tenantConfig.UID
+	err = provisioner.db.UpdateTenantConfig(metadataTenantConfig)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return metadataTenantConfig, nil
 }
 
 func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, request reconcile.Request) error {
@@ -181,21 +206,20 @@ func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, requ
 	return err
 }
 
-func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context, dk *dynatracev1beta1.DynaKube, dynakubeMetadata *metadata.Dynakube) error {
-	oldDynakubeMetadata := *dynakubeMetadata
+func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context, dk *dynatracev1beta1.DynaKube, tenantConfig *metadata.TenantConfig) error {
 	// creates a dt client and checks tokens exist for the given dynakube
 	dtc, err := buildDtc(provisioner, ctx, dk)
 	if err != nil {
 		return err
 	}
 
-	requeue, err := provisioner.updateAgentInstallation(ctx, dtc, dynakubeMetadata, dk)
+	requeue, err := provisioner.updateAgentInstallation(ctx, dtc, tenantConfig, dk)
 	if requeue || err != nil {
 		return err
 	}
 
 	// Set/Update the `LatestVersion` field in the database entry
-	err = provisioner.createOrUpdateDynakubeMetadata(ctx, oldDynakubeMetadata, dynakubeMetadata)
+	err = provisioner.db.UpdateTenantConfig(tenantConfig)
 	if err != nil {
 		return err
 	}
@@ -205,7 +229,7 @@ func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context
 
 func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 	ctx context.Context, dtc dtclient.Client,
-	dynakubeMetadata *metadata.Dynakube,
+	tenantConfig *metadata.TenantConfig,
 	dk *dynatracev1beta1.DynaKube,
 ) (
 	requeue bool,
@@ -222,74 +246,41 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 			log.Info("error when updating agent from image", "error", err.Error())
 			// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
 			return true, nil
-		} else if updatedDigest != "" {
-			dynakubeMetadata.LatestVersion = ""
-			dynakubeMetadata.ImageDigest = updatedDigest
 		}
+
+		tenantConfig.DownloadedCodeModuleVersion = updatedDigest
 	} else {
 		updateVersion, err := provisioner.installAgentZip(ctx, *dk, dtc, latestProcessModuleConfig)
 		if err != nil {
 			log.Info("error when updating agent from zip", "error", err.Error())
 			// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
 			return true, nil
-		} else if updateVersion != "" {
-			dynakubeMetadata.LatestVersion = updateVersion
-			dynakubeMetadata.ImageDigest = ""
+		}
+
+		if updateVersion != "" {
+			tenantConfig.DownloadedCodeModuleVersion = updateVersion
 		}
 	}
 
 	return false, nil
 }
 
-func (provisioner *OneAgentProvisioner) handleMetadata(ctx context.Context, dk *dynatracev1beta1.DynaKube) (*metadata.Dynakube, metadata.Dynakube, error) {
-	dynakubeMetadata, err := provisioner.db.GetDynakube(ctx, dk.Name)
-	if err != nil {
-		return nil, metadata.Dynakube{}, errors.WithStack(err)
-	}
-
-	// In case of a new dynakubeMetadata
-	var oldDynakubeMetadata metadata.Dynakube
-	if dynakubeMetadata != nil {
-		oldDynakubeMetadata = *dynakubeMetadata
-	}
-
+func (provisioner *OneAgentProvisioner) handleMetadata(dk *dynatracev1beta1.DynaKube) (*metadata.TenantConfig, error) {
 	tenantUUID, err := dk.TenantUUIDFromApiUrl()
 	if err != nil {
-		return nil, metadata.Dynakube{}, err
+		return nil, err
 	}
 
-	dynakubeMetadata = metadata.NewDynakube(
-		dk.Name,
-		tenantUUID,
-		oldDynakubeMetadata.LatestVersion,
-		oldDynakubeMetadata.ImageDigest,
-		dk.FeatureMaxFailedCsiMountAttempts())
-
-	return dynakubeMetadata, oldDynakubeMetadata, nil
-}
-
-func (provisioner *OneAgentProvisioner) createOrUpdateDynakubeMetadata(ctx context.Context, oldDynakube metadata.Dynakube, dynakube *metadata.Dynakube) error {
-	if oldDynakube != *dynakube {
-		log.Info("dynakube has changed",
-			"name", dynakube.Name,
-			"tenantUUID", dynakube.TenantUUID,
-			"version", dynakube.LatestVersion,
-			"max mount attempts", dynakube.MaxFailedMountAttempts)
-
-		if oldDynakube == (metadata.Dynakube{}) {
-			log.Info("adding dynakube to db", "tenantUUID", dynakube.TenantUUID, "version", dynakube.LatestVersion)
-
-			return provisioner.db.InsertDynakube(ctx, dynakube)
-		} else {
-			log.Info("updating dynakube in db",
-				"old version", oldDynakube.LatestVersion, "new version", dynakube.LatestVersion,
-				"old tenantUUID", oldDynakube.TenantUUID, "new tenantUUID", dynakube.TenantUUID)
-
-			return provisioner.db.UpdateDynakube(ctx, dynakube)
-		}
+	newTenantConfig := &metadata.TenantConfig{
+		UID:                         string(dk.UID),
+		Name:                        dk.Name,
+		TenantUUID:                  tenantUUID,
+		DownloadedCodeModuleVersion: dk.CodeModulesVersion(),
+		MaxFailedMountAttempts:      int64(dk.FeatureMaxFailedCsiMountAttempts()),
+		ConfigDirPath:               provisioner.path.AgentConfigDir(tenantUUID, dk.Name),
 	}
 
-	return nil
+	return newTenantConfig, nil
 }
 
 func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynatracev1beta1.DynaKube) (dtclient.Client, error) {

@@ -9,39 +9,46 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
+	testutil "github.com/Dynatrace/dynatrace-operator/pkg/util/testing"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func createTestDynakube(index int) Dynakube {
-	return Dynakube{
-		TenantUUID:             fmt.Sprintf("asc%d", index),
-		LatestVersion:          strconv.Itoa(123 * index),
-		Name:                   fmt.Sprintf("dk%d", index),
-		ImageDigest:            fmt.Sprintf("sha256:%d", 123*index),
-		MaxFailedMountAttempts: index,
+func createTestTenantConfig(index int) *TenantConfig {
+	return &TenantConfig{
+		Name:                        fmt.Sprintf("dk%d", index),
+		TenantUUID:                  fmt.Sprintf("asc%d", index),
+		DownloadedCodeModuleVersion: fmt.Sprintf("%d", 123*index),
+		MaxFailedMountAttempts:      int64(index),
+		TimeStampedModel:            TimeStampedModel{},
 	}
 }
 
-func createTestVolume(index int) Volume {
-	return Volume{
-		VolumeID:      fmt.Sprintf("vol-%d", index),
-		PodName:       fmt.Sprintf("pod%d", index),
-		Version:       createTestDynakube(index).LatestVersion,
-		TenantUUID:    createTestDynakube(index).TenantUUID,
-		MountAttempts: index,
+func createTestAppMount(index int) *AppMount {
+	return &AppMount{
+		VolumeMeta:        VolumeMeta{ID: fmt.Sprintf("vol-%d", index), PodName: fmt.Sprintf("pod%d", index)},
+		CodeModuleVersion: strconv.Itoa(123 * index),
+		CodeModule:        CodeModule{Version: strconv.Itoa(123 * index)},
+		VolumeMetaID:      fmt.Sprintf("vol-%d", index),
+		MountAttempts:     int64(index),
+		TimeStampedModel:  TimeStampedModel{},
 	}
 }
 
 func TestCorrectCSI(t *testing.T) {
+	diffOptsAppMount := cmpopts.IgnoreFields(AppMount{}, "TimeStampedModel")
+	diffOptsTenantConfig := cmpopts.IgnoreFields(TenantConfig{}, "TimeStampedModel")
+
 	t.Run("error on no db or missing tables", func(t *testing.T) {
 		db := emptyMemoryDB()
 
 		checker := NewCorrectnessChecker(nil, db, dtcsi.CSIOptions{})
 
-		err := checker.CorrectCSI(context.TODO())
+		err := checker.CorrectCSI(context.Background())
 
 		require.Error(t, err)
 	})
@@ -50,114 +57,114 @@ func TestCorrectCSI(t *testing.T) {
 
 		checker := NewCorrectnessChecker(nil, db, dtcsi.CSIOptions{})
 
-		err := checker.CorrectCSI(context.TODO())
+		err := checker.CorrectCSI(context.Background())
 
 		require.NoError(t, err)
 	})
 
 	t.Run("no error on nil apiReader, database is not cleaned", func(t *testing.T) {
-		ctx := context.TODO()
-		testVolume1 := createTestVolume(1)
-		testDynakube1 := createTestDynakube(1)
+		testAppMount1 := createTestAppMount(1)
+		testTenantConfig1 := createTestTenantConfig(1)
 		db := FakeMemoryDB()
-		db.InsertVolume(ctx, &testVolume1)
-		db.InsertDynakube(ctx, &testDynakube1)
+		db.CreateAppMount(testAppMount1)
+		db.CreateTenantConfig(testTenantConfig1)
 
 		checker := NewCorrectnessChecker(nil, db, dtcsi.CSIOptions{})
 
-		err := checker.CorrectCSI(context.TODO())
+		err := checker.CorrectCSI(context.Background())
 
 		require.NoError(t, err)
-		vol, err := db.GetVolume(ctx, testVolume1.VolumeID)
+		appMount, err := db.ReadAppMount(*testAppMount1)
 		require.NoError(t, err)
-		assert.Equal(t, &testVolume1, vol)
+		testutil.PartialEqual(t, testAppMount1, appMount, diffOptsAppMount)
 
+		tenantConfig, err := db.ReadTenantConfig(TenantConfig{Name: testTenantConfig1.Name})
 		require.NoError(t, err)
-		dk, err := db.GetDynakube(ctx, testDynakube1.Name)
-		require.NoError(t, err)
-		assert.Equal(t, &testDynakube1, dk)
+		testutil.PartialEqual(t, testTenantConfig1, tenantConfig, diffOptsTenantConfig)
 	})
 
 	t.Run("nothing to remove, everything is still correct", func(t *testing.T) {
-		ctx := context.TODO()
-		testVolume1 := createTestVolume(1)
-		testDynakube1 := createTestDynakube(1)
+		ctx := context.Background()
+		testAppMount1 := createTestAppMount(1)
+		testTenantConfig1 := createTestTenantConfig(1)
 		db := FakeMemoryDB()
-		db.InsertVolume(ctx, &testVolume1)
-		db.InsertDynakube(ctx, &testDynakube1)
+		db.CreateAppMount(testAppMount1)
+		db.CreateTenantConfig(testTenantConfig1)
 		client := fake.NewClient(
-			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testVolume1.PodName}},
-			&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
+			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testAppMount1.VolumeMeta.PodName}},
+			&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testTenantConfig1.Name}},
 		)
 
 		checker := NewCorrectnessChecker(client, db, dtcsi.CSIOptions{})
 
 		err := checker.CorrectCSI(ctx)
+		require.NoError(t, err)
+
+		appMount, err := db.ReadAppMount(*testAppMount1)
+		require.NoError(t, err)
+		testutil.PartialEqual(t, testAppMount1, appMount, diffOptsAppMount)
 
 		require.NoError(t, err)
-		vol, err := db.GetVolume(ctx, testVolume1.VolumeID)
+		tenantConfig, err := db.ReadTenantConfig(TenantConfig{Name: testTenantConfig1.Name})
 		require.NoError(t, err)
-		assert.Equal(t, &testVolume1, vol)
 
-		require.NoError(t, err)
-		dk, err := db.GetDynakube(ctx, testDynakube1.Name)
-		require.NoError(t, err)
-		assert.Equal(t, &testDynakube1, dk)
+		testutil.PartialEqual(t, testTenantConfig1, tenantConfig, diffOptsTenantConfig)
 	})
 	t.Run("remove unnecessary entries in the filesystem", func(t *testing.T) {
-		ctx := context.TODO()
-		testVolume1 := createTestVolume(1)
-		testVolume2 := createTestVolume(2)
-		testVolume3 := createTestVolume(3)
+		testAppMount1 := createTestAppMount(1)
+		testAppMount2 := createTestAppMount(2)
+		testAppMount3 := createTestAppMount(3)
 
-		testDynakube1 := createTestDynakube(1)
-		testDynakube2 := createTestDynakube(2)
-		testDynakube3 := createTestDynakube(3)
+		testTenantConfig1 := createTestTenantConfig(1)
+		testTenantConfig2 := createTestTenantConfig(2)
+		testTenantConfig3 := createTestTenantConfig(3)
 
 		db := FakeMemoryDB()
-		db.InsertVolume(ctx, &testVolume1)
-		db.InsertVolume(ctx, &testVolume2)
-		db.InsertVolume(ctx, &testVolume3)
-		db.InsertDynakube(ctx, &testDynakube1)
-		db.InsertDynakube(ctx, &testDynakube2)
-		db.InsertDynakube(ctx, &testDynakube3)
+		db.CreateAppMount(testAppMount1)
+		db.CreateAppMount(testAppMount2)
+		db.CreateAppMount(testAppMount3)
+		db.CreateTenantConfig(testTenantConfig1)
+		db.CreateTenantConfig(testTenantConfig2)
+		db.CreateTenantConfig(testTenantConfig3)
 
 		client := fake.NewClient(
-			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testVolume1.PodName}},
-			&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
+			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testAppMount1.VolumeMeta.PodName}},
+			&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testTenantConfig1.Name}},
 		)
 
 		checker := NewCorrectnessChecker(client, db, dtcsi.CSIOptions{})
 
-		err := checker.CorrectCSI(ctx)
+		err := checker.CorrectCSI(context.Background())
 		require.NoError(t, err)
 
-		vol, err := db.GetVolume(ctx, testVolume1.VolumeID)
+		testAppMount1.TimeStampedModel = TimeStampedModel{}
+		appMount, err := db.ReadAppMount(*testAppMount1)
 		require.NoError(t, err)
-		assert.Equal(t, &testVolume1, vol)
+		testutil.PartialEqual(t, &testAppMount1, &appMount, diffOptsAppMount)
 
-		ten, err := db.GetDynakube(ctx, testDynakube1.Name)
+		tenantConfig, err := db.ReadTenantConfig(TenantConfig{Name: testTenantConfig1.Name})
 		require.NoError(t, err)
-		assert.Equal(t, &testDynakube1, ten)
-
-		// PURGED
-		vol, err = db.GetVolume(ctx, testVolume2.VolumeID)
-		require.NoError(t, err)
-		assert.Nil(t, vol)
+		testutil.PartialEqual(t, &testTenantConfig1, &tenantConfig, diffOptsTenantConfig)
 
 		// PURGED
-		vol, err = db.GetVolume(ctx, testVolume3.VolumeID)
-		require.NoError(t, err)
-		assert.Nil(t, vol)
+		appMount, err = db.ReadAppMount(AppMount{VolumeMetaID: testAppMount2.VolumeMetaID})
+		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+		assert.Nil(t, appMount)
 
 		// PURGED
-		ten, err = db.GetDynakube(ctx, testDynakube2.TenantUUID)
-		require.NoError(t, err)
-		assert.Nil(t, ten)
+		testAppMount3.TimeStampedModel = TimeStampedModel{}
+		appMount, err = db.ReadAppMount(*testAppMount3)
+		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+		assert.Nil(t, appMount)
 
 		// PURGED
-		ten, err = db.GetDynakube(ctx, testDynakube3.TenantUUID)
-		require.NoError(t, err)
-		assert.Nil(t, ten)
+		tenantConfig, err = db.ReadTenantConfig(TenantConfig{Name: testTenantConfig2.TenantUUID})
+		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+		assert.Nil(t, tenantConfig)
+
+		// PURGED
+		tenantConfig, err = db.ReadTenantConfig(TenantConfig{Name: testTenantConfig3.TenantUUID})
+		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+		assert.Nil(t, tenantConfig)
 	})
 }
