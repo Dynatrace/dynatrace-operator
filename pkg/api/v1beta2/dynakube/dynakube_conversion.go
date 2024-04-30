@@ -6,7 +6,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
-// ConvertTo converts v1beta1 to v1alpha1.
+// ConvertTo converts v1beta2 to v1beta1.
 func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*dynakube.DynaKube)
 
@@ -43,7 +43,7 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	return nil
 }
 
-// ConvertFrom converts v1alpha1 to v1beta1.
+// ConvertFrom converts v1beta1 to v1beta2.
 func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	src := srcRaw.(*dynakube.DynaKube)
 	dst.ObjectMeta = src.ObjectMeta
@@ -91,6 +91,7 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 		}
 		dst.Status.OneAgent.Instances[key] = instance
 	}
+	dst.Status.Conditions = src.Status.Conditions
 
 	dst.Status.OneAgent.Version = src.Status.OneAgent.Version
 

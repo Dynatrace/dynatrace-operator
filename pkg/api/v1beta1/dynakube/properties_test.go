@@ -29,7 +29,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const testAPIURL = "http://test-endpoint/api"
+const (
+	testAPIURL = "http://test-endpoint/api"
+	testName   = "test-dynakube"
+)
 
 func TestDefaultActiveGateImage(t *testing.T) {
 	t.Run(`ActiveGateImage with no API URL`, func(t *testing.T) {
