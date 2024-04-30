@@ -87,7 +87,7 @@ jobs:
         run: |
           hack/build/ci/install-cgo-dependencies.sh
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@82d40c283aeb1f2b6595839195e95c2d6a49081b # v5.0.0
+        uses: golangci/golangci-lint-action@9d1e0624a798bb64f6c3cea93db47765312263dc # v5.1.0
         with:
           # renovate depName=github.com/golangci/golangci-lint
           version: v1.57.2
@@ -121,7 +121,7 @@ jobs:
         with:
           config: .markdownlint.json
           # renovate depName=github.com/igorshubovych/markdownlint-cli
-          version: v0.39.0
+          version: v0.40.0
 
   check-uncommitted-doc-changes:
     name: Check uncommitted changes in api docs action

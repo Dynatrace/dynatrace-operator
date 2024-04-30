@@ -3,7 +3,6 @@ package hostvolumes
 import (
 	"context"
 	"testing"
-	"time"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
@@ -35,6 +34,7 @@ func TestPublishVolume(t *testing.T) {
 		assert.NotEmpty(t, mounter.MountPoints)
 		assertReferencesForPublishedVolume(t, &publisher, mounter)
 	})
+
 	t.Run(`not ready dynakube`, func(t *testing.T) {
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		publisher := newPublisherForTesting(mounter)
@@ -78,9 +78,9 @@ func TestUnpublishVolume(t *testing.T) {
 		assert.NotNil(t, response)
 		assert.NotEmpty(t, mounter.MountPoints)
 
-		volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(context.Background(), testVolumeId)
-		require.NoError(t, err)
-		assert.Nil(t, volume)
+		appMount, err := publisher.db.ReadOSMount(metadata.OSMount{VolumeMetaID: testVolumeId})
+		require.Error(t, err)
+		assert.Nil(t, appMount)
 	})
 }
 
@@ -120,36 +120,36 @@ func newPublisherForTesting(mounter *mount.FakeMounter) HostVolumePublisher {
 func mockPublishedvolume(t *testing.T, publisher *HostVolumePublisher) {
 	mockDynakube(t, publisher)
 
-	now := time.Now()
-	err := publisher.db.InsertOsAgentVolume(context.Background(), metadata.NewOsAgentVolume(testVolumeId, testTenantUUID, true, &now))
+	osMount := metadata.OSMount{VolumeMetaID: testVolumeId, VolumeMeta: metadata.VolumeMeta{ID: testVolumeId}, TenantUUID: testTenantUUID}
+	err := publisher.db.CreateOSMount(&osMount)
 	require.NoError(t, err)
 }
 
 func mockDynakube(t *testing.T, publisher *HostVolumePublisher) {
-	err := publisher.db.InsertDynakube(context.Background(), metadata.NewDynakube(testDynakubeName, testTenantUUID, "some-version", "", 0))
+	tenantConfig := metadata.TenantConfig{Name: testDynakubeName, TenantUUID: testTenantUUID, DownloadedCodeModuleVersion: "some-version", MaxFailedMountAttempts: 0}
+	err := publisher.db.CreateTenantConfig(&tenantConfig)
 	require.NoError(t, err)
 }
 
 func mockDynakubeWithoutVersion(t *testing.T, publisher *HostVolumePublisher) {
-	err := publisher.db.InsertDynakube(context.Background(), metadata.NewDynakube(testDynakubeName, testTenantUUID, "", "", 0))
+	tenantConfig := metadata.TenantConfig{Name: testDynakubeName, TenantUUID: testTenantUUID, DownloadedCodeModuleVersion: "", MaxFailedMountAttempts: 0}
+	err := publisher.db.CreateTenantConfig(&tenantConfig)
 	require.NoError(t, err)
 }
 
 func assertReferencesForPublishedVolume(t *testing.T, publisher *HostVolumePublisher, mounter *mount.FakeMounter) {
 	assert.NotEmpty(t, mounter.MountPoints)
 
-	volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(context.Background(), testVolumeId)
+	volume, err := publisher.db.ReadOSMount(metadata.OSMount{VolumeMetaID: testVolumeId})
 	require.NoError(t, err)
-	assert.Equal(t, testVolumeId, volume.VolumeID)
+	assert.Equal(t, testVolumeId, volume.VolumeMetaID)
 	assert.Equal(t, testTenantUUID, volume.TenantUUID)
-	assert.True(t, volume.Mounted)
 }
 
 func assertReferencesForUnpublishedVolume(t *testing.T, publisher *HostVolumePublisher) {
-	volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(context.Background(), testVolumeId)
-	require.NoError(t, err)
-	assert.NotNil(t, volume)
-	assert.False(t, volume.Mounted)
+	volume, err := publisher.db.ReadOSMount(metadata.OSMount{VolumeMetaID: testVolumeId})
+	require.Error(t, err)
+	assert.Nil(t, volume)
 }
 
 func createTestVolumeConfig() *csivolumes.VolumeConfig {
