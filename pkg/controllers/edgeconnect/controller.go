@@ -721,7 +721,7 @@ func (controller *Controller) hostAlias(ctx context.Context, deployment *appsv1.
 
 	var kubeSystemNamespace corev1.Namespace
 
-	err = controller.apiReader.Get(ctx, client.ObjectKey{Namespace: "", Name: kubeSystemNamespaceName}, &kubeSystemNamespace)
+	err = controller.apiReader.Get(ctx, client.ObjectKey{Name: kubeSystemNamespaceName}, &kubeSystemNamespace)
 	if err != nil {
 		return errors.WithStack(err)
 	}
