@@ -9,19 +9,25 @@ fi
 image_name=$1
 image_tag=$2
 multiplatform=$3
+image="${image_name}:${image_tag}"
 
 if [ "$multiplatform" == "true" ]
 then
-  echo "Creating manifest for AMD, ARM and PPC64LE images"
-  docker pull "${image_name}:${image_tag}-amd64"
-  docker pull "${image_name}:${image_tag}-arm64"
-  docker pull "${image_name}:${image_tag}-ppc64le"
-  docker manifest create "${image_name}:${image_tag}" "${image_name}:${image_tag}-arm64" "${image_name}:${image_tag}-amd64" "${image_name}:${image_tag}-ppc64le"
+  supported_architectures=("amd64" "arm64" "ppc64le" "s390x")
+  images=()
+  echo "Creating manifest for ${supported_architectures[*]}"
+
+  for architecture in "${supported_architectures[@]}"
+  do
+    docker pull "${image}-${architecture}"
+    images+=("${image}-${architecture}")
+  done
+  docker manifest create "${image}" "${images[*]}"
 else
   echo "Creating manifest for the AMD image "
-  docker pull "${image_name}:${image_tag}-amd64"
-  docker manifest create "${image_name}:${image_tag}" "${image_name}:${image_tag}-amd64"
+  docker pull "${image}-amd64"
+  docker manifest create "${image}" "${image}-amd64"
 fi
 
-sha256=$(docker manifest push "${image_name}:${image_tag}")
+sha256=$(docker manifest push "${image}")
 echo "digest=${sha256}">> $GITHUB_OUTPUT
