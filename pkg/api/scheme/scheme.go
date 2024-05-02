@@ -22,6 +22,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2"
+	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	apiv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"

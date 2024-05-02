@@ -3,6 +3,7 @@ package dynakube
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	_ "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
@@ -73,10 +74,20 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	}
 
 	if src.NamespaceSelector() != nil {
+		matchExpressions := src.NamespaceSelector().MatchExpressions
+		matchLabels := src.NamespaceSelector().MatchLabels
 		if src.CloudNativeFullstackMode() {
-			dst.Spec.OneAgent.CloudNativeFullStack.NamespaceSelector = *src.NamespaceSelector()
+			dst.Spec.OneAgent.CloudNativeFullStack = &CloudNativeFullStackSpec{}
+			dst.Spec.OneAgent.CloudNativeFullStack.NamespaceSelector = v1.LabelSelector{
+				MatchExpressions: matchExpressions,
+				MatchLabels:      matchLabels,
+			}
 		} else if src.ApplicationMonitoringMode() {
-			dst.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = *src.NamespaceSelector()
+			dst.Spec.OneAgent.ApplicationMonitoring = &ApplicationMonitoringSpec{}
+			dst.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = v1.LabelSelector{
+				MatchExpressions: matchExpressions,
+				MatchLabels:      matchLabels,
+			}
 		}
 	}
 
