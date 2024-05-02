@@ -1,60 +1,67 @@
 package token
 
 import (
+	"context"
+	"strings"
+
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/pkg/errors"
 )
 
 type Token struct {
-	Value          string
-	RequiredScopes []string
+	Type     string
+	Value    string
+	Features []Feature
 }
 
-func (token Token) setApiTokenScopes(dynakube dynatracev1beta1.DynaKube, hasPaasToken bool) Token {
-	token.RequiredScopes = make([]string, 0)
+func newToken(tokenType string, value string) Token {
+	return Token{
+		Type:     tokenType,
+		Value:    value,
+		Features: make([]Feature, 0),
+	}
+}
 
-	if !hasPaasToken {
-		token.RequiredScopes = append(token.RequiredScopes, dtclient.TokenScopeInstallerDownload)
+func (token *Token) addFeatures(features []Feature) {
+	token.Features = append(token.Features, features...)
+}
+
+func (token *Token) verifyScopes(ctx context.Context, dtClient dtclient.Client, dynakube dynatracev1beta1.DynaKube) error {
+	if len(token.Features) == 0 {
+		return nil
 	}
 
-	token.RequiredScopes = append(token.RequiredScopes, dtclient.TokenScopeDataExport)
-
-	if dynakube.IsKubernetesMonitoringActiveGateEnabled() &&
-		dynakube.FeatureAutomaticKubernetesApiMonitoring() {
-		token.RequiredScopes = append(token.RequiredScopes,
-			dtclient.TokenScopeEntitiesRead,
-			dtclient.TokenScopeSettingsRead,
-			dtclient.TokenScopeSettingsWrite)
+	scopes, err := dtClient.GetTokenScopes(ctx, token.Value)
+	if err != nil {
+		return err
 	}
 
-	if dynakube.NeedsActiveGate() {
-		token.RequiredScopes = append(token.RequiredScopes,
-			dtclient.TokenScopeActiveGateTokenCreate)
-	}
+	collectedErrors := make([]error, 0)
 
-	return token
-}
-
-func (token Token) setPaasTokenScopes() Token {
-	token.RequiredScopes = []string{dtclient.TokenScopeInstallerDownload}
-
-	return token
-}
-
-func (token Token) setDataIngestScopes() Token {
-	token.RequiredScopes = []string{dtclient.TokenScopeMetricsIngest}
-
-	return token
-}
-
-func (token Token) getMissingScopes(scopes dtclient.TokenScopes) []string {
-	missingScopes := make([]string, 0)
-
-	for _, requiredScope := range token.RequiredScopes {
-		if !scopes.Contains(requiredScope) {
-			missingScopes = append(missingScopes, requiredScope)
+	for _, feature := range token.Features {
+		if feature.IsEnabled(dynakube) {
+			isMissing, missingScopes := feature.IsScopeMissing(scopes)
+			if isMissing {
+				collectedErrors = append(collectedErrors,
+					errors.Errorf("feature '%s' is missing scope '%s'",
+						feature.Name,
+						strings.Join(missingScopes, ", ")))
+			}
 		}
 	}
 
-	return missingScopes
+	if len(collectedErrors) > 0 {
+		return errors.Errorf("token '%s' has scope errors: %s", token.Type, collectedErrors)
+	}
+
+	return nil
+}
+
+func (token *Token) verifyValue() error {
+	if strings.TrimSpace(token.Value) != token.Value {
+		return errors.Errorf("token '%s' contains leading or trailing whitespaces", token.Type)
+	}
+
+	return nil
 }

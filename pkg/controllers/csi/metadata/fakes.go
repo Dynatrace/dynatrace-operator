@@ -3,111 +3,121 @@ package metadata
 import (
 	"context"
 	"database/sql"
+
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
-func emptyMemoryDB() *SqliteAccess {
-	db := SqliteAccess{}
-	_ = db.connect(sqliteDriverName, ":memory:")
+func emptyMemoryDB() *GormConn {
+	db, err := gorm.Open(sqlite.Open("file::memory:"), &gorm.Config{})
+	if err != nil {
+		return nil
+	}
 
-	return &db
+	return &GormConn{ctx: context.Background(), db: db}
 }
 
-func FakeMemoryDB() *SqliteAccess {
-	db := SqliteAccess{}
-	ctx := context.Background()
-	_ = db.Setup(ctx, ":memory:")
-	_ = db.createTables(ctx)
-
-	return &db
-}
-
-func checkIfTablesExist(db *SqliteAccess) bool {
-	var volumesTable string
-
-	row := db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", volumesTableName)
-
-	err := row.Scan(&volumesTable)
+func FakeMemoryDB() *GormConn {
+	db, err := gorm.Open(sqlite.Open("file::memory:"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
 	if err != nil {
-		return false
+		return nil
 	}
 
-	var tenantsTable string
+	gormConn := &GormConn{ctx: context.Background(), db: db}
 
-	row = db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", dynakubesTableName)
-
-	err = row.Scan(&tenantsTable)
+	err = gormConn.InitGormSchema()
 	if err != nil {
-		return false
+		log.Error(err, "Couldn't initialize GORM schema")
+
+		return nil
 	}
 
-	if tenantsTable != dynakubesTableName || volumesTable != volumesTableName {
-		return false
-	}
-
-	return true
+	return gormConn
 }
 
 type FakeFailDB struct{}
 
-func (f *FakeFailDB) Setup(_ context.Context, _ string) error { return sql.ErrTxDone }
-func (f *FakeFailDB) InsertDynakube(_ context.Context, _ *Dynakube) error {
+func (f *FakeFailDB) SchemaMigration() error {
 	return sql.ErrTxDone
 }
-func (f *FakeFailDB) UpdateDynakube(_ context.Context, _ *Dynakube) error {
-	return sql.ErrTxDone
-}
-func (f *FakeFailDB) DeleteDynakube(_ context.Context, _ string) error {
-	return sql.ErrTxDone
-}
-func (f *FakeFailDB) GetDynakube(_ context.Context, _ string) (*Dynakube, error) {
+
+func (f *FakeFailDB) ReadTenantConfig(tenantConfig TenantConfig) (*TenantConfig, error) {
 	return nil, sql.ErrTxDone
 }
-func (f *FakeFailDB) GetTenantsToDynakubes(_ context.Context) (map[string]string, error) {
+func (f *FakeFailDB) ReadCodeModule(codeModule CodeModule) (*CodeModule, error) {
 	return nil, sql.ErrTxDone
 }
-func (f *FakeFailDB) GetAllDynakubes(_ context.Context) ([]*Dynakube, error) {
+func (f *FakeFailDB) ReadOSMount(osMount OSMount) (*OSMount, error) {
+	return nil, sql.ErrTxDone
+}
+func (f *FakeFailDB) ReadUnscopedOSMount(osMount OSMount) (*OSMount, error) {
+	return nil, sql.ErrTxDone
+}
+func (f *FakeFailDB) ReadVolumeMeta(volumeMeta VolumeMeta) (*VolumeMeta, error) {
+	return nil, sql.ErrTxDone
+}
+func (f *FakeFailDB) ReadAppMount(appMount AppMount) (*AppMount, error) {
 	return nil, sql.ErrTxDone
 }
 
-func (f *FakeFailDB) InsertOsAgentVolume(_ context.Context, _ *OsAgentVolume) error {
+func (f *FakeFailDB) ReadTenantConfigs() ([]TenantConfig, error) {
+	return nil, sql.ErrTxDone
+}
+func (f *FakeFailDB) ReadCodeModules() ([]CodeModule, error) {
+	return nil, sql.ErrTxDone
+}
+func (f *FakeFailDB) ReadOSMounts() ([]OSMount, error) {
+	return nil, sql.ErrTxDone
+}
+func (f *FakeFailDB) ReadAppMounts() ([]AppMount, error) {
+	return nil, sql.ErrTxDone
+}
+func (f *FakeFailDB) ReadVolumeMetas() ([]VolumeMeta, error) {
+	return nil, sql.ErrTxDone
+}
+
+func (f *FakeFailDB) CreateTenantConfig(tenantConfig *TenantConfig) error {
 	return sql.ErrTxDone
 }
-func (f *FakeFailDB) GetOsAgentVolumeViaVolumeID(_ context.Context, _ string) (*OsAgentVolume, error) {
-	return nil, sql.ErrTxDone
-}
-func (f *FakeFailDB) GetOsAgentVolumeViaTenantUUID(_ context.Context, _ string) (*OsAgentVolume, error) {
-	return nil, sql.ErrTxDone
-}
-func (f *FakeFailDB) UpdateOsAgentVolume(_ context.Context, _ *OsAgentVolume) error {
+func (f *FakeFailDB) CreateCodeModule(codeModule *CodeModule) error {
 	return sql.ErrTxDone
 }
-func (f *FakeFailDB) GetAllOsAgentVolumes(_ context.Context) ([]*OsAgentVolume, error) {
-	return nil, sql.ErrTxDone
+func (f *FakeFailDB) CreateOSMount(osMount *OSMount) error {
+	return sql.ErrTxDone
+}
+func (f *FakeFailDB) CreateAppMount(appMount *AppMount) error {
+	return sql.ErrTxDone
 }
 
-func (f *FakeFailDB) InsertVolume(_ context.Context, _ *Volume) error { return sql.ErrTxDone }
-func (f *FakeFailDB) DeleteVolume(_ context.Context, _ string) error  { return sql.ErrTxDone }
-func (f *FakeFailDB) GetVolume(_ context.Context, _ string) (*Volume, error) {
-	return nil, sql.ErrTxDone
+func (f *FakeFailDB) UpdateTenantConfig(tenantConfig *TenantConfig) error {
+	return sql.ErrTxDone
 }
-func (f *FakeFailDB) GetAllVolumes(_ context.Context) ([]*Volume, error) { return nil, sql.ErrTxDone }
-func (f *FakeFailDB) GetPodNames(_ context.Context) (map[string]string, error) {
-	return nil, sql.ErrTxDone
+func (f *FakeFailDB) UpdateOSMount(osMount *OSMount) error {
+	return sql.ErrTxDone
 }
-func (f *FakeFailDB) GetUsedVersions(_ context.Context, _ string) (map[string]bool, error) {
-	return nil, sql.ErrTxDone
-}
-func (f *FakeFailDB) GetAllUsedVersions(_ context.Context) (map[string]bool, error) {
-	return nil, sql.ErrTxDone
-}
-func (f *FakeFailDB) GetLatestVersions(_ context.Context) (map[string]bool, error) {
-	return nil, sql.ErrTxDone
+func (f *FakeFailDB) UpdateAppMount(appMount *AppMount) error {
+	return sql.ErrTxDone
 }
 
-func (f *FakeFailDB) GetUsedImageDigests(_ context.Context) (map[string]bool, error) {
-	return nil, sql.ErrTxDone
+func (f *FakeFailDB) DeleteTenantConfig(tenantConfig *TenantConfig, cascade bool) error {
+	return sql.ErrTxDone
+}
+func (f *FakeFailDB) DeleteCodeModule(codeModule *CodeModule) error {
+	return sql.ErrTxDone
+}
+func (f *FakeFailDB) DeleteOSMount(osMount *OSMount) error {
+	return sql.ErrTxDone
+}
+func (f *FakeFailDB) DeleteAppMount(appMount *AppMount) error {
+	return sql.ErrTxDone
 }
 
-func (f *FakeFailDB) IsImageDigestUsed(_ context.Context, _ string) (bool, error) {
+func (f *FakeFailDB) IsCodeModuleOrphaned(codeModule *CodeModule) (bool, error) {
 	return false, sql.ErrTxDone
+}
+func (f *FakeFailDB) RestoreOSMount(osMount *OSMount) (*OSMount, error) {
+	return nil, sql.ErrTxDone
 }

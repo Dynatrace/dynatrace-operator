@@ -15,10 +15,6 @@ func createManager(namespace string, config *rest.Config) (manager.Manager, erro
 		return nil, errors.WithStack(err)
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
 	return mgr, nil
 }
 

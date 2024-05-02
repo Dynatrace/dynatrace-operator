@@ -1,9 +1,35 @@
 package metadata
 
 import (
+	"time"
+
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"gorm.io/gorm"
 )
+
+// Dynakube stores the necessary info from the Dynakube that is needed to be used during volume mount/unmount.
+type Dynakube struct {
+	Name                   string `json:"name"`
+	TenantUUID             string `json:"tenantUUID"`
+	LatestVersion          string `json:"latestVersion"`
+	ImageDigest            string `json:"imageDigest"`
+	MaxFailedMountAttempts int    `json:"maxFailedMountAttempts"`
+}
+
+type Volume struct {
+	VolumeID      string `json:"volumeID" gorm:"column:ID"`
+	PodName       string `json:"podName"`
+	Version       string `json:"version"`
+	TenantUUID    string `json:"tenantUUID"`
+	MountAttempts int    `json:"mountAttempts"`
+}
+
+type OsAgentVolume struct {
+	LastModified *time.Time `json:"lastModified"`
+	VolumeID     string     `json:"volumeID"`
+	TenantUUID   string     `json:"tenantUUID"`
+	Mounted      bool       `json:"mounted"`
+}
 
 func migrateDynakubes(tx *gorm.DB) error {
 	var dynakubes []Dynakube
@@ -21,8 +47,7 @@ func migrateDynakubes(tx *gorm.DB) error {
 		}
 
 		tc := TenantConfig{
-			Name: d.Name,
-
+			Name:                        d.Name,
 			TenantUUID:                  d.TenantUUID,
 			ConfigDirPath:               pr.AgentConfigDir(d.TenantUUID, d.Name),
 			DownloadedCodeModuleVersion: version,
@@ -131,7 +156,7 @@ func migrateOsAgentVolumes(tx *gorm.DB) error {
 			TenantConfigUID: tc.UID,
 			TenantUUID:      ov.TenantUUID,
 			VolumeMetaID:    vm.ID,
-			Location:        pr.AgentRunDirForVolume(ov.TenantUUID, ov.VolumeID),
+			Location:        pr.AgentRunDirForVolume(ov.TenantUUID, vm.ID),
 			MountAttempts:   mountAttempts,
 		}
 		result = tx.Create(&om)
