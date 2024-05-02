@@ -97,6 +97,7 @@ spec:
                       - amd64
                       - arm64
                       - ppc64le
+                      - s390x
                   {{- end }}
                   - key: kubernetes.io/os
                     operator: In
@@ -127,5 +128,8 @@ spec:
           effect: NoSchedule
         - key: kubernetes.io/arch
           value: ppc64le
+          effect: NoSchedule
+        - key: kubernetes.io/arch
+          value: s390x
           effect: NoSchedule
 {{ end }}
