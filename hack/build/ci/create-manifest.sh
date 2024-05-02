@@ -22,7 +22,7 @@ then
     docker pull "${image}-${architecture}"
     images+=("${image}-${architecture}")
   done
-  docker manifest create "${image}" "${images[*]}"
+  docker manifest create "${image}" "${images[@]}"
 else
   echo "Creating manifest for the AMD image "
   docker pull "${image}-amd64"
