@@ -25,6 +25,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csigc "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/gc"
+	csiotel "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/internal/otel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
@@ -33,6 +34,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"gorm.io/gorm"
@@ -98,8 +100,13 @@ func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error
 func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "dynakube", request.Name)
 
+	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	defer span.End()
+
 	dk, err := provisioner.getDynaKube(ctx, request.NamespacedName)
 	if err != nil {
+		span.RecordError(err)
+
 		if k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, provisioner.db.DeleteTenantConfig(&metadata.TenantConfig{Name: request.Name}, false)
 		}
@@ -201,9 +208,18 @@ func (provisioner *OneAgentProvisioner) setupTenantConfig(dk *dynatracev1beta1.D
 }
 
 func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, request reconcile.Request) error {
+	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	defer span.End()
+
 	_, err := provisioner.gc.Reconcile(ctx, request)
 
-	return err
+	if err != nil {
+		span.RecordError(err)
+
+		return err
+	}
+
+	return nil
 }
 
 func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context, dk *dynatracev1beta1.DynaKube, tenantConfig *metadata.TenantConfig) error {
@@ -235,8 +251,13 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 	requeue bool,
 	err error,
 ) {
+	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	defer span.End()
+
 	latestProcessModuleConfig, err := processmoduleconfigsecret.GetSecretData(ctx, provisioner.apiReader, dk.Name, dk.Namespace)
 	if err != nil {
+		span.RecordError(err)
+
 		return false, err
 	}
 
@@ -305,8 +326,12 @@ func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynatra
 }
 
 func (provisioner *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.NamespacedName) (*dynatracev1beta1.DynaKube, error) {
+	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	defer span.End()
+
 	var dk dynatracev1beta1.DynaKube
 	err := provisioner.apiReader.Get(ctx, name, &dk)
+	span.RecordError(err)
 
 	return &dk, err
 }
