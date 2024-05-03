@@ -20,6 +20,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -37,6 +38,10 @@ const (
 	defaultUpdateInterval = 30 * time.Minute
 
 	finalizerName = "server"
+
+	defaultNamespaceName    = "default"
+	kubernetesServiceName   = "kubernetes"
+	kubeSystemNamespaceName = "kube-system"
 )
 
 type oauthCredentialsType struct {
@@ -318,6 +323,11 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 	desiredDeployment := deployment.New(edgeConnect)
 
 	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name, "deploymentName", desiredDeployment.Name)
+
+	err := controller.hostAlias(ctx, desiredDeployment, edgeConnect.Name, edgeConnect.Namespace)
+	if err != nil {
+		return err
+	}
 
 	if err := controllerutil.SetControllerReference(edgeConnect, desiredDeployment, controller.scheme); err != nil {
 		return errors.WithStack(err)
@@ -636,6 +646,11 @@ func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Co
 
 	desiredDeployment := deployment.New(edgeConnect)
 
+	err = controller.hostAlias(ctx, desiredDeployment, edgeConnect.Name, edgeConnect.Namespace)
+	if err != nil {
+		return err
+	}
+
 	desiredDeployment.Spec.Template.Annotations = map[string]string{consts.EdgeConnectAnnotationSecretHash: secretHash}
 	_log = _log.WithValues("deploymentName", desiredDeployment.Name)
 
@@ -694,4 +709,31 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 	}
 
 	return hasher.GenerateHash(secretConfig.Data)
+}
+
+func (controller *Controller) hostAlias(ctx context.Context, deployment *appsv1.Deployment, ecName string, ecNamespace string) error {
+	var kubernetesService corev1.Service
+
+	err := controller.apiReader.Get(ctx, client.ObjectKey{Namespace: defaultNamespaceName, Name: kubernetesServiceName}, &kubernetesService)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	var kubeSystemNamespace corev1.Namespace
+
+	err = controller.apiReader.Get(ctx, client.ObjectKey{Name: kubeSystemNamespaceName}, &kubeSystemNamespace)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	deployment.Spec.Template.Spec.HostAliases = []corev1.HostAlias{
+		{
+			IP: kubernetesService.Spec.ClusterIP,
+			Hostnames: []string{
+				ecName + "." + ecNamespace + "." + string(kubeSystemNamespace.UID),
+			},
+		},
+	}
+
+	return nil
 }

@@ -275,6 +275,9 @@ spec:
         - key: kubernetes.io/arch
           value: ppc64le
           effect: NoSchedule
+        - key: kubernetes.io/arch
+          value: s390x
+          effect: NoSchedule
         - key: ToBeDeletedByClusterAutoscaler
           operator: Exists
           effect: NoSchedule

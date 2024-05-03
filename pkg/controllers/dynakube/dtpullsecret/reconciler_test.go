@@ -47,7 +47,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
-			dtclient.ApiToken: token.Token{Value: testValue},
+			dtclient.ApiToken: &token.Token{Value: testValue},
 		})
 
 		err := r.Reconcile(context.Background())
@@ -78,7 +78,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 		fakeClient := errorClient{}
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
-			dtclient.ApiToken: token.Token{Value: testValue},
+			dtclient.ApiToken: &token.Token{Value: testValue},
 		})
 
 		err := r.Reconcile(context.Background())
@@ -93,7 +93,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 		fakeClient := errorClient{}
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
-			dtclient.ApiToken: token.Token{Value: testValue},
+			dtclient.ApiToken: &token.Token{Value: testValue},
 		})
 
 		err := r.Reconcile(context.Background())
@@ -113,7 +113,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		fakeErrorClient := errorClient{}
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeErrorClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
-			dtclient.ApiToken: token.Token{Value: testValue},
+			dtclient.ApiToken: &token.Token{Value: testValue},
 		})
 
 		err := r.Reconcile(context.Background())
@@ -148,7 +148,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
-			dtclient.ApiToken: token.Token{Value: testValue},
+			dtclient.ApiToken: &token.Token{Value: testValue},
 		})
 
 		err := r.Reconcile(context.Background())
@@ -181,7 +181,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
-			dtclient.ApiToken: token.Token{Value: testValue},
+			dtclient.ApiToken: &token.Token{Value: testValue},
 		})
 
 		err := r.Reconcile(context.Background())

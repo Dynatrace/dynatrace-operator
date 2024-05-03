@@ -9,11 +9,11 @@ gci_version=v0.13.4
 # renovate depName=golang.org/x/tools
 golang_tools_version=v0.20.0
 # renovate depName=github.com/vektra/mockery
-mockery_version=v2.42.3
+mockery_version=v2.43.0
 # renovate depName=github.com/igorshubovych/markdownlint-cli
-markdownlint_cli_version=v0.39.0
+markdownlint_cli_version=v0.40.0
 # renovate depName=github.com/helm-unittest/helm-unittest
-helmunittest_version=v0.4.4
+helmunittest_version=v0.5.0
 # renovate depName=github.com/princjef/gomarkdoc
 gomarkdoc_version=v1.1.0
 
