@@ -1408,11 +1408,13 @@ spec:
                                     items:
                                       type: string
                                     type: array
+                                    x-kubernetes-list-type: atomic
                                 required:
                                 - key
                                 - operator
                                 type: object
                               type: array
+                              x-kubernetes-list-type: atomic
                             matchLabels:
                               additionalProperties:
                                 type: string
@@ -1483,9 +1485,6 @@ spec:
                             In this situation, new pod with the same labelSelector cannot be scheduled,
                             because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones,
                             it will violate MaxSkew.
-
-
-                            This is a beta field and requires the MinDomainsInPodTopologySpread feature gate to be enabled (enabled by default).
                           format: int32
                           type: integer
                         nodeAffinityPolicy:
@@ -1858,11 +1857,13 @@ spec:
                                     items:
                                       type: string
                                     type: array
+                                    x-kubernetes-list-type: atomic
                                 required:
                                 - key
                                 - operator
                                 type: object
                               type: array
+                              x-kubernetes-list-type: atomic
                             matchLabels:
                               additionalProperties:
                                 type: string
@@ -1933,9 +1934,6 @@ spec:
                             In this situation, new pod with the same labelSelector cannot be scheduled,
                             because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones,
                             it will violate MaxSkew.
-
-
-                            This is a beta field and requires the MinDomainsInPodTopologySpread feature gate to be enabled (enabled by default).
                           format: int32
                           type: integer
                         nodeAffinityPolicy:
@@ -2033,11 +2031,13 @@ spec:
                           items:
                             type: string
                           type: array
+                          x-kubernetes-list-type: atomic
                       required:
                       - key
                       - operator
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                   matchLabels:
                     additionalProperties:
                       type: string
@@ -3299,11 +3299,13 @@ spec:
                                     items:
                                       type: string
                                     type: array
+                                    x-kubernetes-list-type: atomic
                                 required:
                                 - key
                                 - operator
                                 type: object
                               type: array
+                              x-kubernetes-list-type: atomic
                             matchLabels:
                               additionalProperties:
                                 type: string
@@ -3374,9 +3376,6 @@ spec:
                             In this situation, new pod with the same labelSelector cannot be scheduled,
                             because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones,
                             it will violate MaxSkew.
-
-
-                            This is a beta field and requires the MinDomainsInPodTopologySpread feature gate to be enabled (enabled by default).
                           format: int32
                           type: integer
                         nodeAffinityPolicy:
