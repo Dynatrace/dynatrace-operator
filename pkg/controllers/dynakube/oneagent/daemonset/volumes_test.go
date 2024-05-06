@@ -249,6 +249,5 @@ func TestPrepareVolumeMounts(t *testing.T) {
 
 		assert.NotContains(t, volumes, buildHttpProxyVolume(instance))
 		assert.NotContains(t, mounts, getHttpProxyMount())
-
 	})
 }
