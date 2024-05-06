@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestPrepareVolumes(t *testing.T) {
@@ -230,7 +229,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 	})
 	t.Run(`has no volume if no proxy is set`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: corev1.ObjectMeta{
 				Name:      "Dynakube",
 				Namespace: "dynatrace",
 				Annotations: map[string]string{
@@ -244,7 +243,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				},
 			},
 		}
-		
+
 		volumes := prepareVolumes(instance)
 		mounts := prepareVolumeMounts(instance)
 
