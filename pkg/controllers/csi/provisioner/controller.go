@@ -54,7 +54,7 @@ const (
 )
 
 type urlInstallerBuilder func(afero.Fs, dtclient.Client, *url.Properties) installer.Installer
-type imageInstallerBuilder func(afero.Fs, *image.Properties) (installer.Installer, error)
+type imageInstallerBuilder func(context.Context, afero.Fs, *image.Properties) (installer.Installer, error)
 
 // OneAgentProvisioner reconciles a DynaKube object
 type OneAgentProvisioner struct {
@@ -262,14 +262,14 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 	}
 
 	if dk.CodeModulesImage() != "" {
-		updatedDigest, err := provisioner.installAgentImage(ctx, *dk, latestProcessModuleConfig)
+		updatedImageURI, err := provisioner.installAgentImage(ctx, *dk, latestProcessModuleConfig)
 		if err != nil {
 			log.Info("error when updating agent from image", "error", err.Error())
 			// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
 			return true, nil
 		}
 
-		tenantConfig.DownloadedCodeModuleVersion = updatedDigest
+		tenantConfig.DownloadedCodeModuleVersion = updatedImageURI
 	} else {
 		updateVersion, err := provisioner.installAgentZip(ctx, *dk, dtc, latestProcessModuleConfig)
 		if err != nil {

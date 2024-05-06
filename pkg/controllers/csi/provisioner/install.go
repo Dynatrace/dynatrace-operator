@@ -2,8 +2,7 @@ package csiprovisioner
 
 import (
 	"context"
-	"net/http"
-	"strings"
+	"encoding/base64"
 
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
@@ -14,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 )
 
@@ -32,11 +30,6 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 	}
 
 	targetImage := dynakube.CodeModulesImage()
-	imageDigest, err := provisioner.getDigest(ctx, dynakube, targetImage)
-
-	if err != nil {
-		return "", err
-	}
 
 	props := &image.Properties{
 		ImageUri:     targetImage,
@@ -46,12 +39,14 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 		Metadata:     provisioner.db,
 	}
 
-	imageInstaller, err := provisioner.imageInstallerBuilder(provisioner.fs, props)
+	imageInstaller, err := provisioner.imageInstallerBuilder(ctx, provisioner.fs, props)
 	if err != nil {
 		return "", err
 	}
 
-	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(imageDigest)
+	// An image URI often contains one or several /-s, which is problematic when trying to use it as a folder name.
+	// Easiest to just base64 encode it
+	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(base64.StdEncoding.EncodeToString([]byte(targetImage)))
 	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dynakube.GetName())
 
 	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
@@ -69,36 +64,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 		return "", err
 	}
 
-	return imageDigest, err
-}
-
-func (provisioner *OneAgentProvisioner) getDigest(ctx context.Context, dynakube dynatracev1beta2.DynaKube, imageUri string) (string, error) {
-	pullSecret := dynakube.PullSecretWithoutData()
-	defaultTransport := http.DefaultTransport.(*http.Transport).Clone()
-
-	transport, err := registry.PrepareTransportForDynaKube(ctx, provisioner.apiReader, defaultTransport, &dynakube)
-	if err != nil {
-		return "", err
-	}
-
-	registryClient, err := provisioner.registryClientBuilder(
-		registry.WithContext(ctx),
-		registry.WithApiReader(provisioner.apiReader),
-		registry.WithKeyChainSecret(&pullSecret),
-		registry.WithTransport(transport),
-	)
-	if err != nil {
-		return "", err
-	}
-
-	imageVersion, err := registryClient.GetImageVersion(ctx, imageUri)
-	if err != nil {
-		return "", err
-	}
-
-	digest, _ := strings.CutPrefix(string(imageVersion.Digest), "sha256:")
-
-	return digest, nil
+	return targetImage, err
 }
 
 func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dynakube dynatracev1beta2.DynaKube, dtc dtclient.Client, latestProcessModuleConfig *dtclient.ProcessModuleConfig) (string, error) {
