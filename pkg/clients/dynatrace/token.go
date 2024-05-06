@@ -3,9 +3,11 @@ package dynatrace
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httptrace"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/pkg/errors"
@@ -37,7 +39,33 @@ func (dtc *dynatraceClient) GetTokenScopes(ctx context.Context, token string) (T
 		return nil, errors.WithStack(err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, dtc.getTokensLookupUrl(), bytes.NewBuffer(jsonStr))
+	trace := &httptrace.ClientTrace{
+		ConnectStart: func(network string, addr string) {
+			log.Info("TRACE ConnectStart", "network", network, "addr", addr)
+		},
+		ConnectDone: func(net, addr string, err error) {
+			if err != nil {
+				log.Info("TRACE ConnectDone unable to connect to host %v: %v", addr, err)
+
+				return
+			}
+			log.Info("TRACE ConnectDone", "network", net, "addr", addr)
+		},
+		GotConn: func(ci httptrace.GotConnInfo) {
+			log.Info("TRACE GotConn", "local", ci.Conn.LocalAddr().String(), "remote", ci.Conn.RemoteAddr().String())
+		},
+		GotFirstResponseByte: func() {
+			log.Info("TRACE GotFirstResponseByte")
+		},
+		TLSHandshakeStart: func() {
+			log.Info("TRACE TLSHandshakeStart")
+		},
+		TLSHandshakeDone: func(_ tls.ConnectionState, _ error) {
+			log.Info("TRACE TLSHandshakeDone")
+		},
+	}
+
+	req, err := http.NewRequestWithContext(httptrace.WithClientTrace(ctx, trace), http.MethodPost, dtc.getTokensLookupUrl(), bytes.NewBuffer(jsonStr))
 	if err != nil {
 		return nil, fmt.Errorf("error initializing http request: %w", err)
 	}
