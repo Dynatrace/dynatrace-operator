@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -50,7 +49,7 @@ func testReadTokens(t *testing.T) {
 				Namespace: "dynatrace",
 			},
 		}
-		testSecret, err := secret.Create(scheme.Scheme, &dynakube, secret.NewNameModifier("dynakube"), secret.NewNamespaceModifier("dynatrace"), secret.NewDataModifier(map[string][]byte{
+		testSecret, err := secret.Create(&dynakube, secret.NewNameModifier("dynakube"), secret.NewNamespaceModifier("dynatrace"), secret.NewDataModifier(map[string][]byte{
 			dtclient.ApiToken:        []byte(testApiToken),
 			dtclient.PaasToken:       []byte(testPaasToken),
 			dtclient.DataIngestToken: []byte(testDataIngestToken),

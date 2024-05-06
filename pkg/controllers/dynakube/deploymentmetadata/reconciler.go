@@ -8,27 +8,24 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
-	scheme    *runtime.Scheme
 	clusterID string
 	dynakube  dynatracev1beta1.DynaKube
 }
 
-type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube dynatracev1beta1.DynaKube, clusterID string) controllers.Reconciler
+type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dynakube dynatracev1beta1.DynaKube, clusterID string) controllers.Reconciler
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube dynatracev1beta1.DynaKube, clusterID string) controllers.Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, dynakube dynatracev1beta1.DynaKube, clusterID string) controllers.Reconciler {
 	return &Reconciler{
 		client:    clt,
 		apiReader: apiReader,
 		dynakube:  dynakube,
 		clusterID: clusterID,
-		scheme:    scheme,
 	}
 }
 
@@ -69,7 +66,7 @@ func (r *Reconciler) addOperatorVersionInfo(configMapData map[string]string) {
 func (r *Reconciler) maintainMetadataConfigMap(ctx context.Context, configMapData map[string]string) error {
 	configMapQuery := configmap.NewQuery(ctx, r.client, r.apiReader, log)
 
-	configMap, err := configmap.CreateConfigMap(r.scheme, &r.dynakube,
+	configMap, err := configmap.CreateConfigMap(&r.dynakube,
 		configmap.NewModifier(GetDeploymentMetadataConfigMapName(r.dynakube.Name)),
 		configmap.NewNamespaceModifier(r.dynakube.Namespace),
 		configmap.NewConfigMapDataModifier(configMapData))

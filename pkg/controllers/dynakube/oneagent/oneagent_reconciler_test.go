@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
@@ -50,7 +49,6 @@ func TestReconcile(t *testing.T) {
 		reconciler := &Reconciler{
 			client:                   fakeClient,
 			apiReader:                fakeClient,
-			scheme:                   scheme.Scheme,
 			dynakube:                 dynakube,
 			versionReconciler:        createVersionReconcilerMock(t),
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
@@ -74,7 +72,6 @@ func TestReconcile(t *testing.T) {
 		reconciler := &Reconciler{
 			client:                   fakeClient,
 			apiReader:                fakeClient,
-			scheme:                   scheme.Scheme,
 			dynakube:                 dynakube,
 			versionReconciler:        createVersionReconcilerMock(t),
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
@@ -104,7 +101,6 @@ func TestReconcile(t *testing.T) {
 		reconciler := &Reconciler{
 			client:                   fakeClient,
 			apiReader:                fakeClient,
-			scheme:                   scheme.Scheme,
 			dynakube:                 &dynaKube,
 			connectionInfoReconciler: connectionInfoReconciler,
 			versionReconciler:        createVersionReconcilerMock(t),
@@ -134,7 +130,6 @@ func TestReconcile(t *testing.T) {
 		reconciler := &Reconciler{
 			client:                   fakeClient,
 			apiReader:                fakeClient,
-			scheme:                   scheme.Scheme,
 			dynakube:                 &dynaKube,
 			connectionInfoReconciler: controllermock.NewReconciler(t),
 			versionReconciler:        versionReconciler,
@@ -182,7 +177,6 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 	reconciler := &Reconciler{
 		client:                   fakeClient,
 		apiReader:                fakeClient,
-		scheme:                   scheme.Scheme,
 		dynakube:                 dynakube,
 		connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		versionReconciler:        createVersionReconcilerMock(t),
@@ -238,7 +232,6 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	reconciler := &Reconciler{
 		client:    c,
 		apiReader: c,
-		scheme:    scheme.Scheme,
 	}
 
 	expectedLabels := map[string]string{
@@ -622,7 +615,6 @@ func TestInstanceStatus(t *testing.T) {
 	reconciler := &Reconciler{
 		client:    fakeClient,
 		apiReader: fakeClient,
-		scheme:    scheme.Scheme,
 	}
 
 	err := reconciler.reconcileInstanceStatuses(context.Background(), dynakube)
@@ -673,7 +665,6 @@ func TestEmptyInstancesWithWrongLabels(t *testing.T) {
 	reconciler := &Reconciler{
 		client:    fakeClient,
 		apiReader: fakeClient,
-		scheme:    scheme.Scheme,
 	}
 
 	err := reconciler.reconcileInstanceStatuses(context.Background(), dynakube)
@@ -715,7 +706,6 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 			dynakube:                 dynakube,
 			client:                   fakeClient,
 			apiReader:                fakeClient,
-			scheme:                   scheme.Scheme,
 			versionReconciler:        createVersionReconcilerMock(t),
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		}

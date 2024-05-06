@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -249,7 +248,6 @@ func createDefaultReconciler(fakeClient client.Client, dtClient *dtclientmock.Cl
 	return &Controller{
 		client:    fakeClient,
 		apiReader: fakeClient,
-		scheme:    scheme.Scheme,
 		dynatraceClientBuilder: &mockDynatraceClientBuilder{
 			dynatraceClient: dtClient,
 		},

@@ -70,11 +70,10 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 
 	capability.NewRoutingCapability(instance)
 
-	r := NewReconciler(clt, clt, scheme.Scheme, instance, capability.NewRoutingCapability(instance)).(*Reconciler)
+	r := NewReconciler(clt, clt, instance, capability.NewRoutingCapability(instance)).(*Reconciler)
 	r.dynakube.Annotations = map[string]string{}
 	require.NotNil(t, r)
 	require.NotNil(t, r.client)
-	require.NotNil(t, r.scheme)
 	require.NotNil(t, r.dynakube)
 
 	return r
@@ -167,7 +166,7 @@ func TestReconcile_GetStatefulSet(t *testing.T) {
 	desiredSts.Kind = "StatefulSet"
 	desiredSts.APIVersion = "apps/v1"
 	desiredSts.ResourceVersion = "1"
-	err = controllerutil.SetControllerReference(r.dynakube, desiredSts, r.scheme)
+	err = controllerutil.SetControllerReference(r.dynakube, desiredSts, scheme.Scheme)
 	require.NoError(t, err)
 
 	sts, err := r.getStatefulSet(context.Background(), desiredSts)

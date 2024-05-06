@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -47,7 +46,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient(buildActiveGateSecret(*dynakube, testTenantUUID))
 		dtc := dtclientmock.NewClient(t)
 
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc, dynakube)
+		r := NewReconciler(fakeClient, fakeClient, dtc, dynakube)
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 		assert.Empty(t, dynakube.Status.ActiveGate.ConnectionInfoStatus)
@@ -66,7 +65,7 @@ func TestReconcile(t *testing.T) {
 		dtc.On("GetActiveGateConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestActiveGateConnectionInfo(), nil)
 
 		fakeClient := fake.NewClient(dynakube)
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc, dynakube)
+		r := NewReconciler(fakeClient, fakeClient, dtc, dynakube)
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
@@ -98,7 +97,7 @@ func TestReconcile(t *testing.T) {
 			},
 		}
 
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc, dynakube)
+		r := NewReconciler(fakeClient, fakeClient, dtc, dynakube)
 		rec := r.(*reconciler)
 		rec.timeProvider.Set(rec.timeProvider.Now().Add(time.Minute * 20))
 
@@ -132,7 +131,7 @@ func TestReconcile(t *testing.T) {
 			},
 		}
 
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc, dynakube)
+		r := NewReconciler(fakeClient, fakeClient, dtc, dynakube)
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
@@ -159,7 +158,7 @@ func TestReconcile(t *testing.T) {
 		dtc := dtclientmock.NewClient(t)
 		dtc.On("GetActiveGateConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestActiveGateConnectionInfo(), nil).Maybe()
 
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc, dynakube)
+		r := NewReconciler(fakeClient, fakeClient, dtc, dynakube)
 		err := r.Reconcile(ctx)
 		require.Error(t, err)
 

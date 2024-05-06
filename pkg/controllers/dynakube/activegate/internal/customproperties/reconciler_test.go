@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/stretchr/testify/assert"
@@ -24,7 +23,7 @@ const (
 
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run(`Create works with minimal setup`, func(t *testing.T) {
-		r := NewReconciler(nil, nil, "", nil, &dynatracev1beta1.DynaKubeValueSource{})
+		r := NewReconciler(nil, nil, "", &dynatracev1beta1.DynaKubeValueSource{})
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 	})
@@ -36,7 +35,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			}}
 		fakeClient := fake.NewClient(instance)
-		r := NewReconciler(fakeClient, instance, testOwner, scheme.Scheme, &valueSource)
+		r := NewReconciler(fakeClient, instance, testOwner, &valueSource)
 		err := r.Reconcile(context.Background())
 
 		require.NoError(t, err)
@@ -58,7 +57,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			}}
 		fakeClient := fake.NewClient(instance)
-		r := NewReconciler(fakeClient, instance, testOwner, scheme.Scheme, &valueSource)
+		r := NewReconciler(fakeClient, instance, testOwner, &valueSource)
 		err := r.Reconcile(context.Background())
 
 		require.NoError(t, err)

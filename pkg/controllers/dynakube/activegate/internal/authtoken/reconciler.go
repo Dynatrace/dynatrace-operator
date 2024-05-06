@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -29,15 +28,13 @@ type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
 	dynakube  *dynatracev1beta1.DynaKube
-	scheme    *runtime.Scheme
 	dtc       dtclient.Client
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler {
 	return &Reconciler{
 		client:    clt,
 		apiReader: apiReader,
-		scheme:    scheme,
 		dynakube:  dynakube,
 		dtc:       dtc,
 	}
@@ -108,7 +105,7 @@ func (r *Reconciler) getActiveGateAuthToken(ctx context.Context) (map[string][]b
 func (r *Reconciler) createSecret(ctx context.Context, secretData map[string][]byte) error {
 	secretName := r.dynakube.ActiveGateAuthTokenSecret()
 
-	secret, err := secret.Create(r.scheme, r.dynakube,
+	secret, err := secret.Create(r.dynakube,
 		secret.NewNameModifier(secretName),
 		secret.NewNamespaceModifier(r.dynakube.Namespace),
 		secret.NewDataModifier(secretData))

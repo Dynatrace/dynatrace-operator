@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -26,17 +25,15 @@ var _ controllers.Reconciler = &Reconciler{}
 
 type Reconciler struct {
 	client                    client.Client
-	scheme                    *runtime.Scheme
 	customPropertiesSource    *dynatracev1beta1.DynaKubeValueSource
 	instance                  *dynatracev1beta1.DynaKube
 	customPropertiesOwnerName string
 }
 
-func NewReconciler(clt client.Client, instance *dynatracev1beta1.DynaKube, customPropertiesOwnerName string, scheme *runtime.Scheme, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) *Reconciler {
+func NewReconciler(clt client.Client, instance *dynatracev1beta1.DynaKube, customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) *Reconciler {
 	return &Reconciler{
 		client:                    clt,
 		instance:                  instance,
-		scheme:                    scheme,
 		customPropertiesSource:    customPropertiesSource,
 		customPropertiesOwnerName: customPropertiesOwnerName,
 	}
@@ -108,7 +105,7 @@ func (r *Reconciler) updateCustomProperties(ctx context.Context, customPropertie
 }
 
 func (r *Reconciler) createCustomProperties() error {
-	customPropertiesSecret, err := secret.Create(r.scheme, r.instance,
+	customPropertiesSecret, err := secret.Create(r.instance,
 		secret.NewNameModifier(r.buildCustomPropertiesName(r.instance.Name)),
 		secret.NewNamespaceModifier(r.instance.Namespace),
 		secret.NewDataModifier(map[string][]byte{

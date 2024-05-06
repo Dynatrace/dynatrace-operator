@@ -6,6 +6,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
@@ -23,7 +24,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -58,7 +58,6 @@ type Controller struct {
 	client                   client.Client
 	apiReader                client.Reader
 	registryClientBuilder    registry.ClientBuilder
-	scheme                   *runtime.Scheme
 	config                   *rest.Config
 	timeProvider             *timeprovider.Provider
 	edgeConnectClientBuilder edgeConnectClientBuilderType
@@ -72,7 +71,6 @@ func NewController(mgr manager.Manager) *Controller {
 	return &Controller{
 		client:                   mgr.GetClient(),
 		apiReader:                mgr.GetAPIReader(),
-		scheme:                   mgr.GetScheme(),
 		registryClientBuilder:    registry.NewClient,
 		config:                   mgr.GetConfig(),
 		timeProvider:             timeprovider.New(),
@@ -329,7 +327,7 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 		return err
 	}
 
-	if err := controllerutil.SetControllerReference(edgeConnect, desiredDeployment, controller.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(edgeConnect, desiredDeployment, scheme.Scheme); err != nil {
 		return errors.WithStack(err)
 	}
 
@@ -551,15 +549,12 @@ func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnect
 
 	_log.Debug("createResponse", "id", createResponse.ID)
 
-	ecOAuthSecret, err := k8ssecret.Create(controller.scheme, edgeConnect,
-		k8ssecret.NewNameModifier(edgeConnect.ClientSecretName()),
-		k8ssecret.NewNamespaceModifier(edgeConnect.Namespace),
-		k8ssecret.NewDataModifier(map[string][]byte{
-			consts.KeyEdgeConnectOauthClientID:     []byte(createResponse.OauthClientId),
-			consts.KeyEdgeConnectOauthClientSecret: []byte(createResponse.OauthClientSecret),
-			consts.KeyEdgeConnectOauthResource:     []byte(createResponse.OauthClientResource),
-			consts.KeyEdgeConnectId:                []byte(createResponse.ID),
-		}))
+	ecOAuthSecret, err := k8ssecret.Create(edgeConnect, k8ssecret.NewNameModifier(edgeConnect.ClientSecretName()), k8ssecret.NewNamespaceModifier(edgeConnect.Namespace), k8ssecret.NewDataModifier(map[string][]byte{
+		consts.KeyEdgeConnectOauthClientID:     []byte(createResponse.OauthClientId),
+		consts.KeyEdgeConnectOauthClientSecret: []byte(createResponse.OauthClientSecret),
+		consts.KeyEdgeConnectOauthResource:     []byte(createResponse.OauthClientResource),
+		consts.KeyEdgeConnectId:                []byte(createResponse.ID),
+	}))
 
 	if err != nil {
 		_log.Debug("unable to create EdgeConnect secret")
@@ -654,7 +649,7 @@ func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Co
 	desiredDeployment.Spec.Template.Annotations = map[string]string{consts.EdgeConnectAnnotationSecretHash: secretHash}
 	_log = _log.WithValues("deploymentName", desiredDeployment.Name)
 
-	if err := controllerutil.SetControllerReference(edgeConnect, desiredDeployment, controller.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(edgeConnect, desiredDeployment, scheme.Scheme); err != nil {
 		_log.Debug("Could not set controller reference")
 
 		return errors.WithStack(err)
@@ -690,7 +685,7 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 	secretData := make(map[string][]byte)
 	secretData[consts.EdgeConnectConfigFileName] = configFile
 
-	secretConfig, err := k8ssecret.Create(controller.scheme, edgeConnect,
+	secretConfig, err := k8ssecret.Create(edgeConnect,
 		k8ssecret.NewNameModifier(edgeConnect.Name+"-"+consts.EdgeConnectSecretSuffix),
 		k8ssecret.NewNamespaceModifier(edgeConnect.Namespace),
 		k8ssecret.NewDataModifier(secretData))

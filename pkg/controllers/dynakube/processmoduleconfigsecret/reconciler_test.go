@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -51,7 +50,7 @@ func TestReconcile(t *testing.T) {
 		mockTime := timeprovider.New().Freeze()
 
 		reconciler := NewReconciler(mockK8sClient,
-			mockK8sClient, createMockDtClient(t, 0), dynakube, scheme.Scheme, mockTime)
+			mockK8sClient, createMockDtClient(t, 0), dynakube, mockTime)
 		err := reconciler.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -93,7 +92,7 @@ func TestReconcile(t *testing.T) {
 			ClassicFullStack: &dynatracev1beta1.HostInjectSpec{}})
 		conditions.SetSecretCreated(dynakube.Conditions(), pmcConditionType, "this is a test")
 
-		reconciler := NewReconciler(nil, nil, nil, dynakube, scheme.Scheme, timeprovider.New())
+		reconciler := NewReconciler(nil, nil, nil, dynakube, timeprovider.New())
 		err := reconciler.Reconcile(context.Background())
 
 		require.NoError(t, err)
@@ -109,7 +108,7 @@ func TestReconcile(t *testing.T) {
 		mockTime := timeprovider.New().Freeze()
 
 		reconciler := NewReconciler(boomClient,
-			boomClient, createMockDtClient(t, 0), dynakube, scheme.Scheme, mockTime)
+			boomClient, createMockDtClient(t, 0), dynakube, mockTime)
 
 		err := reconciler.Reconcile(context.Background())
 
@@ -138,7 +137,7 @@ func TestReconcile(t *testing.T) {
 		mockTime := timeprovider.New().Freeze()
 
 		reconciler := NewReconciler(mockK8sClient,
-			mockK8sClient, createBOOMDtClient(t), dynakube, scheme.Scheme, mockTime)
+			mockK8sClient, createBOOMDtClient(t), dynakube, mockTime)
 
 		err := reconciler.Reconcile(context.Background())
 
@@ -226,7 +225,7 @@ func TestGetSecretData(t *testing.T) {
 
 		mockTime := timeprovider.New().Freeze()
 		reconciler := NewReconciler(mockK8sClient,
-			mockK8sClient, createMockDtClient(t, 0), dynakube, scheme.Scheme, mockTime)
+			mockK8sClient, createMockDtClient(t, 0), dynakube, mockTime)
 		err := reconciler.Reconcile(context.Background())
 		require.NoError(t, err)
 

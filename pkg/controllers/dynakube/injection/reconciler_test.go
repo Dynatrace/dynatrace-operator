@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -102,7 +101,7 @@ func TestReconciler(t *testing.T) {
 
 		istioClient := newIstioTestingClient(fakeistio.NewSimpleClientset(), dynakube)
 
-		rec := NewReconciler(clt, clt, scheme.Scheme, dtClient, istioClient, dynakube)
+		rec := NewReconciler(clt, clt, dtClient, istioClient, dynakube)
 		err := rec.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -150,7 +149,7 @@ func TestReconciler(t *testing.T) {
 		)
 		dtClient := dtclientmock.NewClient(t)
 
-		rec := NewReconciler(clt, clt, scheme.Scheme, dtClient, nil, dynakube)
+		rec := NewReconciler(clt, clt, dtClient, nil, dynakube)
 		err := rec.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -291,7 +290,6 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 func newIstioTestingClient(fakeClient *fakeistio.Clientset, dynakube *dynatracev1beta1.DynaKube) *istio.Client {
 	return &istio.Client{
 		IstioClientset: fakeClient,
-		Scheme:         scheme.Scheme,
 		Owner:          dynakube,
 	}
 }
@@ -300,7 +298,6 @@ func createReconciler(clt client.Client, dynakubeName string, dynakubeNamespace 
 	return reconciler{
 		client:    clt,
 		apiReader: clt,
-		scheme:    scheme.Scheme,
 		dynakube: &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      dynakubeName,

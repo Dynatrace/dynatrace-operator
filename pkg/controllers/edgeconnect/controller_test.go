@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
@@ -563,7 +562,6 @@ func createFakeClientAndReconciler(t *testing.T, instance *edgeconnectv1alpha1.E
 	controller := &Controller{
 		client:                fakeClient,
 		apiReader:             fakeClient,
-		scheme:                scheme.Scheme,
 		timeProvider:          timeprovider.New(),
 		registryClientBuilder: mockRegistryClientBuilder,
 	}
@@ -593,7 +591,6 @@ func createFakeClientAndReconcilerForProvisioner(t *testing.T, instance *edgecon
 	controller := &Controller{
 		client:                   fakeClient,
 		apiReader:                fakeClient,
-		scheme:                   scheme.Scheme,
 		timeProvider:             timeprovider.New(),
 		registryClientBuilder:    mockRegistryClientBuilder,
 		edgeConnectClientBuilder: builder,

@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strconv"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
@@ -20,7 +21,6 @@ import (
 	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -32,7 +32,6 @@ type Reconciler struct {
 	client     client.Client
 	dynakube   *dynatracev1beta1.DynaKube
 	apiReader  client.Reader
-	scheme     *runtime.Scheme
 	capability capability.Capability
 	modifiers  []builder.Modifier
 }
@@ -40,21 +39,19 @@ type Reconciler struct {
 func NewReconciler(
 	clt client.Client,
 	apiReader client.Reader,
-	scheme *runtime.Scheme,
 	dynakube *dynatracev1beta1.DynaKube,
 	capability capability.Capability,
 ) controllers.Reconciler {
 	return &Reconciler{
 		client:     clt,
 		apiReader:  apiReader,
-		scheme:     scheme,
 		dynakube:   dynakube,
 		capability: capability,
 		modifiers:  []builder.Modifier{},
 	}
 }
 
-type NewReconcilerFunc = func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, capability capability.Capability) controllers.Reconciler
+type NewReconcilerFunc = func(clt client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, capability capability.Capability) controllers.Reconciler
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	err := r.manageStatefulSet(ctx)
@@ -73,7 +70,7 @@ func (r *Reconciler) manageStatefulSet(ctx context.Context) error {
 		return errors.WithStack(err)
 	}
 
-	if err := controllerutil.SetControllerReference(r.dynakube, desiredSts, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(r.dynakube, desiredSts, scheme.Scheme); err != nil {
 		return errors.WithStack(err)
 	}
 

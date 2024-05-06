@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,7 +39,7 @@ func newTestReconcilerWithInstance(client client.Client) *Reconciler {
 		},
 	}
 
-	r := NewReconciler(client, client, scheme.Scheme, instance)
+	r := NewReconciler(client, client, instance)
 
 	return r
 }
@@ -103,7 +102,7 @@ func TestReconcileWithoutProxy(t *testing.T) {
 			},
 		}).Build()
 
-		r := NewReconciler(testClient, testClient, scheme.Scheme, instance)
+		r := NewReconciler(testClient, testClient, instance)
 		err := r.Reconcile(context.Background())
 
 		require.NoError(t, err)

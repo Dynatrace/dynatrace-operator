@@ -3,27 +3,26 @@ package istio
 import (
 	"context"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/pkg/errors"
 	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-type ClientBuilder func(config *rest.Config, scheme *runtime.Scheme, owner metav1.Object) (*Client, error)
+type ClientBuilder func(config *rest.Config, owner metav1.Object) (*Client, error)
 
 // Client - an adapter for the external istioclientset library
 type Client struct {
 	IstioClientset istioclientset.Interface
-	Scheme         *runtime.Scheme
 	Owner          metav1.Object
 }
 
-func NewClient(config *rest.Config, scheme *runtime.Scheme, owner metav1.Object) (*Client, error) {
+func NewClient(config *rest.Config, owner metav1.Object) (*Client, error) {
 	istioClient, err := istioclientset.NewForConfig(config)
 	if err != nil {
 		log.Info("failed to initialize istio client", "error", err.Error())
@@ -37,7 +36,6 @@ func NewClient(config *rest.Config, scheme *runtime.Scheme, owner metav1.Object)
 
 	return &Client{
 		IstioClientset: istioClient,
-		Scheme:         scheme,
 		Owner:          owner,
 	}, nil
 }
@@ -72,7 +70,7 @@ func (cl *Client) CreateOrUpdateVirtualService(ctx context.Context, newVirtualSe
 	}
 
 	// the owner reference is created before the hash annotation is added
-	if err := controllerutil.SetControllerReference(cl.Owner, newVirtualService, cl.Scheme); err != nil {
+	if err := controllerutil.SetControllerReference(cl.Owner, newVirtualService, scheme.Scheme); err != nil {
 		return errors.WithStack(err)
 	}
 
@@ -163,7 +161,7 @@ func (cl *Client) CreateOrUpdateServiceEntry(ctx context.Context, newServiceEntr
 	}
 
 	// the owner reference is created before the hash annotation is added
-	if err := controllerutil.SetControllerReference(cl.Owner, newServiceEntry, cl.Scheme); err != nil {
+	if err := controllerutil.SetControllerReference(cl.Owner, newServiceEntry, scheme.Scheme); err != nil {
 		return errors.WithStack(err)
 	}
 

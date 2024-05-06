@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
@@ -476,7 +475,6 @@ func createFakeClientAndReconciler(t *testing.T, mockClient dtclient.Client, ins
 		client:                              fakeClient,
 		apiReader:                           fakeClient,
 		registryClientBuilder:               createFakeRegistryClientBuilder(t),
-		scheme:                              scheme.Scheme,
 		dynatraceClientBuilder:              mockDtcBuilder,
 		fs:                                  afero.Afero{Fs: afero.NewMemMapFs()},
 		deploymentMetadataReconcilerBuilder: deploymentmetadata.NewReconciler,

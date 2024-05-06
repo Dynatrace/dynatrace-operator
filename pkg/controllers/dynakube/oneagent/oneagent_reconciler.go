@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
@@ -29,7 +30,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -45,26 +45,23 @@ var _ ReconcilerBuilder = NewReconciler
 type ReconcilerBuilder func(
 	client client.Client,
 	apiReader client.Reader,
-	scheme *runtime.Scheme,
 	dtClient dynatrace.Client,
 	dynakube *dynatracev1beta1.DynaKube,
 	clusterID string) controllers.Reconciler
 
 // NewReconciler initializes a new ReconcileOneAgent instance
-func NewReconciler( //nolint: revive
+func NewReconciler(
 	client client.Client,
 	apiReader client.Reader,
-	scheme *runtime.Scheme,
 	dtClient dynatrace.Client,
 	dynakube *dynatracev1beta1.DynaKube,
 	clusterID string) controllers.Reconciler {
 	return &Reconciler{
 		client:                   client,
 		apiReader:                apiReader,
-		scheme:                   scheme,
 		clusterID:                clusterID,
 		dynakube:                 dynakube,
-		connectionInfoReconciler: oaconnectioninfo.NewReconciler(client, apiReader, scheme, dtClient, dynakube),
+		connectionInfoReconciler: oaconnectioninfo.NewReconciler(client, apiReader, dtClient, dynakube),
 		versionReconciler:        version.NewReconciler(apiReader, dtClient, timeprovider.New().Freeze()),
 	}
 }
@@ -74,7 +71,6 @@ type Reconciler struct {
 	// that reads objects from the cache and writes to the apiserver
 	client                   client.Client
 	apiReader                client.Reader
-	scheme                   *runtime.Scheme
 	connectionInfoReconciler controllers.Reconciler
 	versionReconciler        version.Reconciler
 	dynakube                 *dynatracev1beta1.DynaKube
@@ -185,7 +181,7 @@ func (r *Reconciler) updateInstancesStatus(ctx context.Context) error {
 func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Context) error {
 	configMapData := extractPublicData(r.dynakube)
 
-	configMap, err := configmap.CreateConfigMap(r.scheme, r.dynakube,
+	configMap, err := configmap.CreateConfigMap(r.dynakube,
 		configmap.NewModifier(r.dynakube.OneAgentConnectionInfoConfigMapName()),
 		configmap.NewNamespaceModifier(r.dynakube.Namespace),
 		configmap.NewConfigMapDataModifier(configMapData))
@@ -207,7 +203,7 @@ func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 }
 
 func (r *Reconciler) deleteOneAgentTenantConnectionInfoConfigMap(ctx context.Context) error {
-	cm, _ := configmap.CreateConfigMap(r.scheme, r.dynakube,
+	cm, _ := configmap.CreateConfigMap(r.dynakube,
 		configmap.NewModifier(r.dynakube.OneAgentConnectionInfoConfigMapName()),
 		configmap.NewNamespaceModifier(r.dynakube.Namespace))
 	query := configmap.NewQuery(ctx, r.client, r.apiReader, log)
@@ -240,7 +236,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context) error {
 	}
 
 	// Set OneAgent instance as the owner and controller
-	if err := controllerutil.SetControllerReference(r.dynakube, dsDesired, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(r.dynakube, dsDesired, scheme.Scheme); err != nil {
 		return err
 	}
 
