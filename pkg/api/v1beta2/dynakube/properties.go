@@ -18,15 +18,15 @@ package dynakube
 
 import (
 	"fmt"
-	"net/url"
-	"strings"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"net/url"
+	"strings"
+	"time"
 )
 
 const (
@@ -400,6 +400,14 @@ func (dk *DynaKube) TenantUUIDFromApiUrl() (string, error) {
 	return tenantUUID(dk.Spec.APIURL)
 }
 
+func (dk *DynaKube) ApiRequestThreshold() time.Duration {
+	if dk.Spec.DynatraceApiRequestThreshold < 0 {
+		dk.Spec.DynatraceApiRequestThreshold = DefaultMinRequestThresholdMinutes
+	}
+
+	return dk.Spec.DynatraceApiRequestThreshold * time.Minute
+}
+
 func runeIs(wanted rune) func(rune) bool {
 	return func(actual rune) bool {
 		return actual == wanted
@@ -502,7 +510,7 @@ func (dk *DynaKube) GetOneAgentEnvironment() []corev1.EnvVar {
 type RequestAllowedChecker func(timeProvider *timeprovider.Provider) bool
 
 func (dk *DynaKube) IsTokenScopeVerificationAllowed(timeProvider *timeprovider.Provider) bool {
-	return timeProvider.IsOutdated(&dk.Status.DynatraceApi.LastTokenScopeRequest, dk.FeatureApiRequestThreshold())
+	return timeProvider.IsOutdated(&dk.Status.DynatraceApi.LastTokenScopeRequest, dk.ApiRequestThreshold())
 }
 
 func (dk *DynaKube) IsOneAgentCommunicationRouteClear() bool {

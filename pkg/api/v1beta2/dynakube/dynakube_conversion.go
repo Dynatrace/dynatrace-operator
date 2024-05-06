@@ -2,8 +2,9 @@ package dynakube
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
+	"strconv"
 )
 
 // ConvertTo converts v1beta2 to v1beta1.
@@ -25,6 +26,46 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	// Status
 	dst.Status.Conditions = src.Status.Conditions
 
+	if !src.Spec.MetaDataEnrichment.Enabled {
+		dst.Annotations = map[string]string{
+			dynakube.AnnotationFeatureMetadataEnrichment: "false",
+		}
+	}
+
+	dst.Annotations = map[string]string{
+		dynakube.AnnotationFeatureApiRequestThreshold: strconv.FormatInt(int64(src.Spec.DynatraceApiRequestThreshold), 10),
+	}
+
+	if hostMonitoring := src.Spec.OneAgent.HostMonitoring; hostMonitoring != nil {
+		if hostMonitoring.SecCompProfile != "" {
+			dst.Annotations = map[string]string{
+				dynakube.AnnotationFeatureOneAgentSecCompProfile: hostMonitoring.SecCompProfile,
+			}
+		}
+	}
+
+	if src.Spec.OneAgent.CloudNativeFullStack != nil {
+		if !isLabelSelectorEmpty(src.Spec.OneAgent.CloudNativeFullStack.NamespaceSelector) {
+			matchExpressions := src.Spec.OneAgent.CloudNativeFullStack.NamespaceSelector.MatchExpressions
+			matchLabels := src.Spec.OneAgent.CloudNativeFullStack.NamespaceSelector.MatchLabels
+
+			dst.Spec.NamespaceSelector = v1.LabelSelector{
+				MatchExpressions: matchExpressions,
+				MatchLabels:      matchLabels,
+			}
+		}
+	} else if src.Spec.OneAgent.ApplicationMonitoring != nil {
+		if !isLabelSelectorEmpty(src.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector) {
+			matchExpressions := src.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector.MatchExpressions
+			matchLabels := src.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector.MatchLabels
+
+			dst.Spec.NamespaceSelector = v1.LabelSelector{
+				MatchExpressions: matchExpressions,
+				MatchLabels:      matchLabels,
+			}
+		}
+	}
+
 	dst.Status.OneAgent.Instances = map[string]dynakube.OneAgentInstance{}
 
 	for key, value := range src.Status.OneAgent.Instances {
@@ -43,6 +84,10 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	return nil
 }
 
+func isLabelSelectorEmpty(selector v1.LabelSelector) bool {
+	return len(selector.MatchExpressions) == 0 && len(selector.MatchLabels) == 0
+}
+
 // ConvertFrom converts v1beta1 to v1beta2.
 func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	src := srcRaw.(*dynakube.DynaKube)
@@ -58,17 +103,16 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Spec.NetworkZone = src.Spec.NetworkZone
 	dst.Spec.EnableIstio = src.Spec.EnableIstio
 
-	if !src.FeatureDisableMetadataEnrichment() {
-		dst.Spec.MetaDataEnrichment = MetaDataEnrichment{
-			Enabled: true,
-		}
+	if !dst.Spec.MetaDataEnrichment.Enabled {
+		src.Annotations[dynakube.AnnotationFeatureMetadataEnrichment] = "false"
 	}
 
-	dst.Spec.DynatraceApiRequestThreshold = src.FeatureApiRequestThreshold()
+	src.Annotations[dynakube.AnnotationFeatureApiRequestThreshold] = strconv.FormatInt(int64(dst.Spec.DynatraceApiRequestThreshold), 10)
 
-	if src.FeatureOneAgentSecCompProfile() != "" {
-		dst.Spec.OneAgent.HostMonitoring = &HostInjectSpec{
-			SecCompProfile: src.FeatureOneAgentSecCompProfile(),
+	if dst.Spec.OneAgent.HostMonitoring != nil {
+		secCompProfile := dst.Spec.OneAgent.HostMonitoring.SecCompProfile
+		if secCompProfile != "" {
+			src.Annotations[dynakube.AnnotationFeatureOneAgentSecCompProfile] = secCompProfile
 		}
 	}
 

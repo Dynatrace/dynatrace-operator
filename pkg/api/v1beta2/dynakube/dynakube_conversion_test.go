@@ -32,15 +32,29 @@ func TestConversion_ConvertFrom_Create(t *testing.T) {
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testAPIURL,
 			Tokens: testToken,
+			OneAgent: dynakube.OneAgentSpec{
+				HostMonitoring: &dynakube.HostInjectSpec{},
+			},
 		},
 	}
 
-	oldDynakube.Annotations = map[string]string{
-		dynakube.AnnotationFeatureApiRequestThreshold:    testThreshold,
-		dynakube.AnnotationFeatureOneAgentSecCompProfile: testProfile,
-		dynakube.AnnotationFeatureMetadataEnrichment:     "true",
+	convertedDynakube := &DynaKube{
+		ObjectMeta: prepareObjectMeta(),
+		Spec: DynaKubeSpec{
+			APIURL: testAPIURL,
+			Tokens: testToken,
+			MetaDataEnrichment: MetaDataEnrichment{
+				Enabled: true,
+			},
+			DynatraceApiRequestThreshold: DefaultMinRequestThresholdMinutes,
+			OneAgent: OneAgentSpec{
+				HostMonitoring: &HostInjectSpec{
+					SecCompProfile: testProfile,
+				},
+			},
+		},
 	}
-	convertedDynakube := &DynaKube{}
+	oldDynakube.Annotations = map[string]string{}
 	err := convertedDynakube.ConvertFrom(oldDynakube)
 	require.NoError(t, err)
 
@@ -78,6 +92,9 @@ func TestConversion_ConvertFrom(t *testing.T) {
 			},
 			TrustedCAs:  testTrustedCAs,
 			NetworkZone: testNetworkZone,
+			OneAgent: dynakube.OneAgentSpec{
+				HostMonitoring: &dynakube.HostInjectSpec{},
+			},
 		},
 		Status: dynakube.DynaKubeStatus{
 			Phase:            "test-phase",
@@ -103,12 +120,24 @@ func TestConversion_ConvertFrom(t *testing.T) {
 		},
 	}
 
-	oldDynakube.Annotations = map[string]string{
-		dynakube.AnnotationFeatureApiRequestThreshold:    testThreshold,
-		dynakube.AnnotationFeatureOneAgentSecCompProfile: testProfile,
-		dynakube.AnnotationFeatureMetadataEnrichment:     "true",
+	oldDynakube.Annotations = map[string]string{}
+
+	convertedDynakube := &DynaKube{
+		ObjectMeta: prepareObjectMeta(),
+		Spec: DynaKubeSpec{
+			APIURL: testAPIURL,
+			Tokens: testToken,
+			MetaDataEnrichment: MetaDataEnrichment{
+				Enabled: true,
+			},
+			DynatraceApiRequestThreshold: DefaultMinRequestThresholdMinutes,
+			OneAgent: OneAgentSpec{
+				HostMonitoring: &HostInjectSpec{
+					SecCompProfile: testProfile,
+				},
+			},
+		},
 	}
-	convertedDynakube := &DynaKube{}
 	err := convertedDynakube.ConvertFrom(oldDynakube)
 	require.NoError(t, err)
 
@@ -156,8 +185,13 @@ func TestConversion_ConvertTo(t *testing.T) {
 			Proxy: &DynaKubeProxy{
 				Value: testProxyValue,
 			},
-			TrustedCAs:  testTrustedCAs,
-			NetworkZone: testNetworkZone,
+			TrustedCAs:                   testTrustedCAs,
+			NetworkZone:                  testNetworkZone,
+			DynatraceApiRequestThreshold: DefaultMinRequestThresholdMinutes,
+			OneAgent:                     OneAgentSpec{},
+			MetaDataEnrichment: MetaDataEnrichment{
+				Enabled: true,
+			},
 		},
 		Status: DynaKubeStatus{
 			Phase:                   "test-phase",

@@ -103,14 +103,6 @@ func TestDeprecatedDisableAnnotations(t *testing.T) {
 				return dynakube.FeatureDisableActiveGateUpdates()
 			})
 	})
-	t.Run(AnnotationFeatureMetadataEnrichment, func(t *testing.T) {
-		testDeprecateDisableAnnotation(t,
-			AnnotationFeatureMetadataEnrichment,
-			AnnotationFeatureDisableMetadataEnrichment,
-			func(dynakube DynaKube) bool {
-				return dynakube.FeatureDisableMetadataEnrichment()
-			})
-	})
 }
 
 func TestDeprecatedEnableAnnotations(t *testing.T) {
@@ -176,7 +168,6 @@ func TestDefaultEnabledFeatureFlags(t *testing.T) {
 	assert.Equal(t, "silent", dynakube.FeatureInjectionFailurePolicy())
 
 	assert.False(t, dynakube.FeatureDisableActiveGateUpdates())
-	assert.False(t, dynakube.FeatureDisableMetadataEnrichment())
 	assert.False(t, dynakube.FeatureLabelVersionDetection())
 }
 
