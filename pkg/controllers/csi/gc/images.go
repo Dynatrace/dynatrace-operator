@@ -1,14 +1,13 @@
 package csigc
 
 import (
-	"context"
 	"os"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
-func (gc *CSIGarbageCollector) runSharedBinaryGarbageCollection(ctx context.Context) error {
+func (gc *CSIGarbageCollector) runSharedBinaryGarbageCollection() error {
 	imageDirs, err := gc.getSharedBinDirs()
 	if err != nil {
 		return err
@@ -20,7 +19,7 @@ func (gc *CSIGarbageCollector) runSharedBinaryGarbageCollection(ctx context.Cont
 		return nil
 	}
 
-	binsToDelete, err := gc.collectUnusedAgentBins(ctx, imageDirs)
+	binsToDelete, err := gc.collectUnusedAgentBins(imageDirs)
 	if err != nil {
 		return err
 	}
@@ -49,41 +48,66 @@ func (gc *CSIGarbageCollector) getSharedBinDirs() ([]os.FileInfo, error) {
 	return imageDirs, nil
 }
 
-func (gc *CSIGarbageCollector) collectUnusedAgentBins(ctx context.Context, imageDirs []os.FileInfo) ([]string, error) {
+func (gc *CSIGarbageCollector) collectUnusedAgentBins(imageDirs []os.FileInfo) ([]string, error) {
 	var toDelete []string
 
-	usedAgentVersions, err := gc.db.GetLatestVersions(ctx)
+	usedAgentBinPaths, err := gc.getUsedAgentBinPaths()
 	if err != nil {
-		log.Info("failed to get the used image versions")
+		log.Info("failed to get the used agent bin paths")
 
 		return nil, err
 	}
 
-	usedAgentDigest, err := gc.db.GetUsedImageDigests(ctx)
+	codeModuleAgentBinPaths, err := gc.getCodeModuleAgentBinPaths()
 	if err != nil {
-		log.Info("failed to get the used image digests")
-
-		return nil, err
-	}
-
-	// If a shared image was used during mount, the version of a Volume is the imageDigest.
-	// A Volume can still reference versions that are not imageDigests.
-	// However, this shouldn't cause issues as those versions don't matter in this context.
-	mountedAgentBins, err := gc.db.GetAllUsedVersions(ctx)
-	if err != nil {
-		log.Info("failed to get all mounted versions")
+		log.Info("failed to get CodeModule bin paths")
 
 		return nil, err
 	}
 
 	for _, imageDir := range imageDirs {
-		agentBin := imageDir.Name()
-		if !mountedAgentBins[agentBin] && !usedAgentVersions[agentBin] && !usedAgentDigest[agentBin] {
-			toDelete = append(toDelete, gc.path.AgentSharedBinaryDirForAgent(agentBin))
+		agentBinPath := gc.path.AgentSharedBinaryDirForAgent(imageDir.Name())
+
+		if !codeModuleAgentBinPaths[agentBinPath] && !usedAgentBinPaths[agentBinPath] {
+			toDelete = append(toDelete, agentBinPath)
 		}
 	}
 
 	return toDelete, nil
+}
+
+// Returns a map with all agent bin paths based on existing TenantConfig.DownloadedCodeModuleVersion
+// (which is the latest downloaded CodeModule version from the tenant)
+func (gc *CSIGarbageCollector) getUsedAgentBinPaths() (map[string]bool, error) {
+	tenantConfigs, err := gc.db.ReadTenantConfigs()
+	if err != nil {
+		return nil, err
+	}
+
+	latestCodeModuleVersions := make(map[string]bool)
+
+	for _, tenantConfig := range tenantConfigs {
+		agentBinPath := gc.path.AgentSharedBinaryDirForAgent(tenantConfig.DownloadedCodeModuleVersion)
+		latestCodeModuleVersions[agentBinPath] = true
+	}
+
+	return latestCodeModuleVersions, nil
+}
+
+// Returns a map with all agent bin paths based on existing CodeModule entries
+func (gc *CSIGarbageCollector) getCodeModuleAgentBinPaths() (map[string]bool, error) {
+	codeModules, err := gc.db.ReadCodeModules()
+	if err != nil {
+		return nil, err
+	}
+
+	codeModuleBinPaths := make(map[string]bool)
+
+	for _, codeModule := range codeModules {
+		codeModuleBinPaths[codeModule.Location] = true
+	}
+
+	return codeModuleBinPaths, nil
 }
 
 func deleteSharedBinDirs(fs afero.Fs, imageDirs []string) error {

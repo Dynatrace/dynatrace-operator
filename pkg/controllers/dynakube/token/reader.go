@@ -52,9 +52,8 @@ func (reader Reader) readTokens(ctx context.Context) (Tokens, error) {
 	}
 
 	for tokenType, rawToken := range tokenSecret.Data {
-		result[tokenType] = Token{
-			Value: string(rawToken),
-		}
+		token := newToken(tokenType, string(rawToken))
+		result[tokenType] = &token
 	}
 
 	return result, nil

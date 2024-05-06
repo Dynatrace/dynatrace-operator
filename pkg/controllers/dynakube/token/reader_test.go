@@ -83,7 +83,7 @@ func testVerifyTokens(t *testing.T) {
 			Namespace: dynatraceNamespace,
 		}})
 
-		err := reader.verifyApiTokenExists(map[string]Token{
+		err := reader.verifyApiTokenExists(map[string]*Token{
 			testIrrelevantTokenKey: {
 				Value: testIrrelevantToken,
 			},
@@ -94,7 +94,7 @@ func testVerifyTokens(t *testing.T) {
 	t.Run("no error if api token exists", func(t *testing.T) {
 		reader := NewReader(nil, nil)
 
-		err := reader.verifyApiTokenExists(map[string]Token{
+		err := reader.verifyApiTokenExists(map[string]*Token{
 			testIrrelevantTokenKey: {
 				Value: testIrrelevantToken,
 			},
