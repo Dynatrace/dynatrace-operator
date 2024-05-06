@@ -106,17 +106,17 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 		src.Annotations = map[string]string{}
 	}
 
-	if !dst.Spec.MetaDataEnrichment.Enabled {
-		src.Annotations[dynakube.AnnotationFeatureMetadataEnrichment] = "false"
+	if src.Annotations[dynakube.AnnotationFeatureMetadataEnrichment] == "true" {
+		dst.Spec.MetaDataEnrichment = MetaDataEnrichment{
+			Enabled: false,
+		}
 	}
 
 	src.Annotations[dynakube.AnnotationFeatureApiRequestThreshold] = strconv.FormatInt(int64(dst.Spec.DynatraceApiRequestThreshold), 10)
 
-	if dst.Spec.OneAgent.HostMonitoring != nil {
-		secCompProfile := dst.Spec.OneAgent.HostMonitoring.SecCompProfile
-		if secCompProfile != "" {
-			src.Annotations[dynakube.AnnotationFeatureOneAgentSecCompProfile] = secCompProfile
-		}
+	if src.Annotations[dynakube.AnnotationFeatureOneAgentSecCompProfile] != "" {
+		secCompProfile := src.Annotations[dynakube.AnnotationFeatureOneAgentSecCompProfile]
+		dst.Spec.OneAgent.HostMonitoring.SecCompProfile = secCompProfile
 	}
 
 	if src.NamespaceSelector() != nil {
