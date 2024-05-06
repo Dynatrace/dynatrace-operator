@@ -184,6 +184,8 @@ func WithProxy(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) features
 	builder.Teardown(sampleApp.Uninstall())
 	dynakube.Delete(builder, helpers.LevelTeardown, cloudNativeDynakube)
 
+	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(cloudNativeDynakube.Name, cloudNativeDynakube.Namespace))
+
 	return builder.Feature()
 }
 
@@ -243,11 +245,14 @@ func WithProxyCA(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) featur
 	builder.Teardown(sampleApp.Uninstall())
 	dynakube.Delete(builder, helpers.LevelTeardown, cloudNativeDynakube)
 
+	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(cloudNativeDynakube.Name, cloudNativeDynakube.Namespace))
+	builder.WithTeardown("deleted trusted CAs config map", configmap.Delete(caConfigMap))
+
 	return builder.Feature()
 }
 
 func WithProxyAndAGCert(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) features.Feature {
-	builder := features.New("codemodules injection with proxy and custom CA and AG certificate")
+	builder := features.New("codemodules injection with proxy and AG certificate")
 	builder.WithLabel("name", "codemodules-with-proxy-and-ag-cert")
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
@@ -306,6 +311,8 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy)
 	// Register sample, dynakube and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())
 	dynakube.Delete(builder, helpers.LevelTeardown, cloudNativeDynakube)
+
+	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(cloudNativeDynakube.Name, cloudNativeDynakube.Namespace))
 
 	return builder.Feature()
 }
@@ -377,6 +384,9 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProx
 	// Register sample, dynakube and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())
 	dynakube.Delete(builder, helpers.LevelTeardown, cloudNativeDynakube)
+
+	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(cloudNativeDynakube.Name, cloudNativeDynakube.Namespace))
+	builder.WithTeardown("deleted trusted CAs config map", configmap.Delete(caConfigMap))
 
 	return builder.Feature()
 }

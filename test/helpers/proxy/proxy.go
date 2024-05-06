@@ -51,6 +51,9 @@ var (
 	ProxySpec = &dynatracev1beta2.DynaKubeProxy{
 		Value: "http://squid.proxy.svc.cluster.local:3128",
 	}
+	HttpsProxySpec = &dynatracev1beta1.DynaKubeProxy{
+		Value: "https://squid.proxy.svc.cluster.local:3128",
+	}
 )
 
 func SetupProxyWithTeardown(t *testing.T, builder *features.FeatureBuilder, testDynakube dynatracev1beta2.DynaKube) {

@@ -19,6 +19,12 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
+const (
+	oneAgentCustomPemPath      = "/var/lib/dynatrace/oneagent/agent/customkeys/custom.pem"
+	oneAgentCustomProxyPemPath = "/var/lib/dynatrace/oneagent/agent/customkeys/custom_proxy.pem"
+	activeGateRootCAPath       = "/var/lib/dynatrace/secrets/rootca/rootca.pem"
+)
+
 func AssessSampleContainer(builder *features.FeatureBuilder, sampleApp *sample.App, agCrt []byte, trustedCAs []byte) {
 	builder.Assess("certificates are propagated to sample apps containers", checkSampleContainer(sampleApp, agCrt, trustedCAs))
 }
@@ -41,15 +47,15 @@ func checkSampleContainer(sampleApp *sample.App, agCrt []byte, trustedCAs []byte
 
 			certs := string(agCrt) + "\n" + string(trustedCAs)
 
-			if certs == "\n" {
-				checkFileNotFound(ctx, t, resources, podItem, sampleApp.ContainerName(), "/var/lib/dynatrace/oneagent/agent/customkeys/custom.pem")
+			if string(agCrt) == "" && string(trustedCAs) == "" {
+				checkFileNotFound(ctx, t, resources, podItem, sampleApp.ContainerName(), oneAgentCustomPemPath)
 			} else {
-				checkFileContents(ctx, t, resources, podItem, sampleApp.ContainerName(), "/var/lib/dynatrace/oneagent/agent/customkeys/custom.pem", certs)
+				checkFileContents(ctx, t, resources, podItem, sampleApp.ContainerName(), oneAgentCustomPemPath, certs)
 			}
 			if string(trustedCAs) == "" {
-				checkFileNotFound(ctx, t, resources, podItem, sampleApp.ContainerName(), "/var/lib/dynatrace/oneagent/agent/customkeys/custom_proxy.pem")
+				checkFileNotFound(ctx, t, resources, podItem, sampleApp.ContainerName(), oneAgentCustomProxyPemPath)
 			} else {
-				checkFileContents(ctx, t, resources, podItem, sampleApp.ContainerName(), "/var/lib/dynatrace/oneagent/agent/customkeys/custom_proxy.pem", string(trustedCAs))
+				checkFileContents(ctx, t, resources, podItem, sampleApp.ContainerName(), oneAgentCustomProxyPemPath, string(trustedCAs))
 			}
 		}
 
@@ -84,9 +90,9 @@ func checkActiveGateContainer(dynakube *dynatracev1beta1.DynaKube, trustedCAs []
 		require.NotEmpty(t, activeGatePod.Spec.Containers)
 
 		if string(trustedCAs) == "" {
-			checkFileNotFound(ctx, t, resources, activeGatePod, "activegate", "/var/lib/dynatrace/secrets/rootca/rootca.pem")
+			checkFileNotFound(ctx, t, resources, activeGatePod, "activegate", activeGateRootCAPath)
 		} else {
-			checkFileContents(ctx, t, resources, activeGatePod, "activegate", "/var/lib/dynatrace/secrets/rootca/rootca.pem", string(trustedCAs))
+			checkFileContents(ctx, t, resources, activeGatePod, "activegate", activeGateRootCAPath, string(trustedCAs))
 		}
 
 		return ctx
