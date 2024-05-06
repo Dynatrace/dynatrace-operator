@@ -22,7 +22,6 @@ const (
 	testTrustedCAs                = "test-trustedCAs"
 	testNetworkZone               = "test-networkzone"
 	testStatusOneAgentInstanceKey = "test-instance"
-	testThreshold                 = "10"
 	testProfile                   = "test-profile"
 )
 
@@ -54,7 +53,7 @@ func TestConversion_ConvertFrom_Create(t *testing.T) {
 			},
 		},
 	}
-	oldDynakube.Annotations = map[string]string{}
+
 	err := convertedDynakube.ConvertFrom(oldDynakube)
 	require.NoError(t, err)
 
@@ -119,8 +118,6 @@ func TestConversion_ConvertFrom(t *testing.T) {
 			},
 		},
 	}
-
-	oldDynakube.Annotations = map[string]string{}
 
 	convertedDynakube := &DynaKube{
 		ObjectMeta: prepareObjectMeta(),
@@ -218,9 +215,8 @@ func TestConversion_ConvertTo(t *testing.T) {
 		},
 	}
 
-	oldDynakube.Annotations = map[string]string{}
 	convertedDynakube := &dynakube.DynaKube{}
-	
+
 	err := oldDynakube.ConvertTo(convertedDynakube)
 	require.NoError(t, err)
 

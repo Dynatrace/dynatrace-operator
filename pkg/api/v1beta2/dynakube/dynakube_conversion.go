@@ -27,6 +27,10 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	// Status
 	dst.Status.Conditions = src.Status.Conditions
 
+	if dst.Annotations == nil {
+		dst.Annotations = map[string]string{}
+	}
+
 	if !src.Spec.MetaDataEnrichment.Enabled {
 		dst.Annotations[dynakube.AnnotationFeatureMetadataEnrichment] = "false"
 	}
@@ -97,6 +101,10 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Spec.TrustedCAs = src.Spec.TrustedCAs
 	dst.Spec.NetworkZone = src.Spec.NetworkZone
 	dst.Spec.EnableIstio = src.Spec.EnableIstio
+
+	if src.Annotations == nil {
+		src.Annotations = map[string]string{}
+	}
 
 	if !dst.Spec.MetaDataEnrichment.Enabled {
 		src.Annotations[dynakube.AnnotationFeatureMetadataEnrichment] = "false"
