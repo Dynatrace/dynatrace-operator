@@ -227,7 +227,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		assert.Contains(t, volumeMounts, getClusterCaCertVolumeMount())
 		assert.Contains(t, volumeMounts, getCSIStorageMount())
 	})
-	t.Run(`has no volume if no proxy is set`, func(t *testing.T) {
+	t.Run(`has no volume if proxy is set and proxy ignore feature-flags is used`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: corev1.ObjectMeta{
 				Name:      "Dynakube",
