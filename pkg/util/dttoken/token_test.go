@@ -5,17 +5,21 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGenerateToken(t *testing.T) {
 	t.Run("generate token but always new one", func(t *testing.T) {
-		tokenA := New("test")
-		tokenB := New("test")
+		tokenA, err := New("test")
+		require.NoError(t, err)
+		tokenB, err := New("test")
+		require.NoError(t, err)
 
 		assert.NotEqual(t, tokenA, tokenB)
 	})
 	t.Run("string representation of token", func(t *testing.T) {
-		tokenA := New("test")
+		tokenA, err := New("test")
+		require.NoError(t, err)
 		tokenParts := strings.Split(tokenA.String(), ".")
 		assert.Len(t, tokenParts, 3)
 		assert.Equal(t, "test", tokenParts[0])
@@ -26,7 +30,13 @@ func TestGenerateToken(t *testing.T) {
 
 func Test_generateRandom(t *testing.T) {
 	t.Run("check random length", func(t *testing.T) {
-		assert.Len(t, generateRandom(10), 10)
-		assert.Len(t, generateRandom(32), 32)
+		ten, err := generateRandom(10)
+		require.NoError(t, err)
+		assert.Len(t, ten, 10)
+	})
+	t.Run("error", func(t *testing.T) {
+		r, err := generateRandom(32)
+		require.NoError(t, err)
+		require.Len(t, r, 32)
 	})
 }
