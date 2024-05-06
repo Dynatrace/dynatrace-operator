@@ -424,11 +424,14 @@ func (dk *DynaKube) TenantUUIDFromApiUrl() (string, error) {
 	return tenantUUID(dk.Spec.APIURL)
 }
 
-func (dk *DynaKube) TenantUUIDFromConnectionInfo() string {
+func (dk *DynaKube) TenantUUIDFromConnectionInfo() (string, error) {
 	if dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID != "" {
-		return dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID
+		return dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID, nil
+	} else if dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID != "" {
+		return dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID, nil
 	}
-	return dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID
+
+	return "", errors.New("tenant UUID not available")
 }
 
 func (dk *DynaKube) ApiRequestThreshold() time.Duration {

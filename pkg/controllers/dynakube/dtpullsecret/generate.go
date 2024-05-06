@@ -52,8 +52,7 @@ func (r *Reconciler) GenerateData() (map[string][]byte, error) {
 		return nil, errors.New("token secret does not contain a paas or api token, cannot generate docker config")
 	}
 
-	tenantUUID := r.dynakube.TenantUUIDFromConnectionInfo()
-
+	tenantUUID, err := r.dynakube.TenantUUIDFromConnectionInfo()
 	if err != nil {
 		return nil, errors.WithMessage(err, "cannot generate docker config")
 	}

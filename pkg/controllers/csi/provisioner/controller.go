@@ -161,7 +161,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 }
 
 func (provisioner *OneAgentProvisioner) setupFileSystem(dk *dynatracev1beta2.DynaKube) error {
-	tenantUUID, err := dk.TenantUUIDFromApiUrl()
+	tenantUUID, err := dk.TenantUUIDFromConnectionInfo()
 	if err != nil {
 		return err
 	}
@@ -287,7 +287,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 }
 
 func (provisioner *OneAgentProvisioner) handleMetadata(dk *dynatracev1beta2.DynaKube) (*metadata.TenantConfig, error) {
-	tenantUUID, err := dk.TenantUUIDFromApiUrl()
+	tenantUUID, err := dk.TenantUUIDFromConnectionInfo()
 	if err != nil {
 		return nil, err
 	}

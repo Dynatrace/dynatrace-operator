@@ -58,7 +58,7 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 		return defaultReconcileResult, nil
 	}
 
-	tenantUUID, err := dynakube.TenantUUIDFromApiUrl()
+	tenantUUID, err := dynakube.TenantUUIDFromConnectionInfo()
 	if err != nil {
 		log.Info("failed to get tenantUUID of DynaKube, checking later")
 
