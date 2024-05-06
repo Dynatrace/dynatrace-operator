@@ -97,7 +97,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 				metaClient,
 			),
 		},
-		decoder: *admission.NewDecoder(mgr.GetScheme()),
+		decoder: admission.NewDecoder(mgr.GetScheme()),
 
 		requestCounter: requestCounter,
 	}})
