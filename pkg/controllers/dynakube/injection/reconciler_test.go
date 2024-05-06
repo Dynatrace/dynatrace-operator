@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	reconcilermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -112,7 +113,11 @@ func TestReconciler(t *testing.T) {
 
 		istioClient := newIstioTestingClient(fakeistio.NewSimpleClientset(), dynakube)
 
-		rec := NewReconciler(clt, clt, dtClient, istioClient, dynakube)
+		pullSecretReconciler := reconcilermock.NewReconciler(t)
+		pullSecretReconciler.On("Reconcile", mock.AnythingOfType("context.backgroundCtx")).
+			Return(nil).Once()
+
+		rec := NewReconciler(clt, clt, dtClient, istioClient, dynakube, pullSecretReconciler)
 		err := rec.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -154,8 +159,9 @@ func TestReconciler(t *testing.T) {
 			dynakube,
 		)
 		dtClient := dtclientmock.NewClient(t)
+		pullSecretReconciler := reconcilermock.NewReconciler(t)
 
-		rec := NewReconciler(clt, clt, dtClient, nil, dynakube)
+		rec := NewReconciler(clt, clt, dtClient, nil, dynakube, pullSecretReconciler)
 		err := rec.Reconcile(context.Background())
 		require.NoError(t, err)
 

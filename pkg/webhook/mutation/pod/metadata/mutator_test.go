@@ -362,6 +362,15 @@ func getTestDynakube() *dynatracev1beta2.DynaKube {
 				Capabilities: []dynatracev1beta2.CapabilityDisplayName{dynatracev1beta2.MetricsIngestCapability.DisplayName},
 			},
 		},
+		Status: dynatracev1beta1.DynaKubeStatus{
+			OneAgent: dynatracev1beta1.OneAgentStatus{
+				ConnectionInfoStatus: dynatracev1beta1.OneAgentConnectionInfoStatus{
+					ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+						TenantUUID: "test-tenant",
+					},
+				},
+			},
+		},
 	}
 }
 

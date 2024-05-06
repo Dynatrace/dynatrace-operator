@@ -34,16 +34,7 @@ func (clt errorClient) Create(_ context.Context, _ client.Object, _ ...client.Cr
 
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run(`Create works with minimal setup`, func(t *testing.T) {
-		dynakube := &dynatracev1beta2.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
-				APIURL:   testApiUrl,
-				OneAgent: dynatracev1beta2.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{}},
-			},
-		}
+		dynakube := createTestDynakube()
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dynakube, token.Tokens{
 			dtclient.ApiToken: &token.Token{Value: testValue},
@@ -65,16 +56,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.NotEmpty(t, pullSecret.Data[".dockerconfigjson"])
 	})
 	t.Run(`Error when accessing K8s API`, func(t *testing.T) {
-		dynakube := &dynatracev1beta2.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
-				APIURL:   testApiUrl,
-				OneAgent: dynatracev1beta2.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{}},
-			},
-		}
+		dynakube := createTestDynakube()
 		fakeClient := errorClient{}
 		r := NewReconciler(fakeClient, fakeClient, dynakube, token.Tokens{
 			dtclient.ApiToken: &token.Token{Value: testValue},
@@ -83,7 +65,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err := r.Reconcile(context.Background())
 		require.Error(t, err)
 	})
-	t.Run(`Error when creating tenant UUID`, func(t *testing.T) {
+	t.Run(`Error when tenant UUID is missing`, func(t *testing.T) {
 		dynakube := &dynatracev1beta2.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
@@ -99,16 +81,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run(`Error when creating secret`, func(t *testing.T) {
-		dynakube := &dynatracev1beta2.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
-				APIURL:   testApiUrl,
-				OneAgent: dynatracev1beta2.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{}},
-			},
-		}
+		dynakube := createTestDynakube()
 		fakeErrorClient := errorClient{}
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeErrorClient, fakeClient, dynakube, token.Tokens{
@@ -135,16 +108,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run(`Create creates correct docker config`, func(t *testing.T) {
 		expectedJSON := `{"auths":{"test-api-url":{"username":"test-tenant","password":"test-value","auth":"dGVzdC10ZW5hbnQ6dGVzdC12YWx1ZQ=="}}}`
-		dynakube := &dynatracev1beta2.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
-				APIURL:   testApiUrl,
-				OneAgent: dynatracev1beta2.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{}},
-			},
-		}
+		dynakube := createTestDynakube()
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dynakube, token.Tokens{
 			dtclient.ApiToken: &token.Token{Value: testValue},
@@ -168,16 +132,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run(`Create update secret if data changed`, func(t *testing.T) {
 		expectedJSON := `{"auths":{"test-api-url":{"username":"test-tenant","password":"test-value","auth":"dGVzdC10ZW5hbnQ6dGVzdC12YWx1ZQ=="}}}`
-		dynakube := &dynatracev1beta2.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
-				APIURL:   testApiUrl,
-				OneAgent: dynatracev1beta2.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{}},
-			},
-		}
+		dynakube := createTestDynakube()
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dynakube, token.Tokens{
 			dtclient.ApiToken: &token.Token{Value: testValue},
@@ -199,6 +154,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		require.NoError(t, err)
 
+		r.alreadyReconciled = false
 		err = r.Reconcile(context.Background())
 
 		require.NoError(t, err)
@@ -214,4 +170,23 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.NotEmpty(t, pullSecret.Data[".dockerconfigjson"])
 		assert.Equal(t, expectedJSON, string(pullSecret.Data[".dockerconfigjson"]))
 	})
+}
+
+func createTestDynakube() *dynatracev1beta2.DynaKube {
+	return addFakeTennantUUID(&dynatracev1beta2.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: testNamespace,
+			Name:      testName,
+		},
+		Spec: dynatracev1beta2.DynaKubeSpec{
+			APIURL:   testApiUrl,
+			OneAgent: dynatracev1beta2.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{}},
+		},
+	})
+}
+
+func addFakeTennantUUID(dynakube *dynatracev1beta2.DynaKube) *dynatracev1beta2.DynaKube {
+	dynakube.Status.OneAgent.ConnectionInfoStatus.ConnectionInfoStatus.TenantUUID = testTenant
+
+	return dynakube
 }

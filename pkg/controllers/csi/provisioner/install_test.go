@@ -272,7 +272,7 @@ func createMockedCAConfigMap(dynakube dynatracev1beta2.DynaKube, certContent str
 func createTestDynaKubeWithImage(imageDigest string) dynatracev1beta2.DynaKube {
 	imageID := "some.registry.com/image:1.234.345@sha256:" + imageDigest
 
-	return dynatracev1beta2.DynaKube{
+	return *addFakeTenantUUID(&dynatracev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-dk",
 			Namespace: "test-ns",
@@ -287,11 +287,11 @@ func createTestDynaKubeWithImage(imageDigest string) dynatracev1beta2.DynaKube {
 				},
 			},
 		},
-	}
+	})
 }
 
 func createTestDynaKubeWithZip(version string) dynatracev1beta2.DynaKube {
-	return dynatracev1beta2.DynaKube{
+	return *addFakeTenantUUID(&dynatracev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-dk",
 			Namespace: "test-ns",
@@ -306,7 +306,7 @@ func createTestDynaKubeWithZip(version string) dynatracev1beta2.DynaKube {
 				},
 			},
 		},
-	}
+	})
 }
 
 func createTestProvisioner(obj ...client.Object) *OneAgentProvisioner {

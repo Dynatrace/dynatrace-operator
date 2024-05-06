@@ -393,13 +393,13 @@ func createActivegateReconcilerBuilder(reconciler controllers.Reconciler) active
 }
 
 func createOneAgentReconcilerBuilder(reconciler controllers.Reconciler) oneagent.ReconcilerBuilder {
-	return func(_ client.Client, _ client.Reader, _ dtclient.Client, _ *dynatracev1beta2.DynaKube, _ string) controllers.Reconciler {
+	return func(_ client.Client, _ client.Reader, _ dtclient.Client, _ *dynatracev1beta2.DynaKube, _ string, _ controllers.Reconciler) controllers.Reconciler {
 		return reconciler
 	}
 }
 
 func createInjectionReconcilerBuilder(reconciler *injectionmock.Reconciler) injection.ReconcilerBuilder {
-	return func(_ client.Client, _ client.Reader, _ dtclient.Client, _ *istio.Client, _ *dynatracev1beta2.DynaKube) controllers.Reconciler {
+	return func(_ client.Client, _ client.Reader, _ dtclient.Client, _ *istio.Client, _ *dynatracev1beta2.DynaKube, _ controllers.Reconciler) controllers.Reconciler {
 		return reconciler
 	}
 }

@@ -23,6 +23,7 @@ const (
 	testDataIngestToken        = "test-data-ingest-token"
 	testUpdatedDataIngestToken = "updated-test-data-ingest-token"
 
+	testTenant        = "tenant"
 	testApiUrl        = "https://tenant.test/api"
 	testUpdatedApiUrl = "https://tenant.updated-test/api"
 
@@ -192,6 +193,7 @@ func TestGenerateMetadataEnrichmentSecret_ForDynakube(t *testing.T) {
 				dynatracev1beta2.CapabilityDisplayName(dynatracev1beta2.KubeMonCapability.ShortName),
 				dynatracev1beta2.CapabilityDisplayName(dynatracev1beta2.MetricsIngestCapability.ShortName),
 			})
+			addFakeTenantUUID(instance)
 
 			testGenerateEndpointsSecret(t, instance, fakeClient)
 
@@ -203,6 +205,7 @@ func TestGenerateMetadataEnrichmentSecret_ForDynakube(t *testing.T) {
 				dynatracev1beta2.CapabilityDisplayName(dynatracev1beta2.KubeMonCapability.ShortName),
 				dynatracev1beta2.CapabilityDisplayName(dynatracev1beta2.MetricsIngestCapability.ShortName),
 			})
+			addFakeTenantUUID(newInstance)
 
 			testGenerateEndpointsSecret(t, newInstance, fakeClient)
 
@@ -226,6 +229,12 @@ func TestGenerateMetadataEnrichmentSecret_ForDynakube(t *testing.T) {
 			checkTestSecretDoesntExist(t, fakeClient, types.NamespacedName{Namespace: testNamespaceDynatrace, Name: consts.EnrichmentEndpointSecretName})
 		}
 	})
+}
+
+func addFakeTenantUUID(dynakube *dynatracev1beta2.DynaKube) *dynatracev1beta2.DynaKube {
+	dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID = testTenant
+
+	return dynakube
 }
 
 func testGenerateEndpointsSecret(t *testing.T, instance *dynatracev1beta2.DynaKube, fakeClient client.Client) {
@@ -339,7 +348,7 @@ func buildTestDynakube() *dynatracev1beta2.DynaKube {
 }
 
 func buildTestDynakubeWithMetricsIngestCapability(capabilities []dynatracev1beta2.CapabilityDisplayName) *dynatracev1beta2.DynaKube {
-	return &dynatracev1beta2.DynaKube{
+	dynakube := &dynatracev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testDynakubeName,
 			Namespace: testNamespaceDynatrace,
@@ -354,6 +363,8 @@ func buildTestDynakubeWithMetricsIngestCapability(capabilities []dynatracev1beta
 			},
 		},
 	}
+
+	return addFakeTenantUUID(dynakube)
 }
 
 func buildTestClientBeforeGenerate(dk *dynatracev1beta2.DynaKube) client.Client {
