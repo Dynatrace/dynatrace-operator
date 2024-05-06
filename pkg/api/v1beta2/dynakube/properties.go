@@ -424,6 +424,13 @@ func (dk *DynaKube) TenantUUIDFromApiUrl() (string, error) {
 	return tenantUUID(dk.Spec.APIURL)
 }
 
+func (dk *DynaKube) TenantUUIDFromConnectionInfo() string {
+	if dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID != "" {
+		return dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID
+	}
+	return dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID
+}
+
 func (dk *DynaKube) ApiRequestThreshold() time.Duration {
 	if dk.Spec.DynatraceApiRequestThreshold < 0 {
 		dk.Spec.DynatraceApiRequestThreshold = DefaultMinRequestThresholdMinutes

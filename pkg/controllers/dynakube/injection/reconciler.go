@@ -28,6 +28,7 @@ type reconciler struct {
 	versionReconciler        version.Reconciler
 	pmcSecretreconciler      controllers.Reconciler
 	connectionInfoReconciler controllers.Reconciler
+	pullSecretReconciler     controllers.Reconciler
 	dynatraceClient          dynatrace.Client
 }
 
@@ -37,6 +38,7 @@ type ReconcilerBuilder func(
 	dynatraceClient dynatrace.Client,
 	istioClient *istio.Client,
 	dynakube *dynatracev1beta2.DynaKube,
+	pullSecretReconciler controllers.Reconciler,
 ) controllers.Reconciler
 
 //nolint:revive
@@ -46,6 +48,7 @@ func NewReconciler(
 	dynatraceClient dynatrace.Client,
 	istioClient *istio.Client,
 	dynakube *dynatracev1beta2.DynaKube,
+	pullSecretReconciler controllers.Reconciler,
 ) controllers.Reconciler {
 	var istioReconciler istio.Reconciler = nil
 
@@ -63,6 +66,7 @@ func NewReconciler(
 			client, apiReader, dynatraceClient, dynakube, timeprovider.New().Freeze()),
 		connectionInfoReconciler: oaconnectioninfo.NewReconciler(client, apiReader, dynatraceClient, dynakube),
 		dynatraceClient:          dynatraceClient,
+		pullSecretReconciler:     pullSecretReconciler,
 	}
 }
 
@@ -79,6 +83,15 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 
 	if !r.dynakube.NeedAppInjection() {
 		return r.removeAppInjection(ctx)
+	}
+
+	log.Info("creating Pull Secret")
+
+	err = r.pullSecretReconciler.Reconcile(ctx)
+	if err != nil {
+		log.Error(err, "could not reconcile pull secret")
+
+		return err
 	}
 
 	dkMapper := r.createDynakubeMapper(ctx)

@@ -47,15 +47,18 @@ type ReconcilerBuilder func(
 	apiReader client.Reader,
 	dtClient dynatrace.Client,
 	dynakube *dynatracev1beta2.DynaKube,
-	clusterID string) controllers.Reconciler
+	clusterID string,
+	pullSecretReconciler controllers.Reconciler,
+) controllers.Reconciler
 
 // NewReconciler initializes a new ReconcileOneAgent instance
-func NewReconciler(
+func NewReconciler( //nolint
 	client client.Client,
 	apiReader client.Reader,
 	dtClient dynatrace.Client,
 	dynakube *dynatracev1beta2.DynaKube,
-	clusterID string) controllers.Reconciler {
+	clusterID string,
+	pullSecretReconciler controllers.Reconciler) controllers.Reconciler {
 	return &Reconciler{
 		client:                   client,
 		apiReader:                apiReader,
@@ -63,6 +66,7 @@ func NewReconciler(
 		dynakube:                 dynakube,
 		connectionInfoReconciler: oaconnectioninfo.NewReconciler(client, apiReader, dtClient, dynakube),
 		versionReconciler:        version.NewReconciler(apiReader, dtClient, timeprovider.New().Freeze()),
+		pullSecretReconciler:     pullSecretReconciler,
 	}
 }
 
@@ -73,6 +77,7 @@ type Reconciler struct {
 	apiReader                client.Reader
 	connectionInfoReconciler controllers.Reconciler
 	versionReconciler        version.Reconciler
+	pullSecretReconciler     controllers.Reconciler
 	dynakube                 *dynatracev1beta2.DynaKube
 	clusterID                string
 }
@@ -105,6 +110,15 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	if !r.dynakube.NeedsOneAgent() {
 		return r.cleanUp(ctx)
+	}
+
+	log.Info("creating Pull Secret")
+
+	err = r.pullSecretReconciler.Reconcile(ctx)
+	if err != nil {
+		log.Error(err, "could not reconcile pull secret")
+
+		return err
 	}
 
 	log.Info("At least one communication host is provided, deploying OneAgent")

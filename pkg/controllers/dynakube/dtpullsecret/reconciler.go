@@ -18,18 +18,20 @@ const (
 )
 
 type Reconciler struct {
-	client    client.Client
-	apiReader client.Reader
-	dynakube  *dynatracev1beta2.DynaKube
-	tokens    token.Tokens
+	client            client.Client
+	apiReader         client.Reader
+	dynakube          *dynatracev1beta2.DynaKube
+	tokens            token.Tokens
+	alreadyReconciled bool
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader, dynakube *dynatracev1beta2.DynaKube, tokens token.Tokens) *Reconciler {
 	return &Reconciler{
-		client:    clt,
-		apiReader: apiReader,
-		dynakube:  dynakube,
-		tokens:    tokens,
+		client:            clt,
+		apiReader:         apiReader,
+		dynakube:          dynakube,
+		tokens:            tokens,
+		alreadyReconciled: false,
 	}
 }
 
@@ -38,13 +40,15 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if we don't want to do anything with images, then it's not necessary,
 	but other parts of the code must also be updated to handle this scenario.
 	*/
-	if r.dynakube.Spec.CustomPullSecret == "" {
+	if r.dynakube.Spec.CustomPullSecret == "" && !r.alreadyReconciled {
 		err := r.reconcilePullSecret(ctx)
 		if err != nil {
 			log.Info("could not reconcile pull secret")
 
 			return errors.WithStack(err)
 		}
+
+		r.alreadyReconciled = true
 	}
 
 	return nil

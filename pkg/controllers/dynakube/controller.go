@@ -109,8 +109,10 @@ type Controller struct {
 	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
 	injectionReconcilerBuilder          injection.ReconcilerBuilder
 	istioReconcilerBuilder              istio.ReconcilerBuilder
-	operatorNamespace                   string
-	clusterID                           string
+	tokens                              token.Tokens
+
+	operatorNamespace string
+	clusterID         string
 
 	requeueAfter time.Duration
 }
@@ -283,6 +285,8 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube
 		return nil, err
 	}
 
+	controller.tokens = tokens
+
 	dynatraceClientBuilder := controller.dynatraceClientBuilder.
 		SetContext(ctx).
 		SetDynakube(*dynakube).
@@ -297,22 +301,14 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube
 
 	controller.setConditionTokenReady(dynakube)
 
-	log.Info("start reconciling pull secret")
-
-	err = dtpullsecret.
-		NewReconciler(controller.client, controller.apiReader, dynakube, tokens).
-		Reconcile(ctx)
-	if err != nil {
-		log.Info("could not reconcile Dynatrace pull secret")
-
-		return nil, err
-	}
-
 	return dynatraceClient, nil
 }
 
 func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioClient *istio.Client, dynakube *dynatracev1beta2.DynaKube) error {
 	var componentErrors []error
+
+	pullSecretReconciler := dtpullsecret.
+		NewReconciler(controller.client, controller.apiReader, dynakube, controller.tokens)
 
 	log.Info("start reconciling ActiveGate")
 
@@ -332,7 +328,12 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling app injection")
 
-	err = controller.injectionReconcilerBuilder(controller.client, controller.apiReader, dynatraceClient, istioClient, dynakube).
+	err = controller.injectionReconcilerBuilder(controller.client,
+		controller.apiReader,
+		dynatraceClient,
+		istioClient,
+		dynakube,
+		pullSecretReconciler).
 		Reconcile(ctx)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
@@ -350,7 +351,13 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling OneAgent")
 
-	err = controller.oneAgentReconcilerBuilder(controller.client, controller.apiReader, dynatraceClient, dynakube, controller.clusterID).
+	err = controller.oneAgentReconcilerBuilder(
+		controller.client,
+		controller.apiReader,
+		dynatraceClient,
+		dynakube,
+		controller.clusterID,
+		pullSecretReconciler).
 		Reconcile(ctx)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {

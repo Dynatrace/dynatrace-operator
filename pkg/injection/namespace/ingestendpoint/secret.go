@@ -180,7 +180,7 @@ func (g *SecretGenerator) PrepareFields(ctx context.Context, dk *dynatracev1beta
 func ingestUrlFor(dk *dynatracev1beta2.DynaKube) (string, error) {
 	switch {
 	case dk.IsActiveGateMode(dynatracev1beta2.MetricsIngestCapability.DisplayName):
-		return metricsIngestUrlForClusterActiveGate(dk)
+		return metricsIngestUrlForClusterActiveGate(dk), nil
 	case len(dk.Spec.APIURL) > 0:
 		return metricsIngestUrlForDynatraceActiveGate(dk)
 	default:
@@ -192,13 +192,10 @@ func metricsIngestUrlForDynatraceActiveGate(dk *dynatracev1beta2.DynaKube) (stri
 	return dk.Spec.APIURL + "/v2/metrics/ingest", nil
 }
 
-func metricsIngestUrlForClusterActiveGate(dk *dynatracev1beta2.DynaKube) (string, error) {
-	tenant, err := dk.TenantUUIDFromApiUrl()
-	if err != nil {
-		return "", err
-	}
+func metricsIngestUrlForClusterActiveGate(dk *dynatracev1beta2.DynaKube) string {
+	tenant := dk.TenantUUIDFromConnectionInfo()
 
 	serviceName := capability.BuildServiceName(dk.Name, agconsts.MultiActiveGateName)
 
-	return fmt.Sprintf("http://%s.%s/e/%s/api/v2/metrics/ingest", serviceName, dk.Namespace, tenant), nil
+	return fmt.Sprintf("http://%s.%s/e/%s/api/v2/metrics/ingest", serviceName, dk.Namespace, tenant)
 }
