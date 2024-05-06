@@ -1,10 +1,11 @@
 package dynakube
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/conversion"
 	"strconv"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
 // ConvertTo converts v1beta2 to v1beta1.
@@ -27,20 +28,14 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Status.Conditions = src.Status.Conditions
 
 	if !src.Spec.MetaDataEnrichment.Enabled {
-		dst.Annotations = map[string]string{
-			dynakube.AnnotationFeatureMetadataEnrichment: "false",
-		}
+		dst.Annotations[dynakube.AnnotationFeatureMetadataEnrichment] = "false"
 	}
 
-	dst.Annotations = map[string]string{
-		dynakube.AnnotationFeatureApiRequestThreshold: strconv.FormatInt(int64(src.Spec.DynatraceApiRequestThreshold), 10),
-	}
+	dst.Annotations[dynakube.AnnotationFeatureApiRequestThreshold] = strconv.FormatInt(int64(src.Spec.DynatraceApiRequestThreshold), 10)
 
 	if hostMonitoring := src.Spec.OneAgent.HostMonitoring; hostMonitoring != nil {
 		if hostMonitoring.SecCompProfile != "" {
-			dst.Annotations = map[string]string{
-				dynakube.AnnotationFeatureOneAgentSecCompProfile: hostMonitoring.SecCompProfile,
-			}
+			dst.Annotations[dynakube.AnnotationFeatureOneAgentSecCompProfile] = hostMonitoring.SecCompProfile
 		}
 	}
 

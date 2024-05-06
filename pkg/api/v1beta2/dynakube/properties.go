@@ -18,15 +18,16 @@ package dynakube
 
 import (
 	"fmt"
+	"net/url"
+	"strings"
+	"time"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"net/url"
-	"strings"
-	"time"
 )
 
 const (
@@ -405,7 +406,7 @@ func (dk *DynaKube) ApiRequestThreshold() time.Duration {
 		dk.Spec.DynatraceApiRequestThreshold = DefaultMinRequestThresholdMinutes
 	}
 
-	return dk.Spec.DynatraceApiRequestThreshold * time.Minute
+	return dk.Spec.DynatraceApiRequestThreshold * time.Minute //nolint:durationcheck
 }
 
 func runeIs(wanted rune) func(rune) bool {

@@ -218,7 +218,9 @@ func TestConversion_ConvertTo(t *testing.T) {
 		},
 	}
 
+	oldDynakube.Annotations = map[string]string{}
 	convertedDynakube := &dynakube.DynaKube{}
+	
 	err := oldDynakube.ConvertTo(convertedDynakube)
 	require.NoError(t, err)
 

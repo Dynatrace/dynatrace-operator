@@ -19,8 +19,9 @@ package dynakube
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"strconv"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 const (
