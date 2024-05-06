@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestPrepareVolumes(t *testing.T) {
@@ -226,5 +227,29 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		assert.Contains(t, volumeMounts, getActiveGateCaCertVolumeMount())
 		assert.Contains(t, volumeMounts, getClusterCaCertVolumeMount())
 		assert.Contains(t, volumeMounts, getCSIStorageMount())
+	})
+	t.Run(`has no volume if no proxy is set`, func(t *testing.T) {
+		instance := &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "Dynakube",
+				Namespace: "dynatrace",
+				Annotations: map[string]string{
+					dynatracev1beta1.AnnotationFeatureOneAgentIgnoreProxy: "true",
+				},
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				Proxy: &dynatracev1beta1.DynaKubeProxy{ValueFrom: proxy.BuildSecretName("Dynakube")},
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
+				},
+			},
+		}
+		
+		volumes := prepareVolumes(instance)
+		mounts := prepareVolumeMounts(instance)
+
+		assert.NotContains(t, volumes, buildHttpProxyVolume(instance))
+		assert.NotContains(t, mounts, getHttpProxyMount())
+
 	})
 }
