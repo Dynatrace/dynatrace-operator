@@ -88,6 +88,7 @@ func TestUpdateTenantConfig(t *testing.T) {
 
 func TestDeleteTenantConfig(t *testing.T) {
 	var tenantConfig *TenantConfig
+
 	var codeModules []CodeModule
 
 	t.Run("on cascade deletion true", func(t *testing.T) {
@@ -195,6 +196,7 @@ func TestIsCodeModuleOrphaned(t *testing.T) {
 		codeModule := &CodeModule{
 			Version: "1.0",
 		}
+
 		db.db.Create(tenantConfig)
 		db.db.Create(codeModule)
 
