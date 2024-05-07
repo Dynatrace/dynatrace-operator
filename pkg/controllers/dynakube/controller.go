@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
@@ -109,8 +108,8 @@ type Controller struct {
 	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
 	injectionReconcilerBuilder          injection.ReconcilerBuilder
 	istioReconcilerBuilder              istio.ReconcilerBuilder
-	tokens                              token.Tokens
 
+	tokens            token.Tokens
 	operatorNamespace string
 	clusterID         string
 
@@ -307,9 +306,6 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube
 func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioClient *istio.Client, dynakube *dynatracev1beta2.DynaKube) error {
 	var componentErrors []error
 
-	pullSecretReconciler := dtpullsecret.
-		NewReconciler(controller.client, controller.apiReader, dynakube, controller.tokens)
-
 	log.Info("start reconciling ActiveGate")
 
 	err := controller.reconcileActiveGate(ctx, dynakube, dynatraceClient, istioClient)
@@ -332,8 +328,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		controller.apiReader,
 		dynatraceClient,
 		istioClient,
-		dynakube,
-		pullSecretReconciler).
+		dynakube).
 		Reconcile(ctx)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
@@ -356,8 +351,9 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		controller.apiReader,
 		dynatraceClient,
 		dynakube,
+		controller.tokens,
 		controller.clusterID,
-		pullSecretReconciler).
+	).
 		Reconcile(ctx)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {

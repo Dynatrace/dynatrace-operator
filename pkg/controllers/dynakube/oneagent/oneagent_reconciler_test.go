@@ -6,11 +6,13 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent/daemonset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	versions "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -50,6 +52,7 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 		}
+		dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID = "test-tenant"
 		fakeClient := fake.NewClient(dynakube)
 
 		reconciler := &Reconciler{
@@ -58,7 +61,7 @@ func TestReconcile(t *testing.T) {
 			dynakube:                 dynakube,
 			versionReconciler:        createVersionReconcilerMock(t),
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
-			pullSecretReconciler:     createPullSecretReconcilerMock(t),
+			tokens:                   createTokens(),
 		}
 
 		err := reconciler.Reconcile(ctx)
@@ -214,7 +217,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		dynakube:                 dynakube,
 		connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		versionReconciler:        createVersionReconcilerMock(t),
-		pullSecretReconciler:     createPullSecretReconcilerMock(t),
+		tokens:                   createTokens(),
 	}
 
 	err := reconciler.Reconcile(ctx)
@@ -283,7 +286,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		reconciler.dynakube = dk
 		reconciler.connectionInfoReconciler = createConnectionInfoReconcilerMock(t)
 		reconciler.versionReconciler = createVersionReconcilerMock(t)
-		reconciler.pullSecretReconciler = createPullSecretReconcilerMock(t)
+		reconciler.tokens = createTokens()
 		dk.Status.OneAgent.Version = oldComponentVersion
 		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
@@ -315,8 +318,8 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		reconciler.dynakube = dk
 		reconciler.connectionInfoReconciler = createConnectionInfoReconcilerMock(t)
 		reconciler.versionReconciler = createVersionReconcilerMock(t)
-		reconciler.pullSecretReconciler = createPullSecretReconcilerMock(t)
-		dk.Spec.OneAgent.ClassicFullStack.AutoUpdate = autoUpdate
+		reconciler.tokens = createTokens()
+		dk.Spec.OneAgent.ClassicFullStack.AutoUpdate = &autoUpdate
 		dk.Status.OneAgent.Version = oldComponentVersion
 		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
@@ -746,7 +749,7 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 			apiReader:                fakeClient,
 			versionReconciler:        createVersionReconcilerMock(t),
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
-			pullSecretReconciler:     createPullSecretReconcilerMock(t),
+			tokens:                   createTokens(),
 		}
 
 		err := reconciler.Reconcile(ctx)
@@ -777,10 +780,8 @@ func createVersionReconcilerMock(t *testing.T) versions.Reconciler {
 	return versionReconciler
 }
 
-func createPullSecretReconcilerMock(t *testing.T) controllers.Reconciler {
-	pullSecretReconciler := controllermock.NewReconciler(t)
-	pullSecretReconciler.On("Reconcile", mock.AnythingOfType("context.backgroundCtx")).
-		Return(nil).Once()
-
-	return pullSecretReconciler
+func createTokens() token.Tokens {
+	return token.Tokens{
+		dtclient.ApiToken: &token.Token{Value: "sdfsdf"},
+	}
 }

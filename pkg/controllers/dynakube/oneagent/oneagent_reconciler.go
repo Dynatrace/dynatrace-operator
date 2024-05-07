@@ -15,7 +15,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent/daemonset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
@@ -47,8 +49,8 @@ type ReconcilerBuilder func(
 	apiReader client.Reader,
 	dtClient dynatrace.Client,
 	dynakube *dynatracev1beta2.DynaKube,
+	tokens token.Tokens,
 	clusterID string,
-	pullSecretReconciler controllers.Reconciler,
 ) controllers.Reconciler
 
 // NewReconciler initializes a new ReconcileOneAgent instance
@@ -57,8 +59,9 @@ func NewReconciler( //nolint
 	apiReader client.Reader,
 	dtClient dynatrace.Client,
 	dynakube *dynatracev1beta2.DynaKube,
+	tokens token.Tokens,
 	clusterID string,
-	pullSecretReconciler controllers.Reconciler) controllers.Reconciler {
+) controllers.Reconciler {
 	return &Reconciler{
 		client:                   client,
 		apiReader:                apiReader,
@@ -66,7 +69,7 @@ func NewReconciler( //nolint
 		dynakube:                 dynakube,
 		connectionInfoReconciler: oaconnectioninfo.NewReconciler(client, apiReader, dtClient, dynakube),
 		versionReconciler:        version.NewReconciler(apiReader, dtClient, timeprovider.New().Freeze()),
-		pullSecretReconciler:     pullSecretReconciler,
+		tokens:                   tokens,
 	}
 }
 
@@ -77,8 +80,8 @@ type Reconciler struct {
 	apiReader                client.Reader
 	connectionInfoReconciler controllers.Reconciler
 	versionReconciler        version.Reconciler
-	pullSecretReconciler     controllers.Reconciler
 	dynakube                 *dynatracev1beta2.DynaKube
+	tokens                   token.Tokens
 	clusterID                string
 }
 
@@ -114,7 +117,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	log.Info("creating Pull Secret")
 
-	err = r.pullSecretReconciler.Reconcile(ctx)
+	err = dtpullsecret.NewReconciler(r.client, r.apiReader, r.dynakube, r.tokens).Reconcile(ctx)
 	if err != nil {
 		log.Error(err, "could not reconcile pull secret")
 

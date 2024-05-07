@@ -419,12 +419,7 @@ func (dk *DynaKube) Tokens() string {
 	return dk.Name
 }
 
-// TenantUUIDFromApiUrl gets the tenantUUID from the ApiUrl present in the struct, if the tenant is aliased then the alias will be returned.
-func (dk *DynaKube) TenantUUIDFromApiUrl() (string, error) {
-	return tenantUUID(dk.Spec.APIURL)
-}
-
-func (dk *DynaKube) TenantUUIDFromConnectionInfo() (string, error) {
+func (dk *DynaKube) TenantUUID() (string, error) {
 	if dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID != "" {
 		return dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID, nil
 	} else if dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID != "" {

@@ -154,7 +154,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		require.NoError(t, err)
 
-		r.alreadyReconciled = false
 		err = r.Reconcile(context.Background())
 
 		require.NoError(t, err)
