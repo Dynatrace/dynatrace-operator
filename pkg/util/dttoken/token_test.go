@@ -20,6 +20,7 @@ func TestGenerateToken(t *testing.T) {
 	t.Run("string representation of token", func(t *testing.T) {
 		tokenA, err := New("test")
 		require.NoError(t, err)
+
 		tokenParts := strings.Split(tokenA.String(), ".")
 		assert.Len(t, tokenParts, 3)
 		assert.Equal(t, "test", tokenParts[0])
