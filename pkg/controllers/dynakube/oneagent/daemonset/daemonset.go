@@ -318,23 +318,26 @@ func (dsInfo *builderInfo) securityContext() *corev1.SecurityContext {
 	} else {
 		securityContext.Capabilities = defaultSecurityContextCapabilities()
 
-		if dsInfo.dynakube != nil && dsInfo.dynakube.HostMonitoringMode() && dsInfo.dynakube.Spec.OneAgent.HostMonitoring.SecCompProfile != "" {
-			secCompName := dsInfo.dynakube.Spec.OneAgent.HostMonitoring.SecCompProfile
-			securityContext.SeccompProfile = &corev1.SeccompProfile{
-				Type:             corev1.SeccompProfileTypeLocalhost,
-				LocalhostProfile: &secCompName,
-			}
-		} else if dsInfo.dynakube != nil && dsInfo.dynakube.CloudNativeFullstackMode() && dsInfo.dynakube.Spec.OneAgent.CloudNativeFullStack.SecCompProfile != "" {
-			secCompName := dsInfo.dynakube.Spec.OneAgent.CloudNativeFullStack.SecCompProfile
-			securityContext.SeccompProfile = &corev1.SeccompProfile{
-				Type:             corev1.SeccompProfileTypeLocalhost,
-				LocalhostProfile: &secCompName,
-			}
-		} else if dsInfo.dynakube != nil && dsInfo.dynakube.ClassicFullStackMode() && dsInfo.dynakube.Spec.OneAgent.ClassicFullStack.SecCompProfile != "" {
-			secCompName := dsInfo.dynakube.Spec.OneAgent.ClassicFullStack.SecCompProfile
-			securityContext.SeccompProfile = &corev1.SeccompProfile{
-				Type:             corev1.SeccompProfileTypeLocalhost,
-				LocalhostProfile: &secCompName,
+		if dsInfo.dynakube != nil {
+			switch {
+			case dsInfo.dynakube.HostMonitoringMode() && dsInfo.dynakube.Spec.OneAgent.HostMonitoring.SecCompProfile != "":
+				secCompName := dsInfo.dynakube.Spec.OneAgent.HostMonitoring.SecCompProfile
+				securityContext.SeccompProfile = &corev1.SeccompProfile{
+					Type:             corev1.SeccompProfileTypeLocalhost,
+					LocalhostProfile: &secCompName,
+				}
+			case dsInfo.dynakube.ClassicFullStackMode() && dsInfo.dynakube.Spec.OneAgent.ClassicFullStack.SecCompProfile != "":
+				secCompName := dsInfo.dynakube.Spec.OneAgent.ClassicFullStack.SecCompProfile
+				securityContext.SeccompProfile = &corev1.SeccompProfile{
+					Type:             corev1.SeccompProfileTypeLocalhost,
+					LocalhostProfile: &secCompName,
+				}
+			case dsInfo.dynakube.CloudNativeFullstackMode() && dsInfo.dynakube.Spec.OneAgent.CloudNativeFullStack.SecCompProfile != "":
+				secCompName := dsInfo.dynakube.Spec.OneAgent.CloudNativeFullStack.SecCompProfile
+				securityContext.SeccompProfile = &corev1.SeccompProfile{
+					Type:             corev1.SeccompProfileTypeLocalhost,
+					LocalhostProfile: &secCompName,
+				}
 			}
 		}
 	}

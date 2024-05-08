@@ -2,7 +2,6 @@ package metadata
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -37,7 +36,6 @@ func (mut *Mutator) Enabled(request *dtwebhook.BaseRequest) bool {
 		request.DynaKube.FeatureAutomaticInjection())
 	enabledOnDynakube := request.DynaKube.MetaDataEnrichmentEnabled()
 
-	fmt.Println(enabledOnDynakube)
 	return enabledOnPod && enabledOnDynakube
 }
 
