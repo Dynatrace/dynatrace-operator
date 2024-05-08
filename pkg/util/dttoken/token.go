@@ -22,18 +22,28 @@ func (t Token) String() string {
 	return fmt.Sprintf("%s.%s.%s", t.prefix, t.public, t.private)
 }
 
-func New(prefix string) *Token {
-	return &Token{prefix: prefix, public: generateRandom(publicPortionSize), private: generateRandom(privatePortionSize)}
+func New(prefix string) (*Token, error) {
+	public, err := generateRandom(publicPortionSize)
+	if err != nil {
+		return nil, err
+	}
+
+	private, err := generateRandom(privatePortionSize)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Token{prefix: prefix, public: public, private: private}, nil
 }
 
 // generate base32 encoded random string using base32.StdEncoding
-func generateRandom(size int) string {
+func generateRandom(size int) (string, error) {
 	b := make([]byte, size)
 	_, err := rand.Read(b)
 
 	if err != nil {
-		return ""
+		return "", err
 	}
 
-	return base32.StdEncoding.EncodeToString(b)[:size]
+	return base32.StdEncoding.EncodeToString(b)[:size], nil
 }
