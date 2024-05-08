@@ -57,10 +57,11 @@ spec:
     classicFullStack:
       # Optional: If specified, indicates the OneAgent version to use
       # Defaults to the configured version on your Dynatrace environment
+      # Available versions can be found using the UI or the Dynatrace API
       # The version is expected to be provided in the semver format
-      # Example: {major.minor.release}, e.g., "1.200.0"
+      # <major>,<minor>.<release>.<timestamp>, e.g. 1.200.0.20240501-085142
       #
-      # version: ""
+      # version:
 
       # Optional: Sets the URI for the image containing the OneAgent installer used by the DaemonSet
       # Defaults to the latest OneAgent image on the tenant's registry
