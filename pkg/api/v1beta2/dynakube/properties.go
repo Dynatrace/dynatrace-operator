@@ -254,6 +254,7 @@ func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
 	case dk.ApplicationMonitoringMode():
 		return &dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector
 	}
+
 	return nil
 }
 

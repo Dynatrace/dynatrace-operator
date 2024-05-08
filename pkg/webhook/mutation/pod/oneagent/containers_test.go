@@ -50,9 +50,9 @@ func TestConfigureInitContainer(t *testing.T) {
 }
 
 type mutateUserContainerTestCase struct {
-	name                       string
-	dynakube                   dynatracev1beta2.DynaKube
-	expectedAdditionalEnvCount int
+	name                               string
+	dynakube                           dynatracev1beta2.DynaKube
+	expectedAdditionalEnvCount         int
 	expectedAdditionalVolumeMountCount int
 }
 
@@ -148,9 +148,9 @@ func TestReinvokeUserContainers(t *testing.T) {
 
 func TestContainerExclusion(t *testing.T) {
 	testCases := []struct {
-		name                       string
-		dynakube                   dynatracev1beta2.DynaKube
-		expectedAdditionalEnvCount int
+		name                               string
+		dynakube                           dynatracev1beta2.DynaKube
+		expectedAdditionalEnvCount         int
 		expectedAdditionalVolumeMountCount int
 		expectedInitContainerEnvCount      int
 		dynakubeAnnotations                map[string]string

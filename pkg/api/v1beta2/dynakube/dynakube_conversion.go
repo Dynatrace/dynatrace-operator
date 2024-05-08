@@ -1,11 +1,12 @@
 package dynakube
 
 import (
+	"strconv"
+	"time"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
-	"strconv"
-	"time"
 )
 
 // ConvertTo converts v1beta2 to v1beta1.
@@ -123,6 +124,7 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 		if err != nil {
 			return err
 		}
+
 		dst.Spec.DynatraceApiRequestThreshold = duration
 		delete(dst.Annotations, src.Annotations[dynakube.AnnotationFeatureApiRequestThreshold])
 	} else {

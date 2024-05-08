@@ -2,8 +2,8 @@ package status
 
 import (
 	"context"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

@@ -1,9 +1,9 @@
 package support_archive
 
 import (
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	"reflect"
 
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2"
 	dynakubev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"

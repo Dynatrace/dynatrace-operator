@@ -90,9 +90,9 @@ func TestEnsureInitSecret(t *testing.T) {
 }
 
 type mutateTestCase struct {
-	name                       string
-	dynakube                   dynatracev1beta2.DynaKube
-	expectedAdditionalEnvCount int
+	name                                   string
+	dynakube                               dynatracev1beta2.DynaKube
+	expectedAdditionalEnvCount             int
 	expectedAdditionalVolumeCount          int
 	expectedAdditionalVolumeMountCount     int
 	expectedAdditionalInitVolumeMountCount int
@@ -190,9 +190,9 @@ func TestNoCommunicationHostsMutate(t *testing.T) {
 }
 
 type reinvokeTestCase struct {
-	name                       string
-	dynakube                   dynatracev1beta2.DynaKube
-	expectedAdditionalEnvCount int
+	name                               string
+	dynakube                           dynatracev1beta2.DynaKube
+	expectedAdditionalEnvCount         int
 	expectedAdditionalVolumeMountCount int
 }
 

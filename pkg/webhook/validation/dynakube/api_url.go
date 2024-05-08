@@ -2,9 +2,10 @@ package dynakube
 
 import (
 	"context"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"net/url"
 	"strings"
+
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 )
 
 const (

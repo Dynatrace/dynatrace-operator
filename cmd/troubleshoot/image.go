@@ -2,9 +2,9 @@ package troubleshoot
 
 import (
 	"context"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"net/http"
 
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/google/go-containerregistry/pkg/authn"

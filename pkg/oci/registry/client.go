@@ -5,10 +5,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"net/http"
 	"net/url"
 
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/dockerkeychain"
 	"github.com/google/go-containerregistry/pkg/authn"

@@ -4,9 +4,9 @@ package mocks
 
 import (
 	context "context"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 
 	dynakube "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	mock "github.com/stretchr/testify/mock"
 )
 
