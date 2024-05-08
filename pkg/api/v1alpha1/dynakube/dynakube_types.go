@@ -328,7 +328,7 @@ func (dk *DynaKubeStatus) SetPhase(phase status.DeploymentPhase) bool {
 // +kubebuilder:printcolumn:name="Tokens",type=string,JSONPath=`.status.tokens`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +operator-sdk:csv:customresourcedefinitions:displayName="Dynatrace DynaKube"
-// +operator-sdk:csv:customresourcedefinitions:resources={{StatefulSet,v1,},{DaemonSet,v1,},{Pod,v1,}}.
+// +operator-sdk:csv:customresourcedefinitions:resources={{StatefulSet,v1,},{DaemonSet,v1,},{Pod,v1,}}
 type DynaKube struct {
 	metav1.TypeMeta `json:",inline"`
 	Status          DynaKubeStatus `json:"status,omitempty"`
