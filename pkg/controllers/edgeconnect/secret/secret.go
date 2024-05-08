@@ -46,6 +46,10 @@ func PrepareConfigFile(ctx context.Context, instance *edgeconnectv1alpha1.EdgeCo
 		cfg.RootCertificatePaths = append(cfg.RootCertificatePaths, consts.EdgeConnectMountPath+"/"+consts.EdgeConnectCustomCertificateName)
 	}
 
+	if instance.Spec.KubernetesAutomation != nil && instance.Spec.KubernetesAutomation.Enabled {
+		cfg.RootCertificatePaths = append(cfg.RootCertificatePaths, consts.EdgeConnectServiceAccountCAPath)
+	}
+
 	if instance.Spec.Proxy != nil {
 		cfg.Proxy = config.Proxy{
 			Server:     instance.Spec.Proxy.Host,
