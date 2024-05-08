@@ -11,7 +11,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
@@ -87,7 +87,7 @@ func TestManifestCollector_Success(t *testing.T) {
 				Name: testOperatorNamespace,
 			},
 		},
-		&dynatracev1beta1.DynaKube{
+		&dynakube.DynaKube{
 			TypeMeta:   typeMeta("DynaKube"),
 			ObjectMeta: objectMeta("dynakube1"),
 		},
@@ -215,7 +215,7 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 				},
 			},
 		},
-		&dynatracev1beta1.DynaKube{
+		&dynakube.DynaKube{
 			TypeMeta:   typeMeta("DynaKube"),
 			ObjectMeta: objectMeta("dynakube1"),
 		},
@@ -321,9 +321,9 @@ func getResourceLists() []*metav1.APIResourceList {
 		},
 	}
 	dk := metav1.APIResourceList{
-		GroupVersion: crdNameSuffix + "/" + "v1beta1",
+		GroupVersion: crdNameSuffix + "/" + "v1beta2",
 		APIResources: []metav1.APIResource{
-			{Version: "v1beta1", Group: crdNameSuffix, Name: "dynakubes", Namespaced: true, Kind: "DynaKube"},
+			{Version: "v1beta2", Group: crdNameSuffix, Name: "dynakubes", Namespaced: true, Kind: "DynaKube"},
 		},
 	}
 	ec := metav1.APIResourceList{

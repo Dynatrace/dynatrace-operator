@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -317,12 +317,12 @@ func createTestFQDNCommunicationHost() dtclient.CommunicationHost {
 	}
 }
 
-func createTestDynaKube() *dynatracev1beta1.DynaKube {
+func createTestDynaKube() *dynatracev1beta2.DynaKube {
 	fqdnHost := createTestFQDNCommunicationHost()
 	ipHost := createTestIPCommunicationHost()
 	endpoints := "https://abcd123.some.activegate.endpointurl.com:443"
 
-	return &dynatracev1beta1.DynaKube{
+	return &dynatracev1beta2.DynaKube{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "DynaKube",
 		},
@@ -330,18 +330,18 @@ func createTestDynaKube() *dynatracev1beta1.DynaKube {
 			Name:      "owner",
 			Namespace: "test",
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
+		Spec: dynatracev1beta2.DynaKubeSpec{
 			APIURL: "https://test.dev.dynatracelabs.com/api",
-			ActiveGate: dynatracev1beta1.ActiveGateSpec{
-				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-					dynatracev1beta1.RoutingCapability.DisplayName,
+			ActiveGate: dynatracev1beta2.ActiveGateSpec{
+				Capabilities: []dynatracev1beta2.CapabilityDisplayName{
+					dynatracev1beta2.RoutingCapability.DisplayName,
 				},
 			},
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
-			OneAgent: dynatracev1beta1.OneAgentStatus{
-				ConnectionInfoStatus: dynatracev1beta1.OneAgentConnectionInfoStatus{
-					CommunicationHosts: []dynatracev1beta1.CommunicationHostStatus{
+		Status: dynatracev1beta2.DynaKubeStatus{
+			OneAgent: dynatracev1beta2.OneAgentStatus{
+				ConnectionInfoStatus: dynatracev1beta2.OneAgentConnectionInfoStatus{
+					CommunicationHosts: []dynatracev1beta2.CommunicationHostStatus{
 						{
 							Protocol: fqdnHost.Protocol,
 							Host:     fqdnHost.Host,
@@ -355,9 +355,9 @@ func createTestDynaKube() *dynatracev1beta1.DynaKube {
 					},
 				},
 			},
-			ActiveGate: dynatracev1beta1.ActiveGateStatus{
-				ConnectionInfoStatus: dynatracev1beta1.ActiveGateConnectionInfoStatus{
-					ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+			ActiveGate: dynatracev1beta2.ActiveGateStatus{
+				ConnectionInfoStatus: dynatracev1beta2.ActiveGateConnectionInfoStatus{
+					ConnectionInfoStatus: dynatracev1beta2.ConnectionInfoStatus{
 						TenantUUID: "test-tenant",
 						Endpoints:  endpoints,
 					},

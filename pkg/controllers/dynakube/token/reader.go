@@ -3,8 +3,8 @@ package token
 import (
 	"context"
 	"fmt"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -13,10 +13,10 @@ import (
 
 type Reader struct {
 	apiReader client.Reader
-	dynakube  *dynatracev1beta1.DynaKube
+	dynakube  *dynatracev1beta2.DynaKube
 }
 
-func NewReader(apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) Reader {
+func NewReader(apiReader client.Reader, dynakube *dynatracev1beta2.DynaKube) Reader {
 	return Reader{
 		apiReader: apiReader,
 		dynakube:  dynakube,

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
@@ -150,7 +150,7 @@ func TestHasTooManyMountAttempts(t *testing.T) {
 		publisher := newPublisherForTesting(nil)
 		bindCfg := &csivolumes.BindConfig{
 			TenantUUID:       testTenantUUID,
-			MaxMountAttempts: dynatracev1beta1.DefaultMaxFailedCsiMountAttempts,
+			MaxMountAttempts: dynatracev1beta2.DefaultMaxFailedCsiMountAttempts,
 		}
 		volumeCfg := createTestVolumeConfig()
 
@@ -169,7 +169,7 @@ func TestHasTooManyMountAttempts(t *testing.T) {
 		mockFailedPublishedVolume(t, &publisher)
 
 		bindCfg := &csivolumes.BindConfig{
-			MaxMountAttempts: dynatracev1beta1.DefaultMaxFailedCsiMountAttempts,
+			MaxMountAttempts: dynatracev1beta2.DefaultMaxFailedCsiMountAttempts,
 		}
 
 		hasTooManyAttempts, err := publisher.hasTooManyMountAttempts(context.Background(), bindCfg, createTestVolumeConfig())
@@ -304,7 +304,7 @@ func TestMountIfDBHasError(t *testing.T) {
 
 	bindCfg := &csivolumes.BindConfig{
 		TenantUUID:       testTenantUUID,
-		MaxMountAttempts: dynatracev1beta1.DefaultMaxFailedCsiMountAttempts,
+		MaxMountAttempts: dynatracev1beta2.DefaultMaxFailedCsiMountAttempts,
 	}
 
 	err := publisher.ensureMountSteps(context.Background(), bindCfg, createTestVolumeConfig())
@@ -334,7 +334,7 @@ func mockPublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
 
 func mockFailedPublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
 	mockUrlDynakubeMetadata(t, publisher)
-	err := publisher.db.InsertVolume(context.Background(), metadata.NewVolume(testVolumeId, testPodUID, testAgentVersion, testTenantUUID, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts+1))
+	err := publisher.db.InsertVolume(context.Background(), metadata.NewVolume(testVolumeId, testPodUID, testAgentVersion, testTenantUUID, dynatracev1beta2.DefaultMaxFailedCsiMountAttempts+1))
 	require.NoError(t, err)
 }
 
@@ -355,7 +355,7 @@ func mockSharedRuxitAgentProcConf(t *testing.T, publisher *AppVolumePublisher, c
 }
 
 func mockImageDynakubeMetadata(t *testing.T, publisher *AppVolumePublisher) {
-	err := publisher.db.InsertDynakube(context.Background(), metadata.NewDynakube(testDynakubeName, testTenantUUID, "", testImageDigest, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts))
+	err := publisher.db.InsertDynakube(context.Background(), metadata.NewDynakube(testDynakubeName, testTenantUUID, "", testImageDigest, dynatracev1beta2.DefaultMaxFailedCsiMountAttempts))
 	require.NoError(t, err)
 }
 

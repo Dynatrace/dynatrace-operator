@@ -10,7 +10,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/support_archive"
 	edgeconnectv1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/functional"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/csi"
@@ -31,7 +31,7 @@ type requiredFiles struct {
 	t              *testing.T
 	ctx            context.Context
 	resources      *resources.Resources
-	dynakube       dynatracev1beta1.DynaKube
+	dynakube       dynatracev1beta2.DynaKube
 	edgeconnect    edgeconnectv1beta1.EdgeConnect
 	collectManaged bool
 }

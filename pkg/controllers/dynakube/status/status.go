@@ -2,13 +2,13 @@ package status
 
 import (
 	"context"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func SetKubeSystemUUIDInStatus(ctx context.Context, dk *dynatracev1beta1.DynaKube, apiReader client.Reader) error {
+func SetKubeSystemUUIDInStatus(ctx context.Context, dk *dynatracev1beta2.DynaKube, apiReader client.Reader) error {
 	// The UUID of the kube-system namespace should never change
 	if dk.Status.KubeSystemUUID != "" {
 		return nil

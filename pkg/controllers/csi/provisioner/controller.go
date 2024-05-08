@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csigc "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/gc"
@@ -90,7 +90,7 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metad
 
 func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&dynatracev1beta1.DynaKube{}).
+		For(&dynatracev1beta2.DynaKube{}).
 		Complete(provisioner)
 }
 
@@ -147,7 +147,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
 }
 
-func (provisioner *OneAgentProvisioner) setupFileSystem(dk *dynatracev1beta1.DynaKube) error {
+func (provisioner *OneAgentProvisioner) setupFileSystem(dk *dynatracev1beta2.DynaKube) error {
 	tenantUUID, err := dk.TenantUUIDFromApiUrl()
 	if err != nil {
 		return err
@@ -164,7 +164,7 @@ func (provisioner *OneAgentProvisioner) setupFileSystem(dk *dynatracev1beta1.Dyn
 	return nil
 }
 
-func (provisioner *OneAgentProvisioner) setupDynakubeMetadata(ctx context.Context, dk *dynatracev1beta1.DynaKube) (*metadata.Dynakube, error) {
+func (provisioner *OneAgentProvisioner) setupDynakubeMetadata(ctx context.Context, dk *dynatracev1beta2.DynaKube) (*metadata.Dynakube, error) {
 	dynakubeMetadata, oldDynakubeMetadata, err := provisioner.handleMetadata(ctx, dk)
 	if err != nil {
 		return nil, err
@@ -181,7 +181,7 @@ func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, requ
 	return err
 }
 
-func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context, dk *dynatracev1beta1.DynaKube, dynakubeMetadata *metadata.Dynakube) error {
+func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context, dk *dynatracev1beta2.DynaKube, dynakubeMetadata *metadata.Dynakube) error {
 	oldDynakubeMetadata := *dynakubeMetadata
 	// creates a dt client and checks tokens exist for the given dynakube
 	dtc, err := buildDtc(provisioner, ctx, dk)
@@ -206,7 +206,7 @@ func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context
 func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 	ctx context.Context, dtc dtclient.Client,
 	dynakubeMetadata *metadata.Dynakube,
-	dk *dynatracev1beta1.DynaKube,
+	dk *dynatracev1beta2.DynaKube,
 ) (
 	requeue bool,
 	err error,
@@ -241,7 +241,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 	return false, nil
 }
 
-func (provisioner *OneAgentProvisioner) handleMetadata(ctx context.Context, dk *dynatracev1beta1.DynaKube) (*metadata.Dynakube, metadata.Dynakube, error) {
+func (provisioner *OneAgentProvisioner) handleMetadata(ctx context.Context, dk *dynatracev1beta2.DynaKube) (*metadata.Dynakube, metadata.Dynakube, error) {
 	dynakubeMetadata, err := provisioner.db.GetDynakube(ctx, dk.Name)
 	if err != nil {
 		return nil, metadata.Dynakube{}, errors.WithStack(err)
@@ -292,7 +292,7 @@ func (provisioner *OneAgentProvisioner) createOrUpdateDynakubeMetadata(ctx conte
 	return nil
 }
 
-func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynatracev1beta1.DynaKube) (dtclient.Client, error) {
+func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynatracev1beta2.DynaKube) (dtclient.Client, error) {
 	tokenReader := token.NewReader(provisioner.apiReader, dk)
 
 	tokens, err := tokenReader.ReadTokens(ctx)
@@ -313,8 +313,8 @@ func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynatra
 	return dynatraceClient, nil
 }
 
-func (provisioner *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.NamespacedName) (*dynatracev1beta1.DynaKube, error) {
-	var dk dynatracev1beta1.DynaKube
+func (provisioner *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.NamespacedName) (*dynatracev1beta2.DynaKube, error) {
+	var dk dynatracev1beta2.DynaKube
 	err := provisioner.apiReader.Get(ctx, name, &dk)
 
 	return &dk, err

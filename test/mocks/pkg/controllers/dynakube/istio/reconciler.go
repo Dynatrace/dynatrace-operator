@@ -4,8 +4,9 @@ package mocks
 
 import (
 	context "context"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 
-	dynakube "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynakube "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -23,7 +24,7 @@ func (_m *Reconciler) EXPECT() *Reconciler_Expecter {
 }
 
 // ReconcileAPIUrl provides a mock function with given fields: ctx, _a1
-func (_m *Reconciler) ReconcileAPIUrl(ctx context.Context, _a1 *dynakube.DynaKube) error {
+func (_m *Reconciler) ReconcileAPIUrl(ctx context.Context, _a1 *dynatracev1beta2.DynaKube) error {
 	ret := _m.Called(ctx, _a1)
 
 	if len(ret) == 0 {

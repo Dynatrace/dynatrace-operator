@@ -1,9 +1,9 @@
 package statefulset
 
 import (
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"strconv"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
@@ -31,10 +31,10 @@ type Builder struct {
 	envMap     *prioritymap.Map
 	kubeUID    types.UID
 	configHash string
-	dynakube   dynatracev1beta1.DynaKube
+	dynakube   dynatracev1beta2.DynaKube
 }
 
-func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dynakube dynatracev1beta1.DynaKube, capability capability.Capability) Builder {
+func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dynakube dynatracev1beta2.DynaKube, capability capability.Capability) Builder {
 	return Builder{
 		kubeUID:    kubeUID,
 		configHash: configHash,

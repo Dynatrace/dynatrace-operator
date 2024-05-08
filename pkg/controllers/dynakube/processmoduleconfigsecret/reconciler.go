@@ -3,8 +3,8 @@ package processmoduleconfigsecret
 import (
 	"context"
 	"encoding/json"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -29,7 +29,7 @@ type Reconciler struct {
 	client       client.Client
 	apiReader    client.Reader
 	dtClient     dtclient.Client
-	dynakube     *dynatracev1beta1.DynaKube
+	dynakube     *dynatracev1beta2.DynaKube
 	scheme       *runtime.Scheme
 	timeProvider *timeprovider.Provider
 }
@@ -37,7 +37,7 @@ type Reconciler struct {
 func NewReconciler(clt client.Client, //nolint:revive
 	apiReader client.Reader,
 	dtClient dtclient.Client,
-	dynakube *dynatracev1beta1.DynaKube,
+	dynakube *dynatracev1beta2.DynaKube,
 	scheme *runtime.Scheme,
 	timeProvider *timeprovider.Provider) *Reconciler {
 	return &Reconciler{

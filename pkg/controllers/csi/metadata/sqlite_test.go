@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -135,8 +135,8 @@ func TestCreateTables(t *testing.T) {
 			if column == "MaxFailedMountAttempts" {
 				maxFailedMountAttempts, err := strconv.Atoi(*defaultValue)
 				require.NoError(t, err)
-				assert.Equal(t, strconv.Itoa(dynatracev1beta1.DefaultMaxFailedCsiMountAttempts), *defaultValue)
-				assert.Equal(t, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts, maxFailedMountAttempts)
+				assert.Equal(t, strconv.Itoa(dynatracev1beta2.DefaultMaxFailedCsiMountAttempts), *defaultValue)
+				assert.Equal(t, dynatracev1beta2.DefaultMaxFailedCsiMountAttempts, maxFailedMountAttempts)
 				assert.Equal(t, "1", notNull)
 			}
 		}

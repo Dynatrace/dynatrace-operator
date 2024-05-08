@@ -4,7 +4,7 @@ import (
 	"maps"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
@@ -50,9 +50,9 @@ func TestConfigureInitContainer(t *testing.T) {
 }
 
 type mutateUserContainerTestCase struct {
-	name                               string
-	dynakube                           dynatracev1beta1.DynaKube
-	expectedAdditionalEnvCount         int
+	name                       string
+	dynakube                   dynatracev1beta2.DynaKube
+	expectedAdditionalEnvCount int
 	expectedAdditionalVolumeMountCount int
 }
 
@@ -148,9 +148,9 @@ func TestReinvokeUserContainers(t *testing.T) {
 
 func TestContainerExclusion(t *testing.T) {
 	testCases := []struct {
-		name                               string
-		dynakube                           dynatracev1beta1.DynaKube
-		expectedAdditionalEnvCount         int
+		name                       string
+		dynakube                   dynatracev1beta2.DynaKube
+		expectedAdditionalEnvCount int
 		expectedAdditionalVolumeMountCount int
 		expectedInitContainerEnvCount      int
 		dynakubeAnnotations                map[string]string

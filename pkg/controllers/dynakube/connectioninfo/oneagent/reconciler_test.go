@@ -7,7 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -38,15 +38,15 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("cleanup when oneagent is not needed", func(t *testing.T) {
 		dynakube := getTestDynakube()
-		dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta1.OneAgentConnectionInfoStatus{
-			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+		dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta2.OneAgentConnectionInfoStatus{
+			ConnectionInfoStatus: dynatracev1beta2.ConnectionInfoStatus{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
 			},
 		}
 		conditions.SetSecretCreated(dynakube.Conditions(), oaConnectionInfoConditionType, "testing")
 
-		dynakube.Spec = dynatracev1beta1.DynaKubeSpec{}
+		dynakube.Spec = dynatracev1beta2.DynaKubeSpec{}
 
 		fakeClient := fake.NewClient(&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dynakube.OneagentTenantSecret(), Namespace: dynakube.Namespace}})
 		dtc := dtclientmock.NewClient(t)
@@ -67,14 +67,14 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("does not cleanup when only host oneagent is needed", func(t *testing.T) {
 		dynakube := getTestDynakube()
-		dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta1.OneAgentConnectionInfoStatus{
-			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+		dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta2.OneAgentConnectionInfoStatus{
+			ConnectionInfoStatus: dynatracev1beta2.ConnectionInfoStatus{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
 			},
 		}
-		dynakube.Spec = dynatracev1beta1.DynaKubeSpec{}
-		dynakube.Spec.OneAgent.ClassicFullStack = &dynatracev1beta1.HostInjectSpec{}
+		dynakube.Spec = dynatracev1beta2.DynaKubeSpec{}
+		dynakube.Spec.OneAgent.ClassicFullStack = &dynatracev1beta2.HostInjectSpec{}
 
 		conditions.SetSecretCreated(dynakube.Conditions(), oaConnectionInfoConditionType, "testing")
 
@@ -150,8 +150,8 @@ func TestReconcile(t *testing.T) {
 		dtc := dtclientmock.NewClient(t)
 		dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestOneAgentConnectionInfo(), nil)
 
-		dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta1.OneAgentConnectionInfoStatus{
-			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+		dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta2.OneAgentConnectionInfoStatus{
+			ConnectionInfoStatus: dynatracev1beta2.ConnectionInfoStatus{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
 			},
@@ -181,10 +181,12 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run("do not update OneAgent connection info within timeout", func(t *testing.T) {
 		dynakube := getTestDynakube()
+		dynakube.Spec.DynatraceApiRequestThreshold = dynatracev1beta2.DefaultMinRequestThresholdMinutes
 		fakeClient := fake.NewClient(dynakube, buildOneAgentTenantSecret(dynakube, testOutdated))
 		dtc := dtclientmock.NewClient(t)
-		dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta1.OneAgentConnectionInfoStatus{
-			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+
+		dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta2.OneAgentConnectionInfoStatus{
+			ConnectionInfoStatus: dynatracev1beta2.ConnectionInfoStatus{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
 			},
@@ -215,8 +217,8 @@ func TestReconcile(t *testing.T) {
 		dtc := dtclientmock.NewClient(t)
 		dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestOneAgentConnectionInfo(), nil)
 
-		dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta1.OneAgentConnectionInfoStatus{
-			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+		dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta2.OneAgentConnectionInfoStatus{
+			ConnectionInfoStatus: dynatracev1beta2.ConnectionInfoStatus{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
 			},
@@ -248,8 +250,8 @@ func TestReconcile(t *testing.T) {
 		dtc := dtclientmock.NewClient(t)
 		dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestOneAgentConnectionInfo(), nil)
 
-		dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta1.OneAgentConnectionInfoStatus{
-			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+		dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta2.OneAgentConnectionInfoStatus{
+			ConnectionInfoStatus: dynatracev1beta2.ConnectionInfoStatus{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
 			},
@@ -277,14 +279,14 @@ func TestReconcile(t *testing.T) {
 
 func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 	ctx := context.Background()
-	dynakube := dynatracev1beta1.DynaKube{
+	dynakube := dynatracev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+		Spec: dynatracev1beta2.DynaKubeSpec{
+			OneAgent: dynatracev1beta2.OneAgentSpec{
+				CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
 			},
 		},
 	}
@@ -315,21 +317,21 @@ func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 	assert.Equal(t, metav1.ConditionFalse, condition.Status)
 }
 
-func getTestDynakube() *dynatracev1beta1.DynaKube {
-	return &dynatracev1beta1.DynaKube{
+func getTestDynakube() *dynatracev1beta2.DynaKube {
+	return &dynatracev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+		Spec: dynatracev1beta2.DynaKubeSpec{
+			OneAgent: dynatracev1beta2.OneAgentSpec{
+				CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
 			},
 		},
 	}
 }
 
-func buildOneAgentTenantSecret(dynakube *dynatracev1beta1.DynaKube, token string) *corev1.Secret {
+func buildOneAgentTenantSecret(dynakube *dynatracev1beta2.DynaKube, token string) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dynakube.OneagentTenantSecret(),
@@ -341,8 +343,8 @@ func buildOneAgentTenantSecret(dynakube *dynatracev1beta1.DynaKube, token string
 	}
 }
 
-func getTestCommunicationHosts() []dynatracev1beta1.CommunicationHostStatus {
-	return []dynatracev1beta1.CommunicationHostStatus{
+func getTestCommunicationHosts() []dynatracev1beta2.CommunicationHostStatus {
+	return []dynatracev1beta2.CommunicationHostStatus{
 		{
 			Protocol: "http",
 			Host:     "dummyhost",

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -21,7 +21,7 @@ func TestSetDynakubeStatus(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("set status", func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{}
+		instance := &dynatracev1beta2.DynaKube{}
 		clt := fake.NewClient(&corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: kubesystem.Namespace,
@@ -34,7 +34,7 @@ func TestSetDynakubeStatus(t *testing.T) {
 		assert.Equal(t, testUUID, instance.Status.KubeSystemUUID)
 	})
 	t.Run("error querying kube system uid", func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{}
+		instance := &dynatracev1beta2.DynaKube{}
 		clt := fake.NewClient()
 
 		err := SetKubeSystemUUIDInStatus(ctx, instance, clt)
@@ -42,7 +42,7 @@ func TestSetDynakubeStatus(t *testing.T) {
 	})
 
 	t.Run("don't query kube system uid if already set", func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{}
+		instance := &dynatracev1beta2.DynaKube{}
 		instance.Status.KubeSystemUUID = testUUID
 		clt := fake.NewClient()
 

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
@@ -26,15 +26,15 @@ const (
 	testDynakube = "test-dynakube"
 )
 
-var capabilitiesWithService = []dynatracev1beta1.CapabilityDisplayName{
-	dynatracev1beta1.RoutingCapability.DisplayName,
-	dynatracev1beta1.KubeMonCapability.DisplayName,
-	dynatracev1beta1.MetricsIngestCapability.DisplayName,
-	dynatracev1beta1.DynatraceApiCapability.DisplayName,
+var capabilitiesWithService = []dynatracev1beta2.CapabilityDisplayName{
+	dynatracev1beta2.RoutingCapability.DisplayName,
+	dynatracev1beta2.KubeMonCapability.DisplayName,
+	dynatracev1beta2.MetricsIngestCapability.DisplayName,
+	dynatracev1beta2.DynatraceApiCapability.DisplayName,
 }
 
-var capabilitiesWithoutService = []dynatracev1beta1.CapabilityDisplayName{
-	dynatracev1beta1.KubeMonCapability.DisplayName,
+var capabilitiesWithoutService = []dynatracev1beta2.CapabilityDisplayName{
+	dynatracev1beta2.KubeMonCapability.DisplayName,
 }
 
 func createClient() client.WithWatch {
@@ -48,7 +48,7 @@ func createClient() client.WithWatch {
 		}).
 		WithObjects(&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      dynatracev1beta1.AuthTokenSecretSuffix,
+				Name:      dynatracev1beta2.AuthTokenSecretSuffix,
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
@@ -56,15 +56,15 @@ func createClient() client.WithWatch {
 		Build()
 }
 
-func buildDynakube(capabilities []dynatracev1beta1.CapabilityDisplayName) *dynatracev1beta1.DynaKube {
-	return &dynatracev1beta1.DynaKube{
+func buildDynakube(capabilities []dynatracev1beta2.CapabilityDisplayName) *dynatracev1beta2.DynaKube {
+	return &dynatracev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testDynakube,
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
+		Spec: dynatracev1beta2.DynaKubeSpec{
 			APIURL: testApiUrl,
-			ActiveGate: dynatracev1beta1.ActiveGateSpec{
+			ActiveGate: dynatracev1beta2.ActiveGateSpec{
 				Capabilities: capabilities,
 			},
 		},

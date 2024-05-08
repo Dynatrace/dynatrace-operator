@@ -3,9 +3,9 @@ package token
 import (
 	"context"
 	"fmt"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"strings"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
 	"github.com/pkg/errors"
@@ -34,7 +34,7 @@ func (tokens Tokens) getToken(tokenName string) Token {
 	return token
 }
 
-func (tokens Tokens) SetScopesForDynakube(dynakube dynatracev1beta1.DynaKube) Tokens {
+func (tokens Tokens) SetScopesForDynakube(dynakube dynatracev1beta2.DynaKube) Tokens {
 	_, hasPaasToken := tokens[dtclient.PaasToken]
 
 	for tokenType, token := range tokens {

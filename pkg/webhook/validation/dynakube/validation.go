@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/validation"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/rest"
@@ -44,7 +44,7 @@ func AddDynakubeValidationWebhookToManager(manager ctrl.Manager) error {
 func (validator *dynakubeValidator) Handle(ctx context.Context, request admission.Request) admission.Response {
 	log.Info("validating request", "name", request.Name, "namespace", request.Namespace)
 
-	dynakube := &dynatracev1beta1.DynaKube{}
+	dynakube := &dynatracev1beta2.DynaKube{}
 
 	err := decodeRequestToDynakube(request, dynakube)
 	if err != nil {
@@ -70,7 +70,7 @@ func (validator *dynakubeValidator) Handle(ctx context.Context, request admissio
 	return response
 }
 
-func (validator *dynakubeValidator) runValidators(ctx context.Context, validators []validator, dynakube *dynatracev1beta1.DynaKube) []string {
+func (validator *dynakubeValidator) runValidators(ctx context.Context, validators []validator, dynakube *dynatracev1beta2.DynaKube) []string {
 	results := []string{}
 
 	for _, validate := range validators {
@@ -82,7 +82,7 @@ func (validator *dynakubeValidator) runValidators(ctx context.Context, validator
 	return results
 }
 
-func decodeRequestToDynakube(request admission.Request, dynakube *dynatracev1beta1.DynaKube) error {
+func decodeRequestToDynakube(request admission.Request, dynakube *dynatracev1beta2.DynaKube) error {
 	decoder := admission.NewDecoder(scheme.Scheme)
 
 	err := decoder.Decode(request, dynakube)

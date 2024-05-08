@@ -8,7 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -38,7 +38,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("cleanup when activegate is not needed", func(t *testing.T) {
 		dynakube := getTestDynakube()
-		dynakube.Spec = dynatracev1beta1.DynaKubeSpec{}
+		dynakube.Spec = dynatracev1beta2.DynaKubeSpec{}
 		meta.SetStatusCondition(&dynakube.Status.Conditions, metav1.Condition{
 			Type:   activeGateConnectionInfoConditionType,
 			Status: metav1.ConditionTrue,
@@ -91,8 +91,8 @@ func TestReconcile(t *testing.T) {
 		dtc.On("GetActiveGateConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestActiveGateConnectionInfo(), nil)
 
 		fakeClient := fake.NewClient(dynakube, buildActiveGateSecret(*dynakube, testTenantUUID))
-		dynakube.Status.ActiveGate.ConnectionInfoStatus = dynatracev1beta1.ActiveGateConnectionInfoStatus{
-			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+		dynakube.Status.ActiveGate.ConnectionInfoStatus = dynatracev1beta2.ActiveGateConnectionInfoStatus{
+			ConnectionInfoStatus: dynatracev1beta2.ConnectionInfoStatus{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
 			},
@@ -125,8 +125,8 @@ func TestReconcile(t *testing.T) {
 
 		fakeClient := fake.NewClient(dynakube)
 
-		dynakube.Status.ActiveGate.ConnectionInfoStatus = dynatracev1beta1.ActiveGateConnectionInfoStatus{
-			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+		dynakube.Status.ActiveGate.ConnectionInfoStatus = dynatracev1beta2.ActiveGateConnectionInfoStatus{
+			ConnectionInfoStatus: dynatracev1beta2.ConnectionInfoStatus{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
 			},
@@ -180,23 +180,23 @@ func getTestActiveGateConnectionInfo() dtclient.ActiveGateConnectionInfo {
 	}
 }
 
-func getTestDynakube() *dynatracev1beta1.DynaKube {
-	return &dynatracev1beta1.DynaKube{
+func getTestDynakube() *dynatracev1beta2.DynaKube {
+	return &dynatracev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			ActiveGate: dynatracev1beta1.ActiveGateSpec{
-				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-					dynatracev1beta1.RoutingCapability.DisplayName,
+		Spec: dynatracev1beta2.DynaKubeSpec{
+			ActiveGate: dynatracev1beta2.ActiveGateSpec{
+				Capabilities: []dynatracev1beta2.CapabilityDisplayName{
+					dynatracev1beta2.RoutingCapability.DisplayName,
 				},
 			},
 		},
 	}
 }
 
-func buildActiveGateSecret(dynakube dynatracev1beta1.DynaKube, token string) *corev1.Secret {
+func buildActiveGateSecret(dynakube dynatracev1beta2.DynaKube, token string) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dynakube.ActivegateTenantSecret(),

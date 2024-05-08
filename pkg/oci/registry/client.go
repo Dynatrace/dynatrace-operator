@@ -5,10 +5,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"net/http"
 	"net/url"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/dockerkeychain"
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -224,7 +224,7 @@ func addSkipCertCheck(transport *http.Transport, skipCertCheck bool) *http.Trans
 }
 
 // PrepareTransportForDynaKube creates default http transport and add proxy or trustedCAs if any
-func PrepareTransportForDynaKube(ctx context.Context, apiReader client.Reader, transport *http.Transport, dynakube *dynatracev1beta1.DynaKube) (*http.Transport, error) {
+func PrepareTransportForDynaKube(ctx context.Context, apiReader client.Reader, transport *http.Transport, dynakube *dynatracev1beta2.DynaKube) (*http.Transport, error) {
 	var (
 		proxy      string
 		trustedCAs []byte

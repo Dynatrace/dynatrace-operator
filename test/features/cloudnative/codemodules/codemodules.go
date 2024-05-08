@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
@@ -74,7 +74,7 @@ func InstallFromImage(t *testing.T) features.Feature {
 		dynakube.WithName("app-codemodules"),
 		dynakube.WithNameBasedNamespaceSelector(),
 		dynakube.WithApiUrl(secretConfigs[1].ApiUrl),
-		dynakube.WithApplicationMonitoringSpec(&dynatracev1beta1.ApplicationMonitoringSpec{
+		dynakube.WithApplicationMonitoringSpec(&dynatracev1beta2.ApplicationMonitoringSpec{
 			AppInjectionSpec: *codeModulesAppInjectSpec(),
 			UseCSIDriver:     address.Of(true),
 		}),
@@ -127,7 +127,7 @@ const (
 // Connectivity in the dynatrace namespace and sample application namespace is restricted to
 // the local cluster. Sample application is installed. The test checks if DT_PROXY environment
 // variable is defined in the *dynakube-oneagent* container and the *application container*.
-func WithProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Feature {
+func WithProxy(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) features.Feature {
 	builder := features.New("codemodules injection with proxy")
 	builder.WithLabel("name", "codemodules-with-proxy")
 	secretConfigs := tenant.GetMultiTenantSecret(t)
@@ -175,7 +175,7 @@ func WithProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 	return builder.Feature()
 }
 
-func WithProxyCA(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Feature {
+func WithProxyCA(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) features.Feature {
 	const configMapName = "proxy-ca"
 	builder := features.New("codemodules injection with proxy and custom CA")
 	builder.WithLabel("name", "codemodules-with-proxy-custom-ca")
@@ -202,7 +202,7 @@ func WithProxyCA(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) featur
 	// Add customCA config map
 	trustedCa, _ := os.ReadFile(path.Join(project.TestDataDir(), "custom-cas/custom.pem"))
 	caConfigMap := configmap.New(configMapName, cloudNativeDynakube.Namespace,
-		map[string]string{dynatracev1beta1.TrustedCAKey: string(trustedCa)})
+		map[string]string{dynatracev1beta2.TrustedCAKey: string(trustedCa)})
 	builder.Assess("create trusted CAs config map", configmap.Create(caConfigMap))
 
 	// Register proxy create and delete
@@ -229,14 +229,14 @@ func WithProxyCA(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) featur
 	return builder.Feature()
 }
 
-func codeModulesCloudNativeSpec() *dynatracev1beta1.CloudNativeFullStackSpec {
-	return &dynatracev1beta1.CloudNativeFullStackSpec{
+func codeModulesCloudNativeSpec() *dynatracev1beta2.CloudNativeFullStackSpec {
+	return &dynatracev1beta2.CloudNativeFullStackSpec{
 		AppInjectionSpec: *codeModulesAppInjectSpec(),
 	}
 }
 
-func codeModulesAppInjectSpec() *dynatracev1beta1.AppInjectionSpec {
-	return &dynatracev1beta1.AppInjectionSpec{
+func codeModulesAppInjectSpec() *dynatracev1beta2.AppInjectionSpec {
+	return &dynatracev1beta2.AppInjectionSpec{
 		CodeModulesImage: codeModulesImage,
 	}
 }
@@ -388,7 +388,7 @@ func isVolumeAttached(t *testing.T, volumes []corev1.Volume, volumeName string) 
 	return result
 }
 
-func checkOneAgentEnvVars(dynakube dynatracev1beta1.DynaKube) features.Func {
+func checkOneAgentEnvVars(dynakube dynatracev1beta2.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 		err := daemonset.NewQuery(ctx, resources, client.ObjectKey{

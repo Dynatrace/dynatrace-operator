@@ -2,8 +2,8 @@ package deploymentmetadata
 
 import (
 	"context"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
@@ -17,12 +17,12 @@ type Reconciler struct {
 	apiReader client.Reader
 	scheme    *runtime.Scheme
 	clusterID string
-	dynakube  dynatracev1beta1.DynaKube
+	dynakube  dynatracev1beta2.DynaKube
 }
 
-type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube dynatracev1beta1.DynaKube, clusterID string) controllers.Reconciler
+type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube dynatracev1beta2.DynaKube, clusterID string) controllers.Reconciler
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube dynatracev1beta1.DynaKube, clusterID string) controllers.Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube dynatracev1beta2.DynaKube, clusterID string) controllers.Reconciler {
 	return &Reconciler{
 		client:    clt,
 		apiReader: apiReader,

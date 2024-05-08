@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"k8s.io/apimachinery/pkg/labels"
 )
@@ -24,7 +24,7 @@ The conflicting Dynakube: %s
 	warningHostGroupConflict = `DynaKube's specification sets the host group using --set-host-group parameter. Instead, specify the new spec.oneagent.hostGroup field. If you use both settings, the new field precedes the parameter.`
 )
 
-func conflictingOneAgentConfiguration(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func conflictingOneAgentConfiguration(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
 	counter := 0
 	if dynakube.ApplicationMonitoringMode() {
 		counter += 1
@@ -51,12 +51,12 @@ func conflictingOneAgentConfiguration(_ context.Context, _ *dynakubeValidator, d
 	return ""
 }
 
-func conflictingNodeSelector(ctx context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func conflictingNodeSelector(ctx context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
 	if !dynakube.NeedsOneAgent() || dynakube.FeatureEnableMultipleOsAgentsOnNode() {
 		return ""
 	}
 
-	validDynakubes := &dynatracev1beta1.DynaKubeList{}
+	validDynakubes := &dynatracev1beta2.DynaKubeList{}
 	if err := dv.clt.List(ctx, validDynakubes); err != nil {
 		log.Info("error occurred while listing dynakubes", "err", err.Error())
 
@@ -83,7 +83,7 @@ func conflictingNodeSelector(ctx context.Context, dv *dynakubeValidator, dynakub
 	return ""
 }
 
-func imageFieldSetWithoutCSIFlag(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func imageFieldSetWithoutCSIFlag(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
 	if dynakube.ApplicationMonitoringMode() {
 		if !dynakube.NeedsCSIDriver() && len(dynakube.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) > 0 {
 			return errorImageFieldSetWithoutCSIFlag
@@ -106,7 +106,7 @@ func hasConflictingMatchLabels(labelMap, otherLabelMap map[string]string) bool {
 	return labelSelector.Matches(otherLabelSelectorLabels) || otherLabelSelector.Matches(labelSelectorLabels)
 }
 
-func hasOneAgentVolumeStorageEnabled(dynakube *dynatracev1beta1.DynaKube) (isEnabled bool, isSet bool) {
+func hasOneAgentVolumeStorageEnabled(dynakube *dynatracev1beta2.DynaKube) (isEnabled bool, isSet bool) {
 	envVar := env.FindEnvVar(dynakube.GetOneAgentEnvironment(), oneagentEnableVolumeStorageEnvVarName)
 	isSet = envVar != nil
 	isEnabled = isSet && envVar.Value == "true"
@@ -114,7 +114,7 @@ func hasOneAgentVolumeStorageEnabled(dynakube *dynatracev1beta1.DynaKube) (isEna
 	return
 }
 
-func unsupportedOneAgentImage(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func unsupportedOneAgentImage(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
 	if env.FindEnvVar(dynakube.GetOneAgentEnvironment(), oneagentInstallerScriptUrlEnvVarName) != nil ||
 		env.FindEnvVar(dynakube.GetOneAgentEnvironment(), oneagentInstallerTokenEnvVarName) != nil {
 		return warningOneAgentInstallerEnvVars
@@ -123,7 +123,7 @@ func unsupportedOneAgentImage(_ context.Context, _ *dynakubeValidator, dynakube 
 	return ""
 }
 
-func conflictingOneAgentVolumeStorageSettings(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func conflictingOneAgentVolumeStorageSettings(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
 	volumeStorageEnabled, volumeStorageSet := hasOneAgentVolumeStorageEnabled(dynakube)
 	if dynakube.NeedsReadOnlyOneAgents() && volumeStorageSet && !volumeStorageEnabled {
 		return errorVolumeStorageReadOnlyModeConflict
@@ -132,7 +132,7 @@ func conflictingOneAgentVolumeStorageSettings(_ context.Context, _ *dynakubeVali
 	return ""
 }
 
-func conflictingHostGroupSettings(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func conflictingHostGroupSettings(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
 	if dynakube.HostGroupAsParam() != "" {
 		return warningHostGroupConflict
 	}

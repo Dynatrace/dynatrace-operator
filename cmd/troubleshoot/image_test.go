@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/dockerkeychain"
@@ -79,10 +79,10 @@ func TestImagePullable(t *testing.T) {
 	dockerServer, secret, server, err := setupDockerMocker(
 		[]string{
 			"/v2/",
-			"/v2" + dynatracev1beta1.DefaultOneAgentImageRegistrySubPath + "/manifests/" + testVersion + "-raw",
+			"/v2" + dynatracev1beta2.DefaultOneAgentImageRegistrySubPath + "/manifests/" + testVersion + "-raw",
 			"/v2/" + testCustomOneAgentImage + "/manifests/" + testVersion,
 			"/v2/" + testOneAgentCodeModulesImage + "/manifests/" + testVersion,
-			"/v2" + dynatracev1beta1.DefaultActiveGateImageRegistrySubPath + "/manifests/" + testVersion + "-raw",
+			"/v2" + dynatracev1beta2.DefaultActiveGateImageRegistrySubPath + "/manifests/" + testVersion + "-raw",
 			"/v2/" + testActiveGateCustomImage + "/manifests/" + testVersion,
 		})
 	require.NoError(t, err)
@@ -91,7 +91,7 @@ func TestImagePullable(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		dynaKube     *dynatracev1beta1.DynaKube
+		dynaKube     *dynatracev1beta2.DynaKube
 		component    component
 		proxyWarning bool
 	}{
@@ -151,7 +151,7 @@ func TestImagePullable(t *testing.T) {
 		// Active Gate images
 		{
 			name:         "ActiveGate default image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withActiveGateCapability(dynatracev1beta1.RoutingCapability.DisplayName).build(),
+			dynaKube:     dynakubeBuilder(dockerServer.URL).withActiveGateCapability(dynatracev1beta2.RoutingCapability.DisplayName).build(),
 			component:    componentActiveGate,
 			proxyWarning: false,
 		},
@@ -192,7 +192,7 @@ func TestImageNotPullable(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		dynaKube  *dynatracev1beta1.DynaKube
+		dynaKube  *dynatracev1beta2.DynaKube
 		component component
 	}{
 		{
@@ -233,7 +233,7 @@ func TestImageNotPullable(t *testing.T) {
 		{
 			name: "ActiveGate image",
 			dynaKube: dynakubeBuilder(dockerServer.URL).
-				withActiveGateCapability(dynatracev1beta1.RoutingCapability.DisplayName).
+				withActiveGateCapability(dynatracev1beta2.RoutingCapability.DisplayName).
 				build(),
 			component: componentActiveGate,
 		},
@@ -241,7 +241,7 @@ func TestImageNotPullable(t *testing.T) {
 			name: "ActiveGate custom image",
 			dynaKube: dynakubeBuilder(dockerServer.URL).
 				withActiveGateCustomImage(server + "/" + testActiveGateCustomImage).
-				withActiveGateCapability(dynatracev1beta1.RoutingCapability.DisplayName).
+				withActiveGateCapability(dynatracev1beta2.RoutingCapability.DisplayName).
 				build(),
 			component: componentActiveGate,
 		},
@@ -249,7 +249,7 @@ func TestImageNotPullable(t *testing.T) {
 			name: "ActiveGate custom image non-existing server",
 			dynaKube: dynakubeBuilder(dockerServer.URL).
 				withActiveGateCustomImage("myunknownserver.com/foobar/image").
-				withActiveGateCapability(dynatracev1beta1.RoutingCapability.DisplayName).
+				withActiveGateCapability(dynatracev1beta2.RoutingCapability.DisplayName).
 				build(),
 			component: componentActiveGate,
 		},

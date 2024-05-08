@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -101,7 +101,7 @@ func (checker *CorrectnessChecker) removeMissingDynakubes(ctx context.Context) e
 	pruned := []string{}
 
 	for dynakubeName := range dynakubes {
-		var dynakube dynatracev1beta1.DynaKube
+		var dynakube dynatracev1beta2.DynaKube
 		if err := checker.apiReader.Get(ctx, client.ObjectKey{Name: dynakubeName}, &dynakube); !k8serrors.IsNotFound(err) {
 			continue
 		}

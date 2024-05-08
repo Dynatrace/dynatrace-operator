@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
@@ -13,7 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (mut *Mutator) addVolumes(pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) {
+func (mut *Mutator) addVolumes(pod *corev1.Pod, dynakube dynatracev1beta2.DynaKube) {
 	addInjectionConfigVolume(pod)
 	addOneAgentVolumes(pod, dynakube)
 
@@ -62,7 +62,7 @@ func getContainerConfSubPath(containerName string) string {
 	return fmt.Sprintf(consts.AgentContainerConfFilenameTemplate, containerName)
 }
 
-func addCertVolumeMounts(container *corev1.Container, dynakube dynatracev1beta1.DynaKube) {
+func addCertVolumeMounts(container *corev1.Container, dynakube dynatracev1beta2.DynaKube) {
 	if dynakube.HasActiveGateCaCert() || dynakube.Spec.TrustedCAs != "" {
 		container.VolumeMounts = append(container.VolumeMounts,
 			corev1.VolumeMount{
@@ -82,7 +82,7 @@ func addCertVolumeMounts(container *corev1.Container, dynakube dynatracev1beta1.
 	}
 }
 
-func addInitVolumeMounts(initContainer *corev1.Container, dynakube dynatracev1beta1.DynaKube) {
+func addInitVolumeMounts(initContainer *corev1.Container, dynakube dynatracev1beta2.DynaKube) {
 	volumeMounts := []corev1.VolumeMount{
 		{Name: OneAgentBinVolumeName, MountPath: consts.AgentBinDirMount},
 		{Name: oneAgentShareVolumeName, MountPath: consts.AgentShareDirMount},
@@ -121,7 +121,7 @@ func addInjectionConfigVolumeMount(container *corev1.Container) {
 	)
 }
 
-func addOneAgentVolumes(pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) {
+func addOneAgentVolumes(pod *corev1.Pod, dynakube dynatracev1beta2.DynaKube) {
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
 		corev1.Volume{
 			Name:         OneAgentBinVolumeName,
@@ -159,7 +159,7 @@ func addVolumesForReadOnlyCSI(pod *corev1.Pod) {
 	)
 }
 
-func getInstallerVolumeSource(dynakube dynatracev1beta1.DynaKube) corev1.VolumeSource {
+func getInstallerVolumeSource(dynakube dynatracev1beta2.DynaKube) corev1.VolumeSource {
 	volumeSource := corev1.VolumeSource{}
 	if dynakube.NeedsCSIDriver() {
 		volumeSource.CSI = &corev1.CSIVolumeSource{

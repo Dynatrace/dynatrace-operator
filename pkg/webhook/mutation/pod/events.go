@@ -1,14 +1,14 @@
 package pod
 
 import (
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 )
 
 type eventRecorder struct {
-	dk       *dynatracev1beta1.DynaKube
+	dk       *dynatracev1beta2.DynaKube
 	pod      *corev1.Pod
 	recorder record.EventRecorder
 }
@@ -34,7 +34,7 @@ func (er *eventRecorder) sendPodUpdateEvent() {
 func (er *eventRecorder) sendMissingDynaKubeEvent(namespaceName, dynakubeName string) {
 	template := "Namespace '%s' is assigned to DynaKube instance '%s' but this instance doesn't exist"
 	er.recorder.Eventf(
-		&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dynakubeName, Namespace: namespaceName}},
+		&dynatracev1beta2.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dynakubeName, Namespace: namespaceName}},
 		corev1.EventTypeWarning,
 		missingDynakubeEvent,
 		template, namespaceName, dynakubeName)

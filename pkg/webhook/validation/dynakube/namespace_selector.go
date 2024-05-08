@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -20,7 +20,7 @@ Make sure you have a namespaceSelector doesn't conflict with other Dynakubes nam
 	errorNamespaceSelectorMatchLabelsViolateLabelSpec = "The DynaKube's namespaceSelector contains matchLabels that are not conform to spec."
 )
 
-func conflictingNamespaceSelector(ctx context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func conflictingNamespaceSelector(ctx context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
 	if !dynakube.NeedAppInjection() {
 		return ""
 	}
@@ -43,7 +43,7 @@ func conflictingNamespaceSelector(ctx context.Context, dv *dynakubeValidator, dy
 	return ""
 }
 
-func namespaceSelectorViolateLabelSpec(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func namespaceSelectorViolateLabelSpec(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
 	errs := validation.ValidateLabelSelector(dynakube.NamespaceSelector(), validation.LabelSelectorValidationOptions{AllowInvalidLabelValueInSelector: false}, field.NewPath("spec", "namespaceSelector"))
 	if len(errs) == 0 {
 		return ""

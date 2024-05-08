@@ -2,9 +2,9 @@ package dtpullsecret
 
 import (
 	"context"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"reflect"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/pkg/errors"
@@ -21,12 +21,12 @@ const (
 type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
-	dynakube  *dynatracev1beta1.DynaKube
+	dynakube  *dynatracev1beta2.DynaKube
 	scheme    *runtime.Scheme
 	tokens    token.Tokens
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, tokens token.Tokens) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta2.DynaKube, tokens token.Tokens) *Reconciler {
 	return &Reconciler{
 		client:    clt,
 		apiReader: apiReader,

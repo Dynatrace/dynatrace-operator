@@ -3,14 +3,14 @@ package modifiers
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 const testTlsSecretName = "test-tls-secret"
 
-func setCertUsage(dynakube *dynatracev1beta1.DynaKube, isUsed bool) {
+func setCertUsage(dynakube *dynatracev1beta2.DynaKube, isUsed bool) {
 	if isUsed {
 		dynakube.Spec.ActiveGate.TlsSecretName = testTlsSecretName
 	} else {

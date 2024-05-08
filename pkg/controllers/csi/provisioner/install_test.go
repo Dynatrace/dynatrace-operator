@@ -8,7 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
@@ -245,7 +245,7 @@ func mockFsAfterInstall(provisioner *OneAgentProvisioner, version string) func(m
 	}
 }
 
-func createMockedPullSecret(dynakube dynatracev1beta1.DynaKube, pullSecretContent string) *corev1.Secret {
+func createMockedPullSecret(dynakube dynatracev1beta2.DynaKube, pullSecretContent string) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dynakube.PullSecretName(),
@@ -257,31 +257,31 @@ func createMockedPullSecret(dynakube dynatracev1beta1.DynaKube, pullSecretConten
 	}
 }
 
-func createMockedCAConfigMap(dynakube dynatracev1beta1.DynaKube, certContent string) *corev1.ConfigMap {
+func createMockedCAConfigMap(dynakube dynatracev1beta2.DynaKube, certContent string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dynakube.Spec.TrustedCAs,
 			Namespace: dynakube.Namespace,
 		},
 		Data: map[string]string{
-			dynatracev1beta1.TrustedCAKey: certContent,
+			dynatracev1beta2.TrustedCAKey: certContent,
 		},
 	}
 }
 
-func createTestDynaKubeWithImage(imageDigest string) dynatracev1beta1.DynaKube {
+func createTestDynaKubeWithImage(imageDigest string) dynatracev1beta2.DynaKube {
 	imageID := "some.registry.com/image:1.234.345@sha256:" + imageDigest
 
-	return dynatracev1beta1.DynaKube{
+	return dynatracev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-dk",
 			Namespace: "test-ns",
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
+		Spec: dynatracev1beta2.DynaKubeSpec{
 			APIURL: "https://" + testTenantUUID + ".dynatrace.com",
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
-			CodeModules: dynatracev1beta1.CodeModulesStatus{
+		Status: dynatracev1beta2.DynaKubeStatus{
+			CodeModules: dynatracev1beta2.CodeModulesStatus{
 				VersionStatus: status.VersionStatus{
 					ImageID: imageID,
 				},
@@ -290,17 +290,17 @@ func createTestDynaKubeWithImage(imageDigest string) dynatracev1beta1.DynaKube {
 	}
 }
 
-func createTestDynaKubeWithZip(version string) dynatracev1beta1.DynaKube {
-	return dynatracev1beta1.DynaKube{
+func createTestDynaKubeWithZip(version string) dynatracev1beta2.DynaKube {
+	return dynatracev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-dk",
 			Namespace: "test-ns",
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
+		Spec: dynatracev1beta2.DynaKubeSpec{
 			APIURL: "https://" + testTenantUUID + ".dynatrace.com",
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
-			CodeModules: dynatracev1beta1.CodeModulesStatus{
+		Status: dynatracev1beta2.DynaKubeStatus{
+			CodeModules: dynatracev1beta2.CodeModulesStatus{
 				VersionStatus: status.VersionStatus{
 					Version: version,
 				},

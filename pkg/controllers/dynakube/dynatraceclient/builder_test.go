@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/stretchr/testify/assert"
@@ -22,11 +22,11 @@ const (
 
 func TestBuildDynatraceClient(t *testing.T) {
 	t.Run(`BuildDynatraceClient works with minimal setup`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1beta2.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1beta2.DynaKubeSpec{
 				APIURL: testEndpoint,
 			}}
 		fakeClient := fake.NewClient(instance)
@@ -49,11 +49,11 @@ func TestBuildDynatraceClient(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run(`BuildDynatraceClient handles invalid token secret`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1beta2.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1beta2.DynaKubeSpec{
 				APIURL: testEndpoint,
 			}}
 		fakeClient := fake.NewClient(instance)
@@ -82,13 +82,13 @@ func TestBuildDynatraceClient(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run(`BuildDynatraceClient handles missing proxy secret`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1beta2.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1beta2.DynaKubeSpec{
 				APIURL: testEndpoint,
-				Proxy: &dynatracev1beta1.DynaKubeProxy{
+				Proxy: &dynatracev1beta2.DynaKubeProxy{
 					ValueFrom: testKey,
 				}}}
 		fakeClient := fake.NewClient(instance)
@@ -106,11 +106,11 @@ func TestBuildDynatraceClient(t *testing.T) {
 		assert.Nil(t, dtc)
 	})
 	t.Run(`BuildDynatraceClient handles missing trusted certificate config map`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1beta2.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1beta2.DynaKubeSpec{
 				APIURL:     testEndpoint,
 				TrustedCAs: testKey,
 			}}

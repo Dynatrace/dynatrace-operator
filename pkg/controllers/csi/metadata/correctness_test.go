@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -87,7 +87,7 @@ func TestCorrectCSI(t *testing.T) {
 		db.InsertDynakube(ctx, &testDynakube1)
 		client := fake.NewClient(
 			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testVolume1.PodName}},
-			&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
+			&dynatracev1beta2.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
 		)
 
 		checker := NewCorrectnessChecker(client, db, dtcsi.CSIOptions{})
@@ -124,7 +124,7 @@ func TestCorrectCSI(t *testing.T) {
 
 		client := fake.NewClient(
 			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testVolume1.PodName}},
-			&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
+			&dynatracev1beta2.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
 		)
 
 		checker := NewCorrectnessChecker(client, db, dtcsi.CSIOptions{})

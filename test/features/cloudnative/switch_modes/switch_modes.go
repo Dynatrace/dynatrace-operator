@@ -5,7 +5,7 @@ package switch_modes
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
@@ -28,7 +28,7 @@ func Feature(t *testing.T) features.Feature {
 	commonOptions := []dynakube.Option{
 		dynakube.WithApiUrl(secretConfig.ApiUrl),
 	}
-	dynakubeCloudNative := *dynakube.New(append(commonOptions, dynakube.WithCloudNativeSpec(&dynatracev1beta1.CloudNativeFullStackSpec{}))...)
+	dynakubeCloudNative := *dynakube.New(append(commonOptions, dynakube.WithCloudNativeSpec(&dynatracev1beta2.CloudNativeFullStackSpec{}))...)
 	sampleAppCloudNative := sample.NewApp(t, &dynakubeCloudNative,
 		sample.AsDeployment(),
 		sample.WithName(sampleAppsCloudNativeName),
@@ -46,7 +46,7 @@ func Feature(t *testing.T) features.Feature {
 	cloudnative.AssessSampleInitContainers(builder, sampleAppCloudNative)
 
 	// switch to classic full stack
-	dynakubeClassicFullStack := *dynakube.New(append(commonOptions, dynakube.WithClassicFullstackSpec(&dynatracev1beta1.HostInjectSpec{}))...)
+	dynakubeClassicFullStack := *dynakube.New(append(commonOptions, dynakube.WithClassicFullstackSpec(&dynatracev1beta2.HostInjectSpec{}))...)
 	sampleAppClassicFullStack := sample.NewApp(t, &dynakubeClassicFullStack,
 		sample.AsDeployment(),
 		sample.WithName(sampleAppsClassicName),

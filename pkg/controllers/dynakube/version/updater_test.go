@@ -2,10 +2,10 @@ package version
 
 import (
 	"context"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	versionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
@@ -274,12 +274,12 @@ func TestGetTagFromImageID(t *testing.T) {
 	})
 }
 
-func enablePublicRegistry(dynakube *dynatracev1beta1.DynaKube) *dynatracev1beta1.DynaKube {
+func enablePublicRegistry(dynakube *dynatracev1beta2.DynaKube) *dynatracev1beta2.DynaKube {
 	if dynakube.Annotations == nil {
 		dynakube.Annotations = make(map[string]string)
 	}
 
-	dynakube.Annotations[dynatracev1beta1.AnnotationFeaturePublicRegistry] = "true"
+	dynakube.Annotations[dynatracev1beta2.AnnotationFeaturePublicRegistry] = "true"
 
 	return dynakube
 }

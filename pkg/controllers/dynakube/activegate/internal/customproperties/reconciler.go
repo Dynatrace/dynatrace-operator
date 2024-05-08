@@ -3,8 +3,8 @@ package customproperties
 import (
 	"context"
 	"fmt"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/pkg/errors"
@@ -27,12 +27,12 @@ var _ controllers.Reconciler = &Reconciler{}
 type Reconciler struct {
 	client                    client.Client
 	scheme                    *runtime.Scheme
-	customPropertiesSource    *dynatracev1beta1.DynaKubeValueSource
-	instance                  *dynatracev1beta1.DynaKube
+	customPropertiesSource    *dynatracev1beta2.DynaKubeValueSource
+	instance                  *dynatracev1beta2.DynaKube
 	customPropertiesOwnerName string
 }
 
-func NewReconciler(clt client.Client, instance *dynatracev1beta1.DynaKube, customPropertiesOwnerName string, scheme *runtime.Scheme, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) *Reconciler {
+func NewReconciler(clt client.Client, instance *dynatracev1beta2.DynaKube, customPropertiesOwnerName string, scheme *runtime.Scheme, customPropertiesSource *dynatracev1beta2.DynaKubeValueSource) *Reconciler {
 	return &Reconciler{
 		client:                    clt,
 		instance:                  instance,

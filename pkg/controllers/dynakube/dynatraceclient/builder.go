@@ -2,8 +2,8 @@ package dynatraceclient
 
 import (
 	"context"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -15,17 +15,17 @@ import (
 
 type Builder interface {
 	SetContext(ctx context.Context) Builder
-	SetDynakube(dynakube dynatracev1beta1.DynaKube) Builder
+	SetDynakube(dynakube dynatracev1beta2.DynaKube) Builder
 	SetTokens(tokens token.Tokens) Builder
 	Build() (dtclient.Client, error)
-	BuildWithTokenVerification(dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) (dtclient.Client, error)
+	BuildWithTokenVerification(dynaKubeStatus *dynatracev1beta2.DynaKubeStatus) (dtclient.Client, error)
 }
 
 type builder struct {
 	ctx       context.Context
 	apiReader client.Reader
 	tokens    token.Tokens
-	dynakube  dynatracev1beta1.DynaKube
+	dynakube  dynatracev1beta2.DynaKube
 }
 
 func NewBuilder(apiReader client.Reader) Builder {
@@ -40,7 +40,7 @@ func (dynatraceClientBuilder builder) SetContext(ctx context.Context) Builder {
 	return dynatraceClientBuilder
 }
 
-func (dynatraceClientBuilder builder) SetDynakube(dynakube dynatracev1beta1.DynaKube) Builder {
+func (dynatraceClientBuilder builder) SetDynakube(dynakube dynatracev1beta2.DynaKube) Builder {
 	dynatraceClientBuilder.dynakube = dynakube
 
 	return dynatraceClientBuilder
@@ -98,7 +98,7 @@ func (dynatraceClientBuilder builder) Build() (dtclient.Client, error) {
 	return dtclient.NewClient(dynatraceClientBuilder.dynakube.Spec.APIURL, apiToken, paasToken, opts.Opts...)
 }
 
-func (dynatraceClientBuilder builder) BuildWithTokenVerification(dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) (dtclient.Client, error) {
+func (dynatraceClientBuilder builder) BuildWithTokenVerification(dynaKubeStatus *dynatracev1beta2.DynaKubeStatus) (dtclient.Client, error) {
 	dynatraceClient, err := dynatraceClientBuilder.Build()
 	if err != nil {
 		return nil, err
@@ -119,12 +119,12 @@ func (dynatraceClientBuilder builder) BuildWithTokenVerification(dynaKubeStatus 
 	return dynatraceClient, nil
 }
 
-func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient.Client, dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) error {
+func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient.Client, dynaKubeStatus *dynatracev1beta2.DynaKubeStatus) error {
 	if !dynatraceClientBuilder.dynakube.IsTokenScopeVerificationAllowed(timeprovider.New()) {
-		log.Info(dynatracev1beta1.GetCacheValidMessage(
+		log.Info(dynatracev1beta2.GetCacheValidMessage(
 			"token verification",
 			dynaKubeStatus.DynatraceApi.LastTokenScopeRequest,
-			dynatraceClientBuilder.dynakube.FeatureApiRequestThreshold()))
+			dynatraceClientBuilder.dynakube.Spec.DynatraceApiRequestThreshold))
 
 		return lastErrorFromCondition(dynaKubeStatus)
 	}
@@ -141,9 +141,9 @@ func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient
 	return nil
 }
 
-func lastErrorFromCondition(dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) error {
-	oldCondition := meta.FindStatusCondition(dynaKubeStatus.Conditions, dynatracev1beta1.TokenConditionType)
-	if oldCondition != nil && oldCondition.Reason != dynatracev1beta1.ReasonTokenReady {
+func lastErrorFromCondition(dynaKubeStatus *dynatracev1beta2.DynaKubeStatus) error {
+	oldCondition := meta.FindStatusCondition(dynaKubeStatus.Conditions, dynatracev1beta2.TokenConditionType)
+	if oldCondition != nil && oldCondition.Reason != dynatracev1beta2.ReasonTokenReady {
 		return errors.New(oldCondition.Message)
 	}
 

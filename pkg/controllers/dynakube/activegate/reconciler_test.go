@@ -2,11 +2,12 @@ package activegate
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
@@ -51,7 +52,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	dtc.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
 	t.Run(`Create works with minimal setup`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1beta2.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
@@ -62,15 +63,15 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run(`Create AG capability (creation and deletion)`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1beta2.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1beta2.DynaKubeSpec{
 				EnableIstio: true,
-				ActiveGate: dynatracev1beta1.ActiveGateSpec{
-					Capabilities: []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.RoutingCapability.DisplayName},
+				ActiveGate: dynatracev1beta2.ActiveGateSpec{
+					Capabilities: []dynatracev1beta2.CapabilityDisplayName{dynatracev1beta2.RoutingCapability.DisplayName},
 				},
 			},
 		}
@@ -89,7 +90,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		// remove AG from spec
-		instance.Spec.ActiveGate = dynatracev1beta1.ActiveGateSpec{}
+		instance.Spec.ActiveGate = dynatracev1beta2.ActiveGateSpec{}
 		r.connectionReconciler = createConnectionInfoReconcilerMock(t)
 		r.versionReconciler = createVersionReconcilerMock(t)
 		err = r.Reconcile(context.Background())
@@ -99,23 +100,23 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("Reconcile DynaKube without Proxy after a DynaKube with proxy must not interfere with the second DKs Proxy Secret", func(t *testing.T) { // TODO: This is not a unit test, it tests the functionality of another package, it should use a mock for that
-		dynaKubeWithProxy := &dynatracev1beta1.DynaKube{
+		dynaKubeWithProxy := &dynatracev1beta2.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      "proxyDk",
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				Proxy:      &dynatracev1beta1.DynaKubeProxy{Value: testProxyName},
-				ActiveGate: dynatracev1beta1.ActiveGateSpec{Capabilities: []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.KubeMonCapability.DisplayName}},
+			Spec: dynatracev1beta2.DynaKubeSpec{
+				Proxy:      &dynatracev1beta2.DynaKubeProxy{Value: testProxyName},
+				ActiveGate: dynatracev1beta2.ActiveGateSpec{Capabilities: []dynatracev1beta2.CapabilityDisplayName{dynatracev1beta2.KubeMonCapability.DisplayName}},
 			},
 		}
-		dynaKubeNoProxy := &dynatracev1beta1.DynaKube{
+		dynaKubeNoProxy := &dynatracev1beta2.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      "noProxyDk",
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				ActiveGate: dynatracev1beta1.ActiveGateSpec{Capabilities: []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.KubeMonCapability.DisplayName}},
+			Spec: dynatracev1beta2.DynaKubeSpec{
+				ActiveGate: dynatracev1beta2.ActiveGateSpec{Capabilities: []dynatracev1beta2.CapabilityDisplayName{dynatracev1beta2.KubeMonCapability.DisplayName}},
 			},
 		}
 		fakeClient := fake.NewClient()
@@ -127,13 +128,13 @@ func TestReconciler_Reconcile(t *testing.T) {
 			dynakube:            dynaKubeWithProxy,
 			scheme:              scheme.Scheme,
 			authTokenReconciler: fakeReconciler,
-			newStatefulsetReconcilerFunc: func(_ client.Client, _ client.Reader, _ *runtime.Scheme, _ *dynatracev1beta1.DynaKube, _ capability.Capability) controllers.Reconciler {
+			newStatefulsetReconcilerFunc: func(_ client.Client, _ client.Reader, _ *runtime.Scheme, _ *dynatracev1beta2.DynaKube, _ capability.Capability) controllers.Reconciler {
 				return fakeReconciler
 			},
-			newCapabilityReconcilerFunc: func(_ client.Client, _ capability.Capability, _ *dynatracev1beta1.DynaKube, _ controllers.Reconciler, _ controllers.Reconciler) controllers.Reconciler {
+			newCapabilityReconcilerFunc: func(_ client.Client, _ capability.Capability, _ *dynatracev1beta2.DynaKube, _ controllers.Reconciler, _ controllers.Reconciler) controllers.Reconciler {
 				return fakeReconciler
 			},
-			newCustomPropertiesReconcilerFunc: func(_ string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) controllers.Reconciler {
+			newCustomPropertiesReconcilerFunc: func(_ string, customPropertiesSource *dynatracev1beta2.DynaKubeValueSource) controllers.Reconciler {
 				return fakeReconciler
 			},
 			connectionReconciler: createConnectionInfoReconcilerMock(t),
@@ -148,13 +149,13 @@ func TestReconciler_Reconcile(t *testing.T) {
 			dynakube:            dynaKubeNoProxy,
 			scheme:              scheme.Scheme,
 			authTokenReconciler: fakeReconciler,
-			newStatefulsetReconcilerFunc: func(_ client.Client, _ client.Reader, _ *runtime.Scheme, _ *dynatracev1beta1.DynaKube, _ capability.Capability) controllers.Reconciler {
+			newStatefulsetReconcilerFunc: func(_ client.Client, _ client.Reader, _ *runtime.Scheme, _ *dynatracev1beta2.DynaKube, _ capability.Capability) controllers.Reconciler {
 				return fakeReconciler
 			},
-			newCapabilityReconcilerFunc: func(_ client.Client, _ capability.Capability, _ *dynatracev1beta1.DynaKube, _ controllers.Reconciler, _ controllers.Reconciler) controllers.Reconciler {
+			newCapabilityReconcilerFunc: func(_ client.Client, _ capability.Capability, _ *dynatracev1beta2.DynaKube, _ controllers.Reconciler, _ controllers.Reconciler) controllers.Reconciler {
 				return fakeReconciler
 			},
-			newCustomPropertiesReconcilerFunc: func(_ string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) controllers.Reconciler {
+			newCustomPropertiesReconcilerFunc: func(_ string, customPropertiesSource *dynatracev1beta2.DynaKubeValueSource) controllers.Reconciler {
 				return fakeReconciler
 			},
 			connectionReconciler: createConnectionInfoReconcilerMock(t),
@@ -164,16 +165,19 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run(`Reconciles Kubernetes Monitoring`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1beta2.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1beta2.DynaKubeSpec{
 				APIURL: "test-api-url",
-				KubernetesMonitoring: dynatracev1beta1.KubernetesMonitoringSpec{
-					Enabled: true,
-				}},
+				ActiveGate: dynatracev1beta2.ActiveGateSpec{
+					Capabilities: []dynatracev1beta2.CapabilityDisplayName{
+						dynatracev1beta2.KubeMonCapability.DisplayName,
+					},
+				},
+			},
 		}
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 
@@ -188,13 +192,14 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		var statefulSet appsv1.StatefulSet
 
-		kubeMonCapability := capability.NewKubeMonCapability(instance)
+		kubeMonCapability := capability.NewMultiCapability(instance)
 		name := capability.CalculateStatefulSetName(kubeMonCapability, instance.Name)
+		fmt.Println(name)
 		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: name, Namespace: testNamespace}, &statefulSet)
 
 		require.NoError(t, err)
 		assert.NotNil(t, statefulSet)
-		assert.Equal(t, "test-name-kubemon", statefulSet.GetName())
+		assert.Equal(t, "test-name-activegate", statefulSet.GetName())
 	})
 }
 
@@ -202,29 +207,29 @@ func TestServiceCreation(t *testing.T) {
 	dynatraceClient := dtclientmock.NewClient(t)
 	dynatraceClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
-	dynakube := &dynatracev1beta1.DynaKube{
+	dynakube := &dynatracev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			ActiveGate: dynatracev1beta1.ActiveGateSpec{},
+		Spec: dynatracev1beta2.DynaKubeSpec{
+			ActiveGate: dynatracev1beta2.ActiveGateSpec{},
 		},
 	}
 
 	t.Run("service exposes correct ports for single capabilities", func(t *testing.T) {
-		expectedCapabilityPorts := map[dynatracev1beta1.CapabilityDisplayName][]string{
-			dynatracev1beta1.RoutingCapability.DisplayName: {
+		expectedCapabilityPorts := map[dynatracev1beta2.CapabilityDisplayName][]string{
+			dynatracev1beta2.RoutingCapability.DisplayName: {
 				consts.HttpsServicePortName,
 			},
-			dynatracev1beta1.MetricsIngestCapability.DisplayName: {
+			dynatracev1beta2.MetricsIngestCapability.DisplayName: {
 				consts.HttpsServicePortName,
 				consts.HttpServicePortName,
 			},
-			dynatracev1beta1.DynatraceApiCapability.DisplayName: {
+			dynatracev1beta2.DynatraceApiCapability.DisplayName: {
 				consts.HttpsServicePortName,
 			},
-			dynatracev1beta1.KubeMonCapability.DisplayName: {},
+			dynatracev1beta2.KubeMonCapability.DisplayName: {},
 		}
 
 		for capName, expectedPorts := range expectedCapabilityPorts {
@@ -234,7 +239,7 @@ func TestServiceCreation(t *testing.T) {
 			reconciler.connectionReconciler = createConnectionInfoReconcilerMock(t)
 			reconciler.versionReconciler = createVersionReconcilerMock(t)
 
-			dynakube.Spec.ActiveGate.Capabilities = []dynatracev1beta1.CapabilityDisplayName{
+			dynakube.Spec.ActiveGate.Capabilities = []dynatracev1beta2.CapabilityDisplayName{
 				capName,
 			}
 
@@ -261,8 +266,8 @@ func TestServiceCreation(t *testing.T) {
 		reconciler.connectionReconciler = createConnectionInfoReconcilerMock(t)
 		reconciler.versionReconciler = createVersionReconcilerMock(t)
 
-		dynakube.Spec.ActiveGate.Capabilities = []dynatracev1beta1.CapabilityDisplayName{
-			dynatracev1beta1.RoutingCapability.DisplayName,
+		dynakube.Spec.ActiveGate.Capabilities = []dynatracev1beta2.CapabilityDisplayName{
+			dynatracev1beta2.RoutingCapability.DisplayName,
 		}
 		expectedPorts := []string{
 			consts.HttpsServicePortName,
@@ -305,18 +310,18 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 		testTenantEndpoints = "test-endpoints"
 	)
 
-	dynakube := &dynatracev1beta1.DynaKube{
+	dynakube := &dynatracev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			ActiveGate: dynatracev1beta1.ActiveGateSpec{Capabilities: []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.KubeMonCapability.DisplayName}},
+		Spec: dynatracev1beta2.DynaKubeSpec{
+			ActiveGate: dynatracev1beta2.ActiveGateSpec{Capabilities: []dynatracev1beta2.CapabilityDisplayName{dynatracev1beta2.KubeMonCapability.DisplayName}},
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
-			ActiveGate: dynatracev1beta1.ActiveGateStatus{
-				ConnectionInfoStatus: dynatracev1beta1.ActiveGateConnectionInfoStatus{
-					ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+		Status: dynatracev1beta2.DynaKubeStatus{
+			ActiveGate: dynatracev1beta2.ActiveGateStatus{
+				ConnectionInfoStatus: dynatracev1beta2.ActiveGateConnectionInfoStatus{
+					ConnectionInfoStatus: dynatracev1beta2.ConnectionInfoStatus{
 						TenantUUID: testTenantUUID,
 						Endpoints:  testTenantEndpoints,
 					},
@@ -336,13 +341,13 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 			dynakube:            dynakube,
 			scheme:              scheme.Scheme,
 			authTokenReconciler: fakeReconciler,
-			newStatefulsetReconcilerFunc: func(_ client.Client, _ client.Reader, _ *runtime.Scheme, _ *dynatracev1beta1.DynaKube, _ capability.Capability) controllers.Reconciler {
+			newStatefulsetReconcilerFunc: func(_ client.Client, _ client.Reader, _ *runtime.Scheme, _ *dynatracev1beta2.DynaKube, _ capability.Capability) controllers.Reconciler {
 				return fakeReconciler
 			},
-			newCapabilityReconcilerFunc: func(_ client.Client, _ capability.Capability, _ *dynatracev1beta1.DynaKube, _ controllers.Reconciler, _ controllers.Reconciler) controllers.Reconciler {
+			newCapabilityReconcilerFunc: func(_ client.Client, _ capability.Capability, _ *dynatracev1beta2.DynaKube, _ controllers.Reconciler, _ controllers.Reconciler) controllers.Reconciler {
 				return fakeReconciler
 			},
-			newCustomPropertiesReconcilerFunc: func(_ string, _ *dynatracev1beta1.DynaKubeValueSource) controllers.Reconciler {
+			newCustomPropertiesReconcilerFunc: func(_ string, _ *dynatracev1beta2.DynaKubeValueSource) controllers.Reconciler {
 				return fakeReconciler
 			},
 			connectionReconciler: createConnectionInfoReconcilerMock(t),
