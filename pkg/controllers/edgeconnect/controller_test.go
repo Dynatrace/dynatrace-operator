@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
@@ -40,6 +39,9 @@ const (
 	testCreatedId                  = "id"
 	testRecreatedInvalidId         = "id-somehow-different"
 	testCAConfigMapName            = "test-ca-name"
+
+	testClusterIP = "1.2.3.4"
+	testUID       = "1-2-3-4"
 )
 
 var (
@@ -64,7 +66,11 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 		}
-		controller := createFakeClientAndReconciler(t, instance, createClientSecret(testOauthClientSecret, instance.Namespace))
+		controller := createFakeClientAndReconciler(t, instance,
+			createClientSecret(testOauthClientSecret, instance.Namespace),
+			createKubernetesService(),
+			createKubeSystemNamespace(),
+		)
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -98,7 +104,11 @@ func TestReconcile(t *testing.T) {
 			},
 		}
 
-		controller := createFakeClientAndReconciler(t, instance, createClientSecret(testOauthClientSecret, instance.Namespace))
+		controller := createFakeClientAndReconciler(t, instance,
+			createClientSecret(testOauthClientSecret, instance.Namespace),
+			createKubernetesService(),
+			createKubeSystemNamespace(),
+		)
 		controller.timeProvider.Freeze()
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
@@ -129,7 +139,11 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 		}
-		controller := createFakeClientAndReconciler(t, instance, createClientSecret(testOauthClientSecret, instance.Namespace))
+		controller := createFakeClientAndReconciler(t, instance,
+			createClientSecret(testOauthClientSecret, instance.Namespace),
+			createKubernetesService(),
+			createKubeSystemNamespace(),
+		)
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -177,7 +191,7 @@ func TestReconcile(t *testing.T) {
 		customCA := newConfigMap(testCAConfigMapName, instance.Namespace, data)
 		clientSecret := createClientSecret(testOauthClientSecret, instance.Namespace)
 
-		controller := createFakeClientAndReconciler(t, instance, clientSecret, customCA)
+		controller := createFakeClientAndReconciler(t, instance, clientSecret, customCA, createKubernetesService(), createKubeSystemNamespace())
 
 		_, err := controller.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -198,6 +212,8 @@ func TestReconcileProvisionerCreate(t *testing.T) {
 			instance,
 			mockNewEdgeConnectClientCreate(edgeConnectClient),
 			createOauthSecret(instance.Spec.OAuth.ClientSecret, instance.Namespace),
+			createKubernetesService(),
+			createKubeSystemNamespace(),
 		)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
@@ -238,6 +254,8 @@ func TestReconcileProvisionerCreate(t *testing.T) {
 		)
 		require.NoError(t, err)
 		assert.Equal(t, "edge-connect", edgeConnectDeployment.Spec.Template.Spec.Containers[0].Name)
+		assert.Equal(t, testClusterIP, edgeConnectDeployment.Spec.Template.Spec.HostAliases[0].IP)
+		assert.Equal(t, instance.Name+"."+instance.Namespace+"."+testUID, edgeConnectDeployment.Spec.Template.Spec.HostAliases[0].Hostnames[0])
 
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnects", testName)
 		edgeConnectClient.AssertCalled(t, "CreateEdgeConnect", testName, testHostPatterns, "")
@@ -255,6 +273,8 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 			instance,
 			mockNewEdgeConnectClientRecreate(edgeConnectClient, testCreatedId),
 			createOauthSecret(instance.Spec.OAuth.ClientSecret, instance.Namespace),
+			createKubernetesService(),
+			createKubeSystemNamespace(),
 		)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
@@ -295,6 +315,8 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 		)
 		require.NoError(t, err)
 		assert.Equal(t, "edge-connect", edgeConnectDeployment.Spec.Template.Spec.Containers[0].Name)
+		assert.Equal(t, testClusterIP, edgeConnectDeployment.Spec.Template.Spec.HostAliases[0].IP)
+		assert.Equal(t, instance.Name+"."+instance.Namespace+"."+testUID, edgeConnectDeployment.Spec.Template.Spec.HostAliases[0].Hostnames[0])
 
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnects", testName)
 		edgeConnectClient.AssertCalled(t, "DeleteEdgeConnect", testCreatedId)
@@ -312,6 +334,8 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 			mockNewEdgeConnectClientRecreate(edgeConnectClient, testRecreatedInvalidId),
 			createOauthSecret(instance.Spec.OAuth.ClientSecret, instance.Namespace),
 			createClientSecret(instance.ClientSecretName(), instance.Namespace),
+			createKubernetesService(),
+			createKubeSystemNamespace(),
 		)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
@@ -352,6 +376,8 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 		)
 		require.NoError(t, err)
 		assert.Equal(t, "edge-connect", edgeConnectDeployment.Spec.Template.Spec.Containers[0].Name)
+		assert.Equal(t, testClusterIP, edgeConnectDeployment.Spec.Template.Spec.HostAliases[0].IP)
+		assert.Equal(t, instance.Name+"."+instance.Namespace+"."+testUID, edgeConnectDeployment.Spec.Template.Spec.HostAliases[0].Hostnames[0])
 
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnects", testName)
 		edgeConnectClient.AssertCalled(t, "DeleteEdgeConnect", testRecreatedInvalidId)
@@ -453,6 +479,8 @@ func TestReconcileProvisionerUpdate(t *testing.T) {
 			mockNewEdgeConnectClientUpdate(edgeConnectClient),
 			createOauthSecret(instance.Spec.OAuth.ClientSecret, instance.Namespace),
 			createClientSecret(instance.ClientSecretName(), instance.Namespace),
+			createKubernetesService(),
+			createKubeSystemNamespace(),
 		)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
@@ -534,7 +562,6 @@ func createFakeClientAndReconciler(t *testing.T, instance *edgeconnectv1alpha1.E
 	controller := &Controller{
 		client:                fakeClient,
 		apiReader:             fakeClient,
-		scheme:                scheme.Scheme,
 		timeProvider:          timeprovider.New(),
 		registryClientBuilder: mockRegistryClientBuilder,
 	}
@@ -564,7 +591,6 @@ func createFakeClientAndReconcilerForProvisioner(t *testing.T, instance *edgecon
 	controller := &Controller{
 		client:                   fakeClient,
 		apiReader:                fakeClient,
-		scheme:                   scheme.Scheme,
 		timeProvider:             timeprovider.New(),
 		registryClientBuilder:    mockRegistryClientBuilder,
 		edgeConnectClientBuilder: builder,
@@ -722,6 +748,28 @@ func createEdgeConnectProvisionerCR(finalizers []string, deletionTimestamp *meta
 				Provisioner:  true,
 			},
 			HostPatterns: hostPatterns,
+		},
+	}
+}
+
+func createKubernetesService() *corev1.Service {
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      kubernetesServiceName,
+			Namespace: defaultNamespaceName,
+		},
+		Spec: corev1.ServiceSpec{
+			ClusterIP: testClusterIP,
+		},
+	}
+}
+
+func createKubeSystemNamespace() *corev1.Namespace {
+	return &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      kubeSystemNamespaceName,
+			Namespace: "",
+			UID:       testUID,
 		},
 	}
 }

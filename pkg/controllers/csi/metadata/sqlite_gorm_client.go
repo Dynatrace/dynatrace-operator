@@ -8,42 +8,50 @@ import (
 	"github.com/pkg/errors"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
-type DBAccess interface {
-	SchemaMigration(ctx context.Context) error
+type Access interface {
+	SchemaMigration() error
 
-	CreateTenantConfig(ctx context.Context, tenantConfig *TenantConfig) error
-	UpdateTenantConfig(ctx context.Context, tenantConfig *TenantConfig) error
-	DeleteTenantConfig(ctx context.Context, tenantConfig *TenantConfig) error
-	ReadTenantConfigByTenantUUID(ctx context.Context, uid string) (*TenantConfig, error)
+	ReadTenantConfig(tenantConfig TenantConfig) (*TenantConfig, error)
+	ReadCodeModule(codeModule CodeModule) (*CodeModule, error)
+	ReadOSMount(osMount OSMount) (*OSMount, error)
+	ReadUnscopedOSMount(osMount OSMount) (*OSMount, error)
+	ReadAppMount(appMount AppMount) (*AppMount, error)
 
-	CreateCodeModule(ctx context.Context, codeModule *CodeModule) error
-	ReadCodeModuleByVersion(ctx context.Context, version string) (*CodeModule, error)
-	DeleteCodeModule(ctx context.Context, codeModule *CodeModule) error
+	ReadTenantConfigs() ([]TenantConfig, error)
+	ReadCodeModules() ([]CodeModule, error)
+	ReadOSMounts() ([]OSMount, error)
+	ReadAppMounts() ([]AppMount, error)
+	ReadVolumeMetas() ([]VolumeMeta, error)
 
-	CreateOSMount(ctx context.Context, osMount *OSMount) error
-	UpdateOSMount(ctx context.Context, osMount *OSMount) error
-	DeleteOSMount(ctx context.Context, osMount *OSMount) error
-	RestoreOSMount(ctx context.Context, osMount *OSMount) error
-	ReadOSMountByTenantUUID(ctx context.Context, tenantUUID string) (*OSMount, error)
+	CreateTenantConfig(tenantConfig *TenantConfig) error
+	CreateCodeModule(codeModule *CodeModule) error
+	CreateOSMount(osMount *OSMount) error
+	CreateAppMount(appMount *AppMount) error
 
-	CreateAppMount(ctx context.Context, appMount *AppMount) error
-	UpdateAppMount(ctx context.Context, appMount *AppMount) error
-	DeleteAppMount(ctx context.Context, appMount *AppMount) error
-	ReadAppMountByVolumeMetaID(ctx context.Context, volumeMetaID string) (*AppMount, error)
-	ReadAppMounts(ctx context.Context) ([]AppMount, error)
+	UpdateTenantConfig(tenantConfig *TenantConfig) error
+	UpdateOSMount(osMount *OSMount) error
+	UpdateAppMount(appMount *AppMount) error
+
+	DeleteTenantConfig(tenantConfig *TenantConfig, cascade bool) error
+	DeleteCodeModule(codeModule *CodeModule) error
+	DeleteOSMount(osMount *OSMount) error
+	DeleteAppMount(appMount *AppMount) error
+
+	IsCodeModuleOrphaned(codeModule *CodeModule) (bool, error)
+	RestoreOSMount(osMount *OSMount) (*OSMount, error)
 }
 
-type DBConn struct {
-	db *gorm.DB
+type GormConn struct {
+	ctx context.Context
+	db  *gorm.DB
 }
 
-var _ DBAccess = &DBConn{}
+var _ Access = &GormConn{}
 
-// NewDBAccess creates a new gorm db connection to the database.
-func NewDBAccess(path string) (*DBConn, error) {
+// NewAccess creates a new gorm db connection to the database.
+func NewAccess(ctx context.Context, path string) (*GormConn, error) {
 	// we need to explicitly enable foreign_keys for sqlite to have sqlite enforce this constraint
 	if strings.Contains(path, "?") {
 		path += "&_foreign_keys=on"
@@ -51,17 +59,34 @@ func NewDBAccess(path string) (*DBConn, error) {
 		path += "?_foreign_keys=on"
 	}
 
-	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{Logger: logger.Default})
+	db, err := gorm.Open(sqlite.Open(path))
 
 	if err != nil {
-		return &DBConn{}, err
+		return &GormConn{}, err
 	}
 
-	return &DBConn{db: db}, nil
+	return &GormConn{ctx: ctx, db: db}, nil
 }
 
 // SchemaMigration runs gormigrate migrations to create tables
-func (conn *DBConn) SchemaMigration(_ context.Context) error {
+func (conn *GormConn) SchemaMigration() error {
+	err := conn.InitGormSchema()
+	if err != nil {
+		return err
+	}
+
+	return gormigrate.New(conn.db, gormigrate.DefaultOptions, []*gormigrate.Migration{
+		{
+			ID:      "202403041200",
+			Migrate: dataMigration,
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
+	}).Migrate()
+}
+
+func (conn *GormConn) InitGormSchema() error {
 	m := gormigrate.New(conn.db, gormigrate.DefaultOptions, []*gormigrate.Migration{})
 	m.InitSchema(func(tx *gorm.DB) error {
 		err := tx.AutoMigrate(
@@ -80,163 +105,141 @@ func (conn *DBConn) SchemaMigration(_ context.Context) error {
 
 	_ = m.Migrate()
 
-	return gormigrate.New(conn.db, gormigrate.DefaultOptions, []*gormigrate.Migration{
-		{
-			ID:      "202403041200",
-			Migrate: dataMigration,
-			Rollback: func(tx *gorm.DB) error {
-				return nil
-			},
-		},
-	}).Migrate()
+	return nil
 }
 
-func (conn *DBConn) CreateTenantConfig(ctx context.Context, tenantConfig *TenantConfig) error {
-	return conn.db.WithContext(ctx).Create(tenantConfig).Error
-}
+func (conn *GormConn) ReadTenantConfig(tenantConfig TenantConfig) (*TenantConfig, error) {
+	var record *TenantConfig
 
-func (conn *DBConn) UpdateTenantConfig(ctx context.Context, tenantConfig *TenantConfig) error {
-	return conn.db.WithContext(ctx).Updates(tenantConfig).Error
-}
-
-func (conn *DBConn) DeleteTenantConfig(ctx context.Context, tenantConfig *TenantConfig) error {
-	return conn.db.WithContext(ctx).Delete(tenantConfig).Error
-}
-
-func (conn *DBConn) CreateCodeModule(ctx context.Context, codeModule *CodeModule) error {
-	return conn.db.WithContext(ctx).Create(codeModule).Error
-}
-
-func (conn *DBConn) ReadCodeModuleByVersion(ctx context.Context, version string) (*CodeModule, error) {
-	if version == "" {
-		return nil, errors.New("Key must not be empty string!")
-	} // TODO: check will be obsolete with move to sql.NullString
-
-	codeModule := &CodeModule{Version: version}
-
-	err := conn.db.WithContext(ctx).First(codeModule).Error
-
-	if err != nil {
-		return nil, err
+	if (tenantConfig == TenantConfig{}) {
+		return nil, errors.New("Can't query for empty TenantConfig")
 	}
 
-	return codeModule, nil
-}
-
-func (conn *DBConn) DeleteCodeModule(ctx context.Context, codeModule *CodeModule) error {
-	return conn.db.WithContext(ctx).Delete(codeModule).Error
-}
-
-func (conn *DBConn) ReadTenantConfigByTenantUUID(ctx context.Context, uid string) (*TenantConfig, error) {
-	if uid == "" {
-		return nil, errors.New("error")
-	} // TODO: check will be obsolete with move to sql.NullString
-
-	tenantConfig := &TenantConfig{TenantUUID: uid}
-
-	result := conn.db.WithContext(ctx).Where(tenantConfig).First(tenantConfig)
+	result := conn.db.WithContext(conn.ctx).Find(&record, tenantConfig)
 	if result.Error != nil {
 		return nil, result.Error
 	}
 
-	return tenantConfig, nil
-}
-
-func (conn *DBConn) CreateOSMount(ctx context.Context, osMount *OSMount) error {
-	return conn.db.WithContext(ctx).Create(osMount).Error
-}
-
-func (conn *DBConn) UpdateOSMount(ctx context.Context, osMount *OSMount) error {
-	err := conn.RestoreOSMount(ctx, osMount)
-	if err != nil {
-		return err
+	if (*record == TenantConfig{}) {
+		return nil, gorm.ErrRecordNotFound
 	}
 
-	return conn.db.WithContext(ctx).Updates(osMount).Error
+	return record, nil
 }
 
-func (conn *DBConn) RestoreOSMount(ctx context.Context, osMount *OSMount) error {
-	if osMount == nil {
-		return errors.New("Cannot restore nil OSMount")
+func (conn *GormConn) ReadCodeModule(codeModule CodeModule) (*CodeModule, error) {
+	var record *CodeModule
+
+	if (codeModule == CodeModule{}) {
+		return nil, errors.New("Can't query for empty CodeModule")
 	}
 
-	if !osMount.DeletedAt.Valid {
-		return nil
-	}
-
-	osMount.DeletedAt.Valid = false
-
-	return conn.db.WithContext(ctx).Unscoped().Updates(osMount).Error
-}
-
-func (conn *DBConn) ReadOSMountByTenantUUID(ctx context.Context, tenantUUID string) (*OSMount, error) {
-	if tenantUUID == "" {
-		return nil, errors.New("Key must not be empty string!")
-	} // TODO: check will be obsolete with move to sql.NullString
-
-	osMount := &OSMount{TenantUUID: tenantUUID}
-
-	err := conn.db.WithContext(ctx).Unscoped().Preload("VolumeMeta").First(osMount).Error
-	if err != nil {
-		return nil, err
-	}
-
-	return osMount, nil
-}
-
-func (conn *DBConn) DeleteOSMount(ctx context.Context, osMount *OSMount) error {
-	if osMount != nil && osMount.VolumeMetaID != "" {
-		volumeMeta, err := conn.ReadVolumeMetaByID(ctx, osMount.VolumeMetaID)
-		if err == nil {
-			conn.db.WithContext(ctx).Delete(volumeMeta)
-		}
-	}
-
-	return conn.db.WithContext(ctx).Delete(osMount).Error
-}
-
-func (conn *DBConn) ReadVolumeMetaByID(ctx context.Context, id string) (*VolumeMeta, error) {
-	if id == "" {
-		return nil, errors.New("Key must not be empty string!")
-	} // TODO: check will be obsolete with move to sql.NullString
-
-	volumeMeta := &VolumeMeta{ID: id}
-
-	result := conn.db.WithContext(ctx).First(volumeMeta)
+	result := conn.db.WithContext(conn.ctx).Find(&record, codeModule)
 	if result.Error != nil {
 		return nil, result.Error
 	}
 
-	return volumeMeta, nil
+	if (*record == CodeModule{}) {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	return record, nil
 }
 
-func (conn *DBConn) CreateAppMount(ctx context.Context, appMount *AppMount) error {
-	return conn.db.WithContext(ctx).Create(appMount).Error
-}
+func (conn *GormConn) ReadOSMount(osMount OSMount) (*OSMount, error) {
+	var record *OSMount
 
-func (conn *DBConn) UpdateAppMount(ctx context.Context, appMount *AppMount) error {
-	return conn.db.WithContext(ctx).Updates(appMount).Error
-}
+	if (osMount == OSMount{}) {
+		return nil, errors.New("Can't query for empty OSMount")
+	}
 
-func (conn *DBConn) ReadAppMountByVolumeMetaID(ctx context.Context, volumeMetaID string) (*AppMount, error) {
-	if volumeMetaID == "" {
-		return nil, errors.New("Key must not be empty string!")
-	} // TODO: check will be obsolete with move to sql.NullString
-
-	appMount := &AppMount{VolumeMetaID: volumeMetaID}
-
-	result := conn.db.WithContext(ctx).Preload("VolumeMeta").First(&appMount)
+	result := conn.db.WithContext(conn.ctx).Preload("VolumeMeta").Find(&record, osMount)
 	if result.Error != nil {
 		return nil, result.Error
 	}
 
-	return appMount, nil
+	if (*record == OSMount{}) {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	return record, nil
 }
 
-func (conn *DBConn) ReadAppMounts(ctx context.Context) ([]AppMount, error) {
+func (conn *GormConn) ReadUnscopedOSMount(osMount OSMount) (*OSMount, error) {
+	var record *OSMount
+
+	if (osMount == OSMount{}) {
+		return nil, errors.New("Can't query for empty OSMount")
+	}
+
+	result := conn.db.WithContext(conn.ctx).Preload("VolumeMeta").Unscoped().Find(&record, osMount)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	if (*record == OSMount{}) {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	return record, nil
+}
+
+func (conn *GormConn) ReadAppMount(appMount AppMount) (*AppMount, error) {
+	var record *AppMount
+
+	if (appMount == AppMount{}) {
+		return nil, errors.New("Can't query for empty AppMount")
+	}
+
+	result := conn.db.WithContext(conn.ctx).Preload("VolumeMeta").Preload("CodeModule").Find(&record, appMount)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	if (*record == AppMount{}) {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	return record, nil
+}
+
+func (conn *GormConn) ReadTenantConfigs() ([]TenantConfig, error) {
+	var tenantConfigs []TenantConfig
+
+	result := conn.db.WithContext(conn.ctx).Find(&tenantConfigs)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return tenantConfigs, nil
+}
+
+func (conn *GormConn) ReadCodeModules() ([]CodeModule, error) {
+	var codeModules []CodeModule
+
+	result := conn.db.WithContext(conn.ctx).Find(&codeModules)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return codeModules, nil
+}
+
+func (conn *GormConn) ReadOSMounts() ([]OSMount, error) {
+	var osMounts []OSMount
+
+	result := conn.db.WithContext(conn.ctx).Preload("VolumeMeta").Find(&osMounts)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return osMounts, nil
+}
+
+func (conn *GormConn) ReadAppMounts() ([]AppMount, error) {
 	var appMounts []AppMount
 
-	result := conn.db.WithContext(ctx).Preload("VolumeMeta").Find(&appMounts)
+	result := conn.db.WithContext(conn.ctx).Preload("VolumeMeta").Preload("CodeModule").Find(&appMounts)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -244,13 +247,203 @@ func (conn *DBConn) ReadAppMounts(ctx context.Context) ([]AppMount, error) {
 	return appMounts, nil
 }
 
-func (conn *DBConn) DeleteAppMount(ctx context.Context, appMount *AppMount) error {
-	if appMount != nil {
-		volumeMeta, err := conn.ReadVolumeMetaByID(ctx, appMount.VolumeMetaID)
-		if err == nil {
-			conn.db.WithContext(ctx).Delete(volumeMeta)
+func (conn *GormConn) ReadVolumeMetas() ([]VolumeMeta, error) {
+	var volumeMetas []VolumeMeta
+
+	result := conn.db.WithContext(conn.ctx).Find(&volumeMetas)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return volumeMetas, nil
+}
+
+func (conn *GormConn) CreateTenantConfig(tenantConfig *TenantConfig) error {
+	return conn.db.WithContext(conn.ctx).Create(tenantConfig).Error
+}
+
+func (conn *GormConn) CreateCodeModule(codeModule *CodeModule) error {
+	return conn.db.WithContext(conn.ctx).Create(codeModule).Error
+}
+
+func (conn *GormConn) CreateOSMount(osMount *OSMount) error {
+	return conn.db.WithContext(conn.ctx).Create(osMount).Error
+}
+func (conn *GormConn) CreateAppMount(appMount *AppMount) error {
+	return conn.db.WithContext(conn.ctx).Create(appMount).Error
+}
+
+func (conn *GormConn) UpdateTenantConfig(tenantConfig *TenantConfig) error {
+	if (tenantConfig == nil || *tenantConfig == TenantConfig{}) {
+		return errors.New("Can't save an empty TenantConfig")
+	}
+
+	return conn.db.WithContext(conn.ctx).Save(tenantConfig).Error
+}
+
+func (conn *GormConn) UpdateOSMount(osMount *OSMount) error {
+	if (osMount == nil || *osMount == OSMount{}) {
+		return errors.New("Can't save an empty TenantConfig")
+	}
+
+	return conn.db.WithContext(conn.ctx).Updates(osMount).Error
+}
+func (conn *GormConn) UpdateAppMount(appMount *AppMount) error {
+	if (appMount == nil || *appMount == AppMount{}) {
+		return errors.New("Can't save an empty AppMount")
+	}
+
+	return conn.db.WithContext(conn.ctx).Updates(appMount).Error
+}
+
+func (conn *GormConn) DeleteTenantConfig(tenantConfig *TenantConfig, cascade bool) error {
+	if (tenantConfig == nil || *tenantConfig == TenantConfig{}) {
+		return nil
+	}
+
+	tenantConfig, err := conn.ReadTenantConfig(*tenantConfig)
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+
+	err = conn.db.WithContext(conn.ctx).Delete(&TenantConfig{}, &tenantConfig).Error
+	if err != nil {
+		return err
+	}
+
+	if cascade {
+		orphaned, err := conn.IsCodeModuleOrphaned(&CodeModule{Version: tenantConfig.DownloadedCodeModuleVersion})
+		if err != nil {
+			return err
+		}
+
+		if orphaned {
+			err = conn.DeleteCodeModule(&CodeModule{Version: tenantConfig.DownloadedCodeModuleVersion})
+			if err != nil {
+				return err
+			}
 		}
 	}
 
-	return conn.db.WithContext(ctx).Delete(appMount).Error
+	return nil
+}
+
+func (conn *GormConn) DeleteCodeModule(codeModule *CodeModule) error {
+	if (codeModule == nil || *codeModule == CodeModule{}) {
+		return errors.New("Can't delete an empty CodeModule")
+	}
+
+	return conn.db.WithContext(conn.ctx).Delete(&CodeModule{}, codeModule).Error
+}
+
+func (conn *GormConn) DeleteOSMount(osMount *OSMount) error {
+	if (osMount == nil || *osMount == OSMount{}) {
+		return errors.New("Can't delete an empty OSMount")
+	}
+
+	return conn.db.WithContext(conn.ctx).Delete(&OSMount{}, osMount).Error
+}
+
+func (conn *GormConn) DeleteAppMount(appMount *AppMount) error {
+	if (appMount == nil || *appMount == AppMount{}) {
+		return errors.New("Can't delete an empty AppMount")
+	}
+
+	return conn.db.WithContext(conn.ctx).Delete(&AppMount{}, appMount).Error
+}
+
+func (conn *GormConn) IsCodeModuleOrphaned(codeModule *CodeModule) (bool, error) {
+	var tenantConfigResults []TenantConfig
+
+	var appMountResults []AppMount
+
+	if (codeModule == nil || *codeModule == CodeModule{}) {
+		return false, nil
+	}
+
+	err := conn.db.WithContext(conn.ctx).Find(&tenantConfigResults, &TenantConfig{DownloadedCodeModuleVersion: codeModule.Version}).Error
+	if err != nil {
+		return false, err
+	}
+
+	err = conn.db.WithContext(conn.ctx).Find(&appMountResults, &AppMount{CodeModuleVersion: codeModule.Version}).Error
+	if err != nil {
+		return false, err
+	}
+
+	if len(tenantConfigResults) == 0 && len(appMountResults) == 0 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func (conn *GormConn) RestoreOSMount(osMount *OSMount) (*OSMount, error) {
+	osMount, err := conn.ReadUnscopedOSMount(*osMount)
+	if err != nil {
+		return nil, err
+	}
+
+	osMount.DeletedAt.Valid = false
+
+	err = conn.db.WithContext(conn.ctx).Unscoped().Updates(osMount).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return osMount, nil
+}
+
+type AccessOverview struct {
+	VolumeMetas   []VolumeMeta   `json:"volumeMetas"`
+	AppMounts     []AppMount     `json:"appMounts"`
+	TenantConfigs []TenantConfig `json:"tenantConfigs"`
+	CodeModules   []CodeModule   `json:"codeModules"`
+	OSMounts      []OSMount      `json:"osMounts"`
+}
+
+func NewAccessOverview(access Access) (*AccessOverview, error) {
+	volumeMetas, err := access.ReadVolumeMetas()
+	if err != nil {
+		return nil, err
+	}
+
+	appMounts, err := access.ReadAppMounts()
+	if err != nil {
+		return nil, err
+	}
+
+	tenantConfigs, err := access.ReadTenantConfigs()
+	if err != nil {
+		return nil, err
+	}
+
+	codeModules, err := access.ReadCodeModules()
+	if err != nil {
+		return nil, err
+	}
+
+	osMounts, err := access.ReadOSMounts()
+	if err != nil {
+		return nil, err
+	}
+
+	return &AccessOverview{
+		VolumeMetas:   volumeMetas,
+		AppMounts:     appMounts,
+		TenantConfigs: tenantConfigs,
+		CodeModules:   codeModules,
+		OSMounts:      osMounts,
+	}, nil
+}
+
+func LogAccessOverview(access Access) {
+	overview, err := NewAccessOverview(access)
+	if err != nil {
+		log.Error(err, "Failed to get an overview of the stored csi metadata")
+	}
+
+	log.Info("The current overview of the csi metadata", "overview", overview)
 }

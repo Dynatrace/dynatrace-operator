@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,7 +22,6 @@ func newTestingClient(fakeClient *fakeistio.Clientset, namespace string) *Client
 
 	return &Client{
 		IstioClientset: fakeClient,
-		Scheme:         scheme.Scheme,
 		Owner:          testDynakube,
 	}
 }

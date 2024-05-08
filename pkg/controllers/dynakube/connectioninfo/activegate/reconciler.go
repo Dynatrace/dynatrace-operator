@@ -13,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -22,22 +21,20 @@ type reconciler struct {
 	client       client.Client
 	apiReader    client.Reader
 	dtc          dtclient.Client
-	scheme       *runtime.Scheme
 	timeProvider *timeprovider.Provider
 
 	dynakube *dynatracev1beta2.DynaKube
 }
 
-type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, dynakube *dynatracev1beta2.DynaKube) controllers.Reconciler
+type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dynakube *dynatracev1beta2.DynaKube) controllers.Reconciler
 
 var _ ReconcilerBuilder = NewReconciler
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, dynakube *dynatracev1beta2.DynaKube) controllers.Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dynakube *dynatracev1beta2.DynaKube) controllers.Reconciler {
 	return &reconciler{
 		client:       clt,
 		apiReader:    apiReader,
 		dynakube:     dynakube,
-		scheme:       scheme,
 		dtc:          dtc,
 		timeProvider: timeprovider.New(),
 	}
@@ -85,7 +82,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 			log.Info(dynatracev1beta2.GetCacheValidMessage(
 				"activegate connection info update",
 				condition.LastTransitionTime,
-				r.dynakube.Spec.DynatraceApiRequestThreshold))
+				r.dynakube.ApiRequestThreshold()))
 
 			return nil
 		}
@@ -122,7 +119,7 @@ func (r *reconciler) setDynakubeStatus(connectionInfo dtclient.ActiveGateConnect
 }
 
 func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName string, owner metav1.Object, connectionInfo dtclient.ConnectionInfo) error {
-	secret, err := connectioninfo.BuildTenantSecret(owner, r.scheme, secretName, connectionInfo)
+	secret, err := connectioninfo.BuildTenantSecret(owner, secretName, connectionInfo)
 	if err != nil {
 		return errors.WithStack(err)
 	}

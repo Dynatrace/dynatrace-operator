@@ -17,7 +17,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -30,13 +29,11 @@ type reconciler struct {
 	pmcSecretreconciler      controllers.Reconciler
 	connectionInfoReconciler controllers.Reconciler
 	dynatraceClient          dynatrace.Client
-	scheme                   *runtime.Scheme
 }
 
 type ReconcilerBuilder func(
 	client client.Client,
 	apiReader client.Reader,
-	scheme *runtime.Scheme,
 	dynatraceClient dynatrace.Client,
 	istioClient *istio.Client,
 	dynakube *dynatracev1beta2.DynaKube,
@@ -46,7 +43,6 @@ type ReconcilerBuilder func(
 func NewReconciler(
 	client client.Client,
 	apiReader client.Reader,
-	scheme *runtime.Scheme,
 	dynatraceClient dynatrace.Client,
 	istioClient *istio.Client,
 	dynakube *dynatracev1beta2.DynaKube,
@@ -60,13 +56,12 @@ func NewReconciler(
 	return &reconciler{
 		client:            client,
 		apiReader:         apiReader,
-		scheme:            scheme,
 		dynakube:          dynakube,
 		istioReconciler:   istioReconciler,
 		versionReconciler: version.NewReconciler(apiReader, dynatraceClient, timeprovider.New().Freeze()),
 		pmcSecretreconciler: processmoduleconfigsecret.NewReconciler(
-			client, apiReader, dynatraceClient, dynakube, scheme, timeprovider.New().Freeze()),
-		connectionInfoReconciler: oaconnectioninfo.NewReconciler(client, apiReader, scheme, dynatraceClient, dynakube),
+			client, apiReader, dynatraceClient, dynakube, timeprovider.New().Freeze()),
+		connectionInfoReconciler: oaconnectioninfo.NewReconciler(client, apiReader, dynatraceClient, dynakube),
 		dynatraceClient:          dynatraceClient,
 	}
 }

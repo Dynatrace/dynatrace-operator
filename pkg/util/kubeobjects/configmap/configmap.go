@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/query"
@@ -11,7 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -93,23 +93,21 @@ func AreConfigMapsEqual(configMap corev1.ConfigMap, other corev1.ConfigMap) bool
 type configMapData = corev1.ConfigMap
 type configMapModifier = builder.Modifier[configMapData]
 
-func CreateConfigMap(scheme *runtime.Scheme, owner metav1.Object, mods ...configMapModifier) (*corev1.ConfigMap, error) {
+func CreateConfigMap(owner metav1.Object, mods ...configMapModifier) (*corev1.ConfigMap, error) {
 	builderOfSecret := builder.NewBuilder(corev1.ConfigMap{})
-	secret, err := builderOfSecret.AddModifier(mods...).AddModifier(newConfigMapOwnerModifier(scheme, owner)).Build()
+	secret, err := builderOfSecret.AddModifier(mods...).AddModifier(newConfigMapOwnerModifier(owner)).Build()
 
 	return &secret, err
 }
 
-func newConfigMapOwnerModifier(scheme *runtime.Scheme, owner metav1.Object) configMapOwnerModifier {
+func newConfigMapOwnerModifier(owner metav1.Object) configMapOwnerModifier {
 	return configMapOwnerModifier{
-		scheme: scheme,
-		owner:  owner,
+		owner: owner,
 	}
 }
 
 type configMapOwnerModifier struct {
-	scheme *runtime.Scheme
-	owner  metav1.Object
+	owner metav1.Object
 }
 
 func (mod configMapOwnerModifier) Enabled() bool {
@@ -117,7 +115,7 @@ func (mod configMapOwnerModifier) Enabled() bool {
 }
 
 func (mod configMapOwnerModifier) Modify(secret *corev1.ConfigMap) error {
-	if err := controllerutil.SetControllerReference(mod.owner, secret, mod.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(mod.owner, secret, scheme.Scheme); err != nil {
 		return errors.WithStack(err)
 	}
 

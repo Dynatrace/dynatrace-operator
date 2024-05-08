@@ -22,7 +22,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -30,7 +29,6 @@ type Reconciler struct {
 	client                            client.Client
 	dynakube                          *dynatracev1beta2.DynaKube
 	apiReader                         client.Reader
-	scheme                            *runtime.Scheme
 	authTokenReconciler               controllers.Reconciler
 	istioReconciler                   istio.Reconciler
 	connectionReconciler              controllers.Reconciler
@@ -42,26 +40,25 @@ type Reconciler struct {
 
 var _ controllers.Reconciler = (*Reconciler)(nil)
 
-type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta2.DynaKube, dtc dtclient.Client, istioClient *istio.Client) controllers.Reconciler
+type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dynakube *dynatracev1beta2.DynaKube, dtc dtclient.Client, istioClient *istio.Client) controllers.Reconciler
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta2.DynaKube, dtc dtclient.Client, istioClient *istio.Client) controllers.Reconciler { //nolint: revive
+func NewReconciler(clt client.Client, apiReader client.Reader, dynakube *dynatracev1beta2.DynaKube, dtc dtclient.Client, istioClient *istio.Client) controllers.Reconciler {
 	var istioReconciler istio.Reconciler
 	if istioClient != nil {
 		istioReconciler = istio.NewReconciler(istioClient)
 	}
 
-	authTokenReconciler := authtoken.NewReconciler(clt, apiReader, scheme, dynakube, dtc)
+	authTokenReconciler := authtoken.NewReconciler(clt, apiReader, dynakube, dtc)
 	versionReconciler := version.NewReconciler(apiReader, dtc, timeprovider.New().Freeze())
-	connectionInfoReconciler := agconnectioninfo.NewReconciler(clt, apiReader, scheme, dtc, dynakube)
+	connectionInfoReconciler := agconnectioninfo.NewReconciler(clt, apiReader, dtc, dynakube)
 
 	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta2.DynaKubeValueSource) controllers.Reconciler {
-		return customproperties.NewReconciler(clt, dynakube, customPropertiesOwnerName, scheme, customPropertiesSource)
+		return customproperties.NewReconciler(clt, dynakube, customPropertiesOwnerName, customPropertiesSource)
 	}
 
 	return &Reconciler{
 		client:                            clt,
 		apiReader:                         apiReader,
-		scheme:                            scheme,
 		dynakube:                          dynakube,
 		authTokenReconciler:               authTokenReconciler,
 		istioReconciler:                   istioReconciler,
@@ -127,7 +124,7 @@ func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.C
 
 	configMapData := extractPublicData(r.dynakube)
 
-	configMap, err := configmap.CreateConfigMap(r.scheme, r.dynakube,
+	configMap, err := configmap.CreateConfigMap(r.dynakube,
 		configmap.NewModifier(r.dynakube.ActiveGateConnectionInfoConfigMapName()),
 		configmap.NewNamespaceModifier(r.dynakube.Namespace),
 		configmap.NewConfigMapDataModifier(configMapData))
@@ -163,7 +160,7 @@ func extractPublicData(dynakube *dynatracev1beta2.DynaKube) map[string]string {
 
 func (r *Reconciler) createCapability(ctx context.Context, agCapability capability.Capability) error {
 	customPropertiesReconciler := r.newCustomPropertiesReconcilerFunc(r.dynakube.ActiveGateServiceAccountOwner(), agCapability.Properties().CustomProperties) //nolint:typeCheck
-	statefulsetReconciler := r.newStatefulsetReconcilerFunc(r.client, r.apiReader, r.scheme, r.dynakube, agCapability)                                        //nolint:typeCheck
+	statefulsetReconciler := r.newStatefulsetReconcilerFunc(r.client, r.apiReader, r.dynakube, agCapability)                                                  //nolint:typeCheck
 
 	capabilityReconciler := r.newCapabilityReconcilerFunc(r.client, agCapability, r.dynakube, statefulsetReconciler, customPropertiesReconciler)
 

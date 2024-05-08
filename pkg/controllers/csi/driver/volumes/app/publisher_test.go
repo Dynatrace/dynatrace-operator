@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 	"k8s.io/utils/mount"
 )
 
@@ -75,7 +76,7 @@ func TestPublishVolume(t *testing.T) {
 		assert.Equal(t, "overlay", mounter.MountPoints[0].Device)
 		assert.Equal(t, "overlay", mounter.MountPoints[0].Type)
 		assert.Equal(t, []string{
-			"lowerdir=/codemodules/" + testImageDigest,
+			"lowerdir=/codemodules/" + testAgentVersion,
 			"upperdir=/a-tenant-uuid/run/a-volume/var",
 			"workdir=/a-tenant-uuid/run/a-volume/work"},
 			mounter.MountPoints[0].Opts)
@@ -154,16 +155,17 @@ func TestHasTooManyMountAttempts(t *testing.T) {
 		}
 		volumeCfg := createTestVolumeConfig()
 
-		hasTooManyAttempts, err := publisher.hasTooManyMountAttempts(context.Background(), bindCfg, volumeCfg)
+		hasTooManyAttempts, err := publisher.hasTooManyMountAttempts(bindCfg, volumeCfg)
 
 		require.NoError(t, err)
 		assert.False(t, hasTooManyAttempts)
 
-		volume, err := publisher.db.GetVolume(context.Background(), volumeCfg.VolumeID)
+		appMount, err := publisher.db.ReadAppMount(metadata.AppMount{VolumeMetaID: volumeCfg.VolumeID})
 		require.NoError(t, err)
-		require.NotNil(t, volume)
-		assert.Equal(t, 1, volume.MountAttempts)
+		require.NotNil(t, appMount)
+		assert.Equal(t, int64(11), appMount.MountAttempts)
 	})
+
 	t.Run(`too many mount attempts`, func(t *testing.T) {
 		publisher := newPublisherForTesting(nil)
 		mockFailedPublishedVolume(t, &publisher)
@@ -172,7 +174,7 @@ func TestHasTooManyMountAttempts(t *testing.T) {
 			MaxMountAttempts: dynatracev1beta2.DefaultMaxFailedCsiMountAttempts,
 		}
 
-		hasTooManyAttempts, err := publisher.hasTooManyMountAttempts(context.Background(), bindCfg, createTestVolumeConfig())
+		hasTooManyAttempts, err := publisher.hasTooManyMountAttempts(bindCfg, createTestVolumeConfig())
 
 		require.NoError(t, err)
 		assert.True(t, hasTooManyAttempts)
@@ -277,24 +279,23 @@ func TestStoreAndLoadPodInfo(t *testing.T) {
 
 	volumeCfg := createTestVolumeConfig()
 
-	err := publisher.storeVolume(context.Background(), bindCfg, volumeCfg)
+	err := publisher.storeVolume(bindCfg, volumeCfg)
 	require.NoError(t, err)
-	volume, err := publisher.loadVolume(context.Background(), volumeCfg.VolumeID)
+	appMount, err := publisher.db.ReadAppMount(metadata.AppMount{VolumeMetaID: volumeCfg.VolumeID})
 	require.NoError(t, err)
-	require.NotNil(t, volume)
-	assert.Equal(t, testVolumeId, volume.VolumeID)
-	assert.Equal(t, testPodUID, volume.PodName)
-	assert.Equal(t, testAgentVersion, volume.Version)
-	assert.Equal(t, testTenantUUID, volume.TenantUUID)
+	require.NotNil(t, appMount)
+	assert.Equal(t, testVolumeId, appMount.VolumeMetaID)
+	assert.Equal(t, testPodUID, appMount.VolumeMeta.PodName)
+	assert.Equal(t, testAgentVersion, appMount.CodeModuleVersion)
 }
 
 func TestLoadPodInfo_Empty(t *testing.T) {
 	mounter := mount.NewFakeMounter([]mount.MountPoint{})
 	publisher := newPublisherForTesting(mounter)
 
-	volume, err := publisher.loadVolume(context.Background(), testVolumeId)
-	require.NoError(t, err)
-	require.Nil(t, volume)
+	appMount, err := publisher.db.ReadAppMount(metadata.AppMount{VolumeMetaID: testVolumeId})
+	require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+	require.Nil(t, appMount)
 }
 
 func TestMountIfDBHasError(t *testing.T) {
@@ -307,7 +308,7 @@ func TestMountIfDBHasError(t *testing.T) {
 		MaxMountAttempts: dynatracev1beta2.DefaultMaxFailedCsiMountAttempts,
 	}
 
-	err := publisher.ensureMountSteps(context.Background(), bindCfg, createTestVolumeConfig())
+	err := publisher.ensureMountSteps(bindCfg, createTestVolumeConfig())
 	require.Error(t, err)
 	require.Empty(t, mounter.MountPoints)
 }
@@ -327,19 +328,43 @@ func newPublisherForTesting(mounter *mount.FakeMounter) AppVolumePublisher {
 
 func mockPublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
 	mockUrlDynakubeMetadata(t, publisher)
-	err := publisher.db.InsertVolume(context.Background(), metadata.NewVolume(testVolumeId, testPodUID, testAgentVersion, testTenantUUID, 0))
+
+	mockAppMount := metadata.AppMount{
+		VolumeMeta:        metadata.VolumeMeta{ID: testVolumeId, PodUid: testPodUID},
+		CodeModule:        metadata.CodeModule{Version: testAgentVersion},
+		VolumeMetaID:      testVolumeId,
+		CodeModuleVersion: testAgentVersion,
+		MountAttempts:     0,
+		Location:          publisher.path.AgentRunDirForVolume(testTenantUUID, testVolumeId),
+	}
+
+	err := publisher.db.CreateAppMount(&mockAppMount)
 	require.NoError(t, err)
 	agentsVersionsMetric.WithLabelValues(testAgentVersion).Inc()
 }
 
 func mockFailedPublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
 	mockUrlDynakubeMetadata(t, publisher)
-	err := publisher.db.InsertVolume(context.Background(), metadata.NewVolume(testVolumeId, testPodUID, testAgentVersion, testTenantUUID, dynatracev1beta2.DefaultMaxFailedCsiMountAttempts+1))
+
+	appMount := &metadata.AppMount{
+		VolumeMeta:        metadata.VolumeMeta{ID: testVolumeId, PodUid: testPodUID},
+		CodeModuleVersion: testAgentVersion,
+		MountAttempts:     dynatracev1beta2.DefaultMaxFailedCsiMountAttempts + 1,
+		VolumeMetaID:      testVolumeId,
+	}
+
+	err := publisher.db.CreateAppMount(appMount)
 	require.NoError(t, err)
 }
 
 func mockUrlDynakubeMetadata(t *testing.T, publisher *AppVolumePublisher) {
-	err := publisher.db.InsertDynakube(context.Background(), metadata.NewDynakube(testDynakubeName, testTenantUUID, testAgentVersion, "", 0))
+	tenantConfig := metadata.TenantConfig{
+		Name:                        testDynakubeName,
+		TenantUUID:                  testTenantUUID,
+		DownloadedCodeModuleVersion: testAgentVersion,
+		MaxFailedMountAttempts:      0,
+	}
+	err := publisher.db.CreateTenantConfig(&tenantConfig)
 	require.NoError(t, err)
 }
 
@@ -355,36 +380,40 @@ func mockSharedRuxitAgentProcConf(t *testing.T, publisher *AppVolumePublisher, c
 }
 
 func mockImageDynakubeMetadata(t *testing.T, publisher *AppVolumePublisher) {
-	err := publisher.db.InsertDynakube(context.Background(), metadata.NewDynakube(testDynakubeName, testTenantUUID, "", testImageDigest, dynatracev1beta2.DefaultMaxFailedCsiMountAttempts))
+	tenantConfig := metadata.TenantConfig{
+		Name:                        testDynakubeName,
+		TenantUUID:                  testTenantUUID,
+		DownloadedCodeModuleVersion: testAgentVersion,
+		MaxFailedMountAttempts:      dynatracev1beta2.DefaultMaxFailedCsiMountAttempts,
+	}
+	err := publisher.db.CreateTenantConfig(&tenantConfig)
 	require.NoError(t, err)
 }
 
 func assertReferencesForPublishedVolume(t *testing.T, publisher *AppVolumePublisher, mounter *mount.FakeMounter) {
 	assert.NotEmpty(t, mounter.MountPoints)
 
-	volume, err := publisher.loadVolume(context.Background(), testVolumeId)
+	appMount, err := publisher.db.ReadAppMount(metadata.AppMount{VolumeMetaID: testVolumeId})
 	require.NoError(t, err)
-	assert.Equal(t, testVolumeId, volume.VolumeID)
-	assert.Equal(t, testPodUID, volume.PodName)
-	assert.Equal(t, testAgentVersion, volume.Version)
-	assert.Equal(t, testTenantUUID, volume.TenantUUID)
+	assert.Equal(t, testVolumeId, appMount.VolumeMetaID)
+	assert.Equal(t, testPodUID, appMount.VolumeMeta.PodName)
+	assert.Equal(t, testAgentVersion, appMount.CodeModuleVersion)
 }
 
 func assertReferencesForPublishedVolumeWithCodeModulesImage(t *testing.T, publisher *AppVolumePublisher, mounter *mount.FakeMounter) {
 	assert.NotEmpty(t, mounter.MountPoints)
 
-	volume, err := publisher.loadVolume(context.Background(), testVolumeId)
+	appMount, err := publisher.db.ReadAppMount(metadata.AppMount{VolumeMetaID: testVolumeId})
 	require.NoError(t, err)
-	assert.Equal(t, testVolumeId, volume.VolumeID)
-	assert.Equal(t, testPodUID, volume.PodName)
-	assert.Equal(t, testImageDigest, volume.Version)
-	assert.Equal(t, testTenantUUID, volume.TenantUUID)
+	assert.Equal(t, testVolumeId, appMount.VolumeMetaID)
+	assert.Equal(t, testPodUID, appMount.VolumeMeta.PodName)
+	assert.Equal(t, testAgentVersion, appMount.CodeModuleVersion)
 }
 
 func assertNoReferencesForUnpublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
-	volume, err := publisher.loadVolume(context.Background(), testVolumeId)
-	require.NoError(t, err)
-	require.Nil(t, volume)
+	appMount, err := publisher.db.ReadAppMount(metadata.AppMount{VolumeMetaID: testVolumeId})
+	require.Error(t, err)
+	require.Nil(t, appMount)
 }
 
 func resetMetrics() {

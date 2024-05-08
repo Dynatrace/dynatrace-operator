@@ -15,7 +15,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -30,22 +29,19 @@ type Reconciler struct {
 	apiReader    client.Reader
 	dtClient     dtclient.Client
 	dynakube     *dynatracev1beta2.DynaKube
-	scheme       *runtime.Scheme
 	timeProvider *timeprovider.Provider
 }
 
-func NewReconciler(clt client.Client, //nolint:revive
+func NewReconciler(clt client.Client,
 	apiReader client.Reader,
 	dtClient dtclient.Client,
 	dynakube *dynatracev1beta2.DynaKube,
-	scheme *runtime.Scheme,
 	timeProvider *timeprovider.Provider) *Reconciler {
 	return &Reconciler{
 		client:       clt,
 		apiReader:    apiReader,
 		dtClient:     dtClient,
 		dynakube:     dynakube,
-		scheme:       scheme,
 		timeProvider: timeProvider,
 	}
 }
@@ -195,7 +191,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 		return nil, err
 	}
 
-	newSecret, err := secrets.Create(r.scheme, r.dynakube,
+	newSecret, err := secrets.Create(r.dynakube,
 		secrets.NewNameModifier(extendWithSuffix(r.dynakube.Name)),
 		secrets.NewNamespaceModifier(r.dynakube.Namespace),
 		secrets.NewTypeModifier(corev1.SecretTypeOpaque),

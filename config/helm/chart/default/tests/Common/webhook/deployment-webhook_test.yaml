@@ -82,6 +82,7 @@ tests:
                             - amd64
                             - arm64
                             - ppc64le
+                            - s390x
                         - key: kubernetes.io/os
                           operator: In
                           values:
@@ -96,6 +97,9 @@ tests:
               - effect: NoSchedule
                 key: kubernetes.io/arch
                 value: ppc64le
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: s390x
             containers:
               - name: webhook
                 args:
@@ -181,6 +185,9 @@ tests:
           - effect: NoSchedule
             key: kubernetes.io/arch
             value: ppc64le
+          - effect: NoSchedule
+            key: kubernetes.io/arch
+            value: s390x
 
   - it: should have nodeSelectors if set
     set:
@@ -251,6 +258,7 @@ tests:
                             - amd64
                             - arm64
                             - ppc64le
+                            - s390x
                         - key: kubernetes.io/os
                           operator: In
                           values:
@@ -265,6 +273,9 @@ tests:
               - effect: NoSchedule
                 key: kubernetes.io/arch
                 value: ppc64le
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: s390x
             containers:
               - name: webhook
                 args:
@@ -387,6 +398,7 @@ tests:
                             - amd64
                             - arm64
                             - ppc64le
+                            - s390x
                         - key: kubernetes.io/os
                           operator: In
                           values:
@@ -401,6 +413,10 @@ tests:
               - effect: NoSchedule
                 key: kubernetes.io/arch
                 value: ppc64le
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: s390x
+
             containers:
               - name: webhook
                 args:

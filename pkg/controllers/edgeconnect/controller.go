@@ -6,6 +6,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
@@ -20,9 +21,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -37,6 +38,10 @@ const (
 	defaultUpdateInterval = 30 * time.Minute
 
 	finalizerName = "server"
+
+	defaultNamespaceName    = "default"
+	kubernetesServiceName   = "kubernetes"
+	kubeSystemNamespaceName = "kube-system"
 )
 
 type oauthCredentialsType struct {
@@ -53,7 +58,6 @@ type Controller struct {
 	client                   client.Client
 	apiReader                client.Reader
 	registryClientBuilder    registry.ClientBuilder
-	scheme                   *runtime.Scheme
 	config                   *rest.Config
 	timeProvider             *timeprovider.Provider
 	edgeConnectClientBuilder edgeConnectClientBuilderType
@@ -67,7 +71,6 @@ func NewController(mgr manager.Manager) *Controller {
 	return &Controller{
 		client:                   mgr.GetClient(),
 		apiReader:                mgr.GetAPIReader(),
-		scheme:                   mgr.GetScheme(),
 		registryClientBuilder:    registry.NewClient,
 		config:                   mgr.GetConfig(),
 		timeProvider:             timeprovider.New(),
@@ -319,7 +322,12 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 
 	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name, "deploymentName", desiredDeployment.Name)
 
-	if err := controllerutil.SetControllerReference(edgeConnect, desiredDeployment, controller.scheme); err != nil {
+	err := controller.hostAlias(ctx, desiredDeployment, edgeConnect.Name, edgeConnect.Namespace)
+	if err != nil {
+		return err
+	}
+
+	if err := controllerutil.SetControllerReference(edgeConnect, desiredDeployment, scheme.Scheme); err != nil {
 		return errors.WithStack(err)
 	}
 
@@ -541,15 +549,12 @@ func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnect
 
 	_log.Debug("createResponse", "id", createResponse.ID)
 
-	ecOAuthSecret, err := k8ssecret.Create(controller.scheme, edgeConnect,
-		k8ssecret.NewNameModifier(edgeConnect.ClientSecretName()),
-		k8ssecret.NewNamespaceModifier(edgeConnect.Namespace),
-		k8ssecret.NewDataModifier(map[string][]byte{
-			consts.KeyEdgeConnectOauthClientID:     []byte(createResponse.OauthClientId),
-			consts.KeyEdgeConnectOauthClientSecret: []byte(createResponse.OauthClientSecret),
-			consts.KeyEdgeConnectOauthResource:     []byte(createResponse.OauthClientResource),
-			consts.KeyEdgeConnectId:                []byte(createResponse.ID),
-		}))
+	ecOAuthSecret, err := k8ssecret.Create(edgeConnect, k8ssecret.NewNameModifier(edgeConnect.ClientSecretName()), k8ssecret.NewNamespaceModifier(edgeConnect.Namespace), k8ssecret.NewDataModifier(map[string][]byte{
+		consts.KeyEdgeConnectOauthClientID:     []byte(createResponse.OauthClientId),
+		consts.KeyEdgeConnectOauthClientSecret: []byte(createResponse.OauthClientSecret),
+		consts.KeyEdgeConnectOauthResource:     []byte(createResponse.OauthClientResource),
+		consts.KeyEdgeConnectId:                []byte(createResponse.ID),
+	}))
 
 	if err != nil {
 		_log.Debug("unable to create EdgeConnect secret")
@@ -636,10 +641,15 @@ func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Co
 
 	desiredDeployment := deployment.New(edgeConnect)
 
+	err = controller.hostAlias(ctx, desiredDeployment, edgeConnect.Name, edgeConnect.Namespace)
+	if err != nil {
+		return err
+	}
+
 	desiredDeployment.Spec.Template.Annotations = map[string]string{consts.EdgeConnectAnnotationSecretHash: secretHash}
 	_log = _log.WithValues("deploymentName", desiredDeployment.Name)
 
-	if err := controllerutil.SetControllerReference(edgeConnect, desiredDeployment, controller.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(edgeConnect, desiredDeployment, scheme.Scheme); err != nil {
 		_log.Debug("Could not set controller reference")
 
 		return errors.WithStack(err)
@@ -675,7 +685,7 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 	secretData := make(map[string][]byte)
 	secretData[consts.EdgeConnectConfigFileName] = configFile
 
-	secretConfig, err := k8ssecret.Create(controller.scheme, edgeConnect,
+	secretConfig, err := k8ssecret.Create(edgeConnect,
 		k8ssecret.NewNameModifier(edgeConnect.Name+"-"+consts.EdgeConnectSecretSuffix),
 		k8ssecret.NewNamespaceModifier(edgeConnect.Namespace),
 		k8ssecret.NewDataModifier(secretData))
@@ -694,4 +704,31 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 	}
 
 	return hasher.GenerateHash(secretConfig.Data)
+}
+
+func (controller *Controller) hostAlias(ctx context.Context, deployment *appsv1.Deployment, ecName string, ecNamespace string) error {
+	var kubernetesService corev1.Service
+
+	err := controller.apiReader.Get(ctx, client.ObjectKey{Namespace: defaultNamespaceName, Name: kubernetesServiceName}, &kubernetesService)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	var kubeSystemNamespace corev1.Namespace
+
+	err = controller.apiReader.Get(ctx, client.ObjectKey{Name: kubeSystemNamespaceName}, &kubeSystemNamespace)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	deployment.Spec.Template.Spec.HostAliases = []corev1.HostAlias{
+		{
+			IP: kubernetesService.Spec.ClusterIP,
+			Hostnames: []string{
+				ecName + "." + ecNamespace + "." + string(kubeSystemNamespace.UID),
+			},
+		},
+	}
+
+	return nil
 }

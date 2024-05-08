@@ -44,7 +44,7 @@ func (checker *CorrectnessChecker) CorrectCSI(ctx context.Context) error {
 		return err
 	}
 
-	if err := checker.copyCodeModulesFromDeprecatedBin(ctx); err != nil {
+	if err := checker.copyCodeModulesFromDeprecatedBin(); err != nil {
 		return err
 	}
 
@@ -59,25 +59,27 @@ func (checker *CorrectnessChecker) removeVolumesForMissingPods(ctx context.Conte
 		return nil
 	}
 
-	podNames, err := checker.access.GetPodNames(ctx)
+	appMounts, err := checker.access.ReadAppMounts()
 	if err != nil {
 		return err
 	}
 
 	pruned := []string{}
 
-	for podName := range podNames {
+	for _, appMount := range appMounts {
 		var pod corev1.Pod
-		if err := checker.apiReader.Get(ctx, client.ObjectKey{Name: podName}, &pod); !k8serrors.IsNotFound(err) {
+
+		if err := checker.apiReader.Get(ctx, client.ObjectKey{Name: appMount.VolumeMeta.PodName}, &pod); !k8serrors.IsNotFound(err) {
 			continue
 		}
 
-		volumeID := podNames[podName]
-		if err := checker.access.DeleteVolume(ctx, volumeID); err != nil {
+		volumeID := appMount.VolumeMeta.ID
+
+		if err := checker.access.DeleteAppMount(&AppMount{VolumeMetaID: appMount.VolumeMetaID}); err != nil {
 			return err
 		}
 
-		pruned = append(pruned, volumeID+"|"+podName)
+		pruned = append(pruned, volumeID+"|"+appMount.VolumeMeta.PodName)
 	}
 
 	log.Info("CSI volumes database is corrected for missing pods (volume|pod)", "prunedRows", pruned)
@@ -93,25 +95,26 @@ func (checker *CorrectnessChecker) removeMissingDynakubes(ctx context.Context) e
 		return nil
 	}
 
-	dynakubes, err := checker.access.GetTenantsToDynakubes(ctx)
+	tenantConfigs, err := checker.access.ReadTenantConfigs()
 	if err != nil {
 		return err
 	}
 
 	pruned := []string{}
 
-	for dynakubeName := range dynakubes {
+	for _, tenantConfig := range tenantConfigs {
 		var dynakube dynatracev1beta2.DynaKube
-		if err := checker.apiReader.Get(ctx, client.ObjectKey{Name: dynakubeName}, &dynakube); !k8serrors.IsNotFound(err) {
+
+		if err := checker.apiReader.Get(ctx, client.ObjectKey{Name: tenantConfig.Name}, &dynakube); !k8serrors.IsNotFound(err) {
 			continue
 		}
 
-		if err := checker.access.DeleteDynakube(ctx, dynakubeName); err != nil {
+		if err := checker.access.DeleteTenantConfig(&TenantConfig{Name: tenantConfig.Name}, true); err != nil {
 			return err
 		}
 
-		tenantUUID := dynakubes[dynakubeName]
-		pruned = append(pruned, tenantUUID+"|"+dynakubeName)
+		tenantUUID := tenantConfig.TenantUUID
+		pruned = append(pruned, tenantUUID+"|"+tenantConfig.Name)
 	}
 
 	log.Info("CSI tenants database is corrected for missing dynakubes (tenant|dynakube)", "prunedRows", pruned)
@@ -119,21 +122,21 @@ func (checker *CorrectnessChecker) removeMissingDynakubes(ctx context.Context) e
 	return nil
 }
 
-func (checker *CorrectnessChecker) copyCodeModulesFromDeprecatedBin(ctx context.Context) error {
-	dynakubes, err := checker.access.GetAllDynakubes(ctx)
+func (checker *CorrectnessChecker) copyCodeModulesFromDeprecatedBin() error {
+	tenantConfigs, err := checker.access.ReadTenantConfigs()
 	if err != nil {
 		return err
 	}
 
 	moved := []string{}
 
-	for _, dynakube := range dynakubes {
-		if dynakube.TenantUUID == "" || dynakube.LatestVersion == "" {
+	for _, tenantConfig := range tenantConfigs {
+		if tenantConfig.TenantUUID == "" || tenantConfig.DownloadedCodeModuleVersion == "" {
 			continue
 		}
 
-		deprecatedBin := checker.path.AgentBinaryDirForVersion(dynakube.TenantUUID, dynakube.LatestVersion)
-		currentBin := checker.path.AgentSharedBinaryDirForAgent(dynakube.LatestVersion)
+		deprecatedBin := checker.path.AgentBinaryDirForVersion(tenantConfig.TenantUUID, tenantConfig.DownloadedCodeModuleVersion)
+		currentBin := checker.path.AgentSharedBinaryDirForAgent(tenantConfig.DownloadedCodeModuleVersion)
 
 		linked, err := checker.safelyLinkCodeModule(deprecatedBin, currentBin)
 		if err != nil {
@@ -141,7 +144,7 @@ func (checker *CorrectnessChecker) copyCodeModulesFromDeprecatedBin(ctx context.
 		}
 
 		if linked {
-			moved = append(moved, dynakube.TenantUUID+"|"+dynakube.LatestVersion)
+			moved = append(moved, tenantConfig.TenantUUID+"|"+tenantConfig.DownloadedCodeModuleVersion)
 		}
 	}
 

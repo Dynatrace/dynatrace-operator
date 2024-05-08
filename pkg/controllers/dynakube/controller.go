@@ -33,7 +33,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -57,14 +56,13 @@ func Add(mgr manager.Manager, _ string) error {
 }
 
 func NewController(mgr manager.Manager, clusterID string) *Controller {
-	return NewDynaKubeController(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetScheme(), mgr.GetConfig(), clusterID)
+	return NewDynaKubeController(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetConfig(), clusterID)
 }
 
-func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, scheme *runtime.Scheme, config *rest.Config, clusterID string) *Controller {
+func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, config *rest.Config, clusterID string) *Controller {
 	return &Controller{
 		client:                 kubeClient,
 		apiReader:              apiReader,
-		scheme:                 scheme,
 		fs:                     afero.Afero{Fs: afero.NewOsFs()},
 		config:                 config,
 		operatorNamespace:      os.Getenv(env.PodNamespace),
@@ -101,7 +99,6 @@ type Controller struct {
 	fs        afero.Afero
 
 	dynatraceClientBuilder dynatraceclient.Builder
-	scheme                 *runtime.Scheme
 	config                 *rest.Config
 	istioClientBuilder     istio.ClientBuilder
 	registryClientBuilder  registry.ClientBuilder
@@ -250,7 +247,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 
 	log.Info("start reconciling deployment meta data")
 
-	err = controller.deploymentMetadataReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, *dynakube, controller.clusterID).Reconcile(ctx)
+	err = controller.deploymentMetadataReconcilerBuilder(controller.client, controller.apiReader, *dynakube, controller.clusterID).Reconcile(ctx)
 	if err != nil {
 		return err
 	}
@@ -261,7 +258,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 }
 
 func (controller *Controller) setupIstioClient(dynakube *dynatracev1beta2.DynaKube) (*istio.Client, error) {
-	istioClient, err := controller.istioClientBuilder(controller.config, controller.scheme, dynakube)
+	istioClient, err := controller.istioClientBuilder(controller.config, dynakube)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize istio client")
 	}
@@ -303,7 +300,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube
 	log.Info("start reconciling pull secret")
 
 	err = dtpullsecret.
-		NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube, tokens).
+		NewReconciler(controller.client, controller.apiReader, dynakube, tokens).
 		Reconcile(ctx)
 	if err != nil {
 		log.Info("could not reconcile Dynatrace pull secret")
@@ -326,7 +323,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		componentErrors = append(componentErrors, err)
 	}
 
-	proxyReconciler := proxy.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube)
+	proxyReconciler := proxy.NewReconciler(controller.client, controller.apiReader, dynakube)
 
 	err = proxyReconciler.Reconcile(ctx)
 	if err != nil {
@@ -335,7 +332,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling app injection")
 
-	err = controller.injectionReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient, istioClient, dynakube).
+	err = controller.injectionReconcilerBuilder(controller.client, controller.apiReader, dynatraceClient, istioClient, dynakube).
 		Reconcile(ctx)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
@@ -353,7 +350,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling OneAgent")
 
-	err = controller.oneAgentReconcilerBuilder(controller.client, controller.apiReader, controller.scheme, dynatraceClient, dynakube, controller.clusterID).
+	err = controller.oneAgentReconcilerBuilder(controller.client, controller.apiReader, dynatraceClient, dynakube, controller.clusterID).
 		Reconcile(ctx)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {

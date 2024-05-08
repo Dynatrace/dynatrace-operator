@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -51,7 +50,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient(&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dynakube.OneagentTenantSecret(), Namespace: dynakube.Namespace}})
 		dtc := dtclientmock.NewClient(t)
 
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc, dynakube)
+		r := NewReconciler(fakeClient, fakeClient, dtc, dynakube)
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 		assert.Empty(t, dynakube.Status.OneAgent.ConnectionInfoStatus)
@@ -82,7 +81,7 @@ func TestReconcile(t *testing.T) {
 		dtc := dtclientmock.NewClient(t)
 		dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestOneAgentConnectionInfo(), nil)
 
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc, dynakube)
+		r := NewReconciler(fakeClient, fakeClient, dtc, dynakube)
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 		assert.NotEmpty(t, dynakube.Status.OneAgent.ConnectionInfoStatus)
@@ -96,7 +95,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient()
 		dtc := dtclientmock.NewClient(t)
 		dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(dtclient.OneAgentConnectionInfo{}, errors.New("BOOM"))
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc, dynakube)
+		r := NewReconciler(fakeClient, fakeClient, dtc, dynakube)
 		err := r.Reconcile(ctx)
 		require.Error(t, err)
 
@@ -111,7 +110,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := createFailK8sClient()
 		dtc := dtclientmock.NewClient(t)
 		dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestOneAgentConnectionInfo(), nil)
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc, dynakube)
+		r := NewReconciler(fakeClient, fakeClient, dtc, dynakube)
 		err := r.Reconcile(ctx)
 		require.Error(t, err)
 
@@ -126,7 +125,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient(dynakube)
 		dtc := dtclientmock.NewClient(t)
 		dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestOneAgentConnectionInfo(), nil)
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc, dynakube)
+		r := NewReconciler(fakeClient, fakeClient, dtc, dynakube)
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
@@ -158,7 +157,7 @@ func TestReconcile(t *testing.T) {
 		}
 		conditions.SetSecretCreated(dynakube.Conditions(), oaConnectionInfoConditionType, "testing")
 
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc, dynakube)
+		r := NewReconciler(fakeClient, fakeClient, dtc, dynakube)
 		rec := r.(*reconciler)
 		rec.timeProvider.Set(rec.timeProvider.Now().Add(time.Minute * 20))
 
@@ -193,7 +192,7 @@ func TestReconcile(t *testing.T) {
 		}
 		conditions.SetSecretCreated(dynakube.Conditions(), oaConnectionInfoConditionType, "testing")
 
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc, dynakube)
+		r := NewReconciler(fakeClient, fakeClient, dtc, dynakube)
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
@@ -225,7 +224,7 @@ func TestReconcile(t *testing.T) {
 		}
 		conditions.SetSecretCreated(dynakube.Conditions(), oaConnectionInfoConditionType, "testing")
 
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc, dynakube)
+		r := NewReconciler(fakeClient, fakeClient, dtc, dynakube)
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
@@ -258,7 +257,7 @@ func TestReconcile(t *testing.T) {
 		}
 		setEmptyCommunicationHostsCondition(dynakube.Conditions())
 
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc, dynakube)
+		r := NewReconciler(fakeClient, fakeClient, dtc, dynakube)
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
@@ -303,7 +302,7 @@ func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 
 	fakeClient := fake.NewClient(&dynakube)
 
-	r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dtc, &dynakube)
+	r := NewReconciler(fakeClient, fakeClient, dtc, &dynakube)
 	err := r.Reconcile(ctx)
 	require.ErrorIs(t, err, NoOneAgentCommunicationHostsError)
 

@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
@@ -17,7 +18,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -29,7 +29,6 @@ type Controller struct {
 	client                 client.Client
 	apiReader              client.Reader
 	dynatraceClientBuilder dynatraceclient.Builder
-	scheme                 *runtime.Scheme
 	timeProvider           *timeprovider.Provider
 	podNamespace           string
 	runLocal               bool
@@ -55,7 +54,6 @@ func NewController(mgr manager.Manager) *Controller {
 	return &Controller{
 		client:                 mgr.GetClient(),
 		apiReader:              mgr.GetAPIReader(),
-		scheme:                 mgr.GetScheme(),
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
 		runLocal:               kubesystem.IsRunLocally(),
 		podNamespace:           os.Getenv(env.PodNamespace),
@@ -195,7 +193,7 @@ func (controller *Controller) getCache(ctx context.Context) (*Cache, error) {
 				return nil, err
 			}
 
-			if err = controllerutil.SetControllerReference(deploy, cm, controller.scheme); err != nil {
+			if err = controllerutil.SetControllerReference(deploy, cm, scheme.Scheme); err != nil {
 				return nil, err
 			}
 		}

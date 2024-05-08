@@ -151,13 +151,13 @@ func checkDynatraceApiTokenScopes(ctx context.Context, baseLog logd.Logger, apiR
 		return errors.Wrap(err, "failed to build DynatraceAPI client")
 	}
 
-	tokens := dynatraceApiSecretTokens.SetScopesForDynakube(*dynakube)
+	tokens := dynatraceApiSecretTokens.AddFeatureScopesToTokens()
 
 	if err = tokens.VerifyValues(); err != nil {
 		return errors.Wrapf(err, "invalid '%s:%s' secret", dynakube.Namespace, dynakube.Tokens())
 	}
 
-	if err = tokens.VerifyScopes(ctx, dtc); err != nil {
+	if err = tokens.VerifyScopes(ctx, dtc, *dynakube); err != nil {
 		return errors.Wrapf(err, "invalid '%s:%s' secret", dynakube.Namespace, dynakube.Tokens())
 	}
 

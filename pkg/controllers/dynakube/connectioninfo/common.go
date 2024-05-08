@@ -9,7 +9,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -45,13 +44,10 @@ func IsTenantSecretPresent(ctx context.Context, apiReader client.Reader, secretN
 	return true, nil
 }
 
-func BuildTenantSecret(owner metav1.Object, scheme *runtime.Scheme, secretName string, connectionInfo dtclient.ConnectionInfo) (*corev1.Secret, error) {
+func BuildTenantSecret(owner metav1.Object, secretName string, connectionInfo dtclient.ConnectionInfo) (*corev1.Secret, error) {
 	secretData := ExtractSensitiveData(connectionInfo)
 
-	return k8ssecret.Create(scheme, owner,
-		k8ssecret.NewNameModifier(secretName),
-		k8ssecret.NewNamespaceModifier(owner.GetNamespace()),
-		k8ssecret.NewDataModifier(secretData))
+	return k8ssecret.Create(owner, k8ssecret.NewNameModifier(secretName), k8ssecret.NewNamespaceModifier(owner.GetNamespace()), k8ssecret.NewDataModifier(secretData))
 }
 
 func ExtractSensitiveData(connectionInfo dtclient.ConnectionInfo) map[string][]byte {

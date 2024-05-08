@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -22,15 +21,13 @@ type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
 	dynakube  *dynatracev1beta2.DynaKube
-	scheme    *runtime.Scheme
 	tokens    token.Tokens
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta2.DynaKube, tokens token.Tokens) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, dynakube *dynatracev1beta2.DynaKube, tokens token.Tokens) *Reconciler {
 	return &Reconciler{
 		client:    clt,
 		apiReader: apiReader,
-		scheme:    scheme,
 		dynakube:  dynakube,
 		tokens:    tokens,
 	}
@@ -89,7 +86,7 @@ func (r *Reconciler) updatePullSecretIfOutdated(ctx context.Context, pullSecret 
 }
 
 func (r *Reconciler) createPullSecret(ctx context.Context, pullSecretData map[string][]byte) (*corev1.Secret, error) {
-	pullSecret, err := secret.Create(r.scheme, r.dynakube,
+	pullSecret, err := secret.Create(r.dynakube,
 		secret.NewNameModifier(extendWithPullSecretSuffix(r.dynakube.Name)),
 		secret.NewNamespaceModifier(r.dynakube.Namespace),
 		secret.NewTypeModifier(corev1.SecretTypeDockerConfigJson),

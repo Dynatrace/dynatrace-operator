@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -50,7 +49,7 @@ func testReadTokens(t *testing.T) {
 				Namespace: "dynatrace",
 			},
 		}
-		testSecret, err := secret.Create(scheme.Scheme, &dynakube, secret.NewNameModifier("dynakube"), secret.NewNamespaceModifier("dynatrace"), secret.NewDataModifier(map[string][]byte{
+		testSecret, err := secret.Create(&dynakube, secret.NewNameModifier("dynakube"), secret.NewNamespaceModifier("dynatrace"), secret.NewDataModifier(map[string][]byte{
 			dtclient.ApiToken:        []byte(testApiToken),
 			dtclient.PaasToken:       []byte(testPaasToken),
 			dtclient.DataIngestToken: []byte(testDataIngestToken),
@@ -84,7 +83,7 @@ func testVerifyTokens(t *testing.T) {
 			Namespace: dynatraceNamespace,
 		}})
 
-		err := reader.verifyApiTokenExists(map[string]Token{
+		err := reader.verifyApiTokenExists(map[string]*Token{
 			testIrrelevantTokenKey: {
 				Value: testIrrelevantToken,
 			},
@@ -95,7 +94,7 @@ func testVerifyTokens(t *testing.T) {
 	t.Run("no error if api token exists", func(t *testing.T) {
 		reader := NewReader(nil, nil)
 
-		err := reader.verifyApiTokenExists(map[string]Token{
+		err := reader.verifyApiTokenExists(map[string]*Token{
 			testIrrelevantTokenKey: {
 				Value: testIrrelevantToken,
 			},

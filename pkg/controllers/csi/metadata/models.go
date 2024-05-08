@@ -16,9 +16,9 @@ type TimeStampedModel struct {
 // TenantConfig holds info about a given configuration for a tenant.
 type TenantConfig struct {
 	TimeStampedModel
-	UID                         string `gorm:"primaryKey"`
+	UID                         string `gorm:"primaryKey"` // auto generated UID
 	Name                        string `gorm:"not null"`
-	DownloadedCodeModuleVersion string
+	DownloadedCodeModuleVersion string // can't be foreign key because of HostMonitoring edge case
 	ConfigDirPath               string `gorm:"not null"`
 	TenantUUID                  string `gorm:"not null"`
 	MaxFailedMountAttempts      int64  `gorm:"default:10"`

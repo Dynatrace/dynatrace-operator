@@ -137,6 +137,7 @@ linters-settings:
           - "github.com/docker/cli"
           - "github.com/go-gormigrate/gormigrate"
           - "github.com/google/uuid"
+          - "github.com/google/go-cmp/cmp"
 
           # Allowed packages in container-based builder.
         deny:
@@ -159,7 +160,7 @@ linters-settings:
         deny:
           - pkg: "github.com/google/go-cmp"
             desc: Please don't use go-cmp for non-test code.
-  gomnd:
+  mnd:
     checks:
       - argument
       - case
@@ -213,7 +214,7 @@ linters:
   - godot                     # Check if comments end in a period.
   - gofmt                     # Gofmt checks whether code was gofmt-ed. By default this tool runs with -s option to check for code simplification
   - goheader                  # Checks is file header matches to pattern.
-  - gomnd                     # An analyzer to detect magic numbers.
+  - mnd                       # An analyzer to detect magic numbers.
   - gomoddirectives           # Manage the use of 'replace', 'retract', and 'excludes' directives in go.mod.
   - gomodguard                # Allow and block list linter for direct Go module dependencies. This is different from depguard where there are different block types for example version constraints and module recommendations.
   - goprintffuncname          # Checks that printf-like functions are named with f at the end.

@@ -3,6 +3,7 @@ package daemonset
 import (
 	"testing"
 
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/stretchr/testify/assert"
@@ -226,5 +227,28 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		assert.Contains(t, volumeMounts, getActiveGateCaCertVolumeMount())
 		assert.Contains(t, volumeMounts, getClusterCaCertVolumeMount())
 		assert.Contains(t, volumeMounts, getCSIStorageMount())
+	})
+	t.Run(`has no volume if proxy is set and proxy ignore feature-flags is used`, func(t *testing.T) {
+		instance := &dynatracev1beta2.DynaKube{
+			ObjectMeta: corev1.ObjectMeta{
+				Name:      "Dynakube",
+				Namespace: "dynatrace",
+				Annotations: map[string]string{
+					dynatracev1beta1.AnnotationFeatureOneAgentIgnoreProxy: "true",
+				},
+			},
+			Spec: dynatracev1beta2.DynaKubeSpec{
+				Proxy: &dynatracev1beta2.DynaKubeProxy{ValueFrom: proxy.BuildSecretName("Dynakube")},
+				OneAgent: dynatracev1beta2.OneAgentSpec{
+					HostMonitoring: &dynatracev1beta2.HostInjectSpec{},
+				},
+			},
+		}
+
+		volumes := prepareVolumes(instance)
+		mounts := prepareVolumeMounts(instance)
+
+		assert.NotContains(t, volumes, buildHttpProxyVolume(instance))
+		assert.NotContains(t, mounts, getHttpProxyMount())
 	})
 }

@@ -65,7 +65,18 @@ func PrepareConfigFile(ctx context.Context, instance *edgeconnectv1alpha1.EdgeCo
 	}
 
 	edgeConnectYaml, err := yaml.Marshal(cfg)
-	log.Debug(string(edgeConnectYaml))
+	log.Debug(safeEdgeConnectCfg(cfg))
 
 	return edgeConnectYaml, err
+}
+
+// Replace client secret with stars for debug logs
+func safeEdgeConnectCfg(cfg config.EdgeConnect) string {
+	if cfg.OAuth.ClientSecret != "" {
+		cfg.OAuth.ClientSecret = "****"
+	}
+
+	safe, _ := yaml.Marshal(cfg)
+
+	return string(safe)
 }
