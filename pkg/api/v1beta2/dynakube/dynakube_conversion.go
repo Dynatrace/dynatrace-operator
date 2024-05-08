@@ -1,11 +1,11 @@
 package dynakube
 
 import (
-	"strconv"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
+	"strconv"
+	"time"
 )
 
 // ConvertTo converts v1beta2 to v1beta1.
@@ -110,13 +110,30 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 		dst.Spec.MetaDataEnrichment = MetaDataEnrichment{
 			Enabled: false,
 		}
+		delete(dst.Annotations, dynakube.AnnotationFeatureMetadataEnrichment)
+	} else {
+		dst.Spec.MetaDataEnrichment = MetaDataEnrichment{
+			Enabled: true,
+		}
+		delete(dst.Annotations, dynakube.AnnotationFeatureMetadataEnrichment)
 	}
 
-	src.Annotations[dynakube.AnnotationFeatureApiRequestThreshold] = strconv.FormatInt(int64(dst.Spec.DynatraceApiRequestThreshold), 10)
+	if src.Annotations[dynakube.AnnotationFeatureApiRequestThreshold] != "" {
+		duration, err := time.ParseDuration(src.Annotations[dynakube.AnnotationFeatureApiRequestThreshold])
+		if err != nil {
+			return err
+		}
+		dst.Spec.DynatraceApiRequestThreshold = duration
+		delete(dst.Annotations, src.Annotations[dynakube.AnnotationFeatureApiRequestThreshold])
+	} else {
+		dst.Spec.DynatraceApiRequestThreshold = DefaultMinRequestThresholdMinutes
+		delete(dst.Annotations, src.Annotations[dynakube.AnnotationFeatureApiRequestThreshold])
+	}
 
 	if src.Annotations[dynakube.AnnotationFeatureOneAgentSecCompProfile] != "" {
 		secCompProfile := src.Annotations[dynakube.AnnotationFeatureOneAgentSecCompProfile]
 		dst.Spec.OneAgent.HostMonitoring.SecCompProfile = secCompProfile
+		delete(dst.Annotations, dynakube.AnnotationFeatureOneAgentSecCompProfile)
 	}
 
 	if src.NamespaceSelector() != nil {

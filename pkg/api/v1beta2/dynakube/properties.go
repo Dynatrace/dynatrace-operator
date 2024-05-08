@@ -248,7 +248,13 @@ func (dk *DynaKube) InitResources() *corev1.ResourceRequirements {
 }
 
 func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
-	return &dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector
+	switch {
+	case dk.CloudNativeFullstackMode():
+		return &dk.Spec.OneAgent.CloudNativeFullStack.NamespaceSelector
+	case dk.ApplicationMonitoringMode():
+		return &dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector
+	}
+	return nil
 }
 
 func (dk *DynaKube) NodeSelector() map[string]string {
@@ -407,6 +413,10 @@ func (dk *DynaKube) ApiRequestThreshold() time.Duration {
 	}
 
 	return dk.Spec.DynatraceApiRequestThreshold * time.Minute //nolint:durationcheck
+}
+
+func (dk *DynaKube) MetaDataEnrichmentEnabled() bool {
+	return dk.Spec.MetaDataEnrichment.Enabled
 }
 
 func runeIs(wanted rune) func(rune) bool {
