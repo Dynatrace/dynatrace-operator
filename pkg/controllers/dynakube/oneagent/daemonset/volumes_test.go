@@ -227,4 +227,27 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		assert.Contains(t, volumeMounts, getClusterCaCertVolumeMount())
 		assert.Contains(t, volumeMounts, getCSIStorageMount())
 	})
+	t.Run(`has no volume if proxy is set and proxy ignore feature-flags is used`, func(t *testing.T) {
+		instance := &dynatracev1beta1.DynaKube{
+			ObjectMeta: corev1.ObjectMeta{
+				Name:      "Dynakube",
+				Namespace: "dynatrace",
+				Annotations: map[string]string{
+					dynatracev1beta1.AnnotationFeatureOneAgentIgnoreProxy: "true",
+				},
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				Proxy: &dynatracev1beta1.DynaKubeProxy{ValueFrom: proxy.BuildSecretName("Dynakube")},
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
+				},
+			},
+		}
+
+		volumes := prepareVolumes(instance)
+		mounts := prepareVolumeMounts(instance)
+
+		assert.NotContains(t, volumes, buildHttpProxyVolume(instance))
+		assert.NotContains(t, mounts, getHttpProxyMount())
+	})
 }

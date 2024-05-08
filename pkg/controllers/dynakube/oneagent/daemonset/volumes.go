@@ -30,7 +30,7 @@ func prepareVolumeMounts(instance *dynatracev1beta1.DynaKube) []corev1.VolumeMou
 		volumeMounts = append(volumeMounts, getActiveGateCaCertVolumeMount())
 	}
 
-	if instance != nil && instance.HasProxy() {
+	if instance != nil && instance.NeedsOneAgentProxy() {
 		volumeMounts = append(volumeMounts, getHttpProxyMount())
 	}
 
@@ -106,7 +106,7 @@ func prepareVolumes(instance *dynatracev1beta1.DynaKube) []corev1.Volume {
 		volumes = append(volumes, getActiveGateCaCertVolume(instance))
 	}
 
-	if instance.HasProxy() {
+	if instance.NeedsOneAgentProxy() {
 		volumes = append(volumes, buildHttpProxyVolume(instance))
 	}
 
