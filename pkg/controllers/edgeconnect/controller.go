@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
@@ -42,6 +43,8 @@ const (
 	defaultNamespaceName    = "default"
 	kubernetesServiceName   = "kubernetes"
 	kubeSystemNamespaceName = "kube-system"
+
+	k8sHostnameSuffix = "kubernetes-automation"
 )
 
 type oauthCredentialsType struct {
@@ -215,7 +218,7 @@ func (controller *Controller) reconcileEdgeConnectCR(ctx context.Context, edgeCo
 		return err
 	}
 
-	if edgeConnect.Spec.OAuth.Provisioner {
+	if edgeConnect.IsProvisionerModeEnabled() {
 		_log.Debug("reconcile EdgeConnect provisioner")
 
 		return controller.reconcileEdgeConnectProvisioner(ctx, edgeConnect)
@@ -252,7 +255,7 @@ func (controller *Controller) getEdgeConnect(ctx context.Context, name, namespac
 func (controller *Controller) updateFinalizers(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
 	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name)
 
-	if edgeConnect.Spec.OAuth.Provisioner && len(edgeConnect.ObjectMeta.Finalizers) == 0 {
+	if edgeConnect.IsProvisionerModeEnabled() && len(edgeConnect.ObjectMeta.Finalizers) == 0 {
 		_log.Info("updating finalizers")
 
 		edgeConnect.ObjectMeta.Finalizers = []string{finalizerName}
@@ -321,11 +324,6 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 	desiredDeployment := deployment.New(edgeConnect)
 
 	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name, "deploymentName", desiredDeployment.Name)
-
-	err := controller.hostAlias(ctx, desiredDeployment, edgeConnect.Name, edgeConnect.Namespace)
-	if err != nil {
-		return err
-	}
 
 	if err := controllerutil.SetControllerReference(edgeConnect, desiredDeployment, scheme.Scheme); err != nil {
 		return errors.WithStack(err)
@@ -405,8 +403,15 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 		}
 	}
 
+	k8sHostname, err := controller.k8sHostname(ctx, edgeConnect.Name, edgeConnect.Namespace)
+	if err != nil {
+		return err
+	}
+
+	hostPatterns := controller.hostPatterns(edgeConnect, k8sHostname)
+
 	if tenantEdgeConnect.ID == "" {
-		err := controller.createEdgeConnect(ctx, edgeConnectClient, edgeConnect)
+		err := controller.createEdgeConnect(ctx, edgeConnectClient, edgeConnect, hostPatterns)
 		if err != nil {
 			return err
 		}
@@ -414,7 +419,7 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 		return controller.createOrUpdateEdgeConnectDeployment(ctx, edgeConnect)
 	}
 
-	err = controller.updateEdgeConnect(ctx, edgeConnectClient, edgeConnect)
+	err = controller.updateEdgeConnect(ctx, edgeConnectClient, edgeConnect, hostPatterns)
 	if err != nil {
 		return err
 	}
@@ -537,10 +542,10 @@ func (controller *Controller) getEdgeConnectIdFromClientSecret(ctx context.Conte
 	return id, nil
 }
 
-func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnectClient edgeconnect.Client, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
+func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnectClient edgeconnect.Client, edgeConnect *edgeconnectv1alpha1.EdgeConnect, hostPatterns []string) error {
 	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name)
 
-	createResponse, err := edgeConnectClient.CreateEdgeConnect(edgeConnect.Name, edgeConnect.Spec.HostPatterns, "")
+	createResponse, err := edgeConnectClient.CreateEdgeConnect(edgeConnect.Name, hostPatterns, "")
 	if err != nil {
 		_log.Debug("creating EdgeConnect failed")
 
@@ -576,7 +581,7 @@ func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnect
 	return nil
 }
 
-func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnectClient edgeconnect.Client, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
+func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnectClient edgeconnect.Client, edgeConnect *edgeconnectv1alpha1.EdgeConnect, hostPatterns []string) error {
 	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name)
 
 	secretQuery := k8ssecret.NewQuery(ctx, controller.client, controller.apiReader, log)
@@ -609,7 +614,7 @@ func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnect
 		return errors.WithStack(err)
 	}
 
-	if slices.Equal(edgeConnect.Spec.HostPatterns, edgeConnectResponse.HostPatterns) {
+	if slices.Equal(hostPatterns, edgeConnectResponse.HostPatterns) {
 		_log.Debug("EdgeConnect host patterns in response match", "patterns", edgeConnect.Spec.HostPatterns)
 
 		return nil
@@ -617,7 +622,7 @@ func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnect
 
 	log.Debug("updating EdgeConnect", "name", edgeConnect.Name)
 
-	err = edgeConnectClient.UpdateEdgeConnect(id, edgeConnect.Name, edgeConnect.Spec.HostPatterns, oauthClientId)
+	err = edgeConnectClient.UpdateEdgeConnect(id, edgeConnect.Name, hostPatterns, oauthClientId)
 	if err != nil {
 		_log.Debug("updating EdgeConnect failed")
 
@@ -640,11 +645,6 @@ func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Co
 	}
 
 	desiredDeployment := deployment.New(edgeConnect)
-
-	err = controller.hostAlias(ctx, desiredDeployment, edgeConnect.Name, edgeConnect.Namespace)
-	if err != nil {
-		return err
-	}
 
 	desiredDeployment.Spec.Template.Annotations = map[string]string{consts.EdgeConnectAnnotationSecretHash: secretHash}
 	_log = _log.WithValues("deploymentName", desiredDeployment.Name)
@@ -706,29 +706,31 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 	return hasher.GenerateHash(secretConfig.Data)
 }
 
-func (controller *Controller) hostAlias(ctx context.Context, deployment *appsv1.Deployment, ecName string, ecNamespace string) error {
-	var kubernetesService corev1.Service
-
-	err := controller.apiReader.Get(ctx, client.ObjectKey{Namespace: defaultNamespaceName, Name: kubernetesServiceName}, &kubernetesService)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
+func (controller *Controller) k8sHostname(ctx context.Context, ecName string, ecNamespace string) (string, error) {
 	var kubeSystemNamespace corev1.Namespace
 
-	err = controller.apiReader.Get(ctx, client.ObjectKey{Name: kubeSystemNamespaceName}, &kubeSystemNamespace)
+	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: kubeSystemNamespaceName}, &kubeSystemNamespace)
 	if err != nil {
-		return errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 
-	deployment.Spec.Template.Spec.HostAliases = []corev1.HostAlias{
-		{
-			IP: kubernetesService.Spec.ClusterIP,
-			Hostnames: []string{
-				ecName + "." + ecNamespace + "." + string(kubeSystemNamespace.UID),
-			},
-		},
+	return ecName + "." + ecNamespace + "." + string(kubeSystemNamespace.UID) + "." + k8sHostnameSuffix, nil
+}
+
+func (controller *Controller) hostPatterns(edgeConnect *edgeconnectv1alpha1.EdgeConnect, k8sHostname string) []string {
+	if !edgeConnect.IsK8SAutomationEnabled() {
+		return edgeConnect.Spec.HostPatterns
 	}
 
-	return nil
+	var hostPatterns []string
+
+	for _, hostPattern := range edgeConnect.Spec.HostPatterns {
+		if !strings.EqualFold(hostPattern, k8sHostname) {
+			hostPatterns = append(hostPatterns, hostPattern)
+		}
+	}
+
+	hostPatterns = append(hostPatterns, k8sHostname)
+
+	return hostPatterns
 }
