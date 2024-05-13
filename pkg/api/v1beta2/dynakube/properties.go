@@ -421,6 +421,7 @@ func (dk *DynaKube) MetaDataEnrichmentEnabled() bool {
 	if dk.Spec.MetaDataEnrichment.Enabled == nil {
 		dk.Spec.MetaDataEnrichment.Enabled = address.Of(true)
 	}
+
 	return *dk.Spec.MetaDataEnrichment.Enabled
 }
 
