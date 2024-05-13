@@ -2,9 +2,10 @@ package dynakube
 
 import (
 	"testing"
-	_ "time"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	_ "k8s.io/api/core/v1"
@@ -43,9 +44,9 @@ func TestConversion_ConvertFrom_Create(t *testing.T) {
 			APIURL: testAPIURL,
 			Tokens: testToken,
 			MetaDataEnrichment: MetaDataEnrichment{
-				Enabled: true,
+				Enabled: address.Of(true),
 			},
-			DynatraceApiRequestThreshold: DefaultMinRequestThresholdMinutes,
+			DynatraceApiRequestThreshold: address.Of(time.Duration(DefaultMinRequestThresholdMinutes)),
 			OneAgent: OneAgentSpec{
 				HostMonitoring: &HostInjectSpec{
 					SecCompProfile: testProfile,
@@ -64,7 +65,7 @@ func TestConversion_ConvertFrom_Create(t *testing.T) {
 	assert.Equal(t, oldDynakube.Spec.Tokens, convertedDynakube.Spec.Tokens)
 
 	require.NotNil(t, convertedDynakube.Spec.MetaDataEnrichment)
-	require.True(t, convertedDynakube.Spec.MetaDataEnrichment.Enabled)
+	require.True(t, *convertedDynakube.Spec.MetaDataEnrichment.Enabled)
 	require.NotNil(t, convertedDynakube.Spec.OneAgent.HostMonitoring)
 	require.NotEmpty(t, convertedDynakube.Spec.OneAgent.HostMonitoring.SecCompProfile)
 	require.NotNil(t, convertedDynakube.Spec.DynatraceApiRequestThreshold)
@@ -78,7 +79,7 @@ func prepareObjectMeta() metav1.ObjectMeta {
 }
 
 func TestConversion_ConvertFrom(t *testing.T) {
-	time := metav1.Now()
+	curr_time := metav1.Now()
 	oldDynakube := &dynakube.DynaKube{
 		ObjectMeta: prepareObjectMeta(),
 		Spec: dynakube.DynaKubeSpec{
@@ -97,13 +98,13 @@ func TestConversion_ConvertFrom(t *testing.T) {
 		},
 		Status: dynakube.DynaKubeStatus{
 			Phase:            "test-phase",
-			UpdatedTimestamp: time,
+			UpdatedTimestamp: curr_time,
 			Conditions: []metav1.Condition{
 				{
 					Type:               "type",
 					Status:             "status",
 					ObservedGeneration: 3,
-					LastTransitionTime: time,
+					LastTransitionTime: curr_time,
 					Reason:             "reason",
 					Message:            "message",
 				},
@@ -125,9 +126,9 @@ func TestConversion_ConvertFrom(t *testing.T) {
 			APIURL: testAPIURL,
 			Tokens: testToken,
 			MetaDataEnrichment: MetaDataEnrichment{
-				Enabled: true,
+				Enabled: address.Of(true),
 			},
-			DynatraceApiRequestThreshold: DefaultMinRequestThresholdMinutes,
+			DynatraceApiRequestThreshold: address.Of(time.Duration(DefaultMinRequestThresholdMinutes)),
 			OneAgent: OneAgentSpec{
 				HostMonitoring: &HostInjectSpec{
 					SecCompProfile: testProfile,
@@ -164,7 +165,7 @@ func TestConversion_ConvertFrom(t *testing.T) {
 	assert.Equal(t, oldDynakube.Status.UpdatedTimestamp, convertedDynakube.Status.UpdatedTimestamp)
 
 	require.NotNil(t, convertedDynakube.Spec.MetaDataEnrichment)
-	require.True(t, convertedDynakube.Spec.MetaDataEnrichment.Enabled)
+	require.True(t, *convertedDynakube.Spec.MetaDataEnrichment.Enabled)
 	require.NotNil(t, convertedDynakube.Spec.OneAgent.HostMonitoring)
 	require.NotEmpty(t, convertedDynakube.Spec.OneAgent.HostMonitoring.SecCompProfile)
 	require.NotNil(t, convertedDynakube.Spec.DynatraceApiRequestThreshold)
@@ -184,10 +185,10 @@ func TestConversion_ConvertTo(t *testing.T) {
 			},
 			TrustedCAs:                   testTrustedCAs,
 			NetworkZone:                  testNetworkZone,
-			DynatraceApiRequestThreshold: DefaultMinRequestThresholdMinutes,
+			DynatraceApiRequestThreshold: address.Of(time.Duration(DefaultMinRequestThresholdMinutes)),
 			OneAgent:                     OneAgentSpec{},
 			MetaDataEnrichment: MetaDataEnrichment{
-				Enabled: true,
+				Enabled: address.Of(true),
 			},
 		},
 		Status: DynaKubeStatus{

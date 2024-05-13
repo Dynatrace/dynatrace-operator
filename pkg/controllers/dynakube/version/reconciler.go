@@ -107,7 +107,7 @@ func (r *reconciler) needsUpdate(updater StatusUpdater, dynakube *dynatracev1bet
 		return true
 	}
 
-	if !r.timeProvider.IsOutdated(updater.Target().LastProbeTimestamp, dynakube.Spec.DynatraceApiRequestThreshold) {
+	if !r.timeProvider.IsOutdated(updater.Target().LastProbeTimestamp, dynakube.ApiRequestThreshold()) {
 		log.Info("status timestamp still valid, skipping version status updater", "updater", updater.Name())
 
 		return false

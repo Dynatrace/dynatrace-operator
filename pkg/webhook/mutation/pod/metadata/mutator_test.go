@@ -47,11 +47,7 @@ func TestEnabled(t *testing.T) {
 	t.Run("on with feature flag", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		dynakube := dynatracev1beta2.DynaKube{
-			Spec: dynatracev1beta2.DynaKubeSpec{
-				MetaDataEnrichment: dynatracev1beta2.MetaDataEnrichment{
-					Enabled: true,
-				},
-			},
+			Spec: dynatracev1beta2.DynaKubeSpec{},
 		}
 		request := createTestMutationRequest(&dynakube, nil)
 		request.DynaKube.Annotations = map[string]string{dynatracev1beta2.AnnotationFeatureAutomaticInjection: "true"}

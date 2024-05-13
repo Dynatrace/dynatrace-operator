@@ -124,7 +124,7 @@ func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient
 		log.Info(dynatracev1beta2.GetCacheValidMessage(
 			"token verification",
 			dynaKubeStatus.DynatraceApi.LastTokenScopeRequest,
-			dynatraceClientBuilder.dynakube.Spec.DynatraceApiRequestThreshold))
+			dynatraceClientBuilder.dynakube.ApiRequestThreshold()))
 
 		return lastErrorFromCondition(dynaKubeStatus)
 	}

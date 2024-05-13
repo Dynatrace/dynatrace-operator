@@ -24,6 +24,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -409,15 +410,18 @@ func (dk *DynaKube) TenantUUIDFromApiUrl() (string, error) {
 }
 
 func (dk *DynaKube) ApiRequestThreshold() time.Duration {
-	if dk.Spec.DynatraceApiRequestThreshold < 0 {
-		dk.Spec.DynatraceApiRequestThreshold = DefaultMinRequestThresholdMinutes
+	if dk.Spec.DynatraceApiRequestThreshold == nil || *dk.Spec.DynatraceApiRequestThreshold < 0 {
+		dk.Spec.DynatraceApiRequestThreshold = address.Of(time.Duration(DefaultMinRequestThresholdMinutes))
 	}
 
-	return dk.Spec.DynatraceApiRequestThreshold * time.Minute //nolint:durationcheck
+	return *dk.Spec.DynatraceApiRequestThreshold * time.Minute //nolint:durationcheck
 }
 
 func (dk *DynaKube) MetaDataEnrichmentEnabled() bool {
-	return dk.Spec.MetaDataEnrichment.Enabled
+	if dk.Spec.MetaDataEnrichment.Enabled == nil {
+		dk.Spec.MetaDataEnrichment.Enabled = address.Of(true)
+	}
+	return *dk.Spec.MetaDataEnrichment.Enabled
 }
 
 func runeIs(wanted rune) func(rune) bool {

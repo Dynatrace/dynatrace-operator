@@ -11,5 +11,5 @@ type MetaDataEnrichment struct {
 	// Enabled by default.
 	// +kubebuilder:default:=true
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="MetaDataEnrichment",xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
-	Enabled bool `json:"enabled"`
+	Enabled *bool `json:"enabled"`
 }

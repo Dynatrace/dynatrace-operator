@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
@@ -32,11 +33,11 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 		dst.Annotations = map[string]string{}
 	}
 
-	if !src.Spec.MetaDataEnrichment.Enabled {
+	if !*src.Spec.MetaDataEnrichment.Enabled {
 		dst.Annotations[dynakube.AnnotationFeatureMetadataEnrichment] = "false"
 	}
 
-	dst.Annotations[dynakube.AnnotationFeatureApiRequestThreshold] = strconv.FormatInt(int64(src.Spec.DynatraceApiRequestThreshold), 10)
+	dst.Annotations[dynakube.AnnotationFeatureApiRequestThreshold] = strconv.FormatInt(int64(*src.Spec.DynatraceApiRequestThreshold), 10)
 
 	if hostMonitoring := src.Spec.OneAgent.HostMonitoring; hostMonitoring != nil {
 		if hostMonitoring.SecCompProfile != "" {
@@ -109,12 +110,12 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 
 	if src.Annotations[dynakube.AnnotationFeatureMetadataEnrichment] == "true" {
 		dst.Spec.MetaDataEnrichment = MetaDataEnrichment{
-			Enabled: false,
+			Enabled: address.Of(false),
 		}
 		delete(dst.Annotations, dynakube.AnnotationFeatureMetadataEnrichment)
 	} else {
 		dst.Spec.MetaDataEnrichment = MetaDataEnrichment{
-			Enabled: true,
+			Enabled: address.Of(true),
 		}
 		delete(dst.Annotations, dynakube.AnnotationFeatureMetadataEnrichment)
 	}
@@ -125,10 +126,10 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 			return err
 		}
 
-		dst.Spec.DynatraceApiRequestThreshold = duration
+		dst.Spec.DynatraceApiRequestThreshold = address.Of(duration)
 		delete(dst.Annotations, src.Annotations[dynakube.AnnotationFeatureApiRequestThreshold])
 	} else {
-		dst.Spec.DynatraceApiRequestThreshold = DefaultMinRequestThresholdMinutes
+		dst.Spec.DynatraceApiRequestThreshold = address.Of(time.Duration(DefaultMinRequestThresholdMinutes))
 		delete(dst.Annotations, src.Annotations[dynakube.AnnotationFeatureApiRequestThreshold])
 	}
 

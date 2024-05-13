@@ -5,6 +5,7 @@ import (
 	"time"
 
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +34,7 @@ func TestIsOutdated(t *testing.T) {
 		tp := timeprovider.New()
 		dk := &dynatracev1beta2.DynaKube{
 			Spec: dynatracev1beta2.DynaKubeSpec{
-				DynatraceApiRequestThreshold: dynatracev1beta2.DefaultMinRequestThresholdMinutes,
+				DynatraceApiRequestThreshold: address.Of(time.Duration(dynatracev1beta2.DefaultMinRequestThresholdMinutes)),
 			},
 		}
 
