@@ -95,6 +95,11 @@ type DynaKubeSpec struct { //nolint:revive
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	OneAgent OneAgentSpec `json:"oneAgent,omitempty"`
 
+	// Configuration for thresholding Dynatrace API requests.
+	// +optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Dynatrace API Request Threshold",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	DynatraceApiRequestThreshold *time.Duration `json:"dynatraceApiRequestThreshold,omitempty"`
+
 	// Dynatrace apiUrl, including the /api path at the end. For SaaS, set YOUR_ENVIRONMENT_ID to your environment ID. For Managed, change the apiUrl address.
 	// For instructions on how to determine the environment ID and how to configure the apiUrl address, see Environment ID (https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id).
 	// +kubebuilder:validation:Required
@@ -132,11 +137,6 @@ type DynaKubeSpec struct { //nolint:revive
 	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="MetaData Enrichment",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	MetaDataEnrichment MetaDataEnrichment `json:"metaDataEnrichment,omitempty"`
-
-	// Configuration for thresholding Dynatrace API requests.
-	// +optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Dynatrace API Request Threshold",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
-	DynatraceApiRequestThreshold *time.Duration `json:"dynatraceApiRequestThreshold,omitempty" fieldalignment:"8"`
 
 	// Disable certificate check for the connection between Dynatrace Operator and the Dynatrace Cluster.
 	// Set to true if you want to skip certification validation checks.
