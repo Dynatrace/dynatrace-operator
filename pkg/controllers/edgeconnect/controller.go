@@ -706,6 +706,7 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 	return hasher.GenerateHash(secretConfig.Data)
 }
 
+// indicator of the cluster the EC configuration is related to
 func (controller *Controller) k8sHostname(ctx context.Context, ecName string, ecNamespace string) (string, error) {
 	var kubeSystemNamespace corev1.Namespace
 
