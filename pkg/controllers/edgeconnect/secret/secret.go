@@ -6,12 +6,11 @@ import (
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/config"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"gopkg.in/yaml.v3"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func PrepareConfigFile(ctx context.Context, instance *edgeconnectv1alpha1.EdgeConnect, apiReader client.Reader) ([]byte, error) {
+func PrepareConfigFile(ctx context.Context, instance *edgeconnectv1alpha1.EdgeConnect, apiReader client.Reader, token string) ([]byte, error) {
 	cfg := config.EdgeConnect{
 		Name:            instance.ObjectMeta.Name,
 		ApiEndpointHost: instance.Spec.ApiServer,
@@ -50,7 +49,7 @@ func PrepareConfigFile(ctx context.Context, instance *edgeconnectv1alpha1.EdgeCo
 	if instance.Spec.ServiceAccountName != "" {
 		cfg.RootCertificatePaths = append(cfg.RootCertificatePaths, consts.EdgeConnectServiceAccountCAPath)
 
-		secret, err := addDefaultServiceAccount()
+		secret, err := addDefaultServiceAccount(token)
 		if err != nil {
 			return []byte{}, err
 		}
@@ -93,15 +92,10 @@ func safeEdgeConnectCfg(cfg config.EdgeConnect) string {
 	return string(safe)
 }
 
-func addDefaultServiceAccount() (config.Secret, error) {
-	newToken, err := dttoken.New("dt0e01")
-	if err != nil {
-		return config.Secret{}, err
-	}
-
+func addDefaultServiceAccount(token string) (config.Secret, error) {
 	return config.Secret{
 		Name:            "K8S_SERVICE_ACCOUNT_TOKEN",
-		Token:           newToken.String(),
+		Token:           token,
 		From:            "file:/var/run/secrets/kubernetes.io/serviceaccount/token",
 		RestrictHostsTo: "kubernetes.default.svc",
 	}, nil

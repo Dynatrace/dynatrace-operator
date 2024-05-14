@@ -11,16 +11,19 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/config"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/deployment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	k8sdeployment "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/deployment"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -46,6 +49,8 @@ const (
 
 	k8sHostnameSuffix = "kubernetes-automation"
 )
+
+var ErrTokenNotFound = errors.New("token not found")
 
 type oauthCredentialsType struct {
 	clientId     string
@@ -677,7 +682,23 @@ func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Co
 }
 
 func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) (string, error) {
-	configFile, err := secret.PrepareConfigFile(ctx, edgeConnect, controller.apiReader)
+	// Get a Token from edgeconnect.yaml secret data
+	token, err := controller.getToken(ctx, edgeConnect)
+
+	// check token not found and not all errors
+	if err != nil {
+		if k8serrors.IsNotFound(err) || errors.Is(err, ErrTokenNotFound) {
+			newToken, err := dttoken.New("sad")
+			if err != nil {
+				return "", err
+			}
+
+			token = newToken.String()
+		}
+		return "", err
+	}
+
+	configFile, err := secret.PrepareConfigFile(ctx, edgeConnect, controller.apiReader, token)
 	if err != nil {
 		return "", err
 	}
@@ -733,4 +754,26 @@ func (controller *Controller) hostPatterns(edgeConnect *edgeconnectv1alpha1.Edge
 	hostPatterns = append(hostPatterns, k8sHostname)
 
 	return hostPatterns
+}
+
+func (controller *Controller) getToken(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) (string, error) {
+	query := k8ssecret.NewQuery(ctx, controller.client, controller.apiReader, log)
+	secretV, err := query.Get(types.NamespacedName{Name: edgeConnect.Name + "-" + consts.EdgeConnectSecretSuffix, Namespace: edgeConnect.Namespace})
+
+	if err != nil {
+		return "", err
+	}
+
+	cfg := secretV.Data[consts.EdgeConnectConfigFileName]
+
+	ecCfg := config.EdgeConnect{}
+	err = yaml.Unmarshal(cfg, &ecCfg)
+	if err != nil {
+		return "", err
+	}
+
+	if len(ecCfg.Secrets) > 0 {
+		return ecCfg.Secrets[0].Token, nil
+	}
+	return "", ErrTokenNotFound
 }
