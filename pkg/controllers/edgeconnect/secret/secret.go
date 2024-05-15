@@ -48,13 +48,7 @@ func PrepareConfigFile(ctx context.Context, instance *edgeconnectv1alpha1.EdgeCo
 
 	if instance.Spec.ServiceAccountName != "" {
 		cfg.RootCertificatePaths = append(cfg.RootCertificatePaths, consts.EdgeConnectServiceAccountCAPath)
-
-		secret, err := addDefaultServiceAccount(token)
-		if err != nil {
-			return []byte{}, err
-		}
-
-		cfg.Secrets = append(cfg.Secrets, secret)
+		cfg.Secrets = append(cfg.Secrets, createDefaultServiceAccount(token))
 	}
 
 	if instance.Spec.Proxy != nil {
@@ -92,11 +86,11 @@ func safeEdgeConnectCfg(cfg config.EdgeConnect) string {
 	return string(safe)
 }
 
-func addDefaultServiceAccount(token string) (config.Secret, error) {
+func createDefaultServiceAccount(token string) config.Secret {
 	return config.Secret{
 		Name:            "K8S_SERVICE_ACCOUNT_TOKEN",
 		Token:           token,
 		From:            "file:/var/run/secrets/kubernetes.io/serviceaccount/token",
 		RestrictHostsTo: "kubernetes.default.svc",
-	}, nil
+	}
 }

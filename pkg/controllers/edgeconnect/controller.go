@@ -694,8 +694,9 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 			}
 
 			token = newToken.String()
+		} else {
+			return "", err
 		}
-		return "", err
 	}
 
 	configFile, err := secret.PrepareConfigFile(ctx, edgeConnect, controller.apiReader, token)
@@ -767,6 +768,7 @@ func (controller *Controller) getToken(ctx context.Context, edgeConnect *edgecon
 	cfg := secretV.Data[consts.EdgeConnectConfigFileName]
 
 	ecCfg := config.EdgeConnect{}
+
 	err = yaml.Unmarshal(cfg, &ecCfg)
 	if err != nil {
 		return "", err
@@ -775,5 +777,6 @@ func (controller *Controller) getToken(ctx context.Context, edgeConnect *edgecon
 	if len(ecCfg.Secrets) > 0 {
 		return ecCfg.Secrets[0].Token, nil
 	}
+
 	return "", ErrTokenNotFound
 }

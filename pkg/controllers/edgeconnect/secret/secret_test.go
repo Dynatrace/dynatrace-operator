@@ -20,6 +20,7 @@ const (
 	testOauthClientId              = "client-id"
 	testOauthClientSecret          = "client-secret"
 	testOauthClientResource        = "client-resource"
+	testToken                      = "dummy-token"
 	testCreatedOauthClientId       = "created-client-id"
 	testCreatedOauthClientSecret   = "created-client-secret"
 	testCreatedOauthClientResource = "created-client-resource"
@@ -46,7 +47,7 @@ func Test_prepareEdgeConnectConfigFile(t *testing.T) {
 
 		testSecretName := "test-secret"
 		kubeReader := fake.NewClient(createClientSecret(testSecretName, testNamespace))
-		cfg, err := PrepareConfigFile(context.Background(), testEdgeConnect, kubeReader)
+		cfg, err := PrepareConfigFile(context.Background(), testEdgeConnect, kubeReader, testToken)
 
 		require.NoError(t, err)
 
@@ -89,7 +90,7 @@ oauth:
 			edgeconnectv1alpha1.ProxyAuthPasswordKey: "pass",
 		})
 		kubeReader := fake.NewClient(createClientSecret(testSecretName, testNamespace), authRef)
-		cfg, err := PrepareConfigFile(context.Background(), testEdgeConnect, kubeReader)
+		cfg, err := PrepareConfigFile(context.Background(), testEdgeConnect, kubeReader, testToken)
 
 		require.NoError(t, err)
 
