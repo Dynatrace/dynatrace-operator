@@ -75,7 +75,8 @@ oauth:
 					Resource:     "urn:dtenvironment:test12345",
 					ClientSecret: "test-secret",
 				},
-				CaCertsRef: "certs",
+				CaCertsRef:         "certs",
+				ServiceAccountName: "test",
 				Proxy: &edgeconnectv1alpha1.ProxySpec{
 					Host:    "proxy.com",
 					NoProxy: "*.internal.com",
@@ -103,6 +104,7 @@ oauth:
     resource: urn:dtenvironment:test12345
 root_certificate_paths:
     - /etc/ssl/certificate.cer
+    - /var/run/secrets/kuberntes.io/serviceaccount/ca.crt
 proxy:
     auth:
         user: user
@@ -110,6 +112,11 @@ proxy:
     server: proxy.com
     exceptions: '*.internal.com'
     port: 443
+secrets:
+    - name: K8S_SERVICE_ACCOUNT_TOKEN
+      token: dummy-token
+      from: file:/var/run/secrets/kubernetes.io/serviceaccount/token
+      restrict_hosts_to: kubernetes.default.svc
 `
 		assert.Equal(t, expected, string(cfg))
 	})
