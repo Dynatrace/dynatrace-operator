@@ -403,7 +403,7 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 		}
 	}
 
-	k8sHostname, err := controller.k8sHostname(ctx, edgeConnect.Name, edgeConnect.Namespace)
+	k8sHostname, err := controller.k8sAutomationHostPattern(ctx, edgeConnect.Name, edgeConnect.Namespace)
 	if err != nil {
 		return err
 	}
@@ -706,8 +706,7 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 	return hasher.GenerateHash(secretConfig.Data)
 }
 
-// indicator of the cluster the EC configuration is related to
-func (controller *Controller) k8sHostname(ctx context.Context, ecName string, ecNamespace string) (string, error) {
+func (controller *Controller) k8sAutomationHostPattern(ctx context.Context, ecName string, ecNamespace string) (string, error) {
 	var kubeSystemNamespace corev1.Namespace
 
 	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: kubeSystemNamespaceName}, &kubeSystemNamespace)
