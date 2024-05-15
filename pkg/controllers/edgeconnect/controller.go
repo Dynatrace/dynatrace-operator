@@ -688,7 +688,7 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 	// check token not found and not all errors
 	if err != nil {
 		if k8serrors.IsNotFound(err) || errors.Is(err, ErrTokenNotFound) {
-			newToken, err := dttoken.New("sad")
+			newToken, err := dttoken.New("dt0e01")
 			if err != nil {
 				return "", err
 			}
