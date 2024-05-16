@@ -16,6 +16,7 @@ spec:
           namespace: {{.Release.Namespace}}
           path: /convert
       conversionReviewVersions:
+      - v1
       - v1beta1
   group: dynatrace.com
   names:
@@ -2667,7 +2668,7 @@ spec:
             type: object
         type: object
     served: true
-    storage: true
+    storage: false
     subresources:
       status: {}
   - additionalPrinterColumns:
@@ -2720,17 +2721,14 @@ spec:
                       type: string
                     type: array
                   customProperties:
-                    description: |-
-                      Add a custom properties file by providing it as a value or reference it from a secret
-                      If referenced from a secret, make sure the key is called 'customProperties'
+                    description: Add a custom properties file by providing it as a
+                      value or reference it from a secret
                     properties:
                       value:
                         description: Custom properties value.
-                        nullable: true
                         type: string
                       valueFrom:
                         description: Custom properties secret.
-                        nullable: true
                         type: string
                     type: object
                   dnsPolicy:
@@ -2873,6 +2871,7 @@ spec:
                       name. If not specified the setting will be removed from the StatefulSet.
                     type: string
                   replicas:
+                    default: 1
                     description: Amount of replicas for your ActiveGates
                     format: int32
                     type: integer
@@ -3016,11 +3015,13 @@ spec:
                                     items:
                                       type: string
                                     type: array
+                                    x-kubernetes-list-type: atomic
                                 required:
                                 - key
                                 - operator
                                 type: object
                               type: array
+                              x-kubernetes-list-type: atomic
                             matchLabels:
                               additionalProperties:
                                 type: string
@@ -3091,9 +3092,6 @@ spec:
                             In this situation, new pod with the same labelSelector cannot be scheduled,
                             because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones,
                             it will violate MaxSkew.
-
-
-                            This is a beta field and requires the MinDomainsInPodTopologySpread feature gate to be enabled (enabled by default).
                           format: int32
                           type: integer
                         nodeAffinityPolicy:
@@ -3172,8 +3170,8 @@ spec:
                   (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#custompullsecret).
                 type: string
               dynatraceApiRequestThreshold:
+                default: 15
                 description: Configuration for thresholding Dynatrace API requests.
-                format: int64
                 type: integer
               enableIstio:
                 description: |-
@@ -3220,11 +3218,13 @@ spec:
                               items:
                                 type: string
                               type: array
+                              x-kubernetes-list-type: atomic
                           required:
                           - key
                           - operator
                           type: object
                         type: array
+                        x-kubernetes-list-type: atomic
                       matchLabels:
                         additionalProperties:
                           type: string
@@ -3250,7 +3250,6 @@ spec:
                     description: |-
                       dynatrace-webhook injects into application pods based on labeled namespaces.
                       Has an optional CSI driver per node via DaemonSet to provide binaries to pods.
-                    nullable: true
                     properties:
                       codeModulesImage:
                         description: The OneAgent image that is used to inject into
@@ -3344,11 +3343,13 @@ spec:
                                   items:
                                     type: string
                                   type: array
+                                  x-kubernetes-list-type: atomic
                               required:
                               - key
                               - operator
                               type: object
                             type: array
+                            x-kubernetes-list-type: atomic
                           matchLabels:
                             additionalProperties:
                               type: string
@@ -3360,6 +3361,7 @@ spec:
                         type: object
                         x-kubernetes-map-type: atomic
                       useCSIDriver:
+                        default: false
                         description: Set if you want to use the CSIDriver. Don't enable
                           it if you do not have access to Kubernetes nodes or if you
                           lack privileges.
@@ -3372,7 +3374,6 @@ spec:
                     description: |-
                       Has a single OneAgent per node via DaemonSet.
                       Injection is performed via the same OneAgent DaemonSet.
-                    nullable: true
                     properties:
                       annotations:
                         additionalProperties:
@@ -3389,6 +3390,7 @@ spec:
                         type: array
                         x-kubernetes-list-type: set
                       autoUpdate:
+                        default: true
                         description: |-
                           Disables automatic restarts of OneAgent pods in case a new version is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
                           Enabled by default.
@@ -3643,7 +3645,6 @@ spec:
                       Has a single OneAgent per node via DaemonSet.
                       dynatrace-webhook injects into application pods based on labeled namespaces.
                       Has a CSI driver per node via DaemonSet to provide binaries to pods.
-                    nullable: true
                     properties:
                       annotations:
                         additionalProperties:
@@ -3660,6 +3661,7 @@ spec:
                         type: array
                         x-kubernetes-list-type: set
                       autoUpdate:
+                        default: true
                         description: |-
                           Disables automatic restarts of OneAgent pods in case a new version is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
                           Enabled by default.
@@ -3885,11 +3887,13 @@ spec:
                                   items:
                                     type: string
                                   type: array
+                                  x-kubernetes-list-type: atomic
                               required:
                               - key
                               - operator
                               type: object
                             type: array
+                            x-kubernetes-list-type: atomic
                           matchLabels:
                             additionalProperties:
                               type: string
@@ -4023,7 +4027,6 @@ spec:
                     description: |-
                       Has a single OneAgent per node via DaemonSet.
                       Doesn't inject into application pods.
-                    nullable: true
                     properties:
                       annotations:
                         additionalProperties:
@@ -4040,6 +4043,7 @@ spec:
                         type: array
                         x-kubernetes-list-type: set
                       autoUpdate:
+                        default: true
                         description: |-
                           Disables automatic restarts of OneAgent pods in case a new version is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
                           Enabled by default.
@@ -4297,11 +4301,9 @@ spec:
                 properties:
                   value:
                     description: Proxy URL. It has preference over ValueFrom.
-                    nullable: true
                     type: string
                   valueFrom:
                     description: Secret containing proxy URL.
-                    nullable: true
                     type: string
                 type: object
               skipCertCheck:
@@ -4471,11 +4473,6 @@ spec:
                 description: KubeSystemUUID contains the UUID of the current Kubernetes
                   cluster
                 type: string
-              lastTokenProbeTimestamp:
-                description: LastTokenProbeTimestamp tracks when the last request
-                  for the API token validity was sent
-                format: date-time
-                type: string
               oneAgent:
                 description: Observed state of OneAgent
                 properties:
@@ -4560,7 +4557,7 @@ spec:
             type: object
         type: object
     served: true
-    storage: false
+    storage: true
     subresources:
       status: {}
 ---
