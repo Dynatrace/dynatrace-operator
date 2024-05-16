@@ -76,6 +76,10 @@ func NewMultiCapability(dk *dynatracev1beta2.DynaKube) Capability {
 
 	mc.enabled = true
 	mc.properties = &dk.Spec.ActiveGate.CapabilityProperties
+	if len(dk.Spec.ActiveGate.Capabilities) == 0 {
+		mc.properties.Replicas = 1
+	}
+
 	capabilityNames := []string{}
 	capabilityDisplayNames := make([]string, len(dk.Spec.ActiveGate.Capabilities))
 
@@ -90,6 +94,10 @@ func NewMultiCapability(dk *dynatracev1beta2.DynaKube) Capability {
 		capabilityDisplayNames[i] = capGen.displayName
 	}
 
+	// if dynakube.extensions {
+	capabilityNames = append(capabilityNames, "extension_controller")
+	capabilityDisplayNames = append(capabilityDisplayNames, "extension_controller")
+	// }
 	mc.argName = strings.Join(capabilityNames, ",")
 	mc.displayName = strings.Join(capabilityDisplayNames, ", ")
 

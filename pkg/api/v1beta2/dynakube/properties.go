@@ -102,7 +102,7 @@ func (dk *DynaKube) OneAgentDaemonsetName() string {
 }
 
 func (dk *DynaKube) ActiveGateMode() bool {
-	return len(dk.Spec.ActiveGate.Capabilities) > 0
+	return len(dk.Spec.ActiveGate.Capabilities) > 0 || true
 }
 
 func (dk *DynaKube) IsActiveGateMode(mode CapabilityDisplayName) bool {
