@@ -29,8 +29,9 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 						Controller: address.Of(true),
 					},
 				},
-				Name:      resourceName,
-				Namespace: namespaceName,
+				Name:         resourceName,
+				Namespace:    namespaceName,
+				GenerateName: resourceName,
 			},
 		}
 
@@ -44,8 +45,9 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 						Controller: address.Of(true),
 					},
 				},
-				Name:      resourceName,
-				Namespace: namespaceName,
+				Name:         resourceName,
+				Namespace:    namespaceName,
+				GenerateName: resourceName,
 			},
 		}
 
@@ -54,8 +56,9 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 				Kind: "DaemonSet",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resourceName,
-				Namespace: namespaceName,
+				Name:         resourceName,
+				Namespace:    namespaceName,
+				GenerateName: resourceName,
 			},
 		}
 
@@ -81,6 +84,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				OwnerReferences: []metav1.OwnerReference{},
 				Name:            resourceName,
+				GenerateName:    resourceName,
 			},
 		}
 		client := fake.NewClient(&pod)
