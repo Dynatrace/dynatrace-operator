@@ -58,6 +58,10 @@ func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod,
 		return nil, errors.WithStack(err)
 	}
 
+	if podPartialMetadata.ObjectMeta.Name == "" {
+		log.Info("podName is empty", "objectMeta.name", podPartialMetadata.ObjectMeta.Name)
+	}
+
 	return &workloadInfo, nil
 }
 
@@ -100,10 +104,6 @@ func findRootOwner(ctx context.Context, clt client.Client, partialObjectMetadata
 
 			return findRootOwner(ctx, clt, ownerObjectMetadata)
 		}
-	}
-
-	if partialObjectMetadata.ObjectMeta.Name == "" {
-		log.Info("podName is empty", "objectMeta.name", partialObjectMetadata.ObjectMeta.Name)
 	}
 
 	return newWorkloadInfo(partialObjectMetadata), nil
