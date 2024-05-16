@@ -115,7 +115,7 @@ proxy:
 secrets:
     - name: K8S_SERVICE_ACCOUNT_TOKEN
       token: dummy-token
-      from: file:/var/run/secrets/kubernetes.io/serviceaccount/token
+      from_file: /var/run/secrets/kubernetes.io/serviceaccount/token
       restrict_hosts_to:
         - kubernetes.default.svc
 `

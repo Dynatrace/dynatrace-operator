@@ -90,7 +90,7 @@ func createDefaultServiceAccount(token string) config.Secret {
 	return config.Secret{
 		Name:            "K8S_SERVICE_ACCOUNT_TOKEN",
 		Token:           token,
-		From:            "file:/var/run/secrets/kubernetes.io/serviceaccount/token",
+		FromFile:        "/var/run/secrets/kubernetes.io/serviceaccount/token",
 		RestrictHostsTo: []string{"kubernetes.default.svc"},
 	}
 }
