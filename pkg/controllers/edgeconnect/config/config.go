@@ -49,8 +49,8 @@ type Auth struct {
 }
 
 type Secret struct {
-	Name            string `yaml:"name"`
-	Token           string `yaml:"token"`
-	From            string `yaml:"from"`
-	RestrictHostsTo string `yaml:"restrict_hosts_to"`
+	Name            string   `yaml:"name"`
+	Token           string   `yaml:"token"`
+	From            string   `yaml:"from"`
+	RestrictHostsTo []string `yaml:"restrict_hosts_to,omitempty"`
 }

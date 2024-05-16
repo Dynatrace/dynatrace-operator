@@ -14,7 +14,7 @@ const (
 	EdgeConnectConfigVolumeMountName = "ec-vm"
 	EdgeConnectSecretSuffix          = "ec-yaml"
 	EdgeConnectCAConfigMapKey        = "certs"
-	EdgeConnectServiceAccountCAPath  = "/var/run/secrets/kuberntes.io/serviceaccount/ca.crt"
+	EdgeConnectServiceAccountCAPath  = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
 
 	KeyEdgeConnectOauthClientID     = "oauth-client-id"
 	KeyEdgeConnectOauthClientSecret = "oauth-client-secret"

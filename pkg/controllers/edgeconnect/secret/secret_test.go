@@ -104,7 +104,7 @@ oauth:
     resource: urn:dtenvironment:test12345
 root_certificate_paths:
     - /etc/ssl/certificate.cer
-    - /var/run/secrets/kuberntes.io/serviceaccount/ca.crt
+    - /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 proxy:
     auth:
         user: user
@@ -116,7 +116,8 @@ secrets:
     - name: K8S_SERVICE_ACCOUNT_TOKEN
       token: dummy-token
       from: file:/var/run/secrets/kubernetes.io/serviceaccount/token
-      restrict_hosts_to: kubernetes.default.svc
+      restrict_hosts_to:
+        - kubernetes.default.svc
 `
 		assert.Equal(t, expected, string(cfg))
 	})
