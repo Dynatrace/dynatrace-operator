@@ -87,8 +87,8 @@ type ServerError struct {
 
 // DetailsError represents details of errors
 type DetailsError struct {
-	ConstraintViolations ConstraintViolations `json:"constraintViolations"`
-	MissingScopes        []string             `json:"missingScopes,omitempty"`
+	ConstraintViolations []ConstraintViolations `json:"constraintViolations"`
+	MissingScopes        []string               `json:"missingScopes,omitempty"`
 }
 
 // ConstraintViolations represents constraint violation errors

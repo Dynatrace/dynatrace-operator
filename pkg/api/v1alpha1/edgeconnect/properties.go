@@ -35,6 +35,14 @@ func (edgeConnect *EdgeConnect) IsCustomImage() bool {
 	return edgeConnect.Spec.ImageRef.Repository != ""
 }
 
+func (edgeConnect *EdgeConnect) IsProvisionerModeEnabled() bool {
+	return edgeConnect.Spec.OAuth.Provisioner
+}
+
+func (edgeConnect *EdgeConnect) IsK8SAutomationEnabled() bool {
+	return edgeConnect.Spec.KubernetesAutomation != nil && edgeConnect.Spec.KubernetesAutomation.Enabled
+}
+
 func (edgeConnect *EdgeConnect) EmptyPullSecret() corev1.Secret {
 	return corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{

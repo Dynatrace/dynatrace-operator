@@ -22,7 +22,7 @@ func PrepareConfigFile(ctx context.Context, instance *edgeconnectv1alpha1.EdgeCo
 	}
 
 	// For provisioned we need to read another secret, which later we mount to EdgeConnect pod
-	if instance.Spec.OAuth.Provisioner {
+	if instance.IsProvisionerModeEnabled() {
 		oAuth, err := instance.GetOAuthClientFromSecret(ctx, apiReader, instance.ClientSecretName())
 		if err != nil {
 			return []byte{}, err

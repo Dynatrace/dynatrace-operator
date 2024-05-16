@@ -11,7 +11,7 @@ const (
 )
 
 func checkHostPatternsValue(_ context.Context, _ *edgeconnectValidator, edgeConnect *edgeconnect.EdgeConnect) string {
-	if edgeConnect.Spec.OAuth.Provisioner && len(edgeConnect.Spec.HostPatterns) == 0 {
+	if edgeConnect.IsProvisionerModeEnabled() && len(edgeConnect.Spec.HostPatterns) == 0 && !edgeConnect.IsK8SAutomationEnabled() {
 		return errorHostPattersIsRequired
 	}
 

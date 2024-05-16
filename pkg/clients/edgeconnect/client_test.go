@@ -173,10 +173,12 @@ func edgeConnectCreateServerHandler(errorBadRequest bool) http.HandlerFunc {
 						Code:    400,
 						Message: "Constraints violated.",
 						Details: DetailsError{
-							ConstraintViolations: ConstraintViolations{
-								Message:           "must not be null",
-								Path:              "path",
-								ParameterLocation: "PAYLOAD_BODY",
+							ConstraintViolations: []ConstraintViolations{
+								{
+									Message:           "must not be null",
+									Path:              "path",
+									ParameterLocation: "PAYLOAD_BODY",
+								},
 							},
 						},
 					},
