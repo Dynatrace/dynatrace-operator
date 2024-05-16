@@ -114,6 +114,35 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		assert.Equal(t, "UNKNOWN", workloadInfo.kind)
 	})
 
+	// K8S-9949
+	t.Run("should not be empty for CatalogSource", func(t *testing.T) {
+		pod := corev1.Pod{
+			TypeMeta: metav1.TypeMeta{
+				Kind: "Pod",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion:         "operators.coreos.com/v1alpha1",
+						Kind:               "CatalogSource",
+						Name:               "ibm-operator-catalog",
+						Controller:         address.Of(false),
+						BlockOwnerDeletion: address.Of(false),
+						UID:                "2902465e-7214-46ba-8e7c-48fa2067587b",
+					},
+				},
+				//				Name: "ibm-operator-catalog-mltqt",
+				Name:         "",
+				GenerateName: "",
+			},
+		}
+		client := fake.NewClient(&pod)
+		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
+		require.NoError(t, err)
+		assert.Equal(t, "UNKNOWN", workloadInfo.name)
+		assert.Equal(t, "UNKNOWN", workloadInfo.kind)
+	})
+
 	t.Run("should be empty if owner is not set, but name is empty", func(t *testing.T) {
 		pod := corev1.Pod{
 			TypeMeta: metav1.TypeMeta{

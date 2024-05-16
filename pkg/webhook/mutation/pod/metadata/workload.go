@@ -61,13 +61,22 @@ func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod,
 	return &workloadInfo, nil
 }
 
+func hasControllerOwnerReference(ownerReferences []metav1.OwnerReference) bool {
+	for _, owner := range ownerReferences {
+		if owner.Controller != nil && *owner.Controller {
+			return true
+		}
+	}
+	return false
+}
+
 func findRootOwner(ctx context.Context, clt client.Client, partialObjectMetadata *metav1.PartialObjectMetadata) (workloadInfo, error) {
-	if len(partialObjectMetadata.ObjectMeta.OwnerReferences) == 0 {
+
+	if !hasControllerOwnerReference(partialObjectMetadata.ObjectMeta.OwnerReferences) {
 		if partialObjectMetadata.ObjectMeta.Name == "" {
-			// pod is not created directly and does not have an owner reference set
+			// pod is not created directly and does not have an (useful) owner reference set
 			return newUnknownWorkloadInfo(), nil
 		}
-
 		return newWorkloadInfo(partialObjectMetadata), nil
 	}
 
