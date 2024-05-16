@@ -9,7 +9,6 @@ import (
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,7 +28,7 @@ func TestOneAgentUpdater(t *testing.T) {
 			Spec: dynatracev1beta2.DynaKubeSpec{
 				OneAgent: dynatracev1beta2.OneAgentSpec{
 					ClassicFullStack: &dynatracev1beta2.HostInjectSpec{
-						AutoUpdate: address.Of(false),
+						AutoUpdate: false,
 						Image:      testImage.String(),
 						Version:    testImage.Tag,
 					},

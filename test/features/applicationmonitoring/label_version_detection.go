@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
@@ -106,7 +105,7 @@ func LabelVersionDetection(t *testing.T) features.Feature {
 		dynakube.WithApiUrl(secretConfig.ApiUrl),
 		dynakube.WithNameBasedNamespaceSelector(),
 		dynakube.WithApplicationMonitoringSpec(&dynatracev1beta2.ApplicationMonitoringSpec{
-			UseCSIDriver: address.Of(false),
+			UseCSIDriver: false,
 		}),
 	)
 
@@ -116,7 +115,7 @@ func LabelVersionDetection(t *testing.T) features.Feature {
 		dynakube.WithApiUrl(secretConfig.ApiUrl),
 		dynakube.WithNameBasedNamespaceSelector(),
 		dynakube.WithApplicationMonitoringSpec(&dynatracev1beta2.ApplicationMonitoringSpec{
-			UseCSIDriver: address.Of(false),
+			UseCSIDriver: false,
 		}),
 	)
 

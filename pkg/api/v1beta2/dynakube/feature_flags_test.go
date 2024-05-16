@@ -139,7 +139,7 @@ func TestMaxMountAttempts(t *testing.T) {
 func TestDynaKube_FeatureIgnoredNamespaces(t *testing.T) {
 	dynakube := DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
+			Namespace: "test",
 		},
 	}
 	ignoredNamespaces := dynakube.getDefaultIgnoredNamespaces()

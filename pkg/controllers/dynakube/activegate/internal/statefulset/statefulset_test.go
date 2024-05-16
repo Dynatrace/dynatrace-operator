@@ -47,7 +47,7 @@ func getTestDynakube() dynatracev1beta2.DynaKube {
 					dynatracev1beta2.RoutingCapability.DisplayName,
 				},
 				CapabilityProperties: dynatracev1beta2.CapabilityProperties{
-					Replicas: &testReplicas,
+					Replicas: testReplicas,
 				},
 			},
 		},

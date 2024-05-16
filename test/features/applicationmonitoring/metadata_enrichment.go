@@ -9,7 +9,6 @@ import (
 
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
@@ -47,7 +46,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 	testDynakube := *dynakube.New(
 		dynakube.WithApiUrl(secretConfig.ApiUrl),
 		dynakube.WithApplicationMonitoringSpec(&dynatracev1beta2.ApplicationMonitoringSpec{
-			UseCSIDriver: address.Of(false),
+			UseCSIDriver: false,
 		}),
 	)
 

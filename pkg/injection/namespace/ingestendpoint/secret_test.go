@@ -8,7 +8,6 @@ import (
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -218,7 +217,7 @@ func TestGenerateMetadataEnrichmentSecret_ForDynakube(t *testing.T) {
 
 		{
 			instance := buildTestDynakube()
-			instance.Spec.MetaDataEnrichment.Enabled = address.Of(false)
+			instance.Spec.MetaDataEnrichment.Enabled = false
 
 			testGenerateEndpointsSecret(t, instance, fakeClient)
 
@@ -293,7 +292,8 @@ func updatedTestDynakube() *dynatracev1beta2.DynaKube {
 			Namespace: testNamespaceDynatrace,
 		},
 		Spec: dynatracev1beta2.DynaKubeSpec{
-			APIURL: testUpdatedApiUrl,
+			APIURL:             testUpdatedApiUrl,
+			MetaDataEnrichment: dynatracev1beta2.MetaDataEnrichment{Enabled: true},
 		},
 	}
 }
@@ -308,7 +308,8 @@ func updatedTestDynakubeWithMetricsIngestCapability(capabilities []dynatracev1be
 			ActiveGate: dynatracev1beta2.ActiveGateSpec{
 				Capabilities: capabilities,
 			},
-			APIURL: testUpdatedApiUrl,
+			APIURL:             testUpdatedApiUrl,
+			MetaDataEnrichment: dynatracev1beta2.MetaDataEnrichment{Enabled: true},
 		},
 	}
 }
@@ -331,7 +332,8 @@ func buildTestDynakube() *dynatracev1beta2.DynaKube {
 			Namespace: testNamespaceDynatrace,
 		},
 		Spec: dynatracev1beta2.DynaKubeSpec{
-			APIURL: testApiUrl,
+			APIURL:             testApiUrl,
+			MetaDataEnrichment: dynatracev1beta2.MetaDataEnrichment{Enabled: true},
 		},
 	}
 }
@@ -348,7 +350,7 @@ func buildTestDynakubeWithMetricsIngestCapability(capabilities []dynatracev1beta
 			},
 			APIURL: testApiUrl,
 			MetaDataEnrichment: dynatracev1beta2.MetaDataEnrichment{
-				Enabled: address.Of(true),
+				Enabled: true,
 			},
 		},
 	}

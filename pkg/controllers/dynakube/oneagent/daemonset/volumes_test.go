@@ -3,7 +3,6 @@ package daemonset
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/stretchr/testify/assert"
@@ -234,7 +233,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				Name:      "Dynakube",
 				Namespace: "dynatrace",
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureOneAgentIgnoreProxy: "true",
+					dynatracev1beta2.AnnotationFeatureOneAgentIgnoreProxy: "true",
 				},
 			},
 			Spec: dynatracev1beta2.DynaKubeSpec{

@@ -4,8 +4,6 @@
 package dynakube
 
 import (
-	"time"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -59,6 +57,7 @@ type DynaKubeValueSource struct { //nolint:revive
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:storageversion
 
 // DynaKube is the Schema for the DynaKube API
 // +k8s:openapi-gen=true
@@ -86,7 +85,7 @@ type DynaKubeSpec struct { //nolint:revive
 
 	// Set custom proxy settings either directly or from a secret with the field proxy.
 	// Note: Applies to Dynatrace Operator, ActiveGate, and OneAgents.
-	// +optional
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Proxy",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	Proxy *DynaKubeProxy `json:"proxy,omitempty"`
 
@@ -95,11 +94,6 @@ type DynaKubeSpec struct { //nolint:revive
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	OneAgent OneAgentSpec `json:"oneAgent,omitempty"`
 
-	// Configuration for thresholding Dynatrace API requests.
-	// +optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Dynatrace API Request Threshold",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
-	DynatraceApiRequestThreshold *time.Duration `json:"dynatraceApiRequestThreshold,omitempty"`
-
 	// Dynatrace apiUrl, including the /api path at the end. For SaaS, set YOUR_ENVIRONMENT_ID to your environment ID. For Managed, change the apiUrl address.
 	// For instructions on how to determine the environment ID and how to configure the apiUrl address, see Environment ID (https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id).
 	// +kubebuilder:validation:Required
@@ -107,25 +101,25 @@ type DynaKubeSpec struct { //nolint:revive
 	APIURL string `json:"apiUrl"`
 
 	// Name of the secret holding the tokens used for connecting to Dynatrace.
-	// +optional
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Tenant specific secrets",order=2,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
 	Tokens string `json:"tokens,omitempty"`
 
 	// Adds custom RootCAs from a configmap. Put the certificate under certs within your configmap.
 	// Note: Applies to Dynatrace Operator, OneAgent and ActiveGate.
-	// +optional
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Trusted CAs",order=6,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:ConfigMap"}
 	TrustedCAs string `json:"trustedCAs,omitempty"`
 
 	// Sets a network zone for the OneAgent and ActiveGate pods.
-	// +optional
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Network Zone",order=7,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	NetworkZone string `json:"networkZone,omitempty"`
 
 	// Defines a custom pull secret in case you use a private registry when pulling images from the Dynatrace environment.
 	// To define a custom pull secret and learn about the expected behavior, see Configure customPullSecret
 	// (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#custompullsecret).
-	// +optional
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom PullSecret",order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Secret"}
 	CustomPullSecret string `json:"customPullSecret,omitempty"`
 
@@ -134,20 +128,26 @@ type DynaKubeSpec struct { //nolint:revive
 	ActiveGate ActiveGateSpec `json:"activeGate,omitempty"`
 
 	// Configuration for Metadata Enrichment.
-	// +optional
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="MetaData Enrichment",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	MetaDataEnrichment MetaDataEnrichment `json:"metaDataEnrichment,omitempty"`
 
+	// Configuration for thresholding Dynatrace API requests.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=15
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Dynatrace API Request Threshold",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	DynatraceApiRequestThreshold int `json:"dynatraceApiRequestThreshold,omitempty"`
+
 	// Disable certificate check for the connection between Dynatrace Operator and the Dynatrace Cluster.
 	// Set to true if you want to skip certification validation checks.
-	// +optional
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Skip Certificate Check",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	SkipCertCheck bool `json:"skipCertCheck,omitempty"`
 
 	// When enabled, and if Istio is installed on the Kubernetes environment, Dynatrace Operator will create the corresponding
 	// VirtualService and ServiceEntry objects to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate.
 	// Disabled by default.
-	// +optional
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Istio automatic management",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	EnableIstio bool `json:"enableIstio,omitempty"`
 }

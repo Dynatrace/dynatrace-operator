@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -89,7 +88,7 @@ func TestDynaKube_UseCSIDriver(t *testing.T) {
 			Spec: DynaKubeSpec{
 				OneAgent: OneAgentSpec{
 					ApplicationMonitoring: &ApplicationMonitoringSpec{
-						UseCSIDriver: &useCSIDriver,
+						UseCSIDriver: useCSIDriver,
 					},
 				},
 			},
@@ -144,7 +143,7 @@ func TestCustomOneAgentImage(t *testing.T) {
 func TestOneAgentDaemonsetName(t *testing.T) {
 	instance := &DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: testName,
+			Name: "test-name",
 		},
 	}
 	assert.Equal(t, "test-name-oneagent", instance.OneAgentDaemonsetName())
@@ -498,7 +497,7 @@ func TestDynaKube_ShallUpdateActiveGateConnectionInfo(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			dk.Spec.DynatraceApiRequestThreshold = address.Of(time.Duration(test.threshold))
+			dk.Spec.DynatraceApiRequestThreshold = test.threshold
 
 			lastRequestTime := timeProvider.Now().Add(time.Duration(test.lastRequestTimeDeltaMinutes) * time.Minute)
 			dk.Status.DynatraceApi.LastTokenScopeRequest.Time = lastRequestTime

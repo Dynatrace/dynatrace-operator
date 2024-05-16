@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
@@ -86,6 +85,9 @@ func TestReconciler(t *testing.T) {
 							},
 						},
 					},
+				},
+				MetaDataEnrichment: dynatracev1beta2.MetaDataEnrichment{
+					Enabled: true,
 				},
 			},
 		}
@@ -231,7 +233,7 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynatracev1beta2.OneAgentSpec{
 			CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
 		})
-		rec.dynakube.Spec.MetaDataEnrichment.Enabled = address.Of(false)
+		rec.dynakube.Spec.MetaDataEnrichment.Enabled = false
 
 		err := rec.setupEnrichmentInjection(context.Background())
 		require.NoError(t, err)
@@ -245,6 +247,7 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynatracev1beta2.OneAgentSpec{
 			CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
 		})
+		rec.dynakube.Spec.MetaDataEnrichment.Enabled = true
 
 		err := rec.setupEnrichmentInjection(context.Background())
 		require.NoError(t, err)

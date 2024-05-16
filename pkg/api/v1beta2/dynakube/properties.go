@@ -24,7 +24,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -170,11 +169,11 @@ func (dk *DynaKube) NeedsOneAgentProbe() bool {
 func (dk *DynaKube) ShouldAutoUpdateOneAgent() bool {
 	switch {
 	case dk.CloudNativeFullstackMode():
-		return dk.Spec.OneAgent.CloudNativeFullStack.AutoUpdate == nil || *dk.Spec.OneAgent.CloudNativeFullStack.AutoUpdate
+		return dk.Spec.OneAgent.CloudNativeFullStack.AutoUpdate
 	case dk.HostMonitoringMode():
-		return dk.Spec.OneAgent.HostMonitoring.AutoUpdate == nil || *dk.Spec.OneAgent.HostMonitoring.AutoUpdate
+		return dk.Spec.OneAgent.HostMonitoring.AutoUpdate
 	case dk.ClassicFullStackMode():
-		return dk.Spec.OneAgent.ClassicFullStack.AutoUpdate == nil || *dk.Spec.OneAgent.ClassicFullStack.AutoUpdate
+		return dk.Spec.OneAgent.ClassicFullStack.AutoUpdate
 	default:
 		return false
 	}
@@ -228,8 +227,7 @@ func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {
 
 func (dk *DynaKube) NeedsCSIDriver() bool {
 	isAppMonitoringWithCSI := dk.ApplicationMonitoringMode() &&
-		dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver != nil &&
-		*dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver
+		dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver
 
 	return dk.CloudNativeFullstackMode() || isAppMonitoringWithCSI || dk.HostMonitoringMode()
 }
@@ -410,19 +408,15 @@ func (dk *DynaKube) TenantUUIDFromApiUrl() (string, error) {
 }
 
 func (dk *DynaKube) ApiRequestThreshold() time.Duration {
-	if dk.Spec.DynatraceApiRequestThreshold == nil || *dk.Spec.DynatraceApiRequestThreshold < 0 {
-		dk.Spec.DynatraceApiRequestThreshold = address.Of(time.Duration(DefaultMinRequestThresholdMinutes))
+	if dk.Spec.DynatraceApiRequestThreshold < 0 {
+		dk.Spec.DynatraceApiRequestThreshold = DefaultMinRequestThresholdMinutes
 	}
 
-	return *dk.Spec.DynatraceApiRequestThreshold * time.Minute //nolint:durationcheck
+	return time.Duration(dk.Spec.DynatraceApiRequestThreshold) * time.Minute
 }
 
 func (dk *DynaKube) MetaDataEnrichmentEnabled() bool {
-	if dk.Spec.MetaDataEnrichment.Enabled == nil {
-		dk.Spec.MetaDataEnrichment.Enabled = address.Of(true)
-	}
-
-	return *dk.Spec.MetaDataEnrichment.Enabled
+	return dk.Spec.MetaDataEnrichment.Enabled
 }
 
 func runeIs(wanted rune) func(rune) bool {

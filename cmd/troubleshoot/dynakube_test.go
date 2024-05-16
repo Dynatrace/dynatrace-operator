@@ -6,7 +6,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -385,14 +384,14 @@ func (builder *testDynaKubeBuilder) withCloudNativeCodeModulesImage(image string
 func (builder *testDynaKubeBuilder) withApplicationMonitoringCodeModulesImage(image string) *testDynaKubeBuilder {
 	if builder.dynakube.Spec.OneAgent.ApplicationMonitoring != nil {
 		builder.dynakube.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage = image
-		builder.dynakube.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver = address.Of(true)
+		builder.dynakube.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver = true
 	} else {
 		builder.dynakube.Spec.OneAgent.ApplicationMonitoring = &dynatracev1beta2.ApplicationMonitoringSpec{
 			AppInjectionSpec: dynatracev1beta2.AppInjectionSpec{
 				InitResources:    &corev1.ResourceRequirements{},
 				CodeModulesImage: image,
 			},
-			UseCSIDriver: address.Of(true),
+			UseCSIDriver: true,
 		}
 	}
 	builder.dynakube.Status.CodeModules.ImageID = image
