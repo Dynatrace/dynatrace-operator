@@ -43,10 +43,10 @@ require (
 	gorm.io/gorm v1.25.10
 	istio.io/api v1.22.0
 	istio.io/client-go v1.22.0
-	k8s.io/api v0.30.0
-	k8s.io/apiextensions-apiserver v0.30.0
-	k8s.io/apimachinery v0.30.0
-	k8s.io/client-go v0.30.0
+	k8s.io/api v0.30.1
+	k8s.io/apiextensions-apiserver v0.30.1
+	k8s.io/apimachinery v0.30.1
+	k8s.io/client-go v0.30.1
 	k8s.io/utils v0.0.0-20240502163921-fe8a2dddb1d0
 	sigs.k8s.io/controller-runtime v0.18.2
 	sigs.k8s.io/e2e-framework v0.3.0
