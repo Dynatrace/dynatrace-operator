@@ -2721,14 +2721,17 @@ spec:
                       type: string
                     type: array
                   customProperties:
-                    description: Add a custom properties file by providing it as a
-                      value or reference it from a secret
+                    description: |-
+                      Add a custom properties file by providing it as a value or reference it from a secret
+                      If referenced from a secret, make sure the key is called 'customProperties'
                     properties:
                       value:
                         description: Custom properties value.
+                        nullable: true
                         type: string
                       valueFrom:
                         description: Custom properties secret.
+                        nullable: true
                         type: string
                     type: object
                   dnsPolicy:
@@ -3250,6 +3253,7 @@ spec:
                     description: |-
                       dynatrace-webhook injects into application pods based on labeled namespaces.
                       Has an optional CSI driver per node via DaemonSet to provide binaries to pods.
+                    nullable: true
                     properties:
                       codeModulesImage:
                         description: The OneAgent image that is used to inject into
@@ -3374,6 +3378,7 @@ spec:
                     description: |-
                       Has a single OneAgent per node via DaemonSet.
                       Injection is performed via the same OneAgent DaemonSet.
+                    nullable: true
                     properties:
                       annotations:
                         additionalProperties:
@@ -3645,6 +3650,7 @@ spec:
                       Has a single OneAgent per node via DaemonSet.
                       dynatrace-webhook injects into application pods based on labeled namespaces.
                       Has a CSI driver per node via DaemonSet to provide binaries to pods.
+                    nullable: true
                     properties:
                       annotations:
                         additionalProperties:
@@ -4027,6 +4033,7 @@ spec:
                     description: |-
                       Has a single OneAgent per node via DaemonSet.
                       Doesn't inject into application pods.
+                    nullable: true
                     properties:
                       annotations:
                         additionalProperties:
@@ -4301,9 +4308,11 @@ spec:
                 properties:
                   value:
                     description: Proxy URL. It has preference over ValueFrom.
+                    nullable: true
                     type: string
                   valueFrom:
                     description: Secret containing proxy URL.
+                    nullable: true
                     type: string
                 type: object
               skipCertCheck:

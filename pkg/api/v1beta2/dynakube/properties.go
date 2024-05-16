@@ -246,7 +246,7 @@ func (dk *DynaKube) InitResources() *corev1.ResourceRequirements {
 	return nil
 }
 
-func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
+func (dk *DynaKube) OneAgentNamespaceSelector() *metav1.LabelSelector {
 	switch {
 	case dk.CloudNativeFullstackMode():
 		return &dk.Spec.OneAgent.CloudNativeFullStack.NamespaceSelector
@@ -255,6 +255,19 @@ func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
 	}
 
 	return nil
+}
+
+func (dk *DynaKube) OneAgentSecCompProfile() string {
+	switch {
+	case dk.CloudNativeFullstackMode():
+		return dk.Spec.OneAgent.CloudNativeFullStack.SecCompProfile
+	case dk.HostMonitoringMode():
+		return dk.Spec.OneAgent.HostMonitoring.SecCompProfile
+	case dk.ClassicFullStackMode():
+		return dk.Spec.OneAgent.ClassicFullStack.SecCompProfile
+	default:
+		return ""
+	}
 }
 
 func (dk *DynaKube) NodeSelector() map[string]string {

@@ -420,11 +420,6 @@ func (in *DynaKubeStatus) DeepCopyInto(out *DynaKubeStatus) {
 	in.UpdatedTimestamp.DeepCopyInto(&out.UpdatedTimestamp)
 	in.DynatraceApi.DeepCopyInto(&out.DynatraceApi)
 
-	if in.LastTokenProbeTimestamp != nil {
-		in, out := &in.LastTokenProbeTimestamp, &out.LastTokenProbeTimestamp
-		*out = (*in).DeepCopy()
-	}
-
 	if in.Conditions != nil {
 		in, out := &in.Conditions, &out.Conditions
 		*out = make([]metav1.Condition, len(*in))

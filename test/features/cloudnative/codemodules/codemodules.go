@@ -79,7 +79,7 @@ func InstallFromImage(t *testing.T) features.Feature {
 		}),
 	)
 
-	labels := cloudNativeDynakube.NamespaceSelector().MatchLabels
+	labels := cloudNativeDynakube.OneAgentNamespaceSelector().MatchLabels
 	sampleNamespace := *namespace.New("codemodules-sample", namespace.WithLabels(labels))
 
 	sampleApp := sample.NewApp(t, &cloudNativeDynakube,

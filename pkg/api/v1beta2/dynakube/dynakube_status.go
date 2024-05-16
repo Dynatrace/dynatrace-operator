@@ -35,10 +35,6 @@ type DynaKubeStatus struct { //nolint:revive
 	// Observed state of Dynatrace API
 	DynatraceApi DynatraceApiStatus `json:"dynatraceApi,omitempty"`
 
-	// LastTokenProbeTimestamp tracks when the last request for the API token validity was sent
-	// +kubebuilder:deprecatedversion:warning="Use DynatraceApiStatus.LastTokenScopeRequest instead"
-	LastTokenProbeTimestamp *metav1.Time `json:"lastTokenProbeTimestamp,omitempty"`
-
 	// Defines the current state (Running, Updating, Error, ...)
 	Phase status.DeploymentPhase `json:"phase,omitempty"`
 

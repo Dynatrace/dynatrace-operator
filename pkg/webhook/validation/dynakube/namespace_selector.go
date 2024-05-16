@@ -29,7 +29,7 @@ func conflictingNamespaceSelector(ctx context.Context, dv *dynakubeValidator, dy
 
 	_, err := dkMapper.MatchingNamespaces()
 	if err != nil && err.Error() == mapper.ErrorConflictingNamespace {
-		if dynakube.NamespaceSelector().MatchExpressions == nil && dynakube.NamespaceSelector().MatchLabels == nil {
+		if dynakube.OneAgentNamespaceSelector().MatchExpressions == nil && dynakube.OneAgentNamespaceSelector().MatchLabels == nil {
 			log.Info("requested dynakube has conflicting namespaceSelector", "name", dynakube.Name, "namespace", dynakube.Namespace)
 
 			return errorConflictingNamespaceSelectorNoSelector
@@ -44,7 +44,7 @@ func conflictingNamespaceSelector(ctx context.Context, dv *dynakubeValidator, dy
 }
 
 func namespaceSelectorViolateLabelSpec(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
-	errs := validation.ValidateLabelSelector(dynakube.NamespaceSelector(), validation.LabelSelectorValidationOptions{AllowInvalidLabelValueInSelector: false}, field.NewPath("spec", "namespaceSelector"))
+	errs := validation.ValidateLabelSelector(dynakube.OneAgentNamespaceSelector(), validation.LabelSelectorValidationOptions{AllowInvalidLabelValueInSelector: false}, field.NewPath("spec", "namespaceSelector"))
 	if len(errs) == 0 {
 		return ""
 	}

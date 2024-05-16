@@ -505,7 +505,7 @@ func TestTokenConditions(t *testing.T) {
 
 		require.Error(t, err)
 		assertCondition(t, dynakube, dynatracev1beta2.TokenConditionType, metav1.ConditionFalse, dynatracev1beta2.ReasonTokenError, "secrets \"\" not found")
-		assert.Nil(t, dynakube.Status.LastTokenProbeTimestamp, "LastTokenProbeTimestamp should be Nil if token retrieval did not work.")
+		assert.Empty(t, dynakube.Status.DynatraceApi.LastTokenScopeRequest, "LastTokenProbeTimestamp should be Nil if token retrieval did not work.")
 	})
 	t.Run("token condition is set if token are valid", func(t *testing.T) {
 		dynakube := &dynatracev1beta2.DynaKube{
