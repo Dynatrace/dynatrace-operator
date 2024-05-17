@@ -48,7 +48,7 @@ func PrepareConfigFile(ctx context.Context, instance *edgeconnectv1alpha1.EdgeCo
 
 	if instance.IsK8SAutomationEnabled() {
 		cfg.RootCertificatePaths = append(cfg.RootCertificatePaths, consts.EdgeConnectServiceAccountCAPath)
-		cfg.Secrets = append(cfg.Secrets, createDefaultServiceAccount(token))
+		cfg.Secrets = append(cfg.Secrets, createKubernetesApiSecret(token))
 	}
 
 	if instance.Spec.Proxy != nil {
@@ -86,7 +86,7 @@ func safeEdgeConnectCfg(cfg config.EdgeConnect) string {
 	return string(safe)
 }
 
-func createDefaultServiceAccount(token string) config.Secret {
+func createKubernetesApiSecret(token string) config.Secret {
 	return config.Secret{
 		Name:            "K8S_SERVICE_ACCOUNT_TOKEN",
 		Token:           token,
