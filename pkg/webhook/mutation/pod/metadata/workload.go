@@ -71,9 +71,13 @@ func findRootOwner(ctx context.Context, clt client.Client, partialObjectMetadata
 		return newWorkloadInfo(partialObjectMetadata), nil
 	}
 
+	foundController := false
+
 	objectMetadata := partialObjectMetadata.ObjectMeta
 	for _, owner := range objectMetadata.OwnerReferences {
 		if owner.Controller != nil && *owner.Controller {
+			foundController = true //nolint:ineffassign,wastedassign
+
 			if !isWellKnownWorkload(owner) {
 				// pod is created by workload of kind that is not well known
 				return newUnknownWorkloadInfo(), nil
@@ -99,10 +103,12 @@ func findRootOwner(ctx context.Context, clt client.Client, partialObjectMetadata
 			}
 
 			return findRootOwner(ctx, clt, ownerObjectMetadata)
-		} else {
-			// pod is created by workload of kind that is not well known
-			return newUnknownWorkloadInfo(), nil
 		}
+	}
+
+	if !foundController {
+		// Out of all owner references no one is a Controller
+		return newUnknownWorkloadInfo(), nil
 	}
 
 	return newWorkloadInfo(partialObjectMetadata), nil
