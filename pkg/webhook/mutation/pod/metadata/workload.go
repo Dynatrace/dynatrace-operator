@@ -58,10 +58,6 @@ func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod,
 		return nil, errors.WithStack(err)
 	}
 
-	if podPartialMetadata.ObjectMeta.Name == "" {
-		log.Info("podName is empty")
-	}
-
 	return &workloadInfo, nil
 }
 
