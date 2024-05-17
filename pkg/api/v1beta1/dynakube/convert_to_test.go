@@ -18,7 +18,9 @@ func TestConvertTo(t *testing.T) {
 	t.Run("migrate from v1beta1 to v1beta2", func(t *testing.T) {
 		to := v1beta2.DynaKube{}
 		from := getOldDynakubeBase()
+
 		from.ConvertTo(&to)
+
 		compareBase(t, from, to)
 	})
 
@@ -27,9 +29,11 @@ func TestConvertTo(t *testing.T) {
 		hostSpec := getOldHostInjectSpec()
 		from.Spec.OneAgent.HostMonitoring = &hostSpec
 		to := v1beta2.DynaKube{}
+
 		from.ConvertTo(&to)
 
 		compareHostInjectSpec(t, *from.Spec.OneAgent.HostMonitoring, *to.Spec.OneAgent.HostMonitoring)
+		compareMovedFields(t, from, to)
 	})
 
 	t.Run("migrate classic-fullstack from v1beta1 to v1beta2", func(t *testing.T) {
@@ -37,29 +41,31 @@ func TestConvertTo(t *testing.T) {
 		hostSpec := getOldHostInjectSpec()
 		from.Spec.OneAgent.ClassicFullStack = &hostSpec
 		to := v1beta2.DynaKube{}
+
 		from.ConvertTo(&to)
 
 		compareHostInjectSpec(t, *from.Spec.OneAgent.ClassicFullStack, *to.Spec.OneAgent.ClassicFullStack)
+		compareMovedFields(t, from, to)
 	})
 
 	t.Run("migrate cloud-native from v1beta1 to v1beta2", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		spec := getOldCloudNativeSpec()
-
 		from.Spec.OneAgent.CloudNativeFullStack = &spec
 		to := v1beta2.DynaKube{}
+
 		from.ConvertTo(&to)
 
 		compareCloudNativeSpec(t, *from.Spec.OneAgent.CloudNativeFullStack, *to.Spec.OneAgent.CloudNativeFullStack)
+		compareMovedFields(t, from, to)
 	})
 
 	t.Run("migrate application-monitoring from v1beta1 to v1beta2", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		appSpec := getOldApplicationMonitoringSpec()
-
 		from.Spec.OneAgent.ApplicationMonitoring = &appSpec
-
 		to := v1beta2.DynaKube{}
+
 		from.ConvertTo(&to)
 
 		compareApplicationMonitoringSpec(t, *from.Spec.OneAgent.ApplicationMonitoring, *to.Spec.OneAgent.ApplicationMonitoring)
@@ -70,6 +76,7 @@ func TestConvertTo(t *testing.T) {
 		agSpec := getOldActiveGateSpec()
 		from.Spec.ActiveGate = agSpec
 		to := v1beta2.DynaKube{}
+
 		from.ConvertTo(&to)
 
 		compareActiveGateSpec(t, from.Spec.ActiveGate, to.Spec.ActiveGate)
@@ -79,6 +86,7 @@ func TestConvertTo(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Status = getOldStatus()
 		to := v1beta2.DynaKube{}
+
 		from.ConvertTo(&to)
 
 		compareStatus(t, from.Status, to.Status)

@@ -17,6 +17,7 @@ func TestConvertFrom(t *testing.T) {
 	t.Run("migrate base from v1beta2 to v1beta1", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		to := DynaKube{}
+
 		to.ConvertFrom(&from)
 
 		compareBase(t, to, from)
@@ -27,9 +28,11 @@ func TestConvertFrom(t *testing.T) {
 		hostSpec := getNewHostInjectSpec()
 		from.Spec.OneAgent.HostMonitoring = &hostSpec
 		to := DynaKube{}
+
 		to.ConvertFrom(&from)
 
 		compareHostInjectSpec(t, *to.Spec.OneAgent.HostMonitoring, *from.Spec.OneAgent.HostMonitoring)
+		compareMovedFields(t, to, from)
 	})
 
 	t.Run("migrate classic-fullstack from v1beta2 to v1beta1", func(t *testing.T) {
@@ -37,20 +40,23 @@ func TestConvertFrom(t *testing.T) {
 		hostSpec := getNewHostInjectSpec()
 		from.Spec.OneAgent.ClassicFullStack = &hostSpec
 		to := DynaKube{}
+
 		to.ConvertFrom(&from)
 
 		compareHostInjectSpec(t, *to.Spec.OneAgent.ClassicFullStack, *from.Spec.OneAgent.ClassicFullStack)
+		compareMovedFields(t, to, from)
 	})
 
 	t.Run("migrate cloud-native from v1beta2 to v1beta1", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		spec := getNewCloudNativeSpec()
-
 		from.Spec.OneAgent.CloudNativeFullStack = &spec
 		to := DynaKube{}
+
 		to.ConvertFrom(&from)
 
 		compareCloudNativeSpec(t, *to.Spec.OneAgent.CloudNativeFullStack, *from.Spec.OneAgent.CloudNativeFullStack)
+		compareMovedFields(t, to, from)
 	})
 
 	t.Run("migrate application-monitoring from v1beta2 to v1beta1", func(t *testing.T) {
@@ -58,6 +64,7 @@ func TestConvertFrom(t *testing.T) {
 		appSpec := getNewApplicationMonitoringSpec()
 		from.Spec.OneAgent.ApplicationMonitoring = &appSpec
 		to := DynaKube{}
+
 		to.ConvertFrom(&from)
 
 		compareApplicationMonitoringSpec(t, *to.Spec.OneAgent.ApplicationMonitoring, *from.Spec.OneAgent.ApplicationMonitoring)
@@ -68,6 +75,7 @@ func TestConvertFrom(t *testing.T) {
 		agSpec := getNewActiveGateSpec()
 		from.Spec.ActiveGate = agSpec
 		to := DynaKube{}
+
 		to.ConvertFrom(&from)
 
 		compareActiveGateSpec(t, to.Spec.ActiveGate, from.Spec.ActiveGate)
@@ -77,6 +85,7 @@ func TestConvertFrom(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Status = getNewStatus()
 		to := DynaKube{}
+
 		to.ConvertFrom(&from)
 
 		compareStatus(t, to.Status, from.Status)
@@ -118,6 +127,12 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk v1beta2.DynaKube) {
 		assert.Equal(t, oldDk.Spec.Proxy.Value, newDk.Spec.Proxy.Value)
 		assert.Equal(t, oldDk.Spec.Proxy.ValueFrom, newDk.Spec.Proxy.ValueFrom)
 	}
+}
+
+func compareMovedFields(t *testing.T, oldDk DynaKube, newDk v1beta2.DynaKube) {
+	assert.Equal(t, oldDk.FeatureApiRequestThreshold(), newDk.ApiRequestThreshold())
+	assert.Equal(t, oldDk.FeatureOneAgentSecCompProfile(), newDk.OneAgentSecCompProfile())
+	assert.Equal(t, !oldDk.FeatureDisableMetadataEnrichment(), newDk.MetaDataEnrichmentEnabled())
 }
 
 func compareHostInjectSpec(t *testing.T, oldSpec HostInjectSpec, newSpec v1beta2.HostInjectSpec) {
