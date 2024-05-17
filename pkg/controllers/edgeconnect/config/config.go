@@ -20,6 +20,9 @@ type EdgeConnect struct {
 
 	// Proxy related section.
 	Proxy Proxy `yaml:"proxy,omitempty"`
+
+	// Secrets related section.
+	Secrets []Secret `yaml:"secrets,omitempty"`
 }
 
 type OAuth struct {
@@ -43,4 +46,11 @@ type Proxy struct {
 type Auth struct {
 	User     string `yaml:"user"`
 	Password string `yaml:"password"`
+}
+
+type Secret struct {
+	Name            string   `yaml:"name"`
+	Token           string   `yaml:"token"`
+	FromFile        string   `yaml:"from_file"`
+	RestrictHostsTo []string `yaml:"restrict_hosts_to,omitempty"`
 }

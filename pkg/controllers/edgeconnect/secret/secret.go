@@ -10,7 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func PrepareConfigFile(ctx context.Context, instance *edgeconnectv1alpha1.EdgeConnect, apiReader client.Reader) ([]byte, error) {
+func PrepareConfigFile(ctx context.Context, instance *edgeconnectv1alpha1.EdgeConnect, apiReader client.Reader, token string) ([]byte, error) {
 	cfg := config.EdgeConnect{
 		Name:            instance.ObjectMeta.Name,
 		ApiEndpointHost: instance.Spec.ApiServer,
@@ -46,6 +46,13 @@ func PrepareConfigFile(ctx context.Context, instance *edgeconnectv1alpha1.EdgeCo
 		cfg.RootCertificatePaths = append(cfg.RootCertificatePaths, consts.EdgeConnectMountPath+"/"+consts.EdgeConnectCustomCertificateName)
 	}
 
+	// Always add certificates
+	cfg.RootCertificatePaths = append(cfg.RootCertificatePaths, consts.EdgeConnectServiceAccountCAPath)
+
+	if instance.IsK8SAutomationEnabled() {
+		cfg.Secrets = append(cfg.Secrets, createKubernetesApiSecret(token))
+	}
+
 	if instance.Spec.Proxy != nil {
 		cfg.Proxy = config.Proxy{
 			Server:     instance.Spec.Proxy.Host,
@@ -79,4 +86,13 @@ func safeEdgeConnectCfg(cfg config.EdgeConnect) string {
 	safe, _ := yaml.Marshal(cfg)
 
 	return string(safe)
+}
+
+func createKubernetesApiSecret(token string) config.Secret {
+	return config.Secret{
+		Name:            "K8S_SERVICE_ACCOUNT_TOKEN",
+		Token:           token,
+		FromFile:        "/var/run/secrets/kubernetes.io/serviceaccount/token",
+		RestrictHostsTo: []string{"kubernetes.default.svc"},
+	}
 }
