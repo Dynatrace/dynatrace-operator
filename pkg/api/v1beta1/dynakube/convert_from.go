@@ -88,6 +88,8 @@ func (dst *DynaKube) fromMovedFields(src *v1beta2.DynaKube) error {
 
 	if selector := src.OneAgentNamespaceSelector(); selector != nil {
 		dst.Spec.NamespaceSelector = *selector
+	} else {
+		dst.Spec.NamespaceSelector = src.Spec.MetaDataEnrichment.NamespaceSelector
 	}
 
 	return nil
