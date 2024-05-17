@@ -58,6 +58,8 @@ oauth:
     client_id: created-client-id
     client_secret: created-client-secret
     resource: urn:dtenvironment:test12345
+root_certificate_paths:
+    - /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 `
 		assert.Equal(t, expected, string(cfg))
 	})
@@ -104,6 +106,7 @@ oauth:
     resource: urn:dtenvironment:test12345
 root_certificate_paths:
     - /etc/ssl/certificate.cer
+    - /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 proxy:
     auth:
         user: user

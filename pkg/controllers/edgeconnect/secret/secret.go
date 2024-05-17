@@ -46,8 +46,10 @@ func PrepareConfigFile(ctx context.Context, instance *edgeconnectv1alpha1.EdgeCo
 		cfg.RootCertificatePaths = append(cfg.RootCertificatePaths, consts.EdgeConnectMountPath+"/"+consts.EdgeConnectCustomCertificateName)
 	}
 
+	// Always add certificates
+	cfg.RootCertificatePaths = append(cfg.RootCertificatePaths, consts.EdgeConnectServiceAccountCAPath)
+
 	if instance.IsK8SAutomationEnabled() {
-		cfg.RootCertificatePaths = append(cfg.RootCertificatePaths, consts.EdgeConnectServiceAccountCAPath)
 		cfg.Secrets = append(cfg.Secrets, createKubernetesApiSecret(token))
 	}
 
