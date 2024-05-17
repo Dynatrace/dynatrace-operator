@@ -104,7 +104,6 @@ oauth:
     resource: urn:dtenvironment:test12345
 root_certificate_paths:
     - /etc/ssl/certificate.cer
-    - /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 proxy:
     auth:
         user: user
@@ -112,6 +111,43 @@ proxy:
     server: proxy.com
     exceptions: '*.internal.com'
     port: 443
+`
+		assert.Equal(t, expected, string(cfg))
+	})
+	t.Run("Create config k8s automation enabled", func(t *testing.T) {
+		testEdgeConnect := &edgeconnectv1alpha1.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: edgeconnectv1alpha1.EdgeConnectSpec{
+				ApiServer: "abc12345.dynatrace.com",
+				OAuth: edgeconnectv1alpha1.OAuthSpec{
+					Endpoint:     "https://test.com/sso/oauth2/token",
+					Resource:     "urn:dtenvironment:test12345",
+					ClientSecret: "test-secret",
+				},
+				KubernetesAutomation: &edgeconnectv1alpha1.KubernetesAutomationSpec{
+					Enabled: true,
+				},
+				ServiceAccountName: "test",
+			},
+		}
+		testSecretName := "test-secret"
+		kubeReader := fake.NewClient(createClientSecret(testSecretName, testNamespace))
+		cfg, err := PrepareConfigFile(context.Background(), testEdgeConnect, kubeReader, testToken)
+
+		require.NoError(t, err)
+
+		expected := `name: test-name-edgeconnectv1alpha1
+api_endpoint_host: abc12345.dynatrace.com
+oauth:
+    endpoint: https://test.com/sso/oauth2/token
+    client_id: created-client-id
+    client_secret: created-client-secret
+    resource: urn:dtenvironment:test12345
+root_certificate_paths:
+    - /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 secrets:
     - name: K8S_SERVICE_ACCOUNT_TOKEN
       token: dummy-token
@@ -121,6 +157,7 @@ secrets:
 `
 		assert.Equal(t, expected, string(cfg))
 	})
+
 	t.Run("safeEdgeConnectCfg", func(t *testing.T) {
 		cfg := config.EdgeConnect{
 			Name:            "test",

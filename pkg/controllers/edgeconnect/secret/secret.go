@@ -46,7 +46,7 @@ func PrepareConfigFile(ctx context.Context, instance *edgeconnectv1alpha1.EdgeCo
 		cfg.RootCertificatePaths = append(cfg.RootCertificatePaths, consts.EdgeConnectMountPath+"/"+consts.EdgeConnectCustomCertificateName)
 	}
 
-	if instance.Spec.ServiceAccountName != "" {
+	if instance.IsK8SAutomationEnabled() {
 		cfg.RootCertificatePaths = append(cfg.RootCertificatePaths, consts.EdgeConnectServiceAccountCAPath)
 		cfg.Secrets = append(cfg.Secrets, createDefaultServiceAccount(token))
 	}
