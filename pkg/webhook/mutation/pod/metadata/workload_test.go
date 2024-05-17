@@ -29,9 +29,8 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 						Controller: address.Of(true),
 					},
 				},
-				Name:         resourceName,
-				Namespace:    namespaceName,
-				GenerateName: resourceName,
+				Name:      resourceName,
+				Namespace: namespaceName,
 			},
 		}
 
@@ -45,9 +44,8 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 						Controller: address.Of(true),
 					},
 				},
-				Name:         resourceName,
-				Namespace:    namespaceName,
-				GenerateName: resourceName,
+				Name:      resourceName,
+				Namespace: namespaceName,
 			},
 		}
 
@@ -56,9 +54,8 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 				Kind: "DaemonSet",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:         resourceName,
-				Namespace:    namespaceName,
-				GenerateName: resourceName,
+				Name:      resourceName,
+				Namespace: namespaceName,
 			},
 		}
 
@@ -84,7 +81,6 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				OwnerReferences: []metav1.OwnerReference{},
 				Name:            resourceName,
-				GenerateName:    resourceName,
 			},
 		}
 		client := fake.NewClient(&pod)
@@ -118,10 +114,22 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		assert.Equal(t, "UNKNOWN", workloadInfo.kind)
 	})
 
-	t.Run("should be empty if owner is not set, but name is empty", func(t *testing.T) {
+	t.Run("should be empty if owner is no controller", func(t *testing.T) {
 		pod := corev1.Pod{
 			TypeMeta: metav1.TypeMeta{
 				Kind: "Pod",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion:         "some.unknown.kind.com/v1alpha1",
+						Kind:               "SomeUnknownKind",
+						Name:               "some-owner",
+						Controller:         address.Of(false),
+						BlockOwnerDeletion: address.Of(false),
+					},
+				},
+				Name: resourceName,
 			},
 		}
 		client := fake.NewClient(&pod)

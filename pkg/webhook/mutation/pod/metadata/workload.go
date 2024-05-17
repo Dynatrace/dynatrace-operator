@@ -46,7 +46,7 @@ func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod,
 			Kind:       pod.Kind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: pod.ObjectMeta.GenerateName,
+			Name: pod.ObjectMeta.Name,
 			// pod.ObjectMeta.Namespace is empty yet
 			Namespace:       namespace,
 			OwnerReferences: pod.ObjectMeta.OwnerReferences,
@@ -59,7 +59,7 @@ func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod,
 	}
 
 	if podPartialMetadata.ObjectMeta.Name == "" {
-		log.Info("podName is empty", "objectMeta.name", podPartialMetadata.ObjectMeta.Name)
+		log.Info("podName is empty")
 	}
 
 	return &workloadInfo, nil
@@ -103,6 +103,9 @@ func findRootOwner(ctx context.Context, clt client.Client, partialObjectMetadata
 			}
 
 			return findRootOwner(ctx, clt, ownerObjectMetadata)
+		} else {
+			// pod is created by workload of kind that is not well known
+			return newUnknownWorkloadInfo(), nil
 		}
 	}
 
