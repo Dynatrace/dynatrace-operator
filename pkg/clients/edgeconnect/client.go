@@ -312,3 +312,17 @@ func (c *client) GetEdgeConnects(name string) (ListResponse, error) {
 
 	return response, nil
 }
+
+func (c *client) unmarshalToJson(res *http.Response, resDataJson interface{}) error {
+	resData, err := c.getServerResponseData(res)
+	if err != nil {
+		return fmt.Errorf("error reading response body: %w", err)
+	}
+
+	err = json.Unmarshal(resData, resDataJson)
+	if err != nil {
+		return fmt.Errorf("error parsing response body: %w", err)
+	}
+
+	return nil
+}

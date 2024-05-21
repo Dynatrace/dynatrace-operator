@@ -2,6 +2,7 @@ package edgeconnect
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"slices"
 	"strings"
@@ -166,6 +167,28 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 		return edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID)
 	}
 
+	err = controller.deleteConnectionSetting(edgeConnectClient)
+	if err != nil {
+		_log.Info("Deleting connection setting failed")
+
+		return err
+	}
+
+	return nil
+}
+
+func (controller *Controller) deleteConnectionSetting(edgeConnectClient edgeconnect.Client) error {
+	envSetting, err := edgeConnectClient.GetConnectionSetting()
+	if err != nil {
+		return err
+	}
+
+	if (envSetting != edgeconnect.EnvironmentSetting{}) {
+		err = edgeConnectClient.DeleteConnectionSetting(envSetting.ObjectId)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -676,8 +699,64 @@ func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Co
 		return err
 	}
 
+	edgeConnectClient, err := controller.buildEdgeConnectClient(ctx, edgeConnect)
+	if err != nil {
+		_log.Debug("building EdgeConnect client failed")
+
+		return err
+	}
+
+	err = controller.createOrUpdateConnectionSetting(edgeConnectClient, edgeConnect, ddHash)
+	if err != nil {
+		_log.Debug("creating EdgeConnect connection setting failed")
+
+		return err
+	}
+
 	_log.Debug("EdgeConnect deployment created/updated successfully")
 
+	return nil
+}
+
+func (controller *Controller) createOrUpdateConnectionSetting(edgeConnectClient edgeconnect.Client, edgeConnect *edgeconnectv1alpha1.EdgeConnect, latestToken string) error {
+	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name)
+
+	_log.Info("ALBERTO: createOrUpdateConnectionSetting")
+	envSetting, err := edgeConnectClient.GetConnectionSetting()
+	if err != nil {
+		_log.Info("ALBERTO: error 1")
+		return err
+	}
+
+	if (envSetting == edgeconnect.EnvironmentSetting{}) {
+		_log.Info("ALBERTO: Creating edgeconnect")
+		err = edgeConnectClient.CreateConnectionSetting(
+			edgeconnect.EnvironmentSetting{
+				SchemaId:      edgeconnect.KubernetesConnectionSchemaID,
+				SchemaVersion: edgeconnect.KubernetesConnectionVersion,
+				Scope:         edgeconnect.KubernetesConnectionScope,
+				Value: edgeconnect.EnvironmentSettingValue{
+					Name:  fmt.Sprintf("%s.%s", "cluster-name", edgeConnect.Name),
+					Url:   fmt.Sprintf("https://%s.%s.%s", edgeConnect.Name, edgeConnect.Namespace, "cluster-id"),
+					Token: latestToken,
+				},
+			},
+		)
+		if err != nil {
+			_log.Info("ALBERTO: error 2")
+			return err
+		}
+	}
+
+	if (envSetting != edgeconnect.EnvironmentSetting{}) {
+		_log.Info("ALBERTO: Updating edgeconnect")
+		err = edgeConnectClient.DeleteConnectionSetting(envSetting.ObjectId)
+		if err != nil {
+			_log.Info("ALBERTO: error 3")
+			return err
+		}
+	}
+	_log.Info("ALBERTO: exit")
 	return nil
 }
 

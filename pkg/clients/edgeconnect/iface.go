@@ -16,4 +16,12 @@ type Client interface {
 
 	// GetEdgeConnects returns list of edge connects
 	GetEdgeConnects(name string) (ListResponse, error)
+
+	GetConnectionSetting() (EnvironmentSetting, error)
+
+	CreateConnectionSetting(es EnvironmentSetting) error
+
+	UpdateConnectionSetting(es EnvironmentSetting) error
+
+	DeleteConnectionSetting(objectId string) error
 }
