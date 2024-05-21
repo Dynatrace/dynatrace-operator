@@ -114,7 +114,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		assert.Equal(t, "UNKNOWN", workloadInfo.kind)
 	})
 
-	t.Run("should be empty if owner is no controller", func(t *testing.T) {
+	t.Run("should be unknown if no controller is the owner", func(t *testing.T) {
 		pod := corev1.Pod{
 			TypeMeta: metav1.TypeMeta{
 				Kind: "Pod",
