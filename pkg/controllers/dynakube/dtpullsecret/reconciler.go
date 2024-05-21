@@ -6,10 +6,13 @@ import (
 
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -18,27 +21,49 @@ const (
 )
 
 type Reconciler struct {
-	client    client.Client
-	apiReader client.Reader
-	dynakube  *dynatracev1beta2.DynaKube
-	tokens    token.Tokens
+	client       client.Client
+	apiReader    client.Reader
+	dynakube     *dynatracev1beta2.DynaKube
+	tokens       token.Tokens
+	timeprovider *timeprovider.Provider
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader, dynakube *dynatracev1beta2.DynaKube, tokens token.Tokens) *Reconciler {
 	return &Reconciler{
-		client:    clt,
-		apiReader: apiReader,
-		dynakube:  dynakube,
-		tokens:    tokens,
+		client:       clt,
+		apiReader:    apiReader,
+		dynakube:     dynakube,
+		tokens:       tokens,
+		timeprovider: timeprovider.New(),
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	/* TODO: Introduce cleanup, and also, this would not be needed in every case,
-	if we don't want to do anything with images, then it's not necessary,
-	but other parts of the code must also be updated to handle this scenario.
-	*/
-	if r.dynakube.Spec.CustomPullSecret == "" {
+	if r.dynakube.Spec.CustomPullSecret != "" {
+		return nil
+	}
+
+	if !(r.dynakube.NeedsOneAgent() || r.dynakube.NeedsActiveGate()) {
+		if meta.FindStatusCondition(*r.dynakube.Conditions(), PullSecretConditionType) == nil {
+			return nil // no condition == nothing is there to clean up
+		}
+
+		err := r.deletePullSecretIfExists(ctx)
+		if err != nil {
+			log.Error(err, "failed to clean-up OneAgent tenant-secret")
+
+			return nil
+		}
+
+		meta.RemoveStatusCondition(r.dynakube.Conditions(), PullSecretConditionType)
+
+		return nil
+	}
+
+	if conditions.IsOutdated(r.timeprovider, r.dynakube, PullSecretConditionType) {
+		conditions.SetSecretOutdated(r.dynakube.Conditions(), PullSecretConditionType,
+			extendWithPullSecretSuffix(r.dynakube.Name)+" is not present or outdated")
+
 		err := r.reconcilePullSecret(ctx)
 		if err != nil {
 			log.Info("could not reconcile pull secret")
@@ -77,6 +102,24 @@ func (r *Reconciler) createPullSecretIfNotExists(ctx context.Context, pullSecret
 	return &config, err
 }
 
+func (r *Reconciler) deletePullSecretIfExists(ctx context.Context) error {
+	var config corev1.Secret
+
+	err := r.apiReader.Get(ctx, client.ObjectKey{Name: extendWithPullSecretSuffix(r.dynakube.Name), Namespace: r.dynakube.Namespace}, &config)
+	if k8serrors.IsNotFound(err) {
+		return nil
+	}
+
+	log.Info("deleting pull secret")
+
+	err = r.client.Delete(ctx, &config)
+	if err != nil {
+		return errors.WithMessage(err, "failed to delete pull secret")
+	}
+
+	return nil
+}
+
 func (r *Reconciler) updatePullSecretIfOutdated(ctx context.Context, pullSecret *corev1.Secret, desiredPullSecretData map[string][]byte) error {
 	if !isPullSecretEqual(pullSecret, desiredPullSecretData) {
 		return r.updatePullSecret(ctx, pullSecret, desiredPullSecretData)
@@ -97,8 +140,12 @@ func (r *Reconciler) createPullSecret(ctx context.Context, pullSecretData map[st
 
 	err = r.client.Create(ctx, pullSecret)
 	if err != nil {
+		conditions.SetKubeApiError(r.dynakube.Conditions(), PullSecretConditionType, err)
+
 		return nil, errors.WithMessagef(err, "failed to create secret %s", extendWithPullSecretSuffix(r.dynakube.Name))
 	}
+
+	conditions.SetSecretCreated(r.dynakube.Conditions(), PullSecretConditionType, pullSecret.Name)
 
 	return pullSecret, nil
 }
@@ -108,8 +155,12 @@ func (r *Reconciler) updatePullSecret(ctx context.Context, pullSecret *corev1.Se
 
 	pullSecret.Data = desiredPullSecretData
 	if err := r.client.Update(ctx, pullSecret); err != nil {
+		conditions.SetKubeApiError(r.dynakube.Conditions(), PullSecretConditionType, err)
+
 		return errors.WithMessagef(err, "failed to update secret %s", pullSecret.Name)
 	}
+
+	conditions.SetSecretUpdated(r.dynakube.Conditions(), PullSecretConditionType, pullSecret.Name)
 
 	return nil
 }

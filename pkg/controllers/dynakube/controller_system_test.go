@@ -347,7 +347,7 @@ func createDTMockClient(t *testing.T, paasTokenScopes, apiTokenScopes dtclient.T
 			mock.AnythingOfType("context.backgroundCtx"),
 			dtclient.OneAgentConnectionInfo{
 				ConnectionInfo: dtclient.ConnectionInfo{
-					TenantUUID: "abc123456",
+					TenantUUID: testUUID,
 				},
 			}, nil).Maybe()
 	mockClient.On("GetLatestAgentVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything, mock.Anything).
@@ -359,7 +359,11 @@ func createDTMockClient(t *testing.T, paasTokenScopes, apiTokenScopes dtclient.T
 	mockClient.On("CreateOrUpdateKubernetesSetting", mock.AnythingOfType("context.backgroundCtx"), testName, testUID, mock.AnythingOfType("string")).
 		Return(testObjectID, nil).Maybe()
 	mockClient.On("GetActiveGateConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).
-		Return(dtclient.ActiveGateConnectionInfo{}, nil).Maybe()
+		Return(dtclient.ActiveGateConnectionInfo{
+			ConnectionInfo: dtclient.ConnectionInfo{
+				TenantUUID: testUUID,
+			},
+		}, nil).Maybe()
 	mockClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).
 		Return(&dtclient.ProcessModuleConfig{}, nil).Maybe()
 

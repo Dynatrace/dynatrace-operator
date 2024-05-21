@@ -389,7 +389,7 @@ func TestReconcileComponents(t *testing.T) {
 }
 
 func createActivegateReconcilerBuilder(reconciler controllers.Reconciler) activegate.ReconcilerBuilder {
-	return func(_ client.Client, _ client.Reader, _ *dynatracev1beta2.DynaKube, _ dtclient.Client, _ *istio.Client) controllers.Reconciler {
+	return func(_ client.Client, _ client.Reader, _ *dynatracev1beta2.DynaKube, _ dtclient.Client, _ *istio.Client, _ token.Tokens) controllers.Reconciler {
 		return reconciler
 	}
 }
