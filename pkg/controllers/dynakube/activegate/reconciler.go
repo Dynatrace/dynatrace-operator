@@ -112,6 +112,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	// TODO: move cleanup to ActiveGate reconciler
 	meta.RemoveStatusCondition(r.dynakube.Conditions(), statefulset.ActiveGateStatefulSetConditionType)
+	meta.RemoveStatusCondition(r.dynakube.Conditions(), authtoken.ActiveGateAuthTokenSecretConditionType)
 
 	return nil
 }

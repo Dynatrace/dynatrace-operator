@@ -40,3 +40,13 @@ func SetSecretOutdated(conditions *[]metav1.Condition, conditionType, message st
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
+
+func SetAuthSecretCreated(conditions *[]metav1.Condition, conditionType string, msg string) {
+	condition := metav1.Condition{
+		Type:    conditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  SecretCreatedReason,
+		Message: msg,
+	}
+	_ = meta.SetStatusCondition(conditions, condition)
+}
