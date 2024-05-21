@@ -8,7 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/dockerkeychain"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
@@ -105,7 +105,7 @@ func RunTroubleshootCmd(ctx context.Context, log logd.Logger, namespaceName stri
 		return
 	}
 
-	dynakubes := &dynatracev1beta1.DynaKubeList{}
+	dynakubes := &dynatracev1beta2.DynaKubeList{}
 
 	err = apiReader.List(ctx, dynakubes, &client.ListOptions{Namespace: namespaceName})
 	if checkCRD(log, err) != nil {
@@ -124,7 +124,7 @@ func GetK8SClusterAPIReader(kubeConfig *rest.Config) (client.Reader, error) {
 	return k8scluster.GetAPIReader(), nil
 }
 
-func runChecksForAllDynakubes(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, httpClient *http.Client, dynakubes []dynatracev1beta1.DynaKube) {
+func runChecksForAllDynakubes(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, httpClient *http.Client, dynakubes []dynatracev1beta2.DynaKube) {
 	for _, dynakube := range dynakubes {
 		err := runChecksForDynakube(ctx, baseLog, apiReader, httpClient, dynakube)
 		if err != nil {
@@ -133,7 +133,7 @@ func runChecksForAllDynakubes(ctx context.Context, baseLog logd.Logger, apiReade
 	}
 }
 
-func runChecksForDynakube(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, httpClient *http.Client, dynakube dynatracev1beta1.DynaKube) error {
+func runChecksForDynakube(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, httpClient *http.Client, dynakube dynatracev1beta2.DynaKube) error {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
 	logNewCheckf(log, "checking if '%s:%s' Dynakube is configured correctly", dynakube.Namespace, dynakube.Name)
@@ -165,7 +165,7 @@ func runChecksForDynakube(ctx context.Context, baseLog logd.Logger, apiReader cl
 	return checkProxySettings(ctx, log, apiReader, &dynakube)
 }
 
-func createTransport(ctx context.Context, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, httpClient *http.Client) (*http.Transport, error) {
+func createTransport(ctx context.Context, apiReader client.Reader, dynakube *dynatracev1beta2.DynaKube, httpClient *http.Client) (*http.Transport, error) {
 	var transport *http.Transport
 	if httpClient != nil && httpClient.Transport != nil {
 		transport = httpClient.Transport.(*http.Transport).Clone()
@@ -176,10 +176,10 @@ func createTransport(ctx context.Context, apiReader client.Reader, dynakube *dyn
 	return registry.PrepareTransportForDynaKube(ctx, apiReader, transport, dynakube)
 }
 
-func getDynakubes(ctx context.Context, log logd.Logger, apiReader client.Reader, namespaceName string, dynakubeName string) ([]dynatracev1beta1.DynaKube, error) {
+func getDynakubes(ctx context.Context, log logd.Logger, apiReader client.Reader, namespaceName string, dynakubeName string) ([]dynatracev1beta2.DynaKube, error) {
 	var err error
 
-	var dynakubes []dynatracev1beta1.DynaKube
+	var dynakubes []dynatracev1beta2.DynaKube
 
 	if dynakubeName == "" {
 		logNewDynakubef(log, "no Dynakube specified - checking all Dynakubes in namespace '%s'", namespaceName)
@@ -200,8 +200,8 @@ func getDynakubes(ctx context.Context, log logd.Logger, apiReader client.Reader,
 	return dynakubes, nil
 }
 
-func getAllDynakubesInNamespace(ctx context.Context, log logd.Logger, apiReader client.Reader, namespaceName string) ([]dynatracev1beta1.DynaKube, error) {
-	var dynakubes dynatracev1beta1.DynaKubeList
+func getAllDynakubesInNamespace(ctx context.Context, log logd.Logger, apiReader client.Reader, namespaceName string) ([]dynatracev1beta2.DynaKube, error) {
+	var dynakubes dynatracev1beta2.DynaKubeList
 
 	err := apiReader.List(ctx, &dynakubes, client.InNamespace(namespaceName))
 	if err != nil {

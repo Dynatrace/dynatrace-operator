@@ -3,7 +3,7 @@ package deploymentmetadata
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -46,18 +46,18 @@ func TestFormatKeyValue(t *testing.T) {
 
 func TestGetOneAgentDeploymentType(t *testing.T) {
 	tests := []struct {
-		oneAgentSpec           dynatracev1beta1.OneAgentSpec
+		oneAgentSpec           dynatracev1beta2.OneAgentSpec
 		expectedDeploymentType string
 	}{
-		{dynatracev1beta1.OneAgentSpec{HostMonitoring: &dynatracev1beta1.HostInjectSpec{}}, HostMonitoringDeploymentType},
-		{dynatracev1beta1.OneAgentSpec{ClassicFullStack: &dynatracev1beta1.HostInjectSpec{}}, ClassicFullStackDeploymentType},
-		{dynatracev1beta1.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}}, CloudNativeDeploymentType},
-		{dynatracev1beta1.OneAgentSpec{ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{}}, ApplicationMonitoringDeploymentType},
+		{dynatracev1beta2.OneAgentSpec{HostMonitoring: &dynatracev1beta2.HostInjectSpec{}}, HostMonitoringDeploymentType},
+		{dynatracev1beta2.OneAgentSpec{ClassicFullStack: &dynatracev1beta2.HostInjectSpec{}}, ClassicFullStackDeploymentType},
+		{dynatracev1beta2.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{}}, CloudNativeDeploymentType},
+		{dynatracev1beta2.OneAgentSpec{ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{}}, ApplicationMonitoringDeploymentType},
 	}
 
 	for _, test := range tests {
-		dynakube := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		dynakube := &dynatracev1beta2.DynaKube{
+			Spec: dynatracev1beta2.DynaKubeSpec{
 				OneAgent: test.oneAgentSpec,
 			},
 		}

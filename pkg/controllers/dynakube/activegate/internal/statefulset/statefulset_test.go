@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
@@ -34,25 +34,25 @@ var (
 	testReplicas int32 = 69
 )
 
-func getTestDynakube() dynatracev1beta1.DynaKube {
-	return dynatracev1beta1.DynaKube{
+func getTestDynakube() dynatracev1beta2.DynaKube {
+	return dynatracev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        testDynakubeName,
 			Namespace:   testNamespaceName,
 			Annotations: map[string]string{},
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			ActiveGate: dynatracev1beta1.ActiveGateSpec{
-				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-					dynatracev1beta1.RoutingCapability.DisplayName,
+		Spec: dynatracev1beta2.DynaKubeSpec{
+			ActiveGate: dynatracev1beta2.ActiveGateSpec{
+				Capabilities: []dynatracev1beta2.CapabilityDisplayName{
+					dynatracev1beta2.RoutingCapability.DisplayName,
 				},
-				CapabilityProperties: dynatracev1beta1.CapabilityProperties{
-					Replicas: &testReplicas,
+				CapabilityProperties: dynatracev1beta2.CapabilityProperties{
+					Replicas: testReplicas,
 				},
 			},
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
-			ActiveGate: dynatracev1beta1.ActiveGateStatus{
+		Status: dynatracev1beta2.DynaKubeStatus{
+			ActiveGate: dynatracev1beta2.ActiveGateStatus{
 				VersionStatus: status.VersionStatus{},
 			},
 		},
@@ -194,7 +194,7 @@ func TestAddTemplateSpec(t *testing.T) {
 
 	t.Run("adds capability specific stuff", func(t *testing.T) {
 		dynakube := getTestDynakube()
-		dynakube.Spec.ActiveGate.Capabilities = append(dynakube.Spec.ActiveGate.Capabilities, dynatracev1beta1.KubeMonCapability.DisplayName)
+		dynakube.Spec.ActiveGate.Capabilities = append(dynakube.Spec.ActiveGate.Capabilities, dynatracev1beta2.KubeMonCapability.DisplayName)
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
 		sts := appsv1.StatefulSet{}
@@ -404,8 +404,8 @@ func TestBuildCommonEnvs(t *testing.T) {
 	t.Run("metrics-ingest env", func(t *testing.T) {
 		dynakube := getTestDynakube()
 
-		activegate.SwitchCapability(&dynakube, dynatracev1beta1.RoutingCapability, false)
-		activegate.SwitchCapability(&dynakube, dynatracev1beta1.MetricsIngestCapability, true)
+		activegate.SwitchCapability(&dynakube, dynatracev1beta2.RoutingCapability, false)
+		activegate.SwitchCapability(&dynakube, dynatracev1beta2.MetricsIngestCapability, true)
 
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
@@ -437,7 +437,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 func TestSecurityContexts(t *testing.T) {
 	t.Run("containers have the same security context if read-only filesystem", func(t *testing.T) {
 		dynakube := getTestDynakube()
-		dynakube.Spec.ActiveGate.Capabilities = append(dynakube.Spec.ActiveGate.Capabilities, dynatracev1beta1.KubeMonCapability.DisplayName)
+		dynakube.Spec.ActiveGate.Capabilities = append(dynakube.Spec.ActiveGate.Capabilities, dynatracev1beta2.KubeMonCapability.DisplayName)
 
 		multiCapability := capability.NewMultiCapability(&dynakube)
 

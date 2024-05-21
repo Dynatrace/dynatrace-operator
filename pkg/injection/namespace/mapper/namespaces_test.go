@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,7 +16,7 @@ func TestMatchForNamespaceNothingEverything(t *testing.T) {
 		"type":   "app",
 		"inject": "true",
 	}
-	dynakubes := []*dynatracev1beta1.DynaKube{
+	dynakubes := []*dynatracev1beta2.DynaKube{
 		createTestDynakubeWithAppInject("appMonitoring-1", nil, nil),
 		createTestDynakubeWithAppInject("appMonitoring-2", matchLabels, nil),
 	}
@@ -103,7 +103,7 @@ func TestMapFromNamespace(t *testing.T) {
 	t.Run("ComponentFeature flag for monitoring system namespaces", func(t *testing.T) {
 		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil)
 		dk.Annotations = map[string]string{
-			dynatracev1beta1.AnnotationFeatureIgnoredNamespaces: "[]",
+			dynatracev1beta2.AnnotationFeatureIgnoredNamespaces: "[]",
 		}
 		namespace := createNamespace("openshift-something", nil)
 		clt := fake.NewClient(dk)

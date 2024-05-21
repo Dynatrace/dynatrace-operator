@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"k8s.io/utils/net"
 )
@@ -12,11 +12,11 @@ import (
 type baseFunc func() *capabilityBase
 
 var (
-	activeGateCapabilities = map[dynatracev1beta1.CapabilityDisplayName]baseFunc{
-		dynatracev1beta1.KubeMonCapability.DisplayName:       kubeMonBase,
-		dynatracev1beta1.RoutingCapability.DisplayName:       routingBase,
-		dynatracev1beta1.MetricsIngestCapability.DisplayName: metricsIngestBase,
-		dynatracev1beta1.DynatraceApiCapability.DisplayName:  dynatraceApiBase,
+	activeGateCapabilities = map[dynatracev1beta2.CapabilityDisplayName]baseFunc{
+		dynatracev1beta2.KubeMonCapability.DisplayName:       kubeMonBase,
+		dynatracev1beta2.RoutingCapability.DisplayName:       routingBase,
+		dynatracev1beta2.MetricsIngestCapability.DisplayName: metricsIngestBase,
+		dynatracev1beta2.DynatraceApiCapability.DisplayName:  dynatraceApiBase,
 	}
 )
 
@@ -25,11 +25,11 @@ type Capability interface {
 	ShortName() string
 	ArgName() string
 	DisplayName() string
-	Properties() *dynatracev1beta1.CapabilityProperties
+	Properties() *dynatracev1beta2.CapabilityProperties
 }
 
 type capabilityBase struct {
-	properties  *dynatracev1beta1.CapabilityProperties
+	properties  *dynatracev1beta2.CapabilityProperties
 	shortName   string
 	argName     string
 	displayName string
@@ -40,7 +40,7 @@ func (capability *capabilityBase) Enabled() bool {
 	return capability.enabled
 }
 
-func (capability *capabilityBase) Properties() *dynatracev1beta1.CapabilityProperties {
+func (capability *capabilityBase) Properties() *dynatracev1beta2.CapabilityProperties {
 	return capability.properties
 }
 
@@ -60,21 +60,11 @@ func CalculateStatefulSetName(capability Capability, dynakubeName string) string
 	return dynakubeName + "-" + capability.ShortName()
 }
 
-// Deprecated: Use MultiCapability instead
-type KubeMonCapability struct {
-	capabilityBase
-}
-
-// Deprecated: Use MultiCapability instead
-type RoutingCapability struct {
-	capabilityBase
-}
-
 type MultiCapability struct {
 	capabilityBase
 }
 
-func NewMultiCapability(dk *dynatracev1beta1.DynaKube) Capability {
+func NewMultiCapability(dk *dynatracev1beta2.DynaKube) Capability {
 	mc := MultiCapability{
 		capabilityBase{
 			shortName: consts.MultiActiveGateName,
@@ -106,41 +96,11 @@ func NewMultiCapability(dk *dynatracev1beta1.DynaKube) Capability {
 	return &mc
 }
 
-// Deprecated
-func NewKubeMonCapability(dk *dynatracev1beta1.DynaKube) Capability {
-	c := &KubeMonCapability{
-		*kubeMonBase(),
-	}
-	if dk == nil {
-		return c
-	}
-
-	c.enabled = dk.Spec.KubernetesMonitoring.Enabled
-	c.properties = &dk.Spec.KubernetesMonitoring.CapabilityProperties
-
-	return c
-}
-
-// Deprecated
-func NewRoutingCapability(dk *dynatracev1beta1.DynaKube) Capability {
-	c := &RoutingCapability{
-		*routingBase(),
-	}
-	if dk == nil {
-		return c
-	}
-
-	c.enabled = dk.Spec.Routing.Enabled
-	c.properties = &dk.Spec.Routing.CapabilityProperties
-
-	return c
-}
-
 func kubeMonBase() *capabilityBase {
 	c := capabilityBase{
-		shortName:   dynatracev1beta1.KubeMonCapability.ShortName,
-		argName:     dynatracev1beta1.KubeMonCapability.ArgumentName,
-		displayName: string(dynatracev1beta1.KubeMonCapability.DisplayName),
+		shortName:   dynatracev1beta2.KubeMonCapability.ShortName,
+		argName:     dynatracev1beta2.KubeMonCapability.ArgumentName,
+		displayName: string(dynatracev1beta2.KubeMonCapability.DisplayName),
 	}
 
 	return &c
@@ -148,9 +108,9 @@ func kubeMonBase() *capabilityBase {
 
 func routingBase() *capabilityBase {
 	c := capabilityBase{
-		shortName:   dynatracev1beta1.RoutingCapability.ShortName,
-		argName:     dynatracev1beta1.RoutingCapability.ArgumentName,
-		displayName: string(dynatracev1beta1.RoutingCapability.DisplayName),
+		shortName:   dynatracev1beta2.RoutingCapability.ShortName,
+		argName:     dynatracev1beta2.RoutingCapability.ArgumentName,
+		displayName: string(dynatracev1beta2.RoutingCapability.DisplayName),
 	}
 
 	return &c
@@ -158,9 +118,9 @@ func routingBase() *capabilityBase {
 
 func metricsIngestBase() *capabilityBase {
 	c := capabilityBase{
-		shortName:   dynatracev1beta1.MetricsIngestCapability.ShortName,
-		argName:     dynatracev1beta1.MetricsIngestCapability.ArgumentName,
-		displayName: string(dynatracev1beta1.MetricsIngestCapability.DisplayName),
+		shortName:   dynatracev1beta2.MetricsIngestCapability.ShortName,
+		argName:     dynatracev1beta2.MetricsIngestCapability.ArgumentName,
+		displayName: string(dynatracev1beta2.MetricsIngestCapability.DisplayName),
 	}
 
 	return &c
@@ -168,18 +128,16 @@ func metricsIngestBase() *capabilityBase {
 
 func dynatraceApiBase() *capabilityBase {
 	c := capabilityBase{
-		shortName:   dynatracev1beta1.DynatraceApiCapability.ShortName,
-		argName:     dynatracev1beta1.DynatraceApiCapability.ArgumentName,
-		displayName: string(dynatracev1beta1.DynatraceApiCapability.DisplayName),
+		shortName:   dynatracev1beta2.DynatraceApiCapability.ShortName,
+		argName:     dynatracev1beta2.DynatraceApiCapability.ArgumentName,
+		displayName: string(dynatracev1beta2.DynatraceApiCapability.DisplayName),
 	}
 
 	return &c
 }
 
-func GenerateActiveGateCapabilities(dk *dynatracev1beta1.DynaKube) []Capability {
+func GenerateActiveGateCapabilities(dk *dynatracev1beta2.DynaKube) []Capability {
 	return []Capability{
-		NewKubeMonCapability(dk),
-		NewRoutingCapability(dk),
 		NewMultiCapability(dk),
 	}
 }
@@ -192,7 +150,7 @@ func BuildDNSEntryPointWithoutEnvVars(dynakubeName, dynakubeNamespace string, ca
 	return fmt.Sprintf("%s.%s", BuildServiceName(dynakubeName, capability.ShortName()), dynakubeNamespace)
 }
 
-func BuildDNSEntryPoint(dk dynatracev1beta1.DynaKube, capability Capability) string {
+func BuildDNSEntryPoint(dk dynatracev1beta2.DynaKube, capability Capability) string {
 	entries := []string{}
 
 	for _, ip := range dk.Status.ActiveGate.ServiceIPs {

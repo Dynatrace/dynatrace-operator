@@ -3,7 +3,7 @@ package modifiers
 import (
 	"path/filepath"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
@@ -20,14 +20,14 @@ const (
 	secretsRootDir = "/var/lib/dynatrace/secrets/"
 )
 
-func NewCertificatesModifier(dynakube dynatracev1beta1.DynaKube) CertificatesModifier {
+func NewCertificatesModifier(dynakube dynatracev1beta2.DynaKube) CertificatesModifier {
 	return CertificatesModifier{
 		dynakube: dynakube,
 	}
 }
 
 type CertificatesModifier struct {
-	dynakube dynatracev1beta1.DynaKube
+	dynakube dynatracev1beta2.DynaKube
 }
 
 func (mod CertificatesModifier) Enabled() bool {

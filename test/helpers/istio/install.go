@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
@@ -64,14 +64,14 @@ func AssertIstiodDeployment() func(ctx context.Context, envConfig *envconf.Confi
 	}
 }
 
-func AssessIstio(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube, sampleApp sample.App) {
+func AssessIstio(builder *features.FeatureBuilder, testDynakube dynatracev1beta2.DynaKube, sampleApp sample.App) {
 	builder.Assess("sample apps have working istio init container", checkSampleAppIstioInitContainers(sampleApp, testDynakube))
 	builder.Assess("operator pods have working istio init container", checkOperatorIstioInitContainers(testDynakube))
 	builder.Assess("istio virtual service for ApiUrl created", checkVirtualServiceForApiUrl(testDynakube))
 	builder.Assess("istio service entry for ApiUrl created", checkServiceEntryForApiUrl(testDynakube))
 }
 
-func checkSampleAppIstioInitContainers(sampleApp sample.App, testDynakube dynatracev1beta1.DynaKube) features.Func {
+func checkSampleAppIstioInitContainers(sampleApp sample.App, testDynakube dynatracev1beta2.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 		pods := sampleApp.GetPods(ctx, t, resources)
@@ -81,7 +81,7 @@ func checkSampleAppIstioInitContainers(sampleApp sample.App, testDynakube dynatr
 	}
 }
 
-func checkOperatorIstioInitContainers(testDynakube dynatracev1beta1.DynaKube) features.Func {
+func checkOperatorIstioInitContainers(testDynakube dynatracev1beta2.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 		var pods corev1.PodList
@@ -93,7 +93,7 @@ func checkOperatorIstioInitContainers(testDynakube dynatracev1beta1.DynaKube) fe
 	}
 }
 
-func assertIstioInitContainer(t *testing.T, pods corev1.PodList, testDynakube dynatracev1beta1.DynaKube) {
+func assertIstioInitContainer(t *testing.T, pods corev1.PodList, testDynakube dynatracev1beta2.DynaKube) {
 	istioInitName := determineIstioInitContainerName(t)
 
 	for _, podItem := range pods.Items {
@@ -134,7 +134,7 @@ func determineIstioInitContainerName(t *testing.T) string {
 	return istioInitName
 }
 
-func checkVirtualServiceForApiUrl(dynakube dynatracev1beta1.DynaKube) features.Func { //nolint: dupl
+func checkVirtualServiceForApiUrl(dynakube dynatracev1beta2.DynaKube) features.Func { //nolint: dupl
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		apiHost := apiUrlCommunicationHost(t, dynakube)
 		serviceName := istio.BuildNameForFQDNServiceEntry(dynakube.Name, istio.OperatorComponent)
@@ -152,7 +152,7 @@ func checkVirtualServiceForApiUrl(dynakube dynatracev1beta1.DynaKube) features.F
 	}
 }
 
-func checkServiceEntryForApiUrl(dynakube dynatracev1beta1.DynaKube) features.Func { //nolint: dupl
+func checkServiceEntryForApiUrl(dynakube dynatracev1beta2.DynaKube) features.Func { //nolint: dupl
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		apiHost := apiUrlCommunicationHost(t, dynakube)
 		serviceName := istio.BuildNameForFQDNServiceEntry(dynakube.Name, istio.OperatorComponent)
@@ -177,7 +177,7 @@ func istioClient(t *testing.T, restConfig *rest.Config) *istioclientset.Clientse
 	return client
 }
 
-func apiUrlCommunicationHost(t *testing.T, dynakube dynatracev1beta1.DynaKube) dtclient.CommunicationHost {
+func apiUrlCommunicationHost(t *testing.T, dynakube dynatracev1beta2.DynaKube) dtclient.CommunicationHost {
 	apiHost, err := dtclient.ParseEndpoint(dynakube.ApiUrl())
 	require.NoError(t, err)
 

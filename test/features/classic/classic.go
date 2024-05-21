@@ -5,7 +5,7 @@ package classic
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -23,7 +23,7 @@ func Feature(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	testDynakube := *dynakube.New(
 		dynakube.WithApiUrl(secretConfig.ApiUrl),
-		dynakube.WithClassicFullstackSpec(&dynatracev1beta1.HostInjectSpec{}),
+		dynakube.WithClassicFullstackSpec(&dynatracev1beta2.HostInjectSpec{}),
 	)
 
 	// check if oneAgent pods startup and report as ready

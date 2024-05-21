@@ -1,7 +1,7 @@
 package activegate
 
 import (
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
@@ -27,7 +27,7 @@ import (
 
 type Reconciler struct {
 	client                            client.Client
-	dynakube                          *dynatracev1beta1.DynaKube
+	dynakube                          *dynatracev1beta2.DynaKube
 	apiReader                         client.Reader
 	authTokenReconciler               controllers.Reconciler
 	istioReconciler                   istio.Reconciler
@@ -35,14 +35,14 @@ type Reconciler struct {
 	versionReconciler                 version.Reconciler
 	newStatefulsetReconcilerFunc      statefulset.NewReconcilerFunc
 	newCapabilityReconcilerFunc       capabilityInternal.NewReconcilerFunc
-	newCustomPropertiesReconcilerFunc func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) controllers.Reconciler
+	newCustomPropertiesReconcilerFunc func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta2.DynaKubeValueSource) controllers.Reconciler
 }
 
 var _ controllers.Reconciler = (*Reconciler)(nil)
 
-type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client, istioClient *istio.Client) controllers.Reconciler
+type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dynakube *dynatracev1beta2.DynaKube, dtc dtclient.Client, istioClient *istio.Client) controllers.Reconciler
 
-func NewReconciler(clt client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client, istioClient *istio.Client) controllers.Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, dynakube *dynatracev1beta2.DynaKube, dtc dtclient.Client, istioClient *istio.Client) controllers.Reconciler {
 	var istioReconciler istio.Reconciler
 	if istioClient != nil {
 		istioReconciler = istio.NewReconciler(istioClient)
@@ -52,7 +52,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dynakube *dynatra
 	versionReconciler := version.NewReconciler(apiReader, dtc, timeprovider.New().Freeze())
 	connectionInfoReconciler := agconnectioninfo.NewReconciler(clt, apiReader, dtc, dynakube)
 
-	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) controllers.Reconciler {
+	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta2.DynaKubeValueSource) controllers.Reconciler {
 		return customproperties.NewReconciler(clt, dynakube, customPropertiesOwnerName, customPropertiesSource)
 	}
 
@@ -144,7 +144,7 @@ func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.C
 	return nil
 }
 
-func extractPublicData(dynakube *dynatracev1beta1.DynaKube) map[string]string {
+func extractPublicData(dynakube *dynatracev1beta2.DynaKube) map[string]string {
 	data := map[string]string{}
 
 	if dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID != "" {

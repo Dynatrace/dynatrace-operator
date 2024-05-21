@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
@@ -28,7 +28,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 	return createReconciler(t, newDynaKube(), testUID, []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{TotalCount: 0}, "", "")
 }
 
-func createReconciler(t *testing.T, dynakube *dynatracev1beta1.DynaKube, uid string, monitoredEntities []dtclient.MonitoredEntity, getSettingsResponse dtclient.GetSettingsResponse, objectID string, meID interface{}) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
+func createReconciler(t *testing.T, dynakube *dynatracev1beta2.DynaKube, uid string, monitoredEntities []dtclient.MonitoredEntity, getSettingsResponse dtclient.GetSettingsResponse, objectID string, meID interface{}) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	mockClient := dtclientmock.NewClient(t)
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("string")).
 		Return(monitoredEntities, nil)
@@ -50,7 +50,7 @@ func createReconciler(t *testing.T, dynakube *dynatracev1beta1.DynaKube, uid str
 	return r
 }
 
-func createReconcilerWithError(t *testing.T, dynakube *dynatracev1beta1.DynaKube, monitoredEntitiesError error, getSettingsResponseError error, createSettingsResponseError error, createAppSettingsResponseError error) *Reconciler { //nolint:revive
+func createReconcilerWithError(t *testing.T, dynakube *dynatracev1beta2.DynaKube, monitoredEntitiesError error, getSettingsResponseError error, createSettingsResponseError error, createAppSettingsResponseError error) *Reconciler { //nolint:revive
 	mockClient := dtclientmock.NewClient(t)
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("string")).
 		Return([]dtclient.MonitoredEntity{}, monitoredEntitiesError)
@@ -291,8 +291,8 @@ func TestDetermineNewestMonitoredEntity(t *testing.T) {
 	})
 }
 
-func newDynaKube() *dynatracev1beta1.DynaKube {
-	return &dynatracev1beta1.DynaKube{
+func newDynaKube() *dynatracev1beta2.DynaKube {
+	return &dynatracev1beta2.DynaKube{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "DynaKube",
 			APIVersion: "dynatrace.com/v1beta1",
@@ -302,12 +302,12 @@ func newDynaKube() *dynatracev1beta1.DynaKube {
 			Namespace: "my-namespace",
 			UID:       "69e98f18-805a-42de-84b5-3eae66534f75",
 			Annotations: map[string]string{
-				dynatracev1beta1.AnnotationFeatureK8sAppEnabled: "true",
+				dynatracev1beta2.AnnotationFeatureK8sAppEnabled: "true",
 			},
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
+		Spec: dynatracev1beta2.DynaKubeSpec{
+			OneAgent: dynatracev1beta2.OneAgentSpec{
+				HostMonitoring: &dynatracev1beta2.HostInjectSpec{},
 			},
 		},
 	}

@@ -1,7 +1,7 @@
 package daemonset
 
 import (
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -53,8 +53,8 @@ type ClassicFullStack struct {
 }
 
 type builderInfo struct {
-	dynakube       *dynatracev1beta1.DynaKube
-	hostInjectSpec *dynatracev1beta1.HostInjectSpec
+	dynakube       *dynatracev1beta2.DynaKube
+	hostInjectSpec *dynatracev1beta2.HostInjectSpec
 	clusterID      string
 	deploymentType string
 }
@@ -63,7 +63,7 @@ type Builder interface {
 	BuildDaemonSet() (*appsv1.DaemonSet, error)
 }
 
-func NewHostMonitoring(instance *dynatracev1beta1.DynaKube, clusterId string) Builder {
+func NewHostMonitoring(instance *dynatracev1beta2.DynaKube, clusterId string) Builder {
 	return &HostMonitoring{
 		builderInfo{
 			dynakube:       instance,
@@ -74,7 +74,7 @@ func NewHostMonitoring(instance *dynatracev1beta1.DynaKube, clusterId string) Bu
 	}
 }
 
-func NewCloudNativeFullStack(instance *dynatracev1beta1.DynaKube, clusterId string) Builder {
+func NewCloudNativeFullStack(instance *dynatracev1beta2.DynaKube, clusterId string) Builder {
 	return &HostMonitoring{
 		builderInfo{
 			dynakube:       instance,
@@ -85,7 +85,7 @@ func NewCloudNativeFullStack(instance *dynatracev1beta1.DynaKube, clusterId stri
 	}
 }
 
-func NewClassicFullStack(instance *dynatracev1beta1.DynaKube, clusterId string) Builder {
+func NewClassicFullStack(instance *dynatracev1beta2.DynaKube, clusterId string) Builder {
 	return &ClassicFullStack{
 		builderInfo{
 			dynakube:       instance,
@@ -318,11 +318,26 @@ func (dsInfo *builderInfo) securityContext() *corev1.SecurityContext {
 	} else {
 		securityContext.Capabilities = defaultSecurityContextCapabilities()
 
-		if dsInfo.dynakube != nil && dsInfo.dynakube.FeatureOneAgentSecCompProfile() != "" {
-			secCompName := dsInfo.dynakube.FeatureOneAgentSecCompProfile()
-			securityContext.SeccompProfile = &corev1.SeccompProfile{
-				Type:             corev1.SeccompProfileTypeLocalhost,
-				LocalhostProfile: &secCompName,
+		if dsInfo.dynakube != nil {
+			switch {
+			case dsInfo.dynakube.HostMonitoringMode() && dsInfo.dynakube.Spec.OneAgent.HostMonitoring.SecCompProfile != "":
+				secCompName := dsInfo.dynakube.Spec.OneAgent.HostMonitoring.SecCompProfile
+				securityContext.SeccompProfile = &corev1.SeccompProfile{
+					Type:             corev1.SeccompProfileTypeLocalhost,
+					LocalhostProfile: &secCompName,
+				}
+			case dsInfo.dynakube.ClassicFullStackMode() && dsInfo.dynakube.Spec.OneAgent.ClassicFullStack.SecCompProfile != "":
+				secCompName := dsInfo.dynakube.Spec.OneAgent.ClassicFullStack.SecCompProfile
+				securityContext.SeccompProfile = &corev1.SeccompProfile{
+					Type:             corev1.SeccompProfileTypeLocalhost,
+					LocalhostProfile: &secCompName,
+				}
+			case dsInfo.dynakube.CloudNativeFullstackMode() && dsInfo.dynakube.Spec.OneAgent.CloudNativeFullStack.SecCompProfile != "":
+				secCompName := dsInfo.dynakube.Spec.OneAgent.CloudNativeFullStack.SecCompProfile
+				securityContext.SeccompProfile = &corev1.SeccompProfile{
+					Type:             corev1.SeccompProfileTypeLocalhost,
+					LocalhostProfile: &secCompName,
+				}
 			}
 		}
 	}

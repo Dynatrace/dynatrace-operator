@@ -5,7 +5,7 @@ package disabled_auto_injection
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
@@ -25,7 +25,7 @@ func Feature(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	testDynakube := *dynakube.New(
 		dynakube.WithAnnotations(map[string]string{
-			dynatracev1beta1.AnnotationFeatureAutomaticInjection: "false",
+			dynatracev1beta2.AnnotationFeatureAutomaticInjection: "false",
 		}),
 		dynakube.WithApiUrl(secretConfig.ApiUrl),
 		dynakube.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),

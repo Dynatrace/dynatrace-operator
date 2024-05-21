@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -25,8 +25,8 @@ func createTestDynakubeObjectMeta() metav1.ObjectMeta {
 	}
 }
 
-func createTestDynakube(spec *dynatracev1beta1.DynaKubeSpec) *dynatracev1beta1.DynaKube {
-	dynakube := &dynatracev1beta1.DynaKube{ObjectMeta: createTestDynakubeObjectMeta()}
+func createTestDynakube(spec *dynatracev1beta2.DynaKubeSpec) *dynatracev1beta2.DynaKube {
+	dynakube := &dynatracev1beta2.DynaKube{ObjectMeta: createTestDynakubeObjectMeta()}
 	if spec != nil {
 		dynakube.Spec = *spec
 	}
@@ -69,9 +69,9 @@ func TestReconcile(t *testing.T) {
 
 	t.Run(`create configmap with 1 key, if only oneagent is needed`, func(t *testing.T) {
 		dynakube := createTestDynakube(
-			&dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+			&dynatracev1beta2.DynaKubeSpec{
+				OneAgent: dynatracev1beta2.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
 				},
 			})
 
@@ -89,10 +89,10 @@ func TestReconcile(t *testing.T) {
 
 	t.Run(`create configmap with 1 key, if only activegate is needed`, func(t *testing.T) {
 		dynakube := createTestDynakube(
-			&dynatracev1beta1.DynaKubeSpec{
-				ActiveGate: dynatracev1beta1.ActiveGateSpec{
-					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-						dynatracev1beta1.KubeMonCapability.DisplayName,
+			&dynatracev1beta2.DynaKubeSpec{
+				ActiveGate: dynatracev1beta2.ActiveGateSpec{
+					Capabilities: []dynatracev1beta2.CapabilityDisplayName{
+						dynatracev1beta2.KubeMonCapability.DisplayName,
 					},
 				},
 			})
@@ -110,13 +110,13 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run(`create configmap with 2 keys, if both oneagent and activegate is needed`, func(t *testing.T) {
 		dynakube := createTestDynakube(
-			&dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+			&dynatracev1beta2.DynaKubeSpec{
+				OneAgent: dynatracev1beta2.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
 				},
-				ActiveGate: dynatracev1beta1.ActiveGateSpec{
-					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-						dynatracev1beta1.KubeMonCapability.DisplayName,
+				ActiveGate: dynatracev1beta2.ActiveGateSpec{
+					Capabilities: []dynatracev1beta2.CapabilityDisplayName{
+						dynatracev1beta2.KubeMonCapability.DisplayName,
 					},
 				},
 			})

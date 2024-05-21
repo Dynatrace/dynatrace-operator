@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,7 +18,7 @@ func TestCheckProxySettings(t *testing.T) {
 		t.Setenv("HTTPS_PROXY", "")
 
 		logOutput := runWithTestLogger(func(logger logd.Logger) {
-			checkProxySettings(context.Background(), logger, nil, &dynatracev1beta1.DynaKube{})
+			checkProxySettings(context.Background(), logger, nil, &dynatracev1beta2.DynaKube{})
 		})
 
 		require.NotContains(t, logOutput, "Unexpected error")
@@ -32,7 +32,7 @@ func TestCheckProxySettings(t *testing.T) {
 		t.Setenv("HTTPS_PROXY", "")
 
 		logOutput := runWithTestLogger(func(logger logd.Logger) {
-			checkProxySettings(context.Background(), logger, nil, &dynatracev1beta1.DynaKube{})
+			checkProxySettings(context.Background(), logger, nil, &dynatracev1beta2.DynaKube{})
 		})
 
 		require.NotContains(t, logOutput, "Unexpected error")
@@ -46,7 +46,7 @@ func TestCheckProxySettings(t *testing.T) {
 		t.Setenv("HTTPS_PROXY", "foobar:1234")
 
 		logOutput := runWithTestLogger(func(logger logd.Logger) {
-			checkProxySettings(context.Background(), logger, nil, &dynatracev1beta1.DynaKube{})
+			checkProxySettings(context.Background(), logger, nil, &dynatracev1beta2.DynaKube{})
 		})
 
 		require.NotContains(t, logOutput, "Unexpected error")
@@ -78,7 +78,7 @@ func TestCheckProxySettings(t *testing.T) {
 		t.Setenv("HTTPS_PROXY", "")
 
 		proxySecret := testNewSecretBuilder(testNamespace, testSecretName)
-		proxySecret.dataAppend(dynatracev1beta1.ProxyKey, "foobar:1234")
+		proxySecret.dataAppend(dynatracev1beta2.ProxyKey, "foobar:1234")
 
 		clt := fake.NewClientBuilder().
 			WithScheme(scheme.Scheme).

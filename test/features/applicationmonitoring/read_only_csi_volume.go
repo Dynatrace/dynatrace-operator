@@ -7,8 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/codemodules"
@@ -26,7 +25,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-var readOnlyInjection = map[string]string{dynatracev1beta1.AnnotationFeatureReadOnlyCsiVolume: "true"}
+var readOnlyInjection = map[string]string{dynatracev1beta2.AnnotationFeatureReadOnlyCsiVolume: "true"}
 
 func ReadOnlyCSIVolume(t *testing.T) features.Feature {
 	builder := features.New("read only csi volume")
@@ -35,8 +34,8 @@ func ReadOnlyCSIVolume(t *testing.T) features.Feature {
 	testDynakube := *dynakube.New(
 		dynakube.WithAnnotations(readOnlyInjection),
 		dynakube.WithApiUrl(secretConfig.ApiUrl),
-		dynakube.WithApplicationMonitoringSpec(&dynatracev1beta1.ApplicationMonitoringSpec{
-			UseCSIDriver: address.Of(true),
+		dynakube.WithApplicationMonitoringSpec(&dynatracev1beta2.ApplicationMonitoringSpec{
+			UseCSIDriver: true,
 		}),
 	)
 	sampleDeployment := sample.NewApp(t, &testDynakube, sample.AsDeployment())

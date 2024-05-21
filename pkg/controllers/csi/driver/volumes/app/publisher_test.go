@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
@@ -151,7 +151,7 @@ func TestHasTooManyMountAttempts(t *testing.T) {
 		publisher := newPublisherForTesting(nil)
 		bindCfg := &csivolumes.BindConfig{
 			TenantUUID:       testTenantUUID,
-			MaxMountAttempts: dynatracev1beta1.DefaultMaxFailedCsiMountAttempts,
+			MaxMountAttempts: dynatracev1beta2.DefaultMaxFailedCsiMountAttempts,
 		}
 		volumeCfg := createTestVolumeConfig()
 
@@ -171,7 +171,7 @@ func TestHasTooManyMountAttempts(t *testing.T) {
 		mockFailedPublishedVolume(t, &publisher)
 
 		bindCfg := &csivolumes.BindConfig{
-			MaxMountAttempts: dynatracev1beta1.DefaultMaxFailedCsiMountAttempts,
+			MaxMountAttempts: dynatracev1beta2.DefaultMaxFailedCsiMountAttempts,
 		}
 
 		hasTooManyAttempts, err := publisher.hasTooManyMountAttempts(bindCfg, createTestVolumeConfig())
@@ -305,7 +305,7 @@ func TestMountIfDBHasError(t *testing.T) {
 
 	bindCfg := &csivolumes.BindConfig{
 		TenantUUID:       testTenantUUID,
-		MaxMountAttempts: dynatracev1beta1.DefaultMaxFailedCsiMountAttempts,
+		MaxMountAttempts: dynatracev1beta2.DefaultMaxFailedCsiMountAttempts,
 	}
 
 	err := publisher.ensureMountSteps(bindCfg, createTestVolumeConfig())
@@ -349,7 +349,7 @@ func mockFailedPublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
 	appMount := &metadata.AppMount{
 		VolumeMeta:        metadata.VolumeMeta{ID: testVolumeId, PodUid: testPodUID},
 		CodeModuleVersion: testAgentVersion,
-		MountAttempts:     dynatracev1beta1.DefaultMaxFailedCsiMountAttempts + 1,
+		MountAttempts:     dynatracev1beta2.DefaultMaxFailedCsiMountAttempts + 1,
 		VolumeMetaID:      testVolumeId,
 	}
 
@@ -384,7 +384,7 @@ func mockImageDynakubeMetadata(t *testing.T, publisher *AppVolumePublisher) {
 		Name:                        testDynakubeName,
 		TenantUUID:                  testTenantUUID,
 		DownloadedCodeModuleVersion: testAgentVersion,
-		MaxFailedMountAttempts:      dynatracev1beta1.DefaultMaxFailedCsiMountAttempts,
+		MaxFailedMountAttempts:      dynatracev1beta2.DefaultMaxFailedCsiMountAttempts,
 	}
 	err := publisher.db.CreateTenantConfig(&tenantConfig)
 	require.NoError(t, err)

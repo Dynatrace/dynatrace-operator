@@ -3,7 +3,7 @@ package modifiers
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
@@ -51,19 +51,19 @@ func createBuilderForTesting() builder.Builder {
 	return builder
 }
 
-func getBaseDynakube() dynatracev1beta1.DynaKube {
-	return dynatracev1beta1.DynaKube{
+func getBaseDynakube() dynatracev1beta2.DynaKube {
+	return dynatracev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        testDynakubeName,
 			Namespace:   testNamespaceName,
 			Annotations: map[string]string{},
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{},
+		Spec: dynatracev1beta2.DynaKubeSpec{},
 	}
 }
 
-func enableKubeMonCapability(dynakube *dynatracev1beta1.DynaKube) {
-	dynakube.Spec.ActiveGate.Capabilities = append(dynakube.Spec.ActiveGate.Capabilities, dynatracev1beta1.KubeMonCapability.DisplayName)
+func enableKubeMonCapability(dynakube *dynatracev1beta2.DynaKube) {
+	dynakube.Spec.ActiveGate.Capabilities = append(dynakube.Spec.ActiveGate.Capabilities, dynatracev1beta2.KubeMonCapability.DisplayName)
 }
 
 func isSubset[T any](t *testing.T, subset, superset []T) {
@@ -72,7 +72,7 @@ func isSubset[T any](t *testing.T, subset, superset []T) {
 	}
 }
 
-func enableAllModifiers(dynakube *dynatracev1beta1.DynaKube, capability capability.Capability) {
+func enableAllModifiers(dynakube *dynatracev1beta2.DynaKube, capability capability.Capability) {
 	setCertUsage(dynakube, true)
 	setCustomPropertyUsage(capability, true)
 	setProxyUsage(dynakube, true)

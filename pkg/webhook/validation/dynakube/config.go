@@ -3,7 +3,7 @@ package dynakube
 import (
 	"context"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
@@ -13,7 +13,7 @@ const oneagentInstallerTokenEnvVarName = "ONEAGENT_INSTALLER_TOKEN"
 
 var log = logd.Get().WithName("dynakube-validation")
 
-type validator func(ctx context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string
+type validator func(ctx context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string
 
 var validators = []validator{
 	NoApiUrl,
@@ -21,7 +21,6 @@ var validators = []validator{
 	IsThirdGenAPIUrl,
 	missingCSIDaemonSet,
 	disabledCSIForReadonlyCSIVolume,
-	conflictingActiveGateConfiguration,
 	invalidActiveGateCapabilities,
 	duplicateActiveGateCapabilities,
 	invalidActiveGateProxyUrl,
@@ -39,7 +38,6 @@ var validators = []validator{
 var warnings = []validator{
 	missingActiveGateMemoryLimit,
 	deprecatedFeatureFlagDisableActiveGateUpdates,
-	deprecatedFeatureFlagDisableMetadataEnrichment,
 	deprecatedFeatureFlagWillBeDeleted,
 	deprecatedFeatureFlagMovedCRDField,
 	unsupportedOneAgentImage,

@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"regexp"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/pkg/errors"
 )
 
@@ -16,7 +16,7 @@ const (
 	errorMissingProxySecret = `Error occurred while reading PROXY secret indicated in the Dynakube specification`
 )
 
-func invalidActiveGateProxyUrl(ctx context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func invalidActiveGateProxyUrl(ctx context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
 	if dynakube.Spec.Proxy != nil {
 		proxyUrl, err := dynakube.Proxy(ctx, dv.apiReader)
 		if err != nil {

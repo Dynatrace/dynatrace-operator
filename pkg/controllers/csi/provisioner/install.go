@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	csiotel "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/internal/otel"
@@ -20,7 +20,7 @@ import (
 
 func (provisioner *OneAgentProvisioner) installAgentImage(
 	ctx context.Context,
-	dynakube dynatracev1beta1.DynaKube,
+	dynakube dynatracev1beta2.DynaKube,
 	latestProcessModuleConfig *dtclient.ProcessModuleConfig,
 ) (
 	string,
@@ -72,7 +72,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 	return imageDigest, err
 }
 
-func (provisioner *OneAgentProvisioner) getDigest(ctx context.Context, dynakube dynatracev1beta1.DynaKube, imageUri string) (string, error) {
+func (provisioner *OneAgentProvisioner) getDigest(ctx context.Context, dynakube dynatracev1beta2.DynaKube, imageUri string) (string, error) {
 	pullSecret := dynakube.PullSecretWithoutData()
 	defaultTransport := http.DefaultTransport.(*http.Transport).Clone()
 
@@ -101,7 +101,7 @@ func (provisioner *OneAgentProvisioner) getDigest(ctx context.Context, dynakube 
 	return digest, nil
 }
 
-func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dynakube dynatracev1beta1.DynaKube, dtc dtclient.Client, latestProcessModuleConfig *dtclient.ProcessModuleConfig) (string, error) {
+func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dynakube dynatracev1beta2.DynaKube, dtc dtclient.Client, latestProcessModuleConfig *dtclient.ProcessModuleConfig) (string, error) {
 	tenantUUID, err := dynakube.TenantUUIDFromApiUrl()
 	if err != nil {
 		return "", err
@@ -131,7 +131,7 @@ func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dyn
 	return targetVersion, nil
 }
 
-func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, agentInstaller installer.Installer, dynakube dynatracev1beta1.DynaKube, targetDir, targetVersion, tenantUUID string) error { //nolint: revive
+func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, agentInstaller installer.Installer, dynakube dynatracev1beta2.DynaKube, targetDir, targetVersion, tenantUUID string) error { //nolint: revive
 	eventRecorder := updaterEventRecorder{
 		recorder: provisioner.recorder,
 		dynakube: &dynakube,

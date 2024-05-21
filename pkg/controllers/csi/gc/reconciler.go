@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/pkg/errors"
@@ -90,8 +90,8 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 	return defaultReconcileResult, nil
 }
 
-func getDynakubeFromRequest(ctx context.Context, apiReader client.Reader, request reconcile.Request) (*dynatracev1beta1.DynaKube, error) {
-	var dynakube dynatracev1beta1.DynaKube
+func getDynakubeFromRequest(ctx context.Context, apiReader client.Reader, request reconcile.Request) (*dynatracev1beta2.DynaKube, error) {
+	var dynakube dynatracev1beta2.DynaKube
 	if err := apiReader.Get(ctx, request.NamespacedName, &dynakube); err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("given DynaKube object not found")

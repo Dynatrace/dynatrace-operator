@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -120,7 +120,7 @@ func TestMapFromDynakube(t *testing.T) {
 	t.Run("ComponentFeature flag for monitoring system namespaces", func(t *testing.T) {
 		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil)
 		dk.Annotations = map[string]string{
-			dynatracev1beta1.AnnotationFeatureIgnoredNamespaces: "[]",
+			dynatracev1beta2.AnnotationFeatureIgnoredNamespaces: "[]",
 		}
 		namespace := createNamespace("openshift-something", nil)
 		clt := fake.NewClient(dk, namespace)

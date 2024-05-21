@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
@@ -93,7 +93,7 @@ func getContainerImageEnv(containerIndex int) string {
 	return fmt.Sprintf(consts.AgentContainerImageEnvTemplate, containerIndex)
 }
 
-func addDeploymentMetadataEnv(container *corev1.Container, dynakube dynatracev1beta1.DynaKube, clusterID string) {
+func addDeploymentMetadataEnv(container *corev1.Container, dynakube dynatracev1beta2.DynaKube, clusterID string) {
 	if env.IsIn(container.Env, dynatraceMetadataEnv) {
 		return
 	}

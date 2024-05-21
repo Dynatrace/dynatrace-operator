@@ -7,7 +7,7 @@ import (
 	"io"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -84,7 +84,7 @@ func WithReadinessProbe(probe *corev1.Probe) Option {
 	}
 }
 
-func WithProxy(dynakube dynatracev1beta1.DynaKube) Option {
+func WithProxy(dynakube dynatracev1beta2.DynaKube) Option {
 	return func(curlPod *corev1.Pod) {
 		if dynakube.HasProxy() {
 			proxyEnv := corev1.EnvVar{

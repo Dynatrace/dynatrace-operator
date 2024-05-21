@@ -3,7 +3,7 @@ package dynakube
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,11 +25,11 @@ const (
 func TestInvalidActiveGateProxy(t *testing.T) {
 	t.Run(`valid proxy url`, func(t *testing.T) {
 		assertAllowedResponseWithoutWarnings(t,
-			&dynatracev1beta1.DynaKube{
+			&dynatracev1beta2.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta1.DynaKubeSpec{
+				Spec: dynatracev1beta2.DynaKubeSpec{
 					APIURL: testApiUrl,
-					Proxy: &dynatracev1beta1.DynaKubeProxy{
+					Proxy: &dynatracev1beta2.DynaKubeProxy{
 						Value:     validEncodedProxyUrl,
 						ValueFrom: "",
 					},
@@ -39,11 +39,11 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 
 	t.Run(`valid proxy url, no password`, func(t *testing.T) {
 		assertAllowedResponseWithoutWarnings(t,
-			&dynatracev1beta1.DynaKube{
+			&dynatracev1beta2.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta1.DynaKubeSpec{
+				Spec: dynatracev1beta2.DynaKubeSpec{
 					APIURL: testApiUrl,
-					Proxy: &dynatracev1beta1.DynaKubeProxy{
+					Proxy: &dynatracev1beta2.DynaKubeProxy{
 						Value:     validEncodedProxyUrlNoPassword,
 						ValueFrom: "",
 					},
@@ -54,11 +54,11 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 	t.Run(`invalid proxy url`, func(t *testing.T) {
 		assertDeniedResponse(t,
 			[]string{errorInvalidProxyUrl},
-			&dynatracev1beta1.DynaKube{
+			&dynatracev1beta2.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta1.DynaKubeSpec{
+				Spec: dynatracev1beta2.DynaKubeSpec{
 					APIURL: testApiUrl,
-					Proxy: &dynatracev1beta1.DynaKubeProxy{
+					Proxy: &dynatracev1beta2.DynaKubeProxy{
 						Value:     invalidPlainTextProxyUrl,
 						ValueFrom: "",
 					},
@@ -68,11 +68,11 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 
 	t.Run(`valid proxy secret url`, func(t *testing.T) {
 		assertAllowedResponseWithoutWarnings(t,
-			&dynatracev1beta1.DynaKube{
+			&dynatracev1beta2.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta1.DynaKubeSpec{
+				Spec: dynatracev1beta2.DynaKubeSpec{
 					APIURL: testApiUrl,
-					Proxy: &dynatracev1beta1.DynaKubeProxy{
+					Proxy: &dynatracev1beta2.DynaKubeProxy{
 						Value:     "",
 						ValueFrom: testProxySecret,
 					},
@@ -92,11 +92,11 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 	t.Run(`missing proxy secret`, func(t *testing.T) {
 		assertDeniedResponse(t,
 			[]string{errorMissingProxySecret},
-			&dynatracev1beta1.DynaKube{
+			&dynatracev1beta2.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta1.DynaKubeSpec{
+				Spec: dynatracev1beta2.DynaKubeSpec{
 					APIURL: testApiUrl,
-					Proxy: &dynatracev1beta1.DynaKubeProxy{
+					Proxy: &dynatracev1beta2.DynaKubeProxy{
 						Value:     "",
 						ValueFrom: testProxySecret,
 					},
@@ -107,11 +107,11 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 	t.Run(`invalid format of proxy secret`, func(t *testing.T) {
 		assertDeniedResponse(t,
 			[]string{errorMissingProxySecret},
-			&dynatracev1beta1.DynaKube{
+			&dynatracev1beta2.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta1.DynaKubeSpec{
+				Spec: dynatracev1beta2.DynaKubeSpec{
 					APIURL: testApiUrl,
-					Proxy: &dynatracev1beta1.DynaKubeProxy{
+					Proxy: &dynatracev1beta2.DynaKubeProxy{
 						Value:     "",
 						ValueFrom: testProxySecret,
 					},
@@ -131,11 +131,11 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 	t.Run(`invalid proxy secret url`, func(t *testing.T) {
 		assertDeniedResponse(t,
 			[]string{errorInvalidProxyUrl},
-			&dynatracev1beta1.DynaKube{
+			&dynatracev1beta2.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta1.DynaKubeSpec{
+				Spec: dynatracev1beta2.DynaKubeSpec{
 					APIURL: testApiUrl,
-					Proxy: &dynatracev1beta1.DynaKubeProxy{
+					Proxy: &dynatracev1beta2.DynaKubeProxy{
 						Value:     "",
 						ValueFrom: testProxySecret,
 					},

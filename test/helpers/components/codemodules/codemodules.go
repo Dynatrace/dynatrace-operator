@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
@@ -24,11 +24,11 @@ const (
 	RuxitAgentProcFile = "ruxitagentproc.conf"
 )
 
-func CheckRuxitAgentProcFileHasNoConnInfo(testDynakube dynatracev1beta1.DynaKube) features.Func {
+func CheckRuxitAgentProcFileHasNoConnInfo(testDynakube dynatracev1beta2.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, e *envconf.Config) context.Context {
 		resources := e.Client().Resources()
 
-		var dk dynatracev1beta1.DynaKube
+		var dk dynatracev1beta2.DynaKube
 		require.NoError(t, e.Client().Resources().Get(ctx, testDynakube.Name, testDynakube.Namespace, &dk))
 
 		err := daemonset.NewQuery(ctx, resources, client.ObjectKey{

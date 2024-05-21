@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -35,27 +35,11 @@ func TestEnabled(t *testing.T) {
 
 		require.False(t, enabled)
 	})
-	t.Run("turned off via a feature-flag", func(t *testing.T) {
-		mutator := createTestPodMutator(nil)
-		request := createTestMutationRequest(nil, nil)
-		request.DynaKube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureDisableMetadataEnrichment: "true"}
-
-		enabled := mutator.Enabled(request.BaseRequest)
-
-		require.False(t, enabled)
-	})
-	t.Run("on by default", func(t *testing.T) {
-		mutator := createTestPodMutator(nil)
-		request := createTestMutationRequest(nil, nil)
-
-		enabled := mutator.Enabled(request.BaseRequest)
-
-		require.True(t, enabled)
-	})
 	t.Run("off by feature flag", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil)
-		request.DynaKube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureAutomaticInjection: "false"}
+		request.DynaKube.Spec.MetadataEnrichment.Enabled = true
+		request.DynaKube.Annotations = map[string]string{dynatracev1beta2.AnnotationFeatureAutomaticInjection: "false"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -63,8 +47,13 @@ func TestEnabled(t *testing.T) {
 	})
 	t.Run("on with feature flag", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
-		request := createTestMutationRequest(nil, nil)
-		request.DynaKube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureAutomaticInjection: "true"}
+		dynakube := dynatracev1beta2.DynaKube{
+			Spec: dynatracev1beta2.DynaKubeSpec{
+				MetadataEnrichment: dynatracev1beta2.MetadataEnrichment{Enabled: true},
+			},
+		}
+		request := createTestMutationRequest(&dynakube, nil)
+		request.DynaKube.Annotations = map[string]string{dynatracev1beta2.AnnotationFeatureAutomaticInjection: "true"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -215,9 +204,9 @@ func TestContainerIsInjected(t *testing.T) {
 	})
 }
 
-func createTestMutationRequest(dynakube *dynatracev1beta1.DynaKube, annotations map[string]string) *dtwebhook.MutationRequest {
+func createTestMutationRequest(dynakube *dynatracev1beta2.DynaKube, annotations map[string]string) *dtwebhook.MutationRequest {
 	if dynakube == nil {
-		dynakube = &dynatracev1beta1.DynaKube{}
+		dynakube = &dynatracev1beta2.DynaKube{}
 	}
 
 	return dtwebhook.NewMutationRequest(
@@ -231,7 +220,7 @@ func createTestMutationRequest(dynakube *dynatracev1beta1.DynaKube, annotations 
 	)
 }
 
-func createTestReinvocationRequest(dynakube *dynatracev1beta1.DynaKube, annotations map[string]string) *dtwebhook.ReinvocationRequest {
+func createTestReinvocationRequest(dynakube *dynatracev1beta2.DynaKube, annotations map[string]string) *dtwebhook.ReinvocationRequest {
 	request := createTestMutationRequest(dynakube, annotations).ToReinvocationRequest()
 	request.Pod.Spec.InitContainers = append(request.Pod.Spec.InitContainers, corev1.Container{Name: dtwebhook.InstallContainerName})
 
@@ -308,19 +297,19 @@ func getTestTokensSecret() *corev1.Secret {
 	}
 }
 
-func getTestDynakube() *dynatracev1beta1.DynaKube {
-	return &dynatracev1beta1.DynaKube{
+func getTestDynakube() *dynatracev1beta2.DynaKube {
+	return &dynatracev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testDynakubeName,
 			Namespace: testNamespaceName,
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
+		Spec: dynatracev1beta2.DynaKubeSpec{
 			APIURL: testApiUrl,
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
+			OneAgent: dynatracev1beta2.OneAgentSpec{
+				ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{},
 			},
-			ActiveGate: dynatracev1beta1.ActiveGateSpec{
-				Capabilities: []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.MetricsIngestCapability.DisplayName},
+			ActiveGate: dynatracev1beta2.ActiveGateSpec{
+				Capabilities: []dynatracev1beta2.CapabilityDisplayName{dynatracev1beta2.MetricsIngestCapability.DisplayName},
 			},
 		},
 	}

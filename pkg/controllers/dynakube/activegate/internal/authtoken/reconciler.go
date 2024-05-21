@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
@@ -27,11 +27,11 @@ var _ controllers.Reconciler = &Reconciler{}
 type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
-	dynakube  *dynatracev1beta1.DynaKube
+	dynakube  *dynatracev1beta2.DynaKube
 	dtc       dtclient.Client
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, dynakube *dynatracev1beta2.DynaKube, dtc dtclient.Client) *Reconciler {
 	return &Reconciler{
 		client:    clt,
 		apiReader: apiReader,

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynakubev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
@@ -135,7 +135,7 @@ func checkInjectionAnnotations(sampleApp *sample.App, injected string, reason st
 	}
 }
 
-func checkOneAgentPodsDoNotStart(testDynakube dynakubev1beta1.DynaKube, timeout time.Duration) features.Func {
+func checkOneAgentPodsDoNotStart(testDynakube dynakubev1beta2.DynaKube, timeout time.Duration) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 		err := wait.For(conditions.New(resources).ResourceMatch(&appsv1.DaemonSet{
