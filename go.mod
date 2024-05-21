@@ -4,7 +4,7 @@ go 1.22.3
 
 require (
 	github.com/container-storage-interface/spec v1.9.0
-	github.com/docker/cli v26.1.2+incompatible
+	github.com/docker/cli v26.1.3+incompatible
 	github.com/evanphx/json-patch v5.9.0+incompatible
 	github.com/go-gormigrate/gormigrate/v2 v2.1.2
 	github.com/go-logr/logr v1.4.1
