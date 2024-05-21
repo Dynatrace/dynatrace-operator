@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
@@ -106,7 +105,7 @@ func LabelVersionDetection(t *testing.T) features.Feature {
 		dynakube.WithApiUrl(secretConfig.ApiUrl),
 		dynakube.WithNameBasedNamespaceSelector(),
 		dynakube.WithApplicationMonitoringSpec(&dynatracev1beta2.ApplicationMonitoringSpec{
-			UseCSIDriver: address.Of(false),
+			UseCSIDriver: false,
 		}),
 	)
 
@@ -116,7 +115,7 @@ func LabelVersionDetection(t *testing.T) features.Feature {
 		dynakube.WithApiUrl(secretConfig.ApiUrl),
 		dynakube.WithNameBasedNamespaceSelector(),
 		dynakube.WithApplicationMonitoringSpec(&dynatracev1beta2.ApplicationMonitoringSpec{
-			UseCSIDriver: address.Of(false),
+			UseCSIDriver: false,
 		}),
 	)
 
@@ -227,7 +226,7 @@ func assertValue(ctx context.Context, t *testing.T, resource *resources.Resource
 }
 
 func buildDisabledBuildLabelNamespace(testDynakube dynatracev1beta2.DynaKube) corev1.Namespace {
-	return *namespace.New(disabledBuildLabelsNamespace, namespace.WithLabels(testDynakube.NamespaceSelector().MatchLabels))
+	return *namespace.New(disabledBuildLabelsNamespace, namespace.WithLabels(testDynakube.OneAgentNamespaceSelector().MatchLabels))
 }
 
 func buildDisabledBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta2.DynaKube) *sample.App {
@@ -235,7 +234,7 @@ func buildDisabledBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta
 }
 
 func buildDefaultBuildLabelNamespace(testDynakube dynatracev1beta2.DynaKube) corev1.Namespace {
-	return *namespace.New(defaultBuildLabelsNamespace, namespace.WithLabels(testDynakube.NamespaceSelector().MatchLabels))
+	return *namespace.New(defaultBuildLabelsNamespace, namespace.WithLabels(testDynakube.OneAgentNamespaceSelector().MatchLabels))
 }
 
 func buildDefaultBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta2.DynaKube) *sample.App {
@@ -258,7 +257,7 @@ func buildDefaultBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta2
 func buildCustomBuildLabelNamespace(testDynakube dynatracev1beta2.DynaKube) corev1.Namespace {
 	return *namespace.New(
 		customBuildLabelsNamespace,
-		namespace.WithLabels(testDynakube.NamespaceSelector().MatchLabels),
+		namespace.WithLabels(testDynakube.OneAgentNamespaceSelector().MatchLabels),
 		namespace.WithAnnotation(map[string]string{
 			"mapping.release.dynatrace.com/version":       "metadata.labels['my.domain/version']",
 			"mapping.release.dynatrace.com/product":       "metadata.labels['my.domain/product']",
@@ -288,7 +287,7 @@ func buildCustomBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta2.
 func buildPreservedBuildLabelNamespace(testDynakube dynatracev1beta2.DynaKube) corev1.Namespace {
 	return *namespace.New(
 		preservedBuildLabelsNamespace,
-		namespace.WithLabels(testDynakube.NamespaceSelector().MatchLabels),
+		namespace.WithLabels(testDynakube.OneAgentNamespaceSelector().MatchLabels),
 		namespace.WithAnnotation(map[string]string{
 			"mapping.release.dynatrace.com/version":       "metadata.labels['my.domain/version']",
 			"mapping.release.dynatrace.com/product":       "metadata.labels['my.domain/product']",
@@ -356,7 +355,7 @@ func buildPreservedBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1bet
 func buildInvalidBuildLabelNamespace(testDynakube dynatracev1beta2.DynaKube) corev1.Namespace {
 	return *namespace.New(
 		invalidBuildLabelsNamespace,
-		namespace.WithLabels(testDynakube.NamespaceSelector().MatchLabels),
+		namespace.WithLabels(testDynakube.OneAgentNamespaceSelector().MatchLabels),
 		namespace.WithAnnotation(map[string]string{
 			"mapping.release.dynatrace.com/stage":         "metadata.labels['my.domain/invalid-stage']",
 			"mapping.release.dynatrace.com/build-version": "metadata.labels['my.domain/invalid-build-version']",

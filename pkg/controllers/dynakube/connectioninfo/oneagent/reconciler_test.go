@@ -10,7 +10,6 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -181,7 +180,7 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run("do not update OneAgent connection info within timeout", func(t *testing.T) {
 		dynakube := getTestDynakube()
-		dynakube.Spec.DynatraceApiRequestThreshold = address.Of(time.Duration(dynatracev1beta2.DefaultMinRequestThresholdMinutes))
+		dynakube.Spec.DynatraceApiRequestThreshold = dynatracev1beta2.DefaultMinRequestThresholdMinutes
 		fakeClient := fake.NewClient(dynakube, buildOneAgentTenantSecret(dynakube, testOutdated))
 		dtc := dtclientmock.NewClient(t)
 

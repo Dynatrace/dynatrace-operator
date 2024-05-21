@@ -15,7 +15,6 @@ import (
 
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
@@ -76,11 +75,11 @@ func InstallFromImage(t *testing.T) features.Feature {
 		dynakube.WithApiUrl(secretConfigs[1].ApiUrl),
 		dynakube.WithApplicationMonitoringSpec(&dynatracev1beta2.ApplicationMonitoringSpec{
 			AppInjectionSpec: *codeModulesAppInjectSpec(),
-			UseCSIDriver:     address.Of(true),
+			UseCSIDriver:     true,
 		}),
 	)
 
-	labels := cloudNativeDynakube.NamespaceSelector().MatchLabels
+	labels := cloudNativeDynakube.OneAgentNamespaceSelector().MatchLabels
 	sampleNamespace := *namespace.New("codemodules-sample", namespace.WithLabels(labels))
 
 	sampleApp := sample.NewApp(t, &cloudNativeDynakube,

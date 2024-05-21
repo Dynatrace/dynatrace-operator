@@ -16,6 +16,7 @@ spec:
           namespace: {{.Release.Namespace}}
           path: /convert
       conversionReviewVersions:
+      - v1
       - v1beta1
   group: dynatrace.com
   names:
@@ -2667,7 +2668,7 @@ spec:
             type: object
         type: object
     served: true
-    storage: true
+    storage: false
     subresources:
       status: {}
   - additionalPrinterColumns:
@@ -2873,6 +2874,7 @@ spec:
                       name. If not specified the setting will be removed from the StatefulSet.
                     type: string
                   replicas:
+                    default: 1
                     description: Amount of replicas for your ActiveGates
                     format: int32
                     type: integer
@@ -3171,8 +3173,8 @@ spec:
                   (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#custompullsecret).
                 type: string
               dynatraceApiRequestThreshold:
+                default: 15
                 description: Configuration for thresholding Dynatrace API requests.
-                format: int64
                 type: integer
               enableIstio:
                 description: |-
@@ -3180,14 +3182,12 @@ spec:
                   VirtualService and ServiceEntry objects to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate.
                   Disabled by default.
                 type: boolean
-              metaDataEnrichment:
+              metadataEnrichment:
                 description: Configuration for Metadata Enrichment.
                 properties:
                   enabled:
                     default: true
-                    description: |-
-                      Enables MetaDataEnrichment.
-                      Enabled by default.
+                    description: Enables MetadataEnrichment, `true` by default.
                     type: boolean
                   namespaceSelector:
                     description: The namespaces where you want Dynatrace Operator
@@ -3363,6 +3363,7 @@ spec:
                         type: object
                         x-kubernetes-map-type: atomic
                       useCSIDriver:
+                        default: false
                         description: Set if you want to use the CSIDriver. Don't enable
                           it if you do not have access to Kubernetes nodes or if you
                           lack privileges.
@@ -3392,6 +3393,7 @@ spec:
                         type: array
                         x-kubernetes-list-type: set
                       autoUpdate:
+                        default: true
                         description: |-
                           Disables automatic restarts of OneAgent pods in case a new version is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
                           Enabled by default.
@@ -3663,6 +3665,7 @@ spec:
                         type: array
                         x-kubernetes-list-type: set
                       autoUpdate:
+                        default: true
                         description: |-
                           Disables automatic restarts of OneAgent pods in case a new version is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
                           Enabled by default.
@@ -4045,6 +4048,7 @@ spec:
                         type: array
                         x-kubernetes-list-type: set
                       autoUpdate:
+                        default: true
                         description: |-
                           Disables automatic restarts of OneAgent pods in case a new version is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
                           Enabled by default.
@@ -4476,11 +4480,6 @@ spec:
                 description: KubeSystemUUID contains the UUID of the current Kubernetes
                   cluster
                 type: string
-              lastTokenProbeTimestamp:
-                description: LastTokenProbeTimestamp tracks when the last request
-                  for the API token validity was sent
-                format: date-time
-                type: string
               oneAgent:
                 description: Observed state of OneAgent
                 properties:
@@ -4565,7 +4564,7 @@ spec:
             type: object
         type: object
     served: true
-    storage: false
+    storage: true
     subresources:
       status: {}
 ---

@@ -12,7 +12,6 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
@@ -206,7 +205,7 @@ func TestNeedsUpdate(t *testing.T) {
 			OneAgent: dynatracev1beta2.OneAgentSpec{
 				ClassicFullStack: &dynatracev1beta2.HostInjectSpec{},
 			},
-			DynatraceApiRequestThreshold: address.Of(time.Duration(dynatracev1beta2.DefaultMinRequestThresholdMinutes)),
+			DynatraceApiRequestThreshold: dynatracev1beta2.DefaultMinRequestThresholdMinutes,
 		},
 		Status: dynatracev1beta2.DynaKubeStatus{
 			OneAgent: dynatracev1beta2.OneAgentStatus{

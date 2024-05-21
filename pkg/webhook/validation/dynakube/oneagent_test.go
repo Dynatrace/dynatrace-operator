@@ -254,7 +254,7 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 						AppInjectionSpec: dynatracev1beta2.AppInjectionSpec{
 							CodeModulesImage: testImage,
 						},
-						UseCSIDriver: &useCSIDriver,
+						UseCSIDriver: useCSIDriver,
 					},
 				},
 			},
@@ -273,7 +273,7 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 						AppInjectionSpec: dynatracev1beta2.AppInjectionSpec{
 							CodeModulesImage: testImage,
 						},
-						UseCSIDriver: &useCSIDriver,
+						UseCSIDriver: useCSIDriver,
 					},
 				},
 			},
