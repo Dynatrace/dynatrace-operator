@@ -96,9 +96,6 @@ func (c *client) CreateConnectionSetting(es EnvironmentSetting) error {
 		return fmt.Errorf("error initializing http request: %w", err)
 	}
 
-	// req.Header.Add("Content-Type", "application/json")
-	// req.Header.Add("Authorization", ApiTokenHeader+c.ClientSecret)
-
 	response, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("error making post request to dynatrace api: %w", err)
@@ -122,9 +119,6 @@ func (c *client) UpdateConnectionSetting(es EnvironmentSetting) error {
 		return fmt.Errorf("error initializing http request: %w", err)
 	}
 
-	// req.Header.Add("Content-Type", "application/json")
-	// req.Header.Add("Authorization", ApiTokenHeader+c.ClientSecret)
-
 	response, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("error making post request to dynatrace api: %w", err)
@@ -142,9 +136,6 @@ func (c *client) DeleteConnectionSetting(objectId string) error {
 	if err != nil {
 		return fmt.Errorf("error initializing http request: %w", err)
 	}
-
-	// req.Header.Add("Content-Type", "application/json")
-	// req.Header.Add("Authorization", ApiTokenHeader+c.ClientSecret)
 
 	response, err := c.httpClient.Do(req)
 	if err != nil {
