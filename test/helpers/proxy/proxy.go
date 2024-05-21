@@ -38,7 +38,7 @@ const (
 	curlPodNameDynatraceInboundTraffic  = "dynatrace-inbound-traffic"
 	curlPodNameDynatraceOutboundTraffic = "dynatrace-outbound-traffic"
 
-	internetUrl = "https://wwww.dynatrace.com"
+	internetUrl = "https://www.dynatrace.com"
 )
 
 var (
