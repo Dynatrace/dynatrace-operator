@@ -46,7 +46,7 @@ func (ec *EdgeConnect) GetOAuthClientFromSecret(ctx context.Context, kubeReader 
 
 	resource := ec.Spec.OAuth.Resource
 
-	if ec.Spec.OAuth.Provisioner {
+	if ec.IsProvisionerModeEnabled() {
 		resourceBytes, hasKey := clientSecret.Data[consts.KeyEdgeConnectOauthResource]
 		if !hasKey {
 			return oAuth, errors.Errorf("missing %s in %s", consts.KeyEdgeConnectOauthResource, secretName)

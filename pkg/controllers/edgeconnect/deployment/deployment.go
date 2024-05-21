@@ -59,7 +59,6 @@ func create(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 					Volumes:                       prepareVolumes(instance),
 					NodeSelector:                  instance.Spec.NodeSelector,
 					Tolerations:                   instance.Spec.Tolerations,
-					HostAliases:                   []corev1.HostAlias{},
 					TopologySpreadConstraints:     instance.Spec.TopologySpreadConstraints,
 				},
 			},
