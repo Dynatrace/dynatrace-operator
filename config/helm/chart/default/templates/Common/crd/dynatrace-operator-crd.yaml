@@ -3182,14 +3182,12 @@ spec:
                   VirtualService and ServiceEntry objects to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate.
                   Disabled by default.
                 type: boolean
-              metaDataEnrichment:
+              metadataEnrichment:
                 description: Configuration for Metadata Enrichment.
                 properties:
                   enabled:
                     default: true
-                    description: |-
-                      Enables MetaDataEnrichment.
-                      Enabled by default.
+                    description: Enables MetadataEnrichment, `true` by default.
                     type: boolean
                   namespaceSelector:
                     description: The namespaces where you want Dynatrace Operator

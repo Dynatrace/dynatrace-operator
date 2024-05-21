@@ -86,7 +86,7 @@ func TestReconciler(t *testing.T) {
 						},
 					},
 				},
-				MetaDataEnrichment: dynatracev1beta2.MetaDataEnrichment{
+				MetadataEnrichment: dynatracev1beta2.MetadataEnrichment{
 					Enabled: true,
 				},
 			},
@@ -233,7 +233,7 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynatracev1beta2.OneAgentSpec{
 			CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
 		})
-		rec.dynakube.Spec.MetaDataEnrichment.Enabled = false
+		rec.dynakube.Spec.MetadataEnrichment.Enabled = false
 
 		err := rec.setupEnrichmentInjection(context.Background())
 		require.NoError(t, err)
@@ -247,7 +247,7 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynatracev1beta2.OneAgentSpec{
 			CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
 		})
-		rec.dynakube.Spec.MetaDataEnrichment.Enabled = true
+		rec.dynakube.Spec.MetadataEnrichment.Enabled = true
 
 		err := rec.setupEnrichmentInjection(context.Background())
 		require.NoError(t, err)

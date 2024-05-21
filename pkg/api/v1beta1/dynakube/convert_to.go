@@ -4,7 +4,6 @@ import (
 	"strconv"
 
 	v1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
@@ -88,10 +87,10 @@ func (src *DynaKube) toActiveGateSpec(dst *v1beta2.DynaKube) {
 
 func (src *DynaKube) toMovedFields(dst *v1beta2.DynaKube) error {
 	if src.Annotations[AnnotationFeatureMetadataEnrichment] == "false" || src.ClassicFullStackMode() {
-		dst.Spec.MetaDataEnrichment = v1beta2.MetaDataEnrichment{Enabled: false}
+		dst.Spec.MetadataEnrichment = v1beta2.MetadataEnrichment{Enabled: false}
 		delete(dst.Annotations, AnnotationFeatureMetadataEnrichment)
 	} else {
-		dst.Spec.MetaDataEnrichment = v1beta2.MetaDataEnrichment{Enabled: true}
+		dst.Spec.MetadataEnrichment = v1beta2.MetadataEnrichment{Enabled: true}
 		delete(dst.Annotations, AnnotationFeatureMetadataEnrichment)
 	}
 
@@ -122,14 +121,14 @@ func (src *DynaKube) toMovedFields(dst *v1beta2.DynaKube) error {
 		}
 	}
 
-	if !isLabelSelectorEmpty(src.Spec.NamespaceSelector) {
+	if src.Spec.NamespaceSelector.Size() != 0 {
 		if src.Spec.OneAgent.CloudNativeFullStack != nil {
 			dst.Spec.OneAgent.CloudNativeFullStack.NamespaceSelector = src.Spec.NamespaceSelector
 		} else if src.Spec.OneAgent.ApplicationMonitoring != nil {
 			dst.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = src.Spec.NamespaceSelector
 		}
 
-		dst.Spec.MetaDataEnrichment.NamespaceSelector = src.Spec.NamespaceSelector
+		dst.Spec.MetadataEnrichment.NamespaceSelector = src.Spec.NamespaceSelector
 	}
 
 	return nil
@@ -219,8 +218,4 @@ func toAppInjectSpec(src AppInjectionSpec) *v1beta2.AppInjectionSpec {
 	dst.InitResources = src.InitResources
 
 	return dst
-}
-
-func isLabelSelectorEmpty(selector metav1.LabelSelector) bool {
-	return len(selector.MatchExpressions) == 0 && len(selector.MatchLabels) == 0
 }

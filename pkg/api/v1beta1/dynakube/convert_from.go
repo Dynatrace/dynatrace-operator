@@ -82,14 +82,14 @@ func (dst *DynaKube) fromActiveGateSpec(src *v1beta2.DynaKube) {
 }
 
 func (dst *DynaKube) fromMovedFields(src *v1beta2.DynaKube) error {
-	dst.Annotations[AnnotationFeatureMetadataEnrichment] = strconv.FormatBool(src.Spec.MetaDataEnrichment.Enabled)
+	dst.Annotations[AnnotationFeatureMetadataEnrichment] = strconv.FormatBool(src.Spec.MetadataEnrichment.Enabled)
 	dst.Annotations[AnnotationFeatureApiRequestThreshold] = strconv.FormatInt(int64(src.Spec.DynatraceApiRequestThreshold), 10)
 	dst.Annotations[AnnotationFeatureOneAgentSecCompProfile] = src.OneAgentSecCompProfile()
 
 	if selector := src.OneAgentNamespaceSelector(); selector != nil {
 		dst.Spec.NamespaceSelector = *selector
 	} else {
-		dst.Spec.NamespaceSelector = src.Spec.MetaDataEnrichment.NamespaceSelector
+		dst.Spec.NamespaceSelector = src.Spec.MetadataEnrichment.NamespaceSelector
 	}
 
 	return nil

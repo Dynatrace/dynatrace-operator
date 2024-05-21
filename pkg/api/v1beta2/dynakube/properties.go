@@ -429,7 +429,7 @@ func (dk *DynaKube) ApiRequestThreshold() time.Duration {
 }
 
 func (dk *DynaKube) MetaDataEnrichmentEnabled() bool {
-	return dk.Spec.MetaDataEnrichment.Enabled
+	return dk.Spec.MetadataEnrichment.Enabled
 }
 
 func runeIs(wanted rune) func(rune) bool {

@@ -57,7 +57,6 @@ type DynaKubeValueSource struct { //nolint:revive
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +kubebuilder:storageversion
 
 // DynaKube is the Schema for the DynaKube API
 // +k8s:openapi-gen=true
@@ -130,8 +129,8 @@ type DynaKubeSpec struct { //nolint:revive
 
 	// Configuration for Metadata Enrichment.
 	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="MetaData Enrichment",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
-	MetaDataEnrichment MetaDataEnrichment `json:"metaDataEnrichment,omitempty"`
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Metadata Enrichment",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	MetadataEnrichment MetadataEnrichment `json:"metadataEnrichment,omitempty"`
 
 	// Configuration for thresholding Dynatrace API requests.
 	// +kubebuilder:validation:Optional

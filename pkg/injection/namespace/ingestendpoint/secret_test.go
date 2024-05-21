@@ -217,7 +217,7 @@ func TestGenerateMetadataEnrichmentSecret_ForDynakube(t *testing.T) {
 
 		{
 			instance := buildTestDynakube()
-			instance.Spec.MetaDataEnrichment.Enabled = false
+			instance.Spec.MetadataEnrichment.Enabled = false
 
 			testGenerateEndpointsSecret(t, instance, fakeClient)
 
@@ -293,7 +293,7 @@ func updatedTestDynakube() *dynatracev1beta2.DynaKube {
 		},
 		Spec: dynatracev1beta2.DynaKubeSpec{
 			APIURL:             testUpdatedApiUrl,
-			MetaDataEnrichment: dynatracev1beta2.MetaDataEnrichment{Enabled: true},
+			MetadataEnrichment: dynatracev1beta2.MetadataEnrichment{Enabled: true},
 		},
 	}
 }
@@ -309,7 +309,7 @@ func updatedTestDynakubeWithMetricsIngestCapability(capabilities []dynatracev1be
 				Capabilities: capabilities,
 			},
 			APIURL:             testUpdatedApiUrl,
-			MetaDataEnrichment: dynatracev1beta2.MetaDataEnrichment{Enabled: true},
+			MetadataEnrichment: dynatracev1beta2.MetadataEnrichment{Enabled: true},
 		},
 	}
 }
@@ -333,7 +333,7 @@ func buildTestDynakube() *dynatracev1beta2.DynaKube {
 		},
 		Spec: dynatracev1beta2.DynaKubeSpec{
 			APIURL:             testApiUrl,
-			MetaDataEnrichment: dynatracev1beta2.MetaDataEnrichment{Enabled: true},
+			MetadataEnrichment: dynatracev1beta2.MetadataEnrichment{Enabled: true},
 		},
 	}
 }
@@ -349,7 +349,7 @@ func buildTestDynakubeWithMetricsIngestCapability(capabilities []dynatracev1beta
 				Capabilities: capabilities,
 			},
 			APIURL: testApiUrl,
-			MetaDataEnrichment: dynatracev1beta2.MetaDataEnrichment{
+			MetadataEnrichment: dynatracev1beta2.MetadataEnrichment{
 				Enabled: true,
 			},
 		},

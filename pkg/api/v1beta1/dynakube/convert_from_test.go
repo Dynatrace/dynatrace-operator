@@ -133,7 +133,8 @@ func compareMovedFields(t *testing.T, oldDk DynaKube, newDk v1beta2.DynaKube) {
 	assert.Equal(t, oldDk.FeatureApiRequestThreshold(), newDk.ApiRequestThreshold())
 	assert.Equal(t, oldDk.FeatureOneAgentSecCompProfile(), newDk.OneAgentSecCompProfile())
 	assert.Equal(t, !oldDk.FeatureDisableMetadataEnrichment(), newDk.MetaDataEnrichmentEnabled())
-	assert.Equal(t, *oldDk.NamespaceSelector(), newDk.Spec.MetaDataEnrichment.NamespaceSelector)
+	assert.Equal(t, *oldDk.NamespaceSelector(), newDk.Spec.MetadataEnrichment.NamespaceSelector)
+
 	if newDk.NeedAppInjection() {
 		assert.Equal(t, oldDk.NamespaceSelector(), newDk.OneAgentNamespaceSelector())
 	}
@@ -261,7 +262,7 @@ func getNewDynakubeBase() v1beta2.DynaKube {
 			TrustedCAs:                   "trusted-ca",
 			NetworkZone:                  "network-zone",
 			DynatraceApiRequestThreshold: 42,
-			MetaDataEnrichment: v1beta2.MetaDataEnrichment{
+			MetadataEnrichment: v1beta2.MetadataEnrichment{
 				Enabled:           true,
 				NamespaceSelector: getTestNamespaceSelector(),
 			},
