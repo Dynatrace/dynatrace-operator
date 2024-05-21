@@ -258,8 +258,8 @@ func (app *App) Restart() features.Func {
 
 func deletePods(t *testing.T, ctx context.Context, pods corev1.PodList, resource *resources.Resources) {
 	for _, podItem := range pods.Items {
-		require.NoError(t, resource.Delete(ctx, &podItem)) //nolint:gosec
+		require.NoError(t, resource.Delete(ctx, &podItem))
 		require.NoError(t, wait.For(
-			conditions.New(resource).ResourceDeleted(&podItem)), wait.WithTimeout(1*time.Minute)) //nolint:gosec
+			conditions.New(resource).ResourceDeleted(&podItem)), wait.WithTimeout(1*time.Minute))
 	}
 }
