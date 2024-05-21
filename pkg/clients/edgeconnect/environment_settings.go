@@ -51,35 +51,38 @@ type environmentSettingsResponse struct {
 // 'https://vzx38435.dev.apps.dynatracelabs.com/platform/classic/environment-api/v2/settings/objects?schemaIds=app%3Adynatrace.kubernetes.control%3Aconnection&fields=objectId%2Cvalue' \
 
 func (c *client) GetConnectionSetting() (EnvironmentSetting, error) {
-	req, err := http.NewRequestWithContext(c.ctx, http.MethodGet, c.getSettingsObjectsUrl(), nil)
+	settingsObjectsUrl := c.getSettingsObjectsUrl()
+
+	req, err := http.NewRequestWithContext(c.ctx, http.MethodGet, settingsObjectsUrl, nil)
 	if err != nil {
 		return EnvironmentSetting{}, fmt.Errorf("error initializing http request: %w", err)
 	}
 
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", ApiTokenHeader+c.ClientSecret)
-
 	q := req.URL.Query()
 	q.Add("schemaIds", KubernetesConnectionSchemaID)
+	q.Add("schemaVersion", KubernetesConnectionVersion)
 	req.URL.RawQuery = q.Encode()
 
 	response, err := c.httpClient.Do(req)
-	if err != nil {
-		return EnvironmentSetting{}, fmt.Errorf("error making post request to dynatrace api: %w", err)
-	}
-
 	defer utils.CloseBodyAfterRequest(response)
 
-	_, err = c.getServerResponseData(response)
+	if err != nil {
+		return EnvironmentSetting{}, fmt.Errorf("error making post request to dynatrace api: %w\nrequest:%v\nresponse:%v", err, req, response)
+	}
+
+	responseData, err := c.getServerResponseData(response)
+	if err != nil {
+		return EnvironmentSetting{}, err
+	}
 
 	var resDataJson environmentSettingsResponse
 
-	err = c.unmarshalToJson(response, &resDataJson)
+	err = json.Unmarshal(responseData, &resDataJson)
 	if err != nil {
 		return EnvironmentSetting{}, fmt.Errorf("error parsing response body: %w", err)
 	}
 
-	return resDataJson.Items[0], errors.WithStack(err)
+	return resDataJson.Items[0], nil
 }
 
 func (c *client) CreateConnectionSetting(es EnvironmentSetting) error {
@@ -93,8 +96,8 @@ func (c *client) CreateConnectionSetting(es EnvironmentSetting) error {
 		return fmt.Errorf("error initializing http request: %w", err)
 	}
 
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", ApiTokenHeader+c.ClientSecret)
+	// req.Header.Add("Content-Type", "application/json")
+	// req.Header.Add("Authorization", ApiTokenHeader+c.ClientSecret)
 
 	response, err := c.httpClient.Do(req)
 	if err != nil {
@@ -119,8 +122,8 @@ func (c *client) UpdateConnectionSetting(es EnvironmentSetting) error {
 		return fmt.Errorf("error initializing http request: %w", err)
 	}
 
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", ApiTokenHeader+c.ClientSecret)
+	// req.Header.Add("Content-Type", "application/json")
+	// req.Header.Add("Authorization", ApiTokenHeader+c.ClientSecret)
 
 	response, err := c.httpClient.Do(req)
 	if err != nil {
@@ -140,8 +143,8 @@ func (c *client) DeleteConnectionSetting(objectId string) error {
 		return fmt.Errorf("error initializing http request: %w", err)
 	}
 
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", ApiTokenHeader+c.ClientSecret)
+	// req.Header.Add("Content-Type", "application/json")
+	// req.Header.Add("Authorization", ApiTokenHeader+c.ClientSecret)
 
 	response, err := c.httpClient.Do(req)
 	if err != nil {
