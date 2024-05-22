@@ -19,7 +19,6 @@ package csiprovisioner
 import (
 	"context"
 	"fmt"
-	"time"
 
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -47,12 +46,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const (
-	shortRequeueDuration   = 1 * time.Minute
-	defaultRequeueDuration = 5 * time.Minute
-	longRequeueDuration    = 30 * time.Minute
-)
-
 type urlInstallerBuilder func(afero.Fs, dtclient.Client, *url.Properties) installer.Installer
 type imageInstallerBuilder func(context.Context, afero.Fs, *image.Properties) (installer.Installer, error)
 
@@ -74,7 +67,7 @@ type OneAgentProvisioner struct {
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
-func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.Access) *OneAgentProvisioner {
+func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.AccessCleaner) *OneAgentProvisioner {
 	return &OneAgentProvisioner{
 		client:                 mgr.GetClient(),
 		apiReader:              mgr.GetAPIReader(),
@@ -103,26 +96,15 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
 	defer span.End()
 
-	dk, err := provisioner.getDynaKube(ctx, request.NamespacedName)
+	dk, err := provisioner.needsReconcile(ctx, request)
 	if err != nil {
 		span.RecordError(err)
 
-		if k8serrors.IsNotFound(err) {
-			return reconcile.Result{}, provisioner.db.DeleteTenantConfig(&metadata.TenantConfig{Name: request.Name}, false)
-		}
-
-		return reconcile.Result{}, err
+		return reconcile.Result{RequeueAfter: dtcsi.ShortRequeueDuration}, err
 	}
 
-	if !dk.NeedsCSIDriver() {
-		log.Info("CSI driver provisioner not needed")
-
-		err = provisioner.db.DeleteTenantConfig(&metadata.TenantConfig{Name: dk.Name}, true)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-
-		return reconcile.Result{RequeueAfter: longRequeueDuration}, err
+	if dk == nil {
+		return provisioner.collectGarbage(ctx, request)
 	}
 
 	err = provisioner.setupFileSystem(dk)
@@ -138,13 +120,13 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	if !dk.NeedAppInjection() {
 		log.Info("app injection not necessary, skip agent codemodule download", "dynakube", dk.Name)
 
-		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
+		return provisioner.collectGarbage(ctx, request)
 	}
 
 	if dk.CodeModulesImage() == "" && dk.CodeModulesVersion() == "" {
 		log.Info("dynakube status is not yet ready, requeuing", "dynakube", dk.Name)
 
-		return reconcile.Result{RequeueAfter: shortRequeueDuration}, err
+		return reconcile.Result{RequeueAfter: dtcsi.ShortRequeueDuration}, err
 	}
 
 	err = provisioner.provisionCodeModules(ctx, dk, tenantConfig)
@@ -152,12 +134,37 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{}, err
 	}
 
-	err = provisioner.collectGarbage(ctx, request)
+	return provisioner.collectGarbage(ctx, request)
+}
+
+// needsReconcile checks if the DynaKube in the requests exists or needs any CSI functionality, if not then it runs the GC
+func (provisioner *OneAgentProvisioner) needsReconcile(ctx context.Context, request reconcile.Request) (*dynatracev1beta2.DynaKube, error) {
+	dk, err := provisioner.getDynaKube(ctx, request.NamespacedName)
 	if err != nil {
-		return reconcile.Result{}, err
+		if k8serrors.IsNotFound(err) {
+			log.Info("DynaKube was deleted, running cleanup")
+
+			err := provisioner.db.DeleteTenantConfig(&metadata.TenantConfig{Name: request.Name}, true)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		return nil, nil //nolint: nilnil
 	}
 
-	return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
+	if !dk.NeedsCSIDriver() {
+		log.Info("CSI driver provisioner not needed")
+
+		err = provisioner.db.DeleteTenantConfig(&metadata.TenantConfig{Name: dk.Name}, true)
+		if err != nil {
+			return nil, err
+		}
+
+		return nil, nil //nolint: nilnil
+	}
+
+	return dk, nil
 }
 
 func (provisioner *OneAgentProvisioner) setupFileSystem(dk *dynatracev1beta2.DynaKube) error {
@@ -207,19 +214,19 @@ func (provisioner *OneAgentProvisioner) setupTenantConfig(dk *dynatracev1beta2.D
 	return metadataTenantConfig, nil
 }
 
-func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, request reconcile.Request) error {
+func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
 	defer span.End()
 
-	_, err := provisioner.gc.Reconcile(ctx, request)
+	result, err := provisioner.gc.Reconcile(ctx, request)
 
 	if err != nil {
 		span.RecordError(err)
 
-		return err
+		return result, err
 	}
 
-	return nil
+	return result, nil
 }
 
 func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context, dk *dynatracev1beta2.DynaKube, tenantConfig *metadata.TenantConfig) error {

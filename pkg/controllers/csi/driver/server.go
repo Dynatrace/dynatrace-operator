@@ -166,25 +166,25 @@ func (svr *Server) NodePublishVolume(ctx context.Context, req *csi.NodePublishVo
 		"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
 	)
 
-	return publisher.PublishVolume(ctx, volumeCfg)
+	return publisher.PublishVolume(ctx, *volumeCfg)
 }
 
-func (svr *Server) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
+func (svr *Server) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (response *csi.NodeUnpublishVolumeResponse, err error) {
 	volumeInfo, err := csivolumes.ParseNodeUnpublishVolumeRequest(req)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, publisher := range svr.publishers {
-		canUnpublish, err := publisher.CanUnpublishVolume(ctx, volumeInfo)
+		canUnpublish, err := publisher.CanUnpublishVolume(ctx, *volumeInfo)
 		if err != nil {
 			log.Error(err, "couldn't determine if volume can be unpublished", "publisher", publisher)
 		}
 
 		if canUnpublish {
-			response, err := publisher.UnpublishVolume(ctx, volumeInfo)
+			response, err := publisher.UnpublishVolume(ctx, *volumeInfo)
 			if err != nil {
-				return nil, err
+				log.Error(err, "couldn't unpublish volume properly", "publisher", publisher)
 			}
 
 			return response, nil
@@ -197,7 +197,7 @@ func (svr *Server) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpubli
 }
 
 func (svr *Server) unmountUnknownVolume(volumeInfo csivolumes.VolumeInfo) {
-	log.Info("VolumeID not present in the database", "volumeID", volumeInfo.VolumeID, "targetPath", volumeInfo.TargetPath)
+	log.Info("Couldn't handle volume with any publisher, trying to unmount", "volumeID", volumeInfo.VolumeID, "targetPath", volumeInfo.TargetPath)
 
 	if err := svr.mounter.Unmount(volumeInfo.TargetPath); err != nil {
 		log.Error(err, "Tried to unmount unknown volume", "volumeID", volumeInfo.VolumeID)
