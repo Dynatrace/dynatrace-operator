@@ -2,6 +2,8 @@ package edgeconnect
 
 import "fmt"
 
+// EdgeConnect API
+
 func (c *client) getEdgeConnectApiUrl() string {
 	return fmt.Sprintf("%s/%s", c.baseURL, "platform/app-engine/edge-connect/v1")
 }
@@ -13,6 +15,8 @@ func (c *client) getEdgeConnectsUrl() string {
 func (c *client) getEdgeConnectUrl(id string) string {
 	return fmt.Sprintf("%s/edge-connects/%s", c.baseURL, id)
 }
+
+// Environment API
 
 func (c *client) getEnvironmentApiUrl() string {
 	return fmt.Sprintf("%s/%s", c.baseURL, "platform/classic/environment-api/v2")

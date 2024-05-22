@@ -514,6 +514,9 @@ func newEdgeConnectClient() func(ctx context.Context, edgeConnect *edgeconnectv1
 				"app-engine:edge-connects:write",
 				"app-engine:edge-connects:delete",
 				"oauth2:clients:manage",
+				"app-settings:objects:read",
+				"app-settings:objects:write",
+				"app-settings:objects:delete",
 			}),
 			edgeconnect.WithContext(ctx),
 		)
