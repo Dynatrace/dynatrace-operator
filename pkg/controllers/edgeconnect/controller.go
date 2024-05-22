@@ -752,8 +752,10 @@ func (controller *Controller) createOrUpdateConnectionSetting(edgeConnectClient 
 				SchemaVersion: edgeconnect.KubernetesConnectionVersion,
 				Scope:         edgeconnect.KubernetesConnectionScope,
 				Value: edgeconnect.EnvironmentSettingValue{
-					Name:  fmt.Sprintf("%s", edgeConnect.Name),
-					Url:   fmt.Sprintf("https://%s.%s.%s", edgeConnect.Name, edgeConnect.Namespace, "cluster-id"),
+					Name: fmt.Sprintf("%s", edgeConnect.Name),
+					// TODO alberto: get cluster id from kubesystem uid
+					Url: fmt.Sprintf("https://%s.%s.%s", edgeConnect.Name, edgeConnect.Namespace, "cluster-id"),
+					// TODO alberto: fetch token using util function
 					Token: latestToken,
 				},
 			},
@@ -765,7 +767,7 @@ func (controller *Controller) createOrUpdateConnectionSetting(edgeConnectClient 
 
 	if (envSetting != edgeconnect.EnvironmentSetting{}) {
 		_log.Info("Updating EdgeConnect connection setting object...")
-		// TODO: Update, no delete
+		// TODO alberto: Update, no delete
 		err = edgeConnectClient.DeleteConnectionSetting(envSetting.ObjectId)
 		if err != nil {
 			return err

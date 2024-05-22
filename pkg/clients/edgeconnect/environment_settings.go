@@ -26,6 +26,7 @@ type EnvironmentSetting struct {
 	Value         EnvironmentSettingValue `json:"value"`
 }
 
+// TODO alberto: use new schema
 type EnvironmentSettingValue struct {
 	Name  string `json:"name"`
 	Url   string `json:"url"`
@@ -67,7 +68,7 @@ func (c *client) GetConnectionSetting() (EnvironmentSetting, error) {
 	defer utils.CloseBodyAfterRequest(response)
 
 	if err != nil {
-		return EnvironmentSetting{}, fmt.Errorf("error making post request to dynatrace api: %w\nrequest:%v\nresponse:%v", err, req, response)
+		return EnvironmentSetting{}, fmt.Errorf("error making post request to dynatrace api: %w", err)
 	}
 
 	responseData, err := c.getServerResponseData(response)
