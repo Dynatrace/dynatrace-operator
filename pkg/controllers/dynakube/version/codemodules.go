@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -15,11 +15,11 @@ const (
 )
 
 type codeModulesUpdater struct {
-	dynakube *dynatracev1beta1.DynaKube
+	dynakube *dynatracev1beta2.DynaKube
 	dtClient dtclient.Client
 }
 
-func newCodeModulesUpdater(dynakube *dynatracev1beta1.DynaKube, dtClient dtclient.Client) *codeModulesUpdater {
+func newCodeModulesUpdater(dynakube *dynatracev1beta2.DynaKube, dtClient dtclient.Client) *codeModulesUpdater {
 	return &codeModulesUpdater{
 		dynakube: dynakube,
 		dtClient: dtClient,
@@ -87,7 +87,7 @@ func (updater *codeModulesUpdater) CheckForDowngrade(_ string) (bool, error) {
 func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error {
 	customVersion := updater.CustomVersion()
 	if customVersion != "" {
-		updater.dynakube.Status.CodeModules = dynatracev1beta1.CodeModulesStatus{
+		updater.dynakube.Status.CodeModules = dynatracev1beta2.CodeModulesStatus{
 			VersionStatus: status.VersionStatus{
 				Version: customVersion,
 			},
@@ -106,7 +106,7 @@ func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error 
 		return err
 	}
 
-	updater.dynakube.Status.CodeModules = dynatracev1beta1.CodeModulesStatus{
+	updater.dynakube.Status.CodeModules = dynatracev1beta2.CodeModulesStatus{
 		VersionStatus: status.VersionStatus{
 			Version: latestAgentVersionUnixPaas,
 		},

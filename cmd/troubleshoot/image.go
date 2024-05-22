@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -30,7 +30,7 @@ type Auths struct {
 
 type ImagePullFunc func(image string) error
 
-func verifyAllImagesAvailable(ctx context.Context, baseLog logd.Logger, keychain authn.Keychain, transport *http.Transport, dynakube *dynatracev1beta1.DynaKube) error {
+func verifyAllImagesAvailable(ctx context.Context, baseLog logd.Logger, keychain authn.Keychain, transport *http.Transport, dynakube *dynatracev1beta2.DynaKube) error {
 	log := baseLog.WithName("imagepull")
 
 	imagePullFunc := CreateImagePullFunc(ctx, keychain, transport)
@@ -47,7 +47,7 @@ func verifyAllImagesAvailable(ctx context.Context, baseLog logd.Logger, keychain
 	return nil
 }
 
-func verifyImageIsAvailable(log logd.Logger, pullImage ImagePullFunc, dynakube *dynatracev1beta1.DynaKube, comp component, proxyWarning bool) {
+func verifyImageIsAvailable(log logd.Logger, pullImage ImagePullFunc, dynakube *dynatracev1beta2.DynaKube, comp component, proxyWarning bool) {
 	image, isCustomImage := comp.getImage(dynakube)
 	if comp.SkipImageCheck(image) {
 		logErrorf(log, "Unknown %s image", comp.String())

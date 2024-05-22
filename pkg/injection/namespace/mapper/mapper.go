@@ -4,7 +4,7 @@ import (
 	"context"
 	"regexp"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -17,7 +17,7 @@ type ConflictChecker struct {
 	alreadyUsed bool
 }
 
-func (c *ConflictChecker) check(dk *dynatracev1beta1.DynaKube) error {
+func (c *ConflictChecker) check(dk *dynatracev1beta2.DynaKube) error {
 	if !dk.NeedAppInjection() {
 		return nil
 	}
@@ -63,12 +63,12 @@ func setUpdatedViaDynakubeAnnotation(ns *corev1.Namespace) {
 
 // match uses the namespace selector in the dynakube to check if it matches a given namespace
 // if the namespace selector is not set on the dynakube its an automatic match
-func match(dk *dynatracev1beta1.DynaKube, namespace *corev1.Namespace) (bool, error) {
-	if dk.NamespaceSelector() == nil {
+func match(dk *dynatracev1beta2.DynaKube, namespace *corev1.Namespace) (bool, error) {
+	if dk.OneAgentNamespaceSelector() == nil {
 		return true, nil
 	}
 
-	selector, err := metav1.LabelSelectorAsSelector(dk.NamespaceSelector())
+	selector, err := metav1.LabelSelectorAsSelector(dk.OneAgentNamespaceSelector())
 	if err != nil {
 		return false, errors.WithStack(err)
 	}
@@ -79,7 +79,7 @@ func match(dk *dynatracev1beta1.DynaKube, namespace *corev1.Namespace) (bool, er
 // updateNamespace tries to match the namespace to every dynakube with codeModules
 // finds conflicting dynakubes(2 dynakube with codeModules on the same namespace)
 // adds/updates/removes labels from the namespace.
-func updateNamespace(namespace *corev1.Namespace, deployedDynakubes *dynatracev1beta1.DynaKubeList) (bool, error) {
+func updateNamespace(namespace *corev1.Namespace, deployedDynakubes *dynatracev1beta2.DynaKubeList) (bool, error) {
 	namespaceUpdated := false
 	conflict := ConflictChecker{}
 
@@ -107,7 +107,7 @@ func updateNamespace(namespace *corev1.Namespace, deployedDynakubes *dynatracev1
 	return namespaceUpdated, nil
 }
 
-func updateLabels(matches bool, dynakube *dynatracev1beta1.DynaKube, namespace *corev1.Namespace) bool {
+func updateLabels(matches bool, dynakube *dynatracev1beta2.DynaKube, namespace *corev1.Namespace) bool {
 	updated := false
 
 	if namespace.Labels == nil {
@@ -132,7 +132,7 @@ func updateLabels(matches bool, dynakube *dynatracev1beta1.DynaKube, namespace *
 	return updated
 }
 
-func isIgnoredNamespace(dk *dynatracev1beta1.DynaKube, namespaceName string) bool {
+func isIgnoredNamespace(dk *dynatracev1beta2.DynaKube, namespaceName string) bool {
 	for _, pattern := range dk.FeatureIgnoredNamespaces() {
 		if matched, _ := regexp.MatchString(pattern, namespaceName); matched {
 			return true

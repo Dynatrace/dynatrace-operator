@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/zip"
@@ -61,12 +61,12 @@ func testFileSystemWithSharedDirPresent(pathResolver metadata.PathResolver, imag
 
 func TestNewImageInstaller(t *testing.T) {
 	testFS := afero.NewMemMapFs()
-	dynakube := &dynatracev1beta1.DynaKube{
+	dynakube := &dynatracev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "dynakube",
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{},
+		Spec: dynatracev1beta2.DynaKubeSpec{},
 	}
 	pullSecret := dynakube.PullSecretWithoutData()
 	pullSecret.Data = map[string][]byte{
@@ -131,12 +131,12 @@ func TestInstaller_InstallAgent(t *testing.T) {
 				props: &Properties{
 					PathResolver: metadata.PathResolver{RootDir: "/tmp"},
 					ImageUri:     testImageURL,
-					Dynakube: &dynatracev1beta1.DynaKube{
+					Dynakube: &dynatracev1beta2.DynaKube{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "test",
 							Namespace: "dynakube",
 						},
-						Spec: dynatracev1beta1.DynaKubeSpec{},
+						Spec: dynatracev1beta2.DynaKubeSpec{},
 					},
 					ImageDigest: testImageDigest,
 				},

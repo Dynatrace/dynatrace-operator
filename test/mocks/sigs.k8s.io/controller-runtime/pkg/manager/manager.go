@@ -3,31 +3,20 @@
 package mocks
 
 import (
-	cache "sigs.k8s.io/controller-runtime/pkg/cache"
-	client "sigs.k8s.io/controller-runtime/pkg/client"
-
-	config "sigs.k8s.io/controller-runtime/pkg/config"
-
 	context "context"
-
-	healthz "sigs.k8s.io/controller-runtime/pkg/healthz"
-
 	http "net/http"
 
 	logr "github.com/go-logr/logr"
-
-	manager "sigs.k8s.io/controller-runtime/pkg/manager"
-
-	meta "k8s.io/apimachinery/pkg/api/meta"
-
 	mock "github.com/stretchr/testify/mock"
-
-	record "k8s.io/client-go/tools/record"
-
-	rest "k8s.io/client-go/rest"
-
+	meta "k8s.io/apimachinery/pkg/api/meta"
 	runtime "k8s.io/apimachinery/pkg/runtime"
-
+	rest "k8s.io/client-go/rest"
+	record "k8s.io/client-go/tools/record"
+	cache "sigs.k8s.io/controller-runtime/pkg/cache"
+	client "sigs.k8s.io/controller-runtime/pkg/client"
+	config "sigs.k8s.io/controller-runtime/pkg/config"
+	healthz "sigs.k8s.io/controller-runtime/pkg/healthz"
+	manager "sigs.k8s.io/controller-runtime/pkg/manager"
 	webhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 

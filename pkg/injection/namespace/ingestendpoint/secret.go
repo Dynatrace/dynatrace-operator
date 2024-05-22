@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
@@ -47,7 +47,7 @@ func NewSecretGenerator(client client.Client, apiReader client.Reader, ns string
 func (g *SecretGenerator) GenerateForNamespace(ctx context.Context, dkName, targetNs string) error {
 	log.Info("reconciling metadata-enrichment endpoint secret for", "namespace", targetNs)
 
-	var dk dynatracev1beta1.DynaKube
+	var dk dynatracev1beta2.DynaKube
 	if err := g.client.Get(ctx, client.ObjectKey{Name: dkName, Namespace: g.namespace}, &dk); err != nil {
 		return errors.WithStack(err)
 	}
@@ -77,7 +77,7 @@ func (g *SecretGenerator) GenerateForNamespace(ctx context.Context, dkName, targ
 
 // GenerateForDynakube creates/updates the metadata-enrichment-endpoint secret for EVERY namespace for the given dynakube.
 // Used by the dynakube controller during reconcile.
-func (g *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1beta1.DynaKube) error {
+func (g *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1beta2.DynaKube) error {
 	log.Info("reconciling metadata-enrichment endpoint secret for", "dynakube", dk.Name)
 
 	data, err := g.prepare(ctx, dk)
@@ -129,7 +129,7 @@ func (g *SecretGenerator) RemoveEndpointSecrets(ctx context.Context, namespaces 
 	return nil
 }
 
-func (g *SecretGenerator) prepare(ctx context.Context, dk *dynatracev1beta1.DynaKube) (map[string][]byte, error) {
+func (g *SecretGenerator) prepare(ctx context.Context, dk *dynatracev1beta2.DynaKube) (map[string][]byte, error) {
 	fields, err := g.PrepareFields(ctx, dk)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -137,7 +137,7 @@ func (g *SecretGenerator) prepare(ctx context.Context, dk *dynatracev1beta1.Dyna
 
 	endpointPropertiesBuilder := strings.Builder{}
 
-	if !dk.FeatureDisableMetadataEnrichment() { // TODO: why check here and not at the very beginning?
+	if dk.MetaDataEnrichmentEnabled() { // TODO: why check here and not at the very beginning?
 		if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", MetricsUrlSecretField, fields[MetricsUrlSecretField])); err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -154,7 +154,7 @@ func (g *SecretGenerator) prepare(ctx context.Context, dk *dynatracev1beta1.Dyna
 	return data, nil
 }
 
-func (g *SecretGenerator) PrepareFields(ctx context.Context, dk *dynatracev1beta1.DynaKube) (map[string]string, error) {
+func (g *SecretGenerator) PrepareFields(ctx context.Context, dk *dynatracev1beta2.DynaKube) (map[string]string, error) {
 	fields := make(map[string]string)
 
 	var tokens corev1.Secret
@@ -162,7 +162,7 @@ func (g *SecretGenerator) PrepareFields(ctx context.Context, dk *dynatracev1beta
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 
-	if !dk.FeatureDisableMetadataEnrichment() { // TODO: why check here and not at the very beginning?
+	if dk.MetaDataEnrichmentEnabled() { // TODO: why check here and not at the very beginning?
 		if token, ok := tokens.Data[dtclient.DataIngestToken]; ok {
 			fields[MetricsTokenSecretField] = string(token)
 		}
@@ -177,9 +177,9 @@ func (g *SecretGenerator) PrepareFields(ctx context.Context, dk *dynatracev1beta
 	return fields, nil
 }
 
-func ingestUrlFor(dk *dynatracev1beta1.DynaKube) (string, error) {
+func ingestUrlFor(dk *dynatracev1beta2.DynaKube) (string, error) {
 	switch {
-	case dk.IsActiveGateMode(dynatracev1beta1.MetricsIngestCapability.DisplayName):
+	case dk.IsActiveGateMode(dynatracev1beta2.MetricsIngestCapability.DisplayName):
 		return metricsIngestUrlForClusterActiveGate(dk)
 	case len(dk.Spec.APIURL) > 0:
 		return metricsIngestUrlForDynatraceActiveGate(dk)
@@ -188,11 +188,11 @@ func ingestUrlFor(dk *dynatracev1beta1.DynaKube) (string, error) {
 	}
 }
 
-func metricsIngestUrlForDynatraceActiveGate(dk *dynatracev1beta1.DynaKube) (string, error) {
+func metricsIngestUrlForDynatraceActiveGate(dk *dynatracev1beta2.DynaKube) (string, error) {
 	return dk.Spec.APIURL + "/v2/metrics/ingest", nil
 }
 
-func metricsIngestUrlForClusterActiveGate(dk *dynatracev1beta1.DynaKube) (string, error) {
+func metricsIngestUrlForClusterActiveGate(dk *dynatracev1beta2.DynaKube) (string, error) {
 	tenant, err := dk.TenantUUIDFromApiUrl()
 	if err != nil {
 		return "", err

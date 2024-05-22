@@ -6,10 +6,9 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,11 +24,11 @@ func TestOneAgentUpdater(t *testing.T) {
 	}
 
 	t.Run("Getters work as expected", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{
-						AutoUpdate: address.Of(false),
+		dynakube := &dynatracev1beta2.DynaKube{
+			Spec: dynatracev1beta2.DynaKubeSpec{
+				OneAgent: dynatracev1beta2.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta2.HostInjectSpec{
+						AutoUpdate: false,
 						Image:      testImage.String(),
 						Version:    testImage.Tag,
 					},
@@ -54,9 +53,9 @@ func TestOneAgentUpdater(t *testing.T) {
 
 func TestOneAgentIsEnabled(t *testing.T) {
 	t.Run("cleans up condition if not enabled", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
-			Status: dynatracev1beta1.DynaKubeStatus{
-				OneAgent: dynatracev1beta1.OneAgentStatus{
+		dynakube := &dynatracev1beta2.DynaKube{
+			Status: dynatracev1beta2.DynaKubeStatus{
+				OneAgent: dynatracev1beta2.OneAgentStatus{
 					VersionStatus: status.VersionStatus{
 						Version: "prev",
 					},
@@ -81,10 +80,10 @@ func TestOneAgentIsEnabled(t *testing.T) {
 
 func TestOneAgentPublicRegistry(t *testing.T) {
 	t.Run("sets condition if enabled", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
+		dynakube := &dynatracev1beta2.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeaturePublicRegistry: "true",
+					dynatracev1beta2.AnnotationFeaturePublicRegistry: "true",
 				},
 			},
 		}
@@ -100,7 +99,7 @@ func TestOneAgentPublicRegistry(t *testing.T) {
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 	})
 	t.Run("ignores conditions if not enabled", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{}
+		dynakube := &dynatracev1beta2.DynaKube{}
 
 		updater := newOneAgentUpdater(dynakube, nil, nil)
 
@@ -114,10 +113,10 @@ func TestOneAgentPublicRegistry(t *testing.T) {
 
 func TestOneAgentLatestImageInfo(t *testing.T) {
 	t.Run("problem with Dynatrace request => visible in conditions", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
+		dynakube := &dynatracev1beta2.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeaturePublicRegistry: "true",
+					dynatracev1beta2.AnnotationFeaturePublicRegistry: "true",
 				},
 			},
 		}
@@ -138,11 +137,11 @@ func TestOneAgentUseDefault(t *testing.T) {
 	testVersion := "1.2.3.4-5"
 
 	t.Run("Set according to version field", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		dynakube := &dynatracev1beta2.DynaKube{
+			Spec: dynatracev1beta2.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{
+				OneAgent: dynatracev1beta2.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta2.HostInjectSpec{
 						Version: testVersion,
 					},
 				},
@@ -163,11 +162,11 @@ func TestOneAgentUseDefault(t *testing.T) {
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 	})
 	t.Run("Set according to default", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		dynakube := &dynatracev1beta2.DynaKube{
+			Spec: dynatracev1beta2.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+				OneAgent: dynatracev1beta2.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta2.HostInjectSpec{},
 				},
 			},
 		}
@@ -188,15 +187,15 @@ func TestOneAgentUseDefault(t *testing.T) {
 	})
 	t.Run("Don't allow downgrades", func(t *testing.T) {
 		previousVersion := "999.999.999.999-999"
-		dynakube := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		dynakube := &dynatracev1beta2.DynaKube{
+			Spec: dynatracev1beta2.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+				OneAgent: dynatracev1beta2.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta2.HostInjectSpec{},
 				},
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				OneAgent: dynatracev1beta1.OneAgentStatus{
+			Status: dynatracev1beta2.DynaKubeStatus{
+				OneAgent: dynatracev1beta2.OneAgentStatus{
 					VersionStatus: status.VersionStatus{
 						ImageID: "some.registry.com:" + previousVersion,
 						Version: previousVersion,
@@ -222,15 +221,15 @@ func TestOneAgentUseDefault(t *testing.T) {
 
 	t.Run("Verification fails due to malformed version", func(t *testing.T) {
 		previousVersion := "1.2.3.4444-555"
-		dynakube := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		dynakube := &dynatracev1beta2.DynaKube{
+			Spec: dynatracev1beta2.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+				OneAgent: dynatracev1beta2.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta2.HostInjectSpec{},
 				},
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				OneAgent: dynatracev1beta1.OneAgentStatus{
+			Status: dynatracev1beta2.DynaKubeStatus{
+				OneAgent: dynatracev1beta2.OneAgentStatus{
 					VersionStatus: status.VersionStatus{
 						ImageID: "some.registry.com:" + previousVersion,
 						Version: previousVersion,
@@ -254,15 +253,15 @@ func TestOneAgentUseDefault(t *testing.T) {
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 	t.Run("Verification fails due to malformed ImageID", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		dynakube := &dynatracev1beta2.DynaKube{
+			Spec: dynatracev1beta2.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+				OneAgent: dynatracev1beta2.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
 				},
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				OneAgent: dynatracev1beta1.OneAgentStatus{
+			Status: dynatracev1beta2.DynaKubeStatus{
+				OneAgent: dynatracev1beta2.OneAgentStatus{
 					VersionStatus: status.VersionStatus{
 						ImageID: "BOOM",
 						Source:  status.PublicRegistryVersionSource,
@@ -287,15 +286,15 @@ func TestOneAgentUseDefault(t *testing.T) {
 
 type CheckForDowngradeTestCase struct {
 	testName    string
-	dynakube    *dynatracev1beta1.DynaKube
+	dynakube    *dynatracev1beta2.DynaKube
 	newVersion  string
 	isDowngrade bool
 }
 
-func newDynakubeWithOneAgentStatus(status status.VersionStatus) *dynatracev1beta1.DynaKube {
-	return &dynatracev1beta1.DynaKube{
-		Status: dynatracev1beta1.DynaKubeStatus{
-			OneAgent: dynatracev1beta1.OneAgentStatus{
+func newDynakubeWithOneAgentStatus(status status.VersionStatus) *dynatracev1beta2.DynaKube {
+	return &dynatracev1beta2.DynaKube{
+		Status: dynatracev1beta2.DynaKubeStatus{
+			OneAgent: dynatracev1beta2.OneAgentStatus{
 				VersionStatus: status,
 			},
 		},
@@ -375,13 +374,13 @@ func TestCheckForDowngrade(t *testing.T) {
 	}
 }
 
-func newDynakubeForCheckLabelTest(versionStatus status.VersionStatus) *dynatracev1beta1.DynaKube {
-	return &dynatracev1beta1.DynaKube{
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			OneAgent: dynatracev1beta1.OneAgentSpec{},
+func newDynakubeForCheckLabelTest(versionStatus status.VersionStatus) *dynatracev1beta2.DynaKube {
+	return &dynatracev1beta2.DynaKube{
+		Spec: dynatracev1beta2.DynaKubeSpec{
+			OneAgent: dynatracev1beta2.OneAgentSpec{},
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
-			OneAgent: dynatracev1beta1.OneAgentStatus{
+		Status: dynatracev1beta2.DynaKubeStatus{
+			OneAgent: dynatracev1beta2.OneAgentStatus{
 				VersionStatus: versionStatus,
 			},
 		},
@@ -400,26 +399,26 @@ func TestCheckLabels(t *testing.T) {
 
 	t.Run("Validate immutable oneAgent image with default cloudNative", func(t *testing.T) {
 		dynakube := newDynakubeForCheckLabelTest(versionStatus)
-		dynakube.Spec.OneAgent.CloudNativeFullStack = &dynatracev1beta1.CloudNativeFullStackSpec{}
+		dynakube.Spec.OneAgent.CloudNativeFullStack = &dynatracev1beta2.CloudNativeFullStackSpec{}
 		updater := newOneAgentUpdater(dynakube, fake.NewClient(), nil)
 		require.NoError(t, updater.ValidateStatus())
 	})
 	t.Run("Validate immutable oneAgent image with classicFullStack", func(t *testing.T) {
 		dynakube := newDynakubeForCheckLabelTest(versionStatus)
-		dynakube.Spec.OneAgent.ClassicFullStack = &dynatracev1beta1.HostInjectSpec{}
+		dynakube.Spec.OneAgent.ClassicFullStack = &dynatracev1beta2.HostInjectSpec{}
 		updater := newOneAgentUpdater(dynakube, fake.NewClient(), nil)
 		require.Error(t, updater.ValidateStatus())
 	})
 	t.Run("Validate immutable oneAgent image when image version is not set", func(t *testing.T) {
 		dynakube := newDynakubeForCheckLabelTest(versionStatus)
-		dynakube.Spec.OneAgent.CloudNativeFullStack = &dynatracev1beta1.CloudNativeFullStackSpec{}
+		dynakube.Spec.OneAgent.CloudNativeFullStack = &dynatracev1beta2.CloudNativeFullStackSpec{}
 		dynakube.Status.OneAgent.VersionStatus.Version = ""
 		updater := newOneAgentUpdater(dynakube, fake.NewClient(), nil)
 		require.Error(t, updater.ValidateStatus())
 	})
 	t.Run("Validate mutable oneAgent image with classicFullStack", func(t *testing.T) {
 		dynakube := newDynakubeForCheckLabelTest(versionStatus)
-		dynakube.Spec.OneAgent.ClassicFullStack = &dynatracev1beta1.HostInjectSpec{}
+		dynakube.Spec.OneAgent.ClassicFullStack = &dynatracev1beta2.HostInjectSpec{}
 		dynakube.Status.OneAgent.VersionStatus.Type = "mutable"
 		updater := newOneAgentUpdater(dynakube, fake.NewClient(), nil)
 		require.NoError(t, updater.ValidateStatus())

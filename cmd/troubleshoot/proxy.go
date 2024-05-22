@@ -3,13 +3,13 @@ package troubleshoot
 import (
 	"context"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"golang.org/x/net/http/httpproxy"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func checkProxySettings(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) error {
+func checkProxySettings(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, dynakube *dynatracev1beta2.DynaKube) error {
 	log := baseLog.WithName("proxy")
 
 	var proxyURL string
@@ -84,7 +84,7 @@ func getEnvProxySettings() *httpproxy.Config {
 	return nil
 }
 
-func getProxyURL(ctx context.Context, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) (string, error) {
+func getProxyURL(ctx context.Context, apiReader client.Reader, dynakube *dynatracev1beta2.DynaKube) (string, error) {
 	if !dynakube.HasProxy() {
 		return "", nil
 	}

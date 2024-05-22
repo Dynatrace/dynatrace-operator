@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -22,11 +22,11 @@ func TestReconcile(t *testing.T) {
 	namespace := "test-namespace"
 
 	t.Run(`no latest version in status`, func(t *testing.T) {
-		dynakube := dynatracev1beta1.DynaKube{
+		dynakube := dynatracev1beta2.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1beta2.DynaKubeSpec{
 				APIURL: apiUrl,
 			},
 		}

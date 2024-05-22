@@ -60,6 +60,14 @@ rules:
   - apiGroups:
       - ""
     resources:
+      - services
+    resourceNames:
+      - kubernetes
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
       - events
     verbs:
       - create

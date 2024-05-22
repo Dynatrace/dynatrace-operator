@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/curl"
@@ -24,7 +24,7 @@ const (
 	proxyNamespaceName = "proxy"
 )
 
-func curlActiveGateHttps(builder *features.FeatureBuilder, dynakube dynatracev1beta1.DynaKube) {
+func curlActiveGateHttps(builder *features.FeatureBuilder, dynakube dynatracev1beta2.DynaKube) {
 	podname := "curl-activegate-https"
 	serviceUrl := getActiveGateHttpsServiceUrl(dynakube)
 	builder.Assess("creating https curl pod for activeGate", installActiveGateCurlPod(podname, serviceUrl, dynakube))
@@ -33,7 +33,7 @@ func curlActiveGateHttps(builder *features.FeatureBuilder, dynakube dynatracev1b
 	builder.Teardown(removeActiveGateCurlPod(podname, serviceUrl, dynakube))
 }
 
-func curlActiveGateHttp(builder *features.FeatureBuilder, dynakube dynatracev1beta1.DynaKube) {
+func curlActiveGateHttp(builder *features.FeatureBuilder, dynakube dynatracev1beta2.DynaKube) {
 	podname := "curl-activegate-http"
 	serviceUrl := getActiveGateHttpServiceUrl(dynakube)
 	builder.Assess("creating http curl pod for activeGate", installActiveGateCurlPod(podname, serviceUrl, dynakube))
@@ -42,7 +42,7 @@ func curlActiveGateHttp(builder *features.FeatureBuilder, dynakube dynatracev1be
 	builder.Teardown(removeActiveGateCurlPod(podname, serviceUrl, dynakube))
 }
 
-func installActiveGateCurlPod(podName, serviceUrl string, dynakube dynatracev1beta1.DynaKube) features.Func {
+func installActiveGateCurlPod(podName, serviceUrl string, dynakube dynatracev1beta2.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		curlTarget := fmt.Sprintf("%s/%s", serviceUrl, activeGateEndpoint)
 
@@ -53,7 +53,7 @@ func installActiveGateCurlPod(podName, serviceUrl string, dynakube dynatracev1be
 	}
 }
 
-func removeActiveGateCurlPod(podName, serviceUrl string, dynakube dynatracev1beta1.DynaKube) features.Func {
+func removeActiveGateCurlPod(podName, serviceUrl string, dynakube dynatracev1beta2.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		curlTarget := fmt.Sprintf("%s/%s", serviceUrl, activeGateEndpoint)
 
@@ -67,11 +67,11 @@ func removeActiveGateCurlPod(podName, serviceUrl string, dynakube dynatracev1bet
 	}
 }
 
-func waitForActiveGateCurlPod(podName string, dynakube dynatracev1beta1.DynaKube) features.Func {
+func waitForActiveGateCurlPod(podName string, dynakube dynatracev1beta2.DynaKube) features.Func {
 	return pod.WaitFor(podName, curlNamespace(dynakube))
 }
 
-func checkActiveGateCurlResult(podName string, dynakube dynatracev1beta1.DynaKube) features.Func {
+func checkActiveGateCurlResult(podName string, dynakube dynatracev1beta2.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
@@ -82,7 +82,7 @@ func checkActiveGateCurlResult(podName string, dynakube dynatracev1beta1.DynaKub
 	}
 }
 
-func curlNamespace(dynakube dynatracev1beta1.DynaKube) string {
+func curlNamespace(dynakube dynatracev1beta2.DynaKube) string {
 	if dynakube.HasProxy() {
 		return proxyNamespaceName
 	}
@@ -90,13 +90,13 @@ func curlNamespace(dynakube dynatracev1beta1.DynaKube) string {
 	return dynakube.Namespace
 }
 
-func getActiveGateHttpsServiceUrl(dynakube dynatracev1beta1.DynaKube) string {
+func getActiveGateHttpsServiceUrl(dynakube dynatracev1beta2.DynaKube) string {
 	serviceName := capability.BuildServiceName(dynakube.Name, consts.MultiActiveGateName)
 
 	return fmt.Sprintf("https://%s.%s.svc.cluster.local", serviceName, dynakube.Namespace)
 }
 
-func getActiveGateHttpServiceUrl(dynakube dynatracev1beta1.DynaKube) string {
+func getActiveGateHttpServiceUrl(dynakube dynatracev1beta2.DynaKube) string {
 	serviceName := capability.BuildServiceName(dynakube.Name, consts.MultiActiveGateName)
 
 	return fmt.Sprintf("http://%s.%s.svc.cluster.local", serviceName, dynakube.Namespace)

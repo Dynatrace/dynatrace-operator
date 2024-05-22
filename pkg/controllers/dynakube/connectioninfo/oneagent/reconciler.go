@@ -1,7 +1,7 @@
 package oaconnectioninfo
 
 import (
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -23,13 +23,13 @@ type reconciler struct {
 	dtc          dtclient.Client
 	timeProvider *timeprovider.Provider
 
-	dynakube *dynatracev1beta1.DynaKube
+	dynakube *dynatracev1beta2.DynaKube
 }
-type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dynakube *dynatracev1beta1.DynaKube) controllers.Reconciler
+type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dynakube *dynatracev1beta2.DynaKube) controllers.Reconciler
 
 var _ ReconcilerBuilder = NewReconciler
 
-func NewReconciler(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dynakube *dynatracev1beta1.DynaKube) controllers.Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dynakube *dynatracev1beta2.DynaKube) controllers.Reconciler {
 	return &reconciler{
 		client:       clt,
 		apiReader:    apiReader,
@@ -55,7 +55,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		}
 
 		meta.RemoveStatusCondition(r.dynakube.Conditions(), oaConnectionInfoConditionType)
-		r.dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta1.OneAgentConnectionInfoStatus{}
+		r.dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta2.OneAgentConnectionInfoStatus{}
 
 		return nil // clean-up shouldn't cause a failure
 	}
@@ -88,10 +88,10 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 
 		condition := meta.FindStatusCondition(*r.dynakube.Conditions(), oaConnectionInfoConditionType)
 		if isSecretPresent {
-			log.Info(dynatracev1beta1.GetCacheValidMessage(
+			log.Info(dynatracev1beta2.GetCacheValidMessage(
 				"OneAgent connection info update",
 				condition.LastTransitionTime,
-				r.dynakube.FeatureApiRequestThreshold()))
+				r.dynakube.ApiRequestThreshold()))
 
 			return nil
 		}
@@ -137,10 +137,10 @@ func (r *reconciler) setDynakubeStatus(connectionInfo dtclient.OneAgentConnectio
 	copyCommunicationHosts(&r.dynakube.Status.OneAgent.ConnectionInfoStatus, connectionInfo.CommunicationHosts)
 }
 
-func copyCommunicationHosts(dest *dynatracev1beta1.OneAgentConnectionInfoStatus, src []dtclient.CommunicationHost) {
-	dest.CommunicationHosts = make([]dynatracev1beta1.CommunicationHostStatus, 0, len(src))
+func copyCommunicationHosts(dest *dynatracev1beta2.OneAgentConnectionInfoStatus, src []dtclient.CommunicationHost) {
+	dest.CommunicationHosts = make([]dynatracev1beta2.CommunicationHostStatus, 0, len(src))
 	for _, host := range src {
-		dest.CommunicationHosts = append(dest.CommunicationHosts, dynatracev1beta1.CommunicationHostStatus{
+		dest.CommunicationHosts = append(dest.CommunicationHosts, dynatracev1beta2.CommunicationHostStatus{
 			Protocol: host.Protocol,
 			Host:     host.Host,
 			Port:     host.Port,

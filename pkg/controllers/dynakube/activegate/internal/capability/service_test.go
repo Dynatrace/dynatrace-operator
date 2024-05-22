@@ -3,7 +3,7 @@ package capability
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -21,12 +21,12 @@ const (
 	testApiUrl           = "https://demo.dev.dynatracelabs.com/api"
 )
 
-func testCreateInstance() *dynatracev1beta1.DynaKube {
-	return &dynatracev1beta1.DynaKube{
+func testCreateInstance() *dynatracev1beta2.DynaKube {
+	return &dynatracev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace, Name: testName,
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
+		Spec: dynatracev1beta2.DynaKubeSpec{
 			APIURL: testApiUrl,
 		},
 	}
@@ -74,7 +74,7 @@ func TestCreateService(t *testing.T) {
 
 	t.Run("check AG service if metrics-ingest disabled", func(t *testing.T) {
 		instance := testCreateInstance()
-		activegate.SwitchCapability(instance, dynatracev1beta1.RoutingCapability, true)
+		activegate.SwitchCapability(instance, dynatracev1beta2.RoutingCapability, true)
 
 		service := CreateService(instance, testComponentFeature)
 		ports := service.Spec.Ports
@@ -84,7 +84,7 @@ func TestCreateService(t *testing.T) {
 	})
 	t.Run("check AG service if metrics-ingest enabled", func(t *testing.T) {
 		instance := testCreateInstance()
-		activegate.SwitchCapability(instance, dynatracev1beta1.MetricsIngestCapability, true)
+		activegate.SwitchCapability(instance, dynatracev1beta2.MetricsIngestCapability, true)
 
 		service := CreateService(instance, testComponentFeature)
 		ports := service.Spec.Ports

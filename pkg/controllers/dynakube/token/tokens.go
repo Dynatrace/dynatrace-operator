@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
 )
@@ -49,7 +49,7 @@ func (tokens Tokens) AddFeatureScopesToTokens() Tokens {
 	return tokens
 }
 
-func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient dtclient.Client, dynakube dynatracev1beta1.DynaKube) error {
+func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient dtclient.Client, dynakube dynatracev1beta2.DynaKube) error {
 	scopeErrors := make([]error, 0)
 
 	for _, token := range tokens {

@@ -3,7 +3,7 @@ package token
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -12,7 +12,7 @@ func TestFeature_IsScopeMissing(t *testing.T) {
 		feature := Feature{
 			Name:           "Access problem and event feed, metrics, and topology",
 			RequiredScopes: []string{"scope1", "scope2"},
-			IsEnabled: func(dynakube dynatracev1beta1.DynaKube) bool {
+			IsEnabled: func(dynakube dynatracev1beta2.DynaKube) bool {
 				return true
 			},
 		}
@@ -25,7 +25,7 @@ func TestFeature_IsScopeMissing(t *testing.T) {
 		feature := Feature{
 			Name:           "Access problem and event feed, metrics, and topology",
 			RequiredScopes: []string{"scope1", "scope2"},
-			IsEnabled: func(dynakube dynatracev1beta1.DynaKube) bool {
+			IsEnabled: func(dynakube dynatracev1beta2.DynaKube) bool {
 				return true
 			},
 		}
@@ -38,7 +38,7 @@ func TestFeature_IsScopeMissing(t *testing.T) {
 		feature := Feature{
 			Name:           "Access problem and event feed, metrics, and topology",
 			RequiredScopes: []string{"scope1", "scope2"},
-			IsEnabled: func(dynakube dynatracev1beta1.DynaKube) bool {
+			IsEnabled: func(dynakube dynatracev1beta2.DynaKube) bool {
 				return true
 			},
 		}

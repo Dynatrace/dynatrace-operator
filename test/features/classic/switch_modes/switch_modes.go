@@ -5,7 +5,7 @@ package switch_modes
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
@@ -33,7 +33,7 @@ func Feature(t *testing.T) features.Feature {
 	}
 
 	dynakubeClassicFullStack := *dynakube.New(
-		append(commonOptions, dynakube.WithClassicFullstackSpec(&dynatracev1beta1.HostInjectSpec{}))...,
+		append(commonOptions, dynakube.WithClassicFullstackSpec(&dynatracev1beta2.HostInjectSpec{}))...,
 	)
 
 	sampleAppClassic := sample.NewApp(t, &dynakubeClassicFullStack,

@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	edgeconnectv1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/functional"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
@@ -33,7 +33,7 @@ const testAppNameNotInjected = "application1"
 const testAppNameInjected = "application2"
 
 type CustomResources struct {
-	dynakube    dynatracev1beta1.DynaKube
+	dynakube    dynatracev1beta2.DynaKube
 	edgeconnect edgeconnectv1beta1.EdgeConnect
 }
 
@@ -57,7 +57,7 @@ func Feature(t *testing.T) features.Feature {
 			MatchLabels: injectLabels,
 		}),
 		dynakube.WithApiUrl(secretConfig.ApiUrl),
-		dynakube.WithCloudNativeSpec(&dynatracev1beta1.CloudNativeFullStackSpec{}),
+		dynakube.WithCloudNativeSpec(&dynatracev1beta2.CloudNativeFullStackSpec{}),
 		dynakube.WithActiveGate(),
 	)
 
@@ -87,7 +87,7 @@ func Feature(t *testing.T) features.Feature {
 	return builder.Feature()
 }
 
-func testSupportArchiveCommand(testDynakube dynatracev1beta1.DynaKube, testEdgeConnect edgeconnectv1beta1.EdgeConnect, collectManaged bool) features.Func {
+func testSupportArchiveCommand(testDynakube dynatracev1beta2.DynaKube, testEdgeConnect edgeconnectv1beta1.EdgeConnect, collectManaged bool) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		commandLineArguments := []string{"--stdout"}
 		if !collectManaged {

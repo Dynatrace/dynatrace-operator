@@ -4,14 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	corev1 "k8s.io/api/core/v1"
 )
 
 const (
-	errorConflictingActiveGateSections = `The DynaKube's specification tries to use the deprecated ActiveGate section(s) alongside the new ActiveGate section, which is not supported.
-`
-
 	errorInvalidActiveGateCapability = `The DynaKube's specification tries to use an invalid capability in ActiveGate section, invalid capability=%s.
 Make sure you correctly specify the ActiveGate capabilities in your custom resource.
 `
@@ -22,20 +19,10 @@ Make sure you don't duplicate an Activegate capability in your custom resource.
 	warningMissingActiveGateMemoryLimit = `ActiveGate specification missing memory limits. Can cause excess memory usage.`
 )
 
-func conflictingActiveGateConfiguration(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	if dynakube.DeprecatedActiveGateMode() && dynakube.ActiveGateMode() {
-		log.Info("requested dynakube has conflicting active gate configuration", "name", dynakube.Name, "namespace", dynakube.Namespace)
-
-		return errorConflictingActiveGateSections
-	}
-
-	return ""
-}
-
-func duplicateActiveGateCapabilities(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func duplicateActiveGateCapabilities(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
 	if dynakube.ActiveGateMode() {
 		capabilities := dynakube.Spec.ActiveGate.Capabilities
-		duplicateChecker := map[dynatracev1beta1.CapabilityDisplayName]bool{}
+		duplicateChecker := map[dynatracev1beta2.CapabilityDisplayName]bool{}
 
 		for _, capability := range capabilities {
 			if duplicateChecker[capability] {
@@ -51,11 +38,11 @@ func duplicateActiveGateCapabilities(_ context.Context, _ *dynakubeValidator, dy
 	return ""
 }
 
-func invalidActiveGateCapabilities(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func invalidActiveGateCapabilities(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
 	if dynakube.ActiveGateMode() {
 		capabilities := dynakube.Spec.ActiveGate.Capabilities
 		for _, capability := range capabilities {
-			if _, ok := dynatracev1beta1.ActiveGateDisplayNames[capability]; !ok {
+			if _, ok := dynatracev1beta2.ActiveGateDisplayNames[capability]; !ok {
 				log.Info("requested dynakube has invalid active gate capability", "name", dynakube.Name, "namespace", dynakube.Namespace)
 
 				return fmt.Sprintf(errorInvalidActiveGateCapability, capability)
@@ -66,7 +53,7 @@ func invalidActiveGateCapabilities(_ context.Context, _ *dynakubeValidator, dyna
 	return ""
 }
 
-func missingActiveGateMemoryLimit(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func missingActiveGateMemoryLimit(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
 	if dynakube.ActiveGateMode() &&
 		!memoryLimitSet(dynakube.Spec.ActiveGate.Resources) {
 		return warningMissingActiveGateMemoryLimit

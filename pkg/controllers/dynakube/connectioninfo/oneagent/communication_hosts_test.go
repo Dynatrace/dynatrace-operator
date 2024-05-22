@@ -3,22 +3,22 @@ package oaconnectioninfo
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestGetCommunicationHosts(t *testing.T) {
-	dynakube := &dynatracev1beta1.DynaKube{
+	dynakube := &dynatracev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
-			OneAgent: dynatracev1beta1.OneAgentStatus{
-				ConnectionInfoStatus: dynatracev1beta1.OneAgentConnectionInfoStatus{
-					ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{},
+		Status: dynatracev1beta2.DynaKubeStatus{
+			OneAgent: dynatracev1beta2.OneAgentStatus{
+				ConnectionInfoStatus: dynatracev1beta2.OneAgentConnectionInfoStatus{
+					ConnectionInfoStatus: dynatracev1beta2.ConnectionInfoStatus{},
 				},
 			},
 		},
@@ -38,7 +38,7 @@ func TestGetCommunicationHosts(t *testing.T) {
 	})
 
 	t.Run(`communication-hosts field found`, func(t *testing.T) {
-		dynakube.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynatracev1beta1.CommunicationHostStatus{
+		dynakube.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynatracev1beta2.CommunicationHostStatus{
 			{
 				Protocol: "protocol",
 				Host:     "host",

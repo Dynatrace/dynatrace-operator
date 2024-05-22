@@ -1,7 +1,7 @@
 package modifiers
 
 import (
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
@@ -26,7 +26,7 @@ type initContainerModifier interface {
 	getInitContainers() []corev1.Container
 }
 
-func GenerateAllModifiers(dynakube dynatracev1beta1.DynaKube, capability capability.Capability, agBaseContainerEnvMap *prioritymap.Map) []builder.Modifier {
+func GenerateAllModifiers(dynakube dynatracev1beta2.DynaKube, capability capability.Capability, agBaseContainerEnvMap *prioritymap.Map) []builder.Modifier {
 	return []builder.Modifier{
 		NewAuthTokenModifier(dynakube),
 		NewSSLVolumeModifier(dynakube),

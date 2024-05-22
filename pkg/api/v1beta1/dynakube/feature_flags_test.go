@@ -9,6 +9,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const testNamespace = "test-namespace"
+
 func createDynakubeWithAnnotation(keyValues ...string) DynaKube {
 	dynakube := DynaKube{
 		ObjectMeta: metav1.ObjectMeta{

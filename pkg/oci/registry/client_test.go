@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,19 +16,19 @@ func TestProxy(t *testing.T) {
 	proxyRawURL := "proxy.url"
 
 	t.Run("set NO_PROXY", func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1beta2.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "Dynakube",
 				Namespace: "dynatrace",
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureNoProxy: "working.url,url.working",
+					dynatracev1beta2.AnnotationFeatureNoProxy: "working.url,url.working",
 				},
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				Proxy:  &dynatracev1beta1.DynaKubeProxy{Value: proxyRawURL},
+			Spec: dynatracev1beta2.DynaKubeSpec{
+				Proxy:  &dynatracev1beta2.DynaKubeProxy{Value: proxyRawURL},
 				APIURL: "https://testApiUrl.dev.dynatracelabs.com/api",
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+				OneAgent: dynatracev1beta2.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
 				},
 			},
 		}
@@ -49,15 +49,15 @@ func TestProxy(t *testing.T) {
 }
 
 func TestSkipCertCheck(t *testing.T) {
-	instance := &dynatracev1beta1.DynaKube{
+	instance := &dynatracev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "Dynakube",
 			Namespace: "dynatrace",
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
+		Spec: dynatracev1beta2.DynaKubeSpec{
 			APIURL: "https://testApiUrl.dev.dynatracelabs.com/api",
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+			OneAgent: dynatracev1beta2.OneAgentSpec{
+				CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
 			},
 		},
 	}

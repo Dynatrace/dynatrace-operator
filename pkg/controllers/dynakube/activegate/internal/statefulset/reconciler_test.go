@@ -7,7 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dynafake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
@@ -50,17 +50,17 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		}).
 		WithObjects(&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName + dynatracev1beta1.AuthTokenSecretSuffix,
+				Name:      testName + dynatracev1beta2.AuthTokenSecretSuffix,
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
 		}).
 		Build()
-	instance := &dynatracev1beta1.DynaKube{
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			ActiveGate: dynatracev1beta1.ActiveGateSpec{
-				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-					dynatracev1beta1.RoutingCapability.DisplayName,
+	instance := &dynatracev1beta2.DynaKube{
+		Spec: dynatracev1beta2.DynaKubeSpec{
+			ActiveGate: dynatracev1beta2.ActiveGateSpec{
+				Capabilities: []dynatracev1beta2.CapabilityDisplayName{
+					dynatracev1beta2.RoutingCapability.DisplayName,
 				}},
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -68,9 +68,9 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 			Name:      testName,
 		}}
 
-	capability.NewRoutingCapability(instance)
+	capability.NewMultiCapability(instance)
 
-	r := NewReconciler(clt, clt, instance, capability.NewRoutingCapability(instance)).(*Reconciler)
+	r := NewReconciler(clt, clt, instance, capability.NewMultiCapability(instance)).(*Reconciler)
 	r.dynakube.Annotations = map[string]string{}
 	require.NotNil(t, r)
 	require.NotNil(t, r.client)
@@ -95,7 +95,7 @@ func TestReconcile(t *testing.T) {
 		condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, ActiveGateStatefulSetConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, conditions.StatefulSetCreatedReason, condition.Reason)
-		assert.Equal(t, fmt.Sprintf("%s-routing created", testName), condition.Message)
+		assert.Equal(t, fmt.Sprintf("%s-activegate created", testName), condition.Message)
 	})
 	t.Run(`update stateful set`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
@@ -109,7 +109,7 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, statefulSet)
 		require.NoError(t, err)
 
-		r.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
+		r.dynakube.Spec.Proxy = &dynatracev1beta2.DynaKubeProxy{Value: testValue}
 		err = r.Reconcile(context.Background())
 
 		require.NoError(t, err)
@@ -133,7 +133,7 @@ func TestReconcile(t *testing.T) {
 		condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, ActiveGateStatefulSetConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, conditions.StatefulSetUpdatedReason, condition.Reason)
-		assert.Equal(t, testName+"-routing updated", condition.Message)
+		assert.Equal(t, testName+"-activegate updated", condition.Message)
 	})
 	t.Run(`stateful set error is logged in condition`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
@@ -208,7 +208,7 @@ func TestReconcile_UpdateStatefulSetIfOutdated(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, updated)
 
-	r.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
+	r.dynakube.Spec.Proxy = &dynatracev1beta2.DynaKubeProxy{Value: testValue}
 	desiredSts, err = r.buildDesiredStatefulSet(context.Background())
 	require.NoError(t, err)
 
@@ -237,7 +237,7 @@ func TestReconcile_DeleteStatefulSetIfOldLabelsAreUsed(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, deleted)
 
-		r.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
+		r.dynakube.Spec.Proxy = &dynatracev1beta2.DynaKubeProxy{Value: testValue}
 		desiredSts, err = r.buildDesiredStatefulSet(context.Background())
 		require.NoError(t, err)
 
@@ -285,12 +285,12 @@ func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
-	r.dynakube.Spec.Routing.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{Value: testValue}
+	r.dynakube.Spec.ActiveGate.CustomProperties = &dynatracev1beta2.DynaKubeValueSource{Value: testValue}
 	hash, err = r.calculateActiveGateConfigurationHash()
 	require.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
-	r.dynakube.Spec.Routing.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{ValueFrom: testName}
+	r.dynakube.Spec.ActiveGate.CustomProperties = &dynatracev1beta2.DynaKubeValueSource{ValueFrom: testName}
 	hash, err = r.calculateActiveGateConfigurationHash()
 	require.Error(t, err)
 	assert.Empty(t, hash)

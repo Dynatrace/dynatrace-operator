@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 )
@@ -27,7 +27,7 @@ func (token *Token) addFeatures(features []Feature) {
 	token.Features = append(token.Features, features...)
 }
 
-func (token *Token) verifyScopes(ctx context.Context, dtClient dtclient.Client, dynakube dynatracev1beta1.DynaKube) error {
+func (token *Token) verifyScopes(ctx context.Context, dtClient dtclient.Client, dynakube dynatracev1beta2.DynaKube) error {
 	if len(token.Features) == 0 {
 		return nil
 	}

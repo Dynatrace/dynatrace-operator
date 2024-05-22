@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -46,7 +46,7 @@ type ReconcilerBuilder func(
 	client client.Client,
 	apiReader client.Reader,
 	dtClient dynatrace.Client,
-	dynakube *dynatracev1beta1.DynaKube,
+	dynakube *dynatracev1beta2.DynaKube,
 	clusterID string) controllers.Reconciler
 
 // NewReconciler initializes a new ReconcileOneAgent instance
@@ -54,7 +54,7 @@ func NewReconciler(
 	client client.Client,
 	apiReader client.Reader,
 	dtClient dynatrace.Client,
-	dynakube *dynatracev1beta1.DynaKube,
+	dynakube *dynatracev1beta2.DynaKube,
 	clusterID string) controllers.Reconciler {
 	return &Reconciler{
 		client:                   client,
@@ -73,7 +73,7 @@ type Reconciler struct {
 	apiReader                client.Reader
 	connectionInfoReconciler controllers.Reconciler
 	versionReconciler        version.Reconciler
-	dynakube                 *dynatracev1beta1.DynaKube
+	dynakube                 *dynatracev1beta2.DynaKube
 	clusterID                string
 }
 
@@ -211,7 +211,7 @@ func (r *Reconciler) deleteOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 	return query.Delete(*cm)
 }
 
-func extractPublicData(dynakube *dynatracev1beta1.DynaKube) map[string]string {
+func extractPublicData(dynakube *dynatracev1beta2.DynaKube) map[string]string {
 	data := map[string]string{}
 
 	if dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID != "" {
@@ -274,7 +274,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) getOneagentPods(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, feature string) ([]corev1.Pod, []client.ListOption, error) {
+func (r *Reconciler) getOneagentPods(ctx context.Context, dynakube *dynatracev1beta2.DynaKube, feature string) ([]corev1.Pod, []client.ListOption, error) {
 	agentVersion := dynakube.OneAgentVersion()
 	appLabels := labels.NewAppLabels(labels.OneAgentComponentLabel, dynakube.Name,
 		feature, agentVersion)
@@ -288,7 +288,7 @@ func (r *Reconciler) getOneagentPods(ctx context.Context, dynakube *dynatracev1b
 	return podList.Items, listOps, err
 }
 
-func (r *Reconciler) buildDesiredDaemonSet(dynakube *dynatracev1beta1.DynaKube) (*appsv1.DaemonSet, error) {
+func (r *Reconciler) buildDesiredDaemonSet(dynakube *dynatracev1beta2.DynaKube) (*appsv1.DaemonSet, error) {
 	var ds *appsv1.DaemonSet
 
 	var err error
@@ -316,7 +316,7 @@ func (r *Reconciler) buildDesiredDaemonSet(dynakube *dynatracev1beta1.DynaKube) 
 	return ds, nil
 }
 
-func (r *Reconciler) reconcileInstanceStatuses(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+func (r *Reconciler) reconcileInstanceStatuses(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
 	pods, listOpts, err := r.getOneagentPods(ctx, dynakube, deploymentmetadata.GetOneAgentDeploymentType(*dynakube))
 	if err != nil {
 		handlePodListError(err, listOpts)
@@ -338,17 +338,17 @@ func (r *Reconciler) reconcileInstanceStatuses(ctx context.Context, dynakube *dy
 	return err
 }
 
-func (r *Reconciler) removeOneAgentDaemonSet(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+func (r *Reconciler) removeOneAgentDaemonSet(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
 	oneAgentDaemonSet := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dynakube.OneAgentDaemonsetName(), Namespace: dynakube.Namespace}}
 
 	return object.Delete(ctx, r.client, &oneAgentDaemonSet)
 }
 
-func getInstanceStatuses(pods []corev1.Pod) map[string]dynatracev1beta1.OneAgentInstance {
-	instanceStatuses := make(map[string]dynatracev1beta1.OneAgentInstance)
+func getInstanceStatuses(pods []corev1.Pod) map[string]dynatracev1beta2.OneAgentInstance {
+	instanceStatuses := make(map[string]dynatracev1beta2.OneAgentInstance)
 
 	for _, pod := range pods {
-		instanceStatuses[pod.Spec.NodeName] = dynatracev1beta1.OneAgentInstance{
+		instanceStatuses[pod.Spec.NodeName] = dynatracev1beta2.OneAgentInstance{
 			PodName:   pod.Name,
 			IPAddress: pod.Status.HostIP,
 		}

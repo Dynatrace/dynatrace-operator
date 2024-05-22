@@ -18,10 +18,11 @@ package scheme
 
 import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
-	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dynakube"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2"
+	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	apiv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -37,6 +38,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(Scheme))
 	utilruntime.Must(dynatracev1alpha1.AddToScheme(Scheme))
 	utilruntime.Must(dynatracev1beta1.AddToScheme(Scheme))
+	utilruntime.Must(dynatracev1beta2.AddToScheme(Scheme))
 	utilruntime.Must(istiov1beta1.AddToScheme(Scheme))
 	utilruntime.Must(corev1.AddToScheme(Scheme))
 	utilruntime.Must(apiv1.AddToScheme(Scheme))

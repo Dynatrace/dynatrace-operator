@@ -3,7 +3,7 @@ package webhook
 import (
 	"context"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -29,7 +29,7 @@ type PodMutator interface {
 type BaseRequest struct {
 	Pod       *corev1.Pod
 	Namespace corev1.Namespace
-	DynaKube  dynatracev1beta1.DynaKube
+	DynaKube  dynatracev1beta2.DynaKube
 }
 
 func (req BaseRequest) PodName() string {
@@ -56,7 +56,7 @@ type ReinvocationRequest struct {
 	*BaseRequest
 }
 
-func newBaseRequest(pod *corev1.Pod, namespace corev1.Namespace, dynakube dynatracev1beta1.DynaKube) *BaseRequest {
+func newBaseRequest(pod *corev1.Pod, namespace corev1.Namespace, dynakube dynatracev1beta2.DynaKube) *BaseRequest {
 	return &BaseRequest{
 		Pod:       pod,
 		DynaKube:  dynakube,
@@ -64,7 +64,7 @@ func newBaseRequest(pod *corev1.Pod, namespace corev1.Namespace, dynakube dynatr
 	}
 }
 
-func NewMutationRequest(ctx context.Context, namespace corev1.Namespace, installContainer *corev1.Container, pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) *MutationRequest {
+func NewMutationRequest(ctx context.Context, namespace corev1.Namespace, installContainer *corev1.Container, pod *corev1.Pod, dynakube dynatracev1beta2.DynaKube) *MutationRequest {
 	return &MutationRequest{
 		BaseRequest:      newBaseRequest(pod, namespace, dynakube),
 		Context:          ctx,
