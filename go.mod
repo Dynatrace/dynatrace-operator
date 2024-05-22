@@ -6,7 +6,7 @@ require (
 	github.com/container-storage-interface/spec v1.9.0
 	github.com/docker/cli v25.0.5+incompatible
 	github.com/evanphx/json-patch v5.9.0+incompatible
-	github.com/go-logr/logr v1.4.1
+	github.com/go-logr/logr v1.4.2
 	github.com/google/go-containerregistry v0.19.1
 	github.com/klauspost/compress v1.17.8
 	github.com/mattn/go-sqlite3 v1.14.22
