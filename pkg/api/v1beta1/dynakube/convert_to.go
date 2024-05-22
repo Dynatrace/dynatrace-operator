@@ -95,7 +95,7 @@ func (src *DynaKube) toMovedFields(dst *v1beta2.DynaKube) error {
 	}
 
 	if src.Annotations[AnnotationFeatureApiRequestThreshold] != "" {
-		duration, err := strconv.ParseInt(src.Annotations[AnnotationFeatureApiRequestThreshold], 10, 64)
+		duration, err := strconv.ParseInt(src.Annotations[AnnotationFeatureApiRequestThreshold], 10, 32)
 		if err != nil {
 			return err
 		}
