@@ -51,7 +51,7 @@ var (
 	ProxySpec = &dynatracev1beta2.DynaKubeProxy{
 		Value: "http://squid.proxy.svc.cluster.local:3128",
 	}
-	HttpsProxySpec = &dynatracev1beta1.DynaKubeProxy{
+	HttpsProxySpec = &dynatracev1beta2.DynaKubeProxy{
 		Value: "https://squid.proxy.svc.cluster.local:3128",
 	}
 )

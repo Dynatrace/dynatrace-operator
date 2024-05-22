@@ -282,7 +282,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy)
 	agP12, _ := os.ReadFile(path.Join(project.TestDataDir(), agCertificateAndPrivateKey))
 	agSecret := secret.New(agSecretName, cloudNativeDynakube.Namespace,
 		map[string][]byte{
-			dynatracev1beta1.TlsCertKey:     agCrt,
+			dynatracev1beta2.TlsCertKey:     agCrt,
 			agCertificateAndPrivateKeyField: agP12,
 		})
 	builder.Assess("create AG TLS secret", secret.Create(agSecret))
@@ -317,7 +317,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy)
 	return builder.Feature()
 }
 
-func WithProxyCAAndAGCert(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Feature {
+func WithProxyCAAndAGCert(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) features.Feature {
 	builder := features.New("codemodules injection with proxy and custom CA and AG certificate")
 	builder.WithLabel("name", "codemodules-with-proxy-custom-ca-ag-cert")
 	secretConfigs := tenant.GetMultiTenantSecret(t)
@@ -349,7 +349,7 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProx
 	agP12, _ := os.ReadFile(path.Join(project.TestDataDir(), agCertificateAndPrivateKey))
 	agSecret := secret.New(agSecretName, cloudNativeDynakube.Namespace,
 		map[string][]byte{
-			dynatracev1beta1.TlsCertKey:     agCrt,
+			dynatracev1beta2.TlsCertKey:     agCrt,
 			agCertificateAndPrivateKeyField: agP12,
 		})
 	builder.Assess("create AG TLS secret", secret.Create(agSecret))
@@ -357,7 +357,7 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProx
 	// Add customCA config map
 	trustedCa, _ := os.ReadFile(path.Join(project.TestDataDir(), proxyCertificate))
 	caConfigMap := configmap.New(configMapName, cloudNativeDynakube.Namespace,
-		map[string]string{dynatracev1beta1.TrustedCAKey: string(trustedCa)})
+		map[string]string{dynatracev1beta2.TrustedCAKey: string(trustedCa)})
 	builder.Assess("create trusted CAs config map", configmap.Create(caConfigMap))
 
 	// Register proxy create and delete
