@@ -194,8 +194,8 @@ github.com/yusufpapurcu/wmi v1.2.4 h1:zFUKzehAFReQwLys1b/iSMl+JQGSCSjtVqQn9bBrPo
 github.com/yusufpapurcu/wmi v1.2.4/go.mod h1:SBZ9tNy3G9/m5Oi98Zks0QjeHVDvuK0qfxQmPyzfmi0=
 go.opentelemetry.io/contrib/instrumentation/host v0.52.0 h1:cluW2+yXY/RbUDcMMPFoAFrIHrb+Guu6Hjc3nGG8QLA=
 go.opentelemetry.io/contrib/instrumentation/host v0.52.0/go.mod h1:QgaWu0LRrkD9KTV3Nf1wdItC4FA1x5OV2dCmiMwOgTE=
-go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.51.0 h1:974XTyIwHI4nHa1+uSLxHtUnlJ2DiVtAJjk7fd07p/8=
-go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.51.0/go.mod h1:ZvX/taFlN6TGaOOM6D42wrNwPKUV1nGO2FuUXkityBU=
+go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.52.0 h1:Ud1trPqDHGSxyMiJ9a2XAdtTCXmRy0Yf7MjhW4dXogI=
+go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.52.0/go.mod h1:l/UzmhdRx9YP37NI/nSr7l1bgG0dZnGfZf6C7TiV4jI=
 go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.52.0 h1:9l89oX4ba9kHbBol3Xin3leYJ+252h0zszDtBwyKe2A=
 go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.52.0/go.mod h1:XLZfZboOJWHNKUv7eH0inh0E9VV6eWDFB/9yJyTLPp0=
 go.opentelemetry.io/contrib/instrumentation/runtime v0.52.0 h1:UaQVCH34fQsyDjlgS0L070Kjs9uCrLKoQfzn2Nl7XTY=
