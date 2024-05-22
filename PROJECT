@@ -27,6 +27,7 @@ resources:
   kind: DynaKube
   path: github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2
   version: v1beta2
+  controller: true
   webhooks:
     conversion: true
     webhookVersion: v1
