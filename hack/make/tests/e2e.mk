@@ -64,6 +64,14 @@ test/e2e/cloudnative/codemodules-with-proxy: manifests/crd/helm
 test/e2e/cloudnative/codemodules-with-custom-ca: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/istio -args --labels "name=codemodules-with-proxy-custom-ca" $(SKIPCLEANUP)
 
+## Runs CloudNative codemodules e2e test with proxy and AG custom certificate
+test/e2e/cloudnative/codemodules-with-proxy-and-ag-cert: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/istio -args --labels "name=codemodules-with-proxy-and-ag-cert" $(SKIPCLEANUP)
+
+## Runs CloudNative codemodules e2e test with proxy and AG custom certificates
+test/e2e/cloudnative/codemodules-with-proxy-custom-ca-ag-cert: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/istio -args --labels "name=codemodules-with-proxy-custom-ca-ag-cert" $(SKIPCLEANUP)
+
 ## Runs CloudNative automatic injection disabled e2e test only
 test/e2e/cloudnative/disabledautoinjection: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=cloudnative-disabled-auto-inject" $(SKIPCLEANUP)
