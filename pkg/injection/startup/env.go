@@ -275,11 +275,7 @@ func (env *environment) addWorkloadKind() error {
 		return err
 	}
 
-	if workloadKind == consts.EnrichmentUnknownWorkload {
-		env.WorkloadKind = ""
-	} else {
-		env.WorkloadKind = workloadKind
-	}
+	env.WorkloadKind = workloadKind
 
 	return nil
 }
@@ -290,11 +286,7 @@ func (env *environment) addWorkloadName() error {
 		return err
 	}
 
-	if workloadName == consts.EnrichmentUnknownWorkload {
-		env.WorkloadName = ""
-	} else {
-		env.WorkloadName = workloadName
-	}
+	env.WorkloadName = workloadName
 
 	return nil
 }
