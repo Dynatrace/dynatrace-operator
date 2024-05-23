@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -62,9 +63,19 @@ func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, 
 
 	oneAgentCommunicationHosts := oaconnectioninfo.GetCommunicationHosts(dynakube)
 
+	const conditionComponent = "CodeModule"
+
 	err := r.reconcileCommunicationHostsForComponent(ctx, oneAgentCommunicationHosts, OneAgentComponent)
 	if err != nil {
+		setServiceEntryFailedConditionForComponent(dynakube.Conditions(), conditionComponent, err)
+
 		return err
+	}
+
+	if len(oneAgentCommunicationHosts) > 0 {
+		setServiceEntryUpdatedConditionForComponent(dynakube.Conditions(), conditionComponent)
+	} else {
+		meta.RemoveStatusCondition(dynakube.Conditions(), getConditionTypeName(conditionComponent))
 	}
 
 	return nil
@@ -83,9 +94,19 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 
 	activeGateEndpoints := activegate.GetEndpointsAsCommunicationHosts(dynakube)
 
+	const conditionComponent = "ActiveGate"
+
 	err := r.reconcileCommunicationHostsForComponent(ctx, activeGateEndpoints, ActiveGateComponent)
 	if err != nil {
+		setServiceEntryFailedConditionForComponent(dynakube.Conditions(), conditionComponent, err)
+
 		return err
+	}
+
+	if len(activeGateEndpoints) > 0 {
+		setServiceEntryUpdatedConditionForComponent(dynakube.Conditions(), conditionComponent)
+	} else {
+		meta.RemoveStatusCondition(dynakube.Conditions(), getConditionTypeName(conditionComponent))
 	}
 
 	return nil
@@ -135,13 +156,13 @@ func (r *reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []dtcl
 	entryName := BuildNameForIPServiceEntry(owner.GetName(), component)
 
 	if len(ipHosts) != 0 {
-		meta := buildObjectMeta(
+		objectMeta := buildObjectMeta(
 			entryName,
 			owner.GetNamespace(),
 			labels.NewCoreLabels(owner.GetName(), component).BuildLabels(),
 		)
 
-		serviceEntry := buildServiceEntryIPs(meta, ipHosts)
+		serviceEntry := buildServiceEntryIPs(objectMeta, ipHosts)
 
 		err := r.client.CreateOrUpdateServiceEntry(ctx, serviceEntry)
 		if err != nil {
@@ -162,20 +183,20 @@ func (r *reconciler) reconcileFQDNServiceEntry(ctx context.Context, fqdnHosts []
 	entryName := BuildNameForFQDNServiceEntry(owner.GetName(), component)
 
 	if len(fqdnHosts) != 0 {
-		meta := buildObjectMeta(
+		objectMeta := buildObjectMeta(
 			entryName,
 			owner.GetNamespace(),
 			labels.NewCoreLabels(owner.GetName(), component).BuildLabels(),
 		)
 
-		serviceEntry := buildServiceEntryFQDNs(meta, fqdnHosts)
+		serviceEntry := buildServiceEntryFQDNs(objectMeta, fqdnHosts)
 
 		err := r.client.CreateOrUpdateServiceEntry(ctx, serviceEntry)
 		if err != nil {
 			return err
 		}
 
-		virtualService := buildVirtualService(meta, fqdnHosts)
+		virtualService := buildVirtualService(objectMeta, fqdnHosts)
 
 		err = r.client.CreateOrUpdateVirtualService(ctx, virtualService)
 		if err != nil {

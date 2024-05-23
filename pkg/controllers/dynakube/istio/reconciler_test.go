@@ -245,6 +245,10 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
+
+		statusCondition := meta.FindStatusCondition(*dynakube.Conditions(), "IstioServiceConfigurationForCodeModule")
+		require.NotNil(t, statusCondition)
+		require.Equal(t, "IstioServiceConfigurationForCodeModuleChanged", statusCondition.Reason)
 	})
 	t.Run("unknown k8s client error => error", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
@@ -255,6 +259,10 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 
 		err := reconciler.ReconcileCodeModuleCommunicationHosts(ctx, dynakube)
 		require.Error(t, err)
+
+		statusCondition := meta.FindStatusCondition(*dynakube.Conditions(), "IstioServiceConfigurationForCodeModule")
+		require.NotNil(t, statusCondition)
+		require.Equal(t, "IstioServiceConfigurationForCodeModuleFailed", statusCondition.Reason)
 	})
 }
 
@@ -273,7 +281,6 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
-		conditionType := createConditionTypeForComponent(ActiveGateComponent)
 
 		err := reconciler.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
 		require.NoError(t, err)
@@ -284,16 +291,16 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		assert.NotNil(t, serviceEntry)
 		assert.Contains(t, fmt.Sprintf("%v", serviceEntry), "abcd123.some.activegate.endpointurl.com")
 
-		statusCondition := meta.FindStatusCondition(*dynakube.Conditions(), conditionType)
-		require.NotNil(t, statusCondition)
-		require.Equal(t, "", statusCondition.Reason)
-
 		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, virtualService)
 
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
+
+		statusCondition := meta.FindStatusCondition(*dynakube.Conditions(), "IstioServiceConfigurationForActiveGate")
+		require.NotNil(t, statusCondition)
+		require.Equal(t, "IstioServiceConfigurationForActiveGateChanged", statusCondition.Reason)
 	})
 	t.Run("unknown k8s client error => error", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
@@ -304,6 +311,43 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 
 		err := reconciler.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
 		require.Error(t, err)
+
+		statusCondition := meta.FindStatusCondition(*dynakube.Conditions(), "IstioServiceConfigurationForActiveGate")
+		require.NotNil(t, statusCondition)
+		require.Equal(t, "IstioServiceConfigurationForActiveGateFailed", statusCondition.Reason)
+	})
+	t.Run("verify removal of conditions", func(t *testing.T) {
+		fakeClient := fakeistio.NewSimpleClientset()
+		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
+		reconciler := NewReconciler(istioClient)
+
+		err := reconciler.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
+		require.NoError(t, err)
+
+		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), ActiveGateComponent)
+		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, serviceEntry)
+		assert.Contains(t, fmt.Sprintf("%v", serviceEntry), "abcd123.some.activegate.endpointurl.com")
+
+		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, virtualService)
+
+		require.NoError(t, err)
+		assert.NotNil(t, serviceEntry)
+
+		statusCondition := meta.FindStatusCondition(*dynakube.Conditions(), "IstioServiceConfigurationForActiveGate")
+		require.NotNil(t, statusCondition)
+		require.Equal(t, "IstioServiceConfigurationForActiveGateChanged", statusCondition.Reason)
+
+		kube := dynakube
+		kube.Status.ActiveGate.ConnectionInfoStatus.Endpoints = ""
+		err = reconciler.ReconcileActiveGateCommunicationHosts(ctx, kube)
+		require.NoError(t, err)
+
+		statusCondition2 := meta.FindStatusCondition(*dynakube.Conditions(), "IstioServiceConfigurationForActiveGate")
+		require.Nil(t, statusCondition2)
 	})
 }
 
