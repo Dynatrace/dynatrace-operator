@@ -51,7 +51,8 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 
 		daemonSet := appsv1.DaemonSet{
 			TypeMeta: metav1.TypeMeta{
-				Kind: "DaemonSet",
+				Kind:       "DaemonSet",
+				APIVersion: "apps/v1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      resourceName,
@@ -90,7 +91,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		assert.Equal(t, "Pod", workloadInfo.kind)
 	})
 
-	t.Run("should be empty if owner is not well known", func(t *testing.T) {
+	t.Run("should be pod if owner is not well known", func(t *testing.T) {
 		pod := corev1.Pod{
 			TypeMeta: metav1.TypeMeta{
 				Kind: "Pod",
@@ -98,8 +99,8 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				OwnerReferences: []metav1.OwnerReference{
 					{
-						APIVersion: "unknown",
-						Kind:       "unknown",
+						APIVersion: "v1",
+						Kind:       "Secret",
 						Name:       "test",
 						Controller: address.Of(true),
 					},
@@ -107,14 +108,20 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 				Name: resourceName,
 			},
 		}
-		client := fake.NewClient(&pod)
+		secret := corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resourceName,
+				Namespace: namespaceName,
+			},
+		}
+		client := fake.NewClient(&pod, &secret)
 		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
 		require.NoError(t, err)
-		assert.Equal(t, "UNKNOWN", workloadInfo.name)
-		assert.Equal(t, "UNKNOWN", workloadInfo.kind)
+		assert.Equal(t, resourceName, workloadInfo.name)
+		assert.Equal(t, "Pod", workloadInfo.kind)
 	})
 
-	t.Run("should be unknown if no controller is the owner", func(t *testing.T) {
+	t.Run("should be pod if no controller is the owner", func(t *testing.T) {
 		pod := corev1.Pod{
 			TypeMeta: metav1.TypeMeta{
 				Kind: "Pod",
@@ -135,8 +142,66 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		client := fake.NewClient(&pod)
 		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
 		require.NoError(t, err)
-		assert.Equal(t, "UNKNOWN", workloadInfo.name)
-		assert.Equal(t, "UNKNOWN", workloadInfo.kind)
+		assert.Equal(t, namespaceName, workloadInfo.name)
+		assert.Equal(t, "Pod", workloadInfo.kind)
+	})
+	t.Run("should find the root owner of the pod if the root owner is unknown", func(t *testing.T) {
+		pod := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: "apps/v1",
+						Kind:       "Deployment",
+						Name:       "test",
+						Controller: address.Of(true),
+					},
+				},
+				Name:      resourceName,
+				Namespace: namespaceName,
+			},
+		}
+
+		deployment := appsv1.Deployment{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Deployment",
+				APIVersion: "apps/v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: "v1",
+						Kind:       "Secret",
+						Name:       "test",
+						Controller: address.Of(true),
+					},
+				},
+				Name:      resourceName,
+				Namespace: namespaceName,
+			},
+		}
+
+		secret := corev1.Secret{
+			TypeMeta: metav1.TypeMeta{
+				Kind: "Secret",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resourceName,
+				Namespace: namespaceName,
+			},
+		}
+
+		namespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: namespaceName,
+			},
+		}
+
+		client := fake.NewClient(&pod, &deployment, &secret, &namespace)
+
+		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
+		require.NoError(t, err)
+		assert.Equal(t, resourceName, workloadInfo.name)
+		assert.Equal(t, "Deployment", workloadInfo.kind)
 	})
 }
 

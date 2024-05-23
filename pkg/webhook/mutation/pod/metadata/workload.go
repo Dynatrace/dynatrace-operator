@@ -3,7 +3,7 @@ package metadata
 import (
 	"context"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	kubeobjects "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -16,17 +16,10 @@ type workloadInfo struct {
 	kind string
 }
 
-func newWorkloadInfo(partialObjectMetadata *metav1.PartialObjectMetadata) workloadInfo {
-	return workloadInfo{
+func newWorkloadInfo(partialObjectMetadata *metav1.PartialObjectMetadata) *workloadInfo {
+	return &workloadInfo{
 		name: partialObjectMetadata.ObjectMeta.Name,
 		kind: partialObjectMetadata.Kind,
-	}
-}
-
-func newUnknownWorkloadInfo() workloadInfo {
-	return workloadInfo{
-		name: consts.EnrichmentUnknownWorkload,
-		kind: consts.EnrichmentUnknownWorkload,
 	}
 }
 
@@ -46,51 +39,33 @@ func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod,
 			Kind:       pod.Kind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: pod.ObjectMeta.Name,
+			Name: kubeobjects.GetName(*pod),
 			// pod.ObjectMeta.Namespace is empty yet
 			Namespace:       namespace,
 			OwnerReferences: pod.ObjectMeta.OwnerReferences,
 		},
 	}
 
-	workloadInfo, err := findRootOwner(ctx, clt, podPartialMetadata)
+	rootOwner, err := findRootOwner(ctx, clt, podPartialMetadata) // default owner of the pod is the pod itself
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	return &workloadInfo, nil
+	return newWorkloadInfo(rootOwner), nil
 }
 
-func findRootOwner(ctx context.Context, clt client.Client, partialObjectMetadata *metav1.PartialObjectMetadata) (workloadInfo, error) {
-	if len(partialObjectMetadata.ObjectMeta.OwnerReferences) == 0 {
-		if partialObjectMetadata.ObjectMeta.Name == "" {
-			// pod is not created directly and does not have an owner reference set
-			return newUnknownWorkloadInfo(), nil
-		}
-
-		return newWorkloadInfo(partialObjectMetadata), nil
-	}
-
-	foundController := false
-
-	objectMetadata := partialObjectMetadata.ObjectMeta
+func findRootOwner(ctx context.Context, clt client.Client, childObjectMetadata *metav1.PartialObjectMetadata) (parentObjectMetadata *metav1.PartialObjectMetadata, err error) {
+	objectMetadata := childObjectMetadata.ObjectMeta
 	for _, owner := range objectMetadata.OwnerReferences {
 		if owner.Controller != nil && *owner.Controller {
-			foundController = true //nolint:ineffassign,wastedassign
-
-			if !isWellKnownWorkload(owner) {
-				// pod is created by workload of kind that is not well known
-				return newUnknownWorkloadInfo(), nil
-			}
-
-			ownerObjectMetadata := &metav1.PartialObjectMetadata{
+			parentObjectMetadata = &metav1.PartialObjectMetadata{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: owner.APIVersion,
 					Kind:       owner.Kind,
 				},
 			}
 
-			err := clt.Get(ctx, client.ObjectKey{Name: owner.Name, Namespace: objectMetadata.Namespace}, ownerObjectMetadata)
+			err = clt.Get(ctx, client.ObjectKey{Name: owner.Name, Namespace: objectMetadata.Namespace}, parentObjectMetadata)
 			if err != nil {
 				log.Error(err, "failed to query the object",
 					"apiVersion", owner.APIVersion,
@@ -99,22 +74,26 @@ func findRootOwner(ctx context.Context, clt client.Client, partialObjectMetadata
 					"namespace", objectMetadata.Namespace,
 				)
 
-				return newWorkloadInfo(partialObjectMetadata), err
+				return childObjectMetadata, err
 			}
 
-			return findRootOwner(ctx, clt, ownerObjectMetadata)
+			parentObjectMetadata, err = findRootOwner(ctx, clt, parentObjectMetadata)
+			if err != nil {
+				return childObjectMetadata, err
+			}
+
+			if isWellKnownWorkload(parentObjectMetadata) {
+				return parentObjectMetadata, nil
+			}
+
+			return childObjectMetadata, nil
 		}
 	}
 
-	if !foundController {
-		// Out of all owner references no one is a Controller
-		return newUnknownWorkloadInfo(), nil
-	}
-
-	return newWorkloadInfo(partialObjectMetadata), nil
+	return childObjectMetadata, nil
 }
 
-func isWellKnownWorkload(ownerRef metav1.OwnerReference) bool {
+func isWellKnownWorkload(ownerRef *metav1.PartialObjectMetadata) bool {
 	knownWorkloads := []metav1.TypeMeta{
 		{Kind: "ReplicaSet", APIVersion: "apps/v1"},
 		{Kind: "Deployment", APIVersion: "apps/v1"},
