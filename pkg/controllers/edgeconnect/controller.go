@@ -178,17 +178,17 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 }
 
 func (controller *Controller) deleteConnectionSetting(edgeConnectClient edgeconnect.Client) error {
-	envSetting, err := edgeConnectClient.GetConnectionSetting()
-	if err != nil {
-		return err
-	}
+	// envSetting, err := edgeConnectClient.GetConnectionSetting()
+	// if err != nil {
+	// 	return err
+	// }
 
-	if (envSetting != edgeconnect.EnvironmentSetting{}) {
-		err = edgeConnectClient.DeleteConnectionSetting(envSetting.ObjectId)
-		if err != nil {
-			return err
-		}
-	}
+	// if (envSetting != edgeconnect.EnvironmentSetting{}) {
+	// 	err = edgeConnectClient.DeleteConnectionSetting(envSetting.ObjectId)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
 	return nil
 }
 
@@ -737,8 +737,9 @@ func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Co
 
 func (controller *Controller) createOrUpdateConnectionSetting(edgeConnectClient edgeconnect.Client, edgeConnect *edgeconnectv1alpha1.EdgeConnect, latestToken string) error {
 	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name)
+	_log.Info("OUTSIDE GetConnectionSetting")
 
-	envSetting, err := edgeConnectClient.GetConnectionSetting()
+	envSetting, err := edgeConnectClient.GetConnectionSetting(&_log)
 	if err != nil {
 		_log.Info("Failed getting EdgeConnect connection setting object")
 		return err

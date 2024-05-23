@@ -4,6 +4,8 @@ package mocks
 
 import (
 	edgeconnect "github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
+	logd "github.com/Dynatrace/dynatrace-operator/pkg/logd"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -216,9 +218,9 @@ func (_c *Client_DeleteEdgeConnect_Call) RunAndReturn(run func(string) error) *C
 	return _c
 }
 
-// GetConnectionSetting provides a mock function with given fields:
-func (_m *Client) GetConnectionSetting() (edgeconnect.EnvironmentSetting, error) {
-	ret := _m.Called()
+// GetConnectionSetting provides a mock function with given fields: log
+func (_m *Client) GetConnectionSetting(log *logd.Logger) (edgeconnect.EnvironmentSetting, error) {
+	ret := _m.Called(log)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetConnectionSetting")
@@ -226,17 +228,17 @@ func (_m *Client) GetConnectionSetting() (edgeconnect.EnvironmentSetting, error)
 
 	var r0 edgeconnect.EnvironmentSetting
 	var r1 error
-	if rf, ok := ret.Get(0).(func() (edgeconnect.EnvironmentSetting, error)); ok {
-		return rf()
+	if rf, ok := ret.Get(0).(func(*logd.Logger) (edgeconnect.EnvironmentSetting, error)); ok {
+		return rf(log)
 	}
-	if rf, ok := ret.Get(0).(func() edgeconnect.EnvironmentSetting); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(*logd.Logger) edgeconnect.EnvironmentSetting); ok {
+		r0 = rf(log)
 	} else {
 		r0 = ret.Get(0).(edgeconnect.EnvironmentSetting)
 	}
 
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(*logd.Logger) error); ok {
+		r1 = rf(log)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -250,13 +252,14 @@ type Client_GetConnectionSetting_Call struct {
 }
 
 // GetConnectionSetting is a helper method to define mock.On call
-func (_e *Client_Expecter) GetConnectionSetting() *Client_GetConnectionSetting_Call {
-	return &Client_GetConnectionSetting_Call{Call: _e.mock.On("GetConnectionSetting")}
+//   - log *logd.Logger
+func (_e *Client_Expecter) GetConnectionSetting(log interface{}) *Client_GetConnectionSetting_Call {
+	return &Client_GetConnectionSetting_Call{Call: _e.mock.On("GetConnectionSetting", log)}
 }
 
-func (_c *Client_GetConnectionSetting_Call) Run(run func()) *Client_GetConnectionSetting_Call {
+func (_c *Client_GetConnectionSetting_Call) Run(run func(log *logd.Logger)) *Client_GetConnectionSetting_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(*logd.Logger))
 	})
 	return _c
 }
@@ -266,7 +269,7 @@ func (_c *Client_GetConnectionSetting_Call) Return(_a0 edgeconnect.EnvironmentSe
 	return _c
 }
 
-func (_c *Client_GetConnectionSetting_Call) RunAndReturn(run func() (edgeconnect.EnvironmentSetting, error)) *Client_GetConnectionSetting_Call {
+func (_c *Client_GetConnectionSetting_Call) RunAndReturn(run func(*logd.Logger) (edgeconnect.EnvironmentSetting, error)) *Client_GetConnectionSetting_Call {
 	_c.Call.Return(run)
 	return _c
 }
