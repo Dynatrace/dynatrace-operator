@@ -81,9 +81,11 @@ func findRootOwner(ctx context.Context, clt client.Client, childObjectMetadata *
 			if err != nil {
 				return childObjectMetadata, err
 			}
+
 			if isWellKnownWorkload(parentObjectMetadata) {
 				return parentObjectMetadata, nil
 			}
+
 			return childObjectMetadata, nil
 		}
 	}

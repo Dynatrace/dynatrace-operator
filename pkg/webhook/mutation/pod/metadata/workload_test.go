@@ -114,7 +114,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 				Namespace: namespaceName,
 			},
 		}
-		client := fake.NewClient(&pod, &namespace)
+		client := fake.NewClient(&pod, &secret)
 		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
 		require.NoError(t, err)
 		assert.Equal(t, resourceName, workloadInfo.name)
