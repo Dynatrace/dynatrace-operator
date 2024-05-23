@@ -51,25 +51,29 @@ type environmentSettingsResponse struct {
 	PageSize   int                  `json:"pageSize"`
 }
 
+var (
+	log = logd.Get().WithName("edgeconnect-client")
+)
+
 // 'https://vzx38435.dev.apps.dynatracelabs.com/platform/classic/environment-api/v2/settings/objects?schemaIds=app%3Adynatrace.kubernetes.control%3Aconnection&fields=objectId%2Cvalue' \
 
-func (c *client) GetConnectionSetting(_log *logd.Logger) (EnvironmentSetting, error) {
-	fmt.Println("FMT INSIDE GetConnectionSetting")
-	_log.Info("INSIDE GetConnectionSetting")
+func (c *client) GetConnectionSetting(_ *logd.Logger) (EnvironmentSetting, error) {
+	//fmt.Println("FMT INSIDE GetConnectionSetting")
+	log.Info("INSIDE GetConnectionSetting")
 	trace := &httptrace.ClientTrace{
 		WroteHeaderField: func(key string, value []string) {
-			_log.Info("TRACE WroteHeaderField", "key", key, "value", value)
+			log.Info("TRACE WroteHeaderField", "key", key, "value", value)
 		},
 		ConnectStart: func(network string, addr string) {
-			_log.Info("TRACE ConnectStart", "network", network, "addr", addr)
+			log.Info("TRACE ConnectStart", "network", network, "addr", addr)
 		},
 		ConnectDone: func(net, addr string, err error) {
 			if err != nil {
-				_log.Info("TRACE ConnectDone unable to connect to host %v: %v", addr, err)
+				log.Info("TRACE ConnectDone unable to connect to host %v: %v", addr, err)
 
 				return
 			}
-			_log.Info("TRACE ConnectDone", "network", net, "addr", addr)
+			log.Info("TRACE ConnectDone", "network", net, "addr", addr)
 		},
 		// GotConn: func(ci httptrace.GotConnInfo) {
 		// 	log.Info("TRACE GotConn", "local", ci.Conn.LocalAddr().String(), "remote", ci.Conn.RemoteAddr().String())
@@ -86,6 +90,7 @@ func (c *client) GetConnectionSetting(_log *logd.Logger) (EnvironmentSetting, er
 	}
 
 	settingsObjectsUrl := c.getSettingsObjectsUrl()
+
 	req, err := http.NewRequestWithContext(httptrace.WithClientTrace(c.ctx, trace), http.MethodGet, settingsObjectsUrl, nil)
 
 	// req, err := http.NewRequestWithContext(c.ctx, http.MethodGet, settingsObjectsUrl, nil)
