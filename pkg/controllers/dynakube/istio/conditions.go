@@ -1,8 +1,6 @@
 package istio
 
 import (
-	"fmt"
-
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -26,7 +24,7 @@ func setServiceEntryFailedConditionForComponent(conditions *[]metav1.Condition, 
 		Type:    "IstioServiceConfigurationFor" + component,
 		Status:  metav1.ConditionFalse,
 		Reason:  "IstioServiceConfigurationFor" + component + "Failed",
-		Message: fmt.Sprintf("Failed to configure Istio ServiceEntries and VirtualServices for %s with error: %s", component, err.Error()),
+		Message: "Failed to configure Istio ServiceEntries and VirtualServices for " + component + " with error: " + err.Error(),
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
