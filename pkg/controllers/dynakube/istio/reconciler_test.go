@@ -12,6 +12,7 @@ import (
 	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	fakeistio "istio.io/client-go/pkg/clientset/versioned/fake"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	fakediscovery "k8s.io/client-go/discovery/fake"
 )
@@ -272,6 +273,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
+		conditionType := createConditionTypeForComponent(ActiveGateComponent)
 
 		err := reconciler.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
 		require.NoError(t, err)
@@ -281,6 +283,10 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
 		assert.Contains(t, fmt.Sprintf("%v", serviceEntry), "abcd123.some.activegate.endpointurl.com")
+
+		statusCondition := meta.FindStatusCondition(*dynakube.Conditions(), conditionType)
+		require.NotNil(t, statusCondition)
+		require.Equal(t, "", statusCondition.Reason)
 
 		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.NoError(t, err)
