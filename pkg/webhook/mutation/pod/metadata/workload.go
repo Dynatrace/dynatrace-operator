@@ -16,8 +16,8 @@ type workloadInfo struct {
 	kind string
 }
 
-func newWorkloadInfo(partialObjectMetadata *metav1.PartialObjectMetadata) workloadInfo {
-	return workloadInfo{
+func newWorkloadInfo(partialObjectMetadata *metav1.PartialObjectMetadata) *workloadInfo {
+	return &workloadInfo{
 		name: partialObjectMetadata.ObjectMeta.Name,
 		kind: partialObjectMetadata.Kind,
 	}
@@ -46,30 +46,26 @@ func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod,
 		},
 	}
 
-	workloadInfo, err := findRootOwner(ctx, clt, podPartialMetadata, podPartialMetadata) // default owner of the pod is the pod itself
+	rootOwner, err := findRootOwner(ctx, clt, podPartialMetadata) // default owner of the pod is the pod itself
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	return &workloadInfo, nil
+	return newWorkloadInfo(rootOwner), nil
 }
 
-func findRootOwner(ctx context.Context, clt client.Client, rootObject *metav1.PartialObjectMetadata, wellKnownOwner *metav1.PartialObjectMetadata) (workloadInfo, error) {
-	if len(rootObject.ObjectMeta.OwnerReferences) == 0 {
-		return newWorkloadInfo(wellKnownOwner), nil
-	}
-
-	objectMetadata := rootObject.ObjectMeta
+func findRootOwner(ctx context.Context, clt client.Client, childObjectMetadata *metav1.PartialObjectMetadata) (parentObjectMetadata *metav1.PartialObjectMetadata, err error) {
+	objectMetadata := childObjectMetadata.ObjectMeta
 	for _, owner := range objectMetadata.OwnerReferences {
 		if owner.Controller != nil && *owner.Controller {
-			ownerObjectMetadata := &metav1.PartialObjectMetadata{
+			parentObjectMetadata = &metav1.PartialObjectMetadata{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: owner.APIVersion,
 					Kind:       owner.Kind,
 				},
 			}
 
-			err := clt.Get(ctx, client.ObjectKey{Name: owner.Name, Namespace: objectMetadata.Namespace}, ownerObjectMetadata)
+			err = clt.Get(ctx, client.ObjectKey{Name: owner.Name, Namespace: objectMetadata.Namespace}, parentObjectMetadata)
 			if err != nil {
 				log.Error(err, "failed to query the object",
 					"apiVersion", owner.APIVersion,
@@ -78,21 +74,24 @@ func findRootOwner(ctx context.Context, clt client.Client, rootObject *metav1.Pa
 					"namespace", objectMetadata.Namespace,
 				)
 
-				return newWorkloadInfo(wellKnownOwner), err
+				return childObjectMetadata, err
 			}
 
-			if isWellKnownWorkload(owner) {
-				wellKnownOwner = ownerObjectMetadata
+			parentObjectMetadata, err = findRootOwner(ctx, clt, parentObjectMetadata)
+			if err != nil {
+				return childObjectMetadata, err
 			}
-
-			return findRootOwner(ctx, clt, ownerObjectMetadata, wellKnownOwner)
+			if isWellKnownWorkload(parentObjectMetadata) {
+				return parentObjectMetadata, nil
+			}
+			return childObjectMetadata, nil
 		}
 	}
 
-	return newWorkloadInfo(wellKnownOwner), nil
+	return childObjectMetadata, nil
 }
 
-func isWellKnownWorkload(ownerRef metav1.OwnerReference) bool {
+func isWellKnownWorkload(ownerRef *metav1.PartialObjectMetadata) bool {
 	knownWorkloads := []metav1.TypeMeta{
 		{Kind: "ReplicaSet", APIVersion: "apps/v1"},
 		{Kind: "Deployment", APIVersion: "apps/v1"},

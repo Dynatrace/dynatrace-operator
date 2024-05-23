@@ -51,7 +51,8 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 
 		daemonSet := appsv1.DaemonSet{
 			TypeMeta: metav1.TypeMeta{
-				Kind: "DaemonSet",
+				Kind:       "DaemonSet",
+				APIVersion: "apps/v1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      resourceName,
@@ -162,7 +163,8 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 
 		deployment := appsv1.Deployment{
 			TypeMeta: metav1.TypeMeta{
-				Kind: "Deployment",
+				Kind:       "Deployment",
+				APIVersion: "apps/v1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				OwnerReferences: []metav1.OwnerReference{

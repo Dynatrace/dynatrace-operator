@@ -71,23 +71,6 @@ func TestNewEnv(t *testing.T) {
 		assert.False(t, env.OneAgentInjected)
 		assert.True(t, env.MetadataEnrichmentInjected)
 	})
-	t.Run(`create new env for only metadata-enrichment injection with unknown owner workload`, func(t *testing.T) {
-		resetEnv := prepMetadataEnrichmentTestEnv(t, true)
-
-		env, err := newEnv()
-
-		resetEnv()
-
-		require.NoError(t, err)
-		require.NotNil(t, env)
-
-		assert.NotEmpty(t, env.K8ClusterID)
-		assert.Empty(t, env.WorkloadKind)
-		assert.Empty(t, env.WorkloadName)
-
-		assert.False(t, env.OneAgentInjected)
-		assert.True(t, env.MetadataEnrichmentInjected)
-	})
 	t.Run(`create new env for only oneagent`, func(t *testing.T) {
 		resetEnv := prepOneAgentTestEnv(t)
 
