@@ -107,7 +107,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 				Name: resourceName,
 			},
 		}
-		namespace := corev1.Secret{
+		secret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      resourceName,
 				Namespace: namespaceName,
