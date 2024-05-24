@@ -18,7 +18,7 @@ type ConflictChecker struct {
 }
 
 func (c *ConflictChecker) check(dk *dynatracev1beta2.DynaKube) error {
-	if !dk.NeedAppInjection() && !dk.MetaDataEnrichmentEnabled() {
+	if !dk.NeedAppInjection() && !dk.MetadataEnrichmentEnabled() {
 		return nil
 	}
 
@@ -67,7 +67,7 @@ func matchDynakubeToNamespace(dk *dynatracev1beta2.DynaKube, namespace *corev1.N
 		return false, err
 	}
 
-	matchesMetadataEnrichment, err := matchMetaDataEnrichment(dk, namespace)
+	matchesMetadataEnrichment, err := matchMetadataEnrichment(dk, namespace)
 	if err != nil {
 		return false, err
 	}
@@ -92,8 +92,8 @@ func matchOneAgent(dk *dynatracev1beta2.DynaKube, namespace *corev1.Namespace) (
 	return selector.Matches(labels.Set(namespace.Labels)), nil
 }
 
-func matchMetaDataEnrichment(dk *dynatracev1beta2.DynaKube, namespace *corev1.Namespace) (bool, error) {
-	if !dk.MetaDataEnrichmentEnabled() {
+func matchMetadataEnrichment(dk *dynatracev1beta2.DynaKube, namespace *corev1.Namespace) (bool, error) {
+	if !dk.MetadataEnrichmentEnabled() {
 		return false, nil
 	} else if dk.MetadataEnrichmentNamespaceSelector() == nil {
 		return true, nil

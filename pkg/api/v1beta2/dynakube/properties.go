@@ -432,7 +432,7 @@ func (dk *DynaKube) ApiRequestThreshold() time.Duration {
 	return time.Duration(dk.Spec.DynatraceApiRequestThreshold) * time.Minute
 }
 
-func (dk *DynaKube) MetaDataEnrichmentEnabled() bool {
+func (dk *DynaKube) MetadataEnrichmentEnabled() bool {
 	return dk.Spec.MetadataEnrichment.Enabled
 }
 
