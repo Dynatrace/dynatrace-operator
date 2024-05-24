@@ -41,11 +41,7 @@ func (mut *Mutator) Enabled(request *dtwebhook.BaseRequest) bool {
 	matchesNamespaceSelector := true // if no namespace selector is configured, we just pass set this to true
 
 	if request.DynaKube.OneAgentNamespaceSelector().Size() > 0 {
-		selector, err := metav1.LabelSelectorAsSelector(request.DynaKube.OneAgentNamespaceSelector())
-
-		if err != nil {
-			matchesNamespaceSelector = false //nolint:ineffassign,wastedassign
-		}
+		selector, _ := metav1.LabelSelectorAsSelector(request.DynaKube.OneAgentNamespaceSelector())
 
 		matchesNamespaceSelector = selector.Matches(labels.Set(request.Namespace.Labels))
 	}
