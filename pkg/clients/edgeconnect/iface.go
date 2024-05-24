@@ -1,7 +1,5 @@
 package edgeconnect
 
-import "github.com/Dynatrace/dynatrace-operator/pkg/logd"
-
 // Client is the interface for the Dynatrace EdgeConnect REST API client.
 type Client interface {
 	// GetEdgeConnect return details of single edge connect
@@ -19,7 +17,7 @@ type Client interface {
 	// GetEdgeConnects returns list of edge connects
 	GetEdgeConnects(name string) (ListResponse, error)
 
-	GetConnectionSetting(log *logd.Logger) (EnvironmentSetting, error)
+	GetConnectionSetting() (EnvironmentSetting, error)
 
 	CreateConnectionSetting(es EnvironmentSetting) error
 

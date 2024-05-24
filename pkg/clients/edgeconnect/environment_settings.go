@@ -5,34 +5,30 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/httptrace"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 )
 
 const (
-	ApiTokenHeader               = "Api-Token "
 	KubernetesConnectionSchemaID = "app:dynatrace.kubernetes.connector:connection"
-	KubernetesConnectionVersion  = "0.0.3"
+	KubernetesConnectionVersion  = "0.1.1"
 	KubernetesConnectionName     = "edgeconnect-kubernetes-connection"
 	KubernetesConnectionScope    = "environment"
 )
 
 type EnvironmentSetting struct {
-	ObjectId      string                  `json:"objectId"`
 	SchemaId      string                  `json:"schemaId"`
 	SchemaVersion string                  `json:"schemaVersion"`
 	Scope         string                  `json:"scope"`
 	Value         EnvironmentSettingValue `json:"value"`
 }
 
-// TODO alberto: use new schema
 type EnvironmentSettingValue struct {
-	Name  string `json:"name"`
-	Url   string `json:"url"`
-	Token string `json:"token"`
+	Name      string `json:"name"`
+	Uid       string `json:"uid"`
+	Namespace string `json:"namespace"`
+	Token     string `json:"token"`
 }
 
 type ObjectsList struct {
@@ -51,56 +47,18 @@ type environmentSettingsResponse struct {
 	PageSize   int                  `json:"pageSize"`
 }
 
-var (
-	log = logd.Get().WithName("edgeconnect-client")
-)
-
-// 'https://vzx38435.dev.apps.dynatracelabs.com/platform/classic/environment-api/v2/settings/objects?schemaIds=app%3Adynatrace.kubernetes.control%3Aconnection&fields=objectId%2Cvalue' \
-
-func (c *client) GetConnectionSetting(_ *logd.Logger) (EnvironmentSetting, error) {
-	//fmt.Println("FMT INSIDE GetConnectionSetting")
-	log.Info("INSIDE GetConnectionSetting")
-	trace := &httptrace.ClientTrace{
-		WroteHeaderField: func(key string, value []string) {
-			log.Info("TRACE WroteHeaderField", "key", key, "value", value)
-		},
-		ConnectStart: func(network string, addr string) {
-			log.Info("TRACE ConnectStart", "network", network, "addr", addr)
-		},
-		ConnectDone: func(net, addr string, err error) {
-			if err != nil {
-				log.Info("TRACE ConnectDone unable to connect to host %v: %v", addr, err)
-
-				return
-			}
-			log.Info("TRACE ConnectDone", "network", net, "addr", addr)
-		},
-		// GotConn: func(ci httptrace.GotConnInfo) {
-		// 	log.Info("TRACE GotConn", "local", ci.Conn.LocalAddr().String(), "remote", ci.Conn.RemoteAddr().String())
-		// },
-		// GotFirstResponseByte: func() {
-		// 	log.Info("TRACE GotFirstResponseByte")
-		// },
-		// TLSHandshakeStart: func() {
-		// 	log.Info("TRACE TLSHandshakeStart")
-		// },
-		// TLSHandshakeDone: func(_ tls.ConnectionState, _ error) {
-		// 	log.Info("TRACE TLSHandshakeDone")
-		// },
-	}
-
+func (c *client) GetConnectionSetting() (EnvironmentSetting, error) {
 	settingsObjectsUrl := c.getSettingsObjectsUrl()
 
-	req, err := http.NewRequestWithContext(httptrace.WithClientTrace(c.ctx, trace), http.MethodGet, settingsObjectsUrl, nil)
-
-	// req, err := http.NewRequestWithContext(c.ctx, http.MethodGet, settingsObjectsUrl, nil)
+	req, err := http.NewRequestWithContext(c.ctx, http.MethodGet, settingsObjectsUrl, nil)
 	if err != nil {
 		return EnvironmentSetting{}, fmt.Errorf("error initializing http request: %w", err)
 	}
 
 	q := req.URL.Query()
 	q.Add("schemaIds", KubernetesConnectionSchemaID)
-	q.Add("schemaVersion", KubernetesConnectionVersion)
+	q.Add("scopes", KubernetesConnectionScope)
+
 	req.URL.RawQuery = q.Encode()
 
 	response, err := c.httpClient.Do(req)
@@ -112,7 +70,7 @@ func (c *client) GetConnectionSetting(_ *logd.Logger) (EnvironmentSetting, error
 
 	responseData, err := c.getServerResponseData(response)
 	if err != nil {
-		return EnvironmentSetting{}, err
+		return EnvironmentSetting{}, fmt.Errorf("error getting server response data: %w", err)
 	}
 
 	var resDataJson environmentSettingsResponse
@@ -122,10 +80,16 @@ func (c *client) GetConnectionSetting(_ *logd.Logger) (EnvironmentSetting, error
 		return EnvironmentSetting{}, fmt.Errorf("error parsing response body: %w", err)
 	}
 
+	if len(resDataJson.Items) == 0 {
+		return EnvironmentSetting{}, nil
+	}
+
 	return resDataJson.Items[0], nil
 }
 
 func (c *client) CreateConnectionSetting(es EnvironmentSetting) error {
+	log.Info("Creating connection setting", "EnvironmentSetting", es)
+
 	jsonStr, err := json.Marshal(es)
 	if err != nil {
 		return errors.WithStack(err)
@@ -136,14 +100,20 @@ func (c *client) CreateConnectionSetting(es EnvironmentSetting) error {
 		return fmt.Errorf("error initializing http request: %w", err)
 	}
 
+	req.Header.Add("Content-Type", "application/json")
+
 	response, err := c.httpClient.Do(req)
+
+	defer utils.CloseBodyAfterRequest(response)
+
 	if err != nil {
 		return fmt.Errorf("error making post request to dynatrace api: %w", err)
 	}
 
-	defer utils.CloseBodyAfterRequest(response)
-
 	_, err = c.getServerResponseData(response)
+	if err != nil {
+		return fmt.Errorf("error reading response data: %w", err)
+	}
 
 	return errors.WithStack(err)
 }

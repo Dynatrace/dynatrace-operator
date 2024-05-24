@@ -178,17 +178,18 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 }
 
 func (controller *Controller) deleteConnectionSetting(edgeConnectClient edgeconnect.Client) error {
-	// envSetting, err := edgeConnectClient.GetConnectionSetting()
-	// if err != nil {
-	// 	return err
-	// }
+	envSetting, err := edgeConnectClient.GetConnectionSetting()
+	if err != nil {
+		return err
+	}
 
-	// if (envSetting != edgeconnect.EnvironmentSetting{}) {
-	// 	err = edgeConnectClient.DeleteConnectionSetting(envSetting.ObjectId)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
+	if (envSetting != edgeconnect.EnvironmentSetting{}) {
+		// TODO ALBERTO
+		// err = edgeConnectClient.DeleteConnectionSetting(envSetting.ObjectId)
+		// if err != nil {
+		// 	return err
+		// }
+	}
 	return nil
 }
 
@@ -357,7 +358,7 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 		return errors.WithStack(err)
 	}
 
-	secretHash, err := controller.createOrUpdateEdgeConnectConfigSecret(ctx, edgeConnect)
+	edgeConnectToken, secretHash, err := controller.createOrUpdateEdgeConnectConfigSecret(ctx, edgeConnect)
 	if err != nil {
 		return err
 	}
@@ -387,7 +388,7 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 		return err
 	}
 
-	err = controller.createOrUpdateConnectionSetting(edgeConnectClient, edgeConnect, ddHash)
+	err = controller.createOrUpdateConnectionSetting(edgeConnectClient, edgeConnect, edgeConnectToken)
 	if err != nil {
 		_log.Debug("creating EdgeConnect connection setting failed")
 
@@ -514,9 +515,6 @@ func newEdgeConnectClient() func(ctx context.Context, edgeConnect *edgeconnectv1
 				"app-engine:edge-connects:write",
 				"app-engine:edge-connects:delete",
 				"oauth2:clients:manage",
-				//"app-settings:objects:read",
-				//"app-settings:objects:write",
-				//"app-settings:objects:delete",
 				"settings:objects:read",
 				"settings:objects:write",
 			}),
@@ -686,7 +684,7 @@ func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Co
 
 	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name, "clientSecretName", clientSecretName)
 
-	secretHash, err := controller.createOrUpdateEdgeConnectConfigSecret(ctx, edgeConnect)
+	edgeConnectToken, secretHash, err := controller.createOrUpdateEdgeConnectConfigSecret(ctx, edgeConnect)
 	if err != nil {
 		return err
 	}
@@ -725,7 +723,7 @@ func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Co
 		return err
 	}
 
-	err = controller.createOrUpdateConnectionSetting(edgeConnectClient, edgeConnect, ddHash)
+	err = controller.createOrUpdateConnectionSetting(edgeConnectClient, edgeConnect, edgeConnectToken)
 	if err != nil {
 		_log.Debug("creating EdgeConnect connection setting failed")
 
@@ -739,9 +737,8 @@ func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Co
 
 func (controller *Controller) createOrUpdateConnectionSetting(edgeConnectClient edgeconnect.Client, edgeConnect *edgeconnectv1alpha1.EdgeConnect, latestToken string) error {
 	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name)
-	_log.Info("OUTSIDE GetConnectionSetting")
 
-	envSetting, err := edgeConnectClient.GetConnectionSetting(&_log)
+	envSetting, err := edgeConnectClient.GetConnectionSetting()
 	if err != nil {
 		_log.Info("Failed getting EdgeConnect connection setting object")
 		return err
@@ -756,10 +753,10 @@ func (controller *Controller) createOrUpdateConnectionSetting(edgeConnectClient 
 				Scope:         edgeconnect.KubernetesConnectionScope,
 				Value: edgeconnect.EnvironmentSettingValue{
 					Name: fmt.Sprintf("%s", edgeConnect.Name),
-					// TODO alberto: get cluster id from kubesystem uid
-					Url: fmt.Sprintf("https://%s.%s.%s", edgeConnect.Name, edgeConnect.Namespace, "cluster-id"),
-					// TODO alberto: fetch token using util function
-					Token: latestToken,
+					// TODO ALBERTO: get id from kubesystem uid
+					Uid:       "c48d2842-3fac-4611-8519-300347be20ba",
+					Namespace: edgeConnect.Namespace,
+					Token:     latestToken,
 				},
 			},
 		)
@@ -770,16 +767,16 @@ func (controller *Controller) createOrUpdateConnectionSetting(edgeConnectClient 
 
 	if (envSetting != edgeconnect.EnvironmentSetting{}) {
 		_log.Info("Updating EdgeConnect connection setting object...")
-		// TODO alberto: Update, no delete
-		err = edgeConnectClient.DeleteConnectionSetting(envSetting.ObjectId)
-		if err != nil {
-			return err
-		}
+		// TODO ALBERTO: Update, no delete
+		// err = edgeConnectClient.DeleteConnectionSetting(envSetting.ObjectId)
+		// if err != nil {
+		// 	return err
+		// }
 	}
 	return nil
 }
 
-func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) (string, error) {
+func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) (string, string, error) {
 	// Get a Token from edgeconnect.yaml secret data
 	token, err := controller.getToken(ctx, edgeConnect)
 
@@ -788,18 +785,18 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 		if k8serrors.IsNotFound(err) || errors.Is(err, ErrTokenNotFound) {
 			newToken, err := dttoken.New("dt0e01")
 			if err != nil {
-				return "", err
+				return "", "", err
 			}
 
 			token = newToken.String()
 		} else {
-			return "", err
+			return "", "", err
 		}
 	}
 
 	configFile, err := secret.PrepareConfigFile(ctx, edgeConnect, controller.apiReader, token)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	secretData := make(map[string][]byte)
@@ -811,7 +808,7 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 		k8ssecret.NewDataModifier(secretData))
 
 	if err != nil {
-		return "", errors.WithStack(err)
+		return "", "", errors.WithStack(err)
 	}
 
 	query := k8ssecret.NewQuery(ctx, controller.client, controller.apiReader, log)
@@ -820,10 +817,12 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 	if err != nil {
 		log.Info("could not create or update secret for edgeConnect.yaml", "name", secretConfig.Name)
 
-		return "", err
+		return "", "", err
 	}
 
-	return hasher.GenerateHash(secretConfig.Data)
+	hash, err := hasher.GenerateHash(secretConfig.Data)
+
+	return token, hash, err
 }
 
 func (controller *Controller) k8sAutomationHostPattern(ctx context.Context, ecName string, ecNamespace string) (string, error) {
