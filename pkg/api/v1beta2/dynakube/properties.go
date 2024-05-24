@@ -432,6 +432,10 @@ func (dk *DynaKube) MetaDataEnrichmentEnabled() bool {
 	return dk.Spec.MetadataEnrichment.Enabled
 }
 
+func (dk *DynaKube) MetadataEnrichmentNamespaceSelector() *metav1.LabelSelector {
+	return &dk.Spec.MetadataEnrichment.NamespaceSelector
+}
+
 func runeIs(wanted rune) func(rune) bool {
 	return func(actual rune) bool {
 		return actual == wanted

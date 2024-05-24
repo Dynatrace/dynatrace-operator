@@ -16,11 +16,14 @@ import (
 )
 
 const (
-	testImage         = "test-image"
-	testClusterID     = "test-cluster-id"
-	testPodName       = "test-pod"
-	testNamespaceName = "test-namespace"
-	testDynakubeName  = "test-dynakube"
+	testImage               = "test-image"
+	testClusterID           = "test-cluster-id"
+	testPodName             = "test-pod"
+	testNamespaceName       = "test-namespace"
+	testDynakubeName        = "test-dynakube"
+	testLabelKeyMatching    = "inject"
+	testLabelKeyNotMatching = "do-not-inject"
+	testLabelValue          = "into-this-ns"
 )
 
 func TestEnabled(t *testing.T) {
@@ -57,6 +60,26 @@ func TestEnabled(t *testing.T) {
 		enabled := mutator.Enabled(request.BaseRequest)
 
 		require.True(t, enabled)
+	})
+	t.Run("on with namespaceselector", func(t *testing.T) {
+		mutator := createTestPodMutator(nil)
+		request := createTestMutationRequest(nil, nil, getTestNamespaceWithMatchingLabel(nil, testLabelKeyMatching, testLabelValue))
+		request.DynaKube.Annotations = map[string]string{dynatracev1beta2.AnnotationFeatureAutomaticInjection: "true"}
+		request.DynaKube = *addNamespaceSelector(&request.DynaKube)
+
+		enabled := mutator.Enabled(request.BaseRequest)
+
+		require.True(t, enabled)
+	})
+	t.Run("off due to not matching namespaceselector", func(t *testing.T) {
+		mutator := createTestPodMutator(nil)
+		request := createTestMutationRequest(nil, nil, getTestNamespaceWithMatchingLabel(nil, testLabelKeyNotMatching, testLabelValue))
+		request.DynaKube.Annotations = map[string]string{dynatracev1beta2.AnnotationFeatureAutomaticInjection: "true"}
+		request.DynaKube = *addNamespaceSelector(&request.DynaKube)
+
+		enabled := mutator.Enabled(request.BaseRequest)
+
+		require.False(t, enabled)
 	})
 }
 
@@ -277,6 +300,18 @@ func getTestInitSecret() *corev1.Secret {
 	}
 }
 
+func addNamespaceSelector(dynakube *dynatracev1beta2.DynaKube) *dynatracev1beta2.DynaKube {
+	dynakube.Spec.OneAgent.ApplicationMonitoring = &dynatracev1beta2.ApplicationMonitoringSpec{}
+
+	dynakube.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			testLabelKeyMatching: testLabelValue,
+		},
+	}
+
+	return dynakube
+}
+
 func createTestMutationRequest(dynakube *dynatracev1beta2.DynaKube, podAnnotations map[string]string, namespace corev1.Namespace) *dtwebhook.MutationRequest {
 	if dynakube == nil {
 		dynakube = &dynatracev1beta2.DynaKube{}
@@ -447,6 +482,19 @@ func getTestNamespace(annotations map[string]string) corev1.Namespace {
 			Name: testNamespaceName,
 			Labels: map[string]string{
 				dtwebhook.InjectionInstanceLabel: testDynakubeName,
+			},
+			Annotations: annotations,
+		},
+	}
+}
+
+func getTestNamespaceWithMatchingLabel(annotations map[string]string, labelKey, labelValue string) corev1.Namespace {
+	return corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testNamespaceName,
+			Labels: map[string]string{
+				dtwebhook.InjectionInstanceLabel: testDynakubeName,
+				labelKey:                         labelValue,
 			},
 			Annotations: annotations,
 		},

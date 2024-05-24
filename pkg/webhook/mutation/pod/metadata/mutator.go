@@ -12,6 +12,8 @@ import (
 	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/internal/otel"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -36,7 +38,19 @@ func (mut *Mutator) Enabled(request *dtwebhook.BaseRequest) bool {
 		request.DynaKube.FeatureAutomaticInjection())
 	enabledOnDynakube := request.DynaKube.MetaDataEnrichmentEnabled()
 
-	return enabledOnPod && enabledOnDynakube
+	matchesNamespace := true // if no namespace selector is configured, we just pass set this to true
+
+	if enabledOnDynakube && request.DynaKube.MetadataEnrichmentNamespaceSelector() != nil && request.DynaKube.MetadataEnrichmentNamespaceSelector().Size() > 0 {
+		selector, err := metav1.LabelSelectorAsSelector(request.DynaKube.MetadataEnrichmentNamespaceSelector())
+
+		if err != nil {
+			matchesNamespace = false //nolint:ineffassign,wastedassign
+		}
+
+		matchesNamespace = selector.Matches(labels.Set(request.Namespace.Labels))
+	}
+
+	return matchesNamespace && enabledOnPod && enabledOnDynakube
 }
 
 func (mut *Mutator) Injected(request *dtwebhook.BaseRequest) bool {
