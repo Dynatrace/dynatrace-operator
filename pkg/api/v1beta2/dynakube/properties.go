@@ -257,6 +257,10 @@ func (dk *DynaKube) OneAgentNamespaceSelector() *metav1.LabelSelector {
 	return nil
 }
 
+func (dk *DynaKube) MetadataEnrichmentNamespaceSelector() *metav1.LabelSelector {
+	return &dk.Spec.MetadataEnrichment.NamespaceSelector
+}
+
 func (dk *DynaKube) OneAgentSecCompProfile() string {
 	switch {
 	case dk.CloudNativeFullstackMode():

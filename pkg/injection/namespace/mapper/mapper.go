@@ -18,7 +18,7 @@ type ConflictChecker struct {
 }
 
 func (c *ConflictChecker) check(dk *dynatracev1beta2.DynaKube) error {
-	if !dk.NeedAppInjection() {
+	if !dk.NeedAppInjection() && !dk.MetaDataEnrichmentEnabled() {
 		return nil
 	}
 
@@ -61,10 +61,26 @@ func setUpdatedViaDynakubeAnnotation(ns *corev1.Namespace) {
 	ns.Annotations[UpdatedViaDynakubeAnnotation] = "true"
 }
 
-// match uses the namespace selector in the dynakube to check if it matches a given namespace
+func matchDynakubeToNamespace(dk *dynatracev1beta2.DynaKube, namespace *corev1.Namespace) (bool, error) {
+	matchesOneAgent, err := matchOneAgent(dk, namespace)
+	if err != nil {
+		return false, err
+	}
+
+	matchesMetadataEnrichment, err := matchMetaDataEnrichment(dk, namespace)
+	if err != nil {
+		return false, err
+	}
+
+	return matchesMetadataEnrichment || matchesOneAgent, nil
+}
+
+// matchOneAgent uses the namespace selector in the dynakube to check if it matches a given namespace
 // if the namespace selector is not set on the dynakube its an automatic match
-func match(dk *dynatracev1beta2.DynaKube, namespace *corev1.Namespace) (bool, error) {
-	if dk.OneAgentNamespaceSelector() == nil {
+func matchOneAgent(dk *dynatracev1beta2.DynaKube, namespace *corev1.Namespace) (bool, error) {
+	if !dk.NeedAppInjection() {
+		return false, nil
+	} else if dk.OneAgentNamespaceSelector() == nil {
 		return true, nil
 	}
 
@@ -74,6 +90,21 @@ func match(dk *dynatracev1beta2.DynaKube, namespace *corev1.Namespace) (bool, er
 	}
 
 	return selector.Matches(labels.Set(namespace.Labels)), nil
+}
+
+func matchMetaDataEnrichment(dk *dynatracev1beta2.DynaKube, namespace *corev1.Namespace) (bool, error) {
+	if !dk.MetaDataEnrichmentEnabled() {
+		return false, nil
+	} else if dk.MetadataEnrichmentNamespaceSelector() == nil {
+		return true, nil
+	}
+
+	metadataEnrichmentSelector, err := metav1.LabelSelectorAsSelector(dk.MetadataEnrichmentNamespaceSelector())
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+
+	return metadataEnrichmentSelector.Matches(labels.Set(namespace.Labels)), nil
 }
 
 // updateNamespace tries to match the namespace to every dynakube with codeModules
@@ -89,7 +120,7 @@ func updateNamespace(namespace *corev1.Namespace, deployedDynakubes *dynatracev1
 			continue
 		}
 
-		matches, err := match(dynakube, namespace)
+		matches, err := matchDynakubeToNamespace(dynakube, namespace)
 		if err != nil {
 			return namespaceUpdated, err
 		}
@@ -116,7 +147,7 @@ func updateLabels(matches bool, dynakube *dynatracev1beta2.DynaKube, namespace *
 
 	associatedDynakubeName, instanceLabelFound := namespace.Labels[dtwebhook.InjectionInstanceLabel]
 
-	if matches && dynakube.NeedAppInjection() {
+	if matches {
 		if !instanceLabelFound || associatedDynakubeName != dynakube.Name {
 			updated = true
 

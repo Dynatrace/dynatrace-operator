@@ -11,15 +11,26 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func createTestDynakubeWithAppInject(name string, labels map[string]string, labelExpression []metav1.LabelSelectorRequirement) *dynatracev1beta2.DynaKube {
+func createBaseDynakube(name string, appInjection bool, metadataEnrichment bool) *dynatracev1beta2.DynaKube {
 	dk := &dynatracev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "dynatrace"},
 		Spec: dynatracev1beta2.DynaKubeSpec{
-			OneAgent: dynatracev1beta2.OneAgentSpec{
-				ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{},
+			MetadataEnrichment: dynatracev1beta2.MetadataEnrichment{
+				Enabled: metadataEnrichment,
 			},
 		},
 	}
+
+	if appInjection {
+		dk.Spec.OneAgent = dynatracev1beta2.OneAgentSpec{
+			ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{}}
+	}
+
+	return dk
+}
+
+func createTestDynakubeWithAppInject(name string, labels map[string]string, labelExpression []metav1.LabelSelectorRequirement) *dynatracev1beta2.DynaKube {
+	dk := createBaseDynakube(name, true, false)
 	if labels != nil {
 		dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = metav1.LabelSelector{MatchLabels: labels}
 	}
@@ -33,6 +44,34 @@ func createTestDynakubeWithAppInject(name string, labels map[string]string, labe
 
 func createTestDynakubeWithMultipleFeatures(name string, labels map[string]string) *dynatracev1beta2.DynaKube {
 	dk := createTestDynakubeWithAppInject(name, labels, nil)
+
+	return dk
+}
+
+func createTestDynakubeWithMetadataEnrichment(name string, labels map[string]string, labelExpression []metav1.LabelSelectorRequirement) *dynatracev1beta2.DynaKube {
+	dk := createBaseDynakube(name, false, true)
+	if labels != nil {
+		dk.Spec.MetadataEnrichment.NamespaceSelector = metav1.LabelSelector{MatchLabels: labels}
+	}
+
+	if labelExpression != nil {
+		dk.Spec.MetadataEnrichment.NamespaceSelector = metav1.LabelSelector{MatchExpressions: labelExpression}
+	}
+
+	return dk
+}
+
+func createTestDynakubeWithMetadataAndAppInjection(name string, labels map[string]string, labelExpression []metav1.LabelSelectorRequirement) *dynatracev1beta2.DynaKube {
+	dk := createBaseDynakube(name, true, true)
+	if labels != nil {
+		dk.Spec.MetadataEnrichment.NamespaceSelector = metav1.LabelSelector{MatchLabels: labels}
+		dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = metav1.LabelSelector{MatchLabels: labels}
+	}
+
+	if labelExpression != nil {
+		dk.Spec.MetadataEnrichment.NamespaceSelector = metav1.LabelSelector{MatchExpressions: labelExpression}
+		dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = metav1.LabelSelector{MatchExpressions: labelExpression}
+	}
 
 	return dk
 }
@@ -57,6 +96,29 @@ func TestUpdateNamespace(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, updated)
 		assert.Len(t, namespace.Labels, 2)
+	})
+	t.Run("Add to namespace, when only metadata enrichment is enabled", func(t *testing.T) {
+		labels := map[string]string{"test": "selector"}
+		dk := createTestDynakubeWithMetadataEnrichment("dk-test", labels, nil)
+		namespace := createNamespace("test-namespace", labels)
+
+		updated, err := updateNamespace(namespace, &dynatracev1beta2.DynaKubeList{Items: []dynatracev1beta2.DynaKube{*dk}})
+
+		require.NoError(t, err)
+		require.True(t, updated)
+		assert.Len(t, namespace.Labels, 2)
+	})
+	t.Run("Add to namespace, with metadata and appInjection enabled", func(t *testing.T) {
+		labels := map[string]string{"test": "selector"}
+		dk := createTestDynakubeWithMetadataAndAppInjection("appMonitoring", labels, nil)
+
+		namespace := createNamespace("test", labels)
+
+		updated, err := updateNamespace(namespace, &dynatracev1beta2.DynaKubeList{Items: []dynatracev1beta2.DynaKube{*dk}})
+
+		require.NoError(t, err)
+		require.True(t, updated)
+		assert.Equal(t, dk.Name, namespace.Labels[dtwebhook.InjectionInstanceLabel])
 	})
 	t.Run("Overwrite stale entry in labels", func(t *testing.T) {
 		labels := map[string]string{"test": "selector"}
@@ -90,7 +152,7 @@ func TestUpdateNamespace(t *testing.T) {
 	t.Run("Throw error in case of conflicting Dynakubes", func(t *testing.T) {
 		labels := map[string]string{"test": "selector"}
 		dk := createTestDynakubeWithMultipleFeatures("dk-test", labels)
-		conflictingDk := createTestDynakubeWithMultipleFeatures("conflicting-dk", labels)
+		conflictingDk := createTestDynakubeWithMetadataEnrichment("conflicting-dk", labels, nil)
 		nsLabels := map[string]string{
 			dtwebhook.InjectionInstanceLabel: dk.Name,
 			"test":                           "selector",
@@ -155,5 +217,18 @@ func TestUpdateNamespace(t *testing.T) {
 		require.True(t, updated)
 		assert.Len(t, namespace.Labels, 2)
 		assert.Equal(t, notIgnoreDk.Name, namespace.Labels[dtwebhook.InjectionInstanceLabel])
+	})
+	t.Run("Remove stale dynakube entry for no longer matching namespace with only metadata enrichment", func(t *testing.T) {
+		labels := map[string]string{"test": "selector"}
+		movedDk := createTestDynakubeWithMetadataEnrichment("moved-dk", labels, nil)
+		nsLabels := map[string]string{
+			dtwebhook.InjectionInstanceLabel: movedDk.Name,
+		}
+		namespace := createNamespace("test-namespace", nsLabels)
+
+		updated, err := updateNamespace(namespace, &dynatracev1beta2.DynaKubeList{Items: []dynatracev1beta2.DynaKube{*movedDk}})
+		require.NoError(t, err)
+		require.True(t, updated)
+		assert.Empty(t, namespace.Labels)
 	})
 }
