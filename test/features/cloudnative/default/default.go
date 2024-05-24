@@ -92,5 +92,7 @@ func Feature(t *testing.T, istioEnabled bool) features.Feature {
 	builder.Teardown(sampleApp.Uninstall())
 	dynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 
+	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
+
 	return builder.Feature()
 }

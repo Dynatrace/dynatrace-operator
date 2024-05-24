@@ -40,6 +40,21 @@ func CheckIfNotEmpty(path string) Command {
 	return Command{command}
 }
 
+func Cat(filename string) Command {
+	// the command returns contents of the file
+	command := fmt.Sprintf("cat %s", filename)
+
+	return Command{command}
+}
+
+func Exists(filename string) Command {
+	// the command returns non-empty string if file exists
+	// ignore exec.CodeExitError(Status=1) if file not found
+	command := fmt.Sprintf("[ -e %s ] && echo found ; exit 0", filename)
+
+	return Command{command}
+}
+
 func Shell(command Command) Command {
 	return Command{"sh", "-c", command.String()}
 }

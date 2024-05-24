@@ -37,3 +37,17 @@ func Create(configMap corev1.ConfigMap) features.Func {
 		return ctx
 	}
 }
+
+func Delete(configMap corev1.ConfigMap) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		err := envConfig.Client().Resources().Delete(ctx, &configMap)
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				err = nil
+			}
+		}
+		require.NoError(t, err)
+
+		return ctx
+	}
+}
