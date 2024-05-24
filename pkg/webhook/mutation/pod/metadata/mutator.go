@@ -40,7 +40,7 @@ func (mut *Mutator) Enabled(request *dtwebhook.BaseRequest) bool {
 
 	matchesNamespace := true // if no namespace selector is configured, we just pass set this to true
 
-	if enabledOnDynakube && request.DynaKube.MetadataEnrichmentNamespaceSelector() != nil && request.DynaKube.MetadataEnrichmentNamespaceSelector().Size() > 0 {
+	if request.DynaKube.MetadataEnrichmentNamespaceSelector().Size() > 0 {
 		selector, err := metav1.LabelSelectorAsSelector(request.DynaKube.MetadataEnrichmentNamespaceSelector())
 
 		if err != nil {
