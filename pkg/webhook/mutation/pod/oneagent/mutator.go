@@ -40,7 +40,7 @@ func NewMutator(image, clusterID, webhookNamespace string, client client.Client,
 func (mut *Mutator) Enabled(request *dtwebhook.BaseRequest) bool {
 	matchesNamespaceSelector := true // if no namespace selector is configured, we just pass set this to true
 
-	if request.DynaKube.OneAgentNamespaceSelector() != nil && request.DynaKube.OneAgentNamespaceSelector().Size() > 0 {
+	if request.DynaKube.OneAgentNamespaceSelector().Size() > 0 {
 		selector, err := metav1.LabelSelectorAsSelector(request.DynaKube.OneAgentNamespaceSelector())
 
 		if err != nil {
