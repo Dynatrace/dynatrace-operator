@@ -6,14 +6,14 @@ import (
 )
 
 func getConditionTypeName(component string) string {
-	return "IstioServiceConfigurationFor" + component
+	return "IstioFor" + component
 }
 
 func setServiceEntryUpdatedConditionForComponent(conditions *[]metav1.Condition, component string) {
 	condition := metav1.Condition{
 		Type:    getConditionTypeName(component),
 		Status:  metav1.ConditionTrue,
-		Reason:  "IstioServiceConfigurationFor" + component + "Changed",
+		Reason:  "IstioFor" + component + "Changed",
 		Message: "ServiceEntries and VirtualServices for " + component + " have been configured.",
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
@@ -21,9 +21,9 @@ func setServiceEntryUpdatedConditionForComponent(conditions *[]metav1.Condition,
 
 func setServiceEntryFailedConditionForComponent(conditions *[]metav1.Condition, component string, err error) {
 	condition := metav1.Condition{
-		Type:    "IstioServiceConfigurationFor" + component,
+		Type:    getConditionTypeName(component),
 		Status:  metav1.ConditionFalse,
-		Reason:  "IstioServiceConfigurationFor" + component + "Failed",
+		Reason:  "IstioFor" + component + "Failed",
 		Message: "Failed to configure Istio ServiceEntries and VirtualServices for " + component + " with error: " + err.Error(),
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
