@@ -271,6 +271,66 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		assert.Equal(t, address.Of(true), securityContext.RunAsNonRoot)
 		assert.NotEmpty(t, securityContext.Capabilities)
 		assert.Nil(t, securityContext.SeccompProfile)
+		require.NotNil(t, securityContext.ReadOnlyRootFilesystem)
+		assert.True(t, *securityContext.ReadOnlyRootFilesystem)
+	})
+
+	t.Run("old version does not have ReadOnlyRootFilesystem", func(t *testing.T) {
+		instance := dynatracev1beta2.DynaKube{
+			Spec: dynatracev1beta2.DynaKubeSpec{
+				APIURL: testURL,
+				OneAgent: dynatracev1beta2.OneAgentSpec{
+					HostMonitoring: &dynatracev1beta2.HostInjectSpec{},
+				},
+			},
+			Status: dynatracev1beta2.DynaKubeStatus{
+				OneAgent: dynatracev1beta2.OneAgentStatus{
+					VersionStatus: status.VersionStatus{
+						Version: "1.290.18.20240520-124108",
+					},
+				},
+			},
+		}
+		dsInfo := NewHostMonitoring(&instance, testClusterID)
+		ds, err := dsInfo.BuildDaemonSet()
+		require.NoError(t, err)
+
+		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
+
+		securityContext := ds.Spec.Template.Spec.Containers[0].SecurityContext
+
+		assert.NotNil(t, securityContext)
+		require.NotNil(t, securityContext.ReadOnlyRootFilesystem)
+		assert.False(t, *securityContext.ReadOnlyRootFilesystem)
+	})
+
+	t.Run("newer version has ReadOnlyRootFilesystem", func(t *testing.T) {
+		instance := dynatracev1beta2.DynaKube{
+			Spec: dynatracev1beta2.DynaKubeSpec{
+				APIURL: testURL,
+				OneAgent: dynatracev1beta2.OneAgentSpec{
+					HostMonitoring: &dynatracev1beta2.HostInjectSpec{},
+				},
+			},
+			Status: dynatracev1beta2.DynaKubeStatus{
+				OneAgent: dynatracev1beta2.OneAgentStatus{
+					VersionStatus: status.VersionStatus{
+						Version: "1.291.18.20240520-124108",
+					},
+				},
+			},
+		}
+		dsInfo := NewHostMonitoring(&instance, testClusterID)
+		ds, err := dsInfo.BuildDaemonSet()
+		require.NoError(t, err)
+
+		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
+
+		securityContext := ds.Spec.Template.Spec.Containers[0].SecurityContext
+
+		assert.NotNil(t, securityContext)
+		require.NotNil(t, securityContext.ReadOnlyRootFilesystem)
+		assert.True(t, *securityContext.ReadOnlyRootFilesystem)
 	})
 
 	t.Run(`privileged security context when feature flag is enabled`, func(t *testing.T) {
