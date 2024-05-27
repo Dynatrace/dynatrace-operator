@@ -509,7 +509,7 @@ func volumesAreMountedCorrectly(sampleApp sample.App) features.Func {
 			assert.NotEmpty(t, executionResult.StdOut.String())
 
 			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), podItem, sampleApp.ContainerName(), webhook.DefaultInstallPath)
-			assert.Greater(t, diskUsage, 0)
+			assert.Positive(t, diskUsage)
 		})
 
 		require.NoError(t, err)
