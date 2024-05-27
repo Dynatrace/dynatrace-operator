@@ -161,5 +161,5 @@ func (r *Reconciler) conditionSetSecretCreated(secret *corev1.Secret) {
 	tokenAllParts := strings.Split(string(secret.Data[ActiveGateAuthTokenName]), ".")
 	tokenPublicPart := strings.Join(tokenAllParts[:2], ".")
 
-	SetAuthSecretCreated(r.dynakube.Conditions(), ActiveGateAuthTokenSecretConditionType, "secret created "+days+" day(s) ago, token:"+tokenPublicPart)
+	setAuthSecretCreated(r.dynakube.Conditions(), ActiveGateAuthTokenSecretConditionType, "secret created "+days+" day(s) ago, token:"+tokenPublicPart)
 }

@@ -8,7 +8,7 @@ import (
 
 const ActiveGateAuthTokenSecretConditionType string = "ActiveGateAuthTokenSecret"
 
-func SetAuthSecretCreated(conditions *[]metav1.Condition, conditionType string, msg string) {
+func setAuthSecretCreated(conditions *[]metav1.Condition, conditionType string, msg string) {
 	condition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionTrue,
