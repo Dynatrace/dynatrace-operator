@@ -8,8 +8,8 @@ import (
 )
 
 func TestAffinity(t *testing.T) {
-	dsInfo := builderInfo{}
-	affinity := dsInfo.affinity()
+	dsBuilder := builder{}
+	affinity := dsBuilder.affinity()
 	assert.NotContains(t, affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, corev1.NodeSelectorTerm{
 		MatchExpressions: []corev1.NodeSelectorRequirement{
 			{
