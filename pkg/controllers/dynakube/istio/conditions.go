@@ -28,14 +28,3 @@ func setServiceEntryFailedConditionForComponent(conditions *[]metav1.Condition, 
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
-
-//
-// func setIPServiceEntryForActiveGateFailedCondition(conditions *[]metav1.Condition, err error) {
-// 	condition := metav1.Condition{
-// 		Type:    serviceEntryForActiveGateConditionType,
-// 		Status:  metav1.ConditionFalse,
-// 		Reason:  ipServiceEntryForActiveGateFailedReason,
-// 		Message: "Failed to create an IP ServiceEntry for ActiveGate, error: " + err.Error(),
-// 	}
-// 	_ = meta.SetStatusCondition(conditions, condition)
-// }
