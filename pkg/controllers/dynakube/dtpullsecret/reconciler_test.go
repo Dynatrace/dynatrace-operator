@@ -74,8 +74,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 				Name:      testName,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}},
+			Spec: dynatracev1beta2.DynaKubeSpec{
+				OneAgent: dynatracev1beta2.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{}},
 			},
 		}
 		fakeClient := errorClient{}
@@ -178,6 +178,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run(`Reconciliation only runs every 15 min`, func(t *testing.T) {
 		dynakube := createTestDynakube()
+		dynakube.Spec.DynatraceApiRequestThreshold = dynatracev1beta2.DefaultMinRequestThresholdMinutes
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dynakube, token.Tokens{
 			dtclient.ApiToken: &token.Token{Value: testValue},
@@ -230,7 +231,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		require.NoError(t, err)
 
-		dynakube.Spec.OneAgent = dynatracev1beta1.OneAgentSpec{}
+		dynakube.Spec.OneAgent = dynatracev1beta2.OneAgentSpec{}
 		err = r.Reconcile(context.Background())
 		require.NoError(t, err)
 
