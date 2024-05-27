@@ -38,6 +38,7 @@ func TestEnabled(t *testing.T) {
 	t.Run("on by default", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, getTestNamespace(nil))
+		request.DynaKube.Spec.OneAgent.ApplicationMonitoring = &dynatracev1beta2.ApplicationMonitoringSpec{}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -55,6 +56,7 @@ func TestEnabled(t *testing.T) {
 	t.Run("on with feature flag", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, getTestNamespace(nil))
+		request.DynaKube.Spec.OneAgent.ApplicationMonitoring = &dynatracev1beta2.ApplicationMonitoringSpec{}
 		request.DynaKube.Annotations = map[string]string{dynatracev1beta2.AnnotationFeatureAutomaticInjection: "true"}
 
 		enabled := mutator.Enabled(request.BaseRequest)

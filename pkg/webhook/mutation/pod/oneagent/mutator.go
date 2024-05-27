@@ -38,6 +38,9 @@ func NewMutator(image, clusterID, webhookNamespace string, client client.Client,
 }
 
 func (mut *Mutator) Enabled(request *dtwebhook.BaseRequest) bool {
+	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOneAgentInject, request.DynaKube.FeatureAutomaticInjection())
+	enabledOnDynakube := request.DynaKube.OneAgentNamespaceSelector() != nil
+
 	matchesNamespaceSelector := true // if no namespace selector is configured, we just pass set this to true
 
 	if request.DynaKube.OneAgentNamespaceSelector().Size() > 0 {
@@ -46,7 +49,7 @@ func (mut *Mutator) Enabled(request *dtwebhook.BaseRequest) bool {
 		matchesNamespaceSelector = selector.Matches(labels.Set(request.Namespace.Labels))
 	}
 
-	return matchesNamespaceSelector && maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOneAgentInject, request.DynaKube.FeatureAutomaticInjection())
+	return matchesNamespaceSelector && enabledOnPod && enabledOnDynakube
 }
 
 func (mut *Mutator) Injected(request *dtwebhook.BaseRequest) bool {
