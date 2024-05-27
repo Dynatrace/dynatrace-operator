@@ -118,6 +118,7 @@ func TestReconcile(t *testing.T) {
 		authToken.CreationTimestamp = metav1.Time{Time: time.Now().Round(1 * time.Second).Add(-AuthTokenRotationInterval).Add(-5 * time.Second)}
 		err = r.client.Update(context.Background(), &authToken)
 		require.NoError(t, err)
+
 		firstCreationTimestamp := authToken.CreationTimestamp
 
 		// let's "wait", small difference needed to compare LastTransitionTime
@@ -160,6 +161,7 @@ func TestReconcile(t *testing.T) {
 
 		var authToken corev1.Secret
 		_ = r.client.Get(context.Background(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
+
 		require.NoError(t, err)
 		assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
 
@@ -169,6 +171,7 @@ func TestReconcile(t *testing.T) {
 		authToken.CreationTimestamp = metav1.Time{Time: time.Now().Round(1 * time.Second).Add(-AuthTokenRotationInterval).Add(1 * time.Minute)}
 		err = r.client.Update(context.Background(), &authToken)
 		require.NoError(t, err)
+
 		firstCreationTimestamp := authToken.CreationTimestamp
 
 		// let's "wait", small difference needed to compare LastTransitionTime

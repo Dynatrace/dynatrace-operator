@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -44,6 +45,21 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dynakube *dynatra
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
+	if !r.dynakube.NeedsActiveGate() {
+		_ = meta.RemoveStatusCondition(r.dynakube.Conditions(), ActiveGateAuthTokenSecretConditionType)
+
+		return nil
+	}
+
+	err := r.reconcileAuthTokenSecret(ctx)
+	if err != nil {
+		return errors.WithMessage(err, "failed to create activeGateAuthToken secret")
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context) error {
 	var secret corev1.Secret
 
 	err := r.apiReader.Get(ctx,
