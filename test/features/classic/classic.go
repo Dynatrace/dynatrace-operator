@@ -27,7 +27,7 @@ func Feature(t *testing.T) features.Feature {
 	)
 
 	// check if oneAgent pods startup and report as ready
-	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube, false)
 	dynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 
 	return builder.Feature()

@@ -40,7 +40,7 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Register dynakube install
-	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube, false)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())

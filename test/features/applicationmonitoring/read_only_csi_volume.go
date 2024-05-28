@@ -41,7 +41,7 @@ func ReadOnlyCSIVolume(t *testing.T) features.Feature {
 	sampleDeployment := sample.NewApp(t, &testDynakube, sample.AsDeployment())
 	builder.Assess("install sample deployment namespace", sampleDeployment.InstallNamespace())
 
-	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube, false)
 
 	builder.Assess("install sample deployment and wait till ready", sampleDeployment.Install())
 	builder.Assess("check mounted volumes", checkMountedVolumes(sampleDeployment))

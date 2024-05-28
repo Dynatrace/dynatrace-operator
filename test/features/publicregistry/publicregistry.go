@@ -61,7 +61,7 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Register dynakube install - will verify OneAgent DaemonSet startup
-	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube, false)
 
 	// Install Sample apps - will check if CodeModule could be downloaded and mounted
 	builder.Assess("install sample app", sampleApp.Install())
