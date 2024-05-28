@@ -1,12 +1,15 @@
 package daemonset
 
 import (
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	"golang.org/x/mod/semver"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -42,19 +45,21 @@ const (
 
 	probeMaxInitialDelay         = int32(90)
 	probeDefaultSuccessThreshold = int32(1)
+
+	readOnlyRootFsConstraint = "v1.291"
 )
 
-type HostMonitoring struct {
-	builderInfo
+type hostMonitoring struct {
+	builder
 }
 
-type ClassicFullStack struct {
-	builderInfo
+type classicFullStack struct {
+	builder
 }
 
-type builderInfo struct {
-	dynakube       *dynatracev1beta2.DynaKube
-	hostInjectSpec *dynatracev1beta2.HostInjectSpec
+type builder struct {
+	dk             *dynakube.DynaKube
+	hostInjectSpec *dynakube.HostInjectSpec
 	clusterID      string
 	deploymentType string
 }
@@ -63,10 +68,10 @@ type Builder interface {
 	BuildDaemonSet() (*appsv1.DaemonSet, error)
 }
 
-func NewHostMonitoring(instance *dynatracev1beta2.DynaKube, clusterId string) Builder {
-	return &HostMonitoring{
-		builderInfo{
-			dynakube:       instance,
+func NewHostMonitoring(instance *dynakube.DynaKube, clusterId string) Builder {
+	return &hostMonitoring{
+		builder{
+			dk:             instance,
 			hostInjectSpec: instance.Spec.OneAgent.HostMonitoring,
 			clusterID:      clusterId,
 			deploymentType: deploymentmetadata.HostMonitoringDeploymentType,
@@ -74,10 +79,10 @@ func NewHostMonitoring(instance *dynatracev1beta2.DynaKube, clusterId string) Bu
 	}
 }
 
-func NewCloudNativeFullStack(instance *dynatracev1beta2.DynaKube, clusterId string) Builder {
-	return &HostMonitoring{
-		builderInfo{
-			dynakube:       instance,
+func NewCloudNativeFullStack(instance *dynakube.DynaKube, clusterId string) Builder {
+	return &hostMonitoring{
+		builder{
+			dk:             instance,
 			hostInjectSpec: &instance.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
 			clusterID:      clusterId,
 			deploymentType: deploymentmetadata.CloudNativeDeploymentType,
@@ -85,10 +90,10 @@ func NewCloudNativeFullStack(instance *dynatracev1beta2.DynaKube, clusterId stri
 	}
 }
 
-func NewClassicFullStack(instance *dynatracev1beta2.DynaKube, clusterId string) Builder {
-	return &ClassicFullStack{
-		builderInfo{
-			dynakube:       instance,
+func NewClassicFullStack(instance *dynakube.DynaKube, clusterId string) Builder {
+	return &classicFullStack{
+		builder{
+			dk:             instance,
 			hostInjectSpec: instance.Spec.OneAgent.ClassicFullStack,
 			clusterID:      clusterId,
 			deploymentType: deploymentmetadata.ClassicFullStackDeploymentType,
@@ -96,60 +101,60 @@ func NewClassicFullStack(instance *dynatracev1beta2.DynaKube, clusterId string) 
 	}
 }
 
-func (dsInfo *HostMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {
-	daemonSet, err := dsInfo.builderInfo.BuildDaemonSet()
+func (hm *hostMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {
+	daemonSet, err := hm.builder.BuildDaemonSet()
 	if err != nil {
 		return nil, err
 	}
 
-	daemonSet.Name = dsInfo.dynakube.OneAgentDaemonsetName()
+	daemonSet.Name = hm.dk.OneAgentDaemonsetName()
 
 	if len(daemonSet.Spec.Template.Spec.Containers) > 0 {
-		dsInfo.appendInfraMonEnvVars(daemonSet)
+		hm.appendInfraMonEnvVars(daemonSet)
 	}
 
 	return daemonSet, nil
 }
 
-func (dsInfo *ClassicFullStack) BuildDaemonSet() (*appsv1.DaemonSet, error) {
-	result, err := dsInfo.builderInfo.BuildDaemonSet()
+func (classic *classicFullStack) BuildDaemonSet() (*appsv1.DaemonSet, error) {
+	result, err := classic.builder.BuildDaemonSet()
 	if err != nil {
 		return nil, err
 	}
 
-	result.Name = dsInfo.dynakube.OneAgentDaemonsetName()
+	result.Name = classic.dk.OneAgentDaemonsetName()
 
 	return result, nil
 }
 
-func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
-	dynakube := dsInfo.dynakube
+func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
+	dk := b.dk
 
-	podSpec, err := dsInfo.podSpec()
+	podSpec, err := b.podSpec()
 	if err != nil {
 		return nil, err
 	}
 
-	versionLabelValue := dynakube.OneAgentVersion()
+	versionLabelValue := dk.OneAgentVersion()
 
-	appLabels := labels.NewAppLabels(labels.OneAgentComponentLabel, dynakube.Name,
-		dsInfo.deploymentType, versionLabelValue)
+	appLabels := labels.NewAppLabels(labels.OneAgentComponentLabel, dk.Name,
+		b.deploymentType, versionLabelValue)
 	labels := maputils.MergeMap(
 		appLabels.BuildLabels(),
-		dsInfo.hostInjectSpec.Labels,
+		b.hostInjectSpec.Labels,
 	)
-	maxUnavailable := intstr.FromInt(dynakube.FeatureOneAgentMaxUnavailable())
+	maxUnavailable := intstr.FromInt(dk.FeatureOneAgentMaxUnavailable())
 	annotations := map[string]string{
 		annotationUnprivileged:            annotationUnprivilegedValue,
 		webhook.AnnotationDynatraceInject: "false",
 	}
 
-	annotations = maputils.MergeMap(annotations, dsInfo.hostInjectSpec.Annotations)
+	annotations = maputils.MergeMap(annotations, b.hostInjectSpec.Annotations)
 
 	result := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        dynakube.Name,
-			Namespace:   dynakube.Namespace,
+			Name:        dk.Name,
+			Namespace:   dk.Namespace,
 			Labels:      labels,
 			Annotations: map[string]string{},
 		},
@@ -175,92 +180,92 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	return result, nil
 }
 
-func (dsInfo *builderInfo) podSpec() (corev1.PodSpec, error) {
-	resources := dsInfo.resources()
-	dnsPolicy := dsInfo.dnsPolicy()
+func (b *builder) podSpec() (corev1.PodSpec, error) {
+	resources := b.resources()
+	dnsPolicy := b.dnsPolicy()
 
-	arguments, err := dsInfo.arguments()
+	arguments, err := b.arguments()
 	if err != nil {
 		return corev1.PodSpec{}, err
 	}
 
-	environmentVariables, err := dsInfo.environmentVariables()
+	environmentVariables, err := b.environmentVariables()
 	if err != nil {
 		return corev1.PodSpec{}, err
 	}
 
-	volumeMounts := dsInfo.volumeMounts()
-	volumes := dsInfo.volumes()
-	imagePullSecrets := dsInfo.imagePullSecrets()
-	affinity := dsInfo.affinity()
+	volumeMounts := b.volumeMounts()
+	volumes := b.volumes()
+	imagePullSecrets := b.imagePullSecrets()
+	affinity := b.affinity()
 
 	podSpec := corev1.PodSpec{
 		Containers: []corev1.Container{{
 			Args:            arguments,
 			Env:             environmentVariables,
-			Image:           dsInfo.immutableOneAgentImage(),
+			Image:           b.immutableOneAgentImage(),
 			ImagePullPolicy: corev1.PullAlways,
 			Name:            podName,
 			Resources:       resources,
-			SecurityContext: dsInfo.securityContext(),
+			SecurityContext: b.securityContext(),
 			VolumeMounts:    volumeMounts,
 		}},
 		ImagePullSecrets:              imagePullSecrets,
 		HostNetwork:                   true,
 		HostPID:                       true,
 		HostIPC:                       false,
-		NodeSelector:                  dsInfo.nodeSelector(),
-		PriorityClassName:             dsInfo.priorityClassName(),
+		NodeSelector:                  b.nodeSelector(),
+		PriorityClassName:             b.priorityClassName(),
 		ServiceAccountName:            serviceAccountName,
-		Tolerations:                   dsInfo.tolerations(),
+		Tolerations:                   b.tolerations(),
 		DNSPolicy:                     dnsPolicy,
 		Volumes:                       volumes,
 		Affinity:                      affinity,
 		TerminationGracePeriodSeconds: address.Of(defaultTerminationGracePeriod),
 	}
 
-	if dsInfo.dynakube.NeedsOneAgentProbe() {
-		podSpec.Containers[0].ReadinessProbe = dsInfo.getReadinessProbe()
-		podSpec.Containers[0].LivenessProbe = dsInfo.getDefaultProbeFromStatus()
+	if b.dk.NeedsOneAgentProbe() {
+		podSpec.Containers[0].ReadinessProbe = b.getReadinessProbe()
+		podSpec.Containers[0].LivenessProbe = b.getDefaultProbeFromStatus()
 	}
 
 	return podSpec, nil
 }
 
-func (dsInfo *builderInfo) immutableOneAgentImage() string {
-	if dsInfo.dynakube == nil {
+func (b *builder) immutableOneAgentImage() string {
+	if b.dk == nil {
 		return ""
 	}
 
-	return dsInfo.dynakube.OneAgentImage()
+	return b.dk.OneAgentImage()
 }
 
-func (dsInfo *builderInfo) tolerations() []corev1.Toleration {
-	if dsInfo.hostInjectSpec != nil {
-		return dsInfo.hostInjectSpec.Tolerations
+func (b *builder) tolerations() []corev1.Toleration {
+	if b.hostInjectSpec != nil {
+		return b.hostInjectSpec.Tolerations
 	}
 
 	return nil
 }
 
-func (dsInfo *builderInfo) priorityClassName() string {
-	if dsInfo.hostInjectSpec != nil {
-		return dsInfo.hostInjectSpec.PriorityClassName
+func (b *builder) priorityClassName() string {
+	if b.hostInjectSpec != nil {
+		return b.hostInjectSpec.PriorityClassName
 	}
 
 	return ""
 }
 
-func (dsInfo *builderInfo) nodeSelector() map[string]string {
-	if dsInfo.hostInjectSpec == nil {
+func (b *builder) nodeSelector() map[string]string {
+	if b.hostInjectSpec == nil {
 		return make(map[string]string, 0)
 	}
 
-	return dsInfo.hostInjectSpec.NodeSelector
+	return b.hostInjectSpec.NodeSelector
 }
 
-func (dsInfo *builderInfo) resources() corev1.ResourceRequirements {
-	resources := dsInfo.oneAgentResource()
+func (b *builder) resources() corev1.ResourceRequirements {
+	resources := b.oneAgentResource()
 	if resources.Requests == nil {
 		resources.Requests = corev1.ResourceList{}
 	}
@@ -273,67 +278,68 @@ func (dsInfo *builderInfo) resources() corev1.ResourceRequirements {
 	return resources
 }
 
-func (dsInfo *builderInfo) oneAgentResource() corev1.ResourceRequirements {
-	if dsInfo.hostInjectSpec == nil {
+func (b *builder) oneAgentResource() corev1.ResourceRequirements {
+	if b.hostInjectSpec == nil {
 		return corev1.ResourceRequirements{}
 	}
 
-	return dsInfo.hostInjectSpec.OneAgentResources
+	return b.hostInjectSpec.OneAgentResources
 }
 
-func (dsInfo *builderInfo) dnsPolicy() corev1.DNSPolicy {
-	if dsInfo.hostInjectSpec != nil && dsInfo.hostInjectSpec.DNSPolicy != "" {
-		return dsInfo.hostInjectSpec.DNSPolicy
+func (b *builder) dnsPolicy() corev1.DNSPolicy {
+	if b.hostInjectSpec != nil && b.hostInjectSpec.DNSPolicy != "" {
+		return b.hostInjectSpec.DNSPolicy
 	}
 
 	return corev1.DNSClusterFirstWithHostNet
 }
 
-func (dsInfo *builderInfo) volumeMounts() []corev1.VolumeMount {
-	return prepareVolumeMounts(dsInfo.dynakube)
+func (b *builder) volumeMounts() []corev1.VolumeMount {
+	return prepareVolumeMounts(b.dk)
 }
 
-func (dsInfo *builderInfo) volumes() []corev1.Volume {
-	return prepareVolumes(dsInfo.dynakube)
+func (b *builder) volumes() []corev1.Volume {
+	return prepareVolumes(b.dk)
 }
 
-func (dsInfo *builderInfo) imagePullSecrets() []corev1.LocalObjectReference {
-	if dsInfo.dynakube == nil {
+func (b *builder) imagePullSecrets() []corev1.LocalObjectReference {
+	if b.dk == nil {
 		return []corev1.LocalObjectReference{}
 	}
 
-	return []corev1.LocalObjectReference{{Name: dsInfo.dynakube.PullSecretName()}}
+	return []corev1.LocalObjectReference{{Name: b.dk.PullSecretName()}}
 }
 
-func (dsInfo *builderInfo) securityContext() *corev1.SecurityContext {
+func (b *builder) securityContext() *corev1.SecurityContext {
 	var securityContext corev1.SecurityContext
-	if dsInfo.dynakube != nil && dsInfo.dynakube.NeedsReadOnlyOneAgents() {
+	if b.dk != nil && b.dk.NeedsReadOnlyOneAgents() {
 		securityContext.RunAsNonRoot = address.Of(true)
 		securityContext.RunAsUser = address.Of(int64(1000))
 		securityContext.RunAsGroup = address.Of(int64(1000))
+		securityContext.ReadOnlyRootFilesystem = address.Of(b.isRootFsReadonly())
 	}
 
-	if dsInfo.dynakube != nil && dsInfo.dynakube.NeedsOneAgentPrivileged() {
+	if b.dk != nil && b.dk.NeedsOneAgentPrivileged() {
 		securityContext.Privileged = address.Of(true)
 	} else {
 		securityContext.Capabilities = defaultSecurityContextCapabilities()
 
-		if dsInfo.dynakube != nil {
+		if b.dk != nil {
 			switch {
-			case dsInfo.dynakube.HostMonitoringMode() && dsInfo.dynakube.Spec.OneAgent.HostMonitoring.SecCompProfile != "":
-				secCompName := dsInfo.dynakube.Spec.OneAgent.HostMonitoring.SecCompProfile
+			case b.dk.HostMonitoringMode() && b.dk.Spec.OneAgent.HostMonitoring.SecCompProfile != "":
+				secCompName := b.dk.Spec.OneAgent.HostMonitoring.SecCompProfile
 				securityContext.SeccompProfile = &corev1.SeccompProfile{
 					Type:             corev1.SeccompProfileTypeLocalhost,
 					LocalhostProfile: &secCompName,
 				}
-			case dsInfo.dynakube.ClassicFullStackMode() && dsInfo.dynakube.Spec.OneAgent.ClassicFullStack.SecCompProfile != "":
-				secCompName := dsInfo.dynakube.Spec.OneAgent.ClassicFullStack.SecCompProfile
+			case b.dk.ClassicFullStackMode() && b.dk.Spec.OneAgent.ClassicFullStack.SecCompProfile != "":
+				secCompName := b.dk.Spec.OneAgent.ClassicFullStack.SecCompProfile
 				securityContext.SeccompProfile = &corev1.SeccompProfile{
 					Type:             corev1.SeccompProfileTypeLocalhost,
 					LocalhostProfile: &secCompName,
 				}
-			case dsInfo.dynakube.CloudNativeFullstackMode() && dsInfo.dynakube.Spec.OneAgent.CloudNativeFullStack.SecCompProfile != "":
-				secCompName := dsInfo.dynakube.Spec.OneAgent.CloudNativeFullStack.SecCompProfile
+			case b.dk.CloudNativeFullstackMode() && b.dk.Spec.OneAgent.CloudNativeFullStack.SecCompProfile != "":
+				secCompName := b.dk.Spec.OneAgent.CloudNativeFullStack.SecCompProfile
 				securityContext.SeccompProfile = &corev1.SeccompProfile{
 					Type:             corev1.SeccompProfileTypeLocalhost,
 					LocalhostProfile: &secCompName,
@@ -371,27 +377,47 @@ func defaultSecurityContextCapabilities() *corev1.Capabilities {
 }
 
 // getDefaultProbeFromStatus uses the docker HEALTHCHECK from status
-func (dsInfo *builderInfo) getDefaultProbeFromStatus() *corev1.Probe {
+func (b *builder) getDefaultProbeFromStatus() *corev1.Probe {
 	return &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			Exec: &corev1.ExecAction{
-				Command: dsInfo.dynakube.Status.OneAgent.Healthcheck.Test,
+				Command: b.dk.Status.OneAgent.Healthcheck.Test,
 			},
 		},
-		InitialDelaySeconds: int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.StartPeriod.Seconds()),
-		PeriodSeconds:       int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Interval.Seconds()),
-		TimeoutSeconds:      int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Timeout.Seconds()),
-		FailureThreshold:    int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Retries),
+		InitialDelaySeconds: int32(b.dk.Status.OneAgent.Healthcheck.StartPeriod.Seconds()),
+		PeriodSeconds:       int32(b.dk.Status.OneAgent.Healthcheck.Interval.Seconds()),
+		TimeoutSeconds:      int32(b.dk.Status.OneAgent.Healthcheck.Timeout.Seconds()),
+		FailureThreshold:    int32(b.dk.Status.OneAgent.Healthcheck.Retries),
 		SuccessThreshold:    probeDefaultSuccessThreshold,
 	}
 }
 
 // getReadinessProbe overrides the default HEALTHCHECK to ensure early readiness
-func (dsInfo *builderInfo) getReadinessProbe() *corev1.Probe {
-	defaultProbe := dsInfo.getDefaultProbeFromStatus()
+func (b *builder) getReadinessProbe() *corev1.Probe {
+	defaultProbe := b.getDefaultProbeFromStatus()
 	if defaultProbe.InitialDelaySeconds > probeMaxInitialDelay {
 		defaultProbe.InitialDelaySeconds = probeMaxInitialDelay
 	}
 
 	return defaultProbe
+}
+
+// isRootFsReadonly checks if the given version of the OneAgent supports the `ReadOnlyRootFilesystem` securityContext setting.
+// if the version is not set, ie.: unknown, we  consider the OneAgent to support `ReadOnlyRootFilesystem`.
+func (b *builder) isRootFsReadonly() bool {
+	if b.dk != nil &&
+		b.dk.NeedsReadOnlyOneAgents() &&
+		b.dk.OneAgentVersion() != "" &&
+		b.dk.OneAgentVersion() != string(status.CustomImageVersionSource) {
+		agentSemver, err := dtversion.ToSemver(b.dk.OneAgentVersion())
+		if err != nil {
+			log.Debug("Unable to determine OneAgent version to enable readonly pod filesystem, skipping", "version", b.dk.OneAgentVersion(), "error", err.Error())
+
+			return true
+		}
+
+		return semver.Compare(readOnlyRootFsConstraint, agentSemver) != 1 // if threshold <= agent-version
+	}
+
+	return true
 }

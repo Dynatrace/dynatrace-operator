@@ -133,7 +133,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		// assert
 		require.NoError(t, err)
 		require.NotNil(t, actual)
-		assert.Greater(t, actual.TotalCount, 0)
+		assert.Positive(t, actual.TotalCount)
 		assert.Len(t, expected, actual.TotalCount)
 	})
 

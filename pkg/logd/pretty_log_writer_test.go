@@ -21,7 +21,7 @@ func TestErrorPrettify_Write(t *testing.T) {
 		written, err := errPrettify.Write([]byte(testString))
 
 		require.NoError(t, err)
-		assert.Greater(t, written, 0)
+		assert.Positive(t, written)
 		assert.Equal(t, expectedString, bufferString.String())
 	})
 	t.Run(`Write replaces "stacktrace" with "errorVerbose"`, func(t *testing.T) {
@@ -33,7 +33,7 @@ func TestErrorPrettify_Write(t *testing.T) {
 		written, err := errPrettify.Write([]byte(testString))
 
 		require.NoError(t, err)
-		assert.Greater(t, written, 0)
+		assert.Positive(t, written)
 		assert.Equal(t, expectedString, bufferString.String())
 	})
 	t.Run("Write writes non json message to output", func(t *testing.T) {
@@ -45,7 +45,7 @@ func TestErrorPrettify_Write(t *testing.T) {
 		written, err := errPrettify.Write([]byte(testString))
 
 		require.NoError(t, err)
-		assert.Greater(t, written, 0)
+		assert.Positive(t, written)
 		assert.Equal(t, expectedString, bufferString.String())
 	})
 }

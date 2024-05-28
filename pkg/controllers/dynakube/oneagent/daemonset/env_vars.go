@@ -29,28 +29,28 @@ const (
 const customEnvPriority = prioritymap.HighPriority
 const defaultEnvPriority = prioritymap.DefaultPriority
 
-func (dsInfo *builderInfo) environmentVariables() ([]corev1.EnvVar, error) {
+func (b *builder) environmentVariables() ([]corev1.EnvVar, error) {
 	envMap := prioritymap.New(prioritymap.WithPriority(defaultEnvPriority))
 
-	if dsInfo.hostInjectSpec != nil {
-		prioritymap.Append(envMap, dsInfo.hostInjectSpec.Env, prioritymap.WithPriority(customEnvPriority))
+	if b.hostInjectSpec != nil {
+		prioritymap.Append(envMap, b.hostInjectSpec.Env, prioritymap.WithPriority(customEnvPriority))
 	}
 
 	addNodeNameEnv(envMap)
-	dsInfo.addClusterIDEnv(envMap)
-	dsInfo.addDeploymentMetadataEnv(envMap)
-	dsInfo.addOperatorVersionInfoEnv(envMap)
-	dsInfo.addConnectionInfoEnvs(envMap)
-	dsInfo.addReadOnlyEnv(envMap)
+	b.addClusterIDEnv(envMap)
+	b.addDeploymentMetadataEnv(envMap)
+	b.addOperatorVersionInfoEnv(envMap)
+	b.addConnectionInfoEnvs(envMap)
+	b.addReadOnlyEnv(envMap)
 
-	isProxyAsEnvDeprecated, err := isProxyAsEnvVarDeprecated(dsInfo.dynakube.OneAgentVersion())
+	isProxyAsEnvDeprecated, err := isProxyAsEnvVarDeprecated(b.dk.OneAgentVersion())
 	if err != nil {
 		return []corev1.EnvVar{}, err
 	}
 
 	if !isProxyAsEnvDeprecated {
 		// deprecated
-		dsInfo.addProxyEnv(envMap)
+		b.addProxyEnv(envMap)
 	}
 
 	return envMap.AsEnvVars(), nil
@@ -60,41 +60,41 @@ func addNodeNameEnv(envVarMap *prioritymap.Map) {
 	addDefaultValueSource(envVarMap, dtNodeName, &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}})
 }
 
-func (dsInfo *builderInfo) addClusterIDEnv(envVarMap *prioritymap.Map) {
-	addDefaultValue(envVarMap, dtClusterId, dsInfo.clusterID)
+func (b *builder) addClusterIDEnv(envVarMap *prioritymap.Map) {
+	addDefaultValue(envVarMap, dtClusterId, b.clusterID)
 }
 
-func (dsInfo *builderInfo) addDeploymentMetadataEnv(envVarMap *prioritymap.Map) {
+func (b *builder) addDeploymentMetadataEnv(envVarMap *prioritymap.Map) {
 	addDefaultValueSource(envVarMap, deploymentmetadata.EnvDtDeploymentMetadata, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 		LocalObjectReference: corev1.LocalObjectReference{
-			Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(dsInfo.dynakube.Name),
+			Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(b.dk.Name),
 		},
 		Key:      deploymentmetadata.OneAgentMetadataKey,
 		Optional: address.Of(false),
 	}})
 }
 
-func (dsInfo *builderInfo) addOperatorVersionInfoEnv(envVarMap *prioritymap.Map) {
+func (b *builder) addOperatorVersionInfoEnv(envVarMap *prioritymap.Map) {
 	addDefaultValueSource(envVarMap, deploymentmetadata.EnvDtOperatorVersion, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 		LocalObjectReference: corev1.LocalObjectReference{
-			Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(dsInfo.dynakube.Name),
+			Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(b.dk.Name),
 		},
 		Key:      deploymentmetadata.OperatorVersionKey,
 		Optional: address.Of(false),
 	}})
 }
 
-func (dsInfo *builderInfo) addConnectionInfoEnvs(envVarMap *prioritymap.Map) {
+func (b *builder) addConnectionInfoEnvs(envVarMap *prioritymap.Map) {
 	addDefaultValueSource(envVarMap, connectioninfo.EnvDtTenant, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 		LocalObjectReference: corev1.LocalObjectReference{
-			Name: dsInfo.dynakube.OneAgentConnectionInfoConfigMapName(),
+			Name: b.dk.OneAgentConnectionInfoConfigMapName(),
 		},
 		Key:      connectioninfo.TenantUUIDKey,
 		Optional: address.Of(false),
 	}})
 	addDefaultValueSource(envVarMap, connectioninfo.EnvDtServer, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 		LocalObjectReference: corev1.LocalObjectReference{
-			Name: dsInfo.dynakube.OneAgentConnectionInfoConfigMapName(),
+			Name: b.dk.OneAgentConnectionInfoConfigMapName(),
 		},
 		Key:      connectioninfo.CommunicationEndpointsKey,
 		Optional: address.Of(false),
@@ -102,30 +102,30 @@ func (dsInfo *builderInfo) addConnectionInfoEnvs(envVarMap *prioritymap.Map) {
 }
 
 // deprecated
-func (dsInfo *builderInfo) addProxyEnv(envVarMap *prioritymap.Map) {
-	if !dsInfo.hasProxy() {
+func (b *builder) addProxyEnv(envVarMap *prioritymap.Map) {
+	if !b.hasProxy() {
 		return
 	}
 
-	if dsInfo.dynakube.Spec.Proxy.ValueFrom != "" {
+	if b.dk.Spec.Proxy.ValueFrom != "" {
 		addDefaultValueSource(envVarMap, proxyEnv, &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: dsInfo.dynakube.Spec.Proxy.ValueFrom},
+				LocalObjectReference: corev1.LocalObjectReference{Name: b.dk.Spec.Proxy.ValueFrom},
 				Key:                  dynatracev1beta2.ProxyKey,
 			},
 		})
 	} else {
-		addDefaultValue(envVarMap, proxyEnv, dsInfo.dynakube.Spec.Proxy.Value)
+		addDefaultValue(envVarMap, proxyEnv, b.dk.Spec.Proxy.Value)
 	}
 }
 
-func (dsInfo *builderInfo) addReadOnlyEnv(envVarMap *prioritymap.Map) {
-	if dsInfo.dynakube != nil && dsInfo.dynakube.NeedsReadOnlyOneAgents() {
+func (b *builder) addReadOnlyEnv(envVarMap *prioritymap.Map) {
+	if b.dk != nil && b.dk.NeedsReadOnlyOneAgents() {
 		addDefaultValue(envVarMap, oneagentReadOnlyMode, "true")
 	}
 }
 
-func (dsInfo *HostMonitoring) appendInfraMonEnvVars(daemonset *appsv1.DaemonSet) {
+func (b *hostMonitoring) appendInfraMonEnvVars(daemonset *appsv1.DaemonSet) {
 	envVars := prioritymap.New()
 	prioritymap.Append(envVars, daemonset.Spec.Template.Spec.Containers[0].Env)
 	addDefaultValue(envVars, oneagentDisableContainerInjection, "true")

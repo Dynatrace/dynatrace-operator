@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -27,23 +27,23 @@ const (
 func TestUseImmutableImage(t *testing.T) {
 	t.Run(`use image from status`, func(t *testing.T) {
 		imageID := "my.repo.com/image:my-tag"
-		instance := dynatracev1beta2.DynaKube{
-			Spec: dynatracev1beta2.DynaKubeSpec{
+		instance := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta2.HostInjectSpec{},
+				OneAgent: dynakube.OneAgentSpec{
+					ClassicFullStack: &dynakube.HostInjectSpec{},
 				},
 			},
-			Status: dynatracev1beta2.DynaKubeStatus{
-				OneAgent: dynatracev1beta2.OneAgentStatus{
+			Status: dynakube.DynaKubeStatus{
+				OneAgent: dynakube.OneAgentStatus{
 					VersionStatus: status.VersionStatus{
 						ImageID: imageID,
 					},
 				},
 			},
 		}
-		dsInfo := NewClassicFullStack(&instance, testClusterID)
-		ds, err := dsInfo.BuildDaemonSet()
+		dsBuilder := NewClassicFullStack(&instance, testClusterID)
+		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
 		podSpecs := ds.Spec.Template.Spec
@@ -56,15 +56,15 @@ func TestLabels(t *testing.T) {
 	feature := strings.ReplaceAll(deploymentmetadata.ClassicFullStackDeploymentType, "_", "")
 
 	t.Run("use version when set", func(t *testing.T) {
-		instance := dynatracev1beta2.DynaKube{
-			Spec: dynatracev1beta2.DynaKubeSpec{
+		instance := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta2.HostInjectSpec{},
+				OneAgent: dynakube.OneAgentSpec{
+					ClassicFullStack: &dynakube.HostInjectSpec{},
 				},
 			},
-			Status: dynatracev1beta2.DynaKubeStatus{
-				OneAgent: dynatracev1beta2.OneAgentStatus{
+			Status: dynakube.DynaKubeStatus{
+				OneAgent: dynakube.OneAgentStatus{
 					VersionStatus: status.VersionStatus{
 						Version: testImageTag,
 					},
@@ -83,8 +83,8 @@ func TestLabels(t *testing.T) {
 			labels.AppCreatedByLabel: instance.Name,
 			labels.AppManagedByLabel: version.AppName,
 		}
-		dsInfo := NewClassicFullStack(&instance, testClusterID)
-		ds, err := dsInfo.BuildDaemonSet()
+		dsBuilder := NewClassicFullStack(&instance, testClusterID)
+		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
 		podSpecs := ds.Spec.Template.Spec
@@ -94,11 +94,11 @@ func TestLabels(t *testing.T) {
 		assert.Equal(t, expectedLabels, ds.Spec.Template.Labels)
 	})
 	t.Run("if no version is set, no version label", func(t *testing.T) {
-		instance := dynatracev1beta2.DynaKube{
-			Spec: dynatracev1beta2.DynaKubeSpec{
+		instance := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta2.HostInjectSpec{},
+				OneAgent: dynakube.OneAgentSpec{
+					ClassicFullStack: &dynakube.HostInjectSpec{},
 				},
 			},
 		}
@@ -116,8 +116,8 @@ func TestLabels(t *testing.T) {
 			labels.AppManagedByLabel: version.AppName,
 		}
 
-		dsInfo := NewClassicFullStack(&instance, testClusterID)
-		ds, err := dsInfo.BuildDaemonSet()
+		dsBuilder := NewClassicFullStack(&instance, testClusterID)
+		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
 		podSpecs := ds.Spec.Template.Spec
@@ -129,17 +129,17 @@ func TestLabels(t *testing.T) {
 }
 
 func TestCustomPullSecret(t *testing.T) {
-	instance := dynatracev1beta2.DynaKube{
-		Spec: dynatracev1beta2.DynaKubeSpec{
+	instance := dynakube.DynaKube{
+		Spec: dynakube.DynaKubeSpec{
 			APIURL: testURL,
-			OneAgent: dynatracev1beta2.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta2.HostInjectSpec{},
+			OneAgent: dynakube.OneAgentSpec{
+				ClassicFullStack: &dynakube.HostInjectSpec{},
 			},
 			CustomPullSecret: testName,
 		},
 	}
-	dsInfo := NewClassicFullStack(&instance, testClusterID)
-	ds, err := dsInfo.BuildDaemonSet()
+	dsBuilder := NewClassicFullStack(&instance, testClusterID)
+	ds, err := dsBuilder.BuildDaemonSet()
 	require.NoError(t, err)
 
 	podSpecs := ds.Spec.Template.Spec
@@ -150,16 +150,16 @@ func TestCustomPullSecret(t *testing.T) {
 
 func TestResources(t *testing.T) {
 	t.Run(`minimal cpu request of 100mC is set if no resources specified`, func(t *testing.T) {
-		instance := dynatracev1beta2.DynaKube{
-			Spec: dynatracev1beta2.DynaKubeSpec{
+		instance := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta2.HostInjectSpec{},
+				OneAgent: dynakube.OneAgentSpec{
+					ClassicFullStack: &dynakube.HostInjectSpec{},
 				},
 			},
 		}
-		dsInfo := NewClassicFullStack(&instance, testClusterID)
-		ds, err := dsInfo.BuildDaemonSet()
+		dsBuilder := NewClassicFullStack(&instance, testClusterID)
+		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
 		podSpecs := ds.Spec.Template.Spec
@@ -175,11 +175,11 @@ func TestResources(t *testing.T) {
 		memoryRequest := resource.NewScaledQuantity(1, 3)
 		memoryLimit := resource.NewScaledQuantity(2, 3)
 
-		instance := dynatracev1beta2.DynaKube{
-			Spec: dynatracev1beta2.DynaKubeSpec{
+		instance := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta2.HostInjectSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					ClassicFullStack: &dynakube.HostInjectSpec{
 						OneAgentResources: corev1.ResourceRequirements{
 							Requests: corev1.ResourceList{
 								corev1.ResourceCPU:    *cpuRequest,
@@ -195,8 +195,8 @@ func TestResources(t *testing.T) {
 			},
 		}
 
-		dsInfo := NewClassicFullStack(&instance, testClusterID)
-		ds, err := dsInfo.BuildDaemonSet()
+		dsBuilder := NewClassicFullStack(&instance, testClusterID)
+		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
 		podSpecs := ds.Spec.Template.Spec
@@ -243,22 +243,22 @@ func TestSecurityContextCapabilities(t *testing.T) {
 
 func TestHostMonitoring_SecurityContext(t *testing.T) {
 	t.Run("returns default context if instance is nil", func(t *testing.T) {
-		dsInfo := builderInfo{}
-		securityContext := dsInfo.securityContext()
+		dsBuilder := builder{}
+		securityContext := dsBuilder.securityContext()
 
 		assert.Equal(t, defaultSecurityContextCapabilities(), securityContext.Capabilities)
 	})
 	t.Run(`User and group id set when read only mode is enabled`, func(t *testing.T) {
-		instance := dynatracev1beta2.DynaKube{
-			Spec: dynatracev1beta2.DynaKubeSpec{
+		instance := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta2.HostInjectSpec{},
+				OneAgent: dynakube.OneAgentSpec{
+					HostMonitoring: &dynakube.HostInjectSpec{},
 				},
 			},
 		}
-		dsInfo := NewHostMonitoring(&instance, testClusterID)
-		ds, err := dsInfo.BuildDaemonSet()
+		dsBuilder := NewHostMonitoring(&instance, testClusterID)
+		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
 		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
@@ -271,24 +271,84 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		assert.Equal(t, address.Of(true), securityContext.RunAsNonRoot)
 		assert.NotEmpty(t, securityContext.Capabilities)
 		assert.Nil(t, securityContext.SeccompProfile)
+		require.NotNil(t, securityContext.ReadOnlyRootFilesystem)
+		assert.True(t, *securityContext.ReadOnlyRootFilesystem)
 	})
 
-	t.Run(`privileged security context when feature flag is enabled`, func(t *testing.T) {
-		instance := dynatracev1beta2.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					dynatracev1beta2.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+	t.Run("old version does not have ReadOnlyRootFilesystem", func(t *testing.T) {
+		instance := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testURL,
+				OneAgent: dynakube.OneAgentSpec{
+					HostMonitoring: &dynakube.HostInjectSpec{},
 				},
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
-				APIURL: testURL,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta2.HostInjectSpec{},
+			Status: dynakube.DynaKubeStatus{
+				OneAgent: dynakube.OneAgentStatus{
+					VersionStatus: status.VersionStatus{
+						Version: "1.290.18.20240520-124108",
+					},
 				},
 			},
 		}
-		dsInfo := NewHostMonitoring(&instance, testClusterID)
-		ds, err := dsInfo.BuildDaemonSet()
+		dsBuilder := NewHostMonitoring(&instance, testClusterID)
+		ds, err := dsBuilder.BuildDaemonSet()
+		require.NoError(t, err)
+
+		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
+
+		securityContext := ds.Spec.Template.Spec.Containers[0].SecurityContext
+
+		assert.NotNil(t, securityContext)
+		require.NotNil(t, securityContext.ReadOnlyRootFilesystem)
+		assert.False(t, *securityContext.ReadOnlyRootFilesystem)
+	})
+
+	t.Run("newer version has ReadOnlyRootFilesystem", func(t *testing.T) {
+		instance := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testURL,
+				OneAgent: dynakube.OneAgentSpec{
+					HostMonitoring: &dynakube.HostInjectSpec{},
+				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				OneAgent: dynakube.OneAgentStatus{
+					VersionStatus: status.VersionStatus{
+						Version: "1.291.18.20240520-124108",
+					},
+				},
+			},
+		}
+		dsBuilder := NewHostMonitoring(&instance, testClusterID)
+		ds, err := dsBuilder.BuildDaemonSet()
+		require.NoError(t, err)
+
+		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
+
+		securityContext := ds.Spec.Template.Spec.Containers[0].SecurityContext
+
+		assert.NotNil(t, securityContext)
+		require.NotNil(t, securityContext.ReadOnlyRootFilesystem)
+		assert.True(t, *securityContext.ReadOnlyRootFilesystem)
+	})
+
+	t.Run(`privileged security context when feature flag is enabled`, func(t *testing.T) {
+		instance := dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dynakube.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testURL,
+				OneAgent: dynakube.OneAgentSpec{
+					HostMonitoring: &dynakube.HostInjectSpec{},
+				},
+			},
+		}
+		dsBuilder := NewHostMonitoring(&instance, testClusterID)
+		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
 		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
@@ -305,21 +365,21 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 	})
 
 	t.Run(`privileged security context when feature flag is enabled for classic fullstack`, func(t *testing.T) {
-		instance := dynatracev1beta2.DynaKube{
+		instance := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynatracev1beta2.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+					dynakube.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
 				},
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta2.HostInjectSpec{},
+				OneAgent: dynakube.OneAgentSpec{
+					ClassicFullStack: &dynakube.HostInjectSpec{},
 				},
 			},
 		}
-		dsInfo := NewClassicFullStack(&instance, testClusterID)
-		ds, err := dsInfo.BuildDaemonSet()
+		dsBuilder := NewClassicFullStack(&instance, testClusterID)
+		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
 		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
@@ -337,19 +397,19 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 
 	t.Run(`localhost seccomp profile when feature flag is enabled`, func(t *testing.T) {
 		customSecCompProfile := "seccomp.json"
-		instance := dynatracev1beta2.DynaKube{
+		instance := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{},
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta2.HostInjectSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					ClassicFullStack: &dynakube.HostInjectSpec{
 						SecCompProfile: customSecCompProfile,
 					},
 				},
 			},
 		}
-		dsInfo := NewClassicFullStack(&instance, testClusterID)
-		ds, err := dsInfo.BuildDaemonSet()
+		dsBuilder := NewClassicFullStack(&instance, testClusterID)
+		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
 		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
@@ -368,23 +428,23 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 
 	t.Run(`localhost seccomp profile disabled if privileged security context enabled`, func(t *testing.T) {
 		customSecCompProfile := "seccomp.json"
-		instance := dynatracev1beta2.DynaKube{
+		instance := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynatracev1beta2.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+					dynakube.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
 				},
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta2.HostInjectSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					ClassicFullStack: &dynakube.HostInjectSpec{
 						SecCompProfile: customSecCompProfile,
 					},
 				},
 			},
 		}
-		dsInfo := NewClassicFullStack(&instance, testClusterID)
-		ds, err := dsInfo.BuildDaemonSet()
+		dsBuilder := NewClassicFullStack(&instance, testClusterID)
+		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
 		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
@@ -403,19 +463,19 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 
 func TestPodSpecServiceAccountName(t *testing.T) {
 	t.Run("service account name is unprivileged + readonly by default", func(t *testing.T) {
-		builder := builderInfo{
-			dynakube: &dynatracev1beta2.DynaKube{},
+		builder := builder{
+			dk: &dynakube.DynaKube{},
 		}
 		podSpec, _ := builder.podSpec()
 
 		assert.Equal(t, serviceAccountName, podSpec.ServiceAccountName)
 	})
 	t.Run("privileged and readonly is recognized", func(t *testing.T) {
-		builder := builderInfo{
-			dynakube: &dynatracev1beta2.DynaKube{
+		builder := builder{
+			dk: &dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						dynatracev1beta2.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+						dynakube.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
 					},
 				},
 			},
@@ -425,15 +485,15 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 		assert.Equal(t, serviceAccountName, podSpec.ServiceAccountName)
 	})
 	t.Run("service account name is unprivileged if run as unprivileged", func(t *testing.T) {
-		dynakube := &dynatracev1beta2.DynaKube{
+		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynatracev1beta2.AnnotationFeatureRunOneAgentContainerPrivileged: "false",
+					dynakube.AnnotationFeatureRunOneAgentContainerPrivileged: "false",
 				},
 			},
 		}
-		builder := builderInfo{
-			dynakube: dynakube,
+		builder := builder{
+			dk: dk,
 		}
 		podSpec, _ := builder.podSpec()
 
@@ -451,10 +511,10 @@ func TestPodSpecProbes(t *testing.T) {
 	}
 
 	t.Run("set probes when dynakube oneagent status has healthcheck", func(t *testing.T) {
-		builder := builderInfo{
-			dynakube: &dynatracev1beta2.DynaKube{
-				Status: dynatracev1beta2.DynaKubeStatus{
-					OneAgent: dynatracev1beta2.OneAgentStatus{
+		builder := builder{
+			dk: &dynakube.DynaKube{
+				Status: dynakube.DynaKubeStatus{
+					OneAgent: dynakube.OneAgentStatus{
 						Healthcheck: &expectedHealthcheck,
 					},
 				},
@@ -484,10 +544,10 @@ func TestPodSpecProbes(t *testing.T) {
 		updatedHealthCheck := expectedHealthcheck.DeepCopy()
 		updatedHealthCheck.StartPeriod = 1200 * time.Second
 
-		builder := builderInfo{
-			dynakube: &dynatracev1beta2.DynaKube{
-				Status: dynatracev1beta2.DynaKubeStatus{
-					OneAgent: dynatracev1beta2.OneAgentStatus{
+		builder := builder{
+			dk: &dynakube.DynaKube{
+				Status: dynakube.DynaKubeStatus{
+					OneAgent: dynakube.OneAgentStatus{
 						Healthcheck: updatedHealthCheck,
 					},
 				},
@@ -504,8 +564,8 @@ func TestPodSpecProbes(t *testing.T) {
 		assert.Equal(t, int32(updatedHealthCheck.StartPeriod.Seconds()), actualLivenessProbe.InitialDelaySeconds)
 	})
 	t.Run("nil probes when dynakube oneagent status has no healthcheck", func(t *testing.T) {
-		builder := builderInfo{
-			dynakube: &dynatracev1beta2.DynaKube{},
+		builder := builder{
+			dk: &dynakube.DynaKube{},
 		}
 		podSpec, _ := builder.podSpec()
 
@@ -516,14 +576,14 @@ func TestPodSpecProbes(t *testing.T) {
 
 func TestOneAgentResources(t *testing.T) {
 	t.Run("get empty resources if hostInjection spec is nil", func(t *testing.T) {
-		builder := builderInfo{}
+		builder := builder{}
 		resources := builder.oneAgentResource()
 
 		assert.Equal(t, corev1.ResourceRequirements{}, resources)
 	})
 	t.Run("get resources if hostInjection spec is set", func(t *testing.T) {
-		builder := builderInfo{
-			hostInjectSpec: &dynatracev1beta2.HostInjectSpec{
+		builder := builder{
+			hostInjectSpec: &dynakube.HostInjectSpec{
 				OneAgentResources: corev1.ResourceRequirements{
 					Requests: map[corev1.ResourceName]resource.Quantity{
 						corev1.ResourceCPU: *resource.NewScaledQuantity(2, 1),
@@ -543,7 +603,7 @@ func TestOneAgentResources(t *testing.T) {
 
 func TestDNSPolicy(t *testing.T) {
 	t.Run("returns default dns policy if hostInjection is nil", func(t *testing.T) {
-		builder := builderInfo{}
+		builder := builder{}
 		dnsPolicy := builder.dnsPolicy()
 
 		assert.Equal(t, corev1.DNSClusterFirstWithHostNet, dnsPolicy)
@@ -552,18 +612,18 @@ func TestDNSPolicy(t *testing.T) {
 
 func TestNodeSelector(t *testing.T) {
 	t.Run("returns empty map if hostInjectSpec is nil", func(t *testing.T) {
-		dsInfo := builderInfo{}
-		nodeSelector := dsInfo.nodeSelector()
+		dsBuilder := builder{}
+		nodeSelector := dsBuilder.nodeSelector()
 
 		assert.Equal(t, map[string]string{}, nodeSelector)
 	})
 	t.Run("returns nodeselector", func(t *testing.T) {
-		dsInfo := builderInfo{
-			hostInjectSpec: &dynatracev1beta2.HostInjectSpec{
+		dsBuilder := builder{
+			hostInjectSpec: &dynakube.HostInjectSpec{
 				NodeSelector: map[string]string{testKey: testValue},
 			},
 		}
-		nodeSelector := dsInfo.nodeSelector()
+		nodeSelector := dsBuilder.nodeSelector()
 
 		assert.Contains(t, nodeSelector, testKey)
 	})
@@ -571,18 +631,18 @@ func TestNodeSelector(t *testing.T) {
 
 func TestPriorityClass(t *testing.T) {
 	t.Run("returns empty string if hostInjectSpec is nil", func(t *testing.T) {
-		dsInfo := builderInfo{}
-		priorityClassName := dsInfo.priorityClassName()
+		dsBuilder := builder{}
+		priorityClassName := dsBuilder.priorityClassName()
 
 		assert.Equal(t, "", priorityClassName)
 	})
 	t.Run("returns nodeselector", func(t *testing.T) {
-		dsInfo := builderInfo{
-			hostInjectSpec: &dynatracev1beta2.HostInjectSpec{
+		dsBuilder := builder{
+			hostInjectSpec: &dynakube.HostInjectSpec{
 				PriorityClassName: testName,
 			},
 		}
-		priorityClassName := dsInfo.priorityClassName()
+		priorityClassName := dsBuilder.priorityClassName()
 
 		assert.Equal(t, testName, priorityClassName)
 	})
@@ -590,14 +650,14 @@ func TestPriorityClass(t *testing.T) {
 
 func TestTolerations(t *testing.T) {
 	t.Run("returns empty list if hostInjectSpec is nil", func(t *testing.T) {
-		dsInfo := builderInfo{}
-		tolerations := dsInfo.tolerations()
+		dsBuilder := builder{}
+		tolerations := dsBuilder.tolerations()
 
 		assert.Empty(t, tolerations)
 	})
 	t.Run("returns tolerations", func(t *testing.T) {
-		dsInfo := builderInfo{
-			hostInjectSpec: &dynatracev1beta2.HostInjectSpec{
+		dsBuilder := builder{
+			hostInjectSpec: &dynakube.HostInjectSpec{
 				Tolerations: []corev1.Toleration{
 					{
 						Key:   testKey,
@@ -606,7 +666,7 @@ func TestTolerations(t *testing.T) {
 				},
 			},
 		}
-		tolerations := dsInfo.tolerations()
+		tolerations := dsBuilder.tolerations()
 
 		assert.Contains(t, tolerations, corev1.Toleration{
 			Key:   testKey,
@@ -617,37 +677,37 @@ func TestTolerations(t *testing.T) {
 
 func TestImagePullSecrets(t *testing.T) {
 	t.Run("returns empty list if instance is null", func(t *testing.T) {
-		dsInfo := builderInfo{}
-		pullSecrets := dsInfo.imagePullSecrets()
+		dsBuilder := builder{}
+		pullSecrets := dsBuilder.imagePullSecrets()
 
 		assert.Empty(t, pullSecrets)
 	})
 	t.Run("returns default instance pull secret", func(t *testing.T) {
-		dsInfo := builderInfo{
-			dynakube: &dynatracev1beta2.DynaKube{
+		dsBuilder := builder{
+			dk: &dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: testName,
 				},
 			},
 		}
-		pullSecrets := dsInfo.imagePullSecrets()
+		pullSecrets := dsBuilder.imagePullSecrets()
 
 		assert.Contains(t, pullSecrets, corev1.LocalObjectReference{
-			Name: testName + dynatracev1beta2.PullSecretSuffix,
+			Name: testName + dynakube.PullSecretSuffix,
 		})
 	})
 	t.Run("returns custom pull secret", func(t *testing.T) {
-		dsInfo := builderInfo{
-			dynakube: &dynatracev1beta2.DynaKube{
+		dsBuilder := builder{
+			dk: &dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: testName,
 				},
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					CustomPullSecret: testValue,
 				},
 			},
 		}
-		pullSecrets := dsInfo.imagePullSecrets()
+		pullSecrets := dsBuilder.imagePullSecrets()
 
 		assert.Contains(t, pullSecrets, corev1.LocalObjectReference{
 			Name: testValue,
@@ -657,28 +717,28 @@ func TestImagePullSecrets(t *testing.T) {
 
 func TestImmutableOneAgentImage(t *testing.T) {
 	t.Run("returns empty string if instance is nil", func(t *testing.T) {
-		dsInfo := builderInfo{}
-		image := dsInfo.immutableOneAgentImage()
+		dsBuilder := builder{}
+		image := dsBuilder.immutableOneAgentImage()
 
 		assert.Empty(t, image)
 	})
 	t.Run("returns instance image", func(t *testing.T) {
-		dsInfo := builderInfo{
-			dynakube: &dynatracev1beta2.DynaKube{},
+		dsBuilder := builder{
+			dk: &dynakube.DynaKube{},
 		}
-		image := dsInfo.immutableOneAgentImage()
+		image := dsBuilder.immutableOneAgentImage()
 
-		assert.Equal(t, dsInfo.dynakube.OneAgentImage(), image)
+		assert.Equal(t, dsBuilder.dk.OneAgentImage(), image)
 	})
 }
 
 func TestAnnotations(t *testing.T) {
 	t.Run("cloud native has apparmor annotation by default", func(t *testing.T) {
-		dynakube := dynatracev1beta2.DynaKube{
-			Spec: dynatracev1beta2.DynaKubeSpec{
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{
-						HostInjectSpec: dynatracev1beta2.HostInjectSpec{},
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
+						HostInjectSpec: dynakube.HostInjectSpec{},
 					},
 				},
 			},
@@ -688,7 +748,7 @@ func TestAnnotations(t *testing.T) {
 			annotationUnprivileged:            annotationUnprivilegedValue,
 		}
 
-		builder := NewCloudNativeFullStack(&dynakube, testClusterID)
+		builder := NewCloudNativeFullStack(&dk, testClusterID)
 		daemonset, err := builder.BuildDaemonSet()
 
 		require.NoError(t, err)
@@ -696,10 +756,10 @@ func TestAnnotations(t *testing.T) {
 		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("host monitoring has apparmor annotation by default", func(t *testing.T) {
-		dynakube := dynatracev1beta2.DynaKube{
-			Spec: dynatracev1beta2.DynaKubeSpec{
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta2.HostInjectSpec{},
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					HostMonitoring: &dynakube.HostInjectSpec{},
 				},
 			},
 		}
@@ -708,7 +768,7 @@ func TestAnnotations(t *testing.T) {
 			annotationUnprivileged:            annotationUnprivilegedValue,
 		}
 
-		builder := NewHostMonitoring(&dynakube, testClusterID)
+		builder := NewHostMonitoring(&dk, testClusterID)
 		daemonset, err := builder.BuildDaemonSet()
 
 		require.NoError(t, err)
@@ -716,10 +776,10 @@ func TestAnnotations(t *testing.T) {
 		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("classic fullstack has apparmor annotation by default", func(t *testing.T) {
-		dynakube := dynatracev1beta2.DynaKube{
-			Spec: dynatracev1beta2.DynaKubeSpec{
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta2.HostInjectSpec{},
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					ClassicFullStack: &dynakube.HostInjectSpec{},
 				},
 			},
 		}
@@ -728,7 +788,7 @@ func TestAnnotations(t *testing.T) {
 			annotationUnprivileged:            annotationUnprivilegedValue,
 		}
 
-		builder := NewClassicFullStack(&dynakube, testClusterID)
+		builder := NewClassicFullStack(&dk, testClusterID)
 		daemonset, err := builder.BuildDaemonSet()
 
 		require.NoError(t, err)
@@ -736,11 +796,11 @@ func TestAnnotations(t *testing.T) {
 		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("annotations are added with cloud native", func(t *testing.T) {
-		dynakube := dynatracev1beta2.DynaKube{
-			Spec: dynatracev1beta2.DynaKubeSpec{
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{
-						HostInjectSpec: dynatracev1beta2.HostInjectSpec{
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
+						HostInjectSpec: dynakube.HostInjectSpec{
 							Annotations: map[string]string{
 								testKey: testName,
 							},
@@ -755,7 +815,7 @@ func TestAnnotations(t *testing.T) {
 			testKey:                           testName,
 		}
 
-		builder := NewCloudNativeFullStack(&dynakube, testClusterID)
+		builder := NewCloudNativeFullStack(&dk, testClusterID)
 		daemonset, err := builder.BuildDaemonSet()
 
 		require.NoError(t, err)
@@ -763,10 +823,10 @@ func TestAnnotations(t *testing.T) {
 		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("annotations are added with host monitoring", func(t *testing.T) {
-		dynakube := dynatracev1beta2.DynaKube{
-			Spec: dynatracev1beta2.DynaKubeSpec{
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta2.HostInjectSpec{
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					HostMonitoring: &dynakube.HostInjectSpec{
 						Annotations: map[string]string{
 							testKey: testName,
 						},
@@ -780,7 +840,7 @@ func TestAnnotations(t *testing.T) {
 			testKey:                           testName,
 		}
 
-		builder := NewHostMonitoring(&dynakube, testClusterID)
+		builder := NewHostMonitoring(&dk, testClusterID)
 		daemonset, err := builder.BuildDaemonSet()
 
 		require.NoError(t, err)
@@ -788,10 +848,10 @@ func TestAnnotations(t *testing.T) {
 		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("annotations are added with classic fullstack", func(t *testing.T) {
-		dynakube := dynatracev1beta2.DynaKube{
-			Spec: dynatracev1beta2.DynaKubeSpec{
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta2.HostInjectSpec{
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					ClassicFullStack: &dynakube.HostInjectSpec{
 						Annotations: map[string]string{
 							testKey: testName,
 						},
@@ -805,7 +865,7 @@ func TestAnnotations(t *testing.T) {
 			testKey:                           testName,
 		}
 
-		builder := NewClassicFullStack(&dynakube, testClusterID)
+		builder := NewClassicFullStack(&dk, testClusterID)
 		daemonset, err := builder.BuildDaemonSet()
 
 		require.NoError(t, err)
@@ -816,11 +876,11 @@ func TestAnnotations(t *testing.T) {
 
 func TestOneAgentHostGroup(t *testing.T) {
 	t.Run("cloud native - host group settings", func(t *testing.T) {
-		dynakube := dynatracev1beta2.DynaKube{
-			Spec: dynatracev1beta2.DynaKubeSpec{
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{
-						HostInjectSpec: dynatracev1beta2.HostInjectSpec{
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
+						HostInjectSpec: dynakube.HostInjectSpec{
 							Args: []string{
 								"--set-host-group=oldgroup",
 							},
@@ -831,7 +891,7 @@ func TestOneAgentHostGroup(t *testing.T) {
 			},
 		}
 
-		builder := NewCloudNativeFullStack(&dynakube, testClusterID)
+		builder := NewCloudNativeFullStack(&dk, testClusterID)
 		daemonset, err := builder.BuildDaemonSet()
 
 		require.NoError(t, err)
@@ -846,17 +906,17 @@ func TestDefaultArguments(t *testing.T) {
 		name      = "dynakube"
 	)
 
-	base := dynatracev1beta2.DynaKube{
+	base := dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
-		Spec: dynatracev1beta2.DynaKubeSpec{
+		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 			Tokens: name,
-			OneAgent: dynatracev1beta2.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta2.HostInjectSpec{},
+			OneAgent: dynakube.OneAgentSpec{
+				ClassicFullStack: &dynakube.HostInjectSpec{},
 			},
 		},
 	}
-	base.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynatracev1beta2.CommunicationHostStatus{
+	base.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynakube.CommunicationHostStatus{
 		{
 			Protocol: "http",
 			Host:     "dummyhost",
@@ -873,8 +933,8 @@ func TestDefaultArguments(t *testing.T) {
 			"--set-server=https://hyper.super.com:9999",
 		}
 		dk.Spec.OneAgent.ClassicFullStack.Args = args
-		dsInfo := NewClassicFullStack(dk, testClusterID)
-		ds, err := dsInfo.BuildDaemonSet()
+		dsBuilder := NewClassicFullStack(dk, testClusterID)
+		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
 		expectedDefaultArguments := []string{
@@ -898,8 +958,8 @@ func TestDefaultArguments(t *testing.T) {
 			"--set-server=https://hyper.super.com:9999",
 		}
 		dk.Spec.OneAgent.ClassicFullStack.Args = args
-		dsInfo := NewClassicFullStack(dk, testClusterID)
-		ds, err := dsInfo.BuildDaemonSet()
+		dsBuilder := NewClassicFullStack(dk, testClusterID)
+		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
 		expectedDefaultArguments := []string{
