@@ -13,7 +13,6 @@ import (
 const (
 	KubernetesConnectionSchemaID = "app:dynatrace.kubernetes.connector:connection"
 	KubernetesConnectionVersion  = "0.1.1"
-	KubernetesConnectionName     = "edgeconnect-kubernetes-connection"
 	KubernetesConnectionScope    = "environment"
 )
 
