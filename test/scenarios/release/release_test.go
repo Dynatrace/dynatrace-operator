@@ -9,18 +9,22 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
+	"github.com/blang/semver/v4"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 var testEnv env.Environment
+var thresholdVersion, _ = semver.Make("1.0.0")
+
+const usedVersion = "0.15.0"
 
 func TestMain(m *testing.M) {
 	cfg := environment.GetStandardKubeClusterEnvConfig()
 	testEnv = env.NewWithConfig(cfg)
 	testEnv.Setup(
 		tenant.CreateOtelSecret(operator.DefaultNamespace),
-		operator.InstallViaHelm("0.15.0", true, operator.DefaultNamespace), // TODO: Make the version not hard-coded, but always use the previous version. Using git is not an option because pipeline does not pull the whole git repo.
+		operator.InstallViaHelm(usedVersion, true, operator.DefaultNamespace), // TODO: Make the version not hard-coded, but always use the previous version. Using git is not an option because pipeline does not pull the whole git repo.
 	)
 	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
 	if !cfg.FailFast() {
@@ -30,8 +34,13 @@ func TestMain(m *testing.M) {
 }
 
 func TestRelease(t *testing.T) {
+	usesOldVersion := false
+	usedSeMVer, _ := semver.Make(usedVersion)
+	if thresholdVersion.Compare(usedSeMVer) >= 1 {
+		usesOldVersion = true
+	}
 	feats := []features.Feature{
-		upgrade.Feature(t),
+		upgrade.Feature(t, usesOldVersion),
 	}
 	testEnv.Test(t, feats...)
 }

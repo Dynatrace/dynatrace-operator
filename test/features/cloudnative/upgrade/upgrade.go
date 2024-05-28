@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func Feature(t *testing.T) features.Feature {
+func Feature(t *testing.T, usesOldVersion bool) features.Feature {
 	builder := features.New("upgrade a cloudnative installation")
 	builder.WithLabel("name", "cloudnative-upgrade")
 	secretConfig := tenant.GetSingleTenantSecret(t)
@@ -31,7 +31,7 @@ func Feature(t *testing.T) features.Feature {
 	)
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
-	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube, usesOldVersion)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
