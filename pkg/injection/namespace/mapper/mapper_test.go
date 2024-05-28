@@ -36,12 +36,6 @@ func createDynakubeWithAppInject(name string, selector metav1.LabelSelector) *dy
 	return dk
 }
 
-func createDynakubeWithMultipleFeatures(name string, selector metav1.LabelSelector) *dynatracev1beta2.DynaKube {
-	dk := createDynakubeWithAppInject(name, selector)
-
-	return dk
-}
-
 func createDynakubeWithMetadataEnrichment(name string, selector metav1.LabelSelector) *dynatracev1beta2.DynaKube {
 	dk := createBaseDynakube(name, false, true)
 	dk.Spec.MetadataEnrichment.NamespaceSelector = selector
@@ -49,7 +43,7 @@ func createDynakubeWithMetadataEnrichment(name string, selector metav1.LabelSele
 	return dk
 }
 
-func createTestDynakubeWithMetadataAndAppInjection(name string, selector metav1.LabelSelector) *dynatracev1beta2.DynaKube {
+func createDynakubeWithMetadataAndAppInjection(name string, selector metav1.LabelSelector) *dynatracev1beta2.DynaKube {
 	dk := createBaseDynakube(name, true, true)
 
 	dk.Spec.MetadataEnrichment.NamespaceSelector = selector
@@ -74,7 +68,7 @@ func convertToLabelSelector(labels map[string]string) metav1.LabelSelector {
 func TestUpdateNamespace(t *testing.T) {
 	t.Run("Add to namespace", func(t *testing.T) {
 		labels := map[string]string{"test": "selector"}
-		dk := createDynakubeWithMultipleFeatures("dk-test", convertToLabelSelector(labels))
+		dk := createDynakubeWithAppInject("dk-test", convertToLabelSelector(labels))
 		namespace := createNamespace("test-namespace", labels)
 
 		updated, err := updateNamespace(namespace, &dynatracev1beta2.DynaKubeList{Items: []dynatracev1beta2.DynaKube{*dk}})
@@ -96,7 +90,7 @@ func TestUpdateNamespace(t *testing.T) {
 	})
 	t.Run("Add to namespace, with metadata and appInjection enabled", func(t *testing.T) {
 		labels := map[string]string{"test": "selector"}
-		dk := createTestDynakubeWithMetadataAndAppInjection("appMonitoring", convertToLabelSelector(labels))
+		dk := createDynakubeWithMetadataAndAppInjection("appMonitoring", convertToLabelSelector(labels))
 
 		namespace := createNamespace("test", labels)
 
@@ -108,7 +102,7 @@ func TestUpdateNamespace(t *testing.T) {
 	})
 	t.Run("Overwrite stale entry in labels", func(t *testing.T) {
 		labels := map[string]string{"test": "selector"}
-		dk := createDynakubeWithMultipleFeatures("dk-test", convertToLabelSelector(labels))
+		dk := createDynakubeWithAppInject("dk-test", convertToLabelSelector(labels))
 		nsLabels := map[string]string{
 			dtwebhook.InjectionInstanceLabel: "old-dk",
 			"test":                           "selector",
@@ -137,7 +131,7 @@ func TestUpdateNamespace(t *testing.T) {
 	})
 	t.Run("Throw error in case of conflicting Dynakubes", func(t *testing.T) {
 		labels := map[string]string{"test": "selector"}
-		dk := createDynakubeWithMultipleFeatures("dk-test", convertToLabelSelector(labels))
+		dk := createDynakubeWithAppInject("dk-test", convertToLabelSelector(labels))
 		conflictingDk := createDynakubeWithMetadataEnrichment("conflicting-dk", convertToLabelSelector(labels))
 		nsLabels := map[string]string{
 			dtwebhook.InjectionInstanceLabel: dk.Name,
@@ -150,7 +144,7 @@ func TestUpdateNamespace(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run("Ignore kube namespaces", func(t *testing.T) {
-		dk := createDynakubeWithMultipleFeatures("appMonitoring", metav1.LabelSelector{})
+		dk := createDynakubeWithAppInject("appMonitoring", metav1.LabelSelector{})
 		namespace := createNamespace("kube-something", nil)
 
 		updated, err := updateNamespace(namespace, &dynatracev1beta2.DynaKubeList{Items: []dynatracev1beta2.DynaKube{*dk}})
@@ -161,7 +155,7 @@ func TestUpdateNamespace(t *testing.T) {
 	})
 
 	t.Run("Ignore openshift namespaces", func(t *testing.T) {
-		dk := createDynakubeWithMultipleFeatures("appMonitoring", metav1.LabelSelector{})
+		dk := createDynakubeWithAppInject("appMonitoring", metav1.LabelSelector{})
 		namespace := createNamespace("openshift-something", nil)
 
 		updated, err := updateNamespace(namespace, &dynatracev1beta2.DynaKubeList{Items: []dynatracev1beta2.DynaKube{*dk}})
@@ -173,8 +167,8 @@ func TestUpdateNamespace(t *testing.T) {
 	t.Run("Double dynakube, 1. ignores openshift namespaces, 2. doesn't", func(t *testing.T) {
 		labels := map[string]string{"test": "selector"}
 		otherLabels := map[string]string{"test1": "selector"}
-		ignoreDk := createDynakubeWithMultipleFeatures("appMonitoring", convertToLabelSelector(otherLabels))
-		notIgnoreDk := createDynakubeWithMultipleFeatures("boom", convertToLabelSelector(labels))
+		ignoreDk := createDynakubeWithAppInject("appMonitoring", convertToLabelSelector(otherLabels))
+		notIgnoreDk := createDynakubeWithAppInject("boom", convertToLabelSelector(labels))
 		notIgnoreDk.Annotations = map[string]string{
 			dynatracev1beta2.AnnotationFeatureIgnoredNamespaces: "[\"asd\"]",
 		}
@@ -190,8 +184,8 @@ func TestUpdateNamespace(t *testing.T) {
 	t.Run("Double dynakube, 1. doesn't, 2. ignores openshift namespaces", func(t *testing.T) {
 		labels := map[string]string{"test": "selector"}
 		otherLabels := map[string]string{"test1": "selector"}
-		ignoreDk := createDynakubeWithMultipleFeatures("appMonitoring", convertToLabelSelector(otherLabels))
-		notIgnoreDk := createDynakubeWithMultipleFeatures("boom", convertToLabelSelector(labels))
+		ignoreDk := createDynakubeWithAppInject("appMonitoring", convertToLabelSelector(otherLabels))
+		notIgnoreDk := createDynakubeWithAppInject("boom", convertToLabelSelector(labels))
 		notIgnoreDk.Annotations = map[string]string{
 			dynatracev1beta2.AnnotationFeatureIgnoredNamespaces: "[\"asd\"]",
 		}

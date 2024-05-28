@@ -16,7 +16,7 @@ import (
 
 func TestMapFromDynakube(t *testing.T) {
 	labels := map[string]string{"test": "selector"}
-	dk := createDynakubeWithMultipleFeatures("dk-test", convertToLabelSelector(labels))
+	dk := createDynakubeWithAppInject("dk-test", convertToLabelSelector(labels))
 	namespace := createNamespace("test-namespace", labels)
 
 	t.Run("Add to namespace", func(t *testing.T) {
@@ -72,7 +72,7 @@ func TestMapFromDynakube(t *testing.T) {
 		assert.Len(t, ns.Annotations, 1)
 	})
 	t.Run("Throw error in case of conflicting Dynakubes", func(t *testing.T) {
-		conflictingDk := createDynakubeWithMultipleFeatures("conflicting-dk", convertToLabelSelector(labels))
+		conflictingDk := createDynakubeWithAppInject("conflicting-dk", convertToLabelSelector(labels))
 		nsLabels := map[string]string{
 			dtwebhook.InjectionInstanceLabel: dk.Name,
 			"test":                           "selector",
@@ -86,7 +86,7 @@ func TestMapFromDynakube(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run("Ignore kube namespaces", func(t *testing.T) {
-		dk := createDynakubeWithMultipleFeatures("appMonitoring", metav1.LabelSelector{})
+		dk := createDynakubeWithAppInject("appMonitoring", metav1.LabelSelector{})
 		namespace := createNamespace("kube-something", nil)
 		clt := fake.NewClient(dk, namespace)
 		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
@@ -103,7 +103,7 @@ func TestMapFromDynakube(t *testing.T) {
 	})
 
 	t.Run("Ignore openshift namespaces", func(t *testing.T) {
-		dk := createDynakubeWithMultipleFeatures("appMonitoring", metav1.LabelSelector{})
+		dk := createDynakubeWithAppInject("appMonitoring", metav1.LabelSelector{})
 		namespace := createNamespace("openshift-something", nil)
 		clt := fake.NewClient(dk, namespace)
 		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
@@ -119,7 +119,7 @@ func TestMapFromDynakube(t *testing.T) {
 		assert.Empty(t, ns.Annotations)
 	})
 	t.Run("ComponentFeature flag for monitoring system namespaces", func(t *testing.T) {
-		dk := createDynakubeWithMultipleFeatures("appMonitoring", metav1.LabelSelector{})
+		dk := createDynakubeWithAppInject("appMonitoring", metav1.LabelSelector{})
 		dk.Annotations = map[string]string{
 			dynatracev1beta2.AnnotationFeatureIgnoredNamespaces: "[]",
 		}
