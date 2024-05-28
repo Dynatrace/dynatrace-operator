@@ -5,17 +5,18 @@ package release
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/upgrade"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
-	"github.com/blang/semver/v4"
+	"golang.org/x/mod/semver"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 var testEnv env.Environment
-var thresholdVersion, _ = semver.Make("1.1.0")
+var thresholdVersion, _ = dtversion.ToSemver("1.1.0")
 
 const usedVersion = "0.15.0"
 
@@ -35,8 +36,8 @@ func TestMain(m *testing.M) {
 
 func TestRelease(t *testing.T) {
 	usesOldVersion := false
-	usedSeMVer, _ := semver.Make(usedVersion)
-	if thresholdVersion.Compare(usedSeMVer) >= 1 {
+	usedSemVer, _ := dtversion.ToSemver(usedVersion)
+	if semver.Compare(thresholdVersion, usedSemVer) >= 1 {
 		usesOldVersion = true
 	}
 	feats := []features.Feature{
