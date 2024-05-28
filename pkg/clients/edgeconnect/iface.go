@@ -17,7 +17,7 @@ type Client interface {
 	// GetEdgeConnects returns list of edge connects
 	GetEdgeConnects(name string) (ListResponse, error)
 
-	GetConnectionSetting() (EnvironmentSetting, error)
+	GetConnectionSetting(uid string) (EnvironmentSetting, error)
 
 	CreateConnectionSetting(es EnvironmentSetting) error
 

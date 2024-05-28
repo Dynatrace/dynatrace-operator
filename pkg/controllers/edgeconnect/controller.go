@@ -2,7 +2,6 @@ package edgeconnect
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"slices"
 	"strings"
@@ -133,63 +132,77 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 
 	edgeConnect.ObjectMeta.Finalizers = nil
 	if err := controller.client.Update(ctx, edgeConnect); err != nil {
-		_log.Debug("updating the EdgeConnect object failed")
+		_log.Debug("reconcile deletion: updating the EdgeConnect object failed")
 
 		return errors.WithStack(err)
 	}
 
 	edgeConnectClient, err := controller.buildEdgeConnectClient(ctx, edgeConnect)
 	if err != nil {
-		_log.Debug("building EdgeConnect client failed")
+		_log.Debug("reconcile deletion: building EdgeConnect client failed")
 
 		return err
 	}
 
 	tenantEdgeConnect, err := getEdgeConnectByName(edgeConnectClient, edgeConnect.Name)
 	if err != nil {
+		_log.Debug("reconcile deletion: failed to get EdgeConnect by name")
+
 		return err
 	}
 
 	switch {
 	case tenantEdgeConnect.ID == "":
-		_log.Info("EdgeConnect not found on the tenant")
-	case !tenantEdgeConnect.ManagedByDynatraceOperator:
-		_log.Info("can't delete EdgeConnect configuration from the tenant because it has been created manually by a user")
-	case edgeConnectIdFromSecret == "":
-		_log.Info("EdgeConnect client secret is missing")
-
-		return edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID)
-	default:
-		if tenantEdgeConnect.ID != edgeConnectIdFromSecret {
-			_log.Info("EdgeConnect client secret contains invalid Id")
+		{
+			_log.Info("EdgeConnect not found on the tenant")
+			return nil
 		}
-
-		return edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID)
+	case !tenantEdgeConnect.ManagedByDynatraceOperator:
+		{
+			_log.Info("can't delete EdgeConnect configuration from the tenant because it has been created manually by a user")
+			return nil
+		}
+	case edgeConnectIdFromSecret == "":
+		{
+			_log.Info("EdgeConnect client secret is missing")
+		}
+	default:
+		{
+			if tenantEdgeConnect.ID != edgeConnectIdFromSecret {
+				_log.Info("EdgeConnect client secret contains invalid Id")
+			}
+		}
 	}
 
-	err = controller.deleteConnectionSetting(edgeConnectClient)
+	err = controller.deleteConnectionSetting(ctx, edgeConnectClient)
 	if err != nil {
-		_log.Info("Deleting connection setting failed")
+		_log.Info("reconcile deletion: Deleting connection setting failed")
 
 		return err
 	}
-
-	return nil
+	return edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID)
 }
 
-func (controller *Controller) deleteConnectionSetting(edgeConnectClient edgeconnect.Client) error {
-	envSetting, err := edgeConnectClient.GetConnectionSetting()
+func (controller *Controller) deleteConnectionSetting(ctx context.Context, edgeConnectClient edgeconnect.Client) error {
+	var kubeSystemNamespace corev1.Namespace
+
+	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: kubeSystemNamespaceName}, &kubeSystemNamespace)
+	if err != nil {
+		return err
+	}
+
+	envSetting, err := edgeConnectClient.GetConnectionSetting(string(kubeSystemNamespace.UID))
 	if err != nil {
 		return err
 	}
 
 	if (envSetting != edgeconnect.EnvironmentSetting{}) {
-		// TODO ALBERTO
-		// err = edgeConnectClient.DeleteConnectionSetting(envSetting.ObjectId)
-		// if err != nil {
-		// 	return err
-		// }
+		err = edgeConnectClient.DeleteConnectionSetting(*envSetting.ObjectId)
+		if err != nil {
+			return err
+		}
 	}
+
 	return nil
 }
 
@@ -388,7 +401,7 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 		return err
 	}
 
-	err = controller.createOrUpdateConnectionSetting(edgeConnectClient, edgeConnect, edgeConnectToken)
+	err = controller.createOrUpdateConnectionSetting(ctx, edgeConnectClient, edgeConnect, edgeConnectToken)
 	if err != nil {
 		_log.Debug("creating EdgeConnect connection setting failed")
 
@@ -723,7 +736,7 @@ func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Co
 		return err
 	}
 
-	err = controller.createOrUpdateConnectionSetting(edgeConnectClient, edgeConnect, edgeConnectToken)
+	err = controller.createOrUpdateConnectionSetting(ctx, edgeConnectClient, edgeConnect, edgeConnectToken)
 	if err != nil {
 		_log.Debug("creating EdgeConnect connection setting failed")
 
@@ -735,26 +748,32 @@ func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Co
 	return nil
 }
 
-func (controller *Controller) createOrUpdateConnectionSetting(edgeConnectClient edgeconnect.Client, edgeConnect *edgeconnectv1alpha1.EdgeConnect, latestToken string) error {
+func (controller *Controller) createOrUpdateConnectionSetting(ctx context.Context, edgeConnectClient edgeconnect.Client, edgeConnect *edgeconnectv1alpha1.EdgeConnect, latestToken string) error {
 	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name)
 
-	envSetting, err := edgeConnectClient.GetConnectionSetting()
+	var kubeSystemNamespace corev1.Namespace
+
+	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: kubeSystemNamespaceName}, &kubeSystemNamespace)
+	if err != nil {
+		return err
+	}
+
+	envSetting, err := edgeConnectClient.GetConnectionSetting(string(kubeSystemNamespace.UID))
 	if err != nil {
 		_log.Info("Failed getting EdgeConnect connection setting object")
 		return err
 	}
 
 	if (envSetting == edgeconnect.EnvironmentSetting{}) {
-		_log.Info("Creating edgeconnect connection setting object...")
+		_log.Debug("Creating edgeconnect connection setting object...")
 		err = edgeConnectClient.CreateConnectionSetting(
 			edgeconnect.EnvironmentSetting{
 				SchemaId:      edgeconnect.KubernetesConnectionSchemaID,
 				SchemaVersion: edgeconnect.KubernetesConnectionVersion,
 				Scope:         edgeconnect.KubernetesConnectionScope,
 				Value: edgeconnect.EnvironmentSettingValue{
-					Name: fmt.Sprintf("%s", edgeConnect.Name),
-					// TODO ALBERTO: get id from kubesystem uid
-					Uid:       "c48d2842-3fac-4611-8519-300347be20ba",
+					Name:      edgeConnect.Name,
+					Uid:       string(kubeSystemNamespace.UID),
 					Namespace: edgeConnect.Namespace,
 					Token:     latestToken,
 				},
@@ -766,12 +785,16 @@ func (controller *Controller) createOrUpdateConnectionSetting(edgeConnectClient 
 	}
 
 	if (envSetting != edgeconnect.EnvironmentSetting{}) {
-		_log.Info("Updating EdgeConnect connection setting object...")
-		// TODO ALBERTO: Update, no delete
-		// err = edgeConnectClient.DeleteConnectionSetting(envSetting.ObjectId)
-		// if err != nil {
-		// 	return err
-		// }
+		if envSetting.Value.Token != latestToken {
+			_log.Debug("Updating EdgeConnect connection setting object...")
+
+			envSetting.Value.Token = latestToken
+			err = edgeConnectClient.UpdateConnectionSetting(envSetting)
+		}
+
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -783,7 +806,7 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 	// check token not found and not all errors
 	if err != nil {
 		if k8serrors.IsNotFound(err) || errors.Is(err, ErrTokenNotFound) {
-			newToken, err := dttoken.New("dt0e01")
+			newToken, err := dttoken.New("dt0e01f")
 			if err != nil {
 				return "", "", err
 			}

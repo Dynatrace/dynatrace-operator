@@ -18,6 +18,7 @@ const (
 )
 
 type EnvironmentSetting struct {
+	ObjectId      *string                 `json:"objectId"`
 	SchemaId      string                  `json:"schemaId"`
 	SchemaVersion string                  `json:"schemaVersion"`
 	Scope         string                  `json:"scope"`
@@ -47,7 +48,7 @@ type environmentSettingsResponse struct {
 	PageSize   int                  `json:"pageSize"`
 }
 
-func (c *client) GetConnectionSetting() (EnvironmentSetting, error) {
+func (c *client) GetConnectionSetting(uid string) (EnvironmentSetting, error) {
 	settingsObjectsUrl := c.getSettingsObjectsUrl()
 
 	req, err := http.NewRequestWithContext(c.ctx, http.MethodGet, settingsObjectsUrl, nil)
@@ -80,17 +81,19 @@ func (c *client) GetConnectionSetting() (EnvironmentSetting, error) {
 		return EnvironmentSetting{}, fmt.Errorf("error parsing response body: %w", err)
 	}
 
-	if len(resDataJson.Items) == 0 {
-		return EnvironmentSetting{}, nil
+	for _, item := range resDataJson.Items {
+		if item.Value.Uid == string(uid) {
+			return item, nil
+		}
 	}
 
-	return resDataJson.Items[0], nil
+	return EnvironmentSetting{}, nil
 }
 
 func (c *client) CreateConnectionSetting(es EnvironmentSetting) error {
 	log.Info("Creating connection setting", "EnvironmentSetting", es)
 
-	jsonStr, err := json.Marshal(es)
+	jsonStr, err := json.Marshal([]EnvironmentSetting{es})
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -111,6 +114,7 @@ func (c *client) CreateConnectionSetting(es EnvironmentSetting) error {
 	}
 
 	_, err = c.getServerResponseData(response)
+
 	if err != nil {
 		return fmt.Errorf("error reading response data: %w", err)
 	}
@@ -119,15 +123,19 @@ func (c *client) CreateConnectionSetting(es EnvironmentSetting) error {
 }
 
 func (c *client) UpdateConnectionSetting(es EnvironmentSetting) error {
+	es.SchemaVersion = KubernetesConnectionVersion
+
 	jsonStr, err := json.Marshal(es)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	req, err := http.NewRequestWithContext(c.ctx, http.MethodPut, c.getSettingsObjectsUrl(), bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequestWithContext(c.ctx, http.MethodPut, c.getSettingsObjectsIdUrl(*es.ObjectId), bytes.NewBuffer(jsonStr))
 	if err != nil {
 		return fmt.Errorf("error initializing http request: %w", err)
 	}
+
+	req.Header.Add("Content-Type", "application/json")
 
 	response, err := c.httpClient.Do(req)
 	if err != nil {
@@ -148,13 +156,12 @@ func (c *client) DeleteConnectionSetting(objectId string) error {
 	}
 
 	response, err := c.httpClient.Do(req)
+
+	defer utils.CloseBodyAfterRequest(response)
+
 	if err != nil {
 		return fmt.Errorf("error making post request to dynatrace api: %w", err)
 	}
 
-	defer utils.CloseBodyAfterRequest(response)
-
-	_, err = c.getServerResponseData(response)
-
-	return errors.WithStack(err)
+	return nil
 }
