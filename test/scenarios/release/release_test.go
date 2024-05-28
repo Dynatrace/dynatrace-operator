@@ -15,7 +15,7 @@ import (
 )
 
 var testEnv env.Environment
-var thresholdVersion, _ = semver.Make("1.0.0")
+var thresholdVersion, _ = semver.Make("1.1.0")
 
 const usedVersion = "0.15.0"
 
