@@ -15,7 +15,7 @@ import (
 
 func TestMapFromDynakube(t *testing.T) {
 	labels := map[string]string{"test": "selector"}
-	dk := createTestDynakubeWithMultipleFeatures("dk-test", labels)
+	dk := createDynakubeWithMultipleFeatures("dk-test", labels)
 	namespace := createNamespace("test-namespace", labels)
 
 	t.Run("Add to namespace", func(t *testing.T) {
@@ -52,7 +52,7 @@ func TestMapFromDynakube(t *testing.T) {
 		assert.Len(t, ns.Annotations, 1)
 	})
 	t.Run("Remove stale dynakube entry for no longer matching ns", func(t *testing.T) {
-		movedDk := createTestDynakubeWithAppInject("moved-dk", labels, nil)
+		movedDk := createDynakubeWithAppInject("moved-dk", labels, nil)
 		nsLabels := map[string]string{
 			dtwebhook.InjectionInstanceLabel: movedDk.Name,
 		}
@@ -71,7 +71,7 @@ func TestMapFromDynakube(t *testing.T) {
 		assert.Len(t, ns.Annotations, 1)
 	})
 	t.Run("Throw error in case of conflicting Dynakubes", func(t *testing.T) {
-		conflictingDk := createTestDynakubeWithMultipleFeatures("conflicting-dk", labels)
+		conflictingDk := createDynakubeWithMultipleFeatures("conflicting-dk", labels)
 		nsLabels := map[string]string{
 			dtwebhook.InjectionInstanceLabel: dk.Name,
 			"test":                           "selector",
@@ -85,7 +85,7 @@ func TestMapFromDynakube(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run("Ignore kube namespaces", func(t *testing.T) {
-		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil)
+		dk := createDynakubeWithMultipleFeatures("appMonitoring", nil)
 		namespace := createNamespace("kube-something", nil)
 		clt := fake.NewClient(dk, namespace)
 		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
@@ -102,7 +102,7 @@ func TestMapFromDynakube(t *testing.T) {
 	})
 
 	t.Run("Ignore openshift namespaces", func(t *testing.T) {
-		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil)
+		dk := createDynakubeWithMultipleFeatures("appMonitoring", nil)
 		namespace := createNamespace("openshift-something", nil)
 		clt := fake.NewClient(dk, namespace)
 		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
@@ -118,7 +118,7 @@ func TestMapFromDynakube(t *testing.T) {
 		assert.Empty(t, ns.Annotations)
 	})
 	t.Run("ComponentFeature flag for monitoring system namespaces", func(t *testing.T) {
-		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil)
+		dk := createDynakubeWithMultipleFeatures("appMonitoring", nil)
 		dk.Annotations = map[string]string{
 			dynatracev1beta2.AnnotationFeatureIgnoredNamespaces: "[]",
 		}
@@ -139,7 +139,7 @@ func TestMapFromDynakube(t *testing.T) {
 }
 
 func TestUnmapFromDynaKube(t *testing.T) {
-	dk := createTestDynakubeWithAppInject("dk", nil, nil)
+	dk := createDynakubeWithAppInject("dk", nil, nil)
 	labels := map[string]string{
 		dtwebhook.InjectionInstanceLabel: dk.Name,
 	}

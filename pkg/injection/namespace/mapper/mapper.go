@@ -61,7 +61,7 @@ func setUpdatedViaDynakubeAnnotation(ns *corev1.Namespace) {
 	ns.Annotations[UpdatedViaDynakubeAnnotation] = "true"
 }
 
-func matchDynakubeToNamespace(dk *dynatracev1beta2.DynaKube, namespace *corev1.Namespace) (bool, error) {
+func match(dk *dynatracev1beta2.DynaKube, namespace *corev1.Namespace) (bool, error) {
 	matchesOneAgent, err := matchOneAgent(dk, namespace)
 	if err != nil {
 		return false, err
@@ -120,7 +120,7 @@ func updateNamespace(namespace *corev1.Namespace, deployedDynakubes *dynatracev1
 			continue
 		}
 
-		matches, err := matchDynakubeToNamespace(dynakube, namespace)
+		matches, err := match(dynakube, namespace)
 		if err != nil {
 			return namespaceUpdated, err
 		}
