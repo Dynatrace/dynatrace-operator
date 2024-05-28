@@ -38,7 +38,7 @@ const (
 	curlPodNameDynatraceInboundTraffic  = "dynatrace-inbound-traffic"
 	curlPodNameDynatraceOutboundTraffic = "dynatrace-outbound-traffic"
 
-	internetUrl = "https://wwww.dynatrace.com"
+	internetUrl = "https://www.dynatrace.com"
 )
 
 var (
@@ -50,6 +50,9 @@ var (
 
 	ProxySpec = &dynatracev1beta2.DynaKubeProxy{
 		Value: "http://squid.proxy.svc.cluster.local:3128",
+	}
+	HttpsProxySpec = &dynatracev1beta2.DynaKubeProxy{
+		Value: "https://squid.proxy.svc.cluster.local:3128",
 	}
 )
 
