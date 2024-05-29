@@ -2,14 +2,17 @@ name: E2E tests
 
 on:
   schedule:
-    # every work day at 00:00 UTC
+    # (monday-wednesday-friday)
+    # and it used to be enabled or disabled manually depending on where were we in the release process
+    # beginning of “hardening” -> update and start pipelines
+    # after release -> pause pipelines
     - cron: 0 0 * * 1-5
   workflow_dispatch:
     inputs:
       target:
         description: 'Target branch to run E2E tests over'
         required: true
-        default: 'main'
+        default: 'release'
 
 permissions:
   checks: write
