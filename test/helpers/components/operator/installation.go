@@ -34,9 +34,9 @@ func InstallViaMake(withCSI bool) env.Func {
 	}
 }
 
-func InstallViaHelm(releaseTag string, withCsi bool, namespace string) env.Func {
+func InstallViaHelm(withCsi bool, namespace string) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
-		err := installViaHelm(releaseTag, withCsi, namespace)
+		err := installViaHelm(withCsi, namespace)
 		if err != nil {
 			return ctx, err
 		}
@@ -84,7 +84,7 @@ func execMakeCommand(rootDir, makeTarget string, envVariables ...string) error {
 	return command.Run()
 }
 
-func installViaHelm(releaseTag string, withCsi bool, namespace string) error {
+func installViaHelm(withCsi bool, namespace string) error {
 	manager := helm.New("''")
 	err := manager.RunRepo(helm.WithArgs("add", "dynatrace", helmRepoUrl))
 	if err != nil {
@@ -103,7 +103,6 @@ func installViaHelm(releaseTag string, withCsi bool, namespace string) error {
 
 	return manager.RunUpgrade(helm.WithName("dynatrace-operator"), helm.WithNamespace(namespace),
 		helm.WithReleaseName("dynatrace/dynatrace-operator"),
-		helm.WithVersion(releaseTag),
 		helm.WithArgs("--create-namespace"),
 		helm.WithArgs("--install"),
 		helm.WithArgs("--set", fmt.Sprintf("platform=%s", _platform)),

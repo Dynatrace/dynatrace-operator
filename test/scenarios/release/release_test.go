@@ -3,6 +3,7 @@
 package release
 
 import (
+	"os/exec"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
@@ -16,16 +17,14 @@ import (
 )
 
 var testEnv env.Environment
-var thresholdVersion, _ = dtversion.ToSemver("1.1.0")
-
-const usedVersion = "1.0.0"
+var thresholdVersion, _ = dtversion.ToSemver("1.2.0")
 
 func TestMain(m *testing.M) {
 	cfg := environment.GetStandardKubeClusterEnvConfig()
 	testEnv = env.NewWithConfig(cfg)
 	testEnv.Setup(
 		tenant.CreateOtelSecret(operator.DefaultNamespace),
-		operator.InstallViaHelm(usedVersion, true, operator.DefaultNamespace), // TODO: Make the version not hard-coded, but always use the previous version. Using git is not an option because pipeline does not pull the whole git repo.
+		operator.InstallViaHelm(true, operator.DefaultNamespace),
 	)
 	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
 	if !cfg.FailFast() {
@@ -35,8 +34,14 @@ func TestMain(m *testing.M) {
 }
 
 func TestRelease(t *testing.T) {
+	cmd := exec.Command("git", "describe", "--tags", "--abbrev=0")
+	latestTag, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("Failed to run 'git describe': %v", err)
+	}
+
 	usesOldVersion := false
-	usedSemVer, _ := dtversion.ToSemver(usedVersion)
+	usedSemVer, _ := dtversion.ToSemver(string(latestTag))
 	if semver.Compare(thresholdVersion, usedSemVer) >= 1 {
 		usesOldVersion = true
 	}
