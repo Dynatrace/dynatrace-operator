@@ -156,11 +156,13 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 	case tenantEdgeConnect.ID == "":
 		{
 			_log.Info("EdgeConnect not found on the tenant")
+
 			return nil
 		}
 	case !tenantEdgeConnect.ManagedByDynatraceOperator:
 		{
 			_log.Info("can't delete EdgeConnect configuration from the tenant because it has been created manually by a user")
+
 			return nil
 		}
 	case edgeConnectIdFromSecret == "":
@@ -184,6 +186,7 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 			return err
 		}
 	}
+
 	return edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID)
 }
 
@@ -545,6 +548,7 @@ func newEdgeConnectClient() func(ctx context.Context, edgeConnect *edgeconnectv1
 		jsonBytes, _ := json.Marshal(edgeConnectClient)
 
 		log.Info("EDGECONNECT CLIENT CREATED", "client", string(jsonBytes))
+
 		return edgeConnectClient, nil
 	}
 }
@@ -769,11 +773,13 @@ func (controller *Controller) createOrUpdateConnectionSetting(ctx context.Contex
 	envSetting, err := edgeConnectClient.GetConnectionSetting(string(kubeSystemNamespace.UID))
 	if err != nil {
 		_log.Info("Failed getting EdgeConnect connection setting object")
+
 		return err
 	}
 
 	if (envSetting == edgeconnect.EnvironmentSetting{}) {
 		_log.Debug("Creating edgeconnect connection setting object...")
+
 		err = edgeConnectClient.CreateConnectionSetting(
 			edgeconnect.EnvironmentSetting{
 				SchemaId:      edgeconnect.KubernetesConnectionSchemaID,
@@ -804,6 +810,7 @@ func (controller *Controller) createOrUpdateConnectionSetting(ctx context.Contex
 			return err
 		}
 	}
+
 	return nil
 }
 

@@ -31,13 +31,6 @@ type EnvironmentSettingValue struct {
 	Token     string `json:"token"`
 }
 
-type ObjectsList struct {
-	Items       []SettingsObject
-	nextPageKey string
-	pageSize    int
-	totalCount  int
-}
-
 type SettingsObject struct {
 }
 
@@ -81,7 +74,7 @@ func (c *client) GetConnectionSetting(uid string) (EnvironmentSetting, error) {
 	}
 
 	for _, item := range resDataJson.Items {
-		if item.Value.Uid == string(uid) {
+		if item.Value.Uid == uid {
 			return item, nil
 		}
 	}

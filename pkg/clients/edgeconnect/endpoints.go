@@ -5,11 +5,11 @@ import "fmt"
 // EdgeConnect API
 
 func (c *client) getEdgeConnectApiUrl() string {
-	return fmt.Sprintf("%s/platform/app-engine/edge-connect/v1", c.baseURL)
+	return c.baseURL + "/platform/app-engine/edge-connect/v1"
 }
 
 func (c *client) getEdgeConnectsUrl() string {
-	return fmt.Sprintf("%s/edge-connects", c.getEdgeConnectApiUrl())
+	return c.getEdgeConnectApiUrl() + "/edge-connects"
 }
 
 func (c *client) getEdgeConnectUrl(id string) string {
@@ -19,11 +19,11 @@ func (c *client) getEdgeConnectUrl(id string) string {
 // Environment API
 
 func (c *client) getEnvironmentApiUrl() string {
-	return fmt.Sprintf("%s/platform/classic/environment-api/v2", c.baseURL)
+	return c.baseURL + "/platform/classic/environment-api/v2"
 }
 
 func (c *client) getSettingsObjectsUrl() string {
-	return fmt.Sprintf("%s/settings/objects", c.getEnvironmentApiUrl())
+	return c.getEnvironmentApiUrl() + "/settings/objects"
 }
 
 func (c *client) getSettingsObjectsIdUrl(objectId string) string {
