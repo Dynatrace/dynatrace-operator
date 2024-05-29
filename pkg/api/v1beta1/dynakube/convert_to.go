@@ -86,7 +86,7 @@ func (src *DynaKube) toActiveGateSpec(dst *v1beta2.DynaKube) {
 }
 
 func (src *DynaKube) toMovedFields(dst *v1beta2.DynaKube) error {
-	if src.Annotations[AnnotationFeatureMetadataEnrichment] == "false" || src.ClassicFullStackMode() {
+	if src.Annotations[AnnotationFeatureMetadataEnrichment] == "false" {
 		dst.Spec.MetadataEnrichment = v1beta2.MetadataEnrichment{Enabled: false}
 		delete(dst.Annotations, AnnotationFeatureMetadataEnrichment)
 	} else {
