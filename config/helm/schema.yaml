@@ -298,20 +298,6 @@ properties:
       The amount of memory allocation the CSI driver requests from the cluster.
       It is recommended for the memory requests to be the same as the memory limits.
     default: 100Mi
-  csidriver.provisioner.resources.limits.cpu:
-    type: string
-    title: CSI driver CPU limit - provisioner
-    description: |
-      The amount of CPU allocation to which the cluster may limit the CSI driver.
-      It is recommended for the CPU limits to be the same as the CPU requests.
-    default: 300m
-  csidriver.provisioner.resources.limits.memory:
-    type: string
-    title: CSI driver Memory limit - provisioner
-    description: |
-      The amount of memory allocation to which the cluster may limit the CSI driver.
-      It is recommended for the memory limits to be the same as the memory requests.
-    default: 100Mi
   csidriver.server.resources.requests.cpu:
     type: string
     title: CSI driver CPU request - server
