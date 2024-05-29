@@ -30,7 +30,7 @@ func WithoutCSI(t *testing.T) features.Feature {
 		}),
 	)
 
-	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, appOnlyDynakube, false)
+	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, appOnlyDynakube)
 
 	sampleApp := sample.NewApp(t, &appOnlyDynakube, sample.AsDeployment())
 	builder.Assess("install sample app", sampleApp.Install())

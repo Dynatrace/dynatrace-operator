@@ -66,7 +66,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 		}))
 
 	// dynakube install
-	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube, false)
+	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
 	// Register actual test
 	builder.Assess("install sample deployment and wait till ready", sampleDeployment.Install())

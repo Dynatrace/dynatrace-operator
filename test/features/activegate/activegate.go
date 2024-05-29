@@ -73,7 +73,7 @@ func Feature(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) features.F
 	proxy.IsDynatraceNamespaceCutOff(builder, testDynakube)
 
 	// Register actual test
-	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube, false)
+	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 	assessActiveGate(builder, &testDynakube)
 
 	assessReadOnlyActiveGate(builder, &testDynakube)

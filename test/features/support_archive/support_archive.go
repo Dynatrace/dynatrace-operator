@@ -72,7 +72,7 @@ func Feature(t *testing.T) features.Feature {
 
 	builder.Assess("deploy injected namespace", namespace.Create(*namespace.New(testAppNameInjected, namespace.WithLabels(injectLabels))))
 	builder.Assess("deploy NOT injected namespace", namespace.Create(*namespace.New(testAppNameNotInjected)))
-	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube, false)
+	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 	edgeconnect.Install(builder, helpers.LevelAssess, &edgeconnectSecretConfig, testEdgeConnect)
 
 	// Register actual test

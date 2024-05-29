@@ -18,7 +18,7 @@ import (
 var testEnv env.Environment
 var thresholdVersion, _ = dtversion.ToSemver("1.1.0")
 
-const usedVersion = "0.15.0"
+const usedVersion = "1.0.0"
 
 func TestMain(m *testing.M) {
 	cfg := environment.GetStandardKubeClusterEnvConfig()

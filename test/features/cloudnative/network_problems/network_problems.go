@@ -68,7 +68,7 @@ func ResilienceFeature(t *testing.T) features.Feature {
 	)
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
-	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube, false)
+	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
 	builder.Assess("install sample-apps", sampleApp.Install())
 	builder.Assess("check for dummy volume", checkForDummyVolume(sampleApp))
