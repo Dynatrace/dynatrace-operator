@@ -175,11 +175,14 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 		}
 	}
 
-	err = controller.deleteConnectionSetting(ctx, edgeConnectClient)
-	if err != nil {
-		_log.Info("reconcile deletion: Deleting connection setting failed")
+	// TODO: Remove IF clause when non-provisioner mode supports Connection Settings object creation
+	if edgeConnect.IsProvisionerModeEnabled() {
+		err = controller.deleteConnectionSetting(ctx, edgeConnectClient)
+		if err != nil {
+			_log.Info("reconcile deletion: Deleting connection setting failed")
 
-		return err
+			return err
+		}
 	}
 	return edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID)
 }
@@ -372,7 +375,7 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 		return errors.WithStack(err)
 	}
 
-	edgeConnectToken, secretHash, err := controller.createOrUpdateEdgeConnectConfigSecret(ctx, edgeConnect)
+	_, secretHash, err := controller.createOrUpdateEdgeConnectConfigSecret(ctx, edgeConnect)
 	if err != nil {
 		return err
 	}
@@ -395,19 +398,20 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 		return err
 	}
 
-	edgeConnectClient, err := controller.buildEdgeConnectClient(ctx, edgeConnect)
-	if err != nil {
-		_log.Debug("building EdgeConnect client failed")
+	// TODO: Disabled until non-provisioner mode supports Connection Settings object creation
+	// edgeConnectClient, err := controller.buildEdgeConnectClient(ctx, edgeConnect)
+	// if err != nil {
+	// 	_log.Debug("building EdgeConnect client failed")
 
-		return err
-	}
+	// 	return err
+	// }
 
-	err = controller.createOrUpdateConnectionSetting(ctx, edgeConnectClient, edgeConnect, edgeConnectToken)
-	if err != nil {
-		_log.Debug("creating EdgeConnect connection setting failed")
+	// err = controller.createOrUpdateConnectionSetting(ctx, edgeConnectClient, edgeConnect, edgeConnectToken)
+	// if err != nil {
+	// 	_log.Debug("creating EdgeConnect connection setting failed")
 
-		return err
-	}
+	// 	return err
+	// }
 
 	return nil
 }
