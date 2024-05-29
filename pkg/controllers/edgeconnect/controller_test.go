@@ -656,11 +656,29 @@ func createFakeClientAndReconciler(t *testing.T, instance *edgeconnectv1alpha1.E
 		return mockImageGetter, nil
 	}
 
+	mockEdgeConnectClient := edgeconnectmock.NewClient(t)
+	v := "my:default"
+	mockEdgeConnectClient.On("GetConnectionSetting", mock.Anything).Return(edgeconnect.EnvironmentSetting{
+		ObjectId:      &v,
+		SchemaId:      edgeconnect.KubernetesConnectionSchemaID,
+		SchemaVersion: edgeconnect.KubernetesConnectionVersion,
+		Scope:         edgeconnect.KubernetesConnectionScope,
+		Value:         edgeconnect.EnvironmentSettingValue{},
+	}, nil).Maybe()
+	mockEdgeConnectClient.On("CreateConnectionSetting", mock.Anything).Return(nil).Maybe()
+	mockEdgeConnectClient.On("UpdateConnectionSetting", mock.Anything).Return(nil).Maybe()
+	mockEdgeConnectClient.On("DeleteConnectionSetting", mock.Anything).Return(nil).Maybe()
+
+	mockEdgeConnectClientBuilder := func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error) {
+		return mockEdgeConnectClient, nil
+	}
+
 	controller := &Controller{
-		client:                fakeClient,
-		apiReader:             fakeClient,
-		timeProvider:          timeprovider.New(),
-		registryClientBuilder: mockRegistryClientBuilder,
+		client:                   fakeClient,
+		apiReader:                fakeClient,
+		timeProvider:             timeprovider.New(),
+		registryClientBuilder:    mockRegistryClientBuilder,
+		edgeConnectClientBuilder: mockEdgeConnectClientBuilder,
 	}
 
 	return controller
@@ -717,6 +735,17 @@ func mockNewEdgeConnectClientCreate(edgeConnectClient *edgeconnectmock.Client, h
 			},
 			nil,
 		)
+		v := "my:default"
+		edgeConnectClient.On("GetConnectionSetting", mock.Anything).Return(edgeconnect.EnvironmentSetting{
+			ObjectId:      &v,
+			SchemaId:      edgeconnect.KubernetesConnectionSchemaID,
+			SchemaVersion: edgeconnect.KubernetesConnectionVersion,
+			Scope:         edgeconnect.KubernetesConnectionScope,
+			Value:         edgeconnect.EnvironmentSettingValue{},
+		}, nil).Maybe()
+		edgeConnectClient.On("CreateConnectionSetting", mock.Anything).Return(nil).Maybe()
+		edgeConnectClient.On("UpdateConnectionSetting", mock.Anything).Return(nil).Maybe()
+		edgeConnectClient.On("DeleteConnectionSetting", mock.Anything).Return(nil).Maybe()
 
 		return edgeConnectClient, nil
 	}
@@ -754,6 +783,18 @@ func mockNewEdgeConnectClientRecreate(edgeConnectClient *edgeconnectmock.Client,
 			nil,
 		)
 
+		v := "my:default"
+		edgeConnectClient.On("GetConnectionSetting", mock.Anything).Return(edgeconnect.EnvironmentSetting{
+			ObjectId:      &v,
+			SchemaId:      edgeconnect.KubernetesConnectionSchemaID,
+			SchemaVersion: edgeconnect.KubernetesConnectionVersion,
+			Scope:         edgeconnect.KubernetesConnectionScope,
+			Value:         edgeconnect.EnvironmentSettingValue{},
+		}, nil).Maybe()
+		edgeConnectClient.On("CreateConnectionSetting", mock.Anything).Return(nil).Maybe()
+		edgeConnectClient.On("UpdateConnectionSetting", mock.Anything).Return(nil).Maybe()
+		edgeConnectClient.On("DeleteConnectionSetting", mock.Anything).Return(nil).Maybe()
+
 		return edgeConnectClient, nil
 	}
 }
@@ -776,6 +817,18 @@ func mockNewEdgeConnectClientDelete(edgeConnectClient *edgeconnectmock.Client) f
 			nil,
 		)
 		edgeConnectClient.On("DeleteEdgeConnect", testCreatedId).Return(nil)
+
+		v := "my:default"
+		edgeConnectClient.On("GetConnectionSetting", mock.Anything).Return(edgeconnect.EnvironmentSetting{
+			ObjectId:      &v,
+			SchemaId:      edgeconnect.KubernetesConnectionSchemaID,
+			SchemaVersion: edgeconnect.KubernetesConnectionVersion,
+			Scope:         edgeconnect.KubernetesConnectionScope,
+			Value:         edgeconnect.EnvironmentSettingValue{},
+		}, nil)
+		edgeConnectClient.On("CreateConnectionSetting", mock.Anything).Return(nil)
+		edgeConnectClient.On("UpdateConnectionSetting", mock.Anything).Return(nil)
+		edgeConnectClient.On("DeleteConnectionSetting", mock.Anything).Return(nil)
 
 		return edgeConnectClient, nil
 	}
