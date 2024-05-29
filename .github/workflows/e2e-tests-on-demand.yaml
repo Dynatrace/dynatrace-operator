@@ -1,4 +1,4 @@
-name: E2E tests
+name: E2E tests ondemand
 
 on:
   schedule:
@@ -12,14 +12,15 @@ on:
       target:
         description: 'Target branch to run E2E tests over'
         required: true
-        default: 'release'
+        # TODO: @andriisoldatenko revisit it
+        default: 'release-1.1'
 
 permissions:
   checks: write
 
 jobs:
-  run-in-k8s:
-    name: Run in Kubernetes latest (${{ github.event.inputs.target || 'main' }})
+  run-in-k8s-1-21:
+    name: Run in Kubernetes
     environment: E2E
     runs-on:
       - self-hosted
@@ -31,7 +32,7 @@ jobs:
         uses: ./.github/actions/run-e2e
         with:
           flc-namespace: dto-daily
-          flc-environment: dto-k8s-latest-flc
+          flc-environment: dto-k8s-1-21
           target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
