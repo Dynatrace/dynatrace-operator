@@ -46,7 +46,7 @@ var (
 
 func TestReconciler_Reconcile(t *testing.T) {
 	dtc := dtclientmock.NewClient(t)
-	dtc.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
+	dtc.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{TokenId: "test", Token: "dt.some.valuegoeshere"}, nil)
 
 	t.Run(`Create works with minimal setup`, func(t *testing.T) {
 		instance := &dynatracev1beta2.DynaKube{
@@ -199,7 +199,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 func TestServiceCreation(t *testing.T) {
 	dynatraceClient := dtclientmock.NewClient(t)
-	dynatraceClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
+	dynatraceClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{TokenId: "test", Token: "dt.some.valuegoeshere"}, nil)
 
 	dynakube := &dynatracev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
