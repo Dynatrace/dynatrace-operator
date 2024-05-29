@@ -156,9 +156,6 @@ csidriver:
       requests:
         cpu: 300m
         memory: 100Mi
-      limits:
-        cpu: 300m
-        memory: 100Mi
   registrar:
     securityContext:
       runAsUser: 0
