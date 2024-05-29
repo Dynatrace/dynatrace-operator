@@ -38,12 +38,18 @@ func (pretty *prettyLogWriter) Write(payload []byte) (int, error) {
 		return 0, errors.New("no output set on prettyLogWriter")
 	}
 
-	payload, err := removeDuplicatedStacktrace(payload)
+	prettified, err := removeDuplicatedStacktrace(payload)
 	if err != nil {
 		return pretty.out.Write(payload)
 	}
 
-	return pretty.out.Write(correctLineEndings(payload))
+	if prettified != nil {
+		prettified = correctLineEndings(prettified)
+
+		return pretty.out.Write(prettified)
+	}
+
+	return pretty.out.Write(payload)
 }
 
 func correctLineEndings(payload []byte) []byte {
@@ -67,8 +73,11 @@ func removeDuplicatedStacktrace(payload []byte) ([]byte, error) {
 	}
 
 	document = setErrorVerboseAsStacktrace(document)
+	if document != nil {
+		return json.Marshal(document)
+	}
 
-	return json.Marshal(document)
+	return nil, nil
 }
 
 func setErrorVerboseAsStacktrace(document map[string]any) map[string]any {
@@ -76,6 +85,8 @@ func setErrorVerboseAsStacktrace(document map[string]any) map[string]any {
 	if hasErrorVerbose {
 		document[stacktraceKey] = errorVerbose
 		delete(document, errorVerboseKey)
+	} else {
+		return nil
 	}
 
 	return document

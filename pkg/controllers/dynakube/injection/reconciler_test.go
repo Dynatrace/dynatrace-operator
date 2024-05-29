@@ -88,6 +88,11 @@ func TestReconciler(t *testing.T) {
 				},
 				MetadataEnrichment: dynatracev1beta2.MetadataEnrichment{
 					Enabled: true,
+					NamespaceSelector: metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							testNamespaceSelectorLabel: testDynakube,
+						},
+					},
 				},
 			},
 		}

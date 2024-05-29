@@ -21,7 +21,7 @@ Make sure you have a namespaceSelector doesn't conflict with other Dynakubes nam
 )
 
 func conflictingNamespaceSelector(ctx context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
-	if !dynakube.NeedAppInjection() {
+	if !dynakube.NeedAppInjection() && !dynakube.MetadataEnrichmentEnabled() {
 		return ""
 	}
 

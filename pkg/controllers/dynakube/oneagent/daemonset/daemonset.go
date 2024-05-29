@@ -317,6 +317,8 @@ func (b *builder) securityContext() *corev1.SecurityContext {
 		securityContext.RunAsUser = address.Of(int64(1000))
 		securityContext.RunAsGroup = address.Of(int64(1000))
 		securityContext.ReadOnlyRootFilesystem = address.Of(b.isRootFsReadonly())
+	} else {
+		securityContext.ReadOnlyRootFilesystem = address.Of(false)
 	}
 
 	if b.dk != nil && b.dk.NeedsOneAgentPrivileged() {

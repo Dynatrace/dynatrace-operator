@@ -34,7 +34,7 @@ func NewMutator(webhookNamespace string, client client.Client, apiReader client.
 func (mut *Mutator) Enabled(request *dtwebhook.BaseRequest) bool {
 	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationMetadataEnrichmentInject,
 		request.DynaKube.FeatureAutomaticInjection())
-	enabledOnDynakube := request.DynaKube.MetaDataEnrichmentEnabled()
+	enabledOnDynakube := request.DynaKube.MetadataEnrichmentEnabled()
 
 	return enabledOnPod && enabledOnDynakube
 }

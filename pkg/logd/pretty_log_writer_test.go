@@ -9,12 +9,8 @@ import (
 )
 
 func TestErrorPrettify_Write(t *testing.T) {
-	t.Run(`Write unescapes newlines and tabs`, func(t *testing.T) {
-		// backticks ` interpret newlines and tabs as their escaped version
-		// I.e., `\n` = "\\n"
-		// Which is why backslashes remain in the result text
-		testString := `{"newlines" : "some\\n text to \n\\n escape newlines", "tabs": "some\t text\t to \\t\t escape tabs", "mixed": "some\n\\n text \n\t to escape \\n\\t tabs \t\\n\n\\t"}`
-		expectedString := "{\"mixed\":\"some\n\\\n text \n\t to escape \\\n\\\t tabs \t\\\n\n\\\t\",\"newlines\":\"some\\\n text to \n\\\n escape newlines\",\"tabs\":\"some\t text\t to \\\t\t escape tabs\"}\n"
+	t.Run("Don't touch input without stacktrace, to keep the order intact", func(t *testing.T) {
+		testString := `{"level":"info","ts":"2024-05-28T14:00:03.031Z","logger":"csi-driver","msg":"starting listener","protocol":"unix","address":"csi/csi.sock"}`
 
 		bufferString := bytes.NewBufferString("")
 		errPrettify := NewPrettyLogWriter(WithWriter(bufferString))
@@ -22,9 +18,9 @@ func TestErrorPrettify_Write(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.Positive(t, written)
-		assert.Equal(t, expectedString, bufferString.String())
+		assert.Equal(t, testString, bufferString.String())
 	})
-	t.Run(`Write replaces "stacktrace" with "errorVerbose"`, func(t *testing.T) {
+	t.Run("Write replaces 'stacktrace' with 'errorVerbose'", func(t *testing.T) {
 		testString := `{"stacktrace":"stacktrace","errorVerbose":"errorVerbose"}`
 		expectedString := "{\"stacktrace\":\"errorVerbose\"}\n"
 
