@@ -257,6 +257,10 @@ func (dk *DynaKube) OneAgentNamespaceSelector() *metav1.LabelSelector {
 	return nil
 }
 
+func (dk *DynaKube) MetadataEnrichmentNamespaceSelector() *metav1.LabelSelector {
+	return &dk.Spec.MetadataEnrichment.NamespaceSelector
+}
+
 func (dk *DynaKube) OneAgentSecCompProfile() string {
 	switch {
 	case dk.CloudNativeFullstackMode():
@@ -428,7 +432,7 @@ func (dk *DynaKube) ApiRequestThreshold() time.Duration {
 	return time.Duration(dk.Spec.DynatraceApiRequestThreshold) * time.Minute
 }
 
-func (dk *DynaKube) MetaDataEnrichmentEnabled() bool {
+func (dk *DynaKube) MetadataEnrichmentEnabled() bool {
 	return dk.Spec.MetadataEnrichment.Enabled
 }
 

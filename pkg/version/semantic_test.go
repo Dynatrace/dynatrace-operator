@@ -68,18 +68,18 @@ func TestCompareClusterVersion(t *testing.T) {
 	})
 
 	t.Run("CompareSemanticVersions a < b", func(t *testing.T) {
-		assert.Less(t, CompareSemanticVersions(makeVer(1, 0, 0, ""), makeVer(1, 200, 0, "")), 0)
-		assert.Less(t, CompareSemanticVersions(makeVer(0, 0, 0, ""), makeVer(0, 2000, 3000, "")), 0)
-		assert.Less(t, CompareSemanticVersions(makeVer(1, 200, 0, ""), makeVer(1, 200, 1, "")), 0)
-		assert.Less(t, CompareSemanticVersions(makeVer(1, 200, 0, "0"), makeVer(1, 200, 1, "1")), 0)
+		assert.Negative(t, CompareSemanticVersions(makeVer(1, 0, 0, ""), makeVer(1, 200, 0, "")))
+		assert.Negative(t, CompareSemanticVersions(makeVer(0, 0, 0, ""), makeVer(0, 2000, 3000, "")))
+		assert.Negative(t, CompareSemanticVersions(makeVer(1, 200, 0, ""), makeVer(1, 200, 1, "")))
+		assert.Negative(t, CompareSemanticVersions(makeVer(1, 200, 0, "0"), makeVer(1, 200, 1, "1")))
 	})
 
 	t.Run("CompareSemanticVersions a > b", func(t *testing.T) {
-		assert.Greater(t, CompareSemanticVersions(makeVer(1, 200, 0, ""), makeVer(1, 100, 0, "")), 0)
-		assert.Greater(t, CompareSemanticVersions(makeVer(2, 0, 0, ""), makeVer(1, 100, 0, "")), 0)
-		assert.Greater(t, CompareSemanticVersions(makeVer(1, 201, 0, ""), makeVer(1, 100, 0, "")), 0)
-		assert.Greater(t, CompareSemanticVersions(makeVer(1, 0, 0, ""), makeVer(0, 0, 20000, "")), 0)
-		assert.Greater(t, CompareSemanticVersions(makeVer(1, 0, 0, "1"), makeVer(1, 0, 0, "0")), 0)
+		assert.Positive(t, CompareSemanticVersions(makeVer(1, 200, 0, ""), makeVer(1, 100, 0, "")))
+		assert.Positive(t, CompareSemanticVersions(makeVer(2, 0, 0, ""), makeVer(1, 100, 0, "")))
+		assert.Positive(t, CompareSemanticVersions(makeVer(1, 201, 0, ""), makeVer(1, 100, 0, "")))
+		assert.Positive(t, CompareSemanticVersions(makeVer(1, 0, 0, ""), makeVer(0, 0, 20000, "")))
+		assert.Positive(t, CompareSemanticVersions(makeVer(1, 0, 0, "1"), makeVer(1, 0, 0, "0")))
 	})
 }
 

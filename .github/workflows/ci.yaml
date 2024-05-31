@@ -90,7 +90,7 @@ jobs:
         uses: golangci/golangci-lint-action@a4f60bb28d35aeee14e6880718e0c85ff1882e64 # v6.0.1
         with:
           # renovate depName=github.com/golangci/golangci-lint
-          version: v1.58.2
+          version: v1.59.0
           args: --build-tags e2e --timeout 300s --out-${NO_FUTURE}format colored-line-number
       - name: Run deadcode
         id: deadcode
@@ -121,7 +121,7 @@ jobs:
         with:
           config: .markdownlint.json
           # renovate depName=github.com/igorshubovych/markdownlint-cli
-          version: v0.40.0
+          version: v0.41.0
 
   check-uncommitted-doc-changes:
     name: Check uncommitted changes in api docs action
@@ -206,7 +206,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - name: Login to Registry
-        uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
+        uses: docker/login-action@0d4c9c5ea7693da7b068278f7b52bda2a190a446 # v3.2.0
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
@@ -232,7 +232,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - name: Login to Registry
-        uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
+        uses: docker/login-action@0d4c9c5ea7693da7b068278f7b52bda2a190a446 # v3.2.0
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}

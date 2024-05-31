@@ -165,7 +165,7 @@ func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
 }
 
 func (r *reconciler) setupEnrichmentInjection(ctx context.Context) error {
-	if !r.dynakube.MetaDataEnrichmentEnabled() {
+	if !r.dynakube.MetadataEnrichmentEnabled() {
 		return nil
 	}
 

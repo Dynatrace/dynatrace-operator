@@ -5,17 +5,17 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (dsInfo *builderInfo) affinity() *corev1.Affinity {
+func (b *builder) affinity() *corev1.Affinity {
 	return &corev1.Affinity{
 		NodeAffinity: &corev1.NodeAffinity{
 			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-				NodeSelectorTerms: dsInfo.affinityNodeSelectorTerms(),
+				NodeSelectorTerms: b.affinityNodeSelectorTerms(),
 			},
 		},
 	}
 }
 
-func (dsInfo *builderInfo) affinityNodeSelectorTerms() []corev1.NodeSelectorTerm {
+func (b *builder) affinityNodeSelectorTerms() []corev1.NodeSelectorTerm {
 	nodeSelectorTerms := []corev1.NodeSelectorTerm{
 		kubernetesArchOsSelectorTerm(),
 	}

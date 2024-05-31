@@ -137,7 +137,7 @@ func (g *SecretGenerator) prepare(ctx context.Context, dk *dynatracev1beta2.Dyna
 
 	endpointPropertiesBuilder := strings.Builder{}
 
-	if dk.MetaDataEnrichmentEnabled() { // TODO: why check here and not at the very beginning?
+	if dk.MetadataEnrichmentEnabled() { // TODO: why check here and not at the very beginning?
 		if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", MetricsUrlSecretField, fields[MetricsUrlSecretField])); err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -162,7 +162,7 @@ func (g *SecretGenerator) PrepareFields(ctx context.Context, dk *dynatracev1beta
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 
-	if dk.MetaDataEnrichmentEnabled() { // TODO: why check here and not at the very beginning?
+	if dk.MetadataEnrichmentEnabled() { // TODO: why check here and not at the very beginning?
 		if token, ok := tokens.Data[dtclient.DataIngestToken]; ok {
 			fields[MetricsTokenSecretField] = string(token)
 		}
