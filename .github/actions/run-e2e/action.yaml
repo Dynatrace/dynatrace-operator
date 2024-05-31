@@ -13,7 +13,7 @@ inputs:
     default: main
   tenant1-name:
     description: The name of Tenant 1
-    required: true
+    default:  ${{ secrets.TENANT1_NAME }}
   tenant1-apitoken:
     description: The API token of Tenant 1
     required: true
