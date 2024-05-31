@@ -14,6 +14,7 @@ permissions:
 
 # based on:
 # https://docs.dynatrace.com/docs/setup-and-configuration/technology-support/support-model-for-kubernetes
+# https://kubernetes.io/releases/
 jobs:
   run-in-k8s-1-21:
     name: Run in Kubernetes 1.25
