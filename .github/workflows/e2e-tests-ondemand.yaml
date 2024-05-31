@@ -16,7 +16,7 @@ permissions:
 # https://docs.dynatrace.com/docs/setup-and-configuration/technology-support/support-model-for-kubernetes
 # https://kubernetes.io/releases/
 jobs:
-  run-in-k8s-1-21:
+  run-in-k8s-1-25:
     name: Run in Kubernetes 1.25
     environment: E2E
     runs-on:
@@ -30,6 +30,30 @@ jobs:
         with:
           flc-namespace: dto-k8s-ondemand
           flc-environment: dto-k8s-1-25
+          target-branch: ${{ github.event.inputs.target }}
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-oteltoken: ${{ secrets.TENANT1_OTELTOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  run-in-ocp:
+    name: Run in OpenShift
+    environment: E2E
+    runs-on:
+      - self-hosted
+      - operator-e2e
+    steps:
+      - name: Checkout
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - name: Run e2e test
+        uses: ./.github/actions/run-e2e
+        with:
+          flc-namespace: dto-ocp-ondemand
+          flc-environment: dto-ocp-dummy
           target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
