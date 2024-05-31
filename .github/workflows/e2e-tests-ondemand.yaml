@@ -173,7 +173,7 @@ jobs:
         uses: ./.github/actions/run-e2e
         with:
           flc-namespace: dto-ocp-ondemand
-          flc-environment: dto-ocp-dummy
+          flc-environment: dto-ocp-4-10
           target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
