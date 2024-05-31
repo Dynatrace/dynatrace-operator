@@ -12,7 +12,7 @@ func TestMutateUserContainers(t *testing.T) {
 	annotations := map[string]string{"container.inject.dyantrace/container": "false"}
 
 	t.Run("Add volume mounts to containers", func(t *testing.T) {
-		request := createTestMutationRequest(getTestDynakube(), nil)
+		request := createTestMutationRequest(getTestDynakube(), nil, false)
 		mutateUserContainers(request.BaseRequest)
 
 		for _, container := range request.Pod.Spec.Containers {
@@ -23,7 +23,7 @@ func TestMutateUserContainers(t *testing.T) {
 	t.Run("Do not inject container if excluded in dynkube", func(t *testing.T) {
 		dynakube.Annotations = annotations
 
-		request := createTestMutationRequest(dynakube, nil)
+		request := createTestMutationRequest(dynakube, nil, false)
 		mutateUserContainers(request.BaseRequest)
 
 		for _, container := range request.Pod.Spec.Containers {
@@ -32,7 +32,7 @@ func TestMutateUserContainers(t *testing.T) {
 	})
 
 	t.Run("Do not inject container if excluded in pod", func(t *testing.T) {
-		request := createTestMutationRequest(dynakube, annotations)
+		request := createTestMutationRequest(dynakube, annotations, false)
 		mutateUserContainers(request.BaseRequest)
 
 		for _, container := range request.Pod.Spec.Containers {
