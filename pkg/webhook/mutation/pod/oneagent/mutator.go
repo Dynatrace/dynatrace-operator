@@ -12,6 +12,8 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -36,7 +38,18 @@ func NewMutator(image, clusterID, webhookNamespace string, client client.Client,
 }
 
 func (mut *Mutator) Enabled(request *dtwebhook.BaseRequest) bool {
-	return maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOneAgentInject, request.DynaKube.FeatureAutomaticInjection())
+	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOneAgentInject, request.DynaKube.FeatureAutomaticInjection())
+	enabledOnDynakube := request.DynaKube.OneAgentNamespaceSelector() != nil
+
+	matchesNamespaceSelector := true // if no namespace selector is configured, we just pass set this to true
+
+	if request.DynaKube.OneAgentNamespaceSelector().Size() > 0 {
+		selector, _ := metav1.LabelSelectorAsSelector(request.DynaKube.OneAgentNamespaceSelector())
+
+		matchesNamespaceSelector = selector.Matches(labels.Set(request.Namespace.Labels))
+	}
+
+	return matchesNamespaceSelector && enabledOnPod && enabledOnDynakube
 }
 
 func (mut *Mutator) Injected(request *dtwebhook.BaseRequest) bool {

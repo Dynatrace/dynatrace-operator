@@ -18,18 +18,21 @@ import (
 )
 
 const (
-	testPodName          = "test-pod"
-	testNamespaceName    = "test-namespace"
-	testDynakubeName     = "test-dynakube"
-	testApiUrl           = "http://test-endpoint/api"
-	testWorkloadInfoName = "test-name"
-	testWorkloadInfoKind = "test-kind"
+	testPodName             = "test-pod"
+	testNamespaceName       = "test-namespace"
+	testDynakubeName        = "test-dynakube"
+	testApiUrl              = "http://test-endpoint/api"
+	testWorkloadInfoName    = "test-name"
+	testWorkloadInfoKind    = "test-kind"
+	testLabelKeyMatching    = "inject"
+	testLabelKeyNotMatching = "do-not-inject"
+	testLabelValue          = "into-this-ns"
 )
 
 func TestEnabled(t *testing.T) {
 	t.Run("turned off", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
-		request := createTestMutationRequest(nil, map[string]string{dtwebhook.AnnotationMetadataEnrichmentInject: "false"})
+		request := createTestMutationRequest(nil, map[string]string{dtwebhook.AnnotationMetadataEnrichmentInject: "false"}, false)
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -37,7 +40,7 @@ func TestEnabled(t *testing.T) {
 	})
 	t.Run("off by feature flag", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
-		request := createTestMutationRequest(nil, nil)
+		request := createTestMutationRequest(nil, nil, false)
 		request.DynaKube.Spec.MetadataEnrichment.Enabled = true
 		request.DynaKube.Annotations = map[string]string{dynatracev1beta2.AnnotationFeatureAutomaticInjection: "false"}
 
@@ -52,19 +55,61 @@ func TestEnabled(t *testing.T) {
 				MetadataEnrichment: dynatracev1beta2.MetadataEnrichment{Enabled: true},
 			},
 		}
-		request := createTestMutationRequest(&dynakube, nil)
+		request := createTestMutationRequest(&dynakube, nil, false)
 		request.DynaKube.Annotations = map[string]string{dynatracev1beta2.AnnotationFeatureAutomaticInjection: "true"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
 		require.True(t, enabled)
 	})
+	t.Run("on with namespaceselector", func(t *testing.T) {
+		mutator := createTestPodMutator(nil)
+		dynakube := dynatracev1beta2.DynaKube{
+			Spec: dynatracev1beta2.DynaKubeSpec{
+				MetadataEnrichment: dynatracev1beta2.MetadataEnrichment{
+					Enabled: true,
+					NamespaceSelector: metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							testLabelKeyMatching: testLabelValue,
+						},
+					},
+				},
+			},
+		}
+		request := createTestMutationRequest(&dynakube, nil, true)
+		request.DynaKube.Annotations = map[string]string{dynatracev1beta2.AnnotationFeatureAutomaticInjection: "true"}
+
+		enabled := mutator.Enabled(request.BaseRequest)
+
+		require.True(t, enabled)
+	})
+	t.Run("off due to mismatching namespaceselector", func(t *testing.T) {
+		mutator := createTestPodMutator(nil)
+		dynakube := dynatracev1beta2.DynaKube{
+			Spec: dynatracev1beta2.DynaKubeSpec{
+				MetadataEnrichment: dynatracev1beta2.MetadataEnrichment{
+					Enabled: true,
+					NamespaceSelector: metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							testLabelKeyNotMatching: testLabelValue,
+						},
+					},
+				},
+			},
+		}
+		request := createTestMutationRequest(&dynakube, nil, true)
+		request.DynaKube.Annotations = map[string]string{dynatracev1beta2.AnnotationFeatureAutomaticInjection: "true"}
+
+		enabled := mutator.Enabled(request.BaseRequest)
+
+		require.False(t, enabled)
+	})
 }
 
 func TestInjected(t *testing.T) {
 	t.Run("already marked", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
-		request := createTestMutationRequest(nil, map[string]string{dtwebhook.AnnotationMetadataEnrichmentInjected: "true"})
+		request := createTestMutationRequest(nil, map[string]string{dtwebhook.AnnotationMetadataEnrichmentInjected: "true"}, false)
 
 		enabled := mutator.Injected(request.BaseRequest)
 
@@ -72,7 +117,7 @@ func TestInjected(t *testing.T) {
 	})
 	t.Run("fresh", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
-		request := createTestMutationRequest(nil, nil)
+		request := createTestMutationRequest(nil, nil, false)
 
 		enabled := mutator.Injected(request.BaseRequest)
 
@@ -83,7 +128,7 @@ func TestInjected(t *testing.T) {
 func TestMutate(t *testing.T) {
 	t.Run("should mutate the pod and init container in the request", func(t *testing.T) {
 		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
-		request := createTestMutationRequest(getTestDynakube(), nil)
+		request := createTestMutationRequest(getTestDynakube(), nil, false)
 		initialNumberOfVolumesLen := len(request.Pod.Spec.Volumes)
 		initialContainerVolumeMountsLen := len(request.Pod.Spec.Containers[0].VolumeMounts)
 		initialAnnotationsLen := len(request.Pod.Annotations)
@@ -132,7 +177,7 @@ func TestReinvoke(t *testing.T) {
 func TestIngestEndpointSecret(t *testing.T) {
 	t.Run("shouldn't create ingest secret if already there", func(t *testing.T) {
 		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
-		request := createTestMutationRequest(getTestDynakube(), nil)
+		request := createTestMutationRequest(getTestDynakube(), nil, false)
 
 		err := mutator.ensureIngestEndpointSecret(request)
 		require.NoError(t, err)
@@ -140,7 +185,7 @@ func TestIngestEndpointSecret(t *testing.T) {
 
 	t.Run("should create ingest secret", func(t *testing.T) {
 		mutator := createTestPodMutator([]client.Object{getTestDynakube(), getTestTokensSecret()})
-		request := createTestMutationRequest(getTestDynakube(), nil)
+		request := createTestMutationRequest(getTestDynakube(), nil, false)
 
 		err := mutator.ensureIngestEndpointSecret(request)
 		require.NoError(t, err)
@@ -153,7 +198,7 @@ func TestIngestEndpointSecret(t *testing.T) {
 
 func TestSetInjectedAnnotation(t *testing.T) {
 	t.Run("should add annotation to nil map", func(t *testing.T) {
-		request := createTestMutationRequest(nil, nil)
+		request := createTestMutationRequest(nil, nil, false)
 		mutator := createTestPodMutator(nil)
 
 		require.False(t, mutator.Injected(request.BaseRequest))
@@ -165,7 +210,7 @@ func TestSetInjectedAnnotation(t *testing.T) {
 
 func TestWorkloadAnnotations(t *testing.T) {
 	t.Run("should add annotation to nil map", func(t *testing.T) {
-		request := createTestMutationRequest(nil, nil)
+		request := createTestMutationRequest(nil, nil, false)
 
 		require.Equal(t, "not-found", maputils.GetField(request.Pod.Annotations, dtwebhook.AnnotationWorkloadName, "not-found"))
 		setWorkloadAnnotations(request.Pod, &workloadInfo{name: testWorkloadInfoName, kind: testWorkloadInfoKind})
@@ -174,7 +219,7 @@ func TestWorkloadAnnotations(t *testing.T) {
 		assert.Equal(t, testWorkloadInfoKind, maputils.GetField(request.Pod.Annotations, dtwebhook.AnnotationWorkloadKind, "not-found"))
 	})
 	t.Run("should lower case kind annotation", func(t *testing.T) {
-		request := createTestMutationRequest(nil, nil)
+		request := createTestMutationRequest(nil, nil, false)
 		setWorkloadAnnotations(request.Pod, &workloadInfo{name: testWorkloadInfoName, kind: "SuperWorkload"})
 		assert.Contains(t, request.Pod.Annotations, dtwebhook.AnnotationWorkloadKind)
 		assert.Equal(t, "superworkload", request.Pod.Annotations[dtwebhook.AnnotationWorkloadKind])
@@ -204,14 +249,19 @@ func TestContainerIsInjected(t *testing.T) {
 	})
 }
 
-func createTestMutationRequest(dynakube *dynatracev1beta2.DynaKube, annotations map[string]string) *dtwebhook.MutationRequest {
+func createTestMutationRequest(dynakube *dynatracev1beta2.DynaKube, annotations map[string]string, withLabelSelector bool) *dtwebhook.MutationRequest {
 	if dynakube == nil {
 		dynakube = &dynatracev1beta2.DynaKube{}
 	}
 
+	namespace := getTestNamespace()
+	if withLabelSelector {
+		namespace = getTestNamespaceWithMatchingLabel()
+	}
+
 	return dtwebhook.NewMutationRequest(
 		context.Background(),
-		*getTestNamespace(),
+		*namespace,
 		&corev1.Container{
 			Name: dtwebhook.InstallContainerName,
 		},
@@ -221,7 +271,7 @@ func createTestMutationRequest(dynakube *dynatracev1beta2.DynaKube, annotations 
 }
 
 func createTestReinvocationRequest(dynakube *dynatracev1beta2.DynaKube, annotations map[string]string) *dtwebhook.ReinvocationRequest {
-	request := createTestMutationRequest(dynakube, annotations).ToReinvocationRequest()
+	request := createTestMutationRequest(dynakube, annotations, false).ToReinvocationRequest()
 	request.Pod.Spec.InitContainers = append(request.Pod.Spec.InitContainers, corev1.Container{Name: dtwebhook.InstallContainerName})
 
 	return request
@@ -321,6 +371,18 @@ func getTestNamespace() *corev1.Namespace {
 			Name: testNamespaceName,
 			Labels: map[string]string{
 				dtwebhook.InjectionInstanceLabel: testDynakubeName,
+			},
+		},
+	}
+}
+
+func getTestNamespaceWithMatchingLabel() *corev1.Namespace {
+	return &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testNamespaceName,
+			Labels: map[string]string{
+				dtwebhook.InjectionInstanceLabel: testDynakubeName,
+				testLabelKeyMatching:             testLabelValue,
 			},
 		},
 	}
