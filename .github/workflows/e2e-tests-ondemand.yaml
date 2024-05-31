@@ -30,6 +30,15 @@ jobs:
         with:
           flc-namespace: dto-k8s-ondemand
           flc-environment: dto-k8s-1-24
+          target-branch: ${{ github.event.inputs.target }}
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-oteltoken: ${{ secrets.TENANT1_OTELTOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   run-in-k8s-1-25:
     name: Run in Kubernetes 1.25
@@ -45,6 +54,15 @@ jobs:
         with:
           flc-namespace: dto-k8s-ondemand
           flc-environment: dto-k8s-1-25
+          target-branch: ${{ github.event.inputs.target }}
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-oteltoken: ${{ secrets.TENANT1_OTELTOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   run-in-k8s-1-26:
     name: Run in Kubernetes 1.26
@@ -60,6 +78,15 @@ jobs:
         with:
           flc-namespace: dto-k8s-ondemand
           flc-environment: dto-k8s-1-26
+          target-branch: ${{ github.event.inputs.target }}
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-oteltoken: ${{ secrets.TENANT1_OTELTOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   run-in-k8s-1-27:
     name: Run in Kubernetes 1.27
@@ -75,6 +102,15 @@ jobs:
         with:
           flc-namespace: dto-k8s-ondemand
           flc-environment: dto-k8s-1-27
+          target-branch: ${{ github.event.inputs.target }}
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-oteltoken: ${{ secrets.TENANT1_OTELTOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   run-in-k8s-1-28:
     name: Run in Kubernetes 1.28
@@ -90,6 +126,15 @@ jobs:
         with:
           flc-namespace: dto-k8s-ondemand
           flc-environment: dto-k8s-1-28
+          target-branch: ${{ github.event.inputs.target }}
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-oteltoken: ${{ secrets.TENANT1_OTELTOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   run-in-k8s-1-29:
     name: Run in Kubernetes 1.29
@@ -105,6 +150,15 @@ jobs:
         with:
           flc-namespace: dto-k8s-ondemand
           flc-environment: dto-k8s-1-29
+          target-branch: ${{ github.event.inputs.target }}
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-oteltoken: ${{ secrets.TENANT1_OTELTOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   run-in-ocp:
     name: Run in OpenShift
@@ -120,3 +174,12 @@ jobs:
         with:
           flc-namespace: dto-ocp-ondemand
           flc-environment: dto-ocp-dummy
+          target-branch: ${{ github.event.inputs.target }}
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-oteltoken: ${{ secrets.TENANT1_OTELTOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
