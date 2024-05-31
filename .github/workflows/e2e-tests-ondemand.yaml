@@ -12,6 +12,8 @@ on:
 permissions:
   checks: write
 
+# based on:
+# https://docs.dynatrace.com/docs/setup-and-configuration/technology-support/support-model-for-kubernetes
 jobs:
   run-in-k8s-1-21:
     name: Run in Kubernetes 1.25
@@ -25,7 +27,7 @@ jobs:
       - name: Run e2e test
         uses: ./.github/actions/run-e2e
         with:
-          flc-namespace: dto-ocp-ondemand
+          flc-namespace: dto-k8s-ondemand
           flc-environment: dto-k8s-1-25
           target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
