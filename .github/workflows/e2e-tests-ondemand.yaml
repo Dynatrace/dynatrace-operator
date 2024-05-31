@@ -16,11 +16,11 @@ permissions:
 # https://kubernetes.io/releases/
 jobs:
   # TODO: End of support: Aug 1, 2024, remove after this date
-  k8s-matrix:
+  run-k8s-matrix:
     name: Run in Kubernetes
     strategy:
       matrix:
-        flc_env: [ dto-k8s-1-24, dto-k8s-1-25 ]
+        flc_env: [ dto-k8s-1-24, dto-k8s-1-25, dto-k8s-1-26, dto-k8s-1-27, dto-k8s-1-28, dto-k8s-1-29 ]
     environment: E2E
     runs-on:
       - self-hosted
@@ -43,9 +43,12 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-  run-in-ocp:
+  run-ocp-matrix:
     name: Run in OpenShift
     environment: E2E
+    strategy:
+      matrix:
+        flc_env: [ dto-ocp-4-10, dto-ocp-4-11, dto-ocp-4-12, dto-ocp-4-13 ]
     runs-on:
       - self-hosted
       - operator-e2e
@@ -56,7 +59,7 @@ jobs:
         uses: ./.github/actions/run-e2e
         with:
           flc-namespace: dto-ocp-ondemand
-          flc-environment: dto-ocp-4-10
+          flc-environment: ${{ matrix.flc_env }}
           target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
