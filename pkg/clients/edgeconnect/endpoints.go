@@ -1,7 +1,5 @@
 package edgeconnect
 
-import "fmt"
-
 // EdgeConnect API
 
 func (c *client) getEdgeConnectApiUrl() string {
@@ -13,7 +11,7 @@ func (c *client) getEdgeConnectsUrl() string {
 }
 
 func (c *client) getEdgeConnectUrl(id string) string {
-	return fmt.Sprintf("%s/%s", c.getEdgeConnectsUrl(), id)
+	return c.getEdgeConnectsUrl() + "/" + id
 }
 
 // Environment API
@@ -27,5 +25,5 @@ func (c *client) getSettingsObjectsUrl() string {
 }
 
 func (c *client) getSettingsObjectsIdUrl(objectId string) string {
-	return fmt.Sprintf("%s/%s", c.getSettingsObjectsUrl(), objectId)
+	return c.getSettingsObjectsUrl() + "/" + objectId
 }

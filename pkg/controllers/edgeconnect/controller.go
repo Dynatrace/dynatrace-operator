@@ -793,12 +793,12 @@ func (controller *Controller) createOrUpdateConnectionSetting(ctx context.Contex
 
 func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) (token string, hash string, err error) {
 	// Get a Token from edgeconnect.yaml secret data
-	token, err := controller.getToken(ctx, edgeConnect)
+	token, err = controller.getToken(ctx, edgeConnect)
 
 	// check token not found and not all errors
 	if err != nil {
 		if k8serrors.IsNotFound(err) || errors.Is(err, ErrTokenNotFound) {
-			newToken, err := dttoken.New("dt0e01f")
+			newToken, err := dttoken.New("dt0e01")
 			if err != nil {
 				return "", "", err
 			}
@@ -835,7 +835,7 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 		return "", "", err
 	}
 
-	hash, err := hasher.GenerateHash(secretConfig.Data)
+	hash, err = hasher.GenerateHash(secretConfig.Data)
 
 	return token, hash, err
 }
