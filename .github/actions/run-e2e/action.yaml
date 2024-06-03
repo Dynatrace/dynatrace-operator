@@ -35,7 +35,6 @@ inputs:
   github-token:
     description: The GitHub token
     required: true
-
 runs:
   using: composite
   steps:
