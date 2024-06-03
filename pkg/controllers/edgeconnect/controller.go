@@ -791,7 +791,7 @@ func (controller *Controller) createOrUpdateConnectionSetting(ctx context.Contex
 	return nil
 }
 
-func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) (string, string, error) {
+func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) (token string, hash string, err error) {
 	// Get a Token from edgeconnect.yaml secret data
 	token, err := controller.getToken(ctx, edgeConnect)
 
