@@ -53,8 +53,8 @@ jobs:
       - name: Run e2e test
         uses: ./.github/actions/run-e2e
         with:
-          flc-namespace:  ${{ format('dto-{0}-{1}',  matrix.platform, matrix.version ) }}
-          flc-environment: ${{ format('dto-{0}-ondemand', matrix.platform ) }}
+          flc-namespace: ${{ format('dto-{0}-ondemand', matrix.platform ) }}
+          flc-environment: ${{ format('dto-{0}-{1}',  matrix.platform, matrix.version ) }}
           target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
