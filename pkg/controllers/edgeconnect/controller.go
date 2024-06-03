@@ -122,7 +122,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 }
 
 func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
-	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name)
+	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name, "scenario", "deletion")
 
 	_log.Info("reconciling EdgeConnect deletion", "name", edgeConnect.Name, "namespace", edgeConnect.Namespace)
 
@@ -133,47 +133,39 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 
 	edgeConnect.ObjectMeta.Finalizers = nil
 	if err := controller.client.Update(ctx, edgeConnect); err != nil {
-		_log.Debug("reconcile deletion: updating the EdgeConnect object failed, couldn't remove the finalizers")
+		_log.Debug("updating the EdgeConnect object failed, couldn't remove the finalizers")
 
 		return errors.WithStack(err)
 	}
 
 	edgeConnectClient, err := controller.buildEdgeConnectClient(ctx, edgeConnect)
 	if err != nil {
-		_log.Debug("reconcile deletion: building EdgeConnect client failed")
+		_log.Debug("building EdgeConnect client failed")
 
 		return err
 	}
 
 	tenantEdgeConnect, err := getEdgeConnectByName(edgeConnectClient, edgeConnect.Name)
 	if err != nil {
-		_log.Debug("reconcile deletion: failed to get EdgeConnect by name")
+		_log.Debug("failed to get EdgeConnect by name")
 
 		return err
 	}
 
 	switch {
 	case tenantEdgeConnect.ID == "":
-		{
-			_log.Info("EdgeConnect not found on the tenant")
+		_log.Info("EdgeConnect not found on the tenant")
 
-			return nil
-		}
+		return nil
 	case !tenantEdgeConnect.ManagedByDynatraceOperator:
-		{
-			_log.Info("can't delete EdgeConnect configuration from the tenant because it has been created manually by a user")
+		_log.Info("can't delete EdgeConnect configuration from the tenant because it has been created manually by a user")
 
-			return nil
-		}
+		return nil
 	case edgeConnectIdFromSecret == "":
-		{
-			_log.Info("EdgeConnect client secret is missing")
-		}
+		_log.Info("EdgeConnect client secret is missing")
 	default:
-		{
-			if tenantEdgeConnect.ID != edgeConnectIdFromSecret {
-				_log.Info("EdgeConnect client secret contains invalid Id")
-			}
+		if tenantEdgeConnect.ID != edgeConnectIdFromSecret {
+			_log.Info("EdgeConnect client secret contains invalid Id")
 		}
 	}
 
@@ -400,21 +392,6 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 
 		return err
 	}
-
-	// TODO: Disabled until non-provisioner mode supports Connection Settings object creation
-	// edgeConnectClient, err := controller.buildEdgeConnectClient(ctx, edgeConnect)
-	// if err != nil {
-	// 	_log.Debug("building EdgeConnect client failed")
-
-	// 	return err
-	// }
-
-	// err = controller.createOrUpdateConnectionSetting(ctx, edgeConnectClient, edgeConnect, edgeConnectToken)
-	// if err != nil {
-	// 	_log.Debug("creating EdgeConnect connection setting failed")
-
-	// 	return err
-	// }
 
 	return nil
 }

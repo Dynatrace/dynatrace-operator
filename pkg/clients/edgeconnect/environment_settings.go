@@ -31,9 +31,6 @@ type EnvironmentSettingValue struct {
 	Token     string `json:"token"`
 }
 
-type SettingsObject struct {
-}
-
 type environmentSettingsResponse struct {
 	Items      []EnvironmentSetting `json:"items"`
 	TotalCount int                  `json:"totalCount"`
