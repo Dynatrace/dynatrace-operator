@@ -18,7 +18,6 @@ permissions:
 # https://docs.dynatrace.com/docs/setup-and-configuration/technology-support/support-model-for-kubernetes
 # https://kubernetes.io/releases/
 jobs:
-  # TODO: End of support: Aug 1, 2024, remove after this date
   run-k8s-matrix:
     name: Run in Kubernetes
     strategy:
