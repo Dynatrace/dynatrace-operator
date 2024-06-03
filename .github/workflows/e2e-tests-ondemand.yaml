@@ -1,6 +1,9 @@
 name: E2E tests ondemand
 
 on:
+  schedule:
+    # every Mon/Wed/Fri at 08:00 UTC
+    - cron: 0 8 * * 1,3,5
   workflow_dispatch:
     inputs:
       target:
