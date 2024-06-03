@@ -22,23 +22,29 @@ jobs:
     name: Run in Kubernetes/OCP
     strategy:
       matrix:
-        flc_env:
-          - dto-k8s-1-24
-          - dto-k8s-1-25
-          - dto-k8s-1-26
-          - dto-k8s-1-27
-          - dto-k8s-1-28
-          - dto-k8s-1-29
-          - dto-ocp-4-10
-          - dto-ocp-4-11
-          - dto-ocp-4-12
-          - dto-ocp-4-13
-        flc_environment: [dto-k8s-ondemand, dto-ocp-ondemand]
-        exclude:
-          - flc_env: [dto-ocp-4-10, dto-ocp-4-11, dto-ocp-4-12, dto-ocp-4-13]
-            flc_environment: dto-k8s-ondemand
-          - flc_env: [dto-k8s-1-24, dto-k8s-1-25, dto-k8s-1-26, dto-k8s-1-27, dto-k8s-1-28, dto-k8s-1-29]
-            flc_environment: dto-ocp-ondemand
+        include:
+          # k8s
+          - flc_env: dto-k8s-1-24
+            flc_ns: dto-k8s-ondemand
+          - flc_env: dto-k8s-1-25
+            flc_ns: dto-k8s-ondemand
+          - flc_env: dto-k8s-1-26
+            flc_ns: dto-k8s-ondemand
+          - flc_env: dto-k8s-1-27
+            flc_ns: dto-k8s-ondemand
+          - flc_env: dto-k8s-1-28
+            flc_ns: dto-k8s-ondemand
+          - flc_env: dto-k8s-1-29
+            flc_ns: dto-k8s-ondemand
+          # OCP
+          - flc_env: dto-ocp-4-10
+            flc_ns: dto-ocp-ondemand
+          - flc_env: dto-ocp-4-11
+            flc_ns: dto-ocp-ondemand
+          - flc_env: dto-ocp-4-12
+            flc_ns: dto-ocp-ondemand
+          - flc_env: dto-ocp-4-13
+            flc_ns: dto-ocp-ondemand
     environment: E2E
     runs-on:
       - self-hosted
@@ -49,7 +55,7 @@ jobs:
       - name: Run e2e test
         uses: ./.github/actions/run-e2e
         with:
-          flc-namespace: dto-k8s-ondemand
+          flc-namespace:  ${{ matrix.flc_ns }}
           flc-environment: ${{ matrix.flc_env }}
           target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
