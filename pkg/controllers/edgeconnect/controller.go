@@ -133,7 +133,7 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 
 	edgeConnect.ObjectMeta.Finalizers = nil
 	if err := controller.client.Update(ctx, edgeConnect); err != nil {
-		_log.Debug("reconcile deletion: updating the EdgeConnect object failed")
+		_log.Debug("reconcile deletion: updating the EdgeConnect object failed, couldn't remove the finalizers")
 
 		return errors.WithStack(err)
 	}
