@@ -19,7 +19,7 @@ permissions:
 # https://kubernetes.io/releases/
 jobs:
   run-matrix:
-    name: Run in Kubernetes/OCP
+    name: Run using version/platform
     strategy:
       matrix:
         include:
