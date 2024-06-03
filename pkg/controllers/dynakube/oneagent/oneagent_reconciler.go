@@ -115,12 +115,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return r.cleanUp(ctx)
 	}
 
-	log.Info("creating Pull Secret")
-
 	err = dtpullsecret.NewReconciler(r.client, r.apiReader, r.dynakube, r.tokens).Reconcile(ctx)
 	if err != nil {
-		log.Error(err, "could not reconcile pull secret")
-
 		return err
 	}
 

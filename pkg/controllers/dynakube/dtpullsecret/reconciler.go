@@ -50,9 +50,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 		err := r.deletePullSecretIfExists(ctx)
 		if err != nil {
-			log.Error(err, "failed to clean-up OneAgent tenant-secret")
-
-			return nil
+			log.Error(err, "failed to clean-up pull secret")
 		}
 
 		meta.RemoveStatusCondition(r.dynakube.Conditions(), PullSecretConditionType)
