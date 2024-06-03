@@ -23,28 +23,26 @@ jobs:
     strategy:
       matrix:
         include:
-          # k8s
-          - flc_env: dto-k8s-1-24
-            flc_ns: dto-k8s-ondemand
-          - flc_env: dto-k8s-1-25
-            flc_ns: dto-k8s-ondemand
-          - flc_env: dto-k8s-1-26
-            flc_ns: dto-k8s-ondemand
-          - flc_env: dto-k8s-1-27
-            flc_ns: dto-k8s-ondemand
-          - flc_env: dto-k8s-1-28
-            flc_ns: dto-k8s-ondemand
-          - flc_env: dto-k8s-1-29
-            flc_ns: dto-k8s-ondemand
-          # OCP
-          - flc_env: dto-ocp-4-10
-            flc_ns: dto-ocp-ondemand
-          - flc_env: dto-ocp-4-11
-            flc_ns: dto-ocp-ondemand
-          - flc_env: dto-ocp-4-12
-            flc_ns: dto-ocp-ondemand
-          - flc_env: dto-ocp-4-13
-            flc_ns: dto-ocp-ondemand
+          - version: 1-24
+            platform: k8s
+          - version: 1-25
+            platform: k8s
+          - version: 1-26
+            platform: k8s
+          - version: 1-27
+            platform: k8s
+          - version: 1-28
+            platform: k8s
+          - version: 1-29
+            platform: k8s
+          - version: 4-10
+            platform: ocp
+          - version: 4-11
+            platform: ocp
+          - version: 4-12
+            platform: ocp
+          - version: 4-13
+            platform: ocp
     environment: E2E
     runs-on:
       - self-hosted
@@ -55,8 +53,8 @@ jobs:
       - name: Run e2e test
         uses: ./.github/actions/run-e2e
         with:
-          flc-namespace:  ${{ matrix.flc_ns }}
-          flc-environment: ${{ matrix.flc_env }}
+          flc-namespace:  ${{ format('dto-{0}-{1}',  matrix.platform, matrix.version ) }}
+          flc-environment: ${{ format('dto-{0}-ondemand', matrix.platform ) }}
           target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
