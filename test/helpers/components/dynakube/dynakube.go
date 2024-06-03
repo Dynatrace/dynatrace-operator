@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1"
+	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2"
 	dynakubev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
@@ -32,6 +34,11 @@ func Install(builder *features.FeatureBuilder, level features.Level, secretConfi
 	VerifyStartup(builder, level, testDynakube)
 }
 
+func InstallPreviousVersion(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.Secret, previousVersionDK dynakubev1beta1.DynaKube) {
+	CreatePreviousVersion(builder, level, secretConfig, previousVersionDK)
+	VerifyStartupPreviousVersion(builder, level, previousVersionDK)
+}
+
 func Create(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.Secret, testDynakube dynakubev1beta2.DynaKube) {
 	if secretConfig != nil {
 		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(*secretConfig, testDynakube.Name, testDynakube.Namespace))
@@ -44,6 +51,26 @@ func Create(builder *features.FeatureBuilder, level features.Level, secretConfig
 
 func Update(builder *features.FeatureBuilder, level features.Level, testDynakube dynakubev1beta2.DynaKube) {
 	builder.WithStep("dynakube updated", level, update(testDynakube))
+}
+
+func CreatePreviousVersion(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.Secret, testDynakube dynakubev1beta1.DynaKube) {
+	if secretConfig != nil {
+		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(*secretConfig, testDynakube.Name, testDynakube.Namespace))
+	}
+	builder.WithStep(
+		fmt.Sprintf("'%s' dynakube created", testDynakube.Name),
+		level,
+		createPreviousVersion(testDynakube))
+}
+
+func VerifyStartupPreviousVersion(builder *features.FeatureBuilder, level features.Level, testDynakube dynakubev1beta1.DynaKube) {
+	if testDynakube.NeedsOneAgent() {
+		builder.WithStep("oneagent started", level, oneagent.WaitForDaemonsetV1Beta1(testDynakube))
+	}
+	builder.WithStep(
+		fmt.Sprintf("'%s' dynakube phase changes to 'Running'", testDynakube.Name),
+		level,
+		WaitForPhasePreviousVersion(testDynakube, status.Running))
 }
 
 func Delete(builder *features.FeatureBuilder, level features.Level, testDynakube dynakubev1beta2.DynaKube) {
@@ -83,9 +110,35 @@ func WaitForPhase(dynakube dynakubev1beta2.DynaKube, phase status.DeploymentPhas
 	}
 }
 
+func WaitForPhasePreviousVersion(dynakube dynakubev1beta1.DynaKube, phase status.DeploymentPhase) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+
+		const timeout = 5 * time.Minute
+		err := wait.For(conditions.New(resources).ResourceMatch(&dynakube, func(object k8s.Object) bool {
+			dynakube, isDynakube := object.(*dynakubev1beta1.DynaKube)
+
+			return isDynakube && dynakube.Status.Phase == phase
+		}), wait.WithTimeout(timeout))
+
+		require.NoError(t, err)
+
+		return ctx
+	}
+}
+
 func create(dynakube dynakubev1beta2.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		require.NoError(t, dynatracev1beta2.AddToScheme(envConfig.Client().Resources().GetScheme()))
+		require.NoError(t, envConfig.Client().Resources().Create(ctx, &dynakube))
+
+		return ctx
+	}
+}
+
+func createPreviousVersion(dynakube dynakubev1beta1.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		require.NoError(t, dynatracev1beta1.AddToScheme(envConfig.Client().Resources().GetScheme()))
 		require.NoError(t, envConfig.Client().Resources().Create(ctx, &dynakube))
 
 		return ctx
