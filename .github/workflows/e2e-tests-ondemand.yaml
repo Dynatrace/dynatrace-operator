@@ -37,6 +37,8 @@ jobs:
         exclude:
           - flc_env: [dto-ocp-4-10, dto-ocp-4-11, dto-ocp-4-12, dto-ocp-4-13]
             flc_environment: dto-k8s-ondemand
+          - flc_env: [dto-k8s-1-24, dto-k8s-1-25, dto-k8s-1-26, dto-k8s-1-27, dto-k8s-1-28, dto-k8s-1-29]
+            flc_environment: dto-ocp-ondemand
     environment: E2E
     runs-on:
       - self-hosted
