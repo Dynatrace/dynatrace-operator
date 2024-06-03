@@ -93,11 +93,11 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 				return err
 			}
 		}
+	}
 
-		err = r.authTokenReconciler.Reconcile(ctx)
-		if err != nil {
-			return errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
-		}
+	err = r.authTokenReconciler.Reconcile(ctx)
+	if err != nil {
+		return errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
 	}
 
 	for _, agCapability := range capability.GenerateActiveGateCapabilities(r.dynakube) {
