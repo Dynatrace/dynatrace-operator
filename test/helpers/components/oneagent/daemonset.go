@@ -5,6 +5,7 @@ package oneagent
 import (
 	"context"
 
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
@@ -16,6 +17,10 @@ import (
 )
 
 func WaitForDaemonset(dynakube dynatracev1beta2.DynaKube) features.Func {
+	return helpers.ToFeatureFunc(daemonset.WaitFor(dynakube.OneAgentDaemonsetName(), dynakube.Namespace), true)
+}
+
+func WaitForDaemonsetV1Beta1(dynakube dynatracev1beta1.DynaKube) features.Func {
 	return helpers.ToFeatureFunc(daemonset.WaitFor(dynakube.OneAgentDaemonsetName(), dynakube.Namespace), true)
 }
 
