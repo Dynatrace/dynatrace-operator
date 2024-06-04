@@ -47,10 +47,10 @@ const (
 var (
 	testHostPatterns  = []string{"*.internal.org"}
 	testHostPatterns2 = []string{"*.external.org"}
-	objectId          = "my:default"
+	testObjectId      = "my:default"
 
 	testEnvironmentSetting = edgeconnect.EnvironmentSetting{
-		ObjectId:      &objectId,
+		ObjectId:      &testObjectId,
 		SchemaId:      edgeconnect.KubernetesConnectionSchemaID,
 		SchemaVersion: edgeconnect.KubernetesConnectionVersion,
 		Scope:         edgeconnect.KubernetesConnectionScope,
