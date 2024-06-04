@@ -2,7 +2,6 @@ package edgeconnect
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"slices"
 	"strings"
@@ -521,10 +520,6 @@ func newEdgeConnectClient() func(ctx context.Context, edgeConnect *edgeconnectv1
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-
-		jsonBytes, _ := json.Marshal(edgeConnectClient)
-
-		log.Info("EDGECONNECT CLIENT CREATED", "client", string(jsonBytes))
 
 		return edgeConnectClient, nil
 	}
