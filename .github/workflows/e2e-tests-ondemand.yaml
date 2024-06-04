@@ -21,6 +21,9 @@ jobs:
   run-matrix:
     name: Run using version/platform
     strategy:
+      # we don't want to cancel all in-progress jobs if any matrix job fails.
+      fail-fast: false
+      max-parallel: 4
       matrix:
         include:
           - version: 1-24
