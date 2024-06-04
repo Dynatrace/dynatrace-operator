@@ -246,9 +246,6 @@ tests:
                     name: livez
                     protocol: TCP
                 resources:
-                  limits:
-                    cpu: 300m
-                    memory: 100Mi
                   requests:
                     cpu: 300m
                     memory: 100Mi
@@ -439,8 +436,6 @@ tests:
       csidriver.enabled: true
       csidriver.provisioner.resources.requests.cpu: 600m
       csidriver.provisioner.resources.requests.memory: 200Mi
-      csidriver.provisioner.resources.limits.cpu: 900m
-      csidriver.provisioner.resources.limits.memory: 300Mi
     asserts:
       - equal:
           path: spec.template.spec.containers[1].name
@@ -451,12 +446,6 @@ tests:
       - equal:
           path: spec.template.spec.containers[1].resources.requests.memory
           value: 200Mi
-      - equal:
-          path: spec.template.spec.containers[1].resources.limits.cpu
-          value: 900m
-      - equal:
-          path: spec.template.spec.containers[1].resources.limits.memory
-          value: 300Mi
   - it: should take resource limits from values file for server
     set:
       csidriver.enabled: true
