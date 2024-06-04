@@ -64,6 +64,10 @@ spec:
   # Configuration for OneAgent instances
   #
   oneAgent:
+    # Optional: Sets a host group for OneAgent.
+    # 
+    # hostGroup: ""
+
     # Enables application-only monitoring and changes its settings
     # Cannot be used in conjunction with cloud-native fullstack monitoring, classic fullstack monitoring or host monitoring
     #
