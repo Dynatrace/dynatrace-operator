@@ -125,6 +125,21 @@ tests:
               - mountPath: /data
                 name: data-dir
             priorityClassName: dynatrace-high-priority
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - key: kubernetes.io/arch
+                          operator: In
+                          values:
+                            - amd64
+                            - arm64
+                            - ppc64le
+                        - key: kubernetes.io/os
+                          operator: In
+                          values:
+                            - linux
             tolerations:
                 - effect: NoSchedule
                   key: node-role.kubernetes.io/master
