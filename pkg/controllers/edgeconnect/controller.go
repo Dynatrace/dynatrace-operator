@@ -457,7 +457,7 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 			return err
 		}
 
-		return controller.createOrUpdateEdgeConnectDeployment(ctx, edgeConnect)
+		return controller.createOrUpdateEdgeConnectDeploymentAndSettings(ctx, edgeConnect)
 	}
 
 	err = controller.updateEdgeConnect(ctx, edgeConnectClient, edgeConnect, hostPatterns)
@@ -465,7 +465,7 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 		return err
 	}
 
-	return controller.createOrUpdateEdgeConnectDeployment(ctx, edgeConnect)
+	return controller.createOrUpdateEdgeConnectDeploymentAndSettings(ctx, edgeConnect)
 }
 
 func (controller *Controller) buildEdgeConnectClient(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) (edgeconnect.Client, error) {
@@ -677,7 +677,7 @@ func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnect
 	return nil
 }
 
-func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
+func (controller *Controller) createOrUpdateEdgeConnectDeploymentAndSettings(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
 	clientSecretName := edgeConnect.ClientSecretName()
 
 	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name, "clientSecretName", clientSecretName)
