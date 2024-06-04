@@ -680,10 +680,6 @@ func createFakeClientAndReconciler(t *testing.T, instance *edgeconnectv1alpha1.E
 	}
 
 	mockEdgeConnectClient := edgeconnectmock.NewClient(t)
-	mockEdgeConnectClient.On("GetConnectionSetting", mock.Anything).Return(testEnvironmentSetting, nil).Maybe()
-	mockEdgeConnectClient.On("CreateConnectionSetting", mock.Anything).Return(nil).Maybe()
-	mockEdgeConnectClient.On("UpdateConnectionSetting", mock.Anything).Return(nil).Maybe()
-	mockEdgeConnectClient.On("DeleteConnectionSetting", mock.Anything).Return(nil).Maybe()
 
 	mockEdgeConnectClientBuilder := func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error) {
 		return mockEdgeConnectClient, nil
