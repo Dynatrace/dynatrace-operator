@@ -419,9 +419,18 @@ func (dk *DynaKube) Tokens() string {
 	return dk.Name
 }
 
-// TenantUUIDFromApiUrl gets the tenantUUID from the ApiUrl present in the struct, if the tenant is aliased then the alias will be returned.
 func (dk *DynaKube) TenantUUIDFromApiUrl() (string, error) {
-	return tenantUUID(dk.Spec.APIURL)
+	return tenantUUID(dk.ApiUrl())
+}
+
+func (dk *DynaKube) TenantUUIDFromConnectionInfoStatus() (string, error) {
+	if dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID != "" {
+		return dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID, nil
+	} else if dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID != "" {
+		return dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID, nil
+	}
+
+	return "", errors.New("tenant UUID not available")
 }
 
 func (dk *DynaKube) ApiRequestThreshold() time.Duration {

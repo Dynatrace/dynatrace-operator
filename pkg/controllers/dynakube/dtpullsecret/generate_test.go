@@ -37,6 +37,15 @@ func TestReconciler_GenerateData(t *testing.T) {
 		Spec: dynatracev1beta2.DynaKubeSpec{
 			APIURL: testApiUrl,
 		},
+		Status: dynatracev1beta2.DynaKubeStatus{
+			OneAgent: dynatracev1beta2.OneAgentStatus{
+				ConnectionInfoStatus: dynatracev1beta2.OneAgentConnectionInfoStatus{
+					ConnectionInfoStatus: dynatracev1beta2.ConnectionInfoStatus{
+						TenantUUID: testTenant,
+					},
+				},
+			},
+		},
 	}
 	r := &Reconciler{
 		dynakube: dynakube,

@@ -15,7 +15,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent/daemonset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
@@ -47,15 +49,19 @@ type ReconcilerBuilder func(
 	apiReader client.Reader,
 	dtClient dynatrace.Client,
 	dynakube *dynatracev1beta2.DynaKube,
-	clusterID string) controllers.Reconciler
+	tokens token.Tokens,
+	clusterID string,
+) controllers.Reconciler
 
 // NewReconciler initializes a new ReconcileOneAgent instance
-func NewReconciler(
+func NewReconciler( //nolint
 	client client.Client,
 	apiReader client.Reader,
 	dtClient dynatrace.Client,
 	dynakube *dynatracev1beta2.DynaKube,
-	clusterID string) controllers.Reconciler {
+	tokens token.Tokens,
+	clusterID string,
+) controllers.Reconciler {
 	return &Reconciler{
 		client:                   client,
 		apiReader:                apiReader,
@@ -63,6 +69,7 @@ func NewReconciler(
 		dynakube:                 dynakube,
 		connectionInfoReconciler: oaconnectioninfo.NewReconciler(client, apiReader, dtClient, dynakube),
 		versionReconciler:        version.NewReconciler(apiReader, dtClient, timeprovider.New().Freeze()),
+		tokens:                   tokens,
 	}
 }
 
@@ -74,6 +81,7 @@ type Reconciler struct {
 	connectionInfoReconciler controllers.Reconciler
 	versionReconciler        version.Reconciler
 	dynakube                 *dynatracev1beta2.DynaKube
+	tokens                   token.Tokens
 	clusterID                string
 }
 
@@ -105,6 +113,11 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	if !r.dynakube.NeedsOneAgent() {
 		return r.cleanUp(ctx)
+	}
+
+	err = dtpullsecret.NewReconciler(r.client, r.apiReader, r.dynakube, r.tokens).Reconcile(ctx)
+	if err != nil {
+		return err
 	}
 
 	log.Info("At least one communication host is provided, deploying OneAgent")

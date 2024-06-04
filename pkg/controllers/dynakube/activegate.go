@@ -10,7 +10,7 @@ import (
 )
 
 func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube *dynakube.DynaKube, dtc dynatrace.Client, istioClient *istio.Client) error {
-	reconciler := controller.activeGateReconcilerBuilder(controller.client, controller.apiReader, dynakube, dtc, istioClient)
+	reconciler := controller.activeGateReconcilerBuilder(controller.client, controller.apiReader, dynakube, dtc, istioClient, controller.tokens)
 	err := reconciler.Reconcile(ctx)
 
 	if err != nil {

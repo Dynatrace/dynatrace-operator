@@ -6,11 +6,13 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent/daemonset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	versions "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -40,6 +42,39 @@ func TestReconcile(t *testing.T) {
 	ctx := context.Background()
 	namespace := "dynatrace"
 	dkName := "dynakube"
+
+	t.Run("create DaemonSet in case OneAgent is needed", func(t *testing.T) {
+		dynakube := &dynatracev1beta2.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
+			Spec: dynatracev1beta2.DynaKubeSpec{
+				OneAgent: dynatracev1beta2.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
+				},
+			},
+		}
+		dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID = "test-tenant"
+		fakeClient := fake.NewClient(dynakube)
+
+		reconciler := &Reconciler{
+			client:                   fakeClient,
+			apiReader:                fakeClient,
+			dynakube:                 dynakube,
+			versionReconciler:        createVersionReconcilerMock(t),
+			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
+			tokens:                   createTokens(),
+		}
+
+		err := reconciler.Reconcile(ctx)
+		require.NoError(t, err)
+
+		dsActual := &appsv1.DaemonSet{}
+		err = fakeClient.Get(ctx, types.NamespacedName{Name: dynakube.OneAgentDaemonsetName(), Namespace: namespace}, dsActual)
+		require.NoError(t, err, "failed to get DaemonSet")
+		assert.Equal(t, namespace, dsActual.Namespace, "wrong namespace")
+		assert.Equal(t, dynakube.OneAgentDaemonsetName(), dsActual.GetObjectMeta().GetName(), "wrong name")
+
+		assert.NotNil(t, dsActual.Spec.Template.Spec.Affinity)
+	})
 
 	t.Run("remove DaemonSet in case OneAgent is not needed + remove condition", func(t *testing.T) {
 		dynakube := &dynatracev1beta2.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace}}
@@ -164,6 +199,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		Spec:       dkSpec,
 	}
 
+	dynakube.Status.OneAgent.ConnectionInfoStatus.ConnectionInfoStatus.TenantUUID = "test-tenant"
 	dynakube.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynatracev1beta2.CommunicationHostStatus{
 		{
 			Protocol: "http",
@@ -181,6 +217,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		dynakube:                 dynakube,
 		connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		versionReconciler:        createVersionReconcilerMock(t),
+		tokens:                   createTokens(),
 	}
 
 	err := reconciler.Reconcile(ctx)
@@ -218,6 +255,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 			},
 		},
 	}
+	base.Status.OneAgent.ConnectionInfoStatus.TenantUUID = "test-tenant"
 	base.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynatracev1beta2.CommunicationHostStatus{
 		{
 			Protocol: "http",
@@ -248,6 +286,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		reconciler.dynakube = dk
 		reconciler.connectionInfoReconciler = createConnectionInfoReconcilerMock(t)
 		reconciler.versionReconciler = createVersionReconcilerMock(t)
+		reconciler.tokens = createTokens()
 		dk.Status.OneAgent.Version = oldComponentVersion
 		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
@@ -279,6 +318,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		reconciler.dynakube = dk
 		reconciler.connectionInfoReconciler = createConnectionInfoReconcilerMock(t)
 		reconciler.versionReconciler = createVersionReconcilerMock(t)
+		reconciler.tokens = createTokens()
 		dk.Spec.OneAgent.ClassicFullStack.AutoUpdate = autoUpdate
 		dk.Status.OneAgent.Version = oldComponentVersion
 		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
@@ -709,6 +749,7 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 			apiReader:                fakeClient,
 			versionReconciler:        createVersionReconcilerMock(t),
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
+			tokens:                   createTokens(),
 		}
 
 		err := reconciler.Reconcile(ctx)
@@ -737,4 +778,10 @@ func createVersionReconcilerMock(t *testing.T) versions.Reconciler {
 		mock.AnythingOfType("*dynakube.DynaKube")).Return(nil).Once()
 
 	return versionReconciler
+}
+
+func createTokens() token.Tokens {
+	return token.Tokens{
+		dtclient.ApiToken: &token.Token{Value: "sdfsdf"},
+	}
 }
