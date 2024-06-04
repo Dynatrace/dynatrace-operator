@@ -646,6 +646,9 @@ spec:
                   - type
                   type: object
                 type: array
+              kubeSystemUid:
+                description: kube-system namespace uid
+                type: string
               phase:
                 description: Defines the current state (Running, Updating, Error,
                   ...)

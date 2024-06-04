@@ -21,11 +21,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	k8sdeployment "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/deployment"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -170,7 +170,7 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 
 	// TODO: Remove IF clause when non-provisioner mode supports Connection Settings object creation
 	if edgeConnect.IsProvisionerModeEnabled() {
-		err = controller.deleteConnectionSetting(ctx, edgeConnectClient)
+		err = controller.deleteConnectionSetting(edgeConnectClient, edgeConnect.Status.KubeSystemUid)
 		if err != nil {
 			_log.Info("reconcile deletion: Deleting connection setting failed")
 
@@ -181,15 +181,8 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 	return edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID)
 }
 
-func (controller *Controller) deleteConnectionSetting(ctx context.Context, edgeConnectClient edgeconnect.Client) error {
-	var kubeSystemNamespace corev1.Namespace
-
-	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: kubeSystemNamespaceName}, &kubeSystemNamespace)
-	if err != nil {
-		return err
-	}
-
-	envSetting, err := edgeConnectClient.GetConnectionSetting(string(kubeSystemNamespace.UID))
+func (controller *Controller) deleteConnectionSetting(edgeConnectClient edgeconnect.Client, kubeSystemUid string) error {
+	envSetting, err := edgeConnectClient.GetConnectionSetting(kubeSystemUid)
 	if err != nil {
 		return err
 	}
@@ -256,6 +249,17 @@ func (controller *Controller) reconcileEdgeConnectCR(ctx context.Context, edgeCo
 		_log.Debug("updating version info failed")
 
 		return err
+	}
+
+	if edgeConnect.Status.KubeSystemUid == "" {
+		_log.Debug("reconcile EdgeConnect kube-system UID")
+
+		kubeSystemUid, err := kubesystem.GetUID(ctx, controller.apiReader)
+		if err != nil {
+			return err
+		}
+
+		edgeConnect.Status.KubeSystemUid = string(kubeSystemUid)
 	}
 
 	if edgeConnect.IsProvisionerModeEnabled() {
@@ -443,10 +447,7 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 		}
 	}
 
-	k8sHostname, err := controller.k8sAutomationHostPattern(ctx, edgeConnect.Name, edgeConnect.Namespace)
-	if err != nil {
-		return err
-	}
+	k8sHostname := controller.k8sAutomationHostPattern(edgeConnect.Name, edgeConnect.Namespace, edgeConnect.Status.KubeSystemUid)
 
 	hostPatterns := controller.hostPatterns(edgeConnect, k8sHostname)
 
@@ -720,7 +721,7 @@ func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Co
 		return err
 	}
 
-	err = controller.createOrUpdateConnectionSetting(ctx, edgeConnectClient, edgeConnect, edgeConnectToken)
+	err = controller.createOrUpdateConnectionSetting(edgeConnectClient, edgeConnect, edgeConnectToken)
 	if err != nil {
 		_log.Debug("creating EdgeConnect connection setting failed")
 
@@ -732,17 +733,10 @@ func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Co
 	return nil
 }
 
-func (controller *Controller) createOrUpdateConnectionSetting(ctx context.Context, edgeConnectClient edgeconnect.Client, edgeConnect *edgeconnectv1alpha1.EdgeConnect, latestToken string) error {
+func (controller *Controller) createOrUpdateConnectionSetting(edgeConnectClient edgeconnect.Client, edgeConnect *edgeconnectv1alpha1.EdgeConnect, latestToken string) error {
 	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name)
 
-	var kubeSystemNamespace corev1.Namespace
-
-	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: kubeSystemNamespaceName}, &kubeSystemNamespace)
-	if err != nil {
-		return err
-	}
-
-	envSetting, err := edgeConnectClient.GetConnectionSetting(string(kubeSystemNamespace.UID))
+	envSetting, err := edgeConnectClient.GetConnectionSetting(edgeConnect.Status.KubeSystemUid)
 	if err != nil {
 		_log.Info("Failed getting EdgeConnect connection setting object")
 
@@ -759,7 +753,7 @@ func (controller *Controller) createOrUpdateConnectionSetting(ctx context.Contex
 				Scope:         edgeconnect.KubernetesConnectionScope,
 				Value: edgeconnect.EnvironmentSettingValue{
 					Name:      edgeConnect.Name,
-					Uid:       string(kubeSystemNamespace.UID),
+					Uid:       edgeConnect.Status.KubeSystemUid,
 					Namespace: edgeConnect.Namespace,
 					Token:     latestToken,
 				},
@@ -835,15 +829,8 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 	return token, hash, err
 }
 
-func (controller *Controller) k8sAutomationHostPattern(ctx context.Context, ecName string, ecNamespace string) (string, error) {
-	var kubeSystemNamespace corev1.Namespace
-
-	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: kubeSystemNamespaceName}, &kubeSystemNamespace)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	return ecName + "." + ecNamespace + "." + string(kubeSystemNamespace.UID) + "." + k8sHostnameSuffix, nil
+func (controller *Controller) k8sAutomationHostPattern(ecName string, ecNamespace string, kubeSystemUid string) string {
+	return ecName + "." + ecNamespace + "." + kubeSystemUid + "." + k8sHostnameSuffix
 }
 
 func (controller *Controller) hostPatterns(edgeConnect *edgeconnectv1alpha1.EdgeConnect, k8sHostname string) []string {
