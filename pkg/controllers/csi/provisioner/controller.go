@@ -287,7 +287,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 }
 
 func (provisioner *OneAgentProvisioner) handleMetadata(dk *dynatracev1beta2.DynaKube) (*metadata.TenantConfig, error) {
-	tenantUUID, err := dk.TenantUUIDFromApiUrl()
+	tenantUUID, err := dk.TenantUUIDFromApiUrl() // TODO update to use the tenant uuid from the DynaKube status
 	if err != nil {
 		return nil, err
 	}

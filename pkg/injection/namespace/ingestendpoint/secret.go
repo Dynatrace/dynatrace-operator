@@ -193,7 +193,7 @@ func metricsIngestUrlForDynatraceActiveGate(dk *dynatracev1beta2.DynaKube) (stri
 }
 
 func metricsIngestUrlForClusterActiveGate(dk *dynatracev1beta2.DynaKube) (string, error) {
-	tenant, err := dk.TenantUUIDFromApiUrl()
+	tenant, err := dk.TenantUUIDFromConnectionInfoStatus()
 	if err != nil {
 		return "", err
 	}

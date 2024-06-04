@@ -18,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
@@ -387,13 +388,13 @@ func TestReconcileComponents(t *testing.T) {
 }
 
 func createActivegateReconcilerBuilder(reconciler controllers.Reconciler) activegate.ReconcilerBuilder {
-	return func(_ client.Client, _ client.Reader, _ *dynatracev1beta2.DynaKube, _ dtclient.Client, _ *istio.Client) controllers.Reconciler {
+	return func(_ client.Client, _ client.Reader, _ *dynatracev1beta2.DynaKube, _ dtclient.Client, _ *istio.Client, _ token.Tokens) controllers.Reconciler {
 		return reconciler
 	}
 }
 
 func createOneAgentReconcilerBuilder(reconciler controllers.Reconciler) oneagent.ReconcilerBuilder {
-	return func(_ client.Client, _ client.Reader, _ dtclient.Client, _ *dynatracev1beta2.DynaKube, _ string) controllers.Reconciler {
+	return func(_ client.Client, _ client.Reader, _ dtclient.Client, _ *dynatracev1beta2.DynaKube, _ token.Tokens, _ string) controllers.Reconciler {
 		return reconciler
 	}
 }
