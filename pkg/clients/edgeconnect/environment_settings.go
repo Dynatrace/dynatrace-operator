@@ -80,8 +80,6 @@ func (c *client) GetConnectionSetting(uid string) (EnvironmentSetting, error) {
 }
 
 func (c *client) CreateConnectionSetting(es EnvironmentSetting) error {
-	log.Info("Creating connection setting", "EnvironmentSetting", es)
-
 	jsonStr, err := json.Marshal([]EnvironmentSetting{es})
 	if err != nil {
 		return errors.WithStack(err)
