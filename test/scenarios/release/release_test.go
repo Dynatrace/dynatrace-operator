@@ -15,12 +15,14 @@ import (
 
 var testEnv env.Environment
 
+const releaseTag = "1.1.0"
+
 func TestMain(m *testing.M) {
 	cfg := environment.GetStandardKubeClusterEnvConfig()
 	testEnv = env.NewWithConfig(cfg)
 	testEnv.Setup(
 		tenant.CreateOtelSecret(operator.DefaultNamespace),
-		operator.InstallViaHelm("0.15.0", true, operator.DefaultNamespace), // TODO: Make the version not hard-coded, but always use the previous version. Using git is not an option because pipeline does not pull the whole git repo.
+		operator.InstallViaHelm(releaseTag, true, operator.DefaultNamespace), // TODO: add logic to get releaseTag in a dynamic way instead of hard coding it
 	)
 	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
 	if !cfg.FailFast() {

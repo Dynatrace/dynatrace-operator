@@ -19,5 +19,6 @@ manifests/crd/release: manifests/crd/helm
 	helm template dynatrace-operator config/helm/chart/default \
 			--namespace dynatrace \
 			--set installCRD=true \
+			--set csidriver.enabled=false \
 			--set partial="crd" > $(RELEASE_CRD_YAML)
 

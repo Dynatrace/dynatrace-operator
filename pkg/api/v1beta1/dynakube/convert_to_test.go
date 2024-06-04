@@ -7,6 +7,7 @@ import (
 	v1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,6 +35,7 @@ func TestConvertTo(t *testing.T) {
 
 		compareHostInjectSpec(t, *from.Spec.OneAgent.HostMonitoring, *to.Spec.OneAgent.HostMonitoring)
 		compareMovedFields(t, from, to)
+		assert.False(t, to.MetadataEnrichmentEnabled())
 	})
 
 	t.Run("migrate classic-fullstack from v1beta1 to v1beta2", func(t *testing.T) {
@@ -46,6 +48,7 @@ func TestConvertTo(t *testing.T) {
 
 		compareHostInjectSpec(t, *from.Spec.OneAgent.ClassicFullStack, *to.Spec.OneAgent.ClassicFullStack)
 		compareMovedFields(t, from, to)
+		assert.False(t, to.MetadataEnrichmentEnabled())
 	})
 
 	t.Run("migrate cloud-native from v1beta1 to v1beta2", func(t *testing.T) {
@@ -80,6 +83,7 @@ func TestConvertTo(t *testing.T) {
 		from.ConvertTo(&to)
 
 		compareActiveGateSpec(t, from.Spec.ActiveGate, to.Spec.ActiveGate)
+		assert.False(t, to.MetadataEnrichmentEnabled())
 	})
 
 	t.Run("migrate status from v1beta2 to v1beta1", func(t *testing.T) {
