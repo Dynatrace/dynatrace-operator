@@ -60,7 +60,7 @@ type HostInjectSpec struct {
 	// Enabled by default.
 	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Automatically update Agent",order=13,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
-	AutoUpdate *bool `json:"autoUpdate,omitempty"`
+	AutoUpdate *bool `json:"autoUpdate"`
 
 	// Set the DNS Policy for OneAgent pods. For details, see Pods DNS Policy (https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy).
 	// +optional
