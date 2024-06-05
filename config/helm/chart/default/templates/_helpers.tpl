@@ -59,5 +59,4 @@ startupProbe:
   periodSeconds: 10
   timeoutSeconds: 5
   failureThreshold: 1
-{{- println }}
 {{- end -}}
