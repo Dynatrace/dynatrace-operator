@@ -646,7 +646,7 @@ spec:
                   - type
                   type: object
                 type: array
-              kubeSystemUid:
+              kubeSystemUID:
                 description: kube-system namespace uid
                 type: string
               phase:
