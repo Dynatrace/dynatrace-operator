@@ -1,6 +1,7 @@
 package dynakube
 
 import (
+	"fmt"
 	"strconv"
 
 	v1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
@@ -10,7 +11,9 @@ import (
 
 // ConvertFrom converts v1beta2 to v1beta1.
 func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
+
 	src := srcRaw.(*v1beta2.DynaKube)
+	log.Info("wepudt autoUpdate: ConvertFrom v1beta1 autoUpdate " + fmt.Sprintf("%v", src.Spec.OneAgent.CloudNativeFullStack.AutoUpdate)) // TODO: remove this logline
 	dst.fromBase(src)
 	dst.fromOneAgentSpec(src)
 	dst.fromActiveGateSpec(src)
@@ -20,7 +23,7 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	if err != nil {
 		return err
 	}
-
+	log.Info("wepudt autoupdate: ConvertFrom v1beta2 to v1beta1 " + fmt.Sprintf("%v", *dst.Spec.OneAgent.CloudNativeFullStack.AutoUpdate)) // TODO: remove this logline
 	return nil
 }
 

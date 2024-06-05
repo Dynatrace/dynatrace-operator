@@ -1,6 +1,7 @@
 package dynakube
 
 import (
+	"fmt"
 	"strconv"
 
 	v1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
@@ -9,6 +10,8 @@ import (
 
 // ConvertTo converts v1beta1 to v1beta2.
 func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
+
+	log.Info("wepudt autoupdate:ConvertTo: conversion v1beta1 to v1beta2 of DK " + src.Name + " started") // TODO: remove this logline
 	dst := dstRaw.(*v1beta2.DynaKube)
 	src.toBase(dst)
 	src.toOneAgentSpec(dst)
@@ -17,8 +20,13 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 
 	err := src.toMovedFields(dst)
 	if err != nil {
+		log.Info("wepudt autoupdate:ConvertTo: conversion v1beta1 to v1beta2 of DK " + src.Name + " failed") // TODO: remove this logline
+
 		return err
 	}
+
+	log.Info("wepudt autoupdate:ConvertTo: conversion v1beta1 to v1beta2 of DK " + src.Name + " succeeded")                                                                // TODO: remove this logline
+	log.Info("wepudt autoupdate:ConvertTo: autoUpdate value of v1beta2 DK " + fmt.Sprintf("%v", dstRaw.(*v1beta2.DynaKube).Spec.OneAgent.CloudNativeFullStack.AutoUpdate)) // TODO: remove this logline
 
 	return nil
 }
@@ -190,6 +198,8 @@ func (src *DynaKube) toActiveGateStatus(dst *v1beta2.DynaKube) {
 }
 
 func toHostInjectSpec(src HostInjectSpec) *v1beta2.HostInjectSpec {
+	log.Info("wepudt autoupdate:ConvertTo: HostInjectSpec conversion started")                                  // TODO: remove this logline
+	log.Info("wepudt autoupdate:ConvertTo: HostInjectSpec.AutoUpdate is " + fmt.Sprintf("%v", *src.AutoUpdate)) // TODO: remove this logline
 	dst := &v1beta2.HostInjectSpec{}
 	if src.AutoUpdate != nil {
 		dst.AutoUpdate = *src.AutoUpdate
@@ -208,7 +218,7 @@ func toHostInjectSpec(src HostInjectSpec) *v1beta2.HostInjectSpec {
 	dst.NodeSelector = src.NodeSelector
 	dst.PriorityClassName = src.PriorityClassName
 	dst.Tolerations = src.Tolerations
-
+	log.Info("wepudt autoupdate: HostInjectSpec conversion succeeded") // TODO: remove this logline
 	return dst
 }
 
