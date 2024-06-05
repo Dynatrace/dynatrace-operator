@@ -72,7 +72,6 @@ affinity:
               operator: In
               values:
                 - linux
-{{- println }}
 {{- end -}}
 
 {{- define "dynatrace-operator.defaultTolerations" -}}
@@ -88,5 +87,4 @@ affinity:
 - key: kubernetes.io/arch
   value: s390x
   effect: NoSchedule
-{{- println }}
 {{- end -}}
