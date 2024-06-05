@@ -13,6 +13,7 @@ func fillWithTenantConfigs(t *testing.T, db *GormConn, amount int) {
 		tConfig := generateTenantConfig(i)
 		err := db.CreateTenantConfig(tConfig)
 		require.NoError(t, err)
+
 		if i%2 == 0 {
 			err := db.DeleteTenantConfig(tConfig, false)
 			require.NoError(t, err)
@@ -71,6 +72,7 @@ func TestPurgeTenantConfig(t *testing.T) {
 
 		initialLength := 6
 		fillWithTenantConfigs(t, db, initialLength)
+
 		for i := range initialLength {
 			err = db.PurgeTenantConfig(generateTenantConfig(i))
 			require.NoError(t, err)
@@ -87,6 +89,7 @@ func fillWithCodeModules(t *testing.T, db *GormConn, amount int) {
 		cm := generateCodeModule(i)
 		err := db.CreateCodeModule(cm)
 		require.NoError(t, err)
+
 		if i%2 == 0 {
 			err := db.DeleteCodeModule(cm)
 			require.NoError(t, err)
@@ -141,6 +144,7 @@ func TestPurgeCodeModule(t *testing.T) {
 
 		initialLength := 6
 		fillWithCodeModules(t, db, initialLength)
+
 		for i := range initialLength {
 			err = db.PurgeCodeModule(generateCodeModule(i))
 			require.NoError(t, err)
@@ -157,6 +161,7 @@ func fillWithAppMounts(t *testing.T, db *GormConn, amount int) {
 		am := generateAppMount(i)
 		err := db.CreateAppMount(am)
 		require.NoError(t, err)
+
 		if i%2 == 0 {
 			err := db.DeleteAppMount(am)
 			require.NoError(t, err)
@@ -213,6 +218,7 @@ func TestPurgeAppMount(t *testing.T) {
 
 		initialLength := 6
 		fillWithAppMounts(t, db, initialLength)
+
 		for i := range initialLength {
 			err = db.PurgeAppMount(generateAppMount(i))
 			require.NoError(t, err)
@@ -229,6 +235,7 @@ func fillWithOSMounts(t *testing.T, db *GormConn, amount int) {
 		om := generateOSMount(i)
 		err := db.CreateOSMount(om)
 		require.NoError(t, err)
+
 		if i%2 == 0 {
 			err := db.DeleteOSMount(om)
 			require.NoError(t, err)
@@ -287,6 +294,7 @@ func TestPurgeOSMount(t *testing.T) {
 
 		initialLength := 6
 		fillWithOSMounts(t, db, initialLength)
+
 		for i := range initialLength {
 			// I don't understand why I can't just pass in the generated OSMount.
 			// It just doesn't clean up the already soft-deleted entries if I do.
