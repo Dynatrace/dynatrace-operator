@@ -197,10 +197,10 @@ func (svr *Server) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpubli
 }
 
 func (svr *Server) unmountUnknownVolume(volumeInfo csivolumes.VolumeInfo) {
-	log.Info("Couldn't handle volume with any publisher, trying to unmount", "volumeID", volumeInfo.VolumeID, "targetPath", volumeInfo.TargetPath)
+	log.Info("unmounting unknown volume", "volumeID", volumeInfo.VolumeID, "targetPath", volumeInfo.TargetPath)
 
 	if err := svr.mounter.Unmount(volumeInfo.TargetPath); err != nil {
-		log.Error(err, "Tried to unmount unknown volume", "volumeID", volumeInfo.VolumeID)
+		log.Error(err, "failed to unmount unknown volume", "volumeID", volumeInfo.VolumeID)
 	}
 }
 

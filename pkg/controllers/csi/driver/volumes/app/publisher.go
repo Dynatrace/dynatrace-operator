@@ -280,7 +280,7 @@ func (publisher *AppVolumePublisher) hasTooManyMountAttempts(tenantConfig *metad
 		return false, err
 	}
 
-	if int(appMount.MountAttempts) > int(tenantConfig.MaxFailedMountAttempts) {
+	if appMount.MountAttempts > tenantConfig.MaxFailedMountAttempts {
 		return true, nil
 	}
 
