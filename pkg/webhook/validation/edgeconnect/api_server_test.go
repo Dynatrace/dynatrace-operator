@@ -37,10 +37,10 @@ func TestApiServer(t *testing.T) {
 						Endpoint:     "endpoint",
 						Resource:     "resource",
 					},
-					ServiceAccountName: testServiceAccountName,
+					ServiceAccountName: defaultServiceAccountName,
 				},
 			}
-			assertAllowedResponse(t, edgeConnect, prepareTestServiceAccount(testServiceAccountName, testNamespace))
+			assertAllowedResponse(t, edgeConnect, prepareTestServiceAccount(defaultServiceAccountName, testNamespace))
 		}
 	})
 

@@ -22,10 +22,10 @@ func TestHostPatternsRequired(t *testing.T) {
 					Endpoint:     "endpoint",
 					Resource:     "resource",
 				},
-				ServiceAccountName: testServiceAccountName,
+				ServiceAccountName: defaultServiceAccountName,
 			},
 		}
-		response := handleRequest(t, edgeConnect, prepareTestServiceAccount(testServiceAccountName, testNamespace))
+		response := handleRequest(t, edgeConnect, prepareTestServiceAccount(defaultServiceAccountName, testNamespace))
 		assert.True(t, response.Allowed)
 		assert.Empty(t, response.Warnings)
 	})
