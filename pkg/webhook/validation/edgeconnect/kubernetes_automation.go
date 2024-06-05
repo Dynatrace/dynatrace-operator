@@ -11,7 +11,7 @@ const (
 )
 
 func isKubernetesAutomationEnabled(_ context.Context, _ *edgeconnectValidator, edgeConnect *edgeconnect.EdgeConnect) string {
-	if edgeConnect.Spec.ServiceAccountName != defaultServiceAccountName || edgeConnect.Spec.KubernetesAutomation != nil && edgeConnect.Spec.KubernetesAutomation.Enabled {
+	if edgeConnect.Spec.ServiceAccountName != defaultServiceAccountName || (edgeConnect.Spec.KubernetesAutomation != nil && edgeConnect.Spec.KubernetesAutomation.Enabled) {
 		return errorKubernetesAutomationNotImplemented
 	}
 
