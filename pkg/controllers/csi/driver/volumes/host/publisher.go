@@ -64,6 +64,7 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 	if osMount != nil && osMount.DeletedAt.Valid {
 		osMount.VolumeMeta = metadata.VolumeMeta{ID: volumeCfg.VolumeID, PodName: volumeCfg.PodName}
 		osMount.VolumeMetaID = volumeCfg.VolumeID
+		osMount.TenantConfigUID = tenantConfig.UID // necessary so that in some edge-cases(incorrect/messy uninstall) the previous(already soft-deleted) TenantConfig can be removed
 
 		if err := publisher.mountOneAgent(osMount, volumeCfg); err != nil {
 			return nil, status.Error(codes.Internal, "failed to mount OSMount: "+err.Error())
