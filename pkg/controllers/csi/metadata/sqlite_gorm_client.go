@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type Access interface {
@@ -43,6 +44,12 @@ type Access interface {
 	RestoreOSMount(osMount *OSMount) (*OSMount, error)
 }
 
+// TODO: Come up with a less confusing name
+type AccessCleaner interface {
+	Access
+	Cleaner
+}
+
 type GormConn struct {
 	ctx context.Context
 	db  *gorm.DB
@@ -59,7 +66,7 @@ func NewAccess(ctx context.Context, path string) (*GormConn, error) {
 		path += "?_foreign_keys=on"
 	}
 
-	db, err := gorm.Open(sqlite.Open(path))
+	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{Logger: logger.Discard})
 
 	if err != nil {
 		return &GormConn{}, err
@@ -358,6 +365,18 @@ func (conn *GormConn) DeleteAppMount(appMount *AppMount) error {
 		return errors.New("Can't delete an empty AppMount")
 	}
 
+	orphaned, err := conn.IsCodeModuleOrphaned(&CodeModule{Version: appMount.CodeModuleVersion})
+	if err != nil {
+		return err
+	}
+
+	if orphaned {
+		err = conn.DeleteCodeModule(&CodeModule{Version: appMount.CodeModuleVersion})
+		if err != nil {
+			return err
+		}
+	}
+
 	return conn.db.WithContext(conn.ctx).Delete(&AppMount{}, appMount).Error
 }
 
@@ -388,14 +407,9 @@ func (conn *GormConn) IsCodeModuleOrphaned(codeModule *CodeModule) (bool, error)
 }
 
 func (conn *GormConn) RestoreOSMount(osMount *OSMount) (*OSMount, error) {
-	osMount, err := conn.ReadUnscopedOSMount(*osMount)
-	if err != nil {
-		return nil, err
-	}
-
 	osMount.DeletedAt.Valid = false
 
-	err = conn.db.WithContext(conn.ctx).Unscoped().Updates(osMount).Error
+	err := conn.db.WithContext(conn.ctx).Unscoped().Updates(osMount).Error
 	if err != nil {
 		return nil, err
 	}

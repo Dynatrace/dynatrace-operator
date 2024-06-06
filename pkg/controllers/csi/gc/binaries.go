@@ -12,30 +12,22 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection() {
 
 	gcRunsMetric.Inc()
 
-	codeModules, err := gc.db.ReadCodeModules()
+	codeModules, err := gc.db.ListDeletedCodeModules()
 	if err != nil {
-		log.Error(err, "failed to read codemodules")
+		log.Error(err, "failed to read deleted codemodules")
 
 		return
 	}
 
 	for _, codeModule := range codeModules {
-		orphaned, err := gc.db.IsCodeModuleOrphaned(&codeModule)
+		log.Info("cleaning up orphaned codemodule binary", "version", codeModule.Version, "location", codeModule.Location)
+		removeUnusedVersion(fs, codeModule.Location)
+
+		err := gc.db.PurgeCodeModule(&metadata.CodeModule{Version: codeModule.Version})
 		if err != nil {
-			log.Error(err, "failed to check if codemodule is orphaned")
+			log.Error(err, "failed to delete codemodule database entry")
 
-			continue
-		}
-
-		if orphaned {
-			removeUnusedVersion(fs, codeModule.Location)
-
-			err := gc.db.DeleteCodeModule(&metadata.CodeModule{Version: codeModule.Version})
-			if err != nil {
-				log.Error(err, "failed to delete codemodule")
-
-				return
-			}
+			return
 		}
 	}
 }
@@ -45,7 +37,7 @@ func removeUnusedVersion(fs *afero.Afero, binaryPath string) {
 
 	err := fs.RemoveAll(binaryPath)
 	if err != nil {
-		log.Info("delete failed", "path", binaryPath)
+		log.Error(err, "codemodule delete failed", "path", binaryPath)
 	} else {
 		foldersRemovedMetric.Inc()
 		reclaimedMemoryMetric.Add(float64(size))
