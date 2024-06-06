@@ -152,16 +152,16 @@ func assertReferencesForUnpublishedVolume(t *testing.T, publisher *HostVolumePub
 	assert.Nil(t, volume)
 }
 
-func createTestVolumeConfig() *csivolumes.VolumeConfig {
-	return &csivolumes.VolumeConfig{
-		VolumeInfo:   *createTestVolumeInfo(),
+func createTestVolumeConfig() csivolumes.VolumeConfig {
+	return csivolumes.VolumeConfig{
+		VolumeInfo:   createTestVolumeInfo(),
 		Mode:         Mode,
 		DynakubeName: testDynakubeName,
 	}
 }
 
-func createTestVolumeInfo() *csivolumes.VolumeInfo {
-	return &csivolumes.VolumeInfo{
+func createTestVolumeInfo() csivolumes.VolumeInfo {
+	return csivolumes.VolumeInfo{
 		VolumeID:   testVolumeId,
 		TargetPath: testTargetPath,
 	}
