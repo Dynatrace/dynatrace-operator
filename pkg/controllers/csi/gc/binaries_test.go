@@ -78,18 +78,6 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 	})
 }
 
-func TestBinaryGarbageCollector_getUsedVersions(t *testing.T) {
-	gc := NewMockGarbageCollector()
-	gc.mockUsedVersions(t, testVersion1, testVersion2, testVersion3)
-
-	usedVersions, err := gc.db.ReadCodeModules()
-	require.NoError(t, err)
-
-	assert.NotNil(t, usedVersions)
-	assert.Len(t, usedVersions, 3)
-	require.NoError(t, err)
-}
-
 func NewMockGarbageCollector() *CSIGarbageCollector {
 	return &CSIGarbageCollector{
 		fs:                    afero.NewMemMapFs(),
@@ -103,8 +91,9 @@ func (gc *CSIGarbageCollector) mockUnusedVersions(versions ...string) {
 	_ = gc.fs.Mkdir(testBinaryDir, 0770)
 
 	for _, version := range versions {
-		gc.db.CreateCodeModule(&metadata.CodeModule{Version: version, Location: filepath.Join(testBinaryDir, version)})
+		gc.db.(metadata.Access).CreateCodeModule(&metadata.CodeModule{Version: version, Location: filepath.Join(testBinaryDir, version)})
 		_, _ = gc.fs.Create(filepath.Join(testBinaryDir, version))
+		gc.db.(metadata.Access).DeleteCodeModule(&metadata.CodeModule{Version: version})
 	}
 }
 func (gc *CSIGarbageCollector) mockUsedVersions(t *testing.T, versions ...string) {
@@ -117,10 +106,10 @@ func (gc *CSIGarbageCollector) mockUsedVersions(t *testing.T, versions ...string
 			CodeModuleVersion: version,
 			MountAttempts:     0,
 		}
-		err := gc.db.CreateAppMount(&appMount)
+		err := gc.db.(metadata.Access).CreateAppMount(&appMount)
 		require.NoError(t, err)
 
-		gc.db.CreateCodeModule(&metadata.CodeModule{Version: version, Location: filepath.Join(testBinaryDir, version)})
+		gc.db.(metadata.Access).CreateCodeModule(&metadata.CodeModule{Version: version, Location: filepath.Join(testBinaryDir, version)})
 	}
 }
 
