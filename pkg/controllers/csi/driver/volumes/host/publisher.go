@@ -50,23 +50,26 @@ type HostVolumePublisher struct {
 	path    metadata.PathResolver
 }
 
-//nolint:revive
-func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
-	bindCfg, err := csivolumes.NewBindConfig(ctx, publisher.db, volumeCfg)
+func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeCfg csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
+	tenantConfig, err := publisher.db.ReadTenantConfig(metadata.TenantConfig{Name: volumeCfg.DynakubeName})
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to create new BindConfig: "+err.Error())
+		return nil, status.Error(codes.Internal, "failed to read tenant-config: "+err.Error())
 	}
 
-	if err := publisher.mountOneAgent(bindCfg.TenantUUID, volumeCfg); err != nil {
-		return nil, status.Error(codes.Internal, "failed to mount OSMount: "+err.Error())
-	}
-
-	osMount, err := publisher.db.ReadUnscopedOSMount(metadata.OSMount{TenantUUID: bindCfg.TenantUUID})
+	osMount, err := publisher.db.ReadUnscopedOSMount(metadata.OSMount{TenantUUID: tenantConfig.TenantUUID})
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, status.Error(codes.Internal, failedToGetOsAgentVolumePrefix+err.Error())
 	}
 
 	if osMount != nil && osMount.DeletedAt.Valid {
+		osMount.VolumeMeta = metadata.VolumeMeta{ID: volumeCfg.VolumeID, PodName: volumeCfg.PodName}
+		osMount.VolumeMetaID = volumeCfg.VolumeID
+		osMount.TenantConfigUID = tenantConfig.UID // necessary so that in some edge-cases(incorrect/messy uninstall) the previous(already soft-deleted) TenantConfig can be removed
+
+		if err := publisher.mountOneAgent(osMount, volumeCfg); err != nil {
+			return nil, status.Error(codes.Internal, "failed to mount OSMount: "+err.Error())
+		}
+
 		osMount, err = publisher.db.RestoreOSMount(osMount)
 		if err != nil {
 			return nil, status.Error(codes.Internal, "failed to restore OSMount: "+err.Error())
@@ -74,35 +77,28 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 	}
 
 	if osMount == nil && errors.Is(err, gorm.ErrRecordNotFound) {
-		tenantConfig, err := publisher.db.ReadTenantConfig(metadata.TenantConfig{TenantUUID: bindCfg.TenantUUID})
-		if err != nil {
-			return nil, status.Error(codes.Internal, "failed to read TenantConfig: "+err.Error())
-		}
-
 		osMount := metadata.OSMount{
 			VolumeMeta:      metadata.VolumeMeta{ID: volumeCfg.VolumeID, PodName: volumeCfg.PodName},
 			VolumeMetaID:    volumeCfg.VolumeID,
-			TenantUUID:      bindCfg.TenantUUID,
-			Location:        publisher.path.AgentRunDirForVolume(bindCfg.TenantUUID, volumeCfg.VolumeID),
+			TenantUUID:      tenantConfig.TenantUUID,
+			Location:        publisher.path.OsAgentDir(tenantConfig.TenantUUID),
 			MountAttempts:   0,
 			TenantConfigUID: tenantConfig.UID,
 		}
 
+		if err := publisher.mountOneAgent(&osMount, volumeCfg); err != nil {
+			return nil, status.Error(codes.Internal, "failed to mount OSMount: "+err.Error())
+		}
+
 		if err := publisher.db.CreateOSMount(&osMount); err != nil {
 			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to insert osmount to database. info: %v err: %s", osMount, err.Error()))
-		}
-	} else {
-		osMount.VolumeMetaID = volumeCfg.VolumeID
-
-		if err := publisher.db.UpdateOSMount(osMount); err != nil {
-			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to update osmount to database. info: %v err: %s", osMount, err.Error()))
 		}
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
-func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volumeInfo *csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
+func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volumeInfo csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
 	osMount, err := publisher.db.ReadOSMount(metadata.OSMount{VolumeMetaID: volumeInfo.VolumeID})
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -128,7 +124,7 @@ func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volum
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
-func (publisher *HostVolumePublisher) CanUnpublishVolume(ctx context.Context, volumeInfo *csivolumes.VolumeInfo) (bool, error) {
+func (publisher *HostVolumePublisher) CanUnpublishVolume(ctx context.Context, volumeInfo csivolumes.VolumeInfo) (bool, error) {
 	volume, err := publisher.db.ReadOSMount(metadata.OSMount{VolumeMetaID: volumeInfo.VolumeID})
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return false, status.Error(codes.Internal, failedToGetOsAgentVolumePrefix+err.Error())
@@ -137,8 +133,8 @@ func (publisher *HostVolumePublisher) CanUnpublishVolume(ctx context.Context, vo
 	return volume != nil, nil
 }
 
-func (publisher *HostVolumePublisher) mountOneAgent(tenantUUID string, volumeCfg *csivolumes.VolumeConfig) error {
-	hostDir := publisher.path.OsAgentDir(tenantUUID)
+func (publisher *HostVolumePublisher) mountOneAgent(osMount *metadata.OSMount, volumeCfg csivolumes.VolumeConfig) error {
+	hostDir := osMount.Location
 	_ = publisher.fs.MkdirAll(hostDir, os.ModePerm)
 
 	if err := publisher.fs.MkdirAll(volumeCfg.TargetPath, os.ModePerm); err != nil {
