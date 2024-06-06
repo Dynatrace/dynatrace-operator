@@ -52,3 +52,39 @@ Enforces that platform is set to a valid one
 {{- define "dynatrace-operator.platformRequired" -}}
 {{- $platformIsSet := printf "%s" (required "Platform needs to be set to kubernetes, openshift, google-marketplace, or gke-autopilot" (include "dynatrace-operator.platformIsValid" .))}}
 {{- end -}}
+
+{{- define "dynatrace-operator.nodeAffinity" -}}
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+              {{- if ne (include "dynatrace-operator.platform" .) "gke-autopilot"}}
+            - key: kubernetes.io/arch
+              operator: In
+              values:
+                - amd64
+                - arm64
+                - ppc64le
+                - s390x
+              {{- end }}
+            - key: kubernetes.io/os
+              operator: In
+              values:
+                - linux
+{{- end -}}
+
+{{- define "dynatrace-operator.defaultTolerations" -}}
+- key: kubernetes.io/arch
+  value: arm64
+  effect: NoSchedule
+- key: kubernetes.io/arch
+  value: amd64
+  effect: NoSchedule
+- key: kubernetes.io/arch
+  value: ppc64le
+  effect: NoSchedule
+- key: kubernetes.io/arch
+  value: s390x
+  effect: NoSchedule
+{{- end -}}

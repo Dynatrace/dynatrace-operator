@@ -262,22 +262,12 @@ spec:
       {{- if .Values.csidriver.nodeSelector }}
       nodeSelector: {{- toYaml .Values.csidriver.nodeSelector | nindent 8 }}
       {{- end }}
+      {{- include "dynatrace-operator.nodeAffinity" . | nindent 6 }}
       tolerations:
         {{- if .Values.csidriver.tolerations }}
         {{- toYaml .Values.csidriver.tolerations | nindent 8 }}
         {{- end }}
-        - key: kubernetes.io/arch
-          value: arm64
-          effect: NoSchedule
-        - key: kubernetes.io/arch
-          value: amd64
-          effect: NoSchedule
-        - key: kubernetes.io/arch
-          value: ppc64le
-          effect: NoSchedule
-        - key: kubernetes.io/arch
-          value: s390x
-          effect: NoSchedule
+        {{- include "dynatrace-operator.defaultTolerations" . | nindent 8 }}
         - key: ToBeDeletedByClusterAutoscaler
           operator: Exists
           effect: NoSchedule
