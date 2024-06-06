@@ -6,7 +6,6 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 func emptyMemoryDB() *GormConn {
@@ -19,9 +18,7 @@ func emptyMemoryDB() *GormConn {
 }
 
 func FakeMemoryDB() *GormConn {
-	db, err := gorm.Open(sqlite.Open("file::memory:"), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
-	})
+	db, err := gorm.Open(sqlite.Open("file::memory:"), &gorm.Config{})
 	if err != nil {
 		return nil
 	}

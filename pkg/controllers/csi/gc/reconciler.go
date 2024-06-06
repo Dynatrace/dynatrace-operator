@@ -5,12 +5,9 @@ import (
 	"os"
 	"time"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
-	"github.com/pkg/errors"
 	"github.com/spf13/afero"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -19,7 +16,7 @@ import (
 type CSIGarbageCollector struct {
 	apiReader client.Reader
 	fs        afero.Fs
-	db        metadata.Access
+	db        metadata.Cleaner
 	path      metadata.PathResolver
 
 	maxUnmountedVolumeAge time.Duration
@@ -28,7 +25,7 @@ type CSIGarbageCollector struct {
 var _ reconcile.Reconciler = (*CSIGarbageCollector)(nil)
 
 // NewCSIGarbageCollector returns a new CSIGarbageCollector
-func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollector {
+func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Cleaner) *CSIGarbageCollector {
 	return &CSIGarbageCollector{
 		apiReader:             apiReader,
 		fs:                    afero.NewOsFs(),
@@ -41,68 +38,49 @@ func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db m
 func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("running OneAgent garbage collection", "namespace", request.Namespace, "name", request.Name)
 
-	defaultReconcileResult := reconcile.Result{}
-
-	dynakube, err := getDynakubeFromRequest(ctx, gc.apiReader, request)
-	if err != nil {
-		return defaultReconcileResult, err
-	}
-
-	if dynakube == nil {
-		return defaultReconcileResult, nil
-	}
-
-	if !dynakube.NeedAppInjection() {
-		log.Info("app injection not enabled, skip garbage collection", "dynakube", dynakube.Name)
-
-		return defaultReconcileResult, nil
-	}
-
-	tenantUUID, err := dynakube.TenantUUIDFromApiUrl()
-	if err != nil {
-		log.Info("failed to get tenantUUID of DynaKube, checking later")
-
-		return defaultReconcileResult, err
-	}
-
-	log.Info("running binary garbage collection (for deprecated location)")
+	log.Info("running binary garbage collection")
 	gc.runBinaryGarbageCollection()
 
 	if err := ctx.Err(); err != nil {
-		return defaultReconcileResult, err
+		return reconcile.Result{RequeueAfter: dtcsi.ShortRequeueDuration}, err
+	}
+
+	tenantConfigs, err := gc.db.ListDeletedTenantConfigs()
+
+	if err != nil {
+		return reconcile.Result{RequeueAfter: dtcsi.ShortRequeueDuration}, err
 	}
 
 	log.Info("running log garbage collection")
-	gc.runUnmountedVolumeGarbageCollection(tenantUUID)
 
-	if err := ctx.Err(); err != nil {
-		return defaultReconcileResult, err
-	}
+	for _, tenantConfig := range tenantConfigs {
+		log.Info("cleaning up soft deleted tenant-config", "name", tenantConfig.Name)
 
-	log.Info("running shared binary garbage collection")
+		gc.runUnmountedVolumeGarbageCollection(tenantConfig.TenantUUID)
 
-	if err := gc.runSharedBinaryGarbageCollection(); err != nil {
-		log.Info("failed to garbage collect the shared images")
-
-		return defaultReconcileResult, err
-	}
-
-	return defaultReconcileResult, nil
-}
-
-func getDynakubeFromRequest(ctx context.Context, apiReader client.Reader, request reconcile.Request) (*dynatracev1beta2.DynaKube, error) {
-	var dynakube dynatracev1beta2.DynaKube
-	if err := apiReader.Get(ctx, request.NamespacedName, &dynakube); err != nil {
-		if k8serrors.IsNotFound(err) {
-			log.Info("given DynaKube object not found")
-
-			return nil, nil //nolint: nilnil
+		osMounts, err := gc.db.ListDeletedOSMounts()
+		if err != nil {
+			continue
 		}
 
-		log.Info("failed to get DynaKube object")
+		for _, osm := range osMounts {
+			if osm.TenantConfigUID == tenantConfig.UID {
+				gc.fs.RemoveAll(osm.Location)
+				gc.db.PurgeOSMount(&osm)
+			}
+		}
 
-		return nil, errors.WithStack(err)
+		err = gc.db.PurgeTenantConfig(&tenantConfig)
+		if err != nil {
+			log.Info("failed to remove the soft deleted tenant-config entry, will try again", "name", tenantConfig.Name)
+
+			return reconcile.Result{RequeueAfter: dtcsi.ShortRequeueDuration}, nil //nolint: nilerr
+		}
 	}
 
-	return &dynakube, nil
+	if err := ctx.Err(); err != nil {
+		return reconcile.Result{RequeueAfter: dtcsi.ShortRequeueDuration}, err
+	}
+
+	return reconcile.Result{RequeueAfter: dtcsi.LongRequeueDuration}, nil
 }

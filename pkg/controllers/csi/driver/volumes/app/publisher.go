@@ -21,12 +21,13 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
-	"strings"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/pkg/errors"
 	dto "github.com/prometheus/client_model/go"
@@ -53,13 +54,13 @@ type AppVolumePublisher struct {
 	path    metadata.PathResolver
 }
 
-func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
-	bindCfg, err := csivolumes.NewBindConfig(ctx, publisher.db, volumeCfg)
+func (publisher *AppVolumePublisher) PublishVolume(_ context.Context, volumeCfg csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
+	tenantConfig, err := publisher.db.ReadTenantConfig(metadata.TenantConfig{Name: volumeCfg.DynakubeName})
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, "failed to read tenant-config: "+err.Error())
 	}
 
-	hasTooManyAttempts, err := publisher.hasTooManyMountAttempts(bindCfg, volumeCfg)
+	hasTooManyAttempts, err := publisher.hasTooManyMountAttempts(tenantConfig, volumeCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -70,23 +71,27 @@ func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCf
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
 
-	if !bindCfg.IsArchiveAvailable() {
+	if !IsArchiveAvailable(tenantConfig) {
 		return nil, status.Error(
 			codes.Unavailable,
-			"version or digest is not yet set, csi-provisioner hasn't finished setup yet for tenant: "+bindCfg.TenantUUID,
+			"version or digest is not yet set, csi-provisioner hasn't finished setup yet for tenant: "+tenantConfig.TenantUUID,
 		)
 	}
 
-	if err := publisher.ensureMountSteps(bindCfg, volumeCfg); err != nil {
+	if err := publisher.ensureMountSteps(tenantConfig, volumeCfg); err != nil {
 		return nil, err
 	}
 
-	agentsVersionsMetric.WithLabelValues(bindCfg.Version).Inc()
+	agentsVersionsMetric.WithLabelValues(tenantConfig.DownloadedCodeModuleVersion).Inc()
 
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
-func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volumeInfo *csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
+func IsArchiveAvailable(tenantConfig *metadata.TenantConfig) bool {
+	return tenantConfig.DownloadedCodeModuleVersion != ""
+}
+
+func (publisher *AppVolumePublisher) UnpublishVolume(_ context.Context, volumeInfo csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
 	appMount, err := publisher.db.ReadAppMount(metadata.AppMount{VolumeMetaID: volumeInfo.VolumeID})
 
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -125,7 +130,7 @@ func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volume
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
-func (publisher *AppVolumePublisher) CanUnpublishVolume(ctx context.Context, volumeInfo *csivolumes.VolumeInfo) (bool, error) {
+func (publisher *AppVolumePublisher) CanUnpublishVolume(_ context.Context, volumeInfo csivolumes.VolumeInfo) (bool, error) {
 	appMount, err := publisher.db.ReadAppMount(metadata.AppMount{VolumeMetaID: volumeInfo.VolumeID})
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return false, err
@@ -149,30 +154,22 @@ func (publisher *AppVolumePublisher) fireVolumeUnpublishedMetric(volumeVersion s
 	}
 }
 
-func (publisher *AppVolumePublisher) buildLowerDir(bindCfg *csivolumes.BindConfig) string {
-	directories := []string{
-		publisher.path.AgentSharedBinaryDirForAgent(bindCfg.Version),
-	}
-
-	return strings.Join(directories, ":")
-}
-
-func (publisher *AppVolumePublisher) prepareUpperDir(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) (string, error) {
-	upperDir := publisher.path.OverlayVarDir(bindCfg.TenantUUID, volumeCfg.VolumeID)
+func (publisher *AppVolumePublisher) prepareUpperDir(tenantConfig *metadata.TenantConfig, volumeCfg csivolumes.VolumeConfig) (string, error) {
+	upperDir := publisher.path.OverlayVarDir(tenantConfig.TenantUUID, volumeCfg.VolumeID)
 	err := publisher.fs.MkdirAll(upperDir, os.ModePerm)
 
 	if err != nil {
 		return "", errors.WithMessagef(err, "failed create overlay upper directory structure, path: %s", upperDir)
 	}
 
-	destAgentConfPath := publisher.path.OverlayVarRuxitAgentProcConf(bindCfg.TenantUUID, volumeCfg.VolumeID)
+	destAgentConfPath := publisher.path.OverlayVarRuxitAgentProcConf(tenantConfig.TenantUUID, volumeCfg.VolumeID)
 
 	err = publisher.fs.MkdirAll(filepath.Dir(destAgentConfPath), os.ModePerm)
 	if err != nil {
 		return "", errors.WithMessagef(err, "failed create overlay upper directory agent config directory structure, path: %s", upperDir)
 	}
 
-	srcAgentConfPath := publisher.path.AgentSharedRuxitAgentProcConf(bindCfg.TenantUUID, volumeCfg.DynakubeName)
+	srcAgentConfPath := path.Join(tenantConfig.ConfigDirPath, processmoduleconfig.RuxitAgentProcPath)
 	srcFile, err := publisher.fs.Open(srcAgentConfPath)
 
 	if err != nil {
@@ -201,20 +198,25 @@ func (publisher *AppVolumePublisher) prepareUpperDir(bindCfg *csivolumes.BindCon
 	return upperDir, nil
 }
 
-func (publisher *AppVolumePublisher) mountOneAgent(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
-	mappedDir := publisher.path.OverlayMappedDir(bindCfg.TenantUUID, volumeCfg.VolumeID)
+func (publisher *AppVolumePublisher) mountOneAgent(tenantConfig *metadata.TenantConfig, volumeCfg csivolumes.VolumeConfig) error {
+	mappedDir := publisher.path.OverlayMappedDir(tenantConfig.TenantUUID, volumeCfg.VolumeID)
 	_ = publisher.fs.MkdirAll(mappedDir, os.ModePerm)
 
-	upperDir, err := publisher.prepareUpperDir(bindCfg, volumeCfg)
+	codeModule, err := publisher.db.ReadCodeModule(metadata.CodeModule{Version: tenantConfig.DownloadedCodeModuleVersion})
 	if err != nil {
 		return err
 	}
 
-	workDir := publisher.path.OverlayWorkDir(bindCfg.TenantUUID, volumeCfg.VolumeID)
+	upperDir, err := publisher.prepareUpperDir(tenantConfig, volumeCfg)
+	if err != nil {
+		return err
+	}
+
+	workDir := publisher.path.OverlayWorkDir(tenantConfig.TenantUUID, volumeCfg.VolumeID)
 	_ = publisher.fs.MkdirAll(workDir, os.ModePerm)
 
 	overlayOptions := []string{
-		"lowerdir=" + publisher.buildLowerDir(bindCfg),
+		"lowerdir=" + codeModule.Location,
 		"upperdir=" + upperDir,
 		"workdir=" + workDir,
 	}
@@ -248,13 +250,13 @@ func (publisher *AppVolumePublisher) unmountOneAgent(targetPath string, overlayF
 	}
 }
 
-func (publisher *AppVolumePublisher) ensureMountSteps(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
-	if err := publisher.mountOneAgent(bindCfg, volumeCfg); err != nil {
+func (publisher *AppVolumePublisher) ensureMountSteps(tenantConfig *metadata.TenantConfig, volumeCfg csivolumes.VolumeConfig) error {
+	if err := publisher.mountOneAgent(tenantConfig, volumeCfg); err != nil {
 		return status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err))
 	}
 
-	if err := publisher.storeVolume(bindCfg, volumeCfg); err != nil {
-		agentRunDirForVolume := publisher.path.AgentRunDirForVolume(bindCfg.TenantUUID, volumeCfg.VolumeID)
+	if err := publisher.storeVolume(tenantConfig, volumeCfg); err != nil {
+		agentRunDirForVolume := publisher.path.AgentRunDirForVolume(tenantConfig.TenantUUID, volumeCfg.VolumeID)
 		overlayFSPath := filepath.Join(agentRunDirForVolume, dtcsi.OverlayMappedDirPath)
 
 		publisher.unmountOneAgent(volumeCfg.TargetPath, overlayFSPath)
@@ -265,16 +267,20 @@ func (publisher *AppVolumePublisher) ensureMountSteps(bindCfg *csivolumes.BindCo
 	return nil
 }
 
-func (publisher *AppVolumePublisher) hasTooManyMountAttempts(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) (bool, error) {
+func (publisher *AppVolumePublisher) hasTooManyMountAttempts(tenantConfig *metadata.TenantConfig, volumeCfg csivolumes.VolumeConfig) (bool, error) {
 	appMount, err := publisher.db.ReadAppMount(metadata.AppMount{VolumeMetaID: volumeCfg.VolumeID})
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
-		appMount = publisher.newAppMount(bindCfg, volumeCfg)
+		appMount, err = publisher.newAppMount(tenantConfig, volumeCfg)
+		if err != nil {
+			return false, err
+		}
+
 		publisher.db.CreateAppMount(appMount)
 	} else if err != nil {
 		return false, err
 	}
 
-	if int(appMount.MountAttempts) > bindCfg.MaxMountAttempts {
+	if appMount.MountAttempts > tenantConfig.MaxFailedMountAttempts {
 		return true, nil
 	}
 
@@ -283,8 +289,12 @@ func (publisher *AppVolumePublisher) hasTooManyMountAttempts(bindCfg *csivolumes
 	return false, publisher.db.UpdateAppMount(appMount)
 }
 
-func (publisher *AppVolumePublisher) storeVolume(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
-	newAppMount := publisher.newAppMount(bindCfg, volumeCfg)
+func (publisher *AppVolumePublisher) storeVolume(tenantConfig *metadata.TenantConfig, volumeCfg csivolumes.VolumeConfig) error {
+	newAppMount, err := publisher.newAppMount(tenantConfig, volumeCfg)
+	if err != nil {
+		return err
+	}
+
 	log.Info("inserting AppMount", "appMount", newAppMount)
 
 	// check if it currently exists
@@ -301,13 +311,18 @@ func (publisher *AppVolumePublisher) storeVolume(bindCfg *csivolumes.BindConfig,
 	return publisher.db.UpdateAppMount(newAppMount)
 }
 
-func (publisher *AppVolumePublisher) newAppMount(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) *metadata.AppMount {
+func (publisher *AppVolumePublisher) newAppMount(tenantConfig *metadata.TenantConfig, volumeCfg csivolumes.VolumeConfig) (*metadata.AppMount, error) {
+	codeModule, err := publisher.db.ReadCodeModule(metadata.CodeModule{Version: tenantConfig.DownloadedCodeModuleVersion})
+	if err != nil {
+		return nil, err
+	}
+
 	return &metadata.AppMount{
 		VolumeMeta:        metadata.VolumeMeta{ID: volumeCfg.VolumeID, PodName: volumeCfg.PodName},
-		CodeModule:        metadata.CodeModule{Version: bindCfg.Version, Location: publisher.path.AgentSharedBinaryDirForAgent(bindCfg.Version)},
+		CodeModule:        *codeModule,
 		VolumeMetaID:      volumeCfg.VolumeID,
-		CodeModuleVersion: bindCfg.Version,
-		Location:          publisher.path.AgentRunDirForVolume(bindCfg.TenantUUID, volumeCfg.VolumeID),
-		MountAttempts:     int64(bindCfg.MaxMountAttempts),
-	}
+		CodeModuleVersion: codeModule.Version,
+		Location:          publisher.path.AgentRunDirForVolume(tenantConfig.TenantUUID, volumeCfg.VolumeID),
+		MountAttempts:     0,
+	}, nil
 }
