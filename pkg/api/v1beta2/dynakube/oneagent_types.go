@@ -111,7 +111,7 @@ type HostInjectSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=true
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Automatically update Agent",order=13,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
-	AutoUpdate bool `json:"autoUpdate,omitempty"`
+	AutoUpdate bool `json:"autoUpdate"`
 }
 
 type ApplicationMonitoringSpec struct {
