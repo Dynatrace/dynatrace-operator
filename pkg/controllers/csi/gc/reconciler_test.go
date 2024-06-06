@@ -7,6 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -35,9 +36,9 @@ func TestReconcile(t *testing.T) {
 			fs:        afero.NewMemMapFs(),
 			db:        metadata.FakeMemoryDB(),
 		}
-		result, err := gc.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakube.Name}})
+		result, err := gc.Reconcile(context.Background(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakube.Name}})
 
 		require.NoError(t, err)
-		assert.Equal(t, reconcile.Result{}, result)
+		assert.Equal(t, reconcile.Result{RequeueAfter: dtcsi.LongRequeueDuration}, result)
 	})
 }

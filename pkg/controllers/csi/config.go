@@ -18,6 +18,7 @@ package dtcsi
 
 import (
 	"path/filepath"
+	"time"
 )
 
 const (
@@ -35,6 +36,10 @@ const (
 	DaemonSetName = "dynatrace-oneagent-csi-driver"
 
 	UnixUmask = 0000
+
+	ShortRequeueDuration   = 1 * time.Minute
+	DefaultRequeueDuration = 5 * time.Minute
+	LongRequeueDuration    = 30 * time.Minute
 )
 
 var MetadataAccessPath = filepath.Join(DataPath, "csi.db")
