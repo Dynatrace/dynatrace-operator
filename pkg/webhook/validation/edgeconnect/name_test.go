@@ -48,11 +48,11 @@ func TestNameTooLong(t *testing.T) {
 				},
 				Spec: edgeconnect.EdgeConnectSpec{
 					ApiServer:          "id." + allowedSuffix[0],
-					ServiceAccountName: testServiceAccountName,
+					ServiceAccountName: defaultServiceAccountName,
 				},
 			}
 			if test.allow {
-				assertAllowedResponse(t, ec, prepareTestServiceAccount(testServiceAccountName, testNamespace))
+				assertAllowedResponse(t, ec, prepareTestServiceAccount(defaultServiceAccountName, testNamespace))
 			} else {
 				errorMessage := fmt.Sprintf(errorNameTooLong, edgeconnect.MaxNameLength)
 				assertDeniedResponse(t, []string{errorMessage}, ec)
