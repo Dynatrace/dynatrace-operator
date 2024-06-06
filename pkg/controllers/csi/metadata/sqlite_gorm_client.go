@@ -83,6 +83,13 @@ func (conn *GormConn) SchemaMigration() error {
 				return nil
 			},
 		},
+		{
+			ID:      "202406061200",
+			Migrate: removeOldTables,
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
 	}).Migrate()
 }
 
