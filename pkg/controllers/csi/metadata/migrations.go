@@ -182,7 +182,11 @@ func dataMigration(tx *gorm.DB) error {
 }
 
 func removeOldTables(tx *gorm.DB) error {
-	tx.Migrator().DropTable("dynakubes")
-	tx.Migrator().DropTable("volumes")
-	tx.Migrator().DropTable("osagent_volumes")
+	for _, table := range []string{"dynakubes", "volumes", "osagent_volumes"} {
+		if err := tx.Migrator().DropTable(table); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
