@@ -72,6 +72,7 @@
       commitMessagePrefix: "Docker:",
       enabled: true,
       allowedVersions: "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/",
+      automerge: true,
     },
     {
       matchManagers: [
@@ -83,6 +84,7 @@
       commitMessagePrefix: "Go:",
       enabled: true,
       allowedVersions: "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/",
+      automerge: true,
     },
     {
       matchManagers: [
@@ -92,6 +94,7 @@
         "indirect",
       ],
       enabled: false,
+      automerge: true,
     },
     {
       matchManagers: [
@@ -102,6 +105,7 @@
       ],
       commitMessagePrefix: "Actions:",
       enabled: true,
+      automerge: true,
       allowedVersions: "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/",
     },
     {
@@ -113,6 +117,7 @@
       ],
       commitMessagePrefix: "Dev:",
       enabled: true,
+      automerge: true,
     },
     {
       matchPackageNames: [
@@ -121,6 +126,7 @@
       matchBaseBranches: [
         "$default",
       ],
+      automerge: true,
     },
     {
       matchPackageNames: [
@@ -128,6 +134,7 @@
       ],
       pinVersions: true,
       enabled: true,
+      automerge: true,
     },
     {
       packageNames: [
@@ -135,6 +142,7 @@
       ],
       enabled: true,
       pinVersions: true,
+      automerge: true,
     },
     {
       packageNames: [
@@ -142,6 +150,8 @@
       ],
       enabled: true,
       pinVersions: true,
+      automerge: true,
     },
   ],
+  platformAutomerge: true
 }
