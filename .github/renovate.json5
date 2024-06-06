@@ -60,6 +60,7 @@
         "minor",
       ],
       enabled: false,
+      automerge: true
     },
     {
       matchManagers: [
