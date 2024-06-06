@@ -38,6 +38,7 @@ func (src *DynaKube) toBase(dst *v1beta2.DynaKube) {
 
 func (src *DynaKube) toOneAgentSpec(dst *v1beta2.DynaKube) {
 	dst.Spec.OneAgent.HostGroup = src.Spec.OneAgent.HostGroup
+
 	switch {
 	case src.HostMonitoringMode():
 		dst.Spec.OneAgent.HostMonitoring = toHostInjectSpec(*src.Spec.OneAgent.HostMonitoring)
