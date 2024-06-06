@@ -67,9 +67,7 @@ jobs:
     environment: E2E
     needs: [ "run-in-k8s", "run-in-ocp" ]
     if: ${{ failure() || cancelled() }}
-    runs-on:
-      - self-hosted
-      - operator-e2e
+    runs-on: ubuntu-latest
     steps:
       - name: Notify failure in Slack
         uses: slackapi/slack-github-action@70cd7be8e40a46e8b0eced40b0de447bdb42f68e # v1.26.0

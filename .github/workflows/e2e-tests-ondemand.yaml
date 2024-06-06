@@ -67,3 +67,19 @@ jobs:
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+
+  notify-failure:
+    name: Notify failure in Slack
+    environment: E2E ondemand
+    needs: [ "run-matrix" ]
+    if: ${{ failure() || cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify failure in Slack
+        uses: slackapi/slack-github-action@70cd7be8e40a46e8b0eced40b0de447bdb42f68e # v1.26.0
+        with:
+          channel-id: 'int-cp-operator'
+          slack-message: ":x: E2E ondemand tests failed `${{ matrix.platform }}-${{ matrix.version }}` on ${{ github.event.inputs.target }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
