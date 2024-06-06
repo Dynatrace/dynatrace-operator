@@ -180,3 +180,13 @@ func dataMigration(tx *gorm.DB) error {
 
 	return migrateOsAgentVolumes(tx)
 }
+
+func removeOldTables(tx *gorm.DB) error {
+	for _, table := range []string{"dynakubes", "volumes", "osagent_volumes"} {
+		if err := tx.Migrator().DropTable(table); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
