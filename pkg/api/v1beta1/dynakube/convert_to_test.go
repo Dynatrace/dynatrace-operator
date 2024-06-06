@@ -95,6 +95,16 @@ func TestConvertTo(t *testing.T) {
 
 		compareStatus(t, from.Status, to.Status)
 	})
+
+	t.Run("migrate hostGroup", func(t *testing.T) {
+		from := getOldDynakubeBase()
+		from.Status = getOldStatus()
+		to := v1beta2.DynaKube{}
+
+		from.ConvertTo(&to)
+
+		assert.Equal(t, from.Spec.OneAgent.HostGroup, to.Spec.OneAgent.HostGroup)
+	})
 }
 
 func getMovedFeatureFlagList() []string {
@@ -137,6 +147,7 @@ func getOldDynakubeBase() DynaKube {
 			},
 		},
 		Spec: DynaKubeSpec{
+			OneAgent:         OneAgentSpec{HostGroup: "hostgroup-value"},
 			APIURL:           "api-url",
 			Tokens:           "token",
 			CustomPullSecret: "pull-secret",
