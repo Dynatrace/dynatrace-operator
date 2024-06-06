@@ -29,8 +29,7 @@ type Properties struct {
 	ImageDigest  string
 }
 
-func NewImageInstaller(fs afero.Fs, props *Properties) (installer.Installer, error) {
-	ctx := context.TODO()
+func NewImageInstaller(ctx context.Context, fs afero.Fs, props *Properties) (installer.Installer, error) {
 	pullSecret := props.Dynakube.PullSecretWithoutData()
 	defaultTransport := http.DefaultTransport.(*http.Transport).Clone()
 
@@ -109,19 +108,7 @@ func (installer *Installer) installAgentFromImage(targetDir string) error {
 	}
 
 	image := installer.props.ImageUri
-
-	if err != nil {
-		log.Info("failed to get source information", "image", image)
-
-		return errors.WithStack(err)
-	}
-
 	imageCacheDir := getCacheDirPath(installer.props.ImageDigest)
-	if err != nil {
-		log.Info("failed to get destination information", "image", image, "imageCacheDir", imageCacheDir)
-
-		return errors.WithStack(err)
-	}
 
 	err = installer.extractAgentBinariesFromImage(
 		imagePullInfo{

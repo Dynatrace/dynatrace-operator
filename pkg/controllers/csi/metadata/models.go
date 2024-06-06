@@ -41,7 +41,7 @@ type CodeModule struct {
 type OSMount struct {
 	VolumeMeta VolumeMeta `gorm:"foreignKey:VolumeMetaID"`
 	TimeStampedModel
-	TenantConfigUID string       `gorm:"not null"`
+	TenantConfigUID string
 	TenantUUID      string       `gorm:"primaryKey"`
 	VolumeMetaID    string       `gorm:"not null"`
 	Location        string       `gorm:"not null"`
@@ -52,7 +52,7 @@ type OSMount struct {
 // AppMount keeps track of our mounts to user applications, where we provide the codemodules.
 type AppMount struct {
 	VolumeMeta VolumeMeta
-	CodeModule CodeModule `gorm:"foreignKey:CodeModuleVersion"`
+	CodeModule CodeModule `gorm:"foreignKey:CodeModuleVersion;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	TimeStampedModel
 	VolumeMetaID      string `gorm:"primaryKey"`
 	CodeModuleVersion string
