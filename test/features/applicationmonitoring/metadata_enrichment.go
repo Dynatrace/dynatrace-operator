@@ -58,7 +58,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 	type testCase struct {
 		name        string
 		app         *sample.App
-		testingFunc func(samplePod *sample.App) features.Func
+		assess func(samplePod *sample.App) features.Func
 	}
 
 	injectEverythingLabels := maputil.MergeMap(
@@ -77,7 +77,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 					webhook.AnnotationOneAgentInject:           "false",
 					webhook.AnnotationMetadataEnrichmentInject: "true",
 				})),
-			testingFunc: deploymentPodsHaveOnlyMetadataEnrichmentInitContainer,
+			assess: deploymentPodsHaveOnlyMetadataEnrichmentInitContainer,
 		},
 		{
 			name: "control metadata-enrichment with annotations - pod",
@@ -88,7 +88,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 					webhook.AnnotationOneAgentInject:           "false",
 					webhook.AnnotationMetadataEnrichmentInject: "true",
 				})),
-			testingFunc: podHasOnlyMetadataEnrichmentInitContainer,
+			assess: podHasOnlyMetadataEnrichmentInitContainer,
 		},
 		{
 			name: "control metadata-enrichment with namespace-selector - deployment",
@@ -97,7 +97,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 				sample.AsDeployment(),
 				sample.WithNamespaceLabels(testDynakube.MetadataEnrichmentNamespaceSelector().MatchLabels),
 			),
-			testingFunc: deploymentPodsHaveOnlyMetadataEnrichmentInitContainer,
+			assess: deploymentPodsHaveOnlyMetadataEnrichmentInitContainer,
 		},
 		{
 			name: "control metadata-enrichment with namespace-selector - pod",
@@ -105,7 +105,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 				sample.WithName("pod-metadata-label"),
 				sample.WithNamespaceLabels(testDynakube.MetadataEnrichmentNamespaceSelector().MatchLabels),
 			),
-			testingFunc: podHasOnlyMetadataEnrichmentInitContainer,
+			assess: podHasOnlyMetadataEnrichmentInitContainer,
 		},
 		{
 			name: "control oneagent-injection with annotations - pod",
@@ -116,7 +116,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 					webhook.AnnotationOneAgentInject:           "true",
 					webhook.AnnotationMetadataEnrichmentInject: "false",
 				})),
-			testingFunc: podHasOnlyOneAgentInitContainer,
+			assess: podHasOnlyOneAgentInitContainer,
 		},
 		{
 			name: "control oneagent-injection with namespace-selector - pod",
@@ -124,7 +124,15 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 				sample.WithName("pod-oa-label"),
 				sample.WithNamespaceLabels(testDynakube.OneAgentNamespaceSelector().MatchLabels),
 			),
-			testingFunc: podHasOnlyOneAgentInitContainer,
+			assess: podHasOnlyOneAgentInitContainer,
+		},
+		{
+			name: "namespace-selectors don't conflict - pod",
+			app: sample.NewApp(t, &testDynakube,
+				sample.WithName("pod-all-label"),
+				sample.WithNamespaceLabels(injectEverythingLabels),
+			),
+			assess: podHasCompleteInitContainer,
 		},
 	}
 
@@ -134,7 +142,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 	// Register actual test
 	for _, test := range testCases {
 		builder.Assess(fmt.Sprintf("%s: Installing sample app", test.name), test.app.Install())
-		builder.Assess(fmt.Sprintf("%s: Checking sample app", test.name), test.testingFunc(test.app))
+		builder.Assess(fmt.Sprintf("%s: Checking sample app", test.name), test.assess(test.app))
 		builder.WithTeardown(fmt.Sprintf("%s: Uninstalling sample app", test.name), test.app.Uninstall())
 	}
 
@@ -179,11 +187,48 @@ func deploymentPodsHaveOnlyMetadataEnrichmentInitContainer(sampleApp *sample.App
 	}
 }
 
+// podHasCompleteInitContainer checks if the sample has BOTH the metadata-enrichment and oneagent parts added to it.
+func podHasCompleteInitContainer(samplePod *sample.App) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		testPod := samplePod.GetPods(ctx, t, envConfig.Client().Resources()).Items[0]
+		initContainers := testPod.Spec.InitContainers
+
+		require.Len(t, initContainers, 1)
+
+		installOneAgentContainer := initContainers[0]
+		envVars := installOneAgentContainer.Env
+
+		assert.True(t, env.IsIn(envVars, consts.EnrichmentWorkloadKindEnv))
+		assert.True(t, env.IsIn(envVars, consts.EnrichmentWorkloadNameEnv))
+		assert.True(t, env.IsIn(envVars, consts.EnrichmentInjectedEnv))
+
+		assert.True(t, env.IsIn(envVars, consts.AgentInjectedEnv))
+
+		assert.Contains(t, testPod.Annotations, webhook.AnnotationWorkloadKind)
+		assert.Contains(t, testPod.Annotations, webhook.AnnotationWorkloadName)
+
+		return ctx
+	}
+}
+
 func podHasOnlyOneAgentInitContainer(samplePod *sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		testPod := samplePod.GetPods(ctx, t, envConfig.Client().Resources()).Items[0]
-		assessOnlyOneAgentIsInjected(t)(testPod)
+		initContainers := testPod.Spec.InitContainers
 
+		require.Len(t, initContainers, 1)
+
+		installOneAgentContainer := initContainers[0]
+		envVars := installOneAgentContainer.Env
+
+		assert.False(t, env.IsIn(envVars, consts.EnrichmentWorkloadKindEnv))
+		assert.False(t, env.IsIn(envVars, consts.EnrichmentWorkloadNameEnv))
+		assert.False(t, env.IsIn(envVars, consts.EnrichmentInjectedEnv))
+
+		assert.True(t, env.IsIn(envVars, consts.AgentInjectedEnv))
+
+		assert.NotContains(t, testPod.Annotations, webhook.AnnotationWorkloadKind)
+		assert.NotContains(t, testPod.Annotations, webhook.AnnotationWorkloadName)
 		return ctx
 	}
 }
@@ -236,22 +281,3 @@ func assessOnlyMetadataEnrichmentIsInjected(t *testing.T) deployment.PodConsumer
 	}
 }
 
-func assessOnlyOneAgentIsInjected(t *testing.T) deployment.PodConsumer {
-	return func(pod corev1.Pod) {
-		initContainers := pod.Spec.InitContainers
-
-		require.Len(t, initContainers, 1)
-
-		installOneAgentContainer := initContainers[0]
-		envVars := installOneAgentContainer.Env
-
-		assert.False(t, env.IsIn(envVars, consts.EnrichmentWorkloadKindEnv))
-		assert.False(t, env.IsIn(envVars, consts.EnrichmentWorkloadNameEnv))
-		assert.False(t, env.IsIn(envVars, consts.EnrichmentInjectedEnv))
-
-		assert.True(t, env.IsIn(envVars, consts.AgentInjectedEnv))
-
-		assert.NotContains(t, pod.Annotations, webhook.AnnotationWorkloadKind)
-		assert.NotContains(t, pod.Annotations, webhook.AnnotationWorkloadName)
-	}
-}
