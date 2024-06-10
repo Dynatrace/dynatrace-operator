@@ -13,19 +13,21 @@
     "$default",
     "release-1.0",
     "release-1.1",
-    "release-1.2"
+    "release-1.2",
   ],
   enabledManagers: [
     "regex",
     "dockerfile",
     "gomod",
     "github-actions",
+    "pip_requirements"
   ],
   postUpdateOptions: [
     "gomodTidy",
     "gomodTidy1.17",
   ],
   automergeType: "pr",
+  automerge: true,
   regexManagers: [
     {
       fileMatch: [
@@ -55,7 +57,7 @@
         "$default",
         "release-1.0",
         "release-1.1",
-        "release-1.2"
+        "release-1.2",
       ],
       matchUpdateTypes: [
         "major",
