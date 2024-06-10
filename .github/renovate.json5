@@ -27,6 +27,9 @@
     "gomodTidy1.17",
   ],
   automergeType: "pr",
+  regex: {
+    automerge: true,
+  },
   regexManagers: [
     {
       fileMatch: [
@@ -37,7 +40,6 @@
         "depName=(?<depName>.*?)\\s.*?_version=(?<currentValue>.*)\\s",
       ],
       datasourceTemplate: "go",
-      automerge: "true",
     },
     {
       fileMatch: [
@@ -47,7 +49,6 @@
         "depName=(?<depName>.*?)\\s.*?version\\:\\s(?<currentValue>.*)\\s",
       ],
       datasourceTemplate: "go",
-      automerge: "true",
     },
   ],
   packageRules: [
