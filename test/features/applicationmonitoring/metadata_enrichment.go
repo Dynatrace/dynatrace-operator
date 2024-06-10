@@ -56,8 +56,8 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 	)
 
 	type testCase struct {
-		name        string
-		app         *sample.App
+		name   string
+		app    *sample.App
 		assess func(samplePod *sample.App) features.Func
 	}
 
@@ -188,7 +188,7 @@ func deploymentPodsHaveOnlyMetadataEnrichmentInitContainer(sampleApp *sample.App
 }
 
 // podHasCompleteInitContainer checks if the sample has BOTH the metadata-enrichment and oneagent parts added to it.
-func podHasCompleteInitContainer(samplePod *sample.App) features.Func {
+func podHasCompleteInitContainer(samplePod *sample.App) features.Func { //nolint: dupl
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		testPod := samplePod.GetPods(ctx, t, envConfig.Client().Resources()).Items[0]
 		initContainers := testPod.Spec.InitContainers
@@ -211,7 +211,7 @@ func podHasCompleteInitContainer(samplePod *sample.App) features.Func {
 	}
 }
 
-func podHasOnlyOneAgentInitContainer(samplePod *sample.App) features.Func {
+func podHasOnlyOneAgentInitContainer(samplePod *sample.App) features.Func { //nolint: dupl
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		testPod := samplePod.GetPods(ctx, t, envConfig.Client().Resources()).Items[0]
 		initContainers := testPod.Spec.InitContainers
@@ -229,6 +229,7 @@ func podHasOnlyOneAgentInitContainer(samplePod *sample.App) features.Func {
 
 		assert.NotContains(t, testPod.Annotations, webhook.AnnotationWorkloadKind)
 		assert.NotContains(t, testPod.Annotations, webhook.AnnotationWorkloadName)
+
 		return ctx
 	}
 }
@@ -280,4 +281,3 @@ func assessOnlyMetadataEnrichmentIsInjected(t *testing.T) deployment.PodConsumer
 		assert.Contains(t, pod.Annotations, webhook.AnnotationWorkloadName)
 	}
 }
-
