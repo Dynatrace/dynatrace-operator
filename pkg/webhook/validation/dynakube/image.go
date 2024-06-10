@@ -3,6 +3,7 @@ package dynakube
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
@@ -16,7 +17,7 @@ const (
 )
 
 func imageFieldHasTenantImage(_ context.Context, _ *dynakubeValidator, dk *dynakube.DynaKube) string {
-	tenantRepoBase := strings.Replace(dk.ApiUrl(), "/api", "", 1)
+	tenantHost := dk.ApiUrlHost()
 
 	type imageField struct {
 		value   string
@@ -37,7 +38,7 @@ func imageFieldHasTenantImage(_ context.Context, _ *dynakubeValidator, dk *dynak
 	messages := []string{}
 
 	for _, field := range imageFields {
-		message := checkImageField(field.value, field.section, tenantRepoBase)
+		message := checkImageField(field.value, field.section, tenantHost)
 		if message != "" {
 			messages = append(messages, message)
 		}
@@ -46,14 +47,16 @@ func imageFieldHasTenantImage(_ context.Context, _ *dynakubeValidator, dk *dynak
 	return strings.Join(messages, ";")
 }
 
-func checkImageField(image, section, disallowedPrefix string) (errorMsg string) {
+func checkImageField(image, section, disallowedHost string) (errorMsg string) {
 	if image != "" {
 		ref, err := name.ParseReference(image)
 		if err != nil {
 			return fmt.Sprintf(errorUnparsableImageRef, section)
 		}
 
-		if strings.HasPrefix(ref.Name(), disallowedPrefix) {
+		refUrl, _ := url.Parse(ref.Name())
+
+		if refUrl.Host == disallowedHost {
 			return fmt.Sprintf(errorUsingTenantImageAsCustom, section)
 		}
 	}

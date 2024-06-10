@@ -64,7 +64,7 @@ func TestImageFieldHasTenantImage(t *testing.T) {
 	})
 
 	t.Run("valid image fields", func(t *testing.T) {
-		testRegistryUrl := "https://my.images.com"
+		testRegistryUrl := "my.images.com"
 		assertAllowedResponse(t, &dynatracev1beta2.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "dynakube",
