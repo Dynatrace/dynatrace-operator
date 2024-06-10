@@ -3,17 +3,22 @@ package injection
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
+	versions "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
+	versionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -25,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 const (
@@ -199,6 +205,49 @@ func TestReconciler(t *testing.T) {
 		virtualService, err = istioClient.GetVirtualService(context.Background(), istio.BuildNameForFQDNServiceEntry(dynakube.GetName(), istio.OneAgentComponent))
 		require.NoError(t, err)
 		assert.NotNil(t, virtualService)
+	})
+	t.Run(`failure is logged in condition`, func(t *testing.T) {
+		dynakube := &dynatracev1beta2.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testDynakube,
+				Namespace: testNamespaceDynatrace,
+			},
+			Spec: dynatracev1beta2.DynaKubeSpec{
+				APIURL: testApiUrl,
+				OneAgent: dynatracev1beta2.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{
+						AppInjectionSpec: dynatracev1beta2.AppInjectionSpec{
+							NamespaceSelector: metav1.LabelSelector{
+								MatchLabels: map[string]string{
+									testNamespaceSelectorLabel: testDynakube,
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		boomClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+				return k8serrors.NewInternalError(errors.New("test-error"))
+			},
+		})
+
+		istioClient := newIstioTestingClient(fakeistio.NewSimpleClientset(), dynakube)
+		fakeReconciler := createGenericReconcilerMock(t)
+		fakeVersionReconciler := createVersionReconcilerMock(t)
+
+		rec := NewReconciler(boomClient, boomClient, nil, istioClient, dynakube).(*reconciler)
+		rec.connectionInfoReconciler = fakeReconciler
+		rec.pmcSecretreconciler = fakeReconciler
+		rec.versionReconciler = fakeVersionReconciler
+
+		err := rec.Reconcile(context.Background())
+		require.Error(t, err)
+
+		condition := meta.FindStatusCondition(*dynakube.Conditions(), codeModulesInjectionConditionType)
+		require.NotNil(t, condition)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 }
 
@@ -483,4 +532,21 @@ func assertSecretNotFound(t *testing.T, clt client.Client, secretName string, se
 	err := clt.Get(context.Background(), client.ObjectKey{Name: secretName, Namespace: secretNamespace}, &secret)
 	require.Error(t, err, "%s.%s secret found, error: %s ", secretName, secretNamespace, err)
 	assert.True(t, k8serrors.IsNotFound(err), "%s.%s secret, unexpected error: %s", secretName, secretNamespace, err)
+}
+
+func createGenericReconcilerMock(t *testing.T) controllers.Reconciler {
+	connectionInfoReconciler := controllermock.NewReconciler(t)
+	connectionInfoReconciler.On("Reconcile",
+		mock.AnythingOfType("context.backgroundCtx")).Return(nil).Maybe()
+
+	return connectionInfoReconciler
+}
+
+func createVersionReconcilerMock(t *testing.T) versions.Reconciler {
+	versionReconciler := versionmock.NewReconciler(t)
+	versionReconciler.On("ReconcileCodeModules",
+		mock.AnythingOfType("context.backgroundCtx"),
+		mock.AnythingOfType("*dynakube.DynaKube")).Return(nil).Once()
+
+	return versionReconciler
 }

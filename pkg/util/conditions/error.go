@@ -1,6 +1,9 @@
 package conditions
 
 import (
+	"errors"
+
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -8,7 +11,6 @@ import (
 const (
 	KubeApiErrorReason      = "KubeApiError"
 	DynatraceApiErrorReason = "DynatraceApiError"
-	ErrorReason             = "Error"
 )
 
 func SetKubeApiError(conditions *[]metav1.Condition, conditionType string, err error) {
@@ -39,16 +41,8 @@ func SetDynatraceApiError(conditions *[]metav1.Condition, conditionType string, 
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func SetError(conditions *[]metav1.Condition, conditionType string, err error) {
-	if err == nil {
-		return
-	}
+func IsKubeApiError(err error) bool {
+	status, ok := err.(k8serrors.APIStatus)
 
-	condition := metav1.Condition{
-		Type:    conditionType,
-		Status:  metav1.ConditionFalse,
-		Reason:  ErrorReason,
-		Message: "A problem occurred: " + err.Error(),
-	}
-	_ = meta.SetStatusCondition(conditions, condition)
+	return ok || errors.As(err, &status)
 }

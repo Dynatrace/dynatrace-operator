@@ -31,7 +31,6 @@ type reconciler struct {
 	versionReconciler        version.Reconciler
 	pmcSecretreconciler      controllers.Reconciler
 	connectionInfoReconciler controllers.Reconciler
-	dynatraceClient          dynatrace.Client
 }
 
 type ReconcilerBuilder func(
@@ -65,7 +64,6 @@ func NewReconciler(
 		pmcSecretreconciler: processmoduleconfigsecret.NewReconciler(
 			client, apiReader, dynatraceClient, dynakube, timeprovider.New().Freeze()),
 		connectionInfoReconciler: oaconnectioninfo.NewReconciler(client, apiReader, dynatraceClient, dynakube),
-		dynatraceClient:          dynatraceClient,
 	}
 }
 
@@ -150,7 +148,9 @@ func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
 
 	err := initgeneration.NewInitGenerator(r.client, r.apiReader, r.dynakube.Namespace).GenerateForDynakube(ctx, r.dynakube)
 	if err != nil {
-		conditions.SetError(r.dynakube.Conditions(), codeModulesInjectionConditionType, err)
+		if conditions.IsKubeApiError(err) {
+			conditions.SetKubeApiError(r.dynakube.Conditions(), codeModulesInjectionConditionType, err)
+		}
 
 		return err
 	}
@@ -188,8 +188,9 @@ func (r *reconciler) setupEnrichmentInjection(ctx context.Context) error {
 
 	err := endpointSecretGenerator.GenerateForDynakube(ctx, r.dynakube)
 	if err != nil {
-		log.Info("failed to generate the metadata-enrichment secret")
-		conditions.SetError(r.dynakube.Conditions(), metaDataEnrichmentConditionType, err)
+		if conditions.IsKubeApiError(err) {
+			conditions.SetKubeApiError(r.dynakube.Conditions(), metaDataEnrichmentConditionType, err)
+		}
 
 		return err
 	}
