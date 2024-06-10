@@ -26,6 +26,7 @@
     "gomodTidy",
     "gomodTidy1.17",
   ],
+  "automergeType": "pr",
   regexManagers: [
     {
       fileMatch: [
