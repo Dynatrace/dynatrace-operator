@@ -8,6 +8,7 @@ import (
 const (
 	KubeApiErrorReason      = "KubeApiError"
 	DynatraceApiErrorReason = "DynatraceApiError"
+	ErrorReason             = "Error"
 )
 
 func SetKubeApiError(conditions *[]metav1.Condition, conditionType string, err error) {
@@ -34,6 +35,20 @@ func SetDynatraceApiError(conditions *[]metav1.Condition, conditionType string, 
 		Status:  metav1.ConditionFalse,
 		Reason:  DynatraceApiErrorReason,
 		Message: "A problem occurred when using the Dynatrace API: " + err.Error(),
+	}
+	_ = meta.SetStatusCondition(conditions, condition)
+}
+
+func SetError(conditions *[]metav1.Condition, conditionType string, err error) {
+	if err == nil {
+		return
+	}
+
+	condition := metav1.Condition{
+		Type:    conditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  ErrorReason,
+		Message: "A problem occurred: " + err.Error(),
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
