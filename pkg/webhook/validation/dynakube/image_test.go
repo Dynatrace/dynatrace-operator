@@ -11,6 +11,7 @@ import (
 
 func TestImageFieldHasTenantImage(t *testing.T) {
 	testTenantUrl := "https://beepboop.dev.dynatracelabs.com"
+
 	t.Run("image fields are a malformed ref", func(t *testing.T) {
 		expectedMessage := strings.Join([]string{
 			fmt.Sprintf(errorUnparsableImageRef, "ActiveGate"),
