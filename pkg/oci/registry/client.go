@@ -199,7 +199,11 @@ func proxyWrapper(proxyConfig httpproxy.Config) func(req *http.Request) (*url.UR
 }
 
 func addCertificates(transport *http.Transport, trustedCAs []byte) (*http.Transport, error) {
-	rootCAs := x509.NewCertPool()
+	rootCAs, err := x509.SystemCertPool()
+	if err != nil {
+		return nil, errors.Wrap(err, "couldn't read system certificates")
+	}
+
 	if ok := rootCAs.AppendCertsFromPEM(trustedCAs); !ok {
 		return nil, errors.New("failed to append custom certs")
 	}
