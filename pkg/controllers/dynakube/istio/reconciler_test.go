@@ -268,9 +268,9 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 
 func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 	ctx := context.Background()
-	dynakube := createTestDynaKube()
 
 	t.Run("nil => error", func(t *testing.T) {
+		dynakube := createTestDynaKube()
 		istioClient := newTestingClient(nil, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
@@ -278,6 +278,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run("success", func(t *testing.T) {
+		dynakube := createTestDynaKube()
 		fakeClient := fakeistio.NewSimpleClientset()
 		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
@@ -303,6 +304,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		require.Equal(t, "IstioForActiveGateChanged", statusCondition.Reason)
 	})
 	t.Run("unknown k8s client error => error", func(t *testing.T) {
+		dynakube := createTestDynaKube()
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
 
@@ -320,9 +322,11 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		dynakube := createTestDynaKube()
 		fakeClient := fakeistio.NewSimpleClientset()
 		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
-		reconciler := NewReconciler(istioClient)
+		r := NewReconciler(istioClient)
+		rec := r.(*reconciler)
+		rec.timeProvider.Freeze()
 
-		err := reconciler.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
+		err := r.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
 		require.NoError(t, err)
 
 		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), ActiveGateComponent)
@@ -342,13 +346,24 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		require.NotNil(t, statusCondition)
 		require.Equal(t, "IstioForActiveGateChanged", statusCondition.Reason)
 
-		kube := dynakube
-		kube.Status.ActiveGate.ConnectionInfoStatus.Endpoints = ""
-		err = reconciler.ReconcileActiveGateCommunicationHosts(ctx, kube)
+		// disable endpoints, make request within api threshold
+		dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints = ""
+
+		err = r.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
 		require.NoError(t, err)
 
 		statusCondition2 := meta.FindStatusCondition(*dynakube.Conditions(), "IstioForActiveGate")
-		require.Nil(t, statusCondition2)
+		require.NotNil(t, statusCondition2)
+
+		// advance time to be outside api threshold
+		rec2 := r.(*reconciler)
+		time := rec.timeProvider.Now().Add(dynakube.FeatureApiRequestThreshold() * 2)
+		rec2.timeProvider.Set(time)
+		err = r.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
+		require.NoError(t, err)
+
+		statusCondition3 := meta.FindStatusCondition(*dynakube.Conditions(), "IstioForActiveGate")
+		require.Nil(t, statusCondition3)
 	})
 	t.Run("verify removal of conditions when ActiveGate disabled", func(t *testing.T) {
 		dynakube := createTestDynaKube()
@@ -376,12 +391,11 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		require.NotNil(t, statusCondition)
 		require.Equal(t, "IstioForActiveGateChanged", statusCondition.Reason)
 
-		kube := dynakube
-		kube.Spec.ActiveGate.Capabilities = []dynatracev1beta1.CapabilityDisplayName{}
-		err = reconciler.ReconcileActiveGateCommunicationHosts(ctx, kube)
+		dynakube.Spec.ActiveGate.Capabilities = []dynatracev1beta1.CapabilityDisplayName{}
+		err = reconciler.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
 		require.NoError(t, err)
 
-		statusCondition2 := meta.FindStatusCondition(*kube.Conditions(), "IstioForActiveGate")
+		statusCondition2 := meta.FindStatusCondition(*dynakube.Conditions(), "IstioForActiveGate")
 		require.Nil(t, statusCondition2)
 	})
 }

@@ -8,7 +8,9 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,14 +23,16 @@ type Reconciler interface {
 }
 
 type reconciler struct {
-	client *Client
+	client       *Client
+	timeProvider *timeprovider.Provider
 }
 
 type ReconcilerBuilder func(istio *Client) Reconciler
 
 func NewReconciler(istio *Client) Reconciler {
 	return &reconciler{
-		client: istio,
+		client:       istio,
+		timeProvider: timeprovider.New(),
 	}
 }
 
@@ -90,8 +94,6 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 		return errors.New("can't reconcile activegate communication hosts of nil dynakube")
 	}
 
-	activeGateEndpoints := activegate.GetEndpointsAsCommunicationHosts(dynakube)
-
 	if !dynakube.NeedsActiveGate() {
 		if isIstioConfigured(dynakube, conditionComponent) {
 			log.Info("ActiveGate disabled, cleaning up")
@@ -101,6 +103,12 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 			return nil
 		}
 	}
+
+	if !conditions.IsOutdated(r.timeProvider, dynakube, getConditionTypeName(conditionComponent)) {
+		return nil
+	}
+
+	activeGateEndpoints := activegate.GetEndpointsAsCommunicationHosts(dynakube)
 
 	err := r.reconcileCommunicationHostsForComponent(ctx, activeGateEndpoints, ActiveGateComponent)
 	if err != nil {
