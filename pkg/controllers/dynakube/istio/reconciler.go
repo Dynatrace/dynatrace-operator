@@ -82,19 +82,25 @@ func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, 
 }
 
 func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
+	const conditionComponent = "ActiveGate"
+
 	log.Info("reconciling istio components for activegate communication hosts")
 
 	if dynakube == nil {
-		return errors.New("can't reconcile oneagent communication hosts of nil dynakube")
-	}
-
-	if !dynakube.NeedsActiveGate() {
-		return nil
+		return errors.New("can't reconcile activegate communication hosts of nil dynakube")
 	}
 
 	activeGateEndpoints := activegate.GetEndpointsAsCommunicationHosts(dynakube)
 
-	const conditionComponent = "ActiveGate"
+	if !dynakube.NeedsActiveGate() {
+		if isIstioConfigured(dynakube, conditionComponent) {
+			log.Info("ActiveGate disabled, cleaning up")
+
+			return r.CleanupIstio(ctx, dynakube, conditionComponent)
+		} else {
+			return nil
+		}
+	}
 
 	err := r.reconcileCommunicationHostsForComponent(ctx, activeGateEndpoints, ActiveGateComponent)
 	if err != nil {
@@ -110,6 +116,30 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 	}
 
 	return nil
+}
+
+func (r *reconciler) CleanupIstio(ctx context.Context, dynakube *dynatracev1beta2.DynaKube, conditionComponent string) error {
+	meta.RemoveStatusCondition(dynakube.Conditions(), getConditionTypeName(conditionComponent))
+
+	err1 := r.cleanupIPServiceEntry(ctx, ActiveGateComponent)
+	err2 := r.cleanupFQDNServiceEntry(ctx, ActiveGateComponent)
+
+	// try to clean up all entries even if one fails
+	if err1 != nil {
+		return err1
+	}
+
+	if err2 != nil {
+		return err2
+	}
+
+	return nil
+}
+
+func isIstioConfigured(dynakube *dynatracev1beta2.DynaKube, conditionComponent string) bool {
+	istioCondition := meta.FindStatusCondition(*dynakube.Conditions(), getConditionTypeName(conditionComponent))
+
+	return istioCondition != nil
 }
 
 func (r *reconciler) reconcileCommunicationHostsForComponent(ctx context.Context, comHosts []dtclient.CommunicationHost, componentName string) error {
@@ -169,10 +199,21 @@ func (r *reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []dtcl
 			return err
 		}
 	} else {
-		err := r.client.DeleteServiceEntry(ctx, entryName)
+		err := r.cleanupIPServiceEntry(ctx, component)
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (r *reconciler) cleanupIPServiceEntry(ctx context.Context, component string) error {
+	entryName := BuildNameForIPServiceEntry(r.client.Owner.GetName(), component)
+
+	err := r.client.DeleteServiceEntry(ctx, entryName)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -203,15 +244,26 @@ func (r *reconciler) reconcileFQDNServiceEntry(ctx context.Context, fqdnHosts []
 			return err
 		}
 	} else {
-		err := r.client.DeleteServiceEntry(ctx, entryName)
+		err := r.cleanupFQDNServiceEntry(ctx, component)
 		if err != nil {
 			return err
 		}
+	}
 
-		err = r.client.DeleteVirtualService(ctx, entryName)
-		if err != nil {
-			return err
-		}
+	return nil
+}
+
+func (r *reconciler) cleanupFQDNServiceEntry(ctx context.Context, component string) error {
+	entryName := BuildNameForFQDNServiceEntry(r.client.Owner.GetName(), component)
+
+	err := r.client.DeleteServiceEntry(ctx, entryName)
+	if err != nil {
+		return err
+	}
+
+	err = r.client.DeleteVirtualService(ctx, entryName)
+	if err != nil {
+		return err
 	}
 
 	return nil
