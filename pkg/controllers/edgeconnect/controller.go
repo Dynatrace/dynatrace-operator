@@ -120,6 +120,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	return controller.reconcileEdgeConnect(ctx, edgeConnect)
 }
 
+//nolint:revive
 func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
 	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name, "scenario", "deletion")
 
@@ -168,8 +169,7 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 		}
 	}
 
-	// TODO: Remove IF clause when non-provisioner mode supports Connection Settings object creation
-	if edgeConnect.IsProvisionerModeEnabled() {
+	if edgeConnect.IsK8SAutomationEnabled() && edgeConnect.IsProvisionerModeEnabled() {
 		err = controller.deleteConnectionSetting(edgeConnectClient, edgeConnect.Status.KubeSystemUID)
 		if err != nil {
 			_log.Info("reconcile deletion: Deleting connection setting failed")
@@ -714,21 +714,23 @@ func (controller *Controller) createOrUpdateEdgeConnectDeploymentAndSettings(ctx
 		return err
 	}
 
-	edgeConnectClient, err := controller.buildEdgeConnectClient(ctx, edgeConnect)
-	if err != nil {
-		_log.Debug("building EdgeConnect client failed")
+	if edgeConnect.IsK8SAutomationEnabled() {
+		edgeConnectClient, err := controller.buildEdgeConnectClient(ctx, edgeConnect)
+		if err != nil {
+			_log.Debug("building EdgeConnect client failed")
 
-		return err
+			return err
+		}
+
+		err = controller.createOrUpdateConnectionSetting(edgeConnectClient, edgeConnect, edgeConnectToken)
+		if err != nil {
+			_log.Debug("creating EdgeConnect connection setting failed")
+
+			return err
+		}
+
+		_log.Debug("EdgeConnect deployment created/updated successfully")
 	}
-
-	err = controller.createOrUpdateConnectionSetting(edgeConnectClient, edgeConnect, edgeConnectToken)
-	if err != nil {
-		_log.Debug("creating EdgeConnect connection setting failed")
-
-		return err
-	}
-
-	_log.Debug("EdgeConnect deployment created/updated successfully")
 
 	return nil
 }

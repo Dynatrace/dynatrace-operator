@@ -45,8 +45,8 @@ const (
 )
 
 var (
-	testHostPatterns  = []string{"*.internal.org"}
-	testHostPatterns2 = []string{"*.external.org"}
+	testHostPatterns  = []string{"*.internal.org", "test-name-edgeconnectv1alpha1.test-namespace.1-2-3-4.kubernetes-automation"}
+	testHostPatterns2 = []string{"*.external.org", "test-name-edgeconnectv1alpha1.test-namespace.1-2-3-4.kubernetes-automation"}
 	testObjectId      = "my:default"
 
 	testEnvironmentSetting = edgeconnect.EnvironmentSetting{
@@ -518,9 +518,6 @@ func TestReconcileProvisionerWithK8sAutomationsCreate(t *testing.T) {
 			Enabled: true,
 		}
 
-		testK8SAutomationHostPatterns := testHostPatterns
-		testK8SAutomationHostPatterns = append(testK8SAutomationHostPatterns, instance.Name+"."+instance.Namespace+"."+testUID+"."+k8sHostnameSuffix)
-
 		edgeConnectClient := edgeconnectmock.NewClient(t)
 		edgeConnectClient.On("GetConnectionSetting", mock.Anything).Return(testEnvironmentSetting, nil)
 		edgeConnectClient.On("UpdateConnectionSetting", mock.Anything).Return(nil)
@@ -528,7 +525,7 @@ func TestReconcileProvisionerWithK8sAutomationsCreate(t *testing.T) {
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
 			instance,
-			mockNewEdgeConnectClientCreate(edgeConnectClient, testK8SAutomationHostPatterns),
+			mockNewEdgeConnectClientCreate(edgeConnectClient, testHostPatterns),
 			createOauthSecret(instance.Spec.OAuth.ClientSecret, instance.Namespace),
 			createKubernetesService(),
 			createKubeSystemNamespace(),
@@ -574,29 +571,23 @@ func TestReconcileProvisionerWithK8sAutomationsCreate(t *testing.T) {
 		assert.Equal(t, "edge-connect", edgeConnectDeployment.Spec.Template.Spec.Containers[0].Name)
 
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnects", testName)
-		edgeConnectClient.AssertCalled(t, "CreateEdgeConnect", testName, testK8SAutomationHostPatterns, "")
+		edgeConnectClient.AssertCalled(t, "CreateEdgeConnect", testName, testHostPatterns, "")
 	})
 }
 
 func TestReconcileProvisionerWithK8sAutomationsUpdate(t *testing.T) {
 	t.Run("update EdgeConnect", func(t *testing.T) {
-		testK8SAutomationHostPatterns2 := testHostPatterns2
-		testK8SAutomationHostPatterns2 = append(testK8SAutomationHostPatterns2, testName+"."+testNamespace+"."+testUID+"."+k8sHostnameSuffix)
-
-		instance := createEdgeConnectProvisionerCR([]string{}, nil, testK8SAutomationHostPatterns2)
+		instance := createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns2)
 		instance.Spec.KubernetesAutomation = &edgeconnectv1alpha1.KubernetesAutomationSpec{
 			Enabled: true,
 		}
-
-		testK8SAutomationHostPatterns := testHostPatterns
-		testK8SAutomationHostPatterns = append(testK8SAutomationHostPatterns, instance.Name+"."+instance.Namespace+"."+testUID+"."+k8sHostnameSuffix)
 
 		edgeConnectClient := edgeconnectmock.NewClient(t)
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
 			instance,
-			mockNewEdgeConnectClientUpdate(edgeConnectClient, testK8SAutomationHostPatterns, testK8SAutomationHostPatterns2),
+			mockNewEdgeConnectClientUpdate(edgeConnectClient, testHostPatterns, testHostPatterns2),
 			createOauthSecret(instance.Spec.OAuth.ClientSecret, instance.Namespace),
 			createClientSecret(instance.ClientSecretName(), instance.Namespace),
 			createKubernetesService(),
@@ -612,7 +603,7 @@ func TestReconcileProvisionerWithK8sAutomationsUpdate(t *testing.T) {
 
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnects", testName)
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnect", testCreatedId)
-		edgeConnectClient.AssertCalled(t, "UpdateEdgeConnect", testCreatedId, testName, testK8SAutomationHostPatterns2, testCreatedOauthClientId)
+		edgeConnectClient.AssertCalled(t, "UpdateEdgeConnect", testCreatedId, testName, testHostPatterns2, testCreatedOauthClientId)
 	})
 }
 
@@ -877,7 +868,8 @@ func createEdgeConnectProvisionerCR(finalizers []string, deletionTimestamp *meta
 				ClientSecret: testName + "client",
 				Provisioner:  true,
 			},
-			HostPatterns: hostPatterns,
+			HostPatterns:         hostPatterns,
+			KubernetesAutomation: &edgeconnectv1alpha1.KubernetesAutomationSpec{Enabled: true},
 		},
 	}
 }
