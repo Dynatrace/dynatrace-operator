@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	errorUsingTenantImageAsCustom = `The 'image' field in the %s section can't be referencing an image directly from the Dynatrace Environment.`
+	errorUsingTenantImageAsCustom = `Custom %s image must not reference the Dynatrace Environment directly.`
 
 	errorUnparsableImageRef = `The 'image' field in the %s section can't be parsed, make sure it's a valid image reference.`
 )
