@@ -13,7 +13,7 @@ import (
 const (
 	errorUsingTenantImageAsCustom = `Custom %s image must not reference the Dynatrace Environment directly.`
 
-	errorUnparsableImageRef = `The 'image' field in the %s section can't be parsed, make sure it's a valid image reference.`
+	errorUnparsableImageRef = `Custom %s image can't be parsed, make sure it's a valid image reference.`
 )
 
 func imageFieldHasTenantImage(_ context.Context, _ *dynakubeValidator, dk *dynakube.DynaKube) string {
