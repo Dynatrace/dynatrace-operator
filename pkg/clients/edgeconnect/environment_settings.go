@@ -26,7 +26,7 @@ type EnvironmentSetting struct {
 
 type EnvironmentSettingValue struct {
 	Name      string `json:"name"`
-	Uid       string `json:"uid"`
+	UID      string `json:"uid"`
 	Namespace string `json:"namespace"`
 	Token     string `json:"token"`
 }
