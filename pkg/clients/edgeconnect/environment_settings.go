@@ -12,7 +12,7 @@ import (
 
 const (
 	KubernetesConnectionSchemaID = "app:dynatrace.kubernetes.connector:connection"
-	KubernetesConnectionVersion  = "0.1.3"
+	KubernetesConnectionVersion  = "0.1.4"
 	KubernetesConnectionScope    = "environment"
 )
 
@@ -58,7 +58,7 @@ func (c *client) GetConnectionSetting(uid string) (EnvironmentSetting, error) {
 		return EnvironmentSetting{}, fmt.Errorf("error making post request to dynatrace api: %w", err)
 	}
 
-	responseData, err := c.getServerResponseData(response)
+	responseData, err := c.getSettingsApiResponseData(response)
 	if err != nil {
 		return EnvironmentSetting{}, fmt.Errorf("error getting server response data: %w", err)
 	}
@@ -100,7 +100,7 @@ func (c *client) CreateConnectionSetting(es EnvironmentSetting) error {
 		return fmt.Errorf("error making post request to dynatrace api: %w", err)
 	}
 
-	_, err = c.getServerResponseData(response)
+	_, err = c.getSettingsApiResponseData(response)
 
 	if err != nil {
 		return fmt.Errorf("error reading response data: %w", err)
@@ -131,7 +131,7 @@ func (c *client) UpdateConnectionSetting(es EnvironmentSetting) error {
 
 	defer utils.CloseBodyAfterRequest(response)
 
-	_, err = c.getServerResponseData(response)
+	_, err = c.getSettingsApiResponseData(response)
 
 	return errors.WithStack(err)
 }

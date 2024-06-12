@@ -111,6 +111,30 @@ type serverErrorResponse struct {
 	ErrorMessage ServerError `json:"error"`
 }
 
+// Edgeconnect client handles two different APIs with different response schemas.
+// That's why we need Settings API specific structs
+
+// Settings API response
+type SettingsApiResponse struct {
+	Error SettingsApiError `json:"error"`
+	Code  int              `json:"code"`
+}
+
+// Settings API error field
+type SettingsApiError struct {
+	Message              string                 `json:"message,omitempty"`
+	ConstraintViolations []ConstraintViolations `json:"constraintViolations"`
+	Code                 int                    `json:"code,omitempty"`
+}
+
+func (e SettingsApiError) Error() string {
+	if len(e.Message) == 0 && e.Code == 0 {
+		return "unknown server error"
+	}
+
+	return fmt.Sprintf("edgeconnect server error %d: %s, ConstraintViolations: %v", int64(e.Code), e.Message, e.ConstraintViolations)
+}
+
 func (c *client) handleErrorResponseFromAPI(response []byte, statusCode int) error {
 	se := serverErrorResponse{}
 	if err := json.Unmarshal(response, &se); err != nil {
@@ -118,6 +142,15 @@ func (c *client) handleErrorResponseFromAPI(response []byte, statusCode int) err
 	}
 
 	return se.ErrorMessage
+}
+
+func (c *client) handleErrorResponseFromSettingsAPI(response []byte, statusCode int) error {
+	se := []SettingsApiResponse{}
+	if err := json.Unmarshal(response, &se); err != nil {
+		return errors.WithStack(errors.WithMessagef(err, "response error, can't unmarshal json response %d", statusCode))
+	}
+
+	return se[0].Error
 }
 
 func (c *client) getServerResponseData(response *http.Response) ([]byte, error) {
@@ -129,6 +162,20 @@ func (c *client) getServerResponseData(response *http.Response) ([]byte, error) 
 	if response.StatusCode != http.StatusOK &&
 		response.StatusCode != http.StatusCreated {
 		return responseData, c.handleErrorResponseFromAPI(responseData, response.StatusCode)
+	}
+
+	return responseData, nil
+}
+
+func (c *client) getSettingsApiResponseData(response *http.Response) ([]byte, error) {
+	responseData, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, errors.WithMessage(err, "error reading response")
+	}
+
+	if response.StatusCode != http.StatusOK &&
+		response.StatusCode != http.StatusCreated {
+		return responseData, c.handleErrorResponseFromSettingsAPI(responseData, response.StatusCode)
 	}
 
 	return responseData, nil
