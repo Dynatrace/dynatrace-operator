@@ -18,7 +18,7 @@ const (
 
 	EmptyConnectionInfoReason = "EmptyConnectionInfo"
 
-	MetadataEnrichmentPrefix = "metrics-enrichment"
+	MetadataEnrichmentPrefix = "metadata-enrichment"
 	// AnnotationMetadataEnrichmentInject can be set at pod level to enable/disable metadata-enrichment injection.
 	AnnotationMetadataEnrichmentInject   = MetadataEnrichmentPrefix + ".dynatrace.com/inject"
 	AnnotationMetadataEnrichmentInjected = MetadataEnrichmentPrefix + ".dynatrace.com/injected"

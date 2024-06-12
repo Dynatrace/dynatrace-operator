@@ -33,6 +33,7 @@ var validators = []validator{
 	nameViolatesDNS1035,
 	nameTooLong,
 	namespaceSelectorViolateLabelSpec,
+	imageFieldHasTenantImage,
 }
 
 var warnings = []validator{
