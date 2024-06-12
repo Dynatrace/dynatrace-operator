@@ -755,7 +755,7 @@ func (controller *Controller) createOrUpdateConnectionSetting(edgeConnectClient 
 				Scope:         edgeconnect.KubernetesConnectionScope,
 				Value: edgeconnect.EnvironmentSettingValue{
 					Name:      edgeConnect.Name,
-					Uid:       edgeConnect.Status.KubeSystemUID,
+					UID:       edgeConnect.Status.KubeSystemUID,
 					Namespace: edgeConnect.Namespace,
 					Token:     latestToken,
 				},

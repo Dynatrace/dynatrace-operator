@@ -26,7 +26,7 @@ type EnvironmentSetting struct {
 
 type EnvironmentSettingValue struct {
 	Name      string `json:"name"`
-	UID      string `json:"uid"`
+	UID       string `json:"uid"`
 	Namespace string `json:"namespace"`
 	Token     string `json:"token"`
 }
@@ -71,7 +71,7 @@ func (c *client) GetConnectionSetting(uid string) (EnvironmentSetting, error) {
 	}
 
 	for _, item := range resDataJson.Items {
-		if item.Value.Uid == uid {
+		if item.Value.UID == uid {
 			return item, nil
 		}
 	}
