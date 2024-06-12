@@ -72,14 +72,14 @@ func InstallFromImage(t *testing.T) features.Feature {
 
 	cloudNativeDynakube := *dynakube.New(
 		dynakube.WithName("cloudnative-codemodules"),
-		dynakube.WithNameBasedNamespaceSelector(),
+		dynakube.WithNameBasedOneAgentNamespaceSelector(),
 		dynakube.WithApiUrl(secretConfigs[0].ApiUrl),
 		dynakube.WithCloudNativeSpec(codeModulesCloudNativeSpec()),
 	)
 
 	appDynakube := *dynakube.New(
 		dynakube.WithName("app-codemodules"),
-		dynakube.WithNameBasedNamespaceSelector(),
+		dynakube.WithNameBasedOneAgentNamespaceSelector(),
 		dynakube.WithApiUrl(secretConfigs[1].ApiUrl),
 		dynakube.WithApplicationMonitoringSpec(&dynatracev1beta2.ApplicationMonitoringSpec{
 			AppInjectionSpec: *codeModulesAppInjectSpec(),

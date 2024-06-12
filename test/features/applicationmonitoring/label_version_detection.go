@@ -103,7 +103,7 @@ func LabelVersionDetection(t *testing.T) features.Feature {
 	defaultDynakube := *dynakube.New(
 		dynakube.WithName("dynakube-default"),
 		dynakube.WithApiUrl(secretConfig.ApiUrl),
-		dynakube.WithNameBasedNamespaceSelector(),
+		dynakube.WithNameBasedOneAgentNamespaceSelector(),
 		dynakube.WithApplicationMonitoringSpec(&dynatracev1beta2.ApplicationMonitoringSpec{
 			UseCSIDriver: false,
 		}),
@@ -113,7 +113,7 @@ func LabelVersionDetection(t *testing.T) features.Feature {
 		dynakube.WithName("dynakube-labels"),
 		dynakube.WithAnnotations(map[string]string{dynatracev1beta2.AnnotationFeatureLabelVersionDetection: "true"}),
 		dynakube.WithApiUrl(secretConfig.ApiUrl),
-		dynakube.WithNameBasedNamespaceSelector(),
+		dynakube.WithNameBasedOneAgentNamespaceSelector(),
 		dynakube.WithApplicationMonitoringSpec(&dynatracev1beta2.ApplicationMonitoringSpec{
 			UseCSIDriver: false,
 		}),

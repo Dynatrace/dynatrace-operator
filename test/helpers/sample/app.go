@@ -88,6 +88,12 @@ func WithNamespace(namespace corev1.Namespace) Option {
 	}
 }
 
+func WithNamespaceLabels(labels map[string]string) Option {
+	return func(app *App) {
+		app.namespace.Labels = labels
+	}
+}
+
 func WithAnnotations(annotations map[string]string) Option {
 	return func(app *App) {
 		app.base.Annotations = annotations

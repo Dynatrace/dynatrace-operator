@@ -1,4 +1,4 @@
-package utilmap
+package maputil
 
 import (
 	"testing"

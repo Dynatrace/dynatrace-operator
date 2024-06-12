@@ -71,6 +71,12 @@ func WithActiveGate() Option {
 	}
 }
 
+func WithMetadataEnrichment() Option {
+	return func(dynakube *dynakubev1beta2.DynaKube) {
+		dynakube.Spec.MetadataEnrichment.Enabled = true
+	}
+}
+
 func WithActiveGateTlsSecret(tlsSecretName string) Option {
 	return func(dynakube *dynakubev1beta2.DynaKube) {
 		dynakube.Spec.ActiveGate.TlsSecretName = tlsSecretName
@@ -83,11 +89,11 @@ func WithCustomActiveGateImage(imageURI string) Option {
 	}
 }
 
-func WithNameBasedNamespaceSelector() Option {
+func WithNameBasedOneAgentNamespaceSelector() Option {
 	return func(dynakube *dynakubev1beta2.DynaKube) {
 		namespaceSelector := metav1.LabelSelector{
 			MatchLabels: map[string]string{
-				"inject": dynakube.Name,
+				"oa-inject": dynakube.Name,
 			},
 		}
 		switch {
@@ -99,7 +105,18 @@ func WithNameBasedNamespaceSelector() Option {
 	}
 }
 
-func WithNamespaceSelector(selector metav1.LabelSelector) Option {
+func WithNameBasedMetadataEnrichmentNamespaceSelector() Option {
+	return func(dynakube *dynakubev1beta2.DynaKube) {
+		namespaceSelector := metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"me-inject": dynakube.Name,
+			},
+		}
+		dynakube.Spec.MetadataEnrichment.NamespaceSelector = namespaceSelector
+	}
+}
+
+func WithOneAgentNamespaceSelector(selector metav1.LabelSelector) Option {
 	return func(dynakube *dynakubev1beta2.DynaKube) {
 		switch {
 		case dynakube.CloudNativeFullstackMode():
@@ -107,6 +124,12 @@ func WithNamespaceSelector(selector metav1.LabelSelector) Option {
 		case dynakube.ApplicationMonitoringMode():
 			dynakube.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = selector
 		}
+	}
+}
+
+func WithMetadataEnrichmentNamespaceSelector(selector metav1.LabelSelector) Option {
+	return func(dynakube *dynakubev1beta2.DynaKube) {
+		dynakube.Spec.MetadataEnrichment.NamespaceSelector = selector
 	}
 }
 
