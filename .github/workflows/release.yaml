@@ -98,7 +98,7 @@ jobs:
         with:
           registry-type: public
       - name: Push ${{matrix.platform}} to ${{matrix.registry}}
-        id: pushimage
+        id: push-image
         uses: ./.github/actions/upload-image
         with:
           platform: ${{ matrix.platform }}
@@ -109,7 +109,7 @@ jobs:
       - name: Sign image for ${{matrix.registry}}
         uses: ./.github/actions/sign-image
         with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}@${{steps.pushimage.outputs.digest}}
+          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}@${{steps.push-image.outputs.digest}}
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
 
