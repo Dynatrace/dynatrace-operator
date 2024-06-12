@@ -11,20 +11,23 @@
   },
   baseBranches: [
     "$default",
-    "release-0.14",
-    "release-0.15",
     "release-1.0",
+    "release-1.1",
+    "release-1.2",
   ],
   enabledManagers: [
     "regex",
     "dockerfile",
     "gomod",
     "github-actions",
+    "pip_requirements"
   ],
   postUpdateOptions: [
     "gomodTidy",
     "gomodTidy1.17",
   ],
+  automergeType: "pr",
+  automerge: true,
   regexManagers: [
     {
       fileMatch: [
@@ -35,6 +38,7 @@
         "depName=(?<depName>.*?)\\s.*?_version=(?<currentValue>.*)\\s",
       ],
       datasourceTemplate: "go",
+      automerge: "true",
     },
     {
       fileMatch: [
@@ -44,21 +48,23 @@
         "depName=(?<depName>.*?)\\s.*?version\\:\\s(?<currentValue>.*)\\s",
       ],
       datasourceTemplate: "go",
+      automerge: "true",
     },
   ],
   packageRules: [
     {
       matchBaseBranches: [
         "$default",
-        "release-0.14",
-        "release-0.15",
         "release-1.0",
+        "release-1.1",
+        "release-1.2",
       ],
       matchUpdateTypes: [
         "major",
         "minor",
       ],
       enabled: false,
+      automerge: true,
     },
     {
       matchManagers: [
@@ -70,6 +76,7 @@
       commitMessagePrefix: "Docker:",
       enabled: true,
       allowedVersions: "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/",
+      automerge: true,
     },
     {
       matchManagers: [
@@ -81,6 +88,7 @@
       commitMessagePrefix: "Go:",
       enabled: true,
       allowedVersions: "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/",
+      automerge: true,
     },
     {
       matchManagers: [
@@ -90,6 +98,7 @@
         "indirect",
       ],
       enabled: false,
+      automerge: true,
     },
     {
       matchManagers: [
@@ -100,6 +109,7 @@
       ],
       commitMessagePrefix: "Actions:",
       enabled: true,
+      automerge: true,
       allowedVersions: "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/",
     },
     {
@@ -111,6 +121,7 @@
       ],
       commitMessagePrefix: "Dev:",
       enabled: true,
+      automerge: true,
     },
     {
       matchPackageNames: [
@@ -119,6 +130,7 @@
       matchBaseBranches: [
         "$default",
       ],
+      automerge: true,
     },
     {
       matchPackageNames: [
@@ -126,6 +138,7 @@
       ],
       pinVersions: true,
       enabled: true,
+      automerge: true,
     },
     {
       packageNames: [
@@ -133,6 +146,7 @@
       ],
       enabled: true,
       pinVersions: true,
+      automerge: true,
     },
     {
       packageNames: [
@@ -140,6 +154,8 @@
       ],
       enabled: true,
       pinVersions: true,
+      automerge: true,
     },
   ],
+  platformAutomerge: true,
 }
