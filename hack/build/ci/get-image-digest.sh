@@ -1,4 +1,4 @@
 #!/bin/bash
 
-digest=$(skopeo inspect docker-daemon:"${IMAGE}" --format "{{.Digest}}")
+digest=$(docker image list --digests ${IMAGE} --format json | jq -r '.[].Digest')
 echo "digest=${digest}">> "$GITHUB_OUTPUT"
