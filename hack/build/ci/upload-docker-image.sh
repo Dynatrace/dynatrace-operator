@@ -25,5 +25,7 @@ docker load --input "${imageTarPath}"
 docker tag "${srcImage}" "${targetImage}"
 docker push "${targetImage}"
 
-digest=$(docker image list --format "{{.Digest}}" "${targetImage}")
+# filtering by image-tag directly does not work currently see: https://github.com/moby/moby/issues/29901
+digest=$(docker images --digests --format "{{.Repository}}:{{.Tag}}@{{.Digest}}" | grep "${targetImage}" | cut -d '@' -f 2)
+
 echo "digest=${digest}">> "$GITHUB_OUTPUT"
