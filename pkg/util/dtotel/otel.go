@@ -22,7 +22,7 @@ type shutdownFn func(ctx context.Context) error
 func Start(ctx context.Context, otelServiceName string, apiReader client.Reader, webhookNamespace string) func() {
 	endpoint, apiToken, err := getOtelConfig(ctx, apiReader, webhookNamespace)
 	if err != nil {
-		log.Info("failed to read OpenTelementry config secret", "err", err.Error())
+		log.Info("Opentelemetry instrumentation was not configured")
 
 		return setupNoopOTel()
 	}
