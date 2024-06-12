@@ -19,4 +19,8 @@ else
   CONTAINER_CMD=docker
 fi
 
-${CONTAINER_CMD} push "${out_image}"
+digest=$(${CONTAINER_CMD} push "${out_image}")
+
+if [[ ! -z $GITHUB_OUTPUT ]]; then
+    echo "digest=${digest}">> $GITHUB_OUTPUT
+fi
