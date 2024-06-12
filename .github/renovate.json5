@@ -155,5 +155,5 @@
       automerge: true,
     },
   ],
-  platformAutomerge: true
+  platformAutomerge: true,
 }
