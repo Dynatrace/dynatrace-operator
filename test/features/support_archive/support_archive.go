@@ -53,7 +53,7 @@ func Feature(t *testing.T) features.Feature {
 	}
 
 	testDynakube := *dynakube.New(
-		dynakube.WithNamespaceSelector(metav1.LabelSelector{
+		dynakube.WithOneAgentNamespaceSelector(metav1.LabelSelector{
 			MatchLabels: injectLabels,
 		}),
 		dynakube.WithApiUrl(secretConfig.ApiUrl),
