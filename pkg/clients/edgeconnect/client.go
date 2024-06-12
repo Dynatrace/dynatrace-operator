@@ -144,7 +144,7 @@ func (c *client) handleErrorResponseFromAPI(response []byte, statusCode int) err
 	return se.ErrorMessage
 }
 
-func (c *client) handleErrorResponseFromSettingsAPI(response []byte, statusCode int) error {
+func (c *client) handleErrorResponseFromSettingsApi(response []byte, statusCode int) error {
 	se := []SettingsApiResponse{}
 	if err := json.Unmarshal(response, &se); err != nil {
 		return errors.WithStack(errors.WithMessagef(err, "response error, can't unmarshal json response %d", statusCode))
@@ -175,7 +175,7 @@ func (c *client) getSettingsApiResponseData(response *http.Response) ([]byte, er
 
 	if response.StatusCode != http.StatusOK &&
 		response.StatusCode != http.StatusCreated {
-		return responseData, c.handleErrorResponseFromSettingsAPI(responseData, response.StatusCode)
+		return responseData, c.handleErrorResponseFromSettingsApi(responseData, response.StatusCode)
 	}
 
 	return responseData, nil
