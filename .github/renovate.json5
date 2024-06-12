@@ -155,5 +155,4 @@
       automerge: true,
     },
   ],
-  platformAutomerge: true,
 }
