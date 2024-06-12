@@ -39,7 +39,7 @@ require (
 	golang.org/x/sys v0.19.0
 	google.golang.org/grpc v1.63.2
 	gopkg.in/yaml.v3 v3.0.1
-	gorm.io/driver/sqlite v1.5.5
+	gorm.io/driver/sqlite v1.5.6
 	gorm.io/gorm v1.25.10
 	istio.io/api v1.21.2
 	istio.io/client-go v1.21.2
