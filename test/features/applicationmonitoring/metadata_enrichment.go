@@ -5,11 +5,13 @@ package applicationmonitoring
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
@@ -45,37 +47,105 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	testDynakube := *dynakube.New(
 		dynakube.WithApiUrl(secretConfig.ApiUrl),
+		dynakube.WithMetadataEnrichment(),
 		dynakube.WithApplicationMonitoringSpec(&dynatracev1beta2.ApplicationMonitoringSpec{
 			UseCSIDriver: false,
 		}),
+		dynakube.WithNameBasedMetadataEnrichmentNamespaceSelector(),
+		dynakube.WithNameBasedOneAgentNamespaceSelector(),
 	)
 
-	sampleDeployment := sample.NewApp(t, &testDynakube,
-		sample.WithName("deploy-app"),
-		sample.AsDeployment(),
-		sample.WithAnnotations(map[string]string{
-			webhook.AnnotationOneAgentInject:           "false",
-			webhook.AnnotationMetadataEnrichmentInject: "true",
-		}))
+	type testCase struct {
+		name   string
+		app    *sample.App
+		assess func(samplePod *sample.App) features.Func
+	}
 
-	samplePod := sample.NewApp(t, &testDynakube,
-		sample.WithName("pod-app"),
-		sample.WithAnnotations(map[string]string{
-			webhook.AnnotationOneAgentInject:           "false",
-			webhook.AnnotationMetadataEnrichmentInject: "true",
-		}))
+	injectEverythingLabels := maputil.MergeMap(
+		testDynakube.OneAgentNamespaceSelector().MatchLabels,
+		testDynakube.MetadataEnrichmentNamespaceSelector().MatchLabels,
+	)
+
+	testCases := []testCase{
+		{
+			name: "control metadata-enrichment with annotations - deployment",
+			app: sample.NewApp(t, &testDynakube,
+				sample.WithName("deploy-metadata-annotation"),
+				sample.AsDeployment(),
+				sample.WithNamespaceLabels(injectEverythingLabels),
+				sample.WithAnnotations(map[string]string{
+					webhook.AnnotationOneAgentInject:           "false",
+					webhook.AnnotationMetadataEnrichmentInject: "true",
+				})),
+			assess: deploymentPodsHaveOnlyMetadataEnrichmentInitContainer,
+		},
+		{
+			name: "control metadata-enrichment with annotations - pod",
+			app: sample.NewApp(t, &testDynakube,
+				sample.WithName("pod-metadata-annotation"),
+				sample.WithNamespaceLabels(injectEverythingLabels),
+				sample.WithAnnotations(map[string]string{
+					webhook.AnnotationOneAgentInject:           "false",
+					webhook.AnnotationMetadataEnrichmentInject: "true",
+				})),
+			assess: podHasOnlyMetadataEnrichmentInitContainer,
+		},
+		{
+			name: "control metadata-enrichment with namespace-selector - deployment",
+			app: sample.NewApp(t, &testDynakube,
+				sample.WithName("deploy-metadata-label"),
+				sample.AsDeployment(),
+				sample.WithNamespaceLabels(testDynakube.MetadataEnrichmentNamespaceSelector().MatchLabels),
+			),
+			assess: deploymentPodsHaveOnlyMetadataEnrichmentInitContainer,
+		},
+		{
+			name: "control metadata-enrichment with namespace-selector - pod",
+			app: sample.NewApp(t, &testDynakube,
+				sample.WithName("pod-metadata-label"),
+				sample.WithNamespaceLabels(testDynakube.MetadataEnrichmentNamespaceSelector().MatchLabels),
+			),
+			assess: podHasOnlyMetadataEnrichmentInitContainer,
+		},
+		{
+			name: "control oneagent-injection with annotations - pod",
+			app: sample.NewApp(t, &testDynakube,
+				sample.WithName("pod-oa-annotation"),
+				sample.WithNamespaceLabels(injectEverythingLabels),
+				sample.WithAnnotations(map[string]string{
+					webhook.AnnotationOneAgentInject:           "true",
+					webhook.AnnotationMetadataEnrichmentInject: "false",
+				})),
+			assess: podHasOnlyOneAgentInitContainer,
+		},
+		{
+			name: "control oneagent-injection with namespace-selector - pod",
+			app: sample.NewApp(t, &testDynakube,
+				sample.WithName("pod-oa-label"),
+				sample.WithNamespaceLabels(testDynakube.OneAgentNamespaceSelector().MatchLabels),
+			),
+			assess: podHasOnlyOneAgentInitContainer,
+		},
+		{
+			name: "namespace-selectors don't conflict - pod",
+			app: sample.NewApp(t, &testDynakube,
+				sample.WithName("pod-all-label"),
+				sample.WithNamespaceLabels(injectEverythingLabels),
+			),
+			assess: podHasCompleteInitContainer,
+		},
+	}
 
 	// dynakube install
 	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
 	// Register actual test
-	builder.Assess("install sample deployment and wait till ready", sampleDeployment.Install())
-	builder.Assess("install sample pod  and wait till ready", samplePod.Install())
-	builder.Assess("deployment pods only have metadata enrichment", deploymentPodsHaveOnlyMetadataEnrichmentInitContainer(sampleDeployment))
-	builder.Assess("pod only has metadata enrichment", podHasOnlyMetadataEnrichmentInitContainer(samplePod))
+	for _, test := range testCases {
+		builder.Assess(fmt.Sprintf("%s: Installing sample app", test.name), test.app.Install())
+		builder.Assess(fmt.Sprintf("%s: Checking sample app", test.name), test.assess(test.app))
+		builder.WithTeardown(fmt.Sprintf("%s: Uninstalling sample app", test.name), test.app.Uninstall())
+	}
 
-	builder.WithTeardown("removing samples", sampleDeployment.Uninstall())
-	builder.WithTeardown("removing samples", samplePod.Uninstall())
 	dynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 
 	return builder.Feature()
@@ -112,6 +182,53 @@ func deploymentPodsHaveOnlyMetadataEnrichmentInitContainer(sampleApp *sample.App
 		err = query.ForEachPod(assessDeploymentHasMetadataEnrichmentFile(ctx, t, envConfig.Client().Resources(), sampleApp.Name()))
 
 		require.NoError(t, err)
+
+		return ctx
+	}
+}
+
+// podHasCompleteInitContainer checks if the sample has BOTH the metadata-enrichment and oneagent parts added to it.
+func podHasCompleteInitContainer(samplePod *sample.App) features.Func { //nolint: dupl
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		testPod := samplePod.GetPods(ctx, t, envConfig.Client().Resources()).Items[0]
+		initContainers := testPod.Spec.InitContainers
+
+		require.Len(t, initContainers, 1)
+
+		installOneAgentContainer := initContainers[0]
+		envVars := installOneAgentContainer.Env
+
+		assert.True(t, env.IsIn(envVars, consts.EnrichmentWorkloadKindEnv))
+		assert.True(t, env.IsIn(envVars, consts.EnrichmentWorkloadNameEnv))
+		assert.True(t, env.IsIn(envVars, consts.EnrichmentInjectedEnv))
+
+		assert.True(t, env.IsIn(envVars, consts.AgentInjectedEnv))
+
+		assert.Contains(t, testPod.Annotations, webhook.AnnotationWorkloadKind)
+		assert.Contains(t, testPod.Annotations, webhook.AnnotationWorkloadName)
+
+		return ctx
+	}
+}
+
+func podHasOnlyOneAgentInitContainer(samplePod *sample.App) features.Func { //nolint: dupl
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		testPod := samplePod.GetPods(ctx, t, envConfig.Client().Resources()).Items[0]
+		initContainers := testPod.Spec.InitContainers
+
+		require.Len(t, initContainers, 1)
+
+		installOneAgentContainer := initContainers[0]
+		envVars := installOneAgentContainer.Env
+
+		assert.False(t, env.IsIn(envVars, consts.EnrichmentWorkloadKindEnv))
+		assert.False(t, env.IsIn(envVars, consts.EnrichmentWorkloadNameEnv))
+		assert.False(t, env.IsIn(envVars, consts.EnrichmentInjectedEnv))
+
+		assert.True(t, env.IsIn(envVars, consts.AgentInjectedEnv))
+
+		assert.NotContains(t, testPod.Annotations, webhook.AnnotationWorkloadKind)
+		assert.NotContains(t, testPod.Annotations, webhook.AnnotationWorkloadName)
 
 		return ctx
 	}
