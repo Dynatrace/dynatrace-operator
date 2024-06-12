@@ -1,4 +1,4 @@
 #!/bin/bash
 
-digest=$(docker image list --digests ${IMAGE} --format json | jq -r '.[].Digest')
+digest=$(docker image list --format "{{.Digest}}" ${IMAGE})
 echo "digest=${digest}">> "$GITHUB_OUTPUT"
