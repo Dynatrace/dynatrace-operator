@@ -24,3 +24,6 @@ srcImage=$(docker load -i "${imageTarPath}" | cut -d' ' -f3)
 docker load --input "${imageTarPath}"
 docker tag "${srcImage}" "${targetImage}"
 docker push "${targetImage}"
+
+digest=$(docker image list --format "{{.Digest}}" "${targetImage}")
+echo "digest=${digest}">> "$GITHUB_OUTPUT"
