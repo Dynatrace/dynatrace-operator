@@ -26,7 +26,9 @@ fi
 echo "Checking currentState='$desired_state' for '$FLC_ENVIRONMENT'..."
 flc_state=$(kubectl get flcenvironment "$FLC_ENVIRONMENT" --namespace "$FLC_NAMESPACE" -ojsonpath="{.status.currentState}")
 if [[ "$flc_state" != "$desired_state" ]]; then
-  echo "Pipeline deployment did not reach expected state '$desired_state', currentState: ${flc_state}"
+  echo "Pipeline deployment did not reach expected state '$desired_state', currentState: ${flc_state}..."
   exit 1
+  else
+    echo "successful..."
 fi
 echo "done"
