@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
-	errorslib "github.com/pkg/errors"
+	errorshelper "github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -41,7 +41,7 @@ func (r *reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1b
 	log.Info("reconciling istio components for the Dynatrace API url")
 
 	if dynakube == nil {
-		return errorslib.New("can't reconcile api url of nil dynakube")
+		return errorshelper.New("can't reconcile api url of nil dynakube")
 	}
 
 	apiHost, err := dtclient.ParseEndpoint(dynakube.Spec.APIURL)
@@ -51,7 +51,7 @@ func (r *reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1b
 
 	err = r.reconcileCommunicationHosts(ctx, []dtclient.CommunicationHost{apiHost}, OperatorComponent)
 	if err != nil {
-		return errorslib.WithMessage(err, "error reconciling config for Dynatrace API URL")
+		return errorshelper.WithMessage(err, "error reconciling config for Dynatrace API URL")
 	}
 
 	log.Info("reconciled istio objects for API url")
@@ -63,7 +63,7 @@ func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, 
 	log.Info("reconciling istio components for oneagent-code-modules communication hosts")
 
 	if dynakube == nil {
-		return errorslib.New("can't reconcile oneagent communication hosts of nil dynakube")
+		return errorshelper.New("can't reconcile oneagent communication hosts of nil dynakube")
 	}
 
 	oneAgentCommunicationHosts := oaconnectioninfo.GetCommunicationHosts(dynakube)
@@ -92,7 +92,7 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 	log.Info("reconciling istio components for activegate communication hosts")
 
 	if dynakube == nil {
-		return errorslib.New("can't reconcile activegate communication hosts of nil dynakube")
+		return errorshelper.New("can't reconcile activegate communication hosts of nil dynakube")
 	}
 
 	if !dynakube.NeedsActiveGate() {
@@ -146,7 +146,7 @@ func isIstioConfigured(dynakube *dynatracev1beta2.DynaKube, conditionComponent s
 func (r *reconciler) reconcileCommunicationHostsForComponent(ctx context.Context, comHosts []dtclient.CommunicationHost, componentName string) error {
 	err := r.reconcileCommunicationHosts(ctx, comHosts, componentName)
 	if err != nil {
-		return errorslib.WithMessage(err, "error reconciling config for Dynatrace communication hosts")
+		return errorshelper.WithMessage(err, "error reconciling config for Dynatrace communication hosts")
 	}
 
 	log.Info("reconciled istio objects for communication hosts", "component", componentName)
