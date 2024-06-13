@@ -213,9 +213,9 @@ func TestReconcileAPIUrl(t *testing.T) {
 
 func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 	ctx := context.Background()
-	dynakube := createTestDynaKube()
 
 	t.Run("nil => error", func(t *testing.T) {
+		dynakube := createTestDynaKube()
 		istioClient := newTestingClient(nil, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
@@ -223,6 +223,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run("success", func(t *testing.T) {
+		dynakube := createTestDynaKube()
 		fakeClient := fakeistio.NewSimpleClientset()
 		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
@@ -251,6 +252,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		require.Equal(t, "IstioForCodeModuleChanged", statusCondition.Reason)
 	})
 	t.Run("unknown k8s client error => error", func(t *testing.T) {
+		dynakube := createTestDynaKube()
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
 
@@ -263,6 +265,53 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		statusCondition := meta.FindStatusCondition(*dynakube.Conditions(), "IstioForCodeModule")
 		require.NotNil(t, statusCondition)
 		require.Equal(t, "IstioForCodeModuleFailed", statusCondition.Reason)
+	})
+	t.Run("remove and cleanup if AppInjection is disabled", func(t *testing.T) {
+		dynakube := createTestDynaKube()
+		fakeClient := fakeistio.NewSimpleClientset()
+		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
+		r := NewReconciler(istioClient)
+
+		err := r.ReconcileCodeModuleCommunicationHosts(ctx, dynakube)
+		require.NoError(t, err)
+
+		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), OneAgentComponent)
+		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, serviceEntry)
+		assert.Contains(t, fmt.Sprintf("%v", serviceEntry), "something.test.io")
+
+		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, virtualService)
+
+		expectedIPName := BuildNameForIPServiceEntry(dynakube.GetName(), OneAgentComponent)
+		serviceEntry, err = fakeClient.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedIPName, metav1.GetOptions{})
+
+		require.NoError(t, err)
+		assert.NotNil(t, serviceEntry)
+
+		statusCondition := meta.FindStatusCondition(*dynakube.Conditions(), "IstioForCodeModule")
+		require.NotNil(t, statusCondition)
+		require.Equal(t, "IstioForCodeModuleChanged", statusCondition.Reason)
+
+		dynakube.Spec.OneAgent.CloudNativeFullStack = nil
+		dynakube.Spec.OneAgent.HostMonitoring = &dynatracev1beta1.HostInjectSpec{}
+
+		err = r.ReconcileCodeModuleCommunicationHosts(ctx, dynakube)
+		require.NoError(t, err)
+		statusCondition = meta.FindStatusCondition(*dynakube.Conditions(), "IstioForCodeModule")
+		require.Nil(t, statusCondition)
+
+		_, err = fakeClient.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
+		require.Error(t, err)
+
+		_, err = fakeClient.NetworkingV1beta1().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
+		require.Error(t, err)
+
+		_, err = fakeClient.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedIPName, metav1.GetOptions{})
+
+		require.Error(t, err)
 	})
 }
 
@@ -435,6 +484,9 @@ func createTestDynaKube() *dynatracev1beta2.DynaKube {
 				Capabilities: []dynatracev1beta2.CapabilityDisplayName{
 					dynatracev1beta2.RoutingCapability.DisplayName,
 				},
+			},
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
 			},
 		},
 		Status: dynatracev1beta2.DynaKubeStatus{

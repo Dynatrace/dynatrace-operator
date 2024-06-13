@@ -60,15 +60,25 @@ func (r *reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1b
 }
 
 func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
+	const conditionComponent = "CodeModule"
+
 	log.Info("reconciling istio components for oneagent-code-modules communication hosts")
 
 	if dynakube == nil {
 		return errorshelper.New("can't reconcile oneagent communication hosts of nil dynakube")
 	}
 
-	oneAgentCommunicationHosts := oaconnectioninfo.GetCommunicationHosts(dynakube)
+	if !dynakube.NeedAppInjection() {
+		if isIstioConfigured(dynakube, conditionComponent) {
+			log.Info("AppInjection disabled, cleaning up")
 
-	const conditionComponent = "CodeModule"
+			return r.CleanupIstio(ctx, dynakube, conditionComponent, OneAgentComponent)
+		} else {
+			return nil
+		}
+	}
+
+	oneAgentCommunicationHosts := oaconnectioninfo.GetCommunicationHosts(dynakube)
 
 	err := r.reconcileCommunicationHostsForComponent(ctx, oneAgentCommunicationHosts, OneAgentComponent)
 	if err != nil {
@@ -99,7 +109,7 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 		if isIstioConfigured(dynakube, conditionComponent) {
 			log.Info("ActiveGate disabled, cleaning up")
 
-			return r.CleanupIstio(ctx, dynakube, conditionComponent)
+			return r.CleanupIstio(ctx, dynakube, conditionComponent, ActiveGateComponent)
 		} else {
 			return nil
 		}
@@ -127,11 +137,11 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 	return nil
 }
 
-func (r *reconciler) CleanupIstio(ctx context.Context, dynakube *dynatracev1beta2.DynaKube, conditionComponent string) error {
+func (r *reconciler) CleanupIstio(ctx context.Context, dynakube *dynatracev1beta2.DynaKube, conditionComponent string, component string) error {
 	meta.RemoveStatusCondition(dynakube.Conditions(), getConditionTypeName(conditionComponent))
 
-	err1 := r.cleanupIPServiceEntry(ctx, ActiveGateComponent)
-	err2 := r.cleanupFQDNServiceEntry(ctx, ActiveGateComponent)
+	err1 := r.cleanupIPServiceEntry(ctx, component)
+	err2 := r.cleanupFQDNServiceEntry(ctx, component)
 
 	// try to clean up all entries even if one fails
 	return errors.Join(err1, err2)
