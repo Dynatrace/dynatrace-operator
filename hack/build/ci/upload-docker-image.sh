@@ -23,8 +23,8 @@ srcImage=$(docker load -i "${imageTarPath}" | cut -d' ' -f3)
 
 docker load --input "${imageTarPath}"
 docker tag "${srcImage}" "${targetImage}"
-imageinfo=$(docker push "${targetImage}")
+pushinfo=$(docker push "${targetImage}")
 
 # filtering by image-tag directly does not work currently see: https://github.com/moby/moby/issues/29901
-digest=$(echo "$imageinfo" | tail -n 1 | cut -d " " -f 3)
+digest=$(echo "$pushinfo" | tail -n 1 | cut -d " " -f 3)
 echo "digest=${digest}">> "$GITHUB_OUTPUT"
