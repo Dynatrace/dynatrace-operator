@@ -18,8 +18,8 @@ RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLED=1 CGO_CFLAGS="
     go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./cmd/
 
-FROM registry.access.redhat.com/ubi9-micro:9.4-6.1716471860@sha256:1c8483e0fda0e990175eb9855a5f15e0910d2038dd397d9e2b357630f0321e6d AS base
-FROM registry.access.redhat.com/ubi9:9.4-947.1717074712@sha256:d31d3e5e92c0c47277c5011c0326b285ab7ae627eff036133be1dccc4208004d AS dependency
+FROM registry.access.redhat.com/ubi9-micro:9.4-9@sha256:2044e2ca8e258d00332f40532db9f55fb3d0bfd77ecc84c4aa4c1b7af3626ffb AS base
+FROM registry.access.redhat.com/ubi9:9.4-1123@sha256:d98fdae16212df566150ac975cab860cd8d2cb1b322ed9966d09a13e219112e9 AS dependency
 RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
 RUN dnf install --installroot /tmp/rootfs-dependency \

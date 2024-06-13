@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: Prepare build parameters
         id: prep
         run: |
@@ -43,7 +43,7 @@ jobs:
         platform: [amd64, arm64, ppc64le, s390x]
     steps:
       - name: Checkout
-        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: Build image
         uses: ./.github/actions/build-image
         with:
@@ -78,7 +78,7 @@ jobs:
           repository: ECR_REPOSITORY
     steps:
       - name: Checkout
-        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: Login to Registry
         if: ${{ matrix.registry != 'amazon-ecr' }}
         uses: docker/login-action@0d4c9c5ea7693da7b068278f7b52bda2a190a446 # v3.2.0
@@ -98,6 +98,7 @@ jobs:
         with:
           registry-type: public
       - name: Push ${{matrix.platform}} to ${{matrix.registry}}
+        id: push-image
         uses: ./.github/actions/upload-image
         with:
           platform: ${{ matrix.platform }}
@@ -105,16 +106,10 @@ jobs:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ matrix.url }}
           repository: ${{ secrets[matrix.repository] }}
-      - name: Get image digest
-        id: digest
-        env:
-          IMAGE: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}
-        run: |
-          hack/build/ci/get-image-digest.sh
       - name: Sign image for ${{matrix.registry}}
         uses: ./.github/actions/sign-image
         with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}@${{steps.digest.outputs.digest}}
+          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}@${{steps.push-image.outputs.digest}}
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
 
@@ -128,7 +123,7 @@ jobs:
       SCAN_REGISTRY: "quay.io"
     steps:
       - name: Checkout
-        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: Login to Registry
         uses: docker/login-action@0d4c9c5ea7693da7b068278f7b52bda2a190a446 # v3.2.0
         with:
@@ -182,7 +177,7 @@ jobs:
             repository: ECR_REPOSITORY
     steps:
       - name: Checkout
-        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: Login to Registry
         if: ${{ matrix.registry != 'amazon-ecr' }}
         uses: docker/login-action@0d4c9c5ea7693da7b068278f7b52bda2a190a446 # v3.2.0
@@ -242,7 +237,7 @@ jobs:
             repository: ECR_REPOSITORY
     steps:
       - name: Checkout
-        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: Login to Registry
         if: ${{ matrix.registry != 'amazon-ecr' }}
         uses: docker/login-action@0d4c9c5ea7693da7b068278f7b52bda2a190a446 # v3.2.0
@@ -288,7 +283,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: Setup Golang
         uses: actions/setup-go@cdcb36043654635271a94b9a6d1392de5bb323a7 # v5.0.1
         with:

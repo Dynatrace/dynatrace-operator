@@ -200,7 +200,13 @@ func proxyWrapper(proxyConfig httpproxy.Config) func(req *http.Request) (*url.UR
 
 func Certs(certs []byte) Option {
 	return func(c *dynatraceClient) {
-		rootCAs := x509.NewCertPool()
+		rootCAs, err := x509.SystemCertPool()
+		if err != nil {
+			log.Info("couldn't read system certificates!")
+
+			return
+		}
+
 		if ok := rootCAs.AppendCertsFromPEM(certs); !ok {
 			log.Info("failed to append custom certs!")
 		}
