@@ -26,5 +26,5 @@ docker tag "${srcImage}" "${targetImage}"
 imageinfo=$(docker push "${targetImage}")
 
 # filtering by image-tag directly does not work currently see: https://github.com/moby/moby/issues/29901
-digest=$(echo "$imageinfo" | cut -d " " -f 3)
+digest=$(echo "$imageinfo" | tail -n 1 | cut -d " " -f 3)
 echo "digest=${digest}">> "$GITHUB_OUTPUT"
