@@ -1,4 +1,4 @@
-name: E2E tests ondemand
+name: E2E tests ondemand ocp test
 
 on:
   workflow_dispatch:
