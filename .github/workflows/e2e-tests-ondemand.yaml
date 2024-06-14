@@ -44,7 +44,6 @@ jobs:
         with:
           flc-namespace: ${{ format('dto-{0}-ondemand', matrix.platform ) }}
           flc-environment: ${{ format('dto-{0}-{1}',  matrix.platform, matrix.version ) }}
-          flc-platform: ${{ matrix.platform }}
           target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
