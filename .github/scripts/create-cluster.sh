@@ -17,7 +17,7 @@ kubectl get flcenvironments --namespace $FLC_NAMESPACE
 #echo "Waiting up to '$DEFAULT_TIMEOUT' for successful deployment of environment '$FLC_ENVIRONMENT'"
 #kubectl wait --namespace $FLC_NAMESPACE --timeout="$DEFAULT_TIMEOUT" --for=condition=InTransition=false flcenvironment $FLC_ENVIRONMENT
 
-if [ "$FLC_PLATFORM" == 'ocp' ]; then
+if [[ "$FLC_PLATFORM" == 'ocp' ]]; then
   echo "PLATFORM is set to 'ocp'. Waiting for 5 minutes..."
   sleep 3 #300  # Wait for 5 minutes (300 seconds)
   echo "done"
