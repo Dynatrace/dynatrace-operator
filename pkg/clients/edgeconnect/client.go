@@ -132,7 +132,7 @@ func (e SettingsApiError) Error() string {
 		return "unknown server error"
 	}
 
-	return fmt.Sprintf("edgeconnect server error %d: %s, ConstraintViolations: %v", int64(e.Code), e.Message, e.ConstraintViolations)
+	return fmt.Sprintf("edgeconnect Settings API error: code=%d, message=%s, ConstraintViolations=%v", int64(e.Code), e.Message, e.ConstraintViolations)
 }
 
 func (c *client) handleErrorResponseFromAPI(response []byte, statusCode int) error {
