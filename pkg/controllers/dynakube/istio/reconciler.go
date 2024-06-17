@@ -116,6 +116,8 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 	}
 
 	if !conditions.IsOutdated(r.timeProvider, dynakube, getConditionTypeName(conditionComponent)) {
+		log.Info("Condition still within time threshold...skipping further reconciliation")
+
 		return nil
 	}
 

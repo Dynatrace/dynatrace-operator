@@ -78,6 +78,14 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if !r.dynakube.NeedAppInjection() {
+		if r.istioReconciler != nil {
+			err = r.istioReconciler.ReconcileCodeModuleCommunicationHosts(ctx, r.dynakube)
+
+			if err != nil {
+				log.Info("Error reconciling Istio codemodules", "error", err)
+			}
+		}
+
 		return r.removeAppInjection(ctx)
 	}
 
