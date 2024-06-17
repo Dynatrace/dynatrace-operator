@@ -1047,6 +1047,62 @@ func (_c *Client_GetProcessModuleConfig_Call) RunAndReturn(run func(context.Cont
 	return _c
 }
 
+// GetRulesSetting provides a mock function with given fields: ctx
+func (_m *Client) GetRulesSetting(ctx context.Context) (dynatrace.GetRulesSettingsResponse, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetRulesSetting")
+	}
+
+	var r0 dynatrace.GetRulesSettingsResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (dynatrace.GetRulesSettingsResponse, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) dynatrace.GetRulesSettingsResponse); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(dynatrace.GetRulesSettingsResponse)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Client_GetRulesSetting_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetRulesSetting'
+type Client_GetRulesSetting_Call struct {
+	*mock.Call
+}
+
+// GetRulesSetting is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Client_Expecter) GetRulesSetting(ctx interface{}) *Client_GetRulesSetting_Call {
+	return &Client_GetRulesSetting_Call{Call: _e.mock.On("GetRulesSetting", ctx)}
+}
+
+func (_c *Client_GetRulesSetting_Call) Run(run func(ctx context.Context)) *Client_GetRulesSetting_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *Client_GetRulesSetting_Call) Return(_a0 dynatrace.GetRulesSettingsResponse, _a1 error) *Client_GetRulesSetting_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Client_GetRulesSetting_Call) RunAndReturn(run func(context.Context) (dynatrace.GetRulesSettingsResponse, error)) *Client_GetRulesSetting_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetSettingsForMonitoredEntities provides a mock function with given fields: ctx, monitoredEntities, schemaId
 func (_m *Client) GetSettingsForMonitoredEntities(ctx context.Context, monitoredEntities []dynatrace.MonitoredEntity, schemaId string) (dynatrace.GetSettingsResponse, error) {
 	ret := _m.Called(ctx, monitoredEntities, schemaId)
