@@ -296,7 +296,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		require.Equal(t, "IstioForCodeModuleChanged", statusCondition.Reason)
 
 		dynakube.Spec.OneAgent.CloudNativeFullStack = nil
-		dynakube.Spec.OneAgent.HostMonitoring = &dynatracev1beta1.HostInjectSpec{}
+		dynakube.Spec.OneAgent.HostMonitoring = &dynatracev1beta2.HostInjectSpec{}
 
 		err = r.ReconcileCodeModuleCommunicationHosts(ctx, dynakube)
 		require.NoError(t, err)
@@ -406,9 +406,9 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 
 		// advance time to be outside api threshold
 		rec2 := r.(*reconciler)
-		time := rec.timeProvider.Now().Add(dynakube.FeatureApiRequestThreshold() * 2)
+		time := rec2.timeProvider.Now().Add(dynakube.ApiRequestThreshold() * 2)
 		rec2.timeProvider.Set(time)
-		err = r.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
+		err = rec2.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
 		require.NoError(t, err)
 
 		statusCondition3 := meta.FindStatusCondition(*dynakube.Conditions(), "IstioForActiveGate")
@@ -440,7 +440,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		require.NotNil(t, statusCondition)
 		require.Equal(t, "IstioForActiveGateChanged", statusCondition.Reason)
 
-		dynakube.Spec.ActiveGate.Capabilities = []dynatracev1beta1.CapabilityDisplayName{}
+		dynakube.Spec.ActiveGate.Capabilities = []dynatracev1beta2.CapabilityDisplayName{}
 		err = reconciler.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
 		require.NoError(t, err)
 
@@ -485,9 +485,10 @@ func createTestDynaKube() *dynatracev1beta2.DynaKube {
 					dynatracev1beta2.RoutingCapability.DisplayName,
 				},
 			},
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+			OneAgent: dynatracev1beta2.OneAgentSpec{
+				CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
 			},
+			DynatraceApiRequestThreshold: 15,
 		},
 		Status: dynatracev1beta2.DynaKubeStatus{
 			OneAgent: dynatracev1beta2.OneAgentStatus{
