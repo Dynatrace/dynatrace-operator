@@ -15,15 +15,16 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: 1.1.0
+  publishedVersion: 1.1.1
   publishedVersionMetadata:
-    releaseNote: '<!-- Release notes generated using configuration in .github/release.yml
-      at v1.1.0 -->
-
-
-
-
-      **Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v1.1.0...v1.1.0'
+    releaseNote: "<!-- Release notes generated using configuration in .github/release.yml\
+      \ at v1.1.1 -->\n\n## What's Changed\n### Bugfixes \U0001FAB2\n* Fix make bundle\
+      \ command by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/3142\n\
+      ### Core changes \U0001F389\n* Fix release pipeline version mismatch of skopeo/docker\
+      \ by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/3285\n\
+      * Fix release pipeline version mismatch of docker and skopeo by @luhi-DT in\
+      \ https://github.com/Dynatrace/dynatrace-operator/pull/3294\n\n\n**Full Changelog**:\
+      \ https://github.com/Dynatrace/dynatrace-operator/compare/v1.1.0...v1.1.1"
     releaseTypes:
     - Feature
     recommended: true
