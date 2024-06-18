@@ -224,12 +224,7 @@ func (r *reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []dtcl
 func (r *reconciler) cleanupIPServiceEntry(ctx context.Context, component string) error {
 	entryName := BuildNameForIPServiceEntry(r.client.Owner.GetName(), component)
 
-	err := r.client.DeleteServiceEntry(ctx, entryName)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return r.client.DeleteServiceEntry(ctx, entryName)
 }
 
 func (r *reconciler) reconcileFQDNServiceEntry(ctx context.Context, fqdnHosts []dtclient.CommunicationHost, component string) error {
