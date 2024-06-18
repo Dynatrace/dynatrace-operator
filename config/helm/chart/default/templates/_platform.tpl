@@ -20,8 +20,6 @@ Auto-detect the platform (if not set), according to the available APIVersions
         {{- printf .Values.platform -}}
     {{- else if .Capabilities.APIVersions.Has "security.openshift.io/v1" }}
         {{- printf "openshift" -}}
-    {{- else if .Capabilities.APIVersions.Has "auto.gke.io/v1" }}
-        {{- printf "gke-autopilot" -}}
     {{- else }}
         {{- printf "kubernetes" -}}
     {{- end -}}
@@ -40,7 +38,7 @@ Exclude Kubernetes manifest not running on OLM
 Check if platform is set to a valid one
 */}}
 {{- define "dynatrace-operator.platformIsValid" -}}
-{{- $validPlatforms := list "kubernetes" "openshift" "google-marketplace" "gke-autopilot" "azure-marketplace" -}}
+{{- $validPlatforms := list "kubernetes" "openshift" "google-marketplace" "azure-marketplace" -}}
 {{- if has (include "dynatrace-operator.platform" .) $validPlatforms -}}
     {{ default "set" }}
 {{- end -}}
@@ -50,7 +48,7 @@ Check if platform is set to a valid one
 Enforces that platform is set to a valid one
 */}}
 {{- define "dynatrace-operator.platformRequired" -}}
-{{- $platformIsSet := printf "%s" (required "Platform needs to be set to kubernetes, openshift, google-marketplace, or gke-autopilot" (include "dynatrace-operator.platformIsValid" .))}}
+{{- $platformIsSet := printf "%s" (required "Platform needs to be set to kubernetes, openshift or google-marketplace" (include "dynatrace-operator.platformIsValid" .))}}
 {{- end -}}
 
 {{- define "dynatrace-operator.nodeAffinity" -}}
@@ -59,7 +57,6 @@ affinity:
     requiredDuringSchedulingIgnoredDuringExecution:
       nodeSelectorTerms:
         - matchExpressions:
-              {{- if ne (include "dynatrace-operator.platform" .) "gke-autopilot"}}
             - key: kubernetes.io/arch
               operator: In
               values:
@@ -67,7 +64,6 @@ affinity:
                 - arm64
                 - ppc64le
                 - s390x
-              {{- end }}
             - key: kubernetes.io/os
               operator: In
               values:
