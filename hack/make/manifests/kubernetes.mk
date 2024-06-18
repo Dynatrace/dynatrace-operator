@@ -21,7 +21,7 @@ manifests/kubernetes/core: manifests/crd/helm
 		  --set image="$(IMAGE_URI)" > "$(KUBERNETES_CORE_YAML)"
 
 ## Generates a manifest for Kubernetes including a CRD, a CSI driver deployment
-manifests/kubernetes: manifests/kubernetes/core manifests/kubernetes/csi manifests/kubernetes/core
+manifests/kubernetes: manifests/kubernetes/core manifests/kubernetes/csi
 	cat "$(KUBERNETES_CORE_YAML)" "$(KUBERNETES_CSIDRIVER_YAML)" > "$(KUBERNETES_ALL_YAML)"
 
 ## Generates a manifest for Kubernetes including OLM version
