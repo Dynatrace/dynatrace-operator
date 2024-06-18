@@ -31,7 +31,7 @@ type EnvironmentSettingValue struct {
 	Token     string `json:"token"`
 }
 
-type environmentSettingsResponse struct {
+type EnvironmentSettingsResponse struct {
 	Items      []EnvironmentSetting `json:"items"`
 	TotalCount int                  `json:"totalCount"`
 	PageSize   int                  `json:"pageSize"`
@@ -63,7 +63,7 @@ func (c *client) GetConnectionSetting(uid string) (EnvironmentSetting, error) {
 		return EnvironmentSetting{}, fmt.Errorf("error getting server response data: %w", err)
 	}
 
-	var resDataJson environmentSettingsResponse
+	var resDataJson EnvironmentSettingsResponse
 
 	err = json.Unmarshal(responseData, &resDataJson)
 	if err != nil {
@@ -106,7 +106,7 @@ func (c *client) CreateConnectionSetting(es EnvironmentSetting) error {
 		return fmt.Errorf("error reading response data: %w", err)
 	}
 
-	return errors.WithStack(err)
+	return nil
 }
 
 func (c *client) UpdateConnectionSetting(es EnvironmentSetting) error {
@@ -133,7 +133,11 @@ func (c *client) UpdateConnectionSetting(es EnvironmentSetting) error {
 
 	_, err = c.getSettingsApiResponseData(response)
 
-	return errors.WithStack(err)
+	if err != nil {
+		return fmt.Errorf("error reading response data: %w", err)
+	}
+
+	return nil
 }
 
 func (c *client) DeleteConnectionSetting(objectId string) error {
@@ -148,6 +152,12 @@ func (c *client) DeleteConnectionSetting(objectId string) error {
 
 	if err != nil {
 		return fmt.Errorf("error making post request to dynatrace api: %w", err)
+	}
+
+	_, err = c.getSettingsApiResponseData(response)
+
+	if err != nil {
+		return fmt.Errorf("error reading response data: %w", err)
 	}
 
 	return nil
