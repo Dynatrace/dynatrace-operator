@@ -20,8 +20,6 @@ Auto-detect the platform (if not set), according to the available APIVersions
         {{- printf .Values.platform -}}
     {{- else if .Capabilities.APIVersions.Has "security.openshift.io/v1" }}
         {{- printf "openshift" -}}
-    {{- else if .Capabilities.APIVersions.Has "auto.gke.io/v1" }}
-        {{- printf "gke-autopilot" -}}
     {{- else }}
         {{- printf "kubernetes" -}}
     {{- end -}}
@@ -59,7 +57,6 @@ affinity:
     requiredDuringSchedulingIgnoredDuringExecution:
       nodeSelectorTerms:
         - matchExpressions:
-              {{- if ne (include "dynatrace-operator.platform" .) "gke-autopilot"}}
             - key: kubernetes.io/arch
               operator: In
               values:
@@ -67,7 +64,6 @@ affinity:
                 - arm64
                 - ppc64le
                 - s390x
-              {{- end }}
             - key: kubernetes.io/os
               operator: In
               values:

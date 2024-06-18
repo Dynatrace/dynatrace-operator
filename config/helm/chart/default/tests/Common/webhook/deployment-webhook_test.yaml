@@ -479,22 +479,6 @@ tests:
                 type: RuntimeDefault
             serviceAccountName: dynatrace-webhook
 
-  - it: should have only OS node affinity on GKE Autopilot
-    set:
-      platform: gke-autopilot
-    asserts:
-      - equal:
-          path: spec.template.spec.affinity
-          value:
-              nodeAffinity:
-                requiredDuringSchedulingIgnoredDuringExecution:
-                  nodeSelectorTerms:
-                    - matchExpressions:
-                        - key: kubernetes.io/os
-                          operator: In
-                          values:
-                            - linux
-
   - it: should have imagePullSecrets defined in spec
     set:
       customPullSecret: pull-secret
