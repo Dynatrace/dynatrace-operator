@@ -73,9 +73,9 @@ func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, 
 			log.Info("appinjection disabled, cleaning up")
 
 			return r.CleanupIstio(ctx, dynakube, conditionComponent, OneAgentComponent)
-		} else {
-			return nil
 		}
+
+		return nil
 	}
 
 	oneAgentCommunicationHosts := oaconnectioninfo.GetCommunicationHosts(dynakube)
@@ -87,11 +87,13 @@ func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, 
 		return err
 	}
 
-	if len(oneAgentCommunicationHosts) > 0 {
-		setServiceEntryUpdatedConditionForComponent(dynakube.Conditions(), conditionComponent)
-	} else {
+	if len(oneAgentCommunicationHosts) == 0 {
 		meta.RemoveStatusCondition(dynakube.Conditions(), getConditionTypeName(conditionComponent))
+
+		return nil
 	}
+
+	setServiceEntryUpdatedConditionForComponent(dynakube.Conditions(), conditionComponent)
 
 	return nil
 }
@@ -110,9 +112,9 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 			log.Info("activegate disabled, cleaning up")
 
 			return r.CleanupIstio(ctx, dynakube, conditionComponent, ActiveGateComponent)
-		} else {
-			return nil
 		}
+
+		return nil
 	}
 
 	if !conditions.IsOutdated(r.timeProvider, dynakube, getConditionTypeName(conditionComponent)) {
@@ -130,11 +132,13 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 		return err
 	}
 
-	if len(activeGateEndpoints) > 0 {
-		setServiceEntryUpdatedConditionForComponent(dynakube.Conditions(), conditionComponent)
-	} else {
+	if len(activeGateEndpoints) == 0 {
 		meta.RemoveStatusCondition(dynakube.Conditions(), getConditionTypeName(conditionComponent))
+
+		return nil
 	}
+
+	setServiceEntryUpdatedConditionForComponent(dynakube.Conditions(), conditionComponent)
 
 	return nil
 }
@@ -169,17 +173,10 @@ func (r *reconciler) reconcileCommunicationHostsForComponent(ctx context.Context
 func (r *reconciler) reconcileCommunicationHosts(ctx context.Context, comHosts []dtclient.CommunicationHost, component string) error {
 	ipHosts, fqdnHosts := splitCommunicationHost(comHosts)
 
-	err := r.reconcileIPServiceEntry(ctx, ipHosts, component)
-	if err != nil {
-		return err
-	}
+	errIPServiceEntry := r.reconcileIPServiceEntry(ctx, ipHosts, component)
+	errFQDNServiceEntry := r.reconcileFQDNServiceEntry(ctx, fqdnHosts, component)
 
-	err = r.reconcileFQDNServiceEntry(ctx, fqdnHosts, component)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return goerrors.Join(errIPServiceEntry, errFQDNServiceEntry)
 }
 
 func splitCommunicationHost(comHosts []dtclient.CommunicationHost) (ipHosts, fqdnHosts []dtclient.CommunicationHost) {
