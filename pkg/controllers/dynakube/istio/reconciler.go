@@ -70,7 +70,7 @@ func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, 
 
 	if !dynakube.NeedAppInjection() {
 		if isIstioConfigured(dynakube, conditionComponent) {
-			log.Info("AppInjection disabled, cleaning up")
+			log.Info("appinjection disabled, cleaning up")
 
 			return r.CleanupIstio(ctx, dynakube, conditionComponent, OneAgentComponent)
 		} else {
@@ -107,7 +107,7 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 
 	if !dynakube.NeedsActiveGate() {
 		if isIstioConfigured(dynakube, conditionComponent) {
-			log.Info("ActiveGate disabled, cleaning up")
+			log.Info("activegate disabled, cleaning up")
 
 			return r.CleanupIstio(ctx, dynakube, conditionComponent, ActiveGateComponent)
 		} else {
@@ -116,7 +116,7 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 	}
 
 	if !conditions.IsOutdated(r.timeProvider, dynakube, getConditionTypeName(conditionComponent)) {
-		log.Info("Condition still within time threshold...skipping further reconciliation")
+		log.Info("condition still within time threshold...skipping further reconciliation")
 
 		return nil
 	}

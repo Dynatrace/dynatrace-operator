@@ -82,7 +82,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		err = r.istioReconciler.ReconcileCodeModuleCommunicationHosts(ctx, r.dynakube)
 
 		if err != nil {
-			log.Info("Error reconciling Istio configuration for CodeModules", "error", err)
+			log.Info("error reconciling istio configuration for codemodules", "error", err)
 		}
 	}
 
