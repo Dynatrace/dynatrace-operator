@@ -23,6 +23,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -894,4 +895,36 @@ func createKubeSystemNamespace() *corev1.Namespace {
 			UID:       testUID,
 		},
 	}
+}
+
+func TestController_createOrUpdateConnectionSetting(t *testing.T) {
+	t.Run("Create Connection Setting object", func(t *testing.T) {
+		controller := &Controller{
+			client:                   fake.NewClient(),
+			apiReader:                fake.NewClient(),
+			registryClientBuilder:    registry.NewClient,
+			config:                   &rest.Config{},
+			timeProvider:             timeprovider.New(),
+			edgeConnectClientBuilder: newEdgeConnectClient(),
+		}
+		edgeConnectClient := edgeconnectmock.NewClient(t)
+		edgeConnectClient.On("GetConnectionSetting", mock.Anything).Return(edgeconnect.EnvironmentSetting{}, nil)
+		edgeConnectClient.On("CreateConnectionSetting", mock.Anything).Return(nil)
+		err := controller.createOrUpdateConnectionSetting(edgeConnectClient, createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns), "")
+		require.NoError(t, err)
+	})
+	t.Run("Existing Connection Setting object", func(t *testing.T) {
+		controller := &Controller{
+			client:                   fake.NewClient(),
+			apiReader:                fake.NewClient(),
+			registryClientBuilder:    registry.NewClient,
+			config:                   &rest.Config{},
+			timeProvider:             timeprovider.New(),
+			edgeConnectClientBuilder: newEdgeConnectClient(),
+		}
+		edgeConnectClient := edgeconnectmock.NewClient(t)
+		edgeConnectClient.On("GetConnectionSetting", mock.Anything).Return(testEnvironmentSetting, nil)
+		err := controller.createOrUpdateConnectionSetting(edgeConnectClient, createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns), "")
+		require.NoError(t, err)
+	})
 }
