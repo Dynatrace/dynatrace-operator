@@ -4,6 +4,7 @@ import (
 	"context"
 	goerrors "errors"
 	"net"
+	"strings"
 
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -60,8 +61,6 @@ func (r *reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1b
 }
 
 func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
-	const conditionComponent = "CodeModule"
-
 	log.Info("reconciling istio components for oneagent-code-modules communication hosts")
 
 	if dynakube == nil {
@@ -69,10 +68,10 @@ func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, 
 	}
 
 	if !dynakube.NeedAppInjection() {
-		if isIstioConfigured(dynakube, conditionComponent) {
+		if isIstioConfigured(dynakube, CodeModuleComponent) {
 			log.Info("appinjection disabled, cleaning up")
 
-			return r.CleanupIstio(ctx, dynakube, conditionComponent, OneAgentComponent)
+			return r.CleanupIstio(ctx, dynakube, CodeModuleComponent, OneAgentComponent)
 		}
 
 		return nil
@@ -82,25 +81,23 @@ func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, 
 
 	err := r.reconcileCommunicationHostsForComponent(ctx, oneAgentCommunicationHosts, OneAgentComponent)
 	if err != nil {
-		setServiceEntryFailedConditionForComponent(dynakube.Conditions(), conditionComponent, err)
+		setServiceEntryFailedConditionForComponent(dynakube.Conditions(), CodeModuleComponent, err)
 
 		return err
 	}
 
 	if len(oneAgentCommunicationHosts) == 0 {
-		meta.RemoveStatusCondition(dynakube.Conditions(), getConditionTypeName(conditionComponent))
+		meta.RemoveStatusCondition(dynakube.Conditions(), getConditionTypeName(CodeModuleComponent))
 
 		return nil
 	}
 
-	setServiceEntryUpdatedConditionForComponent(dynakube.Conditions(), conditionComponent)
+	setServiceEntryUpdatedConditionForComponent(dynakube.Conditions(), CodeModuleComponent)
 
 	return nil
 }
 
 func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
-	const conditionComponent = "ActiveGate"
-
 	log.Info("reconciling istio components for activegate communication hosts")
 
 	if dynakube == nil {
@@ -108,16 +105,16 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 	}
 
 	if !dynakube.NeedsActiveGate() {
-		if isIstioConfigured(dynakube, conditionComponent) {
+		if isIstioConfigured(dynakube, ActiveGateComponent) {
 			log.Info("activegate disabled, cleaning up")
 
-			return r.CleanupIstio(ctx, dynakube, conditionComponent, ActiveGateComponent)
+			return r.CleanupIstio(ctx, dynakube, ActiveGateComponent, strings.ToLower(ActiveGateComponent))
 		}
 
 		return nil
 	}
 
-	if !conditions.IsOutdated(r.timeProvider, dynakube, getConditionTypeName(conditionComponent)) {
+	if !conditions.IsOutdated(r.timeProvider, dynakube, getConditionTypeName(ActiveGateComponent)) {
 		log.Info("condition still within time threshold...skipping further reconciliation")
 
 		return nil
@@ -125,20 +122,20 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 
 	activeGateEndpoints := activegate.GetEndpointsAsCommunicationHosts(dynakube)
 
-	err := r.reconcileCommunicationHostsForComponent(ctx, activeGateEndpoints, ActiveGateComponent)
+	err := r.reconcileCommunicationHostsForComponent(ctx, activeGateEndpoints, strings.ToLower(ActiveGateComponent))
 	if err != nil {
-		setServiceEntryFailedConditionForComponent(dynakube.Conditions(), conditionComponent, err)
+		setServiceEntryFailedConditionForComponent(dynakube.Conditions(), ActiveGateComponent, err)
 
 		return err
 	}
 
 	if len(activeGateEndpoints) == 0 {
-		meta.RemoveStatusCondition(dynakube.Conditions(), getConditionTypeName(conditionComponent))
+		meta.RemoveStatusCondition(dynakube.Conditions(), getConditionTypeName(ActiveGateComponent))
 
 		return nil
 	}
 
-	setServiceEntryUpdatedConditionForComponent(dynakube.Conditions(), conditionComponent)
+	setServiceEntryUpdatedConditionForComponent(dynakube.Conditions(), ActiveGateComponent)
 
 	return nil
 }

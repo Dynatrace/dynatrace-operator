@@ -3,6 +3,7 @@ package istio
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
@@ -335,7 +336,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		err := reconciler.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
 		require.NoError(t, err)
 
-		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), ActiveGateComponent)
+		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), strings.ToLower(ActiveGateComponent))
 		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
@@ -378,7 +379,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		err := r.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
 		require.NoError(t, err)
 
-		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), ActiveGateComponent)
+		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), strings.ToLower(ActiveGateComponent))
 		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
@@ -423,7 +424,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		err := reconciler.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
 		require.NoError(t, err)
 
-		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), ActiveGateComponent)
+		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), strings.ToLower(ActiveGateComponent))
 		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
