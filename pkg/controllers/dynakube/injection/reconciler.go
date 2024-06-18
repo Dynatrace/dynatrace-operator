@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/metadata/rules"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
@@ -24,13 +25,14 @@ import (
 )
 
 type reconciler struct {
-	client                   client.Client
-	apiReader                client.Reader
-	dynakube                 *dynatracev1beta2.DynaKube
-	istioReconciler          istio.Reconciler
-	versionReconciler        version.Reconciler
-	pmcSecretreconciler      controllers.Reconciler
-	connectionInfoReconciler controllers.Reconciler
+	client                    client.Client
+	apiReader                 client.Reader
+	dynakube                  *dynatracev1beta2.DynaKube
+	istioReconciler           istio.Reconciler
+	versionReconciler         version.Reconciler
+	pmcSecretreconciler       controllers.Reconciler
+	connectionInfoReconciler  controllers.Reconciler
+	enrichmentRulesReconciler controllers.Reconciler
 }
 
 type ReconcilerBuilder func(
@@ -63,7 +65,8 @@ func NewReconciler(
 		versionReconciler: version.NewReconciler(apiReader, dynatraceClient, timeprovider.New().Freeze()),
 		pmcSecretreconciler: processmoduleconfigsecret.NewReconciler(
 			client, apiReader, dynatraceClient, dynakube, timeprovider.New().Freeze()),
-		connectionInfoReconciler: oaconnectioninfo.NewReconciler(client, apiReader, dynatraceClient, dynakube),
+		connectionInfoReconciler:  oaconnectioninfo.NewReconciler(client, apiReader, dynatraceClient, dynakube),
+		enrichmentRulesReconciler: rules.NewReconciler(dynatraceClient, dynakube),
 	}
 }
 
@@ -85,6 +88,13 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		if err != nil {
 			log.Error(err, "error reconciling istio configuration for codemodules")
 		}
+	}
+
+	err = r.enrichmentRulesReconciler.Reconcile(ctx)
+	if err != nil {
+		log.Info("couldn't reconcile metadata-enrichment rules")
+
+		return err
 	}
 
 	if !r.dynakube.NeedAppInjection() {

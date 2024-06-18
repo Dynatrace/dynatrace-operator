@@ -17,7 +17,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/metadata/rules"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -76,7 +75,6 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, co
 		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
 		injectionReconcilerBuilder:          injection.NewReconciler,
 		istioReconcilerBuilder:              istio.NewReconciler,
-		enrichmentRulesReconcilerBuilder:    rules.NewReconciler,
 	}
 }
 
@@ -109,7 +107,6 @@ type Controller struct {
 	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
 	injectionReconcilerBuilder          injection.ReconcilerBuilder
 	istioReconcilerBuilder              istio.ReconcilerBuilder
-	enrichmentRulesReconcilerBuilder    rules.ReconcilerBuilder
 
 	tokens            token.Tokens
 	operatorNamespace string
@@ -362,13 +359,6 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		}
 
 		log.Info("could not reconcile OneAgent")
-
-		componentErrors = append(componentErrors, err)
-	}
-
-	err = controller.enrichmentRulesReconcilerBuilder(dynatraceClient, dynakube).Reconcile(ctx)
-	if err != nil {
-		log.Info("couldn't reconcile metadata-enrichment rules")
 
 		componentErrors = append(componentErrors, err)
 	}
