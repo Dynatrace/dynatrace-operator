@@ -269,17 +269,10 @@ func (r *reconciler) reconcileFQDNServiceEntry(ctx context.Context, fqdnHosts []
 func (r *reconciler) cleanupFQDNServiceEntry(ctx context.Context, component string) error {
 	entryName := BuildNameForFQDNServiceEntry(r.client.Owner.GetName(), component)
 
-	err := r.client.DeleteServiceEntry(ctx, entryName)
-	if err != nil {
-		return err
-	}
+	errServiceEntry := r.client.DeleteServiceEntry(ctx, entryName)
+	errVirtualService := r.client.DeleteVirtualService(ctx, entryName)
 
-	err = r.client.DeleteVirtualService(ctx, entryName)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return goerrors.Join(errServiceEntry, errVirtualService)
 }
 
 func buildObjectMeta(name, namespace string, labels map[string]string) metav1.ObjectMeta {
