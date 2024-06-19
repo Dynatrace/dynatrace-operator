@@ -3,6 +3,7 @@ package csigc
 import (
 	"context"
 	"os"
+	"path"
 	"time"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
@@ -65,7 +66,11 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 
 		for _, osm := range osMounts {
 			if osm.TenantConfigUID == tenantConfig.UID {
-				gc.fs.RemoveAll(osm.Location)
+				dir, _ := afero.ReadDir(gc.fs, osm.Location)
+				for _, d := range dir {
+					gc.fs.RemoveAll(path.Join([]string{osm.Location, d.Name()}...))
+				}
+
 				gc.db.PurgeOSMount(&osm)
 			}
 		}
