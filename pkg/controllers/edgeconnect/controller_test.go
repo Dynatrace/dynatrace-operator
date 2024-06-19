@@ -23,6 +23,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -45,8 +46,17 @@ const (
 )
 
 var (
-	testHostPatterns  = []string{"*.internal.org"}
-	testHostPatterns2 = []string{"*.external.org"}
+	testHostPatterns  = []string{"*.internal.org", "test-name-edgeconnectv1alpha1.test-namespace.1-2-3-4.kubernetes-automation"}
+	testHostPatterns2 = []string{"*.external.org", "test-name-edgeconnectv1alpha1.test-namespace.1-2-3-4.kubernetes-automation"}
+	testObjectId      = "my:default"
+
+	testEnvironmentSetting = edgeconnect.EnvironmentSetting{
+		ObjectId:      &testObjectId,
+		SchemaId:      edgeconnect.KubernetesConnectionSchemaID,
+		SchemaVersion: edgeconnect.KubernetesConnectionVersion,
+		Scope:         edgeconnect.KubernetesConnectionScope,
+		Value:         edgeconnect.EnvironmentSettingValue{},
+	}
 )
 
 func TestReconcile(t *testing.T) {
@@ -206,6 +216,8 @@ func TestReconcileProvisionerCreate(t *testing.T) {
 		instance := createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
 
 		edgeConnectClient := edgeconnectmock.NewClient(t)
+		edgeConnectClient.On("GetConnectionSetting", mock.Anything).Return(testEnvironmentSetting, nil)
+		edgeConnectClient.On("UpdateConnectionSetting", mock.Anything).Return(nil)
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
@@ -265,6 +277,8 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 		instance := createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
 
 		edgeConnectClient := edgeconnectmock.NewClient(t)
+		edgeConnectClient.On("GetConnectionSetting", mock.Anything).Return(testEnvironmentSetting, nil)
+		edgeConnectClient.On("UpdateConnectionSetting", mock.Anything).Return(nil)
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
@@ -323,6 +337,8 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 		instance := createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
 
 		edgeConnectClient := edgeconnectmock.NewClient(t)
+		edgeConnectClient.On("GetConnectionSetting", mock.Anything).Return(testEnvironmentSetting, nil)
+		edgeConnectClient.On("UpdateConnectionSetting", mock.Anything).Return(nil)
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
@@ -384,6 +400,8 @@ func TestReconcileProvisionerDelete(t *testing.T) {
 		instance := createEdgeConnectProvisionerCR([]string{finalizerName}, &metav1.Time{Time: time.Now()}, testHostPatterns)
 
 		edgeConnectClient := edgeconnectmock.NewClient(t)
+		edgeConnectClient.On("GetConnectionSetting", mock.Anything).Return(testEnvironmentSetting, nil)
+		edgeConnectClient.On("DeleteConnectionSetting", mock.Anything).Return(nil)
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
@@ -391,6 +409,7 @@ func TestReconcileProvisionerDelete(t *testing.T) {
 			mockNewEdgeConnectClientDelete(edgeConnectClient),
 			createOauthSecret(instance.Spec.OAuth.ClientSecret, instance.Namespace),
 			createClientSecret(instance.ClientSecretName(), instance.Namespace),
+			createKubeSystemNamespace(),
 		)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
@@ -411,12 +430,15 @@ func TestReconcileProvisionerDelete(t *testing.T) {
 		instance := createEdgeConnectProvisionerCR([]string{finalizerName}, &metav1.Time{Time: time.Now()}, testHostPatterns)
 
 		edgeConnectClient := edgeconnectmock.NewClient(t)
+		edgeConnectClient.On("GetConnectionSetting", mock.Anything).Return(testEnvironmentSetting, nil)
+		edgeConnectClient.On("DeleteConnectionSetting", mock.Anything).Return(nil)
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
 			instance,
 			mockNewEdgeConnectClientDelete(edgeConnectClient),
 			createOauthSecret(instance.Spec.OAuth.ClientSecret, instance.Namespace),
+			createKubeSystemNamespace(),
 		)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
@@ -497,15 +519,14 @@ func TestReconcileProvisionerWithK8sAutomationsCreate(t *testing.T) {
 			Enabled: true,
 		}
 
-		testK8SAutomationHostPatterns := testHostPatterns
-		testK8SAutomationHostPatterns = append(testK8SAutomationHostPatterns, instance.Name+"."+instance.Namespace+"."+testUID+"."+k8sHostnameSuffix)
-
 		edgeConnectClient := edgeconnectmock.NewClient(t)
+		edgeConnectClient.On("GetConnectionSetting", mock.Anything).Return(testEnvironmentSetting, nil)
+		edgeConnectClient.On("UpdateConnectionSetting", mock.Anything).Return(nil)
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
 			instance,
-			mockNewEdgeConnectClientCreate(edgeConnectClient, testK8SAutomationHostPatterns),
+			mockNewEdgeConnectClientCreate(edgeConnectClient, testHostPatterns),
 			createOauthSecret(instance.Spec.OAuth.ClientSecret, instance.Namespace),
 			createKubernetesService(),
 			createKubeSystemNamespace(),
@@ -551,29 +572,23 @@ func TestReconcileProvisionerWithK8sAutomationsCreate(t *testing.T) {
 		assert.Equal(t, "edge-connect", edgeConnectDeployment.Spec.Template.Spec.Containers[0].Name)
 
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnects", testName)
-		edgeConnectClient.AssertCalled(t, "CreateEdgeConnect", testName, testK8SAutomationHostPatterns, "")
+		edgeConnectClient.AssertCalled(t, "CreateEdgeConnect", testName, testHostPatterns, "")
 	})
 }
 
 func TestReconcileProvisionerWithK8sAutomationsUpdate(t *testing.T) {
 	t.Run("update EdgeConnect", func(t *testing.T) {
-		testK8SAutomationHostPatterns2 := testHostPatterns2
-		testK8SAutomationHostPatterns2 = append(testK8SAutomationHostPatterns2, testName+"."+testNamespace+"."+testUID+"."+k8sHostnameSuffix)
-
-		instance := createEdgeConnectProvisionerCR([]string{}, nil, testK8SAutomationHostPatterns2)
+		instance := createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns2)
 		instance.Spec.KubernetesAutomation = &edgeconnectv1alpha1.KubernetesAutomationSpec{
 			Enabled: true,
 		}
-
-		testK8SAutomationHostPatterns := testHostPatterns
-		testK8SAutomationHostPatterns = append(testK8SAutomationHostPatterns, instance.Name+"."+instance.Namespace+"."+testUID+"."+k8sHostnameSuffix)
 
 		edgeConnectClient := edgeconnectmock.NewClient(t)
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
 			instance,
-			mockNewEdgeConnectClientUpdate(edgeConnectClient, testK8SAutomationHostPatterns, testK8SAutomationHostPatterns2),
+			mockNewEdgeConnectClientUpdate(edgeConnectClient, testHostPatterns, testHostPatterns2),
 			createOauthSecret(instance.Spec.OAuth.ClientSecret, instance.Namespace),
 			createClientSecret(instance.ClientSecretName(), instance.Namespace),
 			createKubernetesService(),
@@ -589,7 +604,7 @@ func TestReconcileProvisionerWithK8sAutomationsUpdate(t *testing.T) {
 
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnects", testName)
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnect", testCreatedId)
-		edgeConnectClient.AssertCalled(t, "UpdateEdgeConnect", testCreatedId, testName, testK8SAutomationHostPatterns2, testCreatedOauthClientId)
+		edgeConnectClient.AssertCalled(t, "UpdateEdgeConnect", testCreatedId, testName, testHostPatterns2, testCreatedOauthClientId)
 	})
 }
 
@@ -656,11 +671,18 @@ func createFakeClientAndReconciler(t *testing.T, instance *edgeconnectv1alpha1.E
 		return mockImageGetter, nil
 	}
 
+	mockEdgeConnectClient := edgeconnectmock.NewClient(t)
+
+	mockEdgeConnectClientBuilder := func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error) {
+		return mockEdgeConnectClient, nil
+	}
+
 	controller := &Controller{
-		client:                fakeClient,
-		apiReader:             fakeClient,
-		timeProvider:          timeprovider.New(),
-		registryClientBuilder: mockRegistryClientBuilder,
+		client:                   fakeClient,
+		apiReader:                fakeClient,
+		timeProvider:             timeprovider.New(),
+		registryClientBuilder:    mockRegistryClientBuilder,
+		edgeConnectClientBuilder: mockEdgeConnectClientBuilder,
 	}
 
 	return controller
@@ -826,6 +848,9 @@ func mockNewEdgeConnectClientUpdate(edgeConnectClient *edgeconnectmock.Client, f
 		// CreateEdgeConnect creates edge connect
 		edgeConnectClient.On("UpdateEdgeConnect", testCreatedId, testName, toHostPatterns, testCreatedOauthClientId).Return(nil)
 
+		edgeConnectClient.On("GetConnectionSetting", mock.Anything).Return(testEnvironmentSetting, nil)
+		edgeConnectClient.On("UpdateConnectionSetting", mock.Anything).Return(nil)
+
 		return edgeConnectClient, nil
 	}
 }
@@ -844,7 +869,8 @@ func createEdgeConnectProvisionerCR(finalizers []string, deletionTimestamp *meta
 				ClientSecret: testName + "client",
 				Provisioner:  true,
 			},
-			HostPatterns: hostPatterns,
+			HostPatterns:         hostPatterns,
+			KubernetesAutomation: &edgeconnectv1alpha1.KubernetesAutomationSpec{Enabled: true},
 		},
 	}
 }
@@ -869,4 +895,36 @@ func createKubeSystemNamespace() *corev1.Namespace {
 			UID:       testUID,
 		},
 	}
+}
+
+func TestController_createOrUpdateConnectionSetting(t *testing.T) {
+	t.Run("Create Connection Setting object", func(t *testing.T) {
+		controller := &Controller{
+			client:                   fake.NewClient(),
+			apiReader:                fake.NewClient(),
+			registryClientBuilder:    registry.NewClient,
+			config:                   &rest.Config{},
+			timeProvider:             timeprovider.New(),
+			edgeConnectClientBuilder: newEdgeConnectClient(),
+		}
+		edgeConnectClient := edgeconnectmock.NewClient(t)
+		edgeConnectClient.On("GetConnectionSetting", mock.Anything).Return(edgeconnect.EnvironmentSetting{}, nil)
+		edgeConnectClient.On("CreateConnectionSetting", mock.Anything).Return(nil)
+		err := controller.createOrUpdateConnectionSetting(edgeConnectClient, createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns), "")
+		require.NoError(t, err)
+	})
+	t.Run("Existing Connection Setting object", func(t *testing.T) {
+		controller := &Controller{
+			client:                   fake.NewClient(),
+			apiReader:                fake.NewClient(),
+			registryClientBuilder:    registry.NewClient,
+			config:                   &rest.Config{},
+			timeProvider:             timeprovider.New(),
+			edgeConnectClientBuilder: newEdgeConnectClient(),
+		}
+		edgeConnectClient := edgeconnectmock.NewClient(t)
+		edgeConnectClient.On("GetConnectionSetting", mock.Anything).Return(testEnvironmentSetting, nil)
+		err := controller.createOrUpdateConnectionSetting(edgeConnectClient, createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns), "")
+		require.NoError(t, err)
+	})
 }
