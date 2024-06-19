@@ -7,8 +7,7 @@ import (
 )
 
 const (
-	errorAutomationRequiresProvisioner = `When enabling Kubernetes automation using provisioner mode is mandatory! Please enable spec.oauth.provisioner and provide a resp. OAuth client configuration.
-	`
+	errorAutomationRequiresProvisioner = `When enabling Kubernetes automation using provisioner mode is mandatory! Please enable spec.oauth.provisioner and provide a resp. OAuth client configuration.`
 )
 
 func automationRequiresProvisionerValidation(_ context.Context, _ *edgeconnectValidator, edgeConnect *edgeconnect.EdgeConnect) string {
