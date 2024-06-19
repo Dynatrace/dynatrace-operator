@@ -1,4 +1,4 @@
-apiVersion: dynatrace.com/v1beta1
+apiVersion: dynatrace.com/v1beta2
 kind: DynaKube
 metadata:
   name: dynakube
@@ -48,13 +48,37 @@ spec:
   #
   # enableIstio: false
 
+  # Optional: Configuration for thresholding Dynatrace API requests in minutes. Default is 15 minutes.
+  #
+  # dynatraceApiRequestThreshold: 15
+
+  # Configuration for Metadata Enrichment.
+  #
+  metadataEnrichment:
+    # Optional: Enables or disables metadata enrichment
+    # Defaults to "true"
+    #
+    enabled: true
+
+    # The namespaces in which metadata enrichment should be injected into
+    # If unset, all namespace will be injected into
+    # For examples regarding namespaceSelectors, see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements
+    #
+    # namespaceSelector:
+    #   matchLabels:
+    #     app: my-app
+    #   matchExpressions:
+    #    - key: app
+    #      operator: In
+    #      values: [my-frontend, my-backend, my-database]
+
   # Configuration for OneAgent instances
   #
   oneAgent:
     # Optional: Sets a host group for OneAgent.
-    # 
+    #
     # hostGroup: ""
-    
+
     # Enables host monitoring and changes its settings
     # Cannot be used in conjunction with cloud-native fullstack monitoring, classic fullstack monitoring or application-only monitoring
     #
@@ -70,7 +94,7 @@ spec:
       # Optional: Sets the URI for the image containing the OneAgent installer used by the DaemonSet
       # Defaults to the latest OneAgent image on the tenant's registry
       #
-      image: ""
+      # image: ""
 
       # Optional: Sets a node selector to control on which nodes the OneAgent will be deployed.
       # For more information on node selectors, see https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/
@@ -140,6 +164,11 @@ spec:
       args:
         - --set-monitoring-mode=infra-only
 
+      # Optional: The SecComp Profile that will be used by the OneAgent in
+      # order to run in secure computing mode.
+      #
+      # secCompProfile: ""
+
   # Configuration for ActiveGate instances.
   #
   activeGate:
@@ -159,7 +188,7 @@ spec:
     # Defaults to the latest ActiveGate image on the tenant's registry
     # Example: "ENVIRONMENTID.live.dynatrace.com/linux/activegate:latest"
     #
-    image: ""
+    # image: ""
 
     # Optional: Sets how many ActiveGate pods are spawned by the StatefulSet
     # Defaults to "1"

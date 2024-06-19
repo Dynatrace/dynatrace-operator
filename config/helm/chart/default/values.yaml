@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # may be set to "kubernetes", "openshift", or "gke-autopilot"
-platform: ""
+platform: "gke-autopilot"
 
 #image qualifier; OBSOLETE -> use imageref instead!
 # supply either image or imageref; if both supplied, imageref will be disregarded
