@@ -75,7 +75,7 @@ contain parameters for various Dynatrace capabilities (OneAgent deployment mode,
 >
 > If not specified Dynatrace Operator searches for a secret called like the DynaKube custom resource `.metadata.name`.
 
-The recommended approach is using classic Fullstack injection to roll out Dynatrace to your cluster, available as [classicFullStack sample](assets/samples/dynakube/v1beta1/classicFullStack.yaml).
+The recommended approach is using classic Fullstack injection to roll out Dynatrace to your cluster, available as [classicFullStack sample](assets/samples/dynakube/v1beta2/classicFullStack.yaml).
 In case you want to have adjustments please have a look at [our DynaKube Custom Resource examples](assets/samples/dynakube).
 
 Save one of the sample configurations, change the API url to your environment and apply it to your cluster.
