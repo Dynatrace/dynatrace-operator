@@ -22,3 +22,5 @@ coverage:
         target: auto
         threshold: 1%  # allowed to drop X% and still result in a "success" commit status
         base: auto
+ignore:
+  - "test/mocks" # ignore test mocks.
