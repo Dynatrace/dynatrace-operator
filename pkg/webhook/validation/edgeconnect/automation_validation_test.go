@@ -10,7 +10,7 @@ import (
 )
 
 func TestAutomationValidator(t *testing.T) {
-	t.Run("accept edgeconnect config without automation of oauth configs set", func(t *testing.T) {
+	t.Run("accept edgeconnect config without automation or oauth configs set", func(t *testing.T) {
 		edgeConnect := &edgeconnect.EdgeConnect{
 			Spec: edgeconnect.EdgeConnectSpec{},
 		}
