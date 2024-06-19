@@ -19,6 +19,7 @@ import (
 
 func TestReconcile(t *testing.T) {
 	ctx := context.Background()
+
 	t.Run("no error if not enabled", func(t *testing.T) {
 		dk := createDynaKube()
 		dk.Spec.MetadataEnrichment.Enabled = false
@@ -35,6 +36,7 @@ func TestReconcile(t *testing.T) {
 		dk.Spec.MetadataEnrichment.Enabled = false
 		dk.Status.MetadataEnrichment.Rules = createRules()
 		conditions.SetStatusUpdated(dk.Conditions(), conditionType, "TESTING")
+
 		dtc := dtclientmock.NewClient(t)
 		reconciler := NewReconciler(dtc, &dk)
 
@@ -49,6 +51,7 @@ func TestReconcile(t *testing.T) {
 		dk := createDynaKube()
 		specialMessage := "TESTING" // if the special message does not change == condition didn't update
 		conditions.SetStatusUpdated(dk.Conditions(), conditionType, specialMessage)
+
 		dtc := dtclientmock.NewClient(t)
 		reconciler := NewReconciler(dtc, &dk)
 
@@ -65,8 +68,10 @@ func TestReconcile(t *testing.T) {
 		expectedResponse := createRulesResponse()
 		specialMessage := "TESTING" // if the special message changes == condition updated
 		conditions.SetStatusUpdated(dk.Conditions(), conditionType, specialMessage)
+
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetRulesSetting", mock.AnythingOfType("context.backgroundCtx")).Return(expectedResponse, nil)
+		dtc.On("GetRulesSetting", mock.AnythingOfType("context.backgroundCtx"), dk.Status.KubeSystemUUID).Return(expectedResponse, nil)
+
 		futureTime := timeprovider.New()
 		futureTime.Set(time.Now().Add(time.Hour))
 		reconciler := Reconciler{
@@ -88,7 +93,7 @@ func TestReconcile(t *testing.T) {
 		expectedResponse := createRulesResponse()
 
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetRulesSetting", mock.AnythingOfType("context.backgroundCtx")).Return(expectedResponse, nil)
+		dtc.On("GetRulesSetting", mock.AnythingOfType("context.backgroundCtx"), dk.Status.KubeSystemUUID).Return(expectedResponse, nil)
 		reconciler := NewReconciler(dtc, &dk)
 
 		err := reconciler.Reconcile(ctx)
@@ -102,12 +107,12 @@ func TestReconcile(t *testing.T) {
 	t.Run("set api-error condition in case of fail", func(t *testing.T) {
 		dk := createDynaKube()
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetRulesSetting", mock.AnythingOfType("context.backgroundCtx")).Return(dtclient.GetRulesSettingsResponse{}, errors.New("BOOM"))
+		dtc.On("GetRulesSetting", mock.AnythingOfType("context.backgroundCtx"), dk.Status.KubeSystemUUID).Return(dtclient.GetRulesSettingsResponse{}, errors.New("BOOM"))
 		reconciler := NewReconciler(dtc, &dk)
 
 		err := reconciler.Reconcile(ctx)
 
-		require.NoError(t, err)
+		require.Error(t, err)
 		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
 		require.Len(t, dk.Status.Conditions, 1)
 		assert.Equal(t, conditions.DynatraceApiErrorReason, dk.Status.Conditions[0].Reason)
@@ -124,6 +129,9 @@ func createDynaKube() dynakube.DynaKube {
 			MetadataEnrichment: dynakube.MetadataEnrichment{
 				Enabled: true,
 			},
+		},
+		Status: dynakube.DynaKubeStatus{
+			KubeSystemUUID: "kube-system-uuid",
 		},
 	}
 }

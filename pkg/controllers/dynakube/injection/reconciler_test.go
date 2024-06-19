@@ -118,7 +118,7 @@ func TestReconciler(t *testing.T) {
 		dtClient.On("GetLatestAgentVersion", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("", nil)
 		dtClient.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(expectedOneAgentConnectionInfo, nil)
 		dtClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
-		dtClient.On("GetRulesSetting", mock.AnythingOfType("context.backgroundCtx")).Return(dtclient.GetRulesSettingsResponse{}, nil)
+		dtClient.On("GetRulesSetting", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("string")).Return(dtclient.GetRulesSettingsResponse{}, nil)
 
 		istioClient := newIstioTestingClient(fakeistio.NewSimpleClientset(), dynakube)
 

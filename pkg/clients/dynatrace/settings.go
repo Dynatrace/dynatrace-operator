@@ -89,11 +89,6 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(ctx context.Context,
 		return GetSettingsResponse{TotalCount: 0}, nil
 	}
 
-	scopes := make([]string, 0, len(monitoredEntities))
-	for _, entity := range monitoredEntities {
-		scopes = append(scopes, entity.EntityId)
-	}
-
 	req, err := createBaseRequest(ctx, dtc.getSettingsUrl(true), http.MethodGet, dtc.apiToken, nil)
 	if err != nil {
 		return GetSettingsResponse{}, err
@@ -101,7 +96,7 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(ctx context.Context,
 
 	q := req.URL.Query()
 	q.Add("schemaIds", schemaId)
-	q.Add("scopes", strings.Join(scopes, ","))
+	q.Add("scopes", createScopes(monitoredEntities))
 	req.URL.RawQuery = q.Encode()
 
 	res, err := dtc.httpClient.Do(req)
@@ -167,4 +162,13 @@ func handleErrorArrayResponseFromAPI(response []byte, statusCode int) error {
 
 		return errors.New(sb.String())
 	}
+}
+
+func createScopes(monitoredEntities []MonitoredEntity) string {
+	scopes := make([]string, 0, len(monitoredEntities))
+	for _, entity := range monitoredEntities {
+		scopes = append(scopes, entity.EntityId)
+	}
+
+	return strings.Join(scopes, ",")
 }

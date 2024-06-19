@@ -24,7 +24,7 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 		// arrange
 		expected := createMonitoredEntitiesForTesting()
 
-		dynatraceServer := httptest.NewServer(mockDynatraceServerEntitiesHandler(expected, false))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createEntitiesMockParams(expected, http.StatusOK)))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -46,7 +46,7 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 		// arrange
 		expected := []MonitoredEntity{}
 
-		dynatraceServer := httptest.NewServer(mockDynatraceServerEntitiesHandler(expected, false))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createEntitiesMockParams(expected, http.StatusOK)))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -68,7 +68,7 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 		// arrange
 		expected := createMonitoredEntitiesForTesting()
 
-		dynatraceServer := httptest.NewServer(mockDynatraceServerEntitiesHandler(expected, true))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createEntitiesMockParams(expected, http.StatusBadRequest)))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -89,7 +89,7 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 		// arrange
 		expected := createMonitoredEntitiesForTesting()
 
-		dynatraceServer := httptest.NewServer(mockDynatraceServerEntitiesHandler(expected, true))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createEntitiesMockParams(expected, http.StatusBadRequest)))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -115,7 +115,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		expected := createMonitoredEntitiesForTesting()
 		totalCount := 2
 
-		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", http.StatusOK))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createKubernetesSettingsMockParams(totalCount, "", http.StatusOK)))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -138,7 +138,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		expected := createMonitoredEntitiesForTesting()
 		totalCount := 0
 
-		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", http.StatusOK))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createKubernetesSettingsMockParams(totalCount, "", http.StatusOK)))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -162,7 +162,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		// monitored entities is empty, therefore also no settings will be returned
 		totalCount := 999
 
-		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", http.StatusOK))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createKubernetesSettingsMockParams(totalCount, "", http.StatusOK)))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -185,7 +185,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		// it is immaterial what we put here since the http request is producing an error
 		totalCount := 999
 
-		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", http.StatusBadRequest))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createKubernetesSettingsMockParams(totalCount, "", http.StatusBadRequest)))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)

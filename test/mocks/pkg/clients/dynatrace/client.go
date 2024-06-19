@@ -1047,9 +1047,9 @@ func (_c *Client_GetProcessModuleConfig_Call) RunAndReturn(run func(context.Cont
 	return _c
 }
 
-// GetRulesSetting provides a mock function with given fields: ctx
-func (_m *Client) GetRulesSetting(ctx context.Context) (dynatrace.GetRulesSettingsResponse, error) {
-	ret := _m.Called(ctx)
+// GetRulesSetting provides a mock function with given fields: ctx, kubeSystemUUID
+func (_m *Client) GetRulesSetting(ctx context.Context, kubeSystemUUID string) (dynatrace.GetRulesSettingsResponse, error) {
+	ret := _m.Called(ctx, kubeSystemUUID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetRulesSetting")
@@ -1057,17 +1057,17 @@ func (_m *Client) GetRulesSetting(ctx context.Context) (dynatrace.GetRulesSettin
 
 	var r0 dynatrace.GetRulesSettingsResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (dynatrace.GetRulesSettingsResponse, error)); ok {
-		return rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, string) (dynatrace.GetRulesSettingsResponse, error)); ok {
+		return rf(ctx, kubeSystemUUID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) dynatrace.GetRulesSettingsResponse); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, string) dynatrace.GetRulesSettingsResponse); ok {
+		r0 = rf(ctx, kubeSystemUUID)
 	} else {
 		r0 = ret.Get(0).(dynatrace.GetRulesSettingsResponse)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, kubeSystemUUID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1082,13 +1082,14 @@ type Client_GetRulesSetting_Call struct {
 
 // GetRulesSetting is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *Client_Expecter) GetRulesSetting(ctx interface{}) *Client_GetRulesSetting_Call {
-	return &Client_GetRulesSetting_Call{Call: _e.mock.On("GetRulesSetting", ctx)}
+//   - kubeSystemUUID string
+func (_e *Client_Expecter) GetRulesSetting(ctx interface{}, kubeSystemUUID interface{}) *Client_GetRulesSetting_Call {
+	return &Client_GetRulesSetting_Call{Call: _e.mock.On("GetRulesSetting", ctx, kubeSystemUUID)}
 }
 
-func (_c *Client_GetRulesSetting_Call) Run(run func(ctx context.Context)) *Client_GetRulesSetting_Call {
+func (_c *Client_GetRulesSetting_Call) Run(run func(ctx context.Context, kubeSystemUUID string)) *Client_GetRulesSetting_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -1098,7 +1099,7 @@ func (_c *Client_GetRulesSetting_Call) Return(_a0 dynatrace.GetRulesSettingsResp
 	return _c
 }
 
-func (_c *Client_GetRulesSetting_Call) RunAndReturn(run func(context.Context) (dynatrace.GetRulesSettingsResponse, error)) *Client_GetRulesSetting_Call {
+func (_c *Client_GetRulesSetting_Call) RunAndReturn(run func(context.Context, string) (dynatrace.GetRulesSettingsResponse, error)) *Client_GetRulesSetting_Call {
 	_c.Call.Return(run)
 	return _c
 }

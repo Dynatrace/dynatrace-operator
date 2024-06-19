@@ -79,7 +79,7 @@ type Client interface {
 	// or an api error otherwise
 	GetSettingsForMonitoredEntities(ctx context.Context, monitoredEntities []MonitoredEntity, schemaId string) (GetSettingsResponse, error)
 
-	GetRulesSetting(ctx context.Context) (GetRulesSettingsResponse, error)
+	GetRulesSetting(ctx context.Context, kubeSystemUUID string) (GetRulesSettingsResponse, error)
 
 	GetActiveGateAuthToken(ctx context.Context, dynakubeName string) (*ActiveGateAuthTokenInfo, error)
 
