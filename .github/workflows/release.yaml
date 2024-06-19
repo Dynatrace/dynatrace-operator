@@ -310,6 +310,7 @@ jobs:
           make manifests/kubernetes IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.manifest.outputs.digest}}"
           make manifests/openshift/olm IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.manifest.outputs.digest}}"
           make manifests/openshift IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.manifest.outputs.digest}}"
+          cp config/deploy/kubernetes/kubernetes.yaml config/deploy/kubernetes/gke-autopilot.yaml
       - name: Build helm packages
         uses: ./.github/actions/build-helm
         with:

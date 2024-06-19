@@ -132,21 +132,5 @@ test/e2e/edgeconnect: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=edgeconnect-install" $(SKIPCLEANUP)
 
 ## Runs e2e tests on gke-autopilot
-test/e2e/gke-autopilot: manifests/kubernetes/gke-autopilot
+test/e2e/gke-autopilot: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=app-metadata-enrichment,name=app-read-only-csi-volume,name=app-read-only-csi-volume,name=app-without-csi,name=activegate-default" $(SKIPCLEANUP)
-
-## Runs Application Monitoring metadata-enrichment e2e test only on gke-autopilot
-test/e2e/gke-autopilot/applicationmonitoring/metadataenrichment: manifests/kubernetes/gke-autopilot
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=app-metadata-enrichment"  $(SKIPCLEANUP)
-
-## Runs Application Monitoring label versio detection e2e test only on gke-autopilot
-test/e2e/gke-autopilot/applicationmonitoring/labelversion: manifests/kubernetes/gke-autopilot
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=app-label-version"  $(SKIPCLEANUP)
-
-## Runs Application Monitoring readonly csi-volume e2e test only on gke-autopilot
-test/e2e/gke-autopilot/applicationmonitoring/readonlycsivolume: manifests/kubernetes/gke-autopilot
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=app-read-only-csi-volume" $(SKIPCLEANUP)
-
-## Runs Application Monitoring without CSI e2e test only on gke-autopilot
-test/e2e/gke-autopilot/applicationmonitoring/withoutcsi: manifests/kubernetes/gke-autopilot
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=app-without-csi" $(SKIPCLEANUP)
