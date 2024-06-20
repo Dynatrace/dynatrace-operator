@@ -31,7 +31,7 @@ func TestMakeHostMappings(t *testing.T) {
 				hostPatterns: []string{hostPattern1},
 			},
 			want: []HostMapping{
-				{From: hostPattern1, To: defaultKubernetesDns},
+				{From: hostPattern1, To: defaultKubernetesDNS},
 			},
 		},
 		{
@@ -40,8 +40,18 @@ func TestMakeHostMappings(t *testing.T) {
 				hostPatterns: []string{hostPattern1, hostPattern2},
 			},
 			want: []HostMapping{
-				{From: hostPattern1, To: defaultKubernetesDns},
-				{From: hostPattern2, To: defaultKubernetesDns},
+				{From: hostPattern1, To: defaultKubernetesDNS},
+				{From: hostPattern2, To: defaultKubernetesDNS},
+			},
+		},
+		{
+			name: "Multiple host patterns with also default one",
+			args: args{
+				hostPatterns: []string{defaultKubernetesDNS, hostPattern1, hostPattern2},
+			},
+			want: []HostMapping{
+				{From: hostPattern1, To: defaultKubernetesDNS},
+				{From: hostPattern2, To: defaultKubernetesDNS},
 			},
 		},
 	}
