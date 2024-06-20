@@ -71,7 +71,7 @@ func (_c *Reconciler_ReconcileAPIUrl_Call) RunAndReturn(run func(context.Context
 }
 
 // ReconcileAPIUrl provides a mock function with given fields: ctx, _a1
-func (_m *Reconciler) ReconcileCSIDriver(ctx context.Context, _a1 *dynatracev1beta2.DynaKube) error {
+func (_m *Reconciler) ReconcileCSIDriver(ctx context.Context, _a1 *dynakube.DynaKube) error {
 	ret := _m.Called(ctx, _a1)
 
 	if len(ret) == 0 {
