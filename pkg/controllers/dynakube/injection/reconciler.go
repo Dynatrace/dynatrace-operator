@@ -72,11 +72,6 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	err = r.reconcileIstioForCSIDriver(ctx)
-	if err != nil {
-		return err
-	}
-
 	err = r.connectionInfoReconciler.Reconcile(ctx)
 	if err != nil {
 		return err
@@ -88,6 +83,11 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 
 		if err != nil {
 			log.Error(err, "error reconciling istio configuration for codemodules")
+		}
+
+		err = r.reconcileIstioForCSIDriver(ctx)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -126,11 +126,9 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *reconciler) reconcileIstioForCSIDriver(ctx context.Context) error {
-	if r.istioReconciler != nil {
-		err := r.istioReconciler.ReconcileCSIDriver(ctx, r.dynakube)
-		if err != nil {
-			return errors.WithMessage(err, "failed to reconcile istio objects for CSI Driver")
-		}
+	err := r.istioReconciler.ReconcileCSIDriver(ctx, r.dynakube)
+	if err != nil {
+		return errors.WithMessage(err, "failed to reconcile istio objects for CSI Driver")
 	}
 
 	return nil
