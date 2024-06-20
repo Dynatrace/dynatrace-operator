@@ -3,10 +3,12 @@ package csigc
 import (
 	"context"
 	"os"
+	"path"
 	"time"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/spf13/afero"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -17,12 +19,18 @@ type CSIGarbageCollector struct {
 	apiReader client.Reader
 	fs        afero.Fs
 	db        metadata.Cleaner
-	path      metadata.PathResolver
+	time      *timeprovider.Provider
+
+	path metadata.PathResolver
 
 	maxUnmountedVolumeAge time.Duration
 }
 
 var _ reconcile.Reconciler = (*CSIGarbageCollector)(nil)
+
+const (
+	safeRemovalThreshold = 5 * time.Minute
+)
 
 // NewCSIGarbageCollector returns a new CSIGarbageCollector
 func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Cleaner) *CSIGarbageCollector {
@@ -31,6 +39,7 @@ func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db m
 		fs:                    afero.NewOsFs(),
 		db:                    db,
 		path:                  metadata.PathResolver{RootDir: opts.RootDir},
+		time:                  timeprovider.New(),
 		maxUnmountedVolumeAge: determineMaxUnmountedVolumeAge(os.Getenv(maxUnmountedCsiVolumeAgeEnv)),
 	}
 }
@@ -64,8 +73,18 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 		}
 
 		for _, osm := range osMounts {
+			if !gc.time.Now().Time.After(osm.DeletedAt.Time.Add(safeRemovalThreshold)) {
+				log.Info("skipping recently removed os-mount", "location", osm.Location)
+
+				continue
+			}
+
 			if osm.TenantConfigUID == tenantConfig.UID {
-				gc.fs.RemoveAll(osm.Location)
+				dir, _ := afero.ReadDir(gc.fs, osm.Location)
+				for _, d := range dir {
+					gc.fs.RemoveAll(path.Join([]string{osm.Location, d.Name()}...))
+				}
+
 				gc.db.PurgeOSMount(&osm)
 			}
 		}
