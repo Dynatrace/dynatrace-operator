@@ -39,7 +39,7 @@ func TestGetRulesSetting(t *testing.T) {
 
 		rulesResponse, err := dtc.GetRulesSetting(ctx, "test-uuid")
 		require.NoError(t, err)
-		assert.Equal(t, createRulesResponse(mockParams.settingsAPI.totalCount, mockParams.settingsAPI.objectID), rulesResponse)
+		assert.Equal(t, createRulesResponse(mockParams.settingsAPI.totalCount), rulesResponse)
 	})
 
 	t.Run("no kubesystem-uuid -> error", func(t *testing.T) {
@@ -132,8 +132,8 @@ func TestGetRulesSetting(t *testing.T) {
 	})
 }
 
-func mockGetRulesSettingsAPI(writer http.ResponseWriter, totalCount int, objectId string) {
-	rawResponse, err := json.Marshal(createRulesResponse(totalCount, objectId))
+func mockGetRulesSettingsAPI(writer http.ResponseWriter, totalCount int) {
+	rawResponse, err := json.Marshal(createRulesResponse(totalCount))
 	if err != nil {
 		return
 	}
@@ -142,7 +142,7 @@ func mockGetRulesSettingsAPI(writer http.ResponseWriter, totalCount int, objectI
 	writer.Write(rawResponse)
 }
 
-func createRulesResponse(totalCount int, objectId string) GetRulesSettingsResponse {
+func createRulesResponse(totalCount int) GetRulesSettingsResponse {
 	rules := []dynakube.EnrichmentRule{
 		{
 			Key: "rule-1",
@@ -155,7 +155,6 @@ func createRulesResponse(totalCount int, objectId string) GetRulesSettingsRespon
 		TotalCount: totalCount,
 		Items: []RuleItem{
 			{
-				ObjectID: objectId,
 				Value: RulesResponseValue{
 					Rules: rules,
 				},

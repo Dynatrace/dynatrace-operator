@@ -269,6 +269,14 @@ func mockDynatraceServerV2Handler(params v2APIMockParams) http.HandlerFunc {
 				}
 
 				mockHandleSettingsRequest(r, w, params.settingsAPI.totalCount, params.settingsAPI.objectID)
+			case "/v2/settings/effectiveValues":
+				if params.settingsAPI.status != http.StatusOK {
+					writeError(w, params.settingsAPI.status)
+
+					return
+				}
+
+				mockHandleEffectiveSettingsRequest(r, w, params.settingsAPI.totalCount)
 			case "/v2/entities":
 				if params.entitiesAPI.status != http.StatusOK {
 					writeError(w, params.entitiesAPI.status)
@@ -323,12 +331,25 @@ func mockHandleSettingsRequest(request *http.Request, writer http.ResponseWriter
 			mockGetKubernetesSettingsAPI(writer, totalCount)
 		}
 
-		if request.Form.Get("schemaIds") == MetadataEnrichmentSettingsSchemaId {
-			mockGetRulesSettingsAPI(writer, totalCount, objectId)
-		}
-
 	case http.MethodPost:
 		mockPostKubernetesSettingAPI(request, writer, objectId)
+	default:
+		writeError(writer, http.StatusMethodNotAllowed)
+	}
+}
+
+func mockHandleEffectiveSettingsRequest(request *http.Request, writer http.ResponseWriter, totalCount int) {
+	switch request.Method {
+	case http.MethodGet:
+		if request.Form.Get("scopes") == "" {
+			writer.WriteHeader(http.StatusBadRequest)
+
+			return
+		}
+
+		if request.Form.Get("schemaIds") == MetadataEnrichmentSettingsSchemaId {
+			mockGetRulesSettingsAPI(writer, totalCount)
+		}
 	default:
 		writeError(writer, http.StatusMethodNotAllowed)
 	}

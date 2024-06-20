@@ -20,8 +20,7 @@ type GetRulesSettingsResponse struct {
 }
 
 type RuleItem struct {
-	ObjectID string             `json:"objectId"`
-	Value    RulesResponseValue `json:"value"`
+	Value RulesResponseValue `json:"value"`
 }
 
 type RulesResponseValue struct {
@@ -46,7 +45,7 @@ func (dtc *dynatraceClient) GetRulesSetting(ctx context.Context, kubeSystemUUID 
 		return GetRulesSettingsResponse{}, nil
 	}
 
-	req, err := createBaseRequest(ctx, dtc.getSettingsUrl(true), http.MethodGet, dtc.apiToken, nil)
+	req, err := createBaseRequest(ctx, dtc.getEffectiveSettingsUrl(true), http.MethodGet, dtc.apiToken, nil)
 	if err != nil {
 		return GetRulesSettingsResponse{}, err
 	}
