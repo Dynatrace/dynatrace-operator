@@ -70,6 +70,53 @@ func (_c *Reconciler_ReconcileAPIUrl_Call) RunAndReturn(run func(context.Context
 	return _c
 }
 
+// ReconcileAPIUrl provides a mock function with given fields: ctx, _a1
+func (_m *Reconciler) ReconcileCSIDriver(ctx context.Context, _a1 *dynatracev1beta2.DynaKube) error {
+	ret := _m.Called(ctx, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ReconcileCSIDriver")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *dynakube.DynaKube) error); ok {
+		r0 = rf(ctx, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Reconciler_ReconcileCSIDriver_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ReconcileCSIDriver'
+type Reconciler_ReconcileCSIDriver_Call struct {
+	*mock.Call
+}
+
+// ReconcileCSIDriver is a helper method to define mock.On call
+//   - ctx context.Context
+//   - _a1 *dynakube.DynaKube
+func (_e *Reconciler_Expecter) ReconcileCSIDriver(ctx interface{}, _a1 interface{}) *Reconciler_ReconcileCSIDriver_Call {
+	return &Reconciler_ReconcileCSIDriver_Call{Call: _e.mock.On("ReconcileCSIDriver", ctx, _a1)}
+}
+
+func (_c *Reconciler_ReconcileCSIDriver_Call) Run(run func(ctx context.Context, _a1 *dynakube.DynaKube)) *Reconciler_ReconcileCSIDriver_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*dynakube.DynaKube))
+	})
+	return _c
+}
+
+func (_c *Reconciler_ReconcileCSIDriver_Call) Return(_a0 error) *Reconciler_ReconcileCSIDriver_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Reconciler_ReconcileCSIDriver_Call) RunAndReturn(run func(context.Context, *dynakube.DynaKube) error) *Reconciler_ReconcileCSIDriver_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ReconcileActiveGateCommunicationHosts provides a mock function with given fields: ctx, _a1
 func (_m *Reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, _a1 *dynakube.DynaKube) error {
 	ret := _m.Called(ctx, _a1)

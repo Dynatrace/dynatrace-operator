@@ -42,10 +42,6 @@ func (r *reconciler) ReconcileCSIDriver(ctx context.Context, dynakube *dynatrace
 
 	codeModulesURL := dynakube.Status.CodeModules.ImageID
 
-	if codeModulesURL == "" {
-		return errors.New("imageID of codeModules status is empty")
-	}
-
 	if !hasCorrectFormat(codeModulesURL) {
 		codeModulesURL = "https://" + codeModulesURL
 	}
