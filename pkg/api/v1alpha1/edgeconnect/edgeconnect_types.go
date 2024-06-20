@@ -5,6 +5,8 @@
 package edgeconnect
 
 import (
+	"strings"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -186,4 +188,28 @@ type EdgeConnectList struct { //nolint:revive
 
 func init() {
 	v1alpha1.SchemeBuilder.Register(&EdgeConnect{}, &EdgeConnectList{})
+}
+
+func (e *EdgeConnect) HostPatterns(k8sHostname string) []string {
+	if !e.IsK8SAutomationEnabled() {
+		return e.Spec.HostPatterns
+	}
+
+	var hostPatterns []string
+
+	for _, hostPattern := range e.Spec.HostPatterns {
+		if !strings.EqualFold(hostPattern, k8sHostname) {
+			hostPatterns = append(hostPatterns, hostPattern)
+		}
+	}
+
+	hostPatterns = append(hostPatterns, k8sHostname)
+
+	return hostPatterns
+}
+
+const k8sHostnameSuffix = "kubernetes-automation"
+
+func (e *EdgeConnect) K8sAutomationHostPattern() string {
+	return e.Name + "." + e.Namespace + "." + e.Status.KubeSystemUID + "." + k8sHostnameSuffix
 }

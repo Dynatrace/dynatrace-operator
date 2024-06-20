@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
@@ -46,8 +45,6 @@ const (
 	defaultNamespaceName    = "default"
 	kubernetesServiceName   = "kubernetes"
 	kubeSystemNamespaceName = "kube-system"
-
-	k8sHostnameSuffix = "kubernetes-automation"
 )
 
 var ErrTokenNotFound = errors.New("token not found")
@@ -447,9 +444,8 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 		}
 	}
 
-	k8sAutomationHostPattern := controller.k8sAutomationHostPattern(edgeConnect.Name, edgeConnect.Namespace, edgeConnect.Status.KubeSystemUID)
-
-	hostPatterns := controller.hostPatterns(edgeConnect, k8sAutomationHostPattern)
+	k8sAutomationHostPattern := edgeConnect.K8sAutomationHostPattern()
+	hostPatterns := edgeConnect.HostPatterns(edgeConnect.K8sAutomationHostPattern())
 
 	if tenantEdgeConnect.ID == "" {
 		err := controller.createEdgeConnect(ctx, edgeConnectClient, edgeConnect, hostPatterns, k8sAutomationHostPattern)
@@ -665,9 +661,7 @@ func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnect
 
 	log.Debug("updating EdgeConnect", "name", edgeConnect.Name)
 
-	k8sAutomationHostPattern := controller.k8sAutomationHostPattern(edgeConnect.Name, edgeConnect.Namespace, edgeConnect.Status.KubeSystemUID)
-
-	err = edgeConnectClient.UpdateEdgeConnect(id, edgeConnect.Name, hostPatterns, k8sAutomationHostPattern, oauthClientId)
+	err = edgeConnectClient.UpdateEdgeConnect(id, edgeConnect.Name, hostPatterns, edgeConnect.K8sAutomationHostPattern(), oauthClientId)
 	if err != nil {
 		_log.Debug("updating EdgeConnect failed")
 
@@ -831,28 +825,6 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 	hash, err = hasher.GenerateHash(secretConfig.Data)
 
 	return token, hash, err
-}
-
-func (controller *Controller) k8sAutomationHostPattern(ecName string, ecNamespace string, kubeSystemUID string) string {
-	return ecName + "." + ecNamespace + "." + kubeSystemUID + "." + k8sHostnameSuffix
-}
-
-func (controller *Controller) hostPatterns(edgeConnect *edgeconnectv1alpha1.EdgeConnect, k8sHostname string) []string {
-	if !edgeConnect.IsK8SAutomationEnabled() {
-		return edgeConnect.Spec.HostPatterns
-	}
-
-	var hostPatterns []string
-
-	for _, hostPattern := range edgeConnect.Spec.HostPatterns {
-		if !strings.EqualFold(hostPattern, k8sHostname) {
-			hostPatterns = append(hostPatterns, hostPattern)
-		}
-	}
-
-	hostPatterns = append(hostPatterns, k8sHostname)
-
-	return hostPatterns
 }
 
 func (controller *Controller) getToken(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) (string, error) {
