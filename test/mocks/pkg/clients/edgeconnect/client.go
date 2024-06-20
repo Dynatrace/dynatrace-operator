@@ -20,6 +20,52 @@ func (_m *Client) EXPECT() *Client_Expecter {
 	return &Client_Expecter{mock: &_m.Mock}
 }
 
+// CreateConnectionSetting provides a mock function with given fields: es
+func (_m *Client) CreateConnectionSetting(es edgeconnect.EnvironmentSetting) error {
+	ret := _m.Called(es)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateConnectionSetting")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(edgeconnect.EnvironmentSetting) error); ok {
+		r0 = rf(es)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Client_CreateConnectionSetting_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateConnectionSetting'
+type Client_CreateConnectionSetting_Call struct {
+	*mock.Call
+}
+
+// CreateConnectionSetting is a helper method to define mock.On call
+//   - es edgeconnect.EnvironmentSetting
+func (_e *Client_Expecter) CreateConnectionSetting(es interface{}) *Client_CreateConnectionSetting_Call {
+	return &Client_CreateConnectionSetting_Call{Call: _e.mock.On("CreateConnectionSetting", es)}
+}
+
+func (_c *Client_CreateConnectionSetting_Call) Run(run func(es edgeconnect.EnvironmentSetting)) *Client_CreateConnectionSetting_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(edgeconnect.EnvironmentSetting))
+	})
+	return _c
+}
+
+func (_c *Client_CreateConnectionSetting_Call) Return(_a0 error) *Client_CreateConnectionSetting_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Client_CreateConnectionSetting_Call) RunAndReturn(run func(edgeconnect.EnvironmentSetting) error) *Client_CreateConnectionSetting_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CreateEdgeConnect provides a mock function with given fields: name, hostPatterns, oauthClientId
 func (_m *Client) CreateEdgeConnect(name string, hostPatterns []string, oauthClientId string) (edgeconnect.CreateResponse, error) {
 	ret := _m.Called(name, hostPatterns, oauthClientId)
@@ -78,6 +124,52 @@ func (_c *Client_CreateEdgeConnect_Call) RunAndReturn(run func(string, []string,
 	return _c
 }
 
+// DeleteConnectionSetting provides a mock function with given fields: objectId
+func (_m *Client) DeleteConnectionSetting(objectId string) error {
+	ret := _m.Called(objectId)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteConnectionSetting")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(objectId)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Client_DeleteConnectionSetting_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteConnectionSetting'
+type Client_DeleteConnectionSetting_Call struct {
+	*mock.Call
+}
+
+// DeleteConnectionSetting is a helper method to define mock.On call
+//   - objectId string
+func (_e *Client_Expecter) DeleteConnectionSetting(objectId interface{}) *Client_DeleteConnectionSetting_Call {
+	return &Client_DeleteConnectionSetting_Call{Call: _e.mock.On("DeleteConnectionSetting", objectId)}
+}
+
+func (_c *Client_DeleteConnectionSetting_Call) Run(run func(objectId string)) *Client_DeleteConnectionSetting_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Client_DeleteConnectionSetting_Call) Return(_a0 error) *Client_DeleteConnectionSetting_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Client_DeleteConnectionSetting_Call) RunAndReturn(run func(string) error) *Client_DeleteConnectionSetting_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DeleteEdgeConnect provides a mock function with given fields: edgeConnectId
 func (_m *Client) DeleteEdgeConnect(edgeConnectId string) error {
 	ret := _m.Called(edgeConnectId)
@@ -120,6 +212,62 @@ func (_c *Client_DeleteEdgeConnect_Call) Return(_a0 error) *Client_DeleteEdgeCon
 }
 
 func (_c *Client_DeleteEdgeConnect_Call) RunAndReturn(run func(string) error) *Client_DeleteEdgeConnect_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetConnectionSetting provides a mock function with given fields: uid
+func (_m *Client) GetConnectionSetting(uid string) (edgeconnect.EnvironmentSetting, error) {
+	ret := _m.Called(uid)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetConnectionSetting")
+	}
+
+	var r0 edgeconnect.EnvironmentSetting
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (edgeconnect.EnvironmentSetting, error)); ok {
+		return rf(uid)
+	}
+	if rf, ok := ret.Get(0).(func(string) edgeconnect.EnvironmentSetting); ok {
+		r0 = rf(uid)
+	} else {
+		r0 = ret.Get(0).(edgeconnect.EnvironmentSetting)
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(uid)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Client_GetConnectionSetting_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetConnectionSetting'
+type Client_GetConnectionSetting_Call struct {
+	*mock.Call
+}
+
+// GetConnectionSetting is a helper method to define mock.On call
+//   - uid string
+func (_e *Client_Expecter) GetConnectionSetting(uid interface{}) *Client_GetConnectionSetting_Call {
+	return &Client_GetConnectionSetting_Call{Call: _e.mock.On("GetConnectionSetting", uid)}
+}
+
+func (_c *Client_GetConnectionSetting_Call) Run(run func(uid string)) *Client_GetConnectionSetting_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Client_GetConnectionSetting_Call) Return(_a0 edgeconnect.EnvironmentSetting, _a1 error) *Client_GetConnectionSetting_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Client_GetConnectionSetting_Call) RunAndReturn(run func(string) (edgeconnect.EnvironmentSetting, error)) *Client_GetConnectionSetting_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -232,6 +380,52 @@ func (_c *Client_GetEdgeConnects_Call) Return(_a0 edgeconnect.ListResponse, _a1 
 }
 
 func (_c *Client_GetEdgeConnects_Call) RunAndReturn(run func(string) (edgeconnect.ListResponse, error)) *Client_GetEdgeConnects_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateConnectionSetting provides a mock function with given fields: es
+func (_m *Client) UpdateConnectionSetting(es edgeconnect.EnvironmentSetting) error {
+	ret := _m.Called(es)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateConnectionSetting")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(edgeconnect.EnvironmentSetting) error); ok {
+		r0 = rf(es)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Client_UpdateConnectionSetting_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateConnectionSetting'
+type Client_UpdateConnectionSetting_Call struct {
+	*mock.Call
+}
+
+// UpdateConnectionSetting is a helper method to define mock.On call
+//   - es edgeconnect.EnvironmentSetting
+func (_e *Client_Expecter) UpdateConnectionSetting(es interface{}) *Client_UpdateConnectionSetting_Call {
+	return &Client_UpdateConnectionSetting_Call{Call: _e.mock.On("UpdateConnectionSetting", es)}
+}
+
+func (_c *Client_UpdateConnectionSetting_Call) Run(run func(es edgeconnect.EnvironmentSetting)) *Client_UpdateConnectionSetting_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(edgeconnect.EnvironmentSetting))
+	})
+	return _c
+}
+
+func (_c *Client_UpdateConnectionSetting_Call) Return(_a0 error) *Client_UpdateConnectionSetting_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Client_UpdateConnectionSetting_Call) RunAndReturn(run func(edgeconnect.EnvironmentSetting) error) *Client_UpdateConnectionSetting_Call {
 	_c.Call.Return(run)
 	return _c
 }

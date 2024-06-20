@@ -2,15 +2,19 @@ package istio
 
 import (
 	"context"
+	goerrors "errors"
 	"net"
 	"strings"
 
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/activegate"
-	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -22,14 +26,16 @@ type Reconciler interface {
 }
 
 type reconciler struct {
-	client *Client
+	client       *Client
+	timeProvider *timeprovider.Provider
 }
 
 type ReconcilerBuilder func(istio *Client) Reconciler
 
 func NewReconciler(istio *Client) Reconciler {
 	return &reconciler{
-		client: istio,
+		client:       istio,
+		timeProvider: timeprovider.New(),
 	}
 }
 
@@ -99,12 +105,32 @@ func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, 
 		return errors.New("can't reconcile oneagent communication hosts of nil dynakube")
 	}
 
+	if !dynakube.NeedAppInjection() {
+		if isIstioConfigured(dynakube, CodeModuleComponent) {
+			log.Info("appinjection disabled, cleaning up")
+
+			return r.CleanupIstio(ctx, dynakube, CodeModuleComponent, OneAgentComponent)
+		}
+
+		return nil
+	}
+
 	oneAgentCommunicationHosts := oaconnectioninfo.GetCommunicationHosts(dynakube)
 
 	err := r.reconcileCommunicationHostsForComponent(ctx, oneAgentCommunicationHosts, OneAgentComponent)
 	if err != nil {
+		setServiceEntryFailedConditionForComponent(dynakube.Conditions(), CodeModuleComponent, err)
+
 		return err
 	}
+
+	if len(oneAgentCommunicationHosts) == 0 {
+		meta.RemoveStatusCondition(dynakube.Conditions(), getConditionTypeName(CodeModuleComponent))
+
+		return nil
+	}
+
+	setServiceEntryUpdatedConditionForComponent(dynakube.Conditions(), CodeModuleComponent)
 
 	return nil
 }
@@ -113,21 +139,59 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 	log.Info("reconciling istio components for activegate communication hosts")
 
 	if dynakube == nil {
-		return errors.New("can't reconcile oneagent communication hosts of nil dynakube")
+		return errors.New("can't reconcile activegate communication hosts of nil dynakube")
 	}
 
 	if !dynakube.NeedsActiveGate() {
+		if isIstioConfigured(dynakube, ActiveGateComponent) {
+			log.Info("activegate disabled, cleaning up")
+
+			return r.CleanupIstio(ctx, dynakube, ActiveGateComponent, strings.ToLower(ActiveGateComponent))
+		}
+
+		return nil
+	}
+
+	if !conditions.IsOutdated(r.timeProvider, dynakube, getConditionTypeName(ActiveGateComponent)) {
+		log.Info("condition still within time threshold...skipping further reconciliation")
+
 		return nil
 	}
 
 	activeGateEndpoints := activegate.GetEndpointsAsCommunicationHosts(dynakube)
 
-	err := r.reconcileCommunicationHostsForComponent(ctx, activeGateEndpoints, ActiveGateComponent)
+	err := r.reconcileCommunicationHostsForComponent(ctx, activeGateEndpoints, strings.ToLower(ActiveGateComponent))
 	if err != nil {
+		setServiceEntryFailedConditionForComponent(dynakube.Conditions(), ActiveGateComponent, err)
+
 		return err
 	}
 
+	if len(activeGateEndpoints) == 0 {
+		meta.RemoveStatusCondition(dynakube.Conditions(), getConditionTypeName(ActiveGateComponent))
+
+		return nil
+	}
+
+	setServiceEntryUpdatedConditionForComponent(dynakube.Conditions(), ActiveGateComponent)
+
 	return nil
+}
+
+func (r *reconciler) CleanupIstio(ctx context.Context, dynakube *dynatracev1beta2.DynaKube, conditionComponent string, component string) error {
+	meta.RemoveStatusCondition(dynakube.Conditions(), getConditionTypeName(conditionComponent))
+
+	err1 := r.cleanupIPServiceEntry(ctx, component)
+	err2 := r.cleanupFQDNServiceEntry(ctx, component)
+
+	// try to clean up all entries even if one fails
+	return goerrors.Join(err1, err2)
+}
+
+func isIstioConfigured(dynakube *dynatracev1beta2.DynaKube, conditionComponent string) bool {
+	istioCondition := meta.FindStatusCondition(*dynakube.Conditions(), getConditionTypeName(conditionComponent))
+
+	return istioCondition != nil
 }
 
 func (r *reconciler) reconcileCommunicationHostsForComponent(ctx context.Context, comHosts []dtclient.CommunicationHost, componentName string) error {
@@ -144,17 +208,10 @@ func (r *reconciler) reconcileCommunicationHostsForComponent(ctx context.Context
 func (r *reconciler) reconcileCommunicationHosts(ctx context.Context, comHosts []dtclient.CommunicationHost, component string) error {
 	ipHosts, fqdnHosts := splitCommunicationHost(comHosts)
 
-	err := r.reconcileIPServiceEntry(ctx, ipHosts, component)
-	if err != nil {
-		return err
-	}
+	errIPServiceEntry := r.reconcileIPServiceEntry(ctx, ipHosts, component)
+	errFQDNServiceEntry := r.reconcileFQDNServiceEntry(ctx, fqdnHosts, component)
 
-	err = r.reconcileFQDNServiceEntry(ctx, fqdnHosts, component)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return goerrors.Join(errIPServiceEntry, errFQDNServiceEntry)
 }
 
 func splitCommunicationHost(comHosts []dtclient.CommunicationHost) (ipHosts, fqdnHosts []dtclient.CommunicationHost) {
@@ -174,20 +231,20 @@ func (r *reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []dtcl
 	entryName := BuildNameForIPServiceEntry(owner.GetName(), component)
 
 	if len(ipHosts) != 0 {
-		meta := buildObjectMeta(
+		objectMeta := buildObjectMeta(
 			entryName,
 			owner.GetNamespace(),
 			labels.NewCoreLabels(owner.GetName(), component).BuildLabels(),
 		)
 
-		serviceEntry := buildServiceEntryIPs(meta, ipHosts)
+		serviceEntry := buildServiceEntryIPs(objectMeta, ipHosts)
 
 		err := r.client.CreateOrUpdateServiceEntry(ctx, serviceEntry)
 		if err != nil {
 			return err
 		}
 	} else {
-		err := r.client.DeleteServiceEntry(ctx, entryName)
+		err := r.cleanupIPServiceEntry(ctx, component)
 		if err != nil {
 			return err
 		}
@@ -196,43 +253,53 @@ func (r *reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []dtcl
 	return nil
 }
 
+func (r *reconciler) cleanupIPServiceEntry(ctx context.Context, component string) error {
+	entryName := BuildNameForIPServiceEntry(r.client.Owner.GetName(), component)
+
+	return r.client.DeleteServiceEntry(ctx, entryName)
+}
+
 func (r *reconciler) reconcileFQDNServiceEntry(ctx context.Context, fqdnHosts []dtclient.CommunicationHost, component string) error {
 	owner := r.client.Owner
 	entryName := BuildNameForFQDNServiceEntry(owner.GetName(), component)
 
 	if len(fqdnHosts) != 0 {
-		meta := buildObjectMeta(
+		objectMeta := buildObjectMeta(
 			entryName,
 			owner.GetNamespace(),
 			labels.NewCoreLabels(owner.GetName(), component).BuildLabels(),
 		)
 
-		serviceEntry := buildServiceEntryFQDNs(meta, fqdnHosts)
+		serviceEntry := buildServiceEntryFQDNs(objectMeta, fqdnHosts)
 
 		err := r.client.CreateOrUpdateServiceEntry(ctx, serviceEntry)
 		if err != nil {
 			return err
 		}
 
-		virtualService := buildVirtualService(meta, fqdnHosts)
+		virtualService := buildVirtualService(objectMeta, fqdnHosts)
 
 		err = r.client.CreateOrUpdateVirtualService(ctx, virtualService)
 		if err != nil {
 			return err
 		}
 	} else {
-		err := r.client.DeleteServiceEntry(ctx, entryName)
-		if err != nil {
-			return err
-		}
-
-		err = r.client.DeleteVirtualService(ctx, entryName)
+		err := r.cleanupFQDNServiceEntry(ctx, component)
 		if err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+func (r *reconciler) cleanupFQDNServiceEntry(ctx context.Context, component string) error {
+	entryName := BuildNameForFQDNServiceEntry(r.client.Owner.GetName(), component)
+
+	errServiceEntry := r.client.DeleteServiceEntry(ctx, entryName)
+	errVirtualService := r.client.DeleteVirtualService(ctx, entryName)
+
+	return goerrors.Join(errServiceEntry, errVirtualService)
 }
 
 func buildObjectMeta(name, namespace string, labels map[string]string) metav1.ObjectMeta {

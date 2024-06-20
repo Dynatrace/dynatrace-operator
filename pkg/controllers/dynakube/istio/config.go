@@ -14,7 +14,8 @@ const (
 	CSIDiverComponent   = "csi-driver"
 	OperatorComponent   = "operator"
 	OneAgentComponent   = "oneagent"
-	ActiveGateComponent = "activegate"
+	CodeModuleComponent = "CodeModule"
+	ActiveGateComponent = "ActiveGate"
 	IstioGVRName        = "networking.istio.io"
 	IstioGVRVersion     = "v1beta1"
 )

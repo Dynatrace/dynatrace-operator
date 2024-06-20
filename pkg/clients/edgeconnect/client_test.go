@@ -143,7 +143,7 @@ func edgeConnectCreateServerHandler(errorBadRequest bool) http.HandlerFunc {
 		switch request.URL.Path {
 		case "/sso/oauth2/token":
 			writeOauthTokenResponse(writer)
-		case "/edge-connects":
+		case "/platform/app-engine/edge-connect/v1/edge-connects":
 			if !errorBadRequest {
 				if !isManagedByOperator(request) {
 					writeError(writer, http.StatusBadRequest)
@@ -199,7 +199,7 @@ func edgeConnectGetServerHandler() http.HandlerFunc {
 		switch request.URL.Path {
 		case "/sso/oauth2/token":
 			writeOauthTokenResponse(writer)
-		case fmt.Sprintf("/edge-connects/%s", EdgeConnectID):
+		case fmt.Sprintf("/platform/app-engine/edge-connect/v1/edge-connects/%s", EdgeConnectID):
 			writer.WriteHeader(http.StatusOK)
 
 			resp := GetResponse{
@@ -228,7 +228,7 @@ func edgeConnectDeleteServerHandler() http.HandlerFunc {
 		switch request.URL.Path {
 		case "/sso/oauth2/token":
 			writeOauthTokenResponse(writer)
-		case fmt.Sprintf("/edge-connects/%s", EdgeConnectID):
+		case fmt.Sprintf("/platform/app-engine/edge-connect/v1/edge-connects/%s", EdgeConnectID):
 			writer.WriteHeader(http.StatusNoContent)
 		default:
 			writeError(writer, http.StatusBadRequest)
@@ -243,7 +243,7 @@ func edgeConnectUpdateServerHandler() http.HandlerFunc {
 		switch request.URL.Path {
 		case "/sso/oauth2/token":
 			writeOauthTokenResponse(writer)
-		case fmt.Sprintf("/edge-connects/%s", EdgeConnectID):
+		case fmt.Sprintf("/platform/app-engine/edge-connect/v1/edge-connects/%s", EdgeConnectID):
 			if !isManagedByOperator(request) {
 				writeError(writer, http.StatusBadRequest)
 
