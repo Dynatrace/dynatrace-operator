@@ -6,6 +6,7 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csidriver "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
@@ -110,6 +111,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		unix.Umask(dtcsi.UnixUmask)
 		version.LogVersion()
+		logd.LogBaseLoggerSettings()
 
 		kubeConfig, err := builder.configProvider.GetConfig()
 		if err != nil {

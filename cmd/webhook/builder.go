@@ -8,6 +8,7 @@ import (
 	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
@@ -119,6 +120,7 @@ func startCertificateWatcher(webhookManager manager.Manager, namespace string, p
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		version.LogVersion()
+		logd.LogBaseLoggerSettings()
 
 		kubeConfig, err := builder.configProvider.GetConfig()
 		if err != nil {
