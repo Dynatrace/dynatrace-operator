@@ -20,4 +20,5 @@ var validators = []validator{
 	nameTooLong,
 	checkHostPatternsValue,
 	isInvalidServiceName,
+	automationRequiresProvisionerValidation,
 }

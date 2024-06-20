@@ -1,11 +1,13 @@
-apiVersion: dynatrace.com/v1beta1
+apiVersion: dynatrace.com/v1beta2
 kind: DynaKube
 metadata:
   name: dynakube
   namespace: dynatrace
+  # annotations:
+    # feature.dynatrace.com/k8s-app-enabled: "true"
 spec:
-  # Dynatrace apiUrl including the `/api` path at the end.
-  # For SaaS, set `ENVIRONMENTID` to your environment ID.
+  # Dynatrace apiUrl including the /api path at the end.
+  # For SaaS, set 'ENVIRONMENTID' to your environment ID.
   # For Managed, change the apiUrl address.
   # For instructions on how to determine the environment ID and how to configure the apiUrl address, see https://www.dynatrace.com/support/help/reference/dynatrace-concepts/environment-id/.
   apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
@@ -48,60 +50,31 @@ spec:
   #
   # enableIstio: false
 
-  # The namespaces which should be injected into
-  # If unset, all namespace will be injected into
-  # namespaceSelector has no effect on hostMonitoring or classicFullstack
-  # For examples regarding namespaceSelectors, see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements
+  # Optional: Configuration for thresholding Dynatrace API requests in minutes. Default is 15 minutes.
   #
-  # namespaceSelector:
-  #   matchLabels:
-  #     app: my-app
-  #   matchExpressions:
-  #    - key: app
-  #      operator: In
-  #      values: [my-frontend, my-backend, my-database]
+  # dynatraceApiRequestThreshold: 15
+
+  # Configuration for Metadata Enrichment.
+  #
+  metadataEnrichment:
+    # Optional: Enables or disables metadata enrichment
+    # Defaults to "true"
+    #
+    enabled: true
+
+    # The namespaces in which metadata enrichment should be injected into
+    # If unset, all namespace will be injected into
+    # For examples regarding namespaceSelectors, see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements
+    #
+    # namespaceSelector:
+    #   matchLabels:
+    #     app: my-app
+    #   matchExpressions:
+    #    - key: app
+    #      operator: In
+    #      values: [my-frontend, my-backend, my-database]
 
   # Configuration for OneAgent instances
-  #
-  oneAgent:
-    # Optional: Sets a host group for OneAgent.
-    # 
-    # hostGroup: ""
-
-    # Enables application-only monitoring and changes its settings
-    # Cannot be used in conjunction with cloud-native fullstack monitoring, classic fullstack monitoring or host monitoring
-    #
-    applicationMonitoring:
-      # Optional: If specified, indicates the OneAgent version to use
-      # Defaults to the configured version on your Dynatrace environment
-      # Available versions can be found using the UI or the Dynatrace API
-      # The version is expected to be provided in the semver format
-      # Example: <major>.<minor>.<release>.<timestamp>, e.g. 1.200.0.20240501-085142
-      #
-      # version: ""
-
-      # Optional: If you want to use CSIDriver; disable if your cluster does not have 'nodes' to fall back to the volume approach.
-      # Defaults to false
-      #
-      useCSIDriver: false
-
-      # Optional: The URI of the image that contains the codemodules specific OneAgent that will be injected into pods and applications.
-      # For an example of a Dockerfile creating such an image, see https://dt-url.net/operator-docker-samples
-      #
-      # codeModulesImage: ""
-
-      # Optional: Defines resources requests and limits for the initContainer
-      # See more: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
-      #
-      # initResources:
-      #   requests:
-      #     cpu: 100m
-      #     memory: 512Mi
-      #   limits:
-      #     cpu: 300m
-      #     memory: 1.5Gi
-
-  # Configuration for ActiveGate instances.
   #
   activeGate:
     # Specifies which capabilities will be enabled on ActiveGate instances
@@ -112,15 +85,14 @@ spec:
     # - dynatrace-api
     #
     capabilities:
-      - routing
       - kubernetes-monitoring
-      - dynatrace-api
+
 
     # Optional: Sets the image used to deploy ActiveGate instances
     # Defaults to the latest ActiveGate image on the tenant's registry
     # Example: "ENVIRONMENTID.live.dynatrace.com/linux/activegate:latest"
     #
-    image: ""
+    # image: ""
 
     # Optional: Sets how many ActiveGate pods are spawned by the StatefulSet
     # Defaults to "1"

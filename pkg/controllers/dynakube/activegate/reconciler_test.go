@@ -416,7 +416,7 @@ func createIstioReconcilerMock(t *testing.T) istio.Reconciler {
 	reconciler := istiomock.NewReconciler(t)
 	reconciler.On("ReconcileActiveGateCommunicationHosts",
 		mock.AnythingOfType("context.backgroundCtx"),
-		mock.AnythingOfType("*dynakube.DynaKube")).Return(nil).Once()
+		mock.AnythingOfType("*dynakube.DynaKube")).Return(nil).Twice()
 
 	return reconciler
 }

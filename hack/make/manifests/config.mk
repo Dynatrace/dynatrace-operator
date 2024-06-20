@@ -9,7 +9,6 @@ MANIFESTS_DIR=config/deploy/
 RELEASE_CRD_YAML=config/deploy/dynatrace-operator-crd.yaml
 
 KUBERNETES_CORE_YAML=$(MANIFESTS_DIR)kubernetes/kubernetes.yaml
-KUBERNETES_AUTOPILOT_YAML=$(MANIFESTS_DIR)kubernetes/gke-autopilot.yaml
 KUBERNETES_CSIDRIVER_YAML=$(MANIFESTS_DIR)kubernetes/kubernetes-csi.yaml
 KUBERNETES_OLM_YAML=$(MANIFESTS_DIR)kubernetes/kubernetes-olm.yaml
 KUBERNETES_ALL_YAML=$(MANIFESTS_DIR)kubernetes/kubernetes-all.yaml

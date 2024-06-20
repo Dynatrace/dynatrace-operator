@@ -139,6 +139,9 @@ type EdgeConnectStatus struct { //nolint:revive
 	// Indicates when the resource was last updated
 	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty"`
 
+	// kube-system namespace uid
+	KubeSystemUID string `json:"kubeSystemUID,omitempty"`
+
 	// Conditions includes status about the current state of the instance
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }

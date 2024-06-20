@@ -77,6 +77,15 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
+	// do istio reconciliation for CodeModules here to enable cleanup of conditions
+	if r.istioReconciler != nil {
+		err = r.istioReconciler.ReconcileCodeModuleCommunicationHosts(ctx, r.dynakube)
+
+		if err != nil {
+			log.Error(err, "error reconciling istio configuration for codemodules")
+		}
+	}
+
 	if !r.dynakube.NeedAppInjection() {
 		return r.removeAppInjection(ctx)
 	}
@@ -141,13 +150,6 @@ func (r *reconciler) removeAppInjection(ctx context.Context) (err error) {
 func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
 	if !r.dynakube.NeedAppInjection() {
 		return nil
-	}
-
-	if r.istioReconciler != nil {
-		err := r.istioReconciler.ReconcileCodeModuleCommunicationHosts(ctx, r.dynakube)
-		if err != nil {
-			return err
-		}
 	}
 
 	err := initgeneration.NewInitGenerator(r.client, r.apiReader, r.dynakube.Namespace).GenerateForDynakube(ctx, r.dynakube)
