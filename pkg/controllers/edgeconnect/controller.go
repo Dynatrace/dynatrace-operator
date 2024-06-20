@@ -444,11 +444,8 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 		}
 	}
 
-	k8sAutomationHostPattern := edgeConnect.K8sAutomationHostPattern()
-	hostPatterns := edgeConnect.HostPatterns(edgeConnect.K8sAutomationHostPattern())
-
 	if tenantEdgeConnect.ID == "" {
-		err := controller.createEdgeConnect(ctx, edgeConnectClient, edgeConnect, hostPatterns, k8sAutomationHostPattern)
+		err := controller.createEdgeConnect(ctx, edgeConnectClient, edgeConnect)
 		if err != nil {
 			return err
 		}
@@ -456,7 +453,7 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 		return controller.createOrUpdateEdgeConnectDeploymentAndSettings(ctx, edgeConnect)
 	}
 
-	err = controller.updateEdgeConnect(ctx, edgeConnectClient, edgeConnect, hostPatterns)
+	err = controller.updateEdgeConnect(ctx, edgeConnectClient, edgeConnect)
 	if err != nil {
 		return err
 	}
@@ -581,10 +578,10 @@ func (controller *Controller) getEdgeConnectIdFromClientSecret(ctx context.Conte
 	return id, nil
 }
 
-func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnectClient edgeconnect.Client, edgeConnect *edgeconnectv1alpha1.EdgeConnect, hostPatterns []string, k8sAutomationHostPattern string) error {
+func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnectClient edgeconnect.Client, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
 	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name)
 
-	createResponse, err := edgeConnectClient.CreateEdgeConnect(edgeConnect.Name, hostPatterns, k8sAutomationHostPattern, "")
+	createResponse, err := edgeConnectClient.CreateEdgeConnect(edgeConnect.Name, edgeConnect.HostPatterns(), edgeConnect.K8sAutomationHostPattern(), "")
 	if err != nil {
 		_log.Debug("creating EdgeConnect failed")
 
@@ -620,7 +617,7 @@ func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnect
 	return nil
 }
 
-func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnectClient edgeconnect.Client, edgeConnect *edgeconnectv1alpha1.EdgeConnect, hostPatterns []string) error {
+func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnectClient edgeconnect.Client, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
 	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name)
 
 	secretQuery := k8ssecret.NewQuery(ctx, controller.client, controller.apiReader, log)
@@ -653,7 +650,7 @@ func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnect
 		return errors.WithStack(err)
 	}
 
-	if slices.Equal(hostPatterns, edgeConnectResponse.HostPatterns) {
+	if slices.Equal(edgeConnect.HostPatterns(), edgeConnectResponse.HostPatterns) {
 		_log.Debug("EdgeConnect host patterns in response match", "patterns", edgeConnect.Spec.HostPatterns)
 
 		return nil
@@ -661,7 +658,7 @@ func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnect
 
 	log.Debug("updating EdgeConnect", "name", edgeConnect.Name)
 
-	err = edgeConnectClient.UpdateEdgeConnect(id, edgeConnect.Name, hostPatterns, edgeConnect.K8sAutomationHostPattern(), oauthClientId)
+	err = edgeConnectClient.UpdateEdgeConnect(id, edgeConnect.Name, edgeConnect.HostPatterns(), edgeConnect.K8sAutomationHostPattern(), oauthClientId)
 	if err != nil {
 		_log.Debug("updating EdgeConnect failed")
 

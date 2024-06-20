@@ -190,7 +190,9 @@ func init() {
 	v1alpha1.SchemeBuilder.Register(&EdgeConnect{}, &EdgeConnectList{})
 }
 
-func (e *EdgeConnect) HostPatterns(k8sHostname string) []string {
+func (e *EdgeConnect) HostPatterns() []string {
+	k8sHostname := e.K8sAutomationHostPattern()
+
 	if !e.IsK8SAutomationEnabled() {
 		return e.Spec.HostPatterns
 	}
