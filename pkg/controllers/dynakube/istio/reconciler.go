@@ -4,6 +4,7 @@ import (
 	"context"
 	goerrors "errors"
 	"net"
+	"net/url"
 	"strings"
 
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
@@ -48,11 +49,12 @@ func (r *reconciler) ReconcileCSIDriver(ctx context.Context, dynakube *dynatrace
 
 	codeModulesURL := dynakube.CodeModulesImage()
 
-	if !hasCorrectFormat(codeModulesURL) {
-		codeModulesURL = "https://" + codeModulesURL
+	parsedCodeModulesURL, err := parseCodeModulesImageURL(codeModulesURL)
+	if err != nil {
+		return err
 	}
 
-	codeModulesHost, err := dtclient.ParseEndpoint(codeModulesURL)
+	codeModulesHost, err := dtclient.ParseEndpoint(parsedCodeModulesURL)
 	if err != nil {
 		return err
 	}
@@ -67,9 +69,27 @@ func (r *reconciler) ReconcileCSIDriver(ctx context.Context, dynakube *dynatrace
 	return nil
 }
 
-// if the URL does not have the correct format parsing does not work‚
-func hasCorrectFormat(url string) bool {
-	return strings.HasPrefix(url, "https://")
+func parseCodeModulesImageURL(rawUrl string) (string, error) {
+	parsedURL, err := url.Parse(rawUrl)
+	if err != nil {
+		return "", errors.New("can't parse the codeModules image URL")
+	}
+
+	if parsedURL.Scheme == "" {
+		parsedURL.Scheme = "https"
+
+		if !strings.HasPrefix(rawUrl, "//") {
+			// if no scheme at all is set we want to add this prefix
+			rawUrl = "//" + rawUrl
+		}
+
+		parsedURL, err = url.Parse(parsedURL.Scheme + ":" + rawUrl)
+		if err != nil {
+			return "", errors.New("can't parse the codeModules image URL")
+		}
+	}
+
+	return parsedURL.String(), nil
 }
 
 func (r *reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
