@@ -551,6 +551,7 @@ func TestParseCodeModulesImageURL(t *testing.T) {
 			if err != nil {
 				t.Errorf("Did not expect error for input %s, but got one: %v", test.input, err)
 			}
+
 			if output != test.output {
 				t.Errorf("For input %s, expected output %s, but got this %s", test.input, test.output, output)
 			}
