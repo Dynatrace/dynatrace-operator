@@ -70,7 +70,7 @@ func NewRequest(name string, hostPatterns []string, oauthClientId string) *Reque
 	}
 }
 
-const defaultKubernetesDns = "kubernetes.default.svc.cluster.local"
+const defaultKubernetesDNS = "kubernetes.default.svc.cluster.local"
 
 func makeHostMappings(hostPatterns []string) []HostMapping {
 	hostMappings := make([]HostMapping, 0)
