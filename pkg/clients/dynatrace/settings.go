@@ -48,6 +48,23 @@ type constraintViolations []struct {
 	Path              string
 }
 
+const (
+	pageSizeQueryParam = "pageSize"
+	entitiesPageSize   = "500"
+
+	entitySelectorQueryParam       = "entitySelector"
+	kubernetesEntitySelectorFormat = "type(KUBERNETES_CLUSTER),kubernetesClusterId(%s)"
+
+	fromQueryParam = "from"
+	entitiesFrom   = "-365d"
+
+	fieldsQueryParam     = "fields"
+	entitiesNeededFields = "+lastSeenTms"
+
+	schemaIDsQueryParam = "schemaIds"
+	scopesQueryParam    = "scopes"
+)
+
 func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(ctx context.Context, kubeSystemUUID string) ([]MonitoredEntity, error) {
 	if kubeSystemUUID == "" {
 		return nil, errors.New("no kube-system namespace UUID given")
@@ -59,20 +76,20 @@ func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(ctx context.Co
 	}
 
 	q := req.URL.Query()
-	q.Add("pageSize", "500")
-	q.Add("entitySelector", fmt.Sprintf("type(KUBERNETES_CLUSTER),kubernetesClusterId(%s)", kubeSystemUUID))
-	q.Add("from", "-365d")
-	q.Add("fields", "+lastSeenTms")
+	q.Add(pageSizeQueryParam, entitiesPageSize)
+	q.Add(entitySelectorQueryParam, fmt.Sprintf(kubernetesEntitySelectorFormat, kubeSystemUUID))
+	q.Add(fromQueryParam, entitiesFrom)
+	q.Add(fieldsQueryParam, entitiesNeededFields)
 	req.URL.RawQuery = q.Encode()
 
 	res, err := dtc.httpClient.Do(req)
+	defer utils.CloseBodyAfterRequest(res)
+
 	if err != nil {
 		log.Info("check if ME exists failed")
 
 		return nil, err
 	}
-
-	defer utils.CloseBodyAfterRequest(res)
 
 	var resDataJson monitoredEntitiesResponse
 
@@ -95,18 +112,18 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(ctx context.Context,
 	}
 
 	q := req.URL.Query()
-	q.Add("schemaIds", schemaId)
-	q.Add("scopes", createScopes(monitoredEntities))
+	q.Add(schemaIDsQueryParam, schemaId)
+	q.Add(scopesQueryParam, createScopes(monitoredEntities))
 	req.URL.RawQuery = q.Encode()
 
 	res, err := dtc.httpClient.Do(req)
+	defer utils.CloseBodyAfterRequest(res)
+
 	if err != nil {
 		log.Info("failed to retrieve MEs")
 
 		return GetSettingsResponse{}, err
 	}
-
-	defer utils.CloseBodyAfterRequest(res)
 
 	var resDataJson GetSettingsResponse
 

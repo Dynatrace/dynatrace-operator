@@ -64,11 +64,11 @@ func (dtc *dynatraceClient) performCreateOrUpdateKubernetesSetting(ctx context.C
 	}
 
 	res, err := dtc.httpClient.Do(req)
+	defer utils.CloseBodyAfterRequest(res)
+
 	if err != nil {
 		return "", fmt.Errorf("error making post request to dynatrace api: %w", err)
 	}
-
-	defer utils.CloseBodyAfterRequest(res)
 
 	resData, err := io.ReadAll(res.Body)
 	if err != nil {

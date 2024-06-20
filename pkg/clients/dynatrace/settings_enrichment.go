@@ -51,18 +51,18 @@ func (dtc *dynatraceClient) GetRulesSetting(ctx context.Context, kubeSystemUUID 
 	}
 
 	q := req.URL.Query()
-	q.Add("schemaIds", MetadataEnrichmentSettingsSchemaId)
-	q.Add("scopes", createScopes(monitoredEntities))
+	q.Add(schemaIDsQueryParam, MetadataEnrichmentSettingsSchemaId)
+	q.Add(scopesQueryParam, createScopes(monitoredEntities))
 	req.URL.RawQuery = q.Encode()
 
 	res, err := dtc.httpClient.Do(req)
+	defer utils.CloseBodyAfterRequest(res)
+
 	if err != nil {
 		log.Info("failed to retrieve enrichment rules")
 
 		return GetRulesSettingsResponse{}, err
 	}
-
-	defer utils.CloseBodyAfterRequest(res)
 
 	var resDataJson GetRulesSettingsResponse
 
