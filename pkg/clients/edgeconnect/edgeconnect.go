@@ -77,7 +77,7 @@ func makeHostMappings(hostPatterns []string) []HostMapping {
 
 	for _, hostPattern := range hostPatterns {
 		if hostPattern != defaultKubernetesDNS {
-			hostMappings = append(hostMappings, HostMapping{From: hostPattern, To: defaultKubernetesDns})
+			hostMappings = append(hostMappings, HostMapping{From: hostPattern, To: defaultKubernetesDNS})
 		}
 	}
 
