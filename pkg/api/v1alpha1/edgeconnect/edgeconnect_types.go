@@ -191,8 +191,6 @@ func init() {
 }
 
 func (e *EdgeConnect) HostPatterns() []string {
-	k8sHostname := e.K8sAutomationHostPattern()
-
 	if !e.IsK8SAutomationEnabled() {
 		return e.Spec.HostPatterns
 	}
@@ -200,12 +198,12 @@ func (e *EdgeConnect) HostPatterns() []string {
 	var hostPatterns []string
 
 	for _, hostPattern := range e.Spec.HostPatterns {
-		if !strings.EqualFold(hostPattern, k8sHostname) {
+		if !strings.EqualFold(hostPattern, e.K8sAutomationHostPattern()) {
 			hostPatterns = append(hostPatterns, hostPattern)
 		}
 	}
 
-	hostPatterns = append(hostPatterns, k8sHostname)
+	hostPatterns = append(hostPatterns, e.K8sAutomationHostPattern())
 
 	return hostPatterns
 }
