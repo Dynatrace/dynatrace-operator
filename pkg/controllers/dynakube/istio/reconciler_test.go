@@ -301,6 +301,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 
 		err = r.ReconcileCodeModuleCommunicationHosts(ctx, dynakube)
 		require.NoError(t, err)
+
 		statusCondition = meta.FindStatusCondition(*dynakube.Conditions(), "IstioForCodeModule")
 		require.Nil(t, statusCondition)
 
