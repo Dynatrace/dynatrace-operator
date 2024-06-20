@@ -508,6 +508,56 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 	})
 }
 
+func TestParseCodeModulesImageURL(t *testing.T) {
+	tests := []struct {
+		input           string
+		output          string
+		parsedCorreclty bool
+	}{
+		{
+			input:           "some.url.com/test",
+			output:          "https://some.url.com/test",
+			parsedCorreclty: true,
+		},
+		{
+			input:           "http://some.url.com/test",
+			output:          "http://some.url.com/test",
+			parsedCorreclty: true,
+		},
+		{
+			input:           "https://some.url.com/test",
+			output:          "https://some.url.com/test",
+			parsedCorreclty: true,
+		},
+		{
+			input:           ":example.com/test",
+			output:          "",
+			parsedCorreclty: false,
+		},
+		{
+			input:           "//some.url.com/test",
+			output:          "https://some.url.com/test",
+			parsedCorreclty: true,
+		},
+	}
+
+	for _, test := range tests {
+		output, err := parseCodeModulesImageURL(test.input)
+		if !test.parsedCorreclty {
+			if err == nil {
+				t.Errorf("Expected error for input %s, but did not get any", test.input)
+			}
+		} else {
+			if err != nil {
+				t.Errorf("Did not expect error for input %s, but got one: %v", test.input, err)
+			}
+			if output != test.output {
+				t.Errorf("For input %s, expected output %s, but got this %s", test.input, test.output, output)
+			}
+		}
+	}
+}
+
 func createTestIPCommunicationHost() dtclient.CommunicationHost {
 	return dtclient.CommunicationHost{
 		Protocol: "http",
