@@ -26,13 +26,6 @@ tests:
       - hasDocuments:
           count: 1
 
-  - it: should exist if platform is set to gke-autopilot
-    set:
-      platform: gke-autopilot
-    asserts:
-      - hasDocuments:
-          count: 1
-
   - it: should exist on kubernetes
     set:
       platform: kubernetes
@@ -398,22 +391,6 @@ tests:
     asserts:
       - isNull:
           path: spec.template.spec.imagePullSecrets
-
-  - it: should have only OS node affinity on GKE Autopilot
-    set:
-      platform: gke-autopilot
-    asserts:
-      - equal:
-          path: spec.template.spec.affinity
-          value:
-              nodeAffinity:
-                requiredDuringSchedulingIgnoredDuringExecution:
-                  nodeSelectorTerms:
-                    - matchExpressions:
-                        - key: kubernetes.io/os
-                          operator: In
-                          values:
-                            - linux
 
   - it: should take custom labels
     set:
