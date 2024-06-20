@@ -12,11 +12,8 @@ import (
 
 const (
 	errorConflictingNamespaceSelector = `The DynaKube's specification tries to inject into namespaces where another Dynakube already injects into, which is not supported.
-Make sure the namespaceSelector doesn't conflict with other Dynakubes namespaceSelector
-`
-	errorConflictingNamespaceSelectorNoSelector = `The DynaKube does not specificy namespaces where it should inject into while another Dynakube already injects into namespaces, which is not supported.
-Make sure you have a namespaceSelector doesn't conflict with other Dynakubes namespaceSelector
-`
+Make sure the namespaceSelector doesn't conflict with other Dynakubes namespaceSelector`
+
 	errorNamespaceSelectorMatchLabelsViolateLabelSpec = "The DynaKube's namespaceSelector contains matchLabels that are not conform to spec."
 )
 
@@ -29,15 +26,9 @@ func conflictingNamespaceSelector(ctx context.Context, dv *dynakubeValidator, dy
 
 	_, err := dkMapper.MatchingNamespaces()
 	if err != nil && err.Error() == mapper.ErrorConflictingNamespace {
-		if dynakube.OneAgentNamespaceSelector().MatchExpressions == nil && dynakube.OneAgentNamespaceSelector().MatchLabels == nil {
-			log.Info("requested dynakube has conflicting namespaceSelector", "name", dynakube.Name, "namespace", dynakube.Namespace)
+		log.Info("requested dynakube has conflicting namespaceSelector", "name", dynakube.Name, "namespace", dynakube.Namespace)
 
-			return errorConflictingNamespaceSelectorNoSelector
-		} else {
-			log.Info("requested dynakube has conflicting namespaceSelector", "name", dynakube.Name, "namespace", dynakube.Namespace)
-
-			return errorConflictingNamespaceSelector
-		}
+		return errorConflictingNamespaceSelector
 	}
 
 	return ""
