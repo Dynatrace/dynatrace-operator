@@ -9,7 +9,7 @@ import (
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
+	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -46,7 +46,7 @@ func (r *reconciler) ReconcileCSIDriver(ctx context.Context, dynakube *dynatrace
 		return errors.New("can't reconcile csi driver of nil dynakube")
 	}
 
-	codeModulesURL := dynakube.Status.CodeModules.ImageID
+	codeModulesURL := dynakube.CodeModulesImage()
 
 	if !hasCorrectFormat(codeModulesURL) {
 		codeModulesURL = "https://" + codeModulesURL
