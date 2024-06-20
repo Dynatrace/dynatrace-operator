@@ -324,6 +324,15 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling app injection")
 
+	if istioClient != nil {
+		istioReconciler := controller.istioReconcilerBuilder(istioClient)
+
+		err := istioReconciler.ReconcileCSIDriver(ctx, dynakube)
+		if err != nil {
+			return errors.WithMessage(err, "failed to reconcile istio objects for CSI Driver")
+		}
+	}
+
 	err = controller.injectionReconcilerBuilder(controller.client,
 		controller.apiReader,
 		dynatraceClient,

@@ -14,7 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
+	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
@@ -593,6 +593,19 @@ func TestSetupIstio(t *testing.T) {
 		assert.NotNil(t, serviceEntry)
 
 		virtualService, err := fakeIstio.NetworkingV1beta1().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, virtualService)
+
+		err = istioReconciler.ReconcileCSIDriver(ctx, dynakube)
+
+		require.NoError(t, err)
+
+		expectedName = istio.BuildNameForFQDNServiceEntry(dynakube.GetName(), istio.CSIDiverComponent)
+		serviceEntry, err = fakeIstio.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, serviceEntry)
+
+		virtualService, err = fakeIstio.NetworkingV1beta1().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, virtualService)
 	})

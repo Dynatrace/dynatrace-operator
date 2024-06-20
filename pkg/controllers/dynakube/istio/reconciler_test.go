@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
@@ -206,6 +207,62 @@ func TestReconcileAPIUrl(t *testing.T) {
 		reconciler := NewReconciler(istioClient)
 
 		err := reconciler.ReconcileAPIUrl(ctx, dynakube)
+		require.Error(t, err)
+	})
+}
+
+func TestReconcileCSIDriver(t *testing.T) {
+	ctx := context.Background()
+	dynakube := createTestDynaKube()
+
+	t.Run("nil => error", func(t *testing.T) {
+		istioClient := newTestingClient(nil, dynakube.GetNamespace())
+		reconciler := NewReconciler(istioClient)
+
+		err := reconciler.ReconcileCSIDriver(ctx, nil)
+		require.Error(t, err)
+	})
+	t.Run("malformed image uri (no protocol prefix) => still no error", func(t *testing.T) {
+		dynakube := createTestDynaKube()
+		dynakube.Status = dynatracev1beta2.DynaKubeStatus{
+			CodeModules: dynatracev1beta2.CodeModulesStatus{
+				VersionStatus: status.VersionStatus{
+					ImageID: "something-random",
+				},
+			},
+		}
+		fakeClient := fakeistio.NewSimpleClientset()
+		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
+		reconciler := NewReconciler(istioClient)
+
+		err := reconciler.ReconcileCSIDriver(ctx, dynakube)
+		require.NoError(t, err)
+	})
+	t.Run("success", func(t *testing.T) {
+		fakeClient := fakeistio.NewSimpleClientset()
+		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
+		reconciler := NewReconciler(istioClient)
+
+		err := reconciler.ReconcileCSIDriver(ctx, dynakube)
+		require.NoError(t, err)
+
+		expectedName := BuildNameForFQDNServiceEntry(dynakube.GetName(), CSIDiverComponent)
+		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, serviceEntry)
+
+		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, virtualService)
+	})
+	t.Run("unknown k8s client error => error", func(t *testing.T) {
+		fakeClient := fakeistio.NewSimpleClientset()
+		fakeClient.PrependReactor("*", "*", boomReaction)
+
+		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
+		reconciler := NewReconciler(istioClient)
+
+		err := reconciler.ReconcileCSIDriver(ctx, dynakube)
 		require.Error(t, err)
 	})
 }

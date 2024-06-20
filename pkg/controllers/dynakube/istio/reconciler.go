@@ -3,11 +3,12 @@ package istio
 import (
 	"context"
 	"net"
+	"strings"
 
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
+	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,6 +18,7 @@ type Reconciler interface {
 	ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
 	ReconcileCodeModuleCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
 	ReconcileActiveGateCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
+	ReconcileCSIDriver(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
 }
 
 type reconciler struct {
@@ -29,6 +31,43 @@ func NewReconciler(istio *Client) Reconciler {
 	return &reconciler{
 		client: istio,
 	}
+}
+
+func (r *reconciler) ReconcileCSIDriver(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
+	log.Info("reconciling istio components for the CSI driver")
+
+	if dynakube == nil {
+		return errors.New("can't reconcile csi driver of nil dynakube")
+	}
+
+	codeModulesURL := dynakube.Status.CodeModules.ImageID
+
+	if codeModulesURL == "" {
+		return errors.New("imageID of codeModules status is empty")
+	}
+
+	if !hasCorrectFormat(codeModulesURL) {
+		codeModulesURL = "https://" + codeModulesURL
+	}
+
+	codeModulesHost, err := dtclient.ParseEndpoint(codeModulesURL)
+	if err != nil {
+		return err
+	}
+
+	err = r.reconcileCommunicationHosts(ctx, []dtclient.CommunicationHost{codeModulesHost}, CSIDiverComponent)
+	if err != nil {
+		return errors.WithMessage(err, "error reconciling config for codeModulesImage")
+	}
+
+	log.Info("reconciled istio objects for CSI driver")
+
+	return nil
+}
+
+// if the URL does not have the correct format parsing does not work‚
+func hasCorrectFormat(url string) bool {
+	return strings.HasPrefix(url, "https://")
 }
 
 func (r *reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
