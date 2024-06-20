@@ -66,9 +66,9 @@ func (_c *Client_CreateConnectionSetting_Call) RunAndReturn(run func(edgeconnect
 	return _c
 }
 
-// CreateEdgeConnect provides a mock function with given fields: name, hostPatterns, oauthClientId
-func (_m *Client) CreateEdgeConnect(name string, hostPatterns []string, oauthClientId string) (edgeconnect.CreateResponse, error) {
-	ret := _m.Called(name, hostPatterns, oauthClientId)
+// CreateEdgeConnect provides a mock function with given fields: name, hostPatterns, k8sAutomationHostPattern, oauthClientId
+func (_m *Client) CreateEdgeConnect(name string, hostPatterns []string, k8sAutomationHostPattern string, oauthClientId string) (edgeconnect.CreateResponse, error) {
+	ret := _m.Called(name, hostPatterns, k8sAutomationHostPattern, oauthClientId)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateEdgeConnect")
@@ -76,17 +76,17 @@ func (_m *Client) CreateEdgeConnect(name string, hostPatterns []string, oauthCli
 
 	var r0 edgeconnect.CreateResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, []string, string) (edgeconnect.CreateResponse, error)); ok {
-		return rf(name, hostPatterns, oauthClientId)
+	if rf, ok := ret.Get(0).(func(string, []string, string, string) (edgeconnect.CreateResponse, error)); ok {
+		return rf(name, hostPatterns, k8sAutomationHostPattern, oauthClientId)
 	}
-	if rf, ok := ret.Get(0).(func(string, []string, string) edgeconnect.CreateResponse); ok {
-		r0 = rf(name, hostPatterns, oauthClientId)
+	if rf, ok := ret.Get(0).(func(string, []string, string, string) edgeconnect.CreateResponse); ok {
+		r0 = rf(name, hostPatterns, k8sAutomationHostPattern, oauthClientId)
 	} else {
 		r0 = ret.Get(0).(edgeconnect.CreateResponse)
 	}
 
-	if rf, ok := ret.Get(1).(func(string, []string, string) error); ok {
-		r1 = rf(name, hostPatterns, oauthClientId)
+	if rf, ok := ret.Get(1).(func(string, []string, string, string) error); ok {
+		r1 = rf(name, hostPatterns, k8sAutomationHostPattern, oauthClientId)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -102,14 +102,15 @@ type Client_CreateEdgeConnect_Call struct {
 // CreateEdgeConnect is a helper method to define mock.On call
 //   - name string
 //   - hostPatterns []string
+//   - k8sAutomationHostPattern string
 //   - oauthClientId string
-func (_e *Client_Expecter) CreateEdgeConnect(name interface{}, hostPatterns interface{}, oauthClientId interface{}) *Client_CreateEdgeConnect_Call {
-	return &Client_CreateEdgeConnect_Call{Call: _e.mock.On("CreateEdgeConnect", name, hostPatterns, oauthClientId)}
+func (_e *Client_Expecter) CreateEdgeConnect(name interface{}, hostPatterns interface{}, k8sAutomationHostPattern interface{}, oauthClientId interface{}) *Client_CreateEdgeConnect_Call {
+	return &Client_CreateEdgeConnect_Call{Call: _e.mock.On("CreateEdgeConnect", name, hostPatterns, k8sAutomationHostPattern, oauthClientId)}
 }
 
-func (_c *Client_CreateEdgeConnect_Call) Run(run func(name string, hostPatterns []string, oauthClientId string)) *Client_CreateEdgeConnect_Call {
+func (_c *Client_CreateEdgeConnect_Call) Run(run func(name string, hostPatterns []string, k8sAutomationHostPattern string, oauthClientId string)) *Client_CreateEdgeConnect_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].([]string), args[2].(string))
+		run(args[0].(string), args[1].([]string), args[2].(string), args[3].(string))
 	})
 	return _c
 }
@@ -119,7 +120,7 @@ func (_c *Client_CreateEdgeConnect_Call) Return(_a0 edgeconnect.CreateResponse, 
 	return _c
 }
 
-func (_c *Client_CreateEdgeConnect_Call) RunAndReturn(run func(string, []string, string) (edgeconnect.CreateResponse, error)) *Client_CreateEdgeConnect_Call {
+func (_c *Client_CreateEdgeConnect_Call) RunAndReturn(run func(string, []string, string, string) (edgeconnect.CreateResponse, error)) *Client_CreateEdgeConnect_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -430,17 +431,17 @@ func (_c *Client_UpdateConnectionSetting_Call) RunAndReturn(run func(edgeconnect
 	return _c
 }
 
-// UpdateEdgeConnect provides a mock function with given fields: edgeConnectId, name, hostPatterns, oauthClientId
-func (_m *Client) UpdateEdgeConnect(edgeConnectId string, name string, hostPatterns []string, oauthClientId string) error {
-	ret := _m.Called(edgeConnectId, name, hostPatterns, oauthClientId)
+// UpdateEdgeConnect provides a mock function with given fields: edgeConnectId, name, hostPatterns, k8sAutomationHostPattern, oauthClientId
+func (_m *Client) UpdateEdgeConnect(edgeConnectId string, name string, hostPatterns []string, k8sAutomationHostPattern string, oauthClientId string) error {
+	ret := _m.Called(edgeConnectId, name, hostPatterns, k8sAutomationHostPattern, oauthClientId)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateEdgeConnect")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string, []string, string) error); ok {
-		r0 = rf(edgeConnectId, name, hostPatterns, oauthClientId)
+	if rf, ok := ret.Get(0).(func(string, string, []string, string, string) error); ok {
+		r0 = rf(edgeConnectId, name, hostPatterns, k8sAutomationHostPattern, oauthClientId)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -457,14 +458,15 @@ type Client_UpdateEdgeConnect_Call struct {
 //   - edgeConnectId string
 //   - name string
 //   - hostPatterns []string
+//   - k8sAutomationHostPattern string
 //   - oauthClientId string
-func (_e *Client_Expecter) UpdateEdgeConnect(edgeConnectId interface{}, name interface{}, hostPatterns interface{}, oauthClientId interface{}) *Client_UpdateEdgeConnect_Call {
-	return &Client_UpdateEdgeConnect_Call{Call: _e.mock.On("UpdateEdgeConnect", edgeConnectId, name, hostPatterns, oauthClientId)}
+func (_e *Client_Expecter) UpdateEdgeConnect(edgeConnectId interface{}, name interface{}, hostPatterns interface{}, k8sAutomationHostPattern interface{}, oauthClientId interface{}) *Client_UpdateEdgeConnect_Call {
+	return &Client_UpdateEdgeConnect_Call{Call: _e.mock.On("UpdateEdgeConnect", edgeConnectId, name, hostPatterns, k8sAutomationHostPattern, oauthClientId)}
 }
 
-func (_c *Client_UpdateEdgeConnect_Call) Run(run func(edgeConnectId string, name string, hostPatterns []string, oauthClientId string)) *Client_UpdateEdgeConnect_Call {
+func (_c *Client_UpdateEdgeConnect_Call) Run(run func(edgeConnectId string, name string, hostPatterns []string, k8sAutomationHostPattern string, oauthClientId string)) *Client_UpdateEdgeConnect_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string), args[2].([]string), args[3].(string))
+		run(args[0].(string), args[1].(string), args[2].([]string), args[3].(string), args[4].(string))
 	})
 	return _c
 }
@@ -474,7 +476,7 @@ func (_c *Client_UpdateEdgeConnect_Call) Return(_a0 error) *Client_UpdateEdgeCon
 	return _c
 }
 
-func (_c *Client_UpdateEdgeConnect_Call) RunAndReturn(run func(string, string, []string, string) error) *Client_UpdateEdgeConnect_Call {
+func (_c *Client_UpdateEdgeConnect_Call) RunAndReturn(run func(string, string, []string, string, string) error) *Client_UpdateEdgeConnect_Call {
 	_c.Call.Return(run)
 	return _c
 }

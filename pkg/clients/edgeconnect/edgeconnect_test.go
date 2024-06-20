@@ -7,11 +7,10 @@ import (
 )
 
 func TestMakeHostMappings(t *testing.T) {
-	hostPattern1 := "my-edgeconnect.dynatrace.a273ec656-603d-46c8-b5f5-5c47a6903dff.kubernetes-automation"
-	hostPattern2 := "super-edgeconnect.dynatrace.a273ec656-603d-46c8-b5f5-5c47a6903dfd.kubernetes-automation"
+	k8sAutomationHostPattern := "my-edgeconnect.dynatrace.a273ec656-603d-46c8-b5f5-5c47a6903dff.kubernetes-automation"
 
 	type args struct {
-		hostPatterns []string
+		k8sAutomationHostPattern string
 	}
 	tests := []struct {
 		name string
@@ -19,45 +18,25 @@ func TestMakeHostMappings(t *testing.T) {
 		want []HostMapping
 	}{
 		{
-			name: "No host patterns",
+			name: "Empty parameter",
 			args: args{
-				hostPatterns: []string{},
+				k8sAutomationHostPattern: "",
 			},
 			want: []HostMapping{},
 		},
 		{
-			name: "Single host pattern",
+			name: "Present k8sAutomationHostPattern",
 			args: args{
-				hostPatterns: []string{hostPattern1},
+				k8sAutomationHostPattern: k8sAutomationHostPattern,
 			},
 			want: []HostMapping{
-				{From: hostPattern1, To: defaultKubernetesDNS},
-			},
-		},
-		{
-			name: "Multiple host patterns",
-			args: args{
-				hostPatterns: []string{hostPattern1, hostPattern2},
-			},
-			want: []HostMapping{
-				{From: hostPattern1, To: defaultKubernetesDNS},
-				{From: hostPattern2, To: defaultKubernetesDNS},
-			},
-		},
-		{
-			name: "Multiple host patterns with also default one",
-			args: args{
-				hostPatterns: []string{defaultKubernetesDNS, hostPattern1, hostPattern2},
-			},
-			want: []HostMapping{
-				{From: hostPattern1, To: defaultKubernetesDNS},
-				{From: hostPattern2, To: defaultKubernetesDNS},
+				{From: k8sAutomationHostPattern, To: defaultKubernetesDNS},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := makeHostMappings(tt.args.hostPatterns)
+			got := makeHostMappings(tt.args.k8sAutomationHostPattern)
 			require.EqualValues(t, tt.want, got)
 		})
 	}

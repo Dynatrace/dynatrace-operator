@@ -447,12 +447,12 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 		}
 	}
 
-	k8sHostname := controller.k8sAutomationHostPattern(edgeConnect.Name, edgeConnect.Namespace, edgeConnect.Status.KubeSystemUID)
+	k8sAutomationHostPattern := controller.k8sAutomationHostPattern(edgeConnect.Name, edgeConnect.Namespace, edgeConnect.Status.KubeSystemUID)
 
-	hostPatterns := controller.hostPatterns(edgeConnect, k8sHostname)
+	hostPatterns := controller.hostPatterns(edgeConnect, k8sAutomationHostPattern)
 
 	if tenantEdgeConnect.ID == "" {
-		err := controller.createEdgeConnect(ctx, edgeConnectClient, edgeConnect, hostPatterns)
+		err := controller.createEdgeConnect(ctx, edgeConnectClient, edgeConnect, hostPatterns, k8sAutomationHostPattern)
 		if err != nil {
 			return err
 		}
@@ -585,10 +585,10 @@ func (controller *Controller) getEdgeConnectIdFromClientSecret(ctx context.Conte
 	return id, nil
 }
 
-func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnectClient edgeconnect.Client, edgeConnect *edgeconnectv1alpha1.EdgeConnect, hostPatterns []string) error {
+func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnectClient edgeconnect.Client, edgeConnect *edgeconnectv1alpha1.EdgeConnect, hostPatterns []string, k8sAutomationHostPattern string) error {
 	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name)
 
-	createResponse, err := edgeConnectClient.CreateEdgeConnect(edgeConnect.Name, hostPatterns, "")
+	createResponse, err := edgeConnectClient.CreateEdgeConnect(edgeConnect.Name, hostPatterns, k8sAutomationHostPattern, "")
 	if err != nil {
 		_log.Debug("creating EdgeConnect failed")
 
@@ -665,7 +665,9 @@ func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnect
 
 	log.Debug("updating EdgeConnect", "name", edgeConnect.Name)
 
-	err = edgeConnectClient.UpdateEdgeConnect(id, edgeConnect.Name, hostPatterns, oauthClientId)
+	k8sAutomationHostPattern := controller.k8sAutomationHostPattern(edgeConnect.Name, edgeConnect.Namespace, edgeConnect.Status.KubeSystemUID)
+
+	err = edgeConnectClient.UpdateEdgeConnect(id, edgeConnect.Name, hostPatterns, k8sAutomationHostPattern, oauthClientId)
 	if err != nil {
 		_log.Debug("updating EdgeConnect failed")
 

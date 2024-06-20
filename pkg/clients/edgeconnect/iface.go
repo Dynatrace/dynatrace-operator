@@ -6,10 +6,10 @@ type Client interface {
 	GetEdgeConnect(edgeConnectId string) (GetResponse, error)
 
 	// CreateEdgeConnect creates edge connect
-	CreateEdgeConnect(name string, hostPatterns []string, oauthClientId string) (CreateResponse, error)
+	CreateEdgeConnect(name string, hostPatterns []string, k8sAutomationHostPattern string, oauthClientId string) (CreateResponse, error)
 
 	// UpdateEdgeConnect updates edge connect
-	UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []string, oauthClientId string) error
+	UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []string, k8sAutomationHostPattern string, oauthClientId string) error
 
 	// DeleteEdgeConnect deletes edge connect
 	DeleteEdgeConnect(edgeConnectId string) error

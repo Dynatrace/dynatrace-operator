@@ -36,7 +36,7 @@ func TestCreateEdgeConnect(t *testing.T) {
 		edgeConnectServer, edgeConnectClient := createTestEdgeConnectServer(t, edgeConnectCreateServerHandler(false))
 		defer edgeConnectServer.Close()
 
-		resp, err := edgeConnectClient.CreateEdgeConnect("InternalServices", []string{"*.internal.org"}, "dt0s02.AIOUP56P")
+		resp, err := edgeConnectClient.CreateEdgeConnect("InternalServices", []string{"*.internal.org"}, "", "dt0s02.AIOUP56P")
 		require.NoError(t, err)
 		assert.Equal(t, "InternalServices", resp.Name)
 	})
@@ -44,8 +44,16 @@ func TestCreateEdgeConnect(t *testing.T) {
 		edgeConnectServer, edgeConnectClient := createTestEdgeConnectServer(t, edgeConnectCreateServerHandler(true))
 		defer edgeConnectServer.Close()
 
-		_, err := edgeConnectClient.CreateEdgeConnect("", []string{"*.internal.org"}, "dt0s02.AIOUP56P")
+		_, err := edgeConnectClient.CreateEdgeConnect("", []string{"*.internal.org"}, "", "dt0s02.AIOUP56P")
 		require.Error(t, err, "edgeconnect server error 400: Constraints violated.")
+	})
+	t.Run("create edge connect with hostMappings", func(t *testing.T) {
+		k8sAutomationHostPattern := "my-edgeconnect.dynatrace.a273ec656-603d-46c8-b5f5-5c47a6903dff.kubernetes-automation"
+		edgeConnectServer, edgeConnectClient := createTestEdgeConnectServer(t, edgeConnectCreateServerHandler(false))
+		defer edgeConnectServer.Close()
+
+		_, err := edgeConnectClient.CreateEdgeConnect("InternalServices", []string{"*.internal.org"}, k8sAutomationHostPattern, "dt0s02.AIOUP56P")
+		require.NoError(t, err)
 	})
 }
 
@@ -91,7 +99,7 @@ func TestUpdateEdgeConnect(t *testing.T) {
 		edgeConnectServer, edgeConnectClient := createTestEdgeConnectServer(t, edgeConnectUpdateServerHandler())
 		defer edgeConnectServer.Close()
 
-		err := edgeConnectClient.UpdateEdgeConnect(EdgeConnectID, "test_name", []string{""}, "")
+		err := edgeConnectClient.UpdateEdgeConnect(EdgeConnectID, "test_name", []string{""}, "", "")
 		require.NoError(t, err)
 	})
 
@@ -99,7 +107,7 @@ func TestUpdateEdgeConnect(t *testing.T) {
 		edgeConnectServer, edgeConnectClient := createTestEdgeConnectServer(t, edgeConnectUpdateServerHandler())
 		defer edgeConnectServer.Close()
 
-		err := edgeConnectClient.UpdateEdgeConnect("", "test_name", []string{""}, "")
+		err := edgeConnectClient.UpdateEdgeConnect("", "test_name", []string{""}, "", "")
 		require.Error(t, err, http.StatusBadRequest)
 	})
 }

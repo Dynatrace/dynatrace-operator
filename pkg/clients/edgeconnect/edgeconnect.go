@@ -60,11 +60,11 @@ type HostMapping struct {
 	To   string `json:"to"`
 }
 
-func NewRequest(name string, hostPatterns []string, oauthClientId string) *Request {
+func NewRequest(name string, hostPatterns []string, k8sAutomationHostPattern string, oauthClientId string) *Request {
 	return &Request{
 		Name:                       name,
 		HostPatterns:               hostPatterns,
-		HostMappings:               makeHostMappings(hostPatterns),
+		HostMappings:               makeHostMappings(k8sAutomationHostPattern),
 		OauthClientId:              oauthClientId,
 		ManagedByDynatraceOperator: true,
 	}
@@ -72,13 +72,11 @@ func NewRequest(name string, hostPatterns []string, oauthClientId string) *Reque
 
 const defaultKubernetesDNS = "kubernetes.default.svc.cluster.local"
 
-func makeHostMappings(hostPatterns []string) []HostMapping {
+func makeHostMappings(k8sAutomationHostPattern string) []HostMapping {
 	hostMappings := make([]HostMapping, 0)
 
-	for _, hostPattern := range hostPatterns {
-		if hostPattern != defaultKubernetesDNS {
-			hostMappings = append(hostMappings, HostMapping{From: hostPattern, To: defaultKubernetesDNS})
-		}
+	if k8sAutomationHostPattern != "" {
+		hostMappings = append(hostMappings, HostMapping{From: k8sAutomationHostPattern, To: defaultKubernetesDNS})
 	}
 
 	return hostMappings

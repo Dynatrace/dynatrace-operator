@@ -40,6 +40,7 @@ const (
 	testCreatedId                  = "id"
 	testRecreatedInvalidId         = "id-somehow-different"
 	testCAConfigMapName            = "test-ca-name"
+	testK8sAutomationHostPattern   = "test-name-edgeconnectv1alpha1.test-namespace.1-2-3-4.kubernetes-automation"
 
 	testClusterIP = "1.2.3.4"
 	testUID       = "1-2-3-4"
@@ -268,7 +269,7 @@ func TestReconcileProvisionerCreate(t *testing.T) {
 		assert.Equal(t, "edge-connect", edgeConnectDeployment.Spec.Template.Spec.Containers[0].Name)
 
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnects", testName)
-		edgeConnectClient.AssertCalled(t, "CreateEdgeConnect", testName, testHostPatterns, "")
+		edgeConnectClient.AssertCalled(t, "CreateEdgeConnect", testName, testHostPatterns, testK8sAutomationHostPattern, "")
 	})
 }
 
@@ -330,7 +331,7 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnects", testName)
 		edgeConnectClient.AssertCalled(t, "DeleteEdgeConnect", testCreatedId)
-		edgeConnectClient.AssertCalled(t, "CreateEdgeConnect", testName, testHostPatterns, "")
+		edgeConnectClient.AssertCalled(t, "CreateEdgeConnect", testName, testHostPatterns, testK8sAutomationHostPattern, "")
 	})
 
 	t.Run("recreate EdgeConnect due to invalid id", func(t *testing.T) {
@@ -391,7 +392,7 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnects", testName)
 		edgeConnectClient.AssertCalled(t, "DeleteEdgeConnect", testRecreatedInvalidId)
-		edgeConnectClient.AssertCalled(t, "CreateEdgeConnect", testName, testHostPatterns, "")
+		edgeConnectClient.AssertCalled(t, "CreateEdgeConnect", testName, testHostPatterns, testK8sAutomationHostPattern, "")
 	})
 }
 
@@ -508,7 +509,7 @@ func TestReconcileProvisionerUpdate(t *testing.T) {
 
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnects", testName)
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnect", testCreatedId)
-		edgeConnectClient.AssertCalled(t, "UpdateEdgeConnect", testCreatedId, testName, testHostPatterns2, testCreatedOauthClientId)
+		edgeConnectClient.AssertCalled(t, "UpdateEdgeConnect", testCreatedId, testName, testHostPatterns2, testK8sAutomationHostPattern, testCreatedOauthClientId)
 	})
 }
 
@@ -572,7 +573,7 @@ func TestReconcileProvisionerWithK8sAutomationsCreate(t *testing.T) {
 		assert.Equal(t, "edge-connect", edgeConnectDeployment.Spec.Template.Spec.Containers[0].Name)
 
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnects", testName)
-		edgeConnectClient.AssertCalled(t, "CreateEdgeConnect", testName, testHostPatterns, "")
+		edgeConnectClient.AssertCalled(t, "CreateEdgeConnect", testName, testHostPatterns, testK8sAutomationHostPattern, "")
 	})
 }
 
@@ -604,7 +605,7 @@ func TestReconcileProvisionerWithK8sAutomationsUpdate(t *testing.T) {
 
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnects", testName)
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnect", testCreatedId)
-		edgeConnectClient.AssertCalled(t, "UpdateEdgeConnect", testCreatedId, testName, testHostPatterns2, testCreatedOauthClientId)
+		edgeConnectClient.AssertCalled(t, "UpdateEdgeConnect", testCreatedId, testName, testHostPatterns2, testK8sAutomationHostPattern, testCreatedOauthClientId)
 	})
 }
 
@@ -728,7 +729,7 @@ func mockNewEdgeConnectClientCreate(edgeConnectClient *edgeconnectmock.Client, h
 		)
 
 		// CreateEdgeConnect creates edge connect
-		edgeConnectClient.On("CreateEdgeConnect", testName, hostPatterns, "").Return(
+		edgeConnectClient.On("CreateEdgeConnect", testName, hostPatterns, testK8sAutomationHostPattern, "").Return(
 			edgeconnect.CreateResponse{
 				ID:                  testCreatedId,
 				Name:                testName,
@@ -764,7 +765,7 @@ func mockNewEdgeConnectClientRecreate(edgeConnectClient *edgeconnectmock.Client,
 
 		edgeConnectClient.On("DeleteEdgeConnect", id).Return(nil)
 		// CreateEdgeConnect creates edge connect
-		edgeConnectClient.On("CreateEdgeConnect", testName, testHostPatterns, "").Return(
+		edgeConnectClient.On("CreateEdgeConnect", testName, testHostPatterns, testK8sAutomationHostPattern, "").Return(
 			edgeconnect.CreateResponse{
 				ID:                  testCreatedId,
 				Name:                testName,
@@ -846,7 +847,7 @@ func mockNewEdgeConnectClientUpdate(edgeConnectClient *edgeconnectmock.Client, f
 		)
 
 		// CreateEdgeConnect creates edge connect
-		edgeConnectClient.On("UpdateEdgeConnect", testCreatedId, testName, toHostPatterns, testCreatedOauthClientId).Return(nil)
+		edgeConnectClient.On("UpdateEdgeConnect", testCreatedId, testName, toHostPatterns, testK8sAutomationHostPattern, testCreatedOauthClientId).Return(nil)
 
 		edgeConnectClient.On("GetConnectionSetting", mock.Anything).Return(testEnvironmentSetting, nil)
 		edgeConnectClient.On("UpdateConnectionSetting", mock.Anything).Return(nil)
