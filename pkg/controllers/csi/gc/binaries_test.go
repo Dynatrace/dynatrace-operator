@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/spf13/afero"
@@ -54,6 +56,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 
 		gc := NewMockGarbageCollector()
 		gc.mockUnusedVersions(testVersion1, testVersion2, testVersion3)
+		gc.time.Set(time.Now().Add(2 * safeRemovalThreshold))
 
 		gc.runBinaryGarbageCollection()
 
@@ -61,6 +64,20 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		assert.InDelta(t, 3, testutil.ToFloat64(foldersRemovedMetric), 0.01)
 
 		gc.assertVersionNotExists(t, testVersion1, testVersion3)
+	})
+	t.Run("ignore recently deleted", func(t *testing.T) {
+		resetMetrics()
+
+		gc := NewMockGarbageCollector()
+		gc.mockUnusedVersions(testVersion1, testVersion2, testVersion3)
+
+		gc.runBinaryGarbageCollection()
+
+		assert.InDelta(t, 1, testutil.ToFloat64(gcRunsMetric), 0.01)
+		assert.InDelta(t, 0, testutil.ToFloat64(foldersRemovedMetric), 0.01)
+		assert.InDelta(t, 0, testutil.ToFloat64(reclaimedMemoryMetric), 0.01)
+
+		gc.assertVersionExists(t, testVersion1, testVersion2, testVersion3)
 	})
 	t.Run("ignore used", func(t *testing.T) {
 		resetMetrics()
@@ -83,6 +100,7 @@ func NewMockGarbageCollector() *CSIGarbageCollector {
 		fs:                    afero.NewMemMapFs(),
 		db:                    metadata.FakeMemoryDB(),
 		path:                  metadata.PathResolver{RootDir: testRootDir},
+		time:                  timeprovider.New(),
 		maxUnmountedVolumeAge: defaultMaxUnmountedCsiVolumeAge,
 	}
 }
