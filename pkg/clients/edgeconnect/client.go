@@ -213,10 +213,10 @@ func (c *client) GetEdgeConnect(edgeConnectId string) (GetResponse, error) {
 }
 
 // UpdateEdgeConnect updates existing edge connect hostPatterns and oauthClientId
-func (c *client) UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []string, k8sAutomationHostPattern string, oauthClientId string) error {
+func (c *client) UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []string, hostMappings []HostMapping, oauthClientId string) error {
 	edgeConnectUrl := c.getEdgeConnectUrl(edgeConnectId)
 
-	body := NewRequest(name, hostPatterns, k8sAutomationHostPattern, oauthClientId)
+	body := NewRequest(name, hostPatterns, hostMappings, oauthClientId)
 	payloadBuf := new(bytes.Buffer)
 
 	err := json.NewEncoder(payloadBuf).Encode(body)
@@ -283,10 +283,10 @@ func (c *client) DeleteEdgeConnect(edgeConnectId string) error {
 }
 
 // CreateEdgeConnect creates new edge connect
-func (c *client) CreateEdgeConnect(name string, hostPatterns []string, k8sAutomationHostPattern string, oauthClientId string) (CreateResponse, error) {
+func (c *client) CreateEdgeConnect(name string, hostPatterns []string, hostMappings []HostMapping, oauthClientId string) (CreateResponse, error) {
 	edgeConnectsUrl := c.getEdgeConnectsUrl()
 
-	body := NewRequest(name, hostPatterns, k8sAutomationHostPattern, oauthClientId)
+	body := NewRequest(name, hostPatterns, hostMappings, oauthClientId)
 	payloadBuf := new(bytes.Buffer)
 
 	err := json.NewEncoder(payloadBuf).Encode(body)
