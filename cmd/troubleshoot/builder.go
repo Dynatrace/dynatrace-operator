@@ -71,6 +71,7 @@ func clusterOptions(opts *cluster.Options) {
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		version.LogVersion()
+		logd.LogBaseLoggerSettings()
 
 		kubeConfig, err := builder.configProvider.GetConfig()
 		if err != nil {

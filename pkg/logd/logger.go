@@ -27,10 +27,14 @@ func Get() Logger {
 	baseLoggerOnce.Do(func() {
 		logLevel := readLogLevelFromEnv()
 		baseLogger = createLogger(NewPrettyLogWriter(), logLevel)
-		baseLogger.Info("logging level", "logLevel", logLevel.String())
 	})
 
 	return baseLogger
+}
+
+func LogBaseLoggerSettings() {
+	logLevel := readLogLevelFromEnv()
+	baseLogger.Info("logging level", "logLevel", logLevel.String())
 }
 
 func createLogger(out io.Writer, logLevel zapcore.Level) Logger {
