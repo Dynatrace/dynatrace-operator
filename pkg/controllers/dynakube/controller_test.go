@@ -600,7 +600,7 @@ func TestSetupIstio(t *testing.T) {
 
 		require.NoError(t, err)
 
-		expectedName = istio.BuildNameForFQDNServiceEntry(dynakube.GetName(), istio.CSIDiverComponent)
+		expectedName = istio.BuildNameForFQDNServiceEntry(dynakube.GetName(), istio.CSIDriverComponent)
 		serviceEntry, err = fakeIstio.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)

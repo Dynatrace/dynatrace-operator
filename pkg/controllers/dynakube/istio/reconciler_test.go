@@ -248,7 +248,7 @@ func TestReconcileCSIDriver(t *testing.T) {
 		err := reconciler.ReconcileCSIDriver(ctx, dynakube)
 		require.NoError(t, err)
 
-		expectedName := BuildNameForFQDNServiceEntry(dynakube.GetName(), CSIDiverComponent)
+		expectedName := BuildNameForFQDNServiceEntry(dynakube.GetName(), CSIDriverComponent)
 		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)

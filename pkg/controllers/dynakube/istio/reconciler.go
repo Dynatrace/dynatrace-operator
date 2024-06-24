@@ -59,7 +59,7 @@ func (r *reconciler) ReconcileCSIDriver(ctx context.Context, dynakube *dynatrace
 		return err
 	}
 
-	err = r.reconcileCommunicationHosts(ctx, []dtclient.CommunicationHost{codeModulesHost}, CSIDiverComponent)
+	err = r.reconcileCommunicationHosts(ctx, []dtclient.CommunicationHost{codeModulesHost}, CSIDriverComponent)
 	if err != nil {
 		return errors.WithMessage(err, "error reconciling config for codeModulesImage")
 	}
