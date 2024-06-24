@@ -9,7 +9,7 @@ const (
 	metaDataEnrichmentConditionType   = "MetadataEnrichment"
 	codeModulesInjectionConditionType = "CodeModulesInjection"
 
-	nsAndSecretsCreatedReason  = "NamespaceAndSecretsCreated"
+	nsAndSecretsCreatedReason  = "SecretsCreated"
 	nsAndSecretsCreatedMessage = "Namespaces mapped and secrets created"
 )
 
