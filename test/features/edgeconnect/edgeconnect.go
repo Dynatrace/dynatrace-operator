@@ -6,30 +6,355 @@ import (
 	"fmt"
 	"testing"
 
+	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+	ecclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
+	"golang.org/x/net/context"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func Feature(t *testing.T) features.Feature {
-	builder := features.New("install edgeconnect")
+const (
+	testHostPattern        = "e2eTestHostPattern.internal.org"
+	testHostPattern2       = "e2eTestHostPattern2.internal.org"
+	testServiceAccountName = "custom-edgeconnect-service-name"
+	testNamespaceName      = "dynatrace"
+)
+
+type tenantConfig struct {
+	// id of the EdgeConnect configuration on the tenant (managed by the operator or the test)
+	id string
+	// secret OAuth2 client credentials created by the Dynatrace API (normal mode)
+	secret tenant.EdgeConnectSecret
+}
+
+func NormalModeFeature(t *testing.T) features.Feature {
+	builder := features.New("install edgeconnect - normal mode")
 	builder.WithLabel("name", "edgeconnect-install")
 
 	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
 
+	edgeConnectTenantConfig := &tenantConfig{}
+
+	builder.Assess("create EC configuration on the tenant", createTenantConfig(secretConfig, edgeConnectTenantConfig))
+
 	testEdgeConnect := *edgeconnect.New(
-		// this name should match with tenant edge connect name
+		// this tenantConfigName should match with tenant edge connect tenantConfigName
 		edgeconnect.WithName(secretConfig.Name),
 		edgeconnect.WithApiServer(secretConfig.ApiServer),
-		edgeconnect.WithOAuthClientSecret(fmt.Sprintf("%s-client-secret", secretConfig.Name)),
+		edgeconnect.WithOAuthClientSecret(buildOAuthClientSecretName(secretConfig.Name)),
 		edgeconnect.WithOAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
-		edgeconnect.WithOAuthResource(fmt.Sprintf("urn:dtenvironment:%s", secretConfig.TenantUid)),
+	)
+
+	// create OAuth client secret related to the specific EdgeConnect configuration on the tenant
+	builder.Assess("create client secret", tenant.CreateClientSecret(edgeConnectTenantConfig.secret, buildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
+
+	// Register operator install
+	edgeconnect.Install(builder, helpers.LevelAssess, nil, testEdgeConnect)
+
+	builder.Assess("check EC configuration on the tenant", checkEcExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
+	builder.Assess("delete EdgeConnect CR", edgeconnect.Delete(testEdgeConnect))
+	builder.Assess("check if EC configuration is deleted on the tenant", checkEcExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
+
+	builder.Teardown(tenant.DeleteTenantSecret(buildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
+	builder.Teardown(deleteTenantConfig(secretConfig, edgeConnectTenantConfig))
+
+	return builder.Feature()
+}
+
+func ProvisionerModeFeature(t *testing.T) features.Feature {
+	builder := features.New("install edgeconnect - provisioner mode")
+	builder.WithLabel("name", "edgeconnect-install-provisioner")
+
+	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
+
+	edgeConnectTenantConfig := &tenantConfig{}
+
+	testEdgeConnect := *edgeconnect.New(
+		// this tenantConfigName should match with tenant edge connect tenantConfigName
+		edgeconnect.WithName(secretConfig.Name),
+		edgeconnect.WithApiServer(secretConfig.ApiServer),
+		edgeconnect.WithOAuthClientSecret(buildOAuthClientSecretName(secretConfig.Name)),
+		edgeconnect.WithOAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
+		edgeconnect.WithOAuthResource(secretConfig.Resource),
+		edgeconnect.WithProvisionerMode(true),
+		edgeconnect.WithHostPattern(testHostPattern),
 	)
 
 	// Register operator install
 	edgeconnect.Install(builder, helpers.LevelAssess, &secretConfig, testEdgeConnect)
-	builder.Teardown(edgeconnect.Delete(testEdgeConnect))
+
+	builder.Assess("get tenant config", getTenantConfig(secretConfig, edgeConnectTenantConfig))
+	builder.Assess("get EC status", edgeconnect.Get(&testEdgeConnect))
+
+	builder.Assess("check if EC configuration exists on the tenant", checkEcExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
+	builder.Assess("check hostPatterns on the tenant - testHostPattern", checkHostPatternOnTheTenant(secretConfig, edgeConnectTenantConfig, func() string { return testHostPattern }))
+	builder.Assess("update hostPatterns", updateHostPatterns(&testEdgeConnect))
+	builder.Assess("check hostPatterns on the tenant - testHostPattern2", checkHostPatternOnTheTenant(secretConfig, edgeConnectTenantConfig, func() string { return testHostPattern2 }))
+	builder.Assess("delete EC custom resource", edgeconnect.Delete(testEdgeConnect))
+	builder.Assess("check if EC configuration is deleted on the tenant", checkEcNotExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
+
+	builder.Teardown(tenant.DeleteTenantSecret(buildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
 
 	return builder.Feature()
+}
+
+func AutomationModeFeature(t *testing.T) features.Feature {
+	builder := features.New("install edgeconnect - k8s automation mode")
+	builder.WithLabel("name", "edgeconnect-install-k8s-automation")
+
+	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
+
+	edgeConnectTenantConfig := &tenantConfig{}
+
+	testEdgeConnect := *edgeconnect.New(
+		// this tenantConfigName should match with tenant edge connect tenantConfigName
+		edgeconnect.WithName(secretConfig.Name),
+		edgeconnect.WithApiServer(secretConfig.ApiServer),
+		edgeconnect.WithOAuthClientSecret(buildOAuthClientSecretName(secretConfig.Name)),
+		edgeconnect.WithOAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
+		edgeconnect.WithOAuthResource(secretConfig.Resource),
+		edgeconnect.WithProvisionerMode(true),
+		edgeconnect.WithK8SAutomationMode(true),
+		edgeconnect.WithServiceAccount(testServiceAccountName),
+	)
+
+	builder.Assess("create ServiceAccount", createServiceAccount())
+
+	// Register operator install
+	edgeconnect.Install(builder, helpers.LevelAssess, &secretConfig, testEdgeConnect)
+
+	builder.Assess("get tenant config", getTenantConfig(secretConfig, edgeConnectTenantConfig))
+	builder.Assess("get EC status", edgeconnect.Get(&testEdgeConnect))
+
+	builder.Assess("check if EC configuration exists on the tenant", checkEcExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
+	// k8sautomation.HostPattern has to be executed when the test is running and testEdgeConnect.Status contains real data
+	builder.Assess("check hostPatterns - k8s automation", checkHostPatternOnTheTenant(secretConfig, edgeConnectTenantConfig, func() string { //nolint
+		return testEdgeConnect.K8sAutomationHostPattern()
+	}))
+	builder.Assess("check if settings object exists on the tenant", checkSettingsExistsOnTheTenant(secretConfig, &testEdgeConnect))
+	builder.Assess("delete EC custom resource", edgeconnect.Delete(testEdgeConnect))
+	builder.Assess("check if EC configuration is deleted on the tenant", checkEcNotExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
+	builder.Assess("check if settings object is deleted on the tenant", checkSettingsNotExistsOnTheTenant(secretConfig, &testEdgeConnect))
+
+	builder.Teardown(tenant.DeleteTenantSecret(buildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
+	builder.Teardown(deleteServiceAccount())
+
+	return builder.Feature()
+}
+
+// createTenantConfig for Normal mode only, preserves the id and OAuth secret of EdgeConnect configuration on the tenant
+func createTenantConfig(clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *tenantConfig) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		ecClt, err := buildEcClient(ctx, clientSecret)
+		require.NoError(t, err)
+
+		res, err := ecClt.CreateEdgeConnect(clientSecret.Name, []string{testHostPattern}, []ecclient.HostMapping{}, "", false)
+		require.NoError(t, err)
+		assert.Equal(t, clientSecret.Name, res.Name)
+
+		edgeConnectTenantConfig.secret.Name = clientSecret.Name
+		edgeConnectTenantConfig.secret.ApiServer = clientSecret.ApiServer
+		edgeConnectTenantConfig.secret.TenantUid = clientSecret.TenantUid
+		edgeConnectTenantConfig.secret.OauthClientId = res.OauthClientId
+		edgeConnectTenantConfig.secret.OauthClientSecret = res.OauthClientSecret
+		edgeConnectTenantConfig.secret.Resource = res.OauthClientResource
+		edgeConnectTenantConfig.id = res.ID
+
+		return ctx
+	}
+}
+
+// getTenantConfig for Provisioner and K8SAutomation modes, preserves the id of EdgeConnect configuration on the tenant
+func getTenantConfig(clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *tenantConfig) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		ecClt, err := buildEcClient(ctx, clientSecret)
+		require.NoError(t, err)
+
+		ecs, err := ecClt.GetEdgeConnects(clientSecret.Name)
+		require.NoError(t, err)
+
+		assert.LessOrEqual(t, len(ecs.EdgeConnects), 1, "Found multiple EdgeConnect objects with the same tenantConfigName", "count", ecs.EdgeConnects)
+		assert.NotEmpty(t, ecs.EdgeConnects, "EdgeConnect object not found", "count", ecs.EdgeConnects)
+
+		assert.Equal(t, clientSecret.Name, ecs.EdgeConnects[0].Name, "expected EC object not found on the tenant")
+		assert.True(t, ecs.EdgeConnects[0].ManagedByDynatraceOperator)
+
+		// the id of EC configuration on the tenant is important only
+		// the OAuth clientSecret used by the test and the OAuth secret used by the operator are the same
+		edgeConnectTenantConfig.id = ecs.EdgeConnects[0].ID
+
+		return ctx
+	}
+}
+
+func deleteTenantConfig(clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *tenantConfig) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		ecClt, err := buildEcClient(ctx, clientSecret)
+		require.NoError(t, err)
+
+		err = ecClt.DeleteEdgeConnect(edgeConnectTenantConfig.id)
+		require.NoError(t, err)
+
+		return ctx
+	}
+}
+
+func checkEcExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *tenantConfig) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		ecClt, err := buildEcClient(ctx, clientSecret)
+		require.NoError(t, err)
+
+		_, err = ecClt.GetEdgeConnect(edgeConnectTenantConfig.id)
+		require.NoError(t, err)
+
+		return ctx
+	}
+}
+
+func checkHostPatternOnTheTenant(clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *tenantConfig, hostPattern func() string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		ecClt, err := buildEcClient(ctx, clientSecret)
+		require.NoError(t, err)
+
+		ec, err := ecClt.GetEdgeConnect(edgeConnectTenantConfig.id)
+		require.NoError(t, err)
+
+		host := hostPattern()
+		assert.True(t, slices.Contains(ec.HostPatterns, host), "hostPattern %s not found", host)
+
+		return ctx
+	}
+}
+
+func checkEcNotExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *tenantConfig) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		ecClt, err := buildEcClient(ctx, clientSecret)
+		require.NoError(t, err)
+
+		_, err = ecClt.GetEdgeConnect(edgeConnectTenantConfig.id)
+		// err.Message: Unknown key: eb27ac05-c0c7-4d88-9bb1-804b39e3429b
+		// err.Code: 404
+		require.Error(t, err)
+
+		return ctx
+	}
+}
+
+func checkSettingsExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, testEdgeConnect *edgeconnectv1alpha1.EdgeConnect) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		ecClt, err := buildEcClient(ctx, clientSecret)
+		require.NoError(t, err)
+
+		require.NotEmpty(t, testEdgeConnect.Status.KubeSystemUID)
+
+		envSetting, err := ecClt.GetConnectionSetting(testEdgeConnect.Status.KubeSystemUID)
+		require.NoError(t, err)
+
+		assert.Equal(t, testEdgeConnect.Name, envSetting.Value.Name)
+		assert.Equal(t, testEdgeConnect.Namespace, envSetting.Value.Namespace)
+
+		return ctx
+	}
+}
+
+func checkSettingsNotExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, testEdgeConnect *edgeconnectv1alpha1.EdgeConnect) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		ecClt, err := buildEcClient(ctx, clientSecret)
+		require.NoError(t, err)
+
+		require.NotEmpty(t, testEdgeConnect.Status.KubeSystemUID)
+
+		se, err := ecClt.GetConnectionSetting(testEdgeConnect.Status.KubeSystemUID)
+		require.NoError(t, err)
+		assert.Equal(t, ecclient.EnvironmentSetting{}, se)
+
+		return ctx
+	}
+}
+
+func buildEcClient(ctx context.Context, secret tenant.EdgeConnectSecret) (ecclient.Client, error) {
+	clt, err := ecclient.NewClient(
+		secret.OauthClientId,
+		secret.OauthClientSecret,
+		ecclient.WithBaseURL("https://"+secret.ApiServer),
+		ecclient.WithTokenURL("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
+		ecclient.WithOauthScopes([]string{
+			"app-engine:edge-connects:read",
+			"app-engine:edge-connects:write",
+			"app-engine:edge-connects:delete",
+			"oauth2:clients:manage",
+			"settings:objects:read",
+			"settings:objects:write",
+		}),
+		ecclient.WithContext(ctx),
+	)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return clt, nil
+}
+
+func createServiceAccount() features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		err := envConfig.Client().Resources().Create(ctx, serviceAccount(testServiceAccountName, testNamespaceName))
+		if err != nil {
+			t.Error("failed to create service account", err)
+
+			return ctx
+		}
+
+		return ctx
+	}
+}
+
+func deleteServiceAccount() features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		err := envConfig.Client().Resources().Delete(ctx, serviceAccount(testServiceAccountName, testNamespaceName))
+		if err != nil {
+			t.Error("failed to delete service account", err)
+
+			return ctx
+		}
+
+		return ctx
+	}
+}
+
+func serviceAccount(name string, namespace string) *corev1.ServiceAccount {
+	return &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+}
+
+func updateHostPatterns(testEdgeConnect *edgeconnectv1alpha1.EdgeConnect) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		testEdgeConnect.Spec.HostPatterns = []string{
+			testHostPattern2,
+		}
+		err := envConfig.Client().Resources().Update(ctx, testEdgeConnect)
+		if err != nil {
+			t.Error("failed to update EdgeConnect CR", err)
+
+			return ctx
+		}
+
+		return ctx
+	}
+}
+
+func buildOAuthClientSecretName(secretName string) string {
+	return fmt.Sprintf("%s-client-secret", secretName)
 }

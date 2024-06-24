@@ -8,7 +8,7 @@ type Client interface {
 	GetEdgeConnect(edgeConnectId string) (GetResponse, error)
 
 	// CreateEdgeConnect creates edge connect
-	CreateEdgeConnect(name string, hostPatterns []string, hostMappings []edgeconnectv1alpha1.HostMapping, oauthClientId string) (CreateResponse, error)
+	CreateEdgeConnect(name string, hostPatterns []string, hostMappings []edgeconnectv1alpha1.HostMapping, oauthClientId string, managedByOperator ...bool) (CreateResponse, error)
 
 	// UpdateEdgeConnect updates edge connect
 	UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []string, hostMappings []edgeconnectv1alpha1.HostMapping, oauthClientId string) error
