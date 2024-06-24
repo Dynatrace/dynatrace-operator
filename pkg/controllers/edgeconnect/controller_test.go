@@ -51,11 +51,10 @@ var (
 	testObjectId      = "my:default"
 
 	testEnvironmentSetting = edgeconnect.EnvironmentSetting{
-		ObjectId:      &testObjectId,
-		SchemaId:      edgeconnect.KubernetesConnectionSchemaID,
-		SchemaVersion: edgeconnect.KubernetesConnectionVersion,
-		Scope:         edgeconnect.KubernetesConnectionScope,
-		Value:         edgeconnect.EnvironmentSettingValue{},
+		ObjectId: &testObjectId,
+		SchemaId: edgeconnect.KubernetesConnectionSchemaID,
+		Scope:    edgeconnect.KubernetesConnectionScope,
+		Value:    edgeconnect.EnvironmentSettingValue{},
 	}
 )
 
