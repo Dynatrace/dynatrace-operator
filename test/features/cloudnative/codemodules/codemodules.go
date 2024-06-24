@@ -30,6 +30,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/registry"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -46,9 +47,7 @@ import (
 )
 
 const (
-	codeModulesVersion = "1.246.0.20220627-183412"
-	codeModulesImage   = "quay.io/dynatrace/codemodules:" + codeModulesVersion
-	diskUsageKiBDelta  = 1000000
+	diskUsageKiBDelta = 1000000
 
 	dataPath                 = "/data/"
 	provisionerContainerName = "provisioner"
@@ -74,7 +73,7 @@ func InstallFromImage(t *testing.T) features.Feature {
 		dynakube.WithName("cloudnative-codemodules"),
 		dynakube.WithNameBasedOneAgentNamespaceSelector(),
 		dynakube.WithApiUrl(secretConfigs[0].ApiUrl),
-		dynakube.WithCloudNativeSpec(codeModulesCloudNativeSpec()),
+		dynakube.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
 	)
 
 	appDynakube := *dynakube.New(
@@ -82,7 +81,7 @@ func InstallFromImage(t *testing.T) features.Feature {
 		dynakube.WithNameBasedOneAgentNamespaceSelector(),
 		dynakube.WithApiUrl(secretConfigs[1].ApiUrl),
 		dynakube.WithApplicationMonitoringSpec(&dynatracev1beta2.ApplicationMonitoringSpec{
-			AppInjectionSpec: *codeModulesAppInjectSpec(),
+			AppInjectionSpec: *codeModulesAppInjectSpec(t),
 			UseCSIDriver:     true,
 		}),
 	)
@@ -106,7 +105,7 @@ func InstallFromImage(t *testing.T) features.Feature {
 	// Register actual test
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 
-	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube.Namespace))
+	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube))
 	builder.Assess("checking storage used", measureDiskUsage(appDynakube.Namespace, storageMap))
 	dynakube.Install(builder, helpers.LevelAssess, &secretConfigs[1], appDynakube)
 	builder.Assess("storage size has not increased", diskUsageDoesNotIncrease(appDynakube.Namespace, storageMap))
@@ -143,7 +142,7 @@ func WithProxy(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) features
 	cloudNativeDynakube := *dynakube.New(
 		dynakube.WithName("codemodules-with-proxy"),
 		dynakube.WithApiUrl(secretConfigs[0].ApiUrl),
-		dynakube.WithCloudNativeSpec(codeModulesCloudNativeSpec()),
+		dynakube.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
 		dynakube.WithActiveGate(),
 		dynakube.WithIstioIntegration(),
 		dynakube.WithProxy(proxySpec),
@@ -171,7 +170,7 @@ func WithProxy(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) features
 	// Register actual test
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
-	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube.Namespace))
+	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube))
 
 	builder.Assess("check env variables of oneagent pods", checkOneAgentEnvVars(cloudNativeDynakube))
 	builder.Assess("check proxy settings in ruxitagentproc.conf", proxy.CheckRuxitAgentProcFileHasProxySetting(*sampleApp, proxySpec))
@@ -199,7 +198,7 @@ func WithProxyCA(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) featur
 	cloudNativeDynakube := *dynakube.New(
 		dynakube.WithName("codemodules-with-proxy-custom-ca"),
 		dynakube.WithApiUrl(secretConfigs[0].ApiUrl),
-		dynakube.WithCloudNativeSpec(codeModulesCloudNativeSpec()),
+		dynakube.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
 		dynakube.WithCustomCAs(configMapName),
 		dynakube.WithActiveGate(),
 		dynakube.WithIstioIntegration(),
@@ -235,7 +234,7 @@ func WithProxyCA(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) featur
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
 
-	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube.Namespace))
+	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube))
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, nil, trustedCa)
 	cloudnative.AssessOneAgentContainer(builder, nil, trustedCa)
@@ -260,7 +259,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy)
 	cloudNativeDynakube := *dynakube.New(
 		dynakube.WithName("codemodules-with-proxy-and-ag-cert"),
 		dynakube.WithApiUrl(secretConfigs[0].ApiUrl),
-		dynakube.WithCloudNativeSpec(codeModulesCloudNativeSpec()),
+		dynakube.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
 		dynakube.WithActiveGate(),
 		dynakube.WithActiveGateTlsSecret(agSecretName),
 		dynakube.WithIstioIntegration(),
@@ -302,7 +301,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy)
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
 
-	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube.Namespace))
+	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube))
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, agCrt, nil)
 	cloudnative.AssessOneAgentContainer(builder, agCrt, nil)
@@ -326,7 +325,7 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProx
 	cloudNativeDynakube := *dynakube.New(
 		dynakube.WithName("codemodules-with-proxy-custom-ca-ag-cert"),
 		dynakube.WithApiUrl(secretConfigs[0].ApiUrl),
-		dynakube.WithCloudNativeSpec(codeModulesCloudNativeSpec()),
+		dynakube.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
 		dynakube.WithCustomCAs(configMapName),
 		dynakube.WithActiveGate(),
 		dynakube.WithActiveGateTlsSecret(agSecretName),
@@ -375,7 +374,7 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProx
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
 
-	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube.Namespace))
+	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube))
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, agCrt, trustedCa)
 	cloudnative.AssessOneAgentContainer(builder, agCrt, trustedCa)
@@ -391,19 +390,19 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProx
 	return builder.Feature()
 }
 
-func codeModulesCloudNativeSpec() *dynatracev1beta2.CloudNativeFullStackSpec {
+func codeModulesCloudNativeSpec(t *testing.T) *dynatracev1beta2.CloudNativeFullStackSpec {
 	return &dynatracev1beta2.CloudNativeFullStackSpec{
-		AppInjectionSpec: *codeModulesAppInjectSpec(),
+		AppInjectionSpec: *codeModulesAppInjectSpec(t),
 	}
 }
 
-func codeModulesAppInjectSpec() *dynatracev1beta2.AppInjectionSpec {
+func codeModulesAppInjectSpec(t *testing.T) *dynatracev1beta2.AppInjectionSpec {
 	return &dynatracev1beta2.AppInjectionSpec{
-		CodeModulesImage: codeModulesImage,
+		CodeModulesImage: registry.GetLatestCodeModulesImageURI(t),
 	}
 }
 
-func imageHasBeenDownloaded(namespace string) features.Func {
+func imageHasBeenDownloaded(dynakube dynatracev1beta2.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
 		clientset, err := kubernetes.NewForConfig(resource.GetConfig())
@@ -411,7 +410,7 @@ func imageHasBeenDownloaded(namespace string) features.Func {
 
 		err = daemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      csi.DaemonSetName,
-			Namespace: namespace,
+			Namespace: dynakube.Namespace,
 		}).ForEachPod(func(podItem corev1.Pod) {
 			err = wait.For(func(ctx context.Context) (done bool, err error) {
 				logStream, err := clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &corev1.PodLogOptions{
@@ -420,7 +419,7 @@ func imageHasBeenDownloaded(namespace string) features.Func {
 				require.NoError(t, err)
 				buffer := new(bytes.Buffer)
 				_, err = io.Copy(buffer, logStream)
-				isNew := strings.Contains(buffer.String(), "Installed agent version: "+codeModulesImage)
+				isNew := strings.Contains(buffer.String(), "Installed agent version: "+dynakube.CustomCodeModulesImage())
 				isOld := strings.Contains(buffer.String(), "agent already installed")
 				t.Logf("wait for Installed agent version in %s", podItem.Name)
 
