@@ -174,7 +174,8 @@ func (c *client) getSettingsApiResponseData(response *http.Response) ([]byte, er
 	}
 
 	if response.StatusCode != http.StatusOK &&
-		response.StatusCode != http.StatusCreated {
+		response.StatusCode != http.StatusCreated &&
+		response.StatusCode != http.StatusNoContent {
 		return responseData, c.handleErrorResponseFromSettingsApi(responseData, response.StatusCode)
 	}
 
