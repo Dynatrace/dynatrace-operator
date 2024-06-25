@@ -28,7 +28,7 @@ type RulesResponseValue struct {
 	Rules []dynakube.EnrichmentRule `json:"rules"`
 }
 
-func (dtc *dynatraceClient) GetRulesSetting(ctx context.Context, kubeSystemUUID string) (GetRulesSettingsResponse, error) {
+func (dtc *dynatraceClient) GetRulesSettings(ctx context.Context, kubeSystemUUID string) (GetRulesSettingsResponse, error) {
 	if kubeSystemUUID == "" {
 		return GetRulesSettingsResponse{}, errors.New("no kube-system namespace UUID given")
 	}

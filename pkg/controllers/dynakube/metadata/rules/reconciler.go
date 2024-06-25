@@ -44,7 +44,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	conditions.SetStatusOutdated(r.dk.Conditions(), conditionType, "Metadata-enrichment rules are outdate in the status")
+	conditions.SetStatusOutdated(r.dk.Conditions(), conditionType, "Metadata-enrichment rules are outdated in the status")
 
 	rules, err := r.getEnrichmentRules(ctx)
 	if err != nil {
@@ -59,7 +59,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) getEnrichmentRules(ctx context.Context) ([]dynakube.EnrichmentRule, error) {
-	rulesResponse, err := r.dtc.GetRulesSetting(ctx, r.dk.Status.KubeSystemUUID)
+	rulesResponse, err := r.dtc.GetRulesSettings(ctx, r.dk.Status.KubeSystemUUID)
 	if err != nil {
 		conditions.SetDynatraceApiError(r.dk.Conditions(), conditionType, err)
 

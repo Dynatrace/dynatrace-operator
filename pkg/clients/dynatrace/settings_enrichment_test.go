@@ -37,7 +37,7 @@ func TestGetRulesSetting(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, dtc)
 
-		rulesResponse, err := dtc.GetRulesSetting(ctx, "test-uuid")
+		rulesResponse, err := dtc.GetRulesSettings(ctx, "test-uuid")
 		require.NoError(t, err)
 		assert.Equal(t, createRulesResponse(mockParams.settingsAPI.totalCount), rulesResponse)
 	})
@@ -54,7 +54,7 @@ func TestGetRulesSetting(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, dtc)
 
-		rulesResponse, err := dtc.GetRulesSetting(ctx, "")
+		rulesResponse, err := dtc.GetRulesSettings(ctx, "")
 		require.Error(t, err)
 		assert.Empty(t, rulesResponse)
 	})
@@ -79,7 +79,7 @@ func TestGetRulesSetting(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, dtc)
 
-		rulesResponse, err := dtc.GetRulesSetting(ctx, "test-uuid")
+		rulesResponse, err := dtc.GetRulesSettings(ctx, "test-uuid")
 		require.NoError(t, err)
 		assert.Empty(t, rulesResponse)
 	})
@@ -101,7 +101,7 @@ func TestGetRulesSetting(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, dtc)
 
-		rulesResponse, err := dtc.GetRulesSetting(ctx, "test-uuid")
+		rulesResponse, err := dtc.GetRulesSettings(ctx, "test-uuid")
 		require.Error(t, err)
 		assert.Empty(t, rulesResponse)
 	})
@@ -126,7 +126,7 @@ func TestGetRulesSetting(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, dtc)
 
-		rulesResponse, err := dtc.GetRulesSetting(ctx, "test-uuid")
+		rulesResponse, err := dtc.GetRulesSettings(ctx, "test-uuid")
 		require.Error(t, err)
 		assert.Empty(t, rulesResponse)
 	})

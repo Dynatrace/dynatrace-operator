@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	StatusUpdateReason   = "StatusUpdated"
+	StatusUpdatedReason  = "StatusUpdated"
 	StatusOutdatedReason = "StatusOutdated"
 )
 
@@ -14,7 +14,7 @@ func SetStatusUpdated(conditions *[]metav1.Condition, conditionType, msg string)
 	condition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionTrue,
-		Reason:  StatusUpdateReason,
+		Reason:  StatusUpdatedReason,
 		Message: msg,
 	}
 	_ = meta.SetStatusCondition(conditions, condition)

@@ -70,7 +70,7 @@ func TestReconcile(t *testing.T) {
 		conditions.SetStatusUpdated(dk.Conditions(), conditionType, specialMessage)
 
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetRulesSetting", mock.AnythingOfType("context.backgroundCtx"), dk.Status.KubeSystemUUID).Return(expectedResponse, nil)
+		dtc.On("GetRulesSettings", mock.AnythingOfType("context.backgroundCtx"), dk.Status.KubeSystemUUID).Return(expectedResponse, nil)
 
 		futureTime := timeprovider.New()
 		futureTime.Set(time.Now().Add(time.Hour))
@@ -93,7 +93,7 @@ func TestReconcile(t *testing.T) {
 		expectedResponse := createRulesResponse()
 
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetRulesSetting", mock.AnythingOfType("context.backgroundCtx"), dk.Status.KubeSystemUUID).Return(expectedResponse, nil)
+		dtc.On("GetRulesSettings", mock.AnythingOfType("context.backgroundCtx"), dk.Status.KubeSystemUUID).Return(expectedResponse, nil)
 		reconciler := NewReconciler(dtc, &dk)
 
 		err := reconciler.Reconcile(ctx)
@@ -101,13 +101,13 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, createRules(), dk.Status.MetadataEnrichment.Rules)
 		require.Len(t, dk.Status.Conditions, 1)
-		assert.Equal(t, conditions.StatusUpdateReason, dk.Status.Conditions[0].Reason)
+		assert.Equal(t, conditions.StatusUpdatedReason, dk.Status.Conditions[0].Reason)
 	})
 
 	t.Run("set api-error condition in case of fail", func(t *testing.T) {
 		dk := createDynaKube()
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetRulesSetting", mock.AnythingOfType("context.backgroundCtx"), dk.Status.KubeSystemUUID).Return(dtclient.GetRulesSettingsResponse{}, errors.New("BOOM"))
+		dtc.On("GetRulesSettings", mock.AnythingOfType("context.backgroundCtx"), dk.Status.KubeSystemUUID).Return(dtclient.GetRulesSettingsResponse{}, errors.New("BOOM"))
 		reconciler := NewReconciler(dtc, &dk)
 
 		err := reconciler.Reconcile(ctx)
