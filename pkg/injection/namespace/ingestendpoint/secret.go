@@ -16,7 +16,6 @@ import (
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -114,19 +113,14 @@ func (g *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynatrace
 }
 
 func (g *SecretGenerator) RemoveEndpointSecrets(ctx context.Context, namespaces []corev1.Namespace) error {
-	for _, targetNs := range namespaces {
-		endpointSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      consts.EnrichmentEndpointSecretName,
-				Namespace: targetNs.GetName(),
-			},
-		}
-		if err := g.client.Delete(ctx, endpointSecret); err != nil && !k8serrors.IsNotFound(err) {
-			return err
-		}
+	nsList := make([]string, 0, len(namespaces))
+	for _, ns := range namespaces {
+		nsList = append(nsList, ns.Name)
 	}
 
-	return nil
+	secretQuery := k8ssecret.NewQuery(ctx, g.client, g.apiReader, log)
+
+	return secretQuery.DeleteForNamespaces(consts.EnrichmentEndpointSecretName, nsList)
 }
 
 func (g *SecretGenerator) prepare(ctx context.Context, dk *dynatracev1beta2.DynaKube) (map[string][]byte, error) {

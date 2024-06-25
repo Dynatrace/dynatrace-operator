@@ -116,6 +116,47 @@ func newClientWithSecrets() client.Client {
 	)
 }
 
+func TestMultipleNamespaces(t *testing.T) {
+	t.Run("deletion of test secret in namespaces 1 and 2", func(t *testing.T) {
+		fakeClient := newClientWithSecrets()
+		secretQuery := NewQuery(context.Background(), fakeClient, fakeClient, secretLog)
+
+		namespaces := []string{"ns1", "ns2"}
+		err := secretQuery.DeleteForNamespaces(testSecretName, namespaces)
+		require.NoError(t, err)
+
+		// get all secrets from all namespaces
+		secretList := &corev1.SecretList{}
+		err = fakeClient.List(context.Background(), secretList)
+
+		require.NoError(t, err)
+		assert.Len(t, secretList.Items, 4)
+	})
+	t.Run("deletion of test secret in namespaces 1 and 2 and empty", func(t *testing.T) {
+		fakeClient := newClientWithSecrets()
+		secretQuery := NewQuery(context.Background(), fakeClient, fakeClient, secretLog)
+
+		// secret does not exist in this namespace => other secrets should still get deleted
+		ns := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "empty",
+			},
+		}
+		_ = fakeClient.Create(context.Background(), &ns)
+
+		namespaces := []string{"ns1", "ns2", "empty"}
+		err := secretQuery.DeleteForNamespaces(testSecretName, namespaces)
+		require.NoError(t, err)
+
+		// get all secrets from all namespaces
+		secretList := &corev1.SecretList{}
+		err = fakeClient.List(context.Background(), secretList)
+
+		require.NoError(t, err)
+		assert.Len(t, secretList.Items, 4)
+	})
+}
+
 func TestMultipleSecrets(t *testing.T) {
 	t.Run("get existing secret from all namespaces", func(t *testing.T) {
 		fakeClient := newClientWithSecrets()

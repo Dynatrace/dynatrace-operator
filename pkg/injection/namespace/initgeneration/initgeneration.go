@@ -109,6 +109,17 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 	return nil
 }
 
+func (g *InitGenerator) Cleanup(ctx context.Context, namespaces []corev1.Namespace) error {
+	nsList := make([]string, 0, len(namespaces))
+	for _, ns := range namespaces {
+		nsList = append(nsList, ns.Name)
+	}
+
+	secretQuery := k8ssecret.NewQuery(ctx, g.client, g.apiReader, log)
+
+	return secretQuery.DeleteForNamespaces(consts.AgentInitSecretName, nsList)
+}
+
 // generate gets the necessary info the create the init secret data
 func (g *InitGenerator) generate(ctx context.Context, dk *dynatracev1beta2.DynaKube) (map[string][]byte, error) {
 	hostMonitoringNodes, err := g.getHostMonitoringNodes(dk)
