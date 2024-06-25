@@ -743,9 +743,8 @@ func (controller *Controller) createOrUpdateConnectionSetting(edgeConnectClient 
 
 		err = edgeConnectClient.CreateConnectionSetting(
 			edgeconnect.EnvironmentSetting{
-				SchemaId:      edgeconnect.KubernetesConnectionSchemaID,
-				SchemaVersion: edgeconnect.KubernetesConnectionVersion,
-				Scope:         edgeconnect.KubernetesConnectionScope,
+				SchemaId: edgeconnect.KubernetesConnectionSchemaID,
+				Scope:    edgeconnect.KubernetesConnectionScope,
 				Value: edgeconnect.EnvironmentSettingValue{
 					Name:      edgeConnect.Name,
 					UID:       edgeConnect.Status.KubeSystemUID,

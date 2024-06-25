@@ -12,16 +12,14 @@ import (
 
 const (
 	KubernetesConnectionSchemaID = "app:dynatrace.kubernetes.connector:connection"
-	KubernetesConnectionVersion  = "0.1.6"
 	KubernetesConnectionScope    = "environment"
 )
 
 type EnvironmentSetting struct {
-	ObjectId      *string                 `json:"objectId"`
-	SchemaId      string                  `json:"schemaId"`
-	SchemaVersion string                  `json:"schemaVersion"`
-	Scope         string                  `json:"scope"`
-	Value         EnvironmentSettingValue `json:"value"`
+	ObjectId *string                 `json:"objectId"`
+	SchemaId string                  `json:"schemaId"`
+	Scope    string                  `json:"scope"`
+	Value    EnvironmentSettingValue `json:"value"`
 }
 
 type EnvironmentSettingValue struct {
@@ -110,8 +108,6 @@ func (c *client) CreateConnectionSetting(es EnvironmentSetting) error {
 }
 
 func (c *client) UpdateConnectionSetting(es EnvironmentSetting) error {
-	es.SchemaVersion = KubernetesConnectionVersion
-
 	jsonStr, err := json.Marshal(es)
 	if err != nil {
 		return errors.WithStack(err)
