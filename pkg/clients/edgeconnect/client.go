@@ -104,7 +104,7 @@ func (e ServerError) Error() string {
 		return "unknown server error"
 	}
 
-	return fmt.Sprintf("edgeconnect server error %d: %s", int64(e.Code), e.Message)
+	return fmt.Sprintf("edgeconnect server error %d: %s: details: %s", int64(e.Code), e.Message, e.Details)
 }
 
 type serverErrorResponse struct {
@@ -174,7 +174,8 @@ func (c *client) getSettingsApiResponseData(response *http.Response) ([]byte, er
 	}
 
 	if response.StatusCode != http.StatusOK &&
-		response.StatusCode != http.StatusCreated {
+		response.StatusCode != http.StatusCreated &&
+		response.StatusCode != http.StatusNoContent {
 		return responseData, c.handleErrorResponseFromSettingsApi(responseData, response.StatusCode)
 	}
 
@@ -213,10 +214,10 @@ func (c *client) GetEdgeConnect(edgeConnectId string) (GetResponse, error) {
 }
 
 // UpdateEdgeConnect updates existing edge connect hostPatterns and oauthClientId
-func (c *client) UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []string, oauthClientId string) error {
+func (c *client) UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []string, hostMappings []HostMapping, oauthClientId string) error {
 	edgeConnectUrl := c.getEdgeConnectUrl(edgeConnectId)
 
-	body := NewRequest(name, hostPatterns, oauthClientId)
+	body := NewRequest(name, hostPatterns, hostMappings, oauthClientId)
 	payloadBuf := new(bytes.Buffer)
 
 	err := json.NewEncoder(payloadBuf).Encode(body)
@@ -276,17 +277,17 @@ func (c *client) DeleteEdgeConnect(edgeConnectId string) error {
 			return err
 		}
 
-		return errors.Errorf("edgeconnect server error %d: %s", errorResponse.ErrorMessage.Code, errorResponse.ErrorMessage.Message)
+		return errors.Errorf("edgeconnect server error %d: %s: details %s", errorResponse.ErrorMessage.Code, errorResponse.ErrorMessage.Message, errorResponse.ErrorMessage.Details)
 	}
 
 	return nil
 }
 
 // CreateEdgeConnect creates new edge connect
-func (c *client) CreateEdgeConnect(name string, hostPatterns []string, oauthClientId string) (CreateResponse, error) {
+func (c *client) CreateEdgeConnect(name string, hostPatterns []string, hostMappings []HostMapping, oauthClientId string) (CreateResponse, error) {
 	edgeConnectsUrl := c.getEdgeConnectsUrl()
 
-	body := NewRequest(name, hostPatterns, oauthClientId)
+	body := NewRequest(name, hostPatterns, hostMappings, oauthClientId)
 	payloadBuf := new(bytes.Buffer)
 
 	err := json.NewEncoder(payloadBuf).Encode(body)
