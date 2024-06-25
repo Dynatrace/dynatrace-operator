@@ -70,7 +70,7 @@ def traverse(props, level=".spec"):
 
 
 def clean_description(desc):
-    d = '<br/>'.join(desc.splitlines())
+    d = ' '.join(desc.splitlines())
     if 'http' in d:
         return d.replace('(', '(<').replace(')', '>)')
     return d

@@ -72,7 +72,7 @@ type ActiveGateSpec struct {
 
 	// Assign a priority class to the ActiveGate pods. By default, no class is set.
 	// For details, see Pod Priority and Preemption. (https://dt-url.net/n8437bl)
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Priority Class name",order=23,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:PriorityClass"}
 	PriorityClassName string `json:"priorityClassName,omitempty"`
 
