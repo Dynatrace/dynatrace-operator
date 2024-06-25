@@ -14,10 +14,9 @@ import (
 var testObjectId = "test-objectId"
 
 var testEnvironmentSetting = EnvironmentSetting{
-	ObjectId:      &testObjectId,
-	SchemaId:      KubernetesConnectionSchemaID,
-	SchemaVersion: KubernetesConnectionVersion,
-	Scope:         KubernetesConnectionScope,
+	ObjectId: &testObjectId,
+	SchemaId: KubernetesConnectionSchemaID,
+	Scope:    KubernetesConnectionScope,
 	Value: EnvironmentSettingValue{
 		Name:      "test-name",
 		UID:       "test-uid",

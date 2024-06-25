@@ -43,20 +43,28 @@ type CreateResponse struct {
 	OauthClientSecret          string           `json:"oauthClientSecret"`
 	OauthClientResource        string           `json:"oauthClientResource"`
 	HostPatterns               []string         `json:"hostPatterns"`
+	HostMappings               []HostMapping    `json:"hostMappings"`
 	ManagedByDynatraceOperator bool             `json:"managedByDynatraceOperator,omitempty"`
 }
 
 type Request struct {
-	Name                       string   `json:"name"`
-	OauthClientId              string   `json:"oauthClientId,omitempty"`
-	HostPatterns               []string `json:"hostPatterns"`
-	ManagedByDynatraceOperator bool     `json:"managedByDynatraceOperator,omitempty"`
+	Name                       string        `json:"name"`
+	OauthClientId              string        `json:"oauthClientId,omitempty"`
+	HostPatterns               []string      `json:"hostPatterns"`
+	HostMappings               []HostMapping `json:"hostMappings"`
+	ManagedByDynatraceOperator bool          `json:"managedByDynatraceOperator,omitempty"`
 }
 
-func NewRequest(name string, hostPatterns []string, oauthClientId string) *Request {
+type HostMapping struct {
+	From string `json:"from"`
+	To   string `json:"to"`
+}
+
+func NewRequest(name string, hostPatterns []string, hostMappings []HostMapping, oauthClientId string) *Request {
 	return &Request{
 		Name:                       name,
 		HostPatterns:               hostPatterns,
+		HostMappings:               hostMappings,
 		OauthClientId:              oauthClientId,
 		ManagedByDynatraceOperator: true,
 	}
