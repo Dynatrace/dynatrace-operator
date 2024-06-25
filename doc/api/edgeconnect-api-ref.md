@@ -33,9 +33,9 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
-|`authRef`|Secret name which contains the username and password used for authentication with the proxy, using the "Basic" HTTP authentication scheme.|-|string|
+|`authRef`|Secret name which contains the username and password used for authentication with the proxy, using the<br/>"Basic" HTTP authentication scheme.|-|string|
 |`host`|Server address (hostname or IP address) of the proxy.|-|string|
-|`noProxy`|NoProxy represents the NO_PROXY or no_proxy environment variable. It specifies a string that contains comma-separated values specifying hosts that should be excluded from proxying.|-|string|
+|`noProxy`|NoProxy represents the NO_PROXY or no_proxy environment<br/>variable. It specifies a string that contains comma-separated values<br/>specifying hosts that should be excluded from proxying.|-|string|
 |`port`|Port of the proxy.|-|integer|
 
 ### .spec.imageRef
