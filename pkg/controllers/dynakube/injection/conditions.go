@@ -9,16 +9,16 @@ const (
 	metaDataEnrichmentConditionType   = "MetadataEnrichment"
 	codeModulesInjectionConditionType = "CodeModulesInjection"
 
-	nsAndSecretsCreatedReason  = "SecretsCreated"
-	nsAndSecretsCreatedMessage = "Namespaces mapped and secrets created"
+	secretsCreatedReason  = "SecretsCreated"
+	secretsCreatedMessage = "Namespaces mapped and secrets created"
 )
 
 func setMetadataEnrichmentCreatedCondition(conditions *[]metav1.Condition) {
 	condition := metav1.Condition{
 		Type:    metaDataEnrichmentConditionType,
 		Status:  metav1.ConditionTrue,
-		Reason:  nsAndSecretsCreatedReason,
-		Message: nsAndSecretsCreatedMessage,
+		Reason:  secretsCreatedReason,
+		Message: secretsCreatedMessage,
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
@@ -27,8 +27,8 @@ func setCodeModulesInjectionCreatedCondition(conditions *[]metav1.Condition) {
 	condition := metav1.Condition{
 		Type:    codeModulesInjectionConditionType,
 		Status:  metav1.ConditionTrue,
-		Reason:  nsAndSecretsCreatedReason,
-		Message: nsAndSecretsCreatedMessage,
+		Reason:  secretsCreatedReason,
+		Message: secretsCreatedMessage,
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
