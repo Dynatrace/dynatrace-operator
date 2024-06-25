@@ -12,6 +12,7 @@ import (
 
 const (
 	MetadataEnrichmentSettingsSchemaId = "builtin:kubernetes.generic.metadata.enrichment"
+	scopeQueryParam                    = "scope"
 )
 
 type GetRulesSettingsResponse struct {
@@ -52,7 +53,7 @@ func (dtc *dynatraceClient) GetRulesSetting(ctx context.Context, kubeSystemUUID 
 
 	q := req.URL.Query()
 	q.Add(schemaIDsQueryParam, MetadataEnrichmentSettingsSchemaId)
-	q.Add(scopesQueryParam, createScopes(monitoredEntities))
+	q.Add(scopeQueryParam, findLatestEntity(monitoredEntities).EntityId)
 	req.URL.RawQuery = q.Encode()
 
 	res, err := dtc.httpClient.Do(req)
@@ -72,4 +73,15 @@ func (dtc *dynatraceClient) GetRulesSetting(ctx context.Context, kubeSystemUUID 
 	}
 
 	return resDataJson, nil
+}
+
+func findLatestEntity(monitoredEntities []MonitoredEntity) MonitoredEntity {
+	latest := monitoredEntities[0]
+	for _, entity := range monitoredEntities {
+		if entity.LastSeenTms < latest.LastSeenTms {
+			latest = entity
+		}
+	}
+
+	return latest
 }

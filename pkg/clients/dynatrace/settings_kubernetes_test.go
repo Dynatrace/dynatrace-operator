@@ -341,7 +341,7 @@ func mockHandleSettingsRequest(request *http.Request, writer http.ResponseWriter
 func mockHandleEffectiveSettingsRequest(request *http.Request, writer http.ResponseWriter, totalCount int) {
 	switch request.Method {
 	case http.MethodGet:
-		if request.Form.Get("scopes") == "" {
+		if request.Form.Get("scope") == "" {
 			writer.WriteHeader(http.StatusBadRequest)
 
 			return
