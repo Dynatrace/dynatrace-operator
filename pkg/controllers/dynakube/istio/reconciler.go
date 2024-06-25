@@ -21,9 +21,8 @@ import (
 
 type Reconciler interface {
 	ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
-	ReconcileCodeModuleCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
+	ReconcileCodeModulesInjectionEndpoints(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
 	ReconcileActiveGateCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
-	ReconcileCSIDriver(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
 }
 
 type reconciler struct {
@@ -40,8 +39,8 @@ func NewReconciler(istio *Client) Reconciler {
 	}
 }
 
-func (r *reconciler) ReconcileCSIDriver(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
-	log.Info("reconciling istio components for the CSI driver")
+func (r *reconciler) reconcileCSIDriver(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
+	log.Info("reconciling istio components for csi driver")
 
 	if dynakube == nil {
 		return errors.New("can't reconcile csi driver of nil dynakube")
@@ -64,7 +63,7 @@ func (r *reconciler) ReconcileCSIDriver(ctx context.Context, dynakube *dynatrace
 		return errors.WithMessage(err, "error reconciling config for codeModulesImage")
 	}
 
-	log.Info("reconciled istio objects for CSI driver")
+	log.Info("reconciled istio objects for csi driver")
 
 	return nil
 }
@@ -114,8 +113,8 @@ func (r *reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1b
 	return nil
 }
 
-func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
-	log.Info("reconciling istio components for oneagent-code-modules communication hosts")
+func (r *reconciler) ReconcileCodeModulesInjectionEndpoints(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
+	log.Info("reconciling istio components for oneagent-code-modules injections endpoints")
 
 	if dynakube == nil {
 		return errors.New("can't reconcile oneagent communication hosts of nil dynakube")
@@ -147,6 +146,11 @@ func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, 
 	}
 
 	setServiceEntryUpdatedConditionForComponent(dynakube.Conditions(), CodeModuleComponent)
+
+	err = r.reconcileCSIDriver(ctx, dynakube)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

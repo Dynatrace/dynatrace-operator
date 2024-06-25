@@ -213,7 +213,7 @@ func TestReconcileAPIUrl(t *testing.T) {
 	})
 }
 
-func TestReconcileCSIDriver(t *testing.T) {
+func TestReconcileIstioForCSIDriver(t *testing.T) {
 	ctx := context.Background()
 	dynakube := createTestDynaKube()
 
@@ -221,7 +221,7 @@ func TestReconcileCSIDriver(t *testing.T) {
 		istioClient := newTestingClient(nil, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
-		err := reconciler.ReconcileCSIDriver(ctx, nil)
+		err := reconciler.ReconcileCodeModulesInjectionEndpoints(ctx, nil)
 		require.Error(t, err)
 	})
 	t.Run("malformed image uri (no protocol prefix) => still no error", func(t *testing.T) {
@@ -237,7 +237,7 @@ func TestReconcileCSIDriver(t *testing.T) {
 		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
-		err := reconciler.ReconcileCSIDriver(ctx, dynakube)
+		err := reconciler.ReconcileCodeModulesInjectionEndpoints(ctx, dynakube)
 		require.NoError(t, err)
 	})
 	t.Run("success", func(t *testing.T) {
@@ -245,7 +245,7 @@ func TestReconcileCSIDriver(t *testing.T) {
 		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
-		err := reconciler.ReconcileCSIDriver(ctx, dynakube)
+		err := reconciler.ReconcileCodeModulesInjectionEndpoints(ctx, dynakube)
 		require.NoError(t, err)
 
 		expectedName := BuildNameForFQDNServiceEntry(dynakube.GetName(), CSIDriverComponent)
@@ -264,12 +264,12 @@ func TestReconcileCSIDriver(t *testing.T) {
 		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
-		err := reconciler.ReconcileCSIDriver(ctx, dynakube)
+		err := reconciler.ReconcileCodeModulesInjectionEndpoints(ctx, dynakube)
 		require.Error(t, err)
 	})
 }
 
-func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
+func TestReconcileOneAgentInjectionEndpoints(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("nil => error", func(t *testing.T) {
@@ -277,7 +277,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		istioClient := newTestingClient(nil, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
-		err := reconciler.ReconcileCodeModuleCommunicationHosts(ctx, nil)
+		err := reconciler.ReconcileCodeModulesInjectionEndpoints(ctx, nil)
 		require.Error(t, err)
 	})
 	t.Run("success", func(t *testing.T) {
@@ -286,7 +286,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
-		err := reconciler.ReconcileCodeModuleCommunicationHosts(ctx, dynakube)
+		err := reconciler.ReconcileCodeModulesInjectionEndpoints(ctx, dynakube)
 		require.NoError(t, err)
 
 		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), OneAgentComponent)
@@ -317,7 +317,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
-		err := reconciler.ReconcileCodeModuleCommunicationHosts(ctx, dynakube)
+		err := reconciler.ReconcileCodeModulesInjectionEndpoints(ctx, dynakube)
 		require.Error(t, err)
 
 		statusCondition := meta.FindStatusCondition(*dynakube.Conditions(), "IstioForCodeModule")
@@ -330,7 +330,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
 		r := NewReconciler(istioClient)
 
-		err := r.ReconcileCodeModuleCommunicationHosts(ctx, dynakube)
+		err := r.ReconcileCodeModulesInjectionEndpoints(ctx, dynakube)
 		require.NoError(t, err)
 
 		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), OneAgentComponent)
@@ -356,7 +356,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		dynakube.Spec.OneAgent.CloudNativeFullStack = nil
 		dynakube.Spec.OneAgent.HostMonitoring = &dynatracev1beta2.HostInjectSpec{}
 
-		err = r.ReconcileCodeModuleCommunicationHosts(ctx, dynakube)
+		err = r.ReconcileCodeModulesInjectionEndpoints(ctx, dynakube)
 		require.NoError(t, err)
 
 		statusCondition = meta.FindStatusCondition(*dynakube.Conditions(), "IstioForCodeModule")

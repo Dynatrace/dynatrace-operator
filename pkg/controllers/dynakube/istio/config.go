@@ -11,7 +11,7 @@ var (
 )
 
 const (
-	CSIDriverComponent   = "csi-driver"
+	CSIDriverComponent  = "csi-driver"
 	OperatorComponent   = "operator"
 	OneAgentComponent   = "oneagent"
 	CodeModuleComponent = "CodeModule"

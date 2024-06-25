@@ -571,6 +571,9 @@ func TestSetupIstio(t *testing.T) {
 	})
 	t.Run("success", func(t *testing.T) {
 		dynakube := dynakubeBase.DeepCopy()
+		activateAppInjection(dynakube)
+		createCommunciationHosts(dynakube)
+
 		fakeIstio := fakeistio.NewSimpleClientset()
 		isIstioInstalled := true
 		controller := &Controller{
@@ -596,7 +599,7 @@ func TestSetupIstio(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, virtualService)
 
-		err = istioReconciler.ReconcileCSIDriver(ctx, dynakube)
+		err = istioReconciler.ReconcileCodeModulesInjectionEndpoints(ctx, dynakube)
 
 		require.NoError(t, err)
 
@@ -609,6 +612,53 @@ func TestSetupIstio(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, virtualService)
 	})
+}
+
+func createTestIPCommunicationHost() dtclient.CommunicationHost {
+	return dtclient.CommunicationHost{
+		Protocol: "http",
+		Host:     "42.42.42.42",
+		Port:     620,
+	}
+}
+
+func createTestFQDNCommunicationHost() dtclient.CommunicationHost {
+	return dtclient.CommunicationHost{
+		Protocol: "http",
+		Host:     "something.test.io",
+		Port:     620,
+	}
+}
+
+func createCommunciationHosts(dynakube *dynatracev1beta2.DynaKube) *dynatracev1beta2.DynaKube {
+	fqdnHost := createTestFQDNCommunicationHost()
+	ipHost := createTestIPCommunicationHost()
+	dynakube.Status = dynatracev1beta2.DynaKubeStatus{
+		OneAgent: dynatracev1beta2.OneAgentStatus{
+			ConnectionInfoStatus: dynatracev1beta2.OneAgentConnectionInfoStatus{
+				CommunicationHosts: []dynatracev1beta2.CommunicationHostStatus{
+					{
+						Protocol: fqdnHost.Protocol,
+						Host:     fqdnHost.Host,
+						Port:     fqdnHost.Port,
+					},
+					{
+						Protocol: ipHost.Protocol,
+						Host:     ipHost.Host,
+						Port:     ipHost.Port,
+					},
+				},
+			},
+		},
+	}
+
+	return dynakube
+}
+
+func activateAppInjection(dynakube *dynatracev1beta2.DynaKube) *dynatracev1beta2.DynaKube {
+	dynakube.Spec.OneAgent.CloudNativeFullStack = &dynatracev1beta2.CloudNativeFullStackSpec{}
+
+	return dynakube
 }
 
 func fakeIstioClientBuilder(t *testing.T, fakeIstio *fakeistio.Clientset, isIstioInstalled bool) istio.ClientBuilder {

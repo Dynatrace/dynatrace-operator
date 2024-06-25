@@ -79,15 +79,10 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 
 	// do istio reconciliation for CodeModules here to enable cleanup of conditions
 	if r.istioReconciler != nil {
-		err = r.istioReconciler.ReconcileCodeModuleCommunicationHosts(ctx, r.dynakube)
+		err = r.istioReconciler.ReconcileCodeModulesInjectionEndpoints(ctx, r.dynakube)
 
 		if err != nil {
 			log.Error(err, "error reconciling istio configuration for codemodules")
-		}
-
-		err = r.reconcileIstioForCSIDriver(ctx)
-		if err != nil {
-			return err
 		}
 	}
 
@@ -121,15 +116,6 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	log.Info("app injection reconciled")
-
-	return nil
-}
-
-func (r *reconciler) reconcileIstioForCSIDriver(ctx context.Context) error {
-	err := r.istioReconciler.ReconcileCSIDriver(ctx, r.dynakube)
-	if err != nil {
-		return errors.WithMessage(err, "failed to reconcile istio objects for CSI Driver")
-	}
 
 	return nil
 }
