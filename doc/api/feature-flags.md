@@ -3,7 +3,7 @@
 # dynakube
 
 ```go
-import "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube/tmp"
+import "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube/tmp"
 ```
 
 ## Index
@@ -32,20 +32,13 @@ const (
     AnnotationFeatureK8sAppEnabled                        = AnnotationFeaturePrefix + "k8s-app-enabled"
     AnnotationFeatureActiveGateIgnoreProxy                = AnnotationFeaturePrefix + "activegate-ignore-proxy"
 
-    AnnotationFeatureNoProxy             = AnnotationFeaturePrefix + "no-proxy"
-    AnnotationFeatureApiRequestThreshold = AnnotationFeaturePrefix + "dynatrace-api-request-threshold"
+    AnnotationFeatureNoProxy = AnnotationFeaturePrefix + "no-proxy"
 
     AnnotationFeatureMultipleOsAgentsOnNode         = AnnotationFeaturePrefix + "multiple-osagents-on-node"
     AnnotationFeatureOneAgentMaxUnavailable         = AnnotationFeaturePrefix + "oneagent-max-unavailable"
     AnnotationFeatureOneAgentIgnoreProxy            = AnnotationFeaturePrefix + "oneagent-ignore-proxy"
     AnnotationFeatureOneAgentInitialConnectRetry    = AnnotationFeaturePrefix + "oneagent-initial-connect-retry-ms"
     AnnotationFeatureRunOneAgentContainerPrivileged = AnnotationFeaturePrefix + "oneagent-privileged"
-    AnnotationFeatureOneAgentSecCompProfile         = AnnotationFeaturePrefix + "oneagent-seccomp-profile"
-
-    // Deprecated: AnnotationFeatureDisableMetadataEnrichment use AnnotationFeatureMetadataEnrichment instead.
-    AnnotationFeatureDisableMetadataEnrichment = AnnotationFeaturePrefix + "disable-metadata-enrichment"
-
-    AnnotationFeatureMetadataEnrichment = AnnotationFeaturePrefix + "metadata-enrichment"
 
     AnnotationFeatureIgnoreUnknownState    = AnnotationFeaturePrefix + "ignore-unknown-state"
     AnnotationFeatureIgnoredNamespaces     = AnnotationFeaturePrefix + "ignored-namespaces"
