@@ -3,7 +3,6 @@ package edgeconnect
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -20,10 +19,10 @@ func TestHostMappings(t *testing.T) {
 			},
 		}
 		got := e.HostMappings()
-		expected := []edgeconnect.HostMapping{
+		expected := []HostMapping{
 			{
 				From: "test-edgeconnect.test-namespace.test-kube-system-uid." + kubernetesHostnameSuffix,
-				To:   kubernetesDefaultDNS,
+				To:   KubernetesDefaultDNS,
 			},
 		}
 		require.EqualValues(t, expected, got)

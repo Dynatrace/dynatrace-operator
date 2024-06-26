@@ -93,6 +93,6 @@ func createKubernetesApiSecret(token string) config.Secret {
 		Name:            "K8S_SERVICE_ACCOUNT_TOKEN",
 		Token:           token,
 		FromFile:        "/var/run/secrets/kubernetes.io/serviceaccount/token",
-		RestrictHostsTo: []string{"kubernetes.default.svc"},
+		RestrictHostsTo: []string{edgeconnectv1alpha1.KubernetesDefaultDNS},
 	}
 }
