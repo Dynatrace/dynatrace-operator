@@ -156,7 +156,7 @@ secrets:
       token: dummy-token
       from_file: /var/run/secrets/kubernetes.io/serviceaccount/token
       restrict_hosts_to:
-        - kubernetes.default.svc
+        - kubernetes.default.svc.cluster.local
 `
 		assert.Equal(t, expected, string(cfg))
 	})

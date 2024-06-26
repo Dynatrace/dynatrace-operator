@@ -9,7 +9,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -188,7 +187,7 @@ type EdgeConnectList struct { //nolint:revive
 }
 
 const (
-	kubernetesDefaultDNS     = "kubernetes.default.svc.cluster.local"
+	KubernetesDefaultDNS     = "kubernetes.default.svc.cluster.local"
 	kubernetesHostnameSuffix = "kubernetes-automation"
 )
 
@@ -214,9 +213,14 @@ func (e *EdgeConnect) HostPatterns() []string {
 	return hostPatterns
 }
 
-func (e *EdgeConnect) HostMappings() []edgeconnect.HostMapping {
-	hostMappings := make([]edgeconnect.HostMapping, 0)
-	hostMappings = append(hostMappings, edgeconnect.HostMapping{From: e.K8sAutomationHostPattern(), To: kubernetesDefaultDNS})
+type HostMapping struct {
+	From string `json:"from"`
+	To   string `json:"to"`
+}
+
+func (e *EdgeConnect) HostMappings() []HostMapping {
+	hostMappings := make([]HostMapping, 0)
+	hostMappings = append(hostMappings, HostMapping{From: e.K8sAutomationHostPattern(), To: KubernetesDefaultDNS})
 
 	return hostMappings
 }
