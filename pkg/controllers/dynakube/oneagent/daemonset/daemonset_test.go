@@ -130,6 +130,9 @@ func TestLabels(t *testing.T) {
 
 func TestCustomPullSecret(t *testing.T) {
 	instance := dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testDynakubeName,
+		},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testURL,
 			OneAgent: dynakube.OneAgentSpec{
@@ -144,8 +147,9 @@ func TestCustomPullSecret(t *testing.T) {
 
 	podSpecs := ds.Spec.Template.Spec
 	assert.NotNil(t, podSpecs)
-	assert.NotEmpty(t, podSpecs.ImagePullSecrets)
-	assert.Equal(t, testName, podSpecs.ImagePullSecrets[0].Name)
+	assert.Len(t, podSpecs.ImagePullSecrets, 2)
+	assert.Equal(t, testDynakubeName+dynakube.PullSecretSuffix, podSpecs.ImagePullSecrets[0].Name)
+	assert.Equal(t, testName, podSpecs.ImagePullSecrets[1].Name)
 }
 
 func TestResources(t *testing.T) {

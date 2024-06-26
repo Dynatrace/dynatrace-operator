@@ -408,7 +408,6 @@ func createFakeClientAndReconciler(t *testing.T, mockClient dtclient.Client, ins
 	controller := &Controller{
 		client:                              fakeClient,
 		apiReader:                           fakeClient,
-		registryClientBuilder:               createFakeRegistryClientBuilder(t),
 		dynatraceClientBuilder:              mockDtcBuilder,
 		fs:                                  afero.Afero{Fs: afero.NewMemMapFs()},
 		deploymentMetadataReconcilerBuilder: deploymentmetadata.NewReconciler,
