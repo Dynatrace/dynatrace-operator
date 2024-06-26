@@ -19,15 +19,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
-	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	injectionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/injection"
-	registrymock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/oci/registry"
-	containerv1 "github.com/google/go-containerregistry/pkg/v1"
-	fakecontainer "github.com/google/go-containerregistry/pkg/v1/fake"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -343,10 +339,10 @@ func TestReconcileComponents(t *testing.T) {
 		mockInjectionReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
 		controller := &Controller{
-			client:                fakeClient,
-			apiReader:             fakeClient,
-			fs:                    afero.Afero{Fs: afero.NewMemMapFs()},
-			registryClientBuilder: createFakeRegistryClientBuilder(t),
+			client:    fakeClient,
+			apiReader: fakeClient,
+			fs:        afero.Afero{Fs: afero.NewMemMapFs()},
+			// registryClientBuilder: createFakeRegistryClientBuilder(t),
 
 			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
 			injectionReconcilerBuilder:  createInjectionReconcilerBuilder(mockInjectionReconciler),
@@ -371,10 +367,10 @@ func TestReconcileComponents(t *testing.T) {
 		mockInjectionReconciler.On("Reconcile", mock.Anything).Return(oaconnectioninfo.NoOneAgentCommunicationHostsError)
 
 		controller := &Controller{
-			client:                      fakeClient,
-			apiReader:                   fakeClient,
-			fs:                          afero.Afero{Fs: afero.NewMemMapFs()},
-			registryClientBuilder:       createFakeRegistryClientBuilder(t),
+			client:    fakeClient,
+			apiReader: fakeClient,
+			fs:        afero.Afero{Fs: afero.NewMemMapFs()},
+			// registryClientBuilder:       createFakeRegistryClientBuilder(t),
 			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
 			injectionReconcilerBuilder:  createInjectionReconcilerBuilder(mockInjectionReconciler),
 		}
@@ -405,6 +401,7 @@ func createInjectionReconcilerBuilder(reconciler *injectionmock.Reconciler) inje
 	}
 }
 
+/*
 func createFakeRegistryClientBuilder(t *testing.T) func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
 	fakeRegistryClient := registrymock.NewImageGetter(t)
 	fakeImage := &fakecontainer.FakeImage{}
@@ -421,6 +418,7 @@ func createFakeRegistryClientBuilder(t *testing.T) func(options ...func(*registr
 		return fakeRegistryClient, nil
 	}
 }
+*/
 
 type errorClient struct {
 	client.Client
@@ -537,7 +535,7 @@ func TestTokenConditions(t *testing.T) {
 			client:                 fakeClient,
 			apiReader:              fakeClient,
 			dynatraceClientBuilder: mockDtcBuilder,
-			registryClientBuilder:  createFakeRegistryClientBuilder(t),
+			// registryClientBuilder:  createFakeRegistryClientBuilder(t),
 		}
 
 		_, err := controller.setupTokensAndClient(ctx, dynakube)

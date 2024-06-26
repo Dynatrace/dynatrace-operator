@@ -69,7 +69,12 @@ func TestNewImageInstaller(t *testing.T) {
 		},
 		Spec: dynatracev1beta2.DynaKubeSpec{},
 	}
-	pullSecret := dynakube.PullSecretWithoutData()
+	pullSecret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dynakube.PullSecretName(),
+			Namespace: dynakube.Namespace,
+		},
+	}
 	pullSecret.Data = map[string][]byte{
 		corev1.DockerConfigJsonKey: []byte(emptyDockerConfig),
 	}

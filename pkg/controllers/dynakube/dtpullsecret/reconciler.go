@@ -39,10 +39,6 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dynakube *dynatra
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if r.dynakube.Spec.CustomPullSecret != "" {
-		return nil
-	}
-
 	if !(r.dynakube.NeedsOneAgent() || r.dynakube.NeedsActiveGate()) {
 		if meta.FindStatusCondition(*r.dynakube.Conditions(), PullSecretConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
