@@ -37,7 +37,7 @@ func TestCreateEdgeConnect(t *testing.T) {
 		edgeConnectServer, edgeConnectClient := createTestEdgeConnectServer(t, edgeConnectCreateServerHandler(false))
 		defer edgeConnectServer.Close()
 
-		resp, err := edgeConnectClient.CreateEdgeConnect("InternalServices", []string{"*.internal.org"}, []edgeconnect.HostMapping{}, "dt0s02.AIOUP56P")
+		resp, err := edgeConnectClient.CreateEdgeConnect(NewRequest("InternalServices", []string{"*.internal.org"}, []edgeconnect.HostMapping{}, "dt0s02.AIOUP56P"))
 		require.NoError(t, err)
 		assert.Equal(t, "InternalServices", resp.Name)
 	})
@@ -45,7 +45,7 @@ func TestCreateEdgeConnect(t *testing.T) {
 		edgeConnectServer, edgeConnectClient := createTestEdgeConnectServer(t, edgeConnectCreateServerHandler(true))
 		defer edgeConnectServer.Close()
 
-		_, err := edgeConnectClient.CreateEdgeConnect("", []string{"*.internal.org"}, []edgeconnect.HostMapping{}, "dt0s02.AIOUP56P")
+		_, err := edgeConnectClient.CreateEdgeConnect(NewRequest("", []string{"*.internal.org"}, []edgeconnect.HostMapping{}, "dt0s02.AIOUP56P"))
 		require.Error(t, err, "edgeconnect server error 400: Constraints violated.")
 	})
 	t.Run("create edge connect with hostMappings", func(t *testing.T) {
@@ -59,7 +59,7 @@ func TestCreateEdgeConnect(t *testing.T) {
 			},
 		}
 
-		_, err := edgeConnectClient.CreateEdgeConnect("InternalServices", []string{"*.internal.org"}, hostMappings, "dt0s02.AIOUP56P")
+		_, err := edgeConnectClient.CreateEdgeConnect(NewRequest("InternalServices", []string{"*.internal.org"}, hostMappings, "dt0s02.AIOUP56P"))
 		require.NoError(t, err)
 	})
 }
@@ -106,7 +106,7 @@ func TestUpdateEdgeConnect(t *testing.T) {
 		edgeConnectServer, edgeConnectClient := createTestEdgeConnectServer(t, edgeConnectUpdateServerHandler())
 		defer edgeConnectServer.Close()
 
-		err := edgeConnectClient.UpdateEdgeConnect(EdgeConnectID, "test_name", []string{""}, []edgeconnect.HostMapping{}, "")
+		err := edgeConnectClient.UpdateEdgeConnect(EdgeConnectID, NewRequest("test_name", []string{""}, []edgeconnect.HostMapping{}, ""))
 		require.NoError(t, err)
 	})
 
@@ -114,7 +114,7 @@ func TestUpdateEdgeConnect(t *testing.T) {
 		edgeConnectServer, edgeConnectClient := createTestEdgeConnectServer(t, edgeConnectUpdateServerHandler())
 		defer edgeConnectServer.Close()
 
-		err := edgeConnectClient.UpdateEdgeConnect("", "test_name", []string{""}, []edgeconnect.HostMapping{}, "")
+		err := edgeConnectClient.UpdateEdgeConnect("", NewRequest("test_name", []string{""}, []edgeconnect.HostMapping{}, ""))
 		require.Error(t, err, http.StatusBadRequest)
 	})
 }
