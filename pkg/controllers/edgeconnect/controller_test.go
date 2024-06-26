@@ -49,10 +49,10 @@ const (
 var (
 	testHostPatterns  = []string{"*.internal.org", testK8sAutomationHostPattern}
 	testHostPatterns2 = []string{"*.external.org", testK8sAutomationHostPattern}
-	testHostMappings  = []edgeconnect.HostMapping{
+	testHostMappings  = []edgeconnectv1alpha1.HostMapping{
 		{
 			From: testK8sAutomationHostPattern,
-			To:   "kubernetes.default.svc.cluster.local",
+			To:   edgeconnectv1alpha1.KubernetesDefaultDNS,
 		},
 	}
 	testObjectId = "my:default"
