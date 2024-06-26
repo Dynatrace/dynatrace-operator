@@ -102,7 +102,12 @@ func (dk *DynaKube) OneAgentDaemonsetName() string {
 }
 
 func (dk *DynaKube) ActiveGateMode() bool {
-	return len(dk.Spec.ActiveGate.Capabilities) > 0
+	return len(dk.Spec.ActiveGate.Capabilities) > 0 || dk.HasExtensionsEnabled()
+}
+
+// add extensions here.
+func (dk *DynaKube) HasExtensionsEnabled() bool {
+	return dk.TempExtensionsEnabled // TODO: remove temp var
 }
 
 func (dk *DynaKube) IsActiveGateMode(mode CapabilityDisplayName) bool {
@@ -146,7 +151,8 @@ func (dk *DynaKube) IsMetricsIngestActiveGateEnabled() bool {
 func (dk *DynaKube) NeedsActiveGateServicePorts() bool {
 	return dk.IsRoutingActiveGateEnabled() ||
 		dk.IsApiActiveGateEnabled() ||
-		dk.IsMetricsIngestActiveGateEnabled()
+		dk.IsMetricsIngestActiveGateEnabled() ||
+		dk.HasExtensionsEnabled()
 }
 
 func (dk *DynaKube) NeedsActiveGateService() bool {

@@ -38,5 +38,6 @@ func GenerateAllModifiers(dynakube dynatracev1beta2.DynaKube, capability capabil
 		NewReadOnlyModifier(dynakube),
 		NewServicePortModifier(dynakube, capability, agBaseContainerEnvMap),
 		NewKubernetesMonitoringModifier(dynakube, capability),
+		NewEecVolumeModifier(dynakube),
 	}
 }
