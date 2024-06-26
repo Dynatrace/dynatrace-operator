@@ -17,8 +17,8 @@ type Client interface {
 	// GetEdgeConnects returns list of edge connects
 	GetEdgeConnects(name string) (ListResponse, error)
 
-	// GetConnectionSetting returns a connection setting object by value uid
-	GetConnectionSetting(uid string) (EnvironmentSetting, error)
+	// GetConnectionSetting returns a connection setting object by value name, namespace and kube-system namespace UID
+	GetConnectionSetting(name, namespace, uid string) (EnvironmentSetting, error)
 
 	// CreateConnectionSetting creates a connection setting object
 	CreateConnectionSetting(es EnvironmentSetting) error

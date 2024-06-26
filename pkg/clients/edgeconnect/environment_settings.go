@@ -35,7 +35,7 @@ type EnvironmentSettingsResponse struct {
 	PageSize   int                  `json:"pageSize"`
 }
 
-func (c *client) GetConnectionSetting(uid string) (EnvironmentSetting, error) {
+func (c *client) GetConnectionSetting(name, namespace, uid string) (EnvironmentSetting, error) {
 	settingsObjectsUrl := c.getSettingsObjectsUrl()
 
 	req, err := http.NewRequestWithContext(c.ctx, http.MethodGet, settingsObjectsUrl, nil)
@@ -69,7 +69,7 @@ func (c *client) GetConnectionSetting(uid string) (EnvironmentSetting, error) {
 	}
 
 	for _, item := range resDataJson.Items {
-		if item.Value.UID == uid {
+		if item.Value.Name == name && item.Value.Namespace == namespace && item.Value.UID == uid {
 			return item, nil
 		}
 	}

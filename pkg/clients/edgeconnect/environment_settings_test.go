@@ -28,13 +28,13 @@ var testEnvironmentSetting = EnvironmentSetting{
 func TestGetConnectionSetting(t *testing.T) {
 	t.Run("Server response OK", func(t *testing.T) {
 		client := MockEdgeConnectClient(http.StatusOK)
-		es, err := client.GetConnectionSetting("test-uid")
+		es, err := client.GetConnectionSetting("test-name", "test-namespace", "test-uid")
 		require.NoError(t, err)
 		require.NotNil(t, es)
 	})
 	t.Run("Server response NOK", func(t *testing.T) {
 		client := MockEdgeConnectClient(http.StatusBadRequest)
-		es, err := client.GetConnectionSetting("test-uid")
+		es, err := client.GetConnectionSetting("test-name", "test-namespace", "test-uid")
 		require.Error(t, err)
 		require.Equal(t, EnvironmentSetting{}, es)
 	})

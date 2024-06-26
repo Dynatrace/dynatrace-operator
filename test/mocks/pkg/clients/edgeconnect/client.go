@@ -217,9 +217,9 @@ func (_c *Client_DeleteEdgeConnect_Call) RunAndReturn(run func(string) error) *C
 	return _c
 }
 
-// GetConnectionSetting provides a mock function with given fields: uid
-func (_m *Client) GetConnectionSetting(uid string) (edgeconnect.EnvironmentSetting, error) {
-	ret := _m.Called(uid)
+// GetConnectionSetting provides a mock function with given fields: name, namespace, uid
+func (_m *Client) GetConnectionSetting(name string, namespace string, uid string) (edgeconnect.EnvironmentSetting, error) {
+	ret := _m.Called(name, namespace, uid)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetConnectionSetting")
@@ -227,17 +227,17 @@ func (_m *Client) GetConnectionSetting(uid string) (edgeconnect.EnvironmentSetti
 
 	var r0 edgeconnect.EnvironmentSetting
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (edgeconnect.EnvironmentSetting, error)); ok {
-		return rf(uid)
+	if rf, ok := ret.Get(0).(func(string, string, string) (edgeconnect.EnvironmentSetting, error)); ok {
+		return rf(name, namespace, uid)
 	}
-	if rf, ok := ret.Get(0).(func(string) edgeconnect.EnvironmentSetting); ok {
-		r0 = rf(uid)
+	if rf, ok := ret.Get(0).(func(string, string, string) edgeconnect.EnvironmentSetting); ok {
+		r0 = rf(name, namespace, uid)
 	} else {
 		r0 = ret.Get(0).(edgeconnect.EnvironmentSetting)
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(uid)
+	if rf, ok := ret.Get(1).(func(string, string, string) error); ok {
+		r1 = rf(name, namespace, uid)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -251,14 +251,16 @@ type Client_GetConnectionSetting_Call struct {
 }
 
 // GetConnectionSetting is a helper method to define mock.On call
+//   - name string
+//   - namespace string
 //   - uid string
-func (_e *Client_Expecter) GetConnectionSetting(uid interface{}) *Client_GetConnectionSetting_Call {
-	return &Client_GetConnectionSetting_Call{Call: _e.mock.On("GetConnectionSetting", uid)}
+func (_e *Client_Expecter) GetConnectionSetting(name interface{}, namespace interface{}, uid interface{}) *Client_GetConnectionSetting_Call {
+	return &Client_GetConnectionSetting_Call{Call: _e.mock.On("GetConnectionSetting", name, namespace, uid)}
 }
 
-func (_c *Client_GetConnectionSetting_Call) Run(run func(uid string)) *Client_GetConnectionSetting_Call {
+func (_c *Client_GetConnectionSetting_Call) Run(run func(name string, namespace string, uid string)) *Client_GetConnectionSetting_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run(args[0].(string), args[1].(string), args[2].(string))
 	})
 	return _c
 }
@@ -268,7 +270,7 @@ func (_c *Client_GetConnectionSetting_Call) Return(_a0 edgeconnect.EnvironmentSe
 	return _c
 }
 
-func (_c *Client_GetConnectionSetting_Call) RunAndReturn(run func(string) (edgeconnect.EnvironmentSetting, error)) *Client_GetConnectionSetting_Call {
+func (_c *Client_GetConnectionSetting_Call) RunAndReturn(run func(string, string, string) (edgeconnect.EnvironmentSetting, error)) *Client_GetConnectionSetting_Call {
 	_c.Call.Return(run)
 	return _c
 }
