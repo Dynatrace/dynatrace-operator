@@ -553,3 +553,7 @@ func (dk *DynaKube) IsTokenScopeVerificationAllowed(timeProvider *timeprovider.P
 func (dk *DynaKube) IsOneAgentCommunicationRouteClear() bool {
 	return len(dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts) > 0
 }
+
+func (dk *DynaKube) PrometheusEnabled() bool {
+	return dk.Spec.Extensions.Prometheus.Enabled
+}

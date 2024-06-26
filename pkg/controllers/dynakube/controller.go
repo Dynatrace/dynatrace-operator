@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
@@ -75,6 +76,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, co
 		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
 		injectionReconcilerBuilder:          injection.NewReconciler,
 		istioReconcilerBuilder:              istio.NewReconciler,
+		extensionBuilder:                    extension.NewReconciler,
 	}
 }
 
@@ -107,6 +109,7 @@ type Controller struct {
 	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
 	injectionReconcilerBuilder          injection.ReconcilerBuilder
 	istioReconcilerBuilder              istio.ReconcilerBuilder
+	extensionBuilder                    extension.ReconcilerBuilder
 
 	tokens            token.Tokens
 	operatorNamespace string
