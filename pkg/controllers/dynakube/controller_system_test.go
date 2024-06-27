@@ -105,7 +105,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, proxySecret)
 	})
-	t.Run(`reconciles phase change correctly`, func(t *testing.T) {
+	t.Run("reconciles phase change correctly", func(t *testing.T) {
 		mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeEntitiesRead, dtclient.TokenScopeSettingsRead, dtclient.TokenScopeSettingsWrite, dtclient.TokenScopeActiveGateTokenCreate})
 
 		mockClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{TokenId: "test", Token: "dt.some.valuegoeshere"}, nil)
@@ -416,6 +416,7 @@ func createFakeClientAndReconciler(t *testing.T, mockClient dtclient.Client, ins
 		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
 		injectionReconcilerBuilder:          injection.NewReconciler,
 		oneAgentReconcilerBuilder:           oneagent.NewReconciler,
+		clusterID:                           testUID,
 	}
 
 	return controller
