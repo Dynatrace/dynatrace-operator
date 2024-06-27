@@ -38,6 +38,12 @@ func TestGetConnectionSetting(t *testing.T) {
 		require.Error(t, err)
 		require.Nil(t, got)
 	})
+	t.Run("Server response unexpected", func(t *testing.T) {
+		client := mockEdgeConnectClient(mockUnexpectedServerHandler())
+		got, err := client.GetConnectionSettings()
+		require.Error(t, err)
+		require.Nil(t, got)
+	})
 }
 
 func TestCreateConnectionSetting(t *testing.T) {
@@ -48,6 +54,11 @@ func TestCreateConnectionSetting(t *testing.T) {
 	})
 	t.Run("Server response NOK", func(t *testing.T) {
 		client := mockEdgeConnectClient(mockServerHandler(http.StatusBadRequest))
+		err := client.CreateConnectionSetting(testEnvironmentSetting)
+		require.Error(t, err)
+	})
+	t.Run("Server response unexpected", func(t *testing.T) {
+		client := mockEdgeConnectClient(mockUnexpectedServerHandler())
 		err := client.CreateConnectionSetting(testEnvironmentSetting)
 		require.Error(t, err)
 	})
@@ -64,17 +75,27 @@ func TestUpdateConnectionSetting(t *testing.T) {
 		err := client.UpdateConnectionSetting(testEnvironmentSetting)
 		require.Error(t, err)
 	})
+	t.Run("Server response unexpected", func(t *testing.T) {
+		client := mockEdgeConnectClient(mockUnexpectedServerHandler())
+		err := client.UpdateConnectionSetting(testEnvironmentSetting)
+		require.Error(t, err)
+	})
 }
 
 func TestDeleteConnectionSetting(t *testing.T) {
 	t.Run("Server response OK", func(t *testing.T) {
 		client := mockEdgeConnectClient(mockServerHandler(http.StatusOK))
-		err := client.DeleteConnectionSetting("test-objectId")
+		err := client.DeleteConnectionSetting(testObjectId)
 		require.NoError(t, err)
 	})
 	t.Run("Server response NOK", func(t *testing.T) {
 		client := mockEdgeConnectClient(mockServerHandler(http.StatusBadRequest))
-		err := client.DeleteConnectionSetting("test-objectId")
+		err := client.DeleteConnectionSetting(testObjectId)
+		require.Error(t, err)
+	})
+	t.Run("Server response unexpected", func(t *testing.T) {
+		client := mockEdgeConnectClient(mockUnexpectedServerHandler())
+		err := client.DeleteConnectionSetting(testObjectId)
 		require.Error(t, err)
 	})
 }
@@ -106,6 +127,19 @@ func mockServerHandler(status int) http.HandlerFunc {
 			writeEnvironmentSettingsResponse(writer, status)
 		default:
 			writeSettingsApiResponse(writer, status)
+		}
+	}
+}
+
+func mockUnexpectedServerHandler() http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Content-Type", "application/json")
+
+		switch request.URL.Path {
+		case "/sso/oauth2/token":
+			writeOauthTokenResponse(writer)
+		default:
+			writeUnexpectedResponse(writer)
 		}
 	}
 }
@@ -149,5 +183,13 @@ func writeSettingsApiResponse(w http.ResponseWriter, status int) {
 	result, _ := json.Marshal(&errorResponse)
 
 	w.WriteHeader(status)
+	_, _ = w.Write(result)
+}
+
+func writeUnexpectedResponse(w http.ResponseWriter) {
+	unexpectedResponse := `{"status":500, "message":"everything is broken!!!"}`
+	result, _ := json.Marshal(&unexpectedResponse)
+
+	w.WriteHeader(http.StatusServiceUnavailable)
 	_, _ = w.Write(result)
 }
