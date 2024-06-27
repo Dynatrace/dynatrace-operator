@@ -911,14 +911,7 @@ func createKubeSystemNamespace() *corev1.Namespace {
 
 func TestController_createOrUpdateConnectionSetting(t *testing.T) {
 	t.Run("Create Connection Setting object", func(t *testing.T) {
-		controller := &Controller{
-			client:                   fake.NewClient(),
-			apiReader:                fake.NewClient(),
-			registryClientBuilder:    registry.NewClient,
-			config:                   &rest.Config{},
-			timeProvider:             timeprovider.New(),
-			edgeConnectClientBuilder: newEdgeConnectClient(),
-		}
+		controller := mockController()
 		edgeConnectClient := edgeconnectmock.NewClient(t)
 		edgeConnectClient.On("GetConnectionSettings").Return([]edgeconnect.EnvironmentSetting{}, nil)
 		edgeConnectClient.On("CreateConnectionSetting", mock.Anything).Return(nil)
@@ -926,14 +919,7 @@ func TestController_createOrUpdateConnectionSetting(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("Existing Connection Setting object", func(t *testing.T) {
-		controller := &Controller{
-			client:                   fake.NewClient(),
-			apiReader:                fake.NewClient(),
-			registryClientBuilder:    registry.NewClient,
-			config:                   &rest.Config{},
-			timeProvider:             timeprovider.New(),
-			edgeConnectClientBuilder: newEdgeConnectClient(),
-		}
+		controller := mockController()
 		edgeConnectClient := edgeconnectmock.NewClient(t)
 		edgeConnectClient.On("GetConnectionSettings").Return([]edgeconnect.EnvironmentSetting{testEnvironmentSetting}, nil)
 		err := controller.createOrUpdateConnectionSetting(edgeConnectClient, createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns), "")
@@ -941,14 +927,7 @@ func TestController_createOrUpdateConnectionSetting(t *testing.T) {
 		edgeConnectClient.AssertNotCalled(t, "CreateConnectionSetting", mock.Anything)
 	})
 	t.Run("Existing object with same Cluster ID but different name", func(t *testing.T) {
-		controller := &Controller{
-			client:                   fake.NewClient(),
-			apiReader:                fake.NewClient(),
-			registryClientBuilder:    registry.NewClient,
-			config:                   &rest.Config{},
-			timeProvider:             timeprovider.New(),
-			edgeConnectClientBuilder: newEdgeConnectClient(),
-		}
+		controller := mockController()
 		differentEnvironmentSetting := testEnvironmentSetting
 		differentEnvironmentSetting.Value.Name = "different-name"
 		differentEnvironmentSetting.Value.Namespace = "different-namespace"
@@ -960,14 +939,7 @@ func TestController_createOrUpdateConnectionSetting(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("Server fails", func(t *testing.T) {
-		controller := &Controller{
-			client:                   fake.NewClient(),
-			apiReader:                fake.NewClient(),
-			registryClientBuilder:    registry.NewClient,
-			config:                   &rest.Config{},
-			timeProvider:             timeprovider.New(),
-			edgeConnectClientBuilder: newEdgeConnectClient(),
-		}
+		controller := mockController()
 		expectedEnvironmentSetting := testEnvironmentSetting
 		expectedEnvironmentSetting.Value.Name = "different-name"
 		expectedEnvironmentSetting.Value.Namespace = "different-namespace"
@@ -977,4 +949,15 @@ func TestController_createOrUpdateConnectionSetting(t *testing.T) {
 		err := controller.createOrUpdateConnectionSetting(edgeConnectClient, createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns), "")
 		require.Error(t, err)
 	})
+}
+
+func mockController() *Controller {
+	return &Controller{
+		client:                   fake.NewClient(),
+		apiReader:                fake.NewClient(),
+		registryClientBuilder:    registry.NewClient,
+		config:                   &rest.Config{},
+		timeProvider:             timeprovider.New(),
+		edgeConnectClientBuilder: newEdgeConnectClient(),
+	}
 }
