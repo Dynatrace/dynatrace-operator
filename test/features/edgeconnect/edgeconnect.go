@@ -8,6 +8,7 @@ import (
 
 	edgeconnectv1alpha "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	ecclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
+	controller "github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -259,7 +260,7 @@ func checkSettingsExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, testE
 
 		require.NotEmpty(t, testEdgeConnect.Status.KubeSystemUID)
 
-		envSetting, err := ecClt.GetConnectionSetting(testEdgeConnect.Status.KubeSystemUID)
+		envSetting, err := controller.GetConnectionSetting(ecClt, testEdgeConnect.Name, testEdgeConnect.Namespace, testEdgeConnect.Status.KubeSystemUID)
 		require.NoError(t, err)
 
 		assert.Equal(t, testEdgeConnect.Name, envSetting.Value.Name)
@@ -276,7 +277,7 @@ func checkSettingsNotExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, te
 
 		require.NotEmpty(t, testEdgeConnect.Status.KubeSystemUID)
 
-		se, err := ecClt.GetConnectionSetting(testEdgeConnect.Status.KubeSystemUID)
+		se, err := controller.GetConnectionSetting(ecClt, testEdgeConnect.Name, testEdgeConnect.Namespace, testEdgeConnect.Status.KubeSystemUID)
 		require.NoError(t, err)
 		assert.Equal(t, ecclient.EnvironmentSetting{}, se)
 
