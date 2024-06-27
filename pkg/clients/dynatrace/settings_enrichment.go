@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
@@ -69,7 +70,13 @@ func (dtc *dynatraceClient) GetRulesSettings(ctx context.Context, kubeSystemUUID
 
 	err = dtc.unmarshalToJson(res, &resDataJson)
 	if err != nil {
-		return GetRulesSettingsResponse{}, fmt.Errorf("error parsing response body: %w", err)
+		if strings.Contains(err.Error(), "404") && strings.Contains(err.Error(), MetadataEnrichmentSettingsSchemaId) {
+			log.Info("enrichment settings schema not available on cluster, skipping getting the enrichment rules")
+
+			return GetRulesSettingsResponse{}, nil
+		}
+
+		return GetRulesSettingsResponse{}, errors.New(fmt.Errorf("error parsing response body: %w", err).Error())
 	}
 
 	return resDataJson, nil
