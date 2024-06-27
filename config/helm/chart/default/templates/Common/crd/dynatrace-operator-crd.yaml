@@ -2775,15 +2775,19 @@ spec:
                     description: Adds additional annotations to the ActiveGate pods
                     type: object
                   capabilities:
-                    description: Activegate capabilities enabled (routing, kubernetes-monitoring,
-                      metrics-ingest, dynatrace-api)
+                    description: "Defines the ActiveGate pod capabilities\nPossible
+                      values:\n\t- `routing` enables OneAgent routing.\n\t- `kubernetes-monitoring`
+                      enables Kubernetes API monitoring.\n\t- `metrics-ingest` opens
+                      the metrics ingest endpoint on the DynaKube ActiveGate and redirects
+                      all pods to it.\n\t- `dynatrace-api` enables calling the Dynatrace
+                      API via ActiveGate."
                     items:
                       type: string
                     type: array
                   customProperties:
                     description: |-
                       Add a custom properties file by providing it as a value or reference it from a secret
-                      If referenced from a secret, make sure the key is called 'customProperties'
+                      If referenced from a secret, make sure the key is called `customProperties`
                     properties:
                       value:
                         description: Custom properties value.
@@ -2925,23 +2929,25 @@ spec:
                     description: Set activation group for ActiveGate
                     type: string
                   image:
-                    description: The ActiveGate container image. Defaults to the latest
+                    description: Use a custom ActiveGate image. Defaults to the latest
                       ActiveGate image provided by the registry on the tenant
                     type: string
                   labels:
                     additionalProperties:
                       type: string
-                    description: Adds additional labels for the ActiveGate pods
+                    description: Your defined labels for ActiveGate pods in order
+                      to structure workloads as desired.
                     type: object
                   nodeSelector:
                     additionalProperties:
                       type: string
-                    description: Node selector to control the selection of nodes
+                    description: Specify the node selector that controls on which
+                      nodes ActiveGate will be deployed.
                     type: object
                   priorityClassName:
                     description: |-
-                      If specified, indicates the pod's priority. Name must be defined by creating a PriorityClass object with that
-                      name. If not specified the setting will be removed from the StatefulSet.
+                      Assign a priority class to the ActiveGate pods. By default, no class is set.
+                      For details, see Pod Priority and Preemption. (https://dt-url.net/n8437bl)
                     type: string
                   replicas:
                     default: 1
@@ -2949,8 +2955,9 @@ spec:
                     format: int32
                     type: integer
                   resources:
-                    description: Define resources requests and limits for single ActiveGate
-                      pods
+                    description: |-
+                      Resource settings for ActiveGate container.
+                      Consumption of the ActiveGate heavily depends on the workload to monitor. Adjust values accordingly.
                     properties:
                       claims:
                         description: |-
@@ -3007,8 +3014,8 @@ spec:
                   tlsSecretName:
                     description: |-
                       The name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.
-                      server.p12: certificate+key pair in pkcs12 format
-                      password: passphrase to read server.p12
+                      `server.p12`: certificate+key pair in pkcs12 format
+                      `password`: passphrase to read server.p12
                     type: string
                   tolerations:
                     description: Set tolerations for the ActiveGate pods
@@ -3050,7 +3057,7 @@ spec:
                       type: object
                     type: array
                   topologySpreadConstraints:
-                    description: Adds TopologySpreadConstraints for the ActiveGate
+                    description: Adds TopologySpreadConstraints to the ActiveGate
                       pods
                     items:
                       description: TopologySpreadConstraint specifies how to spread
@@ -3233,7 +3240,9 @@ spec:
                 type: object
               apiUrl:
                 description: |-
-                  Dynatrace apiUrl, including the /api path at the end. For SaaS, set YOUR_ENVIRONMENT_ID to your environment ID. For Managed, change the apiUrl address.
+                  Dynatrace `apiUrl`, including the `/api` path at the end.
+                  - For SaaS, set `YOUR_ENVIRONMENT_ID` to your environment ID.
+                  - For Managed, change the `apiUrl` address.
                   For instructions on how to determine the environment ID and how to configure the apiUrl address, see Environment ID (https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id).
                 type: string
               customPullSecret:
@@ -3244,12 +3253,11 @@ spec:
                 type: string
               dynatraceApiRequestThreshold:
                 default: 15
-                description: Configuration for thresholding Dynatrace API requests.
+                description: Minimum minutes between Dynatrace API requests.
                 type: integer
               enableIstio:
                 description: |-
-                  When enabled, and if Istio is installed on the Kubernetes environment, Dynatrace Operator will create the corresponding
-                  VirtualService and ServiceEntry objects to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate.
+                  When enabled, and if Istio is installed on the Kubernetes environment, Dynatrace Operator will create the corresponding VirtualService and ServiceEntry objects to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate.
                   Disabled by default.
                 type: boolean
               metadataEnrichment:
@@ -3616,7 +3624,8 @@ spec:
                       oneAgentResources:
                         description: |-
                           Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.
-                          Note: resource.requests shows the values needed to run; resource.limits shows the maximum limits for the pod.
+                          - `resource.requests` shows the values needed to run
+                          - `resource.limits` shows the maximum limits for the pod
                         properties:
                           claims:
                             description: |-
@@ -3720,7 +3729,9 @@ spec:
                           type: object
                         type: array
                       version:
-                        description: The OneAgent version to be used.
+                        description: The OneAgent version to be used for host monitoring
+                          OneAgents running in the dedicated pod. This setting doesn't
+                          affect the OneAgent version used for application monitoring.
                         type: string
                     type: object
                   cloudNativeFullStack:
@@ -4007,7 +4018,8 @@ spec:
                       oneAgentResources:
                         description: |-
                           Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.
-                          Note: resource.requests shows the values needed to run; resource.limits shows the maximum limits for the pod.
+                          - `resource.requests` shows the values needed to run
+                          - `resource.limits` shows the maximum limits for the pod
                         properties:
                           claims:
                             description: |-
@@ -4111,11 +4123,16 @@ spec:
                           type: object
                         type: array
                       version:
-                        description: The OneAgent version to be used.
+                        description: The OneAgent version to be used for host monitoring
+                          OneAgents running in the dedicated pod. This setting doesn't
+                          affect the OneAgent version used for application monitoring.
                         type: string
                     type: object
                   hostGroup:
-                    description: Sets a host group for OneAgent.
+                    description: |-
+                      Specify the name of the group to which you want to assign the host.
+                      This method is preferred over the now obsolete `--set-host-group` argument.
+                      If both settings are used, this field takes precedence over the `--set-host-group` argument.
                     type: string
                   hostMonitoring:
                     description: |-
@@ -4291,7 +4308,8 @@ spec:
                       oneAgentResources:
                         description: |-
                           Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.
-                          Note: resource.requests shows the values needed to run; resource.limits shows the maximum limits for the pod.
+                          - `resource.requests` shows the values needed to run
+                          - `resource.limits` shows the maximum limits for the pod
                         properties:
                           claims:
                             description: |-
@@ -4395,14 +4413,16 @@ spec:
                           type: object
                         type: array
                       version:
-                        description: The OneAgent version to be used.
+                        description: The OneAgent version to be used for host monitoring
+                          OneAgents running in the dedicated pod. This setting doesn't
+                          affect the OneAgent version used for application monitoring.
                         type: string
                     type: object
                 type: object
               proxy:
                 description: |-
-                  Set custom proxy settings either directly or from a secret with the field proxy.
-                  Note: Applies to Dynatrace Operator, ActiveGate, and OneAgents.
+                  Set custom proxy settings either directly or from a secret with the field `proxy`.
+                  Applies to Dynatrace Operator, ActiveGate, and OneAgents.
                 properties:
                   value:
                     description: Proxy URL. It has preference over ValueFrom.
@@ -4416,7 +4436,7 @@ spec:
               skipCertCheck:
                 description: |-
                   Disable certificate check for the connection between Dynatrace Operator and the Dynatrace Cluster.
-                  Set to true if you want to skip certification validation checks.
+                  Set to `true` if you want to skip certification validation checks.
                 type: boolean
               tokens:
                 description: Name of the secret holding the tokens used for connecting
@@ -4424,8 +4444,9 @@ spec:
                 type: string
               trustedCAs:
                 description: |-
-                  Adds custom RootCAs from a configmap. Put the certificate under certs within your configmap.
-                  Note: Applies to Dynatrace Operator, OneAgent and ActiveGate.
+                  Adds custom RootCAs from a configmap.
+                  The key to the data must be `certs`.
+                  This applies to both the Dynatrace Operator and the OneAgent. Doesn't apply to ActiveGate.
                 type: string
             required:
             - apiUrl
