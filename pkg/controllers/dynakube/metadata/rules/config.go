@@ -1,9 +1,9 @@
-package status
+package rules
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 var (
-	log = logd.Get().WithName("dynakube-status")
+	log = logd.Get().WithName("metadata-enrichment-rules")
 )

@@ -53,7 +53,7 @@ func (r *Reconciler) createObjectIdIfNotExists(ctx context.Context) (string, err
 	}
 
 	// check if Setting for ME exists
-	settings, err := r.dtc.GetSettingsForMonitoredEntities(ctx, monitoredEntities, dtclient.SettingsSchemaId)
+	settings, err := r.dtc.GetSettingsForMonitoredEntities(ctx, monitoredEntities, dtclient.KubernetesSettingsSchemaId)
 	if err != nil {
 		return "", errors.WithMessage(err, "error trying to check if setting exists")
 	}

@@ -60,6 +60,15 @@ func (dtc *dynatraceClient) getSettingsUrl(validate bool) string {
 	return fmt.Sprintf("%s/v2/settings/objects%s", dtc.url, validationQuery)
 }
 
+func (dtc *dynatraceClient) getEffectiveSettingsUrl(validate bool) string {
+	validationQuery := ""
+	if !validate {
+		validationQuery = "?validateOnly=false"
+	}
+
+	return fmt.Sprintf("%s/v2/settings/effectiveValues%s", dtc.url, validationQuery)
+}
+
 func (dtc *dynatraceClient) getProcessModuleConfigUrl() string {
 	return dtc.url + "/v1/deployment/installer/agent/processmoduleconfig?sections=general,agentType"
 }

@@ -19,7 +19,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
@@ -239,12 +238,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
-	err = status.SetKubeSystemUUIDInStatus(ctx, dynakube, controller.apiReader)
-	if err != nil {
-		log.Info("could not set kube-system UUID in Dynakube status")
-
-		return err
-	}
+	dynakube.Status.KubeSystemUUID = controller.clusterID
 
 	log.Info("start reconciling deployment meta data")
 
