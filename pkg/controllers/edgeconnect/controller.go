@@ -167,7 +167,7 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 	}
 
 	if edgeConnect.IsK8SAutomationEnabled() && edgeConnect.IsProvisionerModeEnabled() {
-		err = controller.deleteConnectionSetting(edgeConnectClient, edgeConnect.Status.KubeSystemUID)
+		err = controller.deleteConnectionSetting(edgeConnectClient, edgeConnect)
 		if err != nil {
 			_log.Info("reconcile deletion: Deleting connection setting failed")
 
@@ -178,8 +178,8 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 	return edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID)
 }
 
-func (controller *Controller) deleteConnectionSetting(edgeConnectClient edgeconnect.Client, kubeSystemUID string) error {
-	envSetting, err := edgeConnectClient.GetConnectionSetting(kubeSystemUID)
+func (controller *Controller) deleteConnectionSetting(edgeConnectClient edgeconnect.Client, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
+	envSetting, err := GetConnectionSetting(edgeConnectClient, edgeConnect.Name, edgeConnect.Namespace, edgeConnect.Status.KubeSystemUID)
 	if err != nil {
 		return err
 	}
@@ -731,7 +731,7 @@ func (controller *Controller) createOrUpdateEdgeConnectDeploymentAndSettings(ctx
 func (controller *Controller) createOrUpdateConnectionSetting(edgeConnectClient edgeconnect.Client, edgeConnect *edgeconnectv1alpha1.EdgeConnect, latestToken string) error {
 	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name)
 
-	envSetting, err := edgeConnectClient.GetConnectionSetting(edgeConnect.Status.KubeSystemUID)
+	envSetting, err := GetConnectionSetting(edgeConnectClient, edgeConnect.Name, edgeConnect.Namespace, edgeConnect.Status.KubeSystemUID)
 	if err != nil {
 		_log.Info("Failed getting EdgeConnect connection setting object")
 
@@ -845,4 +845,21 @@ func (controller *Controller) getToken(ctx context.Context, edgeConnect *edgecon
 	}
 
 	return "", ErrTokenNotFound
+}
+
+func GetConnectionSetting(edgeConnectClient edgeconnect.Client, name, namespace, uid string) (edgeconnect.EnvironmentSetting, error) {
+	connectionSettings, err := edgeConnectClient.GetConnectionSettings()
+	if err != nil {
+		return edgeconnect.EnvironmentSetting{}, err
+	}
+
+	for _, connectionSetting := range connectionSettings {
+		if connectionSetting.Value.Name == name &&
+			connectionSetting.Value.Namespace == namespace &&
+			connectionSetting.Value.UID == uid {
+			return connectionSetting, nil
+		}
+	}
+
+	return edgeconnect.EnvironmentSetting{}, nil
 }
