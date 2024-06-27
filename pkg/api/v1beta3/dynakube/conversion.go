@@ -14,5 +14,6 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 // ConvertTo converts this v1beta3.DynaKube to the Hub version (v1beta2.DynaKube).
 func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	_ = dstRaw.(*v1beta2.DynaKube)
+	// TODO marshal as anotationkeyy
 	return nil
 }
