@@ -18,4 +18,4 @@ deploy: manifests/crd/helm
 			--set platform=$(PLATFORM) \
 			--set csidriver.enabled=$(ENABLE_CSI) \
 			--set manifests=true \
-			--set image="$(IMAGE_URI)" | kubectl apply -f -
+			--set image="$(IMAGE_URI)" | kubectl replace -f -

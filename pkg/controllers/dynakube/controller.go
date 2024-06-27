@@ -8,6 +8,7 @@ import (
 
 	dynatracestatus "github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	dynatracev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
@@ -311,6 +312,15 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 		componentErrors = append(componentErrors, err)
 	}
+
+	dynakubeV1beta3 := &dynatracev1beta3.DynaKube{}
+	err = dynakubeV1beta3.ConvertFrom(dynakube)
+	if err != nil {
+		return err
+	}
+
+	extensionReconciler := extension.NewReconciler(controller.client, controller.apiReader, dynakubeV1beta3)
+	err = extensionReconciler.Reconcile(ctx)
 
 	proxyReconciler := proxy.NewReconciler(controller.client, controller.apiReader, dynakube)
 
