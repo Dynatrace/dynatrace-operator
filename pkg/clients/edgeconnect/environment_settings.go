@@ -35,12 +35,12 @@ type EnvironmentSettingsResponse struct {
 	PageSize   int                  `json:"pageSize"`
 }
 
-func (c *client) GetConnectionSetting(name, namespace, uid string) (EnvironmentSetting, error) {
+func (c *client) GetConnectionSettings() ([]EnvironmentSetting, error) {
 	settingsObjectsUrl := c.getSettingsObjectsUrl()
 
 	req, err := http.NewRequestWithContext(c.ctx, http.MethodGet, settingsObjectsUrl, nil)
 	if err != nil {
-		return EnvironmentSetting{}, fmt.Errorf("error initializing http request: %w", err)
+		return nil, fmt.Errorf("error initializing http request: %w", err)
 	}
 
 	q := req.URL.Query()
@@ -53,28 +53,22 @@ func (c *client) GetConnectionSetting(name, namespace, uid string) (EnvironmentS
 	defer utils.CloseBodyAfterRequest(response)
 
 	if err != nil {
-		return EnvironmentSetting{}, fmt.Errorf("error making post request to dynatrace api: %w", err)
+		return nil, fmt.Errorf("error making post request to dynatrace api: %w", err)
 	}
 
 	responseData, err := c.getSettingsApiResponseData(response)
 	if err != nil {
-		return EnvironmentSetting{}, fmt.Errorf("error getting server response data: %w", err)
+		return nil, fmt.Errorf("error getting server response data: %w", err)
 	}
 
 	var resDataJson EnvironmentSettingsResponse
 
 	err = json.Unmarshal(responseData, &resDataJson)
 	if err != nil {
-		return EnvironmentSetting{}, fmt.Errorf("error parsing response body: %w", err)
+		return nil, fmt.Errorf("error parsing response body: %w", err)
 	}
 
-	for _, item := range resDataJson.Items {
-		if item.Value.Name == name && item.Value.Namespace == namespace && item.Value.UID == uid {
-			return item, nil
-		}
-	}
-
-	return EnvironmentSetting{}, nil
+	return resDataJson.Items, nil
 }
 
 func (c *client) CreateConnectionSetting(es EnvironmentSetting) error {
