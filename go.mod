@@ -4,7 +4,7 @@ go 1.22.3
 
 require (
 	github.com/container-storage-interface/spec v1.9.0
-	github.com/docker/cli v27.0.1+incompatible
+	github.com/docker/cli v27.0.2+incompatible
 	github.com/evanphx/json-patch v5.9.0+incompatible
 	github.com/go-gormigrate/gormigrate/v2 v2.1.2
 	github.com/go-logr/logr v1.4.2
@@ -61,7 +61,6 @@ require (
 	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
-	github.com/docker/docker v24.0.6+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
