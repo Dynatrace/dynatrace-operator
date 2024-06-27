@@ -108,3 +108,11 @@ Extensions Controller (EEC) labels
 {{ include "dynatrace-operator.commonLabels" . }}
 app.kubernetes.io/component: dynatrace-extensions-controller
 {{- end -}}
+
+{{/*
+Extensions OpenTelemetry Collector (OTelC) labels
+*/}}
+{{- define "dynatrace-operator.extensionsOpenTelemetryCollectorLabels" -}}
+{{ include "dynatrace-operator.commonLabels" . }}
+app.kubernetes.io/component: dynatrace-extensions-collector
+{{- end -}}

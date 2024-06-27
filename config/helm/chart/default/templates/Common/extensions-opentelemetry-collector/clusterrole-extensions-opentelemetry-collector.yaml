@@ -1,5 +1,5 @@
 {{- include "dynatrace-operator.platformRequired" . }}
-{{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+{{ if eq (include "dynatrace-operator.partial" .) "false" }}
 # Copyright 2021 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,31 +13,30 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
-  name: dynatrace-extensions-controller
+  name: prometheus-service-detector
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "dynatrace-operator.extensionsControllerLabels" . | nindent 4 }}
+    {{- include "dynatrace-operator.extensionsOpenTelemetryCollectorLabels" . | nindent 4 }}
 rules:
-  - apiGroups: ["security.openshift.io"]
-    resources: ["securitycontextconstraints"]
-    resourceNames: ["privileged"]
-    verbs: ["use"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "watch", "list"]
 ---
-kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
-  name: dynatrace-extensions-controller
+  name: prometheus-service-detector
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "dynatrace-operator.extensionsControllerLabels" . | nindent 4 }}
+    {{- include "dynatrace-operator.extensionsOpenTelemetryCollectorLabels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus-service-detector
 subjects:
   - kind: ServiceAccount
-    name: dynatrace-extensions-controller
-roleRef:
-  kind: Role
-  name: dynatrace-extensions-controller
-  apiGroup: rbac.authorization.k8s.io
+    name: dynatrace-extensions-collector
 {{ end }}
