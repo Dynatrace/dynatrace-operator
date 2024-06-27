@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 
-	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2/clientcredentials"
@@ -215,13 +214,12 @@ func (c *client) GetEdgeConnect(edgeConnectId string) (GetResponse, error) {
 }
 
 // UpdateEdgeConnect updates existing edge connect hostPatterns and oauthClientId
-func (c *client) UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []string, hostMappings []edgeconnectv1alpha1.HostMapping, oauthClientId string) error {
+func (c *client) UpdateEdgeConnect(edgeConnectId string, request *Request) error {
 	edgeConnectUrl := c.getEdgeConnectUrl(edgeConnectId)
 
-	body := NewRequest(name, hostPatterns, hostMappings, oauthClientId)
 	payloadBuf := new(bytes.Buffer)
 
-	err := json.NewEncoder(payloadBuf).Encode(body)
+	err := json.NewEncoder(payloadBuf).Encode(request)
 	if err != nil {
 		return err
 	}
@@ -285,13 +283,12 @@ func (c *client) DeleteEdgeConnect(edgeConnectId string) error {
 }
 
 // CreateEdgeConnect creates new edge connect
-func (c *client) CreateEdgeConnect(name string, hostPatterns []string, hostMappings []edgeconnectv1alpha1.HostMapping, oauthClientId string) (CreateResponse, error) {
+func (c *client) CreateEdgeConnect(request *Request) (CreateResponse, error) {
 	edgeConnectsUrl := c.getEdgeConnectsUrl()
 
-	body := NewRequest(name, hostPatterns, hostMappings, oauthClientId)
 	payloadBuf := new(bytes.Buffer)
 
-	err := json.NewEncoder(payloadBuf).Encode(body)
+	err := json.NewEncoder(payloadBuf).Encode(request)
 	if err != nil {
 		return CreateResponse{}, err
 	}

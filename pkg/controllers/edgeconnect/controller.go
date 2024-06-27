@@ -581,7 +581,7 @@ func (controller *Controller) getEdgeConnectIdFromClientSecret(ctx context.Conte
 func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnectClient edgeconnect.Client, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
 	_log := log.WithValues("namespace", edgeConnect.Namespace, "name", edgeConnect.Name)
 
-	createResponse, err := edgeConnectClient.CreateEdgeConnect(edgeConnect.Name, edgeConnect.HostPatterns(), edgeConnect.HostMappings(), "")
+	createResponse, err := edgeConnectClient.CreateEdgeConnect(edgeconnect.NewRequest(edgeConnect.Name, edgeConnect.HostPatterns(), edgeConnect.HostMappings(), ""))
 	if err != nil {
 		_log.Debug("creating EdgeConnect failed")
 
@@ -658,7 +658,7 @@ func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnect
 
 	log.Debug("updating EdgeConnect", "name", edgeConnect.Name)
 
-	err = edgeConnectClient.UpdateEdgeConnect(id, edgeConnect.Name, edgeConnect.HostPatterns(), edgeConnect.HostMappings(), oauthClientId)
+	err = edgeConnectClient.UpdateEdgeConnect(id, edgeconnect.NewRequest(edgeConnect.Name, edgeConnect.HostPatterns(), edgeConnect.HostMappings(), oauthClientId))
 	if err != nil {
 		_log.Debug("updating EdgeConnect failed")
 

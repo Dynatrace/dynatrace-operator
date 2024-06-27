@@ -49,6 +49,15 @@ func Create(edgeConnect edgeconnectv1alpha1.EdgeConnect) features.Func {
 	}
 }
 
+func Get(edgeConnect *edgeconnectv1alpha1.EdgeConnect) features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		require.NoError(t, dynatracev1alpha1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
+		require.NoError(t, environmentConfig.Client().Resources().Get(ctx, edgeConnect.Name, edgeConnect.Namespace, edgeConnect))
+
+		return ctx
+	}
+}
+
 func Delete(edgeConnect edgeconnectv1alpha1.EdgeConnect) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()

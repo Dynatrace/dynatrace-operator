@@ -1,17 +1,15 @@
 package edgeconnect
 
-import edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
-
 // Client is the interface for the Dynatrace EdgeConnect REST API client.
 type Client interface {
 	// GetEdgeConnect return details of single edge connect
 	GetEdgeConnect(edgeConnectId string) (GetResponse, error)
 
 	// CreateEdgeConnect creates edge connect
-	CreateEdgeConnect(name string, hostPatterns []string, hostMappings []edgeconnectv1alpha1.HostMapping, oauthClientId string) (CreateResponse, error)
+	CreateEdgeConnect(request *Request) (CreateResponse, error)
 
 	// UpdateEdgeConnect updates edge connect
-	UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []string, hostMappings []edgeconnectv1alpha1.HostMapping, oauthClientId string) error
+	UpdateEdgeConnect(edgeConnectId string, request *Request) error
 
 	// DeleteEdgeConnect deletes edge connect
 	DeleteEdgeConnect(edgeConnectId string) error

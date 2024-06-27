@@ -129,7 +129,7 @@ test/e2e/supportarchive: manifests/crd/helm
 
 ## Runs Edgeconnect e2e test only
 test/e2e/edgeconnect: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=edgeconnect-install" $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=edgeconnect-install,name=edgeconnect-install-provisioner,name=edgeconnect-install-k8s-automation" $(SKIPCLEANUP)
 
 ## Runs e2e tests on gke-autopilot
 test/e2e/gke-autopilot: manifests/crd/helm
