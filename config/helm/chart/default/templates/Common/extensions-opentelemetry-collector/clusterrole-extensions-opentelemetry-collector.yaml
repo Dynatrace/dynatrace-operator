@@ -39,4 +39,5 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: dynatrace-extensions-collector
+    namespace: {{ .Release.Namespace }}
 {{ end }}
