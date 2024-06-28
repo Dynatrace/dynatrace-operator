@@ -406,9 +406,9 @@ func createFakeClientAndReconciler(t *testing.T, mockClient dtclient.Client, ins
 	mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything).Return(mockClient, nil)
 
 	controller := &Controller{
-		client:                              fakeClient,
-		apiReader:                           fakeClient,
-		registryClientBuilder:               createFakeRegistryClientBuilder(t),
+		client:    fakeClient,
+		apiReader: fakeClient,
+		// registryClientBuilder:               createFakeRegistryClientBuilder(t),
 		dynatraceClientBuilder:              mockDtcBuilder,
 		fs:                                  afero.Afero{Fs: afero.NewMemMapFs()},
 		deploymentMetadataReconcilerBuilder: deploymentmetadata.NewReconciler,

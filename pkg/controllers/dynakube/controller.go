@@ -21,7 +21,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
-	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
@@ -67,7 +66,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, co
 		clusterID:              clusterID,
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
 		istioClientBuilder:     istio.NewClient,
-		registryClientBuilder:  registry.NewClient,
+		// registryClientBuilder:  registry.NewClient,
 
 		deploymentMetadataReconcilerBuilder: deploymentmetadata.NewReconciler,
 		activeGateReconcilerBuilder:         activegate.NewReconciler,
@@ -99,7 +98,7 @@ type Controller struct {
 	dynatraceClientBuilder dynatraceclient.Builder
 	config                 *rest.Config
 	istioClientBuilder     istio.ClientBuilder
-	registryClientBuilder  registry.ClientBuilder
+	// registry.ClientBuilder
 
 	deploymentMetadataReconcilerBuilder deploymentmetadata.ReconcilerBuilder
 	activeGateReconcilerBuilder         activegate.ReconcilerBuilder

@@ -118,6 +118,13 @@ func (statefulSetBuilder Builder) addUserAnnotations(sts *appsv1.StatefulSet) {
 }
 
 func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
+	imagePullSecrets := make([]corev1.LocalObjectReference, 0)
+	for _, pullSecretName := range statefulSetBuilder.dynakube.PullSecretsNames() {
+		imagePullSecrets = append(imagePullSecrets, corev1.LocalObjectReference{
+			Name: pullSecretName,
+		})
+	}
+
 	podSpec := corev1.PodSpec{
 		Containers:         statefulSetBuilder.buildBaseContainer(),
 		NodeSelector:       statefulSetBuilder.capability.Properties().NodeSelector,
@@ -129,9 +136,7 @@ func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
 				Type: corev1.SeccompProfileTypeRuntimeDefault,
 			},
 		},
-		ImagePullSecrets: []corev1.LocalObjectReference{
-			{Name: statefulSetBuilder.dynakube.PullSecretName()},
-		},
+		ImagePullSecrets:  imagePullSecrets,
 		PriorityClassName: statefulSetBuilder.dynakube.Spec.ActiveGate.PriorityClassName,
 		DNSPolicy:         statefulSetBuilder.dynakube.Spec.ActiveGate.DNSPolicy,
 
