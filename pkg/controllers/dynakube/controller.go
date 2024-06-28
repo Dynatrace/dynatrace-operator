@@ -314,13 +314,18 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 	}
 
 	dynakubeV1beta3 := &dynatracev1beta3.DynaKube{}
+
 	err = dynakubeV1beta3.ConvertFrom(dynakube)
 	if err != nil {
 		return err
 	}
 
 	extensionReconciler := extension.NewReconciler(controller.client, controller.apiReader, dynakubeV1beta3)
+
 	err = extensionReconciler.Reconcile(ctx)
+	if err != nil {
+		return err
+	}
 
 	proxyReconciler := proxy.NewReconciler(controller.client, controller.apiReader, dynakube)
 
