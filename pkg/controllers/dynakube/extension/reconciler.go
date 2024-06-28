@@ -2,6 +2,7 @@ package extension
 
 import (
 	"context"
+
 	dynatracev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -29,10 +30,9 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dynakube *dynatra
 	}
 }
 
-func (r *reconciler) Reconcile(ctx context.Context) error {
+func (r *reconciler) Reconcile(_ context.Context) error {
 	if !r.dynakube.PrometheusEnabled() {
 		log.Info("reconcile extensions")
-		//annot.parse()
 
 		return nil
 	}
