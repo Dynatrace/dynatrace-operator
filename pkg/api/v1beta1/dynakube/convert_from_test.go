@@ -185,6 +185,7 @@ func compareActiveGateSpec(t *testing.T, oldSpec ActiveGateSpec, newSpec v1beta2
 	assert.Equal(t, oldSpec.TlsSecretName, newSpec.TlsSecretName)
 	assert.Equal(t, oldSpec.TopologySpreadConstraints, newSpec.TopologySpreadConstraints)
 	assert.Equal(t, oldSpec.Group, newSpec.Group)
+	assert.Equal(t, *oldSpec.Replicas, newSpec.Replicas)
 
 	if oldSpec.CustomProperties != nil || newSpec.CustomProperties != nil { // necessary so we don't explode with nil pointer when not set
 		require.NotNil(t, oldSpec.CustomProperties)
