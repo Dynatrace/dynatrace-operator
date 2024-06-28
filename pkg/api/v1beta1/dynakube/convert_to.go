@@ -89,6 +89,10 @@ func (src *DynaKube) toActiveGateSpec(dst *v1beta2.DynaKube) {
 			ValueFrom: src.Spec.ActiveGate.CustomProperties.ValueFrom,
 		}
 	}
+
+	if src.Spec.ActiveGate.Replicas != nil {
+		dst.Spec.ActiveGate.Replicas = *src.Spec.ActiveGate.Replicas
+	}
 }
 
 func (src *DynaKube) toMovedFields(dst *v1beta2.DynaKube) error {
