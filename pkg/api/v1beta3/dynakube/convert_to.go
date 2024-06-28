@@ -25,7 +25,7 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	}
 
 	if ex != nil {
-		src.Annotations[api.AnnotationDynatraceExtensions] = string(ex)
+		dst.Annotations[api.AnnotationDynatraceExtensions] = string(ex)
 	}
 
 	log.Info("convertTo", ".spec.Templates", src.Spec.Templates)
@@ -37,7 +37,7 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	}
 
 	if otel != nil {
-		src.Annotations[api.AnnotationDynatraceOpenTelemetryCollector] = string(otel)
+		dst.Annotations[api.AnnotationDynatraceOpenTelemetryCollector] = string(otel)
 	}
 
 	ee := src.Spec.Templates.ExtensionExecutionController
@@ -48,15 +48,15 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	}
 
 	if eec != nil {
-		src.Annotations[api.AnnotationDynatraceextEnsionExecutionController] = string(eec)
+		dst.Annotations[api.AnnotationDynatraceextEnsionExecutionController] = string(eec)
 	}
 
 	return nil
 }
 
 func (src *DynaKube) toBase(dst *v1beta2.DynaKube) {
-	if src.Annotations == nil {
-		src.Annotations = map[string]string{}
+	if dst.Annotations == nil {
+		dst.Annotations = map[string]string{}
 	}
 
 	dst.ObjectMeta = *src.ObjectMeta.DeepCopy() // DeepCopy mainly relevant for testing
