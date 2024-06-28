@@ -18,21 +18,33 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 
 	e := src.Spec.Extensions
 
-	ex, _ := json.Marshal(e)
+	ex, err := json.Marshal(e)
+	if err != nil {
+		return err
+	}
+
 	if ex != nil {
 		src.Annotations[api.AnnotationDynatraceExtensions] = string(ex)
 	}
 
 	o := src.Spec.Templates.OpenTelemetryCollector
 
-	otel, _ := json.Marshal(o)
+	otel, err := json.Marshal(o)
+	if err != nil {
+		return err
+	}
+
 	if otel != nil {
 		src.Annotations[api.AnnotationDynatraceOpenTelemetryCollector] = string(otel)
 	}
 
 	ee := src.Spec.Templates.ExtensionExecutionController
 
-	eec, _ := json.Marshal(ee)
+	eec, err := json.Marshal(ee)
+	if err != nil {
+		return err
+	}
+
 	if eec != nil {
 		src.Annotations[api.AnnotationDynatraceextEnsionExecutionController] = string(eec)
 	}
