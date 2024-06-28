@@ -1,11 +1,11 @@
-package dynakube
+package validation
 
 import (
 	"context"
 	"net/url"
 	"strings"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 	out of it. Example: ` + ExampleApiUrl
 )
 
-func NoApiUrl(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
+func NoApiUrl(_ context.Context, _ *Validator, dynakube *dynakube.DynaKube) string {
 	apiUrl := dynakube.Spec.APIURL
 
 	if apiUrl == ExampleApiUrl {
@@ -40,7 +40,7 @@ func NoApiUrl(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta
 	return ""
 }
 
-func IsInvalidApiUrl(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
+func IsInvalidApiUrl(_ context.Context, _ *Validator, dynakube *dynakube.DynaKube) string {
 	apiUrl := dynakube.Spec.APIURL
 
 	if !strings.HasSuffix(apiUrl, "/api") {
@@ -70,7 +70,7 @@ func IsInvalidApiUrl(_ context.Context, _ *dynakubeValidator, dynakube *dynatrac
 	return ""
 }
 
-func IsThirdGenAPIUrl(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
+func IsThirdGenAPIUrl(_ context.Context, _ *Validator, dynakube *dynakube.DynaKube) string {
 	if strings.Contains(dynakube.ApiUrl(), ".apps.") {
 		return errorThirdGenApiUrl
 	}

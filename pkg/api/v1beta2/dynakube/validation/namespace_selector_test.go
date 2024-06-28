@@ -1,21 +1,21 @@
-package dynakube
+package validation
 
 import (
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestConflictingNamespaceSelector(t *testing.T) {
 	t.Run(`valid dynakube specs`, func(t *testing.T) {
-		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta2.DynaKube{
+		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{
-						AppInjectionSpec: dynatracev1beta2.AppInjectionSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
+						AppInjectionSpec: dynakube.AppInjectionSpec{
 							NamespaceSelector: metav1.LabelSelector{
 								MatchLabels: dummyLabels,
 							},
@@ -24,13 +24,13 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 				},
 			},
 		},
-			&dynatracev1beta2.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{
-							AppInjectionSpec: dynatracev1beta2.AppInjectionSpec{
+					OneAgent: dynakube.OneAgentSpec{
+						ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
+							AppInjectionSpec: dynakube.AppInjectionSpec{
 								NamespaceSelector: metav1.LabelSelector{
 									MatchLabels: dummyLabels,
 								},
@@ -41,15 +41,15 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 			}, &dummyNamespace, &dummyNamespace2)
 	})
 	t.Run(`invalid dynakube specs`, func(t *testing.T) {
-		assertDeniedResponse(t,
+		assertDenied(t,
 			[]string{errorConflictingNamespaceSelector},
-			&dynatracev1beta2.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{
-							AppInjectionSpec: dynatracev1beta2.AppInjectionSpec{
+					OneAgent: dynakube.OneAgentSpec{
+						ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
+							AppInjectionSpec: dynakube.AppInjectionSpec{
 								NamespaceSelector: metav1.LabelSelector{
 									MatchLabels: dummyLabels,
 								},
@@ -58,16 +58,16 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 					},
 				},
 			},
-			&dynatracev1beta2.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "conflicting-dk",
 					Namespace: testNamespace,
 				},
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{
-							AppInjectionSpec: dynatracev1beta2.AppInjectionSpec{
+					OneAgent: dynakube.OneAgentSpec{
+						ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
+							AppInjectionSpec: dynakube.AppInjectionSpec{
 								NamespaceSelector: metav1.LabelSelector{
 									MatchLabels: dummyLabels,
 								},
@@ -91,16 +91,16 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 		}
 		// MatchLabels
 		for _, label := range testsValidLabels {
-			assertAllowedResponse(t, &dynatracev1beta2.DynaKube{
+			assertAllowed(t, &dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "invalid-namespace-selector",
 					Namespace: testNamespace,
 				},
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{
-							AppInjectionSpec: dynatracev1beta2.AppInjectionSpec{
+					OneAgent: dynakube.OneAgentSpec{
+						ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
+							AppInjectionSpec: dynakube.AppInjectionSpec{
 								NamespaceSelector: metav1.LabelSelector{
 									MatchLabels: map[string]string{
 										"dummy": label,
@@ -113,16 +113,16 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 			}, &dummyNamespace, &dummyNamespace2)
 		}
 		// MatchExpressions
-		assertAllowedResponse(t, &dynatracev1beta2.DynaKube{
+		assertAllowed(t, &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "invalid-namespace-selector",
 				Namespace: testNamespace,
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{
-						AppInjectionSpec: dynatracev1beta2.AppInjectionSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
+						AppInjectionSpec: dynakube.AppInjectionSpec{
 							NamespaceSelector: metav1.LabelSelector{
 								MatchExpressions: []metav1.LabelSelectorRequirement{
 									{
@@ -145,18 +145,18 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 		}
 		for _, label := range testsInvalidLabels {
 			// MatchLabels
-			assertDeniedResponse(t,
+			assertDenied(t,
 				[]string{errorNamespaceSelectorMatchLabelsViolateLabelSpec},
-				&dynatracev1beta2.DynaKube{
+				&dynakube.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "invalid-namespace-selector",
 						Namespace: testNamespace,
 					},
-					Spec: dynatracev1beta2.DynaKubeSpec{
+					Spec: dynakube.DynaKubeSpec{
 						APIURL: testApiUrl,
-						OneAgent: dynatracev1beta2.OneAgentSpec{
-							ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{
-								AppInjectionSpec: dynatracev1beta2.AppInjectionSpec{
+						OneAgent: dynakube.OneAgentSpec{
+							ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
+								AppInjectionSpec: dynakube.AppInjectionSpec{
 									NamespaceSelector: metav1.LabelSelector{
 										MatchLabels: map[string]string{
 											"dummy": label,
@@ -169,18 +169,18 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 				}, &dummyNamespace, &dummyNamespace2)
 		}
 		// MatchExpressions
-		assertDeniedResponse(t,
+		assertDenied(t,
 			[]string{errorNamespaceSelectorMatchLabelsViolateLabelSpec},
-			&dynatracev1beta2.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "invalid-namespace-selector",
 					Namespace: testNamespace,
 				},
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{
-							AppInjectionSpec: dynatracev1beta2.AppInjectionSpec{
+					OneAgent: dynakube.OneAgentSpec{
+						ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
+							AppInjectionSpec: dynakube.AppInjectionSpec{
 								NamespaceSelector: metav1.LabelSelector{
 									MatchExpressions: []metav1.LabelSelectorRequirement{
 										{

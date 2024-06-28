@@ -1,9 +1,9 @@
-package dynakube
+package validation
 
 import (
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,24 +12,24 @@ import (
 const (
 	testProxySecret = "proxysecret"
 
-	// invalidPlainTextProxyUrl contains forbidden apostrophe character
+	// invalidPlainTextProxyUrl contains forbidden apostrophe character.
 	invalidPlainTextProxyUrl = "http://test:password'!\"#$()*-./:;<>?@[]^_{|}~@proxy-service.dynatrace:3128"
 
 	// validEncodedProxyUrl contains no forbidden characters "http://test:password!"#$()*-./:;<>?@[]^_{|}~@proxy-service.dynatrace:3128"
 	validEncodedProxyUrl = "http://test:password!%22%23%24()*-.%2F%3A%3B%3C%3E%3F%40%5B%5D%5E_%7B%7C%7D~@proxy-service.dynatrace:3128"
 
-	// validEncodedProxyUrlNoPassword contains empty password
+	// validEncodedProxyUrlNoPassword contains empty password.
 	validEncodedProxyUrlNoPassword = "http://test@proxy-service.dynatrace:3128"
 )
 
 func TestInvalidActiveGateProxy(t *testing.T) {
 	t.Run(`valid proxy url`, func(t *testing.T) {
-		assertAllowedResponseWithoutWarnings(t,
-			&dynatracev1beta2.DynaKube{
+		assertAllowedWithoutWarnings(t,
+			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					Proxy: &dynatracev1beta2.DynaKubeProxy{
+					Proxy: &dynakube.DynaKubeProxy{
 						Value:     validEncodedProxyUrl,
 						ValueFrom: "",
 					},
@@ -38,12 +38,12 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 	})
 
 	t.Run(`valid proxy url, no password`, func(t *testing.T) {
-		assertAllowedResponseWithoutWarnings(t,
-			&dynatracev1beta2.DynaKube{
+		assertAllowedWithoutWarnings(t,
+			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					Proxy: &dynatracev1beta2.DynaKubeProxy{
+					Proxy: &dynakube.DynaKubeProxy{
 						Value:     validEncodedProxyUrlNoPassword,
 						ValueFrom: "",
 					},
@@ -52,13 +52,13 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 	})
 
 	t.Run(`invalid proxy url`, func(t *testing.T) {
-		assertDeniedResponse(t,
+		assertDenied(t,
 			[]string{errorInvalidProxyUrl},
-			&dynatracev1beta2.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					Proxy: &dynatracev1beta2.DynaKubeProxy{
+					Proxy: &dynakube.DynaKubeProxy{
 						Value:     invalidPlainTextProxyUrl,
 						ValueFrom: "",
 					},
@@ -67,12 +67,12 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 	})
 
 	t.Run(`valid proxy secret url`, func(t *testing.T) {
-		assertAllowedResponseWithoutWarnings(t,
-			&dynatracev1beta2.DynaKube{
+		assertAllowedWithoutWarnings(t,
+			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					Proxy: &dynatracev1beta2.DynaKubeProxy{
+					Proxy: &dynakube.DynaKubeProxy{
 						Value:     "",
 						ValueFrom: testProxySecret,
 					},
@@ -90,13 +90,13 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 	})
 
 	t.Run(`missing proxy secret`, func(t *testing.T) {
-		assertDeniedResponse(t,
+		assertDenied(t,
 			[]string{errorMissingProxySecret},
-			&dynatracev1beta2.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					Proxy: &dynatracev1beta2.DynaKubeProxy{
+					Proxy: &dynakube.DynaKubeProxy{
 						Value:     "",
 						ValueFrom: testProxySecret,
 					},
@@ -105,13 +105,13 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 	})
 
 	t.Run(`invalid format of proxy secret`, func(t *testing.T) {
-		assertDeniedResponse(t,
+		assertDenied(t,
 			[]string{errorMissingProxySecret},
-			&dynatracev1beta2.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					Proxy: &dynatracev1beta2.DynaKubeProxy{
+					Proxy: &dynakube.DynaKubeProxy{
 						Value:     "",
 						ValueFrom: testProxySecret,
 					},
@@ -129,13 +129,13 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 	})
 
 	t.Run(`invalid proxy secret url`, func(t *testing.T) {
-		assertDeniedResponse(t,
+		assertDenied(t,
 			[]string{errorInvalidProxyUrl},
-			&dynatracev1beta2.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					Proxy: &dynatracev1beta2.DynaKubeProxy{
+					Proxy: &dynakube.DynaKubeProxy{
 						Value:     "",
 						ValueFrom: testProxySecret,
 					},

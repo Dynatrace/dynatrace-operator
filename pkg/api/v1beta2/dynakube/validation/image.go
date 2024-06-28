@@ -1,4 +1,4 @@
-package dynakube
+package validation
 
 import (
 	"context"
@@ -16,7 +16,7 @@ const (
 	errorUnparsableImageRef = `Custom %s image can't be parsed, make sure it's a valid image reference.`
 )
 
-func imageFieldHasTenantImage(_ context.Context, _ *dynakubeValidator, dk *dynakube.DynaKube) string {
+func imageFieldHasTenantImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	tenantHost := dk.ApiUrlHost()
 
 	type imageField struct {

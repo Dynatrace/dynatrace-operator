@@ -1,10 +1,10 @@
-package dynakube
+package validation
 
 import (
 	"context"
 	"fmt"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -19,14 +19,14 @@ Make sure you don't duplicate an Activegate capability in your custom resource.
 	warningMissingActiveGateMemoryLimit = `ActiveGate specification missing memory limits. Can cause excess memory usage.`
 )
 
-func duplicateActiveGateCapabilities(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
-	if dynakube.ActiveGateMode() {
-		capabilities := dynakube.Spec.ActiveGate.Capabilities
-		duplicateChecker := map[dynatracev1beta2.CapabilityDisplayName]bool{}
+func duplicateActiveGateCapabilities(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if dk.ActiveGateMode() {
+		capabilities := dk.Spec.ActiveGate.Capabilities
+		duplicateChecker := map[dynakube.CapabilityDisplayName]bool{}
 
 		for _, capability := range capabilities {
 			if duplicateChecker[capability] {
-				log.Info("requested dynakube has duplicates in the active gate capabilities section", "name", dynakube.Name, "namespace", dynakube.Namespace)
+				log.Info("requested dynakube has duplicates in the active gate capabilities section", "name", dk.Name, "namespace", dk.Namespace)
 
 				return fmt.Sprintf(errorDuplicateActiveGateCapability, capability)
 			}
@@ -38,12 +38,12 @@ func duplicateActiveGateCapabilities(_ context.Context, _ *dynakubeValidator, dy
 	return ""
 }
 
-func invalidActiveGateCapabilities(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
-	if dynakube.ActiveGateMode() {
-		capabilities := dynakube.Spec.ActiveGate.Capabilities
+func invalidActiveGateCapabilities(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if dk.ActiveGateMode() {
+		capabilities := dk.Spec.ActiveGate.Capabilities
 		for _, capability := range capabilities {
-			if _, ok := dynatracev1beta2.ActiveGateDisplayNames[capability]; !ok {
-				log.Info("requested dynakube has invalid active gate capability", "name", dynakube.Name, "namespace", dynakube.Namespace)
+			if _, ok := dynakube.ActiveGateDisplayNames[capability]; !ok {
+				log.Info("requested dynakube has invalid active gate capability", "name", dk.Name, "namespace", dk.Namespace)
 
 				return fmt.Sprintf(errorInvalidActiveGateCapability, capability)
 			}
@@ -53,9 +53,9 @@ func invalidActiveGateCapabilities(_ context.Context, _ *dynakubeValidator, dyna
 	return ""
 }
 
-func missingActiveGateMemoryLimit(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
-	if dynakube.ActiveGateMode() &&
-		!memoryLimitSet(dynakube.Spec.ActiveGate.Resources) {
+func missingActiveGateMemoryLimit(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if dk.ActiveGateMode() &&
+		!memoryLimitSet(dk.Spec.ActiveGate.Resources) {
 		return warningMissingActiveGateMemoryLimit
 	}
 
