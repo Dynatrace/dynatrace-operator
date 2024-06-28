@@ -81,9 +81,9 @@ func NewMultiCapability(dk *dynatracev1beta2.DynaKube) Capability {
 		mc.properties.Replicas = 1
 	}
 
-	var capabilityNames []string //nolint:prealloc
+	capabilityNames := make([]string, 0)
 
-	var capabilityDisplayNames []string //nolint:prealloc
+	capabilityDisplayNames := make([]string, 0)
 
 	for _, capName := range dk.Spec.ActiveGate.Capabilities {
 		capabilityGenerator, ok := activeGateCapabilities[capName]
