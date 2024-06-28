@@ -15,7 +15,7 @@ var _ builder.Modifier = EecModifier{}
 
 const (
 	eecVolumeName = "eec-token"
-	eecDir        = "/var/lib/dynatrace/secrets/eec"
+	eecDir        = "/var/lib/dynatrace/secrets/eec/token"
 	eecFile       = "eec.token"
 )
 
@@ -37,12 +37,6 @@ func (mod EecModifier) Modify(sts *appsv1.StatefulSet) error {
 	baseContainer := container.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)
-
-	baseContainer.Command = []string{"/bin/sh"}
-	baseContainer.Args = []string{
-		"-c",
-		"echo abc ; cp -v " + eecDir + "/" + eecFile + " /var/lib/dynatrace/gateway/config/ ; /opt/dynatrace/gateway/entrypoint.sh",
-	}
 
 	return nil
 }
