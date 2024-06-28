@@ -28,6 +28,8 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.fromActiveGateSpec(src)
 	dst.fromStatus(src)
 
+	log.Info("convertFrom", "Annotations", src.Annotations)
+
 	e, ok := src.Annotations[api.AnnotationDynatraceExtensions]
 	if ok {
 		es := ExtensionsSpec{}

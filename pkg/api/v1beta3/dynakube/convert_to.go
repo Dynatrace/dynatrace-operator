@@ -17,6 +17,7 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	src.toStatus(dst)
 
 	e := src.Spec.Extensions
+	log.Info("convertTo", ".spec.Extensions", e)
 
 	ex, err := json.Marshal(e)
 	if err != nil {
@@ -27,6 +28,7 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 		src.Annotations[api.AnnotationDynatraceExtensions] = string(ex)
 	}
 
+	log.Info("convertTo", ".spec.Templates", src.Spec.Templates)
 	o := src.Spec.Templates.OpenTelemetryCollector
 
 	otel, err := json.Marshal(o)
