@@ -1,5 +1,5 @@
 # setup build image
-FROM golang:1.22.4@sha256:969349b8121a56d51c74f4c273ab974c15b3a8ae246a5cffc1df7d28b66cf978 AS operator-build
+FROM golang:1.4.1@sha256:7a2c57da5c1231fa7111ed569e2b411740c1d511be7db37e84d5509deabb1768 AS operator-build
 
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && apt-get install -y libbtrfs-dev libdevmapper-dev
