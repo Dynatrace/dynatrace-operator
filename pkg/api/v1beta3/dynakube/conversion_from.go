@@ -26,21 +26,28 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Spec.EnableIstio = src.Spec.EnableIstio
 	dst.fromOneAgentSpec(src)
 	dst.fromActiveGateSpec(src)
+	dst.fromStatus(src)
 
-	e := src.Annotations[api.AnnotationDynatraceExtensions]
-	es := ExtensionsSpec{}
-	json.Unmarshal([]byte(e), &es)
-	dst.Spec.Extensions = es
+	e, ok := src.Annotations[api.AnnotationDynatraceExtensions]
+	if ok {
+		es := ExtensionsSpec{}
+		json.Unmarshal([]byte(e), &es)
+		dst.Spec.Extensions = es
+	}
 
-	o := src.Annotations[api.AnnotationDynatraceOpenTelemetryCollector]
-	otel := OpenTelemetryCollectorSpec{}
-	json.Unmarshal([]byte(o), &otel)
-	dst.Spec.Templates.OpenTelemetryCollector = otel
+	o, ok := src.Annotations[api.AnnotationDynatraceOpenTelemetryCollector]
+	if ok {
+		otel := OpenTelemetryCollectorSpec{}
+		json.Unmarshal([]byte(o), &otel)
+		dst.Spec.Templates.OpenTelemetryCollector = otel
+	}
 
-	ee := src.Annotations[api.AnnotationDynatraceextEnsionExecutionController]
-	eec := ExtensionExecutionControllerSpec{}
-	json.Unmarshal([]byte(ee), &eec)
-	dst.Spec.Templates.ExtensionExecutionController = eec
+	ee, ok := src.Annotations[api.AnnotationDynatraceextEnsionExecutionController]
+	if ok {
+		eec := ExtensionExecutionControllerSpec{}
+		json.Unmarshal([]byte(ee), &eec)
+		dst.Spec.Templates.ExtensionExecutionController = eec
+	}
 
 	return nil
 }
@@ -89,6 +96,60 @@ func (dst *DynaKube) fromActiveGateSpec(src *v1beta2.DynaKube) {
 			ValueFrom: src.Spec.ActiveGate.CustomProperties.ValueFrom,
 		}
 	}
+}
+
+func (dst *DynaKube) fromStatus(src *v1beta2.DynaKube) {
+	dst.fromOneAgentStatus(*src)
+	dst.fromActiveGateStatus(*src)
+	dst.Status.CodeModules = CodeModulesStatus{
+		VersionStatus: src.Status.CodeModules.VersionStatus,
+	}
+
+	dst.Status.DynatraceApi = DynatraceApiStatus{
+		LastTokenScopeRequest: src.Status.DynatraceApi.LastTokenScopeRequest,
+	}
+
+	dst.Status.Conditions = src.Status.Conditions
+	dst.Status.Phase = src.Status.Phase
+	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
+	dst.Status.KubeSystemUUID = src.Status.KubeSystemUUID
+}
+
+func (dst *DynaKube) fromOneAgentStatus(src v1beta2.DynaKube) {
+	dst.Status.OneAgent.Instances = map[string]OneAgentInstance{}
+
+	// Instance
+	dst.Status.OneAgent.LastInstanceStatusUpdate = src.Status.OneAgent.LastInstanceStatusUpdate
+
+	for key, instance := range src.Status.OneAgent.Instances {
+		tmp := OneAgentInstance{
+			PodName:   instance.PodName,
+			IPAddress: instance.IPAddress,
+		}
+		dst.Status.OneAgent.Instances[key] = tmp
+	}
+
+	// Connection-Info
+	dst.Status.OneAgent.ConnectionInfoStatus.ConnectionInfoStatus = (ConnectionInfoStatus)(src.Status.OneAgent.ConnectionInfoStatus.ConnectionInfoStatus)
+
+	for _, host := range src.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts {
+		tmp := CommunicationHostStatus{
+			Host:     host.Host,
+			Port:     host.Port,
+			Protocol: host.Protocol,
+		}
+		dst.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = append(dst.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts, tmp)
+	}
+
+	// Version
+	dst.Status.OneAgent.VersionStatus = src.Status.OneAgent.VersionStatus
+	dst.Status.OneAgent.Healthcheck = src.Status.OneAgent.Healthcheck
+}
+
+func (dst *DynaKube) fromActiveGateStatus(src v1beta2.DynaKube) {
+	dst.Status.ActiveGate.ConnectionInfoStatus.ConnectionInfoStatus = (ConnectionInfoStatus)(src.Status.ActiveGate.ConnectionInfoStatus.ConnectionInfoStatus)
+	dst.Status.ActiveGate.ServiceIPs = src.Status.ActiveGate.ServiceIPs
+	dst.Status.ActiveGate.VersionStatus = src.Status.ActiveGate.VersionStatus
 }
 
 func fromHostInjectSpec(src v1beta2.HostInjectSpec) *HostInjectSpec {
