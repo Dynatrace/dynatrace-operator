@@ -396,11 +396,62 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 }
 
 func TestExtensionControllerRequiresActiveGate(t *testing.T) {
+	t.Run("no activegate is created when extensions are disabled in dk, and no capability is configured", func(t *testing.T) {
+		instance := &dynatracev1beta2.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      testName,
+			},
+			Spec: dynatracev1beta2.DynaKubeSpec{
+				ActiveGate: dynatracev1beta2.ActiveGateSpec{Capabilities: []dynatracev1beta2.CapabilityDisplayName{}},
+			},
+			TempExtensionsEnabled: false,
+		}
+		fakeClient := fake.NewClient(testKubeSystemNamespace)
+
+		r := NewReconciler(fakeClient, fakeClient, instance, createMockDtClient(t, false), nil, nil).(*Reconciler)
+		r.connectionReconciler = createGenericReconcilerMock(t)
+		r.versionReconciler = createVersionReconcilerMock(t)
+		r.pullSecretReconciler = createGenericReconcilerMock(t)
+
+		err := r.Reconcile(context.Background())
+		require.NoError(t, err)
+
+		var service corev1.Service
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
+		assert.True(t, k8serrors.IsNotFound(err))
+	})
 	t.Run("activegate is created when extensions are enabled in dk, but no activegate is configured", func(t *testing.T) {
 		instance := &dynatracev1beta2.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
+			},
+			TempExtensionsEnabled: true,
+		}
+		fakeClient := fake.NewClient(testKubeSystemNamespace)
+
+		r := NewReconciler(fakeClient, fakeClient, instance, createMockDtClient(t, true), nil, nil).(*Reconciler)
+		r.connectionReconciler = createGenericReconcilerMock(t)
+		r.versionReconciler = createVersionReconcilerMock(t)
+		r.pullSecretReconciler = createGenericReconcilerMock(t)
+
+		err := r.Reconcile(context.Background())
+		require.NoError(t, err)
+
+		var service corev1.Service
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
+		require.NoError(t, err)
+		require.Equal(t, testServiceName, service.Name)
+	})
+	t.Run("activegate is created when extensions are enabled in dk, but no activegate capability is configured", func(t *testing.T) {
+		instance := &dynatracev1beta2.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      testName,
+			},
+			Spec: dynatracev1beta2.DynaKubeSpec{
+				ActiveGate: dynatracev1beta2.ActiveGateSpec{Capabilities: []dynatracev1beta2.CapabilityDisplayName{}},
 			},
 			TempExtensionsEnabled: true,
 		}
@@ -445,7 +496,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, testServiceName, service.Name)
 	})
-	t.Run("activegate is created when extensions are enabled in dk, but activegate gets removed", func(t *testing.T) {
+	t.Run("activegate is created when extensions are enabled in dk, but activegate capabilities are removed", func(t *testing.T) {
 		instance := &dynatracev1beta2.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
