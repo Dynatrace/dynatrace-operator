@@ -162,10 +162,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 
 		dkv1beta2Validator := dynatracev1beta2validation.New(webhookManager.GetAPIReader(), webhookManager.GetConfig())
 
-		err = ctrl.NewWebhookManagedBy(webhookManager).
-			For(&dynatracev1beta2.DynaKube{}).
-			WithValidator(dkv1beta2Validator).
-			Complete()
+		err = dynatracev1beta2.SetupWebhookWithManager(webhookManager, dkv1beta2Validator)
 		if err != nil {
 			return err
 		}
