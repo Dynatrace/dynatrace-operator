@@ -35,12 +35,12 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	o := src.Annotations[api.AnnotationDynatraceOpenTelemetryCollector]
 	otel := OpenTelemetryCollectorSpec{}
 	json.Unmarshal([]byte(o), &otel)
-	dst.Spec.OpenTelemetryCollector = otel
+	dst.Spec.Templates.OpenTelemetryCollector = otel
 
 	ee := src.Annotations[api.AnnotationDynatraceextEnsionExecutionController]
 	eec := ExtensionExecutionControllerSpec{}
 	json.Unmarshal([]byte(ee), &eec)
-	dst.Spec.ExtensionExecutionController = eec
+	dst.Spec.Templates.ExtensionExecutionController = eec
 
 	return nil
 }

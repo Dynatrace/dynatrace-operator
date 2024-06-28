@@ -31,7 +31,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dynakube *dynatra
 }
 
 func (r *reconciler) Reconcile(_ context.Context) error {
-	if !r.dynakube.PrometheusEnabled() {
+	if r.dynakube.PrometheusEnabled() {
 		log.Info("reconcile extensions")
 
 		return nil

@@ -9,6 +9,14 @@ type ExtensionsSpec struct {
 	Prometheus PrometheusSpec `json:"prometheus,omitempty"`
 }
 
+type TemplatesSpec struct {
+	// +kubebuilder:validation:Optional
+	ExtensionExecutionController ExtensionExecutionControllerSpec `json:"extensionExecutionController,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	OpenTelemetryCollector OpenTelemetryCollectorSpec `json:"openTelemetryCollector,omitempty"`
+}
+
 type PrometheusSpec struct {
 	Enabled bool `json:"enabled"`
 }
