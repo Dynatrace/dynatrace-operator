@@ -1,7 +1,6 @@
 package dynakube
 
 import (
-	"k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -18,7 +17,7 @@ type ExtensionExecutionControllerSpec struct {
 
 	// Define resources requests and limits for single ExtensionExecutionController pods
 	// +kubebuilder:validation:Optional
-	PersistentVolumeClaim corev1.PersistentVolumeClaimSpec `json:"persistentVolumeClaim,omitempty"`
+	// PersistentVolumeClaim corev1.PersistentVolumeClaimSpec `json:"persistentVolumeClaim,omitempty"`
 
 	// Adds additional labels for the ExtensionExecutionController pods
 	// +kubebuilder:validation:Optional
@@ -36,13 +35,15 @@ type ExtensionExecutionControllerSpec struct {
 
 	// Define resources requests and limits for single ExtensionExecutionController pods
 	// +kubebuilder:validation:Optional
-	PersistentVolumeClaimRetentionPolicy v1.PersistentVolumeClaimRetentionPolicyType `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
+	// PersistentVolumeClaimRetentionPolicy v1.PersistentVolumeClaimRetentionPolicyType `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
+
 	// Set tolerations for the ExtensionExecutionController pods
 	// +kubebuilder:validation:Optional
-	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+
 	// Adds TopologySpreadConstraints for the ExtensionExecutionController pods
 	// +kubebuilder:validation:Optional
-	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+	// TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 }
 
 type OpenTelemetryCollectorSpec struct {
