@@ -35,6 +35,7 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 		es := ExtensionsSpec{}
 		json.Unmarshal([]byte(e), &es)
 		dst.Spec.Extensions = es
+		dst.Annotations[api.AnnotationDynatraceExtensions] = src.Annotations[api.AnnotationDynatraceExtensions]
 	}
 
 	o, ok := src.Annotations[api.AnnotationDynatraceOpenTelemetryCollector]
@@ -42,6 +43,7 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 		otel := OpenTelemetryCollectorSpec{}
 		json.Unmarshal([]byte(o), &otel)
 		dst.Spec.Templates.OpenTelemetryCollector = otel
+		dst.Annotations[api.AnnotationDynatraceOpenTelemetryCollector] = src.Annotations[api.AnnotationDynatraceOpenTelemetryCollector]
 	}
 
 	ee, ok := src.Annotations[api.AnnotationDynatraceextEnsionExecutionController]
@@ -49,6 +51,7 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 		eec := ExtensionExecutionControllerSpec{}
 		json.Unmarshal([]byte(ee), &eec)
 		dst.Spec.Templates.ExtensionExecutionController = eec
+		dst.Annotations[api.AnnotationDynatraceextEnsionExecutionController] = src.Annotations[api.AnnotationDynatraceextEnsionExecutionController]
 	}
 
 	return nil
