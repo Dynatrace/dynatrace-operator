@@ -29,7 +29,7 @@ Auto-detect the platform (if not set), according to the available APIVersions
 Exclude Kubernetes manifest not running on OLM
 */}}
 {{- define "dynatrace-operator.openshiftOrOlm" -}}
-{{- if and (or (eq (include "dynatrace-operator.platform" .) "openshift") (.Values.olm)) (eq (include "dynatrace-operator.partial" .) "false") -}}
+{{- if and (or (eq (include "dynatrace-operator.platform" .) "openshift") (.Values.olm)) -}}
     {{ default "true" }}
 {{- end -}}
 {{- end -}}
