@@ -1,6 +1,7 @@
 package dynakube
 
 import (
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -23,9 +24,9 @@ type PrometheusSpec struct {
 
 type ExtensionExecutionControllerSpec struct {
 
-	// Define resources requests and limits for single ExtensionExecutionController pods
+	// Defines storage device
 	// +kubebuilder:validation:Optional
-	// PersistentVolumeClaim corev1.PersistentVolumeClaimSpec `json:"persistentVolumeClaim,omitempty"`
+	PersistentVolumeClaim *corev1.PersistentVolumeClaimSpec `json:"persistentVolumeClaim,omitempty"`
 
 	// Adds additional labels for the ExtensionExecutionController pods
 	// +kubebuilder:validation:Optional
@@ -41,17 +42,21 @@ type ExtensionExecutionControllerSpec struct {
 	// +kubebuilder:validation:Optional
 	TlsRefName string `json:"tlsRefName,omitempty"`
 
-	// Define resources requests and limits for single ExtensionExecutionController pods
+	// Define resources' requests and limits for single ExtensionExecutionController pod
 	// +kubebuilder:validation:Optional
-	// PersistentVolumeClaimRetentionPolicy v1.PersistentVolumeClaimRetentionPolicyType `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Determines retention policy
+	// +kubebuilder:validation:Optional
+	PersistentVolumeClaimRetentionPolicy *appsv1.PersistentVolumeClaimRetentionPolicyType `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
 
 	// Set tolerations for the ExtensionExecutionController pods
 	// +kubebuilder:validation:Optional
-	// Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
 	// Adds TopologySpreadConstraints for the ExtensionExecutionController pods
 	// +kubebuilder:validation:Optional
-	// TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 }
 
 type OpenTelemetryCollectorSpec struct {
@@ -71,7 +76,7 @@ type OpenTelemetryCollectorSpec struct {
 	// +kubebuilder:validation:Optional
 	TlsRefName string `json:"tlsRefName,omitempty"`
 
-	// Define resources' requests and limits for single OtelCollector pods
+	// Define resources' requests and limits for single OtelCollector pod
 	// +kubebuilder:validation:Optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 

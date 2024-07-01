@@ -11,45 +11,17 @@ import (
 // ConvertTo converts this v1beta3.DynaKube to the Hub version (v1beta2.DynaKube).
 func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*v1beta2.DynaKube)
+
 	src.toBase(dst)
 	src.toOneAgentSpec(dst)
 	src.toActiveGateSpec(dst)
+	src.toMetadataEnrichment(dst)
+
+	if err := src.toExtensions(dst); err != nil {
+		return err
+	}
+
 	src.toStatus(dst)
-
-	e := src.Spec.Extensions
-	log.Info("convertTo", ".spec.Extensions", e)
-
-	ex, err := json.Marshal(e)
-	if err != nil {
-		return err
-	}
-
-	if ex != nil {
-		dst.Annotations[api.AnnotationDynatraceExtensions] = string(ex)
-	}
-
-	log.Info("convertTo", ".spec.Templates", src.Spec.Templates)
-	o := src.Spec.Templates.OpenTelemetryCollector
-
-	otel, err := json.Marshal(o)
-	if err != nil {
-		return err
-	}
-
-	if otel != nil {
-		dst.Annotations[api.AnnotationDynatraceOpenTelemetryCollector] = string(otel)
-	}
-
-	ee := src.Spec.Templates.ExtensionExecutionController
-
-	eec, err := json.Marshal(ee)
-	if err != nil {
-		return err
-	}
-
-	if eec != nil {
-		dst.Annotations[api.AnnotationDynatraceextEnsionExecutionController] = string(eec)
-	}
 
 	return nil
 }
@@ -69,6 +41,7 @@ func (src *DynaKube) toBase(dst *v1beta2.DynaKube) {
 	dst.Spec.TrustedCAs = src.Spec.TrustedCAs
 	dst.Spec.NetworkZone = src.Spec.NetworkZone
 	dst.Spec.EnableIstio = src.Spec.EnableIstio
+	dst.Spec.DynatraceApiRequestThreshold = src.Spec.DynatraceApiRequestThreshold
 }
 
 func (src *DynaKube) toOneAgentSpec(dst *v1beta2.DynaKube) {
@@ -104,6 +77,7 @@ func (src *DynaKube) toActiveGateSpec(dst *v1beta2.DynaKube) {
 	dst.Spec.ActiveGate.DNSPolicy = src.Spec.ActiveGate.DNSPolicy
 	dst.Spec.ActiveGate.TopologySpreadConstraints = src.Spec.ActiveGate.TopologySpreadConstraints
 	dst.Spec.ActiveGate.Resources = src.Spec.ActiveGate.Resources
+	dst.Spec.ActiveGate.Replicas = src.Spec.ActiveGate.Replicas
 
 	for _, capability := range src.Spec.ActiveGate.Capabilities {
 		dst.Spec.ActiveGate.Capabilities = append(dst.Spec.ActiveGate.Capabilities, v1beta2.CapabilityDisplayName(capability))
@@ -186,6 +160,7 @@ func toHostInjectSpec(src HostInjectSpec) *v1beta2.HostInjectSpec {
 	dst.NodeSelector = src.NodeSelector
 	dst.PriorityClassName = src.PriorityClassName
 	dst.Tolerations = src.Tolerations
+	dst.SecCompProfile = src.SecCompProfile
 
 	return dst
 }
@@ -195,6 +170,43 @@ func toAppInjectSpec(src AppInjectionSpec) *v1beta2.AppInjectionSpec {
 
 	dst.CodeModulesImage = src.CodeModulesImage
 	dst.InitResources = src.InitResources
+	dst.NamespaceSelector = src.NamespaceSelector
 
 	return dst
+}
+
+func (src *DynaKube) toMetadataEnrichment(dst *v1beta2.DynaKube) {
+	dst.Spec.MetadataEnrichment.Enabled = src.Spec.MetadataEnrichment.Enabled
+	dst.Spec.MetadataEnrichment.NamespaceSelector = src.Spec.MetadataEnrichment.NamespaceSelector
+}
+
+func (src *DynaKube) toExtensions(dst *v1beta2.DynaKube) error {
+	e := src.Spec.Extensions
+
+	ex, err := json.Marshal(e)
+	if err != nil {
+		return err
+	}
+
+	dst.Annotations[api.AnnotationDynatraceExtensions] = string(ex)
+
+	o := src.Spec.Templates.OpenTelemetryCollector
+
+	otel, err := json.Marshal(o)
+	if err != nil {
+		return err
+	}
+
+	dst.Annotations[api.AnnotationDynatraceOpenTelemetryCollector] = string(otel)
+
+	ee := src.Spec.Templates.ExtensionExecutionController
+
+	eec, err := json.Marshal(ee)
+	if err != nil {
+		return err
+	}
+
+	dst.Annotations[api.AnnotationDynatraceextEnsionExecutionController] = string(eec)
+
+	return nil
 }
