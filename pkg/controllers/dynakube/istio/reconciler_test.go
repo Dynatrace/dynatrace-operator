@@ -535,9 +535,14 @@ func TestParseCodeModulesImageURL(t *testing.T) {
 			parsedCorreclty: false,
 		},
 		{
-			input:           "//some.url.com/test",
-			output:          "https://some.url.com/test",
+			input:           "some.url.com/test:some-tag",
+			output:          "https://some.url.com/test:some-tag",
 			parsedCorreclty: true,
+		},
+		{
+			input:           ":example.com/test:some-tag",
+			output:          "",
+			parsedCorreclty: false,
 		},
 	}
 

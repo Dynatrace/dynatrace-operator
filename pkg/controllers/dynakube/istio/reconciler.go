@@ -77,12 +77,7 @@ func parseCodeModulesImageURL(rawUrl string) (string, error) {
 	if parsedURL.Scheme == "" {
 		parsedURL.Scheme = "https"
 
-		if !strings.HasPrefix(rawUrl, "//") {
-			// if no scheme at all is set we want to add this prefix
-			rawUrl = "//" + rawUrl
-		}
-
-		parsedURL, err = url.Parse(parsedURL.Scheme + ":" + rawUrl)
+		parsedURL, err = url.Parse(parsedURL.Scheme + "://" + rawUrl)
 		if err != nil {
 			return "", errors.New("can't parse the codeModules image URL")
 		}
