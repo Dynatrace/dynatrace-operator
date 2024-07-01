@@ -208,6 +208,111 @@ func TestSetInjectedAnnotation(t *testing.T) {
 	})
 }
 
+func TestCopyMetadataFromNamespace(t *testing.T) {
+	t.Run("should copy annotations not labels with prefix from namespace to pod", func(t *testing.T) {
+		mutator := createTestPodMutator(nil)
+		request := createTestMutationRequest(nil, nil, false)
+		request.Namespace.Labels = map[string]string{
+			dynatracev1beta2.MetadataPrefix + "/nocopyoflabels": "nocopyoflabels",
+			"test-label": "test-value",
+		}
+		request.Namespace.Annotations = map[string]string{
+			dynatracev1beta2.MetadataPrefix + "/copyofannotations": "copyofannotations",
+			"test-annotation": "test-value",
+		}
+
+		require.False(t, mutator.Injected(request.BaseRequest))
+		copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+		require.Len(t, request.Pod.Annotations, 1)
+		require.Empty(t, request.Pod.Labels)
+		require.Equal(t, "copyofannotations", request.Pod.Annotations[dynatracev1beta2.MetadataPrefix+"/copyofannotations"])
+	})
+
+	t.Run("should copy all labels and annotations defined without override", func(t *testing.T) {
+		mutator := createTestPodMutator(nil)
+		request := createTestMutationRequest(nil, nil, false)
+		request.Namespace.Labels = map[string]string{
+			dynatracev1beta2.MetadataPrefix + "/nocopyoflabels":   "nocopyoflabels",
+			dynatracev1beta2.MetadataPrefix + "/copyifruleexists": "copyifruleexists",
+			"test-label": "test-value",
+		}
+		request.Namespace.Annotations = map[string]string{
+			dynatracev1beta2.MetadataPrefix + "/copyofannotations": "copyofannotations",
+			"test-annotation": "test-value",
+		}
+
+		request.DynaKube.Status.MetadataEnrichment.Rules = []dynatracev1beta2.EnrichmentRule{
+			{
+				Type:    dynatracev1beta2.EnrichmentAnnotationRule,
+				Key:     "test-annotation",
+				Mapping: "dt.test-annotation",
+			},
+			{
+				Type:    dynatracev1beta2.EnrichmentLabelRule,
+				Key:     "test-label",
+				Mapping: "test-label",
+			},
+			{
+				Type:    dynatracev1beta2.EnrichmentLabelRule,
+				Key:     dynatracev1beta2.MetadataPrefix + "/copyifruleexists",
+				Mapping: "dt.copyifruleexists",
+			},
+			{
+				Type:    dynatracev1beta2.EnrichmentLabelRule,
+				Key:     "does-not-exist-in-namespace",
+				Mapping: "dt.does-not-exist-in-namespace",
+			},
+		}
+		request.Pod.Annotations = map[string]string{
+			dynatracev1beta2.MetadataPrefix + "/copyofannotations": "do-not-overwrite",
+		}
+
+		require.False(t, mutator.Injected(request.BaseRequest))
+		copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+		require.Len(t, request.Pod.Annotations, 4)
+		require.Empty(t, request.Pod.Labels)
+
+		require.Equal(t, "do-not-overwrite", request.Pod.Annotations[dynatracev1beta2.MetadataPrefix+"/copyofannotations"])
+		require.Equal(t, "copyifruleexists", request.Pod.Annotations[dynatracev1beta2.MetadataPrefix+"/dt.copyifruleexists"])
+
+		require.Equal(t, "test-value", request.Pod.Annotations[dynatracev1beta2.MetadataPrefix+"/dt.test-annotation"])
+		require.Equal(t, "test-value", request.Pod.Annotations[dynatracev1beta2.MetadataPrefix+"/test-label"])
+	})
+
+	t.Run("are custom rule types handled correctly", func(t *testing.T) {
+		mutator := createTestPodMutator(nil)
+		request := createTestMutationRequest(nil, nil, false)
+		request.Namespace.Labels = map[string]string{
+			"test":  "test-label-value",
+			"test2": "test-label-value2",
+		}
+		request.Namespace.Annotations = map[string]string{
+			"test":  "test-annotation-value",
+			"test2": "test-annotation-value2",
+		}
+
+		request.DynaKube.Status.MetadataEnrichment.Rules = []dynatracev1beta2.EnrichmentRule{
+			{
+				Type:    dynatracev1beta2.EnrichmentLabelRule,
+				Key:     "test",
+				Mapping: "dt.test-label",
+			},
+			{
+				Type:    dynatracev1beta2.EnrichmentAnnotationRule,
+				Key:     "test2",
+				Mapping: "dt.test-annotation",
+			},
+		}
+
+		require.False(t, mutator.Injected(request.BaseRequest))
+		copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+		require.Len(t, request.Pod.Annotations, 2)
+		require.Empty(t, request.Pod.Labels)
+		require.Equal(t, "test-label-value", request.Pod.Annotations[dynatracev1beta2.MetadataPrefix+"/dt.test-label"])
+		require.Equal(t, "test-annotation-value2", request.Pod.Annotations[dynatracev1beta2.MetadataPrefix+"/dt.test-annotation"])
+	})
+}
+
 func TestWorkloadAnnotations(t *testing.T) {
 	t.Run("should add annotation to nil map", func(t *testing.T) {
 		request := createTestMutationRequest(nil, nil, false)
