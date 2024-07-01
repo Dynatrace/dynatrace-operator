@@ -385,6 +385,7 @@ tests:
           path: spec.updateStrategy
           value:
             rollingUpdate:
+              maxSurge: 0
               maxUnavailable: 1
             type: RollingUpdate
 
@@ -401,6 +402,7 @@ tests:
           path: spec.updateStrategy
           value:
             rollingUpdate:
+              maxSurge: 0
               maxUnavailable: 3
             type: RollingUpdate
 

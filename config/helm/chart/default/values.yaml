@@ -107,6 +107,7 @@ csidriver:
   annotations: []
   updateStrategy:
     rollingUpdate:
+      maxSurge: 0
       maxUnavailable: 1
     type: RollingUpdate
   csiInit:
