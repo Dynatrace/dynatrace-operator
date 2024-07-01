@@ -544,17 +544,10 @@ func TestParseCodeModulesImageURL(t *testing.T) {
 	for _, test := range tests {
 		output, err := parseCodeModulesImageURL(test.input)
 		if !test.parsedCorreclty {
-			if err == nil {
-				t.Errorf("Expected error for input %s, but did not get any", test.input)
-			}
+			require.Error(t, err, "Expected error for input, but did not get any", "input", test.input)
 		} else {
-			if err != nil {
-				t.Errorf("Did not expect error for input %s, but got one: %v", test.input, err)
-			}
-
-			if output != test.output {
-				t.Errorf("For input %s, expected output %s, but got this %s", test.input, test.output, output)
-			}
+			require.NoError(t, err, "Did not expect error for input, but got one", "input", test.input)
+			assert.Equal(t, test.output, output)
 		}
 	}
 }
