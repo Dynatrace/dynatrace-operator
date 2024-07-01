@@ -105,6 +105,10 @@ csidriver:
       operator: Exists
   labels: []
   annotations: []
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
   csiInit:
     securityContext:
       runAsUser: 0

@@ -373,6 +373,37 @@ tests:
               - emptyDir: { }
                 name: tmp-dir
 
+  - it: should have default updateStrategy
+    set:
+      platform: kubernetes
+      image: image-name
+      csidriver.enabled: true
+    asserts:
+      - isNotEmpty:
+          path: spec.updateStrategy
+      - equal:
+          path: spec.updateStrategy
+          value:
+            rollingUpdate:
+              maxUnavailable: 1
+            type: RollingUpdate
+
+  - it: updateStrategy should be configurable
+    set:
+      platform: kubernetes
+      image: image-name
+      csidriver.enabled: true
+      csidriver.updateStrategy.rollingUpdate.maxUnavailable: 3
+    asserts:
+      - isNotEmpty:
+          path: spec.updateStrategy
+      - equal:
+          path: spec.updateStrategy
+          value:
+            rollingUpdate:
+              maxUnavailable: 3
+            type: RollingUpdate
+
   - it: should have imagePullSecrets defined in spec
     set:
       platform: kubernetes
