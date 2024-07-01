@@ -79,7 +79,7 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 				continue
 			}
 
-			if osm.TenantConfigUID == tenantConfig.UID {
+			if osm.TenantConfig.UID == tenantConfig.UID {
 				dir, _ := afero.ReadDir(gc.fs, osm.Location)
 				for _, d := range dir {
 					gc.fs.RemoveAll(path.Join([]string{osm.Location, d.Name()}...))
