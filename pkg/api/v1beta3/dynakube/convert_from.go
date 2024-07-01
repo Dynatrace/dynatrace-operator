@@ -15,7 +15,23 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 		src.Annotations = map[string]string{}
 	}
 
+	dst.fromBase(src)
+	dst.fromOneAgentSpec(src)
+	dst.fromActiveGateSpec(src)
+	dst.fromMetadataEnrichment(src)
+
+	if err := dst.fromExtensions(src); err != nil {
+		return err
+	}
+
+	dst.fromStatus(src)
+
+	return nil
+}
+
+func (dst *DynaKube) fromBase(src *v1beta2.DynaKube) {
 	dst.ObjectMeta = *src.ObjectMeta.DeepCopy() // DeepCopy mainly relevant for testing
+
 	dst.Spec.APIURL = src.Spec.APIURL
 	dst.Spec.Tokens = src.Spec.Tokens
 	dst.Spec.CustomPullSecret = src.Spec.CustomPullSecret
@@ -24,37 +40,7 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Spec.TrustedCAs = src.Spec.TrustedCAs
 	dst.Spec.NetworkZone = src.Spec.NetworkZone
 	dst.Spec.EnableIstio = src.Spec.EnableIstio
-	dst.fromOneAgentSpec(src)
-	dst.fromActiveGateSpec(src)
-	dst.fromStatus(src)
-
-	log.Info("convertFrom", "Annotations", src.Annotations)
-
-	e, ok := src.Annotations[api.AnnotationDynatraceExtensions]
-	if ok {
-		es := ExtensionsSpec{}
-		json.Unmarshal([]byte(e), &es)
-		dst.Spec.Extensions = es
-		dst.Annotations[api.AnnotationDynatraceExtensions] = src.Annotations[api.AnnotationDynatraceExtensions]
-	}
-
-	o, ok := src.Annotations[api.AnnotationDynatraceOpenTelemetryCollector]
-	if ok {
-		otel := OpenTelemetryCollectorSpec{}
-		json.Unmarshal([]byte(o), &otel)
-		dst.Spec.Templates.OpenTelemetryCollector = otel
-		dst.Annotations[api.AnnotationDynatraceOpenTelemetryCollector] = src.Annotations[api.AnnotationDynatraceOpenTelemetryCollector]
-	}
-
-	ee, ok := src.Annotations[api.AnnotationDynatraceextEnsionExecutionController]
-	if ok {
-		eec := ExtensionExecutionControllerSpec{}
-		json.Unmarshal([]byte(ee), &eec)
-		dst.Spec.Templates.ExtensionExecutionController = eec
-		dst.Annotations[api.AnnotationDynatraceextEnsionExecutionController] = src.Annotations[api.AnnotationDynatraceextEnsionExecutionController]
-	}
-
-	return nil
+	dst.Spec.DynatraceApiRequestThreshold = src.Spec.DynatraceApiRequestThreshold
 }
 
 func (dst *DynaKube) fromOneAgentSpec(src *v1beta2.DynaKube) {
@@ -90,6 +76,7 @@ func (dst *DynaKube) fromActiveGateSpec(src *v1beta2.DynaKube) {
 	dst.Spec.ActiveGate.DNSPolicy = src.Spec.ActiveGate.DNSPolicy
 	dst.Spec.ActiveGate.TopologySpreadConstraints = src.Spec.ActiveGate.TopologySpreadConstraints
 	dst.Spec.ActiveGate.Resources = src.Spec.ActiveGate.Resources
+	dst.Spec.ActiveGate.Replicas = src.Spec.ActiveGate.Replicas
 
 	for _, capability := range src.Spec.ActiveGate.Capabilities {
 		dst.Spec.ActiveGate.Capabilities = append(dst.Spec.ActiveGate.Capabilities, CapabilityDisplayName(capability))
@@ -171,6 +158,7 @@ func fromHostInjectSpec(src v1beta2.HostInjectSpec) *HostInjectSpec {
 	dst.NodeSelector = src.NodeSelector
 	dst.PriorityClassName = src.PriorityClassName
 	dst.Tolerations = src.Tolerations
+	dst.SecCompProfile = src.SecCompProfile
 
 	return dst
 }
@@ -180,6 +168,50 @@ func fromAppInjectSpec(src v1beta2.AppInjectionSpec) *AppInjectionSpec {
 
 	dst.CodeModulesImage = src.CodeModulesImage
 	dst.InitResources = src.InitResources
+	dst.NamespaceSelector = src.NamespaceSelector
 
 	return dst
+}
+
+func (dst *DynaKube) fromMetadataEnrichment(src *v1beta2.DynaKube) {
+	dst.Spec.MetadataEnrichment.Enabled = src.Spec.MetadataEnrichment.Enabled
+	dst.Spec.MetadataEnrichment.NamespaceSelector = src.Spec.MetadataEnrichment.NamespaceSelector
+}
+
+func (dst *DynaKube) fromExtensions(src *v1beta2.DynaKube) error {
+	delete(dst.Annotations, api.AnnotationDynatraceExtensions)
+	delete(dst.Annotations, api.AnnotationDynatraceOpenTelemetryCollector)
+	delete(dst.Annotations, api.AnnotationDynatraceextEnsionExecutionController)
+
+	e, ok := src.Annotations[api.AnnotationDynatraceExtensions]
+	if ok {
+		es := ExtensionsSpec{}
+		if err := json.Unmarshal([]byte(e), &es); err != nil {
+			return err
+		}
+
+		dst.Spec.Extensions = es
+	}
+
+	o, ok := src.Annotations[api.AnnotationDynatraceOpenTelemetryCollector]
+	if ok {
+		otel := OpenTelemetryCollectorSpec{}
+		if err := json.Unmarshal([]byte(o), &otel); err != nil {
+			return err
+		}
+
+		dst.Spec.Templates.OpenTelemetryCollector = otel
+	}
+
+	ee, ok := src.Annotations[api.AnnotationDynatraceextEnsionExecutionController]
+	if ok {
+		eec := ExtensionExecutionControllerSpec{}
+		if err := json.Unmarshal([]byte(ee), &eec); err != nil {
+			return err
+		}
+
+		dst.Spec.Templates.ExtensionExecutionController = eec
+	}
+
+	return nil
 }
