@@ -16,7 +16,7 @@
 Check if we need the csi driver.
 */}}
 {{- define "dynatrace-operator.needCSI" -}}
-	{{- if or (.Values.csidriver.enabled) (eq (include "dynatrace-operator.partial" .) "csi") -}}
+	{{- if or (.Values.csidriver.enabled) -}}
 		{{- printf "true" -}}
 	{{- end -}}
 {{- end -}}
