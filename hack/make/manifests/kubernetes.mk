@@ -2,12 +2,7 @@
 manifests/kubernetes/csi:
 	# Generate kubernetes-csi.yaml
 	helm template dynatrace-operator config/helm/chart/default \
-		--show-only templates/Common/csi/clusterrole-csi.yaml \
-		--show-only templates/Common/csi/csidriver.yaml \
-		--show-only templates/Common/csi/daemonset.yaml \
-		--show-only templates/Common/csi/priority-class.yaml \
-		--show-only templates/Common/csi/role-csi.yaml \
-		--show-only templates/Common/csi/serviceaccount-csi.yaml \
+		--show-only templates/Common/csi/*.yaml \
 		--namespace dynatrace \
 		--set platform="kubernetes" \
 		--set manifests=true \
