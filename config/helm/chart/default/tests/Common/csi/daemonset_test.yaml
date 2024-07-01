@@ -404,6 +404,16 @@ tests:
               maxUnavailable: 3
             type: RollingUpdate
 
+  - it: updateStrategy can be null
+    set:
+      platform: kubernetes
+      image: image-name
+      csidriver.enabled: true
+      csidriver.updateStrategy: null
+    asserts:
+      - isEmpty:
+          path: spec.updateStrategy
+
   - it: should have imagePullSecrets defined in spec
     set:
       platform: kubernetes
