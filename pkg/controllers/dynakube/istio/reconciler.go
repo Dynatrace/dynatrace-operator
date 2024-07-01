@@ -19,6 +19,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const defaultRepositoryHost = "docker.io/"
+
 type Reconciler interface {
 	ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
 	ReconcileCodeModulesInjectionEndpoints(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
@@ -72,6 +74,11 @@ func parseCodeModulesImageURL(rawUrl string) (string, error) {
 	parsedURL, err := url.Parse(rawUrl)
 	if err != nil {
 		return "", errors.New("can't parse the codeModules image URL")
+	}
+
+	tmpURL := strings.Split(rawUrl, "/")
+	if !strings.Contains(tmpURL[0], ".") {
+		rawUrl = defaultRepositoryHost + rawUrl
 	}
 
 	if parsedURL.Scheme == "" {
