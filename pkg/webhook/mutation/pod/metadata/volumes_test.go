@@ -25,6 +25,6 @@ func TestSetupVolumeMountsForUserContainer(t *testing.T) {
 
 		setupVolumeMountsForUserContainer(container)
 
-		require.Len(t, container.VolumeMounts, 2)
+		require.Len(t, container.VolumeMounts, 3)
 	})
 }

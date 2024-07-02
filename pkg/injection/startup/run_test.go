@@ -585,13 +585,13 @@ func assertIfEnrichmentFilesExists(t *testing.T, runner Runner) {
 	assertIfFileExists(t,
 		runner.fs,
 		filepath.Join(
-			consts.EnrichmentMountPath,
-			fmt.Sprintf(consts.EnrichmentFilenameTemplate, "json")))
+			consts.EnrichmentInitPath,
+			consts.EnrichmentJsonFilename))
 	assertIfFileExists(t,
 		runner.fs,
 		filepath.Join(
-			consts.EnrichmentMountPath,
-			fmt.Sprintf(consts.EnrichmentFilenameTemplate, "properties")))
+			consts.EnrichmentInitPath,
+			consts.EnrichmentPropertiesFilename))
 }
 
 func assertIfAgentFilesNotExists(t *testing.T, runner Runner) {
@@ -618,12 +618,12 @@ func assertIfEnrichmentFilesNotExists(t *testing.T, runner Runner) {
 		runner.fs,
 		filepath.Join(
 			consts.EnrichmentMountPath,
-			fmt.Sprintf(consts.EnrichmentFilenameTemplate, "json")))
+			consts.EnrichmentJsonFilename))
 	assertIfFileNotExists(t,
 		runner.fs,
 		filepath.Join(
 			consts.EnrichmentMountPath,
-			fmt.Sprintf(consts.EnrichmentFilenameTemplate, "properties")))
+			consts.EnrichmentPropertiesFilename))
 }
 
 func assertIfReadOnlyCSIFilesExists(t *testing.T, runner Runner) {
