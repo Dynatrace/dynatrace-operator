@@ -62,9 +62,11 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 	}
 
 	if osMount != nil && osMount.DeletedAt.Valid {
-		osMount.VolumeMeta = metadata.VolumeMeta{ID: volumeCfg.VolumeID, PodName: volumeCfg.PodName}
-		osMount.VolumeMetaID = volumeCfg.VolumeID
-		osMount.TenantConfigUID = tenantConfig.UID // necessary so that in some edge-cases(incorrect/messy uninstall) the previous(already soft-deleted) TenantConfig can be removed
+		osMount.VolumeMeta = metadata.VolumeMeta{
+			ID:      volumeCfg.VolumeID,
+			PodName: volumeCfg.PodName,
+		}
+		osMount.TenantConfig = *tenantConfig
 
 		if err := publisher.mountOneAgent(osMount, volumeCfg); err != nil {
 			return nil, status.Error(codes.Internal, "failed to mount OSMount: "+err.Error())
@@ -78,12 +80,12 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 
 	if osMount == nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		osMount := metadata.OSMount{
-			VolumeMeta:      metadata.VolumeMeta{ID: volumeCfg.VolumeID, PodName: volumeCfg.PodName},
-			VolumeMetaID:    volumeCfg.VolumeID,
-			TenantUUID:      tenantConfig.TenantUUID,
-			Location:        publisher.path.OsAgentDir(tenantConfig.TenantUUID),
-			MountAttempts:   0,
-			TenantConfigUID: tenantConfig.UID,
+			VolumeMeta:    metadata.VolumeMeta{ID: volumeCfg.VolumeID, PodName: volumeCfg.PodName},
+			VolumeMetaID:  volumeCfg.VolumeID,
+			TenantUUID:    tenantConfig.TenantUUID,
+			Location:      publisher.path.OsAgentDir(tenantConfig.TenantUUID),
+			MountAttempts: 0,
+			TenantConfig:  *tenantConfig,
 		}
 
 		if err := publisher.mountOneAgent(&osMount, volumeCfg); err != nil {
