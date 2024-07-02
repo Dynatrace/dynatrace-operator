@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
@@ -212,7 +213,63 @@ func TestReconcileAPIUrl(t *testing.T) {
 	})
 }
 
-func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
+func TestReconcileIstioForCSIDriver(t *testing.T) {
+	ctx := context.Background()
+	dynakube := createTestDynaKube()
+
+	t.Run("nil => error", func(t *testing.T) {
+		istioClient := newTestingClient(nil, dynakube.GetNamespace())
+		reconciler := NewReconciler(istioClient)
+
+		err := reconciler.ReconcileCodeModulesInjectionEndpoints(ctx, nil)
+		require.Error(t, err)
+	})
+	t.Run("malformed image uri (no protocol prefix) => still no error", func(t *testing.T) {
+		dynakube := createTestDynaKube()
+		dynakube.Status = dynatracev1beta2.DynaKubeStatus{
+			CodeModules: dynatracev1beta2.CodeModulesStatus{
+				VersionStatus: status.VersionStatus{
+					ImageID: "something-random",
+				},
+			},
+		}
+		fakeClient := fakeistio.NewSimpleClientset()
+		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
+		reconciler := NewReconciler(istioClient)
+
+		err := reconciler.ReconcileCodeModulesInjectionEndpoints(ctx, dynakube)
+		require.NoError(t, err)
+	})
+	t.Run("success", func(t *testing.T) {
+		fakeClient := fakeistio.NewSimpleClientset()
+		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
+		reconciler := NewReconciler(istioClient)
+
+		err := reconciler.ReconcileCodeModulesInjectionEndpoints(ctx, dynakube)
+		require.NoError(t, err)
+
+		expectedName := BuildNameForFQDNServiceEntry(dynakube.GetName(), CSIDriverComponent)
+		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, serviceEntry)
+
+		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, virtualService)
+	})
+	t.Run("unknown k8s client error => error", func(t *testing.T) {
+		fakeClient := fakeistio.NewSimpleClientset()
+		fakeClient.PrependReactor("*", "*", boomReaction)
+
+		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
+		reconciler := NewReconciler(istioClient)
+
+		err := reconciler.ReconcileCodeModulesInjectionEndpoints(ctx, dynakube)
+		require.Error(t, err)
+	})
+}
+
+func TestReconcileOneAgentInjectionEndpoints(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("nil => error", func(t *testing.T) {
@@ -220,7 +277,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		istioClient := newTestingClient(nil, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
-		err := reconciler.ReconcileCodeModuleCommunicationHosts(ctx, nil)
+		err := reconciler.ReconcileCodeModulesInjectionEndpoints(ctx, nil)
 		require.Error(t, err)
 	})
 	t.Run("success", func(t *testing.T) {
@@ -229,7 +286,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
-		err := reconciler.ReconcileCodeModuleCommunicationHosts(ctx, dynakube)
+		err := reconciler.ReconcileCodeModulesInjectionEndpoints(ctx, dynakube)
 		require.NoError(t, err)
 
 		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), OneAgentComponent)
@@ -260,7 +317,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
-		err := reconciler.ReconcileCodeModuleCommunicationHosts(ctx, dynakube)
+		err := reconciler.ReconcileCodeModulesInjectionEndpoints(ctx, dynakube)
 		require.Error(t, err)
 
 		statusCondition := meta.FindStatusCondition(*dynakube.Conditions(), "IstioForCodeModule")
@@ -273,7 +330,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
 		r := NewReconciler(istioClient)
 
-		err := r.ReconcileCodeModuleCommunicationHosts(ctx, dynakube)
+		err := r.ReconcileCodeModulesInjectionEndpoints(ctx, dynakube)
 		require.NoError(t, err)
 
 		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), OneAgentComponent)
@@ -299,7 +356,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		dynakube.Spec.OneAgent.CloudNativeFullStack = nil
 		dynakube.Spec.OneAgent.HostMonitoring = &dynatracev1beta2.HostInjectSpec{}
 
-		err = r.ReconcileCodeModuleCommunicationHosts(ctx, dynakube)
+		err = r.ReconcileCodeModulesInjectionEndpoints(ctx, dynakube)
 		require.NoError(t, err)
 
 		statusCondition = meta.FindStatusCondition(*dynakube.Conditions(), "IstioForCodeModule")
@@ -449,6 +506,60 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		statusCondition2 := meta.FindStatusCondition(*dynakube.Conditions(), "IstioForActiveGate")
 		require.Nil(t, statusCondition2)
 	})
+}
+
+func TestParseCodeModulesImageURL(t *testing.T) {
+	tests := []struct {
+		input           string
+		output          string
+		parsedCorreclty bool
+	}{
+		{
+			input:           "some.url.com/test",
+			output:          "https://some.url.com/test",
+			parsedCorreclty: true,
+		},
+		{
+			input:           "http://some.url.com/test",
+			output:          "http://some.url.com/test",
+			parsedCorreclty: true,
+		},
+		{
+			input:           "https://some.url.com/test",
+			output:          "https://some.url.com/test",
+			parsedCorreclty: true,
+		},
+		{
+			input:           ":example.com/test",
+			output:          "",
+			parsedCorreclty: false,
+		},
+		{
+			input:           "some.url.com/test:some-tag",
+			output:          "https://some.url.com/test:some-tag",
+			parsedCorreclty: true,
+		},
+		{
+			input:           "some/url/test:some-tag",
+			output:          "https://docker.io/some/url/test:some-tag",
+			parsedCorreclty: true,
+		},
+		{
+			input:           ":example.com/test:some-tag",
+			output:          "",
+			parsedCorreclty: false,
+		},
+	}
+
+	for _, test := range tests {
+		output, err := parseCodeModulesImageURL(test.input)
+		if !test.parsedCorreclty {
+			require.Error(t, err, "Expected error for input, but did not get any", "input", test.input)
+		} else {
+			require.NoError(t, err, "Did not expect error for input, but got one", "input", test.input)
+			assert.Equal(t, test.output, output)
+		}
+	}
 }
 
 func createTestIPCommunicationHost() dtclient.CommunicationHost {

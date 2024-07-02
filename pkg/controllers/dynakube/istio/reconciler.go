@@ -4,6 +4,7 @@ import (
 	"context"
 	goerrors "errors"
 	"net"
+	"net/url"
 	"strings"
 
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
@@ -18,9 +19,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const defaultRepositoryHost = "docker.io/"
+
 type Reconciler interface {
 	ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
-	ReconcileCodeModuleCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
+	ReconcileCodeModulesInjectionEndpoints(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
 	ReconcileActiveGateCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
 }
 
@@ -36,6 +39,58 @@ func NewReconciler(istio *Client) Reconciler {
 		client:       istio,
 		timeProvider: timeprovider.New(),
 	}
+}
+
+func (r *reconciler) reconcileCSIDriver(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
+	log.Info("reconciling istio components for csi driver")
+
+	if dynakube == nil {
+		return errors.New("can't reconcile csi driver of nil dynakube")
+	}
+
+	codeModulesURL := dynakube.CodeModulesImage()
+
+	parsedCodeModulesURL, err := parseCodeModulesImageURL(codeModulesURL)
+	if err != nil {
+		return err
+	}
+
+	codeModulesHost, err := dtclient.ParseEndpoint(parsedCodeModulesURL)
+	if err != nil {
+		return err
+	}
+
+	err = r.reconcileCommunicationHosts(ctx, []dtclient.CommunicationHost{codeModulesHost}, CSIDriverComponent)
+	if err != nil {
+		return errors.WithMessage(err, "error reconciling config for codeModulesImage")
+	}
+
+	log.Info("reconciled istio objects for csi driver")
+
+	return nil
+}
+
+func parseCodeModulesImageURL(rawUrl string) (string, error) {
+	parsedURL, err := url.Parse(rawUrl)
+	if err != nil {
+		return "", errors.New("can't parse the codeModules image URL")
+	}
+
+	tmpURL := strings.Split(rawUrl, "/")
+	if !strings.Contains(tmpURL[0], ".") {
+		rawUrl = defaultRepositoryHost + rawUrl
+	}
+
+	if parsedURL.Scheme == "" {
+		parsedURL.Scheme = "https"
+
+		parsedURL, err = url.Parse(parsedURL.Scheme + "://" + rawUrl)
+		if err != nil {
+			return "", errors.New("can't parse the codeModules image URL")
+		}
+	}
+
+	return parsedURL.String(), nil
 }
 
 func (r *reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
@@ -60,8 +115,8 @@ func (r *reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1b
 	return nil
 }
 
-func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
-	log.Info("reconciling istio components for oneagent-code-modules communication hosts")
+func (r *reconciler) ReconcileCodeModulesInjectionEndpoints(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
+	log.Info("reconciling istio components for oneagent-code-modules injections endpoints")
 
 	if dynakube == nil {
 		return errors.New("can't reconcile oneagent communication hosts of nil dynakube")
@@ -93,6 +148,11 @@ func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, 
 	}
 
 	setServiceEntryUpdatedConditionForComponent(dynakube.Conditions(), CodeModuleComponent)
+
+	err = r.reconcileCSIDriver(ctx, dynakube)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

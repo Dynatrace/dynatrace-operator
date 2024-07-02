@@ -83,7 +83,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 
 	// do istio reconciliation for CodeModules here to enable cleanup of conditions
 	if r.istioReconciler != nil {
-		err = r.istioReconciler.ReconcileCodeModuleCommunicationHosts(ctx, r.dynakube)
+		err = r.istioReconciler.ReconcileCodeModulesInjectionEndpoints(ctx, r.dynakube)
 
 		if err != nil {
 			log.Error(err, "error reconciling istio configuration for codemodules")
