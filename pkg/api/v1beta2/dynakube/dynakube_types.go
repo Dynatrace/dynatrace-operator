@@ -76,6 +76,9 @@ type DynaKube struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec DynaKubeSpec `json:"spec,omitempty"`
+
+	// TODO: remove when extensions are present
+	TempExtensionsEnabled bool `json:"hasExtensionsEnabled,omitempty"`
 }
 
 // DynaKubeSpec defines the desired state of DynaKube
