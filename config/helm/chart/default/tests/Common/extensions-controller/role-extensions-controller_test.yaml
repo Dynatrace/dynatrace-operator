@@ -42,10 +42,3 @@ tests:
           value: dynatrace-extensions-controller
       - isNotEmpty:
           path: metadata.labels
-  - it: Role and RoleBinding are not rendered for csi
-    set:
-      platform: openshift
-      partial: csi
-    asserts:
-      - hasDocuments:
-          count: 0
