@@ -26,24 +26,24 @@ The conflicting Dynakube: %s
 
 func conflictingOneAgentConfiguration(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	counter := 0
-	if dk.ApplicationMonitoringMode() {
+	if dynakube.ApplicationMonitoringMode() {
 		counter += 1
 	}
 
-	if dk.CloudNativeFullstackMode() {
+	if dynakube.CloudNativeFullstackMode() {
 		counter += 1
 	}
 
-	if dk.ClassicFullStackMode() {
+	if dynakube.ClassicFullStackMode() {
 		counter += 1
 	}
 
-	if dk.HostMonitoringMode() {
+	if dynakube.HostMonitoringMode() {
 		counter += 1
 	}
 
 	if counter > 1 {
-		log.Info("requested dynakube has conflicting one agent configuration", "name", dk.Name, "namespace", dk.Namespace)
+		log.Info("requested dynakube has conflicting one agent configuration", "name", dynakube.Name, "namespace", dynakube.Namespace)
 
 		return errorConflictingOneagentMode
 	}
@@ -68,12 +68,12 @@ func conflictingNodeSelector(ctx context.Context, dv *Validator, dk *dynakube.Dy
 			continue
 		}
 
-		nodeSelectorMap := dk.NodeSelector()
+		nodeSelectorMap := dynakube.NodeSelector()
 		validNodeSelectorMap := item.NodeSelector()
 
-		if item.Name != dk.Name {
+		if item.Name != dynakube.Name {
 			if hasConflictingMatchLabels(nodeSelectorMap, validNodeSelectorMap) {
-				log.Info("requested dynakube has conflicting nodeSelector", "name", dk.Name, "namespace", dk.Namespace)
+				log.Info("requested dynakube has conflicting nodeSelector", "name", dynakube.Name, "namespace", dynakube.Namespace)
 
 				return fmt.Sprintf(errorNodeSelectorConflict, item.Name)
 			}
@@ -106,8 +106,8 @@ func hasConflictingMatchLabels(labelMap, otherLabelMap map[string]string) bool {
 	return labelSelector.Matches(otherLabelSelectorLabels) || otherLabelSelector.Matches(labelSelectorLabels)
 }
 
-func hasOneAgentVolumeStorageEnabled(dk *dynakube.DynaKube) (isEnabled bool, isSet bool) {
-	envVar := env.FindEnvVar(dk.GetOneAgentEnvironment(), oneagentEnableVolumeStorageEnvVarName)
+func hasOneAgentVolumeStorageEnabled(dynakube *dynatracev1beta2.DynaKube) (isEnabled bool, isSet bool) {
+	envVar := env.FindEnvVar(dynakube.GetOneAgentEnvironment(), oneagentEnableVolumeStorageEnvVarName)
 	isSet = envVar != nil
 	isEnabled = isSet && envVar.Value == "true"
 
