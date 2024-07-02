@@ -354,9 +354,9 @@ func TestContainerIsInjected(t *testing.T) {
 	})
 }
 
-func createTestMutationRequest(dynakube *dynatracev1beta2.DynaKube, annotations map[string]string, withLabelSelector bool) *dtwebhook.MutationRequest {
-	if dynakube == nil {
-		dynakube = &dynatracev1beta2.DynaKube{}
+func createTestMutationRequest(dk *dynatracev1beta2.DynaKube, annotations map[string]string, withLabelSelector bool) *dtwebhook.MutationRequest {
+	if dk == nil {
+		dk = &dynatracev1beta2.DynaKube{}
 	}
 
 	namespace := getTestNamespace()
@@ -371,7 +371,7 @@ func createTestMutationRequest(dynakube *dynatracev1beta2.DynaKube, annotations 
 			Name: dtwebhook.InstallContainerName,
 		},
 		getTestPod(annotations),
-		*dynakube,
+		*dk,
 	)
 }
 

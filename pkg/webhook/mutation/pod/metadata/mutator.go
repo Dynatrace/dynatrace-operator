@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
@@ -143,29 +143,29 @@ func setWorkloadAnnotations(pod *corev1.Pod, workload *workloadInfo) {
 	pod.Annotations[dtwebhook.AnnotationWorkloadName] = workload.name
 }
 
-func copyMetadataFromNamespace(pod *corev1.Pod, namespace corev1.Namespace, dynakube dynatracev1beta2.DynaKube) {
-	copyMetadataAccordingToCustomRules(pod, namespace, dynakube)
+func copyMetadataFromNamespace(pod *corev1.Pod, namespace corev1.Namespace, dk dynakube.DynaKube) {
+	copyMetadataAccordingToCustomRules(pod, namespace, dk)
 	copyMetadataAccordingToPrefix(pod, namespace)
 }
 
 func copyMetadataAccordingToPrefix(pod *corev1.Pod, namespace corev1.Namespace) {
 	for key, value := range namespace.Annotations {
-		if strings.HasPrefix(key, dynatracev1beta2.MetadataPrefix) {
+		if strings.HasPrefix(key, dynakube.MetadataPrefix) {
 			setPodAnnotationIfNotExists(pod, key, value)
 		}
 	}
 }
 
-func copyMetadataAccordingToCustomRules(pod *corev1.Pod, namespace corev1.Namespace, dynakube dynatracev1beta2.DynaKube) {
-	for _, rule := range dynakube.Status.MetadataEnrichment.Rules {
+func copyMetadataAccordingToCustomRules(pod *corev1.Pod, namespace corev1.Namespace, dk dynakube.DynaKube) {
+	for _, rule := range dk.Status.MetadataEnrichment.Rules {
 		var valueFromNamespace string
 
 		var exists bool
 
 		switch rule.Type {
-		case dynatracev1beta2.EnrichmentLabelRule:
+		case dynakube.EnrichmentLabelRule:
 			valueFromNamespace, exists = namespace.Labels[rule.Key]
-		case dynatracev1beta2.EnrichmentAnnotationRule:
+		case dynakube.EnrichmentAnnotationRule:
 			valueFromNamespace, exists = namespace.Annotations[rule.Key]
 		}
 
