@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"k8s.io/utils/mount"
 )
 
 const (
@@ -102,12 +103,15 @@ func NewMockGarbageCollector() *CSIGarbageCollector {
 		path:                  metadata.PathResolver{RootDir: testRootDir},
 		time:                  timeprovider.New(),
 		maxUnmountedVolumeAge: defaultMaxUnmountedCsiVolumeAge,
+		mounter:               mount.NewFakeMounter([]mount.MountPoint{}),
+		isNotMounted:          mockIsNotMounted(map[string]error{}),
 	}
 }
 
 func (gc *CSIGarbageCollector) mockUnusedVersions(versions ...string) {
 	_ = gc.fs.Mkdir(testBinaryDir, 0770)
 
+	gc.isNotMounted = mockIsNotMounted(map[string]error{})
 	for _, version := range versions {
 		gc.db.(metadata.Access).CreateCodeModule(&metadata.CodeModule{Version: version, Location: filepath.Join(testBinaryDir, version)})
 		_, _ = gc.fs.Create(filepath.Join(testBinaryDir, version))

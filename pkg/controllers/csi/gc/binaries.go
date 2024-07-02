@@ -26,10 +26,23 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection() {
 			continue
 		}
 
+		isNotMounted, err := gc.isNotMounted(gc.mounter, codeModule.Location)
+		if err != nil {
+			log.Info("failed to determine if AppMount is still mounted", "location", codeModule.Location, "version", codeModule.Version, "err", err.Error())
+
+			continue
+		}
+
+		if !isNotMounted {
+			log.Info("AppMount is still mounted", "location", codeModule.Location, "version", codeModule.Version)
+
+			continue
+		}
+
 		log.Info("cleaning up orphaned codemodule binary", "version", codeModule.Version, "location", codeModule.Location)
 		removeUnusedVersion(fs, codeModule.Location)
 
-		err := gc.db.PurgeCodeModule(&metadata.CodeModule{Version: codeModule.Version})
+		err = gc.db.PurgeCodeModule(&metadata.CodeModule{Version: codeModule.Version})
 		if err != nil {
 			log.Error(err, "failed to delete codemodule database entry")
 
@@ -48,6 +61,8 @@ func removeUnusedVersion(fs *afero.Afero, binaryPath string) {
 		foldersRemovedMetric.Inc()
 		reclaimedMemoryMetric.Add(float64(size))
 	}
+
+	log.Info("removed outdate CodeModule binary", "location", binaryPath)
 }
 
 func dirSize(fs *afero.Afero, path string) (int64, error) {

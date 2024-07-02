@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/mount"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -32,13 +33,34 @@ func TestReconcile(t *testing.T) {
 			},
 		}
 		gc := CSIGarbageCollector{
-			apiReader: fake.NewClient(&dynakube),
-			fs:        afero.NewMemMapFs(),
-			db:        metadata.FakeMemoryDB(),
+			apiReader:    fake.NewClient(&dynakube),
+			fs:           afero.NewMemMapFs(),
+			db:           metadata.FakeMemoryDB(),
+			mounter:      mount.NewFakeMounter([]mount.MountPoint{}),
+			isNotMounted: mockIsNotMounted(map[string]error{}),
 		}
 		result, err := gc.Reconcile(context.Background(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakube.Name}})
 
 		require.NoError(t, err)
 		assert.Equal(t, reconcile.Result{RequeueAfter: dtcsi.LongRequeueDuration}, result)
 	})
+}
+
+// mockIsNotMounted is rather confusing because of the double negation.
+// you can pass in a map of filepaths, each path will be considered as mounted if corresponding error value is nil. (so returns false)
+// if the filepath was not provided in the map, then the path is considered as not mounted. (so returns true)
+// if an error was provided for a filepath in the map, then that path will cause the return of that error.
+func mockIsNotMounted(files map[string]error) mountChecker {
+	return func(mounter mount.Interface, file string) (bool, error) {
+		err, ok := files[file]
+		if !ok {
+			return true, nil // unknown path => not mounted, no mocked error
+		}
+
+		if err == nil {
+			return false, nil // known path => mounted, no mocked error
+		}
+
+		return false, err // mocked error for path
+	}
 }
