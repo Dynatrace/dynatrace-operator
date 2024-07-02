@@ -18,7 +18,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	namespacemutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/namespace"
 	podmutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod"
-	dynakubevalidationhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/validation/dynakube"
 	edgeconnectvalidationhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/validation/edgeconnect"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -170,11 +169,6 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		}
 
 		err = (&dynatracev1beta3.DynaKube{}).SetupWebhookWithManager(webhookManager)
-		if err != nil {
-			return err
-		}
-
-		err = dynakubevalidationhook.AddDynakubeValidationWebhookToManager(webhookManager)
 		if err != nil {
 			return err
 		}
