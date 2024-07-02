@@ -1,31 +1,31 @@
-package dynakube
+package validation
 
 import (
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 )
 
 func TestMissingCSIDaemonSet(t *testing.T) {
 	t.Run(`valid cloud-native dynakube specs`, func(t *testing.T) {
-		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta2.DynaKube{
+		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
+				OneAgent: dynakube.OneAgentSpec{
+					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 				},
 			},
 		}, &defaultCSIDaemonSet)
 	})
 
 	t.Run(`valid default application-monitoring dynakube specs`, func(t *testing.T) {
-		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta2.DynaKube{
+		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{},
+				OneAgent: dynakube.OneAgentSpec{
+					ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{},
 				},
 			},
 		})
@@ -33,12 +33,12 @@ func TestMissingCSIDaemonSet(t *testing.T) {
 
 	t.Run(`valid application-monitoring via csi dynakube specs`, func(t *testing.T) {
 		useCSIDriver := true
-		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta2.DynaKube{
+		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
 						UseCSIDriver: useCSIDriver,
 					},
 				},
@@ -47,12 +47,12 @@ func TestMissingCSIDaemonSet(t *testing.T) {
 	})
 
 	t.Run(`valid default host-monitoring dynakube specs`, func(t *testing.T) {
-		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta2.DynaKube{
+		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta2.HostInjectSpec{},
+				OneAgent: dynakube.OneAgentSpec{
+					HostMonitoring: &dynakube.HostInjectSpec{},
 				},
 			},
 		}, &defaultCSIDaemonSet)
@@ -60,14 +60,14 @@ func TestMissingCSIDaemonSet(t *testing.T) {
 
 	t.Run(`invalid cloud-native dynakube specs`, func(t *testing.T) {
 		// no daemonset ==> fail
-		assertDeniedResponse(t,
+		assertDenied(t,
 			[]string{errorCSIRequired},
-			&dynatracev1beta2.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
+					OneAgent: dynakube.OneAgentSpec{
+						CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 					},
 				},
 			})
@@ -75,14 +75,14 @@ func TestMissingCSIDaemonSet(t *testing.T) {
 
 	t.Run(`invalid default host-monitoring dynakube specs`, func(t *testing.T) {
 		// no daemonset ==> fail
-		assertDeniedResponse(t,
+		assertDenied(t,
 			[]string{errorCSIRequired},
-			&dynatracev1beta2.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						HostMonitoring: &dynatracev1beta2.HostInjectSpec{},
+					OneAgent: dynakube.OneAgentSpec{
+						HostMonitoring: &dynakube.HostInjectSpec{},
 					},
 				},
 			})
@@ -91,14 +91,14 @@ func TestMissingCSIDaemonSet(t *testing.T) {
 	t.Run(`invalid application-monitoring via csi dynakube specs`, func(t *testing.T) {
 		// no daemonset ==> fail
 		useCSIDriver := true
-		assertDeniedResponse(t,
+		assertDenied(t,
 			[]string{errorCSIRequired},
-			&dynatracev1beta2.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{
+					OneAgent: dynakube.OneAgentSpec{
+						ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
 							UseCSIDriver: useCSIDriver,
 						},
 					},
@@ -110,16 +110,16 @@ func TestMissingCSIDaemonSet(t *testing.T) {
 func TestDisabledCSIForReadonlyCSIVolume(t *testing.T) {
 	objectMeta := defaultDynakubeObjectMeta.DeepCopy()
 	objectMeta.Annotations = map[string]string{
-		dynatracev1beta2.AnnotationFeatureReadOnlyCsiVolume: "true",
+		dynakube.AnnotationFeatureReadOnlyCsiVolume: "true",
 	}
 
 	t.Run(`valid cloud-native dynakube specs`, func(t *testing.T) {
-		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta2.DynaKube{
+		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: *objectMeta,
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
+				OneAgent: dynakube.OneAgentSpec{
+					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 				},
 			},
 		}, &defaultCSIDaemonSet)
@@ -127,14 +127,14 @@ func TestDisabledCSIForReadonlyCSIVolume(t *testing.T) {
 
 	t.Run(`invalid dynakube specs, as csi is disabled`, func(t *testing.T) {
 		useCSIDriver := false
-		assertDeniedResponse(t,
+		assertDenied(t,
 			[]string{errorCSIEnabledRequired},
-			&dynatracev1beta2.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: *objectMeta,
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{
+					OneAgent: dynakube.OneAgentSpec{
+						ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
 							UseCSIDriver: useCSIDriver,
 						},
 					},
@@ -143,14 +143,14 @@ func TestDisabledCSIForReadonlyCSIVolume(t *testing.T) {
 	})
 
 	t.Run(`invalid dynakube specs, as csi is not supported for feature`, func(t *testing.T) {
-		assertDeniedResponse(t,
+		assertDenied(t,
 			[]string{errorCSIEnabledRequired},
-			&dynatracev1beta2.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: *objectMeta,
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						ClassicFullStack: &dynatracev1beta2.HostInjectSpec{},
+					OneAgent: dynakube.OneAgentSpec{
+						ClassicFullStack: &dynakube.HostInjectSpec{},
 					},
 				},
 			})

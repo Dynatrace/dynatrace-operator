@@ -24,7 +24,7 @@ tests:
                 service:
                   name: dynatrace-webhook
                   namespace: NAMESPACE
-                  path: /validate
+                  path: /validate-dynatrace-com-v1beta2-dynakube
               rules:
                 - operations:
                     - CREATE

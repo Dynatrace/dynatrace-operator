@@ -1,26 +1,26 @@
-package dynakube
+package validation
 
 import (
 	"fmt"
 	"strings"
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestNameStartsWithDigit(t *testing.T) {
 	t.Run(`dynakube name starts with digit`, func(t *testing.T) {
-		assertDeniedResponse(t, []string{errorNoDNS1053Label}, &dynatracev1beta2.DynaKube{
+		assertDenied(t, []string{errorNoDNS1053Label}, &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "1dynakube",
 			},
 		})
-		assertAllowedResponse(t, &dynatracev1beta2.DynaKube{
+		assertAllowed(t, &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "dynakube",
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: "https://tenantid.doma.in/api",
 			},
 		})
@@ -42,36 +42,36 @@ func TestNameTooLong(t *testing.T) {
 		},
 		{
 			name:         "max - 1 ",
-			crNameLength: dynatracev1beta2.MaxNameLength - 1,
+			crNameLength: dynakube.MaxNameLength - 1,
 			allow:        true,
 		},
 		{
 			name:         "max",
-			crNameLength: dynatracev1beta2.MaxNameLength,
+			crNameLength: dynakube.MaxNameLength,
 			allow:        true,
 		},
 		{
 			name:         "max + 1 ",
-			crNameLength: dynatracev1beta2.MaxNameLength + 1,
+			crNameLength: dynakube.MaxNameLength + 1,
 			allow:        false,
 		},
 	}
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			dk := &dynatracev1beta2.DynaKube{
+			dk := &dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: strings.Repeat("a", test.crNameLength),
 				},
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: "https://tenantid.doma.in/api",
 				},
 			}
 			if test.allow {
-				assertAllowedResponse(t, dk)
+				assertAllowed(t, dk)
 			} else {
-				errorMessage := fmt.Sprintf(errorNameTooLong, dynatracev1beta2.MaxNameLength)
-				assertDeniedResponse(t, []string{errorMessage}, dk)
+				errorMessage := fmt.Sprintf(errorNameTooLong, dynakube.MaxNameLength)
+				assertDenied(t, []string{errorMessage}, dk)
 			}
 		})
 	}

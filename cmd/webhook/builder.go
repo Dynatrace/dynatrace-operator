@@ -8,6 +8,7 @@ import (
 	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	dynatracev1beta2validation "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube/validation"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
@@ -16,7 +17,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	namespacemutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/namespace"
 	podmutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod"
-	dynakubevalidationhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/validation/dynakube"
 	edgeconnectvalidationhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/validation/edgeconnect"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -160,12 +160,9 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		err = (&dynatracev1beta2.DynaKube{}).SetupWebhookWithManager(webhookManager)
-		if err != nil {
-			return err
-		}
+		dkv1beta2Validator := dynatracev1beta2validation.New(webhookManager.GetAPIReader(), webhookManager.GetConfig())
 
-		err = dynakubevalidationhook.AddDynakubeValidationWebhookToManager(webhookManager)
+		err = dynatracev1beta2.SetupWebhookWithManager(webhookManager, dkv1beta2Validator)
 		if err != nil {
 			return err
 		}

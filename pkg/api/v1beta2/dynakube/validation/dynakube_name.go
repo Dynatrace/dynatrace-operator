@@ -1,10 +1,10 @@
-package dynakube
+package validation
 
 import (
 	"context"
 	"fmt"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
@@ -17,8 +17,8 @@ const (
 	The limit is necessary because kubernetes uses the name of some resources (example: StatefulSet) for the label value, which has a limit of 63 characters. (see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set)`
 )
 
-func nameViolatesDNS1035(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
-	dynakubeName := dynakube.Name
+func nameViolatesDNS1035(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	dynakubeName := dk.Name
 
 	var errs []string
 
@@ -33,10 +33,10 @@ func nameViolatesDNS1035(_ context.Context, _ *dynakubeValidator, dynakube *dyna
 	return errorNoDNS1053Label
 }
 
-func nameTooLong(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
-	dynakubeName := dynakube.Name
-	if dynakubeName != "" && len(dynakubeName) > dynatracev1beta2.MaxNameLength {
-		return fmt.Sprintf(errorNameTooLong, dynatracev1beta2.MaxNameLength)
+func nameTooLong(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	dynakubeName := dk.Name
+	if dynakubeName != "" && len(dynakubeName) > dynakube.MaxNameLength {
+		return fmt.Sprintf(errorNameTooLong, dynakube.MaxNameLength)
 	}
 
 	return ""

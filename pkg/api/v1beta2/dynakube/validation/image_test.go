@@ -1,11 +1,11 @@
-package dynakube
+package validation
 
 import (
 	"fmt"
 	"strings"
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -18,19 +18,19 @@ func TestImageFieldHasTenantImage(t *testing.T) {
 			fmt.Sprintf(errorUnparsableImageRef, "OneAgent"),
 		}, ";")
 
-		assertDeniedResponse(t, []string{expectedMessage}, &dynatracev1beta2.DynaKube{
+		assertDenied(t, []string{expectedMessage}, &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "dynakube",
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testTenantUrl + "/api",
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta2.HostInjectSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					ClassicFullStack: &dynakube.HostInjectSpec{
 						Image: "BOOM",
 					},
 				},
-				ActiveGate: dynatracev1beta2.ActiveGateSpec{
-					CapabilityProperties: dynatracev1beta2.CapabilityProperties{
+				ActiveGate: dynakube.ActiveGateSpec{
+					CapabilityProperties: dynakube.CapabilityProperties{
 						Image: "BOOM",
 					},
 				},
@@ -43,19 +43,19 @@ func TestImageFieldHasTenantImage(t *testing.T) {
 			fmt.Sprintf(errorUsingTenantImageAsCustom, "OneAgent"),
 		}, ";")
 
-		assertDeniedResponse(t, []string{expectedMessage}, &dynatracev1beta2.DynaKube{
+		assertDenied(t, []string{expectedMessage}, &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "dynakube",
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testTenantUrl + "/api",
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta2.HostInjectSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					ClassicFullStack: &dynakube.HostInjectSpec{
 						Image: testTenantUrl + "/linux/oneagent:latest",
 					},
 				},
-				ActiveGate: dynatracev1beta2.ActiveGateSpec{
-					CapabilityProperties: dynatracev1beta2.CapabilityProperties{
+				ActiveGate: dynakube.ActiveGateSpec{
+					CapabilityProperties: dynakube.CapabilityProperties{
 						Image: testTenantUrl + "/linux/activegate:latest",
 					},
 				},
@@ -65,19 +65,19 @@ func TestImageFieldHasTenantImage(t *testing.T) {
 
 	t.Run("valid image fields", func(t *testing.T) {
 		testRegistryUrl := "my.images.com"
-		assertAllowedResponse(t, &dynatracev1beta2.DynaKube{
+		assertAllowed(t, &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "dynakube",
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testTenantUrl + "/api",
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta2.HostInjectSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					ClassicFullStack: &dynakube.HostInjectSpec{
 						Image: testRegistryUrl + "/linux/oneagent:latest",
 					},
 				},
-				ActiveGate: dynatracev1beta2.ActiveGateSpec{
-					CapabilityProperties: dynatracev1beta2.CapabilityProperties{
+				ActiveGate: dynakube.ActiveGateSpec{
+					CapabilityProperties: dynakube.CapabilityProperties{
 						Image: testRegistryUrl + "/linux/activegate:latest",
 					},
 				},
