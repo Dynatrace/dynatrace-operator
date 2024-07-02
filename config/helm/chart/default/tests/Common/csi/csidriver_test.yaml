@@ -36,7 +36,6 @@ tests:
     set:
       platform: openshift
       csidriver.enabled: true
-      partial: false
     asserts:
       - isSubset:
           path: metadata.labels
@@ -46,8 +45,7 @@ tests:
   - it: should contain correct labels for openshift manifest
     set:
       platform: openshift
-      csidriver.enabled: false
-      partial: csi
+      csidriver.enabled: true
     asserts:
       - isSubset:
           path: metadata.labels

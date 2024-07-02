@@ -78,7 +78,6 @@ tests:
     set:
       platform: openshift
       csidriver.enabled: true
-      partial: csi
     asserts:
       - isKind:
           of: ClusterRole

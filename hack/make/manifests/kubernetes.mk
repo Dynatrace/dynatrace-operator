@@ -2,8 +2,8 @@
 manifests/kubernetes/csi:
 	# Generate kubernetes-csi.yaml
 	helm template dynatrace-operator config/helm/chart/default \
+		--show-only templates/Common/csi/*.yaml \
 		--namespace dynatrace \
-		--set partial="csi" \
 		--set platform="kubernetes" \
 		--set manifests=true \
 		--set olm="${OLM}" \
