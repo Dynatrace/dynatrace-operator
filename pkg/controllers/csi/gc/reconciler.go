@@ -10,21 +10,27 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/spf13/afero"
+	"k8s.io/utils/mount"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // CSIGarbageCollector removes unused and outdated agent versions
 type CSIGarbageCollector struct {
-	apiReader client.Reader
-	fs        afero.Fs
-	db        metadata.Cleaner
-	time      *timeprovider.Provider
+	apiReader    client.Reader
+	fs           afero.Fs
+	db           metadata.Cleaner
+	mounter      mount.Interface
+	time         *timeprovider.Provider
+	isNotMounted mountChecker
 
 	path metadata.PathResolver
 
 	maxUnmountedVolumeAge time.Duration
 }
+
+// necessary for mocking, as the MounterMock will use the os package
+type mountChecker func(mounter mount.Interface, file string) (bool, error)
 
 var _ reconcile.Reconciler = (*CSIGarbageCollector)(nil)
 
@@ -40,6 +46,8 @@ func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db m
 		db:                    db,
 		path:                  metadata.PathResolver{RootDir: opts.RootDir},
 		time:                  timeprovider.New(),
+		mounter:               mount.New(""),
+		isNotMounted:          mount.IsNotMountPoint,
 		maxUnmountedVolumeAge: determineMaxUnmountedVolumeAge(os.Getenv(maxUnmountedCsiVolumeAgeEnv)),
 	}
 }
@@ -67,26 +75,9 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 
 		gc.runUnmountedVolumeGarbageCollection(tenantConfig.TenantUUID)
 
-		osMounts, err := gc.db.ListDeletedOSMounts()
+		err := gc.runOSMountGarbageCollection(tenantConfig)
 		if err != nil {
 			continue
-		}
-
-		for _, osm := range osMounts {
-			if !gc.time.Now().Time.After(osm.DeletedAt.Time.Add(safeRemovalThreshold)) {
-				log.Info("skipping recently removed os-mount", "location", osm.Location)
-
-				continue
-			}
-
-			if osm.TenantConfig.UID == tenantConfig.UID {
-				dir, _ := afero.ReadDir(gc.fs, osm.Location)
-				for _, d := range dir {
-					gc.fs.RemoveAll(path.Join([]string{osm.Location, d.Name()}...))
-				}
-
-				gc.db.PurgeOSMount(&osm)
-			}
 		}
 
 		err = gc.db.PurgeTenantConfig(&tenantConfig)
@@ -102,4 +93,42 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 	}
 
 	return reconcile.Result{RequeueAfter: dtcsi.LongRequeueDuration}, nil
+}
+
+func (gc *CSIGarbageCollector) runOSMountGarbageCollection(tenantConfig metadata.TenantConfig) error {
+	osMounts, err := gc.db.ListDeletedOSMounts()
+	if err != nil {
+		return err
+	}
+
+	for _, osm := range osMounts {
+		if !gc.time.Now().Time.After(osm.DeletedAt.Time.Add(safeRemovalThreshold)) {
+			log.Info("skipping recently removed os-mount", "location", osm.Location)
+
+			continue
+		}
+
+		if osm.TenantConfig.UID == tenantConfig.UID {
+			isNotMounted, err := gc.isNotMounted(gc.mounter, osm.Location)
+			if err != nil {
+				log.Info("failed to determine if OSMount is still mounted", "location", osm.Location, "tenantConfig", osm.TenantConfig.Name, "err", err.Error())
+
+				continue
+			}
+
+			if !isNotMounted {
+				log.Info("OSMount is still mounted", "location", osm.Location, "tenantConfig", osm.TenantConfig.Name)
+
+				continue
+			}
+
+			dir, _ := afero.ReadDir(gc.fs, osm.Location)
+			for _, d := range dir {
+				gc.fs.RemoveAll(path.Join([]string{osm.Location, d.Name()}...))
+				log.Info("removed outdate contents from OSMount folder", "location", osm.Location)
+			}
+		}
+	}
+
+	return nil
 }

@@ -230,31 +230,6 @@ func TestPurgeAppMount(t *testing.T) {
 	})
 }
 
-func fillWithOSMounts(t *testing.T, db *GormConn, amount int) {
-	for i := range amount {
-		om := generateOSMount(i)
-		err := db.CreateOSMount(om)
-		require.NoError(t, err)
-
-		if i%2 == 0 {
-			err := db.DeleteOSMount(om)
-			require.NoError(t, err)
-		}
-	}
-}
-
-func generateOSMount(i int) *OSMount {
-	return &OSMount{
-		VolumeMetaID:    fmt.Sprintf("id-%d", i),
-		VolumeMeta:      VolumeMeta{ID: fmt.Sprintf("id-%d", i)},
-		TenantConfigUID: fmt.Sprintf("t-id-%d", i),
-		TenantConfig:    TenantConfig{UID: fmt.Sprintf("t-id-%d", i), TenantUUID: fmt.Sprintf("uuid-%d", i)},
-		Location:        fmt.Sprintf("location-%d", i),
-		TenantUUID:      fmt.Sprintf("uuid-%d", i),
-		MountAttempts:   int64(i),
-	}
-}
-
 func TestListDeletedOSMounts(t *testing.T) {
 	t.Run("empty database => no error", func(t *testing.T) {
 		db, err := setupDB()
@@ -268,12 +243,20 @@ func TestListDeletedOSMounts(t *testing.T) {
 		db, err := setupDB()
 		require.NoError(t, err)
 
-		initialLength := 6
+		initialLength := 7
 		fillWithOSMounts(t, db, initialLength)
 
 		oms, err := db.ListDeletedOSMounts()
 		require.NoError(t, err)
-		assert.Len(t, oms, initialLength/2)
+		assert.Len(t, oms, 2)
+
+		osMount, err := db.ReadOSMount(OSMount{VolumeMetaID: "restore"})
+		require.NoError(t, err)
+		assert.NotEmpty(t, osMount)
+
+		osMount, err = db.ReadOSMount(OSMount{TenantConfig: TenantConfig{Name: "restore"}})
+		require.NoError(t, err)
+		assert.NotEmpty(t, osMount)
 	})
 }
 
@@ -308,4 +291,40 @@ func TestPurgeOSMount(t *testing.T) {
 		require.NoError(t, err)
 		assert.Empty(t, tcs)
 	})
+}
+
+func fillWithOSMounts(t *testing.T, db *GormConn, amount int) {
+	for i := range amount {
+		om := generateOSMount(i)
+		err := db.CreateOSMount(om)
+		require.NoError(t, err)
+
+		if i%2 == 0 {
+			err := db.DeleteOSMount(om)
+			require.NoError(t, err)
+		}
+
+		if i%4 == 0 {
+			tmp, err := db.ReadUnscopedOSMount(OSMount{TenantUUID: om.TenantUUID})
+			require.NoError(t, err)
+			assert.NotNil(t, tmp)
+			tmp.VolumeMeta = VolumeMeta{ID: "restore"}
+			tmp.TenantConfig = TenantConfig{Name: "restore"}
+			tmp, err = db.RestoreOSMount(tmp)
+			require.NoError(t, err)
+			require.NotNil(t, tmp)
+		}
+	}
+}
+
+func generateOSMount(i int) *OSMount {
+	return &OSMount{
+		VolumeMetaID:    fmt.Sprintf("id-%d", i),
+		VolumeMeta:      VolumeMeta{ID: fmt.Sprintf("id-%d", i)},
+		TenantConfigUID: fmt.Sprintf("t-id-%d", i),
+		TenantConfig:    TenantConfig{UID: fmt.Sprintf("t-id-%d", i), TenantUUID: fmt.Sprintf("uuid-%d", i)},
+		Location:        fmt.Sprintf("location-%d", i),
+		TenantUUID:      fmt.Sprintf("uuid-%d", i),
+		MountAttempts:   int64(i),
+	}
 }
