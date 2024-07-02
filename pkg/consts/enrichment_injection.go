@@ -7,9 +7,6 @@ const (
 	EnrichmentWorkloadNameEnv    = "DT_WORKLOAD_NAME"
 	EnrichmentPropertiesFilename = "dt_metadata.properties"
 	EnrichmentJsonFilename       = "dt_metadata.json"
-)
-
-var (
-	EnrichmentMountPath = "/var/lib/dynatrace/enrichment"
-	EnrichmentInitPath  = "/tmp/enrichment"
+	EnrichmentMountPath          = "/var/lib/dynatrace/enrichment"
+	EnrichmentInitPath           = "/tmp/enrichment"
 )
