@@ -1,3 +1,4 @@
+CRD_OPTIONS512 ?= "crd:crdVersions=v1,maxDescLen=512"
 CRD_OPTIONS ?= "crd:crdVersions=v1"
 OLM ?= false
 
