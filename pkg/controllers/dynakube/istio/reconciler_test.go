@@ -541,7 +541,7 @@ func TestParseCodeModulesImageURL(t *testing.T) {
 		},
 		{
 			input:           "some/url/test:some-tag",
-			output:          "https://docker.io/some/url/test:some-tag",
+			output:          "https://index.docker.io/some/url/test:some-tag",
 			parsedCorreclty: true,
 		},
 		{
