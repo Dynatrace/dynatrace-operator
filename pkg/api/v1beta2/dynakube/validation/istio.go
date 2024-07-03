@@ -1,9 +1,9 @@
-package dynakube
+package validation
 
 import (
 	"context"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 )
 
@@ -12,9 +12,9 @@ const (
 	errorFailToInitIstioClient = `Failed to initialize istio client`
 )
 
-func noResourcesAvailable(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
-	if dynakube.Spec.EnableIstio {
-		istioClient, err := istio.NewClient(dv.cfg, dynakube)
+func noResourcesAvailable(_ context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+	if dk.Spec.EnableIstio {
+		istioClient, err := istio.NewClient(dv.cfg, dk)
 		if err != nil {
 			return errorFailToInitIstioClient
 		}

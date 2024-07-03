@@ -1,11 +1,11 @@
-package dynakube
+package validation
 
 import (
 	"context"
 	"net/url"
 	"regexp"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/pkg/errors"
 )
 
@@ -16,9 +16,9 @@ const (
 	errorMissingProxySecret = `Error occurred while reading PROXY secret indicated in the Dynakube specification`
 )
 
-func invalidActiveGateProxyUrl(ctx context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta2.DynaKube) string {
-	if dynakube.Spec.Proxy != nil {
-		proxyUrl, err := dynakube.Proxy(ctx, dv.apiReader)
+func invalidActiveGateProxyUrl(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+	if dk.Spec.Proxy != nil {
+		proxyUrl, err := dk.Proxy(ctx, dv.apiReader)
 		if err != nil {
 			return errors.Wrap(err, errorMissingProxySecret).Error()
 		}
@@ -31,7 +31,7 @@ func invalidActiveGateProxyUrl(ctx context.Context, dv *dynakubeValidator, dynak
 
 // proxyUrl is valid if
 // 1) encoded
-// 2) password does not contain '` characters
+// 2) password does not contain '` characters.
 func validateProxyUrl(proxyUrl string, parseErrorMessage string, evalErrorMessage string) string {
 	if parsedUrl, err := url.Parse(proxyUrl); err != nil {
 		return parseErrorMessage

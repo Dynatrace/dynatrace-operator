@@ -1,72 +1,72 @@
-package dynakube
+package validation
 
 import (
 	"fmt"
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestConflictingOneAgentConfiguration(t *testing.T) {
 	t.Run(`valid dynakube specs`, func(t *testing.T) {
-		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta2.DynaKube{
+		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
+				OneAgent: dynakube.OneAgentSpec{
 					ClassicFullStack: nil,
 					HostMonitoring:   nil,
 				},
 			},
 		})
 
-		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta2.DynaKube{
+		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta2.HostInjectSpec{},
+				OneAgent: dynakube.OneAgentSpec{
+					ClassicFullStack: &dynakube.HostInjectSpec{},
 					HostMonitoring:   nil,
 				},
 			},
 		})
 
-		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta2.DynaKube{
+		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
+				OneAgent: dynakube.OneAgentSpec{
 					ClassicFullStack: nil,
-					HostMonitoring:   &dynatracev1beta2.HostInjectSpec{},
+					HostMonitoring:   &dynakube.HostInjectSpec{},
 				},
 			},
 		}, &defaultCSIDaemonSet)
 	})
 	t.Run(`conflicting dynakube specs`, func(t *testing.T) {
-		assertDeniedResponse(t,
+		assertDenied(t,
 			[]string{errorConflictingOneagentMode},
-			&dynatracev1beta2.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						ClassicFullStack: &dynatracev1beta2.HostInjectSpec{},
-						HostMonitoring:   &dynatracev1beta2.HostInjectSpec{},
+					OneAgent: dynakube.OneAgentSpec{
+						ClassicFullStack: &dynakube.HostInjectSpec{},
+						HostMonitoring:   &dynakube.HostInjectSpec{},
 					},
 				},
 			}, &defaultCSIDaemonSet)
 
-		assertDeniedResponse(t,
+		assertDenied(t,
 			[]string{errorConflictingOneagentMode},
-			&dynatracev1beta2.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{},
-						HostMonitoring:        &dynatracev1beta2.HostInjectSpec{},
+					OneAgent: dynakube.OneAgentSpec{
+						ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{},
+						HostMonitoring:        &dynakube.HostInjectSpec{},
 					},
 				},
 			}, &defaultCSIDaemonSet)
@@ -74,18 +74,18 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 }
 
 func TestConflictingNodeSelector(t *testing.T) {
-	newCloudNativeDynakube := func(name string, annotations map[string]string, nodeSelectorValue string) *dynatracev1beta2.DynaKube {
-		return &dynatracev1beta2.DynaKube{
+	newCloudNativeDynakube := func(name string, annotations map[string]string, nodeSelectorValue string) *dynakube.DynaKube {
+		return &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        name,
 				Namespace:   testNamespace,
 				Annotations: annotations,
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{
-						HostInjectSpec: dynatracev1beta2.HostInjectSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
+						HostInjectSpec: dynakube.HostInjectSpec{
 							NodeSelector: map[string]string{
 								"node": nodeSelectorValue,
 							},
@@ -97,13 +97,13 @@ func TestConflictingNodeSelector(t *testing.T) {
 	}
 
 	t.Run(`valid dynakube specs`, func(t *testing.T) {
-		assertAllowedResponseWithoutWarnings(t,
-			&dynatracev1beta2.DynaKube{
+		assertAllowedWithoutWarnings(t,
+			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						HostMonitoring: &dynatracev1beta2.HostInjectSpec{
+					OneAgent: dynakube.OneAgentSpec{
+						HostMonitoring: &dynakube.HostInjectSpec{
 							NodeSelector: map[string]string{
 								"node": "1",
 							},
@@ -111,15 +111,15 @@ func TestConflictingNodeSelector(t *testing.T) {
 					},
 				},
 			},
-			&dynatracev1beta2.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "conflict1",
 					Namespace: testNamespace,
 				},
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						HostMonitoring: &dynatracev1beta2.HostInjectSpec{
+					OneAgent: dynakube.OneAgentSpec{
+						HostMonitoring: &dynakube.HostInjectSpec{
 							NodeSelector: map[string]string{
 								"node": "2",
 							},
@@ -128,17 +128,17 @@ func TestConflictingNodeSelector(t *testing.T) {
 				},
 			}, &defaultCSIDaemonSet)
 
-		assertAllowedResponseWithoutWarnings(t,
-			&dynatracev1beta2.DynaKube{
+		assertAllowedWithoutWarnings(t,
+			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "conflict2",
 					Namespace: testNamespace,
 				},
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{
-							HostInjectSpec: dynatracev1beta2.HostInjectSpec{
+					OneAgent: dynakube.OneAgentSpec{
+						CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
+							HostInjectSpec: dynakube.HostInjectSpec{
 								NodeSelector: map[string]string{
 									"node": "1",
 								},
@@ -147,12 +147,12 @@ func TestConflictingNodeSelector(t *testing.T) {
 					},
 				},
 			},
-			&dynatracev1beta2.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						HostMonitoring: &dynatracev1beta2.HostInjectSpec{
+					OneAgent: dynakube.OneAgentSpec{
+						HostMonitoring: &dynakube.HostInjectSpec{
 							NodeSelector: map[string]string{
 								"node": "2",
 							},
@@ -162,34 +162,34 @@ func TestConflictingNodeSelector(t *testing.T) {
 			}, &defaultCSIDaemonSet)
 	})
 	t.Run(`valid dynakube specs with multitenant hostMonitoring`, func(t *testing.T) {
-		assertAllowedResponseWithWarnings(t, 0,
+		assertAllowedWithWarnings(t, 0,
 			newCloudNativeDynakube("dk1", map[string]string{
-				dynatracev1beta2.AnnotationFeatureMultipleOsAgentsOnNode: "true",
+				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "true",
 			}, "1"),
 			newCloudNativeDynakube("dk2", map[string]string{
-				dynatracev1beta2.AnnotationFeatureMultipleOsAgentsOnNode: "true",
+				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "true",
 			}, "2"),
 			&defaultCSIDaemonSet)
 
-		assertAllowedResponseWithWarnings(t, 0,
+		assertAllowedWithWarnings(t, 0,
 			newCloudNativeDynakube("dk1", map[string]string{
-				dynatracev1beta2.AnnotationFeatureMultipleOsAgentsOnNode: "true",
+				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "true",
 			}, "1"),
 			newCloudNativeDynakube("dk2", map[string]string{
-				dynatracev1beta2.AnnotationFeatureMultipleOsAgentsOnNode: "true",
+				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "true",
 			}, "1"),
 			&defaultCSIDaemonSet)
 	})
 	t.Run(`invalid dynakube specs`, func(t *testing.T) {
-		assertDeniedResponse(t,
+		assertDenied(t,
 			[]string{fmt.Sprintf(errorNodeSelectorConflict, "conflicting-dk")},
-			&dynatracev1beta2.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{
-							HostInjectSpec: dynatracev1beta2.HostInjectSpec{
+					OneAgent: dynakube.OneAgentSpec{
+						CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
+							HostInjectSpec: dynakube.HostInjectSpec{
 								NodeSelector: map[string]string{
 									"node": "1",
 								},
@@ -198,15 +198,15 @@ func TestConflictingNodeSelector(t *testing.T) {
 					},
 				},
 			},
-			&dynatracev1beta2.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "conflicting-dk",
 					Namespace: testNamespace,
 				},
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						HostMonitoring: &dynatracev1beta2.HostInjectSpec{
+					OneAgent: dynakube.OneAgentSpec{
+						HostMonitoring: &dynakube.HostInjectSpec{
 							NodeSelector: map[string]string{
 								"node": "1",
 							},
@@ -216,25 +216,25 @@ func TestConflictingNodeSelector(t *testing.T) {
 			}, &defaultCSIDaemonSet)
 	})
 	t.Run(`invalid dynakube specs with multitenant hostMonitoring`, func(t *testing.T) {
-		assertDeniedResponse(t, nil,
+		assertDenied(t, nil,
 			newCloudNativeDynakube("dk1", map[string]string{
-				dynatracev1beta2.AnnotationFeatureMultipleOsAgentsOnNode: "false",
+				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "false",
 			}, "1"),
 			newCloudNativeDynakube("dk2", map[string]string{
-				dynatracev1beta2.AnnotationFeatureMultipleOsAgentsOnNode: "true",
+				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "true",
 			}, "1"),
 			&defaultCSIDaemonSet)
 
-		assertDeniedResponse(t, nil,
+		assertDenied(t, nil,
 			newCloudNativeDynakube("dk1", map[string]string{
-				dynatracev1beta2.AnnotationFeatureMultipleOsAgentsOnNode: "false",
+				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "false",
 			}, "1"),
 			newCloudNativeDynakube("dk2", map[string]string{
-				dynatracev1beta2.AnnotationFeatureMultipleOsAgentsOnNode: "false",
+				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "false",
 			}, "1"),
 			&defaultCSIDaemonSet)
 
-		assertDeniedResponse(t, nil,
+		assertDenied(t, nil,
 			newCloudNativeDynakube("dk1", map[string]string{}, "1"),
 			newCloudNativeDynakube("dk2", map[string]string{}, "1"),
 			&defaultCSIDaemonSet)
@@ -245,13 +245,13 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 	t.Run(`spec with appMon enabled and image name`, func(t *testing.T) {
 		useCSIDriver := true
 		testImage := "testImage"
-		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta2.DynaKube{
+		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{
-						AppInjectionSpec: dynatracev1beta2.AppInjectionSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
+						AppInjectionSpec: dynakube.AppInjectionSpec{
 							CodeModulesImage: testImage,
 						},
 						UseCSIDriver: useCSIDriver,
@@ -264,13 +264,13 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 	t.Run(`spec with appMon enabled, useCSIDriver not enabled but image set`, func(t *testing.T) {
 		useCSIDriver := false
 		testImage := "testImage"
-		assertDeniedResponse(t, []string{errorImageFieldSetWithoutCSIFlag}, &dynatracev1beta2.DynaKube{
+		assertDenied(t, []string{errorImageFieldSetWithoutCSIFlag}, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{
-						AppInjectionSpec: dynatracev1beta2.AppInjectionSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
+						AppInjectionSpec: dynakube.AppInjectionSpec{
 							CodeModulesImage: testImage,
 						},
 						UseCSIDriver: useCSIDriver,
@@ -281,7 +281,7 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 	})
 }
 
-func createDynakube(oaEnvVar ...string) *dynatracev1beta2.DynaKube {
+func createDynakube(oaEnvVar ...string) *dynakube.DynaKube {
 	envVars := make([]corev1.EnvVar, 0)
 	for i := 0; i < len(oaEnvVar); i += 2 {
 		envVars = append(envVars, corev1.EnvVar{
@@ -290,16 +290,16 @@ func createDynakube(oaEnvVar ...string) *dynatracev1beta2.DynaKube {
 		})
 	}
 
-	return &dynatracev1beta2.DynaKube{
+	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dynakube",
 			Namespace: testNamespace,
 		},
-		Spec: dynatracev1beta2.DynaKubeSpec{
+		Spec: dynakube.DynaKubeSpec{
 			APIURL: testApiUrl,
-			OneAgent: dynatracev1beta2.OneAgentSpec{
-				CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{
-					HostInjectSpec: dynatracev1beta2.HostInjectSpec{
+			OneAgent: dynakube.OneAgentSpec{
+				CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
+					HostInjectSpec: dynakube.HostInjectSpec{
 						Env: envVars,
 					},
 				},
@@ -340,7 +340,7 @@ func TestUnsupportedOneAgentImage(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.testName, func(t *testing.T) {
-			assertAllowedResponseWithWarnings(t,
+			assertAllowedWithWarnings(t,
 				tc.allowedWarnings,
 				createDynakube(tc.envVars...),
 				&defaultCSIDaemonSet)
@@ -350,38 +350,38 @@ func TestUnsupportedOneAgentImage(t *testing.T) {
 
 func TestOneAgentHostGroup(t *testing.T) {
 	t.Run(`valid dynakube specs`, func(t *testing.T) {
-		assertAllowedResponseWithoutWarnings(t,
+		assertAllowedWithoutWarnings(t,
 			createDynakubeWithHostGroup([]string{}, ""),
 			&defaultCSIDaemonSet)
 
-		assertAllowedResponseWithoutWarnings(t,
+		assertAllowedWithoutWarnings(t,
 			createDynakubeWithHostGroup([]string{"--other-param=1"}, ""),
 			&defaultCSIDaemonSet)
 
-		assertAllowedResponseWithoutWarnings(t,
+		assertAllowedWithoutWarnings(t,
 			createDynakubeWithHostGroup([]string{}, "field"),
 			&defaultCSIDaemonSet)
 	})
 
 	t.Run(`obsolete settings`, func(t *testing.T) {
-		assertAllowedResponseWithWarnings(t,
+		assertAllowedWithWarnings(t,
 			1,
 			createDynakubeWithHostGroup([]string{"--set-host-group=arg"}, ""),
 			&defaultCSIDaemonSet)
 
-		assertAllowedResponseWithWarnings(t,
+		assertAllowedWithWarnings(t,
 			1,
 			createDynakubeWithHostGroup([]string{"--set-host-group=arg"}, "field"),
 			&defaultCSIDaemonSet)
 
-		assertAllowedResponseWithWarnings(t,
+		assertAllowedWithWarnings(t,
 			1,
-			&dynatracev1beta2.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						ClassicFullStack: &dynatracev1beta2.HostInjectSpec{
+					OneAgent: dynakube.OneAgentSpec{
+						ClassicFullStack: &dynakube.HostInjectSpec{
 							Args: []string{"--set-host-group=arg"},
 						},
 						HostGroup: "",
@@ -390,14 +390,14 @@ func TestOneAgentHostGroup(t *testing.T) {
 			},
 			&defaultCSIDaemonSet)
 
-		assertAllowedResponseWithWarnings(t,
+		assertAllowedWithWarnings(t,
 			1,
-			&dynatracev1beta2.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						HostMonitoring: &dynatracev1beta2.HostInjectSpec{
+					OneAgent: dynakube.OneAgentSpec{
+						HostMonitoring: &dynakube.HostInjectSpec{
 							Args: []string{"--set-host-group=arg"},
 						},
 						HostGroup: "",
@@ -408,14 +408,14 @@ func TestOneAgentHostGroup(t *testing.T) {
 	})
 }
 
-func createDynakubeWithHostGroup(args []string, hostGroup string) *dynatracev1beta2.DynaKube {
-	return &dynatracev1beta2.DynaKube{
+func createDynakubeWithHostGroup(args []string, hostGroup string) *dynakube.DynaKube {
+	return &dynakube.DynaKube{
 		ObjectMeta: defaultDynakubeObjectMeta,
-		Spec: dynatracev1beta2.DynaKubeSpec{
+		Spec: dynakube.DynaKubeSpec{
 			APIURL: testApiUrl,
-			OneAgent: dynatracev1beta2.OneAgentSpec{
-				CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{
-					HostInjectSpec: dynatracev1beta2.HostInjectSpec{
+			OneAgent: dynakube.OneAgentSpec{
+				CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
+					HostInjectSpec: dynakube.HostInjectSpec{
 						Args: args,
 					},
 				},
