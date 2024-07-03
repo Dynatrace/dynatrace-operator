@@ -3,6 +3,7 @@ package validation
 import (
 	"context"
 	"fmt"
+	"regexp"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
@@ -135,6 +136,21 @@ func conflictingOneAgentVolumeStorageSettings(_ context.Context, _ *Validator, d
 func conflictingHostGroupSettings(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	if dk.HostGroupAsParam() != "" {
 		return warningHostGroupConflict
+	}
+
+	return ""
+}
+
+var oneAgentSemVerVersionSpec = regexp.MustCompile(`^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)$`)
+
+func validateOneAgentVersionIsSemVerCompliant(_ context.Context, _ *dynakubeValidator, dk *dynakube.DynaKube) string {
+	agentVersion := dk.CustomOneAgentVersion()
+	if agentVersion == "" {
+		return ""
+	}
+
+	if !oneAgentSemVerVersionSpec.MatchString(agentVersion) {
+		return "Only semantic versions are allowed!"
 	}
 
 	return ""

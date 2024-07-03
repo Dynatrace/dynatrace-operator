@@ -424,3 +424,41 @@ func createDynakubeWithHostGroup(args []string, hostGroup string) *dynakube.Dyna
 		},
 	}
 }
+
+func TestValidateOneAgentVersionIsSemVer(t *testing.T) {
+	testCasesAcceptedVersions := []string{"", "1.0.0", "1.200.1"}
+
+	testCasesNotAcceptedVersions := []string{"latest", "raw", "1.200.1-raw"}
+
+	for _, tc := range testCasesAcceptedVersions {
+		t.Run("should accept version "+tc, func(t *testing.T) {
+			assertAllowedResponseWithoutWarnings(t, &dynatracev1beta2.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta2.DynaKubeSpec{
+					APIURL: testApiUrl,
+					OneAgent: dynatracev1beta2.OneAgentSpec{
+						ClassicFullStack: &dynatracev1beta2.HostInjectSpec{
+							Version: tc,
+						},
+					},
+				},
+			})
+		})
+	}
+
+	for _, tc := range testCasesNotAcceptedVersions {
+		t.Run("should accept version "+tc, func(t *testing.T) {
+			assertDeniedResponse(t, []string{"Only semantic versions are allowed!"}, &dynatracev1beta2.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta2.DynaKubeSpec{
+					APIURL: testApiUrl,
+					OneAgent: dynatracev1beta2.OneAgentSpec{
+						ClassicFullStack: &dynatracev1beta2.HostInjectSpec{
+							Version: tc,
+						},
+					},
+				},
+			})
+		})
+	}
+}
