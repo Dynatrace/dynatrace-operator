@@ -1,6 +1,8 @@
 package metadata
 
 import (
+	"path/filepath"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -35,7 +37,8 @@ func addWorkloadEnrichmentVolume(pod *corev1.Pod) {
 }
 
 func setupVolumeMountsForUserContainer(container *corev1.Container) {
-	addWorkloadEnrichmentVolumeMount(container)
+	addWorkloadEnrichmentVolumeMount(container, consts.EnrichmentPropertiesFilename)
+	addWorkloadEnrichmentVolumeMount(container, consts.EnrichmentJsonFilename)
 	addEnrichmentEndpointVolumeMount(container)
 }
 
@@ -48,11 +51,21 @@ func addEnrichmentEndpointVolumeMount(container *corev1.Container) {
 	)
 }
 
-func addWorkloadEnrichmentVolumeMount(container *corev1.Container) {
+func addWorkloadEnrichmentVolumeMount(container *corev1.Container, filename string) {
 	container.VolumeMounts = append(container.VolumeMounts,
 		corev1.VolumeMount{
 			Name:      workloadEnrichmentVolumeName,
-			MountPath: consts.EnrichmentMountPath,
+			MountPath: filepath.Join(consts.EnrichmentMountPath, filename),
+			SubPath:   filename,
+		},
+	)
+}
+
+func addWorkloadEnrichmentInstallVolumeMount(container *corev1.Container) {
+	container.VolumeMounts = append(container.VolumeMounts,
+		corev1.VolumeMount{
+			Name:      workloadEnrichmentVolumeName,
+			MountPath: consts.EnrichmentInitPath,
 		},
 	)
 }

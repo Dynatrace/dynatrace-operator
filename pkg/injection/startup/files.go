@@ -94,7 +94,7 @@ func (runner *Runner) createJsonEnrichmentFile() error {
 		runner.env.WorkloadName,
 		runner.env.K8ClusterID,
 	)
-	jsonPath := filepath.Join(consts.EnrichmentMountPath, fmt.Sprintf(consts.EnrichmentFilenameTemplate, "json"))
+	jsonPath := filepath.Join(consts.EnrichmentInitPath, consts.EnrichmentJsonFilename)
 
 	return runner.createConfigFile(jsonPath, jsonContent, true)
 }
@@ -108,7 +108,7 @@ func (runner *Runner) createPropsEnrichmentFile() error {
 		runner.env.WorkloadName,
 		runner.env.K8ClusterID,
 	)
-	propsPath := filepath.Join(consts.EnrichmentMountPath, fmt.Sprintf(consts.EnrichmentFilenameTemplate, "properties"))
+	propsPath := filepath.Join(consts.EnrichmentInitPath, consts.EnrichmentPropertiesFilename)
 
 	return runner.createConfigFile(propsPath, propsContent, true)
 }
