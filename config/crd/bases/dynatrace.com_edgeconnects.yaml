@@ -13,6 +13,9 @@ spec:
     kind: EdgeConnect
     listKind: EdgeConnectList
     plural: edgeconnects
+    shortNames:
+    - ec
+    - ecs
     singular: edgeconnect
   scope: Namespaced
   versions:

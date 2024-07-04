@@ -162,7 +162,7 @@ func (dk *EdgeConnectStatus) SetPhase(phase status.DeploymentPhase) bool {
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=edgeconnects,scope=Namespaced,categories=dynatrace
+// +kubebuilder:resource:path=edgeconnects,scope=Namespaced,categories=dynatrace,shortName={ec,ecs}
 // +kubebuilder:printcolumn:name="ApiServer",type=string,JSONPath=`.spec.apiServer`
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
