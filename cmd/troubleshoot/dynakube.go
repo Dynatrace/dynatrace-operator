@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
-	dynakubevalidation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/validation/dynakube"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,11 +26,6 @@ const dynakubeCheckLoggerName = "dynakube"
 
 func checkDynakube(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, dynakube *dynatracev1beta2.DynaKube) (corev1.Secret, error) {
 	dynatraceApiSecretTokens, err := checkIfDynatraceApiSecretHasApiToken(ctx, baseLog, apiReader, dynakube)
-	if err != nil {
-		return corev1.Secret{}, err
-	}
-
-	err = checkApiUrlSyntax(ctx, baseLog, dynakube)
 	if err != nil {
 		return corev1.Secret{}, err
 	}
@@ -114,26 +108,6 @@ func checkIfDynatraceApiSecretHasApiToken(ctx context.Context, baseLog logd.Logg
 	logInfof(log, "secret token 'apiToken' exists")
 
 	return tokens, nil
-}
-
-func checkApiUrlSyntax(ctx context.Context, baseLog logd.Logger, dynakube *dynatracev1beta2.DynaKube) error {
-	log := baseLog.WithName(dynakubeCheckLoggerName)
-
-	logInfof(log, "checking if syntax of API URL is valid")
-
-	dynakubevalidation.SetLogger(log)
-
-	if dynakubevalidation.NoApiUrl(ctx, nil, dynakube) != "" {
-		return errors.New("API URL is invalid")
-	}
-
-	if dynakubevalidation.IsInvalidApiUrl(ctx, nil, dynakube) != "" {
-		return errors.New("API URL is invalid")
-	}
-
-	logInfof(log, "syntax of API URL is valid")
-
-	return nil
 }
 
 func checkDynatraceApiTokenScopes(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, dynatraceApiSecretTokens token.Tokens, dynakube *dynatracev1beta2.DynaKube) error {

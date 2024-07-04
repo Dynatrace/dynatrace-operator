@@ -29,7 +29,9 @@ type OneAgentSpec struct {
 	// +nullable
 	HostMonitoring *HostInjectSpec `json:"hostMonitoring,omitempty"`
 
-	// Sets a host group for OneAgent.
+	// Specify the name of the group to which you want to assign the host.
+	// This method is preferred over the now obsolete `--set-host-group` argument.
+	// If both settings are used, this field takes precedence over the `--set-host-group` argument.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Host Group",order=5,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	HostGroup string `json:"hostGroup,omitempty"`
@@ -57,7 +59,7 @@ type HostInjectSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Node Selector",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:Node"
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
-	// The OneAgent version to be used.
+	// The OneAgent version to be used for OneAgents running in the dedicated pod. This setting doesn't affect the OneAgent version used for application monitoring.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent version",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Version string `json:"version,omitempty"`
@@ -83,7 +85,8 @@ type HostInjectSpec struct {
 	SecCompProfile string `json:"secCompProfile,omitempty"`
 
 	// Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.
-	// Note: resource.requests shows the values needed to run; resource.limits shows the maximum limits for the pod.
+	// - `resource.requests` shows the values needed to run
+	// - `resource.limits` shows the maximum limits for the pod
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=20,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
 	OneAgentResources corev1.ResourceRequirements `json:"oneAgentResources,omitempty"`

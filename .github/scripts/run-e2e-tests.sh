@@ -41,6 +41,7 @@ tenantUid: $TENANT1_NAME
 apiServer: $TENANT1_NAME.dev.apps.dynatracelabs.com
 oAuthClientId: $TENANT1_OAUTH_CLIENT_ID
 oAuthClientSecret: $TENANT1_OAUTH_SECRET
+resource: $TENANT1_OAUTH_URN
 EOF
 
 cat << EOF > otel-tenant.yaml

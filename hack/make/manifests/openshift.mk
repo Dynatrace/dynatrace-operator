@@ -2,8 +2,8 @@
 manifests/openshift/csi:
 	# Generate openshift-csi.yaml
 	helm template dynatrace-operator config/helm/chart/default \
+		--show-only templates/Common/csi/*.yaml \
 		--namespace dynatrace \
-		--set partial="csi" \
 		--set platform="openshift" \
 		--set manifests=true \
 		--set olm="${OLM}" \

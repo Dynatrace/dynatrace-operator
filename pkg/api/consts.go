@@ -1,6 +1,9 @@
 package api
 
 const (
-	LatestTag = "latest"
-	RawTag    = "raw"
+	LatestTag                                       = "latest"
+	RawTag                                          = "raw"
+	AnnotationDynatraceExtensions                   = "dynatrace.com/extensions"
+	AnnotationDynatraceOpenTelemetryCollector       = "dynatrace.com/openTelemetryCollector"
+	AnnotationDynatraceextEnsionExecutionController = "dynatrace.com/extensionExecutionController"
 )

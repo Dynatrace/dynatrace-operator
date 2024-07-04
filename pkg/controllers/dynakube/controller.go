@@ -8,6 +8,7 @@ import (
 
 	dynatracestatus "github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	dynatracev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
@@ -15,11 +16,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
@@ -76,6 +77,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, co
 		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
 		injectionReconcilerBuilder:          injection.NewReconciler,
 		istioReconcilerBuilder:              istio.NewReconciler,
+		extensionBuilder:                    extension.NewReconciler,
 	}
 }
 
@@ -108,6 +110,7 @@ type Controller struct {
 	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
 	injectionReconcilerBuilder          injection.ReconcilerBuilder
 	istioReconcilerBuilder              istio.ReconcilerBuilder
+	extensionBuilder                    extension.ReconcilerBuilder
 
 	tokens            token.Tokens
 	operatorNamespace string
@@ -239,12 +242,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
-	err = status.SetKubeSystemUUIDInStatus(ctx, dynakube, controller.apiReader)
-	if err != nil {
-		log.Info("could not set kube-system UUID in Dynakube status")
-
-		return err
-	}
+	dynakube.Status.KubeSystemUUID = controller.clusterID
 
 	log.Info("start reconciling deployment meta data")
 
@@ -313,6 +311,20 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		log.Info("could not reconcile ActiveGate")
 
 		componentErrors = append(componentErrors, err)
+	}
+
+	dynakubeV1beta3 := &dynatracev1beta3.DynaKube{}
+
+	err = dynakubeV1beta3.ConvertFrom(dynakube)
+	if err != nil {
+		return err
+	}
+
+	extensionReconciler := extension.NewReconciler(controller.client, controller.apiReader, dynakubeV1beta3)
+
+	err = extensionReconciler.Reconcile(ctx)
+	if err != nil {
+		return err
 	}
 
 	proxyReconciler := proxy.NewReconciler(controller.client, controller.apiReader, dynakube)

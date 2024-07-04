@@ -20,6 +20,12 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection() {
 	}
 
 	for _, codeModule := range codeModules {
+		if !gc.time.Now().Time.After(codeModule.DeletedAt.Time.Add(safeRemovalThreshold)) {
+			log.Info("skipping recently orphaned codemodule", "version", codeModule.Version, "location", codeModule.Location)
+
+			continue
+		}
+
 		log.Info("cleaning up orphaned codemodule binary", "version", codeModule.Version, "location", codeModule.Location)
 		removeUnusedVersion(fs, codeModule.Location)
 

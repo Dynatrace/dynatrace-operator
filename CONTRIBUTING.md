@@ -137,7 +137,7 @@ mockery
 or
 
 ```shell
-make go/gen_mock
+make go/gen_mocks
 ```
 
 #### Migrating to Mockery

@@ -272,7 +272,5 @@ spec:
           operator: Exists
           effect: NoSchedule
   updateStrategy:
-    rollingUpdate:
-      maxUnavailable: 1
-    type: RollingUpdate
+    {{- toYaml .Values.csidriver.updateStrategy | nindent 4 }}
 {{- end -}}

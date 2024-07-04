@@ -40,7 +40,7 @@ def main():
         for name, obj in d[k]:
             raw_desc = obj.get("description", "")
             template = "|{field}|{description}|{default}|{type}|".format(
-                field=name,
+                field=f"`{name}`",
                 type=obj["type"],
                 description=clean_description(raw_desc),
                 default=obj.get("default", "-"),
@@ -70,7 +70,9 @@ def traverse(props, level=".spec"):
 
 
 def clean_description(desc):
-    d = ' '.join(desc.splitlines())
+    d = '<br/>'.join(desc.splitlines())
+    d = d.replace('\t', '  ')
+
     if 'http' in d:
         return d.replace('(', '(<').replace(')', '>)')
     return d

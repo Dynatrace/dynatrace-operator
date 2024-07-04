@@ -77,15 +77,6 @@ func TestDynakube(t *testing.T) {
 	})
 }
 
-func TestApiUrl(t *testing.T) {
-	t.Run("valid ApiUrl", func(t *testing.T) {
-		require.NoErrorf(t, checkApiUrlSyntax(context.Background(), getNullLogger(t), testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).build()), "invalid ApiUrl")
-	})
-	t.Run("invalid ApiUrl", func(t *testing.T) {
-		require.Errorf(t, checkApiUrlSyntax(context.Background(), getNullLogger(t), testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testOtherApiUrl).build()), "valid ApiUrl")
-	})
-}
-
 func TestDynatraceSecret(t *testing.T) {
 	t.Run("Dynatrace secret exists", func(t *testing.T) {
 		dynakube := testNewDynakubeBuilder(testNamespace, testDynakube).withTokens(testDynatraceSecret).build()

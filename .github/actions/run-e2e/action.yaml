@@ -26,6 +26,9 @@ inputs:
   tenant1-oauth-secret:
     description: The OAuth secret of Tenant 1
     required: true
+  tenant1-oauth-urn:
+    description: The OAuth urn of Tenant 1
+    required: true
   tenant2-name:
     description: The name of Tenant 2
     required: true
@@ -78,6 +81,7 @@ runs:
         TENANT1_OTELTOKEN: ${{ inputs.tenant1-oteltoken }}
         TENANT1_OAUTH_CLIENT_ID: ${{ inputs.tenant1-oauth-client-id }}
         TENANT1_OAUTH_SECRET: ${{ inputs.tenant1-oauth-secret }}
+        TENANT1_OAUTH_URN: ${{ inputs.tenant1-oauth-urn }}
         TENANT2_NAME: ${{ inputs.tenant2-name }}
         TENANT2_APITOKEN: ${{ inputs.tenant2-apitoken }}
     - name: Destroy cluster

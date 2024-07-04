@@ -137,7 +137,7 @@ func TestMutate(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Len(t, request.Pod.Spec.Volumes, initialNumberOfVolumesLen+2)
-		assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen+2)
+		assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen+3)
 		assert.Len(t, request.Pod.Annotations, initialAnnotationsLen+3)
 
 		assert.Len(t, request.InstallContainer.Env, 3)
@@ -155,7 +155,7 @@ func TestReinvoke(t *testing.T) {
 		updated := mutator.Reinvoke(request)
 		require.True(t, updated)
 
-		assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen+2)
+		assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen+3)
 	})
 	t.Run("no change ==> no update", func(t *testing.T) {
 		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})

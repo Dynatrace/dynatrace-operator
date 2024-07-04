@@ -59,3 +59,32 @@ func WithOAuthEndpoint(endpoint string) Option {
 		edgeconnect.Spec.OAuth.Endpoint = endpoint
 	}
 }
+
+func WithProvisionerMode(enabled bool) Option {
+	return func(edgeconnect *edgeconnectv1alpha1.EdgeConnect) {
+		edgeconnect.Spec.OAuth.Provisioner = enabled
+	}
+}
+
+func WithK8SAutomationMode(enabled bool) Option {
+	return func(edgeconnect *edgeconnectv1alpha1.EdgeConnect) {
+		edgeconnect.Spec.KubernetesAutomation = &edgeconnectv1alpha1.KubernetesAutomationSpec{
+			Enabled: enabled,
+		}
+	}
+}
+
+func WithHostPattern(hostPattern string) Option {
+	return func(edgeconnect *edgeconnectv1alpha1.EdgeConnect) {
+		if edgeconnect.Spec.HostPatterns == nil {
+			edgeconnect.Spec.HostPatterns = make([]string, 0)
+		}
+		edgeconnect.Spec.HostPatterns = append(edgeconnect.Spec.HostPatterns, hostPattern)
+	}
+}
+
+func WithServiceAccount(serviceAccountName string) Option {
+	return func(edgeconnect *edgeconnectv1alpha1.EdgeConnect) {
+		edgeconnect.Spec.ServiceAccountName = serviceAccountName
+	}
+}

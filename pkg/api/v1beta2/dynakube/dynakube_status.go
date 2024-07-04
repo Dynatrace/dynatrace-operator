@@ -26,6 +26,9 @@ type DynaKubeStatus struct { //nolint:revive
 	// Observed state of Code Modules
 	CodeModules CodeModulesStatus `json:"codeModules,omitempty"`
 
+	// Observed state of Metadata-Enrichment
+	MetadataEnrichment MetadataEnrichmentStatus `json:"metadataEnrichment,omitempty"`
+
 	// UpdatedTimestamp indicates when the instance was last updated
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Last Updated"
@@ -133,6 +136,28 @@ type OneAgentInstance struct {
 
 	// IP address of the pod
 	IPAddress string `json:"ipAddress,omitempty"`
+}
+
+type EnrichmentRuleType string
+
+const (
+	EnrichmentLabelRule      EnrichmentRuleType = "LABEL"
+	EnrichmentAnnotationRule EnrichmentRuleType = "ANNOTATION"
+)
+
+type MetadataEnrichmentStatus struct {
+	Rules []EnrichmentRule `json:"rules,omitempty"`
+}
+
+type EnrichmentRule struct {
+	Type    EnrichmentRuleType `json:"type,omitempty"`
+	Key     string             `json:"key,omitempty"`
+	Mapping string             `json:"mapping,omitempty"`
+	Enabled bool               `json:"enabled,omitempty"`
+}
+
+func (rule EnrichmentRule) ToAnnotationKey() string {
+	return "metadata.dynatrace.com/" + rule.Mapping
 }
 
 // SetPhase sets the status phase on the DynaKube object.

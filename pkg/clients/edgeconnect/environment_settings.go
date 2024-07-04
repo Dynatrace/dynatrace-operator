@@ -12,16 +12,14 @@ import (
 
 const (
 	KubernetesConnectionSchemaID = "app:dynatrace.kubernetes.connector:connection"
-	KubernetesConnectionVersion  = "0.1.6"
 	KubernetesConnectionScope    = "environment"
 )
 
 type EnvironmentSetting struct {
-	ObjectId      *string                 `json:"objectId"`
-	SchemaId      string                  `json:"schemaId"`
-	SchemaVersion string                  `json:"schemaVersion"`
-	Scope         string                  `json:"scope"`
-	Value         EnvironmentSettingValue `json:"value"`
+	ObjectId *string                 `json:"objectId"`
+	SchemaId string                  `json:"schemaId"`
+	Scope    string                  `json:"scope"`
+	Value    EnvironmentSettingValue `json:"value"`
 }
 
 type EnvironmentSettingValue struct {
@@ -37,12 +35,12 @@ type EnvironmentSettingsResponse struct {
 	PageSize   int                  `json:"pageSize"`
 }
 
-func (c *client) GetConnectionSetting(uid string) (EnvironmentSetting, error) {
+func (c *client) GetConnectionSettings() ([]EnvironmentSetting, error) {
 	settingsObjectsUrl := c.getSettingsObjectsUrl()
 
 	req, err := http.NewRequestWithContext(c.ctx, http.MethodGet, settingsObjectsUrl, nil)
 	if err != nil {
-		return EnvironmentSetting{}, fmt.Errorf("error initializing http request: %w", err)
+		return nil, fmt.Errorf("error initializing http request: %w", err)
 	}
 
 	q := req.URL.Query()
@@ -55,28 +53,22 @@ func (c *client) GetConnectionSetting(uid string) (EnvironmentSetting, error) {
 	defer utils.CloseBodyAfterRequest(response)
 
 	if err != nil {
-		return EnvironmentSetting{}, fmt.Errorf("error making post request to dynatrace api: %w", err)
+		return nil, fmt.Errorf("error making post request to dynatrace api: %w", err)
 	}
 
 	responseData, err := c.getSettingsApiResponseData(response)
 	if err != nil {
-		return EnvironmentSetting{}, fmt.Errorf("error getting server response data: %w", err)
+		return nil, fmt.Errorf("error getting server response data: %w", err)
 	}
 
 	var resDataJson EnvironmentSettingsResponse
 
 	err = json.Unmarshal(responseData, &resDataJson)
 	if err != nil {
-		return EnvironmentSetting{}, fmt.Errorf("error parsing response body: %w", err)
+		return nil, fmt.Errorf("error parsing response body: %w", err)
 	}
 
-	for _, item := range resDataJson.Items {
-		if item.Value.UID == uid {
-			return item, nil
-		}
-	}
-
-	return EnvironmentSetting{}, nil
+	return resDataJson.Items, nil
 }
 
 func (c *client) CreateConnectionSetting(es EnvironmentSetting) error {
@@ -110,8 +102,6 @@ func (c *client) CreateConnectionSetting(es EnvironmentSetting) error {
 }
 
 func (c *client) UpdateConnectionSetting(es EnvironmentSetting) error {
-	es.SchemaVersion = KubernetesConnectionVersion
-
 	jsonStr, err := json.Marshal(es)
 	if err != nil {
 		return errors.WithStack(err)

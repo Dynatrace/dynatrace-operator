@@ -47,6 +47,7 @@ type EdgeConnectSecret struct {
 	ApiServer         string `yaml:"apiServer"`
 	OauthClientId     string `yaml:"oAuthClientId"`
 	OauthClientSecret string `yaml:"oAuthClientSecret"`
+	Resource          string `yaml:"resource"`
 }
 
 type OtelSecret struct {

@@ -6,10 +6,10 @@ type Client interface {
 	GetEdgeConnect(edgeConnectId string) (GetResponse, error)
 
 	// CreateEdgeConnect creates edge connect
-	CreateEdgeConnect(name string, hostPatterns []string, oauthClientId string) (CreateResponse, error)
+	CreateEdgeConnect(request *Request) (CreateResponse, error)
 
 	// UpdateEdgeConnect updates edge connect
-	UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []string, oauthClientId string) error
+	UpdateEdgeConnect(edgeConnectId string, request *Request) error
 
 	// DeleteEdgeConnect deletes edge connect
 	DeleteEdgeConnect(edgeConnectId string) error
@@ -17,8 +17,8 @@ type Client interface {
 	// GetEdgeConnects returns list of edge connects
 	GetEdgeConnects(name string) (ListResponse, error)
 
-	// GetConnectionSetting returns a connection setting object by value uid
-	GetConnectionSetting(uid string) (EnvironmentSetting, error)
+	// GetConnectionSettings returns all connection setting objects
+	GetConnectionSettings() ([]EnvironmentSetting, error)
 
 	// CreateConnectionSetting creates a connection setting object
 	CreateConnectionSetting(es EnvironmentSetting) error

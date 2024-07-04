@@ -14,10 +14,9 @@ import (
 var testObjectId = "test-objectId"
 
 var testEnvironmentSetting = EnvironmentSetting{
-	ObjectId:      &testObjectId,
-	SchemaId:      KubernetesConnectionSchemaID,
-	SchemaVersion: KubernetesConnectionVersion,
-	Scope:         KubernetesConnectionScope,
+	ObjectId: &testObjectId,
+	SchemaId: KubernetesConnectionSchemaID,
+	Scope:    KubernetesConnectionScope,
 	Value: EnvironmentSettingValue{
 		Name:      "test-name",
 		UID:       "test-uid",
@@ -28,27 +27,38 @@ var testEnvironmentSetting = EnvironmentSetting{
 
 func TestGetConnectionSetting(t *testing.T) {
 	t.Run("Server response OK", func(t *testing.T) {
-		client := MockEdgeConnectClient(http.StatusOK)
-		es, err := client.GetConnectionSetting("test-uid")
+		client := mockEdgeConnectClient(mockServerHandler(http.StatusOK))
+		got, err := client.GetConnectionSettings()
 		require.NoError(t, err)
-		require.NotNil(t, es)
+		require.NotNil(t, got)
 	})
 	t.Run("Server response NOK", func(t *testing.T) {
-		client := MockEdgeConnectClient(http.StatusBadRequest)
-		es, err := client.GetConnectionSetting("test-uid")
+		client := mockEdgeConnectClient(mockServerHandler(http.StatusBadRequest))
+		got, err := client.GetConnectionSettings()
 		require.Error(t, err)
-		require.Equal(t, EnvironmentSetting{}, es)
+		require.Nil(t, got)
+	})
+	t.Run("Server response unexpected", func(t *testing.T) {
+		client := mockEdgeConnectClient(mockUnexpectedServerHandler())
+		got, err := client.GetConnectionSettings()
+		require.Error(t, err)
+		require.Nil(t, got)
 	})
 }
 
 func TestCreateConnectionSetting(t *testing.T) {
 	t.Run("Server response OK", func(t *testing.T) {
-		client := MockEdgeConnectClient(http.StatusOK)
+		client := mockEdgeConnectClient(mockServerHandler(http.StatusOK))
 		err := client.CreateConnectionSetting(testEnvironmentSetting)
 		require.NoError(t, err)
 	})
 	t.Run("Server response NOK", func(t *testing.T) {
-		client := MockEdgeConnectClient(http.StatusBadRequest)
+		client := mockEdgeConnectClient(mockServerHandler(http.StatusBadRequest))
+		err := client.CreateConnectionSetting(testEnvironmentSetting)
+		require.Error(t, err)
+	})
+	t.Run("Server response unexpected", func(t *testing.T) {
+		client := mockEdgeConnectClient(mockUnexpectedServerHandler())
 		err := client.CreateConnectionSetting(testEnvironmentSetting)
 		require.Error(t, err)
 	})
@@ -56,12 +66,17 @@ func TestCreateConnectionSetting(t *testing.T) {
 
 func TestUpdateConnectionSetting(t *testing.T) {
 	t.Run("Server response OK", func(t *testing.T) {
-		client := MockEdgeConnectClient(http.StatusOK)
+		client := mockEdgeConnectClient(mockServerHandler(http.StatusOK))
 		err := client.UpdateConnectionSetting(testEnvironmentSetting)
 		require.NoError(t, err)
 	})
 	t.Run("Server response NOK", func(t *testing.T) {
-		client := MockEdgeConnectClient(http.StatusBadRequest)
+		client := mockEdgeConnectClient(mockServerHandler(http.StatusBadRequest))
+		err := client.UpdateConnectionSetting(testEnvironmentSetting)
+		require.Error(t, err)
+	})
+	t.Run("Server response unexpected", func(t *testing.T) {
+		client := mockEdgeConnectClient(mockUnexpectedServerHandler())
 		err := client.UpdateConnectionSetting(testEnvironmentSetting)
 		require.Error(t, err)
 	})
@@ -69,20 +84,24 @@ func TestUpdateConnectionSetting(t *testing.T) {
 
 func TestDeleteConnectionSetting(t *testing.T) {
 	t.Run("Server response OK", func(t *testing.T) {
-		client := MockEdgeConnectClient(http.StatusOK)
-		err := client.DeleteConnectionSetting("test-objectId")
+		client := mockEdgeConnectClient(mockServerHandler(http.StatusOK))
+		err := client.DeleteConnectionSetting(testObjectId)
 		require.NoError(t, err)
 	})
 	t.Run("Server response NOK", func(t *testing.T) {
-		client := MockEdgeConnectClient(http.StatusBadRequest)
-		err := client.DeleteConnectionSetting("test-objectId")
+		client := mockEdgeConnectClient(mockServerHandler(http.StatusBadRequest))
+		err := client.DeleteConnectionSetting(testObjectId)
+		require.Error(t, err)
+	})
+	t.Run("Server response unexpected", func(t *testing.T) {
+		client := mockEdgeConnectClient(mockUnexpectedServerHandler())
+		err := client.DeleteConnectionSetting(testObjectId)
 		require.Error(t, err)
 	})
 }
 
-func MockEdgeConnectClient(status int) Client {
-	edgeConnectServer := httptest.NewServer(edgeConnectServerHandler(status))
-
+func mockEdgeConnectClient(handler http.HandlerFunc) Client {
+	edgeConnectServer := httptest.NewServer(handler)
 	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, edgeConnectServer.Client())
 
 	edgeConnectClient, _ := NewClient(
@@ -97,7 +116,7 @@ func MockEdgeConnectClient(status int) Client {
 	return edgeConnectClient
 }
 
-func edgeConnectServerHandler(status int) http.HandlerFunc {
+func mockServerHandler(status int) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
 
@@ -107,7 +126,20 @@ func edgeConnectServerHandler(status int) http.HandlerFunc {
 		case "/platform/classic/environment-api/v2/settings/objects":
 			writeEnvironmentSettingsResponse(writer, status)
 		default:
-			writeSettingsApiStatusResponse(writer, status)
+			writeSettingsApiResponse(writer, status)
+		}
+	}
+}
+
+func mockUnexpectedServerHandler() http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Content-Type", "application/json")
+
+		switch request.URL.Path {
+		case "/sso/oauth2/token":
+			writeOauthTokenResponse(writer)
+		default:
+			writeUnexpectedResponse(writer)
 		}
 	}
 }
@@ -127,11 +159,11 @@ func writeEnvironmentSettingsResponse(w http.ResponseWriter, status int) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(result)
 	} else {
-		writeSettingsApiStatusResponse(w, status)
+		writeSettingsApiResponse(w, status)
 	}
 }
 
-func writeSettingsApiStatusResponse(w http.ResponseWriter, status int) {
+func writeSettingsApiResponse(w http.ResponseWriter, status int) {
 	errorResponse := []SettingsApiResponse{}
 	errorResponse = append(errorResponse, SettingsApiResponse{
 		Error: SettingsApiError{
@@ -151,5 +183,13 @@ func writeSettingsApiStatusResponse(w http.ResponseWriter, status int) {
 	result, _ := json.Marshal(&errorResponse)
 
 	w.WriteHeader(status)
+	_, _ = w.Write(result)
+}
+
+func writeUnexpectedResponse(w http.ResponseWriter) {
+	unexpectedResponse := `{"status":500, "message":"everything is broken!!!"}`
+	result, _ := json.Marshal(&unexpectedResponse)
+
+	w.WriteHeader(http.StatusServiceUnavailable)
 	_, _ = w.Write(result)
 }

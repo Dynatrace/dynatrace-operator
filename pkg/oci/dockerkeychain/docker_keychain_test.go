@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -24,7 +23,7 @@ const (
 )
 
 func TestNewDockerKeychain(t *testing.T) {
-	t.Run("secret not found", func(t *testing.T) {
+	t.Run("secret not found, try without secret", func(t *testing.T) {
 		pullSecret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-secret",
@@ -34,8 +33,7 @@ func TestNewDockerKeychain(t *testing.T) {
 		client := fake.NewClient()
 
 		_, err := NewDockerKeychain(context.TODO(), client, pullSecret)
-		require.Error(t, err)
-		require.True(t, k8sErrors.IsNotFound(err))
+		require.NoError(t, err)
 	})
 
 	t.Run("invalid format of docker secret dockerconfigjson", func(t *testing.T) {

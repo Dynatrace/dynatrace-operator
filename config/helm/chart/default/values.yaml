@@ -30,8 +30,8 @@ installCRD: true
 operator:
   nodeSelector: {}
   tolerations: []
-  labels: []
-  annotations: []
+  labels: {}
+  annotations: {}
   apparmor: false
   securityContext:
     privileged: false
@@ -59,8 +59,8 @@ webhook:
   hostNetwork: false
   nodeSelector: {}
   tolerations: []
-  labels: []
-  annotations: []
+  labels: {}
+  annotations: {}
   apparmor: false
   securityContext:
     privileged: false
@@ -103,8 +103,13 @@ csidriver:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
       operator: Exists
-  labels: []
-  annotations: []
+  labels: {}
+  annotations: {}
+  updateStrategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
   csiInit:
     securityContext:
       runAsUser: 0

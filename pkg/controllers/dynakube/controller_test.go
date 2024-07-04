@@ -494,6 +494,8 @@ func TestGetDynakube(t *testing.T) {
 }
 
 func TestTokenConditions(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run("token condition error is set if token are invalid", func(t *testing.T) {
 		fakeClient := fake.NewClient()
 		dynakube := &dynatracev1beta2.DynaKube{}
@@ -502,7 +504,7 @@ func TestTokenConditions(t *testing.T) {
 			apiReader: fakeClient,
 		}
 
-		err := controller.reconcileDynaKube(context.Background(), dynakube)
+		_, err := controller.setupTokensAndClient(ctx, dynakube)
 
 		require.Error(t, err)
 		assertCondition(t, dynakube, dynatracev1beta2.TokenConditionType, metav1.ConditionFalse, dynatracev1beta2.ReasonTokenError, "secrets \"\" not found")
@@ -538,9 +540,9 @@ func TestTokenConditions(t *testing.T) {
 			registryClientBuilder:  createFakeRegistryClientBuilder(t),
 		}
 
-		err := controller.reconcileDynaKube(context.TODO(), dynakube)
+		_, err := controller.setupTokensAndClient(ctx, dynakube)
 
-		require.Error(t, err, "status update will fail")
+		require.NoError(t, err)
 		assertCondition(t, dynakube, dynatracev1beta2.TokenConditionType, metav1.ConditionTrue, dynatracev1beta2.ReasonTokenReady, "")
 	})
 }
@@ -714,6 +716,7 @@ func getTestDynkubeStatus() *dynatracev1beta2.DynaKubeStatus {
 				},
 			},
 		},
+		KubeSystemUUID: testUID,
 	}
 }
 

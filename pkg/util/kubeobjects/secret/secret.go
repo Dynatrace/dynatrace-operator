@@ -50,6 +50,11 @@ func (query Query) Update(secret corev1.Secret) error {
 
 func (query Query) Delete(name, namespace string) error {
 	query.Log.Info("removing secret", "name", name, "namespace", namespace)
+
+	return query.delete(name, namespace)
+}
+
+func (query Query) delete(name, namespace string) error {
 	tmp := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}}
 
 	err := query.KubeClient.Delete(query.Ctx, tmp)
@@ -58,6 +63,21 @@ func (query Query) Delete(name, namespace string) error {
 	}
 
 	return errors.WithStack(err)
+}
+
+func (query Query) DeleteForNamespaces(secretName string, namespaces []string) error {
+	query.Log.Info("deleting secret from multiple namespaces", "name", secretName, "len(namespaces)", len(namespaces))
+
+	errs := make([]error, 0, len(namespaces))
+
+	for _, namespace := range namespaces {
+		err := query.delete(secretName, namespace)
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	return goerrors.Join(errs...)
 }
 
 func (query Query) create(secret corev1.Secret) error {

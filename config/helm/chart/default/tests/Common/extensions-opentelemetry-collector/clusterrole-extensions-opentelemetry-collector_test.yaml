@@ -1,0 +1,8 @@
+suite: test clusterrole for the extensions OpenTelemetry collector
+templates:
+  - Common/extensions-opentelemetry-collector/clusterrole-extensions-opentelemetry-collector.yaml
+tests:
+  - it: should exist
+    asserts:
+      - hasDocuments:
+          count: 2
