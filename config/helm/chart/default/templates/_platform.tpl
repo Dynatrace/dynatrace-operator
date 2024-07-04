@@ -48,7 +48,7 @@ Check if platform is set to a valid one
 Enforces that platform is set to a valid one
 */}}
 {{- define "dynatrace-operator.platformRequired" -}}
-{{- $platformIsSet := printf "%s" (required "Platform needs to be set to kubernetes, openshift, google-marketplace, or gke-autopilot" (include "dynatrace-operator.platformIsValid" .))}}
+{{- $platformIsSet := printf "%s" (required "Platform needs to be set to kubernetes, openshift, google-marketplace, azure-marketplace or gke-autopilot" (include "dynatrace-operator.platformIsValid" .))}}
 {{- end -}}
 
 {{- define "dynatrace-operator.nodeAffinity" -}}
