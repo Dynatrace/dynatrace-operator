@@ -448,7 +448,7 @@ func TestValidateOneAgentVersionIsSemVer(t *testing.T) {
 
 	for _, tc := range testCasesNotAcceptedVersions {
 		t.Run("should accept version "+tc, func(t *testing.T) {
-			assertDeniedResponse(t, []string{"Only semantic versions are allowed!"}, &dynatracev1beta2.DynaKube{
+			assertDeniedResponse(t, []string{"Only semantic versions in the form of major.minor.patch (e.g. 1.0.0) are allowed!"}, &dynatracev1beta2.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynatracev1beta2.DynaKubeSpec{
 					APIURL: testApiUrl,

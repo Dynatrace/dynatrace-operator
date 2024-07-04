@@ -150,7 +150,7 @@ func validateOneAgentVersionIsSemVerCompliant(_ context.Context, _ *dynakubeVali
 	}
 
 	if !oneAgentSemVerVersionSpec.MatchString(agentVersion) {
-		return "Only semantic versions are allowed!"
+		return "Only semantic versions in the form of major.minor.patch (e.g. 1.0.0) are allowed!"
 	}
 
 	return ""
