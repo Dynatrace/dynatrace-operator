@@ -18,6 +18,7 @@ package hostvolumes
 
 import (
 	"context"
+	goerrors "errors"
 	"fmt"
 	"os"
 
@@ -98,7 +99,7 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to insert OSMount to database. info: %v err: %s", osMount, err.Error()))
 		}
 	} else {
-		return &csi.NodePublishVolumeResponse{}, errors.New("previous OSMount is yet to be unmounted, there can be only 1 OSMount per tenant per node, blocking until unmount")
+		return &csi.NodePublishVolumeResponse{}, goerrors.New("previous OSMount is yet to be unmounted, there can be only 1 OSMount per tenant per node, blocking until unmount") // don't want to have the stacktrace here, it just pollutes the logs
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
