@@ -21,13 +21,15 @@ const (
 )
 
 func TestPublishVolume(t *testing.T) {
-	t.Run(`ready dynakube`, func(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("ready dynakube", func(t *testing.T) {
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		publisher := newPublisherForTesting(mounter)
 
 		mockDynakube(t, &publisher)
 
-		response, err := publisher.PublishVolume(context.Background(), createTestVolumeConfig())
+		response, err := publisher.PublishVolume(ctx, createTestVolumeConfig())
 
 		require.NoError(t, err)
 		assert.NotNil(t, response)
@@ -35,23 +37,41 @@ func TestPublishVolume(t *testing.T) {
 		assertReferencesForPublishedVolume(t, &publisher, mounter)
 	})
 
-	t.Run(`not ready dynakube`, func(t *testing.T) {
+	t.Run("not ready dynakube", func(t *testing.T) {
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		publisher := newPublisherForTesting(mounter)
 
 		mockDynakubeWithoutVersion(t, &publisher)
 
-		response, err := publisher.PublishVolume(context.Background(), createTestVolumeConfig())
+		response, err := publisher.PublishVolume(ctx, createTestVolumeConfig())
 
 		require.NoError(t, err)
 		assert.NotNil(t, response)
 		assert.NotEmpty(t, mounter.MountPoints)
 		assertReferencesForPublishedVolume(t, &publisher, mounter)
 	})
+
+	t.Run("publish volume when previous OSMount not yet unmounted (upgrade scenario) => error", func(t *testing.T) {
+		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+		publisher := newPublisherForTesting(mounter)
+
+		mockDynakube(t, &publisher)
+
+		response, err := publisher.PublishVolume(ctx, createTestVolumeConfig())
+
+		require.NoError(t, err)
+		assert.NotNil(t, response)
+		assert.NotEmpty(t, mounter.MountPoints)
+		assertReferencesForPublishedVolume(t, &publisher, mounter)
+
+		response, err = publisher.PublishVolume(ctx, createTestVolumeConfig())
+		require.Error(t, err)
+		assert.NotNil(t, response)
+	})
 }
 
 func TestUnpublishVolume(t *testing.T) {
-	t.Run(`valid metadata`, func(t *testing.T) {
+	t.Run("valid metadata", func(t *testing.T) {
 		mounter := mount.NewFakeMounter([]mount.MountPoint{
 			{Path: testTargetPath},
 		})
@@ -66,7 +86,7 @@ func TestUnpublishVolume(t *testing.T) {
 		assertReferencesForUnpublishedVolume(t, &publisher)
 	})
 
-	t.Run(`invalid metadata`, func(t *testing.T) {
+	t.Run("invalid metadata", func(t *testing.T) {
 		mounter := mount.NewFakeMounter([]mount.MountPoint{
 			{Path: testTargetPath},
 		})
