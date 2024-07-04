@@ -8,6 +8,7 @@ import (
 
 	dynatracestatus "github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	dynatracev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
@@ -15,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
@@ -75,6 +77,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, co
 		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
 		injectionReconcilerBuilder:          injection.NewReconciler,
 		istioReconcilerBuilder:              istio.NewReconciler,
+		extensionBuilder:                    extension.NewReconciler,
 	}
 }
 
@@ -107,6 +110,7 @@ type Controller struct {
 	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
 	injectionReconcilerBuilder          injection.ReconcilerBuilder
 	istioReconcilerBuilder              istio.ReconcilerBuilder
+	extensionBuilder                    extension.ReconcilerBuilder
 
 	tokens            token.Tokens
 	operatorNamespace string
@@ -307,6 +311,20 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		log.Info("could not reconcile ActiveGate")
 
 		componentErrors = append(componentErrors, err)
+	}
+
+	dynakubeV1beta3 := &dynatracev1beta3.DynaKube{}
+
+	err = dynakubeV1beta3.ConvertFrom(dynakube)
+	if err != nil {
+		return err
+	}
+
+	extensionReconciler := extension.NewReconciler(controller.client, controller.apiReader, dynakubeV1beta3)
+
+	err = extensionReconciler.Reconcile(ctx)
+	if err != nil {
+		return err
 	}
 
 	proxyReconciler := proxy.NewReconciler(controller.client, controller.apiReader, dynakube)
