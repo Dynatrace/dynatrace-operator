@@ -18,6 +18,7 @@ package hostvolumes
 
 import (
 	"context"
+	goerrors "errors"
 	"fmt"
 	"os"
 
@@ -62,28 +63,32 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 	}
 
 	if osMount != nil && osMount.DeletedAt.Valid {
-		osMount.VolumeMeta = metadata.VolumeMeta{ID: volumeCfg.VolumeID, PodName: volumeCfg.PodName}
-		osMount.VolumeMetaID = volumeCfg.VolumeID
-		osMount.TenantConfigUID = tenantConfig.UID // necessary so that in some edge-cases(incorrect/messy uninstall) the previous(already soft-deleted) TenantConfig can be removed
+		osMount.VolumeMeta = metadata.VolumeMeta{
+			ID:      volumeCfg.VolumeID,
+			PodName: volumeCfg.PodName,
+		}
+		osMount.TenantConfig = *tenantConfig
 
 		if err := publisher.mountOneAgent(osMount, volumeCfg); err != nil {
 			return nil, status.Error(codes.Internal, "failed to mount OSMount: "+err.Error())
 		}
 
-		osMount, err = publisher.db.RestoreOSMount(osMount)
+		_, err = publisher.db.RestoreOSMount(osMount)
 		if err != nil {
 			return nil, status.Error(codes.Internal, "failed to restore OSMount: "+err.Error())
 		}
+
+		return &csi.NodePublishVolumeResponse{}, nil
 	}
 
 	if osMount == nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		osMount := metadata.OSMount{
-			VolumeMeta:      metadata.VolumeMeta{ID: volumeCfg.VolumeID, PodName: volumeCfg.PodName},
-			VolumeMetaID:    volumeCfg.VolumeID,
-			TenantUUID:      tenantConfig.TenantUUID,
-			Location:        publisher.path.OsAgentDir(tenantConfig.TenantUUID),
-			MountAttempts:   0,
-			TenantConfigUID: tenantConfig.UID,
+			VolumeMeta:    metadata.VolumeMeta{ID: volumeCfg.VolumeID, PodName: volumeCfg.PodName},
+			VolumeMetaID:  volumeCfg.VolumeID,
+			TenantUUID:    tenantConfig.TenantUUID,
+			Location:      publisher.path.OsAgentDir(tenantConfig.TenantUUID),
+			MountAttempts: 0,
+			TenantConfig:  *tenantConfig,
 		}
 
 		if err := publisher.mountOneAgent(&osMount, volumeCfg); err != nil {
@@ -91,8 +96,10 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 		}
 
 		if err := publisher.db.CreateOSMount(&osMount); err != nil {
-			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to insert osmount to database. info: %v err: %s", osMount, err.Error()))
+			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to insert OSMount to database. info: %v err: %s", osMount, err.Error()))
 		}
+	} else {
+		return &csi.NodePublishVolumeResponse{}, goerrors.New("previous OSMount is yet to be unmounted, there can be only 1 OSMount per tenant per node, blocking until unmount") // don't want to have the stacktrace here, it just pollutes the logs
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
