@@ -36,7 +36,7 @@ require (
 	golang.org/x/mod v0.19.0
 	golang.org/x/net v0.26.0
 	golang.org/x/oauth2 v0.21.0
-	golang.org/x/sys v0.21.0
+	golang.org/x/sys v0.22.0
 	google.golang.org/grpc v1.65.0
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/sqlite v1.5.6
