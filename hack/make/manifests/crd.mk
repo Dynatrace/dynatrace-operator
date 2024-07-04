@@ -1,9 +1,6 @@
 ## Generates a CRD in config/crd/bases
 manifests/crd/generate: prerequisites/controller-gen
-	mkdir -p ./config/crd/longdescbases
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..." output:crd:artifacts:config=config/crd/longdescbases
-	$(CONTROLLER_GEN) $(CRD_OPTIONS512) paths="./..." output:crd:artifacts:config=config/crd/bases
-	cp -f ./config/crd/longdescbases/dynatrace.com_edgeconnects.yaml ./config/crd/bases/dynatrace.com_edgeconnects.yaml
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..." output:crd:artifacts:config=config/crd/bases
 
 ## Generates a CRD in config/crd and then applies it to a cluster using kubectl
 manifests/crd/install: prerequisites/kustomize manifests/crd/generate
