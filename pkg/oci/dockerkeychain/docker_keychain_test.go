@@ -85,3 +85,12 @@ func TestNewDockerKeychain(t *testing.T) {
 		assert.Equal(t, testPassword, auth.Password)
 	})
 }
+
+func TestNewDockerKeychains(t *testing.T) {
+	t.Run("tenant secret not found", func(t *testing.T) {
+		client := fake.NewClient()
+
+		_, err := NewDockerKeychains(context.TODO(), client, "dynatrace", []string{"dynakube-pull-secret"})
+		require.NoError(t, err)
+	})
+}

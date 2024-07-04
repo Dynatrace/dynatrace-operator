@@ -41,9 +41,9 @@ func (keychain *DockerKeychain) loadDockerConfigFromSecrets(ctx context.Context,
 		pullSecret := corev1.Secret{}
 
 		if err := apiReader.Get(ctx, client.ObjectKey{Namespace: namespaceName, Name: pullSecretName}, &pullSecret); err != nil {
-			log.Info("failed to load registry pull secret", "name", pullSecretName, "namespace", namespaceName)
+			log.Info("registry pull secret not loaded", "name", pullSecretName, "namespace", namespaceName)
 
-			return errors.WithStack(err)
+			continue
 		}
 
 		dockerAuths, err := extractDockerAuthsFromSecret(&pullSecret)
@@ -59,9 +59,12 @@ func (keychain *DockerKeychain) loadDockerConfigFromSecrets(ctx context.Context,
 		}
 	}
 
-	keychain.dockerConfig = &configFile
-
-	log.Debug("loaded docker configs", "registries", maps.Keys(configFile.AuthConfigs))
+	if len(configFile.AuthConfigs) > 0 {
+		keychain.dockerConfig = &configFile
+		log.Debug("loaded docker configs", "registries", maps.Keys(configFile.AuthConfigs))
+	} else {
+		log.Debug("no docker configs found")
+	}
 
 	return nil
 }
