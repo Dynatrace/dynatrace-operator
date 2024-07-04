@@ -279,9 +279,7 @@ func TestPurgeOSMount(t *testing.T) {
 		fillWithOSMounts(t, db, initialLength)
 
 		for i := range initialLength {
-			// I don't understand why I can't just pass in the generated OSMount.
-			// It just doesn't clean up the already soft-deleted entries if I do.
-			// (I tested it live, and it has no problems)
+			// The actual UID is auto-generated at time of insert, so here you have to do some workarounds, because if the UID doesn't match it wont be deleted
 			tmp := generateOSMount(i)
 			err = db.PurgeOSMount(&OSMount{TenantUUID: tmp.TenantUUID, VolumeMeta: VolumeMeta{ID: tmp.VolumeMetaID}})
 			require.NoError(t, err)
