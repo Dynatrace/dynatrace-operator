@@ -82,6 +82,7 @@ func storeCommunicationHosts(parsedURLList []string) ([]dtclient.CommunicationHo
 		if err != nil {
 			return nil, err
 		}
+
 		commHosts = append(commHosts, codeModulesHost)
 
 		return commHosts, nil
@@ -103,8 +104,10 @@ func addNecessaryDockerHosts(urlList []string) ([]dtclient.CommunicationHost, er
 		if err != nil {
 			return nil, err
 		}
+
 		commHosts = append(commHosts, dockerHost)
 	}
+
 	return commHosts, nil
 }
 
@@ -145,7 +148,8 @@ func parseCodeModulesImageURL(rawUrl string) ([]string, error) {
 }
 
 func storeParsedURLs(urlList []string) ([]string, error) {
-	var parsedList []string
+	parsedList := make([]string, 0, len(urlList))
+
 	for _, currURL := range urlList {
 		currURL, err := url.Parse(currURL)
 		if err != nil {
@@ -160,8 +164,10 @@ func storeParsedURLs(urlList []string) ([]string, error) {
 				return nil, errors.New("can't parse the codeModules image URL")
 			}
 		}
+
 		parsedList = append(parsedList, currURL.String())
 	}
+
 	return parsedList, nil
 }
 
