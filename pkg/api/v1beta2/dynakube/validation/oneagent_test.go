@@ -428,7 +428,7 @@ func createDynakubeWithHostGroup(args []string, hostGroup string) *dynakube.Dyna
 func TestValidateOneAgentVersionIsSemVer(t *testing.T) {
 	testCasesAcceptedVersions := []string{"", "1.0.0", "1.200.1"}
 
-	testCasesNotAcceptedVersions := []string{"latest", "raw", "1.200.1-raw"}
+	testCasesNotAcceptedVersions := []string{"latest", "raw", "1.200.1-raw", "1.200.1+build", "1.200", "1", "1.0", "v1.200.0"}
 
 	for _, tc := range testCasesAcceptedVersions {
 		t.Run("should accept version "+tc, func(t *testing.T) {
