@@ -25,8 +25,6 @@ const (
 	prodCloudFlareHost          = "production.cloudflare.docker.com/"
 )
 
-var necessarAdditionalDockerHosts = []string{authDockerHost, prodCloudFlareHost}
-
 type Reconciler interface {
 	ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
 	ReconcileCodeModulesInjectionEndpoints(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
@@ -137,25 +135,34 @@ func parseCodeModulesImageURL(rawUrl string) ([]string, error) {
 
 		return []string{parsedURL.String()}, nil
 	} else {
-		var parsedURLList []string
-		for _, currURL := range urlList {
-			currURL, err := url.Parse(currURL)
+		parsedURLList, err := storeParsedURLs(urlList)
+		if err != nil {
+			return nil, err
+		}
+
+		return parsedURLList, nil
+	}
+}
+
+func storeParsedURLs(urlList []string) ([]string, error) {
+	var parsedList []string
+	for _, currURL := range urlList {
+		currURL, err := url.Parse(currURL)
+		if err != nil {
+			return nil, errors.New("can't parse the codeModules image URL")
+		}
+
+		if currURL.Scheme == "" {
+			currURL.Scheme = "https"
+
+			currURL, err = url.Parse(currURL.String())
 			if err != nil {
 				return nil, errors.New("can't parse the codeModules image URL")
 			}
-
-			if currURL.Scheme == "" {
-				currURL.Scheme = "https"
-
-				currURL, err = url.Parse(currURL.String())
-				if err != nil {
-					return nil, errors.New("can't parse the codeModules image URL")
-				}
-			}
-			parsedURLList = append(parsedURLList, currURL.String())
 		}
-		return parsedURLList, nil
+		parsedList = append(parsedList, currURL.String())
 	}
+	return parsedList, nil
 }
 
 func (r *reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {

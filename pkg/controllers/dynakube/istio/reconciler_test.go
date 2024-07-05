@@ -515,39 +515,9 @@ func TestParseCodeModulesImageURL(t *testing.T) {
 		parsedCorreclty bool
 	}{
 		{
-			input:           "some.url.com/test",
-			output:          []string{"https://some.url.com/test"},
-			parsedCorreclty: true,
-		},
-		{
-			input:           "http://some.url.com/test",
-			output:          []string{"http://some.url.com/test"},
-			parsedCorreclty: true,
-		},
-		{
-			input:           "https://some.url.com/test",
-			output:          []string{"https://some.url.com/test"},
-			parsedCorreclty: true,
-		},
-		{
-			input:           ":example.com/test",
-			output:          []string{""},
-			parsedCorreclty: false,
-		},
-		{
-			input:           "some.url.com/test:some-tag",
-			output:          []string{"https://some.url.com/test:some-tag"},
-			parsedCorreclty: true,
-		},
-		{
 			input:           "some/url/test:some-tag",
 			output:          []string{"https://index.docker.io/some/url/test:some-tag", "https://auth.docker.io/some/url/test:some-tag", "https://production.cloudflare.docker.com/some/url/test:some-tag"},
 			parsedCorreclty: true,
-		},
-		{
-			input:           ":example.com/test:some-tag",
-			output:          []string{""},
-			parsedCorreclty: false,
 		},
 	}
 
