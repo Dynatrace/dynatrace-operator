@@ -307,14 +307,7 @@ func (b *builder) imagePullSecrets() []corev1.LocalObjectReference {
 		return []corev1.LocalObjectReference{}
 	}
 
-	imagePullSecrets := make([]corev1.LocalObjectReference, 0)
-	for _, pullSecretName := range b.dk.PullSecretsNames() {
-		imagePullSecrets = append(imagePullSecrets, corev1.LocalObjectReference{
-			Name: pullSecretName,
-		})
-	}
-
-	return imagePullSecrets
+	return b.dk.ImagePullSecretReferences()
 }
 
 func (b *builder) securityContext() *corev1.SecurityContext {

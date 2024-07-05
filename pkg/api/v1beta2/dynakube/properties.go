@@ -223,6 +223,17 @@ func (dk *DynaKube) PullSecretsNames() []string {
 	return names
 }
 
+func (dk *DynaKube) ImagePullSecretReferences() []corev1.LocalObjectReference {
+	imagePullSecrets := make([]corev1.LocalObjectReference, 0)
+	for _, pullSecretName := range dk.PullSecretsNames() {
+		imagePullSecrets = append(imagePullSecrets, corev1.LocalObjectReference{
+			Name: pullSecretName,
+		})
+	}
+
+	return imagePullSecrets
+}
+
 func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {
 	return dk.HostMonitoringMode() || dk.CloudNativeFullstackMode()
 }
