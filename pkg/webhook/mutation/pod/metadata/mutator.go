@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
@@ -78,6 +79,7 @@ func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationReque
 	updateInstallContainer(request.InstallContainer, workload)
 	setInjectedAnnotation(request.Pod)
 	setWorkloadAnnotations(request.Pod, workload)
+	copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
 
 	return nil
 }
@@ -139,6 +141,48 @@ func setWorkloadAnnotations(pod *corev1.Pod, workload *workloadInfo) {
 	// https://bitbucket.lab.dynatrace.org/projects/DEUS/repos/semantic-dictionary/browse/source/fields/k8s.yaml
 	pod.Annotations[dtwebhook.AnnotationWorkloadKind] = strings.ToLower(workload.kind)
 	pod.Annotations[dtwebhook.AnnotationWorkloadName] = workload.name
+}
+
+func copyMetadataFromNamespace(pod *corev1.Pod, namespace corev1.Namespace, dk dynakube.DynaKube) {
+	copyMetadataAccordingToCustomRules(pod, namespace, dk)
+	copyMetadataAccordingToPrefix(pod, namespace)
+}
+
+func copyMetadataAccordingToPrefix(pod *corev1.Pod, namespace corev1.Namespace) {
+	for key, value := range namespace.Annotations {
+		if strings.HasPrefix(key, dynakube.MetadataPrefix) {
+			setPodAnnotationIfNotExists(pod, key, value)
+		}
+	}
+}
+
+func copyMetadataAccordingToCustomRules(pod *corev1.Pod, namespace corev1.Namespace, dk dynakube.DynaKube) {
+	for _, rule := range dk.Status.MetadataEnrichment.Rules {
+		var valueFromNamespace string
+
+		var exists bool
+
+		switch rule.Type {
+		case dynakube.EnrichmentLabelRule:
+			valueFromNamespace, exists = namespace.Labels[rule.Key]
+		case dynakube.EnrichmentAnnotationRule:
+			valueFromNamespace, exists = namespace.Annotations[rule.Key]
+		}
+
+		if exists {
+			setPodAnnotationIfNotExists(pod, rule.ToAnnotationKey(), valueFromNamespace)
+		}
+	}
+}
+
+func setPodAnnotationIfNotExists(pod *corev1.Pod, key, value string) {
+	if pod.Annotations == nil {
+		pod.Annotations = make(map[string]string)
+	}
+
+	if _, ok := pod.Annotations[key]; !ok {
+		pod.Annotations[key] = value
+	}
 }
 
 func containerIsInjected(container *corev1.Container) bool {
