@@ -511,42 +511,42 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 func TestParseCodeModulesImageURL(t *testing.T) {
 	tests := []struct {
 		input           string
-		output          string
+		output          []string
 		parsedCorreclty bool
 	}{
 		{
 			input:           "some.url.com/test",
-			output:          "https://some.url.com/test",
+			output:          []string{"https://some.url.com/test"},
 			parsedCorreclty: true,
 		},
 		{
 			input:           "http://some.url.com/test",
-			output:          "http://some.url.com/test",
+			output:          []string{"http://some.url.com/test"},
 			parsedCorreclty: true,
 		},
 		{
 			input:           "https://some.url.com/test",
-			output:          "https://some.url.com/test",
+			output:          []string{"https://some.url.com/test"},
 			parsedCorreclty: true,
 		},
 		{
 			input:           ":example.com/test",
-			output:          "",
+			output:          []string{""},
 			parsedCorreclty: false,
 		},
 		{
 			input:           "some.url.com/test:some-tag",
-			output:          "https://some.url.com/test:some-tag",
+			output:          []string{"https://some.url.com/test:some-tag"},
 			parsedCorreclty: true,
 		},
 		{
 			input:           "some/url/test:some-tag",
-			output:          "https://index.docker.io/some/url/test:some-tag",
+			output:          []string{"https://index.docker.io/some/url/test:some-tag", "https://auth.docker.io/some/url/test:some-tag", "https://production.cloudflare.docker.com/some/url/test:some-tag"},
 			parsedCorreclty: true,
 		},
 		{
 			input:           ":example.com/test:some-tag",
-			output:          "",
+			output:          []string{""},
 			parsedCorreclty: false,
 		},
 	}

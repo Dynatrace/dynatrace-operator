@@ -19,7 +19,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const defaultRepositoryHost = "index.docker.io/"
+const (
+	defaultDockerRepositoryHost = "index.docker.io/"
+	authDockerHost              = "auth.docker.io/"
+	prodCloudFlareHost          = "production.cloudflare.docker.com/"
+)
+
+var necessarAdditionalDockerHosts = []string{authDockerHost, prodCloudFlareHost}
 
 type Reconciler interface {
 	ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
@@ -55,12 +61,12 @@ func (r *reconciler) reconcileCSIDriver(ctx context.Context, dynakube *dynatrace
 		return err
 	}
 
-	codeModulesHost, err := dtclient.ParseEndpoint(parsedCodeModulesURL)
+	commHosts, err := storeCommunicationHosts(parsedCodeModulesURL)
 	if err != nil {
 		return err
 	}
 
-	err = r.reconcileCommunicationHosts(ctx, []dtclient.CommunicationHost{codeModulesHost}, CSIDriverComponent)
+	err = r.reconcileCommunicationHosts(ctx, commHosts, CSIDriverComponent)
 	if err != nil {
 		return errors.WithMessage(err, "error reconciling config for codeModulesImage")
 	}
@@ -70,27 +76,86 @@ func (r *reconciler) reconcileCSIDriver(ctx context.Context, dynakube *dynatrace
 	return nil
 }
 
-func parseCodeModulesImageURL(rawUrl string) (string, error) {
-	parsedURL, err := url.Parse(rawUrl)
-	if err != nil {
-		return "", errors.New("can't parse the codeModules image URL")
+func storeCommunicationHosts(parsedURLList []string) ([]dtclient.CommunicationHost, error) {
+	commHosts := []dtclient.CommunicationHost{}
+
+	if len(parsedURLList) == 1 {
+		codeModulesHost, err := dtclient.ParseEndpoint(parsedURLList[0])
+		if err != nil {
+			return nil, err
+		}
+		commHosts = append(commHosts, codeModulesHost)
+
+		return commHosts, nil
+	} else {
+		commHosts, err := addNecessaryDockerHosts(parsedURLList)
+		if err != nil {
+			return nil, err
+		}
+
+		return commHosts, err
 	}
+}
+
+func addNecessaryDockerHosts(urlList []string) ([]dtclient.CommunicationHost, error) {
+	commHosts := []dtclient.CommunicationHost{}
+
+	for _, host := range urlList {
+		dockerHost, err := dtclient.ParseEndpoint(host)
+		if err != nil {
+			return nil, err
+		}
+		commHosts = append(commHosts, dockerHost)
+	}
+	return commHosts, nil
+}
+
+func parseCodeModulesImageURL(rawUrl string) ([]string, error) {
+	var urlList []string
 
 	tmpURL := strings.Split(rawUrl, "/")
-	if !strings.Contains(tmpURL[0], ".") {
-		rawUrl = defaultRepositoryHost + rawUrl
+	if !strings.Contains(tmpURL[0], ".") && !strings.Contains(tmpURL[0], "http") {
+		urlList = append(urlList, defaultDockerRepositoryHost+rawUrl)
+		urlList = append(urlList, authDockerHost+rawUrl)
+		urlList = append(urlList, prodCloudFlareHost+rawUrl)
 	}
 
-	if parsedURL.Scheme == "" {
-		parsedURL.Scheme = "https"
-
-		parsedURL, err = url.Parse(parsedURL.Scheme + "://" + rawUrl)
+	if len(urlList) == 0 {
+		parsedURL, err := url.Parse(rawUrl)
 		if err != nil {
-			return "", errors.New("can't parse the codeModules image URL")
+			return nil, errors.New("can't parse the codeModules image URL")
 		}
-	}
 
-	return parsedURL.String(), nil
+		if parsedURL.Scheme == "" {
+			parsedURL.Scheme = "https"
+
+			parsedURL, err = url.Parse(parsedURL.Scheme + "://" + rawUrl)
+			if err != nil {
+				return nil, errors.New("can't parse the codeModules image URL")
+			}
+		}
+
+		return []string{parsedURL.String()}, nil
+	} else {
+		var parsedURLList []string
+		for _, currURL := range urlList {
+			currURL, err := url.Parse(currURL)
+			if err != nil {
+				return nil, errors.New("can't parse the codeModules image URL")
+			}
+
+			if currURL.Scheme == "" {
+				currURL.Scheme = "https"
+
+				currURL, err = url.Parse(currURL.String())
+				if err != nil {
+					return nil, errors.New("can't parse the codeModules image URL")
+				}
+			}
+			parsedURLList = append(parsedURLList, currURL.String())
+		}
+		return parsedURLList, nil
+	}
 }
 
 func (r *reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
