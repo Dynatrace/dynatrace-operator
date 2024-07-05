@@ -3,10 +3,11 @@ package validation
 import (
 	"context"
 	"fmt"
-	"regexp"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"golang.org/x/mod/semver"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
@@ -141,15 +142,14 @@ func conflictingHostGroupSettings(_ context.Context, _ *Validator, dk *dynakube.
 	return ""
 }
 
-var oneAgentSemVerVersionSpec = regexp.MustCompile(`^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)$`)
-
 func validateOneAgentVersionIsSemVerCompliant(_ context.Context, _ *dynakubeValidator, dk *dynakube.DynaKube) string {
 	agentVersion := dk.CustomOneAgentVersion()
 	if agentVersion == "" {
 		return ""
 	}
 
-	if !oneAgentSemVerVersionSpec.MatchString(agentVersion) {
+	version := "v" + agentVersion
+	if !(semver.IsValid(version) && semver.Prerelease(version) == "" && semver.Build(version) == "" && len(strings.Split(version, ".")) == 3) {
 		return "Only semantic versions in the form of major.minor.patch (e.g. 1.0.0) are allowed!"
 	}
 
