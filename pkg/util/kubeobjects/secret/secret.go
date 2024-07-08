@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/builder"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/query"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/internal/query"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
