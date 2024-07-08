@@ -37,9 +37,6 @@ var validators = []validator{
 
 var warnings = []validator{
 	missingActiveGateMemoryLimit,
-	deprecatedFeatureFlagDisableActiveGateUpdates,
-	deprecatedFeatureFlagWillBeDeleted,
-	deprecatedFeatureFlagMovedCRDField,
 	unsupportedOneAgentImage,
 	conflictingHostGroupSettings,
 }
