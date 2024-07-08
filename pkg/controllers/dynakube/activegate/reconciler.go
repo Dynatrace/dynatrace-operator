@@ -151,9 +151,9 @@ func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.C
 		return errors.WithStack(err)
 	}
 
-	query := configmap.NewQuery(ctx, r.client, r.apiReader, log)
+	query := configmap.Query(r.client, r.apiReader, log)
 
-	err = query.CreateOrUpdate(*configMap)
+	err = query.CreateOrUpdate(ctx, configMap)
 	if err != nil {
 		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
 

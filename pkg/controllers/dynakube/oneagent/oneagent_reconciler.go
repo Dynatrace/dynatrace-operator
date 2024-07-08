@@ -202,9 +202,9 @@ func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 		return errors.WithStack(err)
 	}
 
-	query := configmap.NewQuery(ctx, r.client, r.apiReader, log)
+	query := configmap.Query(r.client, r.apiReader, log)
 
-	err = query.CreateOrUpdate(*configMap)
+	err = query.CreateOrUpdate(ctx, configMap)
 	if err != nil {
 		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
 		conditions.SetKubeApiError(r.dk.Conditions(), oaConditionType, err)
@@ -219,9 +219,9 @@ func (r *Reconciler) deleteOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 	cm, _ := configmap.CreateConfigMap(r.dk,
 		configmap.NewModifier(r.dk.OneAgentConnectionInfoConfigMapName()),
 		configmap.NewNamespaceModifier(r.dk.Namespace))
-	query := configmap.NewQuery(ctx, r.client, r.apiReader, log)
+	query := configmap.Query(r.client, r.apiReader, log)
 
-	return query.Delete(*cm)
+	return query.Delete(ctx, cm)
 }
 
 func extractPublicData(dk *dynakube.DynaKube) map[string]string {

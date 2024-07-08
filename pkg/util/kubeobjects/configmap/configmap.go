@@ -1,7 +1,6 @@
 package configmap
 
 import (
-	"context"
 	"reflect"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
@@ -10,83 +9,31 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/query"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-type Query struct {
-	query.KubeQuery
-}
-
-func NewQuery(ctx context.Context, kubeClient client.Client, kubeReader client.Reader, log logd.Logger) Query {
-	return Query{
-		query.New(ctx, kubeClient, kubeReader, log),
-	}
-}
-
-func (query Query) Get(objectKey client.ObjectKey) (corev1.ConfigMap, error) {
-	var configMap corev1.ConfigMap
-	err := query.KubeReader.Get(query.Ctx, objectKey, &configMap)
-
-	return configMap, errors.WithStack(err)
-}
-
-func (query Query) Create(configMap corev1.ConfigMap) error {
-	query.Log.Info("creating configMap", "name", configMap.Name, "namespace", configMap.Namespace)
-
-	return errors.WithStack(query.KubeClient.Create(query.Ctx, &configMap))
-}
-
-func (query Query) Update(configMap corev1.ConfigMap) error {
-	query.Log.Info("updating configMap", "name", configMap.Name, "namespace", configMap.Namespace)
-
-	return errors.WithStack(query.KubeClient.Update(query.Ctx, &configMap))
-}
-
-func (query Query) Delete(configMap corev1.ConfigMap) error {
-	query.Log.Info("removing configMap", "name", configMap.Name, "namespace", configMap.Namespace)
-
-	err := query.KubeClient.Delete(query.Ctx, &configMap)
-	if k8serrors.IsNotFound(err) {
-		return nil
-	}
-
-	return errors.WithStack(err)
-}
-
-func (query Query) CreateOrUpdate(configMap corev1.ConfigMap) error {
-	currentConfigMap, err := query.Get(types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace})
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			err = query.Create(configMap)
-			if err != nil {
-				return errors.WithStack(err)
+func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) query.Generic[*corev1.ConfigMap, *corev1.ConfigMapList] {
+	return query.Generic[*corev1.ConfigMap, *corev1.ConfigMapList]{
+		Target:     &corev1.ConfigMap{},
+		ListTarget: &corev1.ConfigMapList{},
+		ToList: func(cml *corev1.ConfigMapList) []*corev1.ConfigMap {
+			out := make([]*corev1.ConfigMap, len(cml.Items))
+			for _, cm := range cml.Items {
+				out = append(out, &cm) //nolint: makezero
 			}
 
-			return nil
-		}
+			return out
+		},
+		IsEqual: AreConfigMapsEqual,
 
-		return errors.WithStack(err)
+		KubeClient: kubeClient,
+		KubeReader: kubeReader,
 	}
-
-	if AreConfigMapsEqual(configMap, currentConfigMap) {
-		query.Log.Info("configMap unchanged", "name", configMap.Name, "namespace", configMap.Namespace)
-
-		return nil
-	}
-
-	err = query.Update(configMap)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
 }
 
-func AreConfigMapsEqual(configMap corev1.ConfigMap, other corev1.ConfigMap) bool {
+func AreConfigMapsEqual(configMap *corev1.ConfigMap, other *corev1.ConfigMap) bool {
 	return reflect.DeepEqual(configMap.Data, other.Data) && reflect.DeepEqual(configMap.Labels, other.Labels) && reflect.DeepEqual(configMap.OwnerReferences, other.OwnerReferences)
 }
 
