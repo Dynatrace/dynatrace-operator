@@ -48,7 +48,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		}
 
 		r.dk.Status.ActiveGate.ConnectionInfoStatus = dynakube.ActiveGateConnectionInfoStatus{}
-		query := k8ssecret.NewGeneric(r.client, r.apiReader, log)
+		query := k8ssecret.Query(r.client, r.apiReader, log)
 
 		err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.ActivegateTenantSecret(), Namespace: r.dk.Namespace}})
 		if err != nil {
@@ -125,7 +125,7 @@ func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName str
 		return errors.WithStack(err)
 	}
 
-	query := k8ssecret.NewGeneric(r.client, r.apiReader, log)
+	query := k8ssecret.Query(r.client, r.apiReader, log)
 
 	err = query.CreateOrUpdate(ctx, secret)
 	if err != nil {

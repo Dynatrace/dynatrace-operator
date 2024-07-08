@@ -471,7 +471,7 @@ func (controller *Controller) buildEdgeConnectClient(ctx context.Context, ec *ed
 }
 
 func (controller *Controller) getOauthCredentials(ctx context.Context, ec *edgeconnect.EdgeConnect) (oauthCredentialsType, error) {
-	query := k8ssecret.NewGeneric(controller.client, controller.apiReader, log)
+	query := k8ssecret.Query(controller.client, controller.apiReader, log)
 
 	secret, err := query.Get(ctx, types.NamespacedName{
 		Name:      ec.Spec.OAuth.ClientSecret,
@@ -551,7 +551,7 @@ func (controller *Controller) getEdgeConnectIdFromClientSecret(ctx context.Conte
 
 	_log := log.WithValues("namespace", ec.Namespace, "name", ec.Name, "clientSecretName", clientSecretName)
 
-	query := k8ssecret.NewGeneric(controller.client, controller.apiReader, log)
+	query := k8ssecret.Query(controller.client, controller.apiReader, log)
 
 	secret, err := query.Get(ctx, types.NamespacedName{Name: clientSecretName, Namespace: ec.Namespace})
 	if err != nil {
@@ -603,7 +603,7 @@ func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnect
 		return errors.WithStack(err)
 	}
 
-	query := k8ssecret.NewGeneric(controller.client, controller.apiReader, _log)
+	query := k8ssecret.Query(controller.client, controller.apiReader, _log)
 
 	err = query.CreateOrUpdate(ctx, ecOAuthSecret)
 	if err != nil {
@@ -620,7 +620,7 @@ func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnect
 func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnectClient edgeconnectClient.Client, ec *edgeconnect.EdgeConnect) error {
 	_log := log.WithValues("namespace", ec.Namespace, "name", ec.Name)
 
-	secretQuery := k8ssecret.NewGeneric(controller.client, controller.apiReader, log)
+	secretQuery := k8ssecret.Query(controller.client, controller.apiReader, log)
 
 	secret, err := secretQuery.Get(ctx, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace})
 	if err != nil {
@@ -809,7 +809,7 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 		return "", "", errors.WithStack(err)
 	}
 
-	query := k8ssecret.NewGeneric(controller.client, controller.apiReader, log)
+	query := k8ssecret.Query(controller.client, controller.apiReader, log)
 
 	err = query.CreateOrUpdate(ctx, secretConfig)
 	if err != nil {
@@ -824,7 +824,7 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 }
 
 func (controller *Controller) getToken(ctx context.Context, ec *edgeconnect.EdgeConnect) (string, error) {
-	query := k8ssecret.NewGeneric(controller.client, controller.apiReader, log)
+	query := k8ssecret.Query(controller.client, controller.apiReader, log)
 	secretV, err := query.Get(ctx, types.NamespacedName{Name: ec.Name + "-" + consts.EdgeConnectSecretSuffix, Namespace: ec.Namespace})
 
 	if err != nil {

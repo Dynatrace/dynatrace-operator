@@ -17,7 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func NewGeneric(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) query.Generic[*corev1.Secret, *corev1.SecretList] {
+func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) query.Generic[*corev1.Secret, *corev1.SecretList] {
 	return query.Generic[*corev1.Secret, *corev1.SecretList]{
 		Target:     &corev1.Secret{},
 		ListTarget: &corev1.SecretList{},
@@ -58,7 +58,7 @@ func ExtractToken(secret *corev1.Secret, key string) (string, error) {
 }
 
 func GetDataFromSecretName(ctx context.Context, apiReader client.Reader, namespacedName types.NamespacedName, dataKey string, log logd.Logger) (string, error) {
-	query := NewGeneric(nil, apiReader, log)
+	query := Query(nil, apiReader, log)
 
 	secret, err := query.Get(ctx, namespacedName)
 	if err != nil {

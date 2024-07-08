@@ -67,7 +67,7 @@ func (g *SecretGenerator) GenerateForNamespace(ctx context.Context, dkName, targ
 		Data: data,
 		Type: corev1.SecretTypeOpaque,
 	}
-	secretQuery := k8ssecret.NewGeneric(g.client, g.apiReader, log)
+	secretQuery := k8ssecret.Query(g.client, g.apiReader, log)
 
 	err = secretQuery.CreateOrUpdate(ctx, secret)
 
@@ -91,7 +91,7 @@ func (g *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 		return errors.WithStack(err)
 	}
 
-	secretQuery := k8ssecret.NewGeneric(g.client, g.apiReader, log)
+	secretQuery := k8ssecret.Query(g.client, g.apiReader, log)
 	secret := corev1.Secret{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
@@ -118,7 +118,7 @@ func (g *SecretGenerator) RemoveEndpointSecrets(ctx context.Context, namespaces 
 		nsList = append(nsList, ns.Name)
 	}
 
-	secretQuery := k8ssecret.NewGeneric(g.client, g.apiReader, log)
+	secretQuery := k8ssecret.Query(g.client, g.apiReader, log)
 
 	return secretQuery.DeleteForNamespaces(ctx, consts.EnrichmentEndpointSecretName, nsList)
 }

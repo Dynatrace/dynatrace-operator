@@ -167,7 +167,7 @@ func checkApiUrlForLatestAgentVersion(ctx context.Context, baseLog logd.Logger, 
 func checkPullSecretExists(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, dk *dynakube.DynaKube) (corev1.Secret, error) {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
-	query := secret.NewGeneric(nil, apiReader, log)
+	query := secret.Query(nil, apiReader, log)
 
 	pullSecret, err := query.Get(ctx, types.NamespacedName{Namespace: dk.Namespace, Name: dk.PullSecretName()})
 	if err != nil {

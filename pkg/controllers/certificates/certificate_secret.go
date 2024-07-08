@@ -33,7 +33,7 @@ func newCertificateSecret(deployment *appsv1.Deployment) *certificateSecret {
 }
 
 func (certSecret *certificateSecret) setSecretFromReader(ctx context.Context, apiReader client.Reader, namespace string) error {
-	query := k8ssecret.NewGeneric(nil, apiReader, log)
+	query := k8ssecret.Query(nil, apiReader, log)
 	secret, err := query.Get(ctx, types.NamespacedName{Name: buildSecretName(), Namespace: namespace})
 
 	switch {

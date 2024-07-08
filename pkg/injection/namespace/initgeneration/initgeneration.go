@@ -63,7 +63,7 @@ func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynakube.Dy
 		Data: data,
 		Type: corev1.SecretTypeOpaque,
 	}
-	secretQuery := k8ssecret.NewGeneric(g.client, g.apiReader, log)
+	secretQuery := k8ssecret.Query(g.client, g.apiReader, log)
 
 	err = secretQuery.CreateOrUpdate(ctx, secret)
 
@@ -88,7 +88,7 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.Dy
 	}
 
 	coreLabels := k8slabels.NewCoreLabels(dk.Name, k8slabels.WebhookComponentLabel)
-	secretQuery := k8ssecret.NewGeneric(g.client, g.apiReader, log)
+	secretQuery := k8ssecret.Query(g.client, g.apiReader, log)
 	secret := corev1.Secret{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
@@ -115,7 +115,7 @@ func (g *InitGenerator) Cleanup(ctx context.Context, namespaces []corev1.Namespa
 		nsList = append(nsList, ns.Name)
 	}
 
-	secretQuery := k8ssecret.NewGeneric(g.client, g.apiReader, log)
+	secretQuery := k8ssecret.Query(g.client, g.apiReader, log)
 
 	return secretQuery.DeleteForNamespaces(ctx, consts.AgentInitSecretName, nsList)
 }
