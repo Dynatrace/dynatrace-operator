@@ -4,7 +4,8 @@ import (
 	"context"
 	"strings"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 )
@@ -27,7 +28,7 @@ func (token *Token) addFeatures(features []Feature) {
 	token.Features = append(token.Features, features...)
 }
 
-func (token *Token) verifyScopes(ctx context.Context, dtClient dtclient.Client, dynakube dynatracev1beta2.DynaKube) error {
+func (token *Token) verifyScopes(ctx context.Context, dtClient dtclient.Client, dk dynakube.DynaKube) error {
 	if len(token.Features) == 0 {
 		return nil
 	}
@@ -37,10 +38,17 @@ func (token *Token) verifyScopes(ctx context.Context, dtClient dtclient.Client, 
 		return err
 	}
 
+	dynakubeV1beta3 := dynakubev1beta3.DynaKube{}
+
+	err = dynakubeV1beta3.ConvertFrom(&dk)
+	if err != nil {
+		return err
+	}
+
 	collectedErrors := make([]error, 0)
 
 	for _, feature := range token.Features {
-		if feature.IsEnabled(dynakube) {
+		if feature.IsEnabled(dynakubeV1beta3) {
 			isMissing, missingScopes := feature.IsScopeMissing(scopes)
 			if isMissing {
 				collectedErrors = append(collectedErrors,

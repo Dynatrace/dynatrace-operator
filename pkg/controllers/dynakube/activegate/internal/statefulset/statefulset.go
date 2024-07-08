@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
@@ -45,10 +46,17 @@ func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dk dynakube.Dyn
 }
 
 func (statefulSetBuilder Builder) CreateStatefulSet(mods []builder.Modifier) (*appsv1.StatefulSet, error) {
+	dynakubeV1beta3 := dynakubev1beta3.DynaKube{}
+
+	err := dynakubeV1beta3.ConvertFrom(&statefulSetBuilder.dynakube)
+	if err != nil {
+		return nil, err
+	}
+
 	activeGateBuilder := builder.NewBuilder(statefulSetBuilder.getBase())
 
 	if len(mods) == 0 {
-		mods = modifiers.GenerateAllModifiers(statefulSetBuilder.dynakube, statefulSetBuilder.capability, statefulSetBuilder.envMap)
+		mods = modifiers.GenerateAllModifiers(statefulSetBuilder.dynakube, dynakubeV1beta3, statefulSetBuilder.capability, statefulSetBuilder.envMap)
 	}
 
 	sts, _ := activeGateBuilder.AddModifier(mods...).Build()

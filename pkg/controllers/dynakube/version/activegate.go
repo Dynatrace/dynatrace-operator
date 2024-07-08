@@ -4,7 +4,8 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/pkg/errors"
@@ -17,20 +18,23 @@ const (
 )
 
 type activeGateUpdater struct {
-	dynakube  *dynatracev1beta2.DynaKube
-	apiReader client.Reader
-	dtClient  dtclient.Client
+	dynakube        *dynakube.DynaKube
+	dynakubeV1beta3 *dynakubev1beta3.DynaKube
+	apiReader       client.Reader
+	dtClient        dtclient.Client
 }
 
 func newActiveGateUpdater(
-	dynakube *dynatracev1beta2.DynaKube,
+	dynakube *dynakube.DynaKube,
+	dynakubeV1beta3 *dynakubev1beta3.DynaKube,
 	apiReader client.Reader,
 	dtClient dtclient.Client,
 ) *activeGateUpdater {
 	return &activeGateUpdater{
-		dynakube:  dynakube,
-		apiReader: apiReader,
-		dtClient:  dtClient,
+		dynakube:        dynakube,
+		dynakubeV1beta3: dynakubeV1beta3,
+		apiReader:       apiReader,
+		dtClient:        dtClient,
 	}
 }
 
@@ -39,7 +43,7 @@ func (updater activeGateUpdater) Name() string {
 }
 
 func (updater activeGateUpdater) IsEnabled() bool {
-	if updater.dynakube.NeedsActiveGate() {
+	if updater.dynakubeV1beta3.NeedsActiveGate() {
 		return true
 	}
 

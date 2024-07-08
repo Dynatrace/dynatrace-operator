@@ -6,7 +6,8 @@ import (
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
@@ -29,17 +30,18 @@ import (
 var _ controllers.Reconciler = &Reconciler{}
 
 type Reconciler struct {
-	client     client.Client
-	dynakube   *dynatracev1beta2.DynaKube
-	apiReader  client.Reader
-	capability capability.Capability
-	modifiers  []builder.Modifier
+	client          client.Client
+	dynakube        *dynakube.DynaKube
+	dynakubeV1beta3 *dynakubev1beta3.DynaKube
+	apiReader       client.Reader
+	capability      capability.Capability
+	modifiers       []builder.Modifier
 }
 
 func NewReconciler(
 	clt client.Client,
 	apiReader client.Reader,
-	dynakube *dynatracev1beta2.DynaKube,
+	dynakube *dynakube.DynaKube,
 	capability capability.Capability,
 ) controllers.Reconciler {
 	return &Reconciler{
@@ -51,10 +53,17 @@ func NewReconciler(
 	}
 }
 
-type NewReconcilerFunc = func(clt client.Client, apiReader client.Reader, dynakube *dynatracev1beta2.DynaKube, capability capability.Capability) controllers.Reconciler
+type NewReconcilerFunc = func(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube, capability capability.Capability) controllers.Reconciler
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	err := r.manageStatefulSet(ctx)
+	r.dynakubeV1beta3 = &dynakubev1beta3.DynaKube{}
+
+	err := r.dynakubeV1beta3.ConvertFrom(r.dynakube)
+	if err != nil {
+		return err
+	}
+
+	err = r.manageStatefulSet(ctx)
 	if err != nil {
 		log.Error(err, "could not reconcile stateful set")
 
@@ -248,7 +257,7 @@ func (r *Reconciler) getCustomPropertyValue() (string, error) {
 }
 
 func (r *Reconciler) getAuthTokenValue() (string, error) {
-	if !r.dynakube.NeedsActiveGate() {
+	if !r.dynakubeV1beta3.NeedsActiveGate() {
 		return "", nil
 	}
 
@@ -260,7 +269,7 @@ func (r *Reconciler) getAuthTokenValue() (string, error) {
 	return authTokenData, nil
 }
 
-func (r *Reconciler) getDataFromCustomProperty(customProperties *dynatracev1beta2.DynaKubeValueSource) (string, error) {
+func (r *Reconciler) getDataFromCustomProperty(customProperties *dynakube.DynaKubeValueSource) (string, error) {
 	if customProperties.ValueFrom != "" {
 		return secret.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dynakube.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey, log)
 	}
@@ -272,6 +281,6 @@ func (r *Reconciler) getDataFromAuthTokenSecret() (string, error) {
 	return secret.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dynakube.Namespace, Name: r.dynakube.ActiveGateAuthTokenSecret()}, authtoken.ActiveGateAuthTokenName, log)
 }
 
-func needsCustomPropertyHash(customProperties *dynatracev1beta2.DynaKubeValueSource) bool {
+func needsCustomPropertyHash(customProperties *dynakube.DynaKubeValueSource) bool {
 	return customProperties != nil && (customProperties.Value != "" || customProperties.ValueFrom != "")
 }

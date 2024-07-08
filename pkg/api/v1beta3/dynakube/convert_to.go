@@ -27,11 +27,11 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 }
 
 func (src *DynaKube) toBase(dst *v1beta2.DynaKube) {
+	dst.ObjectMeta = *src.ObjectMeta.DeepCopy() // DeepCopy mainly relevant for testing
+
 	if dst.Annotations == nil {
 		dst.Annotations = map[string]string{}
 	}
-
-	dst.ObjectMeta = *src.ObjectMeta.DeepCopy() // DeepCopy mainly relevant for testing
 
 	dst.Spec.APIURL = src.Spec.APIURL
 	dst.Spec.Tokens = src.Spec.Tokens

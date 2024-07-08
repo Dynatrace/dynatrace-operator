@@ -3,7 +3,8 @@ package deploymentmetadata
 import (
 	"context"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
@@ -12,24 +13,32 @@ import (
 )
 
 type Reconciler struct {
-	client    client.Client
-	apiReader client.Reader
-	clusterID string
-	dynakube  dynatracev1beta2.DynaKube
+	client          client.Client
+	apiReader       client.Reader
+	clusterID       string
+	dynakube        dynakube.DynaKube
+	dynakubeV1beta3 dynakubev1beta3.DynaKube
 }
 
-type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dynakube dynatracev1beta2.DynaKube, clusterID string) controllers.Reconciler
+type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dk dynakube.DynaKube, clusterID string) controllers.Reconciler
 
-func NewReconciler(clt client.Client, apiReader client.Reader, dynakube dynatracev1beta2.DynaKube, clusterID string) controllers.Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, dk dynakube.DynaKube, clusterID string) controllers.Reconciler {
 	return &Reconciler{
 		client:    clt,
 		apiReader: apiReader,
-		dynakube:  dynakube,
+		dynakube:  dk,
 		clusterID: clusterID,
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
+	r.dynakubeV1beta3 = dynakubev1beta3.DynaKube{}
+
+	err := r.dynakubeV1beta3.ConvertFrom(&r.dynakube)
+	if err != nil {
+		return err
+	}
+
 	configMapData := map[string]string{}
 
 	r.addOneAgentDeploymentMetadata(configMapData)
@@ -48,7 +57,7 @@ func (r *Reconciler) addOneAgentDeploymentMetadata(configMapData map[string]stri
 }
 
 func (r *Reconciler) addActiveGateDeploymentMetadata(configMapData map[string]string) {
-	if !r.dynakube.NeedsActiveGate() {
+	if !r.dynakubeV1beta3.NeedsActiveGate() {
 		return
 	}
 

@@ -3,7 +3,8 @@ package modifiers
 import (
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
@@ -51,19 +52,19 @@ func createBuilderForTesting() builder.Builder {
 	return builder
 }
 
-func getBaseDynakube() dynatracev1beta2.DynaKube {
-	return dynatracev1beta2.DynaKube{
+func getBaseDynakube() dynakube.DynaKube {
+	return dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        testDynakubeName,
 			Namespace:   testNamespaceName,
 			Annotations: map[string]string{},
 		},
-		Spec: dynatracev1beta2.DynaKubeSpec{},
+		Spec: dynakube.DynaKubeSpec{},
 	}
 }
 
-func enableKubeMonCapability(dynakube *dynatracev1beta2.DynaKube) {
-	dynakube.Spec.ActiveGate.Capabilities = append(dynakube.Spec.ActiveGate.Capabilities, dynatracev1beta2.KubeMonCapability.DisplayName)
+func enableKubeMonCapability(dk *dynakube.DynaKube) {
+	dk.Spec.ActiveGate.Capabilities = append(dk.Spec.ActiveGate.Capabilities, dynakube.KubeMonCapability.DisplayName)
 }
 
 func isSubset[T any](t *testing.T, subset, superset []T) {
@@ -72,12 +73,12 @@ func isSubset[T any](t *testing.T, subset, superset []T) {
 	}
 }
 
-func enableAllModifiers(dynakube *dynatracev1beta2.DynaKube, capability capability.Capability) {
-	setCertUsage(dynakube, true)
+func enableAllModifiers(dk *dynakube.DynaKube, capability capability.Capability) {
+	setCertUsage(dk, true)
 	setCustomPropertyUsage(capability, true)
-	setProxyUsage(dynakube, true)
-	setKubernetesMonitoringUsage(dynakube, true)
-	setServicePortUsage(dynakube, true)
+	setProxyUsage(dk, true)
+	setKubernetesMonitoringUsage(dk, true)
+	setServicePortUsage(dk, true)
 }
 
 func TestNoConflict(t *testing.T) {
@@ -86,7 +87,13 @@ func TestNoConflict(t *testing.T) {
 		enableKubeMonCapability(&dynakube)
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		enableAllModifiers(&dynakube, multiCapability)
-		mods := GenerateAllModifiers(dynakube, multiCapability, prioritymap.New())
+
+		dynakubeV1beta3 := dynakubev1beta3.DynaKube{}
+
+		err := dynakubeV1beta3.ConvertFrom(&dynakube)
+		require.NoError(t, err)
+
+		mods := GenerateAllModifiers(dynakube, dynakubeV1beta3, multiCapability, prioritymap.New())
 		builder := createBuilderForTesting()
 
 		sts, _ := builder.AddModifier(mods...).Build()

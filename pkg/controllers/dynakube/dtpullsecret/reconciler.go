@@ -4,7 +4,8 @@ import (
 	"context"
 	"reflect"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
@@ -23,23 +24,34 @@ const (
 type Reconciler struct {
 	client       client.Client
 	apiReader    client.Reader
-	dynakube     *dynatracev1beta2.DynaKube
+	dynakube     *dynakube.DynaKube
 	tokens       token.Tokens
 	timeprovider *timeprovider.Provider
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, dynakube *dynatracev1beta2.DynaKube, tokens token.Tokens) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube, tokens token.Tokens) *Reconciler {
 	return &Reconciler{
 		client:       clt,
 		apiReader:    apiReader,
-		dynakube:     dynakube,
+		dynakube:     dk,
 		tokens:       tokens,
 		timeprovider: timeprovider.New(),
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !(r.dynakube.NeedsOneAgent() || r.dynakube.NeedsActiveGate()) {
+	if r.dynakube.Spec.CustomPullSecret != "" {
+		return nil
+	}
+
+	dynakubeV1beta3 := &dynakubev1beta3.DynaKube{}
+
+	err := dynakubeV1beta3.ConvertFrom(r.dynakube)
+	if err != nil {
+		return err
+	}
+
+	if !(r.dynakube.NeedsOneAgent() || dynakubeV1beta3.NeedsActiveGate()) {
 		if meta.FindStatusCondition(*r.dynakube.Conditions(), PullSecretConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}

@@ -4,7 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -30,25 +31,30 @@ type Auths struct {
 
 type ImagePullFunc func(image string) error
 
-func verifyAllImagesAvailable(ctx context.Context, baseLog logd.Logger, keychain authn.Keychain, transport *http.Transport, dynakube *dynatracev1beta2.DynaKube) error {
+func verifyAllImagesAvailable(ctx context.Context, baseLog logd.Logger, keychain authn.Keychain, transport *http.Transport, dk *dynakube.DynaKube) error {
 	log := baseLog.WithName("imagepull")
 
 	imagePullFunc := CreateImagePullFunc(ctx, keychain, transport)
 
-	if dynakube.NeedsOneAgent() {
-		verifyImageIsAvailable(log, imagePullFunc, dynakube, componentOneAgent, false)
-		verifyImageIsAvailable(log, imagePullFunc, dynakube, componentCodeModules, true)
+	if dk.NeedsOneAgent() {
+		verifyImageIsAvailable(log, imagePullFunc, dk, componentOneAgent, false)
+		verifyImageIsAvailable(log, imagePullFunc, dk, componentCodeModules, true)
 	}
 
-	if dynakube.NeedsActiveGate() {
-		verifyImageIsAvailable(log, imagePullFunc, dynakube, componentActiveGate, false)
+	dynakubeV1beta3 := &dynakubev1beta3.DynaKube{}
+	if err := dynakubeV1beta3.ConvertFrom(dk); err != nil {
+		return err
+	}
+
+	if dynakubeV1beta3.NeedsActiveGate() {
+		verifyImageIsAvailable(log, imagePullFunc, dk, componentActiveGate, false)
 	}
 
 	return nil
 }
 
-func verifyImageIsAvailable(log logd.Logger, pullImage ImagePullFunc, dynakube *dynatracev1beta2.DynaKube, comp component, proxyWarning bool) {
-	image, isCustomImage := comp.getImage(dynakube)
+func verifyImageIsAvailable(log logd.Logger, pullImage ImagePullFunc, dk *dynakube.DynaKube, comp component, proxyWarning bool) {
+	image, isCustomImage := comp.getImage(dk)
 	if comp.SkipImageCheck(image) {
 		logErrorf(log, "Unknown %s image", comp.String())
 
@@ -64,7 +70,7 @@ func verifyImageIsAvailable(log logd.Logger, pullImage ImagePullFunc, dynakube *
 		return
 	}
 
-	if dynakube.HasProxy() && proxyWarning {
+	if dk.HasProxy() && proxyWarning {
 		logWarningf(log, "Proxy setting in Dynakube is ignored for %s image due to technical limitations.", componentName)
 	}
 

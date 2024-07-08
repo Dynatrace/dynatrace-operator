@@ -13,23 +13,21 @@ import (
 func CreateService(dynakube *dynatracev1beta2.DynaKube, feature string) *corev1.Service {
 	var ports []corev1.ServicePort
 
-	if dynakube.NeedsActiveGateServicePorts() {
-		ports = append(ports,
-			corev1.ServicePort{
-				Name:       consts.HttpsServicePortName,
-				Protocol:   corev1.ProtocolTCP,
-				Port:       consts.HttpsServicePort,
-				TargetPort: intstr.FromString(consts.HttpsServicePortName),
-			},
-		)
-		if dynakube.IsMetricsIngestActiveGateEnabled() {
-			ports = append(ports, corev1.ServicePort{
-				Name:       consts.HttpServicePortName,
-				Protocol:   corev1.ProtocolTCP,
-				Port:       consts.HttpServicePort,
-				TargetPort: intstr.FromString(consts.HttpServicePortName),
-			})
-		}
+	ports = append(ports,
+		corev1.ServicePort{
+			Name:       consts.HttpsServicePortName,
+			Protocol:   corev1.ProtocolTCP,
+			Port:       consts.HttpsServicePort,
+			TargetPort: intstr.FromString(consts.HttpsServicePortName),
+		},
+	)
+	if dynakube.IsMetricsIngestActiveGateEnabled() {
+		ports = append(ports, corev1.ServicePort{
+			Name:       consts.HttpServicePortName,
+			Protocol:   corev1.ProtocolTCP,
+			Port:       consts.HttpServicePort,
+			TargetPort: intstr.FromString(consts.HttpServicePortName),
+		})
 	}
 
 	coreLabels := labels.NewCoreLabels(dynakube.Name, labels.ActiveGateComponentLabel)

@@ -4,7 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -28,20 +29,20 @@ type Reconciler struct {
 	client       client.Client
 	apiReader    client.Reader
 	dtClient     dtclient.Client
-	dynakube     *dynatracev1beta2.DynaKube
+	dynakube     *dynakube.DynaKube
 	timeProvider *timeprovider.Provider
 }
 
 func NewReconciler(clt client.Client,
 	apiReader client.Reader,
 	dtClient dtclient.Client,
-	dynakube *dynatracev1beta2.DynaKube,
+	dk *dynakube.DynaKube,
 	timeProvider *timeprovider.Provider) *Reconciler {
 	return &Reconciler{
 		client:       clt,
 		apiReader:    apiReader,
 		dtClient:     dtClient,
-		dynakube:     dynakube,
+		dynakube:     dk,
 		timeProvider: timeProvider,
 	}
 }
@@ -178,7 +179,14 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 
 		pmc.AddProxy(proxy)
 
-		if r.dynakube.NeedsActiveGate() {
+		dynakubeV1beta3 := &dynakubev1beta3.DynaKube{}
+
+		err = dynakubeV1beta3.ConvertFrom(r.dynakube)
+		if err != nil {
+			return nil, err
+		}
+
+		if dynakubeV1beta3.NeedsActiveGate() {
 			multiCap := capability.NewMultiCapability(r.dynakube)
 			pmc.AddNoProxy(capability.BuildDNSEntryPointWithoutEnvVars(r.dynakube.Name, r.dynakube.Namespace, multiCap))
 		}

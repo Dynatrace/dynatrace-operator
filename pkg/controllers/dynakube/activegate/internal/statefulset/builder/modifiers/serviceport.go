@@ -1,7 +1,8 @@
 package modifiers
 
 import (
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
@@ -15,22 +16,24 @@ import (
 var _ envModifier = ServicePortModifier{}
 var _ builder.Modifier = ServicePortModifier{}
 
-func NewServicePortModifier(dynakube dynatracev1beta2.DynaKube, capability capability.Capability, envMap *prioritymap.Map) ServicePortModifier {
+func NewServicePortModifier(dk dynakube.DynaKube, dkV1beta3 dynakubev1beta3.DynaKube, capability capability.Capability, envMap *prioritymap.Map) ServicePortModifier {
 	return ServicePortModifier{
-		dynakube:   dynakube,
-		capability: capability,
-		envMap:     envMap,
+		dynakube:        dk,
+		dynakubeV1beta3: dkV1beta3,
+		capability:      capability,
+		envMap:          envMap,
 	}
 }
 
 type ServicePortModifier struct {
-	capability capability.Capability
-	envMap     *prioritymap.Map
-	dynakube   dynatracev1beta2.DynaKube
+	capability      capability.Capability
+	envMap          *prioritymap.Map
+	dynakube        dynakube.DynaKube
+	dynakubeV1beta3 dynakubev1beta3.DynaKube
 }
 
 func (mod ServicePortModifier) Enabled() bool {
-	return mod.dynakube.NeedsActiveGateServicePorts()
+	return mod.dynakubeV1beta3.NeedsActiveGateService()
 }
 
 func (mod ServicePortModifier) Modify(sts *appsv1.StatefulSet) error {
