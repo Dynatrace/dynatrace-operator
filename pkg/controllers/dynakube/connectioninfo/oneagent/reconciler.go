@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -47,8 +48,8 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 			return nil // no condition == nothing is there to clean up
 		}
 
-		query := k8ssecret.NewQuery(ctx, r.client, r.apiReader, log)
-		err := query.Delete(r.dk.OneagentTenantSecret(), r.dk.Namespace)
+		query := k8ssecret.NewGeneric(r.client, r.apiReader, log)
+		err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.OneagentTenantSecret(), Namespace: r.dk.Namespace}})
 
 		if err != nil {
 			log.Error(err, "failed to clean-up OneAgent tenant-secret")
@@ -154,9 +155,9 @@ func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName str
 		return errors.WithStack(err)
 	}
 
-	query := k8ssecret.NewQuery(ctx, r.client, r.apiReader, log)
+	query := k8ssecret.NewGeneric(r.client, r.apiReader, log)
 
-	err = query.CreateOrUpdate(*secret)
+	err = query.CreateOrUpdate(ctx, secret)
 	if err != nil {
 		log.Info("could not create or update secret for connection info", "name", secret.Name)
 		conditions.SetKubeApiError(r.dk.Conditions(), oaConnectionInfoConditionType, err)

@@ -152,7 +152,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 		return nil, err
 	}
 
-	tenantToken, err := secrets.GetDataFromSecretName(r.apiReader, types.NamespacedName{
+	tenantToken, err := secrets.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{
 		Name:      r.dk.OneagentTenantSecret(),
 		Namespace: r.dk.Namespace,
 	}, connectioninfo.TenantTokenKey, log)

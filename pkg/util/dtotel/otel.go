@@ -98,19 +98,19 @@ func getOtelConfig(ctx context.Context, apiReader client.Reader, namespace strin
 		Name:      otelSecretName,
 	}
 
-	query := k8ssecret.NewQuery(ctx, nil, apiReader, log)
+	query := k8ssecret.NewGeneric(nil, apiReader, log)
 
-	secret, err := query.Get(secretName)
+	secret, err := query.Get(ctx, secretName)
 	if err != nil {
 		return "", "", errors.WithStack(err)
 	}
 
-	endpoint, err := k8ssecret.ExtractToken(&secret, otelApiEndpointKey)
+	endpoint, err := k8ssecret.ExtractToken(secret, otelApiEndpointKey)
 	if err != nil {
 		return "", "", err
 	}
 
-	token, err := k8ssecret.ExtractToken(&secret, otelAccessTokenKey)
+	token, err := k8ssecret.ExtractToken(secret, otelAccessTokenKey)
 	if err != nil {
 		return "", "", err
 	}

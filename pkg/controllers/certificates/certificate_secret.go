@@ -33,8 +33,8 @@ func newCertificateSecret(deployment *appsv1.Deployment) *certificateSecret {
 }
 
 func (certSecret *certificateSecret) setSecretFromReader(ctx context.Context, apiReader client.Reader, namespace string) error {
-	query := k8ssecret.NewQuery(ctx, nil, apiReader, log)
-	secret, err := query.Get(types.NamespacedName{Name: buildSecretName(), Namespace: namespace})
+	query := k8ssecret.NewGeneric(nil, apiReader, log)
+	secret, err := query.Get(ctx, types.NamespacedName{Name: buildSecretName(), Namespace: namespace})
 
 	switch {
 	case k8serrors.IsNotFound(err):
@@ -50,7 +50,7 @@ func (certSecret *certificateSecret) setSecretFromReader(ctx context.Context, ap
 	case err != nil:
 		return errors.WithStack(err)
 	default:
-		certSecret.secret = &secret
+		certSecret.secret = secret
 		certSecret.existsInCluster = true
 	}
 

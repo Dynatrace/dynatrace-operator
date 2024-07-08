@@ -56,7 +56,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 			Data: map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
 		}).
 		Build()
-	dk := &dynakube.DynaKube{
+	instance := &dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
 			ActiveGate: dynakube.ActiveGateSpec{
 				Capabilities: []dynakube.CapabilityDisplayName{
@@ -70,7 +70,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 
 	capability.NewMultiCapability(dk)
 
-	r := NewReconciler(clt, clt, dk, capability.NewMultiCapability(dk)).(*Reconciler)
+	r := NewReconciler(clt, clt, instance, capability.NewMultiCapability(instance)).(*Reconciler)
 	r.dk.Annotations = map[string]string{}
 	require.NotNil(t, r)
 	require.NotNil(t, r.client)
@@ -280,18 +280,19 @@ func TestReconcile_DeleteStatefulSetIfOldLabelsAreUsed(t *testing.T) {
 }
 
 func TestReconcile_GetCustomPropertyHash(t *testing.T) {
+	ctx := context.Background()
 	r := createDefaultReconciler(t)
-	hash, err := r.calculateActiveGateConfigurationHash()
+	hash, err := r.calculateActiveGateConfigurationHash(ctx)
 	require.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
 	r.dk.Spec.ActiveGate.CustomProperties = &dynakube.DynaKubeValueSource{Value: testValue}
-	hash, err = r.calculateActiveGateConfigurationHash()
+	hash, err = r.calculateActiveGateConfigurationHash(ctx)
 	require.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
 	r.dk.Spec.ActiveGate.CustomProperties = &dynakube.DynaKubeValueSource{ValueFrom: testName}
-	hash, err = r.calculateActiveGateConfigurationHash()
+	hash, err = r.calculateActiveGateConfigurationHash(ctx)
 	require.Error(t, err)
 	assert.Empty(t, hash)
 
@@ -306,14 +307,15 @@ func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	hash, err = r.calculateActiveGateConfigurationHash()
+	hash, err = r.calculateActiveGateConfigurationHash(ctx)
 	require.NoError(t, err)
 	assert.NotEmpty(t, hash)
 }
 
 func TestReconcile_GetActiveGateAuthTokenHash(t *testing.T) {
+	ctx := context.Background()
 	r := createDefaultReconciler(t)
-	hash, err := r.calculateActiveGateConfigurationHash()
+	hash, err := r.calculateActiveGateConfigurationHash(ctx)
 	require.NoError(t, err)
 	assert.NotEmpty(t, hash)
 

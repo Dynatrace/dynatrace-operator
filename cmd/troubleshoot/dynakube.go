@@ -167,16 +167,16 @@ func checkApiUrlForLatestAgentVersion(ctx context.Context, baseLog logd.Logger, 
 func checkPullSecretExists(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, dk *dynakube.DynaKube) (corev1.Secret, error) {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
-	query := secret.NewQuery(ctx, nil, apiReader, log)
+	query := secret.NewGeneric(nil, apiReader, log)
 
-	pullSecret, err := query.Get(types.NamespacedName{Namespace: dk.Namespace, Name: dk.PullSecretName()})
+	pullSecret, err := query.Get(ctx, types.NamespacedName{Namespace: dk.Namespace, Name: dk.PullSecretName()})
 	if err != nil {
 		return corev1.Secret{}, errors.Wrapf(err, "'%s:%s' pull secret is missing", dk.Namespace, dk.PullSecretName())
 	}
 
 	logInfof(log, "pull secret '%s:%s' exists", dk.Namespace, dk.PullSecretName())
 
-	return pullSecret, nil
+	return *pullSecret, nil
 }
 
 func checkPullSecretHasRequiredTokens(baseLog logd.Logger, dk *dynakube.DynaKube, pullSecret corev1.Secret) error {

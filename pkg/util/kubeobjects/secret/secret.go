@@ -2,7 +2,6 @@ package secret
 
 import (
 	"context"
-	goerrors "errors"
 	"reflect"
 	"strings"
 
@@ -12,190 +11,33 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/query"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-type Query struct {
-	query.KubeQuery
-}
+func NewGeneric(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) query.Generic[*corev1.Secret, *corev1.SecretList] {
+	return query.Generic[*corev1.Secret, *corev1.SecretList]{
+		Target:     &corev1.Secret{},
+		ListTarget: &corev1.SecretList{},
+		ToList: func(sl *corev1.SecretList) []*corev1.Secret {
+			out := []*corev1.Secret{}
+			for _, s := range sl.Items {
+				out = append(out, &s)
+			}
 
-func NewQuery(ctx context.Context, kubeClient client.Client, kubeReader client.Reader, log logd.Logger) Query {
-	return Query{
-		query.New(ctx, kubeClient, kubeReader, log),
-	}
-}
-
-func (query Query) Get(objectKey client.ObjectKey) (corev1.Secret, error) {
-	var secret corev1.Secret
-	err := query.KubeReader.Get(query.Ctx, objectKey, &secret)
-
-	return secret, errors.WithStack(err)
-}
-
-func (query Query) Create(secret corev1.Secret) error {
-	query.Log.Info("creating secret", "name", secret.Name, "namespace", secret.Namespace)
-
-	return query.create(secret)
-}
-
-func (query Query) Update(secret corev1.Secret) error {
-	query.Log.Info("updating secret", "name", secret.Name, "namespace", secret.Namespace)
-
-	return query.update(secret)
-}
-
-func (query Query) Delete(name, namespace string) error {
-	query.Log.Info("removing secret", "name", name, "namespace", namespace)
-
-	return query.delete(name, namespace)
-}
-
-func (query Query) delete(name, namespace string) error {
-	tmp := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}}
-
-	err := query.KubeClient.Delete(query.Ctx, tmp)
-	if k8serrors.IsNotFound(err) {
-		return nil
-	}
-
-	return errors.WithStack(err)
-}
-
-func (query Query) DeleteForNamespaces(secretName string, namespaces []string) error {
-	query.Log.Info("deleting secret from multiple namespaces", "name", secretName, "len(namespaces)", len(namespaces))
-
-	errs := make([]error, 0, len(namespaces))
-
-	for _, namespace := range namespaces {
-		err := query.delete(secretName, namespace)
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
-
-	return goerrors.Join(errs...)
-}
-
-func (query Query) create(secret corev1.Secret) error {
-	return errors.WithStack(query.KubeClient.Create(query.Ctx, &secret))
-}
-
-func (query Query) update(secret corev1.Secret) error {
-	return errors.WithStack(query.KubeClient.Update(query.Ctx, &secret))
-}
-
-func (query Query) GetAllFromNamespaces(secretName string) ([]corev1.Secret, error) {
-	query.Log.Info("querying secret from all namespaces", "name", secretName)
-
-	secretList := &corev1.SecretList{}
-	listOps := []client.ListOption{
-		client.MatchingFields{
-			"metadata.name": secretName,
+			return out
 		},
-	}
+		IsEqual: AreSecretsEqual,
 
-	err := query.KubeReader.List(query.Ctx, secretList, listOps...)
-	if client.IgnoreNotFound(err) != nil {
-		return nil, errors.WithStack(err)
+		KubeClient: kubeClient,
+		KubeReader: kubeReader,
+		Log:        log,
 	}
-
-	return secretList.Items, err
 }
 
-func (query Query) CreateOrUpdate(secret corev1.Secret) error {
-	currentSecret, err := query.Get(types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace})
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			err = query.Create(secret)
-			if err != nil {
-				return errors.WithStack(err)
-			}
-
-			return nil
-		}
-
-		return errors.WithStack(err)
-	}
-
-	if AreSecretsEqual(secret, currentSecret) {
-		return nil
-	}
-
-	err = query.Update(secret)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
-}
-
-func (query Query) CreateOrUpdateForNamespaces(newSecret corev1.Secret, namespaces []corev1.Namespace) error {
-	secrets, err := query.GetAllFromNamespaces(newSecret.Name)
-	if err != nil {
-		return err
-	}
-
-	query.Log.Info("reconciling secret for multiple namespaces",
-		"name", newSecret.Name, "len(namespaces)", len(namespaces))
-
-	namespacesContainingSecret := make(map[string]corev1.Secret, len(secrets))
-	for _, secret := range secrets {
-		namespacesContainingSecret[secret.Namespace] = secret
-	}
-
-	return query.createOrUpdateForNamespaces(newSecret, namespacesContainingSecret, namespaces)
-}
-
-// createOrUpdateForNamespaces creates or updates a secret for all given namespaces, it returns no error, as we want to ensure that a problem (example: gatekeeper) with 1 namespace will not influence other namespaces.
-// As we can't ensure this logic to be atomic (every-or-no namespace) we have to make it work for every namespace we can.
-func (query Query) createOrUpdateForNamespaces(newSecret corev1.Secret, namespacesContainingSecret map[string]corev1.Secret, namespaces []corev1.Namespace) error {
-	updateCount := 0
-	creationCount := 0
-
-	var errs []error
-
-	for _, namespace := range namespaces {
-		if namespace.Status.Phase == corev1.NamespaceTerminating {
-			query.Log.Info("skipping terminating namespace", "namespace", namespace.Name)
-
-			continue
-		}
-
-		newSecret.Namespace = namespace.Name
-		if oldSecret, ok := namespacesContainingSecret[namespace.Name]; ok {
-			if !AreSecretsEqual(oldSecret, newSecret) {
-				err := query.update(newSecret)
-				if err != nil {
-					errs = append(errs, errors.WithMessagef(err, "failed to update secret %s for namespace %s", newSecret.Name, namespace.Name))
-
-					continue
-				}
-
-				updateCount++
-			}
-		} else {
-			err := query.create(newSecret)
-			if err != nil {
-				errs = append(errs, errors.WithMessagef(err, "failed to create secret %s for namespace %s", newSecret.Name, namespace.Name))
-
-				continue
-			}
-
-			creationCount++
-		}
-	}
-
-	query.Log.Info("reconciled secret for multiple namespaces",
-		"name", newSecret.Name, "creationCount", creationCount, "updateCount", updateCount)
-
-	return goerrors.Join(errs...)
-}
-
-func AreSecretsEqual(secret corev1.Secret, other corev1.Secret) bool {
+func AreSecretsEqual(secret *corev1.Secret, other *corev1.Secret) bool {
 	return reflect.DeepEqual(secret.Data, other.Data) && reflect.DeepEqual(secret.Labels, other.Labels) && reflect.DeepEqual(secret.OwnerReferences, other.OwnerReferences)
 }
 
@@ -215,15 +57,15 @@ func ExtractToken(secret *corev1.Secret, key string) (string, error) {
 	return strings.TrimSpace(string(value)), nil
 }
 
-func GetDataFromSecretName(apiReader client.Reader, namespacedName types.NamespacedName, dataKey string, log logd.Logger) (string, error) {
-	query := NewQuery(context.TODO(), nil, apiReader, log)
+func GetDataFromSecretName(ctx context.Context, apiReader client.Reader, namespacedName types.NamespacedName, dataKey string, log logd.Logger) (string, error) {
+	query := NewGeneric(nil, apiReader, log)
 
-	secret, err := query.Get(namespacedName)
+	secret, err := query.Get(ctx, namespacedName)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
 
-	value, err := ExtractToken(&secret, dataKey)
+	value, err := ExtractToken(secret, dataKey)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}

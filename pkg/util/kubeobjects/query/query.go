@@ -11,22 +11,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type KubeQuery struct {
-	KubeClient client.Client
-	KubeReader client.Reader
-	Ctx        context.Context
-	Log        logd.Logger
-}
-
-func New(ctx context.Context, kubeClient client.Client, kubeReader client.Reader, log logd.Logger) KubeQuery {
-	return KubeQuery{
-		KubeClient: kubeClient,
-		KubeReader: kubeReader,
-		Ctx:        ctx,
-		Log:        log,
-	}
-}
-
 type Generic[T client.Object, L client.ObjectList] struct {
 	Target     T
 	ListTarget L
@@ -132,6 +116,7 @@ func (c Generic[T, L]) createOrUpdateForNamespaces(ctx context.Context, object T
 		}
 
 		object.SetNamespace(namespace.Name)
+		object.SetResourceVersion("")
 
 		if oldObject, ok := namespacesContainingSecret[namespace.Name]; ok {
 			if !c.IsEqual(oldObject, object) {
@@ -158,6 +143,24 @@ func (c Generic[T, L]) createOrUpdateForNamespaces(ctx context.Context, object T
 
 	c.Log.Info("reconciled objects for multiple namespaces", "kind", object.GetObjectKind(),
 		"name", object.GetName(), "creationCount", creationCount, "updateCount", updateCount)
+
+	return goerrors.Join(errs...)
+}
+
+func (c Generic[T, L]) DeleteForNamespaces(ctx context.Context, objectName string, namespaces []string) error {
+	c.Log.Info("deleting objects from multiple namespaces", "name", objectName, "len(namespaces)", len(namespaces))
+
+	errs := make([]error, 0, len(namespaces))
+
+	for _, namespace := range namespaces {
+		c.Target.SetName(objectName)
+		c.Target.SetNamespace(namespace)
+
+		err := c.Delete(ctx, c.Target)
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
 
 	return goerrors.Join(errs...)
 }

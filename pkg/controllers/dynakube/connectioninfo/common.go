@@ -28,9 +28,9 @@ const (
 )
 
 func IsTenantSecretPresent(ctx context.Context, apiReader client.Reader, secretNamespacedName types.NamespacedName, log logd.Logger) (bool, error) {
-	query := k8ssecret.NewQuery(ctx, nil, apiReader, log)
+	query := k8ssecret.NewGeneric(nil, apiReader, log)
 
-	_, err := query.Get(secretNamespacedName)
+	_, err := query.Get(ctx, secretNamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("creating secret, because missing", "secretName", secretNamespacedName.Name)

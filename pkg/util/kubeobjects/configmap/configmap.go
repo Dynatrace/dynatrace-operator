@@ -19,9 +19,9 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 		Target:     &corev1.ConfigMap{},
 		ListTarget: &corev1.ConfigMapList{},
 		ToList: func(cml *corev1.ConfigMapList) []*corev1.ConfigMap {
-			out := make([]*corev1.ConfigMap, len(cml.Items))
+			out := []*corev1.ConfigMap{}
 			for _, cm := range cml.Items {
-				out = append(out, &cm) //nolint: makezero
+				out = append(out, &cm)
 			}
 
 			return out
@@ -30,6 +30,7 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 
 		KubeClient: kubeClient,
 		KubeReader: kubeReader,
+		Log:        log,
 	}
 }
 

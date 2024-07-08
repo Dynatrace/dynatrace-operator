@@ -114,7 +114,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context) (*appsv1.State
 		return nil, errors.WithStack(err)
 	}
 
-	activeGateConfigurationHash, err := r.calculateActiveGateConfigurationHash()
+	activeGateConfigurationHash, err := r.calculateActiveGateConfigurationHash(ctx)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -211,13 +211,13 @@ func hasSelectorChanged(desiredSts *appsv1.StatefulSet, currentSts *appsv1.State
 	return !reflect.DeepEqual(currentSts.Spec.Selector, desiredSts.Spec.Selector)
 }
 
-func (r *Reconciler) calculateActiveGateConfigurationHash() (string, error) {
-	customPropertyData, err := r.getCustomPropertyValue()
+func (r *Reconciler) calculateActiveGateConfigurationHash(ctx context.Context) (string, error) {
+	customPropertyData, err := r.getCustomPropertyValue(ctx)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
 
-	authTokenData, err := r.getAuthTokenValue()
+	authTokenData, err := r.getAuthTokenValue(ctx)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
@@ -234,12 +234,12 @@ func (r *Reconciler) calculateActiveGateConfigurationHash() (string, error) {
 	return strconv.FormatUint(uint64(hash.Sum32()), 10), nil
 }
 
-func (r *Reconciler) getCustomPropertyValue() (string, error) {
+func (r *Reconciler) getCustomPropertyValue(ctx context.Context) (string, error) {
 	if !needsCustomPropertyHash(r.capability.Properties().CustomProperties) {
 		return "", nil
 	}
 
-	customPropertyData, err := r.getDataFromCustomProperty(r.capability.Properties().CustomProperties)
+	customPropertyData, err := r.getDataFromCustomProperty(ctx, r.capability.Properties().CustomProperties)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
@@ -247,12 +247,12 @@ func (r *Reconciler) getCustomPropertyValue() (string, error) {
 	return customPropertyData, nil
 }
 
-func (r *Reconciler) getAuthTokenValue() (string, error) {
+func (r *Reconciler) getAuthTokenValue(ctx context.Context) (string, error) {
 	if !r.dk.NeedsActiveGate() {
 		return "", nil
 	}
 
-	authTokenData, err := r.getDataFromAuthTokenSecret()
+	authTokenData, err := r.getDataFromAuthTokenSecret(ctx)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
@@ -260,16 +260,16 @@ func (r *Reconciler) getAuthTokenValue() (string, error) {
 	return authTokenData, nil
 }
 
-func (r *Reconciler) getDataFromCustomProperty(customProperties *dynakube.DynaKubeValueSource) (string, error) {
+func (r *Reconciler) getDataFromCustomProperty(ctx context.Context, customProperties *dynakube.DynaKubeValueSource) (string, error) {
 	if customProperties.ValueFrom != "" {
-		return secret.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dk.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey, log)
+		return secret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{Namespace: r.dk.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey, log)
 	}
 
 	return customProperties.Value, nil
 }
 
-func (r *Reconciler) getDataFromAuthTokenSecret() (string, error) {
-	return secret.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dk.Namespace, Name: r.dk.ActiveGateAuthTokenSecret()}, authtoken.ActiveGateAuthTokenName, log)
+func (r *Reconciler) getDataFromAuthTokenSecret(ctx context.Context) (string, error) {
+	return secret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{Namespace: r.dk.Namespace, Name: r.dk.ActiveGateAuthTokenSecret()}, authtoken.ActiveGateAuthTokenName, log)
 }
 
 func needsCustomPropertyHash(customProperties *dynakube.DynaKubeValueSource) bool {
