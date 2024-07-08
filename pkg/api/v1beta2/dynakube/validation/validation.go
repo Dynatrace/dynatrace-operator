@@ -40,9 +40,6 @@ var (
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,
-		deprecatedFeatureFlagDisableActiveGateUpdates,
-		deprecatedFeatureFlagWillBeDeleted,
-		deprecatedFeatureFlagMovedCRDField,
 		unsupportedOneAgentImage,
 		conflictingHostGroupSettings,
 	}
