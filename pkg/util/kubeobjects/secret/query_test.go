@@ -297,78 +297,6 @@ func TestInitialMultipleSecrets(t *testing.T) {
 	})
 }
 
-func TestSecretBuilder(t *testing.T) {
-	labelName := "name"
-	labelValue := "value"
-	labels := map[string]string{
-		labelName: labelValue,
-	}
-	dataKey := ".dockercfg"
-	dockerCfg := map[string][]byte{
-		dataKey: {},
-	}
-
-	t.Run("create secret", func(t *testing.T) {
-		secret, err := Create(createDeployment(),
-			NewNameModifier(testSecretName),
-			NewNamespaceModifier(testNamespace))
-		require.NoError(t, err)
-		require.Len(t, secret.OwnerReferences, 1)
-		assert.Equal(t, testDeploymentName, secret.OwnerReferences[0].Name)
-		assert.Equal(t, testSecretName, secret.Name)
-		assert.Empty(t, secret.Labels)
-		assert.Equal(t, corev1.SecretType(""), secret.Type)
-		assert.Empty(t, secret.Data)
-	})
-	t.Run("create secret with label", func(t *testing.T) {
-		secret, err := Create(createDeployment(),
-			NewLabelsModifier(labels),
-			NewNameModifier(testSecretName),
-			NewNamespaceModifier(testNamespace),
-			NewDataModifier(map[string][]byte{}))
-		require.NoError(t, err)
-		require.Len(t, secret.OwnerReferences, 1)
-		assert.Equal(t, testDeploymentName, secret.OwnerReferences[0].Name)
-		assert.Equal(t, testSecretName, secret.Name)
-		require.Len(t, secret.Labels, 1)
-		assert.Equal(t, labelValue, secret.Labels[labelName])
-		assert.Equal(t, corev1.SecretType(""), secret.Type)
-		assert.Empty(t, secret.Data)
-	})
-	t.Run("create secret with type", func(t *testing.T) {
-		secret, err := Create(createDeployment(),
-			NewTypeModifier(corev1.SecretTypeDockercfg),
-			NewNameModifier(testSecretName),
-			NewNamespaceModifier(testNamespace),
-			NewDataModifier(dockerCfg))
-		require.NoError(t, err)
-		require.Len(t, secret.OwnerReferences, 1)
-		assert.Equal(t, testDeploymentName, secret.OwnerReferences[0].Name)
-		assert.Equal(t, testSecretName, secret.Name)
-		assert.Empty(t, secret.Labels)
-		assert.Equal(t, corev1.SecretTypeDockercfg, secret.Type)
-		_, found := secret.Data[dataKey]
-		assert.True(t, found)
-	})
-	t.Run("create secret with label and type", func(t *testing.T) {
-		secret, err := Create(createDeployment(),
-			NewLabelsModifier(labels),
-			NewTypeModifier(corev1.SecretTypeDockercfg),
-			NewNameModifier(testSecretName),
-			NewNamespaceModifier(testNamespace),
-			NewDataModifier(dockerCfg))
-		require.NoError(t, err)
-		require.Len(t, secret.OwnerReferences, 1)
-		assert.Equal(t, testDeploymentName, secret.OwnerReferences[0].Name)
-		assert.Equal(t, testSecretName, secret.Name)
-		require.Len(t, secret.Labels, 1)
-		assert.Equal(t, labelValue, secret.Labels[labelName])
-		assert.Equal(t, corev1.SecretTypeDockercfg, secret.Type)
-		_, found := secret.Data[dataKey]
-		assert.True(t, found)
-	})
-}
-
 func TestCreateOrUpdate(t *testing.T) {
 	ctx := context.Background()
 	fakeClient := fake.NewClient()
@@ -412,16 +340,5 @@ func TestCreateOrUpdate(t *testing.T) {
 
 		secret, _ := secretQuery.Get(ctx, types.NamespacedName{Name: testSecretName, Namespace: testNamespace})
 		assert.Equal(t, secret.Data[testSecretDataKey], newValue)
-	})
-}
-
-func TestGetDataFromSecretName(t *testing.T) {
-	fakeClient := fake.NewClient()
-	fakeClient.Create(context.Background(), getTestSecret())
-	ctx := context.Background()
-
-	t.Run("get secret data", func(t *testing.T) {
-		data, _ := GetDataFromSecretName(ctx, fakeClient, types.NamespacedName{Name: testSecretName, Namespace: testNamespace}, testSecretDataKey, logd.Logger{})
-		assert.Equal(t, string(dataValue), data)
 	})
 }

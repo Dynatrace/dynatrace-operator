@@ -590,12 +590,11 @@ func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnect
 
 	_log.Debug("createResponse", "id", createResponse.ID)
 
-	ecOAuthSecret, err := k8ssecret.Create(ec, k8ssecret.NewNameModifier(ec.ClientSecretName()), k8ssecret.NewNamespaceModifier(ec.Namespace), k8ssecret.NewDataModifier(map[string][]byte{
+	ecOAuthSecret, err := k8ssecret.Build(ec, ec.ClientSecretName(), map[string][]byte{
 		consts.KeyEdgeConnectOauthClientID:     []byte(createResponse.OauthClientId),
 		consts.KeyEdgeConnectOauthClientSecret: []byte(createResponse.OauthClientSecret),
 		consts.KeyEdgeConnectOauthResource:     []byte(createResponse.OauthClientResource),
-		consts.KeyEdgeConnectId:                []byte(createResponse.ID),
-	}))
+		consts.KeyEdgeConnectId:                []byte(createResponse.ID)})
 
 	if err != nil {
 		_log.Debug("unable to create EdgeConnect secret")
@@ -800,10 +799,10 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 	secretData := make(map[string][]byte)
 	secretData[consts.EdgeConnectConfigFileName] = configFile
 
-	secretConfig, err := k8ssecret.Create(ec,
-		k8ssecret.NewNameModifier(ec.Name+"-"+consts.EdgeConnectSecretSuffix),
-		k8ssecret.NewNamespaceModifier(ec.Namespace),
-		k8ssecret.NewDataModifier(secretData))
+	secretConfig, err := k8ssecret.Build(ec,
+		ec.Name+"-"+consts.EdgeConnectSecretSuffix,
+		secretData,
+	)
 
 	if err != nil {
 		return "", "", errors.WithStack(err)

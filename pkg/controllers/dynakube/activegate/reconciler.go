@@ -143,10 +143,10 @@ func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.C
 
 	configMapData := extractPublicData(r.dk)
 
-	configMap, err := configmap.CreateConfigMap(r.dk,
-		configmap.NewModifier(r.dk.ActiveGateConnectionInfoConfigMapName()),
-		configmap.NewNamespaceModifier(r.dk.Namespace),
-		configmap.NewConfigMapDataModifier(configMapData))
+	configMap, err := configmap.Build(r.dk,
+		r.dk.ActiveGateConnectionInfoConfigMapName(),
+		configMapData,
+	)
 	if err != nil {
 		return errors.WithStack(err)
 	}

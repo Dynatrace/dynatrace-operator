@@ -105,12 +105,11 @@ func (r *Reconciler) updateCustomProperties(ctx context.Context, customPropertie
 }
 
 func (r *Reconciler) createCustomProperties() error {
-	customPropertiesSecret, err := secret.Create(r.dk,
-		secret.NewNameModifier(r.buildCustomPropertiesName(r.dk.Name)),
-		secret.NewNamespaceModifier(r.dk.Namespace),
-		secret.NewDataModifier(map[string][]byte{
+	customPropertiesSecret, err := secret.Build(r.dk,
+		r.buildCustomPropertiesName(r.dk.Name),
+		map[string][]byte{
 			DataKey: []byte(r.customPropertiesSource.Value),
-		}))
+		})
 	if err != nil {
 		return errors.WithStack(err)
 	}

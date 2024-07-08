@@ -194,10 +194,10 @@ func (r *Reconciler) updateInstancesStatus(ctx context.Context) error {
 func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Context) error {
 	configMapData := extractPublicData(r.dk)
 
-	configMap, err := configmap.CreateConfigMap(r.dk,
-		configmap.NewModifier(r.dk.OneAgentConnectionInfoConfigMapName()),
-		configmap.NewNamespaceModifier(r.dk.Namespace),
-		configmap.NewConfigMapDataModifier(configMapData))
+	configMap, err := configmap.Build(r.dk,
+		r.dk.OneAgentConnectionInfoConfigMapName(),
+		configMapData,
+	)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -216,9 +216,10 @@ func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 }
 
 func (r *Reconciler) deleteOneAgentTenantConnectionInfoConfigMap(ctx context.Context) error {
-	cm, _ := configmap.CreateConfigMap(r.dk,
-		configmap.NewModifier(r.dk.OneAgentConnectionInfoConfigMapName()),
-		configmap.NewNamespaceModifier(r.dk.Namespace))
+	cm, _ := configmap.Build(r.dk,
+		r.dk.OneAgentConnectionInfoConfigMapName(),
+		nil,
+	)
 	query := configmap.Query(r.client, r.apiReader, log)
 
 	return query.Delete(ctx, cm)

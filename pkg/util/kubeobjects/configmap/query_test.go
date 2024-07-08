@@ -295,33 +295,3 @@ func createTestConfigMap(labels map[string]string, data map[string]string) *core
 
 	return configMap
 }
-
-func TestConfigMapBuilder(t *testing.T) {
-	dataKey := "cfg"
-	data := map[string]string{
-		dataKey: "",
-	}
-
-	t.Run("create config map", func(t *testing.T) {
-		configMap, err := CreateConfigMap(createDeployment(),
-			NewModifier(testConfigMapName),
-			NewNamespaceModifier(testNamespace))
-		require.NoError(t, err)
-		require.Len(t, configMap.OwnerReferences, 1)
-		assert.Equal(t, testDeploymentName, configMap.OwnerReferences[0].Name)
-		assert.Equal(t, testConfigMapName, configMap.Name)
-		assert.Empty(t, configMap.Data)
-	})
-	t.Run("create config map with data", func(t *testing.T) {
-		configMap, err := CreateConfigMap(createDeployment(),
-			NewModifier(testConfigMapName),
-			NewNamespaceModifier(testNamespace),
-			NewConfigMapDataModifier(data))
-		require.NoError(t, err)
-		require.Len(t, configMap.OwnerReferences, 1)
-		assert.Equal(t, testDeploymentName, configMap.OwnerReferences[0].Name)
-		assert.Equal(t, testConfigMapName, configMap.Name)
-		_, found := configMap.Data[dataKey]
-		assert.True(t, found)
-	})
-}

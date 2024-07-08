@@ -191,11 +191,11 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 		return nil, err
 	}
 
-	newSecret, err := secrets.Create(r.dk,
-		secrets.NewNameModifier(extendWithSuffix(r.dk.Name)),
-		secrets.NewNamespaceModifier(r.dk.Namespace),
-		secrets.NewTypeModifier(corev1.SecretTypeOpaque),
-		secrets.NewDataModifier(map[string][]byte{SecretKeyProcessModuleConfig: marshaled}))
+	newSecret, err := secrets.Build(r.dk,
+		extendWithSuffix(r.dk.Name),
+		map[string][]byte{SecretKeyProcessModuleConfig: marshaled})
+
+	secrets.SetType(corev1.SecretTypeOpaque)
 
 	if err != nil {
 		conditions.SetKubeApiError(r.dk.Conditions(), pmcConditionType, err)
