@@ -23,11 +23,9 @@ const (
 
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run(`Prometheus disabled`, func(t *testing.T) {
-		instance := &dynatracev1beta3.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			}}
+		instance := makeTestDynakube()
+		instance.Spec.Extensions.Prometheus.Enabled = false
+
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, instance)
 		err := r.Reconcile(context.Background())
@@ -37,21 +35,13 @@ func TestReconciler_Reconcile(t *testing.T) {
 		var secretFound corev1.Secret
 		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
 		require.True(t, k8serrors.IsNotFound(err))
+
+		// assert conditions are empty
+		require.Empty(t, instance.Conditions())
 	})
 	t.Run(`Prometheus enabled`, func(t *testing.T) {
-		instance := &dynatracev1beta3.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
-			Spec: dynatracev1beta3.DynaKubeSpec{
-				Extensions: dynatracev1beta3.ExtensionsSpec{
-					Prometheus: dynatracev1beta3.PrometheusSpec{
-						Enabled: true,
-					},
-				},
-			},
-		}
+		instance := makeTestDynakube()
+
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, instance)
 		err := r.Reconcile(context.Background())
@@ -63,33 +53,40 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		// assert extensions token condition is added
+		require.NotEmpty(t, instance.Conditions())
 		var expectedConditions []metav1.Condition
 		setSecretCreated(&expectedConditions)
 		testutil.PartialEqual(t, &expectedConditions, instance.Conditions(), cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
 	})
 
 	t.Run(`Secret creation failed`, func(t *testing.T) {
-		instance := &dynatracev1beta3.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
-			Spec: dynatracev1beta3.DynaKubeSpec{
-				Extensions: dynatracev1beta3.ExtensionsSpec{
-					Prometheus: dynatracev1beta3.PrometheusSpec{
-						Enabled: true,
-					},
-				},
-			},
-		}
+		instance := makeTestDynakube()
+
 		misconfiguredReader, _ := client.New(&rest.Config{}, client.Options{})
 		r := NewReconciler(fake.NewClient(), misconfiguredReader, instance)
 		err := r.Reconcile(context.Background())
 		require.Error(t, err)
 
 		// assert extensions token condition is added
+		require.NotEmpty(t, instance.Conditions())
 		var expectedConditions []metav1.Condition
 		setSecretCreationFailed(&expectedConditions, err)
 		testutil.PartialEqual(t, &expectedConditions, instance.Conditions(), cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
 	})
+}
+
+func makeTestDynakube() *dynatracev1beta3.DynaKube {
+	return &dynatracev1beta3.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: testNamespace,
+			Name:      testName,
+		},
+		Spec: dynatracev1beta3.DynaKubeSpec{
+			Extensions: dynatracev1beta3.ExtensionsSpec{
+				Prometheus: dynatracev1beta3.PrometheusSpec{
+					Enabled: true,
+				},
+			},
+		},
+	}
 }
