@@ -33,9 +33,9 @@ func (keychain *DockerKeychain) loadDockerConfigFromSecret(ctx context.Context, 
 	}
 
 	if err := apiReader.Get(ctx, client.ObjectKey{Namespace: pullSecret.Namespace, Name: pullSecret.Name}, &pullSecret); err != nil {
-		log.Info("failed to load registry pull secret", "name", pullSecret.Name, "namespace", pullSecret.Namespace)
+		log.Info("No registry pull secret loaded", "name", pullSecret.Name, "namespace", pullSecret.Namespace, "err", err)
 
-		return errors.WithStack(err)
+		return nil
 	}
 
 	dockerAuths, err := extractDockerAuthsFromSecret(&pullSecret)
