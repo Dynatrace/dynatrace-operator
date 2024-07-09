@@ -24,7 +24,7 @@ metadata:
   name: dynatrace-operator-otel-config
   namespace: dynatrace
 data:
-  endpoint: base64(<uuid>.dev.dyntracelabs.com)
+  endpoint: base64(<uuid>.dev.dynatracelabs.com)
   apiToken: base64(<apiToken>)
 EOF
 ```

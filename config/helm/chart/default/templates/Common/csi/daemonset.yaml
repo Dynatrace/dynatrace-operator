@@ -87,6 +87,11 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
         - name: KUBE_NODE_NAME
           valueFrom:
             fieldRef:
@@ -137,6 +142,11 @@ spec:
               fieldRef:
                 apiVersion: v1
                 fieldPath: metadata.namespace
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
           {{- if .Values.csidriver.maxUnmountedVolumeAge }}
           - name: MAX_UNMOUNTED_VOLUME_AGE
             value: "{{ .Values.csidriver.maxUnmountedVolumeAge}}"
