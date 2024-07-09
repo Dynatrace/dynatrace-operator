@@ -29,6 +29,18 @@ func StartSpan[T any](ctx context.Context, tracer T, opts ...trace.SpanStartOpti
 	return realTracer.Start(ctx, spanTitle, opts...)
 }
 
+func RecordError(span trace.Span, err error) error {
+	if err != nil {
+		span.RecordError(err)
+	}
+
+	return err
+}
+
+func IsEnabled(spanContext trace.SpanContext) bool {
+	return spanContext.SpanID() != trace.SpanContext{}.SpanID() || spanContext.TraceID() != trace.SpanContext{}.TraceID()
+}
+
 func setupTracesWithOtlp(ctx context.Context, resource *resource.Resource, endpoint string, apiToken string) (trace.TracerProvider, shutdownFn, error) {
 	tracerExporter, err := newOtlpTraceExporter(ctx, endpoint, apiToken)
 	if err != nil {

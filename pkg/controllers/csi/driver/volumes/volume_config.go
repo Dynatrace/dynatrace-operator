@@ -2,6 +2,7 @@ package csivolumes
 
 import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -12,6 +13,8 @@ const (
 	// CSIVolumeAttributeModeField used for identifying the origin of the NodePublishVolume request
 	CSIVolumeAttributeModeField     = "mode"
 	CSIVolumeAttributeDynakubeField = "dynakube"
+	CSIOtelSpanId                   = "otelSpanId"
+	CSIOtelTraceId                  = "otelTraceId"
 )
 
 // Represents the basic information about a volume
@@ -22,6 +25,7 @@ type VolumeInfo struct {
 
 // Represents the config needed to mount a volume
 type VolumeConfig struct {
+	OtelSpanContext *trace.SpanContext
 	VolumeInfo
 	PodName      string
 	Mode         string
@@ -67,20 +71,47 @@ func ParseNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*VolumeCo
 		return nil, status.Error(codes.InvalidArgument, "No mode attribute included with request")
 	}
 
+	spanContext := getSpanContext(volCtx)
+
 	dynakubeName := volCtx[CSIVolumeAttributeDynakubeField]
 	if dynakubeName == "" {
 		return nil, status.Error(codes.InvalidArgument, "No dynakube attribute included with request")
 	}
 
-	return &VolumeConfig{
+	volumeConfig := &VolumeConfig{
 		VolumeInfo: VolumeInfo{
 			VolumeID:   volID,
 			TargetPath: targetPath,
 		},
-		PodName:      podName,
-		Mode:         mode,
-		DynakubeName: dynakubeName,
-	}, nil
+		PodName:         podName,
+		Mode:            mode,
+		DynakubeName:    dynakubeName,
+		OtelSpanContext: spanContext,
+	}
+
+	return volumeConfig, nil
+}
+
+func getSpanContext(volCtx map[string]string) *trace.SpanContext {
+	var spanContext *trace.SpanContext
+
+	if spanID, ok := volCtx[CSIOtelSpanId]; ok {
+		if traceID, ok := volCtx[CSIOtelTraceId]; ok {
+			sid, spanErr := trace.SpanIDFromHex(spanID)
+			tid, traceErr := trace.TraceIDFromHex(traceID)
+
+			if spanErr == nil && traceErr == nil {
+				spanContextConfig := trace.SpanContextConfig{
+					TraceID: tid,
+					SpanID:  sid,
+				}
+				newSpanContext := trace.NewSpanContext(spanContextConfig)
+				spanContext = &newSpanContext
+			}
+		}
+	}
+
+	return spanContext
 }
 
 // Transforms the NodeUnpublishVolumeRequest into a VolumeInfo

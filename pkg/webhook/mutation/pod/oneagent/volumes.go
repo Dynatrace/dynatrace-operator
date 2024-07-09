@@ -9,13 +9,15 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
 	appvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes/app"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
+	"go.opentelemetry.io/otel/trace"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (mut *Mutator) addVolumes(pod *corev1.Pod, dk dynakube.DynaKube) {
+func (mut *Mutator) addVolumes(pod *corev1.Pod, dk dynakube.DynaKube, spanContext trace.SpanContext) {
 	addInjectionConfigVolume(pod)
-	addOneAgentVolumes(pod, dk)
+	addOneAgentVolumes(pod, dk, spanContext)
 
 	if dk.FeatureReadOnlyCsiVolume() {
 		addVolumesForReadOnlyCSI(pod)
@@ -121,11 +123,11 @@ func addInjectionConfigVolumeMount(container *corev1.Container) {
 	)
 }
 
-func addOneAgentVolumes(pod *corev1.Pod, dk dynakube.DynaKube) {
+func addOneAgentVolumes(pod *corev1.Pod, dk dynakube.DynaKube, spanContext trace.SpanContext) {
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
 		corev1.Volume{
 			Name:         OneAgentBinVolumeName,
-			VolumeSource: getInstallerVolumeSource(dk),
+			VolumeSource: getInstallerVolumeSource(dk, spanContext),
 		},
 		corev1.Volume{
 			Name: oneAgentShareVolumeName,
@@ -159,7 +161,7 @@ func addVolumesForReadOnlyCSI(pod *corev1.Pod) {
 	)
 }
 
-func getInstallerVolumeSource(dk dynakube.DynaKube) corev1.VolumeSource {
+func getInstallerVolumeSource(dk dynakube.DynaKube, spanContext trace.SpanContext) corev1.VolumeSource {
 	volumeSource := corev1.VolumeSource{}
 	if dk.NeedsCSIDriver() {
 		volumeSource.CSI = &corev1.CSIVolumeSource{
@@ -169,6 +171,11 @@ func getInstallerVolumeSource(dk dynakube.DynaKube) corev1.VolumeSource {
 				csivolumes.CSIVolumeAttributeModeField:     appvolumes.Mode,
 				csivolumes.CSIVolumeAttributeDynakubeField: dk.Name,
 			},
+		}
+
+		if dtotel.IsEnabled(spanContext) {
+			volumeSource.CSI.VolumeAttributes[csivolumes.CSIOtelSpanId] = spanContext.SpanID().String()
+			volumeSource.CSI.VolumeAttributes[csivolumes.CSIOtelTraceId] = spanContext.TraceID().String()
 		}
 	} else {
 		volumeSource.EmptyDir = &corev1.EmptyDirVolumeSource{}

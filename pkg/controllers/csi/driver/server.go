@@ -29,10 +29,14 @@ import (
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
 	appvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes/app"
 	hostvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes/host"
+	csiotel "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/internal/otel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/spf13/afero"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -143,13 +147,20 @@ func (svr *Server) GetPluginCapabilities(context.Context, *csi.GetPluginCapabili
 }
 
 func (svr *Server) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
+	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	defer span.End()
+
 	volumeCfg, err := csivolumes.ParseNodePublishVolumeRequest(req)
 	if err != nil {
-		return nil, err
+		return nil, dtotel.RecordError(span, err)
+	}
+
+	if volumeCfg.OtelSpanContext != nil {
+		span.AddLink(trace.Link{SpanContext: *volumeCfg.OtelSpanContext})
 	}
 
 	if isMounted, err := isMounted(svr.mounter, volumeCfg.TargetPath); err != nil {
-		return nil, err
+		return nil, dtotel.RecordError(span, err)
 	} else if isMounted {
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
@@ -159,35 +170,30 @@ func (svr *Server) NodePublishVolume(ctx context.Context, req *csi.NodePublishVo
 		return nil, status.Error(codes.Internal, "unknown csi mode provided, mode="+volumeCfg.Mode)
 	}
 
-	log.Info("publishing volume",
-		"csiMode", volumeCfg.Mode,
-		"target", volumeCfg.TargetPath,
-		"fstype", req.GetVolumeCapability().GetMount().GetFsType(),
-		"readonly", req.GetReadonly(),
-		"volumeID", volumeCfg.VolumeID,
-		"attributes", req.GetVolumeContext(),
-		"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
-	)
+	logRequest(volumeCfg, req, span)
 
 	return publisher.PublishVolume(ctx, *volumeCfg)
 }
 
 func (svr *Server) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (response *csi.NodeUnpublishVolumeResponse, err error) {
+	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	defer span.End()
+
 	volumeInfo, err := csivolumes.ParseNodeUnpublishVolumeRequest(req)
 	if err != nil {
-		return nil, err
+		return nil, dtotel.RecordError(span, err)
 	}
 
 	for _, publisher := range svr.publishers {
 		canUnpublish, err := publisher.CanUnpublishVolume(ctx, *volumeInfo)
 		if err != nil {
-			log.Error(err, "couldn't determine if volume can be unpublished", "publisher", publisher)
+			log.Error(dtotel.RecordError(span, err), "couldn't determine if volume can be unpublished", "publisher", publisher)
 		}
 
 		if canUnpublish {
 			response, err := publisher.UnpublishVolume(ctx, *volumeInfo)
 			if err != nil {
-				log.Error(err, "couldn't unpublish volume properly", "publisher", publisher)
+				log.Error(dtotel.RecordError(span, err), "couldn't unpublish volume properly", "publisher", publisher)
 			}
 
 			return response, nil
@@ -240,6 +246,45 @@ func isMounted(mounter mount.Interface, targetPath string) (bool, error) {
 	}
 
 	return !isNotMounted, nil
+}
+
+func logRequest(volumeCfg *csivolumes.VolumeConfig, req *csi.NodePublishVolumeRequest, span trace.Span) {
+	log.Info("publishing volume",
+		"csiMode", volumeCfg.Mode,
+		"target", volumeCfg.TargetPath,
+		"fstype", req.GetVolumeCapability().GetMount().GetFsType(),
+		"readonly", req.GetReadonly(),
+		"volumeID", volumeCfg.VolumeID,
+		"attributes", req.GetVolumeContext(),
+		"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
+	)
+
+	span.SetAttributes(
+		attribute.KeyValue{
+			Key:   "csi.mode",
+			Value: attribute.StringValue(volumeCfg.Mode),
+		},
+		attribute.KeyValue{
+			Key:   "csi.target",
+			Value: attribute.StringValue(volumeCfg.TargetPath),
+		},
+		attribute.KeyValue{
+			Key:   "csi.fstype",
+			Value: attribute.StringValue(req.GetVolumeCapability().GetMount().GetFsType()),
+		},
+		attribute.KeyValue{
+			Key:   "csi.readonly",
+			Value: attribute.BoolValue(req.GetReadonly()),
+		},
+		attribute.KeyValue{
+			Key:   "csi.volumeID",
+			Value: attribute.StringValue(volumeCfg.VolumeID),
+		},
+		attribute.KeyValue{
+			Key:   "csi.mountflags",
+			Value: attribute.StringSliceValue(req.GetVolumeCapability().GetMount().GetMountFlags()),
+		},
+	)
 }
 
 func logGRPC() grpc.UnaryServerInterceptor {

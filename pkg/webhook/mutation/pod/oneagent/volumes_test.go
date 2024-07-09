@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -120,7 +121,7 @@ func TestAddOneAgentVolumes(t *testing.T) {
 		pod := &corev1.Pod{}
 		dk := getTestCSIDynakube()
 
-		addOneAgentVolumes(pod, *dk)
+		addOneAgentVolumes(pod, *dk, trace.SpanContext{})
 		require.Len(t, pod.Spec.Volumes, 2)
 		assert.NotNil(t, pod.Spec.Volumes[0].VolumeSource.CSI)
 		assert.False(t, *pod.Spec.Volumes[0].VolumeSource.CSI.ReadOnly)
@@ -130,7 +131,7 @@ func TestAddOneAgentVolumes(t *testing.T) {
 		pod := &corev1.Pod{}
 		dk := getTestReadOnlyCSIDynakube()
 
-		addOneAgentVolumes(pod, *dk)
+		addOneAgentVolumes(pod, *dk, trace.SpanContext{})
 		require.Len(t, pod.Spec.Volumes, 2)
 		assert.NotNil(t, pod.Spec.Volumes[0].VolumeSource.CSI)
 		assert.True(t, *pod.Spec.Volumes[0].VolumeSource.CSI.ReadOnly)
@@ -140,7 +141,7 @@ func TestAddOneAgentVolumes(t *testing.T) {
 		pod := &corev1.Pod{}
 		dk := getTestDynakube()
 
-		addOneAgentVolumes(pod, *dk)
+		addOneAgentVolumes(pod, *dk, trace.SpanContext{})
 		require.Len(t, pod.Spec.Volumes, 2)
 		assert.NotNil(t, pod.Spec.Volumes[0].VolumeSource.EmptyDir)
 	})

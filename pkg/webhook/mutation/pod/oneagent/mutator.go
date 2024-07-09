@@ -76,7 +76,7 @@ func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationReque
 	}
 
 	installerInfo := getInstallerInfo(request.Pod, request.DynaKube)
-	mut.addVolumes(request.Pod, request.DynaKube)
+	mut.addVolumes(request.Pod, request.DynaKube, span.SpanContext())
 	mut.configureInitContainer(request, installerInfo)
 	injectedContainers := mut.mutateUserContainers(request)
 	mut.setContainerCount(request.InstallContainer, injectedContainers)

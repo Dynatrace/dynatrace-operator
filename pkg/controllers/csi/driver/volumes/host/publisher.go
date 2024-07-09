@@ -23,7 +23,9 @@ import (
 	"os"
 
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
+	csiotel "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/internal/otel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -57,14 +59,17 @@ type HostVolumePublisher struct {
 }
 
 func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeCfg csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
+	_, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	defer span.End()
+
 	tenantConfig, err := publisher.db.ReadTenantConfig(metadata.TenantConfig{Name: volumeCfg.DynakubeName})
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to read tenant-config: "+err.Error())
+		return nil, status.Error(codes.Internal, "failed to read tenant-config: "+dtotel.RecordError(span, err).Error())
 	}
 
 	osMount, err := publisher.db.ReadUnscopedOSMount(metadata.OSMount{TenantUUID: tenantConfig.TenantUUID})
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, status.Error(codes.Internal, failedToGetOsAgentVolumePrefix+err.Error())
+		return nil, status.Error(codes.Internal, failedToGetOsAgentVolumePrefix+dtotel.RecordError(span, err).Error())
 	}
 
 	if osMount != nil {
@@ -87,12 +92,12 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 		osMount.TenantConfig = *tenantConfig
 
 		if err := publisher.mountOneAgent(osMount, volumeCfg); err != nil {
-			return nil, status.Error(codes.Internal, "failed to mount OSMount: "+err.Error())
+			return nil, status.Error(codes.Internal, "failed to mount OSMount: "+dtotel.RecordError(span, err).Error())
 		}
 
 		_, err = publisher.db.RestoreOSMount(osMount)
 		if err != nil {
-			return nil, status.Error(codes.Internal, "failed to restore OSMount: "+err.Error())
+			return nil, status.Error(codes.Internal, "failed to restore OSMount: "+dtotel.RecordError(span, err).Error())
 		}
 
 		return &csi.NodePublishVolumeResponse{}, nil
@@ -107,11 +112,14 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 		}
 
 		if err := publisher.mountOneAgent(&osMount, volumeCfg); err != nil {
-			return nil, status.Error(codes.Internal, "failed to mount OSMount: "+err.Error())
+			return nil, status.Error(codes.Internal, "failed to mount OSMount: "+dtotel.RecordError(span, err).Error())
 		}
 
 		if err := publisher.db.CreateOSMount(&osMount); err != nil {
-			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to insert OSMount to database. info: %v err: %s", osMount, err.Error()))
+			return nil, status.Error(codes.Internal,
+				fmt.Sprintf("failed to insert OSMount to database. info: %v err: %s",
+					osMount,
+					dtotel.RecordError(span, err).Error()))
 		}
 	}
 
@@ -119,6 +127,9 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 }
 
 func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volumeInfo csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
+	_, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	defer span.End()
+
 	osMount, err := publisher.db.ReadOSMount(metadata.OSMount{VolumeMetaID: volumeInfo.VolumeID})
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -126,7 +137,7 @@ func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volum
 	}
 
 	if err != nil {
-		return nil, status.Error(codes.Internal, failedToGetOsAgentVolumePrefix+err.Error())
+		return nil, status.Error(codes.Internal, failedToGetOsAgentVolumePrefix+dtotel.RecordError(span, err).Error())
 	}
 
 	if osMount == nil {
@@ -136,7 +147,10 @@ func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volum
 	publisher.unmountOneAgent(volumeInfo.TargetPath)
 
 	if err := publisher.db.DeleteOSMount(&metadata.OSMount{TenantUUID: osMount.TenantUUID}); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to update OSMount to database. info: %v err: %s", osMount, err.Error()))
+		return nil, status.Error(codes.Internal,
+			fmt.Sprintf("failed to update OSMount to database. info: %v err: %s",
+				osMount,
+				dtotel.RecordError(span, err).Error()))
 	}
 
 	log.Info("OSMount has been unpublished", "targetPath", volumeInfo.TargetPath)
@@ -145,9 +159,12 @@ func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volum
 }
 
 func (publisher *HostVolumePublisher) CanUnpublishVolume(ctx context.Context, volumeInfo csivolumes.VolumeInfo) (bool, error) {
+	_, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	defer span.End()
+
 	volume, err := publisher.db.ReadOSMount(metadata.OSMount{VolumeMetaID: volumeInfo.VolumeID})
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return false, status.Error(codes.Internal, failedToGetOsAgentVolumePrefix+err.Error())
+		return false, status.Error(codes.Internal, failedToGetOsAgentVolumePrefix+dtotel.RecordError(span, err).Error())
 	}
 
 	return volume != nil, nil

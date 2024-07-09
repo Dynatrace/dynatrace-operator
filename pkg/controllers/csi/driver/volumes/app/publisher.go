@@ -26,8 +26,10 @@ import (
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
+	csiotel "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/internal/otel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/pkg/errors"
 	dto "github.com/prometheus/client_model/go"
@@ -54,15 +56,18 @@ type AppVolumePublisher struct {
 	path    metadata.PathResolver
 }
 
-func (publisher *AppVolumePublisher) PublishVolume(_ context.Context, volumeCfg csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
+func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCfg csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
+	_, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	defer span.End()
+
 	tenantConfig, err := publisher.db.ReadTenantConfig(metadata.TenantConfig{Name: volumeCfg.DynakubeName})
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to read tenant-config: "+err.Error())
+		return nil, status.Error(codes.Internal, "failed to read tenant-config: "+dtotel.RecordError(span, err).Error())
 	}
 
 	hasTooManyAttempts, err := publisher.hasTooManyMountAttempts(tenantConfig, volumeCfg)
 	if err != nil {
-		return nil, err
+		return nil, dtotel.RecordError(span, err)
 	}
 
 	if hasTooManyAttempts {
@@ -79,7 +84,7 @@ func (publisher *AppVolumePublisher) PublishVolume(_ context.Context, volumeCfg 
 	}
 
 	if err := publisher.ensureMountSteps(tenantConfig, volumeCfg); err != nil {
-		return nil, err
+		return nil, dtotel.RecordError(span, err)
 	}
 
 	agentsVersionsMetric.WithLabelValues(tenantConfig.DownloadedCodeModuleVersion).Inc()
@@ -91,11 +96,14 @@ func IsArchiveAvailable(tenantConfig *metadata.TenantConfig) bool {
 	return tenantConfig.DownloadedCodeModuleVersion != ""
 }
 
-func (publisher *AppVolumePublisher) UnpublishVolume(_ context.Context, volumeInfo csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
+func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volumeInfo csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
+	_, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	defer span.End()
+
 	appMount, err := publisher.db.ReadAppMount(metadata.AppMount{VolumeMetaID: volumeInfo.VolumeID})
 
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		log.Info("failed to load AppMount", "error", err.Error())
+		log.Info("failed to load AppMount", "error", dtotel.RecordError(span, err).Error())
 	}
 
 	if appMount == nil {
@@ -114,13 +122,13 @@ func (publisher *AppVolumePublisher) UnpublishVolume(_ context.Context, volumeIn
 	publisher.unmountOneAgent(volumeInfo.TargetPath, overlayFSPath)
 
 	if err = publisher.db.DeleteAppMount(&metadata.AppMount{VolumeMetaID: appMount.VolumeMetaID}); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, dtotel.RecordError(span, err).Error())
 	}
 
 	log.Info("deleted AppMount", "ID", appMount.VolumeMetaID, "PodUID", appMount.VolumeMeta.PodName, "Version", appMount.CodeModuleVersion)
 
 	if err = publisher.fs.RemoveAll(volumeInfo.TargetPath); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, dtotel.RecordError(span, err).Error())
 	}
 
 	log.Info("volume has been unpublished", "targetPath", volumeInfo.TargetPath)
@@ -130,10 +138,13 @@ func (publisher *AppVolumePublisher) UnpublishVolume(_ context.Context, volumeIn
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
-func (publisher *AppVolumePublisher) CanUnpublishVolume(_ context.Context, volumeInfo csivolumes.VolumeInfo) (bool, error) {
+func (publisher *AppVolumePublisher) CanUnpublishVolume(ctx context.Context, volumeInfo csivolumes.VolumeInfo) (bool, error) {
+	_, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	defer span.End()
+
 	appMount, err := publisher.db.ReadAppMount(metadata.AppMount{VolumeMetaID: volumeInfo.VolumeID})
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return false, err
+		return false, dtotel.RecordError(span, err)
 	}
 
 	return appMount != nil, nil
