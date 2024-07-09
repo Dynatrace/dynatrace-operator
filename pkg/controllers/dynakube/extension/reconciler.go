@@ -51,7 +51,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 			return err
 		}
 
-		setSecretCreated(r.dynakube.Conditions())
+		setSecretCreatedTrue(r.dynakube.Conditions())
 	}
 
 	return nil

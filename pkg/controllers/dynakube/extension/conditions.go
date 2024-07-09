@@ -14,7 +14,7 @@ const (
 	secretCreatedMessageFalse = "Error creating extensions secret: %s"
 )
 
-func setSecretCreated(conditions *[]metav1.Condition) {
+func setSecretCreatedTrue(conditions *[]metav1.Condition) {
 	condition := metav1.Condition{
 		Type:    secretConditionType,
 		Status:  metav1.ConditionTrue,
