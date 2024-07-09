@@ -70,7 +70,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		// assert extensions token condition is added
 		require.NotEmpty(t, instance.Conditions())
 		var expectedConditions []metav1.Condition
-		setSecretCreationFailed(&expectedConditions, err)
+		setSecretCreatedFalse(&expectedConditions, err)
 		testutil.PartialEqual(t, &expectedConditions, instance.Conditions(), cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
 	})
 }

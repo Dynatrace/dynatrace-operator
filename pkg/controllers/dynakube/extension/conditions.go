@@ -8,25 +8,28 @@ import (
 )
 
 const (
-	secretConditionType = "Secret"
+	secretConditionType       = "Secret"
+	secretCreatedReason       = "SecretCreated"
+	secretCreatedMessageTrue  = "EEC token created"
+	secretCreatedMessageFalse = "Error creating extensions secret: %s"
 )
 
 func setSecretCreated(conditions *[]metav1.Condition) {
 	condition := metav1.Condition{
 		Type:    secretConditionType,
 		Status:  metav1.ConditionTrue,
-		Reason:  "SecretCreated",
-		Message: "EEC token created",
+		Reason:  secretCreatedReason,
+		Message: secretCreatedMessageTrue,
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func setSecretCreationFailed(conditions *[]metav1.Condition, err error) {
+func setSecretCreatedFalse(conditions *[]metav1.Condition, err error) {
 	condition := metav1.Condition{
 		Type:    secretConditionType,
 		Status:  metav1.ConditionFalse,
-		Reason:  "SecretCreationFailed",
-		Message: fmt.Sprintf("EEC token creation failed: %s", err),
+		Reason:  secretCreatedReason,
+		Message: fmt.Sprintf(secretCreatedMessageFalse, err),
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }

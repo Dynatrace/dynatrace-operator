@@ -46,7 +46,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	if r.dynakube.PrometheusEnabled() {
 		err := r.reconcileSecret(ctx)
 		if err != nil {
-			setSecretCreationFailed(r.dynakube.Conditions(), err)
+			setSecretCreatedFalse(r.dynakube.Conditions(), err)
 
 			return err
 		}
