@@ -46,10 +46,6 @@ func reconcileSecret(ctx context.Context, dk *dynakube.DynaKube, kubeClient clie
 	return nil
 }
 
-func getSecretName(dynakubeName string) string {
-	return dynakubeName + secretSuffix
-}
-
 func buildSecret(dk *dynakube.DynaKube, token dttoken.Token) (*corev1.Secret, error) {
 	secretData := map[string][]byte{
 		eecTokenKey: []byte(token.String()),
@@ -59,10 +55,9 @@ func buildSecret(dk *dynakube.DynaKube, token dttoken.Token) (*corev1.Secret, er
 }
 
 func newEecToken() (*dttoken.Token, error) {
-	newToken, err := dttoken.New(eecTokenValuePrefix)
-	if err != nil {
-		return nil, err
-	}
+	return dttoken.New(eecTokenValuePrefix)
+}
 
-	return newToken, nil
+func getSecretName(dynakubeName string) string {
+	return dynakubeName + secretSuffix
 }
