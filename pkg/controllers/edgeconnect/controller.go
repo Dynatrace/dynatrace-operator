@@ -386,7 +386,7 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 
 	desiredDeployment.Annotations[hasher.AnnotationHash] = ddHash
 
-	_, err = k8sdeployment.CreateOrUpdateDeployment(controller.client, log, desiredDeployment)
+	_, err = k8sdeployment.Query(controller.client, controller.apiReader, log).CreateOrUpdate(ctx, desiredDeployment)
 	if err != nil {
 		_log.Info("could not create or update deployment for EdgeConnect")
 
@@ -699,7 +699,7 @@ func (controller *Controller) createOrUpdateEdgeConnectDeploymentAndSettings(ctx
 
 	desiredDeployment.Annotations[hasher.AnnotationHash] = ddHash
 
-	_, err = k8sdeployment.CreateOrUpdateDeployment(controller.client, _log, desiredDeployment)
+	_, err = k8sdeployment.Query(controller.client, controller.apiReader, _log).CreateOrUpdate(ctx, desiredDeployment)
 	if err != nil {
 		_log.Debug("could not create or update deployment for EdgeConnect")
 
