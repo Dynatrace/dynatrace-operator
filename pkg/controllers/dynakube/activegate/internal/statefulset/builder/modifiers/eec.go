@@ -20,7 +20,7 @@ const (
 	eecFile       = "token/eec.token"
 )
 
-func NewExtensionVolumeModifier(dynakube dynakube.DynaKube) EecModifier {
+func NewEecVolumeModifier(dynakube dynakube.DynaKube) EecModifier {
 	return EecModifier{
 		dynakube: dynakube,
 	}
