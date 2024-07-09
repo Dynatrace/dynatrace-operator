@@ -21,23 +21,18 @@ type DockerKeychain struct {
 	mutex        sync.Mutex
 }
 
-func NewDockerKeychains(ctx context.Context, apiReader client.Reader, namespaceName string, pullSecretsNames []string) (authn.Keychain, error) {
+func NewDockerKeychains(ctx context.Context, apiReader client.Reader, namespaceName string, pullSecretNames []string) (authn.Keychain, error) {
 	keychain := &DockerKeychain{}
-	err := keychain.loadDockerConfigFromSecrets(ctx, apiReader, namespaceName, pullSecretsNames)
 
-	return keychain, err
-}
-
-func (keychain *DockerKeychain) loadDockerConfigFromSecrets(ctx context.Context, apiReader client.Reader, namespaceName string, pullSecretsNames []string) error {
-	if len(pullSecretsNames) == 0 {
-		return nil
+	if len(pullSecretNames) == 0 {
+		return keychain, nil
 	}
 
 	configFile := configfile.ConfigFile{
 		AuthConfigs: make(map[string]dockertypes.AuthConfig),
 	}
 
-	for _, pullSecretName := range pullSecretsNames {
+	for _, pullSecretName := range pullSecretNames {
 		pullSecret := corev1.Secret{}
 
 		if err := apiReader.Get(ctx, client.ObjectKey{Namespace: namespaceName, Name: pullSecretName}, &pullSecret); err != nil {
@@ -50,12 +45,12 @@ func (keychain *DockerKeychain) loadDockerConfigFromSecrets(ctx context.Context,
 		if err != nil {
 			log.Info("failed to parse pull secret content", "name", pullSecret.Name, "namespace", pullSecret.Namespace)
 
-			return err
+			return keychain, err
 		}
 
 		err = configFile.LoadFromReader(bytes.NewReader(dockerAuths))
 		if err != nil {
-			return errors.WithStack(err)
+			return keychain, errors.WithStack(err)
 		}
 	}
 
@@ -66,42 +61,37 @@ func (keychain *DockerKeychain) loadDockerConfigFromSecrets(ctx context.Context,
 		log.Debug("no docker configs found")
 	}
 
-	return nil
+	return keychain, nil
 }
 
 func NewDockerKeychain(ctx context.Context, apiReader client.Reader, pullSecret corev1.Secret) (authn.Keychain, error) {
 	keychain := &DockerKeychain{}
-	err := keychain.loadDockerConfigFromSecret(ctx, apiReader, pullSecret)
 
-	return keychain, err
-}
-
-func (keychain *DockerKeychain) loadDockerConfigFromSecret(ctx context.Context, apiReader client.Reader, pullSecret corev1.Secret) error {
 	if pullSecret.Name == "" {
-		return nil
+		return keychain, nil
 	}
 
 	if err := apiReader.Get(ctx, client.ObjectKey{Namespace: pullSecret.Namespace, Name: pullSecret.Name}, &pullSecret); err != nil {
 		log.Info("No registry pull secret loaded", "name", pullSecret.Name, "namespace", pullSecret.Namespace, "err", err)
 
-		return nil
+		return keychain, nil
 	}
 
 	dockerAuths, err := extractDockerAuthsFromSecret(&pullSecret)
 	if err != nil {
 		log.Info("failed to parse pull secret content", "name", pullSecret.Name, "namespace", pullSecret.Namespace)
 
-		return err
+		return keychain, err
 	}
 
 	cf, err := config.LoadFromReader(bytes.NewReader(dockerAuths))
 	if err != nil {
-		return errors.WithStack(err)
+		return keychain, errors.WithStack(err)
 	}
 
 	keychain.dockerConfig = cf
 
-	return nil
+	return keychain, nil
 }
 
 func extractDockerAuthsFromSecret(secret *corev1.Secret) ([]byte, error) {

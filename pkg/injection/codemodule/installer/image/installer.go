@@ -37,7 +37,7 @@ func NewImageInstaller(ctx context.Context, fs afero.Fs, props *Properties) (ins
 		return nil, err
 	}
 
-	keychain, err := dockerkeychain.NewDockerKeychains(ctx, props.ApiReader, props.Dynakube.Namespace, props.Dynakube.PullSecretsNames())
+	keychain, err := dockerkeychain.NewDockerKeychains(ctx, props.ApiReader, props.Dynakube.Namespace, props.Dynakube.PullSecretNames())
 	if err != nil {
 		return nil, err
 	}

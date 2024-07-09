@@ -212,7 +212,7 @@ func (dk *DynaKube) PullSecretName() string {
 }
 
 // PullSecretsNames returns the names of the pull secrets to be used for immutable images.
-func (dk *DynaKube) PullSecretsNames() []string {
+func (dk *DynaKube) PullSecretNames() []string {
 	names := []string{
 		dk.Name + PullSecretSuffix,
 	}
@@ -225,7 +225,7 @@ func (dk *DynaKube) PullSecretsNames() []string {
 
 func (dk *DynaKube) ImagePullSecretReferences() []corev1.LocalObjectReference {
 	imagePullSecrets := make([]corev1.LocalObjectReference, 0)
-	for _, pullSecretName := range dk.PullSecretsNames() {
+	for _, pullSecretName := range dk.PullSecretNames() {
 		imagePullSecrets = append(imagePullSecrets, corev1.LocalObjectReference{
 			Name: pullSecretName,
 		})
