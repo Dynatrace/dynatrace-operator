@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	eecTokenKey         = "eec-token"
+	EecTokenKey         = "eec-token"
 	eecTokenValuePrefix = "EEC dt0x01"
 	secretSuffix        = "-extensions-token"
 )
@@ -22,7 +22,7 @@ func reconcileSecret(ctx context.Context, dk *dynakube.DynaKube, kubeClient clie
 
 	query := k8ssecret.NewQuery(ctx, kubeClient, apiReader, log)
 
-	_, err := query.Get(client.ObjectKey{Name: getSecretName(dk.Name), Namespace: dk.Namespace})
+	_, err := query.Get(client.ObjectKey{Name: GetSecretName(dk.Name), Namespace: dk.Namespace})
 	if err != nil && !errors.IsNotFound(err) {
 		return err
 	}
@@ -48,16 +48,16 @@ func reconcileSecret(ctx context.Context, dk *dynakube.DynaKube, kubeClient clie
 
 func buildSecret(dk *dynakube.DynaKube, token dttoken.Token) (*corev1.Secret, error) {
 	secretData := map[string][]byte{
-		eecTokenKey: []byte(token.String()),
+		EecTokenKey: []byte(token.String()),
 	}
 
-	return k8ssecret.Create(dk, k8ssecret.NewNameModifier(getSecretName(dk.Name)), k8ssecret.NewNamespaceModifier(dk.GetNamespace()), k8ssecret.NewDataModifier(secretData))
+	return k8ssecret.Create(dk, k8ssecret.NewNameModifier(GetSecretName(dk.Name)), k8ssecret.NewNamespaceModifier(dk.GetNamespace()), k8ssecret.NewDataModifier(secretData))
 }
 
 func newEecToken() (*dttoken.Token, error) {
 	return dttoken.New(eecTokenValuePrefix)
 }
 
-func getSecretName(dynakubeName string) string {
+func GetSecretName(dynakubeName string) string {
 	return dynakubeName + secretSuffix
 }
