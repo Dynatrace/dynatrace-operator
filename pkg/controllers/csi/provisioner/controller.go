@@ -130,8 +130,12 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	}
 
 	requeue, err := provisioner.provisionCodeModules(ctx, dk, tenantConfig)
-	if err != nil && requeue {
-		return reconcile.Result{RequeueAfter: dtcsi.ShortRequeueDuration}, err
+	if err != nil {
+		if requeue {
+			return reconcile.Result{RequeueAfter: dtcsi.ShortRequeueDuration}, err
+		}
+
+		return reconcile.Result{}, err
 	}
 
 	return provisioner.collectGarbage(ctx, request)
