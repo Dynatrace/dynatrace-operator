@@ -6,7 +6,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/object"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -85,7 +84,7 @@ func getDeployment(c client.Client, desiredDeployment *appsv1.Deployment) (*apps
 
 	err := c.Get(
 		context.TODO(),
-		object.Key(desiredDeployment),
+		client.ObjectKeyFromObject(desiredDeployment),
 		&actualDaemonSet,
 	)
 	if err != nil {

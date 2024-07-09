@@ -16,7 +16,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/object"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
@@ -210,7 +209,7 @@ func (r *Reconciler) deleteService(ctx context.Context, agCapability capability.
 		},
 	}
 
-	return object.Delete(ctx, r.client, &svc)
+	return client.IgnoreNotFound(r.client.Delete(ctx, &svc))
 }
 
 func (r *Reconciler) deleteStatefulset(ctx context.Context, agCapability capability.Capability) error {
@@ -221,5 +220,5 @@ func (r *Reconciler) deleteStatefulset(ctx context.Context, agCapability capabil
 		},
 	}
 
-	return object.Delete(ctx, r.client, &sts)
+	return client.IgnoreNotFound(r.client.Delete(ctx, &sts))
 }

@@ -24,7 +24,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
 	k8sdaemonset "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/object"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -355,7 +354,7 @@ func (r *Reconciler) reconcileInstanceStatuses(ctx context.Context, dk *dynakube
 func (r *Reconciler) removeOneAgentDaemonSet(ctx context.Context, dk *dynakube.DynaKube) error {
 	oneAgentDaemonSet := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dk.OneAgentDaemonsetName(), Namespace: dk.Namespace}}
 
-	return object.Delete(ctx, r.client, &oneAgentDaemonSet)
+	return client.IgnoreNotFound(r.client.Delete(ctx, &oneAgentDaemonSet))
 }
 
 func getInstanceStatuses(pods []corev1.Pod) map[string]dynakube.OneAgentInstance {
