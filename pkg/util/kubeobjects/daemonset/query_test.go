@@ -28,10 +28,13 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 		annotations := map[string]string{hasher.AnnotationHash: "hash"}
 		daemonSet := createTestDaemonSetWithMatchLabels(daemonsetName, namespaceName, annotations, nil)
 
-		created, err := CreateOrUpdateDaemonSet(ctx, fakeClient, daemonSetLog, &daemonSet)
-
+		created, err := Query(fakeClient, fakeClient, daemonSetLog).CreateOrUpdate(ctx, &daemonSet)
 		require.NoError(t, err)
-		assert.True(t, created)
+		require.True(t, created)
+
+		ds, err := Query(fakeClient, fakeClient, daemonSetLog).Get(ctx, client.ObjectKeyFromObject(&daemonSet))
+		require.NoError(t, err)
+		assert.NotEmpty(t, ds)
 	})
 	t.Run("update when exists and changed", func(t *testing.T) {
 		oldAnnotations := map[string]string{hasher.AnnotationHash: "old"}
@@ -40,10 +43,13 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 		newDaemonSet := createTestDaemonSetWithMatchLabels(daemonsetName, namespaceName, newAnnotations, nil)
 		fakeClient := fake.NewClient(&oldDaemonSet)
 
-		updated, err := CreateOrUpdateDaemonSet(ctx, fakeClient, daemonSetLog, &newDaemonSet)
-
+		updated, err := Query(fakeClient, fakeClient, daemonSetLog).CreateOrUpdate(ctx, &newDaemonSet)
 		require.NoError(t, err)
-		assert.True(t, updated)
+		require.True(t, updated)
+
+		ds, err := Query(fakeClient, fakeClient, daemonSetLog).Get(ctx, client.ObjectKeyFromObject(&newDaemonSet))
+		require.NoError(t, err)
+		assert.Equal(t, newAnnotations, ds.Annotations)
 	})
 	t.Run("not update when exists and no changed", func(t *testing.T) {
 		oldAnnotations := map[string]string{hasher.AnnotationHash: "old"}
@@ -51,9 +57,13 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 
 		fakeClient := fake.NewClient(&oldDaemonSet)
 
-		updated, err := CreateOrUpdateDaemonSet(ctx, fakeClient, daemonSetLog, &oldDaemonSet)
+		updated, err := Query(fakeClient, fakeClient, daemonSetLog).CreateOrUpdate(ctx, &oldDaemonSet)
 		require.NoError(t, err)
-		assert.False(t, updated)
+		require.False(t, updated)
+
+		ds, err := Query(fakeClient, fakeClient, daemonSetLog).Get(ctx, client.ObjectKeyFromObject(&oldDaemonSet))
+		require.NoError(t, err)
+		assert.Equal(t, oldDaemonSet, *ds)
 	})
 	t.Run("recreate when exists and changed for immutable field", func(t *testing.T) {
 		oldAnnotations := map[string]string{hasher.AnnotationHash: "old"}
@@ -65,15 +75,14 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 		newDaemonSet := createTestDaemonSetWithMatchLabels(daemonsetName, namespaceName, newAnnotations, newMatchLabels)
 		fakeClient := fake.NewClient(&oldDaemonSet)
 
-		updated, err := CreateOrUpdateDaemonSet(ctx, fakeClient, daemonSetLog, &newDaemonSet)
-
+		recreate, err := Query(fakeClient, fakeClient, daemonSetLog).CreateOrUpdate(ctx, &newDaemonSet)
 		require.NoError(t, err)
-		assert.True(t, updated)
+		require.True(t, recreate)
 
-		var actualDaemonSet appsv1.DaemonSet
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: daemonsetName, Namespace: namespaceName}, &actualDaemonSet)
+		ds, err := Query(fakeClient, fakeClient, daemonSetLog).Get(ctx, client.ObjectKeyFromObject(&newDaemonSet))
 		require.NoError(t, err)
-		assert.Equal(t, newMatchLabels, actualDaemonSet.Spec.Selector.MatchLabels)
+		assert.Equal(t, newDaemonSet, *ds)
+		assert.Equal(t, newMatchLabels, ds.Spec.Selector.MatchLabels)
 	})
 }
 

@@ -58,7 +58,7 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dk *dynakube.DynaK
 
 	secretQuery := k8ssecret.Query(r.client, r.apiReader, log)
 
-	err = secretQuery.CreateOrUpdate(ctx, secret)
+	_, err = secretQuery.CreateOrUpdate(ctx, secret)
 
 	return errors.WithStack(err)
 }

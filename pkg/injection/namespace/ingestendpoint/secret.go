@@ -69,7 +69,7 @@ func (g *SecretGenerator) GenerateForNamespace(ctx context.Context, dkName, targ
 	}
 	secretQuery := k8ssecret.Query(g.client, g.apiReader, log)
 
-	err = secretQuery.CreateOrUpdate(ctx, secret)
+	_, err = secretQuery.CreateOrUpdate(ctx, secret)
 
 	return errors.WithStack(err)
 }

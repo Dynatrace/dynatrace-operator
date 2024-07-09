@@ -21,7 +21,8 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 
 			return out
 		},
-		IsEqual: AreSecretsEqual,
+		IsEqual:     IsEqual,
+		IsImmutable: func(_, _ *corev1.Secret) bool { return false },
 
 		KubeClient: kubeClient,
 		KubeReader: kubeReader,
@@ -29,6 +30,6 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 	}
 }
 
-func AreSecretsEqual(secret *corev1.Secret, other *corev1.Secret) bool {
+func IsEqual(secret *corev1.Secret, other *corev1.Secret) bool {
 	return reflect.DeepEqual(secret.Data, other.Data) && reflect.DeepEqual(secret.Labels, other.Labels) && reflect.DeepEqual(secret.OwnerReferences, other.OwnerReferences)
 }

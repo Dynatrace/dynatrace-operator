@@ -604,7 +604,7 @@ func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnect
 
 	query := k8ssecret.Query(controller.client, controller.apiReader, _log)
 
-	err = query.CreateOrUpdate(ctx, ecOAuthSecret)
+	_, err = query.CreateOrUpdate(ctx, ecOAuthSecret)
 	if err != nil {
 		_log.Debug("could not create or update secret for edge-connect client")
 
@@ -810,7 +810,7 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 
 	query := k8ssecret.Query(controller.client, controller.apiReader, log)
 
-	err = query.CreateOrUpdate(ctx, secretConfig)
+	_, err = query.CreateOrUpdate(ctx, secretConfig)
 	if err != nil {
 		log.Info("could not create or update secret for ec.yaml", "name", secretConfig.Name)
 

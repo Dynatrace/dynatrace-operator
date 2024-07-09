@@ -75,7 +75,9 @@ func (r *Reconciler) maintainMetadataConfigMap(ctx context.Context, configMapDat
 	}
 
 	if len(configMapData) > 0 {
-		return configMapQuery.CreateOrUpdate(ctx, configMap)
+		_, err := configMapQuery.CreateOrUpdate(ctx, configMap)
+
+		return err
 	}
 
 	return configMapQuery.Delete(ctx, configMap)

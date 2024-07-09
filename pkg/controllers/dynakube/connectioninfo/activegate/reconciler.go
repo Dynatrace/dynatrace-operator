@@ -127,7 +127,7 @@ func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName str
 
 	query := k8ssecret.Query(r.client, r.apiReader, log)
 
-	err = query.CreateOrUpdate(ctx, secret)
+	_, err = query.CreateOrUpdate(ctx, secret)
 	if err != nil {
 		log.Info("could not create or update secret for connection info", "name", secret.Name)
 		conditions.SetKubeApiError(r.dk.Conditions(), activeGateConnectionInfoConditionType, err)

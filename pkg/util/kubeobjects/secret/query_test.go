@@ -306,8 +306,9 @@ func TestCreateOrUpdate(t *testing.T) {
 		// empty client
 		secretQuery := Query(fake.NewClient(), fake.NewClient(), secretLog)
 
-		err := secretQuery.CreateOrUpdate(ctx, getTestSecret())
+		created, err := secretQuery.CreateOrUpdate(ctx, getTestSecret())
 		require.NoError(t, err)
+		require.True(t, created)
 
 		secret, _ := secretQuery.Get(ctx, types.NamespacedName{Name: testSecretName, Namespace: testNamespace})
 		assert.NotNil(t, secret)
@@ -316,8 +317,9 @@ func TestCreateOrUpdate(t *testing.T) {
 		// existing mocked secret in fakeClient
 		secretQuery := Query(fakeClient, fakeClient, secretLog)
 
-		err := secretQuery.CreateOrUpdate(ctx, getTestSecret())
+		updated, err := secretQuery.CreateOrUpdate(ctx, getTestSecret())
 		require.NoError(t, err)
+		require.False(t, updated)
 
 		secret, _ := secretQuery.Get(ctx, types.NamespacedName{Name: testSecretName, Namespace: testNamespace})
 		assert.NotNil(t, secret)
@@ -335,8 +337,9 @@ func TestCreateOrUpdate(t *testing.T) {
 				testSecretDataKey: newValue,
 			},
 		}
-		err := secretQuery.CreateOrUpdate(ctx, &updatedSecret)
+		updated, err := secretQuery.CreateOrUpdate(ctx, &updatedSecret)
 		require.NoError(t, err)
+		require.True(t, updated)
 
 		secret, _ := secretQuery.Get(ctx, types.NamespacedName{Name: testSecretName, Namespace: testNamespace})
 		assert.Equal(t, secret.Data[testSecretDataKey], newValue)

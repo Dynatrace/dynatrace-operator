@@ -65,7 +65,7 @@ func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynakube.Dy
 	}
 	secretQuery := k8ssecret.Query(g.client, g.apiReader, log)
 
-	err = secretQuery.CreateOrUpdate(ctx, secret)
+	_, err = secretQuery.CreateOrUpdate(ctx, secret)
 
 	return errors.WithStack(err)
 }

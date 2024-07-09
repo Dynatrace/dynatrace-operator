@@ -12,10 +12,11 @@ import (
 )
 
 type Generic[T client.Object, L client.ObjectList] struct {
-	Target     T
-	ListTarget L
-	ToList     func(L) []T
-	IsEqual    func(T, T) bool
+	Target      T
+	ListTarget  L
+	ToList      func(L) []T
+	IsEqual     func(T, T) bool
+	IsImmutable func(T, T) bool
 
 	KubeClient client.Client
 	KubeReader client.Reader
@@ -48,24 +49,51 @@ func (c Generic[T, L]) Delete(ctx context.Context, object T) error {
 	return errors.WithStack(client.IgnoreNotFound(err))
 }
 
-func (c Generic[T, L]) CreateOrUpdate(ctx context.Context, object T) error {
-	currentObject, err := c.Get(ctx, asNamespacedName(object))
+func (c Generic[T, L]) CreateOrUpdate(ctx context.Context, newObject T) (bool, error) {
+	currentObject, err := c.Get(ctx, asNamespacedName(newObject))
 	if err != nil && client.IgnoreNotFound(err) == nil {
-		err = c.Create(ctx, object)
+		err = c.Create(ctx, newObject)
 		if err != nil {
-			return errors.WithStack(err)
+			return false, err
 		}
 
-		return nil
+		return true, nil
 	} else if err != nil {
-		return errors.WithStack(err)
+		return false, err
 	}
 
-	if c.IsEqual(currentObject, object) {
-		c.Log.Info("update not needed, no changes detected", "kind", object.GetObjectKind(), "name", object.GetName(), "namespace", object.GetNamespace())
+	if c.IsEqual(currentObject, newObject) {
+		c.Log.Info("update not needed, no changes detected", "kind", newObject.GetObjectKind(), "name", newObject.GetName(), "namespace", newObject.GetNamespace())
+
+		return false, nil
 	}
 
-	return errors.WithStack(c.Update(ctx, object))
+	if c.IsImmutable(currentObject, newObject) {
+		c.Log.Info("recreation needed, immutable change detected", "kind", newObject.GetObjectKind(), "name", newObject.GetName(), "namespace", newObject.GetNamespace())
+
+		err := c.Recreate(ctx, newObject)
+		if err != nil {
+			return false, err
+		}
+
+		return true, nil
+	}
+
+	err = c.Update(ctx, newObject)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (c Generic[T, L]) Recreate(ctx context.Context, object T) error {
+	err := c.Delete(ctx, object)
+	if err != nil {
+		return err
+	}
+
+	return c.Create(ctx, object)
 }
 
 func (c Generic[T, L]) GetAllFromNamespaces(ctx context.Context, objectName string) ([]T, error) {
