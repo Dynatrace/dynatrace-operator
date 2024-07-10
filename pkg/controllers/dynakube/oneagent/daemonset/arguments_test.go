@@ -16,9 +16,10 @@ const (
 	testKey   = "test-key"
 	testValue = "test-value"
 
-	testClusterID = "test-cluster-id"
-	testURL       = "https://testing.dev.dynatracelabs.com/api"
-	testName      = "test-name"
+	testClusterID    = "test-cluster-id"
+	testURL          = "https://testing.dev.dynatracelabs.com/api"
+	testDynakubeName = "test-dynakube-name"
+	testName         = "test-name"
 
 	testNewHostGroupName     = "newhostgroup"
 	testOldHostGroupArgument = "--set-host-group=oldhostgroup"

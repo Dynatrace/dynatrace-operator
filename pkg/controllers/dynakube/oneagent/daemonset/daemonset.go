@@ -307,7 +307,7 @@ func (b *builder) imagePullSecrets() []corev1.LocalObjectReference {
 		return []corev1.LocalObjectReference{}
 	}
 
-	return []corev1.LocalObjectReference{{Name: b.dk.PullSecretName()}}
+	return b.dk.ImagePullSecretReferences()
 }
 
 func (b *builder) securityContext() *corev1.SecurityContext {
