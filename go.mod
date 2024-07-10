@@ -3,7 +3,7 @@ module github.com/Dynatrace/dynatrace-operator
 go 1.22.3
 
 require (
-	github.com/container-storage-interface/spec v1.9.0
+	github.com/container-storage-interface/spec v1.10.0
 	github.com/docker/cli v27.0.3+incompatible
 	github.com/evanphx/json-patch v5.9.0+incompatible
 	github.com/go-gormigrate/gormigrate/v2 v2.1.2

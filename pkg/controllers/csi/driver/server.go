@@ -41,6 +41,9 @@ import (
 )
 
 type Server struct {
+	csi.UnimplementedIdentityServer
+	csi.UnimplementedNodeServer
+
 	fs      afero.Afero
 	mounter mount.Interface
 	db      metadata.Access
