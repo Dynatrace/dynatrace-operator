@@ -53,7 +53,7 @@ runs:
     - name: Set up kubectl
       uses: azure/setup-kubectl@3e0aec4d80787158d308d7b364cb1b702e7feb7f # v4.0.0
     - name: Set up go
-      uses: actions/setup-go@cdcb36043654635271a94b9a6d1392de5bb323a7 # v5.0.1
+      uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
       with:
         go-version-file: "${{ github.workspace }}/target/go.mod"
     - name: Set up helm
