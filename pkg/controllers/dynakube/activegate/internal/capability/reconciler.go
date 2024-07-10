@@ -4,8 +4,7 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
-	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/object"
@@ -39,19 +38,12 @@ func NewReconciler(clt client.Client, capability capability.Capability, dk *dyna
 type NewReconcilerFunc = func(clt client.Client, capability capability.Capability, dk *dynakube.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler) controllers.Reconciler
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	dynakubeV1beta3 := &dynakubev1beta3.DynaKube{}
-
-	err := dynakubeV1beta3.ConvertFrom(r.dynakube)
-	if err != nil {
-		return err
-	}
-
-	err = r.customPropertiesReconciler.Reconcile(ctx)
+	err := r.customPropertiesReconciler.Reconcile(ctx)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	if dynakubeV1beta3.NeedsActiveGateService() {
+	if r.dynakube.NeedsActiveGateService() {
 		err = r.createOrUpdateService(ctx)
 		if err != nil {
 			return err

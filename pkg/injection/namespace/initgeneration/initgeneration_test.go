@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -26,34 +26,34 @@ const (
 
 func TestGenerateForNamespace(t *testing.T) {
 	t.Run("Add secret for namespace (dynakube with all relevant fields)", func(t *testing.T) {
-		dynakube := createDynakube()
+		dk := createDynakube()
 
 		// setup tokens
 		apiToken := "api-test"
 		paasToken := "paas-test"
-		apiTokenSecret := createApiTokenSecret(dynakube, apiToken, paasToken)
+		apiTokenSecret := createApiTokenSecret(dk, apiToken, paasToken)
 
 		// add TrustedCA
-		setTrustedCA(dynakube, "ca-configmap")
+		setTrustedCA(dk, "ca-configmap")
 
 		caValue := "ca-test"
-		caConfigMap := createTestCaConfigMap(dynakube, caValue)
+		caConfigMap := createTestCaConfigMap(dk, caValue)
 
 		// add Proxy
 		proxyValue := "proxy-test-value"
-		setProxy(dynakube, proxyValue)
+		setProxy(dk, proxyValue)
 
 		// add TLS secret
-		setTlsSecret(dynakube, "tls-test")
+		setTlsSecret(dk, "tls-test")
 
 		tlsValue := "tls-test-value"
-		tlsSecret := createTestTlsSecret(dynakube, tlsValue)
+		tlsSecret := createTestTlsSecret(dk, tlsValue)
 
-		testNamespace := createTestInjectedNamespace(dynakube, "test")
-		clt := fake.NewClient(dynakube, testNamespace, apiTokenSecret, getKubeNamespace(), caConfigMap, tlsSecret)
-		ig := NewInitGenerator(clt, clt, dynakube.Namespace)
+		testNamespace := createTestInjectedNamespace(dk, "test")
+		clt := fake.NewClient(dk, testNamespace, apiTokenSecret, getKubeNamespace(), caConfigMap, tlsSecret)
+		ig := NewInitGenerator(clt, clt, dk.Namespace)
 
-		err := ig.GenerateForNamespace(context.TODO(), *dynakube, testNamespace.Name)
+		err := ig.GenerateForNamespace(context.TODO(), *dk, testNamespace.Name)
 		require.NoError(t, err)
 
 		initSecret := retrieveInitSecret(t, clt, testNamespace.Name)
@@ -61,17 +61,17 @@ func TestGenerateForNamespace(t *testing.T) {
 		checkProxy(t, initSecret, proxyValue)
 	})
 	t.Run("Add secret for namespace (simple dynakube)", func(t *testing.T) {
-		dynakube := createDynakube()
+		dk := createDynakube()
 
 		// setup tokens
 		apiToken := "api-test"
-		apiTokenSecret := createApiTokenSecret(dynakube, apiToken, apiToken)
+		apiTokenSecret := createApiTokenSecret(dk, apiToken, apiToken)
 
-		testNamespace := createTestInjectedNamespace(dynakube, "test")
-		clt := fake.NewClient(dynakube, testNamespace, apiTokenSecret, getKubeNamespace())
-		ig := NewInitGenerator(clt, clt, dynakube.Namespace)
+		testNamespace := createTestInjectedNamespace(dk, "test")
+		clt := fake.NewClient(dk, testNamespace, apiTokenSecret, getKubeNamespace())
+		ig := NewInitGenerator(clt, clt, dk.Namespace)
 
-		err := ig.GenerateForNamespace(context.TODO(), *dynakube, testNamespace.Name)
+		err := ig.GenerateForNamespace(context.TODO(), *dk, testNamespace.Name)
 		require.NoError(t, err)
 
 		initSecret := retrieveInitSecret(t, clt, testNamespace.Name)
@@ -82,34 +82,34 @@ func TestGenerateForNamespace(t *testing.T) {
 
 func TestGenerateForDynakube(t *testing.T) {
 	t.Run("Add secret for namespace (dynakube with all the fields)", func(t *testing.T) {
-		dynakube := createDynakube()
+		dk := createDynakube()
 
 		// setup tokens
 		apiToken := "api-test"
 		paasToken := "paas-test"
-		apiTokenSecret := createApiTokenSecret(dynakube, apiToken, paasToken)
+		apiTokenSecret := createApiTokenSecret(dk, apiToken, paasToken)
 
 		// add TrustedCA
-		setTrustedCA(dynakube, "ca-configmap")
+		setTrustedCA(dk, "ca-configmap")
 
 		caValue := "ca-test"
-		caConfigMap := createTestCaConfigMap(dynakube, caValue)
+		caConfigMap := createTestCaConfigMap(dk, caValue)
 
 		// add Proxy
 		proxyValue := "proxy-test-value"
-		setProxy(dynakube, proxyValue)
+		setProxy(dk, proxyValue)
 
 		// add TLS secret
-		setTlsSecret(dynakube, "tls-test")
+		setTlsSecret(dk, "tls-test")
 
 		tlsValue := "tls-test-value"
-		tlsSecret := createTestTlsSecret(dynakube, tlsValue)
+		tlsSecret := createTestTlsSecret(dk, tlsValue)
 
-		testNamespace := createTestInjectedNamespace(dynakube, "test")
+		testNamespace := createTestInjectedNamespace(dk, "test")
 		clt := fake.NewClientWithIndex(testNamespace, apiTokenSecret, getKubeNamespace(), caConfigMap, tlsSecret)
-		ig := NewInitGenerator(clt, clt, dynakube.Namespace)
+		ig := NewInitGenerator(clt, clt, dk.Namespace)
 
-		err := ig.GenerateForDynakube(context.TODO(), dynakube)
+		err := ig.GenerateForDynakube(context.TODO(), dk)
 		require.NoError(t, err)
 
 		initSecret := retrieveInitSecret(t, clt, testNamespace.Name)
@@ -117,16 +117,16 @@ func TestGenerateForDynakube(t *testing.T) {
 		checkProxy(t, initSecret, proxyValue)
 	})
 	t.Run("Add secret for namespace (simple dynakube)", func(t *testing.T) {
-		dynakube := createDynakube()
+		dk := createDynakube()
 		// setup tokens
 		apiToken := "api-test"
-		apiTokenSecret := createApiTokenSecret(dynakube, apiToken, apiToken)
+		apiTokenSecret := createApiTokenSecret(dk, apiToken, apiToken)
 
-		testNamespace := createTestInjectedNamespace(dynakube, "test")
+		testNamespace := createTestInjectedNamespace(dk, "test")
 		clt := fake.NewClientWithIndex(testNamespace, apiTokenSecret, getKubeNamespace())
-		ig := NewInitGenerator(clt, clt, dynakube.Namespace)
+		ig := NewInitGenerator(clt, clt, dk.Namespace)
 
-		err := ig.GenerateForDynakube(context.TODO(), dynakube)
+		err := ig.GenerateForDynakube(context.TODO(), dk)
 		require.NoError(t, err)
 
 		initSecret := retrieveInitSecret(t, clt, testNamespace.Name)
@@ -134,17 +134,17 @@ func TestGenerateForDynakube(t *testing.T) {
 		checkProxy(t, initSecret, "")
 	})
 	t.Run("Add secret to multiple namespaces (simple dynakube)", func(t *testing.T) {
-		dynakube := createDynakube()
+		dk := createDynakube()
 		// setup tokens
 		apiToken := "api-test"
-		apiTokenSecret := createApiTokenSecret(dynakube, apiToken, apiToken)
+		apiTokenSecret := createApiTokenSecret(dk, apiToken, apiToken)
 
-		testNamespace := createTestInjectedNamespace(dynakube, "test")
-		testOtherNamespace := createTestInjectedNamespace(dynakube, "test-other")
+		testNamespace := createTestInjectedNamespace(dk, "test")
+		testOtherNamespace := createTestInjectedNamespace(dk, "test-other")
 		clt := fake.NewClientWithIndex(testNamespace, testOtherNamespace, apiTokenSecret, getKubeNamespace())
-		ig := NewInitGenerator(clt, clt, dynakube.Namespace)
+		ig := NewInitGenerator(clt, clt, dk.Namespace)
 
-		err := ig.GenerateForDynakube(context.TODO(), dynakube)
+		err := ig.GenerateForDynakube(context.TODO(), dk)
 		require.NoError(t, err)
 
 		initSecret := retrieveInitSecret(t, clt, testNamespace.Name)
@@ -161,13 +161,13 @@ func TestGetInfraMonitoringNodes(t *testing.T) {
 	t.Run("Get Monitoring Nodes using nodes", func(t *testing.T) {
 		node1 := createTestNode("node-1", nil)
 		node2 := createTestNode("node-2", nil)
-		dynakube := createDynakube()
-		tenantUUID := dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID
+		dk := createDynakube()
+		tenantUUID := dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID
 
 		clt := fake.NewClient(node1, node2)
-		ig := NewInitGenerator(clt, clt, dynakube.Namespace)
+		ig := NewInitGenerator(clt, clt, dk.Namespace)
 		ig.canWatchNodes = true
-		monitoringNodes, err := ig.getHostMonitoringNodes(dynakube)
+		monitoringNodes, err := ig.getHostMonitoringNodes(dk)
 		require.NoError(t, err)
 		assert.Len(t, monitoringNodes, 2)
 		assert.Equal(t, tenantUUID, monitoringNodes[node1.Name])
@@ -176,14 +176,14 @@ func TestGetInfraMonitoringNodes(t *testing.T) {
 	t.Run("Get Monitoring Nodes from dynakubes (without node access)", func(t *testing.T) {
 		node1 := createTestNode("node-1", nil)
 		node2 := createTestNode("node-2", nil)
-		dynakube := createDynakube()
-		setNodesToInstances(dynakube, node1.Name, node2.Name)
-		tenantUUID := dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID
+		dk := createDynakube()
+		setNodesToInstances(dk, node1.Name, node2.Name)
+		tenantUUID := dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID
 
 		clt := fake.NewClient()
-		ig := NewInitGenerator(clt, clt, dynakube.Namespace)
+		ig := NewInitGenerator(clt, clt, dk.Namespace)
 		ig.canWatchNodes = false
-		monitoringNodes, err := ig.getHostMonitoringNodes(dynakube)
+		monitoringNodes, err := ig.getHostMonitoringNodes(dk)
 		require.NoError(t, err)
 		assert.Len(t, monitoringNodes, 2)
 		assert.Equal(t, tenantUUID, monitoringNodes[node1.Name])
@@ -193,14 +193,14 @@ func TestGetInfraMonitoringNodes(t *testing.T) {
 		node1 := createTestNode("node-1", nil)
 		node2 := createTestNode("node-2", nil)
 		labeledNode := createTestNode("node-labeled", getTestSelectorLabels())
-		dynakube := createDynakube()
-		setNodesSelector(dynakube, getTestSelectorLabels())
-		tenantUUID := dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID
+		dk := createDynakube()
+		setNodesSelector(dk, getTestSelectorLabels())
+		tenantUUID := dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID
 
 		clt := fake.NewClient(labeledNode, node1, node2)
-		ig := NewInitGenerator(clt, clt, dynakube.Namespace)
+		ig := NewInitGenerator(clt, clt, dk.Namespace)
 		ig.canWatchNodes = true
-		monitoringNodes, err := ig.getHostMonitoringNodes(dynakube)
+		monitoringNodes, err := ig.getHostMonitoringNodes(dk)
 		require.NoError(t, err)
 		assert.Len(t, monitoringNodes, 3)
 		assert.Equal(t, tenantUUID, monitoringNodes[labeledNode.Name])
@@ -234,31 +234,31 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 	}
 
 	t.Run("Create SecretConfig with default content", func(t *testing.T) {
-		dynakube := baseDynakube.DeepCopy()
+		dk := baseDynakube.DeepCopy()
 		expectedSecretConfig := *baseExpectedSecretConfig
-		testNamespace := createTestInjectedNamespace(dynakube, "test")
+		testNamespace := createTestInjectedNamespace(dk, "test")
 		clt := fake.NewClientWithIndex(testNamespace, apiTokenSecret.DeepCopy(), getKubeNamespace().DeepCopy())
-		ig := NewInitGenerator(clt, clt, dynakube.Namespace)
+		ig := NewInitGenerator(clt, clt, dk.Namespace)
 
-		secretConfig, err := ig.createSecretConfigForDynaKube(context.TODO(), dynakube, nil)
+		secretConfig, err := ig.createSecretConfigForDynaKube(context.TODO(), dk, nil)
 		require.NoError(t, err)
 		assert.Equal(t, expectedSecretConfig, *secretConfig)
 	})
 
 	t.Run("Create SecretConfig with trustedCA", func(t *testing.T) {
-		dynakube := baseDynakube.DeepCopy()
+		dk := baseDynakube.DeepCopy()
 		expectedSecretConfig := *baseExpectedSecretConfig
 
-		setTrustedCA(dynakube, "ca-configmap")
+		setTrustedCA(dk, "ca-configmap")
 
 		caValue := "ca-test"
-		caConfigMap := createTestCaConfigMap(dynakube, caValue)
+		caConfigMap := createTestCaConfigMap(dk, caValue)
 
-		testNamespace := createTestInjectedNamespace(dynakube, "test")
+		testNamespace := createTestInjectedNamespace(dk, "test")
 		clt := fake.NewClientWithIndex(testNamespace, apiTokenSecret.DeepCopy(), getKubeNamespace().DeepCopy(), caConfigMap.DeepCopy())
-		ig := NewInitGenerator(clt, clt, dynakube.Namespace)
+		ig := NewInitGenerator(clt, clt, dk.Namespace)
 
-		secretData, err := ig.generate(context.TODO(), dynakube)
+		secretData, err := ig.generate(context.TODO(), dk)
 		require.NoError(t, err)
 
 		_, ok := secretData[consts.AgentInitSecretConfigField]
@@ -276,88 +276,88 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 	})
 
 	t.Run("Create SecretConfig with proxy", func(t *testing.T) {
-		dynakube := baseDynakube.DeepCopy()
+		dk := baseDynakube.DeepCopy()
 		expectedSecretConfig := *baseExpectedSecretConfig
 		proxyValue := "proxy-test-value"
-		setProxy(dynakube, proxyValue)
+		setProxy(dk, proxyValue)
 		expectedSecretConfig.Proxy = proxyValue
 
-		testNamespace := createTestInjectedNamespace(dynakube, "test")
+		testNamespace := createTestInjectedNamespace(dk, "test")
 		clt := fake.NewClientWithIndex(testNamespace, apiTokenSecret.DeepCopy(), getKubeNamespace().DeepCopy())
-		ig := NewInitGenerator(clt, clt, dynakube.Namespace)
+		ig := NewInitGenerator(clt, clt, dk.Namespace)
 
-		secretConfig, err := ig.createSecretConfigForDynaKube(context.TODO(), dynakube, nil)
+		secretConfig, err := ig.createSecretConfigForDynaKube(context.TODO(), dk, nil)
 		require.NoError(t, err)
 		assert.Equal(t, expectedSecretConfig, *secretConfig)
 	})
 
 	t.Run("Create SecretConfig without proxy if feature-flag is set", func(t *testing.T) {
-		dynakube := baseDynakube.DeepCopy()
+		dk := baseDynakube.DeepCopy()
 		expectedSecretConfig := *baseExpectedSecretConfig
 		proxyValue := "proxy-test-value"
-		setProxy(dynakube, proxyValue)
-		setAnnotation(dynakube, map[string]string{
-			dynatracev1beta2.AnnotationFeatureOneAgentIgnoreProxy: "true",
+		setProxy(dk, proxyValue)
+		setAnnotation(dk, map[string]string{
+			dynakube.AnnotationFeatureOneAgentIgnoreProxy: "true",
 		})
 
-		testNamespace := createTestInjectedNamespace(dynakube, "test")
+		testNamespace := createTestInjectedNamespace(dk, "test")
 		clt := fake.NewClientWithIndex(testNamespace, apiTokenSecret.DeepCopy(), getKubeNamespace().DeepCopy())
-		ig := NewInitGenerator(clt, clt, dynakube.Namespace)
+		ig := NewInitGenerator(clt, clt, dk.Namespace)
 
-		secretConfig, err := ig.createSecretConfigForDynaKube(context.TODO(), dynakube, nil)
+		secretConfig, err := ig.createSecretConfigForDynaKube(context.TODO(), dk, nil)
 		require.NoError(t, err)
 		assert.Equal(t, expectedSecretConfig, *secretConfig)
 	})
 
 	t.Run("Create SecretConfig with no-proxy", func(t *testing.T) {
-		dynakube := baseDynakube.DeepCopy()
+		dk := baseDynakube.DeepCopy()
 		expectedSecretConfig := *baseExpectedSecretConfig
 		proxyValue := "proxy-test-value"
-		setNoProxy(dynakube, proxyValue)
+		setNoProxy(dk, proxyValue)
 		expectedSecretConfig.NoProxy = proxyValue
 
-		testNamespace := createTestInjectedNamespace(dynakube, "test")
+		testNamespace := createTestInjectedNamespace(dk, "test")
 		clt := fake.NewClientWithIndex(testNamespace, apiTokenSecret.DeepCopy(), getKubeNamespace().DeepCopy())
-		ig := NewInitGenerator(clt, clt, dynakube.Namespace)
+		ig := NewInitGenerator(clt, clt, dk.Namespace)
 
-		secretConfig, err := ig.createSecretConfigForDynaKube(context.TODO(), dynakube, nil)
+		secretConfig, err := ig.createSecretConfigForDynaKube(context.TODO(), dk, nil)
 		require.NoError(t, err)
 		assert.Equal(t, expectedSecretConfig, *secretConfig)
 	})
 
 	t.Run("Create SecretConfig with initial connect retry", func(t *testing.T) {
-		dynakube := baseDynakube.DeepCopy()
+		dk := baseDynakube.DeepCopy()
 		expectedSecretConfig := *baseExpectedSecretConfig
 		retryValue := "123"
-		setInitialConnectRetry(dynakube, retryValue)
+		setInitialConnectRetry(dk, retryValue)
 
 		expectedSecretConfig.InitialConnectRetry = 123
 
-		testNamespace := createTestInjectedNamespace(dynakube, "test")
+		testNamespace := createTestInjectedNamespace(dk, "test")
 		clt := fake.NewClientWithIndex(testNamespace, apiTokenSecret.DeepCopy(), getKubeNamespace().DeepCopy())
-		ig := NewInitGenerator(clt, clt, dynakube.Namespace)
+		ig := NewInitGenerator(clt, clt, dk.Namespace)
 
-		secretConfig, err := ig.createSecretConfigForDynaKube(context.TODO(), dynakube, nil)
+		secretConfig, err := ig.createSecretConfigForDynaKube(context.TODO(), dk, nil)
 		require.NoError(t, err)
 		assert.Equal(t, expectedSecretConfig, *secretConfig)
 	})
 
 	t.Run("Create SecretConfig with tlsSecret", func(t *testing.T) {
-		dynakube := baseDynakube.DeepCopy()
-		setTlsSecret(dynakube, "tls-test")
+		dk := baseDynakube.DeepCopy()
+		setTlsSecret(dk, "tls-test")
 
 		expectedSecretConfig := *baseExpectedSecretConfig
 		tlsValue := "tls-test-value"
-		tlsSecret := createTestTlsSecret(dynakube, tlsValue)
+		tlsSecret := createTestTlsSecret(dk, tlsValue)
 
 		// since we have ActiveGate we add it by default as noProxy
 		expectedSecretConfig.OneAgentNoProxy = "dynakube-test-activegate.dynatrace-test"
 
-		testNamespace := createTestInjectedNamespace(dynakube, "test")
+		testNamespace := createTestInjectedNamespace(dk, "test")
 		clt := fake.NewClientWithIndex(testNamespace, apiTokenSecret.DeepCopy(), getKubeNamespace().DeepCopy(), tlsSecret)
-		ig := NewInitGenerator(clt, clt, dynakube.Namespace)
+		ig := NewInitGenerator(clt, clt, dk.Namespace)
 
-		secretData, err := ig.generate(context.TODO(), dynakube)
+		secretData, err := ig.generate(context.TODO(), dk)
 		require.NoError(t, err)
 
 		var secretConfig startup.SecretConfig
@@ -372,49 +372,49 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 	})
 
 	t.Run("Create SecretConfig with networkZone", func(t *testing.T) {
-		dynakube := baseDynakube.DeepCopy()
+		dk := baseDynakube.DeepCopy()
 		expectedSecretConfig := *baseExpectedSecretConfig
 		networkZone := "test-network"
-		dynakube.Spec.NetworkZone = networkZone
+		dk.Spec.NetworkZone = networkZone
 		expectedSecretConfig.NetworkZone = networkZone
 
-		testNamespace := createTestInjectedNamespace(dynakube, "test")
+		testNamespace := createTestInjectedNamespace(dk, "test")
 		clt := fake.NewClientWithIndex(testNamespace, apiTokenSecret.DeepCopy(), getKubeNamespace().DeepCopy())
-		ig := NewInitGenerator(clt, clt, dynakube.Namespace)
+		ig := NewInitGenerator(clt, clt, dk.Namespace)
 
-		secretConfig, err := ig.createSecretConfigForDynaKube(context.TODO(), dynakube, nil)
+		secretConfig, err := ig.createSecretConfigForDynaKube(context.TODO(), dk, nil)
 		require.NoError(t, err)
 		assert.Equal(t, expectedSecretConfig, *secretConfig)
 	})
 
 	t.Run("Create SecretConfig with skipCertCheck", func(t *testing.T) {
-		dynakube := baseDynakube.DeepCopy()
+		dk := baseDynakube.DeepCopy()
 		expectedSecretConfig := *baseExpectedSecretConfig
-		dynakube.Spec.SkipCertCheck = true
+		dk.Spec.SkipCertCheck = true
 		expectedSecretConfig.SkipCertCheck = true
 
-		testNamespace := createTestInjectedNamespace(dynakube, "test")
+		testNamespace := createTestInjectedNamespace(dk, "test")
 		clt := fake.NewClientWithIndex(testNamespace, apiTokenSecret.DeepCopy(), getKubeNamespace().DeepCopy())
-		ig := NewInitGenerator(clt, clt, dynakube.Namespace)
+		ig := NewInitGenerator(clt, clt, dk.Namespace)
 
-		secretConfig, err := ig.createSecretConfigForDynaKube(context.TODO(), dynakube, nil)
+		secretConfig, err := ig.createSecretConfigForDynaKube(context.TODO(), dk, nil)
 		require.NoError(t, err)
 		assert.Equal(t, expectedSecretConfig, *secretConfig)
 	})
 
 	t.Run("Create SecretConfig with monitoring node", func(t *testing.T) {
-		dynakube := baseDynakube.DeepCopy()
+		dk := baseDynakube.DeepCopy()
 		expectedSecretConfig := *baseExpectedSecretConfig
 		monitoringNodes := map[string]string{
 			"node-1": "tenant-1",
 		}
 		expectedSecretConfig.MonitoringNodes = monitoringNodes
 
-		testNamespace := createTestInjectedNamespace(dynakube, "test")
+		testNamespace := createTestInjectedNamespace(dk, "test")
 		clt := fake.NewClientWithIndex(testNamespace, apiTokenSecret.DeepCopy(), getKubeNamespace().DeepCopy())
-		ig := NewInitGenerator(clt, clt, dynakube.Namespace)
+		ig := NewInitGenerator(clt, clt, dk.Namespace)
 
-		secretConfig, err := ig.createSecretConfigForDynaKube(context.TODO(), dynakube, monitoringNodes)
+		secretConfig, err := ig.createSecretConfigForDynaKube(context.TODO(), dk, monitoringNodes)
 		require.NoError(t, err)
 		assert.Equal(t, expectedSecretConfig, *secretConfig)
 	})
@@ -424,25 +424,25 @@ func getTestSelectorLabels() map[string]string {
 	return map[string]string{"test": "label"}
 }
 
-func createDynakube() *dynatracev1beta2.DynaKube {
-	return &dynatracev1beta2.DynaKube{
+func createDynakube() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "dynakube-test",
 			Namespace:   "dynatrace-test",
 			Annotations: map[string]string{},
 		},
-		Spec: dynatracev1beta2.DynaKubeSpec{
+		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://test-url/e/tenant/api",
 			Tokens: "dynakube-test",
-			OneAgent: dynatracev1beta2.OneAgentSpec{
-				CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{
-					HostInjectSpec: dynatracev1beta2.HostInjectSpec{},
+			OneAgent: dynakube.OneAgentSpec{
+				CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
+					HostInjectSpec: dynakube.HostInjectSpec{},
 				}},
 		},
-		Status: dynatracev1beta2.DynaKubeStatus{
-			OneAgent: dynatracev1beta2.OneAgentStatus{
-				ConnectionInfoStatus: dynatracev1beta2.OneAgentConnectionInfoStatus{
-					ConnectionInfoStatus: dynatracev1beta2.ConnectionInfoStatus{
+		Status: dynakube.DynaKubeStatus{
+			OneAgent: dynakube.OneAgentStatus{
+				ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
+					ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
 						TenantUUID: "test-tenant",
 						Endpoints:  "beep.com;bop.com",
 					},
@@ -452,68 +452,68 @@ func createDynakube() *dynatracev1beta2.DynaKube {
 	}
 }
 
-func setProxy(dynakube *dynatracev1beta2.DynaKube, value string) {
-	dynakube.Spec.Proxy = &dynatracev1beta2.DynaKubeProxy{Value: value}
+func setProxy(dk *dynakube.DynaKube, value string) {
+	dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: value}
 }
 
-func setAnnotation(dynakube *dynatracev1beta2.DynaKube, value map[string]string) {
-	dynakube.ObjectMeta.Annotations = value
+func setAnnotation(dk *dynakube.DynaKube, value map[string]string) {
+	dk.ObjectMeta.Annotations = value
 }
 
-func setTrustedCA(dynakube *dynatracev1beta2.DynaKube, value string) {
-	dynakube.Spec.TrustedCAs = value
+func setTrustedCA(dk *dynakube.DynaKube, value string) {
+	dk.Spec.TrustedCAs = value
 }
 
 func checkProxy(t *testing.T, generatedSecret corev1.Secret, expectedValue string) {
-	proxy, ok := generatedSecret.Data[dynatracev1beta2.ProxyKey]
+	proxy, ok := generatedSecret.Data[dynakube.ProxyKey]
 	require.True(t, ok)
 	assert.NotNil(t, proxy)
 	assert.Equal(t, expectedValue, string(proxy))
 }
 
-func setNoProxy(dynakube *dynatracev1beta2.DynaKube, value string) {
-	dynakube.Annotations[dynatracev1beta2.AnnotationFeatureNoProxy] = value
+func setNoProxy(dk *dynakube.DynaKube, value string) {
+	dk.Annotations[dynakube.AnnotationFeatureNoProxy] = value
 }
 
-func setInitialConnectRetry(dynakube *dynatracev1beta2.DynaKube, value string) {
-	dynakube.Annotations[dynatracev1beta2.AnnotationFeatureOneAgentInitialConnectRetry] = value
+func setInitialConnectRetry(dk *dynakube.DynaKube, value string) {
+	dk.Annotations[dynakube.AnnotationFeatureOneAgentInitialConnectRetry] = value
 }
 
-func setTlsSecret(dynakube *dynatracev1beta2.DynaKube, value string) {
-	dynakube.Spec.ActiveGate = dynatracev1beta2.ActiveGateSpec{
-		Capabilities: []dynatracev1beta2.CapabilityDisplayName{
-			dynatracev1beta2.KubeMonCapability.DisplayName,
+func setTlsSecret(dk *dynakube.DynaKube, value string) {
+	dk.Spec.ActiveGate = dynakube.ActiveGateSpec{
+		Capabilities: []dynakube.CapabilityDisplayName{
+			dynakube.KubeMonCapability.DisplayName,
 		},
 		TlsSecretName: value,
 	}
 }
 
-func setNodesToInstances(dynakube *dynatracev1beta2.DynaKube, nodeNames ...string) {
-	instances := map[string]dynatracev1beta2.OneAgentInstance{}
+func setNodesToInstances(dk *dynakube.DynaKube, nodeNames ...string) {
+	instances := map[string]dynakube.OneAgentInstance{}
 	for _, name := range nodeNames {
-		instances[name] = dynatracev1beta2.OneAgentInstance{}
+		instances[name] = dynakube.OneAgentInstance{}
 	}
 
-	dynakube.Status.OneAgent.Instances = instances
+	dk.Status.OneAgent.Instances = instances
 }
 
-func setNodesSelector(dynakube *dynatracev1beta2.DynaKube, selector map[string]string) {
-	dynakube.Spec.OneAgent.CloudNativeFullStack.NodeSelector = selector
+func setNodesSelector(dk *dynakube.DynaKube, selector map[string]string) {
+	dk.Spec.OneAgent.CloudNativeFullStack.NodeSelector = selector
 }
 
-func createTestCaConfigMap(dynakube *dynatracev1beta2.DynaKube, value string) *corev1.ConfigMap {
+func createTestCaConfigMap(dk *dynakube.DynaKube, value string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{Name: dynakube.Spec.TrustedCAs, Namespace: dynakube.Namespace},
+		ObjectMeta: metav1.ObjectMeta{Name: dk.Spec.TrustedCAs, Namespace: dk.Namespace},
 		Data: map[string]string{
-			dynatracev1beta2.TrustedCAKey: value,
+			dynakube.TrustedCAKey: value,
 		},
 	}
 }
 
-func createTestTlsSecret(dynakube *dynatracev1beta2.DynaKube, value string) *corev1.Secret {
+func createTestTlsSecret(dk *dynakube.DynaKube, value string) *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{Name: dynakube.Spec.ActiveGate.TlsSecretName, Namespace: dynakube.Namespace},
-		Data:       map[string][]byte{dynatracev1beta2.TlsCertKey: []byte(value)},
+		ObjectMeta: metav1.ObjectMeta{Name: dk.Spec.ActiveGate.TlsSecretName, Namespace: dk.Namespace},
+		Data:       map[string][]byte{dynakube.TlsCertKey: []byte(value)},
 	}
 }
 
@@ -523,9 +523,9 @@ func getKubeNamespace() *corev1.Namespace {
 	}
 }
 
-func createApiTokenSecret(dynakube *dynatracev1beta2.DynaKube, apiToken, paasToken string) *corev1.Secret {
+func createApiTokenSecret(dk *dynakube.DynaKube, apiToken, paasToken string) *corev1.Secret {
 	tokenSecret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{Name: dynakube.Name, Namespace: dynakube.Namespace},
+		ObjectMeta: metav1.ObjectMeta{Name: dk.Name, Namespace: dk.Namespace},
 		Data:       map[string][]byte{},
 	}
 	if apiToken != "" {
@@ -548,11 +548,11 @@ func createTestNode(name string, selector map[string]string) *corev1.Node {
 	}
 }
 
-func createTestInjectedNamespace(dynakube *dynatracev1beta2.DynaKube, name string) *corev1.Namespace {
+func createTestInjectedNamespace(dk *dynakube.DynaKube, name string) *corev1.Namespace {
 	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
-			Labels: map[string]string{dtwebhook.InjectionInstanceLabel: dynakube.Name},
+			Labels: map[string]string{dtwebhook.InjectionInstanceLabel: dk.Name},
 		},
 	}
 }

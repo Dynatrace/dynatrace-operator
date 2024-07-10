@@ -5,8 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
-	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
@@ -398,23 +397,20 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 
 func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 	t.Run("no activegate is created when extensions are disabled in dk, and no capability is configured", func(t *testing.T) {
-		instanceV1beta3 := &dynakubev1beta3.DynaKube{
+		instance := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
 			},
-			Spec: dynakubev1beta3.DynaKubeSpec{
-				ActiveGate: dynakubev1beta3.ActiveGateSpec{Capabilities: []dynakubev1beta3.CapabilityDisplayName{}},
-				Extensions: dynakubev1beta3.ExtensionsSpec{
-					Prometheus: dynakubev1beta3.PrometheusSpec{
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{}},
+				Extensions: dynakube.ExtensionsSpec{
+					Prometheus: dynakube.PrometheusSpec{
 						Enabled: false,
 					},
 				},
 			},
 		}
-		instance := &dynakube.DynaKube{}
-		err := instanceV1beta3.ConvertTo(instance)
-		require.NoError(t, err)
 
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 
@@ -423,7 +419,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		r.versionReconciler = createVersionReconcilerMock(t)
 		r.pullSecretReconciler = createGenericReconcilerMock(t)
 
-		err = r.Reconcile(context.Background())
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var service corev1.Service
@@ -435,22 +431,19 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("activegate is created when extensions are enabled in dk, but no activegate is configured", func(t *testing.T) {
-		instanceV1beta3 := &dynakubev1beta3.DynaKube{
+		instance := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
 			},
-			Spec: dynakubev1beta3.DynaKubeSpec{
-				Extensions: dynakubev1beta3.ExtensionsSpec{
-					Prometheus: dynakubev1beta3.PrometheusSpec{
+			Spec: dynakube.DynaKubeSpec{
+				Extensions: dynakube.ExtensionsSpec{
+					Prometheus: dynakube.PrometheusSpec{
 						Enabled: true,
 					},
 				},
 			},
 		}
-		instance := &dynakube.DynaKube{}
-		err := instanceV1beta3.ConvertTo(instance)
-		require.NoError(t, err)
 
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 
@@ -459,7 +452,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		r.versionReconciler = createVersionReconcilerMock(t)
 		r.pullSecretReconciler = createGenericReconcilerMock(t)
 
-		err = r.Reconcile(context.Background())
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var service corev1.Service
@@ -472,23 +465,20 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("activegate is created when extensions are enabled in dk, but no activegate capability is configured", func(t *testing.T) {
-		instanceV1beta3 := &dynakubev1beta3.DynaKube{
+		instance := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
 			},
-			Spec: dynakubev1beta3.DynaKubeSpec{
-				ActiveGate: dynakubev1beta3.ActiveGateSpec{Capabilities: []dynakubev1beta3.CapabilityDisplayName{}},
-				Extensions: dynakubev1beta3.ExtensionsSpec{
-					Prometheus: dynakubev1beta3.PrometheusSpec{
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{}},
+				Extensions: dynakube.ExtensionsSpec{
+					Prometheus: dynakube.PrometheusSpec{
 						Enabled: true,
 					},
 				},
 			},
 		}
-		instance := &dynakube.DynaKube{}
-		err := instanceV1beta3.ConvertTo(instance)
-		require.NoError(t, err)
 
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 
@@ -497,7 +487,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		r.versionReconciler = createVersionReconcilerMock(t)
 		r.pullSecretReconciler = createGenericReconcilerMock(t)
 
-		err = r.Reconcile(context.Background())
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var service corev1.Service
@@ -510,23 +500,20 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("activegate is created when extensions are enabled in dk, and activegate kubernetes is configured", func(t *testing.T) {
-		instanceV1beta3 := &dynakubev1beta3.DynaKube{
+		instance := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
 			},
-			Spec: dynakubev1beta3.DynaKubeSpec{
-				ActiveGate: dynakubev1beta3.ActiveGateSpec{Capabilities: []dynakubev1beta3.CapabilityDisplayName{dynakubev1beta3.KubeMonCapability.DisplayName}},
-				Extensions: dynakubev1beta3.ExtensionsSpec{
-					Prometheus: dynakubev1beta3.PrometheusSpec{
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName}},
+				Extensions: dynakube.ExtensionsSpec{
+					Prometheus: dynakube.PrometheusSpec{
 						Enabled: true,
 					},
 				},
 			},
 		}
-		instance := &dynakube.DynaKube{}
-		err := instanceV1beta3.ConvertTo(instance)
-		require.NoError(t, err)
 
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 
@@ -535,7 +522,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		r.versionReconciler = createVersionReconcilerMock(t)
 		r.pullSecretReconciler = createGenericReconcilerMock(t)
 
-		err = r.Reconcile(context.Background())
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var service corev1.Service
@@ -548,23 +535,20 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("activegate is created when extensions are enabled in dk, but activegate capabilities are removed", func(t *testing.T) {
-		instanceV1beta3 := &dynakubev1beta3.DynaKube{
+		instance := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
 			},
-			Spec: dynakubev1beta3.DynaKubeSpec{
-				ActiveGate: dynakubev1beta3.ActiveGateSpec{Capabilities: []dynakubev1beta3.CapabilityDisplayName{dynakubev1beta3.KubeMonCapability.DisplayName}},
-				Extensions: dynakubev1beta3.ExtensionsSpec{
-					Prometheus: dynakubev1beta3.PrometheusSpec{
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName}},
+				Extensions: dynakube.ExtensionsSpec{
+					Prometheus: dynakube.PrometheusSpec{
 						Enabled: true,
 					},
 				},
 			},
 		}
-		instance := &dynakube.DynaKube{}
-		err := instanceV1beta3.ConvertTo(instance)
-		require.NoError(t, err)
 
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 
@@ -573,7 +557,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		r.versionReconciler = createVersionReconcilerMock(t)
 		r.pullSecretReconciler = createGenericReconcilerMock(t)
 
-		err = r.Reconcile(context.Background())
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var service corev1.Service
@@ -586,12 +570,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		require.NoError(t, err)
 
 		// remove AG from spec
-		instanceV1beta3.Spec.ActiveGate = dynakubev1beta3.ActiveGateSpec{}
-		instance = &dynakube.DynaKube{}
-		err = instanceV1beta3.ConvertTo(instance)
-		require.NoError(t, err)
-
-		r.dynakube = instance
+		r.dynakube.Spec.ActiveGate = dynakube.ActiveGateSpec{}
 		r.connectionReconciler = createGenericReconcilerMock(t)
 		r.versionReconciler = createVersionReconcilerMock(t)
 		r.pullSecretReconciler = createGenericReconcilerMock(t)
@@ -607,12 +586,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		require.NoError(t, err)
 
 		// disable extensions
-		instanceV1beta3.Spec.Extensions.Prometheus.Enabled = false
-		instance = &dynakube.DynaKube{}
-		err = instanceV1beta3.ConvertTo(instance)
-		require.NoError(t, err)
-
-		r.dynakube = instance
+		r.dynakube.Spec.Extensions.Prometheus.Enabled = false
 		r.connectionReconciler = createGenericReconcilerMock(t)
 		r.versionReconciler = createVersionReconcilerMock(t)
 		r.pullSecretReconciler = createGenericReconcilerMock(t)

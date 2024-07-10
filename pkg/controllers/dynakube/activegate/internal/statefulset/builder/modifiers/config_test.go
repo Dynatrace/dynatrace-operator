@@ -3,8 +3,7 @@ package modifiers
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
-	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
@@ -83,17 +82,12 @@ func enableAllModifiers(dk *dynakube.DynaKube, capability capability.Capability)
 
 func TestNoConflict(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		multiCapability := capability.NewMultiCapability(&dynakube)
-		enableAllModifiers(&dynakube, multiCapability)
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		multiCapability := capability.NewMultiCapability(&dk)
+		enableAllModifiers(&dk, multiCapability)
 
-		dynakubeV1beta3 := dynakubev1beta3.DynaKube{}
-
-		err := dynakubeV1beta3.ConvertFrom(&dynakube)
-		require.NoError(t, err)
-
-		mods := GenerateAllModifiers(dynakube, dynakubeV1beta3, multiCapability, prioritymap.New())
+		mods := GenerateAllModifiers(dk, multiCapability, prioritymap.New())
 		builder := createBuilderForTesting()
 
 		sts, _ := builder.AddModifier(mods...).Build()

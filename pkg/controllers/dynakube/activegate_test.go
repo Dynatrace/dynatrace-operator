@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
@@ -17,21 +17,21 @@ import (
 
 func TestReconcileActiveGate(t *testing.T) {
 	ctx := context.Background()
-	dynakubeBase := &dynatracev1beta2.DynaKube{
+	dynakubeBase := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "this-is-a-name",
 			Namespace: "dynatrace",
 		},
-		Spec: dynatracev1beta2.DynaKubeSpec{
-			ActiveGate: dynatracev1beta2.ActiveGateSpec{Capabilities: []dynatracev1beta2.CapabilityDisplayName{dynatracev1beta2.KubeMonCapability.DisplayName}},
+		Spec: dynakube.DynaKubeSpec{
+			ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName}},
 		},
 	}
 
 	t.Run("no active-gate configured => nothing happens (only call active-gate reconciler)", func(t *testing.T) {
-		dynakube := dynakubeBase.DeepCopy()
-		dynakube.Spec.ActiveGate = dynatracev1beta2.ActiveGateSpec{}
+		dk := dynakubeBase.DeepCopy()
+		dk.Spec.ActiveGate = dynakube.ActiveGateSpec{}
 
-		fakeClient := fake.NewClientWithIndex(dynakube)
+		fakeClient := fake.NewClientWithIndex(dk)
 
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(nil)
@@ -42,14 +42,14 @@ func TestReconcileActiveGate(t *testing.T) {
 			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
 		}
 
-		err := controller.reconcileActiveGate(ctx, dynakube, nil, nil)
+		err := controller.reconcileActiveGate(ctx, dk, nil, nil)
 		require.NoError(t, err)
 	})
 	t.Run("no active-gate configured => active-gate reconcile returns error => returns error", func(t *testing.T) {
-		dynakube := dynakubeBase.DeepCopy()
-		dynakube.Spec.ActiveGate = dynatracev1beta2.ActiveGateSpec{}
+		dk := dynakubeBase.DeepCopy()
+		dk.Spec.ActiveGate = dynakube.ActiveGateSpec{}
 
-		fakeClient := fake.NewClientWithIndex(dynakube)
+		fakeClient := fake.NewClientWithIndex(dk)
 
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(errors.New("BOOM"))
@@ -60,28 +60,28 @@ func TestReconcileActiveGate(t *testing.T) {
 			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
 		}
 
-		err := controller.reconcileActiveGate(ctx, dynakube, nil, nil)
+		err := controller.reconcileActiveGate(ctx, dk, nil, nil)
 		require.Error(t, err)
 		require.Equal(t, "failed to reconcile ActiveGate: BOOM", err.Error())
 	})
 	t.Run(`reconcile automatic kubernetes api monitoring`, func(t *testing.T) {
-		instance := &dynatracev1beta2.DynaKube{
+		instance := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 				Annotations: map[string]string{
-					dynatracev1beta2.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
+					dynakube.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
 				},
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				ActiveGate: dynatracev1beta2.ActiveGateSpec{
-					Capabilities: []dynatracev1beta2.CapabilityDisplayName{
-						dynatracev1beta2.KubeMonCapability.DisplayName,
+				ActiveGate: dynakube.ActiveGateSpec{
+					Capabilities: []dynakube.CapabilityDisplayName{
+						dynakube.KubeMonCapability.DisplayName,
 					},
 				},
 			},
-			Status: dynatracev1beta2.DynaKubeStatus{
+			Status: dynakube.DynaKubeStatus{
 				KubeSystemUUID: testUID,
 			},
 		}
@@ -111,24 +111,24 @@ func TestReconcileActiveGate(t *testing.T) {
 	t.Run(`reconcile automatic kubernetes api monitoring with custom cluster name`, func(t *testing.T) {
 		const clusterLabel = "..blabla..;.🙃"
 
-		instance := &dynatracev1beta2.DynaKube{
+		instance := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 				Annotations: map[string]string{
-					dynatracev1beta2.AnnotationFeatureAutomaticK8sApiMonitoring:            "true",
-					dynatracev1beta2.AnnotationFeatureAutomaticK8sApiMonitoringClusterName: clusterLabel,
+					dynakube.AnnotationFeatureAutomaticK8sApiMonitoring:            "true",
+					dynakube.AnnotationFeatureAutomaticK8sApiMonitoringClusterName: clusterLabel,
 				},
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				ActiveGate: dynatracev1beta2.ActiveGateSpec{
-					Capabilities: []dynatracev1beta2.CapabilityDisplayName{
-						dynatracev1beta2.KubeMonCapability.DisplayName,
+				ActiveGate: dynakube.ActiveGateSpec{
+					Capabilities: []dynakube.CapabilityDisplayName{
+						dynakube.KubeMonCapability.DisplayName,
 					},
 				},
 			},
-			Status: dynatracev1beta2.DynaKubeStatus{
+			Status: dynakube.DynaKubeStatus{
 				KubeSystemUUID: testUID,
 			},
 		}

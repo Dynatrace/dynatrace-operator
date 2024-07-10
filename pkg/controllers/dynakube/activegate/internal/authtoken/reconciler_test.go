@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
@@ -23,7 +23,7 @@ import (
 const (
 	testDynakubeName = "test-dynakube"
 	testNamespace    = "test-namespace"
-	secretName       = testDynakubeName + dynatracev1beta2.AuthTokenSecretSuffix
+	secretName       = testDynakubeName + dynakube.AuthTokenSecretSuffix
 	testToken        = "dt.testtoken.test"
 )
 
@@ -34,24 +34,24 @@ var (
 	}
 )
 
-func newInstance() *dynatracev1beta2.DynaKube {
-	return &dynatracev1beta2.DynaKube{
+func newInstance() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testDynakubeName,
 		},
-		Spec: dynatracev1beta2.DynaKubeSpec{
+		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://testing.dev.dynatracelabs.com/api",
-			ActiveGate: dynatracev1beta2.ActiveGateSpec{
-				Capabilities: []dynatracev1beta2.CapabilityDisplayName{
-					dynatracev1beta2.RoutingCapability.DisplayName,
+			ActiveGate: dynakube.ActiveGateSpec{
+				Capabilities: []dynakube.CapabilityDisplayName{
+					dynakube.RoutingCapability.DisplayName,
 				},
 			},
 		},
 	}
 }
 
-func newTestReconciler(t *testing.T, client client.Client, instance *dynatracev1beta2.DynaKube) *Reconciler {
+func newTestReconciler(t *testing.T, client client.Client, instance *dynakube.DynaKube) *Reconciler {
 	dtc := dtclientmock.NewClient(t)
 	dtc.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(testAgAuthTokenResponse, nil)
 

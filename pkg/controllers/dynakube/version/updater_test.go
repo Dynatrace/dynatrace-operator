@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	versionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
@@ -274,14 +274,14 @@ func TestGetTagFromImageID(t *testing.T) {
 	})
 }
 
-func enablePublicRegistry(dynakube *dynatracev1beta2.DynaKube) *dynatracev1beta2.DynaKube {
-	if dynakube.Annotations == nil {
-		dynakube.Annotations = make(map[string]string)
+func enablePublicRegistry(dk *dynakube.DynaKube) *dynakube.DynaKube {
+	if dk.Annotations == nil {
+		dk.Annotations = make(map[string]string)
 	}
 
-	dynakube.Annotations[dynatracev1beta2.AnnotationFeaturePublicRegistry] = "true"
+	dk.Annotations[dynakube.AnnotationFeaturePublicRegistry] = "true"
 
-	return dynakube
+	return dk
 }
 
 func newCustomImageUpdater(t *testing.T, target *status.VersionStatus, image string) *versionmock.StatusUpdater {

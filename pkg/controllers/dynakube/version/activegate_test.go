@@ -6,8 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
-	dynatracev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
@@ -39,14 +38,11 @@ func TestActiveGateUpdater(t *testing.T) {
 				},
 			},
 		}
-		dynakubeV1beta3 := &dynatracev1beta3.DynaKube{}
-		err := dynakubeV1beta3.ConvertFrom(dk)
-		require.NoError(t, err)
 
 		mockClient := dtclientmock.NewClient(t)
 		mockActiveGateImageInfo(mockClient, testImage)
 
-		updater := newActiveGateUpdater(dk, dynakubeV1beta3, fake.NewClient(), mockClient)
+		updater := newActiveGateUpdater(dk, fake.NewClient(), mockClient)
 
 		assert.Equal(t, "activegate", updater.Name())
 		assert.True(t, updater.IsEnabled())
@@ -76,9 +72,6 @@ func TestActiveGateUseDefault(t *testing.T) {
 				},
 			},
 		}
-		dynakubeV1beta3 := &dynatracev1beta3.DynaKube{}
-		err := dynakubeV1beta3.ConvertFrom(dk)
-		require.NoError(t, err)
 
 		expectedVersion := "1.2.3.4-5"
 		expectedImage := dk.DefaultActiveGateImage(expectedVersion)
@@ -86,9 +79,9 @@ func TestActiveGateUseDefault(t *testing.T) {
 
 		mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(expectedVersion, nil)
 
-		updater := newActiveGateUpdater(dk, dynakubeV1beta3, fake.NewClient(), mockClient)
+		updater := newActiveGateUpdater(dk, fake.NewClient(), mockClient)
 
-		err = updater.UseTenantRegistry(context.Background())
+		err := updater.UseTenantRegistry(context.Background())
 		require.NoError(t, err)
 		assert.Equal(t, expectedImage, dk.Status.ActiveGate.ImageID)
 		assert.Equal(t, expectedVersion, dk.Status.ActiveGate.Version)
@@ -106,11 +99,8 @@ func TestActiveGateIsEnabled(t *testing.T) {
 				},
 			},
 		}
-		dynakubeV1beta3 := &dynatracev1beta3.DynaKube{}
-		err := dynakubeV1beta3.ConvertFrom(dk)
-		require.NoError(t, err)
 
-		updater := newActiveGateUpdater(dk, dynakubeV1beta3, nil, nil)
+		updater := newActiveGateUpdater(dk, nil, nil)
 
 		isEnabled := updater.IsEnabled()
 		require.False(t, isEnabled)

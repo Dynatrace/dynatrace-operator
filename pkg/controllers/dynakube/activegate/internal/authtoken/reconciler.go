@@ -6,8 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
-	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -46,20 +45,13 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	dynakubeV1beta3 := &dynakubev1beta3.DynaKube{}
-
-	err := dynakubeV1beta3.ConvertFrom(r.dynakube)
-	if err != nil {
-		return err
-	}
-
-	if !dynakubeV1beta3.NeedsActiveGate() {
+	if !r.dynakube.NeedsActiveGate() {
 		_ = meta.RemoveStatusCondition(r.dynakube.Conditions(), ActiveGateAuthTokenSecretConditionType)
 
 		return nil
 	}
 
-	err = r.reconcileAuthTokenSecret(ctx)
+	err := r.reconcileAuthTokenSecret(ctx)
 	if err != nil {
 		return errors.WithMessage(err, "failed to create activeGateAuthToken secret")
 	}

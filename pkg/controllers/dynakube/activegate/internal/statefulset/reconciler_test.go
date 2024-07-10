@@ -7,8 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dynafake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
-	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
@@ -177,9 +176,6 @@ func TestReconcile_GetStatefulSet(t *testing.T) {
 
 func TestReconcile_CreateStatefulSetIfNotExists(t *testing.T) {
 	r := createDefaultReconciler(t)
-	r.dynakubeV1beta3 = &dynakubev1beta3.DynaKube{}
-	err := r.dynakubeV1beta3.ConvertFrom(r.dynakube)
-	require.NoError(t, err)
 
 	desiredSts, err := r.buildDesiredStatefulSet(context.Background())
 	require.NoError(t, err)
@@ -196,9 +192,6 @@ func TestReconcile_CreateStatefulSetIfNotExists(t *testing.T) {
 
 func TestReconcile_UpdateStatefulSetIfOutdated(t *testing.T) {
 	r := createDefaultReconciler(t)
-	r.dynakubeV1beta3 = &dynakubev1beta3.DynaKube{}
-	err := r.dynakubeV1beta3.ConvertFrom(r.dynakube)
-	require.NoError(t, err)
 
 	desiredSts, err := r.buildDesiredStatefulSet(context.Background())
 	require.NoError(t, err)
@@ -229,9 +222,6 @@ func TestReconcile_UpdateStatefulSetIfOutdated(t *testing.T) {
 func TestReconcile_DeleteStatefulSetIfOldLabelsAreUsed(t *testing.T) {
 	t.Run("statefulset is deleted when old labels are used", func(t *testing.T) {
 		r := createDefaultReconciler(t)
-		r.dynakubeV1beta3 = &dynakubev1beta3.DynaKube{}
-		err := r.dynakubeV1beta3.ConvertFrom(r.dynakube)
-		require.NoError(t, err)
 
 		desiredSts, err := r.buildDesiredStatefulSet(context.Background())
 		require.NoError(t, err)
@@ -266,9 +256,6 @@ func TestReconcile_DeleteStatefulSetIfOldLabelsAreUsed(t *testing.T) {
 	})
 	t.Run("statefulset is not deleted when custom labels are used", func(t *testing.T) {
 		r := createDefaultReconciler(t)
-		r.dynakubeV1beta3 = &dynakubev1beta3.DynaKube{}
-		err := r.dynakubeV1beta3.ConvertFrom(r.dynakube)
-		require.NoError(t, err)
 
 		appliedStatefulset, err := r.buildDesiredStatefulSet(context.Background())
 
@@ -298,9 +285,6 @@ func TestReconcile_DeleteStatefulSetIfOldLabelsAreUsed(t *testing.T) {
 
 func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 	r := createDefaultReconciler(t)
-	r.dynakubeV1beta3 = &dynakubev1beta3.DynaKube{}
-	err := r.dynakubeV1beta3.ConvertFrom(r.dynakube)
-	require.NoError(t, err)
 
 	hash, err := r.calculateActiveGateConfigurationHash()
 	require.NoError(t, err)
@@ -334,9 +318,6 @@ func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 
 func TestReconcile_GetActiveGateAuthTokenHash(t *testing.T) {
 	r := createDefaultReconciler(t)
-	r.dynakubeV1beta3 = &dynakubev1beta3.DynaKube{}
-	err := r.dynakubeV1beta3.ConvertFrom(r.dynakube)
-	require.NoError(t, err)
 
 	hash, err := r.calculateActiveGateConfigurationHash()
 	require.NoError(t, err)
@@ -357,9 +338,6 @@ func TestReconcile_GetActiveGateAuthTokenHash(t *testing.T) {
 func TestManageStatefulSet(t *testing.T) {
 	t.Run("do not delete statefulset if custom labels were added", func(t *testing.T) {
 		r := createDefaultReconciler(t)
-		r.dynakubeV1beta3 = &dynakubev1beta3.DynaKube{}
-		err := r.dynakubeV1beta3.ConvertFrom(r.dynakube)
-		require.NoError(t, err)
 
 		desiredStatefulSet, err := r.buildDesiredStatefulSet(context.Background())
 
@@ -387,9 +365,6 @@ func TestManageStatefulSet(t *testing.T) {
 	})
 	t.Run("update statefulset if selector differs", func(t *testing.T) {
 		r := createDefaultReconciler(t)
-		r.dynakubeV1beta3 = &dynakubev1beta3.DynaKube{}
-		err := r.dynakubeV1beta3.ConvertFrom(r.dynakube)
-		require.NoError(t, err)
 
 		desiredStatefulSet, err := r.buildDesiredStatefulSet(context.Background())
 

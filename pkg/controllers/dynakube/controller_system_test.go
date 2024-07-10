@@ -7,7 +7,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
@@ -49,12 +50,12 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	t.Run(`Create works with minimal setup and interface`, func(t *testing.T) { // keep as integration test?
 		mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
 
-		instance := &dynatracev1beta2.DynaKube{
+		instance := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
 			},
 		}
@@ -72,18 +73,18 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		mockClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{TokenId: "test", Token: "dt.some.valuegoeshere"}, nil)
 		mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(testVersion, nil)
 
-		instance := &dynatracev1beta2.DynaKube{
+		instance := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				Proxy: &dynatracev1beta2.DynaKubeProxy{
+				Proxy: &dynakube.DynaKubeProxy{
 					Value:     "https://proxy:1234",
 					ValueFrom: "",
 				},
-				ActiveGate: dynatracev1beta2.ActiveGateSpec{Capabilities: []dynatracev1beta2.CapabilityDisplayName{dynatracev1beta2.KubeMonCapability.DisplayName}},
+				ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName}},
 			},
 
 			Status: *getTestDynkubeStatus(),
@@ -111,19 +112,19 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		mockClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{TokenId: "test", Token: "dt.some.valuegoeshere"}, nil)
 		mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(testVersion, nil)
 
-		instance := &dynatracev1beta2.DynaKube{
+		instance := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 				Annotations: map[string]string{
-					dynatracev1beta2.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
+					dynakube.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
 				},
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				ActiveGate: dynatracev1beta2.ActiveGateSpec{
-					Capabilities: []dynatracev1beta2.CapabilityDisplayName{
-						dynatracev1beta2.KubeMonCapability.DisplayName,
+				ActiveGate: dynakube.ActiveGateSpec{
+					Capabilities: []dynakube.CapabilityDisplayName{
+						dynakube.KubeMonCapability.DisplayName,
 					},
 				},
 			},
@@ -159,12 +160,12 @@ func TestReconcileOnlyOneTokenProvided_Reconcile(t *testing.T) {
 	t.Run(`Create validates apiToken correctly if apiToken with "InstallerDownload"-scope is provided`, func(t *testing.T) {
 		mockClient := createDTMockClient(t, dtclient.TokenScopes{}, dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeInstallerDownload, dtclient.TokenScopeActiveGateTokenCreate})
 
-		instance := &dynatracev1beta2.DynaKube{
+		instance := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
 			}}
 		controller := createFakeClientAndReconciler(t, mockClient, instance, "", testAPIToken)
@@ -195,18 +196,18 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	mockClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{TokenId: "test", Token: "dt.some.valuegoeshere"}, nil)
 	mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(testVersion, nil)
 
-	instance := &dynatracev1beta2.DynaKube{
+	instance := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
 		},
-		Spec: dynatracev1beta2.DynaKubeSpec{
+		Spec: dynakube.DynaKubeSpec{
 			APIURL: testApiUrl,
-			ActiveGate: dynatracev1beta2.ActiveGateSpec{
-				Capabilities: []dynatracev1beta2.CapabilityDisplayName{
-					dynatracev1beta2.MetricsIngestCapability.DisplayName,
-					dynatracev1beta2.KubeMonCapability.DisplayName,
-					dynatracev1beta2.RoutingCapability.DisplayName,
+			ActiveGate: dynakube.ActiveGateSpec{
+				Capabilities: []dynakube.CapabilityDisplayName{
+					dynakube.MetricsIngestCapability.DisplayName,
+					dynakube.KubeMonCapability.DisplayName,
+					dynakube.RoutingCapability.DisplayName,
 				},
 			},
 		},
@@ -224,7 +225,11 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	_, err = r.Reconcile(context.Background(), request)
 	require.NoError(t, err)
 
-	multiCapability := capability.NewMultiCapability(instance)
+	dynakubeV1beta3 := &dynakubev1beta3.DynaKube{}
+	err = dynakubeV1beta3.ConvertFrom(instance)
+	require.NoError(t, err)
+
+	multiCapability := capability.NewMultiCapability(dynakubeV1beta3)
 	stsName := capability.CalculateStatefulSetName(multiCapability, testName)
 
 	routingSts := &appsv1.StatefulSet{}
@@ -246,7 +251,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	err = r.client.Get(context.Background(), client.ObjectKey{Name: instance.Name, Namespace: instance.Namespace}, instance)
 	require.NoError(t, err)
 
-	instance.Spec.ActiveGate.Capabilities = []dynatracev1beta2.CapabilityDisplayName{}
+	instance.Spec.ActiveGate.Capabilities = []dynakube.CapabilityDisplayName{}
 	err = r.client.Update(context.Background(), instance)
 	require.NoError(t, err)
 
@@ -272,17 +277,17 @@ func TestAPIError(t *testing.T) {
 	mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
 	mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(testVersion, nil)
 
-	instance := &dynatracev1beta2.DynaKube{
+	instance := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
 		},
-		Spec: dynatracev1beta2.DynaKubeSpec{
+		Spec: dynakube.DynaKubeSpec{
 			APIURL:   testApiUrl,
-			OneAgent: dynatracev1beta2.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{HostInjectSpec: dynatracev1beta2.HostInjectSpec{}}},
-			ActiveGate: dynatracev1beta2.ActiveGateSpec{
-				Capabilities: []dynatracev1beta2.CapabilityDisplayName{
-					dynatracev1beta2.KubeMonCapability.DisplayName,
+			OneAgent: dynakube.OneAgentSpec{CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{HostInjectSpec: dynakube.HostInjectSpec{}}},
+			ActiveGate: dynakube.ActiveGateSpec{
+				Capabilities: []dynakube.CapabilityDisplayName{
+					dynakube.KubeMonCapability.DisplayName,
 				},
 			},
 		},
@@ -370,7 +375,7 @@ func createDTMockClient(t *testing.T, paasTokenScopes, apiTokenScopes dtclient.T
 	return mockClient
 }
 
-func createFakeClientAndReconciler(t *testing.T, mockClient dtclient.Client, instance *dynatracev1beta2.DynaKube, paasToken, apiToken string) *Controller {
+func createFakeClientAndReconciler(t *testing.T, mockClient dtclient.Client, instance *dynakube.DynaKube, paasToken, apiToken string) *Controller {
 	data := map[string][]byte{
 		dtclient.ApiToken: []byte(apiToken),
 	}

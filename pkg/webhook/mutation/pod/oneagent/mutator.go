@@ -3,6 +3,7 @@ package oneagent
 import (
 	"context"
 
+	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
@@ -99,11 +100,18 @@ func (mut *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
 func (mut *Mutator) ensureInitSecret(request *dtwebhook.MutationRequest) error {
 	var initSecret corev1.Secret
 
+	dynakubeV1beta3 := &dynakubev1beta3.DynaKube{}
+
+	err := dynakubeV1beta3.ConvertFrom(&request.DynaKube)
+	if err != nil {
+		return err
+	}
+
 	secretObjectKey := client.ObjectKey{Name: consts.AgentInitSecretName, Namespace: request.Namespace.Name}
 	if err := mut.apiReader.Get(request.Context, secretObjectKey, &initSecret); k8serrors.IsNotFound(err) {
 		initGenerator := initgeneration.NewInitGenerator(mut.client, mut.apiReader, mut.webhookNamespace)
 
-		err := initGenerator.GenerateForNamespace(request.Context, request.DynaKube, request.Namespace.Name)
+		err = initGenerator.GenerateForNamespace(request.Context, *dynakubeV1beta3, request.Namespace.Name)
 		if err != nil && !k8serrors.IsAlreadyExists(err) {
 			log.Info("failed to create the init secret before oneagent pod injection")
 

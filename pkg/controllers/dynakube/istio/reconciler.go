@@ -22,7 +22,7 @@ import (
 type Reconciler interface {
 	ReconcileAPIUrl(ctx context.Context, dynakube *dynakube.DynaKube) error
 	ReconcileCodeModuleCommunicationHosts(ctx context.Context, dk *dynakube.DynaKube) error
-	ReconcileActiveGateCommunicationHosts(ctx context.Context, dk *dynakube.DynaKube) error
+	ReconcileActiveGateCommunicationHosts(ctx context.Context, dk *dynakubev1beta3.DynaKube) error
 }
 
 type reconciler struct {
@@ -69,10 +69,10 @@ func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, 
 	}
 
 	if !dk.NeedAppInjection() {
-		if isIstioConfigured(dk, CodeModuleComponent) {
+		if isIstioConfigured(*dk.Conditions(), CodeModuleComponent) {
 			log.Info("appinjection disabled, cleaning up")
 
-			return r.CleanupIstio(ctx, dk, CodeModuleComponent, OneAgentComponent)
+			return r.CleanupIstio(ctx, dk.Conditions(), CodeModuleComponent, OneAgentComponent)
 		}
 
 		return nil
@@ -98,31 +98,24 @@ func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, 
 	return nil
 }
 
-func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, dk *dynakube.DynaKube) error {
+func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, dk *dynakubev1beta3.DynaKube) error {
 	log.Info("reconciling istio components for activegate communication hosts")
 
 	if dk == nil {
 		return errors.New("can't reconcile activegate communication hosts of nil dynakube")
 	}
 
-	dynakubeV1beta3 := &dynakubev1beta3.DynaKube{}
-
-	err := dynakubeV1beta3.ConvertFrom(dk)
-	if err != nil {
-		return err
-	}
-
-	if !dynakubeV1beta3.NeedsActiveGate() {
-		if isIstioConfigured(dk, ActiveGateComponent) {
+	if !dk.NeedsActiveGate() {
+		if isIstioConfigured(*dk.Conditions(), ActiveGateComponent) {
 			log.Info("activegate disabled, cleaning up")
 
-			return r.CleanupIstio(ctx, dk, ActiveGateComponent, strings.ToLower(ActiveGateComponent))
+			return r.CleanupIstio(ctx, dk.Conditions(), ActiveGateComponent, strings.ToLower(ActiveGateComponent))
 		}
 
 		return nil
 	}
 
-	if !conditions.IsOutdated(r.timeProvider, dk, getConditionTypeName(ActiveGateComponent)) {
+	if !conditions.IsOutdated(r.timeProvider, *dk.Conditions(), dk.ApiRequestThreshold(), getConditionTypeName(ActiveGateComponent)) {
 		log.Info("condition still within time threshold...skipping further reconciliation")
 
 		return nil
@@ -130,7 +123,7 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 
 	activeGateEndpoints := activegate.GetEndpointsAsCommunicationHosts(dk)
 
-	err = r.reconcileCommunicationHostsForComponent(ctx, activeGateEndpoints, strings.ToLower(ActiveGateComponent))
+	err := r.reconcileCommunicationHostsForComponent(ctx, activeGateEndpoints, strings.ToLower(ActiveGateComponent))
 	if err != nil {
 		setServiceEntryFailedConditionForComponent(dk.Conditions(), ActiveGateComponent, err)
 
@@ -148,8 +141,8 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 	return nil
 }
 
-func (r *reconciler) CleanupIstio(ctx context.Context, dk *dynakube.DynaKube, conditionComponent string, component string) error {
-	meta.RemoveStatusCondition(dk.Conditions(), getConditionTypeName(conditionComponent))
+func (r *reconciler) CleanupIstio(ctx context.Context, conditions *[]metav1.Condition, conditionComponent string, component string) error {
+	meta.RemoveStatusCondition(conditions, getConditionTypeName(conditionComponent))
 
 	err1 := r.cleanupIPServiceEntry(ctx, component)
 	err2 := r.cleanupFQDNServiceEntry(ctx, component)
@@ -158,8 +151,8 @@ func (r *reconciler) CleanupIstio(ctx context.Context, dk *dynakube.DynaKube, co
 	return goerrors.Join(err1, err2)
 }
 
-func isIstioConfigured(dk *dynakube.DynaKube, conditionComponent string) bool {
-	istioCondition := meta.FindStatusCondition(*dk.Conditions(), getConditionTypeName(conditionComponent))
+func isIstioConfigured(conditions []metav1.Condition, conditionComponent string) bool {
+	istioCondition := meta.FindStatusCondition(conditions, getConditionTypeName(conditionComponent))
 
 	return istioCondition != nil
 }

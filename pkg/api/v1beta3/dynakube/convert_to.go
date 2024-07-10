@@ -79,6 +79,7 @@ func (src *DynaKube) toActiveGateSpec(dst *v1beta2.DynaKube) {
 	dst.Spec.ActiveGate.Resources = src.Spec.ActiveGate.Resources
 	dst.Spec.ActiveGate.Replicas = src.Spec.ActiveGate.Replicas
 
+	dst.Spec.ActiveGate.Capabilities = []v1beta2.CapabilityDisplayName{}
 	for _, capability := range src.Spec.ActiveGate.Capabilities {
 		dst.Spec.ActiveGate.Capabilities = append(dst.Spec.ActiveGate.Capabilities, v1beta2.CapabilityDisplayName(capability))
 	}

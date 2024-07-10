@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -25,22 +25,22 @@ func createTestDynakubeObjectMeta() metav1.ObjectMeta {
 	}
 }
 
-func createTestDynakube(spec *dynatracev1beta2.DynaKubeSpec) *dynatracev1beta2.DynaKube {
-	dynakube := &dynatracev1beta2.DynaKube{ObjectMeta: createTestDynakubeObjectMeta()}
+func createTestDynakube(spec *dynakube.DynaKubeSpec) *dynakube.DynaKube {
+	dk := &dynakube.DynaKube{ObjectMeta: createTestDynakubeObjectMeta()}
 	if spec != nil {
-		dynakube.Spec = *spec
+		dk.Spec = *spec
 	}
 
-	return dynakube
+	return dk
 }
 
 func TestReconcile(t *testing.T) {
 	clusterID := "test"
 
 	t.Run(`don't create anything, if no mode is configured`, func(t *testing.T) {
-		dynakube := createTestDynakube(nil)
+		dk := createTestDynakube(nil)
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(fakeClient, fakeClient, *dynakube, clusterID)
+		r := NewReconciler(fakeClient, fakeClient, *dk, clusterID)
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -49,7 +49,7 @@ func TestReconcile(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run(`delete configmap, if no mode is configured`, func(t *testing.T) {
-		dynakube := createTestDynakube(nil)
+		dk := createTestDynakube(nil)
 		fakeClient := fake.NewClientBuilder().WithObjects(
 			&corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
@@ -58,7 +58,7 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 		).Build()
-		r := NewReconciler(fakeClient, fakeClient, *dynakube, clusterID)
+		r := NewReconciler(fakeClient, fakeClient, *dk, clusterID)
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -68,15 +68,15 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run(`create configmap with 1 key, if only oneagent is needed`, func(t *testing.T) {
-		dynakube := createTestDynakube(
-			&dynatracev1beta2.DynaKubeSpec{
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
+		dk := createTestDynakube(
+			&dynakube.DynaKubeSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 				},
 			})
 
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(fakeClient, fakeClient, *dynakube, clusterID)
+		r := NewReconciler(fakeClient, fakeClient, *dk, clusterID)
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -88,17 +88,17 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run(`create configmap with 1 key, if only activegate is needed`, func(t *testing.T) {
-		dynakube := createTestDynakube(
-			&dynatracev1beta2.DynaKubeSpec{
-				ActiveGate: dynatracev1beta2.ActiveGateSpec{
-					Capabilities: []dynatracev1beta2.CapabilityDisplayName{
-						dynatracev1beta2.KubeMonCapability.DisplayName,
+		dk := createTestDynakube(
+			&dynakube.DynaKubeSpec{
+				ActiveGate: dynakube.ActiveGateSpec{
+					Capabilities: []dynakube.CapabilityDisplayName{
+						dynakube.KubeMonCapability.DisplayName,
 					},
 				},
 			})
 
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(fakeClient, fakeClient, *dynakube, clusterID)
+		r := NewReconciler(fakeClient, fakeClient, *dk, clusterID)
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -109,20 +109,20 @@ func TestReconcile(t *testing.T) {
 		assert.NotEmpty(t, actualConfigMap.Data[ActiveGateMetadataKey])
 	})
 	t.Run(`create configmap with 2 keys, if both oneagent and activegate is needed`, func(t *testing.T) {
-		dynakube := createTestDynakube(
-			&dynatracev1beta2.DynaKubeSpec{
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
+		dk := createTestDynakube(
+			&dynakube.DynaKubeSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 				},
-				ActiveGate: dynatracev1beta2.ActiveGateSpec{
-					Capabilities: []dynatracev1beta2.CapabilityDisplayName{
-						dynatracev1beta2.KubeMonCapability.DisplayName,
+				ActiveGate: dynakube.ActiveGateSpec{
+					Capabilities: []dynakube.CapabilityDisplayName{
+						dynakube.KubeMonCapability.DisplayName,
 					},
 				},
 			})
 
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(fakeClient, fakeClient, *dynakube, clusterID)
+		r := NewReconciler(fakeClient, fakeClient, *dk, clusterID)
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 

@@ -6,8 +6,7 @@ import (
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
-	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
@@ -30,12 +29,11 @@ import (
 var _ controllers.Reconciler = &Reconciler{}
 
 type Reconciler struct {
-	client          client.Client
-	dynakube        *dynakube.DynaKube
-	dynakubeV1beta3 *dynakubev1beta3.DynaKube
-	apiReader       client.Reader
-	capability      capability.Capability
-	modifiers       []builder.Modifier
+	client     client.Client
+	dynakube   *dynakube.DynaKube
+	apiReader  client.Reader
+	capability capability.Capability
+	modifiers  []builder.Modifier
 }
 
 func NewReconciler(
@@ -56,14 +54,7 @@ func NewReconciler(
 type NewReconcilerFunc = func(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube, capability capability.Capability) controllers.Reconciler
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	r.dynakubeV1beta3 = &dynakubev1beta3.DynaKube{}
-
-	err := r.dynakubeV1beta3.ConvertFrom(r.dynakube)
-	if err != nil {
-		return err
-	}
-
-	err = r.manageStatefulSet(ctx)
+	err := r.manageStatefulSet(ctx)
 	if err != nil {
 		log.Error(err, "could not reconcile stateful set")
 
@@ -257,7 +248,7 @@ func (r *Reconciler) getCustomPropertyValue() (string, error) {
 }
 
 func (r *Reconciler) getAuthTokenValue() (string, error) {
-	if !r.dynakubeV1beta3.NeedsActiveGate() {
+	if !r.dynakube.NeedsActiveGate() {
 		return "", nil
 	}
 

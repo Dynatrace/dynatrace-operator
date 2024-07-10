@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
@@ -49,7 +50,7 @@ func NewReconciler(
 	apiReader client.Reader,
 	dynatraceClient dynatrace.Client,
 	istioClient *istio.Client,
-	dynakube *dynatracev1beta2.DynaKube,
+	dk *dynatracev1beta2.DynaKube,
 ) controllers.Reconciler {
 	var istioReconciler istio.Reconciler = nil
 
@@ -60,19 +61,28 @@ func NewReconciler(
 	return &reconciler{
 		client:            client,
 		apiReader:         apiReader,
-		dynakube:          dynakube,
+		dynakube:          dk,
 		istioReconciler:   istioReconciler,
 		versionReconciler: version.NewReconciler(apiReader, dynatraceClient, timeprovider.New().Freeze()),
 		pmcSecretreconciler: processmoduleconfigsecret.NewReconciler(
-			client, apiReader, dynatraceClient, dynakube, timeprovider.New().Freeze()),
-		connectionInfoReconciler:  oaconnectioninfo.NewReconciler(client, apiReader, dynatraceClient, dynakube),
-		enrichmentRulesReconciler: rules.NewReconciler(dynatraceClient, dynakube),
+			client, apiReader, dynatraceClient, dk, timeprovider.New().Freeze()),
+		connectionInfoReconciler:  oaconnectioninfo.NewReconciler(client, apiReader, dynatraceClient, dk),
+		enrichmentRulesReconciler: rules.NewReconciler(dynatraceClient, dk),
 	}
 }
 
-func (r *reconciler) Reconcile(ctx context.Context) error {
-	err := r.versionReconciler.ReconcileCodeModules(ctx, r.dynakube)
+func (r *reconciler) Reconcile(ctx context.Context) error { //nolint:revive
+	dynakubeV1beta3 := &dynakubev1beta3.DynaKube{}
+	if err := dynakubeV1beta3.ConvertFrom(r.dynakube); err != nil {
+		return err
+	}
+
+	err := r.versionReconciler.ReconcileCodeModules(ctx, dynakubeV1beta3)
 	if err != nil {
+		return err
+	}
+
+	if err := dynakubeV1beta3.ConvertTo(r.dynakube); err != nil {
 		return err
 	}
 
@@ -156,7 +166,14 @@ func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
 		return nil
 	}
 
-	err := initgeneration.NewInitGenerator(r.client, r.apiReader, r.dynakube.Namespace).GenerateForDynakube(ctx, r.dynakube)
+	dynakubeV1beta3 := &dynakubev1beta3.DynaKube{}
+
+	err := dynakubeV1beta3.ConvertFrom(r.dynakube)
+	if err != nil {
+		return err
+	}
+
+	err = initgeneration.NewInitGenerator(r.client, r.apiReader, r.dynakube.Namespace).GenerateForDynakube(ctx, dynakubeV1beta3)
 	if err != nil {
 		if conditions.IsKubeApiError(err) {
 			conditions.SetKubeApiError(r.dynakube.Conditions(), codeModulesInjectionConditionType, err)

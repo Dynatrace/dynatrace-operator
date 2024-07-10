@@ -110,7 +110,7 @@ func (r *Reconciler) ensureSecret(ctx context.Context) error {
 		return err
 	}
 
-	if conditions.IsOutdated(r.timeProvider, r.dynakube, pmcConditionType) {
+	if conditions.IsOutdated(r.timeProvider, *r.dynakube.Conditions(), r.dynakube.ApiRequestThreshold(), pmcConditionType) {
 		conditions.SetSecretOutdated(r.dynakube.Conditions(), pmcConditionType, oldSecret.Name+" is outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
 
 		return r.updateSecret(ctx, oldSecret)
@@ -187,7 +187,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 		}
 
 		if dynakubeV1beta3.NeedsActiveGate() {
-			multiCap := capability.NewMultiCapability(r.dynakube)
+			multiCap := capability.NewMultiCapability(dynakubeV1beta3)
 			pmc.AddNoProxy(capability.BuildDNSEntryPointWithoutEnvVars(r.dynakube.Name, r.dynakube.Namespace, multiCap))
 		}
 	}

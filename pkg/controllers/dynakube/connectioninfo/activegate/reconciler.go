@@ -3,8 +3,7 @@ package activegate
 import (
 	"context"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
-	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -42,14 +41,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dtc dtclient.Clie
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	dynakubeV1beta3 := &dynakubev1beta3.DynaKube{}
-
-	err := dynakubeV1beta3.ConvertFrom(r.dynakube)
-	if err != nil {
-		return err
-	}
-
-	if !dynakubeV1beta3.NeedsActiveGate() {
+	if !r.dynakube.NeedsActiveGate() {
 		if meta.FindStatusCondition(*r.dynakube.Conditions(), activeGateConnectionInfoConditionType) == nil {
 			return nil
 		}
@@ -67,7 +59,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return nil // clean-up shouldn't cause a failure
 	}
 
-	err = r.reconcileConnectionInfo(ctx)
+	err := r.reconcileConnectionInfo(ctx)
 
 	if err != nil {
 		return err
@@ -79,7 +71,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 	secretNamespacedName := types.NamespacedName{Name: r.dynakube.ActivegateTenantSecret(), Namespace: r.dynakube.Namespace}
 
-	if !conditions.IsOutdated(r.timeProvider, r.dynakube, activeGateConnectionInfoConditionType) {
+	if !conditions.IsOutdated(r.timeProvider, *r.dynakube.Conditions(), r.dynakube.ApiRequestThreshold(), activeGateConnectionInfoConditionType) {
 		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.apiReader, secretNamespacedName, log)
 		if err != nil {
 			return err

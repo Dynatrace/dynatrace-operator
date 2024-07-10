@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 )
 
@@ -13,15 +14,30 @@ type DeploymentMetadata struct {
 	DeploymentType string
 }
 
-func GetOneAgentDeploymentType(dynakube dynatracev1beta2.DynaKube) string {
+func GetOneAgentDeploymentType(dk dynakube.DynaKube) string {
 	switch {
-	case dynakube.HostMonitoringMode():
+	case dk.HostMonitoringMode():
 		return HostMonitoringDeploymentType
-	case dynakube.CloudNativeFullstackMode():
+	case dk.CloudNativeFullstackMode():
 		return CloudNativeDeploymentType
-	case dynakube.ClassicFullStackMode():
+	case dk.ClassicFullStackMode():
 		return ClassicFullStackDeploymentType
-	case dynakube.ApplicationMonitoringMode():
+	case dk.ApplicationMonitoringMode():
+		return ApplicationMonitoringDeploymentType
+	}
+
+	return ""
+}
+
+func GetOneAgentDeploymentTypeV1beta2(dk dynatracev1beta2.DynaKube) string {
+	switch {
+	case dk.HostMonitoringMode():
+		return HostMonitoringDeploymentType
+	case dk.CloudNativeFullstackMode():
+		return CloudNativeDeploymentType
+	case dk.ClassicFullStackMode():
+		return ClassicFullStackDeploymentType
+	case dk.ApplicationMonitoringMode():
 		return ApplicationMonitoringDeploymentType
 	}
 

@@ -3,7 +3,7 @@ package modifiers
 import (
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,7 +13,7 @@ const testCustomPropertyValue = "testing-property"
 
 func setCustomPropertyUsage(capability capability.Capability, isUsed bool) {
 	if isUsed {
-		capability.Properties().CustomProperties = &dynatracev1beta2.DynaKubeValueSource{
+		capability.Properties().CustomProperties = &dynakube.DynaKubeValueSource{
 			Value: testCustomPropertyValue,
 		}
 	} else {
@@ -23,23 +23,23 @@ func setCustomPropertyUsage(capability capability.Capability, isUsed bool) {
 
 func TestCustomPropertyEnabled(t *testing.T) {
 	t.Run("true", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		multiCapability := capability.NewMultiCapability(&dynakube)
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		multiCapability := capability.NewMultiCapability(&dk)
 		setCustomPropertyUsage(multiCapability, true)
 
-		mod := NewCustomPropertiesModifier(dynakube, multiCapability)
+		mod := NewCustomPropertiesModifier(dk, multiCapability)
 
 		assert.True(t, mod.Enabled())
 	})
 
 	t.Run("false", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		multiCapability := capability.NewMultiCapability(&dynakube)
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		multiCapability := capability.NewMultiCapability(&dk)
 		setCustomPropertyUsage(multiCapability, false)
 
-		mod := NewCustomPropertiesModifier(dynakube, multiCapability)
+		mod := NewCustomPropertiesModifier(dk, multiCapability)
 
 		assert.False(t, mod.Enabled())
 	})
@@ -47,11 +47,11 @@ func TestCustomPropertyEnabled(t *testing.T) {
 
 func TestCustomPropertyModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		multiCapability := capability.NewMultiCapability(&dynakube)
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		multiCapability := capability.NewMultiCapability(&dk)
 		setCustomPropertyUsage(multiCapability, true)
-		mod := NewCustomPropertiesModifier(dynakube, multiCapability)
+		mod := NewCustomPropertiesModifier(dk, multiCapability)
 		builder := createBuilderForTesting()
 
 		sts, _ := builder.AddModifier(mod).Build()

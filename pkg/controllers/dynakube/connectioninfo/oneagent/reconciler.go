@@ -80,7 +80,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 	secretNamespacedName := types.NamespacedName{Name: r.dynakube.OneagentTenantSecret(), Namespace: r.dynakube.Namespace}
 
-	if !conditions.IsOutdated(r.timeProvider, r.dynakube, oaConnectionInfoConditionType) {
+	if !conditions.IsOutdated(r.timeProvider, *r.dynakube.Conditions(), r.dynakube.ApiRequestThreshold(), oaConnectionInfoConditionType) {
 		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.apiReader, secretNamespacedName, log)
 		if err != nil {
 			return err

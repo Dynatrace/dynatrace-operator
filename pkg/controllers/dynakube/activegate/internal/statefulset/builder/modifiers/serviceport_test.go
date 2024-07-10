@@ -3,8 +3,7 @@ package modifiers
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
-	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
@@ -23,14 +22,9 @@ func TestServicePortEnabled(t *testing.T) {
 		dk := getBaseDynakube()
 		setServicePortUsage(&dk, true)
 
-		dynakubeV1beta3 := dynakubev1beta3.DynaKube{}
-
-		err := dynakubeV1beta3.ConvertFrom(&dk)
-		require.NoError(t, err)
-
 		multiCapability := capability.NewMultiCapability(&dk)
 
-		mod := NewServicePortModifier(dk, dynakubeV1beta3, multiCapability, prioritymap.New())
+		mod := NewServicePortModifier(dk, multiCapability, prioritymap.New())
 
 		assert.True(t, mod.Enabled())
 	})
@@ -39,14 +33,9 @@ func TestServicePortEnabled(t *testing.T) {
 		dk := getBaseDynakube()
 		setServicePortUsage(&dk, false)
 
-		dynakubeV1beta3 := dynakubev1beta3.DynaKube{}
-
-		err := dynakubeV1beta3.ConvertFrom(&dk)
-		require.NoError(t, err)
-
 		multiCapability := capability.NewMultiCapability(&dk)
 
-		mod := NewServicePortModifier(dk, dynakubeV1beta3, multiCapability, prioritymap.New())
+		mod := NewServicePortModifier(dk, multiCapability, prioritymap.New())
 
 		assert.False(t, mod.Enabled())
 	})
@@ -58,12 +47,7 @@ func TestServicePortModify(t *testing.T) {
 		setServicePortUsage(&dk, true)
 		multiCapability := capability.NewMultiCapability(&dk)
 
-		dynakubeV1beta3 := dynakubev1beta3.DynaKube{}
-
-		err := dynakubeV1beta3.ConvertFrom(&dk)
-		require.NoError(t, err)
-
-		mod := NewServicePortModifier(dk, dynakubeV1beta3, multiCapability, prioritymap.New())
+		mod := NewServicePortModifier(dk, multiCapability, prioritymap.New())
 		builder := createBuilderForTesting()
 		expectedPorts := mod.getPorts()
 		expectedEnv := mod.getEnvs()

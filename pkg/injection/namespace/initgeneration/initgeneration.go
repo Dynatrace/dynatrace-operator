@@ -4,8 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
-	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
@@ -169,14 +168,7 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 
 	oneAgentNoProxy := ""
 
-	dynakubeV1beta3 := &dynakubev1beta3.DynaKube{}
-
-	err = dynakubeV1beta3.ConvertFrom(dynakube)
-	if err != nil {
-		return nil, err
-	}
-
-	if dynakubeV1beta3.NeedsActiveGate() {
+	if dynakube.NeedsActiveGate() {
 		multiCap := capability.NewMultiCapability(dynakube)
 		oneAgentNoProxy = capability.BuildDNSEntryPointWithoutEnvVars(dynakube.Name, dynakube.Namespace, multiCap)
 	}

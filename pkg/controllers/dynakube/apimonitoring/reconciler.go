@@ -3,24 +3,24 @@ package apimonitoring
 import (
 	"context"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 )
 
 type Reconciler struct {
 	dtc            dtclient.Client
-	dynakube       *dynatracev1beta2.DynaKube
+	dynakube       *dynakube.DynaKube
 	clusterLabel   string
 	kubeSystemUUID string
 }
 
-type ReconcilerBuilder func(dtc dtclient.Client, dynakube *dynatracev1beta2.DynaKube, clusterLabel, kubeSystemUUID string) *Reconciler
+type ReconcilerBuilder func(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel, kubeSystemUUID string) *Reconciler
 
-func NewReconciler(dtc dtclient.Client, dynakube *dynatracev1beta2.DynaKube, clusterLabel, kubeSystemUUID string) *Reconciler {
+func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel, kubeSystemUUID string) *Reconciler {
 	return &Reconciler{
 		dtc,
-		dynakube,
+		dk,
 		clusterLabel,
 		kubeSystemUUID,
 	}

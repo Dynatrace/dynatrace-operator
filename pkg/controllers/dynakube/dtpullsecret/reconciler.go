@@ -4,8 +4,7 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
-	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
@@ -44,14 +43,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	dynakubeV1beta3 := &dynakubev1beta3.DynaKube{}
-
-	err := dynakubeV1beta3.ConvertFrom(r.dynakube)
-	if err != nil {
-		return err
-	}
-
-	if !(r.dynakube.NeedsOneAgent() || dynakubeV1beta3.NeedsActiveGate()) {
+	if !(r.dynakube.NeedsOneAgent() || r.dynakube.NeedsActiveGate()) {
 		if meta.FindStatusCondition(*r.dynakube.Conditions(), PullSecretConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}
@@ -66,7 +58,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	if conditions.IsOutdated(r.timeprovider, r.dynakube, PullSecretConditionType) {
+	if conditions.IsOutdated(r.timeprovider, *r.dynakube.Conditions(), r.dynakube.ApiRequestThreshold(), PullSecretConditionType) {
 		conditions.SetSecretOutdated(r.dynakube.Conditions(), PullSecretConditionType,
 			extendWithPullSecretSuffix(r.dynakube.Name)+" is not present or outdated")
 

@@ -40,7 +40,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	if !conditions.IsOutdated(r.timeProvider, r.dk, conditionType) {
+	if !conditions.IsOutdated(r.timeProvider, *r.dk.Conditions(), r.dk.ApiRequestThreshold(), conditionType) {
 		return nil
 	}
 

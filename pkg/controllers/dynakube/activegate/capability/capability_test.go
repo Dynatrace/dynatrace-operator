@@ -3,8 +3,7 @@ package capability
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
-	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -28,16 +27,9 @@ var (
 		dynakube.MetricsIngestCapability.DisplayName,
 		dynakube.DynatraceApiCapability.DisplayName,
 	}
-
-	capabilitiesV1beta3 = []dynakubev1beta3.CapabilityDisplayName{
-		dynakubev1beta3.RoutingCapability.DisplayName,
-		dynakubev1beta3.KubeMonCapability.DisplayName,
-		dynakubev1beta3.MetricsIngestCapability.DisplayName,
-		dynakubev1beta3.DynatraceApiCapability.DisplayName,
-	}
 )
 
-func buildDynakube(capabilities []dynakube.CapabilityDisplayName) *dynakube.DynaKube {
+func buildDynakube(capabilities []dynakube.CapabilityDisplayName, enableExtensions bool) *dynakube.DynaKube {
 	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace, Name: testName,
@@ -47,22 +39,8 @@ func buildDynakube(capabilities []dynakube.CapabilityDisplayName) *dynakube.Dyna
 			ActiveGate: dynakube.ActiveGateSpec{
 				Capabilities: capabilities,
 			},
-		},
-	}
-}
-
-func buildDynakubeV1beta3(capabilities []dynakubev1beta3.CapabilityDisplayName, enableExtensions bool) *dynakubev1beta3.DynaKube {
-	return &dynakubev1beta3.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace, Name: testName,
-		},
-		Spec: dynakubev1beta3.DynaKubeSpec{
-			APIURL: testApiUrl,
-			ActiveGate: dynakubev1beta3.ActiveGateSpec{
-				Capabilities: capabilities,
-			},
-			Extensions: dynakubev1beta3.ExtensionsSpec{
-				Prometheus: dynakubev1beta3.PrometheusSpec{
+			Extensions: dynakube.ExtensionsSpec{
+				Prometheus: dynakube.PrometheusSpec{
 					Enabled: enableExtensions,
 				},
 			},
@@ -90,8 +68,8 @@ func TestBuildServiceName(t *testing.T) {
 
 func TestNewMultiCapability(t *testing.T) {
 	t.Run(`creates new multicapability`, func(t *testing.T) {
-		dynakube := buildDynakube(capabilities)
-		mc := NewMultiCapability(dynakube)
+		dk := buildDynakube(capabilities, false)
+		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
 		assert.Equal(t, expectedShortName, mc.ShortName())
@@ -99,8 +77,8 @@ func TestNewMultiCapability(t *testing.T) {
 	})
 	t.Run(`creates new multicapability without capabilities set in dynakube`, func(t *testing.T) {
 		var emptyCapabilites []dynakube.CapabilityDisplayName
-		dynakube := buildDynakube(emptyCapabilites)
-		mc := NewMultiCapability(dynakube)
+		dk := buildDynakube(emptyCapabilites, false)
+		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.False(t, mc.Enabled())
 		assert.Equal(t, expectedShortName, mc.ShortName())
@@ -110,42 +88,21 @@ func TestNewMultiCapability(t *testing.T) {
 
 func TestNewMultiCapabilityWithExtensions(t *testing.T) {
 	t.Run(`creates new multicapability with Extensions enabled`, func(t *testing.T) {
-		dynakubeV1beta3 := buildDynakubeV1beta3(capabilitiesV1beta3, true)
-		dynakube := dynakube.DynaKube{}
-		err := dynakubeV1beta3.ConvertTo(&dynakube)
-		require.NoError(t, err)
-
-		mc := NewMultiCapability(&dynakube)
+		dk := buildDynakube(capabilities, true)
+		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
 		assert.Equal(t, expectedShortName, mc.ShortName())
 		assert.Equal(t, expectedArgNameWithExtensions, mc.ArgName())
 	})
 	t.Run(`creates new multicapability without capabilities set in dynakube and Extensions enabled`, func(t *testing.T) {
-		var emptyCapabilites []dynakubev1beta3.CapabilityDisplayName
-		dynakubeV1beta3 := buildDynakubeV1beta3(emptyCapabilites, true)
-		dynakube := dynakube.DynaKube{}
-		err := dynakubeV1beta3.ConvertTo(&dynakube)
-		require.NoError(t, err)
-
-		mc := NewMultiCapability(&dynakube)
+		var emptyCapabilites []dynakube.CapabilityDisplayName
+		dk := buildDynakube(emptyCapabilites, true)
+		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
 		assert.Equal(t, expectedShortName, mc.ShortName())
 		assert.Equal(t, expectedArgNameWithExtensionsOnly, mc.ArgName())
-	})
-	t.Run(`creates new multicapability without capabilities set in dynakube and Extensions disabled`, func(t *testing.T) {
-		var emptyCapabilites []dynakubev1beta3.CapabilityDisplayName
-		dynakubeV1beta3 := buildDynakubeV1beta3(emptyCapabilites, false)
-		dynakube := dynakube.DynaKube{}
-		err := dynakubeV1beta3.ConvertTo(&dynakube)
-		require.NoError(t, err)
-
-		mc := NewMultiCapability(&dynakube)
-		require.NotNil(t, mc)
-		assert.False(t, mc.Enabled())
-		assert.Equal(t, expectedShortName, mc.ShortName())
-		assert.Equal(t, "", mc.ArgName())
 	})
 }
 

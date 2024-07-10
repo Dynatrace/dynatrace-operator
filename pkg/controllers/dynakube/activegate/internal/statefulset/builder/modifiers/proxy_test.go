@@ -3,39 +3,39 @@ package modifiers
 import (
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 const testProxyName = "test-proxy"
 
-func setProxyUsage(dynakube *dynatracev1beta2.DynaKube, isUsed bool) {
-	dynakube.Spec.Proxy = &dynatracev1beta2.DynaKubeProxy{}
+func setProxyUsage(dk *dynakube.DynaKube, isUsed bool) {
+	dk.Spec.Proxy = &dynakube.DynaKubeProxy{}
 	if isUsed {
-		dynakube.Spec.Proxy.ValueFrom = testProxyName
+		dk.Spec.Proxy.ValueFrom = testProxyName
 	} else {
-		dynakube.Spec.Proxy.ValueFrom = ""
+		dk.Spec.Proxy.ValueFrom = ""
 	}
 }
 
 func TestProxyEnabled(t *testing.T) {
 	t.Run("true", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		setProxyUsage(&dynakube, true)
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		setProxyUsage(&dk, true)
 
-		mod := NewProxyModifier(dynakube)
+		mod := NewProxyModifier(dk)
 
 		assert.True(t, mod.Enabled())
 	})
 
 	t.Run("false", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		setProxyUsage(&dynakube, false)
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		setProxyUsage(&dk, false)
 
-		mod := NewProxyModifier(dynakube)
+		mod := NewProxyModifier(dk)
 
 		assert.False(t, mod.Enabled())
 	})
@@ -43,10 +43,10 @@ func TestProxyEnabled(t *testing.T) {
 
 func TestProxyModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		setProxyUsage(&dynakube, true)
-		mod := NewProxyModifier(dynakube)
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		setProxyUsage(&dk, true)
+		mod := NewProxyModifier(dk)
 		builder := createBuilderForTesting()
 
 		sts, _ := builder.AddModifier(mod).Build()

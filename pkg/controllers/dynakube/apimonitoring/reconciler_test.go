@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
@@ -28,7 +28,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 	return createReconciler(t, newDynaKube(), testUID, []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{TotalCount: 0}, "", "")
 }
 
-func createReconciler(t *testing.T, dynakube *dynatracev1beta2.DynaKube, uid string, monitoredEntities []dtclient.MonitoredEntity, getSettingsResponse dtclient.GetSettingsResponse, objectID string, meID interface{}) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
+func createReconciler(t *testing.T, dk *dynakube.DynaKube, uid string, monitoredEntities []dtclient.MonitoredEntity, getSettingsResponse dtclient.GetSettingsResponse, objectID string, meID interface{}) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	mockClient := dtclientmock.NewClient(t)
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("string")).
 		Return(monitoredEntities, nil)
@@ -43,14 +43,14 @@ func createReconciler(t *testing.T, dynakube *dynatracev1beta2.DynaKube, uid str
 		call.Maybe()
 	}
 
-	r := NewReconciler(mockClient, dynakube, testName, uid)
+	r := NewReconciler(mockClient, dk, testName, uid)
 	require.NotNil(t, r)
 	require.NotNil(t, r.dtc)
 
 	return r
 }
 
-func createReconcilerWithError(t *testing.T, dynakube *dynatracev1beta2.DynaKube, monitoredEntitiesError error, getSettingsResponseError error, createSettingsResponseError error, createAppSettingsResponseError error) *Reconciler { //nolint:revive
+func createReconcilerWithError(t *testing.T, dk *dynakube.DynaKube, monitoredEntitiesError error, getSettingsResponseError error, createSettingsResponseError error, createAppSettingsResponseError error) *Reconciler { //nolint:revive
 	mockClient := dtclientmock.NewClient(t)
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("string")).
 		Return([]dtclient.MonitoredEntity{}, monitoredEntitiesError)
@@ -68,7 +68,7 @@ func createReconcilerWithError(t *testing.T, dynakube *dynatracev1beta2.DynaKube
 		call.Maybe()
 	}
 
-	r := NewReconciler(mockClient, dynakube, testName, testUID)
+	r := NewReconciler(mockClient, dk, testName, testUID)
 	require.NotNil(t, r)
 	require.NotNil(t, r.dtc)
 
@@ -84,7 +84,7 @@ func createMonitoredEntities() []dtclient.MonitoredEntity {
 
 func TestReconcile(t *testing.T) {
 	ctx := context.Background()
-	dynakube := newDynaKube()
+	dk := newDynaKube()
 
 	t.Run(`reconciler does not fail in with defaults`, func(t *testing.T) {
 		// arrange
@@ -99,7 +99,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run(`create setting when no monitored entities are existing`, func(t *testing.T) {
 		// arrange
-		r := createReconciler(t, dynakube, testUID, []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{}, testObjectID, "")
+		r := createReconciler(t, dk, testUID, []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{}, testObjectID, "")
 
 		// act
 		actual, err := r.createObjectIdIfNotExists(ctx)
@@ -112,7 +112,7 @@ func TestReconcile(t *testing.T) {
 	t.Run(`create setting when no settings for the found monitored entities are existing`, func(t *testing.T) {
 		// arrange
 		entities := createMonitoredEntities()
-		r := createReconciler(t, dynakube, testUID, entities, dtclient.GetSettingsResponse{}, testObjectID, "")
+		r := createReconciler(t, dk, testUID, entities, dtclient.GetSettingsResponse{}, testObjectID, "")
 
 		// act
 		actual, err := r.createObjectIdIfNotExists(ctx)
@@ -125,7 +125,7 @@ func TestReconcile(t *testing.T) {
 	t.Run(`don't create setting when settings for the found monitored entities are existing`, func(t *testing.T) {
 		// arrange
 		entities := createMonitoredEntities()
-		r := createReconciler(t, dynakube, testUID, entities, dtclient.GetSettingsResponse{TotalCount: 1}, testObjectID, "")
+		r := createReconciler(t, dk, testUID, entities, dtclient.GetSettingsResponse{TotalCount: 1}, testObjectID, "")
 
 		// act
 		actual, err := r.createObjectIdIfNotExists(ctx)
@@ -138,11 +138,11 @@ func TestReconcile(t *testing.T) {
 
 func TestReconcileErrors(t *testing.T) {
 	ctx := context.Background()
-	dynakube := newDynaKube()
+	dk := newDynaKube()
 
 	t.Run(`don't create setting when no kube-system uuid is given`, func(t *testing.T) {
 		// arrange
-		r := createReconciler(t, dynakube, "", []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{}, testObjectID, "")
+		r := createReconciler(t, dk, "", []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{}, testObjectID, "")
 
 		// act
 		actual, err := r.createObjectIdIfNotExists(ctx)
@@ -154,7 +154,7 @@ func TestReconcileErrors(t *testing.T) {
 
 	t.Run(`don't create setting when get entities api response is error`, func(t *testing.T) {
 		// arrange
-		r := createReconcilerWithError(t, dynakube, errors.New("could not get monitored entities"), nil, nil, nil)
+		r := createReconcilerWithError(t, dk, errors.New("could not get monitored entities"), nil, nil, nil)
 
 		// act
 		actual, err := r.createObjectIdIfNotExists(ctx)
@@ -166,7 +166,7 @@ func TestReconcileErrors(t *testing.T) {
 
 	t.Run(`don't create setting when get settings api response is error`, func(t *testing.T) {
 		// arrange
-		r := createReconcilerWithError(t, dynakube, nil, errors.New("could not get settings for monitored entities"), nil, nil)
+		r := createReconcilerWithError(t, dk, nil, errors.New("could not get settings for monitored entities"), nil, nil)
 
 		// act
 		actual, err := r.createObjectIdIfNotExists(ctx)
@@ -178,7 +178,7 @@ func TestReconcileErrors(t *testing.T) {
 
 	t.Run(`don't create setting when create settings api response is error`, func(t *testing.T) {
 		// arrange
-		r := createReconcilerWithError(t, dynakube, nil, nil, errors.New("could not create monitored entity"), nil)
+		r := createReconcilerWithError(t, dk, nil, nil, errors.New("could not create monitored entity"), nil)
 
 		// act
 		actual, err := r.createObjectIdIfNotExists(ctx)
@@ -190,7 +190,7 @@ func TestReconcileErrors(t *testing.T) {
 
 	t.Run(`create settings successful in case of CreateOrUpdateKubernetesAppSetting error`, func(t *testing.T) {
 		// arrange
-		r := createReconcilerWithError(t, dynakube, nil, nil, nil, errors.New("could not create monitored entity"))
+		r := createReconcilerWithError(t, dk, nil, nil, nil, errors.New("could not create monitored entity"))
 
 		// act
 		_, err := r.createObjectIdIfNotExists(ctx)
@@ -202,11 +202,11 @@ func TestReconcileErrors(t *testing.T) {
 
 func TestHandleKubernetesAppEnabled(t *testing.T) {
 	ctx := context.Background()
-	dynakube := newDynaKube()
+	dk := newDynaKube()
 
 	t.Run(`don't create app setting due to empty MonitoredEntitys`, func(t *testing.T) {
 		// arrange
-		r := createReconciler(t, dynakube, "", []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{}, "", "")
+		r := createReconciler(t, dk, "", []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{}, "", "")
 
 		// act
 		_, err := r.handleKubernetesAppEnabled(ctx, []dtclient.MonitoredEntity{})
@@ -221,7 +221,7 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 			{EntityId: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "operator test entity newest", LastSeenTms: 1639483869085},
 			{EntityId: "KUBERNETES_CLUSTER-119C75CCDA94799F", DisplayName: "operator test entity 1", LastSeenTms: 1639034988126},
 		}
-		r := createReconciler(t, dynakube, "", entities, dtclient.GetSettingsResponse{TotalCount: 1}, "", "")
+		r := createReconciler(t, dk, "", entities, dtclient.GetSettingsResponse{TotalCount: 1}, "", "")
 
 		// act
 		_, err := r.handleKubernetesAppEnabled(ctx, entities)
@@ -232,7 +232,7 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 
 	t.Run(`don't create app setting when get entities api response is error`, func(t *testing.T) {
 		// arrange
-		r := createReconcilerWithError(t, dynakube, nil, errors.New("could not get monitored entities"), nil, nil)
+		r := createReconcilerWithError(t, dk, nil, errors.New("could not get monitored entities"), nil, nil)
 
 		// act
 		_, err := r.handleKubernetesAppEnabled(ctx, []dtclient.MonitoredEntity{})
@@ -243,7 +243,7 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 
 	t.Run(`don't create app setting when get CreateOrUpdateKubernetesAppSetting response is error`, func(t *testing.T) {
 		// arrange
-		r := createReconcilerWithError(t, dynakube, nil, nil, nil, errors.New("could not get monitored entities"))
+		r := createReconcilerWithError(t, dk, nil, nil, nil, errors.New("could not get monitored entities"))
 		meID := "KUBERNETES_CLUSTER-0E30FE4BF2007587"
 		entities := []dtclient.MonitoredEntity{
 			{EntityId: meID, DisplayName: "operator test entity newest", LastSeenTms: 1639483869085},
@@ -261,7 +261,7 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 		entities := []dtclient.MonitoredEntity{
 			{EntityId: meID, DisplayName: "operator test entity newest", LastSeenTms: 1639483869085},
 		}
-		r := createReconciler(t, dynakube, "", entities, dtclient.GetSettingsResponse{}, "", meID)
+		r := createReconciler(t, dk, "", entities, dtclient.GetSettingsResponse{}, "", meID)
 		// act
 		id, err := r.handleKubernetesAppEnabled(ctx, entities)
 		// assert
@@ -291,8 +291,8 @@ func TestDetermineNewestMonitoredEntity(t *testing.T) {
 	})
 }
 
-func newDynaKube() *dynatracev1beta2.DynaKube {
-	return &dynatracev1beta2.DynaKube{
+func newDynaKube() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "DynaKube",
 			APIVersion: "dynatrace.com/v1beta1",
@@ -302,12 +302,12 @@ func newDynaKube() *dynatracev1beta2.DynaKube {
 			Namespace: "my-namespace",
 			UID:       "69e98f18-805a-42de-84b5-3eae66534f75",
 			Annotations: map[string]string{
-				dynatracev1beta2.AnnotationFeatureK8sAppEnabled: "true",
+				dynakube.AnnotationFeatureK8sAppEnabled: "true",
 			},
 		},
-		Spec: dynatracev1beta2.DynaKubeSpec{
-			OneAgent: dynatracev1beta2.OneAgentSpec{
-				HostMonitoring: &dynatracev1beta2.HostInjectSpec{},
+		Spec: dynakube.DynaKubeSpec{
+			OneAgent: dynakube.OneAgentSpec{
+				HostMonitoring: &dynakube.HostInjectSpec{},
 			},
 		},
 	}

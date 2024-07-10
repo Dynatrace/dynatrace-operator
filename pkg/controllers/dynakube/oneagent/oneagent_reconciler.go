@@ -10,6 +10,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -58,7 +59,7 @@ func NewReconciler( //nolint
 	client client.Client,
 	apiReader client.Reader,
 	dtClient dynatrace.Client,
-	dynakube *dynatracev1beta2.DynaKube,
+	dk *dynatracev1beta2.DynaKube,
 	tokens token.Tokens,
 	clusterID string,
 ) controllers.Reconciler {
@@ -66,8 +67,8 @@ func NewReconciler( //nolint
 		client:                   client,
 		apiReader:                apiReader,
 		clusterID:                clusterID,
-		dynakube:                 dynakube,
-		connectionInfoReconciler: oaconnectioninfo.NewReconciler(client, apiReader, dtClient, dynakube),
+		dynakube:                 dk,
+		connectionInfoReconciler: oaconnectioninfo.NewReconciler(client, apiReader, dtClient, dk),
 		versionReconciler:        version.NewReconciler(apiReader, dtClient, timeprovider.New().Freeze()),
 		tokens:                   tokens,
 	}
@@ -90,11 +91,20 @@ type Reconciler struct {
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *Reconciler) Reconcile(ctx context.Context) error {
+func (r *Reconciler) Reconcile(ctx context.Context) error { //nolint:revive
 	log.Info("reconciling OneAgent")
 
-	err := r.versionReconciler.ReconcileOneAgent(ctx, r.dynakube)
+	dynakubeV1beta3 := &dynakubev1beta3.DynaKube{}
+	if err := dynakubeV1beta3.ConvertFrom(r.dynakube); err != nil {
+		return err
+	}
+
+	err := r.versionReconciler.ReconcileOneAgent(ctx, dynakubeV1beta3)
 	if err != nil {
+		return err
+	}
+
+	if err := dynakubeV1beta3.ConvertTo(r.dynakube); err != nil {
 		return err
 	}
 
@@ -115,8 +125,16 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return r.cleanUp(ctx)
 	}
 
-	err = dtpullsecret.NewReconciler(r.client, r.apiReader, r.dynakube, r.tokens).Reconcile(ctx)
+	if err := dynakubeV1beta3.ConvertFrom(r.dynakube); err != nil {
+		return err
+	}
+
+	err = dtpullsecret.NewReconciler(r.client, r.apiReader, dynakubeV1beta3, r.tokens).Reconcile(ctx)
 	if err != nil {
+		return err
+	}
+
+	if err := dynakubeV1beta3.ConvertTo(r.dynakube); err != nil {
 		return err
 	}
 
@@ -137,7 +155,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	log.Info("reconciled " + deploymentmetadata.GetOneAgentDeploymentType(*r.dynakube))
+	log.Info("reconciled " + deploymentmetadata.GetOneAgentDeploymentTypeV1beta2(*r.dynakube))
 
 	return nil
 }
@@ -330,7 +348,7 @@ func (r *Reconciler) buildDesiredDaemonSet(dynakube *dynatracev1beta2.DynaKube) 
 }
 
 func (r *Reconciler) reconcileInstanceStatuses(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
-	pods, listOpts, err := r.getOneagentPods(ctx, dynakube, deploymentmetadata.GetOneAgentDeploymentType(*dynakube))
+	pods, listOpts, err := r.getOneagentPods(ctx, dynakube, deploymentmetadata.GetOneAgentDeploymentTypeV1beta2(*dynakube))
 	if err != nil {
 		handlePodListError(err, listOpts)
 	}

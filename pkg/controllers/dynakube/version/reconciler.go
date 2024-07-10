@@ -5,8 +5,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
-	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -54,14 +53,8 @@ func (r *reconciler) ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKub
 }
 
 func (r *reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error {
-	dynakubeV1beta3 := &dynakubev1beta3.DynaKube{}
+	updater := newActiveGateUpdater(dk, r.apiReader, r.dtClient)
 
-	err := dynakubeV1beta3.ConvertFrom(dk)
-	if err != nil {
-		return err
-	}
-
-	updater := newActiveGateUpdater(dk, dynakubeV1beta3, r.apiReader, r.dtClient)
 	if r.needsUpdate(updater, dk) {
 		err := r.updateVersionStatuses(ctx, updater, dk)
 

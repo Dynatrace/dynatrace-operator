@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
-	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"k8s.io/utils/net"
 )
@@ -72,25 +71,14 @@ func NewMultiCapability(dk *dynakube.DynaKube) Capability {
 		},
 	}
 
-	if dk == nil {
-		return &mc
-	}
-
-	dkV1beta3 := &dynakubev1beta3.DynaKube{}
-
-	err := dkV1beta3.ConvertFrom(dk)
-	if err != nil {
-		return &mc
-	}
-
-	if !dkV1beta3.ActiveGateMode() {
+	if dk == nil || !dk.ActiveGateMode() {
 		return &mc
 	}
 
 	mc.enabled = true
 	mc.properties = &dk.Spec.ActiveGate.CapabilityProperties
 
-	if len(dk.Spec.ActiveGate.Capabilities) == 0 && dkV1beta3.HasExtensionsEnabled() {
+	if len(dk.Spec.ActiveGate.Capabilities) == 0 && dk.HasExtensionsEnabled() {
 		mc.properties.Replicas = 1
 	}
 
@@ -109,7 +97,7 @@ func NewMultiCapability(dk *dynakube.DynaKube) Capability {
 		capabilityDisplayNames = append(capabilityDisplayNames, capGen.displayName)
 	}
 
-	if dkV1beta3.HasExtensionsEnabled() {
+	if dk.HasExtensionsEnabled() {
 		capabilityNames = append(capabilityNames, "extension_controller")
 		capabilityDisplayNames = append(capabilityDisplayNames, "extension_controller")
 	}

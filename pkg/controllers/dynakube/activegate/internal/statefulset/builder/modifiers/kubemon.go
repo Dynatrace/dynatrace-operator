@@ -1,7 +1,7 @@
 package modifiers
 
 import (
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
@@ -28,16 +28,16 @@ const (
 	certLoaderWorkDirVolume = "cert-tmp"
 )
 
-func NewKubernetesMonitoringModifier(dynakube dynatracev1beta2.DynaKube, capability capability.Capability) KubernetesMonitoringModifier {
+func NewKubernetesMonitoringModifier(dk dynakube.DynaKube, capability capability.Capability) KubernetesMonitoringModifier {
 	return KubernetesMonitoringModifier{
-		dynakube:   dynakube,
+		dynakube:   dk,
 		capability: capability,
 	}
 }
 
 type KubernetesMonitoringModifier struct {
 	capability capability.Capability
-	dynakube   dynatracev1beta2.DynaKube
+	dynakube   dynakube.DynaKube
 }
 
 func (mod KubernetesMonitoringModifier) Enabled() bool {
