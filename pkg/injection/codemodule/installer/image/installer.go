@@ -30,7 +30,6 @@ type Properties struct {
 }
 
 func NewImageInstaller(ctx context.Context, fs afero.Fs, props *Properties) (installer.Installer, error) {
-	pullSecret := props.Dynakube.PullSecretWithoutData()
 	defaultTransport := http.DefaultTransport.(*http.Transport).Clone()
 
 	transport, err := registry.PrepareTransportForDynaKube(ctx, props.ApiReader, defaultTransport, props.Dynakube)
@@ -38,7 +37,7 @@ func NewImageInstaller(ctx context.Context, fs afero.Fs, props *Properties) (ins
 		return nil, err
 	}
 
-	keychain, err := dockerkeychain.NewDockerKeychain(ctx, props.ApiReader, pullSecret)
+	keychain, err := dockerkeychain.NewDockerKeychains(ctx, props.ApiReader, props.Dynakube.Namespace, props.Dynakube.PullSecretNames())
 	if err != nil {
 		return nil, err
 	}

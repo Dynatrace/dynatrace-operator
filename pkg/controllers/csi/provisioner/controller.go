@@ -32,7 +32,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
-	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -61,7 +60,6 @@ type OneAgentProvisioner struct {
 	dynatraceClientBuilder dynatraceclient.Builder
 	urlInstallerBuilder    urlInstallerBuilder
 	imageInstallerBuilder  imageInstallerBuilder
-	registryClientBuilder  registry.ClientBuilder
 	opts                   dtcsi.CSIOptions
 	path                   metadata.PathResolver
 }
@@ -80,7 +78,6 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metad
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
 		urlInstallerBuilder:    url.NewUrlInstaller,
 		imageInstallerBuilder:  image.NewImageInstaller,
-		registryClientBuilder:  registry.NewClient,
 	}
 }
 

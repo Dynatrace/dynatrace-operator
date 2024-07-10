@@ -211,14 +211,27 @@ func (dk *DynaKube) PullSecretName() string {
 	return dk.Name + PullSecretSuffix
 }
 
-// PullSecretWithoutData returns a secret which can be used to query the actual secrets data from the cluster.
-func (dk *DynaKube) PullSecretWithoutData() corev1.Secret {
-	return corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.PullSecretName(),
-			Namespace: dk.Namespace,
-		},
+// PullSecretsNames returns the names of the pull secrets to be used for immutable images.
+func (dk *DynaKube) PullSecretNames() []string {
+	names := []string{
+		dk.Name + PullSecretSuffix,
 	}
+	if dk.Spec.CustomPullSecret != "" {
+		names = append(names, dk.Spec.CustomPullSecret)
+	}
+
+	return names
+}
+
+func (dk *DynaKube) ImagePullSecretReferences() []corev1.LocalObjectReference {
+	imagePullSecrets := make([]corev1.LocalObjectReference, 0)
+	for _, pullSecretName := range dk.PullSecretNames() {
+		imagePullSecrets = append(imagePullSecrets, corev1.LocalObjectReference{
+			Name: pullSecretName,
+		})
+	}
+
+	return imagePullSecrets
 }
 
 func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {

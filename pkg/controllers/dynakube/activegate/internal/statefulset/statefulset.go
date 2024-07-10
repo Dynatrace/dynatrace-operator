@@ -3,7 +3,7 @@ package statefulset
 import (
 	"strconv"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
@@ -31,14 +31,14 @@ type Builder struct {
 	envMap     *prioritymap.Map
 	kubeUID    types.UID
 	configHash string
-	dynakube   dynatracev1beta2.DynaKube
+	dynakube   dynakube.DynaKube
 }
 
-func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dynakube dynatracev1beta2.DynaKube, capability capability.Capability) Builder {
+func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dk dynakube.DynaKube, capability capability.Capability) Builder {
 	return Builder{
 		kubeUID:    kubeUID,
 		configHash: configHash,
-		dynakube:   dynakube,
+		dynakube:   dk,
 		capability: capability,
 		envMap:     prioritymap.New(prioritymap.WithPriority(defaultEnvPriority)),
 	}
@@ -129,9 +129,7 @@ func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
 				Type: corev1.SeccompProfileTypeRuntimeDefault,
 			},
 		},
-		ImagePullSecrets: []corev1.LocalObjectReference{
-			{Name: statefulSetBuilder.dynakube.PullSecretName()},
-		},
+		ImagePullSecrets:  statefulSetBuilder.dynakube.ImagePullSecretReferences(),
 		PriorityClassName: statefulSetBuilder.dynakube.Spec.ActiveGate.PriorityClassName,
 		DNSPolicy:         statefulSetBuilder.dynakube.Spec.ActiveGate.DNSPolicy,
 
