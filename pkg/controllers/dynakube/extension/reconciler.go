@@ -17,15 +17,15 @@ type reconciler struct {
 	dynakube *dynakube.DynaKube
 }
 
-type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dynakube *dynakube.DynaKube) controllers.Reconciler
+type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler
 
 var _ ReconcilerBuilder = NewReconciler
 
-func NewReconciler(clt client.Client, apiReader client.Reader, dynakube *dynakube.DynaKube) controllers.Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler {
 	return &reconciler{
 		client:       clt,
 		apiReader:    apiReader,
-		dynakube:     dynakube,
+		dynakube:     dk,
 		timeProvider: timeprovider.New(),
 	}
 }

@@ -301,12 +301,12 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube
 	return dynatraceClient, nil
 }
 
-func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioClient *istio.Client, dynakube *dynatracev1beta2.DynaKube) error {
+func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioClient *istio.Client, dk *dynatracev1beta2.DynaKube) error {
 	var componentErrors []error
 
 	log.Info("start reconciling ActiveGate")
 
-	err := controller.reconcileActiveGate(ctx, dynakube, dynatraceClient, istioClient)
+	err := controller.reconcileActiveGate(ctx, dk, dynatraceClient, istioClient)
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
 
@@ -315,7 +315,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	dynakubeV1beta3 := &dynatracev1beta3.DynaKube{}
 
-	err = dynakubeV1beta3.ConvertFrom(dynakube)
+	err = dynakubeV1beta3.ConvertFrom(dk)
 	if err != nil {
 		return err
 	}
@@ -327,7 +327,9 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		return err
 	}
 
-	proxyReconciler := proxy.NewReconciler(controller.client, controller.apiReader, dynakube)
+	*dk.Conditions() = *dynakubeV1beta3.Conditions()
+
+	proxyReconciler := proxy.NewReconciler(controller.client, controller.apiReader, dk)
 
 	err = proxyReconciler.Reconcile(ctx)
 	if err != nil {
@@ -340,7 +342,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		controller.apiReader,
 		dynatraceClient,
 		istioClient,
-		dynakube).
+		dk).
 		Reconcile(ctx)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
@@ -362,7 +364,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		controller.client,
 		controller.apiReader,
 		dynatraceClient,
-		dynakube,
+		dk,
 		controller.tokens,
 		controller.clusterID,
 	).
