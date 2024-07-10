@@ -48,6 +48,15 @@
       ],
       datasourceTemplate: "go",
     },
+    {
+      fileMatch: [
+        "(^|/|\\.)otel.go$",
+      ],
+      matchStrings: [
+        "depName=(?<depName>.*?)\\s.*go.opentelemetry.io\\/otel\\/semconv\\/v(?<currentValue>.*)\\\"",
+      ],
+      datasourceTemplate: "go",
+    },
   ],
   packageRules: [
     {
