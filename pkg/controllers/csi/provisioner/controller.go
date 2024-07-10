@@ -233,14 +233,14 @@ func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, requ
 	return result, nil
 }
 
-func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context, dk *dynatracev1beta2.DynaKube, tenantConfig *metadata.TenantConfig) (bool, error) {
+func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context, dk *dynatracev1beta2.DynaKube, tenantConfig *metadata.TenantConfig) (requeue bool, err error) {
 	// creates a dt client and checks tokens exist for the given dynakube
 	dtc, err := buildDtc(provisioner, ctx, dk)
 	if err != nil {
 		return true, err
 	}
 
-	requeue, err := provisioner.updateAgentInstallation(ctx, dtc, tenantConfig, dk)
+	requeue, err = provisioner.updateAgentInstallation(ctx, dtc, tenantConfig, dk)
 	if err != nil {
 		return requeue, err
 	}
