@@ -7,9 +7,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
-	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -45,76 +42,23 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if r.hasCustomPropertiesValueOnly() {
-		mustNotUpdate, err := r.createCustomPropertiesIfNotExists(ctx)
+		customPropertiesSecret, err := secret.Build(r.dk,
+			r.buildCustomPropertiesName(r.dk.Name),
+			map[string][]byte{
+				DataKey: []byte(r.customPropertiesSource.Value),
+			},
+		)
 		if err != nil {
-			log.Error(err, "could not create custom properties", "owner", r.customPropertiesOwnerName)
-
-			return errors.WithStack(err)
+			return err
 		}
 
-		if !mustNotUpdate {
-			err = r.updateCustomPropertiesIfOutdated(ctx)
-			if err != nil {
-				log.Error(err, "could not update custom properties", "owner", r.customPropertiesOwnerName)
-
-				return errors.WithStack(err)
-			}
+		_, err = secret.Query(r.client, r.client, log).CreateOrUpdate(ctx, customPropertiesSecret) // TODO: pass in an apiReader instead of the client 2 times
+		if err != nil {
+			return err
 		}
 	}
 
 	return nil
-}
-
-func (r *Reconciler) createCustomPropertiesIfNotExists(ctx context.Context) (bool, error) {
-	var customPropertiesSecret corev1.Secret
-
-	err := r.client.Get(ctx,
-		client.ObjectKey{Name: r.buildCustomPropertiesName(r.dk.Name), Namespace: r.dk.Namespace}, &customPropertiesSecret)
-	if err != nil && k8serrors.IsNotFound(err) {
-		return true, r.createCustomProperties()
-	}
-
-	return false, errors.WithStack(err)
-}
-
-func (r *Reconciler) updateCustomPropertiesIfOutdated(ctx context.Context) error {
-	var customPropertiesSecret corev1.Secret
-
-	err := r.client.Get(ctx,
-		client.ObjectKey{Name: r.buildCustomPropertiesName(r.dk.Name), Namespace: r.dk.Namespace},
-		&customPropertiesSecret)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	if r.isOutdated(&customPropertiesSecret) {
-		return r.updateCustomProperties(ctx, &customPropertiesSecret)
-	}
-
-	return nil
-}
-
-func (r *Reconciler) isOutdated(customProperties *corev1.Secret) bool {
-	return r.customPropertiesSource.Value != string(customProperties.Data[DataKey])
-}
-
-func (r *Reconciler) updateCustomProperties(ctx context.Context, customProperties *corev1.Secret) error {
-	customProperties.Data[DataKey] = []byte(r.customPropertiesSource.Value)
-
-	return r.client.Update(ctx, customProperties)
-}
-
-func (r *Reconciler) createCustomProperties() error {
-	customPropertiesSecret, err := secret.Build(r.dk,
-		r.buildCustomPropertiesName(r.dk.Name),
-		map[string][]byte{
-			DataKey: []byte(r.customPropertiesSource.Value),
-		})
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return r.client.Create(context.TODO(), customPropertiesSecret)
 }
 
 func (r *Reconciler) buildCustomPropertiesName(name string) string {
