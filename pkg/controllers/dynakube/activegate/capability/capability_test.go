@@ -59,8 +59,8 @@ func TestBuildServiceName(t *testing.T) {
 
 func TestNewMultiCapability(t *testing.T) {
 	t.Run(`creates new multicapability`, func(t *testing.T) {
-		dynakube := buildDynakube(capabilities)
-		mc := NewMultiCapability(dynakube)
+		dk := buildDynakube(capabilities)
+		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
 		assert.Equal(t, expectedShortName, mc.ShortName())
@@ -68,8 +68,8 @@ func TestNewMultiCapability(t *testing.T) {
 	})
 	t.Run(`creates new multicapability without capabilities set in dynakube`, func(t *testing.T) {
 		var emptyCapabilites []dynakube.CapabilityDisplayName
-		dynakube := buildDynakube(emptyCapabilites)
-		mc := NewMultiCapability(dynakube)
+		dk := buildDynakube(emptyCapabilites)
+		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.False(t, mc.Enabled())
 		assert.Equal(t, expectedShortName, mc.ShortName())

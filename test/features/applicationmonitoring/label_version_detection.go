@@ -225,22 +225,22 @@ func assertValue(ctx context.Context, t *testing.T, resource *resources.Resource
 	assert.Equal(t, expectedValue, stdOut, "%s:%s pod - %s variable has invalid value", podItem.Namespace, podItem.Name, variableName)
 }
 
-func buildDisabledBuildLabelNamespace(testDynakube dynakube.DynaKube) corev1.Namespace {
-	return *namespace.New(disabledBuildLabelsNamespace, namespace.WithLabels(testDynakube.OneAgentNamespaceSelector().MatchLabels))
+func buildDisabledBuildLabelNamespace(dk dynakube.DynaKube) corev1.Namespace {
+	return *namespace.New(disabledBuildLabelsNamespace, namespace.WithLabels(dk.OneAgentNamespaceSelector().MatchLabels))
 }
 
-func buildDisabledBuildLabelSampleApp(t *testing.T, testDynakube dynakube.DynaKube) *sample.App {
-	return sample.NewApp(t, &testDynakube, sample.AsDeployment(), sample.WithNamespace(buildDisabledBuildLabelNamespace(testDynakube)))
+func buildDisabledBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *sample.App {
+	return sample.NewApp(t, &dk, sample.AsDeployment(), sample.WithNamespace(buildDisabledBuildLabelNamespace(dk)))
 }
 
-func buildDefaultBuildLabelNamespace(testDynakube dynakube.DynaKube) corev1.Namespace {
-	return *namespace.New(defaultBuildLabelsNamespace, namespace.WithLabels(testDynakube.OneAgentNamespaceSelector().MatchLabels))
+func buildDefaultBuildLabelNamespace(dk dynakube.DynaKube) corev1.Namespace {
+	return *namespace.New(defaultBuildLabelsNamespace, namespace.WithLabels(dk.OneAgentNamespaceSelector().MatchLabels))
 }
 
-func buildDefaultBuildLabelSampleApp(t *testing.T, testDynakube dynakube.DynaKube) *sample.App {
-	sampleApp := sample.NewApp(t, &testDynakube,
+func buildDefaultBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *sample.App {
+	sampleApp := sample.NewApp(t, &dk,
 		sample.AsDeployment(),
-		sample.WithNamespace(buildDefaultBuildLabelNamespace(testDynakube)),
+		sample.WithNamespace(buildDefaultBuildLabelNamespace(dk)),
 		sample.WithLabels(map[string]string{
 			"app.kubernetes.io/version": "app-kubernetes-io-version",
 			"app.kubernetes.io/part-of": "app-kubernetes-io-part-of",
@@ -254,10 +254,10 @@ func buildDefaultBuildLabelSampleApp(t *testing.T, testDynakube dynakube.DynaKub
 	return sampleApp
 }
 
-func buildCustomBuildLabelNamespace(testDynakube dynakube.DynaKube) corev1.Namespace {
+func buildCustomBuildLabelNamespace(dk dynakube.DynaKube) corev1.Namespace {
 	return *namespace.New(
 		customBuildLabelsNamespace,
-		namespace.WithLabels(testDynakube.OneAgentNamespaceSelector().MatchLabels),
+		namespace.WithLabels(dk.OneAgentNamespaceSelector().MatchLabels),
 		namespace.WithAnnotation(map[string]string{
 			"mapping.release.dynatrace.com/version":       "metadata.labels['my.domain/version']",
 			"mapping.release.dynatrace.com/product":       "metadata.labels['my.domain/product']",
@@ -267,10 +267,10 @@ func buildCustomBuildLabelNamespace(testDynakube dynakube.DynaKube) corev1.Names
 	)
 }
 
-func buildCustomBuildLabelSampleApp(t *testing.T, testDynakube dynakube.DynaKube) *sample.App {
-	sampleApp := sample.NewApp(t, &testDynakube,
+func buildCustomBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *sample.App {
+	sampleApp := sample.NewApp(t, &dk,
 		sample.AsDeployment(),
-		sample.WithNamespace(buildCustomBuildLabelNamespace(testDynakube)),
+		sample.WithNamespace(buildCustomBuildLabelNamespace(dk)),
 		sample.WithLabels(map[string]string{
 			"app.kubernetes.io/version": "app-kubernetes-io-version",
 			"app.kubernetes.io/part-of": "app-kubernetes-io-part-of",
@@ -284,10 +284,10 @@ func buildCustomBuildLabelSampleApp(t *testing.T, testDynakube dynakube.DynaKube
 	return sampleApp
 }
 
-func buildPreservedBuildLabelNamespace(testDynakube dynakube.DynaKube) corev1.Namespace {
+func buildPreservedBuildLabelNamespace(dk dynakube.DynaKube) corev1.Namespace {
 	return *namespace.New(
 		preservedBuildLabelsNamespace,
-		namespace.WithLabels(testDynakube.OneAgentNamespaceSelector().MatchLabels),
+		namespace.WithLabels(dk.OneAgentNamespaceSelector().MatchLabels),
 		namespace.WithAnnotation(map[string]string{
 			"mapping.release.dynatrace.com/version":       "metadata.labels['my.domain/version']",
 			"mapping.release.dynatrace.com/product":       "metadata.labels['my.domain/product']",
@@ -297,10 +297,10 @@ func buildPreservedBuildLabelNamespace(testDynakube dynakube.DynaKube) corev1.Na
 	)
 }
 
-func buildPreservedBuildLabelSampleApp(t *testing.T, testDynakube dynakube.DynaKube) *sample.App {
-	sampleApp := sample.NewApp(t, &testDynakube,
+func buildPreservedBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *sample.App {
+	sampleApp := sample.NewApp(t, &dk,
 		sample.AsDeployment(),
-		sample.WithNamespace(buildPreservedBuildLabelNamespace(testDynakube)),
+		sample.WithNamespace(buildPreservedBuildLabelNamespace(dk)),
 		sample.WithLabels(map[string]string{
 			"app.kubernetes.io/version": "app-kubernetes-io-version",
 			"app.kubernetes.io/part-of": "app-kubernetes-io-part-of",
@@ -352,10 +352,10 @@ func buildPreservedBuildLabelSampleApp(t *testing.T, testDynakube dynakube.DynaK
 	return sampleApp
 }
 
-func buildInvalidBuildLabelNamespace(testDynakube dynakube.DynaKube) corev1.Namespace {
+func buildInvalidBuildLabelNamespace(dk dynakube.DynaKube) corev1.Namespace {
 	return *namespace.New(
 		invalidBuildLabelsNamespace,
-		namespace.WithLabels(testDynakube.OneAgentNamespaceSelector().MatchLabels),
+		namespace.WithLabels(dk.OneAgentNamespaceSelector().MatchLabels),
 		namespace.WithAnnotation(map[string]string{
 			"mapping.release.dynatrace.com/stage":         "metadata.labels['my.domain/invalid-stage']",
 			"mapping.release.dynatrace.com/build-version": "metadata.labels['my.domain/invalid-build-version']",
@@ -363,10 +363,10 @@ func buildInvalidBuildLabelNamespace(testDynakube dynakube.DynaKube) corev1.Name
 	)
 }
 
-func buildInvalidBuildLabelSampleApp(t *testing.T, testDynakube dynakube.DynaKube) *sample.App {
-	sampleApp := sample.NewApp(t, &testDynakube,
+func buildInvalidBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *sample.App {
+	sampleApp := sample.NewApp(t, &dk,
 		sample.AsDeployment(),
-		sample.WithNamespace(buildInvalidBuildLabelNamespace(testDynakube)),
+		sample.WithNamespace(buildInvalidBuildLabelNamespace(dk)),
 		sample.WithLabels(map[string]string{
 			"app.kubernetes.io/version": "app-kubernetes-io-version",
 			"app.kubernetes.io/part-of": "app-kubernetes-io-part-of",

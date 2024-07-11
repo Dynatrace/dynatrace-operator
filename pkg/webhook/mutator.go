@@ -56,17 +56,17 @@ type ReinvocationRequest struct {
 	*BaseRequest
 }
 
-func newBaseRequest(pod *corev1.Pod, namespace corev1.Namespace, dynakube dynakube.DynaKube) *BaseRequest {
+func newBaseRequest(pod *corev1.Pod, namespace corev1.Namespace, dk dynakube.DynaKube) *BaseRequest {
 	return &BaseRequest{
 		Pod:       pod,
-		DynaKube:  dynakube,
+		DynaKube:  dk,
 		Namespace: namespace,
 	}
 }
 
-func NewMutationRequest(ctx context.Context, namespace corev1.Namespace, installContainer *corev1.Container, pod *corev1.Pod, dynakube dynakube.DynaKube) *MutationRequest {
+func NewMutationRequest(ctx context.Context, namespace corev1.Namespace, installContainer *corev1.Container, pod *corev1.Pod, dk dynakube.DynaKube) *MutationRequest {
 	return &MutationRequest{
-		BaseRequest:      newBaseRequest(pod, namespace, dynakube),
+		BaseRequest:      newBaseRequest(pod, namespace, dk),
 		Context:          ctx,
 		InstallContainer: installContainer,
 	}

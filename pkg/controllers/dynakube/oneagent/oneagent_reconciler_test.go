@@ -618,7 +618,7 @@ func TestInstanceStatus(t *testing.T) {
 	namespace := "dynatrace"
 	dkName := "dynakube"
 
-	dynakube := &dynakube.DynaKube{
+	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
@@ -650,7 +650,7 @@ func TestInstanceStatus(t *testing.T) {
 	}
 
 	fakeClient := fake.NewClient(
-		dynakube,
+		dk,
 		pod)
 
 	reconciler := &Reconciler{
@@ -658,21 +658,21 @@ func TestInstanceStatus(t *testing.T) {
 		apiReader: fakeClient,
 	}
 
-	err := reconciler.reconcileInstanceStatuses(context.Background(), dynakube)
+	err := reconciler.reconcileInstanceStatuses(context.Background(), dk)
 	require.NoError(t, err)
-	assert.NotEmpty(t, t, dynakube.Status.OneAgent.Instances)
-	instances := dynakube.Status.OneAgent.Instances
+	assert.NotEmpty(t, t, dk.Status.OneAgent.Instances)
+	instances := dk.Status.OneAgent.Instances
 
-	err = reconciler.reconcileInstanceStatuses(context.Background(), dynakube)
+	err = reconciler.reconcileInstanceStatuses(context.Background(), dk)
 	require.NoError(t, err)
-	assert.Equal(t, instances, dynakube.Status.OneAgent.Instances)
+	assert.Equal(t, instances, dk.Status.OneAgent.Instances)
 }
 
 func TestEmptyInstancesWithWrongLabels(t *testing.T) {
 	namespace := "dynatrace"
 	dkName := "dynakube"
 
-	dynakube := &dynakube.DynaKube{
+	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
@@ -700,7 +700,7 @@ func TestEmptyInstancesWithWrongLabels(t *testing.T) {
 	}
 
 	fakeClient := fake.NewClient(
-		dynakube,
+		dk,
 		pod)
 
 	reconciler := &Reconciler{
@@ -708,9 +708,9 @@ func TestEmptyInstancesWithWrongLabels(t *testing.T) {
 		apiReader: fakeClient,
 	}
 
-	err := reconciler.reconcileInstanceStatuses(context.Background(), dynakube)
+	err := reconciler.reconcileInstanceStatuses(context.Background(), dk)
 	require.NoError(t, err)
-	assert.Empty(t, dynakube.Status.OneAgent.Instances)
+	assert.Empty(t, dk.Status.OneAgent.Instances)
 }
 
 func TestReconcile_OneAgentConfigMap(t *testing.T) {

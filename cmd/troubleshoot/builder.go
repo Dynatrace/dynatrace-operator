@@ -134,36 +134,36 @@ func runChecksForAllDynakubes(ctx context.Context, baseLog logd.Logger, apiReade
 	}
 }
 
-func runChecksForDynakube(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, httpClient *http.Client, dynakube dynakube.DynaKube) error {
+func runChecksForDynakube(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, httpClient *http.Client, dk dynakube.DynaKube) error {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
-	logNewCheckf(log, "checking if '%s:%s' Dynakube is configured correctly", dynakube.Namespace, dynakube.Name)
-	logInfof(log, "using '%s:%s' Dynakube", dynakube.Namespace, dynakube.Name)
+	logNewCheckf(log, "checking if '%s:%s' Dynakube is configured correctly", dk.Namespace, dk.Name)
+	logInfof(log, "using '%s:%s' Dynakube", dk.Namespace, dk.Name)
 
-	pullSecret, err := checkDynakube(ctx, baseLog, apiReader, &dynakube)
+	pullSecret, err := checkDynakube(ctx, baseLog, apiReader, &dk)
 	if err != nil {
 		return errors.Wrapf(err, "'%s:%s' Dynakube isn't valid. %s",
-			dynakube.Namespace, dynakube.Name, dynakubeNotValidMessage())
+			dk.Namespace, dk.Name, dynakubeNotValidMessage())
 	}
 
-	logOkf(log, "'%s:%s' Dynakube is valid", dynakube.Namespace, dynakube.Name)
+	logOkf(log, "'%s:%s' Dynakube is valid", dk.Namespace, dk.Name)
 
 	keychain, err := dockerkeychain.NewDockerKeychain(ctx, apiReader, pullSecret)
 	if err != nil {
 		return err
 	}
 
-	transport, err := createTransport(ctx, apiReader, &dynakube, httpClient)
+	transport, err := createTransport(ctx, apiReader, &dk, httpClient)
 	if err != nil {
 		return err
 	}
 
-	err = verifyAllImagesAvailable(ctx, log, keychain, transport, &dynakube)
+	err = verifyAllImagesAvailable(ctx, log, keychain, transport, &dk)
 	if err != nil {
 		return err
 	}
 
-	return checkProxySettings(ctx, log, apiReader, &dynakube)
+	return checkProxySettings(ctx, log, apiReader, &dk)
 }
 
 func createTransport(ctx context.Context, apiReader client.Reader, dynakube *dynakube.DynaKube, httpClient *http.Client) (*http.Transport, error) {

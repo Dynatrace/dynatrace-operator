@@ -54,21 +54,21 @@ func checkDynakube(ctx context.Context, baseLog logd.Logger, apiReader client.Re
 }
 
 func getSelectedDynakube(ctx context.Context, apiReader client.Reader, namespaceName, dynakubeName string) (dynakube.DynaKube, error) {
-	var dynaKube dynakube.DynaKube
+	var dk dynakube.DynaKube
 	err := apiReader.Get(
 		ctx,
 		client.ObjectKey{
 			Name:      dynakubeName,
 			Namespace: namespaceName,
 		},
-		&dynaKube,
+		&dk,
 	)
 
 	if err != nil {
 		return dynakube.DynaKube{}, determineSelectedDynakubeError(namespaceName, dynakubeName, err)
 	}
 
-	return dynaKube, nil
+	return dk, nil
 }
 
 func dynakubeNotValidMessage() string {

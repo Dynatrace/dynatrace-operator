@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -15,7 +15,7 @@ import (
 )
 
 type updater struct {
-	edgeConnect    *edgeconnectv1alpha1.EdgeConnect
+	edgeConnect    *edgeconnect.EdgeConnect
 	apiReader      client.Reader
 	timeProvider   *timeprovider.Provider
 	registryClient registry.ImageGetter
@@ -27,7 +27,7 @@ func newUpdater(
 	apiReader client.Reader,
 	timeprovider *timeprovider.Provider,
 	registryClient registry.ImageGetter,
-	edgeConnect *edgeconnectv1alpha1.EdgeConnect,
+	edgeConnect *edgeconnect.EdgeConnect,
 ) *updater {
 	return &updater{
 		edgeConnect:    edgeConnect,
@@ -40,7 +40,7 @@ func newUpdater(
 func (u updater) RequiresReconcile() bool {
 	version := u.edgeConnect.Status.Version
 
-	isRequestOutdated := u.timeProvider.IsOutdated(version.LastProbeTimestamp, edgeconnectv1alpha1.DefaultMinRequestThreshold)
+	isRequestOutdated := u.timeProvider.IsOutdated(version.LastProbeTimestamp, edgeconnect.DefaultMinRequestThreshold)
 	didCustomImageChange := !strings.HasPrefix(version.ImageID, u.edgeConnect.Image())
 
 	if didCustomImageChange || version.ImageID == "" {

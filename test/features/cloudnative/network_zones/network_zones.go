@@ -135,13 +135,13 @@ func checkInjectionAnnotations(sampleApp *sample.App, injected string, reason st
 	}
 }
 
-func checkOneAgentPodsDoNotStart(testDynakube dynakube.DynaKube, timeout time.Duration) features.Func {
+func checkOneAgentPodsDoNotStart(dk dynakube.DynaKube, timeout time.Duration) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 		err := wait.For(conditions.New(resources).ResourceMatch(&appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube.OneAgentDaemonsetName(),
-				Namespace: testDynakube.Namespace,
+				Name:      dk.OneAgentDaemonsetName(),
+				Namespace: dk.Namespace,
 			},
 		}, func(object k8s.Object) bool {
 			daemonset, isDaemonset := object.(*appsv1.DaemonSet)

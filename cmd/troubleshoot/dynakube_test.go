@@ -79,11 +79,11 @@ func TestDynakube(t *testing.T) {
 
 func TestDynatraceSecret(t *testing.T) {
 	t.Run("Dynatrace secret exists", func(t *testing.T) {
-		dynakube := testNewDynakubeBuilder(testNamespace, testDynakube).withTokens(testDynatraceSecret).build()
+		dk := testNewDynakubeBuilder(testNamespace, testDynakube).withTokens(testDynatraceSecret).build()
 		clt := fake.NewClientBuilder().
 			WithScheme(scheme.Scheme).
 			WithObjects(
-				dynakube,
+				dk,
 				testBuildNamespace(testNamespace),
 				testNewSecretBuilder(testNamespace, testDynatraceSecret).build(),
 			).
@@ -102,67 +102,67 @@ func TestDynatraceSecret(t *testing.T) {
 			).
 			Build()
 
-		dynakube := testNewDynakubeBuilder(testNamespace, testDynakube).build()
-		_, err := checkIfDynatraceApiSecretHasApiToken(context.Background(), getNullLogger(t), clt, dynakube)
+		dk := testNewDynakubeBuilder(testNamespace, testDynakube).build()
+		_, err := checkIfDynatraceApiSecretHasApiToken(context.Background(), getNullLogger(t), clt, dk)
 		require.Errorf(t, err, "Dynatrace secret found")
 	})
 
 	t.Run("Dynatrace secret has apiToken token", func(t *testing.T) {
-		dynakube := testNewDynakubeBuilder(testNamespace, testDynakube).withTokens(testDynatraceSecret).build()
+		dk := testNewDynakubeBuilder(testNamespace, testDynakube).withTokens(testDynatraceSecret).build()
 		clt := fake.NewClientBuilder().
 			WithScheme(scheme.Scheme).
 			WithObjects(
-				dynakube,
+				dk,
 				testBuildNamespace(testNamespace),
 				testNewSecretBuilder(testNamespace, testDynatraceSecret).dataAppend("apiToken", testApiToken).dataAppend("paasToken", testPaasToken).build(),
 			).
 			Build()
 
-		_, err := checkIfDynatraceApiSecretHasApiToken(context.Background(), getNullLogger(t), clt, dynakube)
+		_, err := checkIfDynatraceApiSecretHasApiToken(context.Background(), getNullLogger(t), clt, dk)
 		require.NoErrorf(t, err, "Dynatrace secret does not have required tokens")
 	})
 	t.Run("Dynatrace secret - apiToken is missing", func(t *testing.T) {
-		dynakube := testNewDynakubeBuilder(testNamespace, testDynakube).withTokens(testDynatraceSecret).build()
+		dk := testNewDynakubeBuilder(testNamespace, testDynakube).withTokens(testDynatraceSecret).build()
 		clt := fake.NewClientBuilder().
 			WithScheme(scheme.Scheme).
 			WithObjects(
-				dynakube,
+				dk,
 				testBuildNamespace(testNamespace),
 				testNewSecretBuilder(testNamespace, testDynatraceSecret).dataAppend("paasToken", testPaasToken).build(),
 			).
 			Build()
 
-		_, err := checkIfDynatraceApiSecretHasApiToken(context.Background(), getNullLogger(t), clt, dynakube)
+		_, err := checkIfDynatraceApiSecretHasApiToken(context.Background(), getNullLogger(t), clt, dk)
 		require.Errorf(t, err, "Dynatrace secret does not have apiToken")
 	})
 }
 
 func TestPullSecret(t *testing.T) {
 	t.Run("custom pull secret exists", func(t *testing.T) {
-		dynakube := testNewDynakubeBuilder(testNamespace, testDynakube).withCustomPullSecret(testSecretName).build()
+		dk := testNewDynakubeBuilder(testNamespace, testDynakube).withCustomPullSecret(testSecretName).build()
 		clt := fake.NewClientBuilder().
 			WithScheme(scheme.Scheme).
 			WithObjects(
-				dynakube,
+				dk,
 				testBuildNamespace(testNamespace),
 				testNewSecretBuilder(testNamespace, testSecretName).build(),
 			).
 			Build()
 
-		_, err := checkPullSecretExists(context.Background(), getNullLogger(t), clt, dynakube)
+		_, err := checkPullSecretExists(context.Background(), getNullLogger(t), clt, dk)
 		require.NoErrorf(t, err, "custom pull secret not found")
 	})
 	t.Run("custom pull secret does not exist", func(t *testing.T) {
-		dynakube := testNewDynakubeBuilder(testNamespace, testDynakube).withCustomPullSecret(testSecretName).build()
+		dk := testNewDynakubeBuilder(testNamespace, testDynakube).withCustomPullSecret(testSecretName).build()
 		clt := fake.NewClientBuilder().
 			WithScheme(scheme.Scheme).
 			WithObjects(
-				dynakube,
+				dk,
 				testBuildNamespace(testNamespace),
 			).
 			Build()
 
-		_, err := checkPullSecretExists(context.Background(), getNullLogger(t), clt, dynakube)
+		_, err := checkPullSecretExists(context.Background(), getNullLogger(t), clt, dk)
 		require.Errorf(t, err, "custom pull secret found")
 	})
 	t.Run("custom pull secret has required tokens", func(t *testing.T) {
@@ -189,38 +189,38 @@ func TestProxySecret(t *testing.T) {
 		require.NoErrorf(t, err, "proxy secret not found")
 	})
 	t.Run("proxy secret does not exist", func(t *testing.T) {
-		dynakube := testNewDynakubeBuilder(testNamespace, testDynakube).withProxySecret(dynakube.ProxyKey).build()
+		dk := testNewDynakubeBuilder(testNamespace, testDynakube).withProxySecret(dynakube.ProxyKey).build()
 		clt := fake.NewClientBuilder().
 			WithScheme(scheme.Scheme).
 			WithObjects(
-				dynakube,
+				dk,
 				testBuildNamespace(testNamespace),
 			).
 			Build()
 
-		_, err := getProxyURL(context.Background(), clt, dynakube)
+		_, err := getProxyURL(context.Background(), clt, dk)
 		require.Errorf(t, err, "proxy secret found, should not exist")
 	})
 	t.Run("proxy secret has required tokens", func(t *testing.T) {
 		proxySecret := *testNewSecretBuilder(testNamespace, dynakube.ProxyKey).
 			dataAppend(dynakube.ProxyKey, testCustomPullSecretToken).
 			build()
-		dynakube := testNewDynakubeBuilder(testNamespace, testDynakube).withProxySecret(dynakube.ProxyKey).build()
+		dk := testNewDynakubeBuilder(testNamespace, testDynakube).withProxySecret(dynakube.ProxyKey).build()
 		clt := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
-			dynakube,
+			dk,
 			&proxySecret).
 			Build()
-		_, err := getProxyURL(context.Background(), clt, dynakube)
+		_, err := getProxyURL(context.Background(), clt, dk)
 		require.NoErrorf(t, err, "proxy secret does not have required tokens")
 	})
 	t.Run("proxy secret does not have required tokens", func(t *testing.T) {
 		secret := *testNewSecretBuilder(testNamespace, testSecretName).build()
-		dynakube := testNewDynakubeBuilder(testNamespace, testDynakube).withProxySecret(dynakube.ProxyKey).build()
+		dk := testNewDynakubeBuilder(testNamespace, testDynakube).withProxySecret(dynakube.ProxyKey).build()
 		clt := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
-			dynakube,
+			dk,
 			&secret).
 			Build()
-		_, err := getProxyURL(context.Background(), clt, dynakube)
+		_, err := getProxyURL(context.Background(), clt, dk)
 		require.Errorf(t, err, "proxy secret has required tokens")
 	})
 }
