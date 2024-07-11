@@ -126,8 +126,12 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{RequeueAfter: dtcsi.ShortRequeueDuration}, err
 	}
 
-	err = provisioner.provisionCodeModules(ctx, dk, tenantConfig)
+	requeue, err := provisioner.provisionCodeModules(ctx, dk, tenantConfig)
 	if err != nil {
+		if requeue {
+			return reconcile.Result{RequeueAfter: dtcsi.ShortRequeueDuration}, err
+		}
+
 		return reconcile.Result{}, err
 	}
 
@@ -226,25 +230,25 @@ func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, requ
 	return result, nil
 }
 
-func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context, dk *dynatracev1beta2.DynaKube, tenantConfig *metadata.TenantConfig) error {
+func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context, dk *dynatracev1beta2.DynaKube, tenantConfig *metadata.TenantConfig) (requeue bool, err error) {
 	// creates a dt client and checks tokens exist for the given dynakube
 	dtc, err := buildDtc(provisioner, ctx, dk)
 	if err != nil {
-		return err
+		return true, err
 	}
 
-	requeue, err := provisioner.updateAgentInstallation(ctx, dtc, tenantConfig, dk)
-	if requeue || err != nil {
-		return err
+	requeue, err = provisioner.updateAgentInstallation(ctx, dtc, tenantConfig, dk)
+	if err != nil {
+		return requeue, err
 	}
 
 	// Set/Update the `LatestVersion` field in the database entry
 	err = provisioner.db.UpdateTenantConfig(tenantConfig)
 	if err != nil {
-		return err
+		return true, err
 	}
 
-	return nil
+	return false, nil
 }
 
 func (provisioner *OneAgentProvisioner) updateAgentInstallation(
