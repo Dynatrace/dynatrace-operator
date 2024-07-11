@@ -212,7 +212,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 
 		require.EqualError(t, err, `secrets "`+dkName+`" not found`)
 		require.NotNil(t, result)
-		require.Equal(t, reconcile.Result{}, result)
+		require.Equal(t, reconcile.Result{RequeueAfter: dtcsi.ShortRequeueDuration}, result)
 	})
 	t.Run("error when creating dynatrace client", func(t *testing.T) {
 		gc := reconcilermock.NewReconciler(t)
@@ -262,7 +262,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 
 		require.EqualError(t, err, "failed to create Dynatrace client: "+errorMsg)
 		require.NotNil(t, result)
-		require.Equal(t, reconcile.Result{}, result)
+		require.Equal(t, reconcile.Result{RequeueAfter: dtcsi.ShortRequeueDuration}, result)
 	})
 	t.Run("error creating directories", func(t *testing.T) {
 		gc := reconcilermock.NewReconciler(t)
