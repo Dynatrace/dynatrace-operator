@@ -155,7 +155,7 @@ func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName str
 		return errors.WithStack(err)
 	}
 
-	query := k8ssecret.Query(r.client, r.apiReader, log)
+	query := k8ssecret.Query(r.client, r.apiReader, log).WithOwner(r.dk)
 
 	_, err = query.CreateOrUpdate(ctx, secret)
 	if err != nil {

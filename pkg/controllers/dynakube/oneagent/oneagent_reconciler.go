@@ -201,7 +201,7 @@ func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 		return errors.WithStack(err)
 	}
 
-	query := configmap.Query(r.client, r.apiReader, log)
+	query := configmap.Query(r.client, r.apiReader, log).WithOwner(r.dynakube)
 
 	_, err = query.CreateOrUpdate(ctx, configMap)
 	if err != nil {
@@ -253,7 +253,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context) error {
 		return err
 	}
 
-	updated, err := k8sdaemonset.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, dsDesired)
+	updated, err := k8sdaemonset.Query(r.client, r.apiReader, log).WithOwner(r.dynakube).CreateOrUpdate(ctx, dsDesired)
 	if err != nil {
 		log.Info("failed to roll out new OneAgent DaemonSet")
 		conditions.SetKubeApiError(r.dk.Conditions(), oaConditionType, err)

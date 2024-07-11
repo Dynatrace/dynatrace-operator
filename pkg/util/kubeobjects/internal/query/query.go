@@ -3,12 +3,15 @@ package query
 import (
 	"context"
 	goerrors "errors"
+	"reflect"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 type Generic[T client.Object, L client.ObjectList] struct {
@@ -18,9 +21,16 @@ type Generic[T client.Object, L client.ObjectList] struct {
 	IsEqual     func(T, T) bool
 	IsImmutable func(T, T) bool
 
+	Owner      client.Object
 	KubeClient client.Client
 	KubeReader client.Reader
 	Log        logd.Logger
+}
+
+func (c Generic[T, L]) WithOwner(owner client.Object) Generic[T, L] {
+	c.Owner = owner
+
+	return c
 }
 
 func (c Generic[T, L]) Get(ctx context.Context, objectKey client.ObjectKey) (T, error) {
@@ -30,19 +40,26 @@ func (c Generic[T, L]) Get(ctx context.Context, objectKey client.ObjectKey) (T, 
 }
 
 func (c Generic[T, L]) Create(ctx context.Context, object T) error {
-	c.Log.Info("creating", "kind", object.GetObjectKind(), "name", object.GetName(), "namespace", object.GetNamespace())
+	c.Log.Info("creating", "kind", reflect.TypeOf(object), "name", object.GetName(), "namespace", object.GetNamespace())
+
+	if c.Owner != nil {
+		err := controllerutil.SetControllerReference(c.Owner, object, scheme.Scheme)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+	}
 
 	return errors.WithStack(c.KubeClient.Create(ctx, object))
 }
 
 func (c Generic[T, L]) Update(ctx context.Context, object T) error {
-	c.Log.Info("updating", "kind", object.GetObjectKind(), "name", object.GetName(), "namespace", object.GetNamespace())
+	c.Log.Info("updating", "kind", reflect.TypeOf(object), "name", object.GetName(), "namespace", object.GetNamespace())
 
 	return errors.WithStack(c.KubeClient.Update(ctx, object))
 }
 
 func (c Generic[T, L]) Delete(ctx context.Context, object T) error {
-	c.Log.Info("deleting", "kind", object.GetObjectKind(), "name", object.GetName(), "namespace", object.GetNamespace())
+	c.Log.Info("deleting", "kind", reflect.TypeOf(object), "name", object.GetName(), "namespace", object.GetNamespace())
 
 	err := c.KubeClient.Delete(ctx, object)
 
@@ -63,13 +80,13 @@ func (c Generic[T, L]) CreateOrUpdate(ctx context.Context, newObject T) (bool, e
 	}
 
 	if c.IsEqual(currentObject, newObject) {
-		c.Log.Info("update not needed, no changes detected", "kind", newObject.GetObjectKind(), "name", newObject.GetName(), "namespace", newObject.GetNamespace())
+		c.Log.Info("update not needed, no changes detected", "kind", reflect.TypeOf(newObject), "name", newObject.GetName(), "namespace", newObject.GetNamespace())
 
 		return false, nil
 	}
 
 	if c.IsImmutable(currentObject, newObject) {
-		c.Log.Info("recreation needed, immutable change detected", "kind", newObject.GetObjectKind(), "name", newObject.GetName(), "namespace", newObject.GetNamespace())
+		c.Log.Info("recreation needed, immutable change detected", "kind", reflect.TypeOf(newObject), "name", newObject.GetName(), "namespace", newObject.GetNamespace())
 
 		err := c.Recreate(ctx, newObject)
 		if err != nil {
@@ -78,6 +95,9 @@ func (c Generic[T, L]) CreateOrUpdate(ctx context.Context, newObject T) (bool, e
 
 		return true, nil
 	}
+
+	newObject.SetUID(currentObject.GetUID())
+	newObject.SetResourceVersion(currentObject.GetResourceVersion())
 
 	err = c.Update(ctx, newObject)
 	if err != nil {
@@ -119,7 +139,7 @@ func (c Generic[T, L]) CreateOrUpdateForNamespaces(ctx context.Context, object T
 		return err
 	}
 
-	c.Log.Info("reconciling objects for multiple namespaces", "kind", object.GetObjectKind(),
+	c.Log.Info("reconciling objects for multiple namespaces", "kind", reflect.TypeOf(object),
 		"name", object.GetName(), "len(namespaces)", len(namespaces))
 
 	namespacesContainingObject := make(map[string]T, len(objects))
@@ -148,9 +168,12 @@ func (c Generic[T, L]) createOrUpdateForNamespaces(ctx context.Context, object T
 
 		if oldObject, ok := namespacesContainingSecret[namespace.Name]; ok {
 			if !c.IsEqual(oldObject, object) {
+				object.SetUID(oldObject.GetUID())
+				object.SetResourceVersion(oldObject.GetResourceVersion())
+
 				err := c.Update(ctx, object)
 				if err != nil {
-					errs = append(errs, errors.WithMessagef(err, "failed to update %s %s for namespace %s", object.GetObjectKind(), object.GetName(), namespace.Name))
+					errs = append(errs, errors.WithMessagef(err, "failed to update %s %s for namespace %s", reflect.TypeOf(object), object.GetName(), namespace.Name))
 
 					continue
 				}
@@ -160,7 +183,7 @@ func (c Generic[T, L]) createOrUpdateForNamespaces(ctx context.Context, object T
 		} else {
 			err := c.Create(ctx, object)
 			if err != nil {
-				errs = append(errs, errors.WithMessagef(err, "failed to create %s %s for namespace %s", object.GetObjectKind(), object.GetName(), namespace.Name))
+				errs = append(errs, errors.WithMessagef(err, "failed to create %s %s for namespace %s", reflect.TypeOf(object), object.GetName(), namespace.Name))
 
 				continue
 			}
@@ -169,7 +192,7 @@ func (c Generic[T, L]) createOrUpdateForNamespaces(ctx context.Context, object T
 		}
 	}
 
-	c.Log.Info("reconciled objects for multiple namespaces", "kind", object.GetObjectKind(),
+	c.Log.Info("reconciled objects for multiple namespaces", "kind", reflect.TypeOf(object),
 		"name", object.GetName(), "creationCount", creationCount, "updateCount", updateCount)
 
 	return goerrors.Join(errs...)

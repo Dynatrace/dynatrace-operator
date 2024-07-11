@@ -386,7 +386,7 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 
 	desiredDeployment.Annotations[hasher.AnnotationHash] = ddHash
 
-	_, err = k8sdeployment.Query(controller.client, controller.apiReader, log).CreateOrUpdate(ctx, desiredDeployment)
+	_, err = k8sdeployment.Query(controller.client, controller.apiReader, log).WithOwner(edgeConnect).CreateOrUpdate(ctx, desiredDeployment)
 	if err != nil {
 		_log.Info("could not create or update deployment for EdgeConnect")
 
@@ -602,7 +602,7 @@ func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnect
 		return errors.WithStack(err)
 	}
 
-	query := k8ssecret.Query(controller.client, controller.apiReader, _log)
+	query := k8ssecret.Query(controller.client, controller.apiReader, _log).WithOwner(edgeConnect)
 
 	_, err = query.CreateOrUpdate(ctx, ecOAuthSecret)
 	if err != nil {
@@ -699,7 +699,7 @@ func (controller *Controller) createOrUpdateEdgeConnectDeploymentAndSettings(ctx
 
 	desiredDeployment.Annotations[hasher.AnnotationHash] = ddHash
 
-	_, err = k8sdeployment.Query(controller.client, controller.apiReader, _log).CreateOrUpdate(ctx, desiredDeployment)
+	_, err = k8sdeployment.Query(controller.client, controller.apiReader, _log).WithOwner(edgeConnect).CreateOrUpdate(ctx, desiredDeployment)
 	if err != nil {
 		_log.Debug("could not create or update deployment for EdgeConnect")
 
@@ -808,7 +808,7 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 		return "", "", errors.WithStack(err)
 	}
 
-	query := k8ssecret.Query(controller.client, controller.apiReader, log)
+	query := k8ssecret.Query(controller.client, controller.apiReader, log).WithOwner(edgeConnect)
 
 	_, err = query.CreateOrUpdate(ctx, secretConfig)
 	if err != nil {

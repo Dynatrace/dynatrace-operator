@@ -66,7 +66,7 @@ func (r *Reconciler) manageStatefulSet(ctx context.Context) error {
 		return err
 	}
 
-	updated, err := statefulset.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, desiredSts)
+	updated, err := statefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
 	if err != nil {
 		conditions.SetKubeApiError(r.dk.Conditions(), ActiveGateStatefulSetConditionType, err)
 
