@@ -4442,6 +4442,10 @@ spec:
                       type: object
                     type: array
                 type: object
+              monitoredEntityID:
+                description: MonitoredEntityID contains the ID of the monitored entity
+                  that points to the Kubernetes cluster
+                type: string
               oneAgent:
                 description: Observed state of OneAgent
                 properties:

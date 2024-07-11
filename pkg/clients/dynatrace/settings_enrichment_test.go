@@ -37,7 +37,7 @@ func TestGetRulesSetting(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, dtc)
 
-		rulesResponse, err := dtc.GetRulesSettings(ctx, "test-uuid")
+		rulesResponse, err := dtc.GetRulesSettings(ctx, "test-uuid", "test-entityID")
 		require.NoError(t, err)
 		assert.Equal(t, createRulesResponse(mockParams.settingsAPI.totalCount), rulesResponse)
 	})
@@ -54,7 +54,7 @@ func TestGetRulesSetting(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, dtc)
 
-		rulesResponse, err := dtc.GetRulesSettings(ctx, "")
+		rulesResponse, err := dtc.GetRulesSettings(ctx, "", "test-entityID")
 		require.Error(t, err)
 		assert.Empty(t, rulesResponse)
 	})
@@ -79,55 +79,8 @@ func TestGetRulesSetting(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, dtc)
 
-		rulesResponse, err := dtc.GetRulesSettings(ctx, "test-uuid")
+		rulesResponse, err := dtc.GetRulesSettings(ctx, "test-uuid", "")
 		require.NoError(t, err)
-		assert.Empty(t, rulesResponse)
-	})
-
-	t.Run("monitored-entities error -> return empty, error", func(t *testing.T) {
-		mockParams := v2APIMockParams{
-			entitiesAPI: entitiesMockParams{
-				status:   http.StatusBadRequest,
-				expected: []MonitoredEntity{},
-			},
-		}
-
-		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(mockParams))
-		defer dynatraceServer.Close()
-
-		skipCert := SkipCertificateValidation(true)
-		dtc, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert)
-
-		require.NoError(t, err)
-		require.NotNil(t, dtc)
-
-		rulesResponse, err := dtc.GetRulesSettings(ctx, "test-uuid")
-		require.Error(t, err)
-		assert.Empty(t, rulesResponse)
-	})
-
-	t.Run("settings error -> return empty, error", func(t *testing.T) {
-		mockParams := v2APIMockParams{
-			entitiesAPI: entitiesMockParams{
-				status:   http.StatusOK,
-				expected: createMonitoredEntitiesForTesting(),
-			},
-			settingsAPI: settingsMockParams{
-				status: http.StatusBadRequest,
-			},
-		}
-
-		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(mockParams))
-		defer dynatraceServer.Close()
-
-		skipCert := SkipCertificateValidation(true)
-		dtc, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert)
-
-		require.NoError(t, err)
-		require.NotNil(t, dtc)
-
-		rulesResponse, err := dtc.GetRulesSettings(ctx, "test-uuid")
-		require.Error(t, err)
 		assert.Empty(t, rulesResponse)
 	})
 }

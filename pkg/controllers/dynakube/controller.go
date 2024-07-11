@@ -19,6 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
+	monitoredentities "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/monitored_entities"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -327,6 +328,15 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 	proxyReconciler := proxy.NewReconciler(controller.client, controller.apiReader, dynakube)
 
 	err = proxyReconciler.Reconcile(ctx)
+	if err != nil {
+		return err
+	}
+
+	log.Info("start reconciling monitored entities")
+
+	monitoredEntitiesreconciler := monitoredentities.NewReconciler(dynatraceClient, dynakube, controller.clusterID)
+
+	err = monitoredEntitiesreconciler.Reconcile(ctx)
 	if err != nil {
 		return err
 	}
