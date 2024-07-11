@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -13,21 +13,21 @@ import (
 )
 
 const (
-	testName      = "test-name-edgeconnectv1alpha1"
+	testName      = "test-name-edgeconnect"
 	testNamespace = "test-namespace"
 )
 
 func TestNew(t *testing.T) {
 	t.Run("Create new edgeconnect deployment", func(t *testing.T) {
-		instance := &edgeconnectv1alpha1.EdgeConnect{
+		instance := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 			},
-			Spec: edgeconnectv1alpha1.EdgeConnectSpec{
+			Spec: edgeconnect.EdgeConnectSpec{
 				ApiServer: "abc12345.dynatrace.com",
 			},
-			Status: edgeconnectv1alpha1.EdgeConnectStatus{
+			Status: edgeconnect.EdgeConnectStatus{
 				UpdatedTimestamp: metav1.NewTime(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)),
 			},
 		}
@@ -39,20 +39,20 @@ func TestNew(t *testing.T) {
 }
 
 func Test_buildAppLabels(t *testing.T) {
-	testEdgeConnect := &edgeconnectv1alpha1.EdgeConnect{
+	testEdgeConnect := &edgeconnect.EdgeConnect{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
 		},
-		Spec: edgeconnectv1alpha1.EdgeConnectSpec{
+		Spec: edgeconnect.EdgeConnectSpec{
 			ApiServer: "abc12345.dynatrace.com",
-			OAuth: edgeconnectv1alpha1.OAuthSpec{
+			OAuth: edgeconnect.OAuthSpec{
 				ClientSecret: "secret-name",
 				Endpoint:     "https://test.com/sso/oauth2/token",
 				Resource:     "urn:dtenvironment:test12345",
 			},
 		},
-		Status: edgeconnectv1alpha1.EdgeConnectStatus{
+		Status: edgeconnect.EdgeConnectStatus{
 			Version: status.VersionStatus{
 				Version: "",
 			},
@@ -67,20 +67,20 @@ func Test_buildAppLabels(t *testing.T) {
 }
 
 func Test_prepareResourceRequirements(t *testing.T) {
-	testEdgeConnect := &edgeconnectv1alpha1.EdgeConnect{
+	testEdgeConnect := &edgeconnect.EdgeConnect{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
 		},
-		Spec: edgeconnectv1alpha1.EdgeConnectSpec{
+		Spec: edgeconnect.EdgeConnectSpec{
 			ApiServer: "abc12345.dynatrace.com",
-			OAuth: edgeconnectv1alpha1.OAuthSpec{
+			OAuth: edgeconnect.OAuthSpec{
 				ClientSecret: "secret-name",
 				Endpoint:     "https://test.com/sso/oauth2/token",
 				Resource:     "urn:dtenvironment:test12345",
 			},
 		},
-		Status: edgeconnectv1alpha1.EdgeConnectStatus{
+		Status: edgeconnect.EdgeConnectStatus{
 			Version: status.VersionStatus{
 				Version: "",
 			},

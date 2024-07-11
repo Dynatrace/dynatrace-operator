@@ -3,7 +3,7 @@ package edgeconnect
 import (
 	"time"
 
-	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 )
 
 type OauthClientStatus int
@@ -39,27 +39,27 @@ type ListResponse struct {
 }
 
 type CreateResponse struct {
-	ModificationInfo           ModificationInfo                  `json:"modificationInfo"`
-	Metadata                   Metadata                          `json:"metadata"`
-	ID                         string                            `json:"id,omitempty"`
-	Name                       string                            `json:"name"`
-	OauthClientId              string                            `json:"oauthClientId"`
-	OauthClientSecret          string                            `json:"oauthClientSecret"`
-	OauthClientResource        string                            `json:"oauthClientResource"`
-	HostPatterns               []string                          `json:"hostPatterns"`
-	HostMappings               []edgeconnectv1alpha1.HostMapping `json:"hostMappings"`
-	ManagedByDynatraceOperator bool                              `json:"managedByDynatraceOperator,omitempty"`
+	ModificationInfo           ModificationInfo          `json:"modificationInfo"`
+	Metadata                   Metadata                  `json:"metadata"`
+	ID                         string                    `json:"id,omitempty"`
+	Name                       string                    `json:"name"`
+	OauthClientId              string                    `json:"oauthClientId"`
+	OauthClientSecret          string                    `json:"oauthClientSecret"`
+	OauthClientResource        string                    `json:"oauthClientResource"`
+	HostPatterns               []string                  `json:"hostPatterns"`
+	HostMappings               []edgeconnect.HostMapping `json:"hostMappings"`
+	ManagedByDynatraceOperator bool                      `json:"managedByDynatraceOperator,omitempty"`
 }
 
 type Request struct {
-	Name                       string                            `json:"name"`
-	OauthClientId              string                            `json:"oauthClientId,omitempty"`
-	HostPatterns               []string                          `json:"hostPatterns"`
-	HostMappings               []edgeconnectv1alpha1.HostMapping `json:"hostMappings"`
-	ManagedByDynatraceOperator bool                              `json:"managedByDynatraceOperator,omitempty"`
+	Name                       string                    `json:"name"`
+	OauthClientId              string                    `json:"oauthClientId,omitempty"`
+	HostPatterns               []string                  `json:"hostPatterns"`
+	HostMappings               []edgeconnect.HostMapping `json:"hostMappings"`
+	ManagedByDynatraceOperator bool                      `json:"managedByDynatraceOperator,omitempty"`
 }
 
-func NewRequest(name string, hostPatterns []string, hostMappings []edgeconnectv1alpha1.HostMapping, oauthClientId string) *Request {
+func NewRequest(name string, hostPatterns []string, hostMappings []edgeconnect.HostMapping, oauthClientId string) *Request {
 	return &Request{
 		Name:                       name,
 		HostPatterns:               hostPatterns,

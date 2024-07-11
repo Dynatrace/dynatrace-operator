@@ -1,7 +1,7 @@
 package troubleshoot
 
 import (
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 )
 
 type component string
@@ -30,26 +30,26 @@ func (c component) SkipImageCheck(image string) bool {
 	return image == "" && c != componentCodeModules
 }
 
-func (c component) getImage(dynakube *dynatracev1beta2.DynaKube) (string, bool) {
-	if dynakube == nil {
+func (c component) getImage(dk *dynakube.DynaKube) (string, bool) {
+	if dk == nil {
 		return "", false
 	}
 
 	switch c {
 	case componentOneAgent:
-		if dynakube.CustomOneAgentImage() != "" {
-			return dynakube.CustomOneAgentImage(), true
+		if dk.CustomOneAgentImage() != "" {
+			return dk.CustomOneAgentImage(), true
 		}
 
-		return dynakube.OneAgentImage(), false
+		return dk.OneAgentImage(), false
 	case componentCodeModules:
-		return dynakube.CustomCodeModulesImage(), true
+		return dk.CustomCodeModulesImage(), true
 	case componentActiveGate:
-		if dynakube.CustomActiveGateImage() != "" {
-			return dynakube.CustomActiveGateImage(), true
+		if dk.CustomActiveGateImage() != "" {
+			return dk.CustomActiveGateImage(), true
 		}
 
-		return dynakube.ActiveGateImage(), false
+		return dk.ActiveGateImage(), false
 	}
 
 	return "", false

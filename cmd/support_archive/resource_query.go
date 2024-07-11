@@ -3,10 +3,10 @@ package support_archive
 import (
 	"reflect"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2"
-	dynakubev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	appsv1 "k8s.io/api/apps/v1"
@@ -86,8 +86,8 @@ func getComponentsQueryGroup(namespace string, appName string, labelKey string) 
 func getCustomResourcesQueryGroup(namespace string) resourceQueryGroup {
 	return resourceQueryGroup{
 		resources: []schema.GroupVersionKind{
-			toGroupVersionKind(dynatracev1beta2.GroupVersion, dynakubev1beta2.DynaKube{}),
-			toGroupVersionKind(dynatracev1alpha1.GroupVersion, edgeconnect.EdgeConnect{}),
+			toGroupVersionKind(v1beta2.GroupVersion, dynakube.DynaKube{}),
+			toGroupVersionKind(v1alpha1.GroupVersion, edgeconnect.EdgeConnect{}),
 		},
 		filters: []client.ListOption{
 			client.InNamespace(namespace),

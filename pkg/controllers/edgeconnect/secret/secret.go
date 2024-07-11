@@ -3,14 +3,14 @@ package secret
 import (
 	"context"
 
-	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/config"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
 	"gopkg.in/yaml.v3"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func PrepareConfigFile(ctx context.Context, instance *edgeconnectv1alpha1.EdgeConnect, apiReader client.Reader, token string) ([]byte, error) {
+func PrepareConfigFile(ctx context.Context, instance *edgeconnect.EdgeConnect, apiReader client.Reader, token string) ([]byte, error) {
 	cfg := config.EdgeConnect{
 		Name:            instance.ObjectMeta.Name,
 		ApiEndpointHost: instance.Spec.ApiServer,
@@ -93,6 +93,6 @@ func createKubernetesApiSecret(token string) config.Secret {
 		Name:            "K8S_SERVICE_ACCOUNT_TOKEN",
 		Token:           token,
 		FromFile:        "/var/run/secrets/kubernetes.io/serviceaccount/token",
-		RestrictHostsTo: []string{edgeconnectv1alpha1.KubernetesDefaultDNS},
+		RestrictHostsTo: []string{edgeconnect.KubernetesDefaultDNS},
 	}
 }

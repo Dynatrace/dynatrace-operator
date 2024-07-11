@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -272,8 +272,8 @@ func (controller *Controller) isNodeDeletable(cachedNode CacheEntry) bool {
 	return false
 }
 
-func (controller *Controller) sendMarkedForTermination(ctx context.Context, dynakubeInstance *dynatracev1beta2.DynaKube, cachedNode CacheEntry) error {
-	tokenReader := token.NewReader(controller.apiReader, dynakubeInstance)
+func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *dynakube.DynaKube, cachedNode CacheEntry) error {
+	tokenReader := token.NewReader(controller.apiReader, dk)
 
 	tokens, err := tokenReader.ReadTokens(ctx)
 	if err != nil {
@@ -281,7 +281,7 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dyna
 	}
 
 	dynatraceClient, err := controller.dynatraceClientBuilder.
-		SetDynakube(*dynakubeInstance).
+		SetDynakube(*dk).
 		SetTokens(tokens).
 		Build()
 	if err != nil {
@@ -291,13 +291,13 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dyna
 	entityID, err := dynatraceClient.GetEntityIDForIP(ctx, cachedNode.IPAddress)
 	if err != nil {
 		if errors.As(err, &dtclient.HostNotFoundErr{}) {
-			log.Info("skipping to send mark for termination event", "dynakube", dynakubeInstance.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
+			log.Info("skipping to send mark for termination event", "dynakube", dk.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
 
 			return nil
 		}
 
 		log.Info("failed to send mark for termination event",
-			"reason", "failed to determine entity id", "dynakube", dynakubeInstance.Name, "nodeIP", cachedNode.IPAddress, "cause", err)
+			"reason", "failed to determine entity id", "dynakube", dk.Name, "nodeIP", cachedNode.IPAddress, "cause", err)
 
 		return err
 	}
@@ -316,7 +316,7 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dyna
 	})
 }
 
-func (controller *Controller) markForTermination(ctx context.Context, dynakube *dynatracev1beta2.DynaKube, cachedNodeData CachedNodeInfo) error {
+func (controller *Controller) markForTermination(ctx context.Context, dk *dynakube.DynaKube, cachedNodeData CachedNodeInfo) error {
 	if !controller.isMarkableForTermination(&cachedNodeData.cachedNode) {
 		return nil
 	}
@@ -325,10 +325,10 @@ func (controller *Controller) markForTermination(ctx context.Context, dynakube *
 		return err
 	}
 
-	log.Info("sending mark for termination event to dynatrace server", "dynakube", dynakube.Name, "ip", cachedNodeData.cachedNode.IPAddress,
+	log.Info("sending mark for termination event to dynatrace server", "dk", dk.Name, "ip", cachedNodeData.cachedNode.IPAddress,
 		"node", cachedNodeData.nodeName)
 
-	return controller.sendMarkedForTermination(ctx, dynakube, cachedNodeData.cachedNode)
+	return controller.sendMarkedForTermination(ctx, dk, cachedNodeData.cachedNode)
 }
 
 func (controller *Controller) isUnschedulable(node *corev1.Node) bool {

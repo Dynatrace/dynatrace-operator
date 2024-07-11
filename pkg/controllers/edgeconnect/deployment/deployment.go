@@ -1,7 +1,7 @@
 package deployment
 
 import (
-	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -21,11 +21,11 @@ const (
 	unprivilegedGroup  = int64(1000)
 )
 
-func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
+func New(instance *edgeconnect.EdgeConnect) *appsv1.Deployment {
 	return create(instance)
 }
 
-func create(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
+func create(instance *edgeconnect.EdgeConnect) *appsv1.Deployment {
 	appLabels := buildAppLabels(instance)
 	labels := maputils.MergeMap(
 		instance.Labels,
@@ -74,7 +74,7 @@ func create(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 	}
 }
 
-func prepareImagePullSecrets(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.LocalObjectReference {
+func prepareImagePullSecrets(instance *edgeconnect.EdgeConnect) []corev1.LocalObjectReference {
 	if instance.Spec.CustomPullSecret != "" {
 		return []corev1.LocalObjectReference{
 			{Name: instance.Spec.CustomPullSecret},
@@ -84,7 +84,7 @@ func prepareImagePullSecrets(instance *edgeconnectv1alpha1.EdgeConnect) []corev1
 	return nil
 }
 
-func buildAppLabels(instance *edgeconnectv1alpha1.EdgeConnect) *labels.AppLabels {
+func buildAppLabels(instance *edgeconnect.EdgeConnect) *labels.AppLabels {
 	return labels.NewAppLabels(
 		labels.EdgeConnectComponentLabel,
 		instance.Name,
@@ -92,7 +92,7 @@ func buildAppLabels(instance *edgeconnectv1alpha1.EdgeConnect) *labels.AppLabels
 		instance.Status.Version.Version)
 }
 
-func buildAnnotations(instance *edgeconnectv1alpha1.EdgeConnect) map[string]string {
+func buildAnnotations(instance *edgeconnect.EdgeConnect) map[string]string {
 	annotations := map[string]string{
 		consts.AnnotationEdgeConnectContainerAppArmor: "runtime/default",
 		webhook.AnnotationDynatraceInject:             "false",
@@ -102,7 +102,7 @@ func buildAnnotations(instance *edgeconnectv1alpha1.EdgeConnect) map[string]stri
 	return annotations
 }
 
-func edgeConnectContainer(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Container {
+func edgeConnectContainer(instance *edgeconnect.EdgeConnect) corev1.Container {
 	return corev1.Container{
 		Name:            consts.EdgeConnectContainerName,
 		Image:           instance.Status.Version.ImageID,
@@ -121,7 +121,7 @@ func edgeConnectContainer(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Cont
 	}
 }
 
-func prepareVolumes(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.Volume {
+func prepareVolumes(instance *edgeconnect.EdgeConnect) []corev1.Volume {
 	volumes := []corev1.Volume{prepareConfigVolume(instance)}
 
 	if instance.Spec.CaCertsRef != "" {
@@ -146,7 +146,7 @@ func prepareVolumes(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.Volume {
 	return volumes
 }
 
-func prepareVolumeMounts(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.VolumeMount {
+func prepareVolumeMounts(instance *edgeconnect.EdgeConnect) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
 		{MountPath: consts.EdgeConnectConfigPath, SubPath: consts.EdgeConnectConfigFileName, Name: instance.Name + "-" + consts.EdgeConnectConfigVolumeMountName},
 	}
@@ -158,7 +158,7 @@ func prepareVolumeMounts(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.Vol
 	return volumeMounts
 }
 
-func prepareConfigVolume(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Volume {
+func prepareConfigVolume(instance *edgeconnect.EdgeConnect) corev1.Volume {
 	return corev1.Volume{
 		Name: instance.Name + "-" + consts.EdgeConnectConfigVolumeMountName,
 		VolumeSource: corev1.VolumeSource{
@@ -172,7 +172,7 @@ func prepareConfigVolume(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Volum
 	}
 }
 
-func prepareResourceRequirements(instance *edgeconnectv1alpha1.EdgeConnect) corev1.ResourceRequirements {
+func prepareResourceRequirements(instance *edgeconnect.EdgeConnect) corev1.ResourceRequirements {
 	limits := resources.NewResourceList("100m", "128Mi")
 	requests := resources.NewResourceList("100m", "128Mi")
 

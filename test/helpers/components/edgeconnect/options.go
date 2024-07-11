@@ -3,7 +3,7 @@
 package edgeconnect
 
 import (
-	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -12,79 +12,79 @@ const (
 	defaultNamespace = "dynatrace"
 )
 
-type Option func(edgeconnect *edgeconnectv1alpha1.EdgeConnect)
+type Option func(ec *edgeconnect.EdgeConnect)
 
-func New(opts ...Option) *edgeconnectv1alpha1.EdgeConnect {
-	edgeconnect := &edgeconnectv1alpha1.EdgeConnect{
+func New(opts ...Option) *edgeconnect.EdgeConnect {
+	ec := &edgeconnect.EdgeConnect{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      defaultName,
 			Namespace: defaultNamespace,
 		},
-		Spec:   edgeconnectv1alpha1.EdgeConnectSpec{},
-		Status: edgeconnectv1alpha1.EdgeConnectStatus{},
+		Spec:   edgeconnect.EdgeConnectSpec{},
+		Status: edgeconnect.EdgeConnectStatus{},
 	}
 	for _, opt := range opts {
-		opt(edgeconnect)
+		opt(ec)
 	}
 
-	return edgeconnect
+	return ec
 }
 
 func WithName(name string) Option {
-	return func(edgeconnect *edgeconnectv1alpha1.EdgeConnect) {
-		edgeconnect.ObjectMeta.Name = name
+	return func(ec *edgeconnect.EdgeConnect) {
+		ec.ObjectMeta.Name = name
 	}
 }
 
 func WithApiServer(apiURL string) Option {
-	return func(edgeconnect *edgeconnectv1alpha1.EdgeConnect) {
-		edgeconnect.Spec.ApiServer = apiURL
+	return func(ec *edgeconnect.EdgeConnect) {
+		ec.Spec.ApiServer = apiURL
 	}
 }
 
 func WithOAuthClientSecret(clientSecretName string) Option {
-	return func(edgeconnect *edgeconnectv1alpha1.EdgeConnect) {
-		edgeconnect.Spec.OAuth.ClientSecret = clientSecretName
+	return func(ec *edgeconnect.EdgeConnect) {
+		ec.Spec.OAuth.ClientSecret = clientSecretName
 	}
 }
 
 func WithOAuthResource(resource string) Option {
-	return func(edgeconnect *edgeconnectv1alpha1.EdgeConnect) {
-		edgeconnect.Spec.OAuth.Resource = resource
+	return func(ec *edgeconnect.EdgeConnect) {
+		ec.Spec.OAuth.Resource = resource
 	}
 }
 
 func WithOAuthEndpoint(endpoint string) Option {
-	return func(edgeconnect *edgeconnectv1alpha1.EdgeConnect) {
-		edgeconnect.Spec.OAuth.Endpoint = endpoint
+	return func(ec *edgeconnect.EdgeConnect) {
+		ec.Spec.OAuth.Endpoint = endpoint
 	}
 }
 
 func WithProvisionerMode(enabled bool) Option {
-	return func(edgeconnect *edgeconnectv1alpha1.EdgeConnect) {
+	return func(edgeconnect *edgeconnect.EdgeConnect) {
 		edgeconnect.Spec.OAuth.Provisioner = enabled
 	}
 }
 
 func WithK8SAutomationMode(enabled bool) Option {
-	return func(edgeconnect *edgeconnectv1alpha1.EdgeConnect) {
-		edgeconnect.Spec.KubernetesAutomation = &edgeconnectv1alpha1.KubernetesAutomationSpec{
+	return func(ec *edgeconnect.EdgeConnect) {
+		ec.Spec.KubernetesAutomation = &edgeconnect.KubernetesAutomationSpec{
 			Enabled: enabled,
 		}
 	}
 }
 
 func WithHostPattern(hostPattern string) Option {
-	return func(edgeconnect *edgeconnectv1alpha1.EdgeConnect) {
-		if edgeconnect.Spec.HostPatterns == nil {
-			edgeconnect.Spec.HostPatterns = make([]string, 0)
+	return func(ec *edgeconnect.EdgeConnect) {
+		if ec.Spec.HostPatterns == nil {
+			ec.Spec.HostPatterns = make([]string, 0)
 		}
-		edgeconnect.Spec.HostPatterns = append(edgeconnect.Spec.HostPatterns, hostPattern)
+		ec.Spec.HostPatterns = append(ec.Spec.HostPatterns, hostPattern)
 	}
 }
 
 func WithServiceAccount(serviceAccountName string) Option {
-	return func(edgeconnect *edgeconnectv1alpha1.EdgeConnect) {
-		edgeconnect.Spec.ServiceAccountName = serviceAccountName
+	return func(ec *edgeconnect.EdgeConnect) {
+		ec.Spec.ServiceAccountName = serviceAccountName
 	}
 }

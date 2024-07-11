@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -44,21 +44,21 @@ func TestReconcile(t *testing.T) {
 	dkName := "dynakube"
 
 	t.Run("create DaemonSet in case OneAgent is needed", func(t *testing.T) {
-		dynakube := &dynatracev1beta2.DynaKube{
+		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
-			Spec: dynatracev1beta2.DynaKubeSpec{
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 				},
 			},
 		}
-		dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID = "test-tenant"
-		fakeClient := fake.NewClient(dynakube)
+		dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID = "test-tenant"
+		fakeClient := fake.NewClient(dk)
 
 		reconciler := &Reconciler{
 			client:                   fakeClient,
 			apiReader:                fakeClient,
-			dynakube:                 dynakube,
+			dynakube:                 dk,
 			versionReconciler:        createVersionReconcilerMock(t),
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 			tokens:                   createTokens(),
@@ -68,23 +68,23 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		dsActual := &appsv1.DaemonSet{}
-		err = fakeClient.Get(ctx, types.NamespacedName{Name: dynakube.OneAgentDaemonsetName(), Namespace: namespace}, dsActual)
+		err = fakeClient.Get(ctx, types.NamespacedName{Name: dk.OneAgentDaemonsetName(), Namespace: namespace}, dsActual)
 		require.NoError(t, err, "failed to get DaemonSet")
 		assert.Equal(t, namespace, dsActual.Namespace, "wrong namespace")
-		assert.Equal(t, dynakube.OneAgentDaemonsetName(), dsActual.GetObjectMeta().GetName(), "wrong name")
+		assert.Equal(t, dk.OneAgentDaemonsetName(), dsActual.GetObjectMeta().GetName(), "wrong name")
 
 		assert.NotNil(t, dsActual.Spec.Template.Spec.Affinity)
 	})
 
 	t.Run("remove DaemonSet in case OneAgent is not needed + remove condition", func(t *testing.T) {
-		dynakube := &dynatracev1beta2.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace}}
-		setDaemonSetCreatedCondition(dynakube.Conditions())
-		fakeClient := fake.NewClient(dynakube, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dynakube.OneAgentDaemonsetName(), Namespace: dynakube.Namespace}})
+		dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace}}
+		setDaemonSetCreatedCondition(dk.Conditions())
+		fakeClient := fake.NewClient(dk, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dk.OneAgentDaemonsetName(), Namespace: dk.Namespace}})
 
 		reconciler := &Reconciler{
 			client:                   fakeClient,
 			apiReader:                fakeClient,
-			dynakube:                 dynakube,
+			dynakube:                 dk,
 			versionReconciler:        createVersionReconcilerMock(t),
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		}
@@ -93,21 +93,21 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		dsActual := &appsv1.DaemonSet{}
-		err = fakeClient.Get(ctx, types.NamespacedName{Name: dynakube.OneAgentDaemonsetName(), Namespace: namespace}, dsActual)
+		err = fakeClient.Get(ctx, types.NamespacedName{Name: dk.OneAgentDaemonsetName(), Namespace: namespace}, dsActual)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 
-		assert.Nil(t, meta.FindStatusCondition(*dynakube.Conditions(), oaConditionType))
+		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), oaConditionType))
 	})
 
 	t.Run("removing DaemonSet is safe even if its missing", func(t *testing.T) {
-		dynakube := &dynatracev1beta2.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace}}
-		fakeClient := fake.NewClient(dynakube)
+		dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace}}
+		fakeClient := fake.NewClient(dk)
 
 		reconciler := &Reconciler{
 			client:                   fakeClient,
 			apiReader:                fakeClient,
-			dynakube:                 dynakube,
+			dynakube:                 dk,
 			versionReconciler:        createVersionReconcilerMock(t),
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		}
@@ -117,13 +117,13 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("NoOneAgentCommunicationHostsError => bubble up error", func(t *testing.T) {
-		dynaKube := dynatracev1beta2.DynaKube{
+		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL:      "https://ENVIRONMENTID.live.dynatrace.com/api",
 				NetworkZone: "test",
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
+				OneAgent: dynakube.OneAgentSpec{
+					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 				},
 			},
 		}
@@ -136,7 +136,7 @@ func TestReconcile(t *testing.T) {
 		reconciler := &Reconciler{
 			client:                   fakeClient,
 			apiReader:                fakeClient,
-			dynakube:                 &dynaKube,
+			dynakube:                 &dk,
 			connectionInfoReconciler: connectionInfoReconciler,
 			versionReconciler:        createVersionReconcilerMock(t),
 		}
@@ -146,12 +146,12 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("version reconcile fail => return immediately and bubble up error", func(t *testing.T) {
-		dynaKube := dynatracev1beta2.DynaKube{
+		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
+				OneAgent: dynakube.OneAgentSpec{
+					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 				},
 			},
 		}
@@ -165,7 +165,7 @@ func TestReconcile(t *testing.T) {
 		reconciler := &Reconciler{
 			client:                   fakeClient,
 			apiReader:                fakeClient,
-			dynakube:                 &dynaKube,
+			dynakube:                 &dk,
 			connectionInfoReconciler: controllermock.NewReconciler(t),
 			versionReconciler:        versionReconciler,
 		}
@@ -180,11 +180,11 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 	namespace := "dynatrace"
 	dkName := "dynakube"
 
-	dkSpec := dynatracev1beta2.DynaKubeSpec{
+	dkSpec := dynakube.DynaKubeSpec{
 		APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 		Tokens: dkName,
-		OneAgent: dynatracev1beta2.OneAgentSpec{
-			ClassicFullStack: &dynatracev1beta2.HostInjectSpec{
+		OneAgent: dynakube.OneAgentSpec{
+			ClassicFullStack: &dynakube.HostInjectSpec{
 				DNSPolicy: corev1.DNSClusterFirstWithHostNet,
 				Labels: map[string]string{
 					"label_key": "label_value",
@@ -194,13 +194,13 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		},
 	}
 
-	dynakube := &dynatracev1beta2.DynaKube{
+	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
 		Spec:       dkSpec,
 	}
 
-	dynakube.Status.OneAgent.ConnectionInfoStatus.ConnectionInfoStatus.TenantUUID = "test-tenant"
-	dynakube.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynatracev1beta2.CommunicationHostStatus{
+	dk.Status.OneAgent.ConnectionInfoStatus.ConnectionInfoStatus.TenantUUID = "test-tenant"
+	dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynakube.CommunicationHostStatus{
 		{
 			Protocol: "http",
 			Host:     "dummyhost",
@@ -214,7 +214,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 	reconciler := &Reconciler{
 		client:                   fakeClient,
 		apiReader:                fakeClient,
-		dynakube:                 dynakube,
+		dynakube:                 dk,
 		connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		versionReconciler:        createVersionReconcilerMock(t),
 		tokens:                   createTokens(),
@@ -224,14 +224,14 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 	require.NoError(t, err)
 
 	dsActual := &appsv1.DaemonSet{}
-	err = fakeClient.Get(ctx, types.NamespacedName{Name: dynakube.OneAgentDaemonsetName(), Namespace: namespace}, dsActual)
+	err = fakeClient.Get(ctx, types.NamespacedName{Name: dk.OneAgentDaemonsetName(), Namespace: namespace}, dsActual)
 	require.NoError(t, err, "failed to get DaemonSet")
 	assert.Equal(t, namespace, dsActual.Namespace, "wrong namespace")
-	assert.Equal(t, dynakube.OneAgentDaemonsetName(), dsActual.GetObjectMeta().GetName(), "wrong name")
+	assert.Equal(t, dk.OneAgentDaemonsetName(), dsActual.GetObjectMeta().GetName(), "wrong name")
 	assert.Equal(t, corev1.DNSClusterFirstWithHostNet, dsActual.Spec.Template.Spec.DNSPolicy, "wrong policy")
 	mock.AssertExpectationsForObjects(t, dtClient)
 
-	condition := meta.FindStatusCondition(*dynakube.Conditions(), oaConditionType)
+	condition := meta.FindStatusCondition(*dk.Conditions(), oaConditionType)
 	require.NotNil(t, condition)
 	assert.Equal(t, metav1.ConditionTrue, condition.Status)
 	assert.Equal(t, daemonSetCreatedReason, condition.Reason)
@@ -245,18 +245,18 @@ func TestReconcile_InstancesSet(t *testing.T) {
 
 	ctx := context.Background()
 
-	base := dynatracev1beta2.DynaKube{
+	base := dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
-		Spec: dynatracev1beta2.DynaKubeSpec{
+		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 			Tokens: name,
-			OneAgent: dynatracev1beta2.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta2.HostInjectSpec{},
+			OneAgent: dynakube.OneAgentSpec{
+				ClassicFullStack: &dynakube.HostInjectSpec{},
 			},
 		},
 	}
 	base.Status.OneAgent.ConnectionInfoStatus.TenantUUID = "test-tenant"
-	base.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynatracev1beta2.CommunicationHostStatus{
+	base.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynakube.CommunicationHostStatus{
 		{
 			Protocol: "http",
 			Host:     "dummyhost",
@@ -353,16 +353,16 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 	ds1 := &appsv1.DaemonSet{ObjectMeta: dkKey}
 	r := Reconciler{}
 
-	dynakube := &dynatracev1beta2.DynaKube{
+	dk := &dynakube.DynaKube{
 		ObjectMeta: dkKey,
-		Spec: dynatracev1beta2.DynaKubeSpec{
-			OneAgent: dynatracev1beta2.OneAgentSpec{
-				HostMonitoring: &dynatracev1beta2.HostInjectSpec{},
+		Spec: dynakube.DynaKubeSpec{
+			OneAgent: dynakube.OneAgentSpec{
+				HostMonitoring: &dynakube.HostInjectSpec{},
 			},
 		},
 	}
 
-	ds2, err := r.buildDesiredDaemonSet(dynakube)
+	ds2, err := r.buildDesiredDaemonSet(dk)
 	require.NoError(t, err)
 	assert.NotEmpty(t, ds2.Annotations[hasher.AnnotationHash])
 
@@ -373,24 +373,24 @@ func TestHasSpecChanged(t *testing.T) {
 	tests := []struct {
 		name     string
 		expected bool
-		mod      func(oldDynakube *dynatracev1beta2.DynaKube, newDynakube *dynatracev1beta2.DynaKube)
+		mod      func(oldDynakube *dynakube.DynaKube, newDynakube *dynakube.DynaKube)
 	}{
 		{
 			name:     "hurga",
 			expected: false,
-			mod:      func(oldDynakube *dynatracev1beta2.DynaKube, newDynakube *dynatracev1beta2.DynaKube) {},
+			mod:      func(oldDynakube *dynakube.DynaKube, newDynakube *dynakube.DynaKube) {},
 		},
 		{
 			name:     "image present",
 			expected: true,
-			mod: func(oldDynakube *dynatracev1beta2.DynaKube, newDynakube *dynatracev1beta2.DynaKube) {
+			mod: func(oldDynakube *dynakube.DynaKube, newDynakube *dynakube.DynaKube) {
 				newDynakube.Status.OneAgent.ImageID = "docker.io/dynatrace/oneagent:1.234.345@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 			},
 		},
 		{
 			name:     "image set but no change",
 			expected: false,
-			mod: func(oldDynakube *dynatracev1beta2.DynaKube, newDynakube *dynatracev1beta2.DynaKube) {
+			mod: func(oldDynakube *dynakube.DynaKube, newDynakube *dynakube.DynaKube) {
 				imageId := "docker.io/dynatrace/oneagent:1.234.345@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 				oldDynakube.Status.OneAgent.ImageID = imageId
 				newDynakube.Status.OneAgent.ImageID = imageId
@@ -400,7 +400,7 @@ func TestHasSpecChanged(t *testing.T) {
 		{
 			name:     "image changed",
 			expected: true,
-			mod: func(oldDynakube *dynatracev1beta2.DynaKube, newDynakube *dynatracev1beta2.DynaKube) {
+			mod: func(oldDynakube *dynakube.DynaKube, newDynakube *dynakube.DynaKube) {
 				oldDynakube.Status.OneAgent.ImageID = "registry.access.redhat.com/dynatrace/oneagent:1.233.345@sha256:6ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 				newDynakube.Status.OneAgent.ImageID = "docker.io/dynatrace/oneagent:1.234.345@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 			},
@@ -409,7 +409,7 @@ func TestHasSpecChanged(t *testing.T) {
 		{
 			name:     "argument removed",
 			expected: true,
-			mod: func(oldDynakube *dynatracev1beta2.DynaKube, newDynakube *dynatracev1beta2.DynaKube) {
+			mod: func(oldDynakube *dynakube.DynaKube, newDynakube *dynakube.DynaKube) {
 				oldDynakube.Spec.OneAgent.HostMonitoring.Args = []string{"INFRA_ONLY=1", "--set-host-property=OperatorVersion=snapshot"}
 				newDynakube.Spec.OneAgent.HostMonitoring.Args = []string{"INFRA_ONLY=1"}
 			},
@@ -418,7 +418,7 @@ func TestHasSpecChanged(t *testing.T) {
 		{
 			name:     "argument changed",
 			expected: true,
-			mod: func(oldDynakube *dynatracev1beta2.DynaKube, newDynakube *dynatracev1beta2.DynaKube) {
+			mod: func(oldDynakube *dynakube.DynaKube, newDynakube *dynakube.DynaKube) {
 				oldDynakube.Spec.OneAgent.HostMonitoring.Args = []string{"INFRA_ONLY=1"}
 				newDynakube.Spec.OneAgent.HostMonitoring.Args = []string{"INFRA_ONLY=0"}
 			},
@@ -427,7 +427,7 @@ func TestHasSpecChanged(t *testing.T) {
 		{
 			name:     "all arguments removed",
 			expected: true,
-			mod: func(oldDynakube *dynatracev1beta2.DynaKube, newDynakube *dynatracev1beta2.DynaKube) {
+			mod: func(oldDynakube *dynakube.DynaKube, newDynakube *dynakube.DynaKube) {
 				oldDynakube.Spec.OneAgent.HostMonitoring.Args = []string{"INFRA_ONLY=1"}
 			},
 		},
@@ -435,7 +435,7 @@ func TestHasSpecChanged(t *testing.T) {
 		{
 			name:     "resources added",
 			expected: true,
-			mod: func(oldDynakube *dynatracev1beta2.DynaKube, newDynakube *dynatracev1beta2.DynaKube) {
+			mod: func(oldDynakube *dynakube.DynaKube, newDynakube *dynakube.DynaKube) {
 				newDynakube.Spec.OneAgent.HostMonitoring.OneAgentResources = newResourceRequirements()
 			},
 		},
@@ -443,7 +443,7 @@ func TestHasSpecChanged(t *testing.T) {
 		{
 			name:     "resources removed",
 			expected: true,
-			mod: func(oldDynakube *dynatracev1beta2.DynaKube, newDynakube *dynatracev1beta2.DynaKube) {
+			mod: func(oldDynakube *dynakube.DynaKube, newDynakube *dynakube.DynaKube) {
 				oldDynakube.Spec.OneAgent.HostMonitoring.OneAgentResources = newResourceRequirements()
 			},
 		},
@@ -451,7 +451,7 @@ func TestHasSpecChanged(t *testing.T) {
 		{
 			name:     "resources removed",
 			expected: true,
-			mod: func(oldDynakube *dynatracev1beta2.DynaKube, newDynakube *dynatracev1beta2.DynaKube) {
+			mod: func(oldDynakube *dynakube.DynaKube, newDynakube *dynakube.DynaKube) {
 				oldDynakube.Spec.OneAgent.HostMonitoring.OneAgentResources = newResourceRequirements()
 			},
 		},
@@ -459,7 +459,7 @@ func TestHasSpecChanged(t *testing.T) {
 		{
 			name:     "priority class added",
 			expected: true,
-			mod: func(oldDynakube *dynatracev1beta2.DynaKube, newDynakube *dynatracev1beta2.DynaKube) {
+			mod: func(oldDynakube *dynakube.DynaKube, newDynakube *dynakube.DynaKube) {
 				newDynakube.Spec.OneAgent.HostMonitoring.PriorityClassName = "class"
 			},
 		},
@@ -467,7 +467,7 @@ func TestHasSpecChanged(t *testing.T) {
 		{
 			name:     "priority class removed",
 			expected: true,
-			mod: func(oldDynakube *dynatracev1beta2.DynaKube, newDynakube *dynatracev1beta2.DynaKube) {
+			mod: func(oldDynakube *dynakube.DynaKube, newDynakube *dynakube.DynaKube) {
 				oldDynakube.Spec.OneAgent.HostMonitoring.PriorityClassName = "class"
 			},
 		},
@@ -475,7 +475,7 @@ func TestHasSpecChanged(t *testing.T) {
 		{
 			name:     "priority class set but no change",
 			expected: false,
-			mod: func(oldDynakube *dynatracev1beta2.DynaKube, newDynakube *dynatracev1beta2.DynaKube) {
+			mod: func(oldDynakube *dynakube.DynaKube, newDynakube *dynakube.DynaKube) {
 				oldDynakube.Spec.OneAgent.HostMonitoring.PriorityClassName = "class"
 				newDynakube.Spec.OneAgent.HostMonitoring.PriorityClassName = "class"
 			},
@@ -484,7 +484,7 @@ func TestHasSpecChanged(t *testing.T) {
 		{
 			name:     "priority class changed",
 			expected: true,
-			mod: func(oldDynakube *dynatracev1beta2.DynaKube, newDynakube *dynatracev1beta2.DynaKube) {
+			mod: func(oldDynakube *dynakube.DynaKube, newDynakube *dynakube.DynaKube) {
 				oldDynakube.Spec.OneAgent.HostMonitoring.PriorityClassName = "some class"
 				newDynakube.Spec.OneAgent.HostMonitoring.PriorityClassName = "other class"
 			},
@@ -493,7 +493,7 @@ func TestHasSpecChanged(t *testing.T) {
 		{
 			name:     "dns policy added",
 			expected: true,
-			mod: func(oldDynakube *dynatracev1beta2.DynaKube, newDynakube *dynatracev1beta2.DynaKube) {
+			mod: func(oldDynakube *dynakube.DynaKube, newDynakube *dynakube.DynaKube) {
 				newDynakube.Spec.OneAgent.HostMonitoring.DNSPolicy = corev1.DNSClusterFirst
 			},
 		},
@@ -503,19 +503,19 @@ func TestHasSpecChanged(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			r := Reconciler{}
 			key := metav1.ObjectMeta{Name: "my-oneagent", Namespace: "my-namespace"}
-			oldInstance := dynatracev1beta2.DynaKube{
+			oldInstance := dynakube.DynaKube{
 				ObjectMeta: key,
-				Spec: dynatracev1beta2.DynaKubeSpec{
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						HostMonitoring: &dynatracev1beta2.HostInjectSpec{},
+				Spec: dynakube.DynaKubeSpec{
+					OneAgent: dynakube.OneAgentSpec{
+						HostMonitoring: &dynakube.HostInjectSpec{},
 					},
 				},
 			}
-			newInstance := dynatracev1beta2.DynaKube{
+			newInstance := dynakube.DynaKube{
 				ObjectMeta: key,
-				Spec: dynatracev1beta2.DynaKubeSpec{
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						HostMonitoring: &dynatracev1beta2.HostInjectSpec{},
+				Spec: dynakube.DynaKubeSpec{
+					OneAgent: dynakube.OneAgentSpec{
+						HostMonitoring: &dynakube.HostInjectSpec{},
 					},
 				},
 			}
@@ -537,8 +537,8 @@ func TestHasSpecChanged(t *testing.T) {
 func TestNewDaemonset_Affinity(t *testing.T) {
 	t.Run(`adds correct affinities`, func(t *testing.T) {
 		r := Reconciler{}
-		dynakube := newDynaKube()
-		ds, err := r.buildDesiredDaemonSet(dynakube)
+		dk := newDynaKube()
+		ds, err := r.buildDesiredDaemonSet(dk)
 
 		require.NoError(t, err)
 		assert.NotNil(t, ds)
@@ -595,8 +595,8 @@ func parseQuantity(s string) resource.Quantity {
 	return q
 }
 
-func newDynaKube() *dynatracev1beta2.DynaKube {
-	return &dynatracev1beta2.DynaKube{
+func newDynaKube() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "DynaKube",
 			APIVersion: "dynatrace.com/v1beta1",
@@ -606,9 +606,9 @@ func newDynaKube() *dynatracev1beta2.DynaKube {
 			Namespace: "my-namespace",
 			UID:       "69e98f18-805a-42de-84b5-3eae66534f75",
 		},
-		Spec: dynatracev1beta2.DynaKubeSpec{
-			OneAgent: dynatracev1beta2.OneAgentSpec{
-				HostMonitoring: &dynatracev1beta2.HostInjectSpec{},
+		Spec: dynakube.DynaKubeSpec{
+			OneAgent: dynakube.OneAgentSpec{
+				HostMonitoring: &dynakube.HostInjectSpec{},
 			},
 		},
 	}
@@ -618,13 +618,13 @@ func TestInstanceStatus(t *testing.T) {
 	namespace := "dynatrace"
 	dkName := "dynakube"
 
-	dynakube := &dynatracev1beta2.DynaKube{
+	dynakube := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
-		Spec: dynatracev1beta2.DynaKubeSpec{
+		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 			Tokens: dkName,
-			OneAgent: dynatracev1beta2.OneAgentSpec{
-				HostMonitoring: &dynatracev1beta2.HostInjectSpec{},
+			OneAgent: dynakube.OneAgentSpec{
+				HostMonitoring: &dynakube.HostInjectSpec{},
 			},
 		},
 	}
@@ -672,13 +672,13 @@ func TestEmptyInstancesWithWrongLabels(t *testing.T) {
 	namespace := "dynatrace"
 	dkName := "dynakube"
 
-	dynakube := &dynatracev1beta2.DynaKube{
+	dynakube := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
-		Spec: dynatracev1beta2.DynaKubeSpec{
+		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 			Tokens: dkName,
-			OneAgent: dynatracev1beta2.OneAgentSpec{
-				HostMonitoring: &dynatracev1beta2.HostInjectSpec{},
+			OneAgent: dynakube.OneAgentSpec{
+				HostMonitoring: &dynakube.HostInjectSpec{},
 			},
 		},
 	}
@@ -720,15 +720,15 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 	)
 
 	ctx := context.Background()
-	dynakube := newDynaKube()
-	dynakube.Status = dynatracev1beta2.DynaKubeStatus{
-		OneAgent: dynatracev1beta2.OneAgentStatus{
-			ConnectionInfoStatus: dynatracev1beta2.OneAgentConnectionInfoStatus{
-				ConnectionInfoStatus: dynatracev1beta2.ConnectionInfoStatus{
+	dk := newDynaKube()
+	dk.Status = dynakube.DynaKubeStatus{
+		OneAgent: dynakube.OneAgentStatus{
+			ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
+				ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
 					TenantUUID: testTenantUUID,
 					Endpoints:  testTenantEndpoints,
 				},
-				CommunicationHosts: []dynatracev1beta2.CommunicationHostStatus{
+				CommunicationHosts: []dynakube.CommunicationHostStatus{
 					{
 						Protocol: "http",
 						Host:     "dummyhost",
@@ -740,11 +740,11 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 	}
 
 	fakeClient := fake.NewClient(
-		dynakube)
+		dk)
 
 	t.Run(`create OneAgent connection info ConfigMap`, func(t *testing.T) {
 		reconciler := Reconciler{
-			dynakube:                 dynakube,
+			dynakube:                 dk,
 			client:                   fakeClient,
 			apiReader:                fakeClient,
 			versionReconciler:        createVersionReconcilerMock(t),
@@ -756,7 +756,7 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 		require.NoError(t, err)
 
 		var actual corev1.ConfigMap
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: dynakube.OneAgentConnectionInfoConfigMapName(), Namespace: dynakube.Namespace}, &actual)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgentConnectionInfoConfigMapName(), Namespace: dk.Namespace}, &actual)
 		require.NoError(t, err)
 		assert.Equal(t, testTenantUUID, actual.Data[connectioninfo.TenantUUIDKey])
 		assert.Equal(t, testTenantEndpoints, actual.Data[connectioninfo.CommunicationEndpointsKey])
