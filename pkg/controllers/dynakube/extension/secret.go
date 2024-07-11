@@ -22,26 +22,50 @@ func reconcileSecret(ctx context.Context, dk *dynakube.DynaKube, kubeClient clie
 
 	query := k8ssecret.NewQuery(ctx, kubeClient, apiReader, log)
 
+	if !dk.PrometheusEnabled() {
+		err := query.Delete(getSecretName(dk.Name), dk.Namespace)
+		if err != nil {
+			return err
+		}
+
+		removeSecretCreated(dk.Conditions())
+
+		return nil
+	}
+
 	_, err := query.Get(client.ObjectKey{Name: getSecretName(dk.Name), Namespace: dk.Namespace})
 	if err != nil && !errors.IsNotFound(err) {
+		setSecretCreatedFalse(dk.Conditions(), err)
+
 		return err
 	}
 
 	if errors.IsNotFound(err) {
 		log.Info("creating secret")
 
-		newEecToken, err := newEecToken()
+		newEecToken, err := dttoken.New(eecTokenValuePrefix)
 		if err != nil {
+			setSecretCreatedFalse(dk.Conditions(), err)
+
 			return err
 		}
 
 		newSecret, err := buildSecret(dk, *newEecToken)
 		if err != nil {
+			setSecretCreatedFalse(dk.Conditions(), err)
+
 			return err
 		}
 
-		query.CreateOrUpdate(*newSecret)
+		err = query.CreateOrUpdate(*newSecret)
+		if err != nil {
+			setSecretCreatedFalse(dk.Conditions(), err)
+
+			return err
+		}
 	}
+
+	setSecretCreatedTrue(dk.Conditions())
 
 	return nil
 }
@@ -52,10 +76,6 @@ func buildSecret(dk *dynakube.DynaKube, token dttoken.Token) (*corev1.Secret, er
 	}
 
 	return k8ssecret.Create(dk, k8ssecret.NewNameModifier(getSecretName(dk.Name)), k8ssecret.NewNamespaceModifier(dk.GetNamespace()), k8ssecret.NewDataModifier(secretData))
-}
-
-func newEecToken() (*dttoken.Token, error) {
-	return dttoken.New(eecTokenValuePrefix)
 }
 
 func getSecretName(dynakubeName string) string {

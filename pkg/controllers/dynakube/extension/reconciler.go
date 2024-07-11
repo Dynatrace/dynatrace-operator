@@ -33,15 +33,9 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 func (r *reconciler) Reconcile(ctx context.Context) error {
 	log.Info("start reconciling extensions")
 
-	if r.dynakube.PrometheusEnabled() {
-		err := reconcileSecret(ctx, r.dynakube, r.client, r.apiReader)
-		if err != nil {
-			setSecretCreatedFalse(r.dynakube.Conditions(), err)
-
-			return err
-		}
-
-		setSecretCreatedTrue(r.dynakube.Conditions())
+	err := reconcileSecret(ctx, r.dynakube, r.client, r.apiReader)
+	if err != nil {
+		return err
 	}
 
 	return nil

@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	secretConditionType       = "Secret"
+	secretConditionType       = "ExtensionsTokenSecret"
 	secretCreatedReason       = "SecretCreated"
 	secretCreatedMessageTrue  = "EEC token created"
 	secretCreatedMessageFalse = "Error creating extensions secret: %s"
@@ -32,4 +32,8 @@ func setSecretCreatedFalse(conditions *[]metav1.Condition, err error) {
 		Message: fmt.Sprintf(secretCreatedMessageFalse, err),
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
+}
+
+func removeSecretCreated(conditions *[]metav1.Condition) bool {
+	return meta.RemoveStatusCondition(conditions, secretConditionType)
 }
