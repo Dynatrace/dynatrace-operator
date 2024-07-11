@@ -1,6 +1,7 @@
 // +kubebuilder:object:generate=true
 // +groupName=dynatrace.com
 // +versionName=v1beta3
+// +kubebuilder:skip
 package dynakube
 
 import (
