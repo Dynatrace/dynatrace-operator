@@ -166,7 +166,7 @@ func runChecksForDynakube(ctx context.Context, baseLog logd.Logger, apiReader cl
 	return checkProxySettings(ctx, log, apiReader, &dk)
 }
 
-func createTransport(ctx context.Context, apiReader client.Reader, dynakube *dynakube.DynaKube, httpClient *http.Client) (*http.Transport, error) {
+func createTransport(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, httpClient *http.Client) (*http.Transport, error) {
 	var transport *http.Transport
 	if httpClient != nil && httpClient.Transport != nil {
 		transport = httpClient.Transport.(*http.Transport).Clone()
@@ -174,7 +174,7 @@ func createTransport(ctx context.Context, apiReader client.Reader, dynakube *dyn
 		transport = http.DefaultTransport.(*http.Transport).Clone()
 	}
 
-	return registry.PrepareTransportForDynaKube(ctx, apiReader, transport, dynakube)
+	return registry.PrepareTransportForDynaKube(ctx, apiReader, transport, dk)
 }
 
 func getDynakubes(ctx context.Context, log logd.Logger, apiReader client.Reader, namespaceName string, dynakubeName string) ([]dynakube.DynaKube, error) {

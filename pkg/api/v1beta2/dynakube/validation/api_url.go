@@ -22,8 +22,8 @@ const (
 	out of it. Example: ` + ExampleApiUrl
 )
 
-func NoApiUrl(_ context.Context, _ *Validator, dynakube *dynakube.DynaKube) string {
-	apiUrl := dynakube.Spec.APIURL
+func NoApiUrl(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	apiUrl := dk.Spec.APIURL
 
 	if apiUrl == ExampleApiUrl {
 		log.Info("api url is an example url", "apiUrl", apiUrl)
@@ -32,7 +32,7 @@ func NoApiUrl(_ context.Context, _ *Validator, dynakube *dynakube.DynaKube) stri
 	}
 
 	if apiUrl == "" {
-		log.Info("requested dynakube has no api url", "name", dynakube.Name, "namespace", dynakube.Namespace)
+		log.Info("requested dynakube has no api url", "name", dk.Name, "namespace", dk.Namespace)
 
 		return errorNoApiUrl
 	}
@@ -40,8 +40,8 @@ func NoApiUrl(_ context.Context, _ *Validator, dynakube *dynakube.DynaKube) stri
 	return ""
 }
 
-func IsInvalidApiUrl(_ context.Context, _ *Validator, dynakube *dynakube.DynaKube) string {
-	apiUrl := dynakube.Spec.APIURL
+func IsInvalidApiUrl(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	apiUrl := dk.Spec.APIURL
 
 	if !strings.HasSuffix(apiUrl, "/api") {
 		log.Info("api url does not end with /api", "apiUrl", apiUrl)
@@ -70,8 +70,8 @@ func IsInvalidApiUrl(_ context.Context, _ *Validator, dynakube *dynakube.DynaKub
 	return ""
 }
 
-func IsThirdGenAPIUrl(_ context.Context, _ *Validator, dynakube *dynakube.DynaKube) string {
-	if strings.Contains(dynakube.ApiUrl(), ".apps.") {
+func IsThirdGenAPIUrl(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if strings.Contains(dk.ApiUrl(), ".apps.") {
 		return errorThirdGenApiUrl
 	}
 

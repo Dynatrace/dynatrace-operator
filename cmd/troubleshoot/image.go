@@ -47,8 +47,8 @@ func verifyAllImagesAvailable(ctx context.Context, baseLog logd.Logger, keychain
 	return nil
 }
 
-func verifyImageIsAvailable(log logd.Logger, pullImage ImagePullFunc, dynakube *dynakube.DynaKube, comp component, proxyWarning bool) {
-	image, isCustomImage := comp.getImage(dynakube)
+func verifyImageIsAvailable(log logd.Logger, pullImage ImagePullFunc, dk *dynakube.DynaKube, comp component, proxyWarning bool) {
+	image, isCustomImage := comp.getImage(dk)
 	if comp.SkipImageCheck(image) {
 		logErrorf(log, "Unknown %s image", comp.String())
 
@@ -64,7 +64,7 @@ func verifyImageIsAvailable(log logd.Logger, pullImage ImagePullFunc, dynakube *
 		return
 	}
 
-	if dynakube.HasProxy() && proxyWarning {
+	if dk.HasProxy() && proxyWarning {
 		logWarningf(log, "Proxy setting in Dynakube is ignored for %s image due to technical limitations.", componentName)
 	}
 
