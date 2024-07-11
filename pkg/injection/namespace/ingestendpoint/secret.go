@@ -151,8 +151,8 @@ func (g *SecretGenerator) prepare(ctx context.Context, dk *dynakube.DynaKube) (m
 func (g *SecretGenerator) PrepareFields(ctx context.Context, dk *dynakube.DynaKube) (map[string]string, error) {
 	fields := make(map[string]string)
 
-	var tokens corev1.Secret
-	if err := g.client.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: g.namespace}, &tokens); err != nil {
+	tokens, err := k8ssecret.Query(g.client, g.apiReader, log).Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: g.namespace})
+	if err != nil {
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 

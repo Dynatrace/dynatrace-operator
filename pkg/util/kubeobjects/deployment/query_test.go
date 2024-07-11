@@ -16,6 +16,7 @@ func TestCreateOrUpdateDeployment(t *testing.T) {
 	const namespaceName = "dynatrace"
 
 	const deploymentName = "my-deployment"
+
 	ctx := context.Background()
 
 	t.Run("create when not exists", func(t *testing.T) {

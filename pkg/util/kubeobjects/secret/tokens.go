@@ -32,12 +32,12 @@ func GetDataFromSecretName(ctx context.Context, apiReader client.Reader, namespa
 
 	secret, err := query.Get(ctx, namespacedName)
 	if err != nil {
-		return "", errors.WithStack(err)
+		return "", err
 	}
 
 	value, err := ExtractToken(secret, dataKey)
 	if err != nil {
-		return "", errors.WithStack(err)
+		return "", err
 	}
 
 	return value, nil
