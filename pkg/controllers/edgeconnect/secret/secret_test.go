@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/config"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	testName                       = "test-name-edgeconnectv1alpha1"
+	testName                       = "test-name-edgeconnect"
 	testNamespace                  = "test-namespace"
 	testOauthClientId              = "client-id"
 	testOauthClientSecret          = "client-secret"
@@ -30,14 +30,14 @@ const (
 
 func Test_prepareEdgeConnectConfigFile(t *testing.T) {
 	t.Run("Create basic config", func(t *testing.T) {
-		testEdgeConnect := &edgeconnectv1alpha1.EdgeConnect{
+		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 			},
-			Spec: edgeconnectv1alpha1.EdgeConnectSpec{
+			Spec: edgeconnect.EdgeConnectSpec{
 				ApiServer: "abc12345.dynatrace.com",
-				OAuth: edgeconnectv1alpha1.OAuthSpec{
+				OAuth: edgeconnect.OAuthSpec{
 					Endpoint:     "https://test.com/sso/oauth2/token",
 					Resource:     "urn:dtenvironment:test12345",
 					ClientSecret: "test-secret",
@@ -47,11 +47,11 @@ func Test_prepareEdgeConnectConfigFile(t *testing.T) {
 
 		testSecretName := "test-secret"
 		kubeReader := fake.NewClient(createClientSecret(testSecretName, testNamespace))
-		cfg, err := PrepareConfigFile(context.Background(), testEdgeConnect, kubeReader, testToken)
+		cfg, err := PrepareConfigFile(context.Background(), ec, kubeReader, testToken)
 
 		require.NoError(t, err)
 
-		expected := `name: test-name-edgeconnectv1alpha1
+		expected := `name: test-name-edgeconnect
 api_endpoint_host: abc12345.dynatrace.com
 oauth:
     endpoint: https://test.com/sso/oauth2/token
@@ -65,21 +65,21 @@ root_certificate_paths:
 	})
 
 	t.Run("Create full config", func(t *testing.T) {
-		testEdgeConnect := &edgeconnectv1alpha1.EdgeConnect{
+		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 			},
-			Spec: edgeconnectv1alpha1.EdgeConnectSpec{
+			Spec: edgeconnect.EdgeConnectSpec{
 				ApiServer: "abc12345.dynatrace.com",
-				OAuth: edgeconnectv1alpha1.OAuthSpec{
+				OAuth: edgeconnect.OAuthSpec{
 					Endpoint:     "https://test.com/sso/oauth2/token",
 					Resource:     "urn:dtenvironment:test12345",
 					ClientSecret: "test-secret",
 				},
 				CaCertsRef:         "certs",
 				ServiceAccountName: "test",
-				Proxy: &edgeconnectv1alpha1.ProxySpec{
+				Proxy: &edgeconnect.ProxySpec{
 					Host:    "proxy.com",
 					NoProxy: "*.internal.com",
 					Port:    443,
@@ -88,16 +88,16 @@ root_certificate_paths:
 			},
 		}
 		testSecretName := "test-secret"
-		authRef := newSecret(testProxyAuthRef, testEdgeConnect.Namespace, map[string]string{
-			edgeconnectv1alpha1.ProxyAuthUserKey:     "user",
-			edgeconnectv1alpha1.ProxyAuthPasswordKey: "pass",
+		authRef := newSecret(testProxyAuthRef, ec.Namespace, map[string]string{
+			edgeconnect.ProxyAuthUserKey:     "user",
+			edgeconnect.ProxyAuthPasswordKey: "pass",
 		})
 		kubeReader := fake.NewClient(createClientSecret(testSecretName, testNamespace), authRef)
-		cfg, err := PrepareConfigFile(context.Background(), testEdgeConnect, kubeReader, testToken)
+		cfg, err := PrepareConfigFile(context.Background(), ec, kubeReader, testToken)
 
 		require.NoError(t, err)
 
-		expected := `name: test-name-edgeconnectv1alpha1
+		expected := `name: test-name-edgeconnect
 api_endpoint_host: abc12345.dynatrace.com
 oauth:
     endpoint: https://test.com/sso/oauth2/token
@@ -118,19 +118,19 @@ proxy:
 		assert.Equal(t, expected, string(cfg))
 	})
 	t.Run("Create config k8s automation enabled", func(t *testing.T) {
-		testEdgeConnect := &edgeconnectv1alpha1.EdgeConnect{
+		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 			},
-			Spec: edgeconnectv1alpha1.EdgeConnectSpec{
+			Spec: edgeconnect.EdgeConnectSpec{
 				ApiServer: "abc12345.dynatrace.com",
-				OAuth: edgeconnectv1alpha1.OAuthSpec{
+				OAuth: edgeconnect.OAuthSpec{
 					Endpoint:     "https://test.com/sso/oauth2/token",
 					Resource:     "urn:dtenvironment:test12345",
 					ClientSecret: "test-secret",
 				},
-				KubernetesAutomation: &edgeconnectv1alpha1.KubernetesAutomationSpec{
+				KubernetesAutomation: &edgeconnect.KubernetesAutomationSpec{
 					Enabled: true,
 				},
 				ServiceAccountName: "test",
@@ -138,11 +138,11 @@ proxy:
 		}
 		testSecretName := "test-secret"
 		kubeReader := fake.NewClient(createClientSecret(testSecretName, testNamespace))
-		cfg, err := PrepareConfigFile(context.Background(), testEdgeConnect, kubeReader, testToken)
+		cfg, err := PrepareConfigFile(context.Background(), ec, kubeReader, testToken)
 
 		require.NoError(t, err)
 
-		expected := `name: test-name-edgeconnectv1alpha1
+		expected := `name: test-name-edgeconnect
 api_endpoint_host: abc12345.dynatrace.com
 oauth:
     endpoint: https://test.com/sso/oauth2/token

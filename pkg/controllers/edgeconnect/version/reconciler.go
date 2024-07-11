@@ -3,21 +3,21 @@ package version
 import (
 	"context"
 
-	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Reconciler struct {
-	edgeConnect  *edgeconnectv1alpha1.EdgeConnect
+	edgeConnect  *edgeconnect.EdgeConnect
 	timeProvider *timeprovider.Provider
 
 	apiReader      client.Reader
 	registryClient registry.ImageGetter
 }
 
-func NewReconciler(apiReader client.Reader, registryClient registry.ImageGetter, timeProvider *timeprovider.Provider, edgeConnect *edgeconnectv1alpha1.EdgeConnect) *Reconciler {
+func NewReconciler(apiReader client.Reader, registryClient registry.ImageGetter, timeProvider *timeprovider.Provider, edgeConnect *edgeconnect.EdgeConnect) *Reconciler {
 	return &Reconciler{
 		edgeConnect:    edgeConnect,
 		apiReader:      apiReader,
