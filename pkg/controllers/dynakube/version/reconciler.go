@@ -5,16 +5,16 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Reconciler interface {
-	ReconcileCodeModules(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
-	ReconcileOneAgent(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
-	ReconcileActiveGate(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
+	ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube) error
+	ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube) error
+	ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
 type reconciler struct {
@@ -34,28 +34,28 @@ func NewReconciler(apiReader client.Reader, dtClient dtclient.Client, timeProvid
 	}
 }
 
-func (r *reconciler) ReconcileCodeModules(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
-	updater := newCodeModulesUpdater(dynakube, r.dtClient)
-	if r.needsUpdate(updater, dynakube) {
-		return r.updateVersionStatuses(ctx, updater, dynakube)
+func (r *reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube) error {
+	updater := newCodeModulesUpdater(dk, r.dtClient)
+	if r.needsUpdate(updater, dk) {
+		return r.updateVersionStatuses(ctx, updater, dk)
 	}
 
 	return nil
 }
 
-func (r *reconciler) ReconcileOneAgent(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
-	updater := newOneAgentUpdater(dynakube, r.apiReader, r.dtClient)
-	if r.needsUpdate(updater, dynakube) {
-		return r.updateVersionStatuses(ctx, updater, dynakube)
+func (r *reconciler) ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube) error {
+	updater := newOneAgentUpdater(dk, r.apiReader, r.dtClient)
+	if r.needsUpdate(updater, dk) {
+		return r.updateVersionStatuses(ctx, updater, dk)
 	}
 
 	return nil
 }
 
-func (r *reconciler) ReconcileActiveGate(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
-	updater := newActiveGateUpdater(dynakube, r.apiReader, r.dtClient)
-	if r.needsUpdate(updater, dynakube) {
-		err := r.updateVersionStatuses(ctx, updater, dynakube)
+func (r *reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error {
+	updater := newActiveGateUpdater(dk, r.apiReader, r.dtClient)
+	if r.needsUpdate(updater, dk) {
+		err := r.updateVersionStatuses(ctx, updater, dk)
 
 		return err
 	}
@@ -63,7 +63,7 @@ func (r *reconciler) ReconcileActiveGate(ctx context.Context, dynakube *dynatrac
 	return nil
 }
 
-func (r *reconciler) updateVersionStatuses(ctx context.Context, updater StatusUpdater, dynakube *dynatracev1beta2.DynaKube) error {
+func (r *reconciler) updateVersionStatuses(ctx context.Context, updater StatusUpdater, dk *dynakube.DynaKube) error {
 	log.Info("updating version status", "updater", updater.Name())
 
 	err := r.run(ctx, updater)
@@ -79,18 +79,18 @@ func (r *reconciler) updateVersionStatuses(ctx context.Context, updater StatusUp
 
 	_, ok := updater.(*oneAgentUpdater)
 	if ok {
-		healthConfig, err := getOneAgentHealthConfig(dynakube.OneAgentVersion())
+		healthConfig, err := getOneAgentHealthConfig(dk.OneAgentVersion())
 		if err != nil {
 			log.Error(err, "could not set OneAgent healthcheck")
 		} else {
-			dynakube.Status.OneAgent.Healthcheck = healthConfig
+			dk.Status.OneAgent.Healthcheck = healthConfig
 		}
 	}
 
 	return nil
 }
 
-func (r *reconciler) needsUpdate(updater StatusUpdater, dynakube *dynatracev1beta2.DynaKube) bool {
+func (r *reconciler) needsUpdate(updater StatusUpdater, dk *dynakube.DynaKube) bool {
 	if !updater.IsEnabled() {
 		log.Info("skipping version status update for disabled section", "updater", updater.Name())
 
@@ -107,7 +107,7 @@ func (r *reconciler) needsUpdate(updater StatusUpdater, dynakube *dynatracev1bet
 		return true
 	}
 
-	if !r.timeProvider.IsOutdated(updater.Target().LastProbeTimestamp, dynakube.ApiRequestThreshold()) {
+	if !r.timeProvider.IsOutdated(updater.Target().LastProbeTimestamp, dk.ApiRequestThreshold()) {
 		log.Info("status timestamp still valid, skipping version status updater", "updater", updater.Name())
 
 		return false

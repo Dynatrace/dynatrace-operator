@@ -3,38 +3,38 @@ package modifiers
 import (
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 const testTlsSecretName = "test-tls-secret"
 
-func setCertUsage(dynakube *dynatracev1beta2.DynaKube, isUsed bool) {
+func setCertUsage(dk *dynakube.DynaKube, isUsed bool) {
 	if isUsed {
-		dynakube.Spec.ActiveGate.TlsSecretName = testTlsSecretName
+		dk.Spec.ActiveGate.TlsSecretName = testTlsSecretName
 	} else {
-		dynakube.Spec.ActiveGate.TlsSecretName = ""
+		dk.Spec.ActiveGate.TlsSecretName = ""
 	}
 }
 
 func TestCertEnabled(t *testing.T) {
 	t.Run("true", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		setCertUsage(&dynakube, true)
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		setCertUsage(&dk, true)
 
-		mod := NewCertificatesModifier(dynakube)
+		mod := NewCertificatesModifier(dk)
 
 		assert.True(t, mod.Enabled())
 	})
 
 	t.Run("false", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		setCertUsage(&dynakube, false)
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		setCertUsage(&dk, false)
 
-		mod := NewCertificatesModifier(dynakube)
+		mod := NewCertificatesModifier(dk)
 
 		assert.False(t, mod.Enabled())
 	})
@@ -42,10 +42,10 @@ func TestCertEnabled(t *testing.T) {
 
 func TestCertModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		setCertUsage(&dynakube, true)
-		mod := NewCertificatesModifier(dynakube)
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		setCertUsage(&dk, true)
+		mod := NewCertificatesModifier(dk)
 		builder := createBuilderForTesting()
 
 		sts, _ := builder.AddModifier(mod).Build()

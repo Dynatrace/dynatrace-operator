@@ -1,7 +1,7 @@
 package modifiers
 
 import (
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
@@ -28,20 +28,20 @@ const (
 	certLoaderWorkDirVolume = "cert-tmp"
 )
 
-func NewKubernetesMonitoringModifier(dynakube dynatracev1beta2.DynaKube, capability capability.Capability) KubernetesMonitoringModifier {
+func NewKubernetesMonitoringModifier(dk dynakube.DynaKube, capability capability.Capability) KubernetesMonitoringModifier {
 	return KubernetesMonitoringModifier{
-		dynakube:   dynakube,
+		dk:         dk,
 		capability: capability,
 	}
 }
 
 type KubernetesMonitoringModifier struct {
 	capability capability.Capability
-	dynakube   dynatracev1beta2.DynaKube
+	dk         dynakube.DynaKube
 }
 
 func (mod KubernetesMonitoringModifier) Enabled() bool {
-	return mod.dynakube.IsKubernetesMonitoringActiveGateEnabled()
+	return mod.dk.IsKubernetesMonitoringActiveGateEnabled()
 }
 
 func (mod KubernetesMonitoringModifier) Modify(sts *appsv1.StatefulSet) error {
@@ -66,7 +66,7 @@ func (mod KubernetesMonitoringModifier) getInitContainers() []corev1.Container {
 	return []corev1.Container{
 		{
 			Name:            initContainerTemplateName,
-			Image:           mod.dynakube.ActiveGateImage(),
+			Image:           mod.dk.ActiveGateImage(),
 			ImagePullPolicy: corev1.PullAlways,
 			WorkingDir:      k8scrt2jksWorkingDir,
 			Command:         []string{"/bin/bash"},

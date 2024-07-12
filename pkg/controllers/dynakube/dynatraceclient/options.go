@@ -3,7 +3,7 @@ package dynatraceclient
 import (
 	"context"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -38,12 +38,12 @@ func (opts *options) appendCertCheck(skipCertCheck bool) {
 	opts.Opts = append(opts.Opts, dtclient.SkipCertificateValidation(skipCertCheck))
 }
 
-func (opts *options) appendProxySettings(apiReader client.Reader, dynakube *dynatracev1beta2.DynaKube) error {
-	if dynakube == nil || !dynakube.HasProxy() {
+func (opts *options) appendProxySettings(apiReader client.Reader, dk *dynakube.DynaKube) error {
+	if dk == nil || !dk.HasProxy() {
 		return nil
 	}
 
-	proxyOption, err := opts.createProxyOption(apiReader, dynakube)
+	proxyOption, err := opts.createProxyOption(apiReader, dk)
 	if err != nil {
 		return err
 	}
@@ -53,15 +53,15 @@ func (opts *options) appendProxySettings(apiReader client.Reader, dynakube *dyna
 	return nil
 }
 
-func (opts *options) createProxyOption(apiReader client.Reader, dynakube *dynatracev1beta2.DynaKube) (dtclient.Option, error) {
+func (opts *options) createProxyOption(apiReader client.Reader, dk *dynakube.DynaKube) (dtclient.Option, error) {
 	var proxyOption dtclient.Option
 
-	proxyUrl, err := dynakube.Proxy(opts.ctx, apiReader)
+	proxyUrl, err := dk.Proxy(opts.ctx, apiReader)
 	if err != nil {
 		return proxyOption, err
 	}
 
-	proxyOption = dtclient.Proxy(proxyUrl, dynakube.FeatureNoProxy())
+	proxyOption = dtclient.Proxy(proxyUrl, dk.FeatureNoProxy())
 
 	return proxyOption, nil
 }
@@ -73,11 +73,11 @@ func (opts *options) appendTrustedCerts(apiReader client.Reader, trustedCerts st
 			return errors.WithMessage(err, "failed to get certificate configmap")
 		}
 
-		if certs.Data[dynatracev1beta2.TrustedCAKey] == "" {
+		if certs.Data[dynakube.TrustedCAKey] == "" {
 			return errors.New("failed to extract certificate configmap field: missing field certs")
 		}
 
-		opts.Opts = append(opts.Opts, dtclient.Certs([]byte(certs.Data[dynatracev1beta2.TrustedCAKey])))
+		opts.Opts = append(opts.Opts, dtclient.Certs([]byte(certs.Data[dynakube.TrustedCAKey])))
 	}
 
 	return nil

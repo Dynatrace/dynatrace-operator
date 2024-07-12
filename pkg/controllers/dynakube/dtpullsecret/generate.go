@@ -38,7 +38,7 @@ func newDockerConfigWithAuth(username string, password string, registry string, 
 func (r *Reconciler) GenerateData() (map[string][]byte, error) {
 	var registryToken string
 
-	registry, err := getImageRegistryFromAPIURL(r.dynakube.Spec.APIURL)
+	registry, err := getImageRegistryFromAPIURL(r.dk.Spec.APIURL)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (r *Reconciler) GenerateData() (map[string][]byte, error) {
 		return nil, errors.New("token secret does not contain a paas or api token, cannot generate docker config")
 	}
 
-	tenantUUID, err := r.dynakube.TenantUUIDFromConnectionInfoStatus()
+	tenantUUID, err := r.dk.TenantUUIDFromConnectionInfoStatus()
 	if err != nil {
 		return nil, errors.WithMessage(err, "cannot generate docker config")
 	}

@@ -1,7 +1,7 @@
 package capability
 
 import (
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -10,10 +10,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func CreateService(dynakube *dynatracev1beta2.DynaKube, feature string) *corev1.Service {
+func CreateService(dk *dynakube.DynaKube, feature string) *corev1.Service {
 	var ports []corev1.ServicePort
 
-	if dynakube.NeedsActiveGateServicePorts() {
+	if dk.NeedsActiveGateServicePorts() {
 		ports = append(ports,
 			corev1.ServicePort{
 				Name:       consts.HttpsServicePortName,
@@ -22,7 +22,7 @@ func CreateService(dynakube *dynatracev1beta2.DynaKube, feature string) *corev1.
 				TargetPort: intstr.FromString(consts.HttpsServicePortName),
 			},
 		)
-		if dynakube.IsMetricsIngestActiveGateEnabled() {
+		if dk.IsMetricsIngestActiveGateEnabled() {
 			ports = append(ports, corev1.ServicePort{
 				Name:       consts.HttpServicePortName,
 				Protocol:   corev1.ProtocolTCP,
@@ -32,17 +32,17 @@ func CreateService(dynakube *dynatracev1beta2.DynaKube, feature string) *corev1.
 		}
 	}
 
-	coreLabels := labels.NewCoreLabels(dynakube.Name, labels.ActiveGateComponentLabel)
+	coreLabels := labels.NewCoreLabels(dk.Name, labels.ActiveGateComponentLabel)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      capability.BuildServiceName(dynakube.Name, feature),
-			Namespace: dynakube.Namespace,
+			Name:      capability.BuildServiceName(dk.Name, feature),
+			Namespace: dk.Namespace,
 			Labels:    coreLabels.BuildLabels(),
 		},
 		Spec: corev1.ServiceSpec{
 			Type:     corev1.ServiceTypeClusterIP,
-			Selector: buildSelectorLabels(dynakube.Name),
+			Selector: buildSelectorLabels(dk.Name),
 			Ports:    ports,
 		},
 	}

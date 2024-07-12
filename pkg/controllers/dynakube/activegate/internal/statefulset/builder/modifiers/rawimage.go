@@ -1,7 +1,7 @@
 package modifiers
 
 import (
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -17,16 +17,16 @@ var _ volumeModifier = RawImageModifier{}
 var _ volumeMountModifier = RawImageModifier{}
 var _ builder.Modifier = RawImageModifier{}
 
-func NewRawImageModifier(dynakube dynatracev1beta2.DynaKube, envMap *prioritymap.Map) RawImageModifier {
+func NewRawImageModifier(dk dynakube.DynaKube, envMap *prioritymap.Map) RawImageModifier {
 	return RawImageModifier{
-		dynakube: dynakube,
-		envMap:   envMap,
+		dk:     dk,
+		envMap: envMap,
 	}
 }
 
 type RawImageModifier struct {
-	envMap   *prioritymap.Map
-	dynakube dynatracev1beta2.DynaKube
+	envMap *prioritymap.Map
+	dk     dynakube.DynaKube
 }
 
 func (mod RawImageModifier) Enabled() bool {
@@ -48,7 +48,7 @@ func (mod RawImageModifier) getVolumes() []corev1.Volume {
 			Name: connectioninfo.TenantSecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: mod.dynakube.ActivegateTenantSecret(),
+					SecretName: mod.dk.ActivegateTenantSecret(),
 				},
 			},
 		},
@@ -79,7 +79,7 @@ func (mod RawImageModifier) tenantUUIDEnvVar() corev1.EnvVar {
 		Name: connectioninfo.EnvDtTenant,
 		ValueFrom: &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 			LocalObjectReference: corev1.LocalObjectReference{
-				Name: mod.dynakube.ActiveGateConnectionInfoConfigMapName(),
+				Name: mod.dk.ActiveGateConnectionInfoConfigMapName(),
 			},
 			Key:      connectioninfo.TenantUUIDKey,
 			Optional: address.Of(false),
@@ -91,7 +91,7 @@ func (mod RawImageModifier) communicationEndpointEnvVar() corev1.EnvVar {
 		Name: connectioninfo.EnvDtServer,
 		ValueFrom: &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 			LocalObjectReference: corev1.LocalObjectReference{
-				Name: mod.dynakube.ActiveGateConnectionInfoConfigMapName(),
+				Name: mod.dk.ActiveGateConnectionInfoConfigMapName(),
 			},
 			Key:      connectioninfo.CommunicationEndpointsKey,
 			Optional: address.Of(false),

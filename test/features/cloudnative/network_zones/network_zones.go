@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dynakubev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/rand"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
@@ -65,13 +65,13 @@ func Feature(t *testing.T) features.Feature {
 		tenant.WaitForNetworkZone(secretConfig, networkZone, tenant.FallbackNone))
 
 	// intentionally no ActiveGate, to block OA rollout and codemodules injection
-	options := []dynakube.Option{
-		dynakube.WithApiUrl(secretConfig.ApiUrl),
-		dynakube.WithNetworkZone(networkZone),
-		dynakube.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
+	options := []dynakubeComponents.Option{
+		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
+		dynakubeComponents.WithNetworkZone(networkZone),
+		dynakubeComponents.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
 	}
 
-	testDynakube := *dynakube.New(options...)
+	testDynakube := *dynakubeComponents.New(options...)
 
 	// Register sample app install
 	sampleNamespace := *namespace.New("cloudnative-network-zone")
@@ -82,11 +82,11 @@ func Feature(t *testing.T) features.Feature {
 
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
-	// Register dynakube install, do not wait for OneAgents to start up, because them not to is expected in this scenario
-	dynakube.Create(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	// Register dynakubeComponents install, do not wait for OneAgents to start up, because them not to is expected in this scenario
+	dynakubeComponents.Create(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 	builder.Assess(
-		fmt.Sprintf("'%s' dynakube phase changes to 'Running'", testDynakube.Name),
-		dynakube.WaitForPhase(testDynakube, status.Deploying))
+		fmt.Sprintf("'%s' dynakubeComponents phase changes to 'Running'", testDynakube.Name),
+		dynakubeComponents.WaitForPhase(testDynakube, status.Deploying))
 	builder.Assess("install sample app", sampleApp.Install())
 
 	// Register actual tests
@@ -94,17 +94,17 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("make sure that OneAgent pods do not yet start up", checkOneAgentPodsDoNotStart(testDynakube, timeout))
 
 	// update DynaKube to start AG, which should than enable OA rollout
-	options = append(options, dynakube.WithActiveGate())
-	testDynaKubeWithAG := *dynakube.New(options...)
-	dynakube.Update(builder, helpers.LevelAssess, testDynaKubeWithAG)
-	dynakube.VerifyStartup(builder, helpers.LevelAssess, testDynaKubeWithAG)
+	options = append(options, dynakubeComponents.WithActiveGate())
+	testDynaKubeWithAG := *dynakubeComponents.New(options...)
+	dynakubeComponents.Update(builder, helpers.LevelAssess, testDynaKubeWithAG)
+	dynakubeComponents.VerifyStartup(builder, helpers.LevelAssess, testDynaKubeWithAG)
 
 	builder.Assess("Restart sample app pods", sampleApp.Restart())
 	builder.Assess("check injection annotations on sample app pods", checkInjectionAnnotations(sampleApp, "true", ""))
 
 	// Register sample, DynaKube and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())
-	dynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
+	dynakubeComponents.Delete(builder, helpers.LevelTeardown, testDynakube)
 
 	builder.Teardown(activegate.WaitForStatefulSetPodsDeletion(&testDynakube, "activegate"))
 	builder.Teardown(tenant.WaitForNetworkZoneDeletion(secretConfig, networkZone))
@@ -135,13 +135,13 @@ func checkInjectionAnnotations(sampleApp *sample.App, injected string, reason st
 	}
 }
 
-func checkOneAgentPodsDoNotStart(testDynakube dynakubev1beta2.DynaKube, timeout time.Duration) features.Func {
+func checkOneAgentPodsDoNotStart(dk dynakube.DynaKube, timeout time.Duration) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 		err := wait.For(conditions.New(resources).ResourceMatch(&appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube.OneAgentDaemonsetName(),
-				Namespace: testDynakube.Namespace,
+				Name:      dk.OneAgentDaemonsetName(),
+				Namespace: dk.Namespace,
 			},
 		}, func(object k8s.Object) bool {
 			daemonset, isDaemonset := object.(*appsv1.DaemonSet)

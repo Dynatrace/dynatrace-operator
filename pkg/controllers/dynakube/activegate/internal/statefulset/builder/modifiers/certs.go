@@ -3,7 +3,7 @@ package modifiers
 import (
 	"path/filepath"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
@@ -20,18 +20,18 @@ const (
 	secretsRootDir = "/var/lib/dynatrace/secrets/"
 )
 
-func NewCertificatesModifier(dynakube dynatracev1beta2.DynaKube) CertificatesModifier {
+func NewCertificatesModifier(dk dynakube.DynaKube) CertificatesModifier {
 	return CertificatesModifier{
-		dynakube: dynakube,
+		dk: dk,
 	}
 }
 
 type CertificatesModifier struct {
-	dynakube dynatracev1beta2.DynaKube
+	dk dynakube.DynaKube
 }
 
 func (mod CertificatesModifier) Enabled() bool {
-	return mod.dynakube.HasActiveGateCaCert()
+	return mod.dk.HasActiveGateCaCert()
 }
 
 func (mod CertificatesModifier) Modify(sts *appsv1.StatefulSet) error {
@@ -48,7 +48,7 @@ func (mod CertificatesModifier) getVolumes() []corev1.Volume {
 			Name: jettyCerts,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: mod.dynakube.Spec.ActiveGate.TlsSecretName,
+					SecretName: mod.dk.Spec.ActiveGate.TlsSecretName,
 				},
 			},
 		},

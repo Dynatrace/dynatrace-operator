@@ -1,40 +1,40 @@
 package dynakube
 
 import (
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (controller *Controller) setConditionTokenError(dynakube *dynatracev1beta2.DynaKube, err error) {
+func (controller *Controller) setConditionTokenError(dk *dynakube.DynaKube, err error) {
 	tokenErrorCondition := metav1.Condition{
-		Type:    dynatracev1beta2.TokenConditionType,
+		Type:    dynakube.TokenConditionType,
 		Status:  metav1.ConditionFalse,
-		Reason:  dynatracev1beta2.ReasonTokenError,
+		Reason:  dynakube.ReasonTokenError,
 		Message: err.Error(),
 	}
 
-	controller.setAndLogCondition(dynakube, tokenErrorCondition)
+	controller.setAndLogCondition(dk, tokenErrorCondition)
 }
 
-func (controller *Controller) setConditionTokenReady(dynakube *dynatracev1beta2.DynaKube) {
+func (controller *Controller) setConditionTokenReady(dk *dynakube.DynaKube) {
 	tokenErrorCondition := metav1.Condition{
-		Type:   dynatracev1beta2.TokenConditionType,
+		Type:   dynakube.TokenConditionType,
 		Status: metav1.ConditionTrue,
-		Reason: dynatracev1beta2.ReasonTokenReady,
+		Reason: dynakube.ReasonTokenReady,
 	}
 
-	controller.setAndLogCondition(dynakube, tokenErrorCondition)
+	controller.setAndLogCondition(dk, tokenErrorCondition)
 }
 
 // TODO: Probably should be removed, as most of this is done inside meta.SetStatusCondition (except the logging) the removeDeprecatedConditionTypes already did its job, as it has been in since forever
-func (controller *Controller) setAndLogCondition(dynakube *dynatracev1beta2.DynaKube, newCondition metav1.Condition) {
-	controller.removeDeprecatedConditionTypes(dynakube)
-	statusCondition := meta.FindStatusCondition(dynakube.Status.Conditions, newCondition.Type)
+func (controller *Controller) setAndLogCondition(dk *dynakube.DynaKube, newCondition metav1.Condition) {
+	controller.removeDeprecatedConditionTypes(dk)
+	statusCondition := meta.FindStatusCondition(dk.Status.Conditions, newCondition.Type)
 
-	if newCondition.Reason != dynatracev1beta2.ReasonTokenReady {
+	if newCondition.Reason != dynakube.ReasonTokenReady {
 		log.Info("problem with token detected",
-			"dynakube", dynakube.Name, "namespace", dynakube.Namespace,
+			"dynakube", dk.Name, "namespace", dk.Namespace,
 			"token", newCondition.Type,
 			"message", newCondition.Message)
 	}
@@ -44,7 +44,7 @@ func (controller *Controller) setAndLogCondition(dynakube *dynatracev1beta2.Dyna
 	}
 
 	newCondition.LastTransitionTime = metav1.Now()
-	meta.SetStatusCondition(&dynakube.Status.Conditions, newCondition)
+	meta.SetStatusCondition(&dk.Status.Conditions, newCondition)
 }
 
 func areStatusesEqual(statusCondition *metav1.Condition, newCondition metav1.Condition) bool {
@@ -54,16 +54,16 @@ func areStatusesEqual(statusCondition *metav1.Condition, newCondition metav1.Con
 		statusCondition.Status == newCondition.Status
 }
 
-func (controller *Controller) removeDeprecatedConditionTypes(dynakube *dynatracev1beta2.DynaKube) {
-	if meta.FindStatusCondition(dynakube.Status.Conditions, dynatracev1beta2.PaaSTokenConditionType) != nil {
-		meta.RemoveStatusCondition(&dynakube.Status.Conditions, dynatracev1beta2.PaaSTokenConditionType)
+func (controller *Controller) removeDeprecatedConditionTypes(dk *dynakube.DynaKube) {
+	if meta.FindStatusCondition(dk.Status.Conditions, dynakube.PaaSTokenConditionType) != nil {
+		meta.RemoveStatusCondition(&dk.Status.Conditions, dynakube.PaaSTokenConditionType)
 	}
 
-	if meta.FindStatusCondition(dynakube.Status.Conditions, dynatracev1beta2.APITokenConditionType) != nil {
-		meta.RemoveStatusCondition(&dynakube.Status.Conditions, dynatracev1beta2.APITokenConditionType)
+	if meta.FindStatusCondition(dk.Status.Conditions, dynakube.APITokenConditionType) != nil {
+		meta.RemoveStatusCondition(&dk.Status.Conditions, dynakube.APITokenConditionType)
 	}
 
-	if meta.FindStatusCondition(dynakube.Status.Conditions, dynatracev1beta2.DataIngestTokenConditionType) != nil {
-		meta.RemoveStatusCondition(&dynakube.Status.Conditions, dynatracev1beta2.DataIngestTokenConditionType)
+	if meta.FindStatusCondition(dk.Status.Conditions, dynakube.DataIngestTokenConditionType) != nil {
+		meta.RemoveStatusCondition(&dk.Status.Conditions, dynakube.DataIngestTokenConditionType)
 	}
 }

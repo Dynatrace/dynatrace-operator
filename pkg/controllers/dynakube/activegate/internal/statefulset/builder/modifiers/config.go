@@ -1,7 +1,7 @@
 package modifiers
 
 import (
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
@@ -26,17 +26,17 @@ type initContainerModifier interface {
 	getInitContainers() []corev1.Container
 }
 
-func GenerateAllModifiers(dynakube dynatracev1beta2.DynaKube, capability capability.Capability, agBaseContainerEnvMap *prioritymap.Map) []builder.Modifier {
+func GenerateAllModifiers(dk dynakube.DynaKube, capability capability.Capability, agBaseContainerEnvMap *prioritymap.Map) []builder.Modifier {
 	return []builder.Modifier{
-		NewAuthTokenModifier(dynakube),
-		NewSSLVolumeModifier(dynakube),
-		NewCertificatesModifier(dynakube),
-		NewTrustedCAsVolumeModifier(dynakube),
-		NewCustomPropertiesModifier(dynakube, capability),
-		NewProxyModifier(dynakube),
-		NewRawImageModifier(dynakube, agBaseContainerEnvMap),
-		NewReadOnlyModifier(dynakube),
-		NewServicePortModifier(dynakube, capability, agBaseContainerEnvMap),
-		NewKubernetesMonitoringModifier(dynakube, capability),
+		NewAuthTokenModifier(dk),
+		NewSSLVolumeModifier(dk),
+		NewCertificatesModifier(dk),
+		NewTrustedCAsVolumeModifier(dk),
+		NewCustomPropertiesModifier(dk, capability),
+		NewProxyModifier(dk),
+		NewRawImageModifier(dk, agBaseContainerEnvMap),
+		NewReadOnlyModifier(dk),
+		NewServicePortModifier(dk, capability, agBaseContainerEnvMap),
+		NewKubernetesMonitoringModifier(dk, capability),
 	}
 }

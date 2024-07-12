@@ -7,7 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook"
 	"github.com/stretchr/testify/assert"
@@ -135,9 +135,9 @@ func TestHandlePodMutation(t *testing.T) {
 	t.Run("should call both mutators, initContainer and annotation added, no error", func(t *testing.T) {
 		mutator1 := createSimplePodMutatorMock(t)
 		mutator2 := createSimplePodMutatorMock(t)
-		dynakube := getTestDynakube()
+		dk := getTestDynakube()
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{mutator1, mutator2}, nil)
-		mutationRequest := createTestMutationRequest(dynakube)
+		mutationRequest := createTestMutationRequest(dk)
 
 		err := podWebhook.handlePodMutation(context.Background(), mutationRequest)
 		require.NoError(t, err)
@@ -169,9 +169,9 @@ func TestHandlePodMutation(t *testing.T) {
 	t.Run("should call 1 webhook, 1 error, no initContainer and annotation", func(t *testing.T) {
 		sadMutator := createFailPodMutatorMock(t)
 		happyMutator := createSimplePodMutatorMock(t)
-		dynakube := getTestDynakube()
+		dk := getTestDynakube()
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{sadMutator, happyMutator}, nil)
-		mutationRequest := createTestMutationRequest(dynakube)
+		mutationRequest := createTestMutationRequest(dk)
 
 		err := podWebhook.handlePodMutation(context.Background(), mutationRequest)
 		require.Error(t, err)
@@ -189,9 +189,9 @@ func TestHandlePodReinvocation(t *testing.T) {
 	t.Run("should call both mutators, updated == true", func(t *testing.T) {
 		mutator1 := createAlreadyInjectedPodMutatorMock(t)
 		mutator2 := createAlreadyInjectedPodMutatorMock(t)
-		dynakube := getTestDynakube()
+		dk := getTestDynakube()
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{mutator1, mutator2}, nil)
-		mutationRequest := createTestMutationRequest(dynakube)
+		mutationRequest := createTestMutationRequest(dk)
 
 		updated := podWebhook.handlePodReinvocation(context.Background(), mutationRequest)
 		require.True(t, updated)
@@ -203,9 +203,9 @@ func TestHandlePodReinvocation(t *testing.T) {
 	t.Run("should call both webhook, only 1 update, updated == true", func(t *testing.T) {
 		failingMutator := createFailPodMutatorMock(t)
 		workingMutator := createAlreadyInjectedPodMutatorMock(t)
-		dynakube := getTestDynakube()
+		dk := getTestDynakube()
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{failingMutator, workingMutator}, nil)
-		mutationRequest := createTestMutationRequest(dynakube)
+		mutationRequest := createTestMutationRequest(dk)
 
 		updated := podWebhook.handlePodReinvocation(context.Background(), mutationRequest)
 		require.True(t, updated)
@@ -216,9 +216,9 @@ func TestHandlePodReinvocation(t *testing.T) {
 	})
 	t.Run("should call webhook, no update", func(t *testing.T) {
 		failingMutator := createFailPodMutatorMock(t)
-		dynakube := getTestDynakube()
+		dk := getTestDynakube()
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{failingMutator}, nil)
-		mutationRequest := createTestMutationRequest(dynakube)
+		mutationRequest := createTestMutationRequest(dk)
 
 		updated := podWebhook.handlePodReinvocation(context.Background(), mutationRequest)
 		require.False(t, updated)
@@ -303,30 +303,30 @@ func createFailPodMutatorMock(t *testing.T) *webhookmock.PodMutator {
 	return mutator
 }
 
-func getTestDynakube() *dynatracev1beta2.DynaKube {
-	return &dynatracev1beta2.DynaKube{
+func getTestDynakube() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
 		ObjectMeta: getTestDynakubeMeta(),
-		Spec: dynatracev1beta2.DynaKubeSpec{
+		Spec: dynakube.DynaKubeSpec{
 			OneAgent: getCloudNativeSpec(&testResourceRequirements),
 		},
 	}
 }
 
-func getTestDynakubeNoInitLimits() *dynatracev1beta2.DynaKube {
-	return &dynatracev1beta2.DynaKube{
+func getTestDynakubeNoInitLimits() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
 		ObjectMeta: getTestDynakubeMeta(),
-		Spec: dynatracev1beta2.DynaKubeSpec{
+		Spec: dynakube.DynaKubeSpec{
 			OneAgent: getCloudNativeSpec(nil),
 		},
 	}
 }
 
-func getTestDynakubeDefaultAppMon() *dynatracev1beta2.DynaKube {
-	return &dynatracev1beta2.DynaKube{
+func getTestDynakubeDefaultAppMon() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
 		ObjectMeta: getTestDynakubeMeta(),
-		Spec: dynatracev1beta2.DynaKubeSpec{
-			OneAgent: dynatracev1beta2.OneAgentSpec{
-				ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{},
+		Spec: dynakube.DynaKubeSpec{
+			OneAgent: dynakube.OneAgentSpec{
+				ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{},
 			},
 		},
 	}
@@ -339,10 +339,10 @@ func getTestDynakubeMeta() metav1.ObjectMeta {
 	}
 }
 
-func getCloudNativeSpec(initResources *corev1.ResourceRequirements) dynatracev1beta2.OneAgentSpec {
-	return dynatracev1beta2.OneAgentSpec{
-		CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{
-			AppInjectionSpec: dynatracev1beta2.AppInjectionSpec{
+func getCloudNativeSpec(initResources *corev1.ResourceRequirements) dynakube.OneAgentSpec {
+	return dynakube.OneAgentSpec{
+		CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
+			AppInjectionSpec: dynakube.AppInjectionSpec{
 				InitResources: initResources,
 			},
 		},

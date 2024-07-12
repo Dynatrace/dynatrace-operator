@@ -1,7 +1,7 @@
 package daemonset
 
 import (
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
 	hostvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes/host"
@@ -10,27 +10,27 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func prepareVolumeMounts(instance *dynatracev1beta2.DynaKube) []corev1.VolumeMount {
+func prepareVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	var volumeMounts []corev1.VolumeMount
 
 	volumeMounts = append(volumeMounts, getOneAgentSecretVolumeMount())
 
-	if instance != nil && instance.NeedsReadOnlyOneAgents() {
+	if dk != nil && dk.NeedsReadOnlyOneAgents() {
 		volumeMounts = append(volumeMounts, getReadOnlyRootMount())
 		volumeMounts = append(volumeMounts, getCSIStorageMount())
 	} else {
 		volumeMounts = append(volumeMounts, getRootMount())
 	}
 
-	if instance != nil && instance.Spec.TrustedCAs != "" {
+	if dk != nil && dk.Spec.TrustedCAs != "" {
 		volumeMounts = append(volumeMounts, getClusterCaCertVolumeMount())
 	}
 
-	if instance != nil && instance.HasActiveGateCaCert() {
+	if dk != nil && dk.HasActiveGateCaCert() {
 		volumeMounts = append(volumeMounts, getActiveGateCaCertVolumeMount())
 	}
 
-	if instance != nil && instance.NeedsOneAgentProxy() {
+	if dk != nil && dk.NeedsOneAgentProxy() {
 		volumeMounts = append(volumeMounts, getHttpProxyMount())
 	}
 
@@ -85,41 +85,41 @@ func getHttpProxyMount() corev1.VolumeMount {
 	return proxy.BuildVolumeMount()
 }
 
-func prepareVolumes(instance *dynatracev1beta2.DynaKube) []corev1.Volume {
+func prepareVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 	volumes := []corev1.Volume{getRootVolume()}
 
-	if instance == nil {
+	if dk == nil {
 		return volumes
 	}
 
-	volumes = append(volumes, getOneAgentSecretVolume(instance))
+	volumes = append(volumes, getOneAgentSecretVolume(dk))
 
-	if instance.NeedsReadOnlyOneAgents() {
-		volumes = append(volumes, getCSIStorageVolume(instance))
+	if dk.NeedsReadOnlyOneAgents() {
+		volumes = append(volumes, getCSIStorageVolume(dk))
 	}
 
-	if instance.Spec.TrustedCAs != "" {
-		volumes = append(volumes, getCertificateVolume(instance))
+	if dk.Spec.TrustedCAs != "" {
+		volumes = append(volumes, getCertificateVolume(dk))
 	}
 
-	if instance.HasActiveGateCaCert() {
-		volumes = append(volumes, getActiveGateCaCertVolume(instance))
+	if dk.HasActiveGateCaCert() {
+		volumes = append(volumes, getActiveGateCaCertVolume(dk))
 	}
 
-	if instance.NeedsOneAgentProxy() {
-		volumes = append(volumes, buildHttpProxyVolume(instance))
+	if dk.NeedsOneAgentProxy() {
+		volumes = append(volumes, buildHttpProxyVolume(dk))
 	}
 
 	return volumes
 }
 
-func getCertificateVolume(instance *dynatracev1beta2.DynaKube) corev1.Volume {
+func getCertificateVolume(dk *dynakube.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name: clusterCaCertVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: instance.Spec.TrustedCAs,
+					Name: dk.Spec.TrustedCAs,
 				},
 				Items: []corev1.KeyToPath{
 					{
@@ -132,7 +132,7 @@ func getCertificateVolume(instance *dynatracev1beta2.DynaKube) corev1.Volume {
 	}
 }
 
-func getCSIStorageVolume(instance *dynatracev1beta2.DynaKube) corev1.Volume {
+func getCSIStorageVolume(dk *dynakube.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name: csiStorageVolumeName,
 		VolumeSource: corev1.VolumeSource{
@@ -140,19 +140,19 @@ func getCSIStorageVolume(instance *dynatracev1beta2.DynaKube) corev1.Volume {
 				Driver: dtcsi.DriverName,
 				VolumeAttributes: map[string]string{
 					csivolumes.CSIVolumeAttributeModeField:     hostvolumes.Mode,
-					csivolumes.CSIVolumeAttributeDynakubeField: instance.Name,
+					csivolumes.CSIVolumeAttributeDynakubeField: dk.Name,
 				},
 			},
 		},
 	}
 }
 
-func getActiveGateCaCertVolume(instance *dynatracev1beta2.DynaKube) corev1.Volume {
+func getActiveGateCaCertVolume(dk *dynakube.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name: activeGateCaCertVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: instance.Spec.ActiveGate.TlsSecretName,
+				SecretName: dk.Spec.ActiveGate.TlsSecretName,
 				Items: []corev1.KeyToPath{
 					{
 						Key:  "server.crt",
@@ -164,23 +164,23 @@ func getActiveGateCaCertVolume(instance *dynatracev1beta2.DynaKube) corev1.Volum
 	}
 }
 
-func buildHttpProxyVolume(instance *dynatracev1beta2.DynaKube) corev1.Volume {
+func buildHttpProxyVolume(dk *dynakube.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name: proxy.SecretVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: proxy.BuildSecretName(instance.Name),
+				SecretName: proxy.BuildSecretName(dk.Name),
 			},
 		},
 	}
 }
 
-func getOneAgentSecretVolume(instance *dynatracev1beta2.DynaKube) corev1.Volume {
+func getOneAgentSecretVolume(dk *dynakube.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name: connectioninfo.TenantSecretVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: instance.OneagentTenantSecret(),
+				SecretName: dk.OneagentTenantSecret(),
 			},
 		},
 	}

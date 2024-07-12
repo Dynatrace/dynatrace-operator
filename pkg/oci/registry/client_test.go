@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,24 +16,24 @@ func TestProxy(t *testing.T) {
 	proxyRawURL := "proxy.url"
 
 	t.Run("set NO_PROXY", func(t *testing.T) {
-		instance := &dynatracev1beta2.DynaKube{
+		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "Dynakube",
 				Namespace: "dynatrace",
 				Annotations: map[string]string{
-					dynatracev1beta2.AnnotationFeatureNoProxy: "working.url,url.working",
+					dynakube.AnnotationFeatureNoProxy: "working.url,url.working",
 				},
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
-				Proxy:  &dynatracev1beta2.DynaKubeProxy{Value: proxyRawURL},
+			Spec: dynakube.DynaKubeSpec{
+				Proxy:  &dynakube.DynaKubeProxy{Value: proxyRawURL},
 				APIURL: "https://testApiUrl.dev.dynatracelabs.com/api",
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
+				OneAgent: dynakube.OneAgentSpec{
+					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 				},
 			},
 		}
 		transport := http.DefaultTransport.(*http.Transport).Clone()
-		transport, err := PrepareTransportForDynaKube(context.TODO(), nil, transport, instance)
+		transport, err := PrepareTransportForDynaKube(context.TODO(), nil, transport, dk)
 
 		require.NoError(t, err)
 
@@ -49,30 +49,30 @@ func TestProxy(t *testing.T) {
 }
 
 func TestSkipCertCheck(t *testing.T) {
-	instance := &dynatracev1beta2.DynaKube{
+	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "Dynakube",
 			Namespace: "dynatrace",
 		},
-		Spec: dynatracev1beta2.DynaKubeSpec{
+		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://testApiUrl.dev.dynatracelabs.com/api",
-			OneAgent: dynatracev1beta2.OneAgentSpec{
-				CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
+			OneAgent: dynakube.OneAgentSpec{
+				CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 			},
 		},
 	}
 
 	t.Run("has skipCertCheck enabled", func(t *testing.T) {
-		instance.Spec.SkipCertCheck = true
+		dk.Spec.SkipCertCheck = true
 		transport := http.DefaultTransport.(*http.Transport).Clone()
-		transport, err := PrepareTransportForDynaKube(context.TODO(), nil, transport, instance)
+		transport, err := PrepareTransportForDynaKube(context.TODO(), nil, transport, dk)
 		require.NoError(t, err)
 		assert.True(t, transport.TLSClientConfig.InsecureSkipVerify)
 	})
 	t.Run("has skipCertCheck disabled", func(t *testing.T) {
-		instance.Spec.SkipCertCheck = false
+		dk.Spec.SkipCertCheck = false
 		transport := http.DefaultTransport.(*http.Transport).Clone()
-		transport, err := PrepareTransportForDynaKube(context.TODO(), nil, transport, instance)
+		transport, err := PrepareTransportForDynaKube(context.TODO(), nil, transport, dk)
 		require.NoError(t, err)
 		assert.False(t, transport.TLSClientConfig.InsecureSkipVerify)
 	})

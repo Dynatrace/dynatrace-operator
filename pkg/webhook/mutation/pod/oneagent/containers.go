@@ -89,27 +89,27 @@ func (mut *Mutator) addOneAgentToContainer(request *dtwebhook.ReinvocationReques
 
 	installPath := maputils.GetField(request.Pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
 
-	dynakube := request.DynaKube
+	dk := request.DynaKube
 
 	addOneAgentVolumeMounts(container, installPath)
-	addDeploymentMetadataEnv(container, dynakube, mut.clusterID)
+	addDeploymentMetadataEnv(container, dk, mut.clusterID)
 	addPreloadEnv(container, installPath)
 
-	addCertVolumeMounts(container, dynakube)
+	addCertVolumeMounts(container, dk)
 
-	if dynakube.FeatureAgentInitialConnectRetry() > 0 {
+	if dk.FeatureAgentInitialConnectRetry() > 0 {
 		addCurlOptionsVolumeMount(container)
 	}
 
-	if dynakube.Spec.NetworkZone != "" {
-		addNetworkZoneEnv(container, dynakube.Spec.NetworkZone)
+	if dk.Spec.NetworkZone != "" {
+		addNetworkZoneEnv(container, dk.Spec.NetworkZone)
 	}
 
-	if dynakube.FeatureLabelVersionDetection() {
+	if dk.FeatureLabelVersionDetection() {
 		addVersionDetectionEnvs(container, newVersionLabelMapping(request.Namespace))
 	}
 
-	if dynakube.FeatureReadOnlyCsiVolume() {
+	if dk.FeatureReadOnlyCsiVolume() {
 		addVolumeMountsForReadOnlyCSI(container)
 	}
 }

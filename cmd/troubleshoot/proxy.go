@@ -3,13 +3,13 @@ package troubleshoot
 import (
 	"context"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"golang.org/x/net/http/httpproxy"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func checkProxySettings(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, dynakube *dynatracev1beta2.DynaKube) error {
+func checkProxySettings(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, dk *dynakube.DynaKube) error {
 	log := baseLog.WithName("proxy")
 
 	var proxyURL string
@@ -17,7 +17,7 @@ func checkProxySettings(ctx context.Context, baseLog logd.Logger, apiReader clie
 	logNewCheckf(log, "Analyzing proxy settings ...")
 
 	proxySettingsAvailable := false
-	if dynakube.HasProxy() {
+	if dk.HasProxy() {
 		proxySettingsAvailable = true
 
 		logInfof(log, "Reminder: Proxy settings in the Dynakube do not apply to pulling of pod images. Please set your proxy on accordingly on node level.")
@@ -25,7 +25,7 @@ func checkProxySettings(ctx context.Context, baseLog logd.Logger, apiReader clie
 
 		var err error
 
-		proxyURL, err = getProxyURL(ctx, apiReader, dynakube)
+		proxyURL, err = getProxyURL(ctx, apiReader, dk)
 		if err != nil {
 			logErrorf(log, "Unexpected error when reading proxy settings from Dynakube: %v", err)
 
@@ -84,10 +84,10 @@ func getEnvProxySettings() *httpproxy.Config {
 	return nil
 }
 
-func getProxyURL(ctx context.Context, apiReader client.Reader, dynakube *dynatracev1beta2.DynaKube) (string, error) {
-	if !dynakube.HasProxy() {
+func getProxyURL(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube) (string, error) {
+	if !dk.HasProxy() {
 		return "", nil
 	}
 
-	return dynakube.Proxy(ctx, apiReader)
+	return dk.Proxy(ctx, apiReader)
 }

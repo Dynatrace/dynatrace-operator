@@ -53,9 +53,9 @@ func TestDefaultActiveGateImage(t *testing.T) {
 	t.Run(`ActiveGateImage truncates build date`, func(t *testing.T) {
 		version := "1.239.14.20220325-164521"
 		expectedImage := "test-endpoint/linux/activegate:1.239.14-raw"
-		dynakube := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
+		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
 
-		assert.Equal(t, expectedImage, dynakube.DefaultActiveGateImage(version))
+		assert.Equal(t, expectedImage, dk.DefaultActiveGateImage(version))
 	})
 }
 
@@ -125,9 +125,9 @@ func TestDefaultOneAgentImage(t *testing.T) {
 	t.Run(`OneAgentImage with custom version truncates build date`, func(t *testing.T) {
 		version := "1.239.14.20220325-164521"
 		expectedImage := "test-endpoint/linux/oneagent:1.239.14-raw"
-		dynakube := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
+		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
 
-		assert.Equal(t, expectedImage, dynakube.DefaultOneAgentImage(version))
+		assert.Equal(t, expectedImage, dk.DefaultOneAgentImage(version))
 	})
 }
 
@@ -145,12 +145,12 @@ func TestCustomOneAgentImage(t *testing.T) {
 }
 
 func TestOneAgentDaemonsetName(t *testing.T) {
-	instance := &DynaKube{
+	dk := &DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testName,
 		},
 	}
-	assert.Equal(t, "test-name-oneagent", instance.OneAgentDaemonsetName())
+	assert.Equal(t, "test-name-oneagent", dk.OneAgentDaemonsetName())
 }
 
 func TestTokens(t *testing.T) {
@@ -310,12 +310,12 @@ func TestGetRawImageTag(t *testing.T) {
 
 func TestIsOneAgentPrivileged(t *testing.T) {
 	t.Run("is false by default", func(t *testing.T) {
-		dynakube := DynaKube{}
+		dk := DynaKube{}
 
-		assert.False(t, dynakube.FeatureOneAgentPrivileged())
+		assert.False(t, dk.FeatureOneAgentPrivileged())
 	})
 	t.Run("is true when annotation is set to true", func(t *testing.T) {
-		dynakube := DynaKube{
+		dk := DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
 					AnnotationFeatureRunOneAgentContainerPrivileged: "true",
@@ -323,10 +323,10 @@ func TestIsOneAgentPrivileged(t *testing.T) {
 			},
 		}
 
-		assert.True(t, dynakube.FeatureOneAgentPrivileged())
+		assert.True(t, dk.FeatureOneAgentPrivileged())
 	})
 	t.Run("is false when annotation is set to false", func(t *testing.T) {
-		dynakube := DynaKube{
+		dk := DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
 					AnnotationFeatureRunOneAgentContainerPrivileged: "false",
@@ -334,7 +334,7 @@ func TestIsOneAgentPrivileged(t *testing.T) {
 			},
 		}
 
-		assert.False(t, dynakube.FeatureOneAgentPrivileged())
+		assert.False(t, dk.FeatureOneAgentPrivileged())
 	})
 }
 

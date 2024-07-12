@@ -5,7 +5,7 @@ package cloudnative
 import (
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
@@ -75,16 +75,16 @@ func checkOneAgentContainer(agCrt []byte, trustedCAs []byte) features.Func {
 	}
 }
 
-func AssessActiveGateContainer(builder *features.FeatureBuilder, dynakube *dynatracev1beta2.DynaKube, trustedCAs []byte) {
-	builder.Assess("certificates are propagated to ActiveGate container", checkActiveGateContainer(dynakube, trustedCAs))
+func AssessActiveGateContainer(builder *features.FeatureBuilder, dk *dynakube.DynaKube, trustedCAs []byte) {
+	builder.Assess("certificates are propagated to ActiveGate container", checkActiveGateContainer(dk, trustedCAs))
 }
 
-func checkActiveGateContainer(dynakube *dynatracev1beta2.DynaKube, trustedCAs []byte) features.Func {
+func checkActiveGateContainer(dk *dynakube.DynaKube, trustedCAs []byte) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
 		var activeGatePod corev1.Pod
-		require.NoError(t, resources.WithNamespace(dynakube.Namespace).Get(ctx, activegate.GetActiveGatePodName(dynakube, "activegate"), dynakube.Namespace, &activeGatePod))
+		require.NoError(t, resources.WithNamespace(dk.Namespace).Get(ctx, activegate.GetActiveGatePodName(dk, "activegate"), dk.Namespace, &activeGatePod))
 
 		require.NotNil(t, activeGatePod.Spec)
 		require.NotEmpty(t, activeGatePod.Spec.Containers)

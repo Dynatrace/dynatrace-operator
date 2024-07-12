@@ -9,30 +9,30 @@ import (
 
 func TestSSLVolumeEnabled(t *testing.T) {
 	t.Run("true - TlsSecretName", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		dynakube.Spec.ActiveGate.TlsSecretName = testTlsSecretName
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		dk.Spec.ActiveGate.TlsSecretName = testTlsSecretName
 
-		mod := NewSSLVolumeModifier(dynakube)
+		mod := NewSSLVolumeModifier(dk)
 
 		assert.True(t, mod.Enabled())
 	})
 
 	t.Run("true - TrustedCAs", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		dynakube.Spec.TrustedCAs = testTlsSecretName
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		dk.Spec.TrustedCAs = testTlsSecretName
 
-		mod := NewSSLVolumeModifier(dynakube)
+		mod := NewSSLVolumeModifier(dk)
 
 		assert.True(t, mod.Enabled())
 	})
 
 	t.Run("false", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
 
-		mod := NewSSLVolumeModifier(dynakube)
+		mod := NewSSLVolumeModifier(dk)
 
 		assert.False(t, mod.Enabled())
 	})
@@ -40,11 +40,11 @@ func TestSSLVolumeEnabled(t *testing.T) {
 
 func TestSSLVolumeModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		dynakube.Spec.ActiveGate.TlsSecretName = testTlsSecretName
+		dl := getBaseDynakube()
+		enableKubeMonCapability(&dl)
+		dl.Spec.ActiveGate.TlsSecretName = testTlsSecretName
 
-		mod := NewSSLVolumeModifier(dynakube)
+		mod := NewSSLVolumeModifier(dl)
 		builder := createBuilderForTesting()
 
 		sts, _ := builder.AddModifier(mod).Build()

@@ -10,12 +10,12 @@ import (
 
 func TestServiceAccountName(t *testing.T) {
 	t.Run("empty name", func(t *testing.T) {
-		edgeConnect := &edgeconnect.EdgeConnect{
+		ec := &edgeconnect.EdgeConnect{
 			Spec: edgeconnect.EdgeConnectSpec{
 				ServiceAccountName: "",
 			},
 		}
-		assertDeniedResponse(t, []string{errorInvalidServiceName}, edgeConnect)
+		assertDeniedResponse(t, []string{errorInvalidServiceName}, ec)
 	})
 }
 

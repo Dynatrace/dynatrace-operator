@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/stretchr/testify/assert"
@@ -34,8 +34,8 @@ func TestReader(t *testing.T) {
 func testReadTokens(t *testing.T) {
 	t.Run("error when tokens are not found", func(t *testing.T) {
 		clt := fake.NewClient()
-		dynakube := dynatracev1beta2.DynaKube{}
-		reader := NewReader(clt, &dynakube)
+		dk := dynakube.DynaKube{}
+		reader := NewReader(clt, &dk)
 
 		_, err := reader.readTokens(context.Background())
 
@@ -43,13 +43,13 @@ func testReadTokens(t *testing.T) {
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("tokens are found if secret exists", func(t *testing.T) {
-		dynakube := dynatracev1beta2.DynaKube{
+		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "dynakube",
 				Namespace: "dynatrace",
 			},
 		}
-		testSecret, err := secret.Create(&dynakube, secret.NewNameModifier("dynakube"), secret.NewNamespaceModifier("dynatrace"), secret.NewDataModifier(map[string][]byte{
+		testSecret, err := secret.Create(&dk, secret.NewNameModifier("dynakube"), secret.NewNamespaceModifier("dynatrace"), secret.NewDataModifier(map[string][]byte{
 			dtclient.ApiToken:        []byte(testApiToken),
 			dtclient.PaasToken:       []byte(testPaasToken),
 			dtclient.DataIngestToken: []byte(testDataIngestToken),
@@ -57,9 +57,9 @@ func testReadTokens(t *testing.T) {
 		}))
 		require.NoError(t, err)
 
-		clt := fake.NewClient(testSecret, &dynakube)
+		clt := fake.NewClient(testSecret, &dk)
 
-		reader := NewReader(clt, &dynakube)
+		reader := NewReader(clt, &dk)
 
 		tokens, err := reader.readTokens(context.Background())
 
@@ -78,7 +78,7 @@ func testReadTokens(t *testing.T) {
 
 func testVerifyTokens(t *testing.T) {
 	t.Run("error if api token is missing", func(t *testing.T) {
-		reader := NewReader(nil, &dynatracev1beta2.DynaKube{ObjectMeta: metav1.ObjectMeta{
+		reader := NewReader(nil, &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{
 			Name:      dynakubeName,
 			Namespace: dynatraceNamespace,
 		}})

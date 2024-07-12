@@ -1,7 +1,7 @@
 package modifiers
 
 import (
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
@@ -14,18 +14,18 @@ var _ volumeModifier = ProxyModifier{}
 var _ volumeMountModifier = ProxyModifier{}
 var _ builder.Modifier = ProxyModifier{}
 
-func NewProxyModifier(dynakube dynatracev1beta2.DynaKube) ProxyModifier {
+func NewProxyModifier(dk dynakube.DynaKube) ProxyModifier {
 	return ProxyModifier{
-		dynakube: dynakube,
+		dk: dk,
 	}
 }
 
 type ProxyModifier struct {
-	dynakube dynatracev1beta2.DynaKube
+	dk dynakube.DynaKube
 }
 
 func (mod ProxyModifier) Enabled() bool {
-	return mod.dynakube.NeedsActiveGateProxy()
+	return mod.dk.NeedsActiveGateProxy()
 }
 
 func (mod ProxyModifier) Modify(sts *appsv1.StatefulSet) error {
@@ -42,7 +42,7 @@ func (mod ProxyModifier) getVolumes() []corev1.Volume {
 			Name: proxy.SecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: proxy.BuildSecretName(mod.dynakube.Name),
+					SecretName: proxy.BuildSecretName(mod.dk.Name),
 				},
 			},
 		},

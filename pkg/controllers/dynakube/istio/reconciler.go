@@ -6,7 +6,7 @@ import (
 	"net"
 	"strings"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/activegate"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
@@ -19,9 +19,9 @@ import (
 )
 
 type Reconciler interface {
-	ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
-	ReconcileCodeModuleCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
-	ReconcileActiveGateCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error
+	ReconcileAPIUrl(ctx context.Context, dk *dynakube.DynaKube) error
+	ReconcileCodeModuleCommunicationHosts(ctx context.Context, dk *dynakube.DynaKube) error
+	ReconcileActiveGateCommunicationHosts(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
 type reconciler struct {
@@ -38,14 +38,14 @@ func NewReconciler(istio *Client) Reconciler {
 	}
 }
 
-func (r *reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
+func (r *reconciler) ReconcileAPIUrl(ctx context.Context, dk *dynakube.DynaKube) error {
 	log.Info("reconciling istio components for the Dynatrace API url")
 
-	if dynakube == nil {
+	if dk == nil {
 		return errors.New("can't reconcile api url of nil dynakube")
 	}
 
-	apiHost, err := dtclient.ParseEndpoint(dynakube.Spec.APIURL)
+	apiHost, err := dtclient.ParseEndpoint(dk.Spec.APIURL)
 	if err != nil {
 		return err
 	}
@@ -60,88 +60,88 @@ func (r *reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1b
 	return nil
 }
 
-func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
+func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, dk *dynakube.DynaKube) error {
 	log.Info("reconciling istio components for oneagent-code-modules communication hosts")
 
-	if dynakube == nil {
+	if dk == nil {
 		return errors.New("can't reconcile oneagent communication hosts of nil dynakube")
 	}
 
-	if !dynakube.NeedAppInjection() {
-		if isIstioConfigured(dynakube, CodeModuleComponent) {
+	if !dk.NeedAppInjection() {
+		if isIstioConfigured(dk, CodeModuleComponent) {
 			log.Info("appinjection disabled, cleaning up")
 
-			return r.CleanupIstio(ctx, dynakube, CodeModuleComponent, OneAgentComponent)
+			return r.CleanupIstio(ctx, dk, CodeModuleComponent, OneAgentComponent)
 		}
 
 		return nil
 	}
 
-	oneAgentCommunicationHosts := oaconnectioninfo.GetCommunicationHosts(dynakube)
+	oneAgentCommunicationHosts := oaconnectioninfo.GetCommunicationHosts(dk)
 
 	err := r.reconcileCommunicationHostsForComponent(ctx, oneAgentCommunicationHosts, OneAgentComponent)
 	if err != nil {
-		setServiceEntryFailedConditionForComponent(dynakube.Conditions(), CodeModuleComponent, err)
+		setServiceEntryFailedConditionForComponent(dk.Conditions(), CodeModuleComponent, err)
 
 		return err
 	}
 
 	if len(oneAgentCommunicationHosts) == 0 {
-		meta.RemoveStatusCondition(dynakube.Conditions(), getConditionTypeName(CodeModuleComponent))
+		meta.RemoveStatusCondition(dk.Conditions(), getConditionTypeName(CodeModuleComponent))
 
 		return nil
 	}
 
-	setServiceEntryUpdatedConditionForComponent(dynakube.Conditions(), CodeModuleComponent)
+	setServiceEntryUpdatedConditionForComponent(dk.Conditions(), CodeModuleComponent)
 
 	return nil
 }
 
-func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
+func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, dk *dynakube.DynaKube) error {
 	log.Info("reconciling istio components for activegate communication hosts")
 
-	if dynakube == nil {
+	if dk == nil {
 		return errors.New("can't reconcile activegate communication hosts of nil dynakube")
 	}
 
-	if !dynakube.NeedsActiveGate() {
-		if isIstioConfigured(dynakube, ActiveGateComponent) {
+	if !dk.NeedsActiveGate() {
+		if isIstioConfigured(dk, ActiveGateComponent) {
 			log.Info("activegate disabled, cleaning up")
 
-			return r.CleanupIstio(ctx, dynakube, ActiveGateComponent, strings.ToLower(ActiveGateComponent))
+			return r.CleanupIstio(ctx, dk, ActiveGateComponent, strings.ToLower(ActiveGateComponent))
 		}
 
 		return nil
 	}
 
-	if !conditions.IsOutdated(r.timeProvider, dynakube, getConditionTypeName(ActiveGateComponent)) {
+	if !conditions.IsOutdated(r.timeProvider, dk, getConditionTypeName(ActiveGateComponent)) {
 		log.Info("condition still within time threshold...skipping further reconciliation")
 
 		return nil
 	}
 
-	activeGateEndpoints := activegate.GetEndpointsAsCommunicationHosts(dynakube)
+	activeGateEndpoints := activegate.GetEndpointsAsCommunicationHosts(dk)
 
 	err := r.reconcileCommunicationHostsForComponent(ctx, activeGateEndpoints, strings.ToLower(ActiveGateComponent))
 	if err != nil {
-		setServiceEntryFailedConditionForComponent(dynakube.Conditions(), ActiveGateComponent, err)
+		setServiceEntryFailedConditionForComponent(dk.Conditions(), ActiveGateComponent, err)
 
 		return err
 	}
 
 	if len(activeGateEndpoints) == 0 {
-		meta.RemoveStatusCondition(dynakube.Conditions(), getConditionTypeName(ActiveGateComponent))
+		meta.RemoveStatusCondition(dk.Conditions(), getConditionTypeName(ActiveGateComponent))
 
 		return nil
 	}
 
-	setServiceEntryUpdatedConditionForComponent(dynakube.Conditions(), ActiveGateComponent)
+	setServiceEntryUpdatedConditionForComponent(dk.Conditions(), ActiveGateComponent)
 
 	return nil
 }
 
-func (r *reconciler) CleanupIstio(ctx context.Context, dynakube *dynatracev1beta2.DynaKube, conditionComponent string, component string) error {
-	meta.RemoveStatusCondition(dynakube.Conditions(), getConditionTypeName(conditionComponent))
+func (r *reconciler) CleanupIstio(ctx context.Context, dk *dynakube.DynaKube, conditionComponent string, component string) error {
+	meta.RemoveStatusCondition(dk.Conditions(), getConditionTypeName(conditionComponent))
 
 	err1 := r.cleanupIPServiceEntry(ctx, component)
 	err2 := r.cleanupFQDNServiceEntry(ctx, component)
@@ -150,8 +150,8 @@ func (r *reconciler) CleanupIstio(ctx context.Context, dynakube *dynatracev1beta
 	return goerrors.Join(err1, err2)
 }
 
-func isIstioConfigured(dynakube *dynatracev1beta2.DynaKube, conditionComponent string) bool {
-	istioCondition := meta.FindStatusCondition(*dynakube.Conditions(), getConditionTypeName(conditionComponent))
+func isIstioConfigured(dk *dynakube.DynaKube, conditionComponent string) bool {
+	istioCondition := meta.FindStatusCondition(*dk.Conditions(), getConditionTypeName(conditionComponent))
 
 	return istioCondition != nil
 }

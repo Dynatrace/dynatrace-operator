@@ -46,7 +46,7 @@ var (
 	}
 )
 
-type validatorFunc func(ctx context.Context, dv *Validator, dynakube *dynakube.DynaKube) string
+type validatorFunc func(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string
 
 func New(apiReader client.Reader, cfg *rest.Config) admission.CustomValidator {
 	return &Validator{

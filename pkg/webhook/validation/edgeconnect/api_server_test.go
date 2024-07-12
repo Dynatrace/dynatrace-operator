@@ -25,7 +25,7 @@ const (
 func TestApiServer(t *testing.T) {
 	t.Run(`happy apiServer`, func(t *testing.T) {
 		for _, suffix := range allowedSuffix {
-			edgeConnect := &edgeconnect.EdgeConnect{
+			ec := &edgeconnect.EdgeConnect{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
 					Namespace: testNamespace,
@@ -40,7 +40,7 @@ func TestApiServer(t *testing.T) {
 					ServiceAccountName: testServiceAccountName,
 				},
 			}
-			assertAllowedResponse(t, edgeConnect, prepareTestServiceAccount(testServiceAccountName, testNamespace))
+			assertAllowedResponse(t, ec, prepareTestServiceAccount(testServiceAccountName, testNamespace))
 		}
 	})
 
@@ -71,14 +71,14 @@ func TestApiServer(t *testing.T) {
 	})
 }
 
-func assertAllowedResponse(t *testing.T, edgeConnect *edgeconnect.EdgeConnect, other ...client.Object) {
-	response := handleRequest(t, edgeConnect, other...)
+func assertAllowedResponse(t *testing.T, ec *edgeconnect.EdgeConnect, other ...client.Object) {
+	response := handleRequest(t, ec, other...)
 	assert.True(t, response.Allowed, response.Result.Message)
 	assert.Empty(t, response.Warnings)
 }
 
-func assertDeniedResponse(t *testing.T, errMessages []string, edgeConnect *edgeconnect.EdgeConnect, other ...client.Object) {
-	response := handleRequest(t, edgeConnect, other...)
+func assertDeniedResponse(t *testing.T, errMessages []string, ec *edgeconnect.EdgeConnect, other ...client.Object) {
+	response := handleRequest(t, ec, other...)
 	assert.False(t, response.Allowed)
 
 	for _, errMsg := range errMessages {
@@ -86,7 +86,7 @@ func assertDeniedResponse(t *testing.T, errMessages []string, edgeConnect *edgec
 	}
 }
 
-func handleRequest(t *testing.T, edgeConnect *edgeconnect.EdgeConnect, other ...client.Object) admission.Response {
+func handleRequest(t *testing.T, ec *edgeconnect.EdgeConnect, other ...client.Object) admission.Response {
 	clt := fake.NewClient()
 	if other != nil {
 		clt = fake.NewClient(other...)
@@ -98,7 +98,7 @@ func handleRequest(t *testing.T, edgeConnect *edgeconnect.EdgeConnect, other ...
 		cfg:       &rest.Config{},
 	}
 
-	data, err := json.Marshal(*edgeConnect)
+	data, err := json.Marshal(*ec)
 	require.NoError(t, err)
 
 	return validator.Handle(context.Background(), admission.Request{

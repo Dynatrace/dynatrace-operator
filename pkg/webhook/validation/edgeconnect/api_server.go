@@ -21,14 +21,14 @@ var (
 	}
 )
 
-func isInvalidApiServer(_ context.Context, _ *edgeconnectValidator, edgeConnect *edgeconnect.EdgeConnect) string {
+func isInvalidApiServer(_ context.Context, _ *edgeconnectValidator, ec *edgeconnect.EdgeConnect) string {
 	for _, suffix := range allowedSuffix {
-		if strings.HasSuffix(edgeConnect.Spec.ApiServer, suffix) {
+		if strings.HasSuffix(ec.Spec.ApiServer, suffix) {
 			hostnameWithDomains := strings.FieldsFunc(suffix,
 				func(r rune) bool { return r == '.' },
 			)
 
-			hostnameWithTenant := strings.FieldsFunc(edgeConnect.Spec.ApiServer,
+			hostnameWithTenant := strings.FieldsFunc(ec.Spec.ApiServer,
 				func(r rune) bool { return r == '.' },
 			)
 
@@ -36,7 +36,7 @@ func isInvalidApiServer(_ context.Context, _ *edgeconnectValidator, edgeConnect 
 				return ""
 			}
 
-			log.Info("apiServer is not a valid hostname", "apiServer", edgeConnect.Spec.ApiServer)
+			log.Info("apiServer is not a valid hostname", "apiServer", ec.Spec.ApiServer)
 
 			break
 		}

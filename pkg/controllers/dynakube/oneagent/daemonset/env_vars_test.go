@@ -167,11 +167,11 @@ func TestAddConnectionInfoEnvs(t *testing.T) {
 	})
 }
 
-func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynakube.DynaKube) {
+func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dk *dynakube.DynaKube) {
 	env := k8senv.FindEnvVar(envs, connectioninfo.EnvDtTenant)
 	assert.Equal(t, connectioninfo.EnvDtTenant, env.Name)
 	assert.Equal(t,
-		dynakube.OneAgentConnectionInfoConfigMapName(),
+		dk.OneAgentConnectionInfoConfigMapName(),
 		env.ValueFrom.ConfigMapKeyRef.Name,
 	)
 	assert.Equal(t,
@@ -182,7 +182,7 @@ func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynak
 	env = k8senv.FindEnvVar(envs, connectioninfo.EnvDtServer)
 	assert.Equal(t, connectioninfo.EnvDtServer, env.Name)
 	assert.Equal(t,
-		dynakube.OneAgentConnectionInfoConfigMapName(),
+		dk.OneAgentConnectionInfoConfigMapName(),
 		env.ValueFrom.ConfigMapKeyRef.Name,
 	)
 	assert.Equal(t,
@@ -235,13 +235,13 @@ func TestAddProxyEnvs(t *testing.T) {
 }
 
 // deprecated
-func assertProxyEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynakube.DynaKube) {
+func assertProxyEnv(t *testing.T, envs []corev1.EnvVar, dk *dynakube.DynaKube) {
 	env := k8senv.FindEnvVar(envs, proxyEnv)
 	assert.Equal(t, proxyEnv, env.Name)
-	assert.Equal(t, dynakube.Spec.Proxy.Value, env.Value)
+	assert.Equal(t, dk.Spec.Proxy.Value, env.Value)
 
-	if dynakube.Spec.Proxy.ValueFrom != "" {
-		assert.Equal(t, dynakube.Spec.Proxy.ValueFrom, env.ValueFrom.SecretKeyRef.LocalObjectReference.Name)
+	if dk.Spec.Proxy.ValueFrom != "" {
+		assert.Equal(t, dk.Spec.Proxy.ValueFrom, env.ValueFrom.SecretKeyRef.LocalObjectReference.Name)
 		assert.Equal(t, "proxy", env.ValueFrom.SecretKeyRef.Key)
 	}
 }

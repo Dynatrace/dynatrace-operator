@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/statefulset"
@@ -19,29 +19,29 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func WaitForStatefulSet(testDynakube *dynatracev1beta2.DynaKube, component string) features.Func {
-	return statefulset.WaitFor(GetActiveGateStateFulSetName(testDynakube, component), testDynakube.Namespace)
+func WaitForStatefulSet(dk *dynakube.DynaKube, component string) features.Func {
+	return statefulset.WaitFor(GetActiveGateStateFulSetName(dk, component), dk.Namespace)
 }
 
-func GetActiveGateStateFulSetName(testDynakube *dynatracev1beta2.DynaKube, component string) string {
-	return fmt.Sprintf("%s-%s", testDynakube.Name, component)
+func GetActiveGateStateFulSetName(dk *dynakube.DynaKube, component string) string {
+	return fmt.Sprintf("%s-%s", dk.Name, component)
 }
 
-func GetActiveGatePodName(testDynakube *dynatracev1beta2.DynaKube, component string) string {
-	return fmt.Sprintf("%s-0", GetActiveGateStateFulSetName(testDynakube, component))
+func GetActiveGatePodName(dk *dynakube.DynaKube, component string) string {
+	return fmt.Sprintf("%s-0", GetActiveGateStateFulSetName(dk, component))
 }
 
-func ReadActiveGateLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, testDynakube *dynatracev1beta2.DynaKube, component string) string {
-	return logs.ReadLog(ctx, t, envConfig, testDynakube.Namespace, GetActiveGatePodName(testDynakube, component), consts.ActiveGateContainerName)
+func ReadActiveGateLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, dk *dynakube.DynaKube, component string) string {
+	return logs.ReadLog(ctx, t, envConfig, dk.Namespace, GetActiveGatePodName(dk, component), consts.ActiveGateContainerName)
 }
 
-func Get(ctx context.Context, resource *resources.Resources, dynakube dynatracev1beta2.DynaKube) (appsv1.StatefulSet, error) {
+func Get(ctx context.Context, resource *resources.Resources, dk dynakube.DynaKube) (appsv1.StatefulSet, error) {
 	return statefulset.NewQuery(ctx, resource, client.ObjectKey{
-		Name:      GetActiveGateStateFulSetName(&dynakube, "activegate"),
-		Namespace: dynakube.Namespace,
+		Name:      GetActiveGateStateFulSetName(&dk, "activegate"),
+		Namespace: dk.Namespace,
 	}).Get()
 }
 
-func WaitForStatefulSetPodsDeletion(testDynakube *dynatracev1beta2.DynaKube, component string) features.Func {
-	return pod.WaitForPodsDeletionWithOwner(GetActiveGateStateFulSetName(testDynakube, component), testDynakube.Namespace)
+func WaitForStatefulSetPodsDeletion(dk *dynakube.DynaKube, component string) features.Func {
+	return pod.WaitForPodsDeletionWithOwner(GetActiveGateStateFulSetName(dk, component), dk.Namespace)
 }

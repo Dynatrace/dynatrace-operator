@@ -3,7 +3,7 @@ package capability
 import (
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -21,12 +21,12 @@ const (
 	testApiUrl           = "https://demo.dev.dynatracelabs.com/api"
 )
 
-func testCreateInstance() *dynatracev1beta2.DynaKube {
-	return &dynatracev1beta2.DynaKube{
+func createTestDynaKube() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace, Name: testName,
 		},
-		Spec: dynatracev1beta2.DynaKubeSpec{
+		Spec: dynakube.DynaKubeSpec{
 			APIURL: testApiUrl,
 		},
 	}
@@ -47,12 +47,12 @@ func TestCreateService(t *testing.T) {
 	}
 
 	t.Run("check service name, labels and selector", func(t *testing.T) {
-		instance := testCreateInstance()
-		service := CreateService(instance, testComponentFeature)
+		dk := createTestDynaKube()
+		service := CreateService(dk, testComponentFeature)
 
 		assert.NotNil(t, service)
-		assert.Equal(t, instance.Name+"-"+testComponentFeature, service.Name)
-		assert.Equal(t, instance.Namespace, service.Namespace)
+		assert.Equal(t, dk.Name+"-"+testComponentFeature, service.Name)
+		assert.Equal(t, dk.Namespace, service.Namespace)
 
 		expectedLabels := map[string]string{
 			labels.AppCreatedByLabel: testName,
@@ -73,20 +73,20 @@ func TestCreateService(t *testing.T) {
 	})
 
 	t.Run("check AG service if metrics-ingest disabled", func(t *testing.T) {
-		instance := testCreateInstance()
-		activegate.SwitchCapability(instance, dynatracev1beta2.RoutingCapability, true)
+		dk := createTestDynaKube()
+		activegate.SwitchCapability(dk, dynakube.RoutingCapability, true)
 
-		service := CreateService(instance, testComponentFeature)
+		service := CreateService(dk, testComponentFeature)
 		ports := service.Spec.Ports
 
 		assert.Contains(t, ports, agHttpsPort)
 		assert.NotContains(t, ports, agHttpPort)
 	})
 	t.Run("check AG service if metrics-ingest enabled", func(t *testing.T) {
-		instance := testCreateInstance()
-		activegate.SwitchCapability(instance, dynatracev1beta2.MetricsIngestCapability, true)
+		dk := createTestDynaKube()
+		activegate.SwitchCapability(dk, dynakube.MetricsIngestCapability, true)
 
-		service := CreateService(instance, testComponentFeature)
+		service := CreateService(dk, testComponentFeature)
 		ports := service.Spec.Ports
 
 		assert.Contains(t, ports, agHttpsPort)

@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/dockerkeychain"
@@ -79,10 +79,10 @@ func TestImagePullable(t *testing.T) {
 	dockerServer, secret, server, err := setupDockerMocker(
 		[]string{
 			"/v2/",
-			"/v2" + dynatracev1beta2.DefaultOneAgentImageRegistrySubPath + "/manifests/" + testVersion + "-raw",
+			"/v2" + dynakube.DefaultOneAgentImageRegistrySubPath + "/manifests/" + testVersion + "-raw",
 			"/v2/" + testCustomOneAgentImage + "/manifests/" + testVersion,
 			"/v2/" + testOneAgentCodeModulesImage + "/manifests/" + testVersion,
-			"/v2" + dynatracev1beta2.DefaultActiveGateImageRegistrySubPath + "/manifests/" + testVersion + "-raw",
+			"/v2" + dynakube.DefaultActiveGateImageRegistrySubPath + "/manifests/" + testVersion + "-raw",
 			"/v2/" + testActiveGateCustomImage + "/manifests/" + testVersion,
 		})
 	require.NoError(t, err)
@@ -91,26 +91,26 @@ func TestImagePullable(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		dynaKube     *dynatracev1beta2.DynaKube
+		dk           *dynakube.DynaKube
 		component    component
 		proxyWarning bool
 	}{
 		// standard OneAgent images
 		{
 			name:         "Default CloudNative OneAgent image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withCloudNativeFullStack().build(),
+			dk:           dynakubeBuilder(dockerServer.URL).withCloudNativeFullStack().build(),
 			component:    componentOneAgent,
 			proxyWarning: false,
 		},
 		{
 			name:         "Default ClassicFullstack OneAgent image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withClassicFullStack().build(),
+			dk:           dynakubeBuilder(dockerServer.URL).withClassicFullStack().build(),
 			component:    componentOneAgent,
 			proxyWarning: false,
 		},
 		{
 			name:         "Default HostMonitoring OneAgent image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withHostMonitoring().build(),
+			dk:           dynakubeBuilder(dockerServer.URL).withHostMonitoring().build(),
 			component:    componentOneAgent,
 			proxyWarning: false,
 		},
@@ -118,19 +118,19 @@ func TestImagePullable(t *testing.T) {
 		// custom OneAgent images
 		{
 			name:         "Custom CloudNative OneAgent image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withCloudNativeFullStackCustomImage(server + "/" + testCustomOneAgentImage + ":" + testVersion).build(),
+			dk:           dynakubeBuilder(dockerServer.URL).withCloudNativeFullStackCustomImage(server + "/" + testCustomOneAgentImage + ":" + testVersion).build(),
 			component:    componentOneAgent,
 			proxyWarning: false,
 		},
 		{
 			name:         "Custom ClassicFullstack OneAgent image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withClassicFullStackCustomImage(server + "/" + testCustomOneAgentImage + ":" + testVersion).build(),
+			dk:           dynakubeBuilder(dockerServer.URL).withClassicFullStackCustomImage(server + "/" + testCustomOneAgentImage + ":" + testVersion).build(),
 			component:    componentOneAgent,
 			proxyWarning: false,
 		},
 		{
 			name:         "Custom HostMonitoring OneAgent image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withHostMonitoringCustomImage(server + "/" + testCustomOneAgentImage + ":" + testVersion).build(),
+			dk:           dynakubeBuilder(dockerServer.URL).withHostMonitoringCustomImage(server + "/" + testCustomOneAgentImage + ":" + testVersion).build(),
 			component:    componentOneAgent,
 			proxyWarning: false,
 		},
@@ -138,26 +138,26 @@ func TestImagePullable(t *testing.T) {
 		// OneAgent code modules images
 		{
 			name:         "Custom CloudNative CodeModulesImage",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withCloudNativeCodeModulesImage(server + "/" + testOneAgentCodeModulesImage + ":" + testVersion).build(),
+			dk:           dynakubeBuilder(dockerServer.URL).withCloudNativeCodeModulesImage(server + "/" + testOneAgentCodeModulesImage + ":" + testVersion).build(),
 			component:    componentCodeModules,
 			proxyWarning: true,
 		},
 		{
 			name:         "Custom ApplicationMonitoring CodeModulesImage",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withApplicationMonitoringCodeModulesImage(server + "/" + testOneAgentCodeModulesImage + ":" + testVersion).build(),
+			dk:           dynakubeBuilder(dockerServer.URL).withApplicationMonitoringCodeModulesImage(server + "/" + testOneAgentCodeModulesImage + ":" + testVersion).build(),
 			component:    componentCodeModules,
 			proxyWarning: true,
 		},
 		// Active Gate images
 		{
 			name:         "ActiveGate default image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withActiveGateCapability(dynatracev1beta2.RoutingCapability.DisplayName).build(),
+			dk:           dynakubeBuilder(dockerServer.URL).withActiveGateCapability(dynakube.RoutingCapability.DisplayName).build(),
 			component:    componentActiveGate,
 			proxyWarning: false,
 		},
 		{
 			name:         "ActiveGate custom image",
-			dynaKube:     dynakubeBuilder(dockerServer.URL).withActiveGateCustomImage(server + "/" + testActiveGateCustomImage + ":" + testVersion).build(),
+			dk:           dynakubeBuilder(dockerServer.URL).withActiveGateCustomImage(server + "/" + testActiveGateCustomImage + ":" + testVersion).build(),
 			component:    componentActiveGate,
 			proxyWarning: false,
 		},
@@ -168,12 +168,12 @@ func TestImagePullable(t *testing.T) {
 			logOutput := runWithTestLogger(func(log logd.Logger) {
 				ctx := context.Background()
 				clt := fake.NewClient(secret)
-				pullSecret, _ := checkDynakube(ctx, log, clt, test.dynaKube)
+				pullSecret, _ := checkDynakube(ctx, log, clt, test.dk)
 				keychain, _ := dockerkeychain.NewDockerKeychain(context.Background(), fake.NewClient(secret), pullSecret)
 
-				transport, _ := createTransport(ctx, clt, test.dynaKube, dockerServer.Client())
+				transport, _ := createTransport(ctx, clt, test.dk, dockerServer.Client())
 				pullImage := CreateImagePullFunc(ctx, keychain, transport)
-				verifyImageIsAvailable(log, pullImage, test.dynaKube, test.component, test.proxyWarning)
+				verifyImageIsAvailable(log, pullImage, test.dk, test.component, test.proxyWarning)
 			})
 
 			require.NotContains(t, logOutput, "failed")
@@ -192,64 +192,64 @@ func TestImageNotPullable(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		dynaKube  *dynatracev1beta2.DynaKube
+		dk        *dynakube.DynaKube
 		component component
 	}{
 		{
 			name:      "OneAgent latest image for CloudNativeFullStack not available",
-			dynaKube:  dynakubeBuilder(dockerServer.URL).withCloudNativeFullStack().build(),
+			dk:        dynakubeBuilder(dockerServer.URL).withCloudNativeFullStack().build(),
 			component: componentOneAgent,
 		},
 		{
 			name:      "OneAgent CloudNativeFullStack non-existing custom image",
-			dynaKube:  dynakubeBuilder(dockerServer.URL).withCloudNativeFullStackCustomImage(server + "/foobar").build(),
+			dk:        dynakubeBuilder(dockerServer.URL).withCloudNativeFullStackCustomImage(server + "/foobar").build(),
 			component: componentOneAgent,
 		},
 		{
 			name:      "OneAgent latest image for ClassicFullStack not available",
-			dynaKube:  dynakubeBuilder(dockerServer.URL).withClassicFullStack().build(),
+			dk:        dynakubeBuilder(dockerServer.URL).withClassicFullStack().build(),
 			component: componentOneAgent,
 		},
 		{
 			name:      "OneAgent ClassicFullStack non-existing custom image",
-			dynaKube:  dynakubeBuilder(dockerServer.URL).withClassicFullStackCustomImage(server + "/foobar").build(),
+			dk:        dynakubeBuilder(dockerServer.URL).withClassicFullStackCustomImage(server + "/foobar").build(),
 			component: componentOneAgent,
 		},
 		{
 			name:      "OneAgent latest image for HostMonitoring not available",
-			dynaKube:  dynakubeBuilder(dockerServer.URL).withHostMonitoring().build(),
+			dk:        dynakubeBuilder(dockerServer.URL).withHostMonitoring().build(),
 			component: componentOneAgent,
 		},
 		{
 			name:      "OneAgent HostMonitoring non-existing custom image",
-			dynaKube:  dynakubeBuilder(dockerServer.URL).withHostMonitoringCustomImage(server + "/foobar").build(),
+			dk:        dynakubeBuilder(dockerServer.URL).withHostMonitoringCustomImage(server + "/foobar").build(),
 			component: componentOneAgent,
 		},
 		{
 			name:      "OneAgent HostMonitoring non-existing server",
-			dynaKube:  dynakubeBuilder(dockerServer.URL).withHostMonitoringCustomImage("myunknownserver.com/foobar/image").build(),
+			dk:        dynakubeBuilder(dockerServer.URL).withHostMonitoringCustomImage("myunknownserver.com/foobar/image").build(),
 			component: componentOneAgent,
 		},
 		{
 			name: "ActiveGate image",
-			dynaKube: dynakubeBuilder(dockerServer.URL).
-				withActiveGateCapability(dynatracev1beta2.RoutingCapability.DisplayName).
+			dk: dynakubeBuilder(dockerServer.URL).
+				withActiveGateCapability(dynakube.RoutingCapability.DisplayName).
 				build(),
 			component: componentActiveGate,
 		},
 		{
 			name: "ActiveGate custom image",
-			dynaKube: dynakubeBuilder(dockerServer.URL).
+			dk: dynakubeBuilder(dockerServer.URL).
 				withActiveGateCustomImage(server + "/" + testActiveGateCustomImage).
-				withActiveGateCapability(dynatracev1beta2.RoutingCapability.DisplayName).
+				withActiveGateCapability(dynakube.RoutingCapability.DisplayName).
 				build(),
 			component: componentActiveGate,
 		},
 		{
 			name: "ActiveGate custom image non-existing server",
-			dynaKube: dynakubeBuilder(dockerServer.URL).
+			dk: dynakubeBuilder(dockerServer.URL).
 				withActiveGateCustomImage("myunknownserver.com/foobar/image").
-				withActiveGateCapability(dynatracev1beta2.RoutingCapability.DisplayName).
+				withActiveGateCapability(dynakube.RoutingCapability.DisplayName).
 				build(),
 			component: componentActiveGate,
 		},
@@ -260,12 +260,12 @@ func TestImageNotPullable(t *testing.T) {
 			logOutput := runWithTestLogger(func(log logd.Logger) {
 				ctx := context.Background()
 				clt := fake.NewClient(secret)
-				pullSecret, _ := checkDynakube(ctx, log, clt, test.dynaKube)
+				pullSecret, _ := checkDynakube(ctx, log, clt, test.dk)
 				keychain, _ := dockerkeychain.NewDockerKeychain(context.Background(), fake.NewClient(secret), pullSecret)
 
-				transport, _ := createTransport(ctx, clt, test.dynaKube, dockerServer.Client())
+				transport, _ := createTransport(ctx, clt, test.dk, dockerServer.Client())
 				pullImage := CreateImagePullFunc(ctx, keychain, transport)
-				verifyImageIsAvailable(log, pullImage, test.dynaKube, test.component, false)
+				verifyImageIsAvailable(log, pullImage, test.dk, test.component, false)
 			})
 
 			require.Contains(t, logOutput, "failed")
@@ -293,19 +293,19 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 	defer dockerServer.Close()
 
 	t.Run("OneAgent code modules unreachable server", func(t *testing.T) {
-		dynakube := *testNewDynakubeBuilder(testNamespace, testDynakube).
+		dk := *testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeCodeModulesImage("myunknownserver.com/myrepo/mymissingcodemodules").
 			build()
 		logOutput := runWithTestLogger(func(log logd.Logger) {
 			ctx := context.Background()
 			clt := fake.NewClient(secret)
-			pullSecret, _ := checkDynakube(ctx, log, clt, &dynakube)
+			pullSecret, _ := checkDynakube(ctx, log, clt, &dk)
 			keychain, _ := dockerkeychain.NewDockerKeychain(context.Background(), fake.NewClient(secret), pullSecret)
 
-			transport, _ := createTransport(ctx, clt, &dynakube, dockerServer.Client())
+			transport, _ := createTransport(ctx, clt, &dk, dockerServer.Client())
 			pullImage := CreateImagePullFunc(ctx, keychain, transport)
-			verifyImageIsAvailable(log, pullImage, &dynakube, componentCodeModules, true)
+			verifyImageIsAvailable(log, pullImage, &dk, componentCodeModules, true)
 		})
 		assert.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "no such host")
@@ -313,7 +313,7 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 	})
 
 	t.Run("OneAgent code modules image with unset image", func(t *testing.T) {
-		dynakube := *testNewDynakubeBuilder(testNamespace, testDynakube).
+		dk := *testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeCodeModulesImage("").
 			build()
@@ -321,11 +321,11 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 		logOutput := runWithTestLogger(func(log logd.Logger) {
 			ctx := context.Background()
 			clt := fake.NewClient(secret)
-			pullSecret, _ := checkDynakube(ctx, log, clt, &dynakube)
+			pullSecret, _ := checkDynakube(ctx, log, clt, &dk)
 			keychain, _ := dockerkeychain.NewDockerKeychain(context.Background(), fake.NewClient(secret), pullSecret)
-			transport, _ := createTransport(ctx, clt, &dynakube, dockerServer.Client())
+			transport, _ := createTransport(ctx, clt, &dk, dockerServer.Client())
 			pullImage := CreateImagePullFunc(ctx, keychain, transport)
-			verifyImageIsAvailable(log, pullImage, &dynakube, componentCodeModules, false)
+			verifyImageIsAvailable(log, pullImage, &dk, componentCodeModules, false)
 		})
 		assert.NotContains(t, logOutput, "Unknown OneAgentCodeModules image")
 	})

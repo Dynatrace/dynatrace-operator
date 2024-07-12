@@ -3,7 +3,7 @@ package deploymentmetadata
 import (
 	"context"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
@@ -15,16 +15,16 @@ type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
 	clusterID string
-	dynakube  dynatracev1beta2.DynaKube
+	dk        dynakube.DynaKube
 }
 
-type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dynakube dynatracev1beta2.DynaKube, clusterID string) controllers.Reconciler
+type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dk dynakube.DynaKube, clusterID string) controllers.Reconciler
 
-func NewReconciler(clt client.Client, apiReader client.Reader, dynakube dynatracev1beta2.DynaKube, clusterID string) controllers.Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, dk dynakube.DynaKube, clusterID string) controllers.Reconciler {
 	return &Reconciler{
 		client:    clt,
 		apiReader: apiReader,
-		dynakube:  dynakube,
+		dk:        dk,
 		clusterID: clusterID,
 	}
 }
@@ -40,15 +40,15 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) addOneAgentDeploymentMetadata(configMapData map[string]string) {
-	if !r.dynakube.NeedsOneAgent() {
+	if !r.dk.NeedsOneAgent() {
 		return
 	}
 
-	configMapData[OneAgentMetadataKey] = NewDeploymentMetadata(r.clusterID, GetOneAgentDeploymentType(r.dynakube)).AsString()
+	configMapData[OneAgentMetadataKey] = NewDeploymentMetadata(r.clusterID, GetOneAgentDeploymentType(r.dk)).AsString()
 }
 
 func (r *Reconciler) addActiveGateDeploymentMetadata(configMapData map[string]string) {
-	if !r.dynakube.NeedsActiveGate() {
+	if !r.dk.NeedsActiveGate() {
 		return
 	}
 
@@ -56,7 +56,7 @@ func (r *Reconciler) addActiveGateDeploymentMetadata(configMapData map[string]st
 }
 
 func (r *Reconciler) addOperatorVersionInfo(configMapData map[string]string) {
-	if !r.dynakube.NeedsOneAgent() { // Currently only used for oneAgent args
+	if !r.dk.NeedsOneAgent() { // Currently only used for oneAgent args
 		return
 	}
 
@@ -66,9 +66,9 @@ func (r *Reconciler) addOperatorVersionInfo(configMapData map[string]string) {
 func (r *Reconciler) maintainMetadataConfigMap(ctx context.Context, configMapData map[string]string) error {
 	configMapQuery := configmap.NewQuery(ctx, r.client, r.apiReader, log)
 
-	configMap, err := configmap.CreateConfigMap(&r.dynakube,
-		configmap.NewModifier(GetDeploymentMetadataConfigMapName(r.dynakube.Name)),
-		configmap.NewNamespaceModifier(r.dynakube.Namespace),
+	configMap, err := configmap.CreateConfigMap(&r.dk,
+		configmap.NewModifier(GetDeploymentMetadataConfigMapName(r.dk.Name)),
+		configmap.NewNamespaceModifier(r.dk.Namespace),
 		configmap.NewConfigMapDataModifier(configMapData))
 	if err != nil {
 		return errors.WithStack(err)

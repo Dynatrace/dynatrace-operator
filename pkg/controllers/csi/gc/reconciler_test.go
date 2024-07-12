@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/spf13/afero"
@@ -24,22 +24,22 @@ func TestReconcile(t *testing.T) {
 	namespace := "test-namespace"
 
 	t.Run(`no latest version in status`, func(t *testing.T) {
-		dynakube := dynatracev1beta2.DynaKube{
+		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: apiUrl,
 			},
 		}
 		gc := CSIGarbageCollector{
-			apiReader:    fake.NewClient(&dynakube),
+			apiReader:    fake.NewClient(&dk),
 			fs:           afero.NewMemMapFs(),
 			db:           metadata.FakeMemoryDB(),
 			mounter:      mount.NewFakeMounter([]mount.MountPoint{}),
 			isNotMounted: mockIsNotMounted(map[string]error{}),
 		}
-		result, err := gc.Reconcile(context.Background(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakube.Name}})
+		result, err := gc.Reconcile(context.Background(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dk.Name}})
 
 		require.NoError(t, err)
 		assert.Equal(t, reconcile.Result{RequeueAfter: dtcsi.LongRequeueDuration}, result)

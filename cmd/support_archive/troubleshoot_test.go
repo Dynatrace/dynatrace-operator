@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -37,7 +37,7 @@ func TestTroubleshootCollector(t *testing.T) {
 				Name: "random",
 			},
 		},
-		&dynatracev1beta2.DynaKube{
+		&dynakube.DynaKube{
 			TypeMeta:   typeMeta("DynaKube"),
 			ObjectMeta: objectMeta("dynakube1"),
 		},

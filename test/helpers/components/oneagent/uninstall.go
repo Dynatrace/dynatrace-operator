@@ -8,7 +8,7 @@ import (
 	"path"
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
@@ -30,18 +30,18 @@ var (
 	uninstallOneAgentDaemonSetPath = path.Join(project.TestDataDir(), "oneagent/uninstall-oneagent.yaml")
 )
 
-func RunClassicUninstall(builder *features.FeatureBuilder, level features.Level, testDynakube dynatracev1beta2.DynaKube) {
+func RunClassicUninstall(builder *features.FeatureBuilder, level features.Level, testDynakube dynakube.DynaKube) {
 	builder.WithStep("clean up OneAgent files from nodes", level, createUninstallDaemonSet(testDynakube))
 	builder.WithStep("wait for daemonset", level, waitForUninstallDaemonset(testDynakube.Namespace))
 	builder.WithStep("OneAgent files removed from nodes", level, executeUninstall(testDynakube.Namespace))
 	builder.WithStep("clean up removed", level, removeUninstallDaemonset(testDynakube.Namespace))
 }
 
-func createUninstallDaemonSet(dynakube dynatracev1beta2.DynaKube) features.Func {
+func createUninstallDaemonSet(dk dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		uninstallDaemonSet := manifests.ObjectFromFile[*appsv1.DaemonSet](t, uninstallOneAgentDaemonSetPath)
-		uninstallDaemonSet.Namespace = dynakube.Namespace
-		uninstallDaemonSet.Spec.Template.Spec.Tolerations = dynakube.Spec.OneAgent.ClassicFullStack.Tolerations
+		uninstallDaemonSet.Namespace = dk.Namespace
+		uninstallDaemonSet.Spec.Template.Spec.Tolerations = dk.Spec.OneAgent.ClassicFullStack.Tolerations
 		resource := envConfig.Client().Resources()
 		require.NoError(t, resource.Create(ctx, uninstallDaemonSet))
 

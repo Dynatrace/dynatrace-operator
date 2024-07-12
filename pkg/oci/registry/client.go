@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/dockerkeychain"
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -228,29 +228,29 @@ func addSkipCertCheck(transport *http.Transport, skipCertCheck bool) *http.Trans
 }
 
 // PrepareTransportForDynaKube creates default http transport and add proxy or trustedCAs if any
-func PrepareTransportForDynaKube(ctx context.Context, apiReader client.Reader, transport *http.Transport, dynakube *dynatracev1beta2.DynaKube) (*http.Transport, error) {
+func PrepareTransportForDynaKube(ctx context.Context, apiReader client.Reader, transport *http.Transport, dk *dynakube.DynaKube) (*http.Transport, error) {
 	var (
 		proxy      string
 		trustedCAs []byte
 		err        error
 	)
 
-	if dynakube.HasProxy() {
-		proxy, err = dynakube.Proxy(ctx, apiReader)
+	if dk.HasProxy() {
+		proxy, err = dk.Proxy(ctx, apiReader)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if dynakube.Spec.TrustedCAs != "" {
-		trustedCAs, err = dynakube.TrustedCAs(ctx, apiReader)
+	if dk.Spec.TrustedCAs != "" {
+		trustedCAs, err = dk.TrustedCAs(ctx, apiReader)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if proxy != "" {
-		transport, err = addProxy(transport, proxy, dynakube.FeatureNoProxy())
+		transport, err = addProxy(transport, proxy, dk.FeatureNoProxy())
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to add proxy to default transport")
 		}
@@ -263,7 +263,7 @@ func PrepareTransportForDynaKube(ctx context.Context, apiReader client.Reader, t
 		}
 	}
 
-	transport = addSkipCertCheck(transport, dynakube.Spec.SkipCertCheck)
+	transport = addSkipCertCheck(transport, dk.Spec.SkipCertCheck)
 
 	return transport, nil
 }

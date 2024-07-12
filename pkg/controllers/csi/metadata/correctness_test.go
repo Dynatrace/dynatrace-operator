@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	testutil "github.com/Dynatrace/dynatrace-operator/pkg/util/testing"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -92,7 +92,7 @@ func TestCorrectCSI(t *testing.T) {
 		db.CreateTenantConfig(testTenantConfig1)
 		client := fake.NewClient(
 			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testAppMount1.VolumeMeta.PodName}},
-			&dynatracev1beta2.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testTenantConfig1.Name}},
+			&dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testTenantConfig1.Name}},
 		)
 
 		checker := NewCorrectnessChecker(client, db, dtcsi.CSIOptions{})
@@ -129,7 +129,7 @@ func TestCorrectCSI(t *testing.T) {
 
 		client := fake.NewClient(
 			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testAppMount1.VolumeMeta.PodName}},
-			&dynatracev1beta2.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testTenantConfig1.Name}},
+			&dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testTenantConfig1.Name}},
 		)
 
 		checker := NewCorrectnessChecker(client, db, dtcsi.CSIOptions{})

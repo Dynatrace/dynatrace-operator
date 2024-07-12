@@ -10,12 +10,12 @@ import (
 	"strings"
 	"testing"
 
-	edgeconnectv1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/functional"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/edgeconnect"
+	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	edgeconnectComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
@@ -33,8 +33,8 @@ const testAppNameNotInjected = "application1"
 const testAppNameInjected = "application2"
 
 type CustomResources struct {
-	dynakube    dynatracev1beta2.DynaKube
-	edgeconnect edgeconnectv1beta1.EdgeConnect
+	dk dynakube.DynaKube
+	ec edgeconnect.EdgeConnect
 }
 
 // Setup: DTO with CSI driver
@@ -52,28 +52,28 @@ func Feature(t *testing.T) features.Feature {
 		"inject": "me",
 	}
 
-	testDynakube := *dynakube.New(
-		dynakube.WithOneAgentNamespaceSelector(metav1.LabelSelector{
+	testDynakube := *dynakubeComponents.New(
+		dynakubeComponents.WithOneAgentNamespaceSelector(metav1.LabelSelector{
 			MatchLabels: injectLabels,
 		}),
-		dynakube.WithApiUrl(secretConfig.ApiUrl),
-		dynakube.WithCloudNativeSpec(&dynatracev1beta2.CloudNativeFullStackSpec{}),
-		dynakube.WithActiveGate(),
+		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
+		dynakubeComponents.WithCloudNativeSpec(&dynakube.CloudNativeFullStackSpec{}),
+		dynakubeComponents.WithActiveGate(),
 	)
 
-	testEdgeConnect := *edgeconnect.New(
+	testEdgeConnect := *edgeconnectComponents.New(
 		// this name should match with tenant edge connect name
-		edgeconnect.WithName(edgeconnectSecretConfig.Name),
-		edgeconnect.WithApiServer(edgeconnectSecretConfig.ApiServer),
-		edgeconnect.WithOAuthClientSecret(fmt.Sprintf("%s-client-secret", edgeconnectSecretConfig.Name)),
-		edgeconnect.WithOAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
-		edgeconnect.WithOAuthResource(fmt.Sprintf("urn:dtenvironment:%s", edgeconnectSecretConfig.TenantUid)),
+		edgeconnectComponents.WithName(edgeconnectSecretConfig.Name),
+		edgeconnectComponents.WithApiServer(edgeconnectSecretConfig.ApiServer),
+		edgeconnectComponents.WithOAuthClientSecret(fmt.Sprintf("%s-client-secret", edgeconnectSecretConfig.Name)),
+		edgeconnectComponents.WithOAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
+		edgeconnectComponents.WithOAuthResource(fmt.Sprintf("urn:dtenvironment:%s", edgeconnectSecretConfig.TenantUid)),
 	)
 
 	builder.Assess("deploy injected namespace", namespace.Create(*namespace.New(testAppNameInjected, namespace.WithLabels(injectLabels))))
 	builder.Assess("deploy NOT injected namespace", namespace.Create(*namespace.New(testAppNameNotInjected)))
-	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
-	edgeconnect.Install(builder, helpers.LevelAssess, &edgeconnectSecretConfig, testEdgeConnect)
+	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	edgeconnectComponents.Install(builder, helpers.LevelAssess, &edgeconnectSecretConfig, testEdgeConnect)
 
 	// Register actual test
 	builder.Assess("support archive subcommand can be executed correctly with managed logs", testSupportArchiveCommand(testDynakube, testEdgeConnect, true))
@@ -81,13 +81,13 @@ func Feature(t *testing.T) features.Feature {
 
 	builder.WithTeardown("remove injected namespace", namespace.Delete(testAppNameInjected))
 	builder.WithTeardown("remove NOT injected namespace", namespace.Delete(testAppNameNotInjected))
-	dynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
-	builder.WithTeardown("remove edgeconnect CR", edgeconnect.Delete(testEdgeConnect))
+	dynakubeComponents.Delete(builder, helpers.LevelTeardown, testDynakube)
+	builder.WithTeardown("remove edgeconnect CR", edgeconnectComponents.Delete(testEdgeConnect))
 
 	return builder.Feature()
 }
 
-func testSupportArchiveCommand(testDynakube dynatracev1beta2.DynaKube, testEdgeConnect edgeconnectv1beta1.EdgeConnect, collectManaged bool) features.Func {
+func testSupportArchiveCommand(testDynakube dynakube.DynaKube, testEdgeConnect edgeconnect.EdgeConnect, collectManaged bool) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		commandLineArguments := []string{"--stdout"}
 		if !collectManaged {
@@ -102,8 +102,8 @@ func testSupportArchiveCommand(testDynakube dynatracev1beta2.DynaKube, testEdgeC
 		require.NoError(t, err)
 
 		customResources := CustomResources{
-			dynakube:    testDynakube,
-			edgeconnect: testEdgeConnect,
+			dk: testDynakube,
+			ec: testEdgeConnect,
 		}
 		requiredFiles := newRequiredFiles(t, ctx, envConfig.Client().Resources(), customResources, collectManaged).
 			collectRequiredFiles()

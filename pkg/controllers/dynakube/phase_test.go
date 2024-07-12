@@ -5,7 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,13 +13,13 @@ import (
 )
 
 func TestActiveGatePhaseChanges(t *testing.T) {
-	dynakube := &dynatracev1beta2.DynaKube{
+	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
 		},
-		Spec: dynatracev1beta2.DynaKubeSpec{
-			ActiveGate: dynatracev1beta2.ActiveGateSpec{Capabilities: []dynatracev1beta2.CapabilityDisplayName{dynatracev1beta2.KubeMonCapability.DisplayName}},
+		Spec: dynakube.DynaKubeSpec{
+			ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName}},
 		},
 	}
 
@@ -29,7 +29,7 @@ func TestActiveGatePhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dynakube)
+		phase := controller.determineDynaKubePhase(dk)
 		assert.Equal(t, status.Deploying, phase)
 	})
 	t.Run("error accessing k8s api -> error", func(t *testing.T) {
@@ -38,7 +38,7 @@ func TestActiveGatePhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dynakube)
+		phase := controller.determineDynaKubePhase(dk)
 		assert.Equal(t, status.Error, phase)
 	})
 	t.Run("activegate pods not ready -> deploying", func(t *testing.T) {
@@ -54,7 +54,7 @@ func TestActiveGatePhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dynakube)
+		phase := controller.determineDynaKubePhase(dk)
 		assert.Equal(t, status.Deploying, phase)
 	})
 	t.Run("activegate deployed -> running", func(t *testing.T) {
@@ -70,7 +70,7 @@ func TestActiveGatePhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dynakube)
+		phase := controller.determineDynaKubePhase(dk)
 		assert.Equal(t, status.Running, phase)
 	})
 }
@@ -92,14 +92,14 @@ func createStatefulset(namespace, name string, replicas, readyReplicas int32) *a
 }
 
 func TestOneAgentPhaseChanges(t *testing.T) {
-	dynakube := &dynatracev1beta2.DynaKube{
+	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
 		},
-		Spec: dynatracev1beta2.DynaKubeSpec{
-			OneAgent: dynatracev1beta2.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta2.HostInjectSpec{},
+		Spec: dynakube.DynaKubeSpec{
+			OneAgent: dynakube.OneAgentSpec{
+				ClassicFullStack: &dynakube.HostInjectSpec{},
 			},
 		},
 	}
@@ -110,7 +110,7 @@ func TestOneAgentPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dynakube)
+		phase := controller.determineDynaKubePhase(dk)
 		assert.Equal(t, status.Deploying, phase)
 	})
 	t.Run("Error accessing k8s api", func(t *testing.T) {
@@ -119,7 +119,7 @@ func TestOneAgentPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dynakube)
+		phase := controller.determineDynaKubePhase(dk)
 		assert.Equal(t, status.Error, phase)
 	})
 	t.Run("OneAgent daemonsets in cluster not all ready -> deploying", func(t *testing.T) {
@@ -140,7 +140,7 @@ func TestOneAgentPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dynakube)
+		phase := controller.determineDynaKubePhase(dk)
 		assert.Equal(t, status.Deploying, phase)
 	})
 	t.Run("OneAgent daemonsets in cluster all ready -> running", func(t *testing.T) {
@@ -161,7 +161,7 @@ func TestOneAgentPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dynakube)
+		phase := controller.determineDynaKubePhase(dk)
 		assert.Equal(t, status.Running, phase)
 	})
 }
