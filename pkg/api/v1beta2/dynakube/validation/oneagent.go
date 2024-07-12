@@ -28,24 +28,24 @@ The conflicting Dynakube: %s
 
 func conflictingOneAgentConfiguration(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	counter := 0
-	if dynakube.ApplicationMonitoringMode() {
+	if dk.ApplicationMonitoringMode() {
 		counter += 1
 	}
 
-	if dynakube.CloudNativeFullstackMode() {
+	if dk.CloudNativeFullstackMode() {
 		counter += 1
 	}
 
-	if dynakube.ClassicFullStackMode() {
+	if dk.ClassicFullStackMode() {
 		counter += 1
 	}
 
-	if dynakube.HostMonitoringMode() {
+	if dk.HostMonitoringMode() {
 		counter += 1
 	}
 
 	if counter > 1 {
-		log.Info("requested dynakube has conflicting one agent configuration", "name", dynakube.Name, "namespace", dynakube.Namespace)
+		log.Info("requested dynakube has conflicting one agent configuration", "name", dk.Name, "namespace", dk.Namespace)
 
 		return errorConflictingOneagentMode
 	}
@@ -70,12 +70,12 @@ func conflictingNodeSelector(ctx context.Context, dv *Validator, dk *dynakube.Dy
 			continue
 		}
 
-		nodeSelectorMap := dynakube.NodeSelector()
+		nodeSelectorMap := dk.NodeSelector()
 		validNodeSelectorMap := item.NodeSelector()
 
-		if item.Name != dynakube.Name {
+		if item.Name != dk.Name {
 			if hasConflictingMatchLabels(nodeSelectorMap, validNodeSelectorMap) {
-				log.Info("requested dynakube has conflicting nodeSelector", "name", dynakube.Name, "namespace", dynakube.Namespace)
+				log.Info("requested dynakube has conflicting nodeSelector", "name", dk.Name, "namespace", dk.Namespace)
 
 				return fmt.Sprintf(errorNodeSelectorConflict, item.Name)
 			}
@@ -108,8 +108,8 @@ func hasConflictingMatchLabels(labelMap, otherLabelMap map[string]string) bool {
 	return labelSelector.Matches(otherLabelSelectorLabels) || otherLabelSelector.Matches(labelSelectorLabels)
 }
 
-func hasOneAgentVolumeStorageEnabled(dynakube *dynatracev1beta2.DynaKube) (isEnabled bool, isSet bool) {
-	envVar := env.FindEnvVar(dynakube.GetOneAgentEnvironment(), oneagentEnableVolumeStorageEnvVarName)
+func hasOneAgentVolumeStorageEnabled(dk *dynakube.DynaKube) (isEnabled bool, isSet bool) {
+	envVar := env.FindEnvVar(dk.GetOneAgentEnvironment(), oneagentEnableVolumeStorageEnvVarName)
 	isSet = envVar != nil
 	isEnabled = isSet && envVar.Value == "true"
 
@@ -142,7 +142,7 @@ func conflictingHostGroupSettings(_ context.Context, _ *Validator, dk *dynakube.
 	return ""
 }
 
-func validateOneAgentVersionIsSemVerCompliant(_ context.Context, _ *dynakubeValidator, dk *dynakube.DynaKube) string {
+func validateOneAgentVersionIsSemVerCompliant(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	agentVersion := dk.CustomOneAgentVersion()
 	if agentVersion == "" {
 		return ""

@@ -428,16 +428,16 @@ func createDynakubeWithHostGroup(args []string, hostGroup string) *dynakube.Dyna
 func TestValidateOneAgentVersionIsSemVer(t *testing.T) {
 	testCasesAcceptedVersions := []string{"", "1.0.0", "1.200.1"}
 
-	testCasesNotAcceptedVersions := []string{"latest", "raw", "1.200.1-raw", "1.200.1+build", "1.200", "1", "1.0", "v1.200.0"}
+	testCasesNotAcceptedVersions := []string{"latest", "raw", "1.200.1-raw", "v1.200.1-raw", "1.200.1+build", "v1.200.1+build", "1.200.1-raw+build", "v1.200.1-raw+build", "1.200", "v1.200", "1", "v1", "1.0", "v1.0", "v1.200.0"}
 
 	for _, tc := range testCasesAcceptedVersions {
 		t.Run("should accept version "+tc, func(t *testing.T) {
-			assertAllowedResponseWithoutWarnings(t, &dynatracev1beta2.DynaKube{
+			assertAllowed(t, &dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						ClassicFullStack: &dynatracev1beta2.HostInjectSpec{
+					OneAgent: dynakube.OneAgentSpec{
+						ClassicFullStack: &dynakube.HostInjectSpec{
 							Version: tc,
 						},
 					},
@@ -448,12 +448,12 @@ func TestValidateOneAgentVersionIsSemVer(t *testing.T) {
 
 	for _, tc := range testCasesNotAcceptedVersions {
 		t.Run("should accept version "+tc, func(t *testing.T) {
-			assertDeniedResponse(t, []string{"Only semantic versions in the form of major.minor.patch (e.g. 1.0.0) are allowed!"}, &dynatracev1beta2.DynaKube{
+			assertDenied(t, []string{"Only semantic versions in the form of major.minor.patch (e.g. 1.0.0) are allowed!"}, &dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta2.OneAgentSpec{
-						ClassicFullStack: &dynatracev1beta2.HostInjectSpec{
+					OneAgent: dynakube.OneAgentSpec{
+						ClassicFullStack: &dynakube.HostInjectSpec{
 							Version: tc,
 						},
 					},
