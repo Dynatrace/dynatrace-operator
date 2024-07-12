@@ -33,8 +33,8 @@ const testAppNameNotInjected = "application1"
 const testAppNameInjected = "application2"
 
 type CustomResources struct {
-	dynakube    dynakube.DynaKube
-	edgeconnect edgeconnect.EdgeConnect
+	dk dynakube.DynaKube
+	ec edgeconnect.EdgeConnect
 }
 
 // Setup: DTO with CSI driver
@@ -102,8 +102,8 @@ func testSupportArchiveCommand(testDynakube dynakube.DynaKube, testEdgeConnect e
 		require.NoError(t, err)
 
 		customResources := CustomResources{
-			dynakube:    testDynakube,
-			edgeconnect: testEdgeConnect,
+			dk: testDynakube,
+			ec: testEdgeConnect,
 		}
 		requiredFiles := newRequiredFiles(t, ctx, envConfig.Client().Resources(), customResources, collectManaged).
 			collectRequiredFiles()

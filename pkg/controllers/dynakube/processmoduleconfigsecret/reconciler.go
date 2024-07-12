@@ -28,26 +28,26 @@ type Reconciler struct {
 	client       client.Client
 	apiReader    client.Reader
 	dtClient     dtclient.Client
-	dynakube     *dynakube.DynaKube
+	dk           *dynakube.DynaKube
 	timeProvider *timeprovider.Provider
 }
 
 func NewReconciler(clt client.Client,
 	apiReader client.Reader,
 	dtClient dtclient.Client,
-	dynakube *dynakube.DynaKube,
+	dk *dynakube.DynaKube,
 	timeProvider *timeprovider.Provider) *Reconciler {
 	return &Reconciler{
 		client:       clt,
 		apiReader:    apiReader,
 		dtClient:     dtClient,
-		dynakube:     dynakube,
+		dk:           dk,
 		timeProvider: timeProvider,
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if r.dynakube.CloudNativeFullstackMode() || r.dynakube.ApplicationMonitoringMode() {
+	if r.dk.CloudNativeFullstackMode() || r.dk.ApplicationMonitoringMode() {
 		err := r.reconcileSecret(ctx)
 		if err != nil {
 			log.Info("could not reconcile pull secret")
@@ -55,7 +55,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return errors.WithStack(err)
 		}
 	} else {
-		_ = meta.RemoveStatusCondition(&r.dynakube.Status.Conditions, pmcConditionType)
+		_ = meta.RemoveStatusCondition(&r.dk.Status.Conditions, pmcConditionType)
 		// TODO: Add cleanup here
 		log.Info("skipping process module config secret reconciler")
 	}
@@ -87,30 +87,30 @@ func (r *Reconciler) createSecret(ctx context.Context) error {
 	}
 
 	if err = r.client.Create(ctx, newSecret); err != nil {
-		conditions.SetKubeApiError(r.dynakube.Conditions(), pmcConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), pmcConditionType, err)
 
 		return err
 	}
 
-	conditions.SetSecretCreated(r.dynakube.Conditions(), pmcConditionType, newSecret.Name)
+	conditions.SetSecretCreated(r.dk.Conditions(), pmcConditionType, newSecret.Name)
 
 	return nil
 }
 
 func (r *Reconciler) ensureSecret(ctx context.Context) error {
-	oldSecret, err := getSecret(ctx, r.apiReader, r.dynakube.Name, r.dynakube.Namespace)
+	oldSecret, err := getSecret(ctx, r.apiReader, r.dk.Name, r.dk.Namespace)
 	if k8serrors.IsNotFound(err) {
 		log.Info("secret was removed unexpectedly, ensuring process module config secret")
 
 		return r.createSecret(ctx)
 	} else if err != nil {
-		conditions.SetKubeApiError(r.dynakube.Conditions(), pmcConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), pmcConditionType, err)
 
 		return err
 	}
 
-	if conditions.IsOutdated(r.timeProvider, r.dynakube, pmcConditionType) {
-		conditions.SetSecretOutdated(r.dynakube.Conditions(), pmcConditionType, oldSecret.Name+" is outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
+	if conditions.IsOutdated(r.timeProvider, r.dk, pmcConditionType) {
+		conditions.SetSecretOutdated(r.dk.Conditions(), pmcConditionType, oldSecret.Name+" is outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
 
 		return r.updateSecret(ctx, oldSecret)
 	}
@@ -128,18 +128,18 @@ func (r *Reconciler) updateSecret(ctx context.Context, oldSecret *corev1.Secret)
 
 	oldSecret.Data = newSecret.Data
 	if err = r.client.Update(ctx, oldSecret); err != nil {
-		conditions.SetKubeApiError(r.dynakube.Conditions(), pmcConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), pmcConditionType, err)
 
 		return err
 	}
 
-	conditions.SetSecretUpdated(r.dynakube.Conditions(), pmcConditionType, newSecret.Name)
+	conditions.SetSecretUpdated(r.dk.Conditions(), pmcConditionType, newSecret.Name)
 
 	return nil
 }
 
 func (r *Reconciler) isFirstRun() bool {
-	condition := meta.FindStatusCondition(r.dynakube.Status.Conditions, pmcConditionType)
+	condition := meta.FindStatusCondition(r.dk.Status.Conditions, pmcConditionType)
 
 	return condition == nil
 }
@@ -147,40 +147,40 @@ func (r *Reconciler) isFirstRun() bool {
 func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) {
 	pmc, err := r.dtClient.GetProcessModuleConfig(ctx, 0)
 	if err != nil {
-		conditions.SetDynatraceApiError(r.dynakube.Conditions(), pmcConditionType, err)
+		conditions.SetDynatraceApiError(r.dk.Conditions(), pmcConditionType, err)
 
 		return nil, err
 	}
 
 	tenantToken, err := secrets.GetDataFromSecretName(r.apiReader, types.NamespacedName{
-		Name:      r.dynakube.OneagentTenantSecret(),
-		Namespace: r.dynakube.Namespace,
+		Name:      r.dk.OneagentTenantSecret(),
+		Namespace: r.dk.Namespace,
 	}, connectioninfo.TenantTokenKey, log)
 	if err != nil {
-		conditions.SetKubeApiError(r.dynakube.Conditions(), pmcConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), pmcConditionType, err)
 
 		return nil, err
 	}
 
 	pmc = pmc.
-		AddHostGroup(r.dynakube.HostGroup()).
-		AddConnectionInfo(r.dynakube.Status.OneAgent.ConnectionInfoStatus, tenantToken).
+		AddHostGroup(r.dk.HostGroup()).
+		AddConnectionInfo(r.dk.Status.OneAgent.ConnectionInfoStatus, tenantToken).
 		// set proxy explicitly empty, so old proxy settings get deleted where necessary
 		AddProxy("")
 
-	if r.dynakube.NeedsOneAgentProxy() {
-		proxy, err := r.dynakube.Proxy(ctx, r.apiReader)
+	if r.dk.NeedsOneAgentProxy() {
+		proxy, err := r.dk.Proxy(ctx, r.apiReader)
 		if err != nil {
-			conditions.SetKubeApiError(r.dynakube.Conditions(), pmcConditionType, err)
+			conditions.SetKubeApiError(r.dk.Conditions(), pmcConditionType, err)
 
 			return nil, err
 		}
 
 		pmc.AddProxy(proxy)
 
-		if r.dynakube.NeedsActiveGate() {
-			multiCap := capability.NewMultiCapability(r.dynakube)
-			pmc.AddNoProxy(capability.BuildDNSEntryPointWithoutEnvVars(r.dynakube.Name, r.dynakube.Namespace, multiCap))
+		if r.dk.NeedsActiveGate() {
+			multiCap := capability.NewMultiCapability(r.dk)
+			pmc.AddNoProxy(capability.BuildDNSEntryPointWithoutEnvVars(r.dk.Name, r.dk.Namespace, multiCap))
 		}
 	}
 
@@ -191,14 +191,14 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 		return nil, err
 	}
 
-	newSecret, err := secrets.Create(r.dynakube,
-		secrets.NewNameModifier(extendWithSuffix(r.dynakube.Name)),
-		secrets.NewNamespaceModifier(r.dynakube.Namespace),
+	newSecret, err := secrets.Create(r.dk,
+		secrets.NewNameModifier(extendWithSuffix(r.dk.Name)),
+		secrets.NewNamespaceModifier(r.dk.Namespace),
 		secrets.NewTypeModifier(corev1.SecretTypeOpaque),
 		secrets.NewDataModifier(map[string][]byte{SecretKeyProcessModuleConfig: marshaled}))
 
 	if err != nil {
-		conditions.SetKubeApiError(r.dynakube.Conditions(), pmcConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), pmcConditionType, err)
 
 		return nil, err
 	}

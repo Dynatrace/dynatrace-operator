@@ -9,10 +9,10 @@ import (
 
 func TestReadOnlyEnabled(t *testing.T) {
 	t.Run("true", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
 
-		mod := NewReadOnlyModifier(dynakube)
+		mod := NewReadOnlyModifier(dk)
 
 		assert.True(t, mod.Enabled())
 	})
@@ -20,9 +20,9 @@ func TestReadOnlyEnabled(t *testing.T) {
 
 func TestReadOnlyModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		mod := NewReadOnlyModifier(dynakube)
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		mod := NewReadOnlyModifier(dk)
 		builder := createBuilderForTesting()
 		expectedVolumes := mod.getVolumes()
 		expectedVolumeMounts := mod.getVolumeMounts()

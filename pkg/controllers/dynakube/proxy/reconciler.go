@@ -22,34 +22,34 @@ var _ controllers.Reconciler = &Reconciler{}
 type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
-	dynakube  *dynakube.DynaKube
+	dk        *dynakube.DynaKube
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if r.dynakube.NeedsActiveGateProxy() || r.dynakube.NeedsOneAgentProxy() {
-		return r.generateForDynakube(ctx, r.dynakube)
+	if r.dk.NeedsActiveGateProxy() || r.dk.NeedsOneAgentProxy() {
+		return r.generateForDynakube(ctx, r.dk)
 	}
 
-	return r.ensureDeleted(ctx, r.dynakube)
+	return r.ensureDeleted(ctx, r.dk)
 }
 
-func NewReconciler(client client.Client, apiReader client.Reader, dynakube *dynakube.DynaKube) *Reconciler {
+func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) *Reconciler {
 	return &Reconciler{
 		client:    client,
 		apiReader: apiReader,
-		dynakube:  dynakube,
+		dk:        dk,
 	}
 }
 
-func (r *Reconciler) generateForDynakube(ctx context.Context, dynakube *dynakube.DynaKube) error {
-	data, err := r.createProxyMap(ctx, dynakube)
+func (r *Reconciler) generateForDynakube(ctx context.Context, dk *dynakube.DynaKube) error {
+	data, err := r.createProxyMap(ctx, dk)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	secret, err := k8ssecret.Create(r.dynakube,
-		k8ssecret.NewNameModifier(BuildSecretName(dynakube.Name)),
-		k8ssecret.NewNamespaceModifier(r.dynakube.Namespace),
+	secret, err := k8ssecret.Create(r.dk,
+		k8ssecret.NewNameModifier(BuildSecretName(dk.Name)),
+		k8ssecret.NewNamespaceModifier(r.dk.Namespace),
 		k8ssecret.NewTypeModifier(corev1.SecretTypeOpaque),
 		k8ssecret.NewDataModifier(data))
 	if err != nil {
@@ -63,22 +63,22 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dynakube *dynakube
 	return errors.WithStack(err)
 }
 
-func (r *Reconciler) ensureDeleted(ctx context.Context, dynakube *dynakube.DynaKube) error {
-	secretName := BuildSecretName(dynakube.Name)
+func (r *Reconciler) ensureDeleted(ctx context.Context, dk *dynakube.DynaKube) error {
+	secretName := BuildSecretName(dk.Name)
 
-	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: secretName, Namespace: dynakube.Namespace}}
+	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: secretName, Namespace: dk.Namespace}}
 	if err := r.client.Delete(ctx, &secret); err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	} else if err == nil {
 		// If the secret is deleted the error is nil, otherwise err is notFound, then we should log nothing
-		log.Info("removed secret", "namespace", dynakube.Namespace, "secret", secretName)
+		log.Info("removed secret", "namespace", dk.Namespace, "secret", secretName)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) createProxyMap(ctx context.Context, dynakube *dynakube.DynaKube) (map[string][]byte, error) {
-	if !dynakube.HasProxy() {
+func (r *Reconciler) createProxyMap(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
+	if !dk.HasProxy() {
 		// the parsed-proxy secret is expected to exist and the entrypoint.sh script handles empty values properly
 		return map[string][]byte{
 			hostField:     []byte(""),
@@ -89,7 +89,7 @@ func (r *Reconciler) createProxyMap(ctx context.Context, dynakube *dynakube.Dyna
 		}, nil
 	}
 
-	proxyUrl, err := dynakube.Proxy(ctx, r.apiReader)
+	proxyUrl, err := dk.Proxy(ctx, r.apiReader)
 	if err != nil {
 		return nil, err
 	}

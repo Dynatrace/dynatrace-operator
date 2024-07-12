@@ -278,7 +278,7 @@ func TestReconcile(t *testing.T) {
 
 func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 	ctx := context.Background()
-	dynakube := dynakube.DynaKube{
+	dk := dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,
@@ -300,17 +300,17 @@ func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 		CommunicationHosts: nil,
 	}, nil)
 
-	fakeClient := fake.NewClient(&dynakube)
+	fakeClient := fake.NewClient(&dk)
 
-	r := NewReconciler(fakeClient, fakeClient, dtc, &dynakube)
+	r := NewReconciler(fakeClient, fakeClient, dtc, &dk)
 	err := r.Reconcile(ctx)
 	require.ErrorIs(t, err, NoOneAgentCommunicationHostsError)
 
-	assert.Equal(t, testTenantUUID, dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
-	assert.Empty(t, dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints)
-	assert.Empty(t, dynakube.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts)
+	assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
+	assert.Empty(t, dk.Status.OneAgent.ConnectionInfoStatus.Endpoints)
+	assert.Empty(t, dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts)
 
-	condition := meta.FindStatusCondition(*dynakube.Conditions(), oaConnectionInfoConditionType)
+	condition := meta.FindStatusCondition(*dk.Conditions(), oaConnectionInfoConditionType)
 	require.NotNil(t, condition)
 	assert.Equal(t, EmptyCommunicationHostsReason, condition.Reason)
 	assert.Equal(t, metav1.ConditionFalse, condition.Status)

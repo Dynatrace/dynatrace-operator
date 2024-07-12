@@ -17,7 +17,7 @@ var _ builder.Modifier = ServicePortModifier{}
 
 func NewServicePortModifier(dk dynakube.DynaKube, capability capability.Capability, envMap *prioritymap.Map) ServicePortModifier {
 	return ServicePortModifier{
-		dynakube:   dk,
+		dk:         dk,
 		capability: capability,
 		envMap:     envMap,
 	}
@@ -26,11 +26,11 @@ func NewServicePortModifier(dk dynakube.DynaKube, capability capability.Capabili
 type ServicePortModifier struct {
 	capability capability.Capability
 	envMap     *prioritymap.Map
-	dynakube   dynakube.DynaKube
+	dk         dynakube.DynaKube
 }
 
 func (mod ServicePortModifier) Enabled() bool {
-	return mod.dynakube.NeedsActiveGateServicePorts()
+	return mod.dk.NeedsActiveGateServicePorts()
 }
 
 func (mod ServicePortModifier) Modify(sts *appsv1.StatefulSet) error {
@@ -49,7 +49,7 @@ func (mod ServicePortModifier) getPorts() []corev1.ContainerPort {
 			ContainerPort: consts.HttpsContainerPort,
 		},
 	}
-	if mod.dynakube.IsMetricsIngestActiveGateEnabled() {
+	if mod.dk.IsMetricsIngestActiveGateEnabled() {
 		ports = append(ports, corev1.ContainerPort{
 			Name:          consts.HttpServicePortName,
 			ContainerPort: consts.HttpContainerPort,
@@ -73,5 +73,5 @@ func (mod ServicePortModifier) getEnvs() []corev1.EnvVar {
 }
 
 func (mod ServicePortModifier) buildDNSEntryPoint() string {
-	return capability.BuildDNSEntryPoint(mod.dynakube, mod.capability)
+	return capability.BuildDNSEntryPoint(mod.dk, mod.capability)
 }

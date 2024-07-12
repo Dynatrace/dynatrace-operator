@@ -14,7 +14,7 @@ type reconciler struct {
 	apiReader    client.Reader
 	timeProvider *timeprovider.Provider
 
-	dynakube *dynakube.DynaKube
+	dk *dynakube.DynaKube
 }
 
 type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler
@@ -25,13 +25,13 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 	return &reconciler{
 		client:       clt,
 		apiReader:    apiReader,
-		dynakube:     dk,
+		dk:           dk,
 		timeProvider: timeprovider.New(),
 	}
 }
 
 func (r *reconciler) Reconcile(_ context.Context) error {
-	if r.dynakube.PrometheusEnabled() {
+	if r.dk.PrometheusEnabled() {
 		log.Info("reconcile extensions")
 
 		return nil

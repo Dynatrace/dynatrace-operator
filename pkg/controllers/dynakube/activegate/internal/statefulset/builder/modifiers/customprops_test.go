@@ -23,23 +23,23 @@ func setCustomPropertyUsage(capability capability.Capability, isUsed bool) {
 
 func TestCustomPropertyEnabled(t *testing.T) {
 	t.Run("true", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		multiCapability := capability.NewMultiCapability(&dynakube)
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		multiCapability := capability.NewMultiCapability(&dk)
 		setCustomPropertyUsage(multiCapability, true)
 
-		mod := NewCustomPropertiesModifier(dynakube, multiCapability)
+		mod := NewCustomPropertiesModifier(dk, multiCapability)
 
 		assert.True(t, mod.Enabled())
 	})
 
 	t.Run("false", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		multiCapability := capability.NewMultiCapability(&dynakube)
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		multiCapability := capability.NewMultiCapability(&dk)
 		setCustomPropertyUsage(multiCapability, false)
 
-		mod := NewCustomPropertiesModifier(dynakube, multiCapability)
+		mod := NewCustomPropertiesModifier(dk, multiCapability)
 
 		assert.False(t, mod.Enabled())
 	})
@@ -47,11 +47,11 @@ func TestCustomPropertyEnabled(t *testing.T) {
 
 func TestCustomPropertyModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		multiCapability := capability.NewMultiCapability(&dynakube)
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		multiCapability := capability.NewMultiCapability(&dk)
 		setCustomPropertyUsage(multiCapability, true)
-		mod := NewCustomPropertiesModifier(dynakube, multiCapability)
+		mod := NewCustomPropertiesModifier(dk, multiCapability)
 		builder := createBuilderForTesting()
 
 		sts, _ := builder.AddModifier(mod).Build()

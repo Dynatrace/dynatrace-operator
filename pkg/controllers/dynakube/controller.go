@@ -125,19 +125,19 @@ type Controller struct {
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
 
-	dynaKube, err := controller.getDynakubeOrCleanup(ctx, request.Name, request.Namespace)
+	dk, err := controller.getDynakubeOrCleanup(ctx, request.Name, request.Namespace)
 	if err != nil {
 		return reconcile.Result{}, err
-	} else if dynaKube == nil {
+	} else if dk == nil {
 		log.Info("reconciling DynaKube finished, no dynakube available", "namespace", request.Namespace, "name", request.Name, "result", "empty")
 
 		return reconcile.Result{}, nil
 	}
 
-	oldStatus := *dynaKube.Status.DeepCopy()
+	oldStatus := *dk.Status.DeepCopy()
 	controller.requeueAfter = defaultUpdateInterval
-	err = controller.reconcileDynaKube(ctx, dynaKube)
-	result, err := controller.handleError(ctx, dynaKube, err, oldStatus)
+	err = controller.reconcileDynaKube(ctx, dk)
+	result, err := controller.handleError(ctx, dk, err, oldStatus)
 
 	log.Info("reconciling DynaKube finished", "namespace", request.Namespace, "name", request.Name, "result", result)
 
@@ -145,13 +145,13 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 }
 
 func (controller *Controller) getDynakubeOrCleanup(ctx context.Context, dkName, dkNamespace string) (*dynakubev1beta2.DynaKube, error) {
-	dynakube := &dynakubev1beta2.DynaKube{
+	dk := &dynakubev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dkName,
 			Namespace: dkNamespace,
 		},
 	}
-	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: dynakube.Name, Namespace: dynakube.Namespace}, dynakube)
+	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: dk.Name, Namespace: dk.Namespace}, dk)
 
 	if k8serrors.IsNotFound(err) {
 		namespaces, err := mapper.GetNamespacesForDynakube(ctx, controller.apiReader, dkName)
@@ -159,17 +159,17 @@ func (controller *Controller) getDynakubeOrCleanup(ctx context.Context, dkName, 
 			return nil, errors.WithMessagef(err, "failed to list namespaces for dynakube %s", dkName)
 		}
 
-		return nil, controller.createDynakubeMapper(ctx, dynakube).UnmapFromDynaKube(namespaces)
+		return nil, controller.createDynakubeMapper(ctx, dk).UnmapFromDynaKube(namespaces)
 	} else if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	return dynakube, nil
+	return dk, nil
 }
 
 func (controller *Controller) handleError(
 	ctx context.Context,
-	dynaKube *dynakubev1beta2.DynaKube,
+	dk *dynakubev1beta2.DynaKube,
 	err error,
 	oldStatus dynakubev1beta2.DynaKubeStatus,
 ) (reconcile.Result, error) {
@@ -182,20 +182,20 @@ func (controller *Controller) handleError(
 
 	case err != nil:
 		controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
-		dynaKube.Status.SetPhase(dynatracestatus.Error)
-		log.Error(err, "error reconciling DynaKube", "namespace", dynaKube.Namespace, "name", dynaKube.Name)
+		dk.Status.SetPhase(dynatracestatus.Error)
+		log.Error(err, "error reconciling DynaKube", "namespace", dk.Namespace, "name", dk.Name)
 
 	default:
-		dynaKube.Status.SetPhase(controller.determineDynaKubePhase(dynaKube))
+		dk.Status.SetPhase(controller.determineDynaKubePhase(dk))
 	}
 
-	if isStatusDifferent, err := hasher.IsDifferent(oldStatus, dynaKube.Status); err != nil {
+	if isStatusDifferent, err := hasher.IsDifferent(oldStatus, dk.Status); err != nil {
 		log.Error(err, "failed to generate hash for the status section")
 	} else if isStatusDifferent {
 		log.Info("status changed, updating DynaKube")
 		controller.setRequeueAfterIfNewIsShorter(changesUpdateInterval)
 
-		if errClient := dynaKube.UpdateStatus(ctx, controller.client); errClient != nil {
+		if errClient := dk.UpdateStatus(ctx, controller.client); errClient != nil {
 			return reconcile.Result{}, errors.WithMessagef(errClient, "failed to update DynaKube after failure, original error: %s", err)
 		}
 	}

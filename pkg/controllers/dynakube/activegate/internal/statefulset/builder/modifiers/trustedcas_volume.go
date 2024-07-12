@@ -21,16 +21,16 @@ const (
 
 func NewTrustedCAsVolumeModifier(dk dynakube.DynaKube) TrustedCAsModifier {
 	return TrustedCAsModifier{
-		dynakube: dk,
+		dk: dk,
 	}
 }
 
 type TrustedCAsModifier struct {
-	dynakube dynakube.DynaKube
+	dk dynakube.DynaKube
 }
 
 func (mod TrustedCAsModifier) Enabled() bool {
-	return mod.dynakube.Spec.TrustedCAs != ""
+	return mod.dk.Spec.TrustedCAs != ""
 }
 
 func (mod TrustedCAsModifier) Modify(sts *appsv1.StatefulSet) error {
@@ -48,7 +48,7 @@ func (mod TrustedCAsModifier) getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: mod.dynakube.Spec.TrustedCAs,
+						Name: mod.dk.Spec.TrustedCAs,
 					},
 					Items: []corev1.KeyToPath{
 						{

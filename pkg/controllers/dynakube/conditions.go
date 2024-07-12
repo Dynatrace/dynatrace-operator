@@ -34,7 +34,7 @@ func (controller *Controller) setAndLogCondition(dk *dynakube.DynaKube, newCondi
 
 	if newCondition.Reason != dynakube.ReasonTokenReady {
 		log.Info("problem with token detected",
-			"dk", dk.Name, "namespace", dk.Namespace,
+			"dynakube", dk.Name, "namespace", dk.Namespace,
 			"token", newCondition.Type,
 			"message", newCondition.Message)
 	}

@@ -29,7 +29,7 @@ import (
 
 type Reconciler struct {
 	client                            client.Client
-	dynakube                          *dynakube.DynaKube
+	dk                                *dynakube.DynaKube
 	apiReader                         client.Reader
 	authTokenReconciler               controllers.Reconciler
 	istioReconciler                   istio.Reconciler
@@ -45,7 +45,7 @@ var _ controllers.Reconciler = (*Reconciler)(nil)
 
 type ReconcilerBuilder func(clt client.Client,
 	apiReader client.Reader,
-	dynakube *dynakube.DynaKube,
+	dk *dynakube.DynaKube,
 	dtc dtclient.Client,
 	istioClient *istio.Client,
 	tokens token.Tokens,
@@ -74,7 +74,7 @@ func NewReconciler(clt client.Client, //nolint
 	return &Reconciler{
 		client:                            clt,
 		apiReader:                         apiReader,
-		dynakube:                          dk,
+		dk:                                dk,
 		authTokenReconciler:               authTokenReconciler,
 		istioReconciler:                   istioReconciler,
 		connectionReconciler:              connectionInfoReconciler,
@@ -97,7 +97,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	err = r.versionReconciler.ReconcileActiveGate(ctx, r.dynakube)
+	err = r.versionReconciler.ReconcileActiveGate(ctx, r.dk)
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if r.istioReconciler != nil {
-		err = r.istioReconciler.ReconcileActiveGateCommunicationHosts(ctx, r.dynakube)
+		err = r.istioReconciler.ReconcileActiveGateCommunicationHosts(ctx, r.dk)
 		if err != nil {
 			return err
 		}
@@ -119,7 +119,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
 	}
 
-	for _, agCapability := range capability.GenerateActiveGateCapabilities(r.dynakube) {
+	for _, agCapability := range capability.GenerateActiveGateCapabilities(r.dk) {
 		if agCapability.Enabled() {
 			return r.createCapability(ctx, agCapability)
 		} else {
@@ -130,22 +130,22 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	// TODO: move cleanup to ActiveGate reconciler
-	meta.RemoveStatusCondition(r.dynakube.Conditions(), statefulset.ActiveGateStatefulSetConditionType)
+	meta.RemoveStatusCondition(r.dk.Conditions(), statefulset.ActiveGateStatefulSetConditionType)
 
 	return nil
 }
 
 func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.Context) error {
-	if !r.dynakube.NeedsActiveGate() {
+	if !r.dk.NeedsActiveGate() {
 		// TODO: Add clean up of the config map
 		return nil
 	}
 
-	configMapData := extractPublicData(r.dynakube)
+	configMapData := extractPublicData(r.dk)
 
-	configMap, err := configmap.CreateConfigMap(r.dynakube,
-		configmap.NewModifier(r.dynakube.ActiveGateConnectionInfoConfigMapName()),
-		configmap.NewNamespaceModifier(r.dynakube.Namespace),
+	configMap, err := configmap.CreateConfigMap(r.dk,
+		configmap.NewModifier(r.dk.ActiveGateConnectionInfoConfigMapName()),
+		configmap.NewNamespaceModifier(r.dk.Namespace),
 		configmap.NewConfigMapDataModifier(configMapData))
 	if err != nil {
 		return errors.WithStack(err)
@@ -178,10 +178,10 @@ func extractPublicData(dk *dynakube.DynaKube) map[string]string {
 }
 
 func (r *Reconciler) createCapability(ctx context.Context, agCapability capability.Capability) error {
-	customPropertiesReconciler := r.newCustomPropertiesReconcilerFunc(r.dynakube.ActiveGateServiceAccountOwner(), agCapability.Properties().CustomProperties) //nolint:typeCheck
-	statefulsetReconciler := r.newStatefulsetReconcilerFunc(r.client, r.apiReader, r.dynakube, agCapability)                                                  //nolint:typeCheck
+	customPropertiesReconciler := r.newCustomPropertiesReconcilerFunc(r.dk.ActiveGateServiceAccountOwner(), agCapability.Properties().CustomProperties) //nolint:typeCheck
+	statefulsetReconciler := r.newStatefulsetReconcilerFunc(r.client, r.apiReader, r.dk, agCapability)                                                  //nolint:typeCheck
 
-	capabilityReconciler := r.newCapabilityReconcilerFunc(r.client, agCapability, r.dynakube, statefulsetReconciler, customPropertiesReconciler)
+	capabilityReconciler := r.newCapabilityReconcilerFunc(r.client, agCapability, r.dk, statefulsetReconciler, customPropertiesReconciler)
 
 	return capabilityReconciler.Reconcile(ctx)
 }
@@ -199,14 +199,14 @@ func (r *Reconciler) deleteCapability(ctx context.Context, agCapability capabili
 }
 
 func (r *Reconciler) deleteService(ctx context.Context, agCapability capability.Capability) error {
-	if r.dynakube.NeedsActiveGateService() {
+	if r.dk.NeedsActiveGateService() {
 		return nil
 	}
 
 	svc := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      capability.BuildServiceName(r.dynakube.Name, agCapability.ShortName()),
-			Namespace: r.dynakube.Namespace,
+			Name:      capability.BuildServiceName(r.dk.Name, agCapability.ShortName()),
+			Namespace: r.dk.Namespace,
 		},
 	}
 
@@ -216,8 +216,8 @@ func (r *Reconciler) deleteService(ctx context.Context, agCapability capability.
 func (r *Reconciler) deleteStatefulset(ctx context.Context, agCapability capability.Capability) error {
 	sts := appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      capability.CalculateStatefulSetName(agCapability, r.dynakube.Name),
-			Namespace: r.dynakube.Namespace,
+			Name:      capability.CalculateStatefulSetName(agCapability, r.dk.Name),
+			Namespace: r.dk.Namespace,
 		},
 	}
 

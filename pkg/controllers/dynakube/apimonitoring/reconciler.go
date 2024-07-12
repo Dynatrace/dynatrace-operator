@@ -10,7 +10,7 @@ import (
 
 type Reconciler struct {
 	dtc            dtclient.Client
-	dynakube       *dynakube.DynaKube
+	dk             *dynakube.DynaKube
 	clusterLabel   string
 	kubeSystemUUID string
 }
@@ -79,7 +79,7 @@ func (r *Reconciler) createObjectIdIfNotExists(ctx context.Context) (string, err
 }
 
 func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, monitoredEntities []dtclient.MonitoredEntity) (string, error) {
-	if r.dynakube.FeatureEnableK8sAppEnabled() {
+	if r.dk.FeatureEnableK8sAppEnabled() {
 		appSettings, err := r.dtc.GetSettingsForMonitoredEntities(ctx, monitoredEntities, dtclient.AppTransitionSchemaId)
 		if err != nil {
 			return "", errors.WithMessage(err, "error trying to check if app setting exists")

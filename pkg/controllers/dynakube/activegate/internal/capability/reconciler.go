@@ -22,7 +22,7 @@ type Reconciler struct {
 	capability                 capability.Capability
 	statefulsetReconciler      controllers.Reconciler
 	customPropertiesReconciler controllers.Reconciler
-	dynakube                   *dynakube.DynaKube
+	dk                         *dynakube.DynaKube
 }
 
 func NewReconciler(clt client.Client, capability capability.Capability, dk *dynakube.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler) controllers.Reconciler {
@@ -30,7 +30,7 @@ func NewReconciler(clt client.Client, capability capability.Capability, dk *dyna
 		statefulsetReconciler:      statefulsetReconciler,
 		customPropertiesReconciler: customPropertiesReconciler,
 		capability:                 capability,
-		dynakube:                   dk,
+		dk:                         dk,
 		client:                     clt,
 	}
 }
@@ -43,7 +43,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return errors.WithStack(err)
 	}
 
-	if r.dynakube.NeedsActiveGateService() {
+	if r.dk.NeedsActiveGateService() {
 		err = r.createOrUpdateService(ctx)
 		if err != nil {
 			return err
@@ -54,7 +54,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return err
 		}
 	} else {
-		r.dynakube.Status.ActiveGate.ServiceIPs = []string{}
+		r.dk.Status.ActiveGate.ServiceIPs = []string{}
 	}
 
 	err = r.statefulsetReconciler.Reconcile(ctx)
@@ -63,7 +63,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) setAGServiceIPs(ctx context.Context) error {
-	template := CreateService(r.dynakube, r.capability.ShortName())
+	template := CreateService(r.dk, r.capability.ShortName())
 	present := &corev1.Service{}
 
 	err := r.client.Get(ctx, object.Key(template), present)
@@ -71,20 +71,20 @@ func (r *Reconciler) setAGServiceIPs(ctx context.Context) error {
 		return errors.WithStack(err)
 	}
 
-	r.dynakube.Status.ActiveGate.ServiceIPs = present.Spec.ClusterIPs
+	r.dk.Status.ActiveGate.ServiceIPs = present.Spec.ClusterIPs
 
 	return nil
 }
 
 func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
-	desired := CreateService(r.dynakube, r.capability.ShortName())
+	desired := CreateService(r.dk, r.capability.ShortName())
 	installed := &corev1.Service{}
 
 	err := r.client.Get(ctx, object.Key(desired), installed)
 	if k8serrors.IsNotFound(err) {
 		log.Info("creating AG service", "module", r.capability.ShortName())
 
-		err = controllerutil.SetControllerReference(r.dynakube, desired, r.client.Scheme())
+		err = controllerutil.SetControllerReference(r.dk, desired, r.client.Scheme())
 		if err != nil {
 			return errors.WithStack(err)
 		}

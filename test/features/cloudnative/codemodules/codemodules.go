@@ -402,7 +402,7 @@ func codeModulesAppInjectSpec(t *testing.T) *dynakube.AppInjectionSpec {
 	}
 }
 
-func imageHasBeenDownloaded(dynakube dynakube.DynaKube) features.Func {
+func imageHasBeenDownloaded(dk dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
 		clientset, err := kubernetes.NewForConfig(resource.GetConfig())
@@ -410,7 +410,7 @@ func imageHasBeenDownloaded(dynakube dynakube.DynaKube) features.Func {
 
 		err = daemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      csi.DaemonSetName,
-			Namespace: dynakube.Namespace,
+			Namespace: dk.Namespace,
 		}).ForEachPod(func(podItem corev1.Pod) {
 			err = wait.For(func(ctx context.Context) (done bool, err error) {
 				logStream, err := clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &corev1.PodLogOptions{
@@ -419,7 +419,7 @@ func imageHasBeenDownloaded(dynakube dynakube.DynaKube) features.Func {
 				require.NoError(t, err)
 				buffer := new(bytes.Buffer)
 				_, err = io.Copy(buffer, logStream)
-				isNew := strings.Contains(buffer.String(), "Installed agent version: "+dynakube.CustomCodeModulesImage())
+				isNew := strings.Contains(buffer.String(), "Installed agent version: "+dk.CustomCodeModulesImage())
 				isOld := strings.Contains(buffer.String(), "agent already installed")
 				t.Logf("wait for Installed agent version in %s", podItem.Name)
 
@@ -549,17 +549,17 @@ func isVolumeAttached(t *testing.T, volumes []corev1.Volume, volumeName string) 
 	return result
 }
 
-func checkOneAgentEnvVars(dynakube dynakube.DynaKube) features.Func {
+func checkOneAgentEnvVars(dk dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 		err := daemonset.NewQuery(ctx, resources, client.ObjectKey{
-			Name:      dynakube.OneAgentDaemonsetName(),
-			Namespace: dynakube.Namespace,
+			Name:      dk.OneAgentDaemonsetName(),
+			Namespace: dk.Namespace,
 		}).ForEachPod(func(podItem corev1.Pod) {
 			require.NotNil(t, podItem)
 			require.NotNil(t, podItem.Spec)
 
-			checkEnvVarsInContainer(t, podItem, dynakube.OneAgentDaemonsetName(), httpsProxy)
+			checkEnvVarsInContainer(t, podItem, dk.OneAgentDaemonsetName(), httpsProxy)
 		})
 
 		require.NoError(t, err)

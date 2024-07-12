@@ -159,15 +159,15 @@ func addVolumesForReadOnlyCSI(pod *corev1.Pod) {
 	)
 }
 
-func getInstallerVolumeSource(dynakube dynakube.DynaKube) corev1.VolumeSource {
+func getInstallerVolumeSource(dk dynakube.DynaKube) corev1.VolumeSource {
 	volumeSource := corev1.VolumeSource{}
-	if dynakube.NeedsCSIDriver() {
+	if dk.NeedsCSIDriver() {
 		volumeSource.CSI = &corev1.CSIVolumeSource{
 			Driver:   dtcsi.DriverName,
-			ReadOnly: address.Of(dynakube.FeatureReadOnlyCsiVolume()),
+			ReadOnly: address.Of(dk.FeatureReadOnlyCsiVolume()),
 			VolumeAttributes: map[string]string{
 				csivolumes.CSIVolumeAttributeModeField:     appvolumes.Mode,
-				csivolumes.CSIVolumeAttributeDynakubeField: dynakube.Name,
+				csivolumes.CSIVolumeAttributeDynakubeField: dk.Name,
 			},
 		}
 	} else {

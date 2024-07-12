@@ -116,7 +116,7 @@ func TestEnsureInitSecret(t *testing.T) {
 
 type mutateTestCase struct {
 	name                                   string
-	dynakube                               dynakube.DynaKube
+	dk                                     dynakube.DynaKube
 	expectedAdditionalEnvCount             int
 	expectedAdditionalVolumeCount          int
 	expectedAdditionalVolumeMountCount     int
@@ -127,7 +127,7 @@ func TestMutate(t *testing.T) {
 	testCases := []mutateTestCase{
 		{
 			name:                                   "basic, should mutate the pod and init container in the request",
-			dynakube:                               *getTestDynakube(),
+			dk:                                     *getTestDynakube(),
 			expectedAdditionalEnvCount:             2, // 1 deployment-metadata + 1 preload
 			expectedAdditionalVolumeCount:          3, // bin, share, injection-config
 			expectedAdditionalVolumeMountCount:     3, // 3 oneagent mounts(preload,bin,conf)
@@ -135,7 +135,7 @@ func TestMutate(t *testing.T) {
 		},
 		{
 			name:                                   "everything turned on, should mutate the pod and init container in the request",
-			dynakube:                               *getTestComplexDynakube(),
+			dk:                                     *getTestComplexDynakube(),
 			expectedAdditionalEnvCount:             5, // 1 deployment-metadata + 1 network-zone + 1 preload + 2 version-detection
 			expectedAdditionalVolumeCount:          3, // bin, share, injection-config
 			expectedAdditionalVolumeMountCount:     5, // 3 oneagent mounts(preload,bin,conf) + 1 cert mount + 1 curl-options
@@ -143,7 +143,7 @@ func TestMutate(t *testing.T) {
 		},
 		{
 			name:                                   "basic + readonly-csi, should mutate the pod and init container in the request",
-			dynakube:                               *getTestReadOnlyCSIDynakube(),
+			dk:                                     *getTestReadOnlyCSIDynakube(),
 			expectedAdditionalEnvCount:             2, // 1 deployment-metadata + 1 preload
 			expectedAdditionalVolumeCount:          6, // bin, share, injection-config +  agent-conf, data-storage, agent-log
 			expectedAdditionalVolumeMountCount:     6, // 3 oneagent mounts(preload,bin,conf) +3 oneagent mounts for readonly csi (agent-conf,data-storage,agent-log)
@@ -154,7 +154,7 @@ func TestMutate(t *testing.T) {
 	for index, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
-			request := createTestMutationRequest(&testCases[index].dynakube, nil, getTestNamespace(nil))
+			request := createTestMutationRequest(&testCases[index].dk, nil, getTestNamespace(nil))
 
 			initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
 			initialNumberOfVolumesLen := len(request.Pod.Spec.Volumes)
@@ -182,10 +182,10 @@ func TestMutate(t *testing.T) {
 }
 
 func TestNoCommunicationHostsMutate(t *testing.T) {
-	dynaKube := getTestNoCommunicationHostDynakube()
+	dk := getTestNoCommunicationHostDynakube()
 
 	mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
-	request := createTestMutationRequest(dynaKube, nil, getTestNamespace(nil))
+	request := createTestMutationRequest(dk, nil, getTestNamespace(nil))
 
 	initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
 	initialNumberOfVolumesLen := len(request.Pod.Spec.Volumes)
@@ -216,7 +216,7 @@ func TestNoCommunicationHostsMutate(t *testing.T) {
 
 type reinvokeTestCase struct {
 	name                               string
-	dynakube                           dynakube.DynaKube
+	dk                                 dynakube.DynaKube
 	expectedAdditionalEnvCount         int
 	expectedAdditionalVolumeMountCount int
 }
@@ -225,19 +225,19 @@ func TestReinvoke(t *testing.T) {
 	testCases := []reinvokeTestCase{
 		{
 			name:                               "basic, should mutate the pod and init container in the request",
-			dynakube:                           *getTestDynakube(),
+			dk:                                 *getTestDynakube(),
 			expectedAdditionalEnvCount:         2, // 1 deployment-metadata + 1 preload
 			expectedAdditionalVolumeMountCount: 3, // 3 oneagent mounts(preload,bin,conf)
 		},
 		{
 			name:                               "everything turned on, should mutate the pod and init container in the request",
-			dynakube:                           *getTestComplexDynakube(),
+			dk:                                 *getTestComplexDynakube(),
 			expectedAdditionalEnvCount:         5, // 1 deployment-metadata + 1 network-zone + 1 preload + 2 version-detection
 			expectedAdditionalVolumeMountCount: 5, // 3 oneagent mounts(preload,bin,conf) + 1 cert mount + 1 curl-options
 		},
 		{
 			name:                               "basic + readonly-csi, should mutate the pod and init container in the request",
-			dynakube:                           *getTestReadOnlyCSIDynakube(),
+			dk:                                 *getTestReadOnlyCSIDynakube(),
 			expectedAdditionalEnvCount:         2, // 1 deployment-metadata + 1 preload
 			expectedAdditionalVolumeMountCount: 6, // 3 oneagent mounts(preload,bin,conf) +3 oneagent mounts for readonly csi (agent-conf,data-storage,agent-log)
 		},
@@ -246,7 +246,7 @@ func TestReinvoke(t *testing.T) {
 	for index, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
-			request := createTestReinvocationRequest(&testCases[index].dynakube, map[string]string{dtwebhook.AnnotationOneAgentInjected: "true"})
+			request := createTestReinvocationRequest(&testCases[index].dk, map[string]string{dtwebhook.AnnotationOneAgentInjected: "true"})
 
 			initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
 			initialNumberOfVolumesLen := len(request.Pod.Spec.Volumes)

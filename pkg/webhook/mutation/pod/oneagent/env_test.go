@@ -113,14 +113,14 @@ func TestAddContainerInfoInitEnv(t *testing.T) {
 func TestAddDeploymentMetadataEnv(t *testing.T) {
 	t.Run("Add cloudNative deployment metadata env", func(t *testing.T) {
 		container := &corev1.Container{}
-		dynakube := dynakube.DynaKube{
+		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: dynakube.OneAgentSpec{
 					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 				},
 			},
 		}
-		addDeploymentMetadataEnv(container, dynakube, testClusterID)
+		addDeploymentMetadataEnv(container, dk, testClusterID)
 		require.Len(t, container.Env, 1)
 		assert.Contains(t, container.Env[0].Value, testClusterID)
 		assert.Contains(t, container.Env[0].Value, deploymentmetadata.CloudNativeDeploymentType)
@@ -128,14 +128,14 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 
 	t.Run("Add appMonitoring deployment metadata env", func(t *testing.T) {
 		container := &corev1.Container{}
-		dynakube := dynakube.DynaKube{
+		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: dynakube.OneAgentSpec{
 					ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{},
 				},
 			},
 		}
-		addDeploymentMetadataEnv(container, dynakube, testClusterID)
+		addDeploymentMetadataEnv(container, dk, testClusterID)
 		require.Len(t, container.Env, 1)
 		assert.Contains(t, container.Env[0].Value, testClusterID)
 		assert.Contains(t, container.Env[0].Value, deploymentmetadata.ApplicationMonitoringDeploymentType)

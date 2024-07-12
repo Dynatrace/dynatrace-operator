@@ -286,7 +286,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 
 type CheckForDowngradeTestCase struct {
 	testName    string
-	dynakube    *dynakube.DynaKube
+	dk          *dynakube.DynaKube
 	newVersion  string
 	isDowngrade bool
 }
@@ -307,7 +307,7 @@ func TestCheckForDowngrade(t *testing.T) {
 	testCases := []CheckForDowngradeTestCase{
 		{
 			testName: "is downgrade, tenant registry",
-			dynakube: newDynakubeWithOneAgentStatus(status.VersionStatus{
+			dk: newDynakubeWithOneAgentStatus(status.VersionStatus{
 				ImageID: "does-not-matter",
 				Version: newerVersion,
 				Source:  status.TenantRegistryVersionSource,
@@ -317,7 +317,7 @@ func TestCheckForDowngrade(t *testing.T) {
 		},
 		{
 			testName: "is downgrade, public registry",
-			dynakube: newDynakubeWithOneAgentStatus(status.VersionStatus{
+			dk: newDynakubeWithOneAgentStatus(status.VersionStatus{
 				ImageID: "some.registry.com:" + newerVersion,
 				Source:  status.PublicRegistryVersionSource,
 			}),
@@ -326,7 +326,7 @@ func TestCheckForDowngrade(t *testing.T) {
 		},
 		{
 			testName: "is NOT downgrade, tenant registry",
-			dynakube: newDynakubeWithOneAgentStatus(status.VersionStatus{
+			dk: newDynakubeWithOneAgentStatus(status.VersionStatus{
 				ImageID: "does-not-matter",
 				Version: olderVersion,
 				Source:  status.TenantRegistryVersionSource,
@@ -336,7 +336,7 @@ func TestCheckForDowngrade(t *testing.T) {
 		},
 		{
 			testName: "is NOT downgrade, public registry",
-			dynakube: newDynakubeWithOneAgentStatus(status.VersionStatus{
+			dk: newDynakubeWithOneAgentStatus(status.VersionStatus{
 				ImageID: "some.registry.com:" + olderVersion,
 				Source:  status.PublicRegistryVersionSource,
 			}),
@@ -345,7 +345,7 @@ func TestCheckForDowngrade(t *testing.T) {
 		},
 		{
 			testName: "is NOT downgrade, custom image - no logic",
-			dynakube: newDynakubeWithOneAgentStatus(status.VersionStatus{
+			dk: newDynakubeWithOneAgentStatus(status.VersionStatus{
 				ImageID: "some.registry.com:" + newerVersion,
 				Source:  status.CustomImageVersionSource,
 			}),
@@ -354,7 +354,7 @@ func TestCheckForDowngrade(t *testing.T) {
 		},
 		{
 			testName: "is NOT downgrade, custom version - no logic",
-			dynakube: newDynakubeWithOneAgentStatus(status.VersionStatus{
+			dk: newDynakubeWithOneAgentStatus(status.VersionStatus{
 				ImageID: "some.registry.com:" + newerVersion,
 				Source:  status.CustomVersionVersionSource,
 			}),
@@ -365,7 +365,7 @@ func TestCheckForDowngrade(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.testName, func(t *testing.T) {
-			updater := newOneAgentUpdater(testCase.dynakube, fake.NewClient(), nil)
+			updater := newOneAgentUpdater(testCase.dk, fake.NewClient(), nil)
 
 			isDowngrade, err := updater.CheckForDowngrade(testCase.newVersion)
 			require.NoError(t, err)

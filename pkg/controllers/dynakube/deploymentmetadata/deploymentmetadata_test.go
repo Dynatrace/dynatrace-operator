@@ -56,12 +56,12 @@ func TestGetOneAgentDeploymentType(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		dynakube := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: test.oneAgentSpec,
 			},
 		}
-		deploymentType := GetOneAgentDeploymentType(*dynakube)
+		deploymentType := GetOneAgentDeploymentType(*dk)
 		assert.Equal(t, test.expectedDeploymentType, deploymentType)
 	}
 }

@@ -157,10 +157,10 @@ func TestHandleError(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, controller.requeueAfter, result.RequeueAfter)
 
-		dynakube := &dynakube.DynaKube{}
-		err = fakeClient.Get(ctx, types.NamespacedName{Name: expectedDynakube.Name, Namespace: expectedDynakube.Namespace}, dynakube)
+		dk := &dynakube.DynaKube{}
+		err = fakeClient.Get(ctx, types.NamespacedName{Name: expectedDynakube.Name, Namespace: expectedDynakube.Namespace}, dk)
 		require.NoError(t, err)
-		assert.Equal(t, expectedDynakube.Status.Phase, dynakube.Status.Phase)
+		assert.Equal(t, expectedDynakube.Status.Phase, dk.Status.Phase)
 	})
 	t.Run("no error => fail update status => error", func(t *testing.T) {
 		oldDynakube := dynakubeBase.DeepCopy()
@@ -200,16 +200,16 @@ func TestHandleError(t *testing.T) {
 		assert.Empty(t, result)
 		require.Error(t, err)
 
-		dynakube := &dynakube.DynaKube{}
-		err = fakeClient.Get(ctx, types.NamespacedName{Name: oldDynakube.Name, Namespace: oldDynakube.Namespace}, dynakube)
+		dk := &dynakube.DynaKube{}
+		err = fakeClient.Get(ctx, types.NamespacedName{Name: oldDynakube.Name, Namespace: oldDynakube.Namespace}, dk)
 		require.NoError(t, err)
-		assert.Equal(t, status.Error, dynakube.Status.Phase)
+		assert.Equal(t, status.Error, dk.Status.Phase)
 	})
 }
 
 func TestSetupTokensAndClient(t *testing.T) {
 	ctx := context.Background()
-	dynakubeBase := &dynakube.DynaKube{
+	dkBase := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "this-is-a-name",
 			Namespace: "dynatrace",
@@ -218,31 +218,31 @@ func TestSetupTokensAndClient(t *testing.T) {
 	}
 
 	t.Run("no tokens => error + condition", func(t *testing.T) {
-		dynakube := dynakubeBase.DeepCopy()
-		fakeClient := fake.NewClientWithIndex(dynakube)
+		dk := dkBase.DeepCopy()
+		fakeClient := fake.NewClientWithIndex(dk)
 		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
 
-		dtc, err := controller.setupTokensAndClient(ctx, dynakube)
+		dtc, err := controller.setupTokensAndClient(ctx, dk)
 		require.Error(t, err)
 		assert.Nil(t, dtc)
-		assertTokenCondition(t, dynakube, true)
+		assertTokenCondition(t, dk, true)
 	})
 
 	t.Run("client builder error => error + condition", func(t *testing.T) {
-		dynakube := dynakubeBase.DeepCopy()
+		dk := dkBase.DeepCopy()
 		tokens := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      dynakube.Tokens(),
-				Namespace: dynakube.Namespace,
+				Name:      dk.Tokens(),
+				Namespace: dk.Namespace,
 			},
 			Data: map[string][]byte{
 				dtclient.ApiToken: []byte("this is a token"),
 			},
 		}
-		fakeClient := fake.NewClientWithIndex(dynakube, tokens)
+		fakeClient := fake.NewClientWithIndex(dk, tokens)
 
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 		mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
@@ -256,26 +256,26 @@ func TestSetupTokensAndClient(t *testing.T) {
 			dynatraceClientBuilder: mockDtcBuilder,
 		}
 
-		dtc, err := controller.setupTokensAndClient(ctx, dynakube)
+		dtc, err := controller.setupTokensAndClient(ctx, dk)
 		require.Error(t, err)
 		assert.Nil(t, dtc)
-		assertTokenCondition(t, dynakube, true)
+		assertTokenCondition(t, dk, true)
 	})
 	t.Run("tokens + dtclient ok => no error", func(t *testing.T) {
 		// There is also a pull-secret created here, however testing it here is a bit counterintuitive.
 		// TODO: Make the pull-secret reconciler mockable, so we can improve this test.
-		dynakube := dynakubeBase.DeepCopy()
-		dynakube.Spec.CustomPullSecret = "custom"
+		dk := dkBase.DeepCopy()
+		dk.Spec.CustomPullSecret = "custom"
 		tokens := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      dynakube.Tokens(),
-				Namespace: dynakube.Namespace,
+				Name:      dk.Tokens(),
+				Namespace: dk.Namespace,
 			},
 			Data: map[string][]byte{
 				dtclient.ApiToken: []byte("this is a token"),
 			},
 		}
-		fakeClient := fake.NewClientWithIndex(dynakube, tokens)
+		fakeClient := fake.NewClientWithIndex(dk, tokens)
 
 		mockedDtc := dtclientmock.NewClient(t)
 
@@ -291,10 +291,10 @@ func TestSetupTokensAndClient(t *testing.T) {
 			dynatraceClientBuilder: mockDtcBuilder,
 		}
 
-		dtc, err := controller.setupTokensAndClient(ctx, dynakube)
+		dtc, err := controller.setupTokensAndClient(ctx, dk)
 		require.NoError(t, err)
 		assert.NotNil(t, dtc)
-		assertTokenCondition(t, dynakube, false)
+		assertTokenCondition(t, dk, false)
 	})
 }
 
@@ -313,7 +313,7 @@ func assertTokenCondition(t *testing.T, dk *dynakube.DynaKube, hasError bool) {
 
 func TestReconcileComponents(t *testing.T) {
 	ctx := context.Background()
-	dynakubeBase := &dynakube.DynaKube{
+	dkBaser := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "this-is-a-name",
 			Namespace: "dynatrace",
@@ -326,7 +326,7 @@ func TestReconcileComponents(t *testing.T) {
 	}
 
 	t.Run("all components reconciled, even in case of errors", func(t *testing.T) {
-		dk := dynakubeBase.DeepCopy()
+		dk := dkBaser.DeepCopy()
 		fakeClient := fake.NewClientWithIndex(dk)
 		// ReconcileCodeModuleCommunicationHosts
 		mockOneAgentReconciler := controllermock.NewReconciler(t)
@@ -356,7 +356,7 @@ func TestReconcileComponents(t *testing.T) {
 	})
 
 	t.Run("exit early in case of no oneagent conncection info", func(t *testing.T) {
-		dk := dynakubeBase.DeepCopy()
+		dk := dkBaser.DeepCopy()
 		fakeClient := fake.NewClientWithIndex(dk)
 
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
@@ -525,7 +525,7 @@ func TestTokenConditions(t *testing.T) {
 
 func TestSetupIstio(t *testing.T) {
 	ctx := context.Background()
-	dynakubeBase := &dynakube.DynaKube{
+	dkBase := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
@@ -537,7 +537,7 @@ func TestSetupIstio(t *testing.T) {
 	}
 
 	t.Run("no istio installed + EnableIstio: true => error", func(t *testing.T) {
-		dk := dynakubeBase.DeepCopy()
+		dk := dkBase.DeepCopy()
 		fakeIstio := fakeistio.NewSimpleClientset()
 		isIstioInstalled := false
 		controller := &Controller{
@@ -548,7 +548,7 @@ func TestSetupIstio(t *testing.T) {
 		assert.Nil(t, istioClient)
 	})
 	t.Run("success", func(t *testing.T) {
-		dk := dynakubeBase.DeepCopy()
+		dk := dkBase.DeepCopy()
 		fakeIstio := fakeistio.NewSimpleClientset()
 		isIstioInstalled := true
 		controller := &Controller{

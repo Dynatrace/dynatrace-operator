@@ -17,21 +17,21 @@ func setKubernetesMonitoringUsage(dk *dynakube.DynaKube, isUsed bool) {
 
 func TestKubernetesMonitoringEnabled(t *testing.T) {
 	t.Run("true", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		setKubernetesMonitoringUsage(&dynakube, true)
-		multiCapability := capability.NewMultiCapability(&dynakube)
+		dk := getBaseDynakube()
+		setKubernetesMonitoringUsage(&dk, true)
+		multiCapability := capability.NewMultiCapability(&dk)
 
-		mod := NewKubernetesMonitoringModifier(dynakube, multiCapability)
+		mod := NewKubernetesMonitoringModifier(dk, multiCapability)
 
 		assert.True(t, mod.Enabled())
 	})
 
 	t.Run("false", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		setKubernetesMonitoringUsage(&dynakube, false)
-		multiCapability := capability.NewMultiCapability(&dynakube)
+		dk := getBaseDynakube()
+		setKubernetesMonitoringUsage(&dk, false)
+		multiCapability := capability.NewMultiCapability(&dk)
 
-		mod := NewKubernetesMonitoringModifier(dynakube, multiCapability)
+		mod := NewKubernetesMonitoringModifier(dk, multiCapability)
 
 		assert.False(t, mod.Enabled())
 	})
@@ -39,10 +39,10 @@ func TestKubernetesMonitoringEnabled(t *testing.T) {
 
 func TestKubernetesMonitoringModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		setKubernetesMonitoringUsage(&dynakube, true)
-		multiCapability := capability.NewMultiCapability(&dynakube)
-		mod := NewKubernetesMonitoringModifier(dynakube, multiCapability)
+		dk := getBaseDynakube()
+		setKubernetesMonitoringUsage(&dk, true)
+		multiCapability := capability.NewMultiCapability(&dk)
+		mod := NewKubernetesMonitoringModifier(dk, multiCapability)
 		builder := createBuilderForTesting()
 		expectedVolumes := mod.getVolumes()
 		expectedIniContainers := mod.getInitContainers()
@@ -57,10 +57,10 @@ func TestKubernetesMonitoringModify(t *testing.T) {
 		isSubset(t, expectedIniContainers, sts.Spec.Template.Spec.InitContainers)
 	})
 	t.Run("successfully modified with readonly feature flag", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		setKubernetesMonitoringUsage(&dynakube, true)
-		multiCapability := capability.NewMultiCapability(&dynakube)
-		mod := NewKubernetesMonitoringModifier(dynakube, multiCapability)
+		dk := getBaseDynakube()
+		setKubernetesMonitoringUsage(&dk, true)
+		multiCapability := capability.NewMultiCapability(&dk)
+		mod := NewKubernetesMonitoringModifier(dk, multiCapability)
 		builder := createBuilderForTesting()
 		expectedVolumes := mod.getVolumes()
 		expectedIniContainers := mod.getInitContainers()

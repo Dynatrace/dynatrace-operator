@@ -29,10 +29,10 @@ func (controller *Controller) getDynakubeList() (*dynakube.DynaKubeList, error) 
 
 func (controller *Controller) filterDynakubeFromList(dkList *dynakube.DynaKubeList,
 	nodeName string) *dynakube.DynaKube {
-	for _, dynakube := range dkList.Items {
-		items := dynakube.Status.OneAgent.Instances
+	for _, dk := range dkList.Items {
+		items := dk.Status.OneAgent.Instances
 		if _, ok := items[nodeName]; ok {
-			return &dynakube
+			return &dk
 		}
 	}
 

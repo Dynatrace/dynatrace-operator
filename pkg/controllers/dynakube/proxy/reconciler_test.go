@@ -28,7 +28,7 @@ const (
 )
 
 func newTestReconcilerWithInstance(client client.Client) *Reconciler {
-	instance := &dynakube.DynaKube{
+	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testDynakubeName,
@@ -39,7 +39,7 @@ func newTestReconcilerWithInstance(client client.Client) *Reconciler {
 		},
 	}
 
-	r := NewReconciler(client, client, instance)
+	r := NewReconciler(client, client, dk)
 
 	return r
 }
@@ -79,7 +79,7 @@ func TestReconcileWithoutProxy(t *testing.T) {
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run(`ensure no proxy is used when supplying a secret but disabling proxy via feature flag`, func(t *testing.T) {
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakubeName,
 				Namespace: testNamespace,
@@ -90,7 +90,7 @@ func TestReconcileWithoutProxy(t *testing.T) {
 					Value:     "https://proxy:1234",
 					ValueFrom: "",
 				}}}
-		instance.Annotations = map[string]string{
+		dk.Annotations = map[string]string{
 			dynakube.AnnotationFeatureActiveGateIgnoreProxy: "true",
 			dynakube.AnnotationFeatureOneAgentIgnoreProxy:   "true",
 		}
@@ -102,7 +102,7 @@ func TestReconcileWithoutProxy(t *testing.T) {
 			},
 		}).Build()
 
-		r := NewReconciler(testClient, testClient, instance)
+		r := NewReconciler(testClient, testClient, dk)
 		err := r.Reconcile(context.Background())
 
 		require.NoError(t, err)
@@ -122,7 +122,7 @@ func TestReconcileProxyValue(t *testing.T) {
 		var proxyValue = buildProxyUrl("", "", "", proxyHost, proxyPort)
 
 		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
-		r.dynakube.Spec.Proxy = &dynakube.DynaKubeProxy{Value: proxyValue}
+		r.dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: proxyValue}
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -139,7 +139,7 @@ func TestReconcileProxyValue(t *testing.T) {
 		var proxyValue = buildProxyUrl("", proxyUsername, proxyPassword, proxyHost, proxyPort)
 
 		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
-		r.dynakube.Spec.Proxy = &dynakube.DynaKubeProxy{Value: proxyValue}
+		r.dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: proxyValue}
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -156,7 +156,7 @@ func TestReconcileProxyValue(t *testing.T) {
 		var proxyValue = buildProxyUrl(proxyHttpScheme, "", "", proxyHost, proxyPort)
 
 		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
-		r.dynakube.Spec.Proxy = &dynakube.DynaKubeProxy{Value: proxyValue}
+		r.dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: proxyValue}
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -173,7 +173,7 @@ func TestReconcileProxyValue(t *testing.T) {
 		var proxyValue = buildProxyUrl(proxyHttpsScheme, "", "", proxyHost, proxyPort)
 
 		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
-		r.dynakube.Spec.Proxy = &dynakube.DynaKubeProxy{Value: proxyValue}
+		r.dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: proxyValue}
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -190,7 +190,7 @@ func TestReconcileProxyValue(t *testing.T) {
 		var proxyValue = buildProxyUrl(proxyHttpScheme, proxyUsername, proxyPassword, proxyHost, proxyPort)
 
 		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
-		r.dynakube.Spec.Proxy = &dynakube.DynaKubeProxy{Value: proxyValue}
+		r.dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: proxyValue}
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -207,7 +207,7 @@ func TestReconcileProxyValue(t *testing.T) {
 		var proxyValue = buildProxyUrl("https", proxyUsername, proxyPassword, proxyHost, proxyPort)
 
 		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
-		r.dynakube.Spec.Proxy = &dynakube.DynaKubeProxy{Value: proxyValue}
+		r.dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: proxyValue}
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -222,7 +222,7 @@ func TestReconcileProxyValue(t *testing.T) {
 	})
 	t.Run(`reconcile empty proxy Value`, func(t *testing.T) {
 		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
-		r.dynakube.Spec.Proxy = &dynakube.DynaKubeProxy{Value: ""}
+		r.dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: ""}
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -244,7 +244,7 @@ func TestReconcileProxyValueFrom(t *testing.T) {
 	r := newTestReconcilerWithInstance(testClient)
 
 	t.Run(`reconcile proxy ValueFrom`, func(t *testing.T) {
-		r.dynakube.Spec.Proxy = &dynakube.DynaKubeProxy{ValueFrom: customProxySecret}
+		r.dk.Spec.Proxy = &dynakube.DynaKubeProxy{ValueFrom: customProxySecret}
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -258,7 +258,7 @@ func TestReconcileProxyValueFrom(t *testing.T) {
 		assert.Equal(t, []byte(proxyHttpScheme), proxySecret.Data[schemeField])
 	})
 	t.Run(`Change of Proxy ValueFrom to Value`, func(t *testing.T) {
-		r.dynakube.Spec.Proxy = &dynakube.DynaKubeProxy{ValueFrom: customProxySecret}
+		r.dk.Spec.Proxy = &dynakube.DynaKubeProxy{ValueFrom: customProxySecret}
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -272,8 +272,8 @@ func TestReconcileProxyValueFrom(t *testing.T) {
 		assert.Equal(t, []byte(proxyUsername), proxySecret.Data[usernameField])
 		assert.Equal(t, []byte(proxyHttpScheme), proxySecret.Data[schemeField])
 
-		r.dynakube.Spec.Proxy.ValueFrom = ""
-		r.dynakube.Spec.Proxy.Value = buildProxyUrl(proxyHttpScheme, proxyDifferentUsername, proxyPassword, proxyHost, proxyPort)
+		r.dk.Spec.Proxy.ValueFrom = ""
+		r.dk.Spec.Proxy.Value = buildProxyUrl(proxyHttpScheme, proxyDifferentUsername, proxyPassword, proxyHost, proxyPort)
 		err = r.Reconcile(context.Background())
 
 		require.NoError(t, err)
@@ -287,7 +287,7 @@ func TestReconcileProxyValueFrom(t *testing.T) {
 		assert.Equal(t, []byte(proxyHttpScheme), proxySecret.Data[schemeField])
 	})
 	t.Run(`reconcile proxy ValueFrom with non existing secret`, func(t *testing.T) {
-		r.dynakube.Spec.Proxy = &dynakube.DynaKubeProxy{ValueFrom: "secret"}
+		r.dk.Spec.Proxy = &dynakube.DynaKubeProxy{ValueFrom: "secret"}
 		err := r.Reconcile(context.Background())
 
 		require.Error(t, err)

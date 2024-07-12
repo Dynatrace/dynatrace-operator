@@ -29,13 +29,13 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run(`Create creates custom properties secret`, func(t *testing.T) {
 		valueSource := dynakube.DynaKubeValueSource{Value: testValue}
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 			}}
-		fakeClient := fake.NewClient(instance)
-		r := NewReconciler(fakeClient, instance, testOwner, &valueSource)
+		fakeClient := fake.NewClient(dk)
+		r := NewReconciler(fakeClient, dk, testOwner, &valueSource)
 		err := r.Reconcile(context.Background())
 
 		require.NoError(t, err)
@@ -51,13 +51,13 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run(`Create updates custom properties only if data changed`, func(t *testing.T) {
 		valueSource := dynakube.DynaKubeValueSource{Value: testValue}
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 			}}
-		fakeClient := fake.NewClient(instance)
-		r := NewReconciler(fakeClient, instance, testOwner, &valueSource)
+		fakeClient := fake.NewClient(dk)
+		r := NewReconciler(fakeClient, dk, testOwner, &valueSource)
 		err := r.Reconcile(context.Background())
 
 		require.NoError(t, err)

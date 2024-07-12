@@ -22,16 +22,16 @@ const (
 
 func NewCertificatesModifier(dk dynakube.DynaKube) CertificatesModifier {
 	return CertificatesModifier{
-		dynakube: dk,
+		dk: dk,
 	}
 }
 
 type CertificatesModifier struct {
-	dynakube dynakube.DynaKube
+	dk dynakube.DynaKube
 }
 
 func (mod CertificatesModifier) Enabled() bool {
-	return mod.dynakube.HasActiveGateCaCert()
+	return mod.dk.HasActiveGateCaCert()
 }
 
 func (mod CertificatesModifier) Modify(sts *appsv1.StatefulSet) error {
@@ -48,7 +48,7 @@ func (mod CertificatesModifier) getVolumes() []corev1.Volume {
 			Name: jettyCerts,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: mod.dynakube.Spec.ActiveGate.TlsSecretName,
+					SecretName: mod.dk.Spec.ActiveGate.TlsSecretName,
 				},
 			},
 		},

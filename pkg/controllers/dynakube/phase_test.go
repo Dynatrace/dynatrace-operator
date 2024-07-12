@@ -13,7 +13,7 @@ import (
 )
 
 func TestActiveGatePhaseChanges(t *testing.T) {
-	dynakube := &dynakube.DynaKube{
+	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
@@ -29,7 +29,7 @@ func TestActiveGatePhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dynakube)
+		phase := controller.determineDynaKubePhase(dk)
 		assert.Equal(t, status.Deploying, phase)
 	})
 	t.Run("error accessing k8s api -> error", func(t *testing.T) {
@@ -38,7 +38,7 @@ func TestActiveGatePhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dynakube)
+		phase := controller.determineDynaKubePhase(dk)
 		assert.Equal(t, status.Error, phase)
 	})
 	t.Run("activegate pods not ready -> deploying", func(t *testing.T) {
@@ -54,7 +54,7 @@ func TestActiveGatePhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dynakube)
+		phase := controller.determineDynaKubePhase(dk)
 		assert.Equal(t, status.Deploying, phase)
 	})
 	t.Run("activegate deployed -> running", func(t *testing.T) {
@@ -70,7 +70,7 @@ func TestActiveGatePhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dynakube)
+		phase := controller.determineDynaKubePhase(dk)
 		assert.Equal(t, status.Running, phase)
 	})
 }
@@ -92,7 +92,7 @@ func createStatefulset(namespace, name string, replicas, readyReplicas int32) *a
 }
 
 func TestOneAgentPhaseChanges(t *testing.T) {
-	dynakube := &dynakube.DynaKube{
+	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
@@ -110,7 +110,7 @@ func TestOneAgentPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dynakube)
+		phase := controller.determineDynaKubePhase(dk)
 		assert.Equal(t, status.Deploying, phase)
 	})
 	t.Run("Error accessing k8s api", func(t *testing.T) {
@@ -119,7 +119,7 @@ func TestOneAgentPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dynakube)
+		phase := controller.determineDynaKubePhase(dk)
 		assert.Equal(t, status.Error, phase)
 	})
 	t.Run("OneAgent daemonsets in cluster not all ready -> deploying", func(t *testing.T) {
@@ -140,7 +140,7 @@ func TestOneAgentPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dynakube)
+		phase := controller.determineDynaKubePhase(dk)
 		assert.Equal(t, status.Deploying, phase)
 	})
 	t.Run("OneAgent daemonsets in cluster all ready -> running", func(t *testing.T) {
@@ -161,7 +161,7 @@ func TestOneAgentPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dynakube)
+		phase := controller.determineDynaKubePhase(dk)
 		assert.Equal(t, status.Running, phase)
 	})
 }

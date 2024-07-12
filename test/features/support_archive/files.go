@@ -31,8 +31,8 @@ type requiredFiles struct {
 	t              *testing.T
 	ctx            context.Context
 	resources      *resources.Resources
-	dynakube       dynakube.DynaKube
-	edgeconnect    edgeconnect.EdgeConnect
+	dk             dynakube.DynaKube
+	ec             edgeconnect.EdgeConnect
 	collectManaged bool
 }
 
@@ -41,8 +41,8 @@ func newRequiredFiles(t *testing.T, ctx context.Context, resources *resources.Re
 		t:              t,
 		ctx:            ctx,
 		resources:      resources,
-		dynakube:       customResources.dynakube,
-		edgeconnect:    customResources.edgeconnect,
+		dk:             customResources.dk,
+		ec:             customResources.ec,
 		collectManaged: collectManaged,
 	}
 }
@@ -70,7 +70,7 @@ func (r requiredFiles) collectRequiredFiles() []string {
 }
 
 func (r requiredFiles) getRequiredPodFiles(labelKey string, collectManaged bool) []string {
-	pods := pod.List(r.t, r.ctx, r.resources, r.dynakube.Namespace)
+	pods := pod.List(r.t, r.ctx, r.resources, r.dk.Namespace)
 	requiredFiles := make([]string, 0)
 
 	podList := functional.Filter(pods.Items, func(podItem corev1.Pod) bool {
@@ -97,7 +97,7 @@ func (r requiredFiles) getRequiredPodFiles(labelKey string, collectManaged bool)
 }
 
 func (r requiredFiles) getRequiredReplicaSetFiles() []string {
-	replicaSets := replicaset.List(r.t, r.ctx, r.resources, r.dynakube.Namespace)
+	replicaSets := replicaset.List(r.t, r.ctx, r.resources, r.dk.Namespace)
 	requiredFiles := make([]string, 0)
 	for _, replicaSet := range replicaSets.Items {
 		requiredFiles = append(requiredFiles,
@@ -112,7 +112,7 @@ func (r requiredFiles) getRequiredReplicaSetFiles() []string {
 
 func (r requiredFiles) getRequiredStatefulSetFiles() []string {
 	statefulSet, err := statefulset.NewQuery(r.ctx, r.resources, client.ObjectKey{
-		Namespace: r.dynakube.Namespace,
+		Namespace: r.dk.Namespace,
 		Name:      "dynakube-activegate"}).Get()
 	require.NoError(r.t, err)
 	requiredFiles := make([]string, 0)
@@ -126,7 +126,7 @@ func (r requiredFiles) getRequiredStatefulSetFiles() []string {
 }
 
 func (r requiredFiles) getRequiredDaemonSetFiles() []string {
-	oneagentDaemonSet, err := oneagent.Get(r.ctx, r.resources, r.dynakube)
+	oneagentDaemonSet, err := oneagent.Get(r.ctx, r.resources, r.dk)
 	require.NoError(r.t, err)
 	requiredFiles := make([]string, 0)
 	requiredFiles = append(requiredFiles,
@@ -140,7 +140,7 @@ func (r requiredFiles) getRequiredDaemonSetFiles() []string {
 }
 
 func (r requiredFiles) getRequiredServiceFiles() []string {
-	services := service.List(r.t, r.ctx, r.resources, r.dynakube.Namespace)
+	services := service.List(r.t, r.ctx, r.resources, r.dk.Namespace)
 	requiredFiles := make([]string, 0)
 	for _, requiredService := range services.Items {
 		requiredFiles = append(requiredFiles,
@@ -159,30 +159,30 @@ func (r requiredFiles) getRequiredWorkloadFiles() []string {
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/%s/%s%s",
 			support_archive.ManifestsDirectoryName,
-			r.dynakube.Namespace,
+			r.dk.Namespace,
 			"deployment",
 			operator.DeploymentName,
 			support_archive.ManifestsFileExtension))
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/%s/%s%s",
 			support_archive.ManifestsDirectoryName,
-			r.dynakube.Namespace,
+			r.dk.Namespace,
 			"deployment",
 			e2ewebhook.DeploymentName,
 			support_archive.ManifestsFileExtension))
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/%s/%s%s",
 			support_archive.ManifestsDirectoryName,
-			r.dynakube.Namespace,
+			r.dk.Namespace,
 			"daemonset",
 			csi.DaemonSetName,
 			support_archive.ManifestsFileExtension))
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/%s/%s%s",
 			support_archive.ManifestsDirectoryName,
-			r.edgeconnect.Namespace,
+			r.ec.Namespace,
 			"deployment",
-			r.edgeconnect.Name,
+			r.ec.Name,
 			support_archive.ManifestsFileExtension))
 
 	return requiredFiles
@@ -193,8 +193,8 @@ func (r requiredFiles) getRequiredNamespaceFiles() []string {
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/namespace-%s%s",
 			support_archive.ManifestsDirectoryName,
-			r.dynakube.Namespace,
-			r.dynakube.Namespace,
+			r.dk.Namespace,
+			r.dk.Namespace,
 			support_archive.ManifestsFileExtension))
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/namespace-%s%s",
@@ -211,9 +211,9 @@ func (r requiredFiles) getRequiredDynaKubeFiles() []string {
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/%s/%s%s",
 			support_archive.ManifestsDirectoryName,
-			r.dynakube.Namespace,
+			r.dk.Namespace,
 			"dynakube",
-			r.dynakube.Name,
+			r.dk.Name,
 			support_archive.ManifestsFileExtension))
 
 	return requiredFiles
@@ -224,9 +224,9 @@ func (r requiredFiles) getRequiredEdgeConnectFiles() []string {
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/%s/%s%s",
 			support_archive.ManifestsDirectoryName,
-			r.edgeconnect.Namespace,
+			r.ec.Namespace,
 			"edgeconnect",
-			r.edgeconnect.Name,
+			r.ec.Name,
 			support_archive.ManifestsFileExtension))
 
 	return requiredFiles
@@ -276,7 +276,7 @@ func (r requiredFiles) getRequiredConfigMapFiles() []string {
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/%s/%s%s",
 			support_archive.ManifestsDirectoryName,
-			r.dynakube.Namespace,
+			r.dk.Namespace,
 			"configmap",
 			"dynatrace-node-cache",
 			support_archive.ManifestsFileExtension))
@@ -284,7 +284,7 @@ func (r requiredFiles) getRequiredConfigMapFiles() []string {
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/%s/%s%s",
 			support_archive.ManifestsDirectoryName,
-			r.dynakube.Namespace,
+			r.dk.Namespace,
 			"configmap",
 			"kube-root-ca.crt",
 			support_archive.ManifestsFileExtension))
@@ -292,27 +292,27 @@ func (r requiredFiles) getRequiredConfigMapFiles() []string {
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/%s/%s-%s%s",
 			support_archive.ManifestsDirectoryName,
-			r.dynakube.Namespace,
+			r.dk.Namespace,
 			"configmap",
-			r.dynakube.Name,
+			r.dk.Name,
 			"deployment-metadata",
 			support_archive.ManifestsFileExtension))
 
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/%s/%s-%s%s",
 			support_archive.ManifestsDirectoryName,
-			r.dynakube.Namespace,
+			r.dk.Namespace,
 			"configmap",
-			r.dynakube.Name,
+			r.dk.Name,
 			"oneagent-connection-info",
 			support_archive.ManifestsFileExtension))
 
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/%s/%s-%s%s",
 			support_archive.ManifestsDirectoryName,
-			r.dynakube.Namespace,
+			r.dk.Namespace,
 			"configmap",
-			r.dynakube.Name,
+			r.dk.Name,
 			"activegate-connection-info",
 			support_archive.ManifestsFileExtension))
 

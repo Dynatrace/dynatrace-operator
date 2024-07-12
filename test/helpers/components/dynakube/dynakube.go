@@ -93,12 +93,12 @@ func VerifyStartup(builder *features.FeatureBuilder, level features.Level, testD
 		WaitForPhase(testDynakube, status.Running))
 }
 
-func WaitForPhase(dynakube dynakubev1beta2.DynaKube, phase status.DeploymentPhase) features.Func {
+func WaitForPhase(dk dynakubev1beta2.DynaKube, phase status.DeploymentPhase) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
 		const timeout = 5 * time.Minute
-		err := wait.For(conditions.New(resources).ResourceMatch(&dynakube, func(object k8s.Object) bool {
+		err := wait.For(conditions.New(resources).ResourceMatch(&dk, func(object k8s.Object) bool {
 			dynakube, isDynakube := object.(*dynakubev1beta2.DynaKube)
 
 			return isDynakube && dynakube.Status.Phase == phase
@@ -110,12 +110,12 @@ func WaitForPhase(dynakube dynakubev1beta2.DynaKube, phase status.DeploymentPhas
 	}
 }
 
-func WaitForPhasePreviousVersion(dynakube dynakubev1beta1.DynaKube, phase status.DeploymentPhase) features.Func {
+func WaitForPhasePreviousVersion(dk dynakubev1beta1.DynaKube, phase status.DeploymentPhase) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
 		const timeout = 5 * time.Minute
-		err := wait.For(conditions.New(resources).ResourceMatch(&dynakube, func(object k8s.Object) bool {
+		err := wait.For(conditions.New(resources).ResourceMatch(&dk, func(object k8s.Object) bool {
 			dynakube, isDynakube := object.(*dynakubev1beta1.DynaKube)
 
 			return isDynakube && dynakube.Status.Phase == phase
@@ -127,44 +127,44 @@ func WaitForPhasePreviousVersion(dynakube dynakubev1beta1.DynaKube, phase status
 	}
 }
 
-func create(dynakube dynakubev1beta2.DynaKube) features.Func {
+func create(dk dynakubev1beta2.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		require.NoError(t, v1beta2.AddToScheme(envConfig.Client().Resources().GetScheme()))
-		require.NoError(t, envConfig.Client().Resources().Create(ctx, &dynakube))
+		require.NoError(t, envConfig.Client().Resources().Create(ctx, &dk))
 
 		return ctx
 	}
 }
 
-func createPreviousVersion(dynakube dynakubev1beta1.DynaKube) features.Func {
+func createPreviousVersion(dk dynakubev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		require.NoError(t, v1beta1.AddToScheme(envConfig.Client().Resources().GetScheme()))
-		require.NoError(t, envConfig.Client().Resources().Create(ctx, &dynakube))
+		require.NoError(t, envConfig.Client().Resources().Create(ctx, &dk))
 
 		return ctx
 	}
 }
 
-func update(dynakube dynakubev1beta2.DynaKube) features.Func {
+func update(dk dynakubev1beta2.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		require.NoError(t, v1beta2.AddToScheme(envConfig.Client().Resources().GetScheme()))
-		var dk dynakubev1beta2.DynaKube
-		require.NoError(t, envConfig.Client().Resources().Get(ctx, dynakube.Name, dynakube.Namespace, &dk))
-		dynakube.ResourceVersion = dk.ResourceVersion
-		require.NoError(t, envConfig.Client().Resources().Update(ctx, &dynakube))
+		var oldDK dynakubev1beta2.DynaKube
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, oldDK.Name, oldDK.Namespace, &oldDK))
+		oldDK.ResourceVersion = dk.ResourceVersion
+		require.NoError(t, envConfig.Client().Resources().Update(ctx, &oldDK))
 
 		return ctx
 	}
 }
 
-func remove(dynakube dynakubev1beta2.DynaKube) features.Func {
+func remove(dk dynakubev1beta2.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
 		err := v1beta2.AddToScheme(resources.GetScheme())
 		require.NoError(t, err)
 
-		err = resources.Delete(ctx, &dynakube)
+		err = resources.Delete(ctx, &dk)
 		isNoKindMatchErr := meta.IsNoMatchError(err)
 
 		if err != nil {
@@ -175,7 +175,7 @@ func remove(dynakube dynakubev1beta2.DynaKube) features.Func {
 			require.NoError(t, err)
 		}
 
-		err = wait.For(conditions.New(resources).ResourceDeleted(&dynakube), wait.WithTimeout(1*time.Minute))
+		err = wait.For(conditions.New(resources).ResourceDeleted(&dk), wait.WithTimeout(1*time.Minute))
 		require.NoError(t, err)
 
 		return ctx

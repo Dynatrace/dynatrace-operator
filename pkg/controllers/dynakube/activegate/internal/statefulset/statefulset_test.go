@@ -368,10 +368,10 @@ func TestBuildCommonEnvs(t *testing.T) {
 				Value: "ns-override",
 			},
 		}
-		dynakube := getTestDynakube()
-		dynakube.Spec.ActiveGate.Env = testEnvs
-		multiCapability := capability.NewMultiCapability(&dynakube)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
+		dk := getTestDynakube()
+		dk.Spec.ActiveGate.Env = testEnvs
+		multiCapability := capability.NewMultiCapability(&dk)
+		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 
 		envs := builder.buildCommonEnvs()
 

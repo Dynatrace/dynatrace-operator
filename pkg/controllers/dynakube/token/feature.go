@@ -54,7 +54,7 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 		{
 			Name:           "Download Installer",
 			RequiredScopes: []string{dtclient.TokenScopeInstallerDownload},
-			IsEnabled: func(dk dynakube.DynaKube) bool {
+			IsEnabled: func(_ dynakube.DynaKube) bool {
 				return !paasTokenExists
 			},
 		},
@@ -66,7 +66,7 @@ func getFeaturesForPaaSToken() []Feature {
 		{
 			Name:           "PaaS Token",
 			RequiredScopes: []string{dtclient.TokenScopeInstallerDownload},
-			IsEnabled: func(dk dynakube.DynaKube) bool {
+			IsEnabled: func(_ dynakube.DynaKube) bool {
 				return true
 			},
 		},

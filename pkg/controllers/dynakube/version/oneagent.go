@@ -17,18 +17,18 @@ const (
 )
 
 type oneAgentUpdater struct {
-	dynakube  *dynakube.DynaKube
+	dk        *dynakube.DynaKube
 	apiReader client.Reader
 	dtClient  dtclient.Client
 }
 
 func newOneAgentUpdater(
-	dynakube *dynakube.DynaKube,
+	dk *dynakube.DynaKube,
 	apiReader client.Reader,
 	dtClient dtclient.Client,
 ) *oneAgentUpdater {
 	return &oneAgentUpdater{
-		dynakube:  dynakube,
+		dk:        dk,
 		apiReader: apiReader,
 		dtClient:  dtClient,
 	}
@@ -39,42 +39,42 @@ func (updater oneAgentUpdater) Name() string {
 }
 
 func (updater oneAgentUpdater) IsEnabled() bool {
-	if updater.dynakube.NeedsOneAgent() {
+	if updater.dk.NeedsOneAgent() {
 		return true
 	}
 
-	updater.dynakube.Status.OneAgent.VersionStatus = status.VersionStatus{}
-	updater.dynakube.Status.OneAgent.Healthcheck = nil
-	_ = meta.RemoveStatusCondition(updater.dynakube.Conditions(), oaConditionType)
+	updater.dk.Status.OneAgent.VersionStatus = status.VersionStatus{}
+	updater.dk.Status.OneAgent.Healthcheck = nil
+	_ = meta.RemoveStatusCondition(updater.dk.Conditions(), oaConditionType)
 
-	return updater.dynakube.NeedsOneAgent()
+	return updater.dk.NeedsOneAgent()
 }
 
 func (updater *oneAgentUpdater) Target() *status.VersionStatus {
-	return &updater.dynakube.Status.OneAgent.VersionStatus
+	return &updater.dk.Status.OneAgent.VersionStatus
 }
 
 func (updater oneAgentUpdater) CustomImage() string {
-	customImage := updater.dynakube.CustomOneAgentImage()
+	customImage := updater.dk.CustomOneAgentImage()
 	if customImage != "" {
-		setVerificationSkippedReasonCondition(updater.dynakube.Conditions(), oaConditionType)
+		setVerificationSkippedReasonCondition(updater.dk.Conditions(), oaConditionType)
 	}
 
 	return customImage
 }
 
 func (updater oneAgentUpdater) CustomVersion() string {
-	return updater.dynakube.CustomOneAgentVersion()
+	return updater.dk.CustomOneAgentVersion()
 }
 
 func (updater oneAgentUpdater) IsAutoUpdateEnabled() bool {
-	return updater.dynakube.ShouldAutoUpdateOneAgent()
+	return updater.dk.ShouldAutoUpdateOneAgent()
 }
 
 func (updater oneAgentUpdater) IsPublicRegistryEnabled() bool {
-	isPublicRegistry := updater.dynakube.FeaturePublicRegistry() && !updater.dynakube.ClassicFullStackMode()
+	isPublicRegistry := updater.dk.FeaturePublicRegistry() && !updater.dk.ClassicFullStackMode()
 	if isPublicRegistry {
-		setVerifiedCondition(updater.dynakube.Conditions(), oaConditionType) // Bit hacky, as things can still go wrong, but if so we will just overwrite this is LatestImageInfo.
+		setVerifiedCondition(updater.dk.Conditions(), oaConditionType) // Bit hacky, as things can still go wrong, but if so we will just overwrite this is LatestImageInfo.
 	}
 
 	return isPublicRegistry
@@ -83,7 +83,7 @@ func (updater oneAgentUpdater) IsPublicRegistryEnabled() bool {
 func (updater oneAgentUpdater) LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error) {
 	imageInfo, err := updater.dtClient.GetLatestOneAgentImage(ctx)
 	if err != nil {
-		conditions.SetDynatraceApiError(updater.dynakube.Conditions(), oaConditionType, err)
+		conditions.SetDynatraceApiError(updater.dk.Conditions(), oaConditionType, err)
 	}
 
 	return imageInfo, err
@@ -99,7 +99,7 @@ func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 		latestVersion, err = updater.dtClient.GetLatestAgentVersion(ctx, dtclient.OsUnix, dtclient.InstallerTypeDefault)
 		if err != nil {
 			log.Info("failed to determine image version")
-			conditions.SetDynatraceApiError(updater.dynakube.Conditions(), oaConditionType, err)
+			conditions.SetDynatraceApiError(updater.dk.Conditions(), oaConditionType, err)
 
 			return err
 		}
@@ -110,14 +110,14 @@ func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 		return err
 	}
 
-	defaultImage := updater.dynakube.DefaultOneAgentImage(latestVersion)
+	defaultImage := updater.dk.DefaultOneAgentImage(latestVersion)
 
 	err = updateVersionStatusForTenantRegistry(updater.Target(), defaultImage, latestVersion)
 	if err != nil {
 		return err
 	}
 
-	setVerifiedCondition(updater.dynakube.Conditions(), oaConditionType)
+	setVerifiedCondition(updater.dk.Conditions(), oaConditionType)
 
 	return nil
 }
@@ -138,7 +138,7 @@ func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, e
 	case status.PublicRegistryVersionSource:
 		previousVersion, err = getTagFromImageID(imageID)
 		if err != nil {
-			setVerificationFailedReasonCondition(updater.dynakube.Conditions(), oaConditionType, err)
+			setVerificationFailedReasonCondition(updater.dk.Conditions(), oaConditionType, err)
 
 			return false, err
 		}
@@ -146,11 +146,11 @@ func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, e
 
 	downgrade, err := isDowngrade(updater.Name(), previousVersion, latestVersion)
 	if downgrade {
-		setDowngradeCondition(updater.dynakube.Conditions(), oaConditionType, previousVersion, latestVersion)
+		setDowngradeCondition(updater.dk.Conditions(), oaConditionType, previousVersion, latestVersion)
 	}
 
 	if err != nil {
-		setVerificationFailedReasonCondition(updater.dynakube.Conditions(), oaConditionType, err)
+		setVerificationFailedReasonCondition(updater.dk.Conditions(), oaConditionType, err)
 	}
 
 	return downgrade, err
@@ -165,7 +165,7 @@ func (updater oneAgentUpdater) ValidateStatus() error {
 	}
 
 	if imageType == status.ImmutableImageType {
-		if updater.dynakube.ClassicFullStackMode() {
+		if updater.dk.ClassicFullStackMode() {
 			return errors.New("immutable OneAgent image in combination with classicFullStack mode is not possible")
 		}
 	}

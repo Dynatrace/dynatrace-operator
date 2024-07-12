@@ -21,21 +21,21 @@ func setProxyUsage(dk *dynakube.DynaKube, isUsed bool) {
 
 func TestProxyEnabled(t *testing.T) {
 	t.Run("true", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		setProxyUsage(&dynakube, true)
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		setProxyUsage(&dk, true)
 
-		mod := NewProxyModifier(dynakube)
+		mod := NewProxyModifier(dk)
 
 		assert.True(t, mod.Enabled())
 	})
 
 	t.Run("false", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		setProxyUsage(&dynakube, false)
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		setProxyUsage(&dk, false)
 
-		mod := NewProxyModifier(dynakube)
+		mod := NewProxyModifier(dk)
 
 		assert.False(t, mod.Enabled())
 	})
@@ -43,10 +43,10 @@ func TestProxyEnabled(t *testing.T) {
 
 func TestProxyModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		setProxyUsage(&dynakube, true)
-		mod := NewProxyModifier(dynakube)
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		setProxyUsage(&dk, true)
+		mod := NewProxyModifier(dk)
 		builder := createBuilderForTesting()
 
 		sts, _ := builder.AddModifier(mod).Build()

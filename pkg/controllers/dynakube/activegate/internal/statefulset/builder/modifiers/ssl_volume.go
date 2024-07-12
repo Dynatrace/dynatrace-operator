@@ -15,16 +15,16 @@ var _ builder.Modifier = SSLVolumeModifier{}
 
 func NewSSLVolumeModifier(dk dynakube.DynaKube) SSLVolumeModifier {
 	return SSLVolumeModifier{
-		dynakube: dk,
+		dk: dk,
 	}
 }
 
 type SSLVolumeModifier struct {
-	dynakube dynakube.DynaKube
+	dk dynakube.DynaKube
 }
 
 func (mod SSLVolumeModifier) Enabled() bool {
-	return mod.dynakube.HasActiveGateCaCert() || mod.dynakube.Spec.TrustedCAs != ""
+	return mod.dk.HasActiveGateCaCert() || mod.dk.Spec.TrustedCAs != ""
 }
 
 func (mod SSLVolumeModifier) Modify(sts *appsv1.StatefulSet) error {

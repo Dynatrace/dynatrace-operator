@@ -89,12 +89,12 @@ func TestCheckProxySettings(t *testing.T) {
 			).
 			Build()
 
-		dynakube := *testNewDynakubeBuilder(testNamespace, testDynakube).
+		dk := *testNewDynakubeBuilder(testNamespace, testDynakube).
 			withProxySecret(testSecretName).
 			build()
 
 		logOutput := runWithTestLogger(func(logger logd.Logger) {
-			checkProxySettings(context.Background(), logger, clt, &dynakube)
+			checkProxySettings(context.Background(), logger, clt, &dk)
 		})
 
 		require.NotContains(t, logOutput, "Unexpected error")

@@ -84,12 +84,12 @@ func WithReadinessProbe(probe *corev1.Probe) Option {
 	}
 }
 
-func WithProxy(dynakube dynakube.DynaKube) Option {
+func WithProxy(dk dynakube.DynaKube) Option {
 	return func(curlPod *corev1.Pod) {
-		if dynakube.HasProxy() {
+		if dk.HasProxy() {
 			proxyEnv := corev1.EnvVar{
 				Name:  "https_proxy",
-				Value: dynakube.Spec.Proxy.Value,
+				Value: dk.Spec.Proxy.Value,
 			}
 			curlPod.Spec.Containers[0].Env = append(curlPod.Spec.Containers[0].Env, proxyEnv)
 		}

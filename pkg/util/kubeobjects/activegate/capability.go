@@ -4,9 +4,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 )
 
-func SwitchCapability(instance *dynakube.DynaKube, capability dynakube.ActiveGateCapability, wantEnabled bool) {
-	hasEnabled := instance.IsActiveGateMode(capability.DisplayName)
-	capabilities := &instance.Spec.ActiveGate.Capabilities
+func SwitchCapability(dk *dynakube.DynaKube, capability dynakube.ActiveGateCapability, wantEnabled bool) {
+	hasEnabled := dk.IsActiveGateMode(capability.DisplayName)
+	capabilities := &dk.Spec.ActiveGate.Capabilities
 
 	if wantEnabled && !hasEnabled {
 		*capabilities = append(*capabilities, capability.DisplayName)

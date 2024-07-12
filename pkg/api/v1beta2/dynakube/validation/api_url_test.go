@@ -10,11 +10,11 @@ import (
 )
 
 func TestHasApiUrl(t *testing.T) {
-	instance := &dynakube.DynaKube{}
-	assert.Equal(t, errorNoApiUrl, NoApiUrl(context.Background(), nil, instance))
+	dk := &dynakube.DynaKube{}
+	assert.Equal(t, errorNoApiUrl, NoApiUrl(context.Background(), nil, dk))
 
-	instance.Spec.APIURL = testApiUrl
-	assert.Empty(t, NoApiUrl(context.Background(), nil, instance))
+	dk.Spec.APIURL = testApiUrl
+	assert.Empty(t, NoApiUrl(context.Background(), nil, dk))
 
 	t.Run(`happy path`, func(t *testing.T) {
 		assertAllowed(t, &dynakube.DynaKube{

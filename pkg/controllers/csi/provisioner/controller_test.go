@@ -596,8 +596,8 @@ func TestUpdateAgentInstallation(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("updateAgentInstallation with codeModules enabled", func(t *testing.T) {
-		dynakube := getDynakube()
-		enableCodeModules(dynakube)
+		dk := getDynakube()
+		enableCodeModules(dk)
 
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 
@@ -607,9 +607,9 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		dtc, err := mockDtcBuilder.Build()
 		require.NoError(t, err)
 
-		mockK8sClient := createMockK8sClient(ctx, dynakube)
+		mockK8sClient := createMockK8sClient(ctx, dk)
 		installerMock := installermock.NewInstaller(t)
-		base64Image := base64.StdEncoding.EncodeToString([]byte(dynakube.CodeModulesImage()))
+		base64Image := base64.StdEncoding.EncodeToString([]byte(dk.CodeModulesImage()))
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("*context.valueCtx"), "test/codemodules/"+base64Image).
 			Return(true, nil)
@@ -631,15 +631,15 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		setUpFS(provisioner.fs, ruxitAgentProcPath, sourceRuxitAgentProcPath)
 
 		tenantConfig := metadata.TenantConfig{Name: dkName, TenantUUID: tenantUUID, DownloadedCodeModuleVersion: agentVersion}
-		isRequeue, err := provisioner.updateAgentInstallation(ctx, dtc, &tenantConfig, dynakube)
+		isRequeue, err := provisioner.updateAgentInstallation(ctx, dtc, &tenantConfig, dk)
 		require.NoError(t, err)
 
-		require.Equal(t, dynakube.CodeModulesImage(), tenantConfig.DownloadedCodeModuleVersion)
+		require.Equal(t, dk.CodeModulesImage(), tenantConfig.DownloadedCodeModuleVersion)
 		assert.False(t, isRequeue)
 	})
 	t.Run("updateAgentInstallation with codeModules enabled errors and requeues", func(t *testing.T) {
-		dynakube := getDynakube()
-		enableCodeModules(dynakube)
+		dk := getDynakube()
+		enableCodeModules(dk)
 
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 
@@ -649,8 +649,8 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		dtc, err := mockDtcBuilder.Build()
 		require.NoError(t, err)
 
-		base64Image := base64.StdEncoding.EncodeToString([]byte(dynakube.CodeModulesImage()))
-		mockK8sClient := createMockK8sClient(ctx, dynakube)
+		base64Image := base64.StdEncoding.EncodeToString([]byte(dk.CodeModulesImage()))
+		mockK8sClient := createMockK8sClient(ctx, dk)
 		installerMock := installermock.NewInstaller(t)
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("*context.valueCtx"), "test/codemodules/"+base64Image).
@@ -668,14 +668,14 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		}
 
 		tenantConfig := metadata.TenantConfig{TenantUUID: tenantUUID, DownloadedCodeModuleVersion: agentVersion, Name: dkName}
-		isRequeue, err := provisioner.updateAgentInstallation(ctx, dtc, &tenantConfig, dynakube)
+		isRequeue, err := provisioner.updateAgentInstallation(ctx, dtc, &tenantConfig, dk)
 		require.NoError(t, err)
 
 		require.Equal(t, "12345", tenantConfig.DownloadedCodeModuleVersion)
 		assert.True(t, isRequeue)
 	})
 	t.Run("updateAgentInstallation without codeModules", func(t *testing.T) {
-		dynakube := getDynakube()
+		dk := getDynakube()
 
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 
@@ -685,7 +685,7 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		dtc, err := mockDtcBuilder.Build()
 		require.NoError(t, err)
 
-		mockK8sClient := createMockK8sClient(ctx, dynakube)
+		mockK8sClient := createMockK8sClient(ctx, dk)
 		installerMock := installermock.NewInstaller(t)
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("*context.valueCtx"), "test/codemodules").
@@ -707,7 +707,7 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		setUpFS(provisioner.fs, ruxitAgentProcPath, sourceRuxitAgentProcPath)
 
 		tenantConfig := metadata.TenantConfig{TenantUUID: tenantUUID, DownloadedCodeModuleVersion: agentVersion, Name: dkName}
-		isRequeue, err := provisioner.updateAgentInstallation(ctx, dtc, &tenantConfig, dynakube)
+		isRequeue, err := provisioner.updateAgentInstallation(ctx, dtc, &tenantConfig, dk)
 		require.NoError(t, err)
 
 		require.Equal(t, "12345", tenantConfig.DownloadedCodeModuleVersion)

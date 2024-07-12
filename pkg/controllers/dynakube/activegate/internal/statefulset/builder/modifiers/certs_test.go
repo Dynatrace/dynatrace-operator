@@ -20,21 +20,21 @@ func setCertUsage(dk *dynakube.DynaKube, isUsed bool) {
 
 func TestCertEnabled(t *testing.T) {
 	t.Run("true", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		setCertUsage(&dynakube, true)
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		setCertUsage(&dk, true)
 
-		mod := NewCertificatesModifier(dynakube)
+		mod := NewCertificatesModifier(dk)
 
 		assert.True(t, mod.Enabled())
 	})
 
 	t.Run("false", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		setCertUsage(&dynakube, false)
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		setCertUsage(&dk, false)
 
-		mod := NewCertificatesModifier(dynakube)
+		mod := NewCertificatesModifier(dk)
 
 		assert.False(t, mod.Enabled())
 	})
@@ -42,10 +42,10 @@ func TestCertEnabled(t *testing.T) {
 
 func TestCertModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		setCertUsage(&dynakube, true)
-		mod := NewCertificatesModifier(dynakube)
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		setCertUsage(&dk, true)
+		mod := NewCertificatesModifier(dk)
 		builder := createBuilderForTesting()
 
 		sts, _ := builder.AddModifier(mod).Build()

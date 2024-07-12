@@ -17,7 +17,7 @@ import (
 
 func TestReconcileActiveGate(t *testing.T) {
 	ctx := context.Background()
-	dynakubeBase := &dynakube.DynaKube{
+	dkBase := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "this-is-a-name",
 			Namespace: "dynatrace",
@@ -28,7 +28,7 @@ func TestReconcileActiveGate(t *testing.T) {
 	}
 
 	t.Run("no active-gate configured => nothing happens (only call active-gate reconciler)", func(t *testing.T) {
-		dk := dynakubeBase.DeepCopy()
+		dk := dkBase.DeepCopy()
 		dk.Spec.ActiveGate = dynakube.ActiveGateSpec{}
 
 		fakeClient := fake.NewClientWithIndex(dk)
@@ -46,7 +46,7 @@ func TestReconcileActiveGate(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("no active-gate configured => active-gate reconcile returns error => returns error", func(t *testing.T) {
-		dk := dynakubeBase.DeepCopy()
+		dk := dkBase.DeepCopy()
 		dk.Spec.ActiveGate = dynakube.ActiveGateSpec{}
 
 		fakeClient := fake.NewClientWithIndex(dk)

@@ -58,7 +58,7 @@ func TestReconcile(t *testing.T) {
 		reconciler := &Reconciler{
 			client:                   fakeClient,
 			apiReader:                fakeClient,
-			dynakube:                 dk,
+			dk:                       dk,
 			versionReconciler:        createVersionReconcilerMock(t),
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 			tokens:                   createTokens(),
@@ -84,7 +84,7 @@ func TestReconcile(t *testing.T) {
 		reconciler := &Reconciler{
 			client:                   fakeClient,
 			apiReader:                fakeClient,
-			dynakube:                 dk,
+			dk:                       dk,
 			versionReconciler:        createVersionReconcilerMock(t),
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		}
@@ -107,7 +107,7 @@ func TestReconcile(t *testing.T) {
 		reconciler := &Reconciler{
 			client:                   fakeClient,
 			apiReader:                fakeClient,
-			dynakube:                 dk,
+			dk:                       dk,
 			versionReconciler:        createVersionReconcilerMock(t),
 			connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		}
@@ -136,7 +136,7 @@ func TestReconcile(t *testing.T) {
 		reconciler := &Reconciler{
 			client:                   fakeClient,
 			apiReader:                fakeClient,
-			dynakube:                 &dk,
+			dk:                       &dk,
 			connectionInfoReconciler: connectionInfoReconciler,
 			versionReconciler:        createVersionReconcilerMock(t),
 		}
@@ -165,7 +165,7 @@ func TestReconcile(t *testing.T) {
 		reconciler := &Reconciler{
 			client:                   fakeClient,
 			apiReader:                fakeClient,
-			dynakube:                 &dk,
+			dk:                       &dk,
 			connectionInfoReconciler: controllermock.NewReconciler(t),
 			versionReconciler:        versionReconciler,
 		}
@@ -214,7 +214,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 	reconciler := &Reconciler{
 		client:                   fakeClient,
 		apiReader:                fakeClient,
-		dynakube:                 dk,
+		dk:                       dk,
 		connectionInfoReconciler: createConnectionInfoReconcilerMock(t),
 		versionReconciler:        createVersionReconcilerMock(t),
 		tokens:                   createTokens(),
@@ -283,7 +283,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 
 	t.Run("Status.OneAgent.Instances set, if autoUpdate is true", func(t *testing.T) {
 		dk := base.DeepCopy()
-		reconciler.dynakube = dk
+		reconciler.dk = dk
 		reconciler.connectionInfoReconciler = createConnectionInfoReconcilerMock(t)
 		reconciler.versionReconciler = createVersionReconcilerMock(t)
 		reconciler.tokens = createTokens()
@@ -315,7 +315,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	t.Run("Status.OneAgent.Instances set, if autoUpdate is false", func(t *testing.T) {
 		dk := base.DeepCopy()
 		autoUpdate := false
-		reconciler.dynakube = dk
+		reconciler.dk = dk
 		reconciler.connectionInfoReconciler = createConnectionInfoReconcilerMock(t)
 		reconciler.versionReconciler = createVersionReconcilerMock(t)
 		reconciler.tokens = createTokens()
@@ -744,7 +744,7 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 
 	t.Run(`create OneAgent connection info ConfigMap`, func(t *testing.T) {
 		reconciler := Reconciler{
-			dynakube:                 dk,
+			dk:                       dk,
 			client:                   fakeClient,
 			apiReader:                fakeClient,
 			versionReconciler:        createVersionReconcilerMock(t),

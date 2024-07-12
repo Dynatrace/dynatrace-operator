@@ -23,7 +23,7 @@ type reconciler struct {
 	dtc          dtclient.Client
 	timeProvider *timeprovider.Provider
 
-	dynakube *dynakube.DynaKube
+	dk *dynakube.DynaKube
 }
 type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler
 
@@ -33,7 +33,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dtc dtclient.Clie
 	return &reconciler{
 		client:       clt,
 		apiReader:    apiReader,
-		dynakube:     dk,
+		dk:           dk,
 		dtc:          dtc,
 		timeProvider: timeprovider.New(),
 	}
@@ -42,66 +42,66 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dtc dtclient.Clie
 var NoOneAgentCommunicationHostsError = errors.New("no communication hosts for OneAgent are available")
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	if !r.dynakube.NeedAppInjection() && !r.dynakube.NeedsOneAgent() {
-		if meta.FindStatusCondition(*r.dynakube.Conditions(), oaConnectionInfoConditionType) == nil {
+	if !r.dk.NeedAppInjection() && !r.dk.NeedsOneAgent() {
+		if meta.FindStatusCondition(*r.dk.Conditions(), oaConnectionInfoConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}
 
 		query := k8ssecret.NewQuery(ctx, r.client, r.apiReader, log)
-		err := query.Delete(r.dynakube.OneagentTenantSecret(), r.dynakube.Namespace)
+		err := query.Delete(r.dk.OneagentTenantSecret(), r.dk.Namespace)
 
 		if err != nil {
 			log.Error(err, "failed to clean-up OneAgent tenant-secret")
 		}
 
-		meta.RemoveStatusCondition(r.dynakube.Conditions(), oaConnectionInfoConditionType)
-		r.dynakube.Status.OneAgent.ConnectionInfoStatus = dynakube.OneAgentConnectionInfoStatus{}
+		meta.RemoveStatusCondition(r.dk.Conditions(), oaConnectionInfoConditionType)
+		r.dk.Status.OneAgent.ConnectionInfoStatus = dynakube.OneAgentConnectionInfoStatus{}
 
 		return nil // clean-up shouldn't cause a failure
 	}
 
-	oldStatus := r.dynakube.Status.DeepCopy()
+	oldStatus := r.dk.Status.DeepCopy()
 
 	err := r.reconcileConnectionInfo(ctx)
 	if err != nil {
 		return err
 	}
 
-	needStatusUpdate, err := hasher.IsDifferent(oldStatus, r.dynakube.Status)
+	needStatusUpdate, err := hasher.IsDifferent(oldStatus, r.dk.Status)
 	if err != nil {
 		return errors.WithMessage(err, "failed to compare connection info status hashes")
 	} else if needStatusUpdate {
-		err = r.dynakube.UpdateStatus(ctx, r.client)
+		err = r.dk.UpdateStatus(ctx, r.client)
 	}
 
 	return err
 }
 
 func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
-	secretNamespacedName := types.NamespacedName{Name: r.dynakube.OneagentTenantSecret(), Namespace: r.dynakube.Namespace}
+	secretNamespacedName := types.NamespacedName{Name: r.dk.OneagentTenantSecret(), Namespace: r.dk.Namespace}
 
-	if !conditions.IsOutdated(r.timeProvider, r.dynakube, oaConnectionInfoConditionType) {
+	if !conditions.IsOutdated(r.timeProvider, r.dk, oaConnectionInfoConditionType) {
 		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.apiReader, secretNamespacedName, log)
 		if err != nil {
 			return err
 		}
 
-		condition := meta.FindStatusCondition(*r.dynakube.Conditions(), oaConnectionInfoConditionType)
+		condition := meta.FindStatusCondition(*r.dk.Conditions(), oaConnectionInfoConditionType)
 		if isSecretPresent {
 			log.Info(dynakube.GetCacheValidMessage(
 				"OneAgent connection info update",
 				condition.LastTransitionTime,
-				r.dynakube.ApiRequestThreshold()))
+				r.dk.ApiRequestThreshold()))
 
 			return nil
 		}
 	}
 
-	conditions.SetSecretOutdated(r.dynakube.Conditions(), oaConnectionInfoConditionType, secretNamespacedName.Name+" is not present or outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
+	conditions.SetSecretOutdated(r.dk.Conditions(), oaConnectionInfoConditionType, secretNamespacedName.Name+" is not present or outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
 
 	connectionInfo, err := r.dtc.GetOneAgentConnectionInfo(ctx)
 	if err != nil {
-		conditions.SetDynatraceApiError(r.dynakube.Conditions(), oaConnectionInfoConditionType, err)
+		conditions.SetDynatraceApiError(r.dk.Conditions(), oaConnectionInfoConditionType, err)
 
 		return errors.WithMessage(err, "failed to get OneAgent connection info")
 	}
@@ -116,12 +116,12 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 
 	if len(connectionInfo.CommunicationHosts) == 0 {
 		log.Info("no OneAgent communication hosts received, tenant API requests not yet throttled")
-		setEmptyCommunicationHostsCondition(r.dynakube.Conditions())
+		setEmptyCommunicationHostsCondition(r.dk.Conditions())
 
 		return NoOneAgentCommunicationHostsError
 	}
 
-	err = r.createTenantTokenSecret(ctx, r.dynakube.OneagentTenantSecret(), r.dynakube, connectionInfo.ConnectionInfo)
+	err = r.createTenantTokenSecret(ctx, r.dk.OneagentTenantSecret(), r.dk, connectionInfo.ConnectionInfo)
 	if err != nil {
 		return err
 	}
@@ -132,9 +132,9 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 }
 
 func (r *reconciler) setDynakubeStatus(connectionInfo dtclient.OneAgentConnectionInfo) {
-	r.dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID = connectionInfo.TenantUUID
-	r.dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints = connectionInfo.Endpoints
-	copyCommunicationHosts(&r.dynakube.Status.OneAgent.ConnectionInfoStatus, connectionInfo.CommunicationHosts)
+	r.dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID = connectionInfo.TenantUUID
+	r.dk.Status.OneAgent.ConnectionInfoStatus.Endpoints = connectionInfo.Endpoints
+	copyCommunicationHosts(&r.dk.Status.OneAgent.ConnectionInfoStatus, connectionInfo.CommunicationHosts)
 }
 
 func copyCommunicationHosts(dest *dynakube.OneAgentConnectionInfoStatus, src []dtclient.CommunicationHost) {
@@ -159,12 +159,12 @@ func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName str
 	err = query.CreateOrUpdate(*secret)
 	if err != nil {
 		log.Info("could not create or update secret for connection info", "name", secret.Name)
-		conditions.SetKubeApiError(r.dynakube.Conditions(), oaConnectionInfoConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), oaConnectionInfoConditionType, err)
 
 		return err
 	}
 
-	conditions.SetSecretCreated(r.dynakube.Conditions(), oaConnectionInfoConditionType, secret.Name)
+	conditions.SetSecretCreated(r.dk.Conditions(), oaConnectionInfoConditionType, secret.Name)
 
 	return nil
 }

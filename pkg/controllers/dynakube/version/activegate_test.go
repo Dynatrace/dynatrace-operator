@@ -23,7 +23,7 @@ func TestActiveGateUpdater(t *testing.T) {
 	}
 
 	t.Run("Getters work as expected", func(t *testing.T) {
-		dynakube := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
 					dynakube.AnnotationFeatureDisableActiveGateUpdates: "true",
@@ -41,11 +41,11 @@ func TestActiveGateUpdater(t *testing.T) {
 		mockClient := dtclientmock.NewClient(t)
 		mockActiveGateImageInfo(mockClient, testImage)
 
-		updater := newActiveGateUpdater(dynakube, fake.NewClient(), mockClient)
+		updater := newActiveGateUpdater(dk, fake.NewClient(), mockClient)
 
 		assert.Equal(t, "activegate", updater.Name())
 		assert.True(t, updater.IsEnabled())
-		assert.Equal(t, dynakube.Spec.ActiveGate.Image, updater.CustomImage())
+		assert.Equal(t, dk.Spec.ActiveGate.Image, updater.CustomImage())
 		assert.Equal(t, "", updater.CustomVersion())
 		assert.False(t, updater.IsAutoUpdateEnabled())
 		imageInfo, err := updater.LatestImageInfo(ctx)
@@ -56,7 +56,7 @@ func TestActiveGateUpdater(t *testing.T) {
 
 func TestActiveGateUseDefault(t *testing.T) {
 	t.Run("Set according to defaults, unset previous status", func(t *testing.T) {
-		dynakube := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
 				ActiveGate: dynakube.ActiveGateSpec{
@@ -72,23 +72,23 @@ func TestActiveGateUseDefault(t *testing.T) {
 			},
 		}
 		expectedVersion := "1.2.3.4-5"
-		expectedImage := dynakube.DefaultActiveGateImage(expectedVersion)
+		expectedImage := dk.DefaultActiveGateImage(expectedVersion)
 		mockClient := dtclientmock.NewClient(t)
 
 		mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(expectedVersion, nil)
 
-		updater := newActiveGateUpdater(dynakube, fake.NewClient(), mockClient)
+		updater := newActiveGateUpdater(dk, fake.NewClient(), mockClient)
 
 		err := updater.UseTenantRegistry(context.Background())
 		require.NoError(t, err)
-		assert.Equal(t, expectedImage, dynakube.Status.ActiveGate.ImageID)
-		assert.Equal(t, expectedVersion, dynakube.Status.ActiveGate.Version)
+		assert.Equal(t, expectedImage, dk.Status.ActiveGate.ImageID)
+		assert.Equal(t, expectedVersion, dk.Status.ActiveGate.Version)
 	})
 }
 
 func TestActiveGateIsEnabled(t *testing.T) {
 	t.Run("cleans up if not enabled", func(t *testing.T) {
-		dynakube := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
 				ActiveGate: dynakube.ActiveGateStatus{
 					VersionStatus: status.VersionStatus{
@@ -98,7 +98,7 @@ func TestActiveGateIsEnabled(t *testing.T) {
 			},
 		}
 
-		updater := newActiveGateUpdater(dynakube, nil, nil)
+		updater := newActiveGateUpdater(dk, nil, nil)
 
 		isEnabled := updater.IsEnabled()
 		require.False(t, isEnabled)

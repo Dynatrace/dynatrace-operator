@@ -19,14 +19,14 @@ var _ builder.Modifier = CustomPropertiesModifier{}
 
 func NewCustomPropertiesModifier(dk dynakube.DynaKube, capability capability.Capability) CustomPropertiesModifier {
 	return CustomPropertiesModifier{
-		dynakube:   dk,
+		dk:         dk,
 		capability: capability,
 	}
 }
 
 type CustomPropertiesModifier struct {
 	capability capability.Capability
-	dynakube   dynakube.DynaKube
+	dk         dynakube.DynaKube
 }
 
 func (mod CustomPropertiesModifier) Enabled() bool {
@@ -79,7 +79,7 @@ func (mod CustomPropertiesModifier) hasCustomProperties() bool {
 
 func (mod CustomPropertiesModifier) determineCustomPropertiesSource() string {
 	if mod.capability.Properties().CustomProperties.ValueFrom == "" {
-		return fmt.Sprintf("%s-%s-%s", mod.dynakube.Name, mod.dynakube.ActiveGateServiceAccountOwner(), customproperties.Suffix)
+		return fmt.Sprintf("%s-%s-%s", mod.dk.Name, mod.dk.ActiveGateServiceAccountOwner(), customproperties.Suffix)
 	}
 
 	return mod.capability.Properties().CustomProperties.ValueFrom

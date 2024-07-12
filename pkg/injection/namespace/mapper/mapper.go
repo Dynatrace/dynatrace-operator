@@ -115,23 +115,23 @@ func updateNamespace(namespace *corev1.Namespace, deployedDynakubes *dynakube.Dy
 	conflict := ConflictChecker{}
 
 	for i := range deployedDynakubes.Items {
-		dynakube := &deployedDynakubes.Items[i]
-		if isIgnoredNamespace(dynakube, namespace.Name) {
+		dk := &deployedDynakubes.Items[i]
+		if isIgnoredNamespace(dk, namespace.Name) {
 			continue
 		}
 
-		matches, err := match(dynakube, namespace)
+		matches, err := match(dk, namespace)
 		if err != nil {
 			return namespaceUpdated, err
 		}
 
 		if matches {
-			if err := conflict.check(dynakube); err != nil {
+			if err := conflict.check(dk); err != nil {
 				return namespaceUpdated, err
 			}
 		}
 
-		labelsUpdated := updateLabels(matches, dynakube, namespace)
+		labelsUpdated := updateLabels(matches, dk, namespace)
 		namespaceUpdated = labelsUpdated || namespaceUpdated
 	}
 

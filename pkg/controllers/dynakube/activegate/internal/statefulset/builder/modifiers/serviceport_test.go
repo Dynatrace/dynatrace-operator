@@ -19,21 +19,21 @@ func setServicePortUsage(dk *dynakube.DynaKube, isUsed bool) {
 
 func TestServicePortEnabled(t *testing.T) {
 	t.Run("true", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		setServicePortUsage(&dynakube, true)
-		multiCapability := capability.NewMultiCapability(&dynakube)
+		dk := getBaseDynakube()
+		setServicePortUsage(&dk, true)
+		multiCapability := capability.NewMultiCapability(&dk)
 
-		mod := NewServicePortModifier(dynakube, multiCapability, prioritymap.New())
+		mod := NewServicePortModifier(dk, multiCapability, prioritymap.New())
 
 		assert.True(t, mod.Enabled())
 	})
 
 	t.Run("false", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		setServicePortUsage(&dynakube, false)
-		multiCapability := capability.NewMultiCapability(&dynakube)
+		dk := getBaseDynakube()
+		setServicePortUsage(&dk, false)
+		multiCapability := capability.NewMultiCapability(&dk)
 
-		mod := NewServicePortModifier(dynakube, multiCapability, prioritymap.New())
+		mod := NewServicePortModifier(dk, multiCapability, prioritymap.New())
 
 		assert.False(t, mod.Enabled())
 	})
@@ -41,10 +41,10 @@ func TestServicePortEnabled(t *testing.T) {
 
 func TestServicePortModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		setServicePortUsage(&dynakube, true)
-		multiCapability := capability.NewMultiCapability(&dynakube)
-		mod := NewServicePortModifier(dynakube, multiCapability, prioritymap.New())
+		dk := getBaseDynakube()
+		setServicePortUsage(&dk, true)
+		multiCapability := capability.NewMultiCapability(&dk)
+		mod := NewServicePortModifier(dk, multiCapability, prioritymap.New())
 		builder := createBuilderForTesting()
 		expectedPorts := mod.getPorts()
 		expectedEnv := mod.getEnvs()

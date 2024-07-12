@@ -37,11 +37,11 @@ func RunClassicUninstall(builder *features.FeatureBuilder, level features.Level,
 	builder.WithStep("clean up removed", level, removeUninstallDaemonset(testDynakube.Namespace))
 }
 
-func createUninstallDaemonSet(dynakube dynakube.DynaKube) features.Func {
+func createUninstallDaemonSet(dk dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		uninstallDaemonSet := manifests.ObjectFromFile[*appsv1.DaemonSet](t, uninstallOneAgentDaemonSetPath)
-		uninstallDaemonSet.Namespace = dynakube.Namespace
-		uninstallDaemonSet.Spec.Template.Spec.Tolerations = dynakube.Spec.OneAgent.ClassicFullStack.Tolerations
+		uninstallDaemonSet.Namespace = dk.Namespace
+		uninstallDaemonSet.Spec.Template.Spec.Tolerations = dk.Spec.OneAgent.ClassicFullStack.Tolerations
 		resource := envConfig.Client().Resources()
 		require.NoError(t, resource.Create(ctx, uninstallDaemonSet))
 

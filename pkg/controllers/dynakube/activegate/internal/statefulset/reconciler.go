@@ -30,7 +30,7 @@ var _ controllers.Reconciler = &Reconciler{}
 
 type Reconciler struct {
 	client     client.Client
-	dynakube   *dynakube.DynaKube
+	dk         *dynakube.DynaKube
 	apiReader  client.Reader
 	capability capability.Capability
 	modifiers  []builder.Modifier
@@ -45,7 +45,7 @@ func NewReconciler(
 	return &Reconciler{
 		client:     clt,
 		apiReader:  apiReader,
-		dynakube:   dk,
+		dk:         dk,
 		capability: capability,
 		modifiers:  []builder.Modifier{},
 	}
@@ -70,39 +70,39 @@ func (r *Reconciler) manageStatefulSet(ctx context.Context) error {
 		return errors.WithStack(err)
 	}
 
-	if err := controllerutil.SetControllerReference(r.dynakube, desiredSts, scheme.Scheme); err != nil {
+	if err := controllerutil.SetControllerReference(r.dk, desiredSts, scheme.Scheme); err != nil {
 		return errors.WithStack(err)
 	}
 
 	created, err := r.createStatefulSetIfNotExists(ctx, desiredSts)
 	if err != nil {
-		conditions.SetKubeApiError(r.dynakube.Conditions(), ActiveGateStatefulSetConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), ActiveGateStatefulSetConditionType, err)
 
 		return errors.WithStack(err)
 	} else if created {
-		conditions.SetStatefulSetCreated(r.dynakube.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
+		conditions.SetStatefulSetCreated(r.dk.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
 
 		return nil
 	}
 
 	deleted, err := r.deleteStatefulSetIfSelectorChanged(ctx, desiredSts)
 	if err != nil {
-		conditions.SetKubeApiError(r.dynakube.Conditions(), ActiveGateStatefulSetConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), ActiveGateStatefulSetConditionType, err)
 
 		return errors.WithStack(err)
 	} else if deleted {
-		conditions.SetStatefulSetDeleted(r.dynakube.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
+		conditions.SetStatefulSetDeleted(r.dk.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
 
 		return r.manageStatefulSet(ctx)
 	}
 
 	updated, err := r.updateStatefulSetIfOutdated(ctx, desiredSts)
 	if err != nil {
-		conditions.SetKubeApiError(r.dynakube.Conditions(), ActiveGateStatefulSetConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), ActiveGateStatefulSetConditionType, err)
 
 		return errors.WithStack(err)
 	} else if updated {
-		conditions.SetStatefulSetUpdated(r.dynakube.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
+		conditions.SetStatefulSetUpdated(r.dk.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
 	}
 
 	return nil
@@ -119,7 +119,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context) (*appsv1.State
 		return nil, errors.WithStack(err)
 	}
 
-	statefulSetBuilder := NewStatefulSetBuilder(kubeUID, activeGateConfigurationHash, *r.dynakube, r.capability)
+	statefulSetBuilder := NewStatefulSetBuilder(kubeUID, activeGateConfigurationHash, *r.dk, r.capability)
 
 	desiredSts, err := statefulSetBuilder.CreateStatefulSet(r.modifiers)
 
@@ -248,7 +248,7 @@ func (r *Reconciler) getCustomPropertyValue() (string, error) {
 }
 
 func (r *Reconciler) getAuthTokenValue() (string, error) {
-	if !r.dynakube.NeedsActiveGate() {
+	if !r.dk.NeedsActiveGate() {
 		return "", nil
 	}
 
@@ -262,14 +262,14 @@ func (r *Reconciler) getAuthTokenValue() (string, error) {
 
 func (r *Reconciler) getDataFromCustomProperty(customProperties *dynakube.DynaKubeValueSource) (string, error) {
 	if customProperties.ValueFrom != "" {
-		return secret.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dynakube.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey, log)
+		return secret.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dk.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey, log)
 	}
 
 	return customProperties.Value, nil
 }
 
 func (r *Reconciler) getDataFromAuthTokenSecret() (string, error) {
-	return secret.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dynakube.Namespace, Name: r.dynakube.ActiveGateAuthTokenSecret()}, authtoken.ActiveGateAuthTokenName, log)
+	return secret.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dk.Namespace, Name: r.dk.ActiveGateAuthTokenSecret()}, authtoken.ActiveGateAuthTokenName, log)
 }
 
 func needsCustomPropertyHash(customProperties *dynakube.DynaKubeValueSource) bool {

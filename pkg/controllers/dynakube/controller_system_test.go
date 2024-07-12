@@ -49,7 +49,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	t.Run(`Create works with minimal setup and interface`, func(t *testing.T) { // keep as integration test?
 		mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
 
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
@@ -58,7 +58,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				APIURL: testApiUrl,
 			},
 		}
-		controller := createFakeClientAndReconciler(t, mockClient, instance, testPaasToken, testAPIToken)
+		controller := createFakeClientAndReconciler(t, mockClient, dk, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -72,7 +72,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		mockClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{TokenId: "test", Token: "dt.some.valuegoeshere"}, nil)
 		mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(testVersion, nil)
 
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
@@ -88,7 +88,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 
 			Status: *getTestDynkubeStatus(),
 		}
-		controller := createFakeClientAndReconciler(t, mockClient, instance, testPaasToken, testAPIToken)
+		controller := createFakeClientAndReconciler(t, mockClient, dk, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -111,7 +111,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		mockClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{TokenId: "test", Token: "dt.some.valuegoeshere"}, nil)
 		mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(testVersion, nil)
 
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
@@ -129,7 +129,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			},
 			Status: *getTestDynkubeStatus(),
 		}
-		controller := createFakeClientAndReconciler(t, mockClient, instance, testPaasToken, testAPIToken)
+		controller := createFakeClientAndReconciler(t, mockClient, dk, testPaasToken, testAPIToken)
 		// Remove existing StatefulSet created by createFakeClientAndReconciler
 		require.NoError(t, controller.client.Delete(context.Background(), &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: testName + "-activegate", Namespace: testNamespace}}))
 
@@ -150,8 +150,8 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 
 		require.NoError(t,
 			controller.client.Get(context.Background(), client.ObjectKey{Name: testName + "-activegate", Namespace: testNamespace}, &activeGateStatefulSet))
-		require.NoError(t, controller.client.Get(context.Background(), client.ObjectKey{Name: testName, Namespace: testNamespace}, instance))
-		assert.Equal(t, status.Running, instance.Status.Phase)
+		require.NoError(t, controller.client.Get(context.Background(), client.ObjectKey{Name: testName, Namespace: testNamespace}, dk))
+		assert.Equal(t, status.Running, dk.Status.Phase)
 	})
 }
 
@@ -159,7 +159,7 @@ func TestReconcileOnlyOneTokenProvided_Reconcile(t *testing.T) {
 	t.Run(`Create validates apiToken correctly if apiToken with "InstallerDownload"-scope is provided`, func(t *testing.T) {
 		mockClient := createDTMockClient(t, dtclient.TokenScopes{}, dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeInstallerDownload, dtclient.TokenScopeActiveGateTokenCreate})
 
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
@@ -167,7 +167,7 @@ func TestReconcileOnlyOneTokenProvided_Reconcile(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
 			}}
-		controller := createFakeClientAndReconciler(t, mockClient, instance, "", testAPIToken)
+		controller := createFakeClientAndReconciler(t, mockClient, dk, "", testAPIToken)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -195,7 +195,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	mockClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{TokenId: "test", Token: "dt.some.valuegoeshere"}, nil)
 	mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(testVersion, nil)
 
-	instance := &dynakube.DynaKube{
+	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
@@ -212,7 +212,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 		},
 	}
 
-	r := createFakeClientAndReconciler(t, mockClient, instance, testPaasToken, testAPIToken)
+	r := createFakeClientAndReconciler(t, mockClient, dk, testPaasToken, testAPIToken)
 	request := reconcile.Request{
 		NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 	}
@@ -224,7 +224,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	_, err = r.Reconcile(context.Background(), request)
 	require.NoError(t, err)
 
-	multiCapability := capability.NewMultiCapability(instance)
+	multiCapability := capability.NewMultiCapability(dk)
 	stsName := capability.CalculateStatefulSetName(multiCapability, testName)
 
 	routingSts := &appsv1.StatefulSet{}
@@ -243,11 +243,11 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, routingSvc)
 
-	err = r.client.Get(context.Background(), client.ObjectKey{Name: instance.Name, Namespace: instance.Namespace}, instance)
+	err = r.client.Get(context.Background(), client.ObjectKey{Name: dk.Name, Namespace: dk.Namespace}, dk)
 	require.NoError(t, err)
 
-	instance.Spec.ActiveGate.Capabilities = []dynakube.CapabilityDisplayName{}
-	err = r.client.Update(context.Background(), instance)
+	dk.Spec.ActiveGate.Capabilities = []dynakube.CapabilityDisplayName{}
+	err = r.client.Update(context.Background(), dk)
 	require.NoError(t, err)
 
 	_, err = r.Reconcile(context.Background(), request)
@@ -272,7 +272,7 @@ func TestAPIError(t *testing.T) {
 	mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
 	mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(testVersion, nil)
 
-	instance := &dynakube.DynaKube{
+	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
@@ -291,7 +291,7 @@ func TestAPIError(t *testing.T) {
 
 	t.Run("should return error result on 503", func(t *testing.T) {
 		mockClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, dtclient.ServerError{Code: http.StatusServiceUnavailable, Message: "Service unavailable"})
-		controller := createFakeClientAndReconciler(t, mockClient, instance, testPaasToken, testAPIToken)
+		controller := createFakeClientAndReconciler(t, mockClient, dk, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -302,7 +302,7 @@ func TestAPIError(t *testing.T) {
 	})
 	t.Run("should return error result on 429", func(t *testing.T) {
 		mockClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, dtclient.ServerError{Code: http.StatusTooManyRequests, Message: "Too many requests"})
-		controller := createFakeClientAndReconciler(t, mockClient, instance, testPaasToken, testAPIToken)
+		controller := createFakeClientAndReconciler(t, mockClient, dk, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -370,7 +370,7 @@ func createDTMockClient(t *testing.T, paasTokenScopes, apiTokenScopes dtclient.T
 	return mockClient
 }
 
-func createFakeClientAndReconciler(t *testing.T, mockClient dtclient.Client, instance *dynakube.DynaKube, paasToken, apiToken string) *Controller {
+func createFakeClientAndReconciler(t *testing.T, mockClient dtclient.Client, dk *dynakube.DynaKube, paasToken, apiToken string) *Controller {
 	data := map[string][]byte{
 		dtclient.ApiToken: []byte(apiToken),
 	}
@@ -379,7 +379,7 @@ func createFakeClientAndReconciler(t *testing.T, mockClient dtclient.Client, ins
 	}
 
 	objects := []client.Object{
-		instance,
+		dk,
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -395,7 +395,7 @@ func createFakeClientAndReconciler(t *testing.T, mockClient dtclient.Client, ins
 	}
 
 	objects = append(objects, generateStatefulSetForTesting(testName, testNamespace, "activegate", testUID))
-	objects = append(objects, createTenantSecrets(instance)...)
+	objects = append(objects, createTenantSecrets(dk)...)
 
 	fakeClient := fake.NewClientWithIndex(objects...)
 

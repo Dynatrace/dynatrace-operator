@@ -127,8 +127,8 @@ func TestTokens(t *testing.T) {
 		assert.EqualError(t, err, "token 'apiToken' has scope errors: [feature 'Access problem and event feed, metrics, and topology' is missing scope 'DataExport' feature 'Kubernetes API Monitoring' is missing scope 'entities.read, settings.read, settings.write' feature 'Automatic ActiveGate Token Creation' is missing scope 'activeGateTokenManagement.create' feature 'Download Installer' is missing scope 'InstallerDownload']")
 	})
 	t.Run("data ingest enabled => dataingest token missing rights => fail", func(t *testing.T) {
-		dynakube := dynakube.DynaKube{}
-		enableKubernetesMonitoringAndMetricsIngest(&dynakube)
+		dk := dynakube.DynaKube{}
+		enableKubernetesMonitoringAndMetricsIngest(&dk)
 
 		apiToken := newToken(dtclient.ApiToken, fakeTokenAllAPITokenPermissionsIncludingPaaS)
 		dataingestToken := newToken(dtclient.DataIngestToken, fakeTokenNoPermissions)
@@ -137,7 +137,7 @@ func TestTokens(t *testing.T) {
 			dtclient.DataIngestToken: &dataingestToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube)
+		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dk)
 
 		assert.Len(t, tokens.ApiToken().Features, 4)
 		assert.Empty(t, tokens.PaasToken().Features)

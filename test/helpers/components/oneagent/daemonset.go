@@ -16,21 +16,21 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func WaitForDaemonset(dynakube dynakubev1beta2.DynaKube) features.Func {
-	return helpers.ToFeatureFunc(daemonset.WaitFor(dynakube.OneAgentDaemonsetName(), dynakube.Namespace), true)
+func WaitForDaemonset(dk dynakubev1beta2.DynaKube) features.Func {
+	return helpers.ToFeatureFunc(daemonset.WaitFor(dk.OneAgentDaemonsetName(), dk.Namespace), true)
 }
 
-func WaitForDaemonsetV1Beta1(dynakube dynakubev1beta1.DynaKube) features.Func {
-	return helpers.ToFeatureFunc(daemonset.WaitFor(dynakube.OneAgentDaemonsetName(), dynakube.Namespace), true)
+func WaitForDaemonsetV1Beta1(dk dynakubev1beta1.DynaKube) features.Func {
+	return helpers.ToFeatureFunc(daemonset.WaitFor(dk.OneAgentDaemonsetName(), dk.Namespace), true)
 }
 
-func WaitForDaemonSetPodsDeletion(dynakube dynakubev1beta2.DynaKube) features.Func {
-	return pod.WaitForPodsDeletionWithOwner(dynakube.OneAgentDaemonsetName(), dynakube.Namespace)
+func WaitForDaemonSetPodsDeletion(dk dynakubev1beta2.DynaKube) features.Func {
+	return pod.WaitForPodsDeletionWithOwner(dk.OneAgentDaemonsetName(), dk.Namespace)
 }
 
-func Get(ctx context.Context, resource *resources.Resources, dynakube dynakubev1beta2.DynaKube) (appsv1.DaemonSet, error) {
+func Get(ctx context.Context, resource *resources.Resources, dk dynakubev1beta2.DynaKube) (appsv1.DaemonSet, error) {
 	return daemonset.NewQuery(ctx, resource, client.ObjectKey{
-		Name:      dynakube.OneAgentDaemonsetName(),
-		Namespace: dynakube.Namespace,
+		Name:      dk.OneAgentDaemonsetName(),
+		Namespace: dk.Namespace,
 	}).Get()
 }

@@ -48,18 +48,18 @@ var (
 
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run(`Create works with minimal setup`, func(t *testing.T) {
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
 			}}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, instance, createMockDtClient(t, false), nil, nil)
+		r := NewReconciler(fakeClient, fakeClient, dk, createMockDtClient(t, false), nil, nil)
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 	})
 	t.Run(`Pull secret reconciler is called even if ActiveGate disabled`, func(t *testing.T) {
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
@@ -74,23 +74,23 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 
-		fakeClient := fake.NewClientWithIndex(instance, &corev1.Secret{
+		fakeClient := fake.NewClientWithIndex(dk, &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName + "-pull-secret",
 			},
 		})
-		r := NewReconciler(fakeClient, fakeClient, instance, createMockDtClient(t, false), nil, nil)
+		r := NewReconciler(fakeClient, fakeClient, dk, createMockDtClient(t, false), nil, nil)
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var secret corev1.Secret
 		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testName + "-pull-secret", Namespace: testNamespace}, &secret)
 		require.True(t, k8serrors.IsNotFound(err))
-		require.Nil(t, meta.FindStatusCondition(instance.Status.Conditions, dtpullsecret.PullSecretConditionType))
+		require.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, dtpullsecret.PullSecretConditionType))
 	})
 	t.Run(`Create AG capability (creation and deletion)`, func(t *testing.T) {
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
@@ -104,7 +104,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 
-		r := NewReconciler(fakeClient, fakeClient, instance, createMockDtClient(t, true), nil, nil).(*Reconciler)
+		r := NewReconciler(fakeClient, fakeClient, dk, createMockDtClient(t, true), nil, nil).(*Reconciler)
 		r.connectionReconciler = createGenericReconcilerMock(t)
 		r.versionReconciler = createVersionReconcilerMock(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
@@ -118,7 +118,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		// remove AG from spec
-		instance.Spec.ActiveGate = dynakube.ActiveGateSpec{}
+		dk.Spec.ActiveGate = dynakube.ActiveGateSpec{}
 		r.connectionReconciler = createGenericReconcilerMock(t)
 		r.versionReconciler = createVersionReconcilerMock(t)
 		r.pullSecretReconciler = createGenericReconcilerMock(t)
@@ -129,7 +129,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("Reconcile DynaKube without Proxy after a DynaKube with proxy must not interfere with the second DKs Proxy Secret", func(t *testing.T) { // TODO: This is not a unit test, it tests the functionality of another package, it should use a mock for that
-		dynaKubeWithProxy := &dynakube.DynaKube{
+		dkWithProxy := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      "proxyDk",
@@ -139,7 +139,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName}},
 			},
 		}
-		dynaKubeNoProxy := &dynakube.DynaKube{
+		dkNoProxy := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      "noProxyDk",
@@ -154,7 +154,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		proxyReconciler := Reconciler{
 			client:               fakeClient,
 			apiReader:            fakeClient,
-			dynakube:             dynaKubeWithProxy,
+			dk:                   dkWithProxy,
 			authTokenReconciler:  fakeReconciler,
 			pullSecretReconciler: fakeReconciler,
 			newStatefulsetReconcilerFunc: func(_ client.Client, _ client.Reader, _ *dynakube.DynaKube, _ capability.Capability) controllers.Reconciler {
@@ -175,7 +175,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		noProxyReconciler := Reconciler{
 			client:               fakeClient,
 			apiReader:            fakeClient,
-			dynakube:             dynaKubeNoProxy,
+			dk:                   dkNoProxy,
 			authTokenReconciler:  fakeReconciler,
 			pullSecretReconciler: fakeReconciler,
 			newStatefulsetReconcilerFunc: func(_ client.Client, _ client.Reader, _ *dynakube.DynaKube, _ capability.Capability) controllers.Reconciler {
@@ -194,7 +194,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run(`Reconciles Kubernetes Monitoring`, func(t *testing.T) {
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
@@ -210,7 +210,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 
-		r := NewReconciler(fakeClient, fakeClient, instance, createMockDtClient(t, true), nil, nil).(*Reconciler)
+		r := NewReconciler(fakeClient, fakeClient, dk, createMockDtClient(t, true), nil, nil).(*Reconciler)
 		r.connectionReconciler = createGenericReconcilerMock(t)
 		r.versionReconciler = createVersionReconcilerMock(t)
 		r.pullSecretReconciler = createGenericReconcilerMock(t)
@@ -222,8 +222,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		var statefulSet appsv1.StatefulSet
 
-		kubeMonCapability := capability.NewMultiCapability(instance)
-		name := capability.CalculateStatefulSetName(kubeMonCapability, instance.Name)
+		kubeMonCapability := capability.NewMultiCapability(dk)
+		name := capability.CalculateStatefulSetName(kubeMonCapability, dk.Name)
 		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: name, Namespace: testNamespace}, &statefulSet)
 
 		require.NoError(t, err)
@@ -369,7 +369,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 		r := Reconciler{
 			client:               fakeClient,
 			apiReader:            fakeClient,
-			dynakube:             dk,
+			dk:                   dk,
 			authTokenReconciler:  fakeReconciler,
 			pullSecretReconciler: fakeReconciler,
 			newStatefulsetReconcilerFunc: func(_ client.Client, _ client.Reader, _ *dynakube.DynaKube, _ capability.Capability) controllers.Reconciler {

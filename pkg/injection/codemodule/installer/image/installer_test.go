@@ -62,7 +62,7 @@ func testFileSystemWithSharedDirPresent(pathResolver metadata.PathResolver, imag
 func TestNewImageInstaller(t *testing.T) {
 	ctx := context.Background()
 	testFS := afero.NewMemMapFs()
-	dynakube := &dynakube.DynaKube{
+	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "dynakube",
@@ -71,8 +71,8 @@ func TestNewImageInstaller(t *testing.T) {
 	}
 	pullSecret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      dynakube.PullSecretName(),
-			Namespace: dynakube.Namespace,
+			Name:      dk.PullSecretName(),
+			Namespace: dk.Namespace,
 		},
 	}
 	pullSecret.Data = map[string][]byte{
@@ -83,7 +83,7 @@ func TestNewImageInstaller(t *testing.T) {
 	props := &Properties{
 		PathResolver: metadata.PathResolver{RootDir: "/tmp"},
 		ImageUri:     testImageURL,
-		Dynakube:     dynakube,
+		Dynakube:     dk,
 		ImageDigest:  testImageDigest,
 		ApiReader:    fakeClient,
 	}

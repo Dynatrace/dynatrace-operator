@@ -16,7 +16,7 @@ func TestProxy(t *testing.T) {
 	proxyRawURL := "proxy.url"
 
 	t.Run("set NO_PROXY", func(t *testing.T) {
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "Dynakube",
 				Namespace: "dynatrace",
@@ -33,7 +33,7 @@ func TestProxy(t *testing.T) {
 			},
 		}
 		transport := http.DefaultTransport.(*http.Transport).Clone()
-		transport, err := PrepareTransportForDynaKube(context.TODO(), nil, transport, instance)
+		transport, err := PrepareTransportForDynaKube(context.TODO(), nil, transport, dk)
 
 		require.NoError(t, err)
 
@@ -49,7 +49,7 @@ func TestProxy(t *testing.T) {
 }
 
 func TestSkipCertCheck(t *testing.T) {
-	instance := &dynakube.DynaKube{
+	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "Dynakube",
 			Namespace: "dynatrace",
@@ -63,16 +63,16 @@ func TestSkipCertCheck(t *testing.T) {
 	}
 
 	t.Run("has skipCertCheck enabled", func(t *testing.T) {
-		instance.Spec.SkipCertCheck = true
+		dk.Spec.SkipCertCheck = true
 		transport := http.DefaultTransport.(*http.Transport).Clone()
-		transport, err := PrepareTransportForDynaKube(context.TODO(), nil, transport, instance)
+		transport, err := PrepareTransportForDynaKube(context.TODO(), nil, transport, dk)
 		require.NoError(t, err)
 		assert.True(t, transport.TLSClientConfig.InsecureSkipVerify)
 	})
 	t.Run("has skipCertCheck disabled", func(t *testing.T) {
-		instance.Spec.SkipCertCheck = false
+		dk.Spec.SkipCertCheck = false
 		transport := http.DefaultTransport.(*http.Transport).Clone()
-		transport, err := PrepareTransportForDynaKube(context.TODO(), nil, transport, instance)
+		transport, err := PrepareTransportForDynaKube(context.TODO(), nil, transport, dk)
 		require.NoError(t, err)
 		assert.False(t, transport.TLSClientConfig.InsecureSkipVerify)
 	})

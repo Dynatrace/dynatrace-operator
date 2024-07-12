@@ -34,7 +34,7 @@ const (
 func TestReconcile(t *testing.T) {
 	ctx := context.Background()
 	latestAgentVersion := "1.2.3.4-5"
-	dk := dynakube.DynaKube{
+	dynakubeTemplate := dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testApiUrl,
@@ -58,11 +58,11 @@ func TestReconcile(t *testing.T) {
 			apiReader:    fake.NewClient(),
 			timeProvider: timeprovider.New().Freeze(),
 		}
-		dkCopy := dk.DeepCopy()
-		err := versionReconciler.ReconcileActiveGate(ctx, dkCopy)
+		dk := dynakubeTemplate.DeepCopy()
+		err := versionReconciler.ReconcileActiveGate(ctx, dk)
 		require.Error(t, err)
 
-		condition := meta.FindStatusCondition(dkCopy.Status.Conditions, activeGateVersionConditionType)
+		condition := meta.FindStatusCondition(dk.Status.Conditions, activeGateVersionConditionType)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 		assert.Equal(t, conditions.DynatraceApiErrorReason, condition.Reason)
 	})
@@ -70,13 +70,13 @@ func TestReconcile(t *testing.T) {
 	t.Run("all image versions were updated", func(t *testing.T) {
 		testActiveGateImage := getTestActiveGateImageInfo()
 		testOneAgentImage := getTestOneAgentImageInfo()
-		dkCopy := dk.DeepCopy()
+		dk := dynakubeTemplate.DeepCopy()
 		fakeClient := fake.NewClient()
 		timeProvider := timeprovider.New().Freeze()
 
-		setupPullSecret(t, fakeClient, *dkCopy)
+		setupPullSecret(t, fakeClient, *dk)
 
-		dkStatus := &dkCopy.Status
+		dkStatus := &dk.Status
 		mockClient := dtclientmock.NewClient(t)
 		mockLatestAgentVersion(mockClient, latestAgentVersion)
 		mockLatestActiveGateVersion(mockClient, latestActiveGateVersion)
@@ -86,32 +86,32 @@ func TestReconcile(t *testing.T) {
 			timeProvider: timeProvider,
 			dtClient:     mockClient,
 		}
-		err := versionReconciler.ReconcileCodeModules(ctx, dkCopy)
+		err := versionReconciler.ReconcileCodeModules(ctx, dk)
 		require.NoError(t, err)
-		err = versionReconciler.ReconcileActiveGate(ctx, dkCopy)
+		err = versionReconciler.ReconcileActiveGate(ctx, dk)
 		require.NoError(t, err)
-		err = versionReconciler.ReconcileOneAgent(ctx, dkCopy)
+		err = versionReconciler.ReconcileOneAgent(ctx, dk)
 		require.NoError(t, err)
 
-		condition := meta.FindStatusCondition(dkCopy.Status.Conditions, activeGateVersionConditionType)
+		condition := meta.FindStatusCondition(dk.Status.Conditions, activeGateVersionConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, verifiedReason, condition.Reason)
 		assert.Equal(t, "Version verified for component.", condition.Message)
 
-		assertStatusBasedOnTenantRegistry(t, dkCopy.DefaultActiveGateImage(testActiveGateImage.Tag), testActiveGateImage.Tag, dkStatus.ActiveGate.VersionStatus)
-		assertStatusBasedOnTenantRegistry(t, dkCopy.DefaultOneAgentImage(testOneAgentImage.Tag), testOneAgentImage.Tag, dkStatus.OneAgent.VersionStatus)
+		assertStatusBasedOnTenantRegistry(t, dk.DefaultActiveGateImage(testActiveGateImage.Tag), testActiveGateImage.Tag, dkStatus.ActiveGate.VersionStatus)
+		assertStatusBasedOnTenantRegistry(t, dk.DefaultOneAgentImage(testOneAgentImage.Tag), testOneAgentImage.Tag, dkStatus.OneAgent.VersionStatus)
 		assert.Equal(t, latestAgentVersion, dkStatus.CodeModules.VersionStatus.Version)
 
 		// no change if probe not old enough
 		previousProbe := *dkStatus.CodeModules.VersionStatus.LastProbeTimestamp
-		err = versionReconciler.ReconcileCodeModules(ctx, dkCopy)
+		err = versionReconciler.ReconcileCodeModules(ctx, dk)
 		require.NoError(t, err)
 		assert.Equal(t, previousProbe, *dkStatus.CodeModules.VersionStatus.LastProbeTimestamp)
 
 		// change if probe old enough
 		changeTime(timeProvider, 15*time.Minute+1*time.Second)
 
-		err = versionReconciler.ReconcileCodeModules(ctx, dkCopy)
+		err = versionReconciler.ReconcileCodeModules(ctx, dk)
 		require.NoError(t, err)
 		assert.NotEqual(t, previousProbe, *dkStatus.CodeModules.VersionStatus.LastProbeTimestamp)
 	})
@@ -120,13 +120,13 @@ func TestReconcile(t *testing.T) {
 		testActiveGateImage := getTestActiveGateImageInfo()
 		testOneAgentImage := getTestOneAgentImageInfo()
 		testCodeModulesImage := getTestCodeModulesImage()
-		dynakube := dk.DeepCopy()
-		enablePublicRegistry(dynakube)
+		dk := dynakubeTemplate.DeepCopy()
+		enablePublicRegistry(dk)
 
 		fakeClient := fake.NewClient()
-		setupPullSecret(t, fakeClient, *dynakube)
+		setupPullSecret(t, fakeClient, *dk)
 
-		dkStatus := &dynakube.Status
+		dkStatus := &dk.Status
 
 		mockClient := dtclientmock.NewClient(t)
 		mockActiveGateImageInfo(mockClient, testActiveGateImage)
@@ -138,15 +138,15 @@ func TestReconcile(t *testing.T) {
 			timeProvider: timeprovider.New().Freeze(),
 			dtClient:     mockClient,
 		}
-		err := versionReconciler.ReconcileCodeModules(ctx, dynakube)
+		err := versionReconciler.ReconcileCodeModules(ctx, dk)
 		require.NoError(t, err)
-		err = versionReconciler.ReconcileActiveGate(ctx, dynakube)
+		err = versionReconciler.ReconcileActiveGate(ctx, dk)
 		require.NoError(t, err)
-		err = versionReconciler.ReconcileOneAgent(ctx, dynakube)
+		err = versionReconciler.ReconcileOneAgent(ctx, dk)
 		require.NoError(t, err)
 		require.NoError(t, err)
 
-		condition := meta.FindStatusCondition(dynakube.Status.Conditions, activeGateVersionConditionType)
+		condition := meta.FindStatusCondition(dk.Status.Conditions, activeGateVersionConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, verifiedReason, condition.Reason)
 		assert.Equal(t, "Version verified for component.", condition.Message)

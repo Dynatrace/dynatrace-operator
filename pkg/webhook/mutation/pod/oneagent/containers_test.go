@@ -51,7 +51,7 @@ func TestConfigureInitContainer(t *testing.T) {
 
 type mutateUserContainerTestCase struct {
 	name                               string
-	dynakube                           dynakube.DynaKube
+	dk                                 dynakube.DynaKube
 	expectedAdditionalEnvCount         int
 	expectedAdditionalVolumeMountCount int
 }
@@ -60,19 +60,19 @@ func TestMutateUserContainers(t *testing.T) {
 	testCases := []mutateUserContainerTestCase{
 		{
 			name:                               "add envs and volume mounts (simple dynakube)",
-			dynakube:                           *getTestDynakube(),
+			dk:                                 *getTestDynakube(),
 			expectedAdditionalEnvCount:         2, // 1 deployment-metadata + 1 preload
 			expectedAdditionalVolumeMountCount: 3, // 3 oneagent mounts(preload,bin,conf)
 		},
 		{
 			name:                               "add envs and volume mounts (complex dynakube)",
-			dynakube:                           *getTestComplexDynakube(),
+			dk:                                 *getTestComplexDynakube(),
 			expectedAdditionalEnvCount:         5, // 1 deployment-metadata + 1 network-zone + 1 preload + 2 version-detection
 			expectedAdditionalVolumeMountCount: 5, // 3 oneagent mounts(preload,bin,conf) + 1 cert mount + 1 curl-options
 		},
 		{
 			name:                               "add envs and volume mounts (readonly-csi)",
-			dynakube:                           *getTestReadOnlyCSIDynakube(),
+			dk:                                 *getTestReadOnlyCSIDynakube(),
 			expectedAdditionalEnvCount:         2, // 1 deployment-metadata + 1 preload
 			expectedAdditionalVolumeMountCount: 6, // 3 oneagent mounts(preload,bin,conf) +3 oneagent mounts for readonly csi (agent-conf,data-storage,agent-log)
 		},
@@ -80,7 +80,7 @@ func TestMutateUserContainers(t *testing.T) {
 	for index, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
-			request := createTestMutationRequest(&testCases[index].dynakube, nil, getTestNamespace(nil))
+			request := createTestMutationRequest(&testCases[index].dk, nil, getTestNamespace(nil))
 			initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
 			initialContainerVolumeMountsLen := len(request.Pod.Spec.Containers[0].VolumeMounts)
 
@@ -99,19 +99,19 @@ func TestReinvokeUserContainers(t *testing.T) {
 	testCases := []mutateUserContainerTestCase{
 		{
 			name:                               "add envs and volume mounts (simple dynakube)",
-			dynakube:                           *getTestDynakube(),
+			dk:                                 *getTestDynakube(),
 			expectedAdditionalEnvCount:         2, // 1 deployment-metadata + 1 preload
 			expectedAdditionalVolumeMountCount: 3, // 3 oneagent mounts(preload,bin,conf)
 		},
 		{
 			name:                               "add envs and volume mounts (complex dynakube)",
-			dynakube:                           *getTestComplexDynakube(),
+			dk:                                 *getTestComplexDynakube(),
 			expectedAdditionalEnvCount:         5, // 1 deployment-metadata + 1 network-zone + 1 preload + 2 version-detection
 			expectedAdditionalVolumeMountCount: 5, // 3 oneagent mounts(preload,bin,conf) + 1 cert mount + 1 curl-options
 		},
 		{
 			name:                               "add envs and volume mounts (readonly-csi)",
-			dynakube:                           *getTestReadOnlyCSIDynakube(),
+			dk:                                 *getTestReadOnlyCSIDynakube(),
 			expectedAdditionalEnvCount:         2, // 1 deployment-metadata + 1 preload
 			expectedAdditionalVolumeMountCount: 6, // 3 oneagent mounts(preload,bin,conf) +3 oneagent mounts for readonly csi (agent-conf,data-storage,agent-log)
 		},
@@ -119,7 +119,7 @@ func TestReinvokeUserContainers(t *testing.T) {
 	for index, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
-			request := createTestMutationRequest(&testCases[index].dynakube, nil, getTestNamespace(nil)).ToReinvocationRequest()
+			request := createTestMutationRequest(&testCases[index].dk, nil, getTestNamespace(nil)).ToReinvocationRequest()
 			initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
 			initialContainerVolumeMountsLen := len(request.Pod.Spec.Containers[0].VolumeMounts)
 			request.Pod.Spec.InitContainers = append(request.Pod.Spec.InitContainers, corev1.Container{
@@ -149,7 +149,7 @@ func TestReinvokeUserContainers(t *testing.T) {
 func TestContainerExclusion(t *testing.T) {
 	testCases := []struct {
 		name                               string
-		dynakube                           dynakube.DynaKube
+		dk                                 dynakube.DynaKube
 		expectedAdditionalEnvCount         int
 		expectedAdditionalVolumeMountCount int
 		expectedInitContainerEnvCount      int
@@ -158,7 +158,7 @@ func TestContainerExclusion(t *testing.T) {
 	}{
 		{
 			name:                               "container exclusion on dynakube level",
-			dynakube:                           *getTestDynakubeWithContainerExclusion(),
+			dk:                                 *getTestDynakubeWithContainerExclusion(),
 			expectedAdditionalEnvCount:         0,
 			expectedAdditionalVolumeMountCount: 0,
 			expectedInitContainerEnvCount:      3,
@@ -168,7 +168,7 @@ func TestContainerExclusion(t *testing.T) {
 		},
 		{
 			name:                               "container exclusion on dynakube level, do not exclude",
-			dynakube:                           *getTestDynakubeWithContainerExclusion(),
+			dk:                                 *getTestDynakubeWithContainerExclusion(),
 			expectedAdditionalEnvCount:         2,
 			expectedAdditionalVolumeMountCount: 3,
 			expectedInitContainerEnvCount:      5,
@@ -178,7 +178,7 @@ func TestContainerExclusion(t *testing.T) {
 		},
 		{
 			name:                               "container exclusion on pod level",
-			dynakube:                           *getTestDynakube(),
+			dk:                                 *getTestDynakube(),
 			expectedAdditionalEnvCount:         0,
 			expectedAdditionalVolumeMountCount: 0,
 			expectedInitContainerEnvCount:      3,
@@ -188,7 +188,7 @@ func TestContainerExclusion(t *testing.T) {
 		},
 		{
 			name:                               "container exclusion on pod level, do not exclude",
-			dynakube:                           *getTestDynakube(),
+			dk:                                 *getTestDynakube(),
 			expectedAdditionalEnvCount:         2,
 			expectedAdditionalVolumeMountCount: 3,
 			expectedInitContainerEnvCount:      5,
@@ -201,7 +201,7 @@ func TestContainerExclusion(t *testing.T) {
 	for index, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
-			request := createTestMutationRequest(&testCases[index].dynakube, testCase.podAnnotations, getTestNamespace(nil)).ToReinvocationRequest()
+			request := createTestMutationRequest(&testCases[index].dk, testCase.podAnnotations, getTestNamespace(nil)).ToReinvocationRequest()
 
 			maps.Copy(request.DynaKube.Annotations, testCase.dynakubeAnnotations)
 

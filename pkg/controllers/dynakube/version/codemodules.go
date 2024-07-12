@@ -15,13 +15,13 @@ const (
 )
 
 type codeModulesUpdater struct {
-	dynakube *dynakube.DynaKube
+	dk       *dynakube.DynaKube
 	dtClient dtclient.Client
 }
 
-func newCodeModulesUpdater(dynakube *dynakube.DynaKube, dtClient dtclient.Client) *codeModulesUpdater {
+func newCodeModulesUpdater(dk *dynakube.DynaKube, dtClient dtclient.Client) *codeModulesUpdater {
 	return &codeModulesUpdater{
-		dynakube: dynakube,
+		dk:       dk,
 		dtClient: dtClient,
 	}
 }
@@ -31,31 +31,31 @@ func (updater codeModulesUpdater) Name() string {
 }
 
 func (updater codeModulesUpdater) IsEnabled() bool {
-	if updater.dynakube.NeedAppInjection() {
+	if updater.dk.NeedAppInjection() {
 		return true
 	}
 
-	updater.dynakube.Status.CodeModules.VersionStatus = status.VersionStatus{}
-	_ = meta.RemoveStatusCondition(updater.dynakube.Conditions(), cmConditionType)
+	updater.dk.Status.CodeModules.VersionStatus = status.VersionStatus{}
+	_ = meta.RemoveStatusCondition(updater.dk.Conditions(), cmConditionType)
 
 	return false
 }
 
 func (updater *codeModulesUpdater) Target() *status.VersionStatus {
-	return &updater.dynakube.Status.CodeModules.VersionStatus
+	return &updater.dk.Status.CodeModules.VersionStatus
 }
 
 func (updater codeModulesUpdater) CustomImage() string {
-	customImage := updater.dynakube.CustomCodeModulesImage()
+	customImage := updater.dk.CustomCodeModulesImage()
 	if customImage != "" {
-		setVerificationSkippedReasonCondition(updater.dynakube.Conditions(), cmConditionType)
+		setVerificationSkippedReasonCondition(updater.dk.Conditions(), cmConditionType)
 	}
 
 	return customImage
 }
 
 func (updater codeModulesUpdater) CustomVersion() string {
-	return updater.dynakube.CustomCodeModulesVersion()
+	return updater.dk.CustomCodeModulesVersion()
 }
 
 func (updater codeModulesUpdater) IsAutoUpdateEnabled() bool {
@@ -63,9 +63,9 @@ func (updater codeModulesUpdater) IsAutoUpdateEnabled() bool {
 }
 
 func (updater codeModulesUpdater) IsPublicRegistryEnabled() bool {
-	isPublicRegistry := updater.dynakube.FeaturePublicRegistry()
+	isPublicRegistry := updater.dk.FeaturePublicRegistry()
 	if isPublicRegistry {
-		setVerifiedCondition(updater.dynakube.Conditions(), cmConditionType) // Bit hacky, as things can still go wrong, but if so we will just overwrite this is LatestImageInfo.
+		setVerifiedCondition(updater.dk.Conditions(), cmConditionType) // Bit hacky, as things can still go wrong, but if so we will just overwrite this is LatestImageInfo.
 	}
 
 	return isPublicRegistry
@@ -74,7 +74,7 @@ func (updater codeModulesUpdater) IsPublicRegistryEnabled() bool {
 func (updater codeModulesUpdater) LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error) {
 	imgInfo, err := updater.dtClient.GetLatestCodeModulesImage(ctx)
 	if err != nil {
-		conditions.SetDynatraceApiError(updater.dynakube.Conditions(), cmConditionType, err)
+		conditions.SetDynatraceApiError(updater.dk.Conditions(), cmConditionType, err)
 	}
 
 	return imgInfo, err
@@ -87,12 +87,12 @@ func (updater *codeModulesUpdater) CheckForDowngrade(_ string) (bool, error) {
 func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error {
 	customVersion := updater.CustomVersion()
 	if customVersion != "" {
-		updater.dynakube.Status.CodeModules = dynakube.CodeModulesStatus{
+		updater.dk.Status.CodeModules = dynakube.CodeModulesStatus{
 			VersionStatus: status.VersionStatus{
 				Version: customVersion,
 			},
 		}
-		setVerificationSkippedReasonCondition(updater.dynakube.Conditions(), cmConditionType)
+		setVerificationSkippedReasonCondition(updater.dk.Conditions(), cmConditionType)
 
 		return nil
 	}
@@ -101,17 +101,17 @@ func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error 
 		dtclient.OsUnix, dtclient.InstallerTypePaaS)
 	if err != nil {
 		log.Info("could not get agent paas unix version")
-		conditions.SetDynatraceApiError(updater.dynakube.Conditions(), cmConditionType, err)
+		conditions.SetDynatraceApiError(updater.dk.Conditions(), cmConditionType, err)
 
 		return err
 	}
 
-	updater.dynakube.Status.CodeModules = dynakube.CodeModulesStatus{
+	updater.dk.Status.CodeModules = dynakube.CodeModulesStatus{
 		VersionStatus: status.VersionStatus{
 			Version: latestAgentVersionUnixPaas,
 		},
 	}
-	setVerifiedCondition(updater.dynakube.Conditions(), cmConditionType)
+	setVerifiedCondition(updater.dk.Conditions(), cmConditionType)
 
 	return nil
 }

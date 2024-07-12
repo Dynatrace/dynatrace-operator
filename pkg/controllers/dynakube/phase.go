@@ -11,44 +11,44 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (controller *Controller) determineDynaKubePhase(dynakube *dynakube.DynaKube) status.DeploymentPhase {
-	if dynakube.NeedsActiveGate() {
-		activeGatePods, err := controller.numberOfMissingActiveGatePods(dynakube)
+func (controller *Controller) determineDynaKubePhase(dk *dynakube.DynaKube) status.DeploymentPhase {
+	if dk.NeedsActiveGate() {
+		activeGatePods, err := controller.numberOfMissingActiveGatePods(dk)
 		if err != nil {
-			log.Error(err, "activegate statefulset could not be accessed", "dynakube", dynakube.Name)
+			log.Error(err, "activegate statefulset could not be accessed", "dynakube", dk.Name)
 
 			return status.Error
 		}
 
 		if activeGatePods > 0 {
-			log.Info("activegate statefulset is still deploying", "dynakube", dynakube.Name)
+			log.Info("activegate statefulset is still deploying", "dynakube", dk.Name)
 
 			return status.Deploying
 		}
 
 		if activeGatePods < 0 {
-			log.Info("activegate statefulset not yet available", "dynakube", dynakube.Name)
+			log.Info("activegate statefulset not yet available", "dynakube", dk.Name)
 
 			return status.Deploying
 		}
 	}
 
-	if dynakube.CloudNativeFullstackMode() || dynakube.ClassicFullStackMode() || dynakube.HostMonitoringMode() {
-		oneAgentPods, err := controller.numberOfMissingOneagentPods(dynakube)
+	if dk.CloudNativeFullstackMode() || dk.ClassicFullStackMode() || dk.HostMonitoringMode() {
+		oneAgentPods, err := controller.numberOfMissingOneagentPods(dk)
 		if k8serrors.IsNotFound(err) {
-			log.Info("oneagent daemonset not yet available", "dynakube", dynakube.Name)
+			log.Info("oneagent daemonset not yet available", "dynakube", dk.Name)
 
 			return status.Deploying
 		}
 
 		if err != nil {
-			log.Error(err, "oneagent daemonset could not be accessed", "dynakube", dynakube.Name)
+			log.Error(err, "oneagent daemonset could not be accessed", "dynakube", dk.Name)
 
 			return status.Error
 		}
 
 		if oneAgentPods > 0 {
-			log.Info("oneagent daemonset is still deploying", "dynakube", dynakube.Name)
+			log.Info("oneagent daemonset is still deploying", "dynakube", dk.Name)
 
 			return status.Deploying
 		}
@@ -57,11 +57,11 @@ func (controller *Controller) determineDynaKubePhase(dynakube *dynakube.DynaKube
 	return status.Running
 }
 
-func (controller *Controller) numberOfMissingOneagentPods(dynakube *dynakube.DynaKube) (int32, error) {
+func (controller *Controller) numberOfMissingOneagentPods(dk *dynakube.DynaKube) (int32, error) {
 	oneAgentDaemonSet := &appsv1.DaemonSet{}
-	instanceName := dynakube.OneAgentDaemonsetName()
+	instanceName := dk.OneAgentDaemonsetName()
 
-	err := controller.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: dynakube.Namespace}, oneAgentDaemonSet)
+	err := controller.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: dk.Namespace}, oneAgentDaemonSet)
 	if err != nil {
 		return 0, err
 	}
@@ -69,17 +69,17 @@ func (controller *Controller) numberOfMissingOneagentPods(dynakube *dynakube.Dyn
 	return oneAgentDaemonSet.Status.CurrentNumberScheduled - oneAgentDaemonSet.Status.NumberReady, nil
 }
 
-func (controller *Controller) numberOfMissingActiveGatePods(dynakube *dynakube.DynaKube) (int32, error) {
-	capabilities := capability.GenerateActiveGateCapabilities(dynakube)
+func (controller *Controller) numberOfMissingActiveGatePods(dk *dynakube.DynaKube) (int32, error) {
+	capabilities := capability.GenerateActiveGateCapabilities(dk)
 
 	sum := int32(0)
 	capabilityFound := false
 
 	for _, activeGateCapability := range capabilities {
 		activeGateStatefulSet := &appsv1.StatefulSet{}
-		instanceName := capability.CalculateStatefulSetName(activeGateCapability, dynakube.Name)
+		instanceName := capability.CalculateStatefulSetName(activeGateCapability, dk.Name)
 
-		err := controller.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: dynakube.Namespace}, activeGateStatefulSet)
+		err := controller.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: dk.Namespace}, activeGateStatefulSet)
 		if k8serrors.IsNotFound(err) {
 			continue
 		}

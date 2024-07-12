@@ -134,16 +134,16 @@ func determineIstioInitContainerName(t *testing.T) string {
 	return istioInitName
 }
 
-func checkVirtualServiceForApiUrl(dynakube dynakube.DynaKube) features.Func { //nolint: dupl
+func checkVirtualServiceForApiUrl(dk dynakube.DynaKube) features.Func { //nolint: dupl
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		apiHost := apiUrlCommunicationHost(t, dynakube)
-		serviceName := istio.BuildNameForFQDNServiceEntry(dynakube.Name, istio.OperatorComponent)
+		apiHost := apiUrlCommunicationHost(t, dk)
+		serviceName := istio.BuildNameForFQDNServiceEntry(dk.Name, istio.OperatorComponent)
 
-		virtualService, err := istioClient(t, envConfig.Client().RESTConfig()).NetworkingV1beta1().VirtualServices(dynakube.Namespace).Get(ctx, serviceName, metav1.GetOptions{})
+		virtualService, err := istioClient(t, envConfig.Client().RESTConfig()).NetworkingV1beta1().VirtualServices(dk.Namespace).Get(ctx, serviceName, metav1.GetOptions{})
 		require.NoError(t, err, "istio: failed to get '%s' virtual service object", serviceName)
 
 		require.NotEmpty(t, virtualService.ObjectMeta.OwnerReferences)
-		assert.Equal(t, dynakube.Name, virtualService.ObjectMeta.OwnerReferences[0].Name)
+		assert.Equal(t, dk.Name, virtualService.ObjectMeta.OwnerReferences[0].Name)
 
 		require.NotEmpty(t, virtualService.Spec.GetHosts())
 		assert.Equal(t, apiHost.Host, virtualService.Spec.GetHosts()[0])
@@ -152,16 +152,16 @@ func checkVirtualServiceForApiUrl(dynakube dynakube.DynaKube) features.Func { //
 	}
 }
 
-func checkServiceEntryForApiUrl(dynakube dynakube.DynaKube) features.Func { //nolint: dupl
+func checkServiceEntryForApiUrl(dk dynakube.DynaKube) features.Func { //nolint: dupl
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		apiHost := apiUrlCommunicationHost(t, dynakube)
-		serviceName := istio.BuildNameForFQDNServiceEntry(dynakube.Name, istio.OperatorComponent)
+		apiHost := apiUrlCommunicationHost(t, dk)
+		serviceName := istio.BuildNameForFQDNServiceEntry(dk.Name, istio.OperatorComponent)
 
-		serviceEntry, err := istioClient(t, envConfig.Client().RESTConfig()).NetworkingV1beta1().ServiceEntries(dynakube.Namespace).Get(ctx, serviceName, metav1.GetOptions{})
+		serviceEntry, err := istioClient(t, envConfig.Client().RESTConfig()).NetworkingV1beta1().ServiceEntries(dk.Namespace).Get(ctx, serviceName, metav1.GetOptions{})
 		require.NoError(t, err, "istio: failed to get '%s' service entry object", serviceName)
 
 		require.NotEmpty(t, serviceEntry.ObjectMeta.OwnerReferences)
-		assert.Equal(t, dynakube.Name, serviceEntry.ObjectMeta.OwnerReferences[0].Name)
+		assert.Equal(t, dk.Name, serviceEntry.ObjectMeta.OwnerReferences[0].Name)
 
 		require.NotEmpty(t, serviceEntry.Spec.GetHosts())
 		assert.Equal(t, apiHost.Host, serviceEntry.Spec.GetHosts()[0])
@@ -177,8 +177,8 @@ func istioClient(t *testing.T, restConfig *rest.Config) *istioclientset.Clientse
 	return client
 }
 
-func apiUrlCommunicationHost(t *testing.T, dynakube dynakube.DynaKube) dtclient.CommunicationHost {
-	apiHost, err := dtclient.ParseEndpoint(dynakube.ApiUrl())
+func apiUrlCommunicationHost(t *testing.T, dk dynakube.DynaKube) dtclient.CommunicationHost {
+	apiHost, err := dtclient.ParseEndpoint(dk.ApiUrl())
 	require.NoError(t, err)
 
 	return apiHost

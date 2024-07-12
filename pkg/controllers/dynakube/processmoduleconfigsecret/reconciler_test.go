@@ -33,10 +33,10 @@ const (
 
 func TestReconcile(t *testing.T) {
 	t.Run("Create and update works with minimal setup", func(t *testing.T) {
-		dynakube := createDynakube(dynakube.OneAgentSpec{
+		dk := createDynakube(dynakube.OneAgentSpec{
 			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}})
 
-		mockK8sClient := fake.NewClient(dynakube)
+		mockK8sClient := fake.NewClient(dk)
 		_ = mockK8sClient.Create(context.Background(),
 			&corev1.Secret{
 				Data: map[string][]byte{connectioninfo.TenantTokenKey: []byte(testTokenValue)},
@@ -50,13 +50,13 @@ func TestReconcile(t *testing.T) {
 		mockTime := timeprovider.New().Freeze()
 
 		reconciler := NewReconciler(mockK8sClient,
-			mockK8sClient, createMockDtClient(t, 0), dynakube, mockTime)
+			mockK8sClient, createMockDtClient(t, 0), dk, mockTime)
 		err := reconciler.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		checkSecretForValue(t, mockK8sClient, "\"revision\":0")
 
-		condition := meta.FindStatusCondition(*dynakube.Conditions(), pmcConditionType)
+		condition := meta.FindStatusCondition(*dk.Conditions(), pmcConditionType)
 		oldTransitionTime := condition.LastTransitionTime
 		require.NotNil(t, condition)
 		require.NotEmpty(t, oldTransitionTime)
@@ -70,7 +70,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		checkSecretForValue(t, mockK8sClient, "\"revision\":0")
 
-		condition = meta.FindStatusCondition(*dynakube.Conditions(), pmcConditionType)
+		condition = meta.FindStatusCondition(*dk.Conditions(), pmcConditionType)
 		require.NotNil(t, condition)
 		require.Equal(t, condition.LastTransitionTime, oldTransitionTime)
 
@@ -81,26 +81,26 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		checkSecretForValue(t, mockK8sClient, "\"revision\":1")
 
-		condition = meta.FindStatusCondition(*dynakube.Conditions(), pmcConditionType)
+		condition = meta.FindStatusCondition(*dk.Conditions(), pmcConditionType)
 		require.NotNil(t, condition)
 		require.Greater(t, condition.LastTransitionTime.Time, oldTransitionTime.Time)
 		assert.Equal(t, conditions.SecretUpdatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 	})
 	t.Run("Only runs when required, and cleans up condition", func(t *testing.T) {
-		dynakube := createDynakube(dynakube.OneAgentSpec{
+		dk := createDynakube(dynakube.OneAgentSpec{
 			ClassicFullStack: &dynakube.HostInjectSpec{}})
-		conditions.SetSecretCreated(dynakube.Conditions(), pmcConditionType, "this is a test")
+		conditions.SetSecretCreated(dk.Conditions(), pmcConditionType, "this is a test")
 
-		reconciler := NewReconciler(nil, nil, nil, dynakube, timeprovider.New())
+		reconciler := NewReconciler(nil, nil, nil, dk, timeprovider.New())
 		err := reconciler.Reconcile(context.Background())
 
 		require.NoError(t, err)
-		assert.Empty(t, *dynakube.Conditions())
+		assert.Empty(t, *dk.Conditions())
 	})
 
 	t.Run("problem with k8s request => visible in conditions", func(t *testing.T) {
-		dynakube := createDynakube(dynakube.OneAgentSpec{
+		dk := createDynakube(dynakube.OneAgentSpec{
 			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}})
 
 		boomClient := createBOOMK8sClient()
@@ -108,22 +108,22 @@ func TestReconcile(t *testing.T) {
 		mockTime := timeprovider.New().Freeze()
 
 		reconciler := NewReconciler(boomClient,
-			boomClient, createMockDtClient(t, 0), dynakube, mockTime)
+			boomClient, createMockDtClient(t, 0), dk, mockTime)
 
 		err := reconciler.Reconcile(context.Background())
 
 		require.Error(t, err)
-		require.Len(t, *dynakube.Conditions(), 1)
-		condition := meta.FindStatusCondition(*dynakube.Conditions(), pmcConditionType)
+		require.Len(t, *dk.Conditions(), 1)
+		condition := meta.FindStatusCondition(*dk.Conditions(), pmcConditionType)
 		assert.Equal(t, conditions.KubeApiErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 
 	t.Run("problem with dynatrace request => visible in conditions", func(t *testing.T) {
-		dynakube := createDynakube(dynakube.OneAgentSpec{
+		dk := createDynakube(dynakube.OneAgentSpec{
 			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}})
 
-		mockK8sClient := fake.NewClient(dynakube)
+		mockK8sClient := fake.NewClient(dk)
 		_ = mockK8sClient.Create(context.Background(),
 			&corev1.Secret{
 				Data: map[string][]byte{connectioninfo.TenantTokenKey: []byte(testTokenValue)},
@@ -137,13 +137,13 @@ func TestReconcile(t *testing.T) {
 		mockTime := timeprovider.New().Freeze()
 
 		reconciler := NewReconciler(mockK8sClient,
-			mockK8sClient, createBOOMDtClient(t), dynakube, mockTime)
+			mockK8sClient, createBOOMDtClient(t), dk, mockTime)
 
 		err := reconciler.Reconcile(context.Background())
 
 		require.Error(t, err)
-		require.Len(t, *dynakube.Conditions(), 1)
-		condition := meta.FindStatusCondition(*dynakube.Conditions(), pmcConditionType)
+		require.Len(t, *dk.Conditions(), 1)
+		condition := meta.FindStatusCondition(*dk.Conditions(), pmcConditionType)
 		assert.Equal(t, conditions.DynatraceApiErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
@@ -210,9 +210,9 @@ func createBOOMK8sClient() client.Client {
 func TestGetSecretData(t *testing.T) {
 	t.Run("unmarshal secret data into struct", func(t *testing.T) {
 		// use Reconcile to automatically create the secret to test
-		dynakube := createDynakube(dynakube.OneAgentSpec{
+		dk := createDynakube(dynakube.OneAgentSpec{
 			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}})
-		mockK8sClient := fake.NewClient(dynakube)
+		mockK8sClient := fake.NewClient(dk)
 		_ = mockK8sClient.Create(context.Background(),
 			&corev1.Secret{
 				Data: map[string][]byte{connectioninfo.TenantTokenKey: []byte(testTokenValue)},
@@ -225,7 +225,7 @@ func TestGetSecretData(t *testing.T) {
 
 		mockTime := timeprovider.New().Freeze()
 		reconciler := NewReconciler(mockK8sClient,
-			mockK8sClient, createMockDtClient(t, 0), dynakube, mockTime)
+			mockK8sClient, createMockDtClient(t, 0), dk, mockTime)
 		err := reconciler.Reconcile(context.Background())
 		require.NoError(t, err)
 

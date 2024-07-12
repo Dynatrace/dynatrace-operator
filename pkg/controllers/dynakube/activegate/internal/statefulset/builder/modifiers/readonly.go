@@ -16,14 +16,14 @@ var _ builder.Modifier = ReadOnlyModifier{}
 
 func NewReadOnlyModifier(dk dynakube.DynaKube) ReadOnlyModifier {
 	return ReadOnlyModifier{
-		dynakube: dk,
+		dk: dk,
 	}
 }
 
 type ReadOnlyModifier struct {
 	presentVolumes []corev1.Volume
 	presentMounts  []corev1.VolumeMount
-	dynakube       dynakube.DynaKube
+	dk             dynakube.DynaKube
 }
 
 func (mod ReadOnlyModifier) Enabled() bool {

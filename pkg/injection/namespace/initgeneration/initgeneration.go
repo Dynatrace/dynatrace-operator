@@ -150,17 +150,17 @@ func (g *InitGenerator) generate(ctx context.Context, dk *dynakube.DynaKube) (ma
 	return data, nil
 }
 
-func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynakube *dynakube.DynaKube, hostMonitoringNodes map[string]string) (*startup.SecretConfig, error) {
+func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dk *dynakube.DynaKube, hostMonitoringNodes map[string]string) (*startup.SecretConfig, error) {
 	var tokens corev1.Secret
-	if err := g.client.Get(ctx, client.ObjectKey{Name: dynakube.Tokens(), Namespace: g.namespace}, &tokens); err != nil {
+	if err := g.client.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: g.namespace}, &tokens); err != nil {
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 
 	var proxy string
 
 	var err error
-	if dynakube.NeedsOneAgentProxy() {
-		proxy, err = dynakube.Proxy(ctx, g.apiReader)
+	if dk.NeedsOneAgentProxy() {
+		proxy, err = dk.Proxy(ctx, g.apiReader)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -168,28 +168,28 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 
 	oneAgentNoProxy := ""
 
-	if dynakube.NeedsActiveGate() {
-		multiCap := capability.NewMultiCapability(dynakube)
-		oneAgentNoProxy = capability.BuildDNSEntryPointWithoutEnvVars(dynakube.Name, dynakube.Namespace, multiCap)
+	if dk.NeedsActiveGate() {
+		multiCap := capability.NewMultiCapability(dk)
+		oneAgentNoProxy = capability.BuildDNSEntryPointWithoutEnvVars(dk.Name, dk.Namespace, multiCap)
 	}
 
 	return &startup.SecretConfig{
-		ApiUrl:              dynakube.Spec.APIURL,
+		ApiUrl:              dk.Spec.APIURL,
 		ApiToken:            getAPIToken(tokens),
 		PaasToken:           getPaasToken(tokens),
-		TenantUUID:          dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID,
+		TenantUUID:          dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID,
 		Proxy:               proxy,
-		NoProxy:             dynakube.FeatureNoProxy(),
+		NoProxy:             dk.FeatureNoProxy(),
 		OneAgentNoProxy:     oneAgentNoProxy,
-		NetworkZone:         dynakube.Spec.NetworkZone,
-		SkipCertCheck:       dynakube.Spec.SkipCertCheck,
-		HasHost:             dynakube.CloudNativeFullstackMode(),
+		NetworkZone:         dk.Spec.NetworkZone,
+		SkipCertCheck:       dk.Spec.SkipCertCheck,
+		HasHost:             dk.CloudNativeFullstackMode(),
 		MonitoringNodes:     hostMonitoringNodes,
-		HostGroup:           dynakube.HostGroup(),
-		InitialConnectRetry: dynakube.FeatureAgentInitialConnectRetry(),
-		EnforcementMode:     dynakube.FeatureEnforcementMode(),
-		ReadOnlyCSIDriver:   dynakube.FeatureReadOnlyCsiVolume(),
-		CSIMode:             dynakube.NeedsCSIDriver(),
+		HostGroup:           dk.HostGroup(),
+		InitialConnectRetry: dk.FeatureAgentInitialConnectRetry(),
+		EnforcementMode:     dk.FeatureEnforcementMode(),
+		ReadOnlyCSIDriver:   dk.FeatureReadOnlyCsiVolume(),
+		CSIMode:             dk.NeedsCSIDriver(),
 	}, nil
 }
 

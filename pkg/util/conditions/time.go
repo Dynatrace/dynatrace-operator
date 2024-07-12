@@ -9,11 +9,11 @@ import (
 
 // IsOutdated determines if a given is considered outdated according to the DynaKube's FeatureApiRequestThreshold
 // This is used for those conditions that are (also) used for limiting API requests.
-func IsOutdated(timeProvider *timeprovider.Provider, dynakube *dynakube.DynaKube, conditionType string) bool {
-	condition := meta.FindStatusCondition(*dynakube.Conditions(), conditionType)
+func IsOutdated(timeProvider *timeprovider.Provider, dk *dynakube.DynaKube, conditionType string) bool {
+	condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
 	if condition == nil {
 		return true
 	}
 
-	return condition.Status == metav1.ConditionFalse || timeProvider.IsOutdated(&condition.LastTransitionTime, dynakube.ApiRequestThreshold())
+	return condition.Status == metav1.ConditionFalse || timeProvider.IsOutdated(&condition.LastTransitionTime, dk.ApiRequestThreshold())
 }

@@ -375,8 +375,8 @@ func createTestMutationRequest(dk *dynakube.DynaKube, annotations map[string]str
 	)
 }
 
-func createTestReinvocationRequest(dynakube *dynakube.DynaKube, annotations map[string]string) *dtwebhook.ReinvocationRequest {
-	request := createTestMutationRequest(dynakube, annotations, false).ToReinvocationRequest()
+func createTestReinvocationRequest(dk *dynakube.DynaKube, annotations map[string]string) *dtwebhook.ReinvocationRequest {
+	request := createTestMutationRequest(dk, annotations, false).ToReinvocationRequest()
 	request.Pod.Spec.InitContainers = append(request.Pod.Spec.InitContainers, corev1.Container{Name: dtwebhook.InstallContainerName})
 
 	return request

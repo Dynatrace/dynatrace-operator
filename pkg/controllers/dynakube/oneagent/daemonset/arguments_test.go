@@ -41,7 +41,7 @@ func TestArguments(t *testing.T) {
 		assert.Equal(t, expectedDefaultArguments, arguments)
 	})
 	t.Run("classic fullstack", func(t *testing.T) {
-		instance := dynakube.DynaKube{
+		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
 				OneAgent: dynakube.OneAgentSpec{
@@ -53,8 +53,8 @@ func TestArguments(t *testing.T) {
 		}
 		dsBuilder := classicFullStack{
 			builder{
-				dk:             &instance,
-				hostInjectSpec: instance.Spec.OneAgent.ClassicFullStack,
+				dk:             &dk,
+				hostInjectSpec: dk.Spec.OneAgent.ClassicFullStack,
 				clusterID:      testClusterID,
 			},
 		}
@@ -160,7 +160,7 @@ func TestArguments(t *testing.T) {
 }
 
 func TestPodSpec_Arguments(t *testing.T) {
-	instance := &dynakube.DynaKube{
+	dk := &dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
 			OneAgent: dynakube.OneAgentSpec{
 				ClassicFullStack: &dynakube.HostInjectSpec{
@@ -169,17 +169,17 @@ func TestPodSpec_Arguments(t *testing.T) {
 			},
 		},
 	}
-	hostInjectSpecs := instance.Spec.OneAgent.ClassicFullStack
+	hostInjectSpecs := dk.Spec.OneAgent.ClassicFullStack
 	dsBuilder := classicFullStack{
 		builder{
-			dk:             instance,
+			dk:             dk,
 			hostInjectSpec: hostInjectSpecs,
 			clusterID:      testClusterID,
 			deploymentType: deploymentmetadata.ClassicFullStackDeploymentType,
 		},
 	}
 
-	instance.Annotations = map[string]string{}
+	dk.Annotations = map[string]string{}
 	podSpecs, _ := dsBuilder.podSpec()
 	require.NotNil(t, podSpecs)
 	require.NotEmpty(t, podSpecs.Containers)
@@ -192,29 +192,29 @@ func TestPodSpec_Arguments(t *testing.T) {
 
 	// deprecated
 	t.Run(`has proxy arg`, func(t *testing.T) {
-		instance.Status.OneAgent.Version = "1.272.0.0-0"
-		instance.Spec.Proxy = &dynakube.DynaKubeProxy{Value: testValue}
+		dk.Status.OneAgent.Version = "1.272.0.0-0"
+		dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: testValue}
 		podSpecs, _ = dsBuilder.podSpec()
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 
-		instance.Spec.Proxy = nil
-		instance.Status.OneAgent.Version = ""
+		dk.Spec.Proxy = nil
+		dk.Status.OneAgent.Version = ""
 		podSpecs, _ = dsBuilder.podSpec()
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 	})
 	// deprecated
 	t.Run(`has proxy arg but feature flag to ignore is enabled`, func(t *testing.T) {
-		instance.Spec.Proxy = &dynakube.DynaKubeProxy{Value: testValue}
-		instance.Annotations[dynakube.AnnotationFeatureOneAgentIgnoreProxy] = "true"
+		dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: testValue}
+		dk.Annotations[dynakube.AnnotationFeatureOneAgentIgnoreProxy] = "true"
 		podSpecs, _ = dsBuilder.podSpec()
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 	})
 	t.Run(`has network zone arg`, func(t *testing.T) {
-		instance.Spec.NetworkZone = testValue
+		dk.Spec.NetworkZone = testValue
 		podSpecs, _ = dsBuilder.podSpec()
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-network-zone="+testValue)
 
-		instance.Spec.NetworkZone = ""
+		dk.Spec.NetworkZone = ""
 		podSpecs, _ = dsBuilder.podSpec()
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-network-zone="+testValue)
 	})

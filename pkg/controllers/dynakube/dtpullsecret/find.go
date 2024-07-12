@@ -9,10 +9,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetImagePullSecret(clt client.Client, instance *dynakube.DynaKube) (*corev1.Secret, error) {
+func GetImagePullSecret(clt client.Client, dk *dynakube.DynaKube) (*corev1.Secret, error) {
 	imagePullSecret := &corev1.Secret{}
 
-	err := clt.Get(context.TODO(), client.ObjectKey{Namespace: instance.Namespace, Name: extendWithPullSecretSuffix(instance.Name)}, imagePullSecret)
+	err := clt.Get(context.TODO(), client.ObjectKey{Namespace: dk.Namespace, Name: extendWithPullSecretSuffix(dk.Name)}, imagePullSecret)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

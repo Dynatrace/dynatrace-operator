@@ -137,6 +137,6 @@ func CheckRuxitAgentProcFileHasProxySetting(sampleApp sample.App, proxySpec *dyn
 	}
 }
 
-func getWebhookServiceUrl(dynakube dynakube.DynaKube) string {
-	return fmt.Sprintf("%s.%s.svc.cluster.local", webhook.DeploymentName, dynakube.Namespace)
+func getWebhookServiceUrl(dk dynakube.DynaKube) string {
+	return fmt.Sprintf("%s.%s.svc.cluster.local", webhook.DeploymentName, dk.Namespace)
 }

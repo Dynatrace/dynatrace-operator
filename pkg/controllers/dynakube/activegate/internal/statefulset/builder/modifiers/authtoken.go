@@ -16,12 +16,12 @@ var _ builder.Modifier = AuthTokenModifier{}
 
 func NewAuthTokenModifier(dk dynakube.DynaKube) AuthTokenModifier {
 	return AuthTokenModifier{
-		dynakube: dk,
+		dk: dk,
 	}
 }
 
 type AuthTokenModifier struct {
-	dynakube dynakube.DynaKube
+	dk dynakube.DynaKube
 }
 
 func (mod AuthTokenModifier) Enabled() bool {
@@ -42,7 +42,7 @@ func (mod AuthTokenModifier) getVolumes() []corev1.Volume {
 			Name: consts.AuthTokenSecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: mod.dynakube.ActiveGateAuthTokenSecret(),
+					SecretName: mod.dk.ActiveGateAuthTokenSecret(),
 				},
 			},
 		},
