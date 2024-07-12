@@ -1,13 +1,13 @@
 package csiprovisioner
 
 import (
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
 )
 
 type updaterEventRecorder struct {
-	dynakube *dynatracev1beta2.DynaKube
+	dynakube *dynakube.DynaKube
 	recorder record.EventRecorder
 }
 

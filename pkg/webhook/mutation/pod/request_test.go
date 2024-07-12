@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
@@ -102,7 +102,7 @@ func TestGetDynakube(t *testing.T) {
 	})
 }
 
-func createTestMutationRequest(dynakube *dynatracev1beta2.DynaKube) *dtwebhook.MutationRequest {
+func createTestMutationRequest(dynakube *dynakube.DynaKube) *dtwebhook.MutationRequest {
 	return dtwebhook.NewMutationRequest(context.Background(), *getTestNamespace(), nil, getTestPod(), *dynakube)
 }
 

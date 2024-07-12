@@ -4,7 +4,7 @@ import (
 	"context"
 	"reflect"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/object"
@@ -22,20 +22,20 @@ type Reconciler struct {
 	capability                 capability.Capability
 	statefulsetReconciler      controllers.Reconciler
 	customPropertiesReconciler controllers.Reconciler
-	dynakube                   *dynatracev1beta2.DynaKube
+	dynakube                   *dynakube.DynaKube
 }
 
-func NewReconciler(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta2.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler) controllers.Reconciler {
+func NewReconciler(clt client.Client, capability capability.Capability, dk *dynakube.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler) controllers.Reconciler {
 	return &Reconciler{
 		statefulsetReconciler:      statefulsetReconciler,
 		customPropertiesReconciler: customPropertiesReconciler,
 		capability:                 capability,
-		dynakube:                   dynakube,
+		dynakube:                   dk,
 		client:                     clt,
 	}
 }
 
-type NewReconcilerFunc = func(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta2.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler) controllers.Reconciler
+type NewReconcilerFunc = func(clt client.Client, capability capability.Capability, dk *dynakube.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler) controllers.Reconciler
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	err := r.customPropertiesReconciler.Reconcile(ctx)

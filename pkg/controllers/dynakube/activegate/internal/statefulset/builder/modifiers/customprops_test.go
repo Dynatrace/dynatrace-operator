@@ -3,7 +3,7 @@ package modifiers
 import (
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,7 +13,7 @@ const testCustomPropertyValue = "testing-property"
 
 func setCustomPropertyUsage(capability capability.Capability, isUsed bool) {
 	if isUsed {
-		capability.Properties().CustomProperties = &dynatracev1beta2.DynaKubeValueSource{
+		capability.Properties().CustomProperties = &dynakube.DynaKubeValueSource{
 			Value: testCustomPropertyValue,
 		}
 	} else {

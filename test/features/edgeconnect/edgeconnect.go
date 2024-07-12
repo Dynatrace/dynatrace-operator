@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	edgeconnectv1alpha "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
-	ecclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
+	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
 	controller "github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/edgeconnect"
@@ -158,7 +158,7 @@ func createTenantConfig(clientSecret tenant.EdgeConnectSecret, edgeConnectTenant
 		ecClt, err := buildEcClient(ctx, clientSecret)
 		require.NoError(t, err)
 
-		edgeConnectRequest := ecclient.NewRequest(clientSecret.Name, []string{testHostPattern}, []edgeconnectv1alpha.HostMapping{}, "")
+		edgeConnectRequest := edgeconnectClient.NewRequest(clientSecret.Name, []string{testHostPattern}, []edgeconnectv1alpha.HostMapping{}, "")
 		edgeConnectRequest.ManagedByDynatraceOperator = false
 
 		res, err := ecClt.CreateEdgeConnect(edgeConnectRequest)
@@ -279,19 +279,19 @@ func checkSettingsNotExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, te
 
 		se, err := controller.GetConnectionSetting(ecClt, testEdgeConnect.Name, testEdgeConnect.Namespace, testEdgeConnect.Status.KubeSystemUID)
 		require.NoError(t, err)
-		assert.Equal(t, ecclient.EnvironmentSetting{}, se)
+		assert.Equal(t, edgeconnectClient.EnvironmentSetting{}, se)
 
 		return ctx
 	}
 }
 
-func buildEcClient(ctx context.Context, secret tenant.EdgeConnectSecret) (ecclient.Client, error) {
-	clt, err := ecclient.NewClient(
+func buildEcClient(ctx context.Context, secret tenant.EdgeConnectSecret) (edgeconnectClient.Client, error) {
+	clt, err := edgeconnectClient.NewClient(
 		secret.OauthClientId,
 		secret.OauthClientSecret,
-		ecclient.WithBaseURL("https://"+secret.ApiServer),
-		ecclient.WithTokenURL("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
-		ecclient.WithOauthScopes([]string{
+		edgeconnectClient.WithBaseURL("https://"+secret.ApiServer),
+		edgeconnectClient.WithTokenURL("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
+		edgeconnectClient.WithOauthScopes([]string{
 			"app-engine:edge-connects:read",
 			"app-engine:edge-connects:write",
 			"app-engine:edge-connects:delete",
@@ -299,7 +299,7 @@ func buildEcClient(ctx context.Context, secret tenant.EdgeConnectSecret) (ecclie
 			"settings:objects:read",
 			"settings:objects:write",
 		}),
-		ecclient.WithContext(ctx),
+		edgeconnectClient.WithContext(ctx),
 	)
 	if err != nil {
 		return nil, errors.WithStack(err)

@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 )
@@ -27,7 +27,7 @@ func (token *Token) addFeatures(features []Feature) {
 	token.Features = append(token.Features, features...)
 }
 
-func (token *Token) verifyScopes(ctx context.Context, dtClient dtclient.Client, dynakube dynatracev1beta2.DynaKube) error {
+func (token *Token) verifyScopes(ctx context.Context, dtClient dtclient.Client, dk dynakube.DynaKube) error {
 	if len(token.Features) == 0 {
 		return nil
 	}
@@ -40,7 +40,7 @@ func (token *Token) verifyScopes(ctx context.Context, dtClient dtclient.Client, 
 	collectedErrors := make([]error, 0)
 
 	for _, feature := range token.Features {
-		if feature.IsEnabled(dynakube) {
+		if feature.IsEnabled(dk) {
 			isMissing, missingScopes := feature.IsScopeMissing(scopes)
 			if isMissing {
 				collectedErrors = append(collectedErrors,

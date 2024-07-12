@@ -10,8 +10,8 @@ const (
 	errorHostPattersIsRequired = `hostPatterns is required when using provisioner mode`
 )
 
-func checkHostPatternsValue(_ context.Context, _ *edgeconnectValidator, edgeConnect *edgeconnect.EdgeConnect) string {
-	if edgeConnect.IsProvisionerModeEnabled() && len(edgeConnect.Spec.HostPatterns) == 0 && !edgeConnect.IsK8SAutomationEnabled() {
+func checkHostPatternsValue(_ context.Context, _ *edgeconnectValidator, ec *edgeconnect.EdgeConnect) string {
+	if ec.IsProvisionerModeEnabled() && len(ec.Spec.HostPatterns) == 0 && !ec.IsK8SAutomationEnabled() {
 		return errorHostPattersIsRequired
 	}
 

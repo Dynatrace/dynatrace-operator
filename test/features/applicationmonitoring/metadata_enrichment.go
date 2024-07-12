@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
@@ -45,14 +45,14 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 	builder := features.New("metadata-enrichment")
 	builder.WithLabel("name", "app-metadata-enrichment")
 	secretConfig := tenant.GetSingleTenantSecret(t)
-	testDynakube := *dynakube.New(
-		dynakube.WithApiUrl(secretConfig.ApiUrl),
-		dynakube.WithMetadataEnrichment(),
-		dynakube.WithApplicationMonitoringSpec(&dynatracev1beta2.ApplicationMonitoringSpec{
+	testDynakube := *dynakubeComponents.New(
+		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
+		dynakubeComponents.WithMetadataEnrichment(),
+		dynakubeComponents.WithApplicationMonitoringSpec(&dynakube.ApplicationMonitoringSpec{
 			UseCSIDriver: false,
 		}),
-		dynakube.WithNameBasedMetadataEnrichmentNamespaceSelector(),
-		dynakube.WithNameBasedOneAgentNamespaceSelector(),
+		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),
+		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
 	)
 
 	type testCase struct {
@@ -136,8 +136,8 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 		},
 	}
 
-	// dynakube install
-	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	// dynakubeComponents install
+	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
 	// Register actual test
 	for _, test := range testCases {
@@ -146,7 +146,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 		builder.WithTeardown(fmt.Sprintf("%s: Uninstalling sample app", test.name), test.app.Uninstall())
 	}
 
-	dynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
+	dynakubeComponents.Delete(builder, helpers.LevelTeardown, testDynakube)
 
 	return builder.Feature()
 }

@@ -1,13 +1,13 @@
 package token
 
 import (
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"golang.org/x/exp/slices"
 )
 
 type Feature struct {
-	IsEnabled      func(dynakube dynatracev1beta2.DynaKube) bool
+	IsEnabled      func(dk dynakube.DynaKube) bool
 	Name           string
 	RequiredScopes []string
 }
@@ -29,7 +29,7 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 		{
 			Name:           "Access problem and event feed, metrics, and topology",
 			RequiredScopes: []string{dtclient.TokenScopeDataExport},
-			IsEnabled: func(dynakube dynatracev1beta2.DynaKube) bool {
+			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return true
 			},
 		},
@@ -39,22 +39,22 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 				dtclient.TokenScopeEntitiesRead,
 				dtclient.TokenScopeSettingsRead,
 				dtclient.TokenScopeSettingsWrite},
-			IsEnabled: func(dynakube dynatracev1beta2.DynaKube) bool {
-				return dynakube.IsKubernetesMonitoringActiveGateEnabled() &&
-					dynakube.FeatureAutomaticKubernetesApiMonitoring()
+			IsEnabled: func(dk dynakube.DynaKube) bool {
+				return dk.IsKubernetesMonitoringActiveGateEnabled() &&
+					dk.FeatureAutomaticKubernetesApiMonitoring()
 			},
 		},
 		{
 			Name:           "Automatic ActiveGate Token Creation",
 			RequiredScopes: []string{dtclient.TokenScopeActiveGateTokenCreate},
-			IsEnabled: func(dynakube dynatracev1beta2.DynaKube) bool {
-				return dynakube.NeedsActiveGate()
+			IsEnabled: func(dk dynakube.DynaKube) bool {
+				return dk.NeedsActiveGate()
 			},
 		},
 		{
 			Name:           "Download Installer",
 			RequiredScopes: []string{dtclient.TokenScopeInstallerDownload},
-			IsEnabled: func(dynakube dynatracev1beta2.DynaKube) bool {
+			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return !paasTokenExists
 			},
 		},
@@ -66,7 +66,7 @@ func getFeaturesForPaaSToken() []Feature {
 		{
 			Name:           "PaaS Token",
 			RequiredScopes: []string{dtclient.TokenScopeInstallerDownload},
-			IsEnabled: func(dynakube dynatracev1beta2.DynaKube) bool {
+			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return true
 			},
 		},
@@ -78,8 +78,8 @@ func getFeaturesForDataIngest() []Feature {
 		{
 			Name:           "Data Ingest",
 			RequiredScopes: []string{dtclient.TokenScopeMetricsIngest},
-			IsEnabled: func(dynakube dynatracev1beta2.DynaKube) bool {
-				return dynakube.IsMetricsIngestActiveGateEnabled()
+			IsEnabled: func(dk dynakube.DynaKube) bool {
+				return dk.IsMetricsIngestActiveGateEnabled()
 			},
 		},
 	}

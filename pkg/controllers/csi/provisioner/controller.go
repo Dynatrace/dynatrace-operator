@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csigc "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/gc"
@@ -83,7 +83,7 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metad
 
 func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&dynatracev1beta2.DynaKube{}).
+		For(&dynakube.DynaKube{}).
 		Complete(provisioner)
 }
 
@@ -139,7 +139,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 }
 
 // needsReconcile checks if the DynaKube in the requests exists or needs any CSI functionality, if not then it runs the GC
-func (provisioner *OneAgentProvisioner) needsReconcile(ctx context.Context, request reconcile.Request) (*dynatracev1beta2.DynaKube, error) {
+func (provisioner *OneAgentProvisioner) needsReconcile(ctx context.Context, request reconcile.Request) (*dynakube.DynaKube, error) {
 	dk, err := provisioner.getDynaKube(ctx, request.NamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -168,7 +168,7 @@ func (provisioner *OneAgentProvisioner) needsReconcile(ctx context.Context, requ
 	return dk, nil
 }
 
-func (provisioner *OneAgentProvisioner) setupFileSystem(dk *dynatracev1beta2.DynaKube) error {
+func (provisioner *OneAgentProvisioner) setupFileSystem(dk *dynakube.DynaKube) error {
 	tenantUUID, err := dk.TenantUUIDFromApiUrl()
 	if err != nil {
 		return err
@@ -185,7 +185,7 @@ func (provisioner *OneAgentProvisioner) setupFileSystem(dk *dynatracev1beta2.Dyn
 	return nil
 }
 
-func (provisioner *OneAgentProvisioner) setupTenantConfig(dk *dynatracev1beta2.DynaKube) (*metadata.TenantConfig, error) {
+func (provisioner *OneAgentProvisioner) setupTenantConfig(dk *dynakube.DynaKube) (*metadata.TenantConfig, error) {
 	metadataTenantConfig, err := provisioner.handleMetadata(dk)
 	if err != nil {
 		return nil, err
@@ -230,7 +230,7 @@ func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, requ
 	return result, nil
 }
 
-func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context, dk *dynatracev1beta2.DynaKube, tenantConfig *metadata.TenantConfig) (requeue bool, err error) {
+func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context, dk *dynakube.DynaKube, tenantConfig *metadata.TenantConfig) (requeue bool, err error) {
 	// creates a dt client and checks tokens exist for the given dynakube
 	dtc, err := buildDtc(provisioner, ctx, dk)
 	if err != nil {
@@ -254,7 +254,7 @@ func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context
 func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 	ctx context.Context, dtc dtclient.Client,
 	tenantConfig *metadata.TenantConfig,
-	dk *dynatracev1beta2.DynaKube,
+	dk *dynakube.DynaKube,
 ) (
 	requeue bool,
 	err error,
@@ -294,7 +294,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 	return false, nil
 }
 
-func (provisioner *OneAgentProvisioner) handleMetadata(dk *dynatracev1beta2.DynaKube) (*metadata.TenantConfig, error) {
+func (provisioner *OneAgentProvisioner) handleMetadata(dk *dynakube.DynaKube) (*metadata.TenantConfig, error) {
 	tenantUUID, err := dk.TenantUUIDFromApiUrl() // TODO update to use the tenant uuid from the DynaKube status
 	if err != nil {
 		return nil, err
@@ -312,7 +312,7 @@ func (provisioner *OneAgentProvisioner) handleMetadata(dk *dynatracev1beta2.Dyna
 	return newTenantConfig, nil
 }
 
-func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynatracev1beta2.DynaKube) (dtclient.Client, error) {
+func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynakube.DynaKube) (dtclient.Client, error) {
 	tokenReader := token.NewReader(provisioner.apiReader, dk)
 
 	tokens, err := tokenReader.ReadTokens(ctx)
@@ -333,11 +333,11 @@ func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynatra
 	return dynatraceClient, nil
 }
 
-func (provisioner *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.NamespacedName) (*dynatracev1beta2.DynaKube, error) {
+func (provisioner *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.NamespacedName) (*dynakube.DynaKube, error) {
 	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
 	defer span.End()
 
-	var dk dynatracev1beta2.DynaKube
+	var dk dynakube.DynaKube
 	err := provisioner.apiReader.Get(ctx, name, &dk)
 	span.RecordError(err)
 

@@ -9,7 +9,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
@@ -96,12 +96,12 @@ func TestGetDynakubeOrCleanup(t *testing.T) {
 	})
 
 	t.Run("dynakube exists => return dynakube", func(t *testing.T) {
-		expectedDynakube := &dynatracev1beta2.DynaKube{
+		expectedDynakube := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      request.Name,
 				Namespace: request.Namespace,
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{APIURL: "this-is-an-api-url"},
+			Spec: dynakube.DynaKubeSpec{APIURL: "this-is-an-api-url"},
 		}
 		fakeClient := fake.NewClientWithIndex(expectedDynakube)
 		controller := &Controller{
@@ -131,12 +131,12 @@ func TestMinimalRequest(t *testing.T) {
 
 func TestHandleError(t *testing.T) {
 	ctx := context.Background()
-	dynakubeBase := &dynatracev1beta2.DynaKube{
+	dynakubeBase := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "this-is-a-name",
 			Namespace: "dynatrace",
 		},
-		Spec: dynatracev1beta2.DynaKubeSpec{APIURL: "this-is-an-api-url"},
+		Spec: dynakube.DynaKubeSpec{APIURL: "this-is-an-api-url"},
 	}
 
 	t.Run("no error => update status", func(t *testing.T) {
@@ -148,7 +148,7 @@ func TestHandleError(t *testing.T) {
 			requeueAfter: 12345 * time.Second,
 		}
 		expectedDynakube := dynakubeBase.DeepCopy()
-		expectedDynakube.Status = dynatracev1beta2.DynaKubeStatus{
+		expectedDynakube.Status = dynakube.DynaKubeStatus{
 			Phase: status.Running,
 		}
 
@@ -157,7 +157,7 @@ func TestHandleError(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, controller.requeueAfter, result.RequeueAfter)
 
-		dynakube := &dynatracev1beta2.DynaKube{}
+		dynakube := &dynakube.DynaKube{}
 		err = fakeClient.Get(ctx, types.NamespacedName{Name: expectedDynakube.Name, Namespace: expectedDynakube.Namespace}, dynakube)
 		require.NoError(t, err)
 		assert.Equal(t, expectedDynakube.Status.Phase, dynakube.Status.Phase)
@@ -200,7 +200,7 @@ func TestHandleError(t *testing.T) {
 		assert.Empty(t, result)
 		require.Error(t, err)
 
-		dynakube := &dynatracev1beta2.DynaKube{}
+		dynakube := &dynakube.DynaKube{}
 		err = fakeClient.Get(ctx, types.NamespacedName{Name: oldDynakube.Name, Namespace: oldDynakube.Namespace}, dynakube)
 		require.NoError(t, err)
 		assert.Equal(t, status.Error, dynakube.Status.Phase)
@@ -209,12 +209,12 @@ func TestHandleError(t *testing.T) {
 
 func TestSetupTokensAndClient(t *testing.T) {
 	ctx := context.Background()
-	dynakubeBase := &dynatracev1beta2.DynaKube{
+	dynakubeBase := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "this-is-a-name",
 			Namespace: "dynatrace",
 		},
-		Spec: dynatracev1beta2.DynaKubeSpec{APIURL: "https://test123.dev.dynatracelabs.com/api"},
+		Spec: dynakube.DynaKubeSpec{APIURL: "https://test123.dev.dynatracelabs.com/api"},
 	}
 
 	t.Run("no tokens => error + condition", func(t *testing.T) {
@@ -298,36 +298,36 @@ func TestSetupTokensAndClient(t *testing.T) {
 	})
 }
 
-func assertTokenCondition(t *testing.T, dynakube *dynatracev1beta2.DynaKube, hasError bool) {
-	condition := dynakube.Status.Conditions[0]
-	assert.Equal(t, dynatracev1beta2.TokenConditionType, condition.Type)
+func assertTokenCondition(t *testing.T, dk *dynakube.DynaKube, hasError bool) {
+	condition := dk.Status.Conditions[0]
+	assert.Equal(t, dynakube.TokenConditionType, condition.Type)
 
 	if hasError {
-		assert.Equal(t, dynatracev1beta2.ReasonTokenError, condition.Reason)
+		assert.Equal(t, dynakube.ReasonTokenError, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	} else {
-		assert.Equal(t, dynatracev1beta2.ReasonTokenReady, condition.Reason)
+		assert.Equal(t, dynakube.ReasonTokenReady, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 	}
 }
 
 func TestReconcileComponents(t *testing.T) {
 	ctx := context.Background()
-	dynakubeBase := &dynatracev1beta2.DynaKube{
+	dynakubeBase := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "this-is-a-name",
 			Namespace: "dynatrace",
 		},
-		Spec: dynatracev1beta2.DynaKubeSpec{
+		Spec: dynakube.DynaKubeSpec{
 			APIURL:     "this-is-an-api-url",
-			OneAgent:   dynatracev1beta2.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{}},
-			ActiveGate: dynatracev1beta2.ActiveGateSpec{Capabilities: []dynatracev1beta2.CapabilityDisplayName{dynatracev1beta2.KubeMonCapability.DisplayName}},
+			OneAgent:   dynakube.OneAgentSpec{CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}},
+			ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName}},
 		},
 	}
 
 	t.Run("all components reconciled, even in case of errors", func(t *testing.T) {
-		dynakube := dynakubeBase.DeepCopy()
-		fakeClient := fake.NewClientWithIndex(dynakube)
+		dk := dynakubeBase.DeepCopy()
+		fakeClient := fake.NewClientWithIndex(dk)
 		// ReconcileCodeModuleCommunicationHosts
 		mockOneAgentReconciler := controllermock.NewReconciler(t)
 		mockOneAgentReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
@@ -348,7 +348,7 @@ func TestReconcileComponents(t *testing.T) {
 			oneAgentReconcilerBuilder:   createOneAgentReconcilerBuilder(mockOneAgentReconciler),
 		}
 		mockedDtc := dtclientmock.NewClient(t)
-		err := controller.reconcileComponents(ctx, mockedDtc, nil, dynakube)
+		err := controller.reconcileComponents(ctx, mockedDtc, nil, dk)
 
 		require.Error(t, err)
 		// goerrors.Join concats errors with \n
@@ -356,8 +356,8 @@ func TestReconcileComponents(t *testing.T) {
 	})
 
 	t.Run("exit early in case of no oneagent conncection info", func(t *testing.T) {
-		dynakube := dynakubeBase.DeepCopy()
-		fakeClient := fake.NewClientWithIndex(dynakube)
+		dk := dynakubeBase.DeepCopy()
+		fakeClient := fake.NewClientWithIndex(dk)
 
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
@@ -373,7 +373,7 @@ func TestReconcileComponents(t *testing.T) {
 			injectionReconcilerBuilder:  createInjectionReconcilerBuilder(mockInjectionReconciler),
 		}
 		mockedDtc := dtclientmock.NewClient(t)
-		err := controller.reconcileComponents(ctx, mockedDtc, nil, dynakube)
+		err := controller.reconcileComponents(ctx, mockedDtc, nil, dk)
 
 		require.Error(t, err)
 		// goerrors.Join concats errors with \n
@@ -382,19 +382,19 @@ func TestReconcileComponents(t *testing.T) {
 }
 
 func createActivegateReconcilerBuilder(reconciler controllers.Reconciler) activegate.ReconcilerBuilder {
-	return func(_ client.Client, _ client.Reader, _ *dynatracev1beta2.DynaKube, _ dtclient.Client, _ *istio.Client, _ token.Tokens) controllers.Reconciler {
+	return func(_ client.Client, _ client.Reader, _ *dynakube.DynaKube, _ dtclient.Client, _ *istio.Client, _ token.Tokens) controllers.Reconciler {
 		return reconciler
 	}
 }
 
 func createOneAgentReconcilerBuilder(reconciler controllers.Reconciler) oneagent.ReconcilerBuilder {
-	return func(_ client.Client, _ client.Reader, _ dtclient.Client, _ *dynatracev1beta2.DynaKube, _ token.Tokens, _ string) controllers.Reconciler {
+	return func(_ client.Client, _ client.Reader, _ dtclient.Client, _ *dynakube.DynaKube, _ token.Tokens, _ string) controllers.Reconciler {
 		return reconciler
 	}
 }
 
 func createInjectionReconcilerBuilder(reconciler *injectionmock.Reconciler) injection.ReconcilerBuilder {
-	return func(_ client.Client, _ client.Reader, _ dtclient.Client, _ *istio.Client, _ *dynatracev1beta2.DynaKube) controllers.Reconciler {
+	return func(_ client.Client, _ client.Reader, _ dtclient.Client, _ *istio.Client, _ *dynakube.DynaKube) controllers.Reconciler {
 		return reconciler
 	}
 }
@@ -409,14 +409,14 @@ func (clt errorClient) Get(_ context.Context, _ client.ObjectKey, _ client.Objec
 
 func TestGetDynakube(t *testing.T) {
 	t.Run("get dynakube", func(t *testing.T) {
-		fakeClient := fake.NewClient(&dynatracev1beta2.DynaKube{
+		fakeClient := fake.NewClient(&dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 				},
 			},
 		})
@@ -463,9 +463,9 @@ func TestGetDynakube(t *testing.T) {
 		}
 
 		ctx := context.Background()
-		dynakube, err := controller.getDynakubeOrCleanup(ctx, testName, testNamespace)
+		dk, err := controller.getDynakubeOrCleanup(ctx, testName, testNamespace)
 
-		assert.Nil(t, dynakube)
+		assert.Nil(t, dk)
 		require.EqualError(t, err, "fake error")
 	})
 }
@@ -475,20 +475,20 @@ func TestTokenConditions(t *testing.T) {
 
 	t.Run("token condition error is set if token are invalid", func(t *testing.T) {
 		fakeClient := fake.NewClient()
-		dynakube := &dynatracev1beta2.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
 
-		_, err := controller.setupTokensAndClient(ctx, dynakube)
+		_, err := controller.setupTokensAndClient(ctx, dk)
 
 		require.Error(t, err)
-		assertCondition(t, dynakube, dynatracev1beta2.TokenConditionType, metav1.ConditionFalse, dynatracev1beta2.ReasonTokenError, "secrets \"\" not found")
-		assert.Empty(t, dynakube.Status.DynatraceApi.LastTokenScopeRequest, "LastTokenProbeTimestamp should be Nil if token retrieval did not work.")
+		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionFalse, dynakube.ReasonTokenError, "secrets \"\" not found")
+		assert.Empty(t, dk.Status.DynatraceApi.LastTokenScopeRequest, "LastTokenProbeTimestamp should be Nil if token retrieval did not work.")
 	})
 	t.Run("token condition is set if token are valid", func(t *testing.T) {
-		dynakube := &dynatracev1beta2.DynaKube{
+		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
@@ -516,61 +516,61 @@ func TestTokenConditions(t *testing.T) {
 			dynatraceClientBuilder: mockDtcBuilder,
 		}
 
-		_, err := controller.setupTokensAndClient(ctx, dynakube)
+		_, err := controller.setupTokensAndClient(ctx, dk)
 
 		require.NoError(t, err)
-		assertCondition(t, dynakube, dynatracev1beta2.TokenConditionType, metav1.ConditionTrue, dynatracev1beta2.ReasonTokenReady, "")
+		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionTrue, dynakube.ReasonTokenReady, "")
 	})
 }
 
 func TestSetupIstio(t *testing.T) {
 	ctx := context.Background()
-	dynakubeBase := &dynatracev1beta2.DynaKube{
+	dynakubeBase := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
 		},
-		Spec: dynatracev1beta2.DynaKubeSpec{
+		Spec: dynakube.DynaKubeSpec{
 			APIURL:      testApiUrl,
 			EnableIstio: true,
 		},
 	}
 
 	t.Run("no istio installed + EnableIstio: true => error", func(t *testing.T) {
-		dynakube := dynakubeBase.DeepCopy()
+		dk := dynakubeBase.DeepCopy()
 		fakeIstio := fakeistio.NewSimpleClientset()
 		isIstioInstalled := false
 		controller := &Controller{
 			istioClientBuilder: fakeIstioClientBuilder(t, fakeIstio, isIstioInstalled),
 		}
-		istioClient, err := controller.setupIstioClient(dynakube)
+		istioClient, err := controller.setupIstioClient(dk)
 		require.Error(t, err)
 		assert.Nil(t, istioClient)
 	})
 	t.Run("success", func(t *testing.T) {
-		dynakube := dynakubeBase.DeepCopy()
+		dk := dynakubeBase.DeepCopy()
 		fakeIstio := fakeistio.NewSimpleClientset()
 		isIstioInstalled := true
 		controller := &Controller{
 			istioClientBuilder: fakeIstioClientBuilder(t, fakeIstio, isIstioInstalled),
 		}
-		istioClient, err := controller.setupIstioClient(dynakube)
+		istioClient, err := controller.setupIstioClient(dk)
 		require.NoError(t, err)
 		require.NotNil(t, istioClient)
 
 		istioReconciler := istio.NewReconciler(istioClient)
 		require.NotNil(t, istioClient)
 
-		err = istioReconciler.ReconcileAPIUrl(ctx, dynakube)
+		err = istioReconciler.ReconcileAPIUrl(ctx, dk)
 
 		require.NoError(t, err)
 
-		expectedName := istio.BuildNameForFQDNServiceEntry(dynakube.GetName(), istio.OperatorComponent)
-		serviceEntry, err := fakeIstio.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
+		expectedName := istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.OperatorComponent)
+		serviceEntry, err := fakeIstio.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
 
-		virtualService, err := fakeIstio.NetworkingV1beta1().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
+		virtualService, err := fakeIstio.NetworkingV1beta1().VirtualServices(dk.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, virtualService)
 	})
@@ -594,7 +594,7 @@ func fakeIstioClientBuilder(t *testing.T, fakeIstio *fakeistio.Clientset, isIsti
 	}
 }
 
-func assertCondition(t *testing.T, dk *dynatracev1beta2.DynaKube, expectedConditionType string, expectedConditionStatus metav1.ConditionStatus, expectedReason string, expectedMessage string) { //nolint:revive // argument-limit
+func assertCondition(t *testing.T, dk *dynakube.DynaKube, expectedConditionType string, expectedConditionStatus metav1.ConditionStatus, expectedReason string, expectedMessage string) { //nolint:revive // argument-limit
 	t.Helper()
 
 	actualCondition := meta.FindStatusCondition(dk.Status.Conditions, expectedConditionType)
@@ -604,23 +604,23 @@ func assertCondition(t *testing.T, dk *dynatracev1beta2.DynaKube, expectedCondit
 	assert.Equal(t, expectedMessage, actualCondition.Message)
 }
 
-func getTestDynkubeStatus() *dynatracev1beta2.DynaKubeStatus {
-	return &dynatracev1beta2.DynaKubeStatus{
-		ActiveGate: dynatracev1beta2.ActiveGateStatus{
-			ConnectionInfoStatus: dynatracev1beta2.ActiveGateConnectionInfoStatus{
-				ConnectionInfoStatus: dynatracev1beta2.ConnectionInfoStatus{
+func getTestDynkubeStatus() *dynakube.DynaKubeStatus {
+	return &dynakube.DynaKubeStatus{
+		ActiveGate: dynakube.ActiveGateStatus{
+			ConnectionInfoStatus: dynakube.ActiveGateConnectionInfoStatus{
+				ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
 					TenantUUID: testUUID,
 					Endpoints:  "endpoint",
 				},
 			},
 		},
-		OneAgent: dynatracev1beta2.OneAgentStatus{
-			ConnectionInfoStatus: dynatracev1beta2.OneAgentConnectionInfoStatus{
-				ConnectionInfoStatus: dynatracev1beta2.ConnectionInfoStatus{
+		OneAgent: dynakube.OneAgentStatus{
+			ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
+				ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
 					TenantUUID: testUUID,
 					Endpoints:  "endpoint",
 				},
-				CommunicationHosts: []dynatracev1beta2.CommunicationHostStatus{
+				CommunicationHosts: []dynakube.CommunicationHostStatus{
 					{
 						Protocol: "http",
 						Host:     "localhost",
@@ -633,11 +633,11 @@ func getTestDynkubeStatus() *dynatracev1beta2.DynaKubeStatus {
 	}
 }
 
-func createTenantSecrets(dynakube *dynatracev1beta2.DynaKube) []client.Object {
+func createTenantSecrets(dk *dynakube.DynaKube) []client.Object {
 	return []client.Object{
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      dynakube.OneagentTenantSecret(),
+				Name:      dk.OneagentTenantSecret(),
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
@@ -646,7 +646,7 @@ func createTenantSecrets(dynakube *dynatracev1beta2.DynaKube) []client.Object {
 		},
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      dynakube.ActivegateTenantSecret(),
+				Name:      dk.ActivegateTenantSecret(),
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{

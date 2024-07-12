@@ -12,8 +12,8 @@ const (
 	The limit is necessary because kubernetes uses the name of some resources for the label value, which has a limit of 63 characters. (see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set)`
 )
 
-func nameTooLong(_ context.Context, _ *edgeconnectValidator, edgeConnect *edgeconnect.EdgeConnect) string {
-	edgeConnectName := edgeConnect.Name
+func nameTooLong(_ context.Context, _ *edgeconnectValidator, ec *edgeconnect.EdgeConnect) string {
+	edgeConnectName := ec.Name
 	if edgeConnectName != "" && len(edgeConnectName) > edgeconnect.MaxNameLength {
 		return fmt.Sprintf(errorNameTooLong, edgeconnect.MaxNameLength)
 	}

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
@@ -77,16 +77,16 @@ func TestReconciler(t *testing.T) {
 				},
 			},
 		}
-		dynakube := &dynatracev1beta2.DynaKube{
+		dynakube := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakube,
 				Namespace: testNamespaceDynatrace,
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{
-						AppInjectionSpec: dynatracev1beta2.AppInjectionSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
+						AppInjectionSpec: dynakube.AppInjectionSpec{
 							NamespaceSelector: metav1.LabelSelector{
 								MatchLabels: map[string]string{
 									testNamespaceSelectorLabel: testDynakube,
@@ -95,7 +95,7 @@ func TestReconciler(t *testing.T) {
 						},
 					},
 				},
-				MetadataEnrichment: dynatracev1beta2.MetadataEnrichment{
+				MetadataEnrichment: dynakube.MetadataEnrichment{
 					Enabled: true,
 					NamespaceSelector: metav1.LabelSelector{
 						MatchLabels: map[string]string{
@@ -143,12 +143,12 @@ func TestReconciler(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("remove injection", func(t *testing.T) {
-		dynakube := &dynatracev1beta2.DynaKube{
+		dynakube := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakube,
 				Namespace: testNamespaceDynatrace,
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL:      testApiUrl,
 				EnableIstio: true,
 			},
@@ -208,16 +208,16 @@ func TestReconciler(t *testing.T) {
 		assert.NotNil(t, virtualService)
 	})
 	t.Run(`failure is logged in condition`, func(t *testing.T) {
-		dynakube := &dynatracev1beta2.DynaKube{
+		dynakube := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakube,
 				Namespace: testNamespaceDynatrace,
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta2.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{
-						AppInjectionSpec: dynatracev1beta2.AppInjectionSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
+						AppInjectionSpec: dynakube.AppInjectionSpec{
 							NamespaceSelector: metav1.LabelSelector{
 								MatchLabels: map[string]string{
 									testNamespaceSelectorLabel: testDynakube,
@@ -254,8 +254,8 @@ func TestReconciler(t *testing.T) {
 
 func TestRemoveAppInjection(t *testing.T) {
 	clt := clientRemoveAppInjection()
-	rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynatracev1beta2.OneAgentSpec{
-		CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
+	rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynakube.OneAgentSpec{
+		CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 	})
 	setCodeModulesInjectionCreatedCondition(rec.dynakube.Conditions())
 	setMetadataEnrichmentCreatedCondition(rec.dynakube.Conditions())
@@ -283,8 +283,8 @@ func TestRemoveAppInjection(t *testing.T) {
 func TestSetupOneAgentInjection(t *testing.T) {
 	t.Run(`no injection - ClassicFullStack`, func(t *testing.T) {
 		clt := clientNoInjection()
-		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynatracev1beta2.OneAgentSpec{
-			ClassicFullStack: &dynatracev1beta2.HostInjectSpec{},
+		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynakube.OneAgentSpec{
+			ClassicFullStack: &dynakube.HostInjectSpec{},
 		})
 
 		err := rec.setupOneAgentInjection(context.Background())
@@ -296,8 +296,8 @@ func TestSetupOneAgentInjection(t *testing.T) {
 
 	t.Run(`no injection - HostMonitoring`, func(t *testing.T) {
 		clt := clientNoInjection()
-		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynatracev1beta2.OneAgentSpec{
-			HostMonitoring: &dynatracev1beta2.HostInjectSpec{},
+		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynakube.OneAgentSpec{
+			HostMonitoring: &dynakube.HostInjectSpec{},
 		})
 
 		err := rec.setupOneAgentInjection(context.Background())
@@ -309,8 +309,8 @@ func TestSetupOneAgentInjection(t *testing.T) {
 
 	t.Run(`injection - ApplicationMonitoring`, func(t *testing.T) {
 		clt := clientOneAgentInjection()
-		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynatracev1beta2.OneAgentSpec{
-			ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{},
+		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynakube.OneAgentSpec{
+			ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{},
 		})
 
 		err := rec.setupOneAgentInjection(context.Background())
@@ -331,8 +331,8 @@ func TestSetupOneAgentInjection(t *testing.T) {
 
 	t.Run(`injection - CloudNativeFullStack`, func(t *testing.T) {
 		clt := clientOneAgentInjection()
-		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynatracev1beta2.OneAgentSpec{
-			CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
+		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynakube.OneAgentSpec{
+			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 		})
 
 		err := rec.setupOneAgentInjection(context.Background())
@@ -355,8 +355,8 @@ func TestSetupOneAgentInjection(t *testing.T) {
 func TestSetupEnrichmentInjection(t *testing.T) {
 	t.Run(`no enrichment injection`, func(t *testing.T) {
 		clt := clientNoInjection()
-		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynatracev1beta2.OneAgentSpec{
-			CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
+		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynakube.OneAgentSpec{
+			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 		})
 		rec.dynakube.Spec.MetadataEnrichment.Enabled = false
 
@@ -369,8 +369,8 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 
 	t.Run(`enrichment injection`, func(t *testing.T) {
 		clt := clientEnrichmentInjection()
-		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynatracev1beta2.OneAgentSpec{
-			CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
+		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynakube.OneAgentSpec{
+			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 		})
 		rec.dynakube.Spec.MetadataEnrichment.Enabled = true
 
@@ -382,23 +382,23 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 	})
 }
 
-func newIstioTestingClient(fakeClient *fakeistio.Clientset, dynakube *dynatracev1beta2.DynaKube) *istio.Client {
+func newIstioTestingClient(fakeClient *fakeistio.Clientset, dk *dynakube.DynaKube) *istio.Client {
 	return &istio.Client{
 		IstioClientset: fakeClient,
-		Owner:          dynakube,
+		Owner:          dk,
 	}
 }
 
-func createReconciler(clt client.Client, dynakubeName string, dynakubeNamespace string, oneAgentSpec dynatracev1beta2.OneAgentSpec) reconciler {
+func createReconciler(clt client.Client, dynakubeName string, dynakubeNamespace string, oneAgentSpec dynakube.OneAgentSpec) reconciler {
 	return reconciler{
 		client:    clt,
 		apiReader: clt,
-		dynakube: &dynatracev1beta2.DynaKube{
+		dynakube: &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      dynakubeName,
 				Namespace: dynakubeNamespace,
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL:      testApiUrl,
 				OneAgent:    oneAgentSpec,
 				EnableIstio: true,
@@ -446,16 +446,16 @@ func clientEnrichmentInjection() client.Client {
 	)
 }
 
-func setupIstioClientWithObjects(dynakube *dynatracev1beta2.DynaKube) *istio.Client {
+func setupIstioClientWithObjects(dk *dynakube.DynaKube) *istio.Client {
 	return newIstioTestingClient(fakeistio.NewSimpleClientset(
-		clientServiceEntry(istio.BuildNameForIPServiceEntry(dynakube.Name, istio.OneAgentComponent), testNamespace),
-		clientServiceEntry(istio.BuildNameForFQDNServiceEntry(dynakube.Name, istio.OneAgentComponent), testNamespace),
-		clientServiceEntry(istio.BuildNameForIPServiceEntry(dynakube.Name, istio.OneAgentComponent), testNamespace2),
-		clientServiceEntry(istio.BuildNameForFQDNServiceEntry(dynakube.Name, istio.OneAgentComponent), testNamespace2),
+		clientServiceEntry(istio.BuildNameForIPServiceEntry(dk.Name, istio.OneAgentComponent), testNamespace),
+		clientServiceEntry(istio.BuildNameForFQDNServiceEntry(dk.Name, istio.OneAgentComponent), testNamespace),
+		clientServiceEntry(istio.BuildNameForIPServiceEntry(dk.Name, istio.OneAgentComponent), testNamespace2),
+		clientServiceEntry(istio.BuildNameForFQDNServiceEntry(dk.Name, istio.OneAgentComponent), testNamespace2),
 
-		clientVirtualService(istio.BuildNameForFQDNServiceEntry(dynakube.Name, istio.OneAgentComponent), testNamespace),
-		clientVirtualService(istio.BuildNameForFQDNServiceEntry(dynakube.Name, istio.OneAgentComponent), testNamespace2),
-	), dynakube)
+		clientVirtualService(istio.BuildNameForFQDNServiceEntry(dk.Name, istio.OneAgentComponent), testNamespace),
+		clientVirtualService(istio.BuildNameForFQDNServiceEntry(dk.Name, istio.OneAgentComponent), testNamespace2),
+	), dk)
 }
 
 func clientInjectedNamespace(namespaceName string, dynakubeName string) *corev1.Namespace {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	csiotel "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/internal/otel"
@@ -18,23 +18,23 @@ import (
 
 func (provisioner *OneAgentProvisioner) installAgentImage(
 	ctx context.Context,
-	dynakube dynatracev1beta2.DynaKube,
+	dk dynakube.DynaKube,
 	latestProcessModuleConfig *dtclient.ProcessModuleConfig,
 ) (
 	targetImage string,
 	err error,
 ) {
-	tenantUUID, err := dynakube.TenantUUIDFromConnectionInfoStatus()
+	tenantUUID, err := dk.TenantUUIDFromConnectionInfoStatus()
 	if err != nil {
 		return "", err
 	}
 
-	targetImage = dynakube.CodeModulesImage()
+	targetImage = dk.CodeModulesImage()
 	// An image URI often contains one or several /-s, which is problematic when trying to use it as a folder name.
 	// Easiest to just base64 encode it
 	base64Image := base64.StdEncoding.EncodeToString([]byte(targetImage))
 	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(base64Image)
-	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dynakube.GetName())
+	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dk.GetName())
 
 	defer func() {
 		if err == nil {
@@ -52,7 +52,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 	props := &image.Properties{
 		ImageUri:     targetImage,
 		ApiReader:    provisioner.apiReader,
-		Dynakube:     &dynakube,
+		Dynakube:     &dk,
 		PathResolver: provisioner.path,
 		Metadata:     provisioner.db,
 	}
@@ -65,7 +65,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
 	defer span.End()
 
-	err = provisioner.installAgent(ctx, imageInstaller, dynakube, targetDir, targetImage, tenantUUID)
+	err = provisioner.installAgent(ctx, imageInstaller, dk, targetDir, targetImage, tenantUUID)
 	if err != nil {
 		span.RecordError(err)
 
@@ -83,17 +83,17 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 	return targetImage, err
 }
 
-func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dynakube dynatracev1beta2.DynaKube, dtc dtclient.Client, latestProcessModuleConfig *dtclient.ProcessModuleConfig) (string, error) {
-	tenantUUID, err := dynakube.TenantUUIDFromConnectionInfoStatus()
+func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dk dynakube.DynaKube, dtc dtclient.Client, latestProcessModuleConfig *dtclient.ProcessModuleConfig) (string, error) {
+	tenantUUID, err := dk.TenantUUIDFromConnectionInfoStatus()
 	if err != nil {
 		return "", err
 	}
 
-	targetVersion := dynakube.CodeModulesVersion()
+	targetVersion := dk.CodeModulesVersion()
 	urlInstaller := provisioner.urlInstallerBuilder(provisioner.fs, dtc, getUrlProperties(targetVersion, provisioner.path))
 
 	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(targetVersion)
-	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dynakube.GetName())
+	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dk.GetName())
 
 	defer func() {
 		if err == nil {
@@ -111,7 +111,7 @@ func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dyn
 	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
 	defer span.End()
 
-	err = provisioner.installAgent(ctx, urlInstaller, dynakube, targetDir, targetVersion, tenantUUID)
+	err = provisioner.installAgent(ctx, urlInstaller, dk, targetDir, targetVersion, tenantUUID)
 	if err != nil {
 		span.RecordError(err)
 
@@ -129,10 +129,10 @@ func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dyn
 	return targetVersion, nil
 }
 
-func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, agentInstaller installer.Installer, dynakube dynatracev1beta2.DynaKube, targetDir, targetVersion, tenantUUID string) error { //nolint: revive
+func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, agentInstaller installer.Installer, dk dynakube.DynaKube, targetDir, targetVersion, tenantUUID string) error { //nolint: revive
 	eventRecorder := updaterEventRecorder{
 		recorder: provisioner.recorder,
-		dynakube: &dynakube,
+		dynakube: &dk,
 	}
 	isNewlyInstalled, err := agentInstaller.InstallAgent(ctx, targetDir)
 

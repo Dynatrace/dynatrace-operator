@@ -5,7 +5,7 @@ import (
 	goerrors "errors"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
@@ -27,7 +27,7 @@ import (
 type reconciler struct {
 	client                    client.Client
 	apiReader                 client.Reader
-	dynakube                  *dynatracev1beta2.DynaKube
+	dynakube                  *dynakube.DynaKube
 	istioReconciler           istio.Reconciler
 	versionReconciler         version.Reconciler
 	pmcSecretreconciler       controllers.Reconciler
@@ -40,7 +40,7 @@ type ReconcilerBuilder func(
 	apiReader client.Reader,
 	dynatraceClient dynatrace.Client,
 	istioClient *istio.Client,
-	dynakube *dynatracev1beta2.DynaKube,
+	dynakube *dynakube.DynaKube,
 ) controllers.Reconciler
 
 //nolint:revive
@@ -49,7 +49,7 @@ func NewReconciler(
 	apiReader client.Reader,
 	dynatraceClient dynatrace.Client,
 	istioClient *istio.Client,
-	dynakube *dynatracev1beta2.DynaKube,
+	dynakube *dynakube.DynaKube,
 ) controllers.Reconciler {
 	var istioReconciler istio.Reconciler = nil
 

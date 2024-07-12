@@ -10,8 +10,8 @@ const (
 	errorAutomationRequiresProvisioner = `When enabling Kubernetes automation using provisioner mode is mandatory! Please enable spec.oauth.provisioner and provide a resp. OAuth client configuration.`
 )
 
-func automationRequiresProvisionerValidation(_ context.Context, _ *edgeconnectValidator, edgeConnect *edgeconnect.EdgeConnect) string {
-	if edgeConnect.Spec.KubernetesAutomation != nil && edgeConnect.Spec.KubernetesAutomation.Enabled && !edgeConnect.Spec.OAuth.Provisioner {
+func automationRequiresProvisionerValidation(_ context.Context, _ *edgeconnectValidator, ec *edgeconnect.EdgeConnect) string {
+	if ec.Spec.KubernetesAutomation != nil && ec.Spec.KubernetesAutomation.Enabled && !ec.Spec.OAuth.Provisioner {
 		return errorAutomationRequiresProvisioner
 	}
 

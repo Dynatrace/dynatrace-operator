@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/codemodules"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
@@ -25,23 +25,23 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-var readOnlyInjection = map[string]string{dynatracev1beta2.AnnotationFeatureReadOnlyCsiVolume: "true"}
+var readOnlyInjection = map[string]string{dynakube.AnnotationFeatureReadOnlyCsiVolume: "true"}
 
 func ReadOnlyCSIVolume(t *testing.T) features.Feature {
 	builder := features.New("read only csi volume")
 	builder.WithLabel("name", "app-read-only-csi-volume")
 	secretConfig := tenant.GetSingleTenantSecret(t)
-	testDynakube := *dynakube.New(
-		dynakube.WithAnnotations(readOnlyInjection),
-		dynakube.WithApiUrl(secretConfig.ApiUrl),
-		dynakube.WithApplicationMonitoringSpec(&dynatracev1beta2.ApplicationMonitoringSpec{
+	testDynakube := *dynakubeComponents.New(
+		dynakubeComponents.WithAnnotations(readOnlyInjection),
+		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
+		dynakubeComponents.WithApplicationMonitoringSpec(&dynakube.ApplicationMonitoringSpec{
 			UseCSIDriver: true,
 		}),
 	)
 	sampleDeployment := sample.NewApp(t, &testDynakube, sample.AsDeployment())
 	builder.Assess("install sample deployment namespace", sampleDeployment.InstallNamespace())
 
-	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
 	builder.Assess("install sample deployment and wait till ready", sampleDeployment.Install())
 	builder.Assess("check mounted volumes", checkMountedVolumes(sampleDeployment))
@@ -49,7 +49,7 @@ func ReadOnlyCSIVolume(t *testing.T) features.Feature {
 
 	builder.WithTeardown("removing sample namespace", sampleDeployment.Uninstall())
 
-	dynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
+	dynakubeComponents.Delete(builder, helpers.LevelTeardown, testDynakube)
 
 	return builder.Feature()
 }

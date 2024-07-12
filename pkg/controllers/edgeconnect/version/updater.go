@@ -27,10 +27,10 @@ func newUpdater(
 	apiReader client.Reader,
 	timeprovider *timeprovider.Provider,
 	registryClient registry.ImageGetter,
-	edgeConnect *edgeconnect.EdgeConnect,
+	ec *edgeconnect.EdgeConnect,
 ) *updater {
 	return &updater{
-		edgeConnect:    edgeConnect,
+		edgeConnect:    ec,
 		apiReader:      apiReader,
 		timeProvider:   timeprovider,
 		registryClient: registryClient,

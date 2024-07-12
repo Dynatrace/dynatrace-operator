@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -268,50 +268,50 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		require.Equal(t, "IstioForCodeModuleFailed", statusCondition.Reason)
 	})
 	t.Run("remove and cleanup if AppInjection is disabled", func(t *testing.T) {
-		dynakube := createTestDynaKube()
+		dk := createTestDynaKube()
 		fakeClient := fakeistio.NewSimpleClientset()
-		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
+		istioClient := newTestingClient(fakeClient, dk.GetNamespace())
 		r := NewReconciler(istioClient)
 
-		err := r.ReconcileCodeModuleCommunicationHosts(ctx, dynakube)
+		err := r.ReconcileCodeModuleCommunicationHosts(ctx, dk)
 		require.NoError(t, err)
 
-		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), OneAgentComponent)
-		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
+		expectedFQDNName := BuildNameForFQDNServiceEntry(dk.GetName(), OneAgentComponent)
+		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
 		assert.Contains(t, fmt.Sprintf("%v", serviceEntry), "something.test.io")
 
-		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
+		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, virtualService)
 
-		expectedIPName := BuildNameForIPServiceEntry(dynakube.GetName(), OneAgentComponent)
-		serviceEntry, err = fakeClient.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedIPName, metav1.GetOptions{})
+		expectedIPName := BuildNameForIPServiceEntry(dk.GetName(), OneAgentComponent)
+		serviceEntry, err = fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedIPName, metav1.GetOptions{})
 
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
 
-		statusCondition := meta.FindStatusCondition(*dynakube.Conditions(), "IstioForCodeModule")
+		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForCodeModule")
 		require.NotNil(t, statusCondition)
 		require.Equal(t, "IstioForCodeModuleChanged", statusCondition.Reason)
 
-		dynakube.Spec.OneAgent.CloudNativeFullStack = nil
-		dynakube.Spec.OneAgent.HostMonitoring = &dynatracev1beta2.HostInjectSpec{}
+		dk.Spec.OneAgent.CloudNativeFullStack = nil
+		dk.Spec.OneAgent.HostMonitoring = &dynakube.HostInjectSpec{}
 
-		err = r.ReconcileCodeModuleCommunicationHosts(ctx, dynakube)
+		err = r.ReconcileCodeModuleCommunicationHosts(ctx, dk)
 		require.NoError(t, err)
 
-		statusCondition = meta.FindStatusCondition(*dynakube.Conditions(), "IstioForCodeModule")
+		statusCondition = meta.FindStatusCondition(*dk.Conditions(), "IstioForCodeModule")
 		require.Nil(t, statusCondition)
 
-		_, err = fakeClient.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
+		_, err = fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.Error(t, err)
 
-		_, err = fakeClient.NetworkingV1beta1().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
+		_, err = fakeClient.NetworkingV1beta1().VirtualServices(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.Error(t, err)
 
-		_, err = fakeClient.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedIPName, metav1.GetOptions{})
+		_, err = fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedIPName, metav1.GetOptions{})
 
 		require.Error(t, err)
 	})
@@ -321,8 +321,8 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("nil => error", func(t *testing.T) {
-		dynakube := createTestDynaKube()
-		istioClient := newTestingClient(nil, dynakube.GetNamespace())
+		dk := createTestDynaKube()
+		istioClient := newTestingClient(nil, dk.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
 		err := reconciler.ReconcileActiveGateCommunicationHosts(ctx, nil)
@@ -355,98 +355,98 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		require.Equal(t, "IstioForActiveGateChanged", statusCondition.Reason)
 	})
 	t.Run("unknown k8s client error => error", func(t *testing.T) {
-		dynakube := createTestDynaKube()
+		dk := createTestDynaKube()
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
 
-		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
+		istioClient := newTestingClient(fakeClient, dk.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
-		err := reconciler.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
+		err := reconciler.ReconcileActiveGateCommunicationHosts(ctx, dk)
 		require.Error(t, err)
 
-		statusCondition := meta.FindStatusCondition(*dynakube.Conditions(), "IstioForActiveGate")
+		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")
 		require.NotNil(t, statusCondition)
 		require.Equal(t, "IstioForActiveGateFailed", statusCondition.Reason)
 	})
 	t.Run("verify removal of conditions", func(t *testing.T) {
-		dynakube := createTestDynaKube()
+		dk := createTestDynaKube()
 		fakeClient := fakeistio.NewSimpleClientset()
-		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
+		istioClient := newTestingClient(fakeClient, dk.GetNamespace())
 		r := NewReconciler(istioClient)
 		rec := r.(*reconciler)
 		rec.timeProvider.Freeze()
 
-		err := r.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
+		err := r.ReconcileActiveGateCommunicationHosts(ctx, dk)
 		require.NoError(t, err)
 
-		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), strings.ToLower(ActiveGateComponent))
-		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
+		expectedFQDNName := BuildNameForFQDNServiceEntry(dk.GetName(), strings.ToLower(ActiveGateComponent))
+		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
 		assert.Contains(t, fmt.Sprintf("%v", serviceEntry), "abcd123.some.activegate.endpointurl.com")
 
-		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
+		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, virtualService)
 
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
 
-		statusCondition := meta.FindStatusCondition(*dynakube.Conditions(), "IstioForActiveGate")
+		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")
 		require.NotNil(t, statusCondition)
 		require.Equal(t, "IstioForActiveGateChanged", statusCondition.Reason)
 
 		// disable endpoints, make request within api threshold
-		dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints = ""
+		dk.Status.ActiveGate.ConnectionInfoStatus.Endpoints = ""
 
-		err = r.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
+		err = r.ReconcileActiveGateCommunicationHosts(ctx, dk)
 		require.NoError(t, err)
 
-		statusCondition2 := meta.FindStatusCondition(*dynakube.Conditions(), "IstioForActiveGate")
+		statusCondition2 := meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")
 		require.NotNil(t, statusCondition2)
 
 		// advance time to be outside api threshold
 		rec2 := r.(*reconciler)
-		time := rec2.timeProvider.Now().Add(dynakube.ApiRequestThreshold() * 2)
+		time := rec2.timeProvider.Now().Add(dk.ApiRequestThreshold() * 2)
 		rec2.timeProvider.Set(time)
-		err = rec2.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
+		err = rec2.ReconcileActiveGateCommunicationHosts(ctx, dk)
 		require.NoError(t, err)
 
-		statusCondition3 := meta.FindStatusCondition(*dynakube.Conditions(), "IstioForActiveGate")
+		statusCondition3 := meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")
 		require.Nil(t, statusCondition3)
 	})
 	t.Run("verify removal of conditions when ActiveGate disabled", func(t *testing.T) {
-		dynakube := createTestDynaKube()
+		dk := createTestDynaKube()
 		fakeClient := fakeistio.NewSimpleClientset()
-		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
+		istioClient := newTestingClient(fakeClient, dk.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
-		err := reconciler.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
+		err := reconciler.ReconcileActiveGateCommunicationHosts(ctx, dk)
 		require.NoError(t, err)
 
-		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), strings.ToLower(ActiveGateComponent))
-		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
+		expectedFQDNName := BuildNameForFQDNServiceEntry(dk.GetName(), strings.ToLower(ActiveGateComponent))
+		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
 		assert.Contains(t, fmt.Sprintf("%v", serviceEntry), "abcd123.some.activegate.endpointurl.com")
 
-		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
+		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, virtualService)
 
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
 
-		statusCondition := meta.FindStatusCondition(*dynakube.Conditions(), "IstioForActiveGate")
+		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")
 		require.NotNil(t, statusCondition)
 		require.Equal(t, "IstioForActiveGateChanged", statusCondition.Reason)
 
-		dynakube.Spec.ActiveGate.Capabilities = []dynatracev1beta2.CapabilityDisplayName{}
-		err = reconciler.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
+		dk.Spec.ActiveGate.Capabilities = []dynakube.CapabilityDisplayName{}
+		err = reconciler.ReconcileActiveGateCommunicationHosts(ctx, dk)
 		require.NoError(t, err)
 
-		statusCondition2 := meta.FindStatusCondition(*dynakube.Conditions(), "IstioForActiveGate")
+		statusCondition2 := meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")
 		require.Nil(t, statusCondition2)
 	})
 }
@@ -467,12 +467,12 @@ func createTestFQDNCommunicationHost() dtclient.CommunicationHost {
 	}
 }
 
-func createTestDynaKube() *dynatracev1beta2.DynaKube {
+func createTestDynaKube() *dynakube.DynaKube {
 	fqdnHost := createTestFQDNCommunicationHost()
 	ipHost := createTestIPCommunicationHost()
 	endpoints := "https://abcd123.some.activegate.endpointurl.com:443"
 
-	return &dynatracev1beta2.DynaKube{
+	return &dynakube.DynaKube{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "DynaKube",
 		},
@@ -480,22 +480,22 @@ func createTestDynaKube() *dynatracev1beta2.DynaKube {
 			Name:      "owner",
 			Namespace: "test",
 		},
-		Spec: dynatracev1beta2.DynaKubeSpec{
+		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://test.dev.dynatracelabs.com/api",
-			ActiveGate: dynatracev1beta2.ActiveGateSpec{
-				Capabilities: []dynatracev1beta2.CapabilityDisplayName{
-					dynatracev1beta2.RoutingCapability.DisplayName,
+			ActiveGate: dynakube.ActiveGateSpec{
+				Capabilities: []dynakube.CapabilityDisplayName{
+					dynakube.RoutingCapability.DisplayName,
 				},
 			},
-			OneAgent: dynatracev1beta2.OneAgentSpec{
-				CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
+			OneAgent: dynakube.OneAgentSpec{
+				CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 			},
 			DynatraceApiRequestThreshold: 15,
 		},
-		Status: dynatracev1beta2.DynaKubeStatus{
-			OneAgent: dynatracev1beta2.OneAgentStatus{
-				ConnectionInfoStatus: dynatracev1beta2.OneAgentConnectionInfoStatus{
-					CommunicationHosts: []dynatracev1beta2.CommunicationHostStatus{
+		Status: dynakube.DynaKubeStatus{
+			OneAgent: dynakube.OneAgentStatus{
+				ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
+					CommunicationHosts: []dynakube.CommunicationHostStatus{
 						{
 							Protocol: fqdnHost.Protocol,
 							Host:     fqdnHost.Host,
@@ -509,9 +509,9 @@ func createTestDynaKube() *dynatracev1beta2.DynaKube {
 					},
 				},
 			},
-			ActiveGate: dynatracev1beta2.ActiveGateStatus{
-				ConnectionInfoStatus: dynatracev1beta2.ActiveGateConnectionInfoStatus{
-					ConnectionInfoStatus: dynatracev1beta2.ConnectionInfoStatus{
+			ActiveGate: dynakube.ActiveGateStatus{
+				ConnectionInfoStatus: dynakube.ActiveGateConnectionInfoStatus{
+					ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
 						TenantUUID: "test-tenant",
 						Endpoints:  endpoints,
 					},

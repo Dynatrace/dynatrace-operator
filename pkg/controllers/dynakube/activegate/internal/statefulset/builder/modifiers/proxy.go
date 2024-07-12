@@ -1,7 +1,7 @@
 package modifiers
 
 import (
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
@@ -14,14 +14,14 @@ var _ volumeModifier = ProxyModifier{}
 var _ volumeMountModifier = ProxyModifier{}
 var _ builder.Modifier = ProxyModifier{}
 
-func NewProxyModifier(dynakube dynatracev1beta2.DynaKube) ProxyModifier {
+func NewProxyModifier(dk dynakube.DynaKube) ProxyModifier {
 	return ProxyModifier{
-		dynakube: dynakube,
+		dynakube: dk,
 	}
 }
 
 type ProxyModifier struct {
-	dynakube dynatracev1beta2.DynaKube
+	dynakube dynakube.DynaKube
 }
 
 func (mod ProxyModifier) Enabled() bool {

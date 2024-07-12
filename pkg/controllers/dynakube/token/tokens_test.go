@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
@@ -73,7 +73,7 @@ func TestTokens(t *testing.T) {
 			dtclient.ApiToken: &apiToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynatracev1beta2.DynaKube{})
+		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
 
 		assert.Len(t, tokens.ApiToken().Features, 4)
 		assert.Empty(t, tokens.PaasToken().Features)
@@ -88,7 +88,7 @@ func TestTokens(t *testing.T) {
 			dtclient.PaasToken: &paasToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynatracev1beta2.DynaKube{})
+		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
 
 		assert.Len(t, tokens.ApiToken().Features, 4)
 		assert.Len(t, tokens.PaasToken().Features, 1)
@@ -101,7 +101,7 @@ func TestTokens(t *testing.T) {
 			dtclient.ApiToken: &apiToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynatracev1beta2.DynaKube{})
+		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
 
 		assert.Len(t, tokens.ApiToken().Features, 4)
 		assert.Empty(t, tokens.PaasToken().Features)
@@ -109,9 +109,9 @@ func TestTokens(t *testing.T) {
 		assert.NoError(t, err, "")
 	})
 	t.Run("activegate enabled dynakube, no permissions in api token => fail", func(t *testing.T) {
-		dynakube := dynatracev1beta2.DynaKube{}
-		dynakube.Spec.ActiveGate.Capabilities = []dynatracev1beta2.CapabilityDisplayName{
-			dynatracev1beta2.KubeMonCapability.DisplayName,
+		dk := dynakube.DynaKube{}
+		dk.Spec.ActiveGate.Capabilities = []dynakube.CapabilityDisplayName{
+			dynakube.KubeMonCapability.DisplayName,
 		}
 
 		apiToken := newToken(dtclient.ApiToken, fakeTokenNoPermissions)
@@ -119,7 +119,7 @@ func TestTokens(t *testing.T) {
 			dtclient.ApiToken: &apiToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube)
+		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dk)
 
 		assert.Len(t, tokens.ApiToken().Features, 4)
 		assert.Empty(t, tokens.PaasToken().Features)
@@ -127,7 +127,7 @@ func TestTokens(t *testing.T) {
 		assert.EqualError(t, err, "token 'apiToken' has scope errors: [feature 'Access problem and event feed, metrics, and topology' is missing scope 'DataExport' feature 'Kubernetes API Monitoring' is missing scope 'entities.read, settings.read, settings.write' feature 'Automatic ActiveGate Token Creation' is missing scope 'activeGateTokenManagement.create' feature 'Download Installer' is missing scope 'InstallerDownload']")
 	})
 	t.Run("data ingest enabled => dataingest token missing rights => fail", func(t *testing.T) {
-		dynakube := dynatracev1beta2.DynaKube{}
+		dynakube := dynakube.DynaKube{}
 		enableKubernetesMonitoringAndMetricsIngest(&dynakube)
 
 		apiToken := newToken(dtclient.ApiToken, fakeTokenAllAPITokenPermissionsIncludingPaaS)
@@ -152,7 +152,7 @@ func TestTokens(t *testing.T) {
 			dtclient.DataIngestToken: &dataingestToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynatracev1beta2.DynaKube{})
+		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
 
 		assert.Len(t, tokens.ApiToken().Features, 4)
 		assert.Empty(t, tokens.PaasToken().Features)
@@ -161,13 +161,13 @@ func TestTokens(t *testing.T) {
 	})
 }
 
-func enableKubernetesMonitoringAndMetricsIngest(dynakube *dynatracev1beta2.DynaKube) *dynatracev1beta2.DynaKube {
-	dynakube.Spec.ActiveGate.Capabilities = []dynatracev1beta2.CapabilityDisplayName{
-		dynatracev1beta2.KubeMonCapability.DisplayName,
-		dynatracev1beta2.MetricsIngestCapability.DisplayName,
+func enableKubernetesMonitoringAndMetricsIngest(dk *dynakube.DynaKube) *dynakube.DynaKube {
+	dk.Spec.ActiveGate.Capabilities = []dynakube.CapabilityDisplayName{
+		dynakube.KubeMonCapability.DisplayName,
+		dynakube.MetricsIngestCapability.DisplayName,
 	}
 
-	return dynakube
+	return dk
 }
 
 func TestTokens_VerifyValues(t *testing.T) {

@@ -2,7 +2,7 @@ package daemonset
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
@@ -111,7 +111,7 @@ func (b *builder) addProxyEnv(envVarMap *prioritymap.Map) {
 		addDefaultValueSource(envVarMap, proxyEnv, &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{Name: b.dk.Spec.Proxy.ValueFrom},
-				Key:                  dynatracev1beta2.ProxyKey,
+				Key:                  dynakube.ProxyKey,
 			},
 		})
 	} else {

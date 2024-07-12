@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
 	"github.com/pkg/errors"
@@ -47,15 +47,15 @@ func TestAddReadOnlyCSIVolumeMounts(t *testing.T) {
 
 func TestAddCertVolumeMounts(t *testing.T) {
 	t.Run("shouldn't add any cert volume mounts", func(t *testing.T) {
-		dynakube := dynatracev1beta2.DynaKube{}
+		dynakube := dynakube.DynaKube{}
 		container := &corev1.Container{}
 
 		addCertVolumeMounts(container, dynakube)
 		require.Empty(t, container.VolumeMounts)
 	})
 	t.Run("should add both cert volume mounts", func(t *testing.T) {
-		dynakube := dynatracev1beta2.DynaKube{
-			Spec: dynatracev1beta2.DynaKubeSpec{
+		dynakube := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
 				TrustedCAs: "test",
 			},
 		}
@@ -67,10 +67,10 @@ func TestAddCertVolumeMounts(t *testing.T) {
 		assert.Equal(t, consts.CustomProxyCertsFileName, container.VolumeMounts[1].SubPath)
 	})
 	t.Run("shouldn't add proxy cert volume mounts", func(t *testing.T) {
-		dynakube := dynatracev1beta2.DynaKube{
-			Spec: dynatracev1beta2.DynaKubeSpec{
-				ActiveGate: dynatracev1beta2.ActiveGateSpec{
-					Capabilities: []dynatracev1beta2.CapabilityDisplayName{
+		dynakube := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: dynakube.ActiveGateSpec{
+					Capabilities: []dynakube.CapabilityDisplayName{
 						"routing",
 					},
 					TlsSecretName: "test",

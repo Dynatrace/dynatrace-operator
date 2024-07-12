@@ -3,15 +3,15 @@ package modifiers
 import (
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func setKubernetesMonitoringUsage(dynakube *dynatracev1beta2.DynaKube, isUsed bool) {
+func setKubernetesMonitoringUsage(dk *dynakube.DynaKube, isUsed bool) {
 	if isUsed {
-		enableKubeMonCapability(dynakube)
+		enableKubeMonCapability(dk)
 	}
 }
 

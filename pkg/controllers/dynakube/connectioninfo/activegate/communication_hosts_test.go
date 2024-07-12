@@ -3,21 +3,21 @@ package activegate
 import (
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestParseCommunicationHostsFromActiveGateEndpoints(t *testing.T) {
-	dynakube := &dynatracev1beta2.DynaKube{
+	dynakube := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "test-namespace",
 			Name:      "test-name",
 		},
-		Status: dynatracev1beta2.DynaKubeStatus{
-			OneAgent: dynatracev1beta2.OneAgentStatus{
-				ConnectionInfoStatus: dynatracev1beta2.OneAgentConnectionInfoStatus{
-					ConnectionInfoStatus: dynatracev1beta2.ConnectionInfoStatus{},
+		Status: dynakube.DynaKubeStatus{
+			OneAgent: dynakube.OneAgentStatus{
+				ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
+					ConnectionInfoStatus: dynakube.ConnectionInfoStatus{},
 				},
 			},
 		},

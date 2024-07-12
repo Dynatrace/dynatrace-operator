@@ -3,7 +3,7 @@ package mapper
 import (
 	"context"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	injectionotel "github.com/Dynatrace/dynatrace-operator/pkg/injection/internal/otel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel/controller_runtime"
@@ -43,7 +43,7 @@ func (nm NamespaceMapper) updateNamespace(ctx context.Context) (bool, error) {
 	ctx, span := dtotel.StartSpan(ctx, injectionotel.Tracer())
 	defer span.End()
 
-	deployedDynakubes := &dynatracev1beta2.DynaKubeList{}
+	deployedDynakubes := &dynakube.DynaKubeList{}
 
 	err := nm.client.List(ctx, deployedDynakubes)
 	if err != nil {

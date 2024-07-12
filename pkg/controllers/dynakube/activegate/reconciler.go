@@ -1,7 +1,7 @@
 package activegate
 
 import (
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
@@ -29,7 +29,7 @@ import (
 
 type Reconciler struct {
 	client                            client.Client
-	dynakube                          *dynatracev1beta2.DynaKube
+	dynakube                          *dynakube.DynaKube
 	apiReader                         client.Reader
 	authTokenReconciler               controllers.Reconciler
 	istioReconciler                   istio.Reconciler
@@ -38,14 +38,14 @@ type Reconciler struct {
 	pullSecretReconciler              controllers.Reconciler
 	newStatefulsetReconcilerFunc      statefulset.NewReconcilerFunc
 	newCapabilityReconcilerFunc       capabilityInternal.NewReconcilerFunc
-	newCustomPropertiesReconcilerFunc func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta2.DynaKubeValueSource) controllers.Reconciler
+	newCustomPropertiesReconcilerFunc func(customPropertiesOwnerName string, customPropertiesSource *dynakube.DynaKubeValueSource) controllers.Reconciler
 }
 
 var _ controllers.Reconciler = (*Reconciler)(nil)
 
 type ReconcilerBuilder func(clt client.Client,
 	apiReader client.Reader,
-	dynakube *dynatracev1beta2.DynaKube,
+	dynakube *dynakube.DynaKube,
 	dtc dtclient.Client,
 	istioClient *istio.Client,
 	tokens token.Tokens,
@@ -53,7 +53,7 @@ type ReconcilerBuilder func(clt client.Client,
 
 func NewReconciler(clt client.Client, //nolint
 	apiReader client.Reader,
-	dynakube *dynatracev1beta2.DynaKube,
+	dk *dynakube.DynaKube,
 	dtc dtclient.Client,
 	istioClient *istio.Client,
 	tokens token.Tokens) controllers.Reconciler {
@@ -62,19 +62,19 @@ func NewReconciler(clt client.Client, //nolint
 		istioReconciler = istio.NewReconciler(istioClient)
 	}
 
-	authTokenReconciler := authtoken.NewReconciler(clt, apiReader, dynakube, dtc)
+	authTokenReconciler := authtoken.NewReconciler(clt, apiReader, dk, dtc)
 	versionReconciler := version.NewReconciler(apiReader, dtc, timeprovider.New().Freeze())
-	connectionInfoReconciler := agconnectioninfo.NewReconciler(clt, apiReader, dtc, dynakube)
-	pullSecretReconciler := dtpullsecret.NewReconciler(clt, apiReader, dynakube, tokens)
+	connectionInfoReconciler := agconnectioninfo.NewReconciler(clt, apiReader, dtc, dk)
+	pullSecretReconciler := dtpullsecret.NewReconciler(clt, apiReader, dk, tokens)
 
-	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta2.DynaKubeValueSource) controllers.Reconciler {
-		return customproperties.NewReconciler(clt, dynakube, customPropertiesOwnerName, customPropertiesSource)
+	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *dynakube.DynaKubeValueSource) controllers.Reconciler {
+		return customproperties.NewReconciler(clt, dk, customPropertiesOwnerName, customPropertiesSource)
 	}
 
 	return &Reconciler{
 		client:                            clt,
 		apiReader:                         apiReader,
-		dynakube:                          dynakube,
+		dynakube:                          dk,
 		authTokenReconciler:               authTokenReconciler,
 		istioReconciler:                   istioReconciler,
 		connectionReconciler:              connectionInfoReconciler,
@@ -163,15 +163,15 @@ func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.C
 	return nil
 }
 
-func extractPublicData(dynakube *dynatracev1beta2.DynaKube) map[string]string {
+func extractPublicData(dk *dynakube.DynaKube) map[string]string {
 	data := map[string]string{}
 
-	if dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID != "" {
-		data[connectioninfo.TenantUUIDKey] = dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID
+	if dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID != "" {
+		data[connectioninfo.TenantUUIDKey] = dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID
 	}
 
-	if dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints != "" {
-		data[connectioninfo.CommunicationEndpointsKey] = dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints
+	if dk.Status.ActiveGate.ConnectionInfoStatus.Endpoints != "" {
+		data[connectioninfo.CommunicationEndpointsKey] = dk.Status.ActiveGate.ConnectionInfoStatus.Endpoints
 	}
 
 	return data

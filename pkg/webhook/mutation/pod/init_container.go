@@ -3,7 +3,7 @@ package pod
 import (
 	"strings"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
@@ -14,14 +14,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.Pod, dynakube dynatracev1beta2.DynaKube) *corev1.Container {
+func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Container {
 	return &corev1.Container{
 		Name:            dtwebhook.InstallContainerName,
 		Image:           webhookImage,
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Args:            []string{"init"},
 		Env: []corev1.EnvVar{
-			{Name: consts.InjectionFailurePolicyEnv, Value: maputils.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, dynakube.FeatureInjectionFailurePolicy())},
+			{Name: consts.InjectionFailurePolicyEnv, Value: maputils.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, dk.FeatureInjectionFailurePolicy())},
 			{Name: consts.K8sPodNameEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.name")},
 			{Name: consts.K8sPodUIDEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.uid")},
 			{Name: consts.K8sBasePodNameEnv, Value: getBasePodName(pod)},
@@ -29,18 +29,18 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 			{Name: consts.K8sNamespaceEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.namespace")},
 			{Name: consts.K8sNodeNameEnv, ValueFrom: env.NewEnvVarSourceForField("spec.nodeName")},
 		},
-		SecurityContext: securityContextForInitContainer(pod, dynakube),
-		Resources:       initContainerResources(dynakube),
+		SecurityContext: securityContextForInitContainer(pod, dk),
+		Resources:       initContainerResources(dk),
 	}
 }
 
-func initContainerResources(dynakube dynatracev1beta2.DynaKube) corev1.ResourceRequirements {
-	customInitResources := dynakube.InitResources()
+func initContainerResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
+	customInitResources := dk.InitResources()
 	if customInitResources != nil {
 		return *customInitResources
 	}
 
-	if !dynakube.NeedsCSIDriver() {
+	if !dk.NeedsCSIDriver() {
 		return corev1.ResourceRequirements{}
 	}
 
@@ -54,7 +54,7 @@ func defaultInitContainerResources() corev1.ResourceRequirements {
 	}
 }
 
-func securityContextForInitContainer(pod *corev1.Pod, dk dynatracev1beta2.DynaKube) *corev1.SecurityContext {
+func securityContextForInitContainer(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.SecurityContext {
 	initSecurityCtx := corev1.SecurityContext{
 		ReadOnlyRootFilesystem:   address.Of(true),
 		AllowPrivilegeEscalation: address.Of(false),
@@ -138,7 +138,7 @@ func addInitContainerToPod(pod *corev1.Pod, initContainer *corev1.Container) {
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *initContainer)
 }
 
-func addSeccompProfile(ctx *corev1.SecurityContext, dk dynatracev1beta2.DynaKube) {
+func addSeccompProfile(ctx *corev1.SecurityContext, dk dynakube.DynaKube) {
 	if dk.FeatureInitContainerSeccomp() {
 		ctx.SeccompProfile = &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault}
 	}

@@ -3,7 +3,7 @@ package modifiers
 import (
 	"fmt"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
@@ -17,16 +17,16 @@ var _ volumeModifier = CustomPropertiesModifier{}
 var _ volumeMountModifier = CustomPropertiesModifier{}
 var _ builder.Modifier = CustomPropertiesModifier{}
 
-func NewCustomPropertiesModifier(dynakube dynatracev1beta2.DynaKube, capability capability.Capability) CustomPropertiesModifier {
+func NewCustomPropertiesModifier(dk dynakube.DynaKube, capability capability.Capability) CustomPropertiesModifier {
 	return CustomPropertiesModifier{
-		dynakube:   dynakube,
+		dynakube:   dk,
 		capability: capability,
 	}
 }
 
 type CustomPropertiesModifier struct {
 	capability capability.Capability
-	dynakube   dynatracev1beta2.DynaKube
+	dynakube   dynakube.DynaKube
 }
 
 func (mod CustomPropertiesModifier) Enabled() bool {

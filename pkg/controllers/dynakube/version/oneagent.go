@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/pkg/errors"
@@ -17,13 +17,13 @@ const (
 )
 
 type oneAgentUpdater struct {
-	dynakube  *dynatracev1beta2.DynaKube
+	dynakube  *dynakube.DynaKube
 	apiReader client.Reader
 	dtClient  dtclient.Client
 }
 
 func newOneAgentUpdater(
-	dynakube *dynatracev1beta2.DynaKube,
+	dynakube *dynakube.DynaKube,
 	apiReader client.Reader,
 	dtClient dtclient.Client,
 ) *oneAgentUpdater {

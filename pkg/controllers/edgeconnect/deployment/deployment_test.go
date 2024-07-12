@@ -19,7 +19,7 @@ const (
 
 func TestNew(t *testing.T) {
 	t.Run("Create new edgeconnect deployment", func(t *testing.T) {
-		instance := &edgeconnect.EdgeConnect{
+		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
@@ -32,14 +32,14 @@ func TestNew(t *testing.T) {
 			},
 		}
 
-		deployment := New(instance)
+		deployment := New(ec)
 
 		assert.NotNil(t, deployment)
 	})
 }
 
 func Test_buildAppLabels(t *testing.T) {
-	testEdgeConnect := &edgeconnect.EdgeConnect{
+	ec := &edgeconnect.EdgeConnect{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
@@ -61,13 +61,13 @@ func Test_buildAppLabels(t *testing.T) {
 	}
 
 	t.Run("Check version label set correctly", func(t *testing.T) {
-		labels := buildAppLabels(testEdgeConnect)
+		labels := buildAppLabels(ec)
 		assert.Equal(t, "", labels.Version)
 	})
 }
 
 func Test_prepareResourceRequirements(t *testing.T) {
-	testEdgeConnect := &edgeconnect.EdgeConnect{
+	ec := &edgeconnect.EdgeConnect{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
@@ -92,8 +92,8 @@ func Test_prepareResourceRequirements(t *testing.T) {
 		customResources := corev1.ResourceRequirements{
 			Limits: resources.NewResourceList("500m", "256Mi"),
 		}
-		testEdgeConnect.Spec.Resources = customResources
-		resourceRequirements := prepareResourceRequirements(testEdgeConnect)
+		ec.Spec.Resources = customResources
+		resourceRequirements := prepareResourceRequirements(ec)
 		assert.Equal(t, customResources.Limits, resourceRequirements.Limits)
 		// check that we use default requests when not provided
 		assert.Equal(t, resources.NewResourceList("100m", "128Mi"), resourceRequirements.Requests)
@@ -103,8 +103,8 @@ func Test_prepareResourceRequirements(t *testing.T) {
 		customResources := corev1.ResourceRequirements{
 			Requests: resources.NewResourceList("500m", "256Mi"),
 		}
-		testEdgeConnect.Spec.Resources = customResources
-		resourceRequirements := prepareResourceRequirements(testEdgeConnect)
+		ec.Spec.Resources = customResources
+		resourceRequirements := prepareResourceRequirements(ec)
 		assert.Equal(t, customResources.Requests, resourceRequirements.Requests)
 		// check that we use default requests when not provided
 		assert.Equal(t, resources.NewResourceList("100m", "128Mi"), resourceRequirements.Limits)

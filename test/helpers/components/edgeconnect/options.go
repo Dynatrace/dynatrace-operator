@@ -61,8 +61,8 @@ func WithOAuthEndpoint(endpoint string) Option {
 }
 
 func WithProvisionerMode(enabled bool) Option {
-	return func(edgeconnect *edgeconnect.EdgeConnect) {
-		edgeconnect.Spec.OAuth.Provisioner = enabled
+	return func(ec *edgeconnect.EdgeConnect) {
+		ec.Spec.OAuth.Provisioner = enabled
 	}
 }
 

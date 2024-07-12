@@ -7,7 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook"
 	"github.com/stretchr/testify/assert"
@@ -303,30 +303,30 @@ func createFailPodMutatorMock(t *testing.T) *webhookmock.PodMutator {
 	return mutator
 }
 
-func getTestDynakube() *dynatracev1beta2.DynaKube {
-	return &dynatracev1beta2.DynaKube{
+func getTestDynakube() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
 		ObjectMeta: getTestDynakubeMeta(),
-		Spec: dynatracev1beta2.DynaKubeSpec{
+		Spec: dynakube.DynaKubeSpec{
 			OneAgent: getCloudNativeSpec(&testResourceRequirements),
 		},
 	}
 }
 
-func getTestDynakubeNoInitLimits() *dynatracev1beta2.DynaKube {
-	return &dynatracev1beta2.DynaKube{
+func getTestDynakubeNoInitLimits() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
 		ObjectMeta: getTestDynakubeMeta(),
-		Spec: dynatracev1beta2.DynaKubeSpec{
+		Spec: dynakube.DynaKubeSpec{
 			OneAgent: getCloudNativeSpec(nil),
 		},
 	}
 }
 
-func getTestDynakubeDefaultAppMon() *dynatracev1beta2.DynaKube {
-	return &dynatracev1beta2.DynaKube{
+func getTestDynakubeDefaultAppMon() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
 		ObjectMeta: getTestDynakubeMeta(),
-		Spec: dynatracev1beta2.DynaKubeSpec{
-			OneAgent: dynatracev1beta2.OneAgentSpec{
-				ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{},
+		Spec: dynakube.DynaKubeSpec{
+			OneAgent: dynakube.OneAgentSpec{
+				ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{},
 			},
 		},
 	}
@@ -339,10 +339,10 @@ func getTestDynakubeMeta() metav1.ObjectMeta {
 	}
 }
 
-func getCloudNativeSpec(initResources *corev1.ResourceRequirements) dynatracev1beta2.OneAgentSpec {
-	return dynatracev1beta2.OneAgentSpec{
-		CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{
-			AppInjectionSpec: dynatracev1beta2.AppInjectionSpec{
+func getCloudNativeSpec(initResources *corev1.ResourceRequirements) dynakube.OneAgentSpec {
+	return dynakube.OneAgentSpec{
+		CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
+			AppInjectionSpec: dynakube.AppInjectionSpec{
 				InitResources: initResources,
 			},
 		},

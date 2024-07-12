@@ -6,7 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
@@ -23,16 +23,16 @@ func TestActiveGateUpdater(t *testing.T) {
 	}
 
 	t.Run("Getters work as expected", func(t *testing.T) {
-		dynakube := &dynatracev1beta2.DynaKube{
+		dynakube := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynatracev1beta2.AnnotationFeatureDisableActiveGateUpdates: "true",
+					dynakube.AnnotationFeatureDisableActiveGateUpdates: "true",
 				},
 			},
-			Spec: dynatracev1beta2.DynaKubeSpec{
-				ActiveGate: dynatracev1beta2.ActiveGateSpec{
-					Capabilities: []dynatracev1beta2.CapabilityDisplayName{dynatracev1beta2.DynatraceApiCapability.DisplayName},
-					CapabilityProperties: dynatracev1beta2.CapabilityProperties{
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: dynakube.ActiveGateSpec{
+					Capabilities: []dynakube.CapabilityDisplayName{dynakube.DynatraceApiCapability.DisplayName},
+					CapabilityProperties: dynakube.CapabilityProperties{
 						Image: testImage.String(),
 					},
 				},
@@ -56,15 +56,15 @@ func TestActiveGateUpdater(t *testing.T) {
 
 func TestActiveGateUseDefault(t *testing.T) {
 	t.Run("Set according to defaults, unset previous status", func(t *testing.T) {
-		dynakube := &dynatracev1beta2.DynaKube{
-			Spec: dynatracev1beta2.DynaKubeSpec{
+		dynakube := &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				ActiveGate: dynatracev1beta2.ActiveGateSpec{
-					CapabilityProperties: dynatracev1beta2.CapabilityProperties{},
+				ActiveGate: dynakube.ActiveGateSpec{
+					CapabilityProperties: dynakube.CapabilityProperties{},
 				},
 			},
-			Status: dynatracev1beta2.DynaKubeStatus{
-				ActiveGate: dynatracev1beta2.ActiveGateStatus{
+			Status: dynakube.DynaKubeStatus{
+				ActiveGate: dynakube.ActiveGateStatus{
 					VersionStatus: status.VersionStatus{
 						Version: "prev",
 					},
@@ -88,9 +88,9 @@ func TestActiveGateUseDefault(t *testing.T) {
 
 func TestActiveGateIsEnabled(t *testing.T) {
 	t.Run("cleans up if not enabled", func(t *testing.T) {
-		dynakube := &dynatracev1beta2.DynaKube{
-			Status: dynatracev1beta2.DynaKubeStatus{
-				ActiveGate: dynatracev1beta2.ActiveGateStatus{
+		dynakube := &dynakube.DynaKube{
+			Status: dynakube.DynaKubeStatus{
+				ActiveGate: dynakube.ActiveGateStatus{
 					VersionStatus: status.VersionStatus{
 						Version: "prev",
 					},

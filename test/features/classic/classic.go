@@ -5,9 +5,9 @@ package classic
 import (
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -21,14 +21,14 @@ func Feature(t *testing.T) features.Feature {
 	builder := features.New("install classic fullstack")
 	builder.WithLabel("name", "classic")
 	secretConfig := tenant.GetSingleTenantSecret(t)
-	testDynakube := *dynakube.New(
-		dynakube.WithApiUrl(secretConfig.ApiUrl),
-		dynakube.WithClassicFullstackSpec(&dynatracev1beta2.HostInjectSpec{}),
+	testDynakube := *dynakubeComponents.New(
+		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
+		dynakubeComponents.WithClassicFullstackSpec(&dynakube.HostInjectSpec{}),
 	)
 
 	// check if oneAgent pods startup and report as ready
-	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
-	dynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
+	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	dynakubeComponents.Delete(builder, helpers.LevelTeardown, testDynakube)
 
 	return builder.Feature()
 }

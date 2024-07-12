@@ -3,7 +3,7 @@ package activegate
 import (
 	"context"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -23,18 +23,18 @@ type reconciler struct {
 	dtc          dtclient.Client
 	timeProvider *timeprovider.Provider
 
-	dynakube *dynatracev1beta2.DynaKube
+	dynakube *dynakube.DynaKube
 }
 
-type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dynakube *dynatracev1beta2.DynaKube) controllers.Reconciler
+type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler
 
 var _ ReconcilerBuilder = NewReconciler
 
-func NewReconciler(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dynakube *dynatracev1beta2.DynaKube) controllers.Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler {
 	return &reconciler{
 		client:       clt,
 		apiReader:    apiReader,
-		dynakube:     dynakube,
+		dynakube:     dk,
 		dtc:          dtc,
 		timeProvider: timeprovider.New(),
 	}
@@ -46,7 +46,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 			return nil
 		}
 
-		r.dynakube.Status.ActiveGate.ConnectionInfoStatus = dynatracev1beta2.ActiveGateConnectionInfoStatus{}
+		r.dynakube.Status.ActiveGate.ConnectionInfoStatus = dynakube.ActiveGateConnectionInfoStatus{}
 		query := k8ssecret.NewQuery(ctx, r.client, r.apiReader, log)
 
 		err := query.Delete(r.dynakube.ActivegateTenantSecret(), r.dynakube.Namespace)
@@ -79,7 +79,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 
 		condition := meta.FindStatusCondition(*r.dynakube.Conditions(), activeGateConnectionInfoConditionType)
 		if isSecretPresent {
-			log.Info(dynatracev1beta2.GetCacheValidMessage(
+			log.Info(dynakube.GetCacheValidMessage(
 				"activegate connection info update",
 				condition.LastTransitionTime,
 				r.dynakube.ApiRequestThreshold()))

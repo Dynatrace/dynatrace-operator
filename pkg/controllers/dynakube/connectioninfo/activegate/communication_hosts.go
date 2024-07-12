@@ -14,8 +14,8 @@ const (
 	DefaultHttpPort = uint32(80)
 )
 
-func GetEndpointsAsCommunicationHosts(dynakube *dynakube.DynaKube) []dtclient.CommunicationHost {
-	activegateEndpointsString := dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints
+func GetEndpointsAsCommunicationHosts(dk *dynakube.DynaKube) []dtclient.CommunicationHost {
+	activegateEndpointsString := dk.Status.ActiveGate.ConnectionInfoStatus.Endpoints
 	if activegateEndpointsString == "" {
 		return []dtclient.CommunicationHost{}
 	}

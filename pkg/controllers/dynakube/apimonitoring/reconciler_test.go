@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
@@ -28,7 +28,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 	return createReconciler(t, newDynaKube(), testUID, []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{TotalCount: 0}, "", "")
 }
 
-func createReconciler(t *testing.T, dynakube *dynatracev1beta2.DynaKube, uid string, monitoredEntities []dtclient.MonitoredEntity, getSettingsResponse dtclient.GetSettingsResponse, objectID string, meID interface{}) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
+func createReconciler(t *testing.T, dk *dynakube.DynaKube, uid string, monitoredEntities []dtclient.MonitoredEntity, getSettingsResponse dtclient.GetSettingsResponse, objectID string, meID interface{}) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	mockClient := dtclientmock.NewClient(t)
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("string")).
 		Return(monitoredEntities, nil)
@@ -43,14 +43,14 @@ func createReconciler(t *testing.T, dynakube *dynatracev1beta2.DynaKube, uid str
 		call.Maybe()
 	}
 
-	r := NewReconciler(mockClient, dynakube, testName, uid)
+	r := NewReconciler(mockClient, dk, testName, uid)
 	require.NotNil(t, r)
 	require.NotNil(t, r.dtc)
 
 	return r
 }
 
-func createReconcilerWithError(t *testing.T, dynakube *dynatracev1beta2.DynaKube, monitoredEntitiesError error, getSettingsResponseError error, createSettingsResponseError error, createAppSettingsResponseError error) *Reconciler { //nolint:revive
+func createReconcilerWithError(t *testing.T, dk *dynakube.DynaKube, monitoredEntitiesError error, getSettingsResponseError error, createSettingsResponseError error, createAppSettingsResponseError error) *Reconciler { //nolint:revive
 	mockClient := dtclientmock.NewClient(t)
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("string")).
 		Return([]dtclient.MonitoredEntity{}, monitoredEntitiesError)
@@ -68,7 +68,7 @@ func createReconcilerWithError(t *testing.T, dynakube *dynatracev1beta2.DynaKube
 		call.Maybe()
 	}
 
-	r := NewReconciler(mockClient, dynakube, testName, testUID)
+	r := NewReconciler(mockClient, dk, testName, testUID)
 	require.NotNil(t, r)
 	require.NotNil(t, r.dtc)
 
@@ -291,8 +291,8 @@ func TestDetermineNewestMonitoredEntity(t *testing.T) {
 	})
 }
 
-func newDynaKube() *dynatracev1beta2.DynaKube {
-	return &dynatracev1beta2.DynaKube{
+func newDynaKube() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "DynaKube",
 			APIVersion: "dynatrace.com/v1beta1",
@@ -302,12 +302,12 @@ func newDynaKube() *dynatracev1beta2.DynaKube {
 			Namespace: "my-namespace",
 			UID:       "69e98f18-805a-42de-84b5-3eae66534f75",
 			Annotations: map[string]string{
-				dynatracev1beta2.AnnotationFeatureK8sAppEnabled: "true",
+				dynakube.AnnotationFeatureK8sAppEnabled: "true",
 			},
 		},
-		Spec: dynatracev1beta2.DynaKubeSpec{
-			OneAgent: dynatracev1beta2.OneAgentSpec{
-				HostMonitoring: &dynatracev1beta2.HostInjectSpec{},
+		Spec: dynakube.DynaKubeSpec{
+			OneAgent: dynakube.OneAgentSpec{
+				HostMonitoring: &dynakube.HostInjectSpec{},
 			},
 		},
 	}

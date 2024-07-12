@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -42,7 +42,7 @@ func TestEnabled(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, false)
 		request.DynaKube.Spec.MetadataEnrichment.Enabled = true
-		request.DynaKube.Annotations = map[string]string{dynatracev1beta2.AnnotationFeatureAutomaticInjection: "false"}
+		request.DynaKube.Annotations = map[string]string{dynakube.AnnotationFeatureAutomaticInjection: "false"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -50,13 +50,13 @@ func TestEnabled(t *testing.T) {
 	})
 	t.Run("on with feature flag", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
-		dynakube := dynatracev1beta2.DynaKube{
-			Spec: dynatracev1beta2.DynaKubeSpec{
-				MetadataEnrichment: dynatracev1beta2.MetadataEnrichment{Enabled: true},
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				MetadataEnrichment: dynakube.MetadataEnrichment{Enabled: true},
 			},
 		}
-		request := createTestMutationRequest(&dynakube, nil, false)
-		request.DynaKube.Annotations = map[string]string{dynatracev1beta2.AnnotationFeatureAutomaticInjection: "true"}
+		request := createTestMutationRequest(&dk, nil, false)
+		request.DynaKube.Annotations = map[string]string{dynakube.AnnotationFeatureAutomaticInjection: "true"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -64,9 +64,9 @@ func TestEnabled(t *testing.T) {
 	})
 	t.Run("on with namespaceselector", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
-		dynakube := dynatracev1beta2.DynaKube{
-			Spec: dynatracev1beta2.DynaKubeSpec{
-				MetadataEnrichment: dynatracev1beta2.MetadataEnrichment{
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				MetadataEnrichment: dynakube.MetadataEnrichment{
 					Enabled: true,
 					NamespaceSelector: metav1.LabelSelector{
 						MatchLabels: map[string]string{
@@ -76,8 +76,8 @@ func TestEnabled(t *testing.T) {
 				},
 			},
 		}
-		request := createTestMutationRequest(&dynakube, nil, true)
-		request.DynaKube.Annotations = map[string]string{dynatracev1beta2.AnnotationFeatureAutomaticInjection: "true"}
+		request := createTestMutationRequest(&dk, nil, true)
+		request.DynaKube.Annotations = map[string]string{dynakube.AnnotationFeatureAutomaticInjection: "true"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -85,9 +85,9 @@ func TestEnabled(t *testing.T) {
 	})
 	t.Run("off due to mismatching namespaceselector", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
-		dynakube := dynatracev1beta2.DynaKube{
-			Spec: dynatracev1beta2.DynaKubeSpec{
-				MetadataEnrichment: dynatracev1beta2.MetadataEnrichment{
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				MetadataEnrichment: dynakube.MetadataEnrichment{
 					Enabled: true,
 					NamespaceSelector: metav1.LabelSelector{
 						MatchLabels: map[string]string{
@@ -97,8 +97,8 @@ func TestEnabled(t *testing.T) {
 				},
 			},
 		}
-		request := createTestMutationRequest(&dynakube, nil, true)
-		request.DynaKube.Annotations = map[string]string{dynatracev1beta2.AnnotationFeatureAutomaticInjection: "true"}
+		request := createTestMutationRequest(&dk, nil, true)
+		request.DynaKube.Annotations = map[string]string{dynakube.AnnotationFeatureAutomaticInjection: "true"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -213,11 +213,11 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, false)
 		request.Namespace.Labels = map[string]string{
-			dynatracev1beta2.MetadataPrefix + "/nocopyoflabels": "nocopyoflabels",
+			dynakube.MetadataPrefix + "/nocopyoflabels": "nocopyoflabels",
 			"test-label": "test-value",
 		}
 		request.Namespace.Annotations = map[string]string{
-			dynatracev1beta2.MetadataPrefix + "/copyofannotations": "copyofannotations",
+			dynakube.MetadataPrefix + "/copyofannotations": "copyofannotations",
 			"test-annotation": "test-value",
 		}
 
@@ -225,46 +225,46 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 		copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
 		require.Len(t, request.Pod.Annotations, 1)
 		require.Empty(t, request.Pod.Labels)
-		require.Equal(t, "copyofannotations", request.Pod.Annotations[dynatracev1beta2.MetadataPrefix+"/copyofannotations"])
+		require.Equal(t, "copyofannotations", request.Pod.Annotations[dynakube.MetadataPrefix+"/copyofannotations"])
 	})
 
 	t.Run("should copy all labels and annotations defined without override", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, false)
 		request.Namespace.Labels = map[string]string{
-			dynatracev1beta2.MetadataPrefix + "/nocopyoflabels":   "nocopyoflabels",
-			dynatracev1beta2.MetadataPrefix + "/copyifruleexists": "copyifruleexists",
+			dynakube.MetadataPrefix + "/nocopyoflabels":   "nocopyoflabels",
+			dynakube.MetadataPrefix + "/copyifruleexists": "copyifruleexists",
 			"test-label": "test-value",
 		}
 		request.Namespace.Annotations = map[string]string{
-			dynatracev1beta2.MetadataPrefix + "/copyofannotations": "copyofannotations",
+			dynakube.MetadataPrefix + "/copyofannotations": "copyofannotations",
 			"test-annotation": "test-value",
 		}
 
-		request.DynaKube.Status.MetadataEnrichment.Rules = []dynatracev1beta2.EnrichmentRule{
+		request.DynaKube.Status.MetadataEnrichment.Rules = []dynakube.EnrichmentRule{
 			{
-				Type:    dynatracev1beta2.EnrichmentAnnotationRule,
+				Type:    dynakube.EnrichmentAnnotationRule,
 				Key:     "test-annotation",
 				Mapping: "dt.test-annotation",
 			},
 			{
-				Type:    dynatracev1beta2.EnrichmentLabelRule,
+				Type:    dynakube.EnrichmentLabelRule,
 				Key:     "test-label",
 				Mapping: "test-label",
 			},
 			{
-				Type:    dynatracev1beta2.EnrichmentLabelRule,
-				Key:     dynatracev1beta2.MetadataPrefix + "/copyifruleexists",
+				Type:    dynakube.EnrichmentLabelRule,
+				Key:     dynakube.MetadataPrefix + "/copyifruleexists",
 				Mapping: "dt.copyifruleexists",
 			},
 			{
-				Type:    dynatracev1beta2.EnrichmentLabelRule,
+				Type:    dynakube.EnrichmentLabelRule,
 				Key:     "does-not-exist-in-namespace",
 				Mapping: "dt.does-not-exist-in-namespace",
 			},
 		}
 		request.Pod.Annotations = map[string]string{
-			dynatracev1beta2.MetadataPrefix + "/copyofannotations": "do-not-overwrite",
+			dynakube.MetadataPrefix + "/copyofannotations": "do-not-overwrite",
 		}
 
 		require.False(t, mutator.Injected(request.BaseRequest))
@@ -272,11 +272,11 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 		require.Len(t, request.Pod.Annotations, 4)
 		require.Empty(t, request.Pod.Labels)
 
-		require.Equal(t, "do-not-overwrite", request.Pod.Annotations[dynatracev1beta2.MetadataPrefix+"/copyofannotations"])
-		require.Equal(t, "copyifruleexists", request.Pod.Annotations[dynatracev1beta2.MetadataPrefix+"/dt.copyifruleexists"])
+		require.Equal(t, "do-not-overwrite", request.Pod.Annotations[dynakube.MetadataPrefix+"/copyofannotations"])
+		require.Equal(t, "copyifruleexists", request.Pod.Annotations[dynakube.MetadataPrefix+"/dt.copyifruleexists"])
 
-		require.Equal(t, "test-value", request.Pod.Annotations[dynatracev1beta2.MetadataPrefix+"/dt.test-annotation"])
-		require.Equal(t, "test-value", request.Pod.Annotations[dynatracev1beta2.MetadataPrefix+"/test-label"])
+		require.Equal(t, "test-value", request.Pod.Annotations[dynakube.MetadataPrefix+"/dt.test-annotation"])
+		require.Equal(t, "test-value", request.Pod.Annotations[dynakube.MetadataPrefix+"/test-label"])
 	})
 
 	t.Run("are custom rule types handled correctly", func(t *testing.T) {
@@ -291,14 +291,14 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			"test2": "test-annotation-value2",
 		}
 
-		request.DynaKube.Status.MetadataEnrichment.Rules = []dynatracev1beta2.EnrichmentRule{
+		request.DynaKube.Status.MetadataEnrichment.Rules = []dynakube.EnrichmentRule{
 			{
-				Type:    dynatracev1beta2.EnrichmentLabelRule,
+				Type:    dynakube.EnrichmentLabelRule,
 				Key:     "test",
 				Mapping: "dt.test-label",
 			},
 			{
-				Type:    dynatracev1beta2.EnrichmentAnnotationRule,
+				Type:    dynakube.EnrichmentAnnotationRule,
 				Key:     "test2",
 				Mapping: "dt.test-annotation",
 			},
@@ -308,8 +308,8 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 		copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
 		require.Len(t, request.Pod.Annotations, 2)
 		require.Empty(t, request.Pod.Labels)
-		require.Equal(t, "test-label-value", request.Pod.Annotations[dynatracev1beta2.MetadataPrefix+"/dt.test-label"])
-		require.Equal(t, "test-annotation-value2", request.Pod.Annotations[dynatracev1beta2.MetadataPrefix+"/dt.test-annotation"])
+		require.Equal(t, "test-label-value", request.Pod.Annotations[dynakube.MetadataPrefix+"/dt.test-label"])
+		require.Equal(t, "test-annotation-value2", request.Pod.Annotations[dynakube.MetadataPrefix+"/dt.test-annotation"])
 	})
 }
 
@@ -354,9 +354,9 @@ func TestContainerIsInjected(t *testing.T) {
 	})
 }
 
-func createTestMutationRequest(dk *dynatracev1beta2.DynaKube, annotations map[string]string, withLabelSelector bool) *dtwebhook.MutationRequest {
+func createTestMutationRequest(dk *dynakube.DynaKube, annotations map[string]string, withLabelSelector bool) *dtwebhook.MutationRequest {
 	if dk == nil {
-		dk = &dynatracev1beta2.DynaKube{}
+		dk = &dynakube.DynaKube{}
 	}
 
 	namespace := getTestNamespace()
@@ -375,7 +375,7 @@ func createTestMutationRequest(dk *dynatracev1beta2.DynaKube, annotations map[st
 	)
 }
 
-func createTestReinvocationRequest(dynakube *dynatracev1beta2.DynaKube, annotations map[string]string) *dtwebhook.ReinvocationRequest {
+func createTestReinvocationRequest(dynakube *dynakube.DynaKube, annotations map[string]string) *dtwebhook.ReinvocationRequest {
 	request := createTestMutationRequest(dynakube, annotations, false).ToReinvocationRequest()
 	request.Pod.Spec.InitContainers = append(request.Pod.Spec.InitContainers, corev1.Container{Name: dtwebhook.InstallContainerName})
 
@@ -452,25 +452,25 @@ func getTestTokensSecret() *corev1.Secret {
 	}
 }
 
-func getTestDynakube() *dynatracev1beta2.DynaKube {
-	return &dynatracev1beta2.DynaKube{
+func getTestDynakube() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testDynakubeName,
 			Namespace: testNamespaceName,
 		},
-		Spec: dynatracev1beta2.DynaKubeSpec{
+		Spec: dynakube.DynaKubeSpec{
 			APIURL: testApiUrl,
-			OneAgent: dynatracev1beta2.OneAgentSpec{
-				ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{},
+			OneAgent: dynakube.OneAgentSpec{
+				ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{},
 			},
-			ActiveGate: dynatracev1beta2.ActiveGateSpec{
-				Capabilities: []dynatracev1beta2.CapabilityDisplayName{dynatracev1beta2.MetricsIngestCapability.DisplayName},
+			ActiveGate: dynakube.ActiveGateSpec{
+				Capabilities: []dynakube.CapabilityDisplayName{dynakube.MetricsIngestCapability.DisplayName},
 			},
 		},
-		Status: dynatracev1beta2.DynaKubeStatus{
-			OneAgent: dynatracev1beta2.OneAgentStatus{
-				ConnectionInfoStatus: dynatracev1beta2.OneAgentConnectionInfoStatus{
-					ConnectionInfoStatus: dynatracev1beta2.ConnectionInfoStatus{
+		Status: dynakube.DynaKubeStatus{
+			OneAgent: dynakube.OneAgentStatus{
+				ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
+					ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
 						TenantUUID: "test-tenant",
 					},
 				},

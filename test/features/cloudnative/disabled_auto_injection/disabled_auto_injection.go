@@ -5,10 +5,10 @@ package disabled_auto_injection
 import (
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -23,12 +23,12 @@ func Feature(t *testing.T) features.Feature {
 	builder.WithLabel("name", "cloudnative-disabled-auto-inject")
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
-	testDynakube := *dynakube.New(
-		dynakube.WithAnnotations(map[string]string{
-			dynatracev1beta2.AnnotationFeatureAutomaticInjection: "false",
+	testDynakube := *dynakubeComponents.New(
+		dynakubeComponents.WithAnnotations(map[string]string{
+			dynakube.AnnotationFeatureAutomaticInjection: "false",
 		}),
-		dynakube.WithApiUrl(secretConfig.ApiUrl),
-		dynakube.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
+		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
+		dynakubeComponents.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
 	)
 
 	// Register sample app install
@@ -40,7 +40,7 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Register dynakube install
-	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
@@ -48,9 +48,9 @@ func Feature(t *testing.T) features.Feature {
 	// Register actual test
 	assessSampleInitContainersDisabled(builder, sampleApp)
 
-	// Register sample, dynakube and operator uninstall
+	// Register sample, dynakubeComponents and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())
-	dynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
+	dynakubeComponents.Delete(builder, helpers.LevelTeardown, testDynakube)
 
 	return builder.Feature()
 }
