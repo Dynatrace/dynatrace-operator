@@ -75,8 +75,8 @@ func checkOneAgentContainer(agCrt []byte, trustedCAs []byte) features.Func {
 	}
 }
 
-func AssessActiveGateContainer(builder *features.FeatureBuilder, dynakube *dynakube.DynaKube, trustedCAs []byte) {
-	builder.Assess("certificates are propagated to ActiveGate container", checkActiveGateContainer(dynakube, trustedCAs))
+func AssessActiveGateContainer(builder *features.FeatureBuilder, dk *dynakube.DynaKube, trustedCAs []byte) {
+	builder.Assess("certificates are propagated to ActiveGate container", checkActiveGateContainer(dk, trustedCAs))
 }
 
 func checkActiveGateContainer(dk *dynakube.DynaKube, trustedCAs []byte) features.Func {
