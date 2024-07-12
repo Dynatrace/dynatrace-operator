@@ -10,8 +10,8 @@ import (
 const (
 	secretConditionType       = "ExtensionsTokenSecret"
 	secretCreatedReason       = "SecretCreated"
-	secretCreatedMessageTrue  = "EEC token created"
-	secretCreatedMessageFalse = "Error creating extensions secret: %s"
+	secretCreatedMessageSuccess  = "EEC token created"
+	secretCreatedMessageFailure = "Error creating extensions secret: %s"
 )
 
 func setSecretCreatedTrue(conditions *[]metav1.Condition) {
