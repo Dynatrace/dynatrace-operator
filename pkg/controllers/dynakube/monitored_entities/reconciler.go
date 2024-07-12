@@ -33,7 +33,7 @@ type Reconciler struct {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if r.dk.Status.MonitoredEntityID == "" {
+	if r.dk.Status.KubernetesClusterMEID == "" {
 		monitoredEntities, err := r.dtClient.GetMonitoredEntitiesForKubeSystemUUID(ctx, r.kubeSystemUUID)
 		if err != nil {
 			log.Info("failed to retrieve MEs")
@@ -49,12 +49,10 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return nil
 		}
 
-		r.dk.Status.MonitoredEntityID = findLatestEntity(monitoredEntities).EntityId
-
-		log.Info("set the monitoredEntityID to the dynakube status")
+		r.dk.Status.KubernetesClusterMEID = findLatestEntity(monitoredEntities).EntityId
 	}
 
-	log.Info("monitoredEntityID already set, done reconciling")
+	log.Info("kubernetesClusterMEID set in dynakube status, done reconciling", "KubernetesClusterMEID", r.dk.Status.KubernetesClusterMEID)
 
 	return nil
 }

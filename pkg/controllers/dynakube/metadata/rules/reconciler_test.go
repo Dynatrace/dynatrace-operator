@@ -70,7 +70,7 @@ func TestReconcile(t *testing.T) {
 		conditions.SetStatusUpdated(dk.Conditions(), conditionType, specialMessage)
 
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetRulesSettings", mock.AnythingOfType("context.backgroundCtx"), dk.Status.KubeSystemUUID, dk.Status.MonitoredEntityID).Return(expectedResponse, nil)
+		dtc.On("GetRulesSettings", mock.AnythingOfType("context.backgroundCtx"), dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(expectedResponse, nil)
 
 		futureTime := timeprovider.New()
 		futureTime.Set(time.Now().Add(time.Hour))
@@ -93,7 +93,7 @@ func TestReconcile(t *testing.T) {
 		expectedResponse := createRulesResponse()
 
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetRulesSettings", mock.AnythingOfType("context.backgroundCtx"), dk.Status.KubeSystemUUID, dk.Status.MonitoredEntityID).Return(expectedResponse, nil)
+		dtc.On("GetRulesSettings", mock.AnythingOfType("context.backgroundCtx"), dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(expectedResponse, nil)
 		reconciler := NewReconciler(dtc, &dk)
 
 		err := reconciler.Reconcile(ctx)
@@ -107,7 +107,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("set api-error condition in case of fail", func(t *testing.T) {
 		dk := createDynaKube()
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetRulesSettings", mock.AnythingOfType("context.backgroundCtx"), dk.Status.KubeSystemUUID, dk.Status.MonitoredEntityID).Return(dtclient.GetRulesSettingsResponse{}, errors.New("BOOM"))
+		dtc.On("GetRulesSettings", mock.AnythingOfType("context.backgroundCtx"), dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(dtclient.GetRulesSettingsResponse{}, errors.New("BOOM"))
 		reconciler := NewReconciler(dtc, &dk)
 
 		err := reconciler.Reconcile(ctx)

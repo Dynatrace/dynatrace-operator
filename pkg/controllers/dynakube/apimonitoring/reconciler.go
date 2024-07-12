@@ -75,7 +75,7 @@ func (r *Reconciler) createObjectIdIfNotExists(ctx context.Context) (string, err
 		return "", errors.WithMessage(err, "error creating dynatrace settings object")
 	}
 
-	r.dk.Status.MonitoredEntityID = meID
+	r.dk.Status.KubernetesClusterMEID = meID
 
 	return objectID, nil
 }
