@@ -63,7 +63,7 @@ func NewController(mgr manager.Manager) *Controller {
 
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	nodeName := request.NamespacedName.Name
-	dynakube, err := controller.determineDynakubeForNode(nodeName)
+	dk, err := controller.determineDynakubeForNode(nodeName)
 	log.Info("reconciling node name", "node", nodeName)
 
 	if err != nil {
@@ -86,10 +86,10 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	// Node is found in the cluster, add or update to cache
-	if dynakube != nil {
-		ipAddress := dynakube.Status.OneAgent.Instances[nodeName].IPAddress
+	if dk != nil {
+		ipAddress := dk.Status.OneAgent.Instances[nodeName].IPAddress
 		cacheEntry := CacheEntry{
-			Instance:  dynakube.Name,
+			Instance:  dk.Name,
 			IPAddress: ipAddress,
 			LastSeen:  controller.timeProvider.Now().UTC(),
 		}
@@ -110,7 +110,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 				nodeName:   nodeName,
 			}
 
-			if err := controller.markForTermination(ctx, dynakube, cachedNodeData); err != nil {
+			if err := controller.markForTermination(ctx, dk, cachedNodeData); err != nil {
 				return reconcile.Result{}, err
 			}
 		}

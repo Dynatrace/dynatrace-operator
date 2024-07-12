@@ -231,10 +231,10 @@ func TestGenerateMetadataEnrichmentSecret_ForDynakube(t *testing.T) {
 	})
 }
 
-func addFakeTenantUUID(dynakube *dynakube.DynaKube) *dynakube.DynaKube {
-	dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID = testTenant
+func addFakeTenantUUID(dk *dynakube.DynaKube) *dynakube.DynaKube {
+	dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID = testTenant
 
-	return dynakube
+	return dk
 }
 
 func testGenerateEndpointsSecret(t *testing.T, dk *dynakube.DynaKube, fakeClient client.Client) {

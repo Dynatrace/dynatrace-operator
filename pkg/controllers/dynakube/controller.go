@@ -213,12 +213,12 @@ func (controller *Controller) setRequeueAfterIfNewIsShorter(requeueAfter time.Du
 	}
 }
 
-func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *dynakubev1beta2.DynaKube) error {
+func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakubev1beta2.DynaKube) error {
 	var istioClient *istio.Client
 
 	var err error
-	if dynakube.Spec.EnableIstio {
-		istioClient, err = controller.setupIstioClient(dynakube)
+	if dk.Spec.EnableIstio {
+		istioClient, err = controller.setupIstioClient(dk)
 	}
 
 	if err != nil {
@@ -228,33 +228,33 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 	if istioClient != nil {
 		istioReconciler := controller.istioReconcilerBuilder(istioClient)
 
-		err := istioReconciler.ReconcileAPIUrl(ctx, dynakube)
+		err := istioReconciler.ReconcileAPIUrl(ctx, dk)
 		if err != nil {
 			return errors.WithMessage(err, "failed to reconcile istio objects for API url")
 		}
 	}
 
-	dynatraceClient, err := controller.setupTokensAndClient(ctx, dynakube)
+	dynatraceClient, err := controller.setupTokensAndClient(ctx, dk)
 	if err != nil {
 		return err
 	}
 
-	dynakube.Status.KubeSystemUUID = controller.clusterID
+	dk.Status.KubeSystemUUID = controller.clusterID
 
 	log.Info("start reconciling deployment meta data")
 
-	err = controller.deploymentMetadataReconcilerBuilder(controller.client, controller.apiReader, *dynakube, controller.clusterID).Reconcile(ctx)
+	err = controller.deploymentMetadataReconcilerBuilder(controller.client, controller.apiReader, *dk, controller.clusterID).Reconcile(ctx)
 	if err != nil {
 		return err
 	}
 
 	log.Info("start reconciling process module config")
 
-	return controller.reconcileComponents(ctx, dynatraceClient, istioClient, dynakube)
+	return controller.reconcileComponents(ctx, dynatraceClient, istioClient, dk)
 }
 
-func (controller *Controller) setupIstioClient(dynakube *dynakubev1beta2.DynaKube) (*istio.Client, error) {
-	istioClient, err := controller.istioClientBuilder(controller.config, dynakube)
+func (controller *Controller) setupIstioClient(dk *dynakubev1beta2.DynaKube) (*istio.Client, error) {
+	istioClient, err := controller.istioClientBuilder(controller.config, dk)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize istio client")
 	}
@@ -269,12 +269,12 @@ func (controller *Controller) setupIstioClient(dynakube *dynakubev1beta2.DynaKub
 	return istioClient, nil
 }
 
-func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube *dynakubev1beta2.DynaKube) (dtclient.Client, error) {
-	tokenReader := token.NewReader(controller.apiReader, dynakube)
+func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dynakubev1beta2.DynaKube) (dtclient.Client, error) {
+	tokenReader := token.NewReader(controller.apiReader, dk)
 
 	tokens, err := tokenReader.ReadTokens(ctx)
 	if err != nil {
-		controller.setConditionTokenError(dynakube, err)
+		controller.setConditionTokenError(dk, err)
 
 		return nil, err
 	}
@@ -283,17 +283,17 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube
 
 	dynatraceClientBuilder := controller.dynatraceClientBuilder.
 		SetContext(ctx).
-		SetDynakube(*dynakube).
+		SetDynakube(*dk).
 		SetTokens(tokens)
 
-	dynatraceClient, err := dynatraceClientBuilder.BuildWithTokenVerification(&dynakube.Status)
+	dynatraceClient, err := dynatraceClientBuilder.BuildWithTokenVerification(&dk.Status)
 	if err != nil {
-		controller.setConditionTokenError(dynakube, err)
+		controller.setConditionTokenError(dk, err)
 
 		return nil, err
 	}
 
-	controller.setConditionTokenReady(dynakube)
+	controller.setConditionTokenReady(dk)
 
 	return dynatraceClient, nil
 }

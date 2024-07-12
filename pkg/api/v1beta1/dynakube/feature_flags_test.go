@@ -58,7 +58,7 @@ func TestCreateDynakubeWithAnnotation(t *testing.T) {
 func testDeprecateDisableAnnotation(t *testing.T,
 	newAnnotation string,
 	deprecatedAnnotation string,
-	propertyFunction func(dynakube DynaKube) bool) {
+	propertyFunction func(dk DynaKube) bool) {
 	// New annotation works
 	dk := createDynakubeWithAnnotation(newAnnotation, "false")
 

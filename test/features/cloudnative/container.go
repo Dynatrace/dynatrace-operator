@@ -79,12 +79,12 @@ func AssessActiveGateContainer(builder *features.FeatureBuilder, dynakube *dynak
 	builder.Assess("certificates are propagated to ActiveGate container", checkActiveGateContainer(dynakube, trustedCAs))
 }
 
-func checkActiveGateContainer(dynakube *dynakube.DynaKube, trustedCAs []byte) features.Func {
+func checkActiveGateContainer(dk *dynakube.DynaKube, trustedCAs []byte) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
 		var activeGatePod corev1.Pod
-		require.NoError(t, resources.WithNamespace(dynakube.Namespace).Get(ctx, activegate.GetActiveGatePodName(dynakube, "activegate"), dynakube.Namespace, &activeGatePod))
+		require.NoError(t, resources.WithNamespace(dk.Namespace).Get(ctx, activegate.GetActiveGatePodName(dk, "activegate"), dk.Namespace, &activeGatePod))
 
 		require.NotNil(t, activeGatePod.Spec)
 		require.NotEmpty(t, activeGatePod.Spec.Containers)
