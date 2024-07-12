@@ -37,18 +37,23 @@ const failedToGetOsAgentVolumePrefix = "failed to get OSMount from database: "
 
 func NewHostVolumePublisher(fs afero.Afero, mounter mount.Interface, db metadata.Access, path metadata.PathResolver) csivolumes.Publisher {
 	return &HostVolumePublisher{
-		fs:      fs,
-		mounter: mounter,
-		db:      db,
-		path:    path,
+		fs:           fs,
+		mounter:      mounter,
+		db:           db,
+		path:         path,
+		isNotMounted: mount.IsNotMountPoint,
 	}
 }
 
+// necessary for mocking, as the MounterMock will use the os package
+type mountChecker func(mounter mount.Interface, file string) (bool, error)
+
 type HostVolumePublisher struct {
-	fs      afero.Afero
-	mounter mount.Interface
-	db      metadata.Access
-	path    metadata.PathResolver
+	fs           afero.Afero
+	mounter      mount.Interface
+	db           metadata.Access
+	isNotMounted mountChecker
+	path         metadata.PathResolver
 }
 
 func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeCfg csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
@@ -65,7 +70,7 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 	if osMount != nil {
 		if !osMount.DeletedAt.Valid {
 			// If the OSAgents were removed forcefully, we might not get the unmount request, so we can't fully relay on the database, and have to directly check if its mounted or not
-			isNotMounted, err := mount.IsNotMountPoint(publisher.mounter, osMount.Location)
+			isNotMounted, err := publisher.isNotMounted(publisher.mounter, osMount.Location)
 			if err != nil {
 				return nil, err
 			}
