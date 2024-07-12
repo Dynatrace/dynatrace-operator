@@ -3,7 +3,7 @@ package extension
 import (
 	"context"
 
-	dynatracev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -14,18 +14,18 @@ type reconciler struct {
 	apiReader    client.Reader
 	timeProvider *timeprovider.Provider
 
-	dynakube *dynatracev1beta3.DynaKube
+	dynakube *dynakube.DynaKube
 }
 
-type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dynakube *dynatracev1beta3.DynaKube) controllers.Reconciler
+type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler
 
 var _ ReconcilerBuilder = NewReconciler
 
-func NewReconciler(clt client.Client, apiReader client.Reader, dynakube *dynatracev1beta3.DynaKube) controllers.Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler {
 	return &reconciler{
 		client:       clt,
 		apiReader:    apiReader,
-		dynakube:     dynakube,
+		dynakube:     dk,
 		timeProvider: timeprovider.New(),
 	}
 }

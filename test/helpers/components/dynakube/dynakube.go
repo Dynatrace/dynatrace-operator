@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1"
 	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2"
 	dynakubev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -129,7 +129,7 @@ func WaitForPhasePreviousVersion(dynakube dynakubev1beta1.DynaKube, phase status
 
 func create(dynakube dynakubev1beta2.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		require.NoError(t, dynatracev1beta2.AddToScheme(envConfig.Client().Resources().GetScheme()))
+		require.NoError(t, v1beta2.AddToScheme(envConfig.Client().Resources().GetScheme()))
 		require.NoError(t, envConfig.Client().Resources().Create(ctx, &dynakube))
 
 		return ctx
@@ -138,7 +138,7 @@ func create(dynakube dynakubev1beta2.DynaKube) features.Func {
 
 func createPreviousVersion(dynakube dynakubev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		require.NoError(t, dynatracev1beta1.AddToScheme(envConfig.Client().Resources().GetScheme()))
+		require.NoError(t, v1beta1.AddToScheme(envConfig.Client().Resources().GetScheme()))
 		require.NoError(t, envConfig.Client().Resources().Create(ctx, &dynakube))
 
 		return ctx
@@ -147,7 +147,7 @@ func createPreviousVersion(dynakube dynakubev1beta1.DynaKube) features.Func {
 
 func update(dynakube dynakubev1beta2.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		require.NoError(t, dynatracev1beta2.AddToScheme(envConfig.Client().Resources().GetScheme()))
+		require.NoError(t, v1beta2.AddToScheme(envConfig.Client().Resources().GetScheme()))
 		var dk dynakubev1beta2.DynaKube
 		require.NoError(t, envConfig.Client().Resources().Get(ctx, dynakube.Name, dynakube.Namespace, &dk))
 		dynakube.ResourceVersion = dk.ResourceVersion
@@ -161,7 +161,7 @@ func remove(dynakube dynakubev1beta2.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
-		err := dynatracev1beta2.AddToScheme(resources.GetScheme())
+		err := v1beta2.AddToScheme(resources.GetScheme())
 		require.NoError(t, err)
 
 		err = resources.Delete(ctx, &dynakube)
