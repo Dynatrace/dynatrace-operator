@@ -36,7 +36,7 @@ func (dtc *dynatraceClient) GetRulesSettings(ctx context.Context, kubeSystemUUID
 
 	if entityID == "" {
 		// if monitored entities were empty this field also stays empty, we return with no error
-		log.Info("No Monitored Entity ID, skip loading/getting/querying enrichment rules")
+		log.Info("No Monitored Entity ID, skip getting enrichment rules")
 
 		return GetRulesSettingsResponse{}, nil
 	}
