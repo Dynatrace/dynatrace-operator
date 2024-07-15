@@ -378,7 +378,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockedDtc := dtclientmock.NewClient(t)
 		mockedDtc.On("GetMonitoredEntitiesForKubeSystemUUID",
 			mock.AnythingOfType("context.backgroundCtx"), "").Return([]dtclient.MonitoredEntity{{EntityId: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "operator test entity 1", LastSeenTms: 1639483869085}}, nil)
-    
+
 		err := controller.reconcileComponents(ctx, mockedDtc, nil, dk)
 
 		require.Error(t, err)
