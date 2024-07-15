@@ -11,13 +11,13 @@ import (
 
 func TestAutomationValidator(t *testing.T) {
 	t.Run("accept edgeconnect config without automation or oauth configs set", func(t *testing.T) {
-		edgeConnect := &edgeconnect.EdgeConnect{
+		ec := &edgeconnect.EdgeConnect{
 			Spec: edgeconnect.EdgeConnectSpec{},
 		}
-		require.Empty(t, automationRequiresProvisionerValidation(context.Background(), nil, edgeConnect))
+		require.Empty(t, automationRequiresProvisionerValidation(context.Background(), nil, ec))
 	})
 	t.Run("reject automation without provisioning", func(t *testing.T) {
-		edgeConnect := &edgeconnect.EdgeConnect{
+		ec := &edgeconnect.EdgeConnect{
 
 			Spec: edgeconnect.EdgeConnectSpec{
 				KubernetesAutomation: &edgeconnect.KubernetesAutomationSpec{Enabled: true},
@@ -27,10 +27,10 @@ func TestAutomationValidator(t *testing.T) {
 				Resources: corev1.ResourceRequirements{},
 			},
 		}
-		require.Equal(t, errorAutomationRequiresProvisioner, automationRequiresProvisionerValidation(context.Background(), nil, edgeConnect))
+		require.Equal(t, errorAutomationRequiresProvisioner, automationRequiresProvisionerValidation(context.Background(), nil, ec))
 	})
 	t.Run("accept automation with provisioning enabled", func(t *testing.T) {
-		edgeConnect := &edgeconnect.EdgeConnect{
+		ec := &edgeconnect.EdgeConnect{
 
 			Spec: edgeconnect.EdgeConnectSpec{
 				KubernetesAutomation: &edgeconnect.KubernetesAutomationSpec{Enabled: true},
@@ -39,15 +39,15 @@ func TestAutomationValidator(t *testing.T) {
 				},
 			},
 		}
-		require.Empty(t, automationRequiresProvisionerValidation(context.Background(), nil, edgeConnect))
+		require.Empty(t, automationRequiresProvisionerValidation(context.Background(), nil, ec))
 	})
 	t.Run("reject automation with no oauth config", func(t *testing.T) {
-		edgeConnect := &edgeconnect.EdgeConnect{
+		ec := &edgeconnect.EdgeConnect{
 
 			Spec: edgeconnect.EdgeConnectSpec{
 				KubernetesAutomation: &edgeconnect.KubernetesAutomationSpec{Enabled: true},
 			},
 		}
-		require.Equal(t, errorAutomationRequiresProvisioner, automationRequiresProvisionerValidation(context.Background(), nil, edgeConnect))
+		require.Equal(t, errorAutomationRequiresProvisioner, automationRequiresProvisionerValidation(context.Background(), nil, ec))
 	})
 }

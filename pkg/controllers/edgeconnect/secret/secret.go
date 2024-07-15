@@ -3,27 +3,27 @@ package secret
 import (
 	"context"
 
-	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/config"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
 	"gopkg.in/yaml.v3"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func PrepareConfigFile(ctx context.Context, instance *edgeconnectv1alpha1.EdgeConnect, apiReader client.Reader, token string) ([]byte, error) {
+func PrepareConfigFile(ctx context.Context, ec *edgeconnect.EdgeConnect, apiReader client.Reader, token string) ([]byte, error) {
 	cfg := config.EdgeConnect{
-		Name:            instance.ObjectMeta.Name,
-		ApiEndpointHost: instance.Spec.ApiServer,
+		Name:            ec.ObjectMeta.Name,
+		ApiEndpointHost: ec.Spec.ApiServer,
 		OAuth: config.OAuth{
-			Endpoint: instance.Spec.OAuth.Endpoint,
-			Resource: instance.Spec.OAuth.Resource,
+			Endpoint: ec.Spec.OAuth.Endpoint,
+			Resource: ec.Spec.OAuth.Resource,
 		},
-		RestrictHostsTo: instance.Spec.HostRestrictions,
+		RestrictHostsTo: ec.Spec.HostRestrictions,
 	}
 
 	// For provisioned we need to read another secret, which later we mount to EdgeConnect pod
-	if instance.IsProvisionerModeEnabled() {
-		oAuth, err := instance.GetOAuthClientFromSecret(ctx, apiReader, instance.ClientSecretName())
+	if ec.IsProvisionerModeEnabled() {
+		oAuth, err := ec.GetOAuthClientFromSecret(ctx, apiReader, ec.ClientSecretName())
 		if err != nil {
 			return []byte{}, err
 		}
@@ -33,7 +33,7 @@ func PrepareConfigFile(ctx context.Context, instance *edgeconnectv1alpha1.EdgeCo
 		cfg.OAuth.Resource = oAuth.Resource
 	} else {
 		// For regular, we use default secret
-		oAuth, err := instance.GetOAuthClientFromSecret(ctx, apiReader, instance.Spec.OAuth.ClientSecret)
+		oAuth, err := ec.GetOAuthClientFromSecret(ctx, apiReader, ec.Spec.OAuth.ClientSecret)
 		if err != nil {
 			return []byte{}, err
 		}
@@ -42,26 +42,26 @@ func PrepareConfigFile(ctx context.Context, instance *edgeconnectv1alpha1.EdgeCo
 		cfg.OAuth.ClientSecret = oAuth.ClientSecret
 	}
 
-	if instance.Spec.CaCertsRef != "" {
+	if ec.Spec.CaCertsRef != "" {
 		cfg.RootCertificatePaths = append(cfg.RootCertificatePaths, consts.EdgeConnectMountPath+"/"+consts.EdgeConnectCustomCertificateName)
 	}
 
 	// Always add certificates
 	cfg.RootCertificatePaths = append(cfg.RootCertificatePaths, consts.EdgeConnectServiceAccountCAPath)
 
-	if instance.IsK8SAutomationEnabled() {
+	if ec.IsK8SAutomationEnabled() {
 		cfg.Secrets = append(cfg.Secrets, createKubernetesApiSecret(token))
 	}
 
-	if instance.Spec.Proxy != nil {
+	if ec.Spec.Proxy != nil {
 		cfg.Proxy = config.Proxy{
-			Server:     instance.Spec.Proxy.Host,
-			Port:       instance.Spec.Proxy.Port,
-			Exceptions: instance.Spec.Proxy.NoProxy,
+			Server:     ec.Spec.Proxy.Host,
+			Port:       ec.Spec.Proxy.Port,
+			Exceptions: ec.Spec.Proxy.NoProxy,
 		}
 
-		if instance.Spec.Proxy.AuthRef != "" {
-			user, pass, err := instance.ProxyAuth(context.Background(), apiReader)
+		if ec.Spec.Proxy.AuthRef != "" {
+			user, pass, err := ec.ProxyAuth(context.Background(), apiReader)
 			if err != nil {
 				return []byte{}, err
 			}
@@ -93,6 +93,6 @@ func createKubernetesApiSecret(token string) config.Secret {
 		Name:            "K8S_SERVICE_ACCOUNT_TOKEN",
 		Token:           token,
 		FromFile:        "/var/run/secrets/kubernetes.io/serviceaccount/token",
-		RestrictHostsTo: []string{edgeconnectv1alpha1.KubernetesDefaultDNS},
+		RestrictHostsTo: []string{edgeconnect.KubernetesDefaultDNS},
 	}
 }

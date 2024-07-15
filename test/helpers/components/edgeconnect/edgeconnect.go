@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
-	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/require"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -22,7 +22,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func Install(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.EdgeConnectSecret, testEdgeConnect edgeconnectv1alpha1.EdgeConnect) {
+func Install(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.EdgeConnectSecret, testEdgeConnect edgeconnect.EdgeConnect) {
 	if secretConfig != nil {
 		builder.WithStep("create edgeconnect client secret", level, tenant.CreateClientSecret(*secretConfig, fmt.Sprintf("%s-client-secret", testEdgeConnect.Name), testEdgeConnect.Namespace))
 	}
@@ -33,36 +33,36 @@ func Install(builder *features.FeatureBuilder, level features.Level, secretConfi
 	VerifyStartup(builder, level, testEdgeConnect)
 }
 
-func VerifyStartup(builder *features.FeatureBuilder, level features.Level, testEdgeConnect edgeconnectv1alpha1.EdgeConnect) {
+func VerifyStartup(builder *features.FeatureBuilder, level features.Level, testEdgeConnect edgeconnect.EdgeConnect) {
 	builder.WithStep(
 		fmt.Sprintf("'%s' edgeconnect phase changes to 'Running'", testEdgeConnect.Name),
 		level,
 		WaitForPhase(testEdgeConnect, status.Running))
 }
 
-func Create(edgeConnect edgeconnectv1alpha1.EdgeConnect) features.Func {
+func Create(edgeConnect edgeconnect.EdgeConnect) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		require.NoError(t, dynatracev1alpha1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
+		require.NoError(t, v1alpha1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
 		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, &edgeConnect))
 
 		return ctx
 	}
 }
 
-func Get(edgeConnect *edgeconnectv1alpha1.EdgeConnect) features.Func {
+func Get(ec *edgeconnect.EdgeConnect) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		require.NoError(t, dynatracev1alpha1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
-		require.NoError(t, environmentConfig.Client().Resources().Get(ctx, edgeConnect.Name, edgeConnect.Namespace, edgeConnect))
+		require.NoError(t, v1alpha1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
+		require.NoError(t, environmentConfig.Client().Resources().Get(ctx, ec.Name, ec.Namespace, ec))
 
 		return ctx
 	}
 }
 
-func Delete(edgeConnect edgeconnectv1alpha1.EdgeConnect) features.Func {
+func Delete(edgeConnect edgeconnect.EdgeConnect) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
-		err := dynatracev1alpha1.AddToScheme(resources.GetScheme())
+		err := v1alpha1.AddToScheme(resources.GetScheme())
 		require.NoError(t, err)
 
 		err = resources.Delete(ctx, &edgeConnect)
@@ -83,12 +83,12 @@ func Delete(edgeConnect edgeconnectv1alpha1.EdgeConnect) features.Func {
 	}
 }
 
-func WaitForPhase(edgeConnect edgeconnectv1alpha1.EdgeConnect, phase status.DeploymentPhase) features.Func {
+func WaitForPhase(edgeConnect edgeconnect.EdgeConnect, phase status.DeploymentPhase) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
 		err := wait.For(conditions.New(resources).ResourceMatch(&edgeConnect, func(object k8s.Object) bool {
-			ec, isEdgeConnect := object.(*edgeconnectv1alpha1.EdgeConnect)
+			ec, isEdgeConnect := object.(*edgeconnect.EdgeConnect)
 
 			return isEdgeConnect && ec.Status.DeploymentPhase == phase
 		}), wait.WithTimeout(5*time.Minute))

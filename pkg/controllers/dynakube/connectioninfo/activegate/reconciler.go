@@ -3,7 +3,7 @@ package activegate
 import (
 	"context"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -23,38 +23,38 @@ type reconciler struct {
 	dtc          dtclient.Client
 	timeProvider *timeprovider.Provider
 
-	dynakube *dynatracev1beta2.DynaKube
+	dk *dynakube.DynaKube
 }
 
-type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dynakube *dynatracev1beta2.DynaKube) controllers.Reconciler
+type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler
 
 var _ ReconcilerBuilder = NewReconciler
 
-func NewReconciler(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dynakube *dynatracev1beta2.DynaKube) controllers.Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler {
 	return &reconciler{
 		client:       clt,
 		apiReader:    apiReader,
-		dynakube:     dynakube,
+		dk:           dk,
 		dtc:          dtc,
 		timeProvider: timeprovider.New(),
 	}
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	if !r.dynakube.NeedsActiveGate() {
-		if meta.FindStatusCondition(*r.dynakube.Conditions(), activeGateConnectionInfoConditionType) == nil {
+	if !r.dk.NeedsActiveGate() {
+		if meta.FindStatusCondition(*r.dk.Conditions(), activeGateConnectionInfoConditionType) == nil {
 			return nil
 		}
 
-		r.dynakube.Status.ActiveGate.ConnectionInfoStatus = dynatracev1beta2.ActiveGateConnectionInfoStatus{}
+		r.dk.Status.ActiveGate.ConnectionInfoStatus = dynakube.ActiveGateConnectionInfoStatus{}
 		query := k8ssecret.NewQuery(ctx, r.client, r.apiReader, log)
 
-		err := query.Delete(r.dynakube.ActivegateTenantSecret(), r.dynakube.Namespace)
+		err := query.Delete(r.dk.ActivegateTenantSecret(), r.dk.Namespace)
 		if err != nil {
 			log.Error(err, "failed to clean-up ActiveGate tenant-secret")
 		}
 
-		meta.RemoveStatusCondition(r.dynakube.Conditions(), activeGateConnectionInfoConditionType)
+		meta.RemoveStatusCondition(r.dk.Conditions(), activeGateConnectionInfoConditionType)
 
 		return nil // clean-up shouldn't cause a failure
 	}
@@ -69,30 +69,30 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
-	secretNamespacedName := types.NamespacedName{Name: r.dynakube.ActivegateTenantSecret(), Namespace: r.dynakube.Namespace}
+	secretNamespacedName := types.NamespacedName{Name: r.dk.ActivegateTenantSecret(), Namespace: r.dk.Namespace}
 
-	if !conditions.IsOutdated(r.timeProvider, r.dynakube, activeGateConnectionInfoConditionType) {
+	if !conditions.IsOutdated(r.timeProvider, r.dk, activeGateConnectionInfoConditionType) {
 		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.apiReader, secretNamespacedName, log)
 		if err != nil {
 			return err
 		}
 
-		condition := meta.FindStatusCondition(*r.dynakube.Conditions(), activeGateConnectionInfoConditionType)
+		condition := meta.FindStatusCondition(*r.dk.Conditions(), activeGateConnectionInfoConditionType)
 		if isSecretPresent {
-			log.Info(dynatracev1beta2.GetCacheValidMessage(
+			log.Info(dynakube.GetCacheValidMessage(
 				"activegate connection info update",
 				condition.LastTransitionTime,
-				r.dynakube.ApiRequestThreshold()))
+				r.dk.ApiRequestThreshold()))
 
 			return nil
 		}
 	}
 
-	conditions.SetSecretOutdated(r.dynakube.Conditions(), activeGateConnectionInfoConditionType, secretNamespacedName.Name+" is not present or outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
+	conditions.SetSecretOutdated(r.dk.Conditions(), activeGateConnectionInfoConditionType, secretNamespacedName.Name+" is not present or outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
 
 	connectionInfo, err := r.dtc.GetActiveGateConnectionInfo(ctx)
 	if err != nil {
-		conditions.SetDynatraceApiError(r.dynakube.Conditions(), activeGateConnectionInfoConditionType, err)
+		conditions.SetDynatraceApiError(r.dk.Conditions(), activeGateConnectionInfoConditionType, err)
 
 		return errors.WithMessage(err, "failed to get ActiveGate connection info")
 	}
@@ -103,7 +103,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 		log.Info("tenant has no endpoints", "tenant", connectionInfo.TenantUUID)
 	}
 
-	err = r.createTenantTokenSecret(ctx, r.dynakube.ActivegateTenantSecret(), r.dynakube, connectionInfo.ConnectionInfo)
+	err = r.createTenantTokenSecret(ctx, r.dk.ActivegateTenantSecret(), r.dk, connectionInfo.ConnectionInfo)
 	if err != nil {
 		return err
 	}
@@ -114,8 +114,8 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 }
 
 func (r *reconciler) setDynakubeStatus(connectionInfo dtclient.ActiveGateConnectionInfo) {
-	r.dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID = connectionInfo.TenantUUID
-	r.dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints = connectionInfo.Endpoints
+	r.dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID = connectionInfo.TenantUUID
+	r.dk.Status.ActiveGate.ConnectionInfoStatus.Endpoints = connectionInfo.Endpoints
 }
 
 func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName string, owner metav1.Object, connectionInfo dtclient.ConnectionInfo) error {
@@ -129,12 +129,12 @@ func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName str
 	err = query.CreateOrUpdate(*secret)
 	if err != nil {
 		log.Info("could not create or update secret for connection info", "name", secret.Name)
-		conditions.SetKubeApiError(r.dynakube.Conditions(), activeGateConnectionInfoConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), activeGateConnectionInfoConditionType, err)
 
 		return err
 	}
 
-	conditions.SetSecretCreated(r.dynakube.Conditions(), activeGateConnectionInfoConditionType, secret.Name)
+	conditions.SetSecretCreated(r.dk.Conditions(), activeGateConnectionInfoConditionType, secret.Name)
 
 	return nil
 }

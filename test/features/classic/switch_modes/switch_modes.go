@@ -5,11 +5,11 @@ package switch_modes
 import (
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -28,27 +28,27 @@ func Feature(t *testing.T) features.Feature {
 	// build classic full stack dynakube
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	commonOptions := []dynakube.Option{
-		dynakube.WithApiUrl(secretConfig.ApiUrl),
+	commonOptions := []dynakubeComponents.Option{
+		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
 	}
 
-	dynakubeClassicFullStack := *dynakube.New(
-		append(commonOptions, dynakube.WithClassicFullstackSpec(&dynatracev1beta2.HostInjectSpec{}))...,
+	dynakubeClassicFullStack := *dynakubeComponents.New(
+		append(commonOptions, dynakubeComponents.WithClassicFullstackSpec(&dynakube.HostInjectSpec{}))...,
 	)
 
 	sampleAppClassic := sample.NewApp(t, &dynakubeClassicFullStack,
 		sample.AsDeployment(),
 		sample.WithName(sampleAppsClassicName),
 	)
-	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, dynakubeClassicFullStack)
+	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, dynakubeClassicFullStack)
 	builder.Assess("install sample app", sampleAppClassic.Install())
 
 	// change dynakube to cloud native
-	dynakubeCloudNative := *dynakube.New(
-		append(commonOptions, dynakube.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()))...,
+	dynakubeCloudNative := *dynakubeComponents.New(
+		append(commonOptions, dynakubeComponents.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()))...,
 	)
 
-	dynakube.Delete(builder, helpers.LevelAssess, dynakubeClassicFullStack)
+	dynakubeComponents.Delete(builder, helpers.LevelAssess, dynakubeClassicFullStack)
 	oneagent.RunClassicUninstall(builder, helpers.LevelAssess, dynakubeClassicFullStack)
 	sampleAppCloudNative := sample.NewApp(t, &dynakubeCloudNative,
 		sample.AsDeployment(),
@@ -57,7 +57,7 @@ func Feature(t *testing.T) features.Feature {
 	)
 	builder.Assess("create sample app namespace", sampleAppCloudNative.InstallNamespace())
 
-	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, dynakubeCloudNative)
+	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, dynakubeCloudNative)
 
 	// apply sample apps
 	builder.Assess("install sample app", sampleAppCloudNative.Install())
@@ -68,7 +68,7 @@ func Feature(t *testing.T) features.Feature {
 	// teardown
 	builder.Teardown(sampleAppCloudNative.Uninstall())
 	builder.Teardown(sampleAppClassic.Uninstall())
-	dynakube.Delete(builder, helpers.LevelTeardown, dynakubeClassicFullStack)
+	dynakubeComponents.Delete(builder, helpers.LevelTeardown, dynakubeClassicFullStack)
 
 	return builder.Feature()
 }

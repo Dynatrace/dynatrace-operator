@@ -6,10 +6,10 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/require"
@@ -23,14 +23,14 @@ func WithoutCSI(t *testing.T) features.Feature {
 	builder := features.New("application monitoring without csi driver enabled")
 	builder.WithLabel("name", "app-without-csi")
 	secretConfig := tenant.GetSingleTenantSecret(t)
-	appOnlyDynakube := *dynakube.New(
-		dynakube.WithApiUrl(secretConfig.ApiUrl),
-		dynakube.WithApplicationMonitoringSpec(&dynatracev1beta2.ApplicationMonitoringSpec{
+	appOnlyDynakube := *dynakubeComponents.New(
+		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
+		dynakubeComponents.WithApplicationMonitoringSpec(&dynakube.ApplicationMonitoringSpec{
 			UseCSIDriver: false,
 		}),
 	)
 
-	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, appOnlyDynakube)
+	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, appOnlyDynakube)
 
 	sampleApp := sample.NewApp(t, &appOnlyDynakube, sample.AsDeployment())
 	builder.Assess("install sample app", sampleApp.Install())
@@ -65,7 +65,7 @@ func WithoutCSI(t *testing.T) features.Feature {
 	builder.Teardown(podSample.Uninstall())
 	builder.Teardown(alreadyInjectedSample.Uninstall())
 	builder.Teardown(randomUserSample.Uninstall())
-	dynakube.Delete(builder, helpers.LevelTeardown, appOnlyDynakube)
+	dynakubeComponents.Delete(builder, helpers.LevelTeardown, appOnlyDynakube)
 
 	return builder.Feature()
 }

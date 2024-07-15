@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -13,13 +13,13 @@ import (
 
 type Reader struct {
 	apiReader client.Reader
-	dynakube  *dynatracev1beta2.DynaKube
+	dk        *dynakube.DynaKube
 }
 
-func NewReader(apiReader client.Reader, dynakube *dynatracev1beta2.DynaKube) Reader {
+func NewReader(apiReader client.Reader, dk *dynakube.DynaKube) Reader {
 	return Reader{
 		apiReader: apiReader,
-		dynakube:  dynakube,
+		dk:        dk,
 	}
 }
 
@@ -43,8 +43,8 @@ func (reader Reader) readTokens(ctx context.Context) (Tokens, error) {
 	result := make(Tokens)
 
 	err := reader.apiReader.Get(ctx, client.ObjectKey{
-		Name:      reader.dynakube.Tokens(),
-		Namespace: reader.dynakube.Namespace,
+		Name:      reader.dk.Tokens(),
+		Namespace: reader.dk.Namespace,
 	}, &tokenSecret)
 
 	if err != nil {
@@ -63,7 +63,7 @@ func (reader Reader) verifyApiTokenExists(tokens Tokens) error {
 	apiToken, hasApiToken := tokens[dtclient.ApiToken]
 
 	if !hasApiToken || len(apiToken.Value) == 0 {
-		return errors.New(fmt.Sprintf("the API token is missing from the token secret '%s:%s'", reader.dynakube.Namespace, reader.dynakube.Tokens()))
+		return errors.New(fmt.Sprintf("the API token is missing from the token secret '%s:%s'", reader.dk.Namespace, reader.dk.Tokens()))
 	}
 
 	return nil

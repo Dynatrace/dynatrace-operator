@@ -40,14 +40,14 @@ func AddEdgeConnectValidationWebhookToManager(manager ctrl.Manager) error {
 func (validator *edgeconnectValidator) Handle(ctx context.Context, request admission.Request) admission.Response {
 	log.Info("validating edgeconnect request", "name", request.Name, "namespace", request.Namespace)
 
-	edgeConnect := &edgeconnect.EdgeConnect{}
+	ec := &edgeconnect.EdgeConnect{}
 
-	err := decodeRequestToEdgeConnect(request, edgeConnect)
+	err := decodeRequestToEdgeConnect(request, ec)
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, errors.WithStack(err))
 	}
 
-	validationErrors := validator.runValidators(ctx, validators, edgeConnect)
+	validationErrors := validator.runValidators(ctx, validators, ec)
 	response := admission.Allowed("")
 
 	if len(validationErrors) > 0 {
@@ -57,11 +57,11 @@ func (validator *edgeconnectValidator) Handle(ctx context.Context, request admis
 	return response
 }
 
-func (validator *edgeconnectValidator) runValidators(ctx context.Context, validators []validator, edgeConnect *edgeconnect.EdgeConnect) []string {
+func (validator *edgeconnectValidator) runValidators(ctx context.Context, validators []validator, ec *edgeconnect.EdgeConnect) []string {
 	results := []string{}
 
 	for _, validate := range validators {
-		if errMsg := validate(ctx, validator, edgeConnect); errMsg != "" {
+		if errMsg := validate(ctx, validator, ec); errMsg != "" {
 			results = append(results, errMsg)
 		}
 	}
@@ -69,10 +69,10 @@ func (validator *edgeconnectValidator) runValidators(ctx context.Context, valida
 	return results
 }
 
-func decodeRequestToEdgeConnect(request admission.Request, edgeConnect *edgeconnect.EdgeConnect) error {
+func decodeRequestToEdgeConnect(request admission.Request, ec *edgeconnect.EdgeConnect) error {
 	decoder := admission.NewDecoder(scheme.Scheme)
 
-	err := decoder.Decode(request, edgeConnect)
+	err := decoder.Decode(request, ec)
 	if err != nil {
 		return errors.WithStack(err)
 	}

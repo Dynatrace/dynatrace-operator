@@ -3,7 +3,7 @@ package pod
 import (
 	"context"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/internal/otel"
@@ -93,8 +93,8 @@ func getDynakubeName(namespace corev1.Namespace) (string, error) {
 	return dynakubeName, nil
 }
 
-func (wh *webhook) getDynakube(ctx context.Context, dynakubeName string) (*dynatracev1beta2.DynaKube, error) {
-	var dk dynatracev1beta2.DynaKube
+func (wh *webhook) getDynakube(ctx context.Context, dynakubeName string) (*dynakube.DynaKube, error) {
+	var dk dynakube.DynaKube
 
 	err := wh.apiReader.Get(ctx, client.ObjectKey{Name: dynakubeName, Namespace: wh.webhookNamespace}, &dk)
 	if k8serrors.IsNotFound(err) {

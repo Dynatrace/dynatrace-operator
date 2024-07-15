@@ -1,7 +1,7 @@
 package modifiers
 
 import (
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
@@ -19,18 +19,18 @@ const (
 	trustedCAsFile = "rootca.pem"
 )
 
-func NewTrustedCAsVolumeModifier(dynakube dynatracev1beta2.DynaKube) TrustedCAsModifier {
+func NewTrustedCAsVolumeModifier(dk dynakube.DynaKube) TrustedCAsModifier {
 	return TrustedCAsModifier{
-		dynakube: dynakube,
+		dk: dk,
 	}
 }
 
 type TrustedCAsModifier struct {
-	dynakube dynatracev1beta2.DynaKube
+	dk dynakube.DynaKube
 }
 
 func (mod TrustedCAsModifier) Enabled() bool {
-	return mod.dynakube.Spec.TrustedCAs != ""
+	return mod.dk.Spec.TrustedCAs != ""
 }
 
 func (mod TrustedCAsModifier) Modify(sts *appsv1.StatefulSet) error {
@@ -48,7 +48,7 @@ func (mod TrustedCAsModifier) getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: mod.dynakube.Spec.TrustedCAs,
+						Name: mod.dk.Spec.TrustedCAs,
 					},
 					Items: []corev1.KeyToPath{
 						{

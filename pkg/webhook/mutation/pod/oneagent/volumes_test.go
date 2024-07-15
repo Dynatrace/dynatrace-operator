@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
 	"github.com/pkg/errors"
@@ -47,30 +47,30 @@ func TestAddReadOnlyCSIVolumeMounts(t *testing.T) {
 
 func TestAddCertVolumeMounts(t *testing.T) {
 	t.Run("shouldn't add any cert volume mounts", func(t *testing.T) {
-		dynakube := dynatracev1beta2.DynaKube{}
+		dk := dynakube.DynaKube{}
 		container := &corev1.Container{}
 
-		addCertVolumeMounts(container, dynakube)
+		addCertVolumeMounts(container, dk)
 		require.Empty(t, container.VolumeMounts)
 	})
 	t.Run("should add both cert volume mounts", func(t *testing.T) {
-		dynakube := dynatracev1beta2.DynaKube{
-			Spec: dynatracev1beta2.DynaKubeSpec{
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
 				TrustedCAs: "test",
 			},
 		}
 		container := &corev1.Container{}
 
-		addCertVolumeMounts(container, dynakube)
+		addCertVolumeMounts(container, dk)
 		require.Len(t, container.VolumeMounts, 2) // custom.pem, custom_proxy.pem
 		assert.Equal(t, consts.CustomCertsFileName, container.VolumeMounts[0].SubPath)
 		assert.Equal(t, consts.CustomProxyCertsFileName, container.VolumeMounts[1].SubPath)
 	})
 	t.Run("shouldn't add proxy cert volume mounts", func(t *testing.T) {
-		dynakube := dynatracev1beta2.DynaKube{
-			Spec: dynatracev1beta2.DynaKubeSpec{
-				ActiveGate: dynatracev1beta2.ActiveGateSpec{
-					Capabilities: []dynatracev1beta2.CapabilityDisplayName{
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: dynakube.ActiveGateSpec{
+					Capabilities: []dynakube.CapabilityDisplayName{
 						"routing",
 					},
 					TlsSecretName: "test",
@@ -79,7 +79,7 @@ func TestAddCertVolumeMounts(t *testing.T) {
 		}
 		container := &corev1.Container{}
 
-		addCertVolumeMounts(container, dynakube)
+		addCertVolumeMounts(container, dk)
 		require.Len(t, container.VolumeMounts, 1)
 		assert.Equal(t, consts.CustomCertsFileName, container.VolumeMounts[0].SubPath)
 	})
@@ -118,9 +118,9 @@ func TestAddInitVolumeMounts(t *testing.T) {
 func TestAddOneAgentVolumes(t *testing.T) {
 	t.Run("should add oneagent volumes, with csi", func(t *testing.T) {
 		pod := &corev1.Pod{}
-		dynakube := getTestCSIDynakube()
+		dk := getTestCSIDynakube()
 
-		addOneAgentVolumes(pod, *dynakube)
+		addOneAgentVolumes(pod, *dk)
 		require.Len(t, pod.Spec.Volumes, 2)
 		assert.NotNil(t, pod.Spec.Volumes[0].VolumeSource.CSI)
 		assert.False(t, *pod.Spec.Volumes[0].VolumeSource.CSI.ReadOnly)
@@ -128,9 +128,9 @@ func TestAddOneAgentVolumes(t *testing.T) {
 
 	t.Run("should add oneagent volumes, with readonly csi", func(t *testing.T) {
 		pod := &corev1.Pod{}
-		dynakube := getTestReadOnlyCSIDynakube()
+		dk := getTestReadOnlyCSIDynakube()
 
-		addOneAgentVolumes(pod, *dynakube)
+		addOneAgentVolumes(pod, *dk)
 		require.Len(t, pod.Spec.Volumes, 2)
 		assert.NotNil(t, pod.Spec.Volumes[0].VolumeSource.CSI)
 		assert.True(t, *pod.Spec.Volumes[0].VolumeSource.CSI.ReadOnly)
@@ -138,9 +138,9 @@ func TestAddOneAgentVolumes(t *testing.T) {
 
 	t.Run("should add oneagent volumes, without csi", func(t *testing.T) {
 		pod := &corev1.Pod{}
-		dynakube := getTestDynakube()
+		dk := getTestDynakube()
 
-		addOneAgentVolumes(pod, *dynakube)
+		addOneAgentVolumes(pod, *dk)
 		require.Len(t, pod.Spec.Volumes, 2)
 		assert.NotNil(t, pod.Spec.Volumes[0].VolumeSource.EmptyDir)
 	})

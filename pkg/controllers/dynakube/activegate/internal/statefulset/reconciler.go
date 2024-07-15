@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
@@ -30,7 +30,7 @@ var _ controllers.Reconciler = &Reconciler{}
 
 type Reconciler struct {
 	client     client.Client
-	dynakube   *dynatracev1beta2.DynaKube
+	dk         *dynakube.DynaKube
 	apiReader  client.Reader
 	capability capability.Capability
 	modifiers  []builder.Modifier
@@ -39,19 +39,19 @@ type Reconciler struct {
 func NewReconciler(
 	clt client.Client,
 	apiReader client.Reader,
-	dynakube *dynatracev1beta2.DynaKube,
+	dk *dynakube.DynaKube,
 	capability capability.Capability,
 ) controllers.Reconciler {
 	return &Reconciler{
 		client:     clt,
 		apiReader:  apiReader,
-		dynakube:   dynakube,
+		dk:         dk,
 		capability: capability,
 		modifiers:  []builder.Modifier{},
 	}
 }
 
-type NewReconcilerFunc = func(clt client.Client, apiReader client.Reader, dynakube *dynatracev1beta2.DynaKube, capability capability.Capability) controllers.Reconciler
+type NewReconcilerFunc = func(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube, capability capability.Capability) controllers.Reconciler
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	err := r.manageStatefulSet(ctx)
@@ -70,39 +70,39 @@ func (r *Reconciler) manageStatefulSet(ctx context.Context) error {
 		return errors.WithStack(err)
 	}
 
-	if err := controllerutil.SetControllerReference(r.dynakube, desiredSts, scheme.Scheme); err != nil {
+	if err := controllerutil.SetControllerReference(r.dk, desiredSts, scheme.Scheme); err != nil {
 		return errors.WithStack(err)
 	}
 
 	created, err := r.createStatefulSetIfNotExists(ctx, desiredSts)
 	if err != nil {
-		conditions.SetKubeApiError(r.dynakube.Conditions(), ActiveGateStatefulSetConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), ActiveGateStatefulSetConditionType, err)
 
 		return errors.WithStack(err)
 	} else if created {
-		conditions.SetStatefulSetCreated(r.dynakube.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
+		conditions.SetStatefulSetCreated(r.dk.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
 
 		return nil
 	}
 
 	deleted, err := r.deleteStatefulSetIfSelectorChanged(ctx, desiredSts)
 	if err != nil {
-		conditions.SetKubeApiError(r.dynakube.Conditions(), ActiveGateStatefulSetConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), ActiveGateStatefulSetConditionType, err)
 
 		return errors.WithStack(err)
 	} else if deleted {
-		conditions.SetStatefulSetDeleted(r.dynakube.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
+		conditions.SetStatefulSetDeleted(r.dk.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
 
 		return r.manageStatefulSet(ctx)
 	}
 
 	updated, err := r.updateStatefulSetIfOutdated(ctx, desiredSts)
 	if err != nil {
-		conditions.SetKubeApiError(r.dynakube.Conditions(), ActiveGateStatefulSetConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), ActiveGateStatefulSetConditionType, err)
 
 		return errors.WithStack(err)
 	} else if updated {
-		conditions.SetStatefulSetUpdated(r.dynakube.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
+		conditions.SetStatefulSetUpdated(r.dk.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
 	}
 
 	return nil
@@ -119,7 +119,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context) (*appsv1.State
 		return nil, errors.WithStack(err)
 	}
 
-	statefulSetBuilder := NewStatefulSetBuilder(kubeUID, activeGateConfigurationHash, *r.dynakube, r.capability)
+	statefulSetBuilder := NewStatefulSetBuilder(kubeUID, activeGateConfigurationHash, *r.dk, r.capability)
 
 	desiredSts, err := statefulSetBuilder.CreateStatefulSet(r.modifiers)
 
@@ -248,7 +248,7 @@ func (r *Reconciler) getCustomPropertyValue() (string, error) {
 }
 
 func (r *Reconciler) getAuthTokenValue() (string, error) {
-	if !r.dynakube.NeedsActiveGate() {
+	if !r.dk.NeedsActiveGate() {
 		return "", nil
 	}
 
@@ -260,18 +260,18 @@ func (r *Reconciler) getAuthTokenValue() (string, error) {
 	return authTokenData, nil
 }
 
-func (r *Reconciler) getDataFromCustomProperty(customProperties *dynatracev1beta2.DynaKubeValueSource) (string, error) {
+func (r *Reconciler) getDataFromCustomProperty(customProperties *dynakube.DynaKubeValueSource) (string, error) {
 	if customProperties.ValueFrom != "" {
-		return secret.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dynakube.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey, log)
+		return secret.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dk.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey, log)
 	}
 
 	return customProperties.Value, nil
 }
 
 func (r *Reconciler) getDataFromAuthTokenSecret() (string, error) {
-	return secret.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dynakube.Namespace, Name: r.dynakube.ActiveGateAuthTokenSecret()}, authtoken.ActiveGateAuthTokenName, log)
+	return secret.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dk.Namespace, Name: r.dk.ActiveGateAuthTokenSecret()}, authtoken.ActiveGateAuthTokenName, log)
 }
 
-func needsCustomPropertyHash(customProperties *dynatracev1beta2.DynaKubeValueSource) bool {
+func needsCustomPropertyHash(customProperties *dynakube.DynaKubeValueSource) bool {
 	return customProperties != nil && (customProperties.Value != "" || customProperties.ValueFrom != "")
 }

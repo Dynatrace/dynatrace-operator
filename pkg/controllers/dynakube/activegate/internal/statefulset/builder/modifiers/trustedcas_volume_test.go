@@ -9,30 +9,30 @@ import (
 
 func TestTrustedCAsVolumeEnabled(t *testing.T) {
 	t.Run("true", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		dynakube.Spec.TrustedCAs = testTlsSecretName
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		dk.Spec.TrustedCAs = testTlsSecretName
 
-		mod := NewTrustedCAsVolumeModifier(dynakube)
+		mod := NewTrustedCAsVolumeModifier(dk)
 
 		assert.True(t, mod.Enabled())
 	})
 
 	t.Run("false - TlsSecretName", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		dynakube.Spec.ActiveGate.TlsSecretName = testTlsSecretName
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		dk.Spec.ActiveGate.TlsSecretName = testTlsSecretName
 
-		mod := NewTrustedCAsVolumeModifier(dynakube)
+		mod := NewTrustedCAsVolumeModifier(dk)
 
 		assert.False(t, mod.Enabled())
 	})
 
 	t.Run("false", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
 
-		mod := NewTrustedCAsVolumeModifier(dynakube)
+		mod := NewTrustedCAsVolumeModifier(dk)
 
 		assert.False(t, mod.Enabled())
 	})
@@ -40,11 +40,11 @@ func TestTrustedCAsVolumeEnabled(t *testing.T) {
 
 func TestTrustedCAsVolumeModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		enableKubeMonCapability(&dynakube)
-		dynakube.Spec.TrustedCAs = testTlsSecretName
+		dk := getBaseDynakube()
+		enableKubeMonCapability(&dk)
+		dk.Spec.TrustedCAs = testTlsSecretName
 
-		mod := NewTrustedCAsVolumeModifier(dynakube)
+		mod := NewTrustedCAsVolumeModifier(dk)
 		builder := createBuilderForTesting()
 
 		sts, _ := builder.AddModifier(mod).Build()

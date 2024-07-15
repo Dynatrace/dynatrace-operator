@@ -7,8 +7,8 @@ import (
 	"time"
 
 	dynatracestatus "github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
-	dynatracev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	dynakubev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
@@ -82,7 +82,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, co
 
 func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&dynatracev1beta2.DynaKube{}).
+		For(&dynakubev1beta2.DynaKube{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&appsv1.DaemonSet{}).
 		Owns(&corev1.ConfigMap{}).
@@ -126,33 +126,33 @@ type Controller struct {
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
 
-	dynaKube, err := controller.getDynakubeOrCleanup(ctx, request.Name, request.Namespace)
+	dk, err := controller.getDynakubeOrCleanup(ctx, request.Name, request.Namespace)
 	if err != nil {
 		return reconcile.Result{}, err
-	} else if dynaKube == nil {
+	} else if dk == nil {
 		log.Info("reconciling DynaKube finished, no dynakube available", "namespace", request.Namespace, "name", request.Name, "result", "empty")
 
 		return reconcile.Result{}, nil
 	}
 
-	oldStatus := *dynaKube.Status.DeepCopy()
+	oldStatus := *dk.Status.DeepCopy()
 	controller.requeueAfter = defaultUpdateInterval
-	err = controller.reconcileDynaKube(ctx, dynaKube)
-	result, err := controller.handleError(ctx, dynaKube, err, oldStatus)
+	err = controller.reconcileDynaKube(ctx, dk)
+	result, err := controller.handleError(ctx, dk, err, oldStatus)
 
 	log.Info("reconciling DynaKube finished", "namespace", request.Namespace, "name", request.Name, "result", result)
 
 	return result, err
 }
 
-func (controller *Controller) getDynakubeOrCleanup(ctx context.Context, dkName, dkNamespace string) (*dynatracev1beta2.DynaKube, error) {
-	dynakube := &dynatracev1beta2.DynaKube{
+func (controller *Controller) getDynakubeOrCleanup(ctx context.Context, dkName, dkNamespace string) (*dynakubev1beta2.DynaKube, error) {
+	dk := &dynakubev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dkName,
 			Namespace: dkNamespace,
 		},
 	}
-	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: dynakube.Name, Namespace: dynakube.Namespace}, dynakube)
+	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: dk.Name, Namespace: dk.Namespace}, dk)
 
 	if k8serrors.IsNotFound(err) {
 		namespaces, err := mapper.GetNamespacesForDynakube(ctx, controller.apiReader, dkName)
@@ -160,19 +160,19 @@ func (controller *Controller) getDynakubeOrCleanup(ctx context.Context, dkName, 
 			return nil, errors.WithMessagef(err, "failed to list namespaces for dynakube %s", dkName)
 		}
 
-		return nil, controller.createDynakubeMapper(ctx, dynakube).UnmapFromDynaKube(namespaces)
+		return nil, controller.createDynakubeMapper(ctx, dk).UnmapFromDynaKube(namespaces)
 	} else if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	return dynakube, nil
+	return dk, nil
 }
 
 func (controller *Controller) handleError(
 	ctx context.Context,
-	dynaKube *dynatracev1beta2.DynaKube,
+	dk *dynakubev1beta2.DynaKube,
 	err error,
-	oldStatus dynatracev1beta2.DynaKubeStatus,
+	oldStatus dynakubev1beta2.DynaKubeStatus,
 ) (reconcile.Result, error) {
 	switch {
 	case dynatraceapi.IsUnreachable(err):
@@ -183,20 +183,20 @@ func (controller *Controller) handleError(
 
 	case err != nil:
 		controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
-		dynaKube.Status.SetPhase(dynatracestatus.Error)
-		log.Error(err, "error reconciling DynaKube", "namespace", dynaKube.Namespace, "name", dynaKube.Name)
+		dk.Status.SetPhase(dynatracestatus.Error)
+		log.Error(err, "error reconciling DynaKube", "namespace", dk.Namespace, "name", dk.Name)
 
 	default:
-		dynaKube.Status.SetPhase(controller.determineDynaKubePhase(dynaKube))
+		dk.Status.SetPhase(controller.determineDynaKubePhase(dk))
 	}
 
-	if isStatusDifferent, err := hasher.IsDifferent(oldStatus, dynaKube.Status); err != nil {
+	if isStatusDifferent, err := hasher.IsDifferent(oldStatus, dk.Status); err != nil {
 		log.Error(err, "failed to generate hash for the status section")
 	} else if isStatusDifferent {
 		log.Info("status changed, updating DynaKube")
 		controller.setRequeueAfterIfNewIsShorter(changesUpdateInterval)
 
-		if errClient := dynaKube.UpdateStatus(ctx, controller.client); errClient != nil {
+		if errClient := dk.UpdateStatus(ctx, controller.client); errClient != nil {
 			return reconcile.Result{}, errors.WithMessagef(errClient, "failed to update DynaKube after failure, original error: %s", err)
 		}
 	}
@@ -214,12 +214,12 @@ func (controller *Controller) setRequeueAfterIfNewIsShorter(requeueAfter time.Du
 	}
 }
 
-func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) error {
+func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakubev1beta2.DynaKube) error {
 	var istioClient *istio.Client
 
 	var err error
-	if dynakube.Spec.EnableIstio {
-		istioClient, err = controller.setupIstioClient(dynakube)
+	if dk.Spec.EnableIstio {
+		istioClient, err = controller.setupIstioClient(dk)
 	}
 
 	if err != nil {
@@ -229,33 +229,33 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 	if istioClient != nil {
 		istioReconciler := controller.istioReconcilerBuilder(istioClient)
 
-		err := istioReconciler.ReconcileAPIUrl(ctx, dynakube)
+		err := istioReconciler.ReconcileAPIUrl(ctx, dk)
 		if err != nil {
 			return errors.WithMessage(err, "failed to reconcile istio objects for API url")
 		}
 	}
 
-	dynatraceClient, err := controller.setupTokensAndClient(ctx, dynakube)
+	dynatraceClient, err := controller.setupTokensAndClient(ctx, dk)
 	if err != nil {
 		return err
 	}
 
-	dynakube.Status.KubeSystemUUID = controller.clusterID
+	dk.Status.KubeSystemUUID = controller.clusterID
 
 	log.Info("start reconciling deployment meta data")
 
-	err = controller.deploymentMetadataReconcilerBuilder(controller.client, controller.apiReader, *dynakube, controller.clusterID).Reconcile(ctx)
+	err = controller.deploymentMetadataReconcilerBuilder(controller.client, controller.apiReader, *dk, controller.clusterID).Reconcile(ctx)
 	if err != nil {
 		return err
 	}
 
 	log.Info("start reconciling process module config")
 
-	return controller.reconcileComponents(ctx, dynatraceClient, istioClient, dynakube)
+	return controller.reconcileComponents(ctx, dynatraceClient, istioClient, dk)
 }
 
-func (controller *Controller) setupIstioClient(dynakube *dynatracev1beta2.DynaKube) (*istio.Client, error) {
-	istioClient, err := controller.istioClientBuilder(controller.config, dynakube)
+func (controller *Controller) setupIstioClient(dk *dynakubev1beta2.DynaKube) (*istio.Client, error) {
+	istioClient, err := controller.istioClientBuilder(controller.config, dk)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize istio client")
 	}
@@ -270,12 +270,12 @@ func (controller *Controller) setupIstioClient(dynakube *dynatracev1beta2.DynaKu
 	return istioClient, nil
 }
 
-func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) (dtclient.Client, error) {
-	tokenReader := token.NewReader(controller.apiReader, dynakube)
+func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dynakubev1beta2.DynaKube) (dtclient.Client, error) {
+	tokenReader := token.NewReader(controller.apiReader, dk)
 
 	tokens, err := tokenReader.ReadTokens(ctx)
 	if err != nil {
-		controller.setConditionTokenError(dynakube, err)
+		controller.setConditionTokenError(dk, err)
 
 		return nil, err
 	}
@@ -284,36 +284,36 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube
 
 	dynatraceClientBuilder := controller.dynatraceClientBuilder.
 		SetContext(ctx).
-		SetDynakube(*dynakube).
+		SetDynakube(*dk).
 		SetTokens(tokens)
 
-	dynatraceClient, err := dynatraceClientBuilder.BuildWithTokenVerification(&dynakube.Status)
+	dynatraceClient, err := dynatraceClientBuilder.BuildWithTokenVerification(&dk.Status)
 	if err != nil {
-		controller.setConditionTokenError(dynakube, err)
+		controller.setConditionTokenError(dk, err)
 
 		return nil, err
 	}
 
-	controller.setConditionTokenReady(dynakube)
+	controller.setConditionTokenReady(dk)
 
 	return dynatraceClient, nil
 }
 
-func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioClient *istio.Client, dynakube *dynatracev1beta2.DynaKube) error {
+func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioClient *istio.Client, dk *dynakubev1beta2.DynaKube) error {
 	var componentErrors []error
 
 	log.Info("start reconciling ActiveGate")
 
-	err := controller.reconcileActiveGate(ctx, dynakube, dynatraceClient, istioClient)
+	err := controller.reconcileActiveGate(ctx, dk, dynatraceClient, istioClient)
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
 
 		componentErrors = append(componentErrors, err)
 	}
 
-	dynakubeV1beta3 := &dynatracev1beta3.DynaKube{}
+	dynakubeV1beta3 := &dynakubev1beta3.DynaKube{}
 
-	err = dynakubeV1beta3.ConvertFrom(dynakube)
+	err = dynakubeV1beta3.ConvertFrom(dk)
 	if err != nil {
 		return err
 	}
@@ -325,7 +325,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		return err
 	}
 
-	proxyReconciler := proxy.NewReconciler(controller.client, controller.apiReader, dynakube)
+	proxyReconciler := proxy.NewReconciler(controller.client, controller.apiReader, dk)
 
 	err = proxyReconciler.Reconcile(ctx)
 	if err != nil {
@@ -347,7 +347,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		controller.apiReader,
 		dynatraceClient,
 		istioClient,
-		dynakube).
+		dk).
 		Reconcile(ctx)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
@@ -369,7 +369,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		controller.client,
 		controller.apiReader,
 		dynatraceClient,
-		dynakube,
+		dk,
 		controller.tokens,
 		controller.clusterID,
 	).
@@ -391,8 +391,8 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 	return goerrors.Join(componentErrors...)
 }
 
-func (controller *Controller) createDynakubeMapper(ctx context.Context, dynakube *dynatracev1beta2.DynaKube) *mapper.DynakubeMapper {
-	dkMapper := mapper.NewDynakubeMapper(ctx, controller.client, controller.apiReader, controller.operatorNamespace, dynakube)
+func (controller *Controller) createDynakubeMapper(ctx context.Context, dk *dynakubev1beta2.DynaKube) *mapper.DynakubeMapper {
+	dkMapper := mapper.NewDynakubeMapper(ctx, controller.client, controller.apiReader, controller.operatorNamespace, dk)
 
 	return &dkMapper
 }

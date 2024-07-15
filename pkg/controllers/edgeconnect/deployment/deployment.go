@@ -1,7 +1,7 @@
 package deployment
 
 import (
-	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -21,14 +21,14 @@ const (
 	unprivilegedGroup  = int64(1000)
 )
 
-func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
-	return create(instance)
+func New(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
+	return create(ec)
 }
 
-func create(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
-	appLabels := buildAppLabels(instance)
+func create(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
+	appLabels := buildAppLabels(ec)
 	labels := maputils.MergeMap(
-		instance.Labels,
+		ec.Labels,
 		appLabels.BuildLabels(),
 	)
 
@@ -36,13 +36,13 @@ func create(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        instance.Name,
-			Namespace:   instance.Namespace,
+			Name:        ec.Name,
+			Namespace:   ec.Namespace,
 			Labels:      labels,
-			Annotations: buildAnnotations(instance),
+			Annotations: buildAnnotations(ec),
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: instance.Spec.Replicas,
+			Replicas: ec.Spec.Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: appLabels.BuildMatchLabels(),
 			},
@@ -51,15 +51,15 @@ func create(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
-					Containers:                    []corev1.Container{edgeConnectContainer(instance)},
-					ImagePullSecrets:              prepareImagePullSecrets(instance),
-					ServiceAccountName:            instance.Spec.ServiceAccountName,
-					DeprecatedServiceAccount:      instance.Spec.ServiceAccountName,
+					Containers:                    []corev1.Container{edgeConnectContainer(ec)},
+					ImagePullSecrets:              prepareImagePullSecrets(ec),
+					ServiceAccountName:            ec.Spec.ServiceAccountName,
+					DeprecatedServiceAccount:      ec.Spec.ServiceAccountName,
 					TerminationGracePeriodSeconds: address.Of(int64(30)),
-					Volumes:                       prepareVolumes(instance),
-					NodeSelector:                  instance.Spec.NodeSelector,
-					Tolerations:                   instance.Spec.Tolerations,
-					TopologySpreadConstraints:     instance.Spec.TopologySpreadConstraints,
+					Volumes:                       prepareVolumes(ec),
+					NodeSelector:                  ec.Spec.NodeSelector,
+					Tolerations:                   ec.Spec.Tolerations,
+					TopologySpreadConstraints:     ec.Spec.TopologySpreadConstraints,
 				},
 			},
 			Strategy: appsv1.DeploymentStrategy{
@@ -74,41 +74,41 @@ func create(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 	}
 }
 
-func prepareImagePullSecrets(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.LocalObjectReference {
-	if instance.Spec.CustomPullSecret != "" {
+func prepareImagePullSecrets(ec *edgeconnect.EdgeConnect) []corev1.LocalObjectReference {
+	if ec.Spec.CustomPullSecret != "" {
 		return []corev1.LocalObjectReference{
-			{Name: instance.Spec.CustomPullSecret},
+			{Name: ec.Spec.CustomPullSecret},
 		}
 	}
 
 	return nil
 }
 
-func buildAppLabels(instance *edgeconnectv1alpha1.EdgeConnect) *labels.AppLabels {
+func buildAppLabels(ec *edgeconnect.EdgeConnect) *labels.AppLabels {
 	return labels.NewAppLabels(
 		labels.EdgeConnectComponentLabel,
-		instance.Name,
+		ec.Name,
 		consts.EdgeConnectUserProvisioned,
-		instance.Status.Version.Version)
+		ec.Status.Version.Version)
 }
 
-func buildAnnotations(instance *edgeconnectv1alpha1.EdgeConnect) map[string]string {
+func buildAnnotations(ec *edgeconnect.EdgeConnect) map[string]string {
 	annotations := map[string]string{
 		consts.AnnotationEdgeConnectContainerAppArmor: "runtime/default",
 		webhook.AnnotationDynatraceInject:             "false",
 	}
-	annotations = maputils.MergeMap(instance.Annotations, annotations)
+	annotations = maputils.MergeMap(ec.Annotations, annotations)
 
 	return annotations
 }
 
-func edgeConnectContainer(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Container {
+func edgeConnectContainer(ec *edgeconnect.EdgeConnect) corev1.Container {
 	return corev1.Container{
 		Name:            consts.EdgeConnectContainerName,
-		Image:           instance.Status.Version.ImageID,
+		Image:           ec.Status.Version.ImageID,
 		ImagePullPolicy: corev1.PullAlways,
-		Env:             instance.Spec.Env,
-		Resources:       prepareResourceRequirements(instance),
+		Env:             ec.Spec.Env,
+		Resources:       prepareResourceRequirements(ec),
 		SecurityContext: &corev1.SecurityContext{
 			AllowPrivilegeEscalation: address.Of(false),
 			Privileged:               address.Of(false),
@@ -117,20 +117,20 @@ func edgeConnectContainer(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Cont
 			RunAsUser:                address.Of(unprivilegedUser),
 			RunAsNonRoot:             address.Of(true),
 		},
-		VolumeMounts: prepareVolumeMounts(instance),
+		VolumeMounts: prepareVolumeMounts(ec),
 	}
 }
 
-func prepareVolumes(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.Volume {
-	volumes := []corev1.Volume{prepareConfigVolume(instance)}
+func prepareVolumes(ec *edgeconnect.EdgeConnect) []corev1.Volume {
+	volumes := []corev1.Volume{prepareConfigVolume(ec)}
 
-	if instance.Spec.CaCertsRef != "" {
+	if ec.Spec.CaCertsRef != "" {
 		volumes = append(volumes, corev1.Volume{
 			Name: consts.EdgeConnectCustomCAVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: instance.Spec.CaCertsRef,
+						Name: ec.Spec.CaCertsRef,
 					},
 					Items: []corev1.KeyToPath{
 						{
@@ -146,24 +146,24 @@ func prepareVolumes(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.Volume {
 	return volumes
 }
 
-func prepareVolumeMounts(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.VolumeMount {
+func prepareVolumeMounts(ec *edgeconnect.EdgeConnect) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
-		{MountPath: consts.EdgeConnectConfigPath, SubPath: consts.EdgeConnectConfigFileName, Name: instance.Name + "-" + consts.EdgeConnectConfigVolumeMountName},
+		{MountPath: consts.EdgeConnectConfigPath, SubPath: consts.EdgeConnectConfigFileName, Name: ec.Name + "-" + consts.EdgeConnectConfigVolumeMountName},
 	}
 
-	if instance.Spec.CaCertsRef != "" {
+	if ec.Spec.CaCertsRef != "" {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{MountPath: consts.EdgeConnectMountPath, Name: consts.EdgeConnectCustomCAVolumeName})
 	}
 
 	return volumeMounts
 }
 
-func prepareConfigVolume(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Volume {
+func prepareConfigVolume(ec *edgeconnect.EdgeConnect) corev1.Volume {
 	return corev1.Volume{
-		Name: instance.Name + "-" + consts.EdgeConnectConfigVolumeMountName,
+		Name: ec.Name + "-" + consts.EdgeConnectConfigVolumeMountName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: instance.Name + "-" + consts.EdgeConnectSecretSuffix,
+				SecretName: ec.Name + "-" + consts.EdgeConnectSecretSuffix,
 				Items: []corev1.KeyToPath{
 					{Key: consts.EdgeConnectConfigFileName, Path: consts.EdgeConnectConfigFileName},
 				},
@@ -172,16 +172,16 @@ func prepareConfigVolume(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Volum
 	}
 }
 
-func prepareResourceRequirements(instance *edgeconnectv1alpha1.EdgeConnect) corev1.ResourceRequirements {
+func prepareResourceRequirements(ec *edgeconnect.EdgeConnect) corev1.ResourceRequirements {
 	limits := resources.NewResourceList("100m", "128Mi")
 	requests := resources.NewResourceList("100m", "128Mi")
 
-	if instance.Spec.Resources.Limits != nil {
-		limits = instance.Spec.Resources.Limits
+	if ec.Spec.Resources.Limits != nil {
+		limits = ec.Spec.Resources.Limits
 	}
 
-	if instance.Spec.Resources.Requests != nil {
-		requests = instance.Spec.Resources.Requests
+	if ec.Spec.Resources.Requests != nil {
+		requests = ec.Spec.Resources.Requests
 	}
 
 	return corev1.ResourceRequirements{

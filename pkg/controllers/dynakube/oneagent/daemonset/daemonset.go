@@ -68,33 +68,33 @@ type Builder interface {
 	BuildDaemonSet() (*appsv1.DaemonSet, error)
 }
 
-func NewHostMonitoring(instance *dynakube.DynaKube, clusterId string) Builder {
+func NewHostMonitoring(dk *dynakube.DynaKube, clusterId string) Builder {
 	return &hostMonitoring{
 		builder{
-			dk:             instance,
-			hostInjectSpec: instance.Spec.OneAgent.HostMonitoring,
+			dk:             dk,
+			hostInjectSpec: dk.Spec.OneAgent.HostMonitoring,
 			clusterID:      clusterId,
 			deploymentType: deploymentmetadata.HostMonitoringDeploymentType,
 		},
 	}
 }
 
-func NewCloudNativeFullStack(instance *dynakube.DynaKube, clusterId string) Builder {
+func NewCloudNativeFullStack(dk *dynakube.DynaKube, clusterId string) Builder {
 	return &hostMonitoring{
 		builder{
-			dk:             instance,
-			hostInjectSpec: &instance.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
+			dk:             dk,
+			hostInjectSpec: &dk.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
 			clusterID:      clusterId,
 			deploymentType: deploymentmetadata.CloudNativeDeploymentType,
 		},
 	}
 }
 
-func NewClassicFullStack(instance *dynakube.DynaKube, clusterId string) Builder {
+func NewClassicFullStack(dk *dynakube.DynaKube, clusterId string) Builder {
 	return &classicFullStack{
 		builder{
-			dk:             instance,
-			hostInjectSpec: instance.Spec.OneAgent.ClassicFullStack,
+			dk:             dk,
+			hostInjectSpec: dk.Spec.OneAgent.ClassicFullStack,
 			clusterID:      clusterId,
 			deploymentType: deploymentmetadata.ClassicFullStackDeploymentType,
 		},

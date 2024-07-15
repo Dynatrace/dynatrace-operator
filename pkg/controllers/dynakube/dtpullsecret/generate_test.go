@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/stretchr/testify/assert"
@@ -33,14 +33,14 @@ func TestGetImageRegistryFromAPIURL(t *testing.T) {
 }
 
 func TestReconciler_GenerateData(t *testing.T) {
-	dynakube := &dynatracev1beta2.DynaKube{
-		Spec: dynatracev1beta2.DynaKubeSpec{
+	dk := &dynakube.DynaKube{
+		Spec: dynakube.DynaKubeSpec{
 			APIURL: testApiUrl,
 		},
-		Status: dynatracev1beta2.DynaKubeStatus{
-			OneAgent: dynatracev1beta2.OneAgentStatus{
-				ConnectionInfoStatus: dynatracev1beta2.OneAgentConnectionInfoStatus{
-					ConnectionInfoStatus: dynatracev1beta2.ConnectionInfoStatus{
+		Status: dynakube.DynaKubeStatus{
+			OneAgent: dynakube.OneAgentStatus{
+				ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
+					ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
 						TenantUUID: testTenant,
 					},
 				},
@@ -48,7 +48,7 @@ func TestReconciler_GenerateData(t *testing.T) {
 		},
 	}
 	r := &Reconciler{
-		dynakube: dynakube,
+		dk: dk,
 		tokens: token.Tokens{
 			dtclient.PaasToken: &token.Token{Value: testPaasToken},
 		},

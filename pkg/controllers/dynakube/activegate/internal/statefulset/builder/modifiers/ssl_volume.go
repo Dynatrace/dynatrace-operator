@@ -1,7 +1,7 @@
 package modifiers
 
 import (
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
@@ -13,18 +13,18 @@ var _ volumeModifier = SSLVolumeModifier{}
 var _ volumeMountModifier = SSLVolumeModifier{}
 var _ builder.Modifier = SSLVolumeModifier{}
 
-func NewSSLVolumeModifier(dynakube dynatracev1beta2.DynaKube) SSLVolumeModifier {
+func NewSSLVolumeModifier(dk dynakube.DynaKube) SSLVolumeModifier {
 	return SSLVolumeModifier{
-		dynakube: dynakube,
+		dk: dk,
 	}
 }
 
 type SSLVolumeModifier struct {
-	dynakube dynatracev1beta2.DynaKube
+	dk dynakube.DynaKube
 }
 
 func (mod SSLVolumeModifier) Enabled() bool {
-	return mod.dynakube.HasActiveGateCaCert() || mod.dynakube.Spec.TrustedCAs != ""
+	return mod.dk.HasActiveGateCaCert() || mod.dk.Spec.TrustedCAs != ""
 }
 
 func (mod SSLVolumeModifier) Modify(sts *appsv1.StatefulSet) error {

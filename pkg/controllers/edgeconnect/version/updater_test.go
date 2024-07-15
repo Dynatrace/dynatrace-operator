@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	registrymock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/oci/registry"
@@ -145,7 +145,7 @@ func TestReconcileRequired(t *testing.T) {
 		edgeConnectTime := metav1.Now()
 		edgeConnect.Status.Version.LastProbeTimestamp = &edgeConnectTime
 		edgeConnect.Status.Version.ImageID = edgeConnect.Image()
-		edgeConnect.Spec.ImageRef = edgeconnectv1alpha1.ImageRefSpec{
+		edgeConnect.Spec.ImageRef = edgeconnect.ImageRefSpec{
 			Repository: "docker.io/dynatrace/superfancynew",
 		}
 
@@ -153,11 +153,11 @@ func TestReconcileRequired(t *testing.T) {
 	})
 }
 
-func createBasicEdgeConnect() *edgeconnectv1alpha1.EdgeConnect {
-	return &edgeconnectv1alpha1.EdgeConnect{
-		Spec: edgeconnectv1alpha1.EdgeConnectSpec{
+func createBasicEdgeConnect() *edgeconnect.EdgeConnect {
+	return &edgeconnect.EdgeConnect{
+		Spec: edgeconnect.EdgeConnectSpec{
 			ApiServer: "superfancy.dev.apps.dynatracelabs.com",
 		},
-		Status: edgeconnectv1alpha1.EdgeConnectStatus{},
+		Status: edgeconnect.EdgeConnectStatus{},
 	}
 }

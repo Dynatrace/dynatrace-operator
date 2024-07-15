@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
@@ -23,7 +23,7 @@ import (
 type Properties struct {
 	ImageUri     string
 	ApiReader    client.Reader
-	Dynakube     *dynatracev1beta2.DynaKube
+	Dynakube     *dynakube.DynaKube
 	PathResolver metadata.PathResolver
 	Metadata     metadata.Access
 	ImageDigest  string

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,14 +17,14 @@ func TestMatchForNamespaceNothingEverything(t *testing.T) {
 		"type":   "app",
 		"inject": "true",
 	}
-	dynakubes := []*dynatracev1beta2.DynaKube{
+	dks := []*dynakube.DynaKube{
 		createDynakubeWithAppInject("appMonitoring-1", metav1.LabelSelector{}),
 		createDynakubeWithAppInject("appMonitoring-2", convertToLabelSelector(matchLabels)),
 	}
 
 	t.Run(`Match to unlabeled namespace`, func(t *testing.T) {
 		namespace := createNamespace("test-namespace", nil)
-		clt := fake.NewClient(dynakubes[0], dynakubes[1])
+		clt := fake.NewClient(dks[0], dks[1])
 		nm := NewNamespaceMapper(clt, clt, "dynatrace", namespace)
 
 		updated, err := nm.updateNamespace(context.Background())
@@ -104,7 +104,7 @@ func TestMapFromNamespace(t *testing.T) {
 	t.Run("ComponentFeature flag for monitoring system namespaces", func(t *testing.T) {
 		dk := createDynakubeWithAppInject("appMonitoring", metav1.LabelSelector{})
 		dk.Annotations = map[string]string{
-			dynatracev1beta2.AnnotationFeatureIgnoredNamespaces: "[]",
+			dynakube.AnnotationFeatureIgnoredNamespaces: "[]",
 		}
 		namespace := createNamespace("openshift-something", nil)
 		clt := fake.NewClient(dk)

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -24,12 +24,12 @@ const (
 
 func TestGetImagePullSecret(t *testing.T) {
 	fakeClient := fake.NewClient()
-	instance := &dynatracev1beta2.DynaKube{
+	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
 		}}
-	secret, err := GetImagePullSecret(fakeClient, instance)
+	secret, err := GetImagePullSecret(fakeClient, dk)
 
 	assert.Nil(t, secret)
 	require.Error(t, err)
@@ -45,7 +45,7 @@ func TestGetImagePullSecret(t *testing.T) {
 
 	require.NoError(t, err)
 
-	secret, err = GetImagePullSecret(fakeClient, instance)
+	secret, err = GetImagePullSecret(fakeClient, dk)
 
 	assert.NotNil(t, secret)
 	require.NoError(t, err)

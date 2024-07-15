@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
@@ -29,19 +29,19 @@ func getTestSecurityContext() *corev1.SecurityContext {
 
 func TestCreateMutationRequestBase(t *testing.T) {
 	t.Run("should create a mutation request", func(t *testing.T) {
-		dynakube := getTestDynakube()
+		dk := getTestDynakube()
 		podWebhook := createTestWebhook(
 			[]dtwebhook.PodMutator{},
 			[]client.Object{
 				getTestNamespace(),
 				getTestPod(),
-				dynakube,
+				dk,
 			})
 		mutationRequest, err := podWebhook.createMutationRequestBase(context.Background(), *createTestAdmissionRequest(getTestPod()))
 		require.NoError(t, err)
 		require.NotNil(t, mutationRequest)
 
-		expected := createTestMutationRequest(dynakube)
+		expected := createTestMutationRequest(dk)
 		assert.Equal(t, expected.Pod.ObjectMeta, mutationRequest.Pod.ObjectMeta)
 		assert.Equal(t, expected.Pod.Spec.Containers, mutationRequest.Pod.Spec.Containers)
 		assert.Equal(t, expected.Pod.Spec.InitContainers, mutationRequest.Pod.Spec.InitContainers)
@@ -102,8 +102,8 @@ func TestGetDynakube(t *testing.T) {
 	})
 }
 
-func createTestMutationRequest(dynakube *dynatracev1beta2.DynaKube) *dtwebhook.MutationRequest {
-	return dtwebhook.NewMutationRequest(context.Background(), *getTestNamespace(), nil, getTestPod(), *dynakube)
+func createTestMutationRequest(dk *dynakube.DynaKube) *dtwebhook.MutationRequest {
+	return dtwebhook.NewMutationRequest(context.Background(), *getTestNamespace(), nil, getTestPod(), *dk)
 }
 
 func createTestAdmissionRequest(pod *corev1.Pod) *admission.Request {

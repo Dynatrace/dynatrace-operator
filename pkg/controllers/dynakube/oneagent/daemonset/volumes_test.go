@@ -11,36 +11,36 @@ import (
 )
 
 func TestPrepareVolumes(t *testing.T) {
-	t.Run("has defaults if instance is nil", func(t *testing.T) {
+	t.Run("has defaults if dk is nil", func(t *testing.T) {
 		volumes := prepareVolumes(nil)
 
 		assert.Contains(t, volumes, getRootVolume())
 	})
 	t.Run(`has root volume`, func(t *testing.T) {
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: dynakube.OneAgentSpec{
 					HostMonitoring: &dynakube.HostInjectSpec{},
 				},
 			},
 		}
-		volumes := prepareVolumes(instance)
+		volumes := prepareVolumes(dk)
 
 		assert.Contains(t, volumes, getRootVolume())
-		assert.NotContains(t, volumes, getCertificateVolume(instance))
+		assert.NotContains(t, volumes, getCertificateVolume(dk))
 	})
 	t.Run(`has tenant secret volume`, func(t *testing.T) {
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			ObjectMeta: corev1.ObjectMeta{
 				Name: testName,
 			},
 		}
-		volumes := prepareVolumes(instance)
+		volumes := prepareVolumes(dk)
 
-		assert.Contains(t, volumes, getOneAgentSecretVolume(instance))
+		assert.Contains(t, volumes, getOneAgentSecretVolume(dk))
 	})
 	t.Run(`has certificate volume`, func(t *testing.T) {
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				TrustedCAs: testName,
 				OneAgent: dynakube.OneAgentSpec{
@@ -48,25 +48,25 @@ func TestPrepareVolumes(t *testing.T) {
 				},
 			},
 		}
-		volumes := prepareVolumes(instance)
+		volumes := prepareVolumes(dk)
 
 		assert.Contains(t, volumes, getRootVolume())
-		assert.Contains(t, volumes, getCertificateVolume(instance))
+		assert.Contains(t, volumes, getCertificateVolume(dk))
 	})
 	t.Run(`has http_proxy volume`, func(t *testing.T) {
-		instance := &dynakube.DynaKube{}
-		instance.Spec =
+		dk := &dynakube.DynaKube{}
+		dk.Spec =
 			dynakube.DynaKubeSpec{
-				Proxy: &dynakube.DynaKubeProxy{ValueFrom: proxy.BuildSecretName(instance.Name)},
+				Proxy: &dynakube.DynaKubeProxy{ValueFrom: proxy.BuildSecretName(dk.Name)},
 			}
 
-		volumes := prepareVolumes(instance)
+		volumes := prepareVolumes(dk)
 
 		assert.Contains(t, volumes, getRootVolume())
-		assert.Contains(t, volumes, buildHttpProxyVolume(instance))
+		assert.Contains(t, volumes, buildHttpProxyVolume(dk))
 	})
 	t.Run(`has tls volume`, func(t *testing.T) {
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				TrustedCAs: testName,
 				ActiveGate: dynakube.ActiveGateSpec{
@@ -80,22 +80,22 @@ func TestPrepareVolumes(t *testing.T) {
 				},
 			},
 		}
-		volumes := prepareVolumes(instance)
-		assert.Contains(t, volumes, getActiveGateCaCertVolume(instance))
+		volumes := prepareVolumes(dk)
+		assert.Contains(t, volumes, getActiveGateCaCertVolume(dk))
 	})
 	t.Run(`csi volume not supported on classicFullStack`, func(t *testing.T) {
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: dynakube.OneAgentSpec{
 					ClassicFullStack: &dynakube.HostInjectSpec{},
 				},
 			},
 		}
-		volumes := prepareVolumes(instance)
-		assert.NotContains(t, volumes, getCSIStorageVolume(instance))
+		volumes := prepareVolumes(dk)
+		assert.NotContains(t, volumes, getCSIStorageVolume(dk))
 	})
 	t.Run(`has all volumes`, func(t *testing.T) {
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				TrustedCAs: testName,
 				OneAgent: dynakube.OneAgentSpec{
@@ -111,8 +111,8 @@ func TestPrepareVolumes(t *testing.T) {
 		}
 		dsBuilder := hostMonitoring{
 			builder{
-				dk:             instance,
-				hostInjectSpec: instance.Spec.OneAgent.HostMonitoring,
+				dk:             dk,
+				hostInjectSpec: dk.Spec.OneAgent.HostMonitoring,
 				clusterID:      "",
 			},
 		}
@@ -122,33 +122,33 @@ func TestPrepareVolumes(t *testing.T) {
 		volumes := ds.Spec.Template.Spec.Volumes
 
 		assert.Contains(t, volumes, getRootVolume())
-		assert.Contains(t, volumes, getCertificateVolume(instance))
-		assert.Contains(t, volumes, getActiveGateCaCertVolume(instance))
-		assert.Contains(t, volumes, getCSIStorageVolume(instance))
+		assert.Contains(t, volumes, getCertificateVolume(dk))
+		assert.Contains(t, volumes, getActiveGateCaCertVolume(dk))
+		assert.Contains(t, volumes, getCSIStorageVolume(dk))
 	})
 }
 
 func TestPrepareVolumeMounts(t *testing.T) {
-	t.Run("has defaults if instance is nil", func(t *testing.T) {
+	t.Run("has defaults if dk is nil", func(t *testing.T) {
 		volumeMounts := prepareVolumeMounts(nil)
 
 		assert.Contains(t, volumeMounts, getRootMount())
 	})
 	t.Run(`has root volume mount`, func(t *testing.T) {
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: dynakube.OneAgentSpec{
 					HostMonitoring: &dynakube.HostInjectSpec{},
 				},
 			},
 		}
-		volumeMounts := prepareVolumeMounts(instance)
+		volumeMounts := prepareVolumeMounts(dk)
 
 		assert.Contains(t, volumeMounts, getReadOnlyRootMount())
 		assert.NotContains(t, volumeMounts, getActiveGateCaCertVolumeMount())
 	})
 	t.Run(`has cluster certificate volume mount`, func(t *testing.T) {
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: dynakube.OneAgentSpec{
 					HostMonitoring: &dynakube.HostInjectSpec{},
@@ -156,14 +156,14 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				TrustedCAs: testName,
 			},
 		}
-		volumeMounts := prepareVolumeMounts(instance)
+		volumeMounts := prepareVolumeMounts(dk)
 
 		assert.Contains(t, volumeMounts, getReadOnlyRootMount())
 		assert.Contains(t, volumeMounts, getClusterCaCertVolumeMount())
 		assert.NotContains(t, volumeMounts, getActiveGateCaCertVolumeMount())
 	})
 	t.Run(`has ActiveGate CA volume mount`, func(t *testing.T) {
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: dynakube.OneAgentSpec{
 					HostMonitoring: &dynakube.HostInjectSpec{},
@@ -178,26 +178,26 @@ func TestPrepareVolumeMounts(t *testing.T) {
 			},
 		}
 
-		volumeMounts := prepareVolumeMounts(instance)
+		volumeMounts := prepareVolumeMounts(dk)
 
 		assert.Contains(t, volumeMounts, getReadOnlyRootMount())
 		assert.Contains(t, volumeMounts, getActiveGateCaCertVolumeMount())
 	})
 	t.Run(`readonly volume not supported on classicFullStack`, func(t *testing.T) {
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: dynakube.OneAgentSpec{
 					ClassicFullStack: &dynakube.HostInjectSpec{},
 				},
 			},
 		}
-		volumeMounts := prepareVolumeMounts(instance)
+		volumeMounts := prepareVolumeMounts(dk)
 
 		assert.Contains(t, volumeMounts, getRootMount())
 		assert.NotContains(t, volumeMounts, getCSIStorageMount())
 	})
 	t.Run(`has all volume mounts`, func(t *testing.T) {
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				TrustedCAs: testName,
 				OneAgent: dynakube.OneAgentSpec{
@@ -213,8 +213,8 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		}
 		dsBuilder := hostMonitoring{
 			builder{
-				dk:             instance,
-				hostInjectSpec: instance.Spec.OneAgent.HostMonitoring,
+				dk:             dk,
+				hostInjectSpec: dk.Spec.OneAgent.HostMonitoring,
 				clusterID:      "",
 			},
 		}
@@ -228,7 +228,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		assert.Contains(t, volumeMounts, getCSIStorageMount())
 	})
 	t.Run(`has no volume if proxy is set and proxy ignore feature-flags is used`, func(t *testing.T) {
-		instance := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			ObjectMeta: corev1.ObjectMeta{
 				Name:      "Dynakube",
 				Namespace: "dynatrace",
@@ -244,10 +244,10 @@ func TestPrepareVolumeMounts(t *testing.T) {
 			},
 		}
 
-		volumes := prepareVolumes(instance)
-		mounts := prepareVolumeMounts(instance)
+		volumes := prepareVolumes(dk)
+		mounts := prepareVolumeMounts(dk)
 
-		assert.NotContains(t, volumes, buildHttpProxyVolume(instance))
+		assert.NotContains(t, volumes, buildHttpProxyVolume(dk))
 		assert.NotContains(t, mounts, getHttpProxyMount())
 	})
 }

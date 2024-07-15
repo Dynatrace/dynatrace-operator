@@ -18,12 +18,12 @@ type Reconciler struct {
 	timeProvider *timeprovider.Provider
 }
 
-type ReconcilerBuilder func(dtc dtclient.Client, dynakube *dynakube.DynaKube) controllers.Reconciler
+type ReconcilerBuilder func(dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler
 
-func NewReconciler(dtc dtclient.Client, dynakube *dynakube.DynaKube) controllers.Reconciler {
+func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler {
 	return &Reconciler{
 		dtc:          dtc,
-		dk:           dynakube,
+		dk:           dk,
 		timeProvider: timeprovider.New(),
 	}
 }

@@ -10,88 +10,88 @@ import (
 )
 
 func createDynakubeWithAnnotation(keyValues ...string) DynaKube {
-	dynakube := DynaKube{
+	dk := DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations: map[string]string{},
 		},
 	}
 
 	for i := 0; i < len(keyValues); i += 2 {
-		dynakube.Annotations[keyValues[i]] = keyValues[i+1]
+		dk.Annotations[keyValues[i]] = keyValues[i+1]
 	}
 
-	return dynakube
+	return dk
 }
 
 func createDynakubeEmptyDynakube() DynaKube {
-	dynakube := DynaKube{
+	dk := DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations: map[string]string{},
 		},
 	}
 
-	return dynakube
+	return dk
 }
 
 func TestCreateDynakubeWithAnnotation(t *testing.T) {
-	dynakube := createDynakubeWithAnnotation("test", "true")
+	dk := createDynakubeWithAnnotation("test", "true")
 
-	assert.Contains(t, dynakube.Annotations, "test")
-	assert.Equal(t, "true", dynakube.Annotations["test"])
+	assert.Contains(t, dk.Annotations, "test")
+	assert.Equal(t, "true", dk.Annotations["test"])
 
-	dynakube = createDynakubeWithAnnotation("other test", "false")
+	dk = createDynakubeWithAnnotation("other test", "false")
 
-	assert.Contains(t, dynakube.Annotations, "other test")
-	assert.Equal(t, "false", dynakube.Annotations["other test"])
-	assert.NotContains(t, dynakube.Annotations, "test")
+	assert.Contains(t, dk.Annotations, "other test")
+	assert.Equal(t, "false", dk.Annotations["other test"])
+	assert.NotContains(t, dk.Annotations, "test")
 
-	dynakube = createDynakubeWithAnnotation("test", "true", "other test", "false")
+	dk = createDynakubeWithAnnotation("test", "true", "other test", "false")
 
-	assert.Contains(t, dynakube.Annotations, "other test")
-	assert.Equal(t, "false", dynakube.Annotations["other test"])
-	assert.Contains(t, dynakube.Annotations, "test")
-	assert.Equal(t, "true", dynakube.Annotations["test"])
+	assert.Contains(t, dk.Annotations, "other test")
+	assert.Equal(t, "false", dk.Annotations["other test"])
+	assert.Contains(t, dk.Annotations, "test")
+	assert.Equal(t, "true", dk.Annotations["test"])
 }
 
 func testDeprecateDisableAnnotation(t *testing.T,
 	newAnnotation string,
 	deprecatedAnnotation string,
-	propertyFunction func(dynakube DynaKube) bool) {
+	propertyFunction func(dk DynaKube) bool) {
 	// New annotation works
-	dynakube := createDynakubeWithAnnotation(newAnnotation, "false")
+	dk := createDynakubeWithAnnotation(newAnnotation, "false")
 
-	assert.True(t, propertyFunction(dynakube))
+	assert.True(t, propertyFunction(dk))
 
-	dynakube = createDynakubeWithAnnotation(newAnnotation, "true")
+	dk = createDynakubeWithAnnotation(newAnnotation, "true")
 
-	assert.False(t, propertyFunction(dynakube))
+	assert.False(t, propertyFunction(dk))
 
 	// Old annotation works
-	dynakube = createDynakubeWithAnnotation(deprecatedAnnotation, "true")
+	dk = createDynakubeWithAnnotation(deprecatedAnnotation, "true")
 
-	assert.True(t, propertyFunction(dynakube))
+	assert.True(t, propertyFunction(dk))
 
-	dynakube = createDynakubeWithAnnotation(deprecatedAnnotation, "false")
+	dk = createDynakubeWithAnnotation(deprecatedAnnotation, "false")
 
-	assert.False(t, propertyFunction(dynakube))
+	assert.False(t, propertyFunction(dk))
 
 	// New annotation takes precedent
-	dynakube = createDynakubeWithAnnotation(
+	dk = createDynakubeWithAnnotation(
 		newAnnotation, "true",
 		deprecatedAnnotation, "true")
 
-	assert.False(t, propertyFunction(dynakube))
+	assert.False(t, propertyFunction(dk))
 
-	dynakube = createDynakubeWithAnnotation(
+	dk = createDynakubeWithAnnotation(
 		newAnnotation, "false",
 		deprecatedAnnotation, "false")
 
-	assert.True(t, propertyFunction(dynakube))
+	assert.True(t, propertyFunction(dk))
 
 	// Default is false
-	dynakube = createDynakubeWithAnnotation()
+	dk = createDynakubeWithAnnotation()
 
-	assert.False(t, propertyFunction(dynakube))
+	assert.False(t, propertyFunction(dk))
 }
 
 func TestDeprecatedDisableAnnotations(t *testing.T) {
@@ -99,50 +99,50 @@ func TestDeprecatedDisableAnnotations(t *testing.T) {
 		testDeprecateDisableAnnotation(t,
 			AnnotationFeatureActiveGateUpdates,
 			AnnotationFeatureDisableActiveGateUpdates,
-			func(dynakube DynaKube) bool {
-				return dynakube.FeatureDisableActiveGateUpdates()
+			func(dk DynaKube) bool {
+				return dk.FeatureDisableActiveGateUpdates()
 			})
 	})
 }
 
 func TestDeprecatedEnableAnnotations(t *testing.T) {
-	dynakube := createDynakubeWithAnnotation(AnnotationInjectionFailurePolicy, "fail")
-	assert.Equal(t, "fail", dynakube.FeatureInjectionFailurePolicy())
+	dk := createDynakubeWithAnnotation(AnnotationInjectionFailurePolicy, "fail")
+	assert.Equal(t, "fail", dk.FeatureInjectionFailurePolicy())
 }
 
 func TestMaxMountAttempts(t *testing.T) {
-	dynakube := createDynakubeWithAnnotation(
+	dk := createDynakubeWithAnnotation(
 		AnnotationFeatureMaxFailedCsiMountAttempts, "5")
 
-	assert.Equal(t, 5, dynakube.FeatureMaxFailedCsiMountAttempts())
+	assert.Equal(t, 5, dk.FeatureMaxFailedCsiMountAttempts())
 
-	dynakube = createDynakubeWithAnnotation(
+	dk = createDynakubeWithAnnotation(
 		AnnotationFeatureMaxFailedCsiMountAttempts, "3")
 
-	assert.Equal(t, 3, dynakube.FeatureMaxFailedCsiMountAttempts())
+	assert.Equal(t, 3, dk.FeatureMaxFailedCsiMountAttempts())
 
-	dynakube = createDynakubeWithAnnotation()
+	dk = createDynakubeWithAnnotation()
 
-	assert.Equal(t, DefaultMaxFailedCsiMountAttempts, dynakube.FeatureMaxFailedCsiMountAttempts())
+	assert.Equal(t, DefaultMaxFailedCsiMountAttempts, dk.FeatureMaxFailedCsiMountAttempts())
 
-	dynakube = createDynakubeWithAnnotation(
+	dk = createDynakubeWithAnnotation(
 		AnnotationFeatureMaxFailedCsiMountAttempts, "a")
 
-	assert.Equal(t, DefaultMaxFailedCsiMountAttempts, dynakube.FeatureMaxFailedCsiMountAttempts())
+	assert.Equal(t, DefaultMaxFailedCsiMountAttempts, dk.FeatureMaxFailedCsiMountAttempts())
 
-	dynakube = createDynakubeWithAnnotation(
+	dk = createDynakubeWithAnnotation(
 		AnnotationFeatureMaxFailedCsiMountAttempts, "-5")
 
-	assert.Equal(t, DefaultMaxFailedCsiMountAttempts, dynakube.FeatureMaxFailedCsiMountAttempts())
+	assert.Equal(t, DefaultMaxFailedCsiMountAttempts, dk.FeatureMaxFailedCsiMountAttempts())
 }
 
 func TestDynaKube_FeatureIgnoredNamespaces(t *testing.T) {
-	dynakube := DynaKube{
+	dk := DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "test",
 		},
 	}
-	ignoredNamespaces := dynakube.getDefaultIgnoredNamespaces()
+	ignoredNamespaces := dk.getDefaultIgnoredNamespaces()
 	dynakubeNamespaceMatches := false
 
 	for _, namespace := range ignoredNamespaces {
@@ -150,7 +150,7 @@ func TestDynaKube_FeatureIgnoredNamespaces(t *testing.T) {
 
 		require.NoError(t, err)
 
-		match := regex.MatchString(dynakube.Namespace)
+		match := regex.MatchString(dk.Namespace)
 
 		if match {
 			dynakubeNamespaceMatches = true
@@ -161,18 +161,18 @@ func TestDynaKube_FeatureIgnoredNamespaces(t *testing.T) {
 }
 
 func TestDefaultEnabledFeatureFlags(t *testing.T) {
-	dynakube := createDynakubeEmptyDynakube()
+	dk := createDynakubeEmptyDynakube()
 
-	assert.True(t, dynakube.FeatureAutomaticKubernetesApiMonitoring())
-	assert.True(t, dynakube.FeatureAutomaticInjection())
-	assert.Equal(t, "silent", dynakube.FeatureInjectionFailurePolicy())
+	assert.True(t, dk.FeatureAutomaticKubernetesApiMonitoring())
+	assert.True(t, dk.FeatureAutomaticInjection())
+	assert.Equal(t, "silent", dk.FeatureInjectionFailurePolicy())
 
-	assert.False(t, dynakube.FeatureDisableActiveGateUpdates())
-	assert.False(t, dynakube.FeatureLabelVersionDetection())
+	assert.False(t, dk.FeatureDisableActiveGateUpdates())
+	assert.False(t, dk.FeatureLabelVersionDetection())
 }
 
 func TestInjectionFailurePolicy(t *testing.T) {
-	dynakube := createDynakubeEmptyDynakube()
+	dk := createDynakubeEmptyDynakube()
 
 	modes := map[string]string{
 		failPhrase:   failPhrase,
@@ -180,33 +180,33 @@ func TestInjectionFailurePolicy(t *testing.T) {
 	}
 	for configuredMode, expectedMode := range modes {
 		t.Run(`injection failure policy: `+configuredMode, func(t *testing.T) {
-			dynakube.Annotations[AnnotationInjectionFailurePolicy] = configuredMode
+			dk.Annotations[AnnotationInjectionFailurePolicy] = configuredMode
 
-			assert.Equal(t, expectedMode, dynakube.FeatureInjectionFailurePolicy())
+			assert.Equal(t, expectedMode, dk.FeatureInjectionFailurePolicy())
 		})
 	}
 }
 
 func TestAgentInitialConnectRetry(t *testing.T) {
 	t.Run("default => not set", func(t *testing.T) {
-		dynakube := createDynakubeEmptyDynakube()
+		dk := createDynakubeEmptyDynakube()
 
-		initialRetry := dynakube.FeatureAgentInitialConnectRetry()
+		initialRetry := dk.FeatureAgentInitialConnectRetry()
 		require.Equal(t, -1, initialRetry)
 	})
 	t.Run("istio default => set", func(t *testing.T) {
-		dynakube := createDynakubeEmptyDynakube()
-		dynakube.Spec.EnableIstio = true
+		dk := createDynakubeEmptyDynakube()
+		dk.Spec.EnableIstio = true
 
-		initialRetry := dynakube.FeatureAgentInitialConnectRetry()
+		initialRetry := dk.FeatureAgentInitialConnectRetry()
 		require.Equal(t, IstioDefaultOneAgentInitialConnectRetry, initialRetry)
 	})
 	t.Run("istio default can be overruled", func(t *testing.T) {
-		dynakube := createDynakubeEmptyDynakube()
-		dynakube.Spec.EnableIstio = true
-		dynakube.Annotations[AnnotationFeatureOneAgentInitialConnectRetry] = "5"
+		dk := createDynakubeEmptyDynakube()
+		dk.Spec.EnableIstio = true
+		dk.Annotations[AnnotationFeatureOneAgentInitialConnectRetry] = "5"
 
-		initialRetry := dynakube.FeatureAgentInitialConnectRetry()
+		initialRetry := dk.FeatureAgentInitialConnectRetry()
 		require.Equal(t, 5, initialRetry)
 	})
 }

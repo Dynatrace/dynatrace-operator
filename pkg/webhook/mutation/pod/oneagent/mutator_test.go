@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
@@ -38,7 +38,7 @@ func TestEnabled(t *testing.T) {
 	t.Run("on by default", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, getTestNamespace(nil))
-		request.DynaKube.Spec.OneAgent.ApplicationMonitoring = &dynatracev1beta2.ApplicationMonitoringSpec{}
+		request.DynaKube.Spec.OneAgent.ApplicationMonitoring = &dynakube.ApplicationMonitoringSpec{}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -47,7 +47,7 @@ func TestEnabled(t *testing.T) {
 	t.Run("off by feature flag", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, getTestNamespace(nil))
-		request.DynaKube.Annotations = map[string]string{dynatracev1beta2.AnnotationFeatureAutomaticInjection: "false"}
+		request.DynaKube.Annotations = map[string]string{dynakube.AnnotationFeatureAutomaticInjection: "false"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -56,8 +56,8 @@ func TestEnabled(t *testing.T) {
 	t.Run("on with feature flag", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, getTestNamespace(nil))
-		request.DynaKube.Spec.OneAgent.ApplicationMonitoring = &dynatracev1beta2.ApplicationMonitoringSpec{}
-		request.DynaKube.Annotations = map[string]string{dynatracev1beta2.AnnotationFeatureAutomaticInjection: "true"}
+		request.DynaKube.Spec.OneAgent.ApplicationMonitoring = &dynakube.ApplicationMonitoringSpec{}
+		request.DynaKube.Annotations = map[string]string{dynakube.AnnotationFeatureAutomaticInjection: "true"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -66,7 +66,7 @@ func TestEnabled(t *testing.T) {
 	t.Run("on with namespaceselector", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, getTestNamespaceWithMatchingLabel(nil, testLabelKeyMatching, testLabelValue))
-		request.DynaKube.Annotations = map[string]string{dynatracev1beta2.AnnotationFeatureAutomaticInjection: "true"}
+		request.DynaKube.Annotations = map[string]string{dynakube.AnnotationFeatureAutomaticInjection: "true"}
 		request.DynaKube = *addNamespaceSelector(&request.DynaKube)
 
 		enabled := mutator.Enabled(request.BaseRequest)
@@ -76,7 +76,7 @@ func TestEnabled(t *testing.T) {
 	t.Run("off due to not matching namespaceselector", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, getTestNamespaceWithMatchingLabel(nil, testLabelKeyNotMatching, testLabelValue))
-		request.DynaKube.Annotations = map[string]string{dynatracev1beta2.AnnotationFeatureAutomaticInjection: "true"}
+		request.DynaKube.Annotations = map[string]string{dynakube.AnnotationFeatureAutomaticInjection: "true"}
 		request.DynaKube = *addNamespaceSelector(&request.DynaKube)
 
 		enabled := mutator.Enabled(request.BaseRequest)
@@ -116,7 +116,7 @@ func TestEnsureInitSecret(t *testing.T) {
 
 type mutateTestCase struct {
 	name                                   string
-	dynakube                               dynatracev1beta2.DynaKube
+	dk                                     dynakube.DynaKube
 	expectedAdditionalEnvCount             int
 	expectedAdditionalVolumeCount          int
 	expectedAdditionalVolumeMountCount     int
@@ -127,7 +127,7 @@ func TestMutate(t *testing.T) {
 	testCases := []mutateTestCase{
 		{
 			name:                                   "basic, should mutate the pod and init container in the request",
-			dynakube:                               *getTestDynakube(),
+			dk:                                     *getTestDynakube(),
 			expectedAdditionalEnvCount:             2, // 1 deployment-metadata + 1 preload
 			expectedAdditionalVolumeCount:          3, // bin, share, injection-config
 			expectedAdditionalVolumeMountCount:     3, // 3 oneagent mounts(preload,bin,conf)
@@ -135,7 +135,7 @@ func TestMutate(t *testing.T) {
 		},
 		{
 			name:                                   "everything turned on, should mutate the pod and init container in the request",
-			dynakube:                               *getTestComplexDynakube(),
+			dk:                                     *getTestComplexDynakube(),
 			expectedAdditionalEnvCount:             5, // 1 deployment-metadata + 1 network-zone + 1 preload + 2 version-detection
 			expectedAdditionalVolumeCount:          3, // bin, share, injection-config
 			expectedAdditionalVolumeMountCount:     5, // 3 oneagent mounts(preload,bin,conf) + 1 cert mount + 1 curl-options
@@ -143,7 +143,7 @@ func TestMutate(t *testing.T) {
 		},
 		{
 			name:                                   "basic + readonly-csi, should mutate the pod and init container in the request",
-			dynakube:                               *getTestReadOnlyCSIDynakube(),
+			dk:                                     *getTestReadOnlyCSIDynakube(),
 			expectedAdditionalEnvCount:             2, // 1 deployment-metadata + 1 preload
 			expectedAdditionalVolumeCount:          6, // bin, share, injection-config +  agent-conf, data-storage, agent-log
 			expectedAdditionalVolumeMountCount:     6, // 3 oneagent mounts(preload,bin,conf) +3 oneagent mounts for readonly csi (agent-conf,data-storage,agent-log)
@@ -154,7 +154,7 @@ func TestMutate(t *testing.T) {
 	for index, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
-			request := createTestMutationRequest(&testCases[index].dynakube, nil, getTestNamespace(nil))
+			request := createTestMutationRequest(&testCases[index].dk, nil, getTestNamespace(nil))
 
 			initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
 			initialNumberOfVolumesLen := len(request.Pod.Spec.Volumes)
@@ -182,10 +182,10 @@ func TestMutate(t *testing.T) {
 }
 
 func TestNoCommunicationHostsMutate(t *testing.T) {
-	dynaKube := getTestNoCommunicationHostDynakube()
+	dk := getTestNoCommunicationHostDynakube()
 
 	mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
-	request := createTestMutationRequest(dynaKube, nil, getTestNamespace(nil))
+	request := createTestMutationRequest(dk, nil, getTestNamespace(nil))
 
 	initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
 	initialNumberOfVolumesLen := len(request.Pod.Spec.Volumes)
@@ -216,7 +216,7 @@ func TestNoCommunicationHostsMutate(t *testing.T) {
 
 type reinvokeTestCase struct {
 	name                               string
-	dynakube                           dynatracev1beta2.DynaKube
+	dk                                 dynakube.DynaKube
 	expectedAdditionalEnvCount         int
 	expectedAdditionalVolumeMountCount int
 }
@@ -225,19 +225,19 @@ func TestReinvoke(t *testing.T) {
 	testCases := []reinvokeTestCase{
 		{
 			name:                               "basic, should mutate the pod and init container in the request",
-			dynakube:                           *getTestDynakube(),
+			dk:                                 *getTestDynakube(),
 			expectedAdditionalEnvCount:         2, // 1 deployment-metadata + 1 preload
 			expectedAdditionalVolumeMountCount: 3, // 3 oneagent mounts(preload,bin,conf)
 		},
 		{
 			name:                               "everything turned on, should mutate the pod and init container in the request",
-			dynakube:                           *getTestComplexDynakube(),
+			dk:                                 *getTestComplexDynakube(),
 			expectedAdditionalEnvCount:         5, // 1 deployment-metadata + 1 network-zone + 1 preload + 2 version-detection
 			expectedAdditionalVolumeMountCount: 5, // 3 oneagent mounts(preload,bin,conf) + 1 cert mount + 1 curl-options
 		},
 		{
 			name:                               "basic + readonly-csi, should mutate the pod and init container in the request",
-			dynakube:                           *getTestReadOnlyCSIDynakube(),
+			dk:                                 *getTestReadOnlyCSIDynakube(),
 			expectedAdditionalEnvCount:         2, // 1 deployment-metadata + 1 preload
 			expectedAdditionalVolumeMountCount: 6, // 3 oneagent mounts(preload,bin,conf) +3 oneagent mounts for readonly csi (agent-conf,data-storage,agent-log)
 		},
@@ -246,7 +246,7 @@ func TestReinvoke(t *testing.T) {
 	for index, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
-			request := createTestReinvocationRequest(&testCases[index].dynakube, map[string]string{dtwebhook.AnnotationOneAgentInjected: "true"})
+			request := createTestReinvocationRequest(&testCases[index].dk, map[string]string{dtwebhook.AnnotationOneAgentInjected: "true"})
 
 			initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
 			initialNumberOfVolumesLen := len(request.Pod.Spec.Volumes)
@@ -302,21 +302,21 @@ func getTestInitSecret() *corev1.Secret {
 	}
 }
 
-func addNamespaceSelector(dynakube *dynatracev1beta2.DynaKube) *dynatracev1beta2.DynaKube {
-	dynakube.Spec.OneAgent.ApplicationMonitoring = &dynatracev1beta2.ApplicationMonitoringSpec{}
+func addNamespaceSelector(dk *dynakube.DynaKube) *dynakube.DynaKube {
+	dk.Spec.OneAgent.ApplicationMonitoring = &dynakube.ApplicationMonitoringSpec{}
 
-	dynakube.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = metav1.LabelSelector{
+	dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = metav1.LabelSelector{
 		MatchLabels: map[string]string{
 			testLabelKeyMatching: testLabelValue,
 		},
 	}
 
-	return dynakube
+	return dk
 }
 
-func createTestMutationRequest(dynakube *dynatracev1beta2.DynaKube, podAnnotations map[string]string, namespace corev1.Namespace) *dtwebhook.MutationRequest {
-	if dynakube == nil {
-		dynakube = &dynatracev1beta2.DynaKube{}
+func createTestMutationRequest(dk *dynakube.DynaKube, podAnnotations map[string]string, namespace corev1.Namespace) *dtwebhook.MutationRequest {
+	if dk == nil {
+		dk = &dynakube.DynaKube{}
 	}
 
 	return dtwebhook.NewMutationRequest(
@@ -326,61 +326,61 @@ func createTestMutationRequest(dynakube *dynatracev1beta2.DynaKube, podAnnotatio
 			Name: dtwebhook.InstallContainerName,
 		},
 		getTestPod(podAnnotations),
-		*dynakube,
+		*dk,
 	)
 }
 
-func createTestReinvocationRequest(dynakube *dynatracev1beta2.DynaKube, annotations map[string]string) *dtwebhook.ReinvocationRequest {
-	request := createTestMutationRequest(dynakube, annotations, getTestNamespace(nil)).ToReinvocationRequest()
+func createTestReinvocationRequest(dk *dynakube.DynaKube, annotations map[string]string) *dtwebhook.ReinvocationRequest {
+	request := createTestMutationRequest(dk, annotations, getTestNamespace(nil)).ToReinvocationRequest()
 	request.Pod.Spec.InitContainers = append(request.Pod.Spec.InitContainers, corev1.Container{Name: dtwebhook.InstallContainerName})
 
 	return request
 }
 
-func getTestCSIDynakube() *dynatracev1beta2.DynaKube {
-	return &dynatracev1beta2.DynaKube{
+func getTestCSIDynakube() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
 		ObjectMeta: getTestDynakubeMeta(),
-		Spec: dynatracev1beta2.DynaKubeSpec{
-			OneAgent: dynatracev1beta2.OneAgentSpec{
-				CloudNativeFullStack: &dynatracev1beta2.CloudNativeFullStackSpec{},
+		Spec: dynakube.DynaKubeSpec{
+			OneAgent: dynakube.OneAgentSpec{
+				CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 			},
 		},
 		Status: getTestDynakubeCommunicationHostStatus(),
 	}
 }
 
-func getTestReadOnlyCSIDynakube() *dynatracev1beta2.DynaKube {
+func getTestReadOnlyCSIDynakube() *dynakube.DynaKube {
 	dk := getTestCSIDynakube()
-	dk.Annotations[dynatracev1beta2.AnnotationFeatureReadOnlyCsiVolume] = "true"
+	dk.Annotations[dynakube.AnnotationFeatureReadOnlyCsiVolume] = "true"
 
 	return dk
 }
 
-func getTestNoCommunicationHostDynakube() *dynatracev1beta2.DynaKube {
+func getTestNoCommunicationHostDynakube() *dynakube.DynaKube {
 	dk := getTestCSIDynakube()
-	dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynatracev1beta2.CommunicationHostStatus{}
+	dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynakube.CommunicationHostStatus{}
 
 	return dk
 }
 
-func getTestDynakube() *dynatracev1beta2.DynaKube {
-	return &dynatracev1beta2.DynaKube{
+func getTestDynakube() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
 		ObjectMeta: getTestDynakubeMeta(),
-		Spec: dynatracev1beta2.DynaKubeSpec{
-			OneAgent: dynatracev1beta2.OneAgentSpec{
-				ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{},
+		Spec: dynakube.DynaKubeSpec{
+			OneAgent: dynakube.OneAgentSpec{
+				ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{},
 			},
 		},
 		Status: getTestDynakubeCommunicationHostStatus(),
 	}
 }
 
-func getTestDynakubeWithContainerExclusion() *dynatracev1beta2.DynaKube {
-	dk := &dynatracev1beta2.DynaKube{
+func getTestDynakubeWithContainerExclusion() *dynakube.DynaKube {
+	dk := &dynakube.DynaKube{
 		ObjectMeta: getTestDynakubeMeta(),
-		Spec: dynatracev1beta2.DynaKubeSpec{
-			OneAgent: dynatracev1beta2.OneAgentSpec{
-				ApplicationMonitoring: &dynatracev1beta2.ApplicationMonitoringSpec{},
+		Spec: dynakube.DynaKubeSpec{
+			OneAgent: dynakube.OneAgentSpec{
+				ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{},
 			},
 		},
 		Status: getTestDynakubeCommunicationHostStatus(),
@@ -390,11 +390,11 @@ func getTestDynakubeWithContainerExclusion() *dynatracev1beta2.DynaKube {
 	return dk
 }
 
-func getTestDynakubeCommunicationHostStatus() dynatracev1beta2.DynaKubeStatus {
-	return dynatracev1beta2.DynaKubeStatus{
-		OneAgent: dynatracev1beta2.OneAgentStatus{
-			ConnectionInfoStatus: dynatracev1beta2.OneAgentConnectionInfoStatus{
-				CommunicationHosts: []dynatracev1beta2.CommunicationHostStatus{
+func getTestDynakubeCommunicationHostStatus() dynakube.DynaKubeStatus {
+	return dynakube.DynaKubeStatus{
+		OneAgent: dynakube.OneAgentStatus{
+			ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
+				CommunicationHosts: []dynakube.CommunicationHostStatus{
 					{
 						Protocol: "http",
 						Host:     "dummyhost",
@@ -414,20 +414,20 @@ func getTestDynakubeMeta() metav1.ObjectMeta {
 	}
 }
 
-func getTestComplexDynakube() *dynatracev1beta2.DynaKube {
-	dynakube := getTestCSIDynakube()
-	dynakube.Spec.Proxy = &dynatracev1beta2.DynaKubeProxy{Value: "test-proxy"}
-	dynakube.Spec.NetworkZone = "test-network-zone"
-	dynakube.Spec.ActiveGate = dynatracev1beta2.ActiveGateSpec{
-		Capabilities:  []dynatracev1beta2.CapabilityDisplayName{dynatracev1beta2.KubeMonCapability.DisplayName},
+func getTestComplexDynakube() *dynakube.DynaKube {
+	dk := getTestCSIDynakube()
+	dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: "test-proxy"}
+	dk.Spec.NetworkZone = "test-network-zone"
+	dk.Spec.ActiveGate = dynakube.ActiveGateSpec{
+		Capabilities:  []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName},
 		TlsSecretName: "super-secret",
 	}
-	dynakube.Annotations = map[string]string{
-		dynatracev1beta2.AnnotationFeatureOneAgentInitialConnectRetry: "5",
-		dynatracev1beta2.AnnotationFeatureLabelVersionDetection:       "true",
+	dk.Annotations = map[string]string{
+		dynakube.AnnotationFeatureOneAgentInitialConnectRetry: "5",
+		dynakube.AnnotationFeatureLabelVersionDetection:       "true",
 	}
 
-	return dynakube
+	return dk
 }
 
 func getTestPod(annotations map[string]string) *corev1.Pod {

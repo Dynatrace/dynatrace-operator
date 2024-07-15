@@ -3,7 +3,7 @@ package mapper
 import (
 	"context"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -15,11 +15,11 @@ type DynakubeMapper struct {
 	ctx        context.Context
 	client     client.Client
 	apiReader  client.Reader
-	dk         *dynatracev1beta2.DynaKube
+	dk         *dynakube.DynaKube
 	operatorNs string
 }
 
-func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.Reader, operatorNs string, dk *dynatracev1beta2.DynaKube) DynakubeMapper {
+func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.Reader, operatorNs string, dk *dynakube.DynaKube) DynakubeMapper {
 	return DynakubeMapper{ctx: ctx, client: clt, apiReader: apiReader, operatorNs: operatorNs, dk: dk}
 }
 
@@ -41,7 +41,7 @@ func (dm DynakubeMapper) MatchingNamespaces() ([]*corev1.Namespace, error) {
 		return nil, errors.Cause(err)
 	}
 
-	dkList := &dynatracev1beta2.DynaKubeList{}
+	dkList := &dynakube.DynaKubeList{}
 	if err := dm.apiReader.List(dm.ctx, dkList, &client.ListOptions{Namespace: dm.operatorNs}); err != nil {
 		return nil, errors.Cause(err)
 	}
@@ -62,7 +62,7 @@ func (dm DynakubeMapper) UnmapFromDynaKube(namespaces []corev1.Namespace) error 
 	return nil
 }
 
-func (dm DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *dynatracev1beta2.DynaKubeList) ([]*corev1.Namespace, error) {
+func (dm DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *dynakube.DynaKubeList) ([]*corev1.Namespace, error) {
 	var updated bool
 
 	var err error

@@ -1,7 +1,7 @@
 package modifiers
 
 import (
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
@@ -15,9 +15,9 @@ import (
 var _ envModifier = ServicePortModifier{}
 var _ builder.Modifier = ServicePortModifier{}
 
-func NewServicePortModifier(dynakube dynatracev1beta2.DynaKube, capability capability.Capability, envMap *prioritymap.Map) ServicePortModifier {
+func NewServicePortModifier(dk dynakube.DynaKube, capability capability.Capability, envMap *prioritymap.Map) ServicePortModifier {
 	return ServicePortModifier{
-		dynakube:   dynakube,
+		dk:         dk,
 		capability: capability,
 		envMap:     envMap,
 	}
@@ -26,11 +26,11 @@ func NewServicePortModifier(dynakube dynatracev1beta2.DynaKube, capability capab
 type ServicePortModifier struct {
 	capability capability.Capability
 	envMap     *prioritymap.Map
-	dynakube   dynatracev1beta2.DynaKube
+	dk         dynakube.DynaKube
 }
 
 func (mod ServicePortModifier) Enabled() bool {
-	return mod.dynakube.NeedsActiveGateServicePorts()
+	return mod.dk.NeedsActiveGateServicePorts()
 }
 
 func (mod ServicePortModifier) Modify(sts *appsv1.StatefulSet) error {
@@ -49,7 +49,7 @@ func (mod ServicePortModifier) getPorts() []corev1.ContainerPort {
 			ContainerPort: consts.HttpsContainerPort,
 		},
 	}
-	if mod.dynakube.IsMetricsIngestActiveGateEnabled() {
+	if mod.dk.IsMetricsIngestActiveGateEnabled() {
 		ports = append(ports, corev1.ContainerPort{
 			Name:          consts.HttpServicePortName,
 			ContainerPort: consts.HttpContainerPort,
@@ -73,5 +73,5 @@ func (mod ServicePortModifier) getEnvs() []corev1.EnvVar {
 }
 
 func (mod ServicePortModifier) buildDNSEntryPoint() string {
-	return capability.BuildDNSEntryPoint(mod.dynakube, mod.capability)
+	return capability.BuildDNSEntryPoint(mod.dk, mod.capability)
 }

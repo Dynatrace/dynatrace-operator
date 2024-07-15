@@ -27,7 +27,7 @@ const (
 func TestUseImmutableImage(t *testing.T) {
 	t.Run(`use image from status`, func(t *testing.T) {
 		imageID := "my.repo.com/image:my-tag"
-		instance := dynakube.DynaKube{
+		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
 				OneAgent: dynakube.OneAgentSpec{
@@ -42,7 +42,7 @@ func TestUseImmutableImage(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewClassicFullStack(&instance, testClusterID)
+		dsBuilder := NewClassicFullStack(&dk, testClusterID)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -56,7 +56,7 @@ func TestLabels(t *testing.T) {
 	feature := strings.ReplaceAll(deploymentmetadata.ClassicFullStackDeploymentType, "_", "")
 
 	t.Run("use version when set", func(t *testing.T) {
-		instance := dynakube.DynaKube{
+		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
 				OneAgent: dynakube.OneAgentSpec{
@@ -73,17 +73,17 @@ func TestLabels(t *testing.T) {
 		}
 		expectedLabels := map[string]string{
 			labels.AppNameLabel:      labels.OneAgentComponentLabel,
-			labels.AppCreatedByLabel: instance.Name,
+			labels.AppCreatedByLabel: dk.Name,
 			labels.AppComponentLabel: feature,
 			labels.AppVersionLabel:   testImageTag,
 			labels.AppManagedByLabel: version.AppName,
 		}
 		expectedMatchLabels := map[string]string{
 			labels.AppNameLabel:      labels.OneAgentComponentLabel,
-			labels.AppCreatedByLabel: instance.Name,
+			labels.AppCreatedByLabel: dk.Name,
 			labels.AppManagedByLabel: version.AppName,
 		}
-		dsBuilder := NewClassicFullStack(&instance, testClusterID)
+		dsBuilder := NewClassicFullStack(&dk, testClusterID)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -94,7 +94,7 @@ func TestLabels(t *testing.T) {
 		assert.Equal(t, expectedLabels, ds.Spec.Template.Labels)
 	})
 	t.Run("if no version is set, no version label", func(t *testing.T) {
-		instance := dynakube.DynaKube{
+		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
 				OneAgent: dynakube.OneAgentSpec{
@@ -105,18 +105,18 @@ func TestLabels(t *testing.T) {
 
 		expectedLabels := map[string]string{
 			labels.AppNameLabel:      labels.OneAgentComponentLabel,
-			labels.AppCreatedByLabel: instance.Name,
+			labels.AppCreatedByLabel: dk.Name,
 			labels.AppVersionLabel:   "",
 			labels.AppComponentLabel: feature,
 			labels.AppManagedByLabel: version.AppName,
 		}
 		expectedMatchLabels := map[string]string{
 			labels.AppNameLabel:      labels.OneAgentComponentLabel,
-			labels.AppCreatedByLabel: instance.Name,
+			labels.AppCreatedByLabel: dk.Name,
 			labels.AppManagedByLabel: version.AppName,
 		}
 
-		dsBuilder := NewClassicFullStack(&instance, testClusterID)
+		dsBuilder := NewClassicFullStack(&dk, testClusterID)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -129,7 +129,7 @@ func TestLabels(t *testing.T) {
 }
 
 func TestCustomPullSecret(t *testing.T) {
-	instance := dynakube.DynaKube{
+	dk := dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testDynakubeName,
 		},
@@ -141,7 +141,7 @@ func TestCustomPullSecret(t *testing.T) {
 			CustomPullSecret: testName,
 		},
 	}
-	dsBuilder := NewClassicFullStack(&instance, testClusterID)
+	dsBuilder := NewClassicFullStack(&dk, testClusterID)
 	ds, err := dsBuilder.BuildDaemonSet()
 	require.NoError(t, err)
 
@@ -154,7 +154,7 @@ func TestCustomPullSecret(t *testing.T) {
 
 func TestResources(t *testing.T) {
 	t.Run(`minimal cpu request of 100mC is set if no resources specified`, func(t *testing.T) {
-		instance := dynakube.DynaKube{
+		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
 				OneAgent: dynakube.OneAgentSpec{
@@ -162,7 +162,7 @@ func TestResources(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewClassicFullStack(&instance, testClusterID)
+		dsBuilder := NewClassicFullStack(&dk, testClusterID)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -179,7 +179,7 @@ func TestResources(t *testing.T) {
 		memoryRequest := resource.NewScaledQuantity(1, 3)
 		memoryLimit := resource.NewScaledQuantity(2, 3)
 
-		instance := dynakube.DynaKube{
+		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
 				OneAgent: dynakube.OneAgentSpec{
@@ -199,7 +199,7 @@ func TestResources(t *testing.T) {
 			},
 		}
 
-		dsBuilder := NewClassicFullStack(&instance, testClusterID)
+		dsBuilder := NewClassicFullStack(&dk, testClusterID)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -253,7 +253,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		assert.Equal(t, defaultSecurityContextCapabilities(), securityContext.Capabilities)
 	})
 	t.Run(`User and group id set when read only mode is enabled`, func(t *testing.T) {
-		instance := dynakube.DynaKube{
+		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
 				OneAgent: dynakube.OneAgentSpec{
@@ -261,7 +261,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&instance, testClusterID)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -280,7 +280,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 	})
 
 	t.Run("old version does not have ReadOnlyRootFilesystem", func(t *testing.T) {
-		instance := dynakube.DynaKube{
+		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
 				OneAgent: dynakube.OneAgentSpec{
@@ -295,7 +295,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&instance, testClusterID)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -309,7 +309,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 	})
 
 	t.Run("newer version has ReadOnlyRootFilesystem", func(t *testing.T) {
-		instance := dynakube.DynaKube{
+		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
 				OneAgent: dynakube.OneAgentSpec{
@@ -324,7 +324,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&instance, testClusterID)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -338,7 +338,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 	})
 
 	t.Run(`privileged security context when feature flag is enabled`, func(t *testing.T) {
-		instance := dynakube.DynaKube{
+		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
 					dynakube.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
@@ -351,7 +351,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&instance, testClusterID)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -369,7 +369,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 	})
 
 	t.Run(`privileged security context when feature flag is enabled for classic fullstack`, func(t *testing.T) {
-		instance := dynakube.DynaKube{
+		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
 					dynakube.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
@@ -382,7 +382,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewClassicFullStack(&instance, testClusterID)
+		dsBuilder := NewClassicFullStack(&dk, testClusterID)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -401,7 +401,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 
 	t.Run(`localhost seccomp profile when feature flag is enabled`, func(t *testing.T) {
 		customSecCompProfile := "seccomp.json"
-		instance := dynakube.DynaKube{
+		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
@@ -412,7 +412,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewClassicFullStack(&instance, testClusterID)
+		dsBuilder := NewClassicFullStack(&dk, testClusterID)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -432,7 +432,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 
 	t.Run(`localhost seccomp profile disabled if privileged security context enabled`, func(t *testing.T) {
 		customSecCompProfile := "seccomp.json"
-		instance := dynakube.DynaKube{
+		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
 					dynakube.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
@@ -447,7 +447,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewClassicFullStack(&instance, testClusterID)
+		dsBuilder := NewClassicFullStack(&dk, testClusterID)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 

@@ -13,7 +13,7 @@ const (
 
 var log = logd.Get().WithName("edgeconnect-validation")
 
-type validator func(ctx context.Context, dv *edgeconnectValidator, edgeConnect *edgeconnect.EdgeConnect) string
+type validator func(ctx context.Context, dv *edgeconnectValidator, ec *edgeconnect.EdgeConnect) string
 
 var validators = []validator{
 	isInvalidApiServer,

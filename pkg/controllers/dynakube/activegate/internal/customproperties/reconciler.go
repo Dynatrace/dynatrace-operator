@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/pkg/errors"
@@ -25,15 +25,15 @@ var _ controllers.Reconciler = &Reconciler{}
 
 type Reconciler struct {
 	client                    client.Client
-	customPropertiesSource    *dynatracev1beta2.DynaKubeValueSource
-	instance                  *dynatracev1beta2.DynaKube
+	customPropertiesSource    *dynakube.DynaKubeValueSource
+	dk                        *dynakube.DynaKube
 	customPropertiesOwnerName string
 }
 
-func NewReconciler(clt client.Client, instance *dynatracev1beta2.DynaKube, customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta2.DynaKubeValueSource) *Reconciler {
+func NewReconciler(clt client.Client, dk *dynakube.DynaKube, customPropertiesOwnerName string, customPropertiesSource *dynakube.DynaKubeValueSource) *Reconciler {
 	return &Reconciler{
 		client:                    clt,
-		instance:                  instance,
+		dk:                        dk,
 		customPropertiesSource:    customPropertiesSource,
 		customPropertiesOwnerName: customPropertiesOwnerName,
 	}
@@ -69,7 +69,7 @@ func (r *Reconciler) createCustomPropertiesIfNotExists(ctx context.Context) (boo
 	var customPropertiesSecret corev1.Secret
 
 	err := r.client.Get(ctx,
-		client.ObjectKey{Name: r.buildCustomPropertiesName(r.instance.Name), Namespace: r.instance.Namespace}, &customPropertiesSecret)
+		client.ObjectKey{Name: r.buildCustomPropertiesName(r.dk.Name), Namespace: r.dk.Namespace}, &customPropertiesSecret)
 	if err != nil && k8serrors.IsNotFound(err) {
 		return true, r.createCustomProperties()
 	}
@@ -81,7 +81,7 @@ func (r *Reconciler) updateCustomPropertiesIfOutdated(ctx context.Context) error
 	var customPropertiesSecret corev1.Secret
 
 	err := r.client.Get(ctx,
-		client.ObjectKey{Name: r.buildCustomPropertiesName(r.instance.Name), Namespace: r.instance.Namespace},
+		client.ObjectKey{Name: r.buildCustomPropertiesName(r.dk.Name), Namespace: r.dk.Namespace},
 		&customPropertiesSecret)
 	if err != nil {
 		return errors.WithStack(err)
@@ -105,9 +105,9 @@ func (r *Reconciler) updateCustomProperties(ctx context.Context, customPropertie
 }
 
 func (r *Reconciler) createCustomProperties() error {
-	customPropertiesSecret, err := secret.Create(r.instance,
-		secret.NewNameModifier(r.buildCustomPropertiesName(r.instance.Name)),
-		secret.NewNamespaceModifier(r.instance.Namespace),
+	customPropertiesSecret, err := secret.Create(r.dk,
+		secret.NewNameModifier(r.buildCustomPropertiesName(r.dk.Name)),
+		secret.NewNamespaceModifier(r.dk.Namespace),
 		secret.NewDataModifier(map[string][]byte{
 			DataKey: []byte(r.customPropertiesSource.Value),
 		}))
