@@ -35,7 +35,7 @@ webhooks:
         apiGroups:
           - dynatrace.com
         apiVersions:
-          - v1beta2
+          - v1beta3
         resources:
           - dynakubes
     name: webhook.dynatrace.com
