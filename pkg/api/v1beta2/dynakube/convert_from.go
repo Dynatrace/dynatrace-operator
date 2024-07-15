@@ -1,9 +1,6 @@
 package dynakube
 
 import (
-	"encoding/json"
-
-	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	v1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
@@ -16,11 +13,6 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.fromOneAgentSpec(src)
 	dst.fromActiveGateSpec(src)
 	dst.fromMetadataEnrichment(src)
-
-	if err := dst.fromExtensions(src); err != nil {
-		return err
-	}
-
 	dst.fromStatus(src)
 
 	return nil
@@ -178,35 +170,4 @@ func fromAppInjectSpec(src v1beta3.AppInjectionSpec) *AppInjectionSpec {
 func (dst *DynaKube) fromMetadataEnrichment(src *v1beta3.DynaKube) {
 	dst.Spec.MetadataEnrichment.Enabled = src.Spec.MetadataEnrichment.Enabled
 	dst.Spec.MetadataEnrichment.NamespaceSelector = src.Spec.MetadataEnrichment.NamespaceSelector
-}
-
-func (dst *DynaKube) fromExtensions(src *v1beta3.DynaKube) error {
-	e := src.Spec.Extensions
-
-	ex, err := json.Marshal(e)
-	if err != nil {
-		return err
-	}
-
-	dst.Annotations[api.AnnotationDynatraceExtensions] = string(ex)
-
-	o := src.Spec.Templates.OpenTelemetryCollector
-
-	otel, err := json.Marshal(o)
-	if err != nil {
-		return err
-	}
-
-	dst.Annotations[api.AnnotationDynatraceOpenTelemetryCollector] = string(otel)
-
-	ee := src.Spec.Templates.ExtensionExecutionController
-
-	eec, err := json.Marshal(ee)
-	if err != nil {
-		return err
-	}
-
-	dst.Annotations[api.AnnotationDynatraceextEnsionExecutionController] = string(eec)
-
-	return nil
 }
