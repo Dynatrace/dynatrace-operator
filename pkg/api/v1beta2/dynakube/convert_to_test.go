@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	v1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -16,7 +16,7 @@ var testTime = metav1.Now()
 
 func TestConvertTo(t *testing.T) {
 	t.Run("migrate from v1beta2 to v1beta3", func(t *testing.T) {
-		to := v1beta3.DynaKube{}
+		to := dynakube.DynaKube{}
 		from := getOldDynakubeBase()
 
 		from.ConvertTo(&to)
@@ -28,7 +28,7 @@ func TestConvertTo(t *testing.T) {
 		from := getOldDynakubeBase()
 		hostSpec := getOldHostInjectSpec()
 		from.Spec.OneAgent.HostMonitoring = &hostSpec
-		to := v1beta3.DynaKube{}
+		to := dynakube.DynaKube{}
 
 		from.ConvertTo(&to)
 
@@ -41,7 +41,7 @@ func TestConvertTo(t *testing.T) {
 		from := getOldDynakubeBase()
 		hostSpec := getOldHostInjectSpec()
 		from.Spec.OneAgent.ClassicFullStack = &hostSpec
-		to := v1beta3.DynaKube{}
+		to := dynakube.DynaKube{}
 
 		from.ConvertTo(&to)
 
@@ -54,7 +54,7 @@ func TestConvertTo(t *testing.T) {
 		from := getOldDynakubeBase()
 		spec := getOldCloudNativeSpec()
 		from.Spec.OneAgent.CloudNativeFullStack = &spec
-		to := v1beta3.DynaKube{}
+		to := dynakube.DynaKube{}
 
 		from.ConvertTo(&to)
 
@@ -66,7 +66,7 @@ func TestConvertTo(t *testing.T) {
 		from := getOldDynakubeBase()
 		appSpec := getOldApplicationMonitoringSpec()
 		from.Spec.OneAgent.ApplicationMonitoring = &appSpec
-		to := v1beta3.DynaKube{}
+		to := dynakube.DynaKube{}
 
 		from.ConvertTo(&to)
 
@@ -77,7 +77,7 @@ func TestConvertTo(t *testing.T) {
 		from := getOldDynakubeBase()
 		agSpec := getOldActiveGateSpec()
 		from.Spec.ActiveGate = agSpec
-		to := v1beta3.DynaKube{}
+		to := dynakube.DynaKube{}
 
 		from.ConvertTo(&to)
 
@@ -88,7 +88,7 @@ func TestConvertTo(t *testing.T) {
 	t.Run("migrate status from v1beta2 to v1beta3", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Status = getOldStatus()
-		to := v1beta3.DynaKube{}
+		to := dynakube.DynaKube{}
 
 		from.ConvertTo(&to)
 
@@ -98,7 +98,7 @@ func TestConvertTo(t *testing.T) {
 	t.Run("migrate hostGroup", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Status = getOldStatus()
-		to := v1beta3.DynaKube{}
+		to := dynakube.DynaKube{}
 
 		from.ConvertTo(&to)
 
@@ -127,8 +127,8 @@ func getOldDynakubeBase() DynaKube {
 			Name:      "name",
 			Namespace: "namespace",
 			Annotations: map[string]string{
-				v1beta3.AnnotationFeatureActiveGateIgnoreProxy:     "true",
-				v1beta3.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
+				dynakube.AnnotationFeatureActiveGateIgnoreProxy:     "true",
+				dynakube.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
 			},
 			Labels: map[string]string{
 				"label": "label-value",
