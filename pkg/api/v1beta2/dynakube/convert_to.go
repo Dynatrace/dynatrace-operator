@@ -27,11 +27,11 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 }
 
 func (src *DynaKube) toBase(dst *v1beta3.DynaKube) {
+	dst.ObjectMeta = *src.ObjectMeta.DeepCopy() // DeepCopy mainly relevant for testing
+
 	if dst.Annotations == nil {
 		dst.Annotations = map[string]string{}
 	}
-
-	dst.ObjectMeta = *src.ObjectMeta.DeepCopy() // DeepCopy mainly relevant for testing
 
 	dst.Spec.APIURL = src.Spec.APIURL
 	dst.Spec.Tokens = src.Spec.Tokens
@@ -78,6 +78,7 @@ func (src *DynaKube) toActiveGateSpec(dst *v1beta3.DynaKube) {
 	dst.Spec.ActiveGate.TopologySpreadConstraints = src.Spec.ActiveGate.TopologySpreadConstraints
 	dst.Spec.ActiveGate.Resources = src.Spec.ActiveGate.Resources
 	dst.Spec.ActiveGate.Replicas = src.Spec.ActiveGate.Replicas
+	dst.Spec.ActiveGate.Capabilities = []v1beta3.CapabilityDisplayName{}
 
 	for _, capability := range src.Spec.ActiveGate.Capabilities {
 		dst.Spec.ActiveGate.Capabilities = append(dst.Spec.ActiveGate.Capabilities, v1beta3.CapabilityDisplayName(capability))
