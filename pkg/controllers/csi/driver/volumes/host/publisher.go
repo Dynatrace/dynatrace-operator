@@ -37,18 +37,23 @@ const failedToGetOsAgentVolumePrefix = "failed to get OSMount from database: "
 
 func NewHostVolumePublisher(fs afero.Afero, mounter mount.Interface, db metadata.Access, path metadata.PathResolver) csivolumes.Publisher {
 	return &HostVolumePublisher{
-		fs:      fs,
-		mounter: mounter,
-		db:      db,
-		path:    path,
+		fs:           fs,
+		mounter:      mounter,
+		db:           db,
+		path:         path,
+		isNotMounted: mount.IsNotMountPoint,
 	}
 }
 
+// necessary for mocking, as the MounterMock will use the os package
+type mountChecker func(mounter mount.Interface, file string) (bool, error)
+
 type HostVolumePublisher struct {
-	fs      afero.Afero
-	mounter mount.Interface
-	db      metadata.Access
-	path    metadata.PathResolver
+	fs           afero.Afero
+	mounter      mount.Interface
+	db           metadata.Access
+	isNotMounted mountChecker
+	path         metadata.PathResolver
 }
 
 func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeCfg csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
@@ -62,7 +67,19 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 		return nil, status.Error(codes.Internal, failedToGetOsAgentVolumePrefix+err.Error())
 	}
 
-	if osMount != nil && osMount.DeletedAt.Valid {
+	if osMount != nil {
+		if !osMount.DeletedAt.Valid {
+			// If the OSAgents were removed forcefully, we might not get the unmount request, so we can't fully relay on the database, and have to directly check if its mounted or not
+			isNotMounted, err := publisher.isNotMounted(publisher.mounter, osMount.Location)
+			if err != nil {
+				return nil, err
+			}
+
+			if !isNotMounted {
+				return &csi.NodePublishVolumeResponse{}, goerrors.New("previous OSMount is yet to be unmounted, there can be only 1 OSMount per tenant per node, blocking until unmount") // don't want to have the stacktrace here, it just pollutes the logs
+			}
+		}
+
 		osMount.VolumeMeta = metadata.VolumeMeta{
 			ID:      volumeCfg.VolumeID,
 			PodName: volumeCfg.PodName,
@@ -79,9 +96,7 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 		}
 
 		return &csi.NodePublishVolumeResponse{}, nil
-	}
-
-	if osMount == nil && errors.Is(err, gorm.ErrRecordNotFound) {
+	} else {
 		osMount := metadata.OSMount{
 			VolumeMeta:    metadata.VolumeMeta{ID: volumeCfg.VolumeID, PodName: volumeCfg.PodName},
 			VolumeMetaID:  volumeCfg.VolumeID,
@@ -98,8 +113,6 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 		if err := publisher.db.CreateOSMount(&osMount); err != nil {
 			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to insert OSMount to database. info: %v err: %s", osMount, err.Error()))
 		}
-	} else {
-		return &csi.NodePublishVolumeResponse{}, goerrors.New("previous OSMount is yet to be unmounted, there can be only 1 OSMount per tenant per node, blocking until unmount") // don't want to have the stacktrace here, it just pollutes the logs
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
