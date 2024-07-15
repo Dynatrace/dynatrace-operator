@@ -90,7 +90,7 @@ func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error
 func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "dynakube", request.Name)
 
-	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer, csiotel.SpanOptions()...)
 	defer span.End()
 
 	dk, err := provisioner.needsReconcile(ctx, request)
@@ -216,7 +216,7 @@ func (provisioner *OneAgentProvisioner) setupTenantConfig(dk *dynakube.DynaKube)
 }
 
 func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer, csiotel.SpanOptions()...)
 	defer span.End()
 
 	result, err := provisioner.gc.Reconcile(ctx, request)
@@ -259,7 +259,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 	requeue bool,
 	err error,
 ) {
-	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer, csiotel.SpanOptions()...)
 	defer span.End()
 
 	latestProcessModuleConfig, err := processmoduleconfigsecret.GetSecretData(ctx, provisioner.apiReader, dk.Name, dk.Namespace)
@@ -334,7 +334,7 @@ func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynakub
 }
 
 func (provisioner *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.NamespacedName) (*dynakube.DynaKube, error) {
-	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer, csiotel.SpanOptions()...)
 	defer span.End()
 
 	var dk dynakube.DynaKube

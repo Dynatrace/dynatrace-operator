@@ -147,7 +147,7 @@ func (svr *Server) GetPluginCapabilities(context.Context, *csi.GetPluginCapabili
 }
 
 func (svr *Server) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
-	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer, csiotel.SpanOptions()...)
 	defer span.End()
 
 	volumeCfg, err := csivolumes.ParseNodePublishVolumeRequest(req)
@@ -176,7 +176,7 @@ func (svr *Server) NodePublishVolume(ctx context.Context, req *csi.NodePublishVo
 }
 
 func (svr *Server) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (response *csi.NodeUnpublishVolumeResponse, err error) {
-	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer, csiotel.SpanOptions()...)
 	defer span.End()
 
 	volumeInfo, err := csivolumes.ParseNodeUnpublishVolumeRequest(req)

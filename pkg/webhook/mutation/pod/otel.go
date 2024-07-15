@@ -3,7 +3,6 @@ package pod
 import (
 	"context"
 	"os"
-	"sync"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/internal/otel"
@@ -17,20 +16,15 @@ const (
 	podMutationHandledMetricName = "handledPodMutationRequests"
 )
 
-var envPodName string
-var once = sync.Once{}
+var podName string
 
-func getWebhookPodName() string {
-	once.Do(func() {
-		envPodName = os.Getenv("POD_NAME")
-	})
-
-	return envPodName
+func init() {
+	podName = os.Getenv("POD_NAME")
 }
 
 func countHandleMutationRequest(ctx context.Context, mutatedPodName string) {
-	dtotel.Count(ctx, webhookotel.Meter(), podMutationHandledMetricName, int64(1),
-		attribute.String(webhookotel.WebhookPodNameKey, getWebhookPodName()),
+	dtotel.Count(ctx, webhookotel.Meter, podMutationHandledMetricName, int64(1),
+		attribute.String(webhookotel.WebhookPodNameKey, podName),
 		attribute.String(mutatedPodNameKey, mutatedPodName))
 }
 
@@ -38,7 +32,7 @@ func spanOptions(opts ...trace.SpanStartOption) []trace.SpanStartOption {
 	options := make([]trace.SpanStartOption, 0)
 	options = append(options, opts...)
 	options = append(options, trace.WithAttributes(
-		attribute.String(webhookotel.WebhookPodNameKey, getWebhookPodName())))
+		attribute.String(webhookotel.WebhookPodNameKey, podName)))
 
 	return options
 }

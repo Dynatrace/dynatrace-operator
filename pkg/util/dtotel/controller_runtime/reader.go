@@ -23,7 +23,7 @@ func NewReader(wrapped client.Reader) client.Reader {
 // obj must be a struct pointer so that obj can be updated with the response
 // returned by the Server.
 func (r wrappedReader) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-	ctx, span := dtotel.StartSpan(ctx, controllerRuntimeTracer())
+	ctx, span := dtotel.StartSpan(ctx, ControllerRuntimeTracer)
 	defer span.End()
 
 	err := r.wrapped.Get(ctx, key, obj, opts...)
@@ -36,7 +36,7 @@ func (r wrappedReader) Get(ctx context.Context, key client.ObjectKey, obj client
 // successful call, Items field in the list will be populated with the
 // result returned from the server.
 func (r wrappedReader) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
-	ctx, span := dtotel.StartSpan(ctx, controllerRuntimeTracer())
+	ctx, span := dtotel.StartSpan(ctx, ControllerRuntimeTracer)
 	defer span.End()
 
 	err := r.wrapped.List(ctx, list, opts...)

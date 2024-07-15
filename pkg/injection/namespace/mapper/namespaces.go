@@ -26,7 +26,7 @@ func NewNamespaceMapper(clt client.Client, apiReader client.Reader, operatorNs s
 
 // MapFromNamespace adds the labels to the targetNs if there is a matching Dynakube
 func (nm NamespaceMapper) MapFromNamespace(ctx context.Context) (bool, error) {
-	ctx, span := dtotel.StartSpan(ctx, injectionotel.Tracer())
+	ctx, span := dtotel.StartSpan(ctx, injectionotel.Tracer)
 	defer span.End()
 
 	updatedNamespace, err := nm.updateNamespace(ctx)
@@ -40,7 +40,7 @@ func (nm NamespaceMapper) MapFromNamespace(ctx context.Context) (bool, error) {
 }
 
 func (nm NamespaceMapper) updateNamespace(ctx context.Context) (bool, error) {
-	ctx, span := dtotel.StartSpan(ctx, injectionotel.Tracer())
+	ctx, span := dtotel.StartSpan(ctx, injectionotel.Tracer)
 	defer span.End()
 
 	deployedDynakubes := &dynakube.DynaKubeList{}

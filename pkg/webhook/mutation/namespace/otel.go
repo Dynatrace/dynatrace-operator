@@ -16,8 +16,8 @@ const (
 )
 
 func countHandleMutationRequest(ctx context.Context, namespace string) {
-	dtotel.Count(ctx, webhookotel.Meter(), namespaceMutationHandledMetricName, int64(1),
-		attribute.String(webhookotel.WebhookPodNameKey, webhookotel.GetWebhookPodName()),
+	dtotel.Count(ctx, webhookotel.Meter, namespaceMutationHandledMetricName, int64(1),
+		attribute.String(webhookotel.WebhookPodNameKey, webhookotel.WebhookPodName),
 		attribute.String(mutatedNamespaceNameKey, namespace))
 }
 
@@ -25,7 +25,7 @@ func spanOptions(opts ...trace.SpanStartOption) []trace.SpanStartOption {
 	options := make([]trace.SpanStartOption, 0)
 	options = append(options, opts...)
 	options = append(options, trace.WithAttributes(
-		attribute.String(webhookotel.WebhookPodNameKey, webhookotel.GetWebhookPodName())))
+		attribute.String(webhookotel.WebhookPodNameKey, webhookotel.WebhookPodName)))
 
 	return options
 }

@@ -57,7 +57,7 @@ func (mut *Mutator) Injected(request *dtwebhook.BaseRequest) bool {
 }
 
 func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationRequest) error {
-	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
+	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer)
 	defer span.End()
 
 	if !request.DynaKube.IsOneAgentCommunicationRouteClear() {

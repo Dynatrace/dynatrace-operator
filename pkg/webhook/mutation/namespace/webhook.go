@@ -40,7 +40,7 @@ type webhook struct {
 //  2. if the namespace was updated by the operator => don't do the mapping: we detect this using an annotation, we do this because the operator also does the mapping
 //     but from the dynakube's side (during dynakube reconcile) and we don't want to repeat ourselves. So we just remove the annotation.
 func (wh *webhook) Handle(ctx context.Context, request admission.Request) admission.Response {
-	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
+	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer, spanOptions()...)
 	defer span.End()
 	countHandleMutationRequest(ctx, request.Namespace)
 

@@ -59,7 +59,7 @@ type HostVolumePublisher struct {
 }
 
 func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeCfg csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
-	_, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	_, span := dtotel.StartSpan(ctx, csiotel.Tracer, csiotel.SpanOptions()...)
 	defer span.End()
 
 	tenantConfig, err := publisher.db.ReadTenantConfig(metadata.TenantConfig{Name: volumeCfg.DynakubeName})
@@ -127,7 +127,7 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 }
 
 func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volumeInfo csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
-	_, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	_, span := dtotel.StartSpan(ctx, csiotel.Tracer, csiotel.SpanOptions()...)
 	defer span.End()
 
 	osMount, err := publisher.db.ReadOSMount(metadata.OSMount{VolumeMetaID: volumeInfo.VolumeID})
@@ -159,7 +159,7 @@ func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volum
 }
 
 func (publisher *HostVolumePublisher) CanUnpublishVolume(ctx context.Context, volumeInfo csivolumes.VolumeInfo) (bool, error) {
-	_, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	_, span := dtotel.StartSpan(ctx, csiotel.Tracer, csiotel.SpanOptions()...)
 	defer span.End()
 
 	volume, err := publisher.db.ReadOSMount(metadata.OSMount{VolumeMetaID: volumeInfo.VolumeID})

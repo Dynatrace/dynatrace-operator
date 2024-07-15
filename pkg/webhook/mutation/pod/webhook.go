@@ -61,7 +61,7 @@ type webhook struct {
 }
 
 func (wh *webhook) Handle(ctx context.Context, request admission.Request) admission.Response {
-	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
+	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer, spanOptions()...)
 	defer span.End()
 
 	ctx = httptrace.WithClientTrace(ctx, otelhttptrace.NewClientTrace(ctx))
@@ -126,7 +126,7 @@ func mutationRequired(mutationRequest *dtwebhook.MutationRequest) bool {
 }
 
 func (wh *webhook) setupEventRecorder(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) {
-	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
+	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer, spanOptions()...)
 	defer span.End()
 
 	wh.recorder.dk = &mutationRequest.DynaKube
@@ -134,7 +134,7 @@ func (wh *webhook) setupEventRecorder(ctx context.Context, mutationRequest *dtwe
 }
 
 func (wh *webhook) isInjected(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) bool {
-	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
+	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer, spanOptions()...)
 	defer span.End()
 
 	for _, mutator := range wh.mutators {
@@ -168,7 +168,7 @@ func podNeedsInjection(mutationRequest *dtwebhook.MutationRequest) bool {
 }
 
 func (wh *webhook) handlePodMutation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) error {
-	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
+	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer, spanOptions()...)
 	defer span.End()
 
 	if !podNeedsInjection(mutationRequest) {
@@ -207,7 +207,7 @@ func (wh *webhook) handlePodMutation(ctx context.Context, mutationRequest *dtweb
 }
 
 func (wh *webhook) handlePodReinvocation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) bool {
-	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
+	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer, spanOptions()...)
 	defer span.End()
 
 	var needsUpdate bool
@@ -235,7 +235,7 @@ func setDynatraceInjectedAnnotation(mutationRequest *dtwebhook.MutationRequest) 
 
 // createResponseForPod tries to format pod as json
 func createResponseForPod(ctx context.Context, pod *corev1.Pod, req admission.Request) admission.Response {
-	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
+	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer, spanOptions()...)
 	defer span.End()
 
 	marshaledPod, err := json.MarshalIndent(pod, "", "  ")

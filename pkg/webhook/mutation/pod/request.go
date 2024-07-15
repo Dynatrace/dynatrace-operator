@@ -15,7 +15,7 @@ import (
 )
 
 func (wh *webhook) createMutationRequestBase(ctx context.Context, request admission.Request) (*dtwebhook.MutationRequest, error) {
-	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
+	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer)
 	defer span.End()
 
 	pod, err := getPodFromRequest(request, wh.decoder)

@@ -13,7 +13,7 @@ type wrappedWriter struct {
 }
 
 func (w wrappedWriter) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
-	ctx, span := dtotel.StartSpan(ctx, controllerRuntimeTracer())
+	ctx, span := dtotel.StartSpan(ctx, ControllerRuntimeTracer)
 	defer span.End()
 
 	err := w.wrapped.Create(ctx, obj, opts...)
@@ -24,7 +24,7 @@ func (w wrappedWriter) Create(ctx context.Context, obj client.Object, opts ...cl
 
 // Delete deletes the given obj from Kubernetes cluster.
 func (w wrappedWriter) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
-	ctx, span := dtotel.StartSpan(ctx, controllerRuntimeTracer())
+	ctx, span := dtotel.StartSpan(ctx, ControllerRuntimeTracer)
 	defer span.End()
 
 	err := w.wrapped.Delete(ctx, obj, opts...)
@@ -36,7 +36,7 @@ func (w wrappedWriter) Delete(ctx context.Context, obj client.Object, opts ...cl
 // Update updates the given obj in the Kubernetes cluster. obj must be a
 // struct pointer so that obj can be updated with the content returned by the Server.
 func (w wrappedWriter) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
-	ctx, span := dtotel.StartSpan(ctx, controllerRuntimeTracer())
+	ctx, span := dtotel.StartSpan(ctx, ControllerRuntimeTracer)
 	defer span.End()
 
 	err := w.wrapped.Update(ctx, obj, opts...)
@@ -48,7 +48,7 @@ func (w wrappedWriter) Update(ctx context.Context, obj client.Object, opts ...cl
 // Patch patches the given obj in the Kubernetes cluster. obj must be a
 // struct pointer so that obj can be updated with the content returned by the Server.
 func (w wrappedWriter) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
-	ctx, span := dtotel.StartSpan(ctx, controllerRuntimeTracer())
+	ctx, span := dtotel.StartSpan(ctx, ControllerRuntimeTracer)
 	defer span.End()
 
 	err := w.wrapped.Patch(ctx, obj, patch, opts...)
@@ -59,7 +59,7 @@ func (w wrappedWriter) Patch(ctx context.Context, obj client.Object, patch clien
 
 // DeleteAllOf deletes all objects of the given type matching the given options.
 func (w wrappedWriter) DeleteAllOf(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error {
-	ctx, span := dtotel.StartSpan(ctx, controllerRuntimeTracer())
+	ctx, span := dtotel.StartSpan(ctx, ControllerRuntimeTracer)
 	defer span.End()
 
 	err := w.wrapped.DeleteAllOf(ctx, obj, opts...)

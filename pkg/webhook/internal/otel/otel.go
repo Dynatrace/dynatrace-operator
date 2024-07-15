@@ -2,16 +2,10 @@ package otel
 
 import (
 	"os"
-	"sync"
 )
 
-var envPodName string
-var oncePodName = sync.Once{}
+var WebhookPodName string
 
-func GetWebhookPodName() string {
-	oncePodName.Do(func() {
-		envPodName = os.Getenv("POD_NAME")
-	})
-
-	return envPodName
+func init() {
+	WebhookPodName = os.Getenv("POD_NAME")
 }

@@ -25,7 +25,7 @@ import (
 )
 
 func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhookPodName string) error {
-	ctx, span := dtotel.StartSpan(context.Background(), webhookotel.Tracer())
+	ctx, span := dtotel.StartSpan(context.Background(), webhookotel.Tracer)
 	defer span.End()
 
 	// Don't use mgr.GetClient() on this function, or other cache-dependent functions from the manager. The cache may
@@ -70,7 +70,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 		return err
 	}
 
-	requestCounter, err := webhookotel.Meter().Int64Counter("handledPodMutationRequests")
+	requestCounter, err := webhookotel.Meter.Int64Counter("handledPodMutationRequests")
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -125,7 +125,7 @@ func getWebhookContainerImage(webhookPod corev1.Pod) (string, error) {
 }
 
 func getClusterID(ctx context.Context, apiReader client.Reader) (string, error) {
-	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
+	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer)
 	defer span.End()
 
 	if clusterUID, err := kubesystem.GetUID(ctx, apiReader); err != nil {

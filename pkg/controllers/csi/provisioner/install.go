@@ -62,7 +62,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 		return "", err
 	}
 
-	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer, csiotel.SpanOptions()...)
 	defer span.End()
 
 	err = provisioner.installAgent(ctx, imageInstaller, dk, targetDir, targetImage, tenantUUID)
@@ -108,7 +108,7 @@ func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dk 
 		return targetVersion, nil
 	}
 
-	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
+	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer, csiotel.SpanOptions()...)
 	defer span.End()
 
 	err = provisioner.installAgent(ctx, urlInstaller, dk, targetDir, targetVersion, tenantUUID)
