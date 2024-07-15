@@ -9,6 +9,9 @@
 - [Errors](#errors)
   - [Do's](#dos)
   - [Don'ts](#donts)
+- [Naming](#naming)
+  - [Do's](#dos-1)
+  - [Don'ts](#donts-1)
 - [Logging](#logging)
   - [Do's](#dos-1)
   - [Don'ts](#donts-1)
@@ -160,6 +163,61 @@ github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynakube_contro
 sigs.k8s.io/controller-runtime@v0.16.3/pkg/internal/controller/controller.go:227
 runtime.goexit
 ```
+
+## Naming
+
+### Do's
+
+- Use `dynakube` or `edgeconnect` as default package name in imports to simplify CRD version maintenance.
+For example:
+
+```go
+package abc
+
+import (
+    "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+)
+```
+
+```go
+package abc
+
+import (
+    "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+)
+```
+
+- Use `dk` or `ec` as short a version of variable name for instances of `dynakube.Dynakube`, or any func arguments
+to not overlap with package name `dynakube` or `edgeconnect`.
+
+For example:
+
+```go
+dk := dynakube.DynaKube{}
+```
+
+```go
+ec := edgeconnect.EdgeConnect{}
+```
+
+```go
+func (c component) getImage(dk *dynakube.DynaKube) (string, bool) {}
+```
+
+### Don'ts
+
+- Use CRD version inside import alias name:
+
+```go
+package abc
+
+import (
+    dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+)
+```
+
+- Use `dynakube` or `edgeconnect` as variable name or function argument name.
+- Use import alias for api package: `dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"`
 
 ## Logging
 
