@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	capabilityInternal "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/ncctoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	agconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/activegate"
@@ -32,6 +33,7 @@ type Reconciler struct {
 	dk                                *dynakube.DynaKube
 	apiReader                         client.Reader
 	authTokenReconciler               controllers.Reconciler
+	nccTokenReconciler                controllers.Reconciler
 	istioReconciler                   istio.Reconciler
 	connectionReconciler              controllers.Reconciler
 	versionReconciler                 version.Reconciler
@@ -63,6 +65,7 @@ func NewReconciler(clt client.Client, //nolint
 	}
 
 	authTokenReconciler := authtoken.NewReconciler(clt, apiReader, dk, dtc)
+	nccTokenReconciler := ncctoken.NewReconciler(clt, apiReader, dk, dtc)
 	versionReconciler := version.NewReconciler(apiReader, dtc, timeprovider.New().Freeze())
 	connectionInfoReconciler := agconnectioninfo.NewReconciler(clt, apiReader, dtc, dk)
 	pullSecretReconciler := dtpullsecret.NewReconciler(clt, apiReader, dk, tokens)
@@ -76,6 +79,7 @@ func NewReconciler(clt client.Client, //nolint
 		apiReader:                         apiReader,
 		dk:                                dk,
 		authTokenReconciler:               authTokenReconciler,
+		nccTokenReconciler:                nccTokenReconciler,
 		istioReconciler:                   istioReconciler,
 		connectionReconciler:              connectionInfoReconciler,
 		versionReconciler:                 versionReconciler,

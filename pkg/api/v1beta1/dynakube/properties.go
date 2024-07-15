@@ -41,6 +41,7 @@ const (
 	OneAgentConnectionInfoConfigMapSuffix   = "-oneagent-connection-info"
 	ActiveGateConnectionInfoConfigMapSuffix = "-activegate-connection-info"
 	AuthTokenSecretSuffix                   = "-activegate-authtoken-secret"
+	NodeConfigCollectorSecretSuffix         = "-activegate-nodeconfigcollector-secret"
 	PodNameOsAgent                          = "oneagent"
 
 	DefaultActiveGateImageRegistrySubPath = "/linux/activegate"
@@ -196,6 +197,11 @@ func (dk *DynaKube) OneagentTenantSecret() string {
 // ActiveGateAuthTokenSecret returns the name of the secret containing the ActiveGateAuthToken, which is mounted to the AGs.
 func (dk *DynaKube) ActiveGateAuthTokenSecret() string {
 	return dk.Name + AuthTokenSecretSuffix
+}
+
+// NodeCondigCollectorTokenSecret returns the name of the secret containing the ActiveGateAuthToken, which is mounted to the AGs.
+func (dk *DynaKube) NodeConfigCollectorTokenSecret() string {
+	return dk.Name + NodeConfigCollectorSecretSuffix
 }
 
 func (dk *DynaKube) ActiveGateConnectionInfoConfigMapName() string {

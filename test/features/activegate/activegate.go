@@ -40,6 +40,7 @@ var (
 		consts.ActiveGateContainerName: {
 			" /var/lib/dynatrace/secrets/tokens/tenant-token ",
 			" /var/lib/dynatrace/secrets/tokens/auth-token ",
+			" /var/lib/dynatrace/secrets/tokens/kspm",
 			" /opt/dynatrace/gateway/jre/lib/security/cacerts ",
 		},
 	}
