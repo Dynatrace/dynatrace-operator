@@ -46,6 +46,22 @@ func TestStartSpan(t *testing.T) {
 	})
 }
 
+func TestIsEnabled(t *testing.T) {
+	t.Run("span context is empty", func(t *testing.T) {
+		spanContext := trace.SpanContext{}
+
+		assert.False(t, IsEnabled(spanContext))
+	})
+	t.Run("span context is not empty", func(t *testing.T) {
+		spanContext := trace.NewSpanContext(trace.SpanContextConfig{
+			TraceID: trace.TraceID{1, 2, 3},
+			SpanID:  trace.SpanID{4, 5, 6},
+		})
+
+		assert.True(t, IsEnabled(spanContext))
+	})
+}
+
 func TestGetCaller(t *testing.T) {
 	// Call getCaller with stack depth of 1
 	caller := getCaller(1)

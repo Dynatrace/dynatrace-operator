@@ -159,5 +159,37 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		assert.Equal(t, testPodUID, volumeCfg.PodName)
 		assert.Equal(t, "test", volumeCfg.Mode)
 		assert.Equal(t, testDynakubeName, volumeCfg.DynakubeName)
+		assert.Nil(t, volumeCfg.OtelSpanContext)
+	})
+	t.Run(`request is parsed correctly with span context`, func(t *testing.T) {
+		testSpanId := "e9b24894c7e1d920"
+		testTraceId := "3a3555cab7773766e48f3c630d7052aa"
+		request := &csi.NodePublishVolumeRequest{
+			VolumeCapability: &csi.VolumeCapability{
+				AccessType: &csi.VolumeCapability_Mount{
+					Mount: &csi.VolumeCapability_MountVolume{},
+				},
+			},
+			VolumeId:   testVolumeId,
+			TargetPath: testTargetPath,
+			VolumeContext: map[string]string{
+				PodNameContextKey:               testPodUID,
+				CSIVolumeAttributeDynakubeField: testDynakubeName,
+				CSIVolumeAttributeModeField:     "test",
+				CSIOtelTraceId:                  testTraceId,
+				CSIOtelSpanId:                   testSpanId,
+			},
+		}
+		volumeCfg, err := ParseNodePublishVolumeRequest(request)
+
+		require.NoError(t, err)
+		assert.NotNil(t, volumeCfg)
+		assert.Equal(t, testVolumeId, volumeCfg.VolumeID)
+		assert.Equal(t, testTargetPath, volumeCfg.TargetPath)
+		assert.Equal(t, testPodUID, volumeCfg.PodName)
+		assert.Equal(t, "test", volumeCfg.Mode)
+		assert.Equal(t, testDynakubeName, volumeCfg.DynakubeName)
+		assert.Equal(t, testSpanId, volumeCfg.OtelSpanContext.SpanID().String())
+		assert.Equal(t, testTraceId, volumeCfg.OtelSpanContext.TraceID().String())
 	})
 }

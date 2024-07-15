@@ -1,6 +1,7 @@
 package oneagent
 
 import (
+	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
 	"path/filepath"
 	"testing"
 
@@ -117,7 +118,7 @@ func TestAddInitVolumeMounts(t *testing.T) {
 }
 
 func TestAddOneAgentVolumes(t *testing.T) {
-	t.Run("should add oneagent volumes, with csi", func(t *testing.T) {
+	t.Run("should add oneagent volumes, with csi and without Otel attributes", func(t *testing.T) {
 		pod := &corev1.Pod{}
 		dk := getTestCSIDynakube()
 
@@ -125,6 +126,7 @@ func TestAddOneAgentVolumes(t *testing.T) {
 		require.Len(t, pod.Spec.Volumes, 2)
 		assert.NotNil(t, pod.Spec.Volumes[0].VolumeSource.CSI)
 		assert.False(t, *pod.Spec.Volumes[0].VolumeSource.CSI.ReadOnly)
+		assert.Equal(t, len(pod.Spec.Volumes[0].VolumeSource.CSI.VolumeAttributes), 2)
 	})
 
 	t.Run("should add oneagent volumes, with readonly csi", func(t *testing.T) {
@@ -144,6 +146,24 @@ func TestAddOneAgentVolumes(t *testing.T) {
 		addOneAgentVolumes(pod, *dk, trace.SpanContext{})
 		require.Len(t, pod.Spec.Volumes, 2)
 		assert.NotNil(t, pod.Spec.Volumes[0].VolumeSource.EmptyDir)
+	})
+
+	t.Run("should add oneagent volumes, with csi and Otel attributes", func(t *testing.T) {
+		pod := &corev1.Pod{}
+		dk := getTestCSIDynakube()
+
+		spanContext := trace.NewSpanContext(trace.SpanContextConfig{
+			TraceID: trace.TraceID{1, 2, 3},
+			SpanID:  trace.SpanID{4, 5, 6},
+		})
+
+		addOneAgentVolumes(pod, *dk, spanContext)
+		require.Len(t, pod.Spec.Volumes, 2)
+		assert.NotNil(t, pod.Spec.Volumes[0].VolumeSource.CSI)
+		assert.False(t, *pod.Spec.Volumes[0].VolumeSource.CSI.ReadOnly)
+		assert.Equal(t, 4, len(pod.Spec.Volumes[0].VolumeSource.CSI.VolumeAttributes))
+		assert.Contains(t, pod.Spec.Volumes[0].VolumeSource.CSI.VolumeAttributes, csivolumes.CSIOtelSpanId)
+		assert.Contains(t, pod.Spec.Volumes[0].VolumeSource.CSI.VolumeAttributes, csivolumes.CSIOtelTraceId)
 	})
 }
 
