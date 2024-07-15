@@ -27,7 +27,7 @@ webhooks:
       service:
         name: dynatrace-webhook
         namespace: {{ .Release.Namespace }}
-        path: /validate-dynatrace-com-v1beta2-dynakube
+        path: /validate-dynatrace-com-v1beta3-dynakube
     rules:
       - operations:
           - CREATE

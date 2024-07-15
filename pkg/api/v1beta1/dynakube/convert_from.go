@@ -3,14 +3,14 @@ package dynakube
 import (
 	"strconv"
 
-	v1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
-// ConvertFrom converts v1beta2 to v1beta1.
+// ConvertFrom converts v1beta3 to v1beta1.
 func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
-	src := srcRaw.(*v1beta2.DynaKube)
+	src := srcRaw.(*dynakube.DynaKube)
 	dst.fromBase(src)
 	dst.fromOneAgentSpec(src)
 	dst.fromActiveGateSpec(src)
@@ -24,7 +24,7 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	return nil
 }
 
-func (dst *DynaKube) fromBase(src *v1beta2.DynaKube) {
+func (dst *DynaKube) fromBase(src *dynakube.DynaKube) {
 	if src.Annotations == nil {
 		src.Annotations = map[string]string{}
 	}
@@ -41,7 +41,7 @@ func (dst *DynaKube) fromBase(src *v1beta2.DynaKube) {
 	dst.Spec.EnableIstio = src.Spec.EnableIstio
 }
 
-func (dst *DynaKube) fromOneAgentSpec(src *v1beta2.DynaKube) {
+func (dst *DynaKube) fromOneAgentSpec(src *dynakube.DynaKube) {
 	dst.Spec.OneAgent.HostGroup = src.Spec.OneAgent.HostGroup
 
 	switch {
@@ -61,7 +61,7 @@ func (dst *DynaKube) fromOneAgentSpec(src *v1beta2.DynaKube) {
 	}
 }
 
-func (dst *DynaKube) fromActiveGateSpec(src *v1beta2.DynaKube) {
+func (dst *DynaKube) fromActiveGateSpec(src *dynakube.DynaKube) {
 	dst.Spec.ActiveGate.Image = src.Spec.ActiveGate.Image
 	dst.Spec.ActiveGate.PriorityClassName = src.Spec.ActiveGate.PriorityClassName
 	dst.Spec.ActiveGate.TlsSecretName = src.Spec.ActiveGate.TlsSecretName
@@ -88,7 +88,7 @@ func (dst *DynaKube) fromActiveGateSpec(src *v1beta2.DynaKube) {
 	}
 }
 
-func (dst *DynaKube) fromMovedFields(src *v1beta2.DynaKube) error {
+func (dst *DynaKube) fromMovedFields(src *dynakube.DynaKube) error {
 	dst.Annotations[AnnotationFeatureMetadataEnrichment] = strconv.FormatBool(src.Spec.MetadataEnrichment.Enabled)
 	dst.Annotations[AnnotationFeatureApiRequestThreshold] = strconv.FormatInt(int64(src.Spec.DynatraceApiRequestThreshold), 10)
 	dst.Annotations[AnnotationFeatureOneAgentSecCompProfile] = src.OneAgentSecCompProfile()
@@ -102,7 +102,7 @@ func (dst *DynaKube) fromMovedFields(src *v1beta2.DynaKube) error {
 	return nil
 }
 
-func (dst *DynaKube) fromStatus(src *v1beta2.DynaKube) {
+func (dst *DynaKube) fromStatus(src *dynakube.DynaKube) {
 	dst.fromOneAgentStatus(*src)
 	dst.fromActiveGateStatus(*src)
 	dst.Status.CodeModules = CodeModulesStatus{
@@ -120,7 +120,7 @@ func (dst *DynaKube) fromStatus(src *v1beta2.DynaKube) {
 	dst.Status.KubeSystemUUID = src.Status.KubeSystemUUID
 }
 
-func (dst *DynaKube) fromOneAgentStatus(src v1beta2.DynaKube) {
+func (dst *DynaKube) fromOneAgentStatus(src dynakube.DynaKube) {
 	dst.Status.OneAgent.Instances = map[string]OneAgentInstance{}
 
 	// Instance
@@ -151,13 +151,13 @@ func (dst *DynaKube) fromOneAgentStatus(src v1beta2.DynaKube) {
 	dst.Status.OneAgent.Healthcheck = src.Status.OneAgent.Healthcheck
 }
 
-func (dst *DynaKube) fromActiveGateStatus(src v1beta2.DynaKube) {
+func (dst *DynaKube) fromActiveGateStatus(src dynakube.DynaKube) {
 	dst.Status.ActiveGate.ConnectionInfoStatus.ConnectionInfoStatus = (ConnectionInfoStatus)(src.Status.ActiveGate.ConnectionInfoStatus.ConnectionInfoStatus)
 	dst.Status.ActiveGate.ServiceIPs = src.Status.ActiveGate.ServiceIPs
 	dst.Status.ActiveGate.VersionStatus = src.Status.ActiveGate.VersionStatus
 }
 
-func fromHostInjectSpec(src v1beta2.HostInjectSpec) *HostInjectSpec {
+func fromHostInjectSpec(src dynakube.HostInjectSpec) *HostInjectSpec {
 	dst := &HostInjectSpec{}
 	dst.AutoUpdate = &src.AutoUpdate
 	dst.OneAgentResources = src.OneAgentResources
@@ -175,7 +175,7 @@ func fromHostInjectSpec(src v1beta2.HostInjectSpec) *HostInjectSpec {
 	return dst
 }
 
-func fromAppInjectSpec(src v1beta2.AppInjectionSpec) *AppInjectionSpec {
+func fromAppInjectSpec(src dynakube.AppInjectionSpec) *AppInjectionSpec {
 	dst := &AppInjectionSpec{}
 
 	dst.CodeModulesImage = src.CodeModulesImage

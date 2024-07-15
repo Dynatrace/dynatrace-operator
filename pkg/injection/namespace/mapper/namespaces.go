@@ -3,7 +3,7 @@ package mapper
 import (
 	"context"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	injectionotel "github.com/Dynatrace/dynatrace-operator/pkg/injection/internal/otel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel/controller_runtime"

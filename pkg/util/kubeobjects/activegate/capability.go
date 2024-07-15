@@ -1,7 +1,7 @@
 package activegate
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 )
 
 func SwitchCapability(dk *dynakube.DynaKube, capability dynakube.ActiveGateCapability, wantEnabled bool) {

@@ -4,16 +4,13 @@ import (
 	"encoding/json"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
-	v1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	v1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
-// ConvertFrom converts from the Hub version (v1beta2) to this version (v1beta3).
+// ConvertFrom converts from the Hub version (v1beta3) to this version (v1beta3).
 func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
-	src := srcRaw.(*v1beta2.DynaKube)
-	if src.Annotations == nil {
-		src.Annotations = map[string]string{}
-	}
+	src := srcRaw.(*v1beta3.DynaKube)
 
 	dst.fromBase(src)
 	dst.fromOneAgentSpec(src)
@@ -29,7 +26,11 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	return nil
 }
 
-func (dst *DynaKube) fromBase(src *v1beta2.DynaKube) {
+func (dst *DynaKube) fromBase(src *v1beta3.DynaKube) {
+	if src.Annotations == nil {
+		src.Annotations = map[string]string{}
+	}
+
 	dst.ObjectMeta = *src.ObjectMeta.DeepCopy() // DeepCopy mainly relevant for testing
 
 	dst.Spec.APIURL = src.Spec.APIURL
@@ -43,7 +44,7 @@ func (dst *DynaKube) fromBase(src *v1beta2.DynaKube) {
 	dst.Spec.DynatraceApiRequestThreshold = src.Spec.DynatraceApiRequestThreshold
 }
 
-func (dst *DynaKube) fromOneAgentSpec(src *v1beta2.DynaKube) {
+func (dst *DynaKube) fromOneAgentSpec(src *v1beta3.DynaKube) {
 	dst.Spec.OneAgent.HostGroup = src.Spec.OneAgent.HostGroup
 
 	switch {
@@ -63,7 +64,7 @@ func (dst *DynaKube) fromOneAgentSpec(src *v1beta2.DynaKube) {
 	}
 }
 
-func (dst *DynaKube) fromActiveGateSpec(src *v1beta2.DynaKube) {
+func (dst *DynaKube) fromActiveGateSpec(src *v1beta3.DynaKube) {
 	dst.Spec.ActiveGate.Image = src.Spec.ActiveGate.Image
 	dst.Spec.ActiveGate.PriorityClassName = src.Spec.ActiveGate.PriorityClassName
 	dst.Spec.ActiveGate.TlsSecretName = src.Spec.ActiveGate.TlsSecretName
@@ -90,7 +91,7 @@ func (dst *DynaKube) fromActiveGateSpec(src *v1beta2.DynaKube) {
 	}
 }
 
-func (dst *DynaKube) fromStatus(src *v1beta2.DynaKube) {
+func (dst *DynaKube) fromStatus(src *v1beta3.DynaKube) {
 	dst.fromOneAgentStatus(*src)
 	dst.fromActiveGateStatus(*src)
 	dst.Status.CodeModules = CodeModulesStatus{
@@ -107,7 +108,7 @@ func (dst *DynaKube) fromStatus(src *v1beta2.DynaKube) {
 	dst.Status.KubeSystemUUID = src.Status.KubeSystemUUID
 }
 
-func (dst *DynaKube) fromOneAgentStatus(src v1beta2.DynaKube) {
+func (dst *DynaKube) fromOneAgentStatus(src v1beta3.DynaKube) {
 	dst.Status.OneAgent.Instances = map[string]OneAgentInstance{}
 
 	// Instance
@@ -138,13 +139,13 @@ func (dst *DynaKube) fromOneAgentStatus(src v1beta2.DynaKube) {
 	dst.Status.OneAgent.Healthcheck = src.Status.OneAgent.Healthcheck
 }
 
-func (dst *DynaKube) fromActiveGateStatus(src v1beta2.DynaKube) {
+func (dst *DynaKube) fromActiveGateStatus(src v1beta3.DynaKube) {
 	dst.Status.ActiveGate.ConnectionInfoStatus.ConnectionInfoStatus = (ConnectionInfoStatus)(src.Status.ActiveGate.ConnectionInfoStatus.ConnectionInfoStatus)
 	dst.Status.ActiveGate.ServiceIPs = src.Status.ActiveGate.ServiceIPs
 	dst.Status.ActiveGate.VersionStatus = src.Status.ActiveGate.VersionStatus
 }
 
-func fromHostInjectSpec(src v1beta2.HostInjectSpec) *HostInjectSpec {
+func fromHostInjectSpec(src v1beta3.HostInjectSpec) *HostInjectSpec {
 	dst := &HostInjectSpec{}
 	dst.AutoUpdate = src.AutoUpdate
 	dst.OneAgentResources = src.OneAgentResources
@@ -163,7 +164,7 @@ func fromHostInjectSpec(src v1beta2.HostInjectSpec) *HostInjectSpec {
 	return dst
 }
 
-func fromAppInjectSpec(src v1beta2.AppInjectionSpec) *AppInjectionSpec {
+func fromAppInjectSpec(src v1beta3.AppInjectionSpec) *AppInjectionSpec {
 	dst := &AppInjectionSpec{}
 
 	dst.CodeModulesImage = src.CodeModulesImage
@@ -173,45 +174,38 @@ func fromAppInjectSpec(src v1beta2.AppInjectionSpec) *AppInjectionSpec {
 	return dst
 }
 
-func (dst *DynaKube) fromMetadataEnrichment(src *v1beta2.DynaKube) {
+func (dst *DynaKube) fromMetadataEnrichment(src *v1beta3.DynaKube) {
 	dst.Spec.MetadataEnrichment.Enabled = src.Spec.MetadataEnrichment.Enabled
 	dst.Spec.MetadataEnrichment.NamespaceSelector = src.Spec.MetadataEnrichment.NamespaceSelector
 }
 
-func (dst *DynaKube) fromExtensions(src *v1beta2.DynaKube) error {
-	delete(dst.Annotations, api.AnnotationDynatraceExtensions)
-	delete(dst.Annotations, api.AnnotationDynatraceOpenTelemetryCollector)
-	delete(dst.Annotations, api.AnnotationDynatraceextEnsionExecutionController)
+func (dst *DynaKube) fromExtensions(src *v1beta3.DynaKube) error {
+	e := src.Spec.Extensions
 
-	e, ok := src.Annotations[api.AnnotationDynatraceExtensions]
-	if ok {
-		es := ExtensionsSpec{}
-		if err := json.Unmarshal([]byte(e), &es); err != nil {
-			return err
-		}
-
-		dst.Spec.Extensions = es
+	ex, err := json.Marshal(e)
+	if err != nil {
+		return err
 	}
 
-	o, ok := src.Annotations[api.AnnotationDynatraceOpenTelemetryCollector]
-	if ok {
-		otel := OpenTelemetryCollectorSpec{}
-		if err := json.Unmarshal([]byte(o), &otel); err != nil {
-			return err
-		}
+	dst.Annotations[api.AnnotationDynatraceExtensions] = string(ex)
 
-		dst.Spec.Templates.OpenTelemetryCollector = otel
+	o := src.Spec.Templates.OpenTelemetryCollector
+
+	otel, err := json.Marshal(o)
+	if err != nil {
+		return err
 	}
 
-	ee, ok := src.Annotations[api.AnnotationDynatraceextEnsionExecutionController]
-	if ok {
-		eec := ExtensionExecutionControllerSpec{}
-		if err := json.Unmarshal([]byte(ee), &eec); err != nil {
-			return err
-		}
+	dst.Annotations[api.AnnotationDynatraceOpenTelemetryCollector] = string(otel)
 
-		dst.Spec.Templates.ExtensionExecutionController = eec
+	ee := src.Spec.Templates.ExtensionExecutionController
+
+	eec, err := json.Marshal(ee)
+	if err != nil {
+		return err
 	}
+
+	dst.Annotations[api.AnnotationDynatraceextEnsionExecutionController] = string(eec)
 
 	return nil
 }
