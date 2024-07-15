@@ -48,7 +48,7 @@ webhooks:
     clientConfig:
       service:
         name: dynatrace-webhook
-        namespace: {{ .Release.Namespace }  }
+        namespace: {{ .Release.Namespace }}
         path: /validate-dynatrace-com-v1beta3-dynakube
     rules:
       - operations:
