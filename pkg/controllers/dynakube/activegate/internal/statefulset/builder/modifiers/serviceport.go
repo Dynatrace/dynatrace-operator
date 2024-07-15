@@ -30,7 +30,7 @@ type ServicePortModifier struct {
 }
 
 func (mod ServicePortModifier) Enabled() bool {
-	return mod.dk.NeedsActiveGateServicePorts()
+	return mod.dk.NeedsActiveGateService()
 }
 
 func (mod ServicePortModifier) Modify(sts *appsv1.StatefulSet) error {
