@@ -187,6 +187,27 @@ import (
 )
 ```
 
+> Note: Incase multiple versions of the same CR are used (conversion, webhook manager configuration, etc.),
+> use the name of the CR as part of the package alias:
+
+```go
+package abc
+
+import (
+    dynakubev1beta2  "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+    dynakubev1beta3  "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+)
+```
+
+```go
+package abc
+
+import (
+    edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+    edgeconnectv1alpha2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
+)
+```
+
 - Use `dk` or `ec` as short a version of variable name for instances of `dynakube.Dynakube`, or any func arguments
 to not overlap with package name `dynakube` or `edgeconnect`.
 
