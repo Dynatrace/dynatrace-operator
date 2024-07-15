@@ -68,6 +68,28 @@ func TestPublishVolume(t *testing.T) {
 		require.Error(t, err)
 		assert.NotNil(t, response)
 	})
+
+	t.Run("publish volume when previous OSMount force deleted => do mount", func(t *testing.T) {
+		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+		publisher := newPublisherForTesting(mounter)
+		mockDynakube(t, &publisher)
+
+		response, err := publisher.PublishVolume(ctx, createTestVolumeConfig())
+
+		require.NoError(t, err)
+		assert.NotNil(t, response)
+		assert.NotEmpty(t, mounter.MountPoints)
+		assertReferencesForPublishedVolume(t, &publisher, mounter)
+
+		publisher.isNotMounted = func(mounter mount.Interface, file string) (bool, error) {
+			return true, nil
+		}
+		response, err = publisher.PublishVolume(ctx, createTestVolumeConfig())
+		require.NoError(t, err)
+		assert.NotNil(t, response)
+		assert.NotEmpty(t, mounter.MountPoints)
+		assertReferencesForPublishedVolume(t, &publisher, mounter)
+	})
 }
 
 func TestUnpublishVolume(t *testing.T) {
@@ -134,6 +156,9 @@ func newPublisherForTesting(mounter *mount.FakeMounter) HostVolumePublisher {
 		mounter: mounter,
 		db:      metadata.FakeMemoryDB(),
 		path:    metadata.PathResolver{RootDir: csiOptions.RootDir},
+		isNotMounted: func(mounter mount.Interface, file string) (bool, error) {
+			return false, nil
+		},
 	}
 }
 
