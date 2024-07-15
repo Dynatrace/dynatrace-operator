@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	v1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -47,7 +47,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate cloud-native from v1beta3 to v1beta3", func(t *testing.T) {
+	t.Run("migrate cloud-native from v1beta3 to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		spec := getNewCloudNativeSpec()
 		from.Spec.OneAgent.CloudNativeFullStack = &spec
@@ -59,7 +59,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate application-monitoring from v1beta3 to v1beta3", func(t *testing.T) {
+	t.Run("migrate application-monitoring from v1beta3 to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		appSpec := getNewApplicationMonitoringSpec()
 		from.Spec.OneAgent.ApplicationMonitoring = &appSpec
@@ -70,7 +70,7 @@ func TestConvertFrom(t *testing.T) {
 		compareApplicationMonitoringSpec(t, *to.Spec.OneAgent.ApplicationMonitoring, *from.Spec.OneAgent.ApplicationMonitoring)
 	})
 
-	t.Run("migrate activegate from v1beta3 to v1beta3", func(t *testing.T) {
+	t.Run("migrate activegate from v1beta3 to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		agSpec := getNewActiveGateSpec()
 		from.Spec.ActiveGate = agSpec
@@ -81,7 +81,7 @@ func TestConvertFrom(t *testing.T) {
 		compareActiveGateSpec(t, to.Spec.ActiveGate, from.Spec.ActiveGate)
 	})
 
-	t.Run("migrate status from v1beta3 to v1beta3", func(t *testing.T) {
+	t.Run("migrate status from v1beta3 to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Status = getNewStatus()
 		to := DynaKube{}
@@ -92,7 +92,7 @@ func TestConvertFrom(t *testing.T) {
 	})
 }
 
-func compareBase(t *testing.T, oldDk DynaKube, newDk v1beta3.DynaKube) {
+func compareBase(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 	require.NotEmpty(t, oldDk)
 	require.NotEmpty(t, newDk)
 
@@ -130,7 +130,7 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk v1beta3.DynaKube) {
 	}
 }
 
-func compareHostInjectSpec(t *testing.T, oldSpec HostInjectSpec, newSpec v1beta3.HostInjectSpec) {
+func compareHostInjectSpec(t *testing.T, oldSpec HostInjectSpec, newSpec dynakube.HostInjectSpec) {
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
 	assert.Equal(t, oldSpec.Args, newSpec.Args)
 	assert.Equal(t, oldSpec.AutoUpdate, newSpec.AutoUpdate)
@@ -146,23 +146,23 @@ func compareHostInjectSpec(t *testing.T, oldSpec HostInjectSpec, newSpec v1beta3
 	assert.Equal(t, oldSpec.SecCompProfile, newSpec.SecCompProfile)
 }
 
-func compareAppInjectionSpec(t *testing.T, oldSpec AppInjectionSpec, newSpec v1beta3.AppInjectionSpec) {
+func compareAppInjectionSpec(t *testing.T, oldSpec AppInjectionSpec, newSpec dynakube.AppInjectionSpec) {
 	assert.Equal(t, oldSpec.CodeModulesImage, newSpec.CodeModulesImage)
 	assert.Equal(t, oldSpec.InitResources, newSpec.InitResources)
 }
 
-func compareCloudNativeSpec(t *testing.T, oldSpec CloudNativeFullStackSpec, newSpec v1beta3.CloudNativeFullStackSpec) {
+func compareCloudNativeSpec(t *testing.T, oldSpec CloudNativeFullStackSpec, newSpec dynakube.CloudNativeFullStackSpec) {
 	compareAppInjectionSpec(t, oldSpec.AppInjectionSpec, newSpec.AppInjectionSpec)
 	compareHostInjectSpec(t, oldSpec.HostInjectSpec, newSpec.HostInjectSpec)
 }
 
-func compareApplicationMonitoringSpec(t *testing.T, oldSpec ApplicationMonitoringSpec, newSpec v1beta3.ApplicationMonitoringSpec) {
+func compareApplicationMonitoringSpec(t *testing.T, oldSpec ApplicationMonitoringSpec, newSpec dynakube.ApplicationMonitoringSpec) {
 	compareAppInjectionSpec(t, oldSpec.AppInjectionSpec, newSpec.AppInjectionSpec)
 	assert.Equal(t, oldSpec.UseCSIDriver, newSpec.UseCSIDriver)
 	assert.Equal(t, oldSpec.Version, newSpec.Version)
 }
 
-func compareActiveGateSpec(t *testing.T, oldSpec ActiveGateSpec, newSpec v1beta3.ActiveGateSpec) {
+func compareActiveGateSpec(t *testing.T, oldSpec ActiveGateSpec, newSpec dynakube.ActiveGateSpec) {
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
 	assert.Equal(t, oldSpec.DNSPolicy, newSpec.DNSPolicy)
 	assert.Equal(t, oldSpec.Env, newSpec.Env)
@@ -186,7 +186,7 @@ func compareActiveGateSpec(t *testing.T, oldSpec ActiveGateSpec, newSpec v1beta3
 	}
 }
 
-func compareStatus(t *testing.T, oldStatus DynaKubeStatus, newStatus v1beta3.DynaKubeStatus) {
+func compareStatus(t *testing.T, oldStatus DynaKubeStatus, newStatus dynakube.DynaKubeStatus) {
 	// Base
 	assert.Equal(t, oldStatus.Conditions, newStatus.Conditions)
 	assert.Equal(t, oldStatus.DynatraceApi.LastTokenScopeRequest, newStatus.DynatraceApi.LastTokenScopeRequest)
@@ -228,33 +228,33 @@ func compareStatus(t *testing.T, oldStatus DynaKubeStatus, newStatus v1beta3.Dyn
 	}
 }
 
-func getNewDynakubeBase() v1beta3.DynaKube {
-	return v1beta3.DynaKube{
+func getNewDynakubeBase() dynakube.DynaKube {
+	return dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "name",
 			Namespace: "namespace",
 			Annotations: map[string]string{
-				v1beta3.AnnotationFeatureActiveGateIgnoreProxy:     "true",
-				v1beta3.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
+				dynakube.AnnotationFeatureActiveGateIgnoreProxy:     "true",
+				dynakube.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
 			},
 			Labels: map[string]string{
 				"label": "label-value",
 			},
 		},
-		Spec: v1beta3.DynaKubeSpec{
+		Spec: dynakube.DynaKubeSpec{
 			APIURL:           "api-url",
 			Tokens:           "token",
 			CustomPullSecret: "pull-secret",
 			EnableIstio:      true,
 			SkipCertCheck:    true,
-			Proxy: &v1beta3.DynaKubeProxy{
+			Proxy: &dynakube.DynaKubeProxy{
 				Value:     "proxy-value",
 				ValueFrom: "proxy-from",
 			},
 			TrustedCAs:                   "trusted-ca",
 			NetworkZone:                  "network-zone",
 			DynatraceApiRequestThreshold: 42,
-			MetadataEnrichment: v1beta3.MetadataEnrichment{
+			MetadataEnrichment: dynakube.MetadataEnrichment{
 				Enabled:           true,
 				NamespaceSelector: getTestNamespaceSelector(),
 			},
@@ -262,8 +262,8 @@ func getNewDynakubeBase() v1beta3.DynaKube {
 	}
 }
 
-func getNewHostInjectSpec() v1beta3.HostInjectSpec {
-	return v1beta3.HostInjectSpec{
+func getNewHostInjectSpec() dynakube.HostInjectSpec {
+	return dynakube.HostInjectSpec{
 		Version: "host-inject-version",
 		Image:   "host-inject-image",
 		Tolerations: []corev1.Toleration{
@@ -305,8 +305,8 @@ func getNewHostInjectSpec() v1beta3.HostInjectSpec {
 	}
 }
 
-func getNewAppInjectionSpec() v1beta3.AppInjectionSpec {
-	return v1beta3.AppInjectionSpec{
+func getNewAppInjectionSpec() dynakube.AppInjectionSpec {
+	return dynakube.AppInjectionSpec{
 		InitResources: &corev1.ResourceRequirements{
 			Limits: corev1.ResourceList{
 				corev1.ResourceCPU: *resource.NewScaledQuantity(2, 1)},
@@ -316,35 +316,35 @@ func getNewAppInjectionSpec() v1beta3.AppInjectionSpec {
 	}
 }
 
-func getNewCloudNativeSpec() v1beta3.CloudNativeFullStackSpec {
-	return v1beta3.CloudNativeFullStackSpec{
+func getNewCloudNativeSpec() dynakube.CloudNativeFullStackSpec {
+	return dynakube.CloudNativeFullStackSpec{
 		AppInjectionSpec: getNewAppInjectionSpec(),
 		HostInjectSpec:   getNewHostInjectSpec(),
 	}
 }
 
-func getNewApplicationMonitoringSpec() v1beta3.ApplicationMonitoringSpec {
-	return v1beta3.ApplicationMonitoringSpec{
+func getNewApplicationMonitoringSpec() dynakube.ApplicationMonitoringSpec {
+	return dynakube.ApplicationMonitoringSpec{
 		AppInjectionSpec: getNewAppInjectionSpec(),
 		UseCSIDriver:     true,
 		Version:          "app-monitoring-version",
 	}
 }
 
-func getNewActiveGateSpec() v1beta3.ActiveGateSpec {
-	return v1beta3.ActiveGateSpec{
+func getNewActiveGateSpec() dynakube.ActiveGateSpec {
+	return dynakube.ActiveGateSpec{
 		DNSPolicy: corev1.DNSClusterFirstWithHostNet,
 		Annotations: map[string]string{
 			"activegate-annotation-key": "activegate-annotation-value",
 		},
 		TlsSecretName:     "activegate-tls-secret-name",
 		PriorityClassName: "activegate-priority-class-name",
-		Capabilities: []v1beta3.CapabilityDisplayName{
-			v1beta3.DynatraceApiCapability.DisplayName,
-			v1beta3.KubeMonCapability.DisplayName,
-			v1beta3.MetricsIngestCapability.DisplayName,
+		Capabilities: []dynakube.CapabilityDisplayName{
+			dynakube.DynatraceApiCapability.DisplayName,
+			dynakube.KubeMonCapability.DisplayName,
+			dynakube.MetricsIngestCapability.DisplayName,
 		},
-		CapabilityProperties: v1beta3.CapabilityProperties{
+		CapabilityProperties: dynakube.CapabilityProperties{
 			Labels: map[string]string{
 				"activegate-label-key": "activegate-label-value",
 			},
@@ -366,7 +366,7 @@ func getNewActiveGateSpec() v1beta3.ActiveGateSpec {
 			Image:    "activegate-image",
 			Replicas: 42,
 			Group:    "activegate-group",
-			CustomProperties: &v1beta3.DynaKubeValueSource{
+			CustomProperties: &dynakube.DynaKubeValueSource{
 				Value:     "activegate-cp-value",
 				ValueFrom: "activegate-cp-value-from",
 			},
@@ -384,9 +384,9 @@ func getNewActiveGateSpec() v1beta3.ActiveGateSpec {
 	}
 }
 
-func getNewStatus() v1beta3.DynaKubeStatus {
-	return v1beta3.DynaKubeStatus{
-		OneAgent: v1beta3.OneAgentStatus{
+func getNewStatus() dynakube.DynaKubeStatus {
+	return dynakube.DynaKubeStatus{
+		OneAgent: dynakube.OneAgentStatus{
 			VersionStatus: status.VersionStatus{
 				ImageID:            "oa-image-id",
 				Version:            "oa-version",
@@ -394,7 +394,7 @@ func getNewStatus() v1beta3.DynaKubeStatus {
 				Source:             status.CustomImageVersionSource,
 				LastProbeTimestamp: &testTime,
 			},
-			Instances: map[string]v1beta3.OneAgentInstance{
+			Instances: map[string]dynakube.OneAgentInstance{
 				"oa-instance-key-1": {
 					PodName:   "oa-instance-pod-1",
 					IPAddress: "oa-instance-ip-1",
@@ -408,13 +408,13 @@ func getNewStatus() v1beta3.DynaKubeStatus {
 			Healthcheck: &registryv1.HealthConfig{
 				Test: []string{"oa-health-check-test"},
 			},
-			ConnectionInfoStatus: v1beta3.OneAgentConnectionInfoStatus{
-				ConnectionInfoStatus: v1beta3.ConnectionInfoStatus{
+			ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
+				ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
 					LastRequest: testTime,
 					TenantUUID:  "oa-tenant-uuid",
 					Endpoints:   "oa-endpoints",
 				},
-				CommunicationHosts: []v1beta3.CommunicationHostStatus{
+				CommunicationHosts: []dynakube.CommunicationHostStatus{
 					{
 						Protocol: "oa-protocol-1",
 						Host:     "oa-host-1",
@@ -428,7 +428,7 @@ func getNewStatus() v1beta3.DynaKubeStatus {
 				},
 			},
 		},
-		ActiveGate: v1beta3.ActiveGateStatus{
+		ActiveGate: dynakube.ActiveGateStatus{
 			VersionStatus: status.VersionStatus{
 				ImageID:            "ag-image-id",
 				Version:            "ag-version",
@@ -437,7 +437,7 @@ func getNewStatus() v1beta3.DynaKubeStatus {
 				LastProbeTimestamp: &testTime,
 			},
 		},
-		CodeModules: v1beta3.CodeModulesStatus{
+		CodeModules: dynakube.CodeModulesStatus{
 			VersionStatus: status.VersionStatus{
 				ImageID:            "cm-image-id",
 				Version:            "cm-version",
@@ -446,7 +446,7 @@ func getNewStatus() v1beta3.DynaKubeStatus {
 				LastProbeTimestamp: &testTime,
 			},
 		},
-		DynatraceApi: v1beta3.DynatraceApiStatus{
+		DynatraceApi: dynakube.DynatraceApiStatus{
 			LastTokenScopeRequest: testTime,
 		},
 		Conditions: []metav1.Condition{
