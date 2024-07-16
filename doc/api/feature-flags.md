@@ -3,7 +3,7 @@
 # dynakube
 
 ```go
-import "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube/tmp"
+import "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/tmp"
 ```
 
 ## Index
