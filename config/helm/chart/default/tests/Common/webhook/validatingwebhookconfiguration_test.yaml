@@ -35,7 +35,7 @@ tests:
                     - v1beta2
                   resources:
                     - dynakubes
-              name: webhook.dynatrace.com
+              name: v1beta2.dynakube.webhook.dynatrace.com
               timeoutSeconds: 10
               sideEffects: None
             - admissionReviewVersions:
@@ -57,7 +57,7 @@ tests:
                     - v1beta3
                   resources:
                     - dynakubes
-              name: webhook.dynatrace.com
+              name: v1beta3.dynakube.webhook.dynatrace.com
               timeoutSeconds: 10
               sideEffects: None
             - admissionReviewVersions:

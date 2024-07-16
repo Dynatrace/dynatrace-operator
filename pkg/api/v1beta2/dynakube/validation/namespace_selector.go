@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	v1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -22,9 +23,16 @@ func conflictingNamespaceSelector(ctx context.Context, dv *Validator, dk *dynaku
 		return ""
 	}
 
-	dkMapper := mapper.NewDynakubeMapper(ctx, nil, dv.apiReader, dk.Namespace, dk)
+	dst := &v1beta3.DynaKube{}
 
-	_, err := dkMapper.MatchingNamespaces()
+	err := dk.ConvertTo(dst)
+	if err != nil {
+		return err.Error()
+	}
+
+	dkMapper := mapper.NewDynakubeMapper(ctx, nil, dv.apiReader, dst.Namespace, dst)
+
+	_, err = dkMapper.MatchingNamespaces()
 	if err != nil && err.Error() == mapper.ErrorConflictingNamespace {
 		log.Info("requested dynakube has conflicting namespaceSelector", "name", dk.Name, "namespace", dk.Namespace)
 
