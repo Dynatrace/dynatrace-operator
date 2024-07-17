@@ -33,7 +33,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 func (r *reconciler) Reconcile(ctx context.Context) error {
 	log.Info("start reconciling extensions")
 
-	err := reconcileSecret(ctx, r.dk, r.client, r.apiReader)
+	err := r.reconcileSecret(ctx)
 	if err != nil {
 		return err
 	}

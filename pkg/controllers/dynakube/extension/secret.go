@@ -17,55 +17,55 @@ const (
 	secretSuffix        = "-extensions-token"
 )
 
-func reconcileSecret(ctx context.Context, dk *dynakube.DynaKube, kubeClient client.Client, apiReader client.Reader) error {
-	log.Info("reconciling secret" + getSecretName(dk.Name))
+func (r *reconciler) reconcileSecret(ctx context.Context) error {
+	log.Info("reconciling secret " + getSecretName(r.dk.Name))
 
-	query := k8ssecret.NewQuery(ctx, kubeClient, apiReader, log)
+	query := k8ssecret.NewQuery(ctx, r.client, r.apiReader, log)
 
-	if !dk.PrometheusEnabled() {
-		err := query.Delete(getSecretName(dk.Name), dk.Namespace)
+	if !r.dk.PrometheusEnabled() {
+		err := query.Delete(getSecretName(r.dk.Name), r.dk.Namespace)
 		if err != nil {
 			return err
 		}
 
-		removeSecretCreatedCondition(dk.Conditions())
+		removeSecretCreatedCondition(r.dk.Conditions())
 
 		return nil
 	}
 
-	_, err := query.Get(client.ObjectKey{Name: getSecretName(dk.Name), Namespace: dk.Namespace})
+	_, err := query.Get(client.ObjectKey{Name: getSecretName(r.dk.Name), Namespace: r.dk.Namespace})
 	if err != nil && !errors.IsNotFound(err) {
-		setSecretCreatedFailureCondition(dk.Conditions(), err)
+		setSecretCreatedFailureCondition(r.dk.Conditions(), err)
 
 		return err
 	}
 
 	if errors.IsNotFound(err) {
-		log.Info("creating secret" + getSecretName(dk.Name))
+		log.Info("creating secret " + getSecretName(r.dk.Name))
 
 		newEecToken, err := dttoken.New(eecTokenValuePrefix)
 		if err != nil {
-			setSecretCreatedFailureCondition(dk.Conditions(), err)
+			setSecretCreatedFailureCondition(r.dk.Conditions(), err)
 
 			return err
 		}
 
-		newSecret, err := buildSecret(dk, *newEecToken)
+		newSecret, err := buildSecret(r.dk, *newEecToken)
 		if err != nil {
-			setSecretCreatedFailureCondition(dk.Conditions(), err)
+			setSecretCreatedFailureCondition(r.dk.Conditions(), err)
 
 			return err
 		}
 
 		err = query.CreateOrUpdate(*newSecret)
 		if err != nil {
-			setSecretCreatedFailureCondition(dk.Conditions(), err)
+			setSecretCreatedFailureCondition(r.dk.Conditions(), err)
 
 			return err
 		}
 	}
 
-	setSecretCreatedSuccessCondition(dk.Conditions())
+	setSecretCreatedSuccessCondition(r.dk.Conditions())
 
 	return nil
 }
