@@ -2,6 +2,7 @@ package extension
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -26,7 +27,7 @@ const (
 
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run("Extension secret not generated when Prometheus is disabled", func(t *testing.T) {
-		dk := makeTestDynakube(false)
+		dk := createDynakube()
 
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dk)
@@ -41,8 +42,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 		// assert conditions are empty
 		require.Empty(t, dk.Conditions())
 	})
-	t.Run("Extension secret gets deleted when Prometheus is disabled", func(t *testing.T) {
-		dk := makeTestDynakube(false)
+	t.Run(`Extension secret gets deleted when Prometheus is disabled`, func(t *testing.T) {
+		dk := createDynakube()
 
 		// mock SecretCreated condition
 		conditions.SetSecretCreated(dk.Conditions(), conditionType, dk.Name+secretSuffix)
@@ -116,9 +117,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 
 	t.Run("Create service when prometheus is enabled with minimal setup", func(t *testing.T) {
-		dk := createDynakube(dynakube.OneAgentSpec{
-			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}})
-
+		dk := createDynakube()
 		dk.Spec.Extensions.Prometheus.Enabled = true
 
 		mockK8sClient := fake.NewClient(dk)
