@@ -25,7 +25,7 @@ entries:
     version: 1.2.1
   - apiVersion: v2
     appVersion: 1.2.0
-    created: '2024-05-07T08:08:50.245013462Z'
+    created: '2024-06-24T09:52:03.850374583Z'
     description: The Dynatrace Operator Helm chart for Kubernetes and OpenShift
     digest: c18766b5c45f720aa3c1bae87de6c7cf8b07a933519874d6fcc7c5150cdaee89
     home: https://www.dynatrace.com/
