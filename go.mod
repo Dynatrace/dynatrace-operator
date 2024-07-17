@@ -42,7 +42,7 @@ require (
 	gorm.io/driver/sqlite v1.5.6
 	gorm.io/gorm v1.25.11
 	istio.io/api v1.22.3
-	istio.io/client-go v1.22.2
+	istio.io/client-go v1.22.3
 	k8s.io/api v0.30.2
 	k8s.io/apiextensions-apiserver v0.30.2
 	k8s.io/apimachinery v0.30.2
