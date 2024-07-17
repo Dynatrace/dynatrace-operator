@@ -114,20 +114,28 @@ func TestReconciler_Reconcile(t *testing.T) {
 		conditions.SetKubeApiError(&expectedConditions, conditionType, err)
 		testutil.PartialEqual(t, &expectedConditions, dk.Conditions(), cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
 	})
+
+	t.Run("Create and update service with minimal setup", func(t *testing.T) {
+		dk := createDynakube(dynakube.OneAgentSpec{
+			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}})
+
+		dk.Spec.Extensions.Prometheus.Enabled = true
+
+		mockK8sClient := fake.NewClient(dk)
+
+		reconciler := NewReconciler(mockK8sClient,
+			mockK8sClient, dk)
+		err := reconciler.Reconcile(context.Background())
+		require.NoError(t, err)
+	})
 }
 
-func makeTestDynakube(prometheusEnabled bool) *dynakube.DynaKube {
+func createDynakube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,
 		},
-		Spec: dynakube.DynaKubeSpec{
-			Extensions: dynakube.ExtensionsSpec{
-				Prometheus: dynakube.PrometheusSpec{
-					Enabled: prometheusEnabled,
-				},
-			},
-		},
+		Spec: dynakube.DynaKubeSpec{},
 	}
 }

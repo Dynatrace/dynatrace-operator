@@ -6,4 +6,8 @@ const (
 	secretSuffix              = "-extensions-token"
 
 	conditionType = "ExtensionsTokenSecret"
+
+	ExtensionsControllerSuffix        = "-extensions-controller"
+	ExtensionsCollectorComPort        = 14599
+	ExtensionsCollectorTargetPortName = "collector-com"
 )
