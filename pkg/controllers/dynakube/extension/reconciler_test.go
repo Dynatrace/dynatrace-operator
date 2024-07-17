@@ -25,7 +25,7 @@ const (
 
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run(`Extension secret not generated when Prometheus is disabled`, func(t *testing.T) {
-		instance := makeTestDynakube()
+		instance := makeTestDynakube(false)
 		instance.Spec.Extensions.Prometheus.Enabled = false
 
 		fakeClient := fake.NewClient()
@@ -42,7 +42,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.Empty(t, instance.Conditions())
 	})
 	t.Run(`Extension secret is generated when Prometheus is enabled`, func(t *testing.T) {
-		instance := makeTestDynakube()
+		instance := makeTestDynakube(true)
 
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, instance)
@@ -62,7 +62,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 
 	t.Run(`Extension SecretCreated failure condition is set when error`, func(t *testing.T) {
-		instance := makeTestDynakube()
+		instance := makeTestDynakube(true)
 
 		misconfiguredReader, _ := client.New(&rest.Config{}, client.Options{})
 		r := NewReconciler(fake.NewClient(), misconfiguredReader, instance)
@@ -77,7 +77,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 }
 
-func makeTestDynakube() *dynakube.DynaKube {
+func makeTestDynakube(prometheusEnabled bool) *dynakube.DynaKube {
 	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
@@ -86,7 +86,7 @@ func makeTestDynakube() *dynakube.DynaKube {
 		Spec: dynakube.DynaKubeSpec{
 			Extensions: dynakube.ExtensionsSpec{
 				Prometheus: dynakube.PrometheusSpec{
-					Enabled: true,
+					Enabled: prometheusEnabled,
 				},
 			},
 		},
