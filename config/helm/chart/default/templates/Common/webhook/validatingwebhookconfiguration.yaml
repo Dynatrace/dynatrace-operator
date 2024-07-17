@@ -21,8 +21,27 @@ metadata:
 webhooks:
   - admissionReviewVersions:
       - v1
-      - v1beta1
-      - v1alpha1
+    clientConfig:
+      service:
+        name: dynatrace-webhook
+        namespace: {{ .Release.Namespace }}
+        path: /validate-dynatrace-com-v1beta1-dynakube
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups:
+          - dynatrace.com
+        apiVersions:
+          - v1beta1
+        resources:
+          - dynakubes
+    name: v1beta1.dynakube.webhook.dynatrace.com
+    timeoutSeconds: {{.Values.webhook.validatingWebhook.timeoutSeconds}}
+    sideEffects: None
+    matchPolicy: Exact
+  - admissionReviewVersions:
+      - v1
     clientConfig:
       service:
         name: dynatrace-webhook
@@ -38,13 +57,33 @@ webhooks:
           - v1beta2
         resources:
           - dynakubes
-    name: webhook.dynatrace.com
+    name: v1beta2.dynakube.webhook.dynatrace.com
     timeoutSeconds: {{.Values.webhook.validatingWebhook.timeoutSeconds}}
     sideEffects: None
+    matchPolicy: Exact
   - admissionReviewVersions:
       - v1
-      - v1beta1
-      - v1alpha1
+    clientConfig:
+      service:
+        name: dynatrace-webhook
+        namespace: {{ .Release.Namespace }}
+        path: /validate-dynatrace-com-v1beta3-dynakube
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups:
+          - dynatrace.com
+        apiVersions:
+          - v1beta3
+        resources:
+          - dynakubes
+    name: v1beta3.dynakube.webhook.dynatrace.com
+    timeoutSeconds: {{.Values.webhook.validatingWebhook.timeoutSeconds}}
+    sideEffects: None
+    matchPolicy: Exact
+  - admissionReviewVersions:
+      - v1
     clientConfig:
       service:
         name: dynatrace-webhook
@@ -63,3 +102,4 @@ webhooks:
     name: edgeconnect.webhook.dynatrace.com
     timeoutSeconds: {{.Values.webhook.validatingWebhook.timeoutSeconds}}
     sideEffects: None
+    matchPolicy: Exact

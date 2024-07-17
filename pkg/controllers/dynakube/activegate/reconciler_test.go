@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
@@ -229,6 +229,212 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, statefulSet)
 		assert.Equal(t, "test-name-activegate", statefulSet.GetName())
+	})
+}
+
+func TestExtensionControllerRequiresActiveGate(t *testing.T) {
+	t.Run("no activegate is created when extensions are disabled in dk, and no capability is configured", func(t *testing.T) {
+		instance := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      testName,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{}},
+				Extensions: dynakube.ExtensionsSpec{
+					Prometheus: dynakube.PrometheusSpec{
+						Enabled: false,
+					},
+				},
+			},
+		}
+
+		fakeClient := fake.NewClient(testKubeSystemNamespace)
+
+		r := NewReconciler(fakeClient, fakeClient, instance, createMockDtClient(t, false), nil, nil).(*Reconciler)
+		r.connectionReconciler = createGenericReconcilerMock(t)
+		r.versionReconciler = createVersionReconcilerMock(t)
+		r.pullSecretReconciler = createGenericReconcilerMock(t)
+
+		err := r.Reconcile(context.Background())
+		require.NoError(t, err)
+
+		var service corev1.Service
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
+		assert.True(t, k8serrors.IsNotFound(err))
+
+		var statefulset appsv1.StatefulSet
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: instance.Name + "-activegate", Namespace: testNamespace}, &statefulset)
+		assert.True(t, k8serrors.IsNotFound(err))
+	})
+	t.Run("activegate is created when extensions are enabled in dk, but no activegate is configured", func(t *testing.T) {
+		instance := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      testName,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				Extensions: dynakube.ExtensionsSpec{
+					Prometheus: dynakube.PrometheusSpec{
+						Enabled: true,
+					},
+				},
+			},
+		}
+
+		fakeClient := fake.NewClient(testKubeSystemNamespace)
+
+		r := NewReconciler(fakeClient, fakeClient, instance, createMockDtClient(t, true), nil, nil).(*Reconciler)
+		r.connectionReconciler = createGenericReconcilerMock(t)
+		r.versionReconciler = createVersionReconcilerMock(t)
+		r.pullSecretReconciler = createGenericReconcilerMock(t)
+
+		err := r.Reconcile(context.Background())
+		require.NoError(t, err)
+
+		var service corev1.Service
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
+		require.NoError(t, err)
+		require.Equal(t, testServiceName, service.Name)
+
+		var statefulset appsv1.StatefulSet
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: instance.Name + "-activegate", Namespace: testNamespace}, &statefulset)
+		require.NoError(t, err)
+	})
+	t.Run("activegate is created when extensions are enabled in dk, but no activegate capability is configured", func(t *testing.T) {
+		instance := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      testName,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{}},
+				Extensions: dynakube.ExtensionsSpec{
+					Prometheus: dynakube.PrometheusSpec{
+						Enabled: true,
+					},
+				},
+			},
+		}
+
+		fakeClient := fake.NewClient(testKubeSystemNamespace)
+
+		r := NewReconciler(fakeClient, fakeClient, instance, createMockDtClient(t, true), nil, nil).(*Reconciler)
+		r.connectionReconciler = createGenericReconcilerMock(t)
+		r.versionReconciler = createVersionReconcilerMock(t)
+		r.pullSecretReconciler = createGenericReconcilerMock(t)
+
+		err := r.Reconcile(context.Background())
+		require.NoError(t, err)
+
+		var service corev1.Service
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
+		require.NoError(t, err)
+		require.Equal(t, testServiceName, service.Name)
+
+		var statefulset appsv1.StatefulSet
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: instance.Name + "-activegate", Namespace: testNamespace}, &statefulset)
+		require.NoError(t, err)
+	})
+	t.Run("activegate is created when extensions are enabled in dk, and activegate kubernetes is configured", func(t *testing.T) {
+		instance := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      testName,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName}},
+				Extensions: dynakube.ExtensionsSpec{
+					Prometheus: dynakube.PrometheusSpec{
+						Enabled: true,
+					},
+				},
+			},
+		}
+
+		fakeClient := fake.NewClient(testKubeSystemNamespace)
+
+		r := NewReconciler(fakeClient, fakeClient, instance, createMockDtClient(t, true), nil, nil).(*Reconciler)
+		r.connectionReconciler = createGenericReconcilerMock(t)
+		r.versionReconciler = createVersionReconcilerMock(t)
+		r.pullSecretReconciler = createGenericReconcilerMock(t)
+
+		err := r.Reconcile(context.Background())
+		require.NoError(t, err)
+
+		var service corev1.Service
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
+		require.NoError(t, err)
+		require.Equal(t, testServiceName, service.Name)
+
+		var statefulset appsv1.StatefulSet
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: instance.Name + "-activegate", Namespace: testNamespace}, &statefulset)
+		require.NoError(t, err)
+	})
+	t.Run("activegate is created when extensions are enabled in dk, but activegate capabilities are removed", func(t *testing.T) {
+		instance := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      testName,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName}},
+				Extensions: dynakube.ExtensionsSpec{
+					Prometheus: dynakube.PrometheusSpec{
+						Enabled: true,
+					},
+				},
+			},
+		}
+
+		fakeClient := fake.NewClient(testKubeSystemNamespace)
+
+		r := NewReconciler(fakeClient, fakeClient, instance, createMockDtClient(t, true), nil, nil).(*Reconciler)
+		r.connectionReconciler = createGenericReconcilerMock(t)
+		r.versionReconciler = createVersionReconcilerMock(t)
+		r.pullSecretReconciler = createGenericReconcilerMock(t)
+
+		err := r.Reconcile(context.Background())
+		require.NoError(t, err)
+
+		var service corev1.Service
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
+		require.NoError(t, err)
+		require.Equal(t, testServiceName, service.Name)
+
+		var statefulset appsv1.StatefulSet
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: instance.Name + "-activegate", Namespace: testNamespace}, &statefulset)
+		require.NoError(t, err)
+
+		// remove AG from spec
+		r.dk.Spec.ActiveGate = dynakube.ActiveGateSpec{}
+		r.connectionReconciler = createGenericReconcilerMock(t)
+		r.versionReconciler = createVersionReconcilerMock(t)
+		r.pullSecretReconciler = createGenericReconcilerMock(t)
+		err = r.Reconcile(context.Background())
+		require.NoError(t, err)
+
+		var service1 corev1.Service
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service1)
+		require.NoError(t, err)
+		require.Equal(t, testServiceName, service1.Name)
+
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: instance.Name + "-activegate", Namespace: testNamespace}, &statefulset)
+		require.NoError(t, err)
+
+		// disable extensions
+		r.dk.Spec.Extensions.Prometheus.Enabled = false
+		r.connectionReconciler = createGenericReconcilerMock(t)
+		r.versionReconciler = createVersionReconcilerMock(t)
+		r.pullSecretReconciler = createGenericReconcilerMock(t)
+		err = r.Reconcile(context.Background())
+		require.NoError(t, err)
+
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
+		assert.True(t, k8serrors.IsNotFound(err))
+
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: instance.Name + "-activegate", Namespace: testNamespace}, &statefulset)
+		assert.True(t, k8serrors.IsNotFound(err))
 	})
 }
 

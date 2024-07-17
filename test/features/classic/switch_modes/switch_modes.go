@@ -5,7 +5,7 @@ package switch_modes
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"

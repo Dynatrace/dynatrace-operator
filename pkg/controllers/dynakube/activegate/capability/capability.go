@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"k8s.io/utils/net"
 )
@@ -76,10 +76,15 @@ func NewMultiCapability(dk *dynakube.DynaKube) Capability {
 
 	mc.enabled = true
 	mc.properties = &dk.Spec.ActiveGate.CapabilityProperties
-	capabilityNames := []string{}
-	capabilityDisplayNames := make([]string, len(dk.Spec.ActiveGate.Capabilities))
 
-	for i, capName := range dk.Spec.ActiveGate.Capabilities {
+	if len(dk.Spec.ActiveGate.Capabilities) == 0 && dk.IsExtensionsEnabled() {
+		mc.properties.Replicas = 1
+	}
+
+	capabilityNames := []string{}
+	capabilityDisplayNames := []string{}
+
+	for _, capName := range dk.Spec.ActiveGate.Capabilities {
 		capabilityGenerator, ok := activeGateCapabilities[capName]
 		if !ok {
 			continue
@@ -87,7 +92,12 @@ func NewMultiCapability(dk *dynakube.DynaKube) Capability {
 
 		capGen := capabilityGenerator()
 		capabilityNames = append(capabilityNames, capGen.argName)
-		capabilityDisplayNames[i] = capGen.displayName
+		capabilityDisplayNames = append(capabilityDisplayNames, capGen.displayName)
+	}
+
+	if dk.IsExtensionsEnabled() {
+		capabilityNames = append(capabilityNames, "extension_controller")
+		capabilityDisplayNames = append(capabilityDisplayNames, "extension_controller")
 	}
 
 	mc.argName = strings.Join(capabilityNames, ",")

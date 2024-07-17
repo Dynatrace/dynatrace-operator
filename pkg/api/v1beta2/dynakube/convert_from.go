@@ -1,34 +1,26 @@
 package dynakube
 
 import (
-	"encoding/json"
-
-	"github.com/Dynatrace/dynatrace-operator/pkg/api"
-	v1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	v1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
-// ConvertTo converts this v1beta3.DynaKube to the Hub version (v1beta2.DynaKube).
-func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
-	dst := dstRaw.(*v1beta2.DynaKube)
+// ConvertFrom converts from the Hub version (v1beta3) to this version (v1beta3).
+func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
+	src := srcRaw.(*v1beta3.DynaKube)
 
-	src.toBase(dst)
-	src.toOneAgentSpec(dst)
-	src.toActiveGateSpec(dst)
-	src.toMetadataEnrichment(dst)
-
-	if err := src.toExtensions(dst); err != nil {
-		return err
-	}
-
-	src.toStatus(dst)
+	dst.fromBase(src)
+	dst.fromOneAgentSpec(src)
+	dst.fromActiveGateSpec(src)
+	dst.fromMetadataEnrichment(src)
+	dst.fromStatus(src)
 
 	return nil
 }
 
-func (src *DynaKube) toBase(dst *v1beta2.DynaKube) {
-	if dst.Annotations == nil {
-		dst.Annotations = map[string]string{}
+func (dst *DynaKube) fromBase(src *v1beta3.DynaKube) {
+	if src.Annotations == nil {
+		src.Annotations = map[string]string{}
 	}
 
 	dst.ObjectMeta = *src.ObjectMeta.DeepCopy() // DeepCopy mainly relevant for testing
@@ -37,34 +29,34 @@ func (src *DynaKube) toBase(dst *v1beta2.DynaKube) {
 	dst.Spec.Tokens = src.Spec.Tokens
 	dst.Spec.CustomPullSecret = src.Spec.CustomPullSecret
 	dst.Spec.SkipCertCheck = src.Spec.SkipCertCheck
-	dst.Spec.Proxy = (*v1beta2.DynaKubeProxy)(src.Spec.Proxy)
+	dst.Spec.Proxy = (*DynaKubeProxy)(src.Spec.Proxy)
 	dst.Spec.TrustedCAs = src.Spec.TrustedCAs
 	dst.Spec.NetworkZone = src.Spec.NetworkZone
 	dst.Spec.EnableIstio = src.Spec.EnableIstio
 	dst.Spec.DynatraceApiRequestThreshold = src.Spec.DynatraceApiRequestThreshold
 }
 
-func (src *DynaKube) toOneAgentSpec(dst *v1beta2.DynaKube) {
+func (dst *DynaKube) fromOneAgentSpec(src *v1beta3.DynaKube) {
 	dst.Spec.OneAgent.HostGroup = src.Spec.OneAgent.HostGroup
 
 	switch {
 	case src.HostMonitoringMode():
-		dst.Spec.OneAgent.HostMonitoring = toHostInjectSpec(*src.Spec.OneAgent.HostMonitoring)
+		dst.Spec.OneAgent.HostMonitoring = fromHostInjectSpec(*src.Spec.OneAgent.HostMonitoring)
 	case src.ClassicFullStackMode():
-		dst.Spec.OneAgent.ClassicFullStack = toHostInjectSpec(*src.Spec.OneAgent.ClassicFullStack)
+		dst.Spec.OneAgent.ClassicFullStack = fromHostInjectSpec(*src.Spec.OneAgent.ClassicFullStack)
 	case src.CloudNativeFullstackMode():
-		dst.Spec.OneAgent.CloudNativeFullStack = &v1beta2.CloudNativeFullStackSpec{}
-		dst.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec = *toHostInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec)
-		dst.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec = *toAppInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec)
+		dst.Spec.OneAgent.CloudNativeFullStack = &CloudNativeFullStackSpec{}
+		dst.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec = *fromHostInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec)
+		dst.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec = *fromAppInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec)
 	case src.ApplicationMonitoringMode():
-		dst.Spec.OneAgent.ApplicationMonitoring = &v1beta2.ApplicationMonitoringSpec{}
-		dst.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec = *toAppInjectSpec(src.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec)
+		dst.Spec.OneAgent.ApplicationMonitoring = &ApplicationMonitoringSpec{}
+		dst.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec = *fromAppInjectSpec(src.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec)
 		dst.Spec.OneAgent.ApplicationMonitoring.Version = src.Spec.OneAgent.ApplicationMonitoring.Version
 		dst.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver = src.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver
 	}
 }
 
-func (src *DynaKube) toActiveGateSpec(dst *v1beta2.DynaKube) {
+func (dst *DynaKube) fromActiveGateSpec(src *v1beta3.DynaKube) {
 	dst.Spec.ActiveGate.Image = src.Spec.ActiveGate.Image
 	dst.Spec.ActiveGate.PriorityClassName = src.Spec.ActiveGate.PriorityClassName
 	dst.Spec.ActiveGate.TlsSecretName = src.Spec.ActiveGate.TlsSecretName
@@ -78,27 +70,28 @@ func (src *DynaKube) toActiveGateSpec(dst *v1beta2.DynaKube) {
 	dst.Spec.ActiveGate.TopologySpreadConstraints = src.Spec.ActiveGate.TopologySpreadConstraints
 	dst.Spec.ActiveGate.Resources = src.Spec.ActiveGate.Resources
 	dst.Spec.ActiveGate.Replicas = src.Spec.ActiveGate.Replicas
+	dst.Spec.ActiveGate.Capabilities = []CapabilityDisplayName{}
 
 	for _, capability := range src.Spec.ActiveGate.Capabilities {
-		dst.Spec.ActiveGate.Capabilities = append(dst.Spec.ActiveGate.Capabilities, v1beta2.CapabilityDisplayName(capability))
+		dst.Spec.ActiveGate.Capabilities = append(dst.Spec.ActiveGate.Capabilities, CapabilityDisplayName(capability))
 	}
 
 	if src.Spec.ActiveGate.CustomProperties != nil {
-		dst.Spec.ActiveGate.CustomProperties = &v1beta2.DynaKubeValueSource{
+		dst.Spec.ActiveGate.CustomProperties = &DynaKubeValueSource{
 			Value:     src.Spec.ActiveGate.CustomProperties.Value,
 			ValueFrom: src.Spec.ActiveGate.CustomProperties.ValueFrom,
 		}
 	}
 }
 
-func (src *DynaKube) toStatus(dst *v1beta2.DynaKube) {
-	src.toOneAgentStatus(dst)
-	src.toActiveGateStatus(dst)
-	dst.Status.CodeModules = v1beta2.CodeModulesStatus{
+func (dst *DynaKube) fromStatus(src *v1beta3.DynaKube) {
+	dst.fromOneAgentStatus(*src)
+	dst.fromActiveGateStatus(*src)
+	dst.Status.CodeModules = CodeModulesStatus{
 		VersionStatus: src.Status.CodeModules.VersionStatus,
 	}
 
-	dst.Status.DynatraceApi = v1beta2.DynatraceApiStatus{
+	dst.Status.DynatraceApi = DynatraceApiStatus{
 		LastTokenScopeRequest: src.Status.DynatraceApi.LastTokenScopeRequest,
 	}
 
@@ -108,25 +101,25 @@ func (src *DynaKube) toStatus(dst *v1beta2.DynaKube) {
 	dst.Status.KubeSystemUUID = src.Status.KubeSystemUUID
 }
 
-func (src *DynaKube) toOneAgentStatus(dst *v1beta2.DynaKube) {
-	dst.Status.OneAgent.Instances = map[string]v1beta2.OneAgentInstance{}
+func (dst *DynaKube) fromOneAgentStatus(src v1beta3.DynaKube) {
+	dst.Status.OneAgent.Instances = map[string]OneAgentInstance{}
 
 	// Instance
+	dst.Status.OneAgent.LastInstanceStatusUpdate = src.Status.OneAgent.LastInstanceStatusUpdate
+
 	for key, instance := range src.Status.OneAgent.Instances {
-		tmp := v1beta2.OneAgentInstance{
+		tmp := OneAgentInstance{
 			PodName:   instance.PodName,
 			IPAddress: instance.IPAddress,
 		}
 		dst.Status.OneAgent.Instances[key] = tmp
 	}
 
-	dst.Status.OneAgent.LastInstanceStatusUpdate = src.Status.OneAgent.LastInstanceStatusUpdate
-
 	// Connection-Info
-	dst.Status.OneAgent.ConnectionInfoStatus.ConnectionInfoStatus = (v1beta2.ConnectionInfoStatus)(src.Status.OneAgent.ConnectionInfoStatus.ConnectionInfoStatus)
+	dst.Status.OneAgent.ConnectionInfoStatus.ConnectionInfoStatus = (ConnectionInfoStatus)(src.Status.OneAgent.ConnectionInfoStatus.ConnectionInfoStatus)
 
 	for _, host := range src.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts {
-		tmp := v1beta2.CommunicationHostStatus{
+		tmp := CommunicationHostStatus{
 			Host:     host.Host,
 			Port:     host.Port,
 			Protocol: host.Protocol,
@@ -139,16 +132,15 @@ func (src *DynaKube) toOneAgentStatus(dst *v1beta2.DynaKube) {
 	dst.Status.OneAgent.Healthcheck = src.Status.OneAgent.Healthcheck
 }
 
-func (src *DynaKube) toActiveGateStatus(dst *v1beta2.DynaKube) {
-	dst.Status.ActiveGate.ConnectionInfoStatus.ConnectionInfoStatus = (v1beta2.ConnectionInfoStatus)(src.Status.ActiveGate.ConnectionInfoStatus.ConnectionInfoStatus)
+func (dst *DynaKube) fromActiveGateStatus(src v1beta3.DynaKube) {
+	dst.Status.ActiveGate.ConnectionInfoStatus.ConnectionInfoStatus = (ConnectionInfoStatus)(src.Status.ActiveGate.ConnectionInfoStatus.ConnectionInfoStatus)
 	dst.Status.ActiveGate.ServiceIPs = src.Status.ActiveGate.ServiceIPs
 	dst.Status.ActiveGate.VersionStatus = src.Status.ActiveGate.VersionStatus
 }
 
-func toHostInjectSpec(src HostInjectSpec) *v1beta2.HostInjectSpec {
-	dst := &v1beta2.HostInjectSpec{}
+func fromHostInjectSpec(src v1beta3.HostInjectSpec) *HostInjectSpec {
+	dst := &HostInjectSpec{}
 	dst.AutoUpdate = src.AutoUpdate
-
 	dst.OneAgentResources = src.OneAgentResources
 	dst.Args = src.Args
 	dst.Version = src.Version
@@ -165,8 +157,8 @@ func toHostInjectSpec(src HostInjectSpec) *v1beta2.HostInjectSpec {
 	return dst
 }
 
-func toAppInjectSpec(src AppInjectionSpec) *v1beta2.AppInjectionSpec {
-	dst := &v1beta2.AppInjectionSpec{}
+func fromAppInjectSpec(src v1beta3.AppInjectionSpec) *AppInjectionSpec {
+	dst := &AppInjectionSpec{}
 
 	dst.CodeModulesImage = src.CodeModulesImage
 	dst.InitResources = src.InitResources
@@ -175,38 +167,7 @@ func toAppInjectSpec(src AppInjectionSpec) *v1beta2.AppInjectionSpec {
 	return dst
 }
 
-func (src *DynaKube) toMetadataEnrichment(dst *v1beta2.DynaKube) {
+func (dst *DynaKube) fromMetadataEnrichment(src *v1beta3.DynaKube) {
 	dst.Spec.MetadataEnrichment.Enabled = src.Spec.MetadataEnrichment.Enabled
 	dst.Spec.MetadataEnrichment.NamespaceSelector = src.Spec.MetadataEnrichment.NamespaceSelector
-}
-
-func (src *DynaKube) toExtensions(dst *v1beta2.DynaKube) error {
-	e := src.Spec.Extensions
-
-	ex, err := json.Marshal(e)
-	if err != nil {
-		return err
-	}
-
-	dst.Annotations[api.AnnotationDynatraceExtensions] = string(ex)
-
-	o := src.Spec.Templates.OpenTelemetryCollector
-
-	otel, err := json.Marshal(o)
-	if err != nil {
-		return err
-	}
-
-	dst.Annotations[api.AnnotationDynatraceOpenTelemetryCollector] = string(otel)
-
-	ee := src.Spec.Templates.ExtensionExecutionController
-
-	eec, err := json.Marshal(ee)
-	if err != nil {
-		return err
-	}
-
-	dst.Annotations[api.AnnotationDynatraceextEnsionExecutionController] = string(eec)
-
-	return nil
 }

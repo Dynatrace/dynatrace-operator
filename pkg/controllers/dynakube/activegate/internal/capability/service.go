@@ -1,7 +1,7 @@
 package capability
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -13,7 +13,7 @@ import (
 func CreateService(dk *dynakube.DynaKube, feature string) *corev1.Service {
 	var ports []corev1.ServicePort
 
-	if dk.NeedsActiveGateServicePorts() {
+	if dk.NeedsActiveGateService() {
 		ports = append(ports,
 			corev1.ServicePort{
 				Name:       consts.HttpsServicePortName,

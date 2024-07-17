@@ -4517,7 +4517,7 @@ spec:
             type: object
         type: object
     served: true
-    storage: true
+    storage: false
     subresources:
       status: {}
   - additionalPrinterColumns:
@@ -7038,6 +7038,23 @@ spec:
                 description: KubeSystemUUID contains the UUID of the current Kubernetes
                   cluster
                 type: string
+              metadataEnrichment:
+                description: Observed state of Metadata-Enrichment
+                properties:
+                  rules:
+                    items:
+                      properties:
+                        enabled:
+                          type: boolean
+                        key:
+                          type: string
+                        mapping:
+                          type: string
+                        type:
+                          type: string
+                      type: object
+                    type: array
+                type: object
               oneAgent:
                 description: Observed state of OneAgent
                 properties:
@@ -7122,6 +7139,6 @@ spec:
             type: object
         type: object
     served: true
-    storage: false
+    storage: true
     subresources:
       status: {}
