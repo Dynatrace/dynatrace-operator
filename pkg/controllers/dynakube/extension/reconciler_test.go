@@ -115,7 +115,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		testutil.PartialEqual(t, &expectedConditions, dk.Conditions(), cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
 	})
 
-	t.Run("Create and update service with minimal setup", func(t *testing.T) {
+	t.Run("Create service when prometheus is enabled with minimal setup", func(t *testing.T) {
 		dk := createDynakube(dynakube.OneAgentSpec{
 			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}})
 
@@ -123,10 +123,15 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		mockK8sClient := fake.NewClient(dk)
 
-		reconciler := NewReconciler(mockK8sClient,
-			mockK8sClient, dk)
-		err := reconciler.Reconcile(context.Background())
+		r := NewReconciler(mockK8sClient, mockK8sClient, dk)
+		err := r.Reconcile(context.Background())
+
 		require.NoError(t, err)
+
+		var svc corev1.Service
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: buildServiceName(dk.Name), Namespace: testNamespace}, &svc)
+		require.NoError(t, err)
+		assert.NotNil(t, svc)
 	})
 }
 

@@ -4,11 +4,30 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/services"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func (r *reconciler) reconcileService(ctx context.Context) error {
+	if r.dk.PrometheusEnabled() {
+		log.Info("reconcile service")
+
+		if err := r.ensureService(ctx); err != nil {
+			return errors.WithMessage(err, "could not update service")
+		}
+
+		return nil
+	} else {
+		if err := r.removeService(ctx); err != nil {
+			return errors.WithMessage(err, "could not remove service")
+		}
+	}
+
+	return nil
+}
 
 func (r *reconciler) ensureService(ctx context.Context) error {
 	_, err := getService(ctx, r.apiReader, r.dk.Name, r.dk.Namespace)
@@ -17,8 +36,6 @@ func (r *reconciler) ensureService(ctx context.Context) error {
 
 		return r.createService(ctx)
 	} else if err != nil {
-		// TODO:
-		// conditions.SetKubeApiError(r.dk.Conditions(), ConditionType, err)
 		return err
 	}
 
