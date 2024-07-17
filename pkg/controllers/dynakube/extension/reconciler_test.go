@@ -41,7 +41,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		// assert conditions are empty
 		require.Empty(t, instance.Conditions())
 	})
-	t.Run(`Extension secret is generated when Prometheus is disabled`, func(t *testing.T) {
+	t.Run(`Extension secret is generated when Prometheus is enabled`, func(t *testing.T) {
 		instance := makeTestDynakube()
 
 		fakeClient := fake.NewClient()
