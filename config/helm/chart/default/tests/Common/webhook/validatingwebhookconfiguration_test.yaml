@@ -86,7 +86,7 @@ tests:
                   name: dynatrace-webhook
                   namespace: NAMESPACE
                   path: /validate/edgeconnect
-              rules: # todo gakr do something in this file
+              rules:
                 - operations:
                     - CREATE
                     - UPDATE
