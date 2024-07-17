@@ -54,7 +54,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 			Data: map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
 		}).
 		Build()
-	instance := &dynakube.DynaKube{
+	dk := &dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
 			ActiveGate: dynakube.ActiveGateSpec{
 				Capabilities: []dynakube.CapabilityDisplayName{
@@ -68,7 +68,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 
 	capability.NewMultiCapability(dk)
 
-	r := NewReconciler(clt, clt, instance, capability.NewMultiCapability(instance)).(*Reconciler)
+	r := NewReconciler(clt, clt, dk, capability.NewMultiCapability(dk)).(*Reconciler)
 	r.dk.Annotations = map[string]string{}
 	require.NotNil(t, r)
 	require.NotNil(t, r.client)

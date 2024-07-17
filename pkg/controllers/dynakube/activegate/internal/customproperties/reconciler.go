@@ -52,7 +52,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return err
 		}
 
-		_, err = secret.Query(r.client, r.client, log).WithOwner(r.instance).CreateOrUpdate(ctx, customPropertiesSecret) // TODO: pass in an apiReader instead of the client 2 times
+		_, err = secret.Query(r.client, r.client, log).WithOwner(r.dk).CreateOrUpdate(ctx, customPropertiesSecret) // TODO: pass in an apiReader instead of the client 2 times
 		if err != nil {
 			return err
 		}

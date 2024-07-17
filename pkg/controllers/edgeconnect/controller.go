@@ -95,26 +95,26 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 
 	_log.Info("reconciling EdgeConnect")
 
-	edgeConnect, err := controller.getEdgeConnect(ctx, request.Name, request.Namespace)
+	ec, err := controller.getEdgeConnect(ctx, request.Name, request.Namespace)
 	if err != nil {
 		_log.Debug("reconciliation of EdgeConnect failed")
 
 		return reconcile.Result{}, err
-	} else if edgeConnect == nil {
+	} else if ec == nil {
 		_log.Debug("EdgeConnect object does not exist")
 
 		return reconcile.Result{}, nil
 	}
 
-	if deletionTimestamp := edgeConnect.GetDeletionTimestamp(); deletionTimestamp != nil {
+	if deletionTimestamp := ec.GetDeletionTimestamp(); deletionTimestamp != nil {
 		_log.Debug("EdgeConnect object shall be deleted", "timestamp", deletionTimestamp.String())
 
-		return reconcile.Result{}, controller.reconcileEdgeConnectDeletion(ctx, edgeConnect)
+		return reconcile.Result{}, controller.reconcileEdgeConnectDeletion(ctx, ec)
 	}
 
 	_log.Debug("EdgeConnect object needs reconcile")
 
-	return controller.reconcileEdgeConnect(ctx, edgeConnect)
+	return controller.reconcileEdgeConnect(ctx, ec)
 }
 
 //nolint:revive
@@ -386,7 +386,7 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 
 	desiredDeployment.Annotations[hasher.AnnotationHash] = ddHash
 
-	_, err = k8sdeployment.Query(controller.client, controller.apiReader, log).WithOwner(edgeConnect).CreateOrUpdate(ctx, desiredDeployment)
+	_, err = k8sdeployment.Query(controller.client, controller.apiReader, log).WithOwner(ec).CreateOrUpdate(ctx, desiredDeployment)
 	if err != nil {
 		_log.Info("could not create or update deployment for EdgeConnect")
 
@@ -602,7 +602,7 @@ func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnect
 		return errors.WithStack(err)
 	}
 
-	query := k8ssecret.Query(controller.client, controller.apiReader, _log).WithOwner(edgeConnect)
+	query := k8ssecret.Query(controller.client, controller.apiReader, _log).WithOwner(ec)
 
 	_, err = query.CreateOrUpdate(ctx, ecOAuthSecret)
 	if err != nil {
@@ -699,7 +699,7 @@ func (controller *Controller) createOrUpdateEdgeConnectDeploymentAndSettings(ctx
 
 	desiredDeployment.Annotations[hasher.AnnotationHash] = ddHash
 
-	_, err = k8sdeployment.Query(controller.client, controller.apiReader, _log).WithOwner(edgeConnect).CreateOrUpdate(ctx, desiredDeployment)
+	_, err = k8sdeployment.Query(controller.client, controller.apiReader, _log).WithOwner(ec).CreateOrUpdate(ctx, desiredDeployment)
 	if err != nil {
 		_log.Debug("could not create or update deployment for EdgeConnect")
 
@@ -808,7 +808,7 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 		return "", "", errors.WithStack(err)
 	}
 
-	query := k8ssecret.Query(controller.client, controller.apiReader, log).WithOwner(edgeConnect)
+	query := k8ssecret.Query(controller.client, controller.apiReader, log).WithOwner(ec)
 
 	_, err = query.CreateOrUpdate(ctx, secretConfig)
 	if err != nil {
