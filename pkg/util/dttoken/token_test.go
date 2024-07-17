@@ -27,6 +27,14 @@ func TestGenerateToken(t *testing.T) {
 		assert.Len(t, tokenParts[1], publicPortionSize)
 		assert.Len(t, tokenParts[2], privatePortionSize)
 	})
+	t.Run("string prefix including space", func(t *testing.T) {
+		token, err := New("EEC dt0x01")
+		require.NoError(t, err)
+
+		require.Equal(t, "EEC dt0x01", token.prefix)
+		require.NotEmpty(t, token.private)
+		require.NotEmpty(t, token.public)
+	})
 }
 
 func Test_generateRandom(t *testing.T) {
