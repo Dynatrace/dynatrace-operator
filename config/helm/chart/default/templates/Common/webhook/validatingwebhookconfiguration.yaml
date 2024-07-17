@@ -21,8 +21,6 @@ metadata:
 webhooks:
   - admissionReviewVersions:
       - v1
-      - v1beta1
-      - v1alpha1
     clientConfig:
       service:
         name: dynatrace-webhook
@@ -41,10 +39,9 @@ webhooks:
     name: webhook.dynatrace.com
     timeoutSeconds: {{.Values.webhook.validatingWebhook.timeoutSeconds}}
     sideEffects: None
+    matchPolicy: Exact
   - admissionReviewVersions:
       - v1
-      - v1beta1
-      - v1alpha1
     clientConfig:
       service:
         name: dynatrace-webhook
@@ -63,3 +60,4 @@ webhooks:
     name: edgeconnect.webhook.dynatrace.com
     timeoutSeconds: {{.Values.webhook.validatingWebhook.timeoutSeconds}}
     sideEffects: None
+    matchPolicy: Exact

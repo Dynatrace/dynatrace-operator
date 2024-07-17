@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"golang.org/x/mod/semver"
 	"k8s.io/apimachinery/pkg/labels"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -59,7 +60,7 @@ func conflictingNodeSelector(ctx context.Context, dv *Validator, dk *dynakube.Dy
 	}
 
 	validDynakubes := &dynakube.DynaKubeList{}
-	if err := dv.apiReader.List(ctx, validDynakubes); err != nil {
+	if err := dv.apiReader.List(ctx, validDynakubes, &client.ListOptions{Namespace: dk.Namespace}); err != nil {
 		log.Info("error occurred while listing dynakubes", "err", err.Error())
 
 		return ""
