@@ -61,7 +61,7 @@ func testGetConfigMap(t *testing.T) {
 	foundConfigMap, err := configMapQuery.Get(context.Background(), client.ObjectKey{Name: testConfigMapName, Namespace: testNamespace})
 
 	require.NoError(t, err)
-	assert.True(t, AreConfigMapsEqual(&configMap, foundConfigMap))
+	assert.True(t, isEqual(&configMap, foundConfigMap))
 }
 
 func testCreateConfigMap(t *testing.T) {
@@ -83,7 +83,7 @@ func testCreateConfigMap(t *testing.T) {
 	err = fakeClient.Get(context.Background(), client.ObjectKey{Name: testConfigMapName, Namespace: testNamespace}, &actualConfigMap)
 
 	require.NoError(t, err)
-	assert.True(t, AreConfigMapsEqual(configMap, &actualConfigMap))
+	assert.True(t, isEqual(configMap, &actualConfigMap))
 }
 
 func testUpdateConfigMap(t *testing.T) {
@@ -113,7 +113,7 @@ func testUpdateConfigMap(t *testing.T) {
 	err = fakeClient.Get(context.Background(), client.ObjectKey{Name: configMap.Name, Namespace: configMap.Namespace}, &updatedConfigMap)
 
 	require.NoError(t, err)
-	assert.True(t, AreConfigMapsEqual(configMap, &updatedConfigMap))
+	assert.True(t, isEqual(configMap, &updatedConfigMap))
 }
 
 func testCreateOrUpdateConfigMap(t *testing.T) {
@@ -135,7 +135,7 @@ func testCreateOrUpdateConfigMap(t *testing.T) {
 	err = fakeClient.Get(context.Background(), client.ObjectKey{Name: configMap.Name, Namespace: configMap.Namespace}, &createdConfigMap)
 
 	require.NoError(t, err)
-	assert.True(t, AreConfigMapsEqual(configMap, &createdConfigMap))
+	assert.True(t, isEqual(configMap, &createdConfigMap))
 
 	fakeClient = fake.NewClient(configMap)
 	configMap = &corev1.ConfigMap{
@@ -155,7 +155,7 @@ func testCreateOrUpdateConfigMap(t *testing.T) {
 	err = fakeClient.Get(context.Background(), client.ObjectKey{Name: configMap.Name, Namespace: configMap.Namespace}, &updatedConfigMap)
 
 	require.NoError(t, err)
-	assert.True(t, AreConfigMapsEqual(configMap, &updatedConfigMap))
+	assert.True(t, isEqual(configMap, &updatedConfigMap))
 }
 
 func testIdenticalConfigMapIsNotUpdated(t *testing.T) {

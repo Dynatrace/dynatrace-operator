@@ -20,8 +20,8 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 
 			return out
 		},
-		IsEqual:     IsEqual,
-		IsImmutable: IsImmutable,
+		IsEqual:     isEqual,
+		IsImmutable: isImmutable,
 
 		KubeClient: kubeClient,
 		KubeReader: kubeReader,
@@ -29,10 +29,10 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 	}
 }
 
-func IsEqual(current, desired *corev1.Pod) bool {
+func isEqual(current, desired *corev1.Pod) bool {
 	return !hasher.IsAnnotationDifferent(current, desired) // TODO: is this relevant?
 }
 
-func IsImmutable(current, desired *corev1.Pod) bool {
+func isImmutable(current, desired *corev1.Pod) bool {
 	return false
 }
