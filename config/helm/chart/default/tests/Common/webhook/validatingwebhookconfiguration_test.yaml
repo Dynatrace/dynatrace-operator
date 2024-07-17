@@ -18,8 +18,6 @@ tests:
           value:
             - admissionReviewVersions:
                 - v1
-                - v1beta1
-                - v1alpha1
               clientConfig:
                 service:
                   name: dynatrace-webhook
@@ -38,10 +36,9 @@ tests:
               name: v1beta2.dynakube.webhook.dynatrace.com
               timeoutSeconds: 10
               sideEffects: None
+              matchPolicy: Exact
             - admissionReviewVersions:
                 - v1
-                - v1beta1
-                - v1alpha1
               clientConfig:
                 service:
                   name: dynatrace-webhook
@@ -60,10 +57,9 @@ tests:
               name: v1beta3.dynakube.webhook.dynatrace.com
               timeoutSeconds: 10
               sideEffects: None
+              matchPolicy: Exact
             - admissionReviewVersions:
                 - v1
-                - v1beta1
-                - v1alpha1
               clientConfig:
                 service:
                   name: dynatrace-webhook
@@ -82,6 +78,7 @@ tests:
               name: edgeconnect.webhook.dynatrace.com
               timeoutSeconds: 10
               sideEffects: None
+              matchPolicy: Exact
   - it: should change timeoutSeconds
     set:
       platform: kubernetes
