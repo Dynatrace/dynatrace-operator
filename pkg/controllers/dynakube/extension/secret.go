@@ -11,12 +11,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	eecTokenKey         = "eec-token"
-	eecTokenValuePrefix = "EEC dt0x01"
-	secretSuffix        = "-extensions-token"
-)
-
 func (r *reconciler) reconcileSecret(ctx context.Context) error {
 	log.Info("reconciling secret " + getSecretName(r.dk.Name))
 
@@ -43,7 +37,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 	if errors.IsNotFound(err) {
 		log.Info("creating secret " + getSecretName(r.dk.Name))
 
-		newEecToken, err := dttoken.New(eecTokenValuePrefix)
+		newEecToken, err := dttoken.New(eecTokenSecretValuePrefix)
 		if err != nil {
 			setSecretCreatedFailureCondition(r.dk.Conditions(), err)
 
@@ -72,7 +66,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 
 func buildSecret(dk *dynakube.DynaKube, token dttoken.Token) (*corev1.Secret, error) {
 	secretData := map[string][]byte{
-		eecTokenKey: []byte(token.String()),
+		eecTokenSecretKey: []byte(token.String()),
 	}
 
 	return k8ssecret.Create(dk, k8ssecret.NewNameModifier(getSecretName(dk.Name)), k8ssecret.NewNamespaceModifier(dk.GetNamespace()), k8ssecret.NewDataModifier(secretData))

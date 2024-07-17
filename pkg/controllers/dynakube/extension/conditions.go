@@ -7,13 +7,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	secretConditionType         = "ExtensionsTokenSecret"
-	secretCreatedReason         = "SecretCreated"
-	secretCreatedMessageSuccess = "EEC token created"
-	secretCreatedMessageFailure = "Error creating extensions secret: %s"
-)
-
 func setSecretCreatedSuccessCondition(conditions *[]metav1.Condition) {
 	condition := metav1.Condition{
 		Type:    secretConditionType,
