@@ -13,8 +13,6 @@ import (
 )
 
 func (r *reconciler) reconcileSecret(ctx context.Context) error {
-	log.Info("reconciling secret " + r.getSecretName())
-
 	query := k8ssecret.NewQuery(ctx, r.client, r.apiReader, log)
 
 	if !r.dk.PrometheusEnabled() {
@@ -29,8 +27,6 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 	}
 
 	if errors.IsNotFound(err) {
-		log.Info("creating secret " + r.getSecretName())
-
 		newEecToken, err := dttoken.New(eecTokenSecretValuePrefix)
 		if err != nil {
 			conditions.SetSecretCreatedFailed(r.dk.Conditions(), secretConditionType, fmt.Sprintf(secretCreatedMessageFailure, err))
