@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dynakubev1beta1validation "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube/validation"
 	dynakubev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dynakubev1beta2validation "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube/validation"
 	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -157,7 +158,9 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		err = (&dynakubev1beta1.DynaKube{}).SetupWebhookWithManager(webhookManager)
+		dkv1beta1Validator := dynakubev1beta1validation.New(webhookManager.GetAPIReader(), webhookManager.GetConfig())
+
+		err = dynakubev1beta1.SetupWebhookWithManager(webhookManager, dkv1beta1Validator)
 		if err != nil {
 			return err
 		}
