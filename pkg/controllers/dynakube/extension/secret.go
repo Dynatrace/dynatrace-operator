@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
@@ -14,22 +13,15 @@ import (
 )
 
 func (r *reconciler) reconcileSecret(ctx context.Context) error {
-	log.Info("reconciling secret " + getSecretName(r.dk.Name))
+	log.Info("reconciling secret " + r.getSecretName())
 
 	query := k8ssecret.NewQuery(ctx, r.client, r.apiReader, log)
 
 	if !r.dk.PrometheusEnabled() {
-		err := query.Delete(getSecretName(r.dk.Name), r.dk.Namespace)
-		if err != nil {
-			return err
-		}
-
-		conditions.RemoveSecretCreated(r.dk.Conditions(), secretConditionType)
-
-		return nil
+		return r.reconcileSecretDeleted(query)
 	}
 
-	_, err := query.Get(client.ObjectKey{Name: getSecretName(r.dk.Name), Namespace: r.dk.Namespace})
+	_, err := query.Get(client.ObjectKey{Name: r.getSecretName(), Namespace: r.dk.Namespace})
 	if err != nil && !errors.IsNotFound(err) {
 		conditions.SetSecretCreatedFailed(r.dk.Conditions(), secretConditionType, fmt.Sprintf(secretCreatedMessageFailure, err))
 
@@ -37,7 +29,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 	}
 
 	if errors.IsNotFound(err) {
-		log.Info("creating secret " + getSecretName(r.dk.Name))
+		log.Info("creating secret " + r.getSecretName())
 
 		newEecToken, err := dttoken.New(eecTokenSecretValuePrefix)
 		if err != nil {
@@ -46,7 +38,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 			return err
 		}
 
-		newSecret, err := buildSecret(r.dk, *newEecToken)
+		newSecret, err := r.buildSecret(*newEecToken)
 		if err != nil {
 			conditions.SetSecretCreatedFailed(r.dk.Conditions(), secretConditionType, fmt.Sprintf(secretCreatedMessageFailure, err))
 
@@ -61,19 +53,39 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 		}
 	}
 
-	conditions.SetSecretCreated(r.dk.Conditions(), secretConditionType, getSecretName(r.dk.Name))
+	conditions.SetSecretCreated(r.dk.Conditions(), secretConditionType, r.getSecretName())
 
 	return nil
 }
 
-func buildSecret(dk *dynakube.DynaKube, token dttoken.Token) (*corev1.Secret, error) {
+func (r *reconciler) reconcileSecretDeleted(query k8ssecret.Query) error {
+	_, err := query.Get(client.ObjectKey{Name: r.getSecretName(), Namespace: r.dk.Namespace})
+	if err != nil && !errors.IsNotFound(err) {
+		log.Error(err, "failed reconciling deletion of "+r.getSecretName())
+
+		return err
+	}
+
+	if !errors.IsNotFound(err) {
+		err := query.Delete(r.getSecretName(), r.dk.Namespace)
+		if err != nil {
+			return err
+		}
+	}
+
+	conditions.RemoveSecretCreated(r.dk.Conditions(), secretConditionType)
+
+	return nil
+}
+
+func (r *reconciler) buildSecret(token dttoken.Token) (*corev1.Secret, error) {
 	secretData := map[string][]byte{
 		eecTokenSecretKey: []byte(token.String()),
 	}
 
-	return k8ssecret.Create(dk, k8ssecret.NewNameModifier(getSecretName(dk.Name)), k8ssecret.NewNamespaceModifier(dk.GetNamespace()), k8ssecret.NewDataModifier(secretData))
+	return k8ssecret.Create(r.dk, k8ssecret.NewNameModifier(r.getSecretName()), k8ssecret.NewNamespaceModifier(r.dk.GetNamespace()), k8ssecret.NewDataModifier(secretData))
 }
 
-func getSecretName(dynakubeName string) string {
-	return dynakubeName + secretSuffix
+func (r *reconciler) getSecretName() string {
+	return r.dk.Name + secretSuffix
 }
