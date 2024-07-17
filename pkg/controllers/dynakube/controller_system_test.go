@@ -353,8 +353,8 @@ func createDTMockClient(t *testing.T, paasTokenScopes, apiTokenScopes dtclient.T
 	mockClient.On("GetLatestAgentVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything, mock.Anything).
 		Return(testVersion, nil).Maybe()
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("string")).
-		Return([]dtclient.MonitoredEntity{}, nil).Maybe()
-	mockClient.On("GetSettingsForMonitoredEntities", mock.AnythingOfType("context.backgroundCtx"), []dtclient.MonitoredEntity{}, mock.AnythingOfType("string")).
+		Return([]dtclient.MonitoredEntity{{EntityId: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "operator test entity 1", LastSeenTms: 1639483869085}}, nil).Maybe()
+	mockClient.On("GetSettingsForMonitoredEntities", mock.AnythingOfType("context.backgroundCtx"), []dtclient.MonitoredEntity{{EntityId: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "operator test entity 1", LastSeenTms: 1639483869085}}, mock.AnythingOfType("string")).
 		Return(dtclient.GetSettingsResponse{}, nil).Maybe()
 	mockClient.On("CreateOrUpdateKubernetesSetting", mock.AnythingOfType("context.backgroundCtx"), testName, testUID, mock.AnythingOfType("string")).
 		Return(testObjectID, nil).Maybe()

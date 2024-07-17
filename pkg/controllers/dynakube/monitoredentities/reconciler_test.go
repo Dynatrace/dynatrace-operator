@@ -17,7 +17,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("no error if not enabled", func(t *testing.T) {
 		clt := dtclientmock.NewClient(t)
-		clt.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("context.backgroundCtx"), "").Return(nil, nil)
+		clt.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("context.backgroundCtx"), "kube-system-uuid").Return([]dtclient.MonitoredEntity{{EntityId: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "operator test entity 1", LastSeenTms: 1639483869085}}, nil)
 
 		dk := createDynaKube()
 		dk.Spec.MetadataEnrichment.Enabled = false
@@ -42,7 +42,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, dk.Status.KubernetesClusterMEID)
 	})
-	t.Run("no error if no MEs are found", func(t *testing.T) {
+	t.Run("error if no MEs are found", func(t *testing.T) {
 		clt := dtclientmock.NewClient(t)
 		clt.On("GetMonitoredEntitiesForKubeSystemUUID",
 			mock.AnythingOfType("context.backgroundCtx"), "kube-system-uuid").Return([]dtclient.MonitoredEntity{}, nil)
@@ -53,7 +53,7 @@ func TestReconcile(t *testing.T) {
 
 		err := reconciler.Reconcile(ctx)
 
-		require.NoError(t, err)
+		require.Error(t, err)
 		require.Empty(t, dk.Status.KubernetesClusterMEID)
 	})
 }

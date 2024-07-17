@@ -2,6 +2,7 @@ package monitoredentities
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -11,7 +12,6 @@ import (
 type ReconcilerBuilder func(
 	dtClient dynatrace.Client,
 	dk *dynakube.DynaKube,
-	kubeSystemUUID string,
 ) controllers.Reconciler
 
 func NewReconciler( //nolint
@@ -20,21 +20,21 @@ func NewReconciler( //nolint
 	kubeSystemUUID string,
 ) controllers.Reconciler {
 	return &Reconciler{
-		dk:             dk,
-		dtClient:       dtClient,
-		kubeSystemUUID: kubeSystemUUID,
+		dk:       dk,
+		dtClient: dtClient,
 	}
 }
 
 type Reconciler struct {
-	dk             *dynakube.DynaKube
-	dtClient       dynatrace.Client
-	kubeSystemUUID string
+	dk       *dynakube.DynaKube
+	dtClient dynatrace.Client
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
+	log.Info("start reconciling monitored entities")
+
 	if r.dk.Status.KubernetesClusterMEID == "" {
-		monitoredEntities, err := r.dtClient.GetMonitoredEntitiesForKubeSystemUUID(ctx, r.kubeSystemUUID)
+		monitoredEntities, err := r.dtClient.GetMonitoredEntitiesForKubeSystemUUID(ctx, r.dk.Status.KubeSystemUUID)
 		if err != nil {
 			log.Info("failed to retrieve MEs")
 
@@ -44,9 +44,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		log.Info("retrieved MEs")
 
 		if len(monitoredEntities) == 0 {
-			log.Info("no MEs found, no monitoredentityID will be set in the dynakube status")
-
-			return nil
+			return errors.New("MEs are empty, at this point this should not be the case")
 		}
 
 		r.dk.Status.KubernetesClusterMEID = findLatestEntity(monitoredEntities).EntityId
