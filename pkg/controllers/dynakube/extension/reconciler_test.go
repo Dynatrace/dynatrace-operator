@@ -26,7 +26,6 @@ const (
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run(`Extension secret not generated when Prometheus is disabled`, func(t *testing.T) {
 		instance := makeTestDynakube(false)
-		instance.Spec.Extensions.Prometheus.Enabled = false
 
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, instance)
