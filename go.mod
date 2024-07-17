@@ -9,7 +9,7 @@ require (
 	github.com/go-gormigrate/gormigrate/v2 v2.1.2
 	github.com/go-logr/logr v1.4.2
 	github.com/google/go-cmp v0.6.0
-	github.com/google/go-containerregistry v0.20.0
+	github.com/google/go-containerregistry v0.20.1
 	github.com/google/uuid v1.6.0
 	github.com/klauspost/compress v1.17.9
 	github.com/opencontainers/go-digest v1.0.0
@@ -41,8 +41,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/sqlite v1.5.6
 	gorm.io/gorm v1.25.11
-	istio.io/api v1.22.2
-	istio.io/client-go v1.22.2
+	istio.io/api v1.22.3
+	istio.io/client-go v1.22.3
 	k8s.io/api v0.30.2
 	k8s.io/apiextensions-apiserver v0.30.2
 	k8s.io/apimachinery v0.30.2
