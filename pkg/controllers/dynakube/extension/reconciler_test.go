@@ -2,10 +2,12 @@ package extension
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dynatracev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	testutil "github.com/Dynatrace/dynatrace-operator/pkg/util/testing"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/require"
@@ -22,7 +24,7 @@ const (
 )
 
 func TestReconciler_Reconcile(t *testing.T) {
-	t.Run(`Prometheus disabled`, func(t *testing.T) {
+	t.Run(`Extension secret not generated when Prometheus is disabled`, func(t *testing.T) {
 		instance := makeTestDynakube()
 		instance.Spec.Extensions.Prometheus.Enabled = false
 
@@ -39,7 +41,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		// assert conditions are empty
 		require.Empty(t, instance.Conditions())
 	})
-	t.Run(`Prometheus enabled`, func(t *testing.T) {
+	t.Run(`Extension secret is generated when Prometheus is disabled`, func(t *testing.T) {
 		instance := makeTestDynakube()
 
 		fakeClient := fake.NewClient()
@@ -55,11 +57,11 @@ func TestReconciler_Reconcile(t *testing.T) {
 		// assert extensions token condition is added
 		require.NotEmpty(t, instance.Conditions())
 		var expectedConditions []metav1.Condition
-		setSecretCreatedSuccessCondition(&expectedConditions)
+		conditions.SetSecretCreated(&expectedConditions, secretConditionType, getSecretName(instance.Name))
 		testutil.PartialEqual(t, &expectedConditions, instance.Conditions(), cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
 	})
 
-	t.Run(`Secret creation failed`, func(t *testing.T) {
+	t.Run(`Extension SecretCreated failure condition is set when error`, func(t *testing.T) {
 		instance := makeTestDynakube()
 
 		misconfiguredReader, _ := client.New(&rest.Config{}, client.Options{})
@@ -70,20 +72,20 @@ func TestReconciler_Reconcile(t *testing.T) {
 		// assert extensions token condition is added
 		require.NotEmpty(t, instance.Conditions())
 		var expectedConditions []metav1.Condition
-		setSecretCreatedFailureCondition(&expectedConditions, err)
+		conditions.SetSecretCreatedFailed(&expectedConditions, secretConditionType, fmt.Sprintf(secretCreatedMessageFailure, err))
 		testutil.PartialEqual(t, &expectedConditions, instance.Conditions(), cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
 	})
 }
 
-func makeTestDynakube() *dynatracev1beta3.DynaKube {
-	return &dynatracev1beta3.DynaKube{
+func makeTestDynakube() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,
 		},
-		Spec: dynatracev1beta3.DynaKubeSpec{
-			Extensions: dynatracev1beta3.ExtensionsSpec{
-				Prometheus: dynatracev1beta3.PrometheusSpec{
+		Spec: dynakube.DynaKubeSpec{
+			Extensions: dynakube.ExtensionsSpec{
+				Prometheus: dynakube.PrometheusSpec{
 					Enabled: true,
 				},
 			},

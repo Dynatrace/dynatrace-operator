@@ -2,8 +2,10 @@ package extension
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	corev1 "k8s.io/api/core/v1"
@@ -22,14 +24,14 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 			return err
 		}
 
-		removeSecretCreatedCondition(r.dk.Conditions())
+		conditions.RemoveSecretCreated(r.dk.Conditions(), secretConditionType)
 
 		return nil
 	}
 
 	_, err := query.Get(client.ObjectKey{Name: getSecretName(r.dk.Name), Namespace: r.dk.Namespace})
 	if err != nil && !errors.IsNotFound(err) {
-		setSecretCreatedFailureCondition(r.dk.Conditions(), err)
+		conditions.SetSecretCreatedFailed(r.dk.Conditions(), secretConditionType, fmt.Sprintf(secretCreatedMessageFailure, err))
 
 		return err
 	}
@@ -39,27 +41,27 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 
 		newEecToken, err := dttoken.New(eecTokenSecretValuePrefix)
 		if err != nil {
-			setSecretCreatedFailureCondition(r.dk.Conditions(), err)
+			conditions.SetSecretCreatedFailed(r.dk.Conditions(), secretConditionType, fmt.Sprintf(secretCreatedMessageFailure, err))
 
 			return err
 		}
 
 		newSecret, err := buildSecret(r.dk, *newEecToken)
 		if err != nil {
-			setSecretCreatedFailureCondition(r.dk.Conditions(), err)
+			conditions.SetSecretCreatedFailed(r.dk.Conditions(), secretConditionType, fmt.Sprintf(secretCreatedMessageFailure, err))
 
 			return err
 		}
 
 		err = query.CreateOrUpdate(*newSecret)
 		if err != nil {
-			setSecretCreatedFailureCondition(r.dk.Conditions(), err)
+			conditions.SetSecretCreatedFailed(r.dk.Conditions(), secretConditionType, fmt.Sprintf(secretCreatedMessageFailure, err))
 
 			return err
 		}
 	}
 
-	setSecretCreatedSuccessCondition(r.dk.Conditions())
+	conditions.SetSecretCreated(r.dk.Conditions(), secretConditionType, getSecretName(r.dk.Name))
 
 	return nil
 }
