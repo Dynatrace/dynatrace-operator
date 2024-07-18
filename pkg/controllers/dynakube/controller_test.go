@@ -42,6 +42,7 @@ import (
 
 const (
 	testUID              = "test-uid"
+	testMEID             = "KUBERNETES_CLUSTER-0E30FE4BF2007587"
 	testPaasToken        = "test-paas-token"
 	testAPIToken         = "test-api-token"
 	testVersion          = "1.217.1.12345-678910"
@@ -349,7 +350,7 @@ func TestReconcileComponents(t *testing.T) {
 		}
 		mockedDtc := dtclientmock.NewClient(t)
 		mockedDtc.On("GetMonitoredEntitiesForKubeSystemUUID",
-			mock.AnythingOfType("context.backgroundCtx"), "").Return([]dtclient.MonitoredEntity{{EntityId: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "operator test entity 1", LastSeenTms: 1639483869085}}, nil)
+			mock.AnythingOfType("context.backgroundCtx"), "").Return([]dtclient.MonitoredEntity{{EntityId: testMEID, DisplayName: "operator test entity 1", LastSeenTms: 1639483869085}}, nil)
 
 		err := controller.reconcileComponents(ctx, mockedDtc, nil, dk)
 

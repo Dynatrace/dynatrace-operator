@@ -50,7 +50,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		r.dk.Status.KubernetesClusterMEID = findLatestEntity(monitoredEntities).EntityId
 	}
 
-	log.Info("kubernetesClusterMEID set in dynakube status, done reconciling", "KubernetesClusterMEID", r.dk.Status.KubernetesClusterMEID)
+	log.Info("kubernetesClusterMEID set in dynakube status, done reconciling", "kubernetesClusterMEID", r.dk.Status.KubernetesClusterMEID)
 
 	return nil
 }

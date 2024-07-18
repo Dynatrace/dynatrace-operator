@@ -5,24 +5,23 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/monitoredentities"
 	"github.com/pkg/errors"
 )
 
 type Reconciler struct {
-	dtc            dtclient.Client
-	dk             *dynakube.DynaKube
-	clusterLabel   string
-	kubeSystemUUID string
+	dtc          dtclient.Client
+	dk           *dynakube.DynaKube
+	clusterLabel string
 }
 
-type ReconcilerBuilder func(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel, kubeSystemUUID string) *Reconciler
+type ReconcilerBuilder func(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel string) *Reconciler
 
-func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel, kubeSystemUUID string) *Reconciler {
+func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel string) *Reconciler {
 	return &Reconciler{
 		dtc,
 		dk,
 		clusterLabel,
-		kubeSystemUUID,
 	}
 }
 
@@ -33,33 +32,42 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if objectID != "" {
-		log.Info("created kubernetes cluster setting", "clusterLabel", r.clusterLabel, "cluster", r.kubeSystemUUID, "object id", objectID)
+		log.Info("created kubernetes cluster setting", "clusterLabel", r.clusterLabel, "cluster", r.dk.Status.KubeSystemUUID, "object id", objectID)
 	} else {
-		log.Info("kubernetes cluster setting already exists", "clusterLabel", r.clusterLabel, "cluster", r.kubeSystemUUID)
+		log.Info("kubernetes cluster setting already exists", "clusterLabel", r.clusterLabel, "cluster", r.dk.Status.KubeSystemUUID)
 	}
 
 	return nil
 }
 
 func (r *Reconciler) createObjectIdIfNotExists(ctx context.Context) (string, error) {
-	if r.kubeSystemUUID == "" {
+	if r.dk.Status.KubeSystemUUID == "" {
 		return "", errors.New("no kube-system namespace UUID given")
 	}
 
-	// check if ME with UID exists
-	var monitoredEntities, err = r.dtc.GetMonitoredEntitiesForKubeSystemUUID(ctx, r.kubeSystemUUID)
-	if err != nil {
-		return "", errors.WithMessage(err, "error while loading MEs")
+	if r.dk.Status.KubernetesClusterMEID == "" {
+		monitoredEntitiesreconciler := monitoredentities.NewReconciler(r.dtc, r.dk, r.dk.Status.KubeSystemUUID)
+
+		err := monitoredEntitiesreconciler.Reconcile(ctx)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	monitoredEntity := []dtclient.MonitoredEntity{
+		{
+			EntityId: r.dk.Status.KubernetesClusterMEID,
+		},
 	}
 
 	// check if Setting for ME exists
-	settings, err := r.dtc.GetSettingsForMonitoredEntities(ctx, monitoredEntities, dtclient.KubernetesSettingsSchemaId)
+	settings, err := r.dtc.GetSettingsForMonitoredEntities(ctx, monitoredEntity, dtclient.KubernetesSettingsSchemaId)
 	if err != nil {
 		return "", errors.WithMessage(err, "error trying to check if setting exists")
 	}
 
 	if settings.TotalCount > 0 {
-		_, err = r.handleKubernetesAppEnabled(ctx, monitoredEntities)
+		_, err = r.handleKubernetesAppEnabled(ctx, monitoredEntity)
 		if err != nil {
 			return "", err
 		}
@@ -67,15 +75,10 @@ func (r *Reconciler) createObjectIdIfNotExists(ctx context.Context) (string, err
 		return "", nil
 	}
 
-	// determine newest ME (can be empty string), and create or update a settings object accordingly
-	meID := determineNewestMonitoredEntity(monitoredEntities)
-
-	objectID, err := r.dtc.CreateOrUpdateKubernetesSetting(ctx, r.clusterLabel, r.kubeSystemUUID, meID)
+	objectID, err := r.dtc.CreateOrUpdateKubernetesSetting(ctx, r.clusterLabel, r.dk.Status.KubeSystemUUID, r.dk.Status.KubernetesClusterMEID)
 	if err != nil {
 		return "", errors.WithMessage(err, "error creating dynatrace settings object")
 	}
-
-	r.dk.Status.KubernetesClusterMEID = meID
 
 	return objectID, nil
 }
