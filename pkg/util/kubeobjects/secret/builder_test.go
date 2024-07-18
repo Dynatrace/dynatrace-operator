@@ -61,8 +61,7 @@ func TestSecretBuilder(t *testing.T) {
 		assert.Equal(t, testSecretName, secret.Name)
 		assert.Empty(t, secret.Labels)
 		assert.Equal(t, corev1.SecretTypeDockercfg, secret.Type)
-		_, found := secret.Data[dataKey]
-		assert.True(t, found)
+		assert.Contains(t, secret.Data, dataKey)
 	})
 	t.Run("create secret with label and type", func(t *testing.T) {
 		secret, err := Build(createDeployment(),
@@ -79,7 +78,6 @@ func TestSecretBuilder(t *testing.T) {
 		require.Len(t, secret.Labels, 1)
 		assert.Equal(t, labelValue, secret.Labels[labelName])
 		assert.Equal(t, corev1.SecretTypeDockercfg, secret.Type)
-		_, found := secret.Data[dataKey]
-		assert.True(t, found)
+		assert.Contains(t, secret.Data, dataKey)
 	})
 }

@@ -35,7 +35,6 @@ func TestConfigMapBuilder(t *testing.T) {
 		require.Len(t, configMap.OwnerReferences, 1)
 		assert.Equal(t, testDeploymentName, configMap.OwnerReferences[0].Name)
 		assert.Equal(t, testConfigMapName, configMap.Name)
-		_, found := configMap.Data[dataKey]
-		assert.True(t, found)
+		assert.Contains(t, configMap.Data, dataKey)
 	})
 }
