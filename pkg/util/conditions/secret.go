@@ -6,9 +6,10 @@ import (
 )
 
 const (
-	SecretCreatedReason  = "SecretCreated"
-	SecretUpdatedReason  = "SecretUpdated"
-	SecretOutdatedReason = "SecretOutdated"
+	SecretCreatedReason    = "SecretCreated"
+	SecretUpdatedReason    = "SecretUpdated"
+	SecretOutdatedReason   = "SecretOutdated"
+	SecretGenerationFailed = "SecretGenerationFailed"
 )
 
 func SetSecretCreated(conditions *[]metav1.Condition, conditionType, name string) {
@@ -17,16 +18,6 @@ func SetSecretCreated(conditions *[]metav1.Condition, conditionType, name string
 		Status:  metav1.ConditionTrue,
 		Reason:  SecretCreatedReason,
 		Message: appendCreatedSuffix(name),
-	}
-	_ = meta.SetStatusCondition(conditions, condition)
-}
-
-func SetSecretCreatedFailed(conditions *[]metav1.Condition, conditionType, message string) {
-	condition := metav1.Condition{
-		Type:    conditionType,
-		Status:  metav1.ConditionFalse,
-		Reason:  SecretCreatedReason,
-		Message: message,
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
@@ -41,6 +32,16 @@ func SetSecretUpdated(conditions *[]metav1.Condition, conditionType, name string
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
+func SetSecretGenFailed(conditions *[]metav1.Condition, conditionType string, err error) {
+	condition := metav1.Condition{
+		Type:    conditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  SecretGenerationFailed,
+		Message: "Failed to generate secret: " + err.Error(),
+	}
+	_ = meta.SetStatusCondition(conditions, condition)
+}
+
 func SetSecretOutdated(conditions *[]metav1.Condition, conditionType, message string) {
 	condition := metav1.Condition{
 		Type:    conditionType,
@@ -49,8 +50,4 @@ func SetSecretOutdated(conditions *[]metav1.Condition, conditionType, message st
 		Message: message,
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
-}
-
-func RemoveSecretCreated(conditions *[]metav1.Condition, conditionType string) bool {
-	return meta.RemoveStatusCondition(conditions, conditionType)
 }
