@@ -1,7 +1,8 @@
 package extension
 
 const (
-	eecTokenSecretKey         = "eec-token"
+	// secret
+	EecTokenSecretKey         = "eec-token"
 	eecTokenSecretValuePrefix = "EEC dt0x01"
 	secretSuffix              = "-extensions-token"
 

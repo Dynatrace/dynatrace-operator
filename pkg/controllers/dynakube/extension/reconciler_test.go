@@ -50,7 +50,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		// mock secret
 		secretToken, _ := dttoken.New(eecTokenSecretValuePrefix)
 		secretData := map[string][]byte{
-			eecTokenSecretKey: []byte(secretToken.String()),
+			EecTokenSecretKey: []byte(secretToken.String()),
 		}
 		secretMock, _ := k8ssecret.Build(dk, testName+"-extensions-token", secretData)
 

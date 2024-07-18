@@ -77,12 +77,16 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 
 func (r *reconciler) buildSecret(token dttoken.Token) (*corev1.Secret, error) {
 	secretData := map[string][]byte{
-		eecTokenSecretKey: []byte(token.String()),
+		EecTokenSecretKey: []byte(token.String()),
 	}
 
 	return k8ssecret.Build(r.dk, r.getSecretName(), secretData)
 }
 
 func (r *reconciler) getSecretName() string {
-	return r.dk.Name + secretSuffix
+	return GetSecretName(r.dk.Name)
+}
+
+func GetSecretName(dynakubeName string) string {
+	return dynakubeName + secretSuffix
 }
