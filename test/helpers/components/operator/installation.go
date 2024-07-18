@@ -3,6 +3,7 @@
 package operator
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -80,8 +81,12 @@ func execMakeCommand(rootDir, makeTarget string, envVariables ...string) error {
 	command := exec.Command("make", "-C", rootDir, makeTarget)
 	command.Env = os.Environ()
 	command.Env = append(command.Env, envVariables...)
+	b := new(bytes.Buffer)
+	command.Stdout = b
+	err := command.Run()
+	fmt.Println("out:", b.String()) //nolint
 
-	return command.Run()
+	return err
 }
 
 func installViaHelm(releaseTag string, withCsi bool, namespace string) error {
