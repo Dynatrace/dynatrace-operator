@@ -30,10 +30,9 @@ spec:
   #   value: my-proxy-url.com
   #   valueFrom: name-of-my-proxy-secret
 
-  # Optional: Adds custom RootCAs from a configmap
-  # The key to the data must be "certs"
-  # This property only affects certificates used to communicate with the Dynatrace API.
-  # The property is not applied to the ActiveGate
+  # Optional: Adds custom RootCAs from a configmap.
+  # Put the certificate under "certs" key within your configmap.
+  #	Applies to Dynatrace Operator, OneAgent and ActiveGate.
   #
   # trustedCAs: name-of-my-ca-configmap
 
@@ -65,7 +64,7 @@ spec:
   #
   oneAgent:
     # Optional: Sets a host group for OneAgent.
-    # 
+    #
     # hostGroup: ""
 
     # Enables cloud-native fullstack monitoring and changes its settings
