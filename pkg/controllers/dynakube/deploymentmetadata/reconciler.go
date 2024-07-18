@@ -64,8 +64,6 @@ func (r *Reconciler) addOperatorVersionInfo(configMapData map[string]string) {
 }
 
 func (r *Reconciler) maintainMetadataConfigMap(ctx context.Context, configMapData map[string]string) error {
-	configMapQuery := configmap.Query(r.client, r.apiReader, log).WithOwner(&r.dk)
-
 	configMap, err := configmap.Build(&r.dk,
 		GetDeploymentMetadataConfigMapName(r.dk.Name),
 		configMapData,
@@ -73,6 +71,8 @@ func (r *Reconciler) maintainMetadataConfigMap(ctx context.Context, configMapDat
 	if err != nil {
 		return errors.WithStack(err)
 	}
+
+	configMapQuery := configmap.Query(r.client, r.apiReader, log)
 
 	if len(configMapData) > 0 {
 		_, err := configMapQuery.CreateOrUpdate(ctx, configMap)
