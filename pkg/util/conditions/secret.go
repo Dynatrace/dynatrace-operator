@@ -21,6 +21,16 @@ func SetSecretCreated(conditions *[]metav1.Condition, conditionType, name string
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
+func SetSecretCreatedFailed(conditions *[]metav1.Condition, conditionType, message string) {
+	condition := metav1.Condition{
+		Type:    conditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  SecretCreatedReason,
+		Message: message,
+	}
+	_ = meta.SetStatusCondition(conditions, condition)
+}
+
 func SetSecretUpdated(conditions *[]metav1.Condition, conditionType, name string) {
 	condition := metav1.Condition{
 		Type:    conditionType,
@@ -39,4 +49,8 @@ func SetSecretOutdated(conditions *[]metav1.Condition, conditionType, message st
 		Message: message,
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
+}
+
+func RemoveSecretCreated(conditions *[]metav1.Condition, conditionType string) bool {
+	return meta.RemoveStatusCondition(conditions, conditionType)
 }
