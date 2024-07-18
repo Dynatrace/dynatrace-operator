@@ -104,7 +104,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 		log.Info("tenant has no endpoints", "tenant", connectionInfo.TenantUUID)
 	}
 
-	err = r.createTenantTokenSecret(ctx, r.dk.ActivegateTenantSecret(), r.dk, connectionInfo.ConnectionInfo)
+	err = r.createTenantTokenSecret(ctx, r.dk.ActivegateTenantSecret(), connectionInfo.ConnectionInfo)
 	if err != nil {
 		return err
 	}
@@ -119,13 +119,13 @@ func (r *reconciler) setDynakubeStatus(connectionInfo dtclient.ActiveGateConnect
 	r.dk.Status.ActiveGate.ConnectionInfoStatus.Endpoints = connectionInfo.Endpoints
 }
 
-func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName string, owner metav1.Object, connectionInfo dtclient.ConnectionInfo) error {
-	secret, err := connectioninfo.BuildTenantSecret(owner, secretName, connectionInfo)
+func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName string, connectionInfo dtclient.ConnectionInfo) error {
+	secret, err := connectioninfo.BuildTenantSecret(r.dk, secretName, connectionInfo)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	query := k8ssecret.Query(r.client, r.apiReader, log).WithOwner(r.dk)
+	query := k8ssecret.Query(r.client, r.apiReader, log)
 
 	_, err = query.CreateOrUpdate(ctx, secret)
 	if err != nil {

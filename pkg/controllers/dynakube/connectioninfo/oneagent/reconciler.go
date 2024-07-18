@@ -122,7 +122,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 		return NoOneAgentCommunicationHostsError
 	}
 
-	err = r.createTenantTokenSecret(ctx, r.dk.OneagentTenantSecret(), r.dk, connectionInfo.ConnectionInfo)
+	err = r.createTenantTokenSecret(ctx, r.dk.OneagentTenantSecret(), connectionInfo.ConnectionInfo)
 	if err != nil {
 		return err
 	}
@@ -149,13 +149,13 @@ func copyCommunicationHosts(dest *dynakube.OneAgentConnectionInfoStatus, src []d
 	}
 }
 
-func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName string, owner metav1.Object, connectionInfo dtclient.ConnectionInfo) error {
-	secret, err := connectioninfo.BuildTenantSecret(owner, secretName, connectionInfo)
+func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName string, connectionInfo dtclient.ConnectionInfo) error {
+	secret, err := connectioninfo.BuildTenantSecret(r.dk, secretName, connectionInfo)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	query := k8ssecret.Query(r.client, r.apiReader, log).WithOwner(r.dk)
+	query := k8ssecret.Query(r.client, r.apiReader, log)
 
 	_, err = query.CreateOrUpdate(ctx, secret)
 	if err != nil {
