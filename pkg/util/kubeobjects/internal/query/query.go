@@ -9,17 +9,18 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 type Generic[T client.Object, L client.ObjectList] struct {
-	Target      T
-	ListTarget  L
-	ToList      func(L) []T
-	IsEqual     func(T, T) bool
-	IsImmutable func(T, T) bool
+	Target       T
+	ListTarget   L
+	ToList       func(L) []T
+	IsEqual      func(T, T) bool
+	MustRecreate func(T, T) bool
 
 	Owner      client.Object
 	KubeClient client.Client
@@ -68,7 +69,8 @@ func (c Generic[T, L]) Delete(ctx context.Context, object T) error {
 
 func (c Generic[T, L]) CreateOrUpdate(ctx context.Context, newObject T) (bool, error) {
 	currentObject, err := c.Get(ctx, asNamespacedName(newObject))
-	if err != nil && client.IgnoreNotFound(err) == nil {
+
+	if k8serrors.IsNotFound(err) {
 		err = c.Create(ctx, newObject)
 		if err != nil {
 			return false, err
@@ -85,7 +87,7 @@ func (c Generic[T, L]) CreateOrUpdate(ctx context.Context, newObject T) (bool, e
 		return false, nil
 	}
 
-	if c.IsImmutable(currentObject, newObject) {
+	if c.MustRecreate(currentObject, newObject) {
 		c.log(newObject).Info("recreation needed, immutable change detected")
 
 		err := c.Recreate(ctx, newObject)
@@ -126,11 +128,8 @@ func (c Generic[T, L]) GetAllFromNamespaces(ctx context.Context, objectName stri
 	}
 
 	err := c.KubeReader.List(ctx, c.ListTarget, listOps...)
-	if client.IgnoreNotFound(err) != nil {
-		return nil, errors.WithStack(err)
-	}
 
-	return c.ToList(c.ListTarget), err
+	return c.ToList(c.ListTarget), errors.WithStack(client.IgnoreNotFound(err))
 }
 
 func (c Generic[T, L]) CreateOrUpdateForNamespaces(ctx context.Context, object T, namespaces []corev1.Namespace) error {

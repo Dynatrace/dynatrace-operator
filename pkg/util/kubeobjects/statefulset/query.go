@@ -21,8 +21,8 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 
 			return out
 		},
-		IsEqual:     isEqual,
-		IsImmutable: isImmutable,
+		IsEqual:      isEqual,
+		MustRecreate: mustRecreate,
 
 		KubeClient: kubeClient,
 		KubeReader: kubeReader,
@@ -34,6 +34,6 @@ func isEqual(current, desired *appsv1.StatefulSet) bool {
 	return !hasher.IsAnnotationDifferent(current, desired)
 }
 
-func isImmutable(current, desired *appsv1.StatefulSet) bool {
+func mustRecreate(current, desired *appsv1.StatefulSet) bool {
 	return labels.NotEqual(current.Spec.Selector.MatchLabels, desired.Spec.Selector.MatchLabels)
 }
