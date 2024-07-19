@@ -26,7 +26,7 @@ func Build(owner metav1.Object, name string, data map[string][]byte, options ...
 	return builder.Build(owner, &corev1.Secret{}, neededOpts...)
 }
 
-func BuildWithoutOwner(name, namespace string, data map[string][]byte, options ...builder.Option[*corev1.Secret]) (*corev1.Secret, error) {
+func BuildForNamespace(name, namespace string, data map[string][]byte, options ...builder.Option[*corev1.Secret]) (*corev1.Secret, error) {
 	neededOpts := []builder.Option[*corev1.Secret]{
 		setName(name),
 		setData(data),
