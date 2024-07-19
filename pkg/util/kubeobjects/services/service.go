@@ -145,6 +145,26 @@ func (mod PortsModifier) Modify(service *corev1.Service) error {
 	return nil
 }
 
+type LabelsModifier struct {
+	labels map[string]string
+}
+
+func NewLabelsModifier(labels map[string]string) LabelsModifier {
+	return LabelsModifier{
+		labels: labels,
+	}
+}
+
+func (mod LabelsModifier) Enabled() bool {
+	return true
+}
+
+func (mod LabelsModifier) Modify(service *corev1.Service) error {
+	service.Labels = mod.labels
+
+	return nil
+}
+
 func Create(owner metav1.Object, mods ...serviceBuilderModifier) (*corev1.Service, error) {
 	builderOfService := builder.NewBuilder(corev1.Service{})
 	service, err := builderOfService.AddModifier(mods...).AddModifier(newServiceOwnerModifier(owner)).Build()

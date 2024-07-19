@@ -99,8 +99,9 @@ func TestReconciler_Reconcile(t *testing.T) {
 		conditions.SetSecretCreated(&expectedConditions, conditionType, dk.Name+secretSuffix)
 		testutil.PartialEqual(t, &expectedConditions, dk.Conditions(), cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
 	})
-	t.Run("Extension SecretCreated failure condition is set when error", func(t *testing.T) {
-		dk := makeTestDynakube(true)
+	t.Run(`Extension SecretCreated failure condition is set when error`, func(t *testing.T) {
+		dk := createDynakube()
+		dk.Spec.Extensions.Prometheus.Enabled = true
 
 		misconfiguredReader, _ := client.New(&rest.Config{}, client.Options{})
 		r := NewReconciler(fake.NewClient(), misconfiguredReader, dk)

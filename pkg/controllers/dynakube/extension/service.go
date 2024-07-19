@@ -3,6 +3,7 @@ package extension
 import (
 	"context"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/services"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -60,6 +61,10 @@ func (r *reconciler) removeService(ctx context.Context) error {
 }
 
 func (r *reconciler) prepareService() (*corev1.Service, error) {
+	coreLabels := labels.NewCoreLabels(r.dk.Name, labels.ExtensionComponentLabel)
+	// TODO: add proper version later on
+	appLabels := labels.NewAppLabels(labels.ExtensionComponentLabel, r.dk.Name, labels.ExtensionComponentLabel, "")
+
 	newService, err := services.Create(r.dk,
 		services.NewNameModifier(buildServiceName(r.dk.Name)),
 		services.NewNamespaceModifier(r.dk.Namespace),
@@ -68,7 +73,10 @@ func (r *reconciler) prepareService() (*corev1.Service, error) {
 			corev1.ProtocolTCP,
 			intstr.IntOrString{Type: 1, StrVal: ExtensionsCollectorTargetPortName},
 		),
+		services.NewLabelsModifier(coreLabels.BuildMatchLabels()),
 	)
+
+	newService.Spec.Selector = appLabels.BuildMatchLabels()
 
 	return newService, err
 }
