@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/services"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/service"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -22,8 +22,17 @@ func (r *reconciler) reconcileService(ctx context.Context) error {
 
 		return nil
 	} else {
-		if err := r.removeService(ctx); err != nil {
-			return errors.WithMessage(err, "could not remove service")
+		svc, err := r.buildService()
+		if err != nil {
+			log.Error(err, "could not build service during cleanup")
+		}
+
+		err = service.Query(r.client, r.apiReader, log).Delete(ctx, svc)
+
+		if err != nil {
+			log.Error(err, "failed to clean up extension service")
+
+			return nil
 		}
 	}
 
@@ -31,7 +40,8 @@ func (r *reconciler) reconcileService(ctx context.Context) error {
 }
 
 func (r *reconciler) ensureService(ctx context.Context) error {
-	_, err := getService(ctx, r.apiReader, r.dk.Name, r.dk.Namespace)
+	_, err := service.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKey{Name: r.buildServiceName(), Namespace: r.dk.Namespace})
+
 	if k8serrors.IsNotFound(err) {
 		log.Info("service was not found, creating service")
 
@@ -46,54 +56,39 @@ func (r *reconciler) ensureService(ctx context.Context) error {
 func (r *reconciler) createService(ctx context.Context) error {
 	log.Info("creating extension collector service")
 
-	newService, err := r.prepareService()
+	newService, err := r.buildService()
 	if err != nil {
 		return err
 	}
 
-	return r.client.Create(ctx, newService)
+	_, err = service.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newService)
+
+	return err
 }
 
-func (r *reconciler) removeService(ctx context.Context) error {
-	log.Info("creating extension collector service")
-
-	return services.NewQuery(ctx, r.client, r.apiReader, log).Delete(r.dk.Name, r.dk.Namespace)
-}
-
-func (r *reconciler) prepareService() (*corev1.Service, error) {
+func (r *reconciler) buildService() (*corev1.Service, error) {
 	coreLabels := labels.NewCoreLabels(r.dk.Name, labels.ExtensionComponentLabel)
 	// TODO: add proper version later on
 	appLabels := labels.NewAppLabels(labels.ExtensionComponentLabel, r.dk.Name, labels.ExtensionComponentLabel, "")
 
-	newService, err := services.Create(r.dk,
-		services.NewNameModifier(buildServiceName(r.dk.Name)),
-		services.NewNamespaceModifier(r.dk.Namespace),
-		services.NewPortsModifier(buildPortsName(r.dk.Name),
-			ExtensionsCollectorComPort,
-			corev1.ProtocolTCP,
-			intstr.IntOrString{Type: 1, StrVal: ExtensionsCollectorTargetPortName},
-		),
-		services.NewLabelsModifier(coreLabels.BuildMatchLabels()),
-	)
-
-	newService.Spec.Selector = appLabels.BuildMatchLabels()
-
-	return newService, err
-}
-
-func getService(ctx context.Context, apiReader client.Reader, dkName string, dkNamespace string) (*corev1.Service, error) {
-	var svc corev1.Service
-
-	err := apiReader.Get(ctx, client.ObjectKey{Name: buildServiceName(dkName), Namespace: dkNamespace}, &svc)
-	if err != nil {
-		return nil, err
+	svcPort := corev1.ServicePort{
+		Name:       buildPortsName(r.dk.Name),
+		Port:       ExtensionsCollectorComPort,
+		Protocol:   corev1.ProtocolTCP,
+		TargetPort: intstr.IntOrString{Type: 1, StrVal: ExtensionsCollectorTargetPortName},
 	}
 
-	return &svc, nil
+	return service.Build(r.dk,
+		r.buildServiceName(),
+		appLabels.BuildMatchLabels(),
+		svcPort,
+		service.SetLabels(coreLabels.BuildMatchLabels()),
+		service.SetType(corev1.ServiceTypeClusterIP),
+	)
 }
 
-func buildServiceName(dkName string) string {
-	return dkName + ExtensionsControllerSuffix
+func (r *reconciler) buildServiceName() string {
+	return r.dk.Name + ExtensionsControllerSuffix
 }
 
 func buildPortsName(dkName string) string {

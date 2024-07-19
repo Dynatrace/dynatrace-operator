@@ -2,7 +2,6 @@ package extension
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -11,7 +10,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	testutil "github.com/Dynatrace/dynatrace-operator/pkg/util/testing"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -79,7 +80,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.Empty(t, dk.Conditions())
 	})
 	t.Run("Extension secret is generated when Prometheus is enabled", func(t *testing.T) {
-		dk := makeTestDynakube(true)
+		dk := createDynakube()
+		dk.Spec.Extensions.Prometheus.Enabled = true
 
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dk)
@@ -123,13 +125,13 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		mockK8sClient := fake.NewClient(dk)
 
-		r := NewReconciler(mockK8sClient, mockK8sClient, dk)
+		r := &reconciler{client: mockK8sClient, apiReader: mockK8sClient, dk: dk, timeProvider: timeprovider.New()}
 		err := r.Reconcile(context.Background())
 
 		require.NoError(t, err)
 
 		var svc corev1.Service
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: buildServiceName(dk.Name), Namespace: testNamespace}, &svc)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: r.buildServiceName(), Namespace: testNamespace}, &svc)
 		require.NoError(t, err)
 		assert.NotNil(t, svc)
 	})

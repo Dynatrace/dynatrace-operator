@@ -17,7 +17,7 @@ func TestReconciler_prepareService(t *testing.T) {
 
 		fakeClient := fake.NewClient()
 		r := &reconciler{client: fakeClient, apiReader: fakeClient, dk: dk, timeProvider: timeprovider.New()}
-		svc, err := r.prepareService()
+		svc, err := r.buildService()
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{
 			labels.AppComponentLabel: labels.ExtensionComponentLabel,
