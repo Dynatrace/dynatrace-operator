@@ -6,19 +6,35 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var setName = builder.SetName[*corev1.Secret]
-var SetNamespace = builder.SetNamespace[*corev1.Secret]
-var SetLabels = builder.SetLabels[*corev1.Secret]
+var (
+	// Mandatory fields, provided in constructor as named params
+	setName      = builder.SetName[*corev1.Secret]
+	setNamespace = builder.SetNamespace[*corev1.Secret]
+
+	// Optional fields, provided in constructor as list of options
+	SetLabels = builder.SetLabels[*corev1.Secret]
+)
 
 func Build(owner metav1.Object, name string, data map[string][]byte, options ...builder.Option[*corev1.Secret]) (*corev1.Secret, error) {
 	neededOpts := []builder.Option[*corev1.Secret]{
 		setName(name),
 		setData(data),
-		SetNamespace(owner.GetNamespace()),
+		setNamespace(owner.GetNamespace()),
 	}
 	neededOpts = append(neededOpts, options...)
 
 	return builder.Build(owner, &corev1.Secret{}, neededOpts...)
+}
+
+func BuildWithoutOwner(name, namespace string, data map[string][]byte, options ...builder.Option[*corev1.Secret]) (*corev1.Secret, error) {
+	neededOpts := []builder.Option[*corev1.Secret]{
+		setName(name),
+		setData(data),
+		setNamespace(namespace),
+	}
+	neededOpts = append(neededOpts, options...)
+
+	return builder.Build(nil, &corev1.Secret{}, neededOpts...)
 }
 
 func setData(data map[string][]byte) builder.Option[*corev1.Secret] {

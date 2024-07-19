@@ -23,7 +23,7 @@ func TestSecretBuilder(t *testing.T) {
 		secret, err := Build(createDeployment(),
 			testSecretName,
 			map[string][]byte{},
-			SetNamespace(testNamespace))
+			setNamespace(testNamespace))
 		require.NoError(t, err)
 		require.Len(t, secret.OwnerReferences, 1)
 		assert.Equal(t, testDeploymentName, secret.OwnerReferences[0].Name)
@@ -37,7 +37,7 @@ func TestSecretBuilder(t *testing.T) {
 			testSecretName,
 			map[string][]byte{},
 			SetLabels(labels),
-			SetNamespace(testNamespace),
+			setNamespace(testNamespace),
 		)
 		require.NoError(t, err)
 		require.Len(t, secret.OwnerReferences, 1)
@@ -53,7 +53,7 @@ func TestSecretBuilder(t *testing.T) {
 			testSecretName,
 			dockerCfg,
 			SetType(corev1.SecretTypeDockercfg),
-			SetNamespace(testNamespace),
+			setNamespace(testNamespace),
 		)
 		require.NoError(t, err)
 		require.Len(t, secret.OwnerReferences, 1)
@@ -69,7 +69,7 @@ func TestSecretBuilder(t *testing.T) {
 			dockerCfg,
 			SetLabels(labels),
 			SetType(corev1.SecretTypeDockercfg),
-			SetNamespace(testNamespace),
+			setNamespace(testNamespace),
 		)
 		require.NoError(t, err)
 		require.Len(t, secret.OwnerReferences, 1)

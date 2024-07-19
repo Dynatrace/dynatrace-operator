@@ -17,7 +17,7 @@ func TestConfigMapBuilder(t *testing.T) {
 		configMap, err := Build(createDeployment(),
 			testConfigMapName,
 			nil,
-			SetNamespace(testNamespace),
+			setNamespace(testNamespace),
 		)
 		require.NoError(t, err)
 		require.Len(t, configMap.OwnerReferences, 1)
@@ -29,7 +29,7 @@ func TestConfigMapBuilder(t *testing.T) {
 		configMap, err := Build(createDeployment(),
 			testConfigMapName,
 			data,
-			SetNamespace(testNamespace),
+			setNamespace(testNamespace),
 		)
 		require.NoError(t, err)
 		require.Len(t, configMap.OwnerReferences, 1)

@@ -178,13 +178,14 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run(`update crd successfully with up-to-date secret`, func(t *testing.T) {
-		fakeClient := fake.NewClient(crd, &appsv1.Deployment{
+		deployment := &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      webhook.DeploymentName,
 				Namespace: testNamespace,
 			},
-		})
-		cs := newCertificateSecret(&appsv1.Deployment{})
+		}
+		fakeClient := fake.NewClient(crd, deployment)
+		cs := newCertificateSecret(deployment)
 		_ = cs.setSecretFromReader(context.TODO(), fakeClient, testNamespace)
 		_ = cs.validateCertificates(testNamespace)
 		_ = cs.createOrUpdateIfNecessary(context.TODO(), fakeClient)

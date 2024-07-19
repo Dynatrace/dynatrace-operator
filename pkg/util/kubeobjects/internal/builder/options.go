@@ -14,9 +14,11 @@ func Build[T client.Object](owner metav1.Object, target T, options ...Option[T])
 		opt(target)
 	}
 
-	err := controllerutil.SetControllerReference(owner, target, scheme.Scheme)
-	if err != nil {
-		return target, err
+	if owner != nil {
+		err := controllerutil.SetControllerReference(owner, target, scheme.Scheme)
+		if err != nil {
+			return target, err
+		}
 	}
 
 	return target, nil

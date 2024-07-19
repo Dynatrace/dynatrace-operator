@@ -40,8 +40,7 @@ func (certSecret *certificateSecret) setSecretFromReader(ctx context.Context, ap
 	case k8serrors.IsNotFound(err):
 		certSecret.secret, err = k8ssecret.Build(certSecret.owner,
 			buildSecretName(),
-			map[string][]byte{},
-			k8ssecret.SetNamespace(namespace))
+			map[string][]byte{})
 		if err != nil {
 			return errors.WithStack(err)
 		}
