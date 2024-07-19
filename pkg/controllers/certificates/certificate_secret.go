@@ -33,15 +33,14 @@ func newCertificateSecret(deployment *appsv1.Deployment) *certificateSecret {
 }
 
 func (certSecret *certificateSecret) setSecretFromReader(ctx context.Context, apiReader client.Reader, namespace string) error {
-	query := k8ssecret.NewQuery(ctx, nil, apiReader, log)
-	secret, err := query.Get(types.NamespacedName{Name: buildSecretName(), Namespace: namespace})
+	query := k8ssecret.Query(nil, apiReader, log)
+	secret, err := query.Get(ctx, types.NamespacedName{Name: buildSecretName(), Namespace: namespace})
 
 	switch {
 	case k8serrors.IsNotFound(err):
-		certSecret.secret, err = k8ssecret.Create(certSecret.owner,
-			k8ssecret.NewNameModifier(buildSecretName()),
-			k8ssecret.NewNamespaceModifier(namespace),
-			k8ssecret.NewDataModifier(map[string][]byte{}))
+		certSecret.secret, err = k8ssecret.Build(certSecret.owner,
+			buildSecretName(),
+			map[string][]byte{})
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -50,7 +49,7 @@ func (certSecret *certificateSecret) setSecretFromReader(ctx context.Context, ap
 	case err != nil:
 		return errors.WithStack(err)
 	default:
-		certSecret.secret = &secret
+		certSecret.secret = secret
 		certSecret.existsInCluster = true
 	}
 

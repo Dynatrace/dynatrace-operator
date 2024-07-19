@@ -49,12 +49,12 @@ func testReadTokens(t *testing.T) {
 				Namespace: "dynatrace",
 			},
 		}
-		testSecret, err := secret.Create(&dk, secret.NewNameModifier("dynakube"), secret.NewNamespaceModifier("dynatrace"), secret.NewDataModifier(map[string][]byte{
+		testSecret, err := secret.Build(&dk, "dynakube", map[string][]byte{
 			dtclient.ApiToken:        []byte(testApiToken),
 			dtclient.PaasToken:       []byte(testPaasToken),
 			dtclient.DataIngestToken: []byte(testDataIngestToken),
 			testIrrelevantTokenKey:   []byte(testIrrelevantToken),
-		}))
+		})
 		require.NoError(t, err)
 
 		clt := fake.NewClient(testSecret, &dk)

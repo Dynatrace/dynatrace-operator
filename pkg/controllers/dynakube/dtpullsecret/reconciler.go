@@ -123,11 +123,10 @@ func (r *Reconciler) updatePullSecretIfOutdated(ctx context.Context, pullSecret 
 }
 
 func (r *Reconciler) createPullSecret(ctx context.Context, pullSecretData map[string][]byte) (*corev1.Secret, error) {
-	pullSecret, err := secret.Create(r.dk,
-		secret.NewNameModifier(extendWithPullSecretSuffix(r.dk.Name)),
-		secret.NewNamespaceModifier(r.dk.Namespace),
-		secret.NewTypeModifier(corev1.SecretTypeDockerConfigJson),
-		secret.NewDataModifier(pullSecretData))
+	pullSecret, err := secret.Build(r.dk,
+		extendWithPullSecretSuffix(r.dk.Name),
+		pullSecretData,
+		secret.SetType(corev1.SecretTypeDockerConfigJson))
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

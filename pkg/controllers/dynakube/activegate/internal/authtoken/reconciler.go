@@ -119,10 +119,9 @@ func (r *Reconciler) getActiveGateAuthToken(ctx context.Context) (map[string][]b
 func (r *Reconciler) createSecret(ctx context.Context, secretData map[string][]byte) error {
 	secretName := r.dk.ActiveGateAuthTokenSecret()
 
-	secret, err := secret.Create(r.dk,
-		secret.NewNameModifier(secretName),
-		secret.NewNamespaceModifier(r.dk.Namespace),
-		secret.NewDataModifier(secretData))
+	secret, err := secret.Build(r.dk,
+		secretName,
+		secretData)
 	if err != nil {
 		conditions.SetKubeApiError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
 

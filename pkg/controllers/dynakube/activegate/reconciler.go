@@ -16,7 +16,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/object"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
@@ -143,17 +142,17 @@ func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.C
 
 	configMapData := extractPublicData(r.dk)
 
-	configMap, err := configmap.CreateConfigMap(r.dk,
-		configmap.NewModifier(r.dk.ActiveGateConnectionInfoConfigMapName()),
-		configmap.NewNamespaceModifier(r.dk.Namespace),
-		configmap.NewConfigMapDataModifier(configMapData))
+	configMap, err := configmap.Build(r.dk,
+		r.dk.ActiveGateConnectionInfoConfigMapName(),
+		configMapData,
+	)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	query := configmap.NewQuery(ctx, r.client, r.apiReader, log)
+	query := configmap.Query(r.client, r.apiReader, log)
 
-	err = query.CreateOrUpdate(*configMap)
+	_, err = query.CreateOrUpdate(ctx, configMap)
 	if err != nil {
 		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
 
@@ -210,7 +209,7 @@ func (r *Reconciler) deleteService(ctx context.Context, agCapability capability.
 		},
 	}
 
-	return object.Delete(ctx, r.client, &svc)
+	return client.IgnoreNotFound(r.client.Delete(ctx, &svc))
 }
 
 func (r *Reconciler) deleteStatefulset(ctx context.Context, agCapability capability.Capability) error {
@@ -221,5 +220,5 @@ func (r *Reconciler) deleteStatefulset(ctx context.Context, agCapability capabil
 		},
 	}
 
-	return object.Delete(ctx, r.client, &sts)
+	return client.IgnoreNotFound(r.client.Delete(ctx, &sts))
 }

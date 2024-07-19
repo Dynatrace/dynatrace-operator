@@ -2,7 +2,6 @@ package extension
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -26,11 +25,11 @@ const (
 )
 
 func TestReconciler_Reconcile(t *testing.T) {
-	t.Run(`Extension secret not generated when Prometheus is disabled`, func(t *testing.T) {
-		instance := makeTestDynakube(false)
+	t.Run("Extension secret not generated when Prometheus is disabled", func(t *testing.T) {
+		dk := makeTestDynakube(false)
 
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, instance)
+		r := NewReconciler(fakeClient, fakeClient, dk)
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -40,24 +39,24 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.True(t, k8serrors.IsNotFound(err))
 
 		// assert conditions are empty
-		require.Empty(t, instance.Conditions())
+		require.Empty(t, dk.Conditions())
 	})
-	t.Run(`Extension secret gets deleted when Prometheus is disabled`, func(t *testing.T) {
-		instance := makeTestDynakube(false)
+	t.Run("Extension secret gets deleted when Prometheus is disabled", func(t *testing.T) {
+		dk := makeTestDynakube(false)
 
 		// mock SecretCreated condition
-		conditions.SetSecretCreated(instance.Conditions(), secretConditionType, instance.Name+secretSuffix)
+		conditions.SetSecretCreated(dk.Conditions(), conditionType, dk.Name+secretSuffix)
 
 		// mock secret
 		secretToken, _ := dttoken.New(eecTokenSecretValuePrefix)
 		secretData := map[string][]byte{
 			eecTokenSecretKey: []byte(secretToken.String()),
 		}
-		secretMock, _ := k8ssecret.Create(instance, k8ssecret.NewNameModifier(testName+"-extensions-token"), k8ssecret.NewNamespaceModifier(instance.GetNamespace()), k8ssecret.NewDataModifier(secretData))
+		secretMock, _ := k8ssecret.Build(dk, testName+"-extensions-token", secretData)
 
 		fakeClient := fake.NewClient()
 		fakeClient.Create(context.Background(), secretMock)
-		r := NewReconciler(fakeClient, fakeClient, instance)
+		r := NewReconciler(fakeClient, fakeClient, dk)
 
 		// assert extensions token is there before reconciliation
 		var secretFound corev1.Secret
@@ -65,7 +64,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.False(t, k8serrors.IsNotFound(err))
 
 		// assert conditions are not empty
-		require.NotEmpty(t, instance.Conditions())
+		require.NotEmpty(t, dk.Conditions())
 
 		// reconcile
 		err = r.Reconcile(context.Background())
@@ -76,13 +75,13 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.True(t, k8serrors.IsNotFound(err))
 
 		// assert conditions are empty
-		require.Empty(t, instance.Conditions())
+		require.Empty(t, dk.Conditions())
 	})
-	t.Run(`Extension secret is generated when Prometheus is enabled`, func(t *testing.T) {
-		instance := makeTestDynakube(true)
+	t.Run("Extension secret is generated when Prometheus is enabled", func(t *testing.T) {
+		dk := makeTestDynakube(true)
 
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, instance)
+		r := NewReconciler(fakeClient, fakeClient, dk)
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -92,28 +91,28 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		// assert extensions token condition is added
-		require.NotEmpty(t, instance.Conditions())
+		require.NotEmpty(t, dk.Conditions())
 
 		var expectedConditions []metav1.Condition
 
-		conditions.SetSecretCreated(&expectedConditions, secretConditionType, instance.Name+secretSuffix)
-		testutil.PartialEqual(t, &expectedConditions, instance.Conditions(), cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
+		conditions.SetSecretCreated(&expectedConditions, conditionType, dk.Name+secretSuffix)
+		testutil.PartialEqual(t, &expectedConditions, dk.Conditions(), cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
 	})
-	t.Run(`Extension SecretCreated failure condition is set when error`, func(t *testing.T) {
-		instance := makeTestDynakube(true)
+	t.Run("Extension SecretCreated failure condition is set when error", func(t *testing.T) {
+		dk := makeTestDynakube(true)
 
 		misconfiguredReader, _ := client.New(&rest.Config{}, client.Options{})
-		r := NewReconciler(fake.NewClient(), misconfiguredReader, instance)
+		r := NewReconciler(fake.NewClient(), misconfiguredReader, dk)
 		err := r.Reconcile(context.Background())
 		require.Error(t, err)
 
 		// assert extensions token condition is added
-		require.NotEmpty(t, instance.Conditions())
+		require.NotEmpty(t, dk.Conditions())
 
 		var expectedConditions []metav1.Condition
 
-		conditions.SetSecretCreatedFailed(&expectedConditions, secretConditionType, fmt.Sprintf(secretCreatedMessageFailure, err))
-		testutil.PartialEqual(t, &expectedConditions, instance.Conditions(), cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
+		conditions.SetKubeApiError(&expectedConditions, conditionType, err)
+		testutil.PartialEqual(t, &expectedConditions, dk.Conditions(), cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
 	})
 }
 

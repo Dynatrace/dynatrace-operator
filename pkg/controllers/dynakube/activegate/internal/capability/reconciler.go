@@ -7,7 +7,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/object"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -66,7 +65,7 @@ func (r *Reconciler) setAGServiceIPs(ctx context.Context) error {
 	template := CreateService(r.dk, r.capability.ShortName())
 	present := &corev1.Service{}
 
-	err := r.client.Get(ctx, object.Key(template), present)
+	err := r.client.Get(ctx, client.ObjectKeyFromObject(template), present)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -80,7 +79,7 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
 	desired := CreateService(r.dk, r.capability.ShortName())
 	installed := &corev1.Service{}
 
-	err := r.client.Get(ctx, object.Key(desired), installed)
+	err := r.client.Get(ctx, client.ObjectKeyFromObject(desired), installed)
 	if k8serrors.IsNotFound(err) {
 		log.Info("creating AG service", "module", r.capability.ShortName())
 

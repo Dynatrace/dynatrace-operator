@@ -27,8 +27,11 @@ const (
 )
 
 var (
-	dataValue  = []byte("dGVzdCB2YWx1ZSBudW1iZXIgMQ==")
-	testSecret = corev1.Secret{
+	dataValue = []byte("dGVzdCB2YWx1ZSBudW1iZXIgMQ==")
+)
+
+func getTestSecret() *corev1.Secret {
+	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Secret",
@@ -41,7 +44,7 @@ var (
 			testSecretDataKey: dataValue,
 		},
 	}
-)
+}
 
 func createDeployment() *appsv1.Deployment {
 	return &appsv1.Deployment{
@@ -52,6 +55,7 @@ func createDeployment() *appsv1.Deployment {
 }
 
 func TestGetSecret(t *testing.T) {
+	ctx := context.Background()
 	fakeClient := fake.NewClient(
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -60,16 +64,16 @@ func TestGetSecret(t *testing.T) {
 			},
 		},
 	)
-	secretQuery := NewQuery(context.Background(), fakeClient, fakeClient, secretLog)
+	secretQuery := Query(fakeClient, fakeClient, secretLog)
 
 	t.Run("get existing secret", func(t *testing.T) {
-		secret, err := secretQuery.Get(types.NamespacedName{Name: testSecretName, Namespace: testNamespace})
+		secret, err := secretQuery.Get(ctx, types.NamespacedName{Name: testSecretName, Namespace: testNamespace})
 
 		require.NoError(t, err)
 		assert.NotNil(t, secret)
 	})
 	t.Run("return error if secret does not exist", func(t *testing.T) {
-		_, err := secretQuery.Get(types.NamespacedName{Name: "not a secret", Namespace: testNamespace})
+		_, err := secretQuery.Get(ctx, types.NamespacedName{Name: "not a secret", Namespace: testNamespace})
 
 		require.Error(t, err)
 	})
@@ -117,12 +121,14 @@ func newClientWithSecrets() client.Client {
 }
 
 func TestMultipleNamespaces(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run("deletion of test secret in namespaces 1 and 2", func(t *testing.T) {
 		fakeClient := newClientWithSecrets()
-		secretQuery := NewQuery(context.Background(), fakeClient, fakeClient, secretLog)
+		secretQuery := Query(fakeClient, fakeClient, secretLog)
 
 		namespaces := []string{"ns1", "ns2"}
-		err := secretQuery.DeleteForNamespaces(testSecretName, namespaces)
+		err := secretQuery.DeleteForNamespaces(ctx, testSecretName, namespaces)
 		require.NoError(t, err)
 
 		// get all secrets from all namespaces
@@ -134,7 +140,7 @@ func TestMultipleNamespaces(t *testing.T) {
 	})
 	t.Run("deletion of test secret in namespaces 1 and 2 and empty", func(t *testing.T) {
 		fakeClient := newClientWithSecrets()
-		secretQuery := NewQuery(context.Background(), fakeClient, fakeClient, secretLog)
+		secretQuery := Query(fakeClient, fakeClient, secretLog)
 
 		// secret does not exist in this namespace => other secrets should still get deleted
 		ns := corev1.Namespace{
@@ -145,7 +151,7 @@ func TestMultipleNamespaces(t *testing.T) {
 		_ = fakeClient.Create(context.Background(), &ns)
 
 		namespaces := []string{"ns1", "ns2", "empty"}
-		err := secretQuery.DeleteForNamespaces(testSecretName, namespaces)
+		err := secretQuery.DeleteForNamespaces(ctx, testSecretName, namespaces)
 		require.NoError(t, err)
 
 		// get all secrets from all namespaces
@@ -158,17 +164,19 @@ func TestMultipleNamespaces(t *testing.T) {
 }
 
 func TestMultipleSecrets(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run("get existing secret from all namespaces", func(t *testing.T) {
 		fakeClient := newClientWithSecrets()
-		secretQuery := NewQuery(context.Background(), fakeClient, fakeClient, secretLog)
+		secretQuery := Query(fakeClient, fakeClient, secretLog)
 
-		secrets, err := secretQuery.GetAllFromNamespaces(testSecretName)
+		secrets, err := secretQuery.GetAllFromNamespaces(ctx, testSecretName)
 		require.NoError(t, err)
 		assert.Len(t, secrets, 3)
 	})
 	t.Run("update and create secret in specific namespaces", func(t *testing.T) {
 		fakeClient := newClientWithSecrets()
-		secretQuery := NewQuery(context.Background(), fakeClient, fakeClient, secretLog)
+		secretQuery := Query(fakeClient, fakeClient, secretLog)
 
 		namespaces := []corev1.Namespace{
 			{
@@ -205,17 +213,17 @@ func TestMultipleSecrets(t *testing.T) {
 				"samplekey": []byte("samplevalue"),
 			},
 		}
-		err := secretQuery.CreateOrUpdateForNamespaces(secret, namespaces)
+		err := secretQuery.CreateOrUpdateForNamespaces(ctx, &secret, namespaces)
 		require.NoError(t, err)
 
-		secrets, err := secretQuery.GetAllFromNamespaces(testSecretName)
+		secrets, err := secretQuery.GetAllFromNamespaces(ctx, testSecretName)
 		require.NoError(t, err)
 
 		assert.Len(t, secrets, 4)
 
 		secretsMap := make(map[string]corev1.Secret)
 		for _, secret := range secrets {
-			secretsMap[secret.Namespace] = secret
+			secretsMap[secret.Namespace] = *secret
 		}
 
 		assert.Equal(t, secret.Data, secretsMap["ns1"].Data)
@@ -269,9 +277,9 @@ func TestMultipleSecrets(t *testing.T) {
 				},
 			},
 		}
-		secretQuery := NewQuery(context.Background(), boomClient, fakeReader, secretLog)
+		secretQuery := Query(boomClient, fakeReader, secretLog)
 
-		err := secretQuery.CreateOrUpdateForNamespaces(secret, namespaces)
+		err := secretQuery.CreateOrUpdateForNamespaces(ctx, &secret, namespaces)
 		require.Error(t, err)
 		assert.NotEmpty(t, requestCounter)
 	})
@@ -280,114 +288,45 @@ func TestMultipleSecrets(t *testing.T) {
 func TestInitialMultipleSecrets(t *testing.T) {
 	testSecretName := "testSecret"
 	fakeClient := fake.NewClientWithIndex()
-	secretQuery := NewQuery(context.Background(), fakeClient, fakeClient, secretLog)
+	secretQuery := Query(fakeClient, fakeClient, secretLog)
 
 	t.Run("get existing secret from all namespaces", func(t *testing.T) {
-		secrets, err := secretQuery.GetAllFromNamespaces(testSecretName)
+		secrets, err := secretQuery.GetAllFromNamespaces(context.Background(), testSecretName)
 		require.NoError(t, err)
 		assert.Empty(t, secrets)
 	})
 }
 
-func TestSecretBuilder(t *testing.T) {
-	labelName := "name"
-	labelValue := "value"
-	labels := map[string]string{
-		labelName: labelValue,
-	}
-	dataKey := ".dockercfg"
-	dockerCfg := map[string][]byte{
-		dataKey: {},
-	}
-
-	t.Run("create secret", func(t *testing.T) {
-		secret, err := Create(createDeployment(),
-			NewNameModifier(testSecretName),
-			NewNamespaceModifier(testNamespace))
-		require.NoError(t, err)
-		require.Len(t, secret.OwnerReferences, 1)
-		assert.Equal(t, testDeploymentName, secret.OwnerReferences[0].Name)
-		assert.Equal(t, testSecretName, secret.Name)
-		assert.Empty(t, secret.Labels)
-		assert.Equal(t, corev1.SecretType(""), secret.Type)
-		assert.Empty(t, secret.Data)
-	})
-	t.Run("create secret with label", func(t *testing.T) {
-		secret, err := Create(createDeployment(),
-			NewLabelsModifier(labels),
-			NewNameModifier(testSecretName),
-			NewNamespaceModifier(testNamespace),
-			NewDataModifier(map[string][]byte{}))
-		require.NoError(t, err)
-		require.Len(t, secret.OwnerReferences, 1)
-		assert.Equal(t, testDeploymentName, secret.OwnerReferences[0].Name)
-		assert.Equal(t, testSecretName, secret.Name)
-		require.Len(t, secret.Labels, 1)
-		assert.Equal(t, labelValue, secret.Labels[labelName])
-		assert.Equal(t, corev1.SecretType(""), secret.Type)
-		assert.Empty(t, secret.Data)
-	})
-	t.Run("create secret with type", func(t *testing.T) {
-		secret, err := Create(createDeployment(),
-			NewTypeModifier(corev1.SecretTypeDockercfg),
-			NewNameModifier(testSecretName),
-			NewNamespaceModifier(testNamespace),
-			NewDataModifier(dockerCfg))
-		require.NoError(t, err)
-		require.Len(t, secret.OwnerReferences, 1)
-		assert.Equal(t, testDeploymentName, secret.OwnerReferences[0].Name)
-		assert.Equal(t, testSecretName, secret.Name)
-		assert.Empty(t, secret.Labels)
-		assert.Equal(t, corev1.SecretTypeDockercfg, secret.Type)
-		_, found := secret.Data[dataKey]
-		assert.True(t, found)
-	})
-	t.Run("create secret with label and type", func(t *testing.T) {
-		secret, err := Create(createDeployment(),
-			NewLabelsModifier(labels),
-			NewTypeModifier(corev1.SecretTypeDockercfg),
-			NewNameModifier(testSecretName),
-			NewNamespaceModifier(testNamespace),
-			NewDataModifier(dockerCfg))
-		require.NoError(t, err)
-		require.Len(t, secret.OwnerReferences, 1)
-		assert.Equal(t, testDeploymentName, secret.OwnerReferences[0].Name)
-		assert.Equal(t, testSecretName, secret.Name)
-		require.Len(t, secret.Labels, 1)
-		assert.Equal(t, labelValue, secret.Labels[labelName])
-		assert.Equal(t, corev1.SecretTypeDockercfg, secret.Type)
-		_, found := secret.Data[dataKey]
-		assert.True(t, found)
-	})
-}
-
 func TestCreateOrUpdate(t *testing.T) {
+	ctx := context.Background()
 	fakeClient := fake.NewClient()
-	fakeClient.Create(context.Background(), testSecret.DeepCopy())
+	fakeClient.Create(context.Background(), getTestSecret())
 
 	t.Run("create secret", func(t *testing.T) {
 		// empty client
-		secretQuery := NewQuery(context.Background(), fake.NewClient(), fake.NewClient(), secretLog)
+		secretQuery := Query(fake.NewClient(), fake.NewClient(), secretLog)
 
-		err := secretQuery.CreateOrUpdate(testSecret)
+		created, err := secretQuery.CreateOrUpdate(ctx, getTestSecret())
 		require.NoError(t, err)
+		require.True(t, created)
 
-		secret, _ := secretQuery.Get(types.NamespacedName{Name: testSecretName, Namespace: testNamespace})
+		secret, _ := secretQuery.Get(ctx, types.NamespacedName{Name: testSecretName, Namespace: testNamespace})
 		assert.NotNil(t, secret)
 	})
 	t.Run("existing equal secret", func(t *testing.T) {
 		// existing mocked secret in fakeClient
-		secretQuery := NewQuery(context.Background(), fakeClient, fakeClient, secretLog)
+		secretQuery := Query(fakeClient, fakeClient, secretLog)
 
-		err := secretQuery.CreateOrUpdate(testSecret)
+		updated, err := secretQuery.CreateOrUpdate(ctx, getTestSecret())
 		require.NoError(t, err)
+		require.False(t, updated)
 
-		secret, _ := secretQuery.Get(types.NamespacedName{Name: testSecretName, Namespace: testNamespace})
+		secret, _ := secretQuery.Get(ctx, types.NamespacedName{Name: testSecretName, Namespace: testNamespace})
 		assert.NotNil(t, secret)
 	})
 	t.Run("update secret", func(t *testing.T) {
 		// existing mocked secret in fakeClient
-		secretQuery := NewQuery(context.Background(), fakeClient, fakeClient, secretLog)
+		secretQuery := Query(fakeClient, fakeClient, secretLog)
 		newValue := []byte("dGVzdCB2YWx1ZSBudW1iZXIgMg==")
 		updatedSecret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -398,20 +337,11 @@ func TestCreateOrUpdate(t *testing.T) {
 				testSecretDataKey: newValue,
 			},
 		}
-		err := secretQuery.CreateOrUpdate(updatedSecret)
+		updated, err := secretQuery.CreateOrUpdate(ctx, &updatedSecret)
 		require.NoError(t, err)
+		require.True(t, updated)
 
-		secret, _ := secretQuery.Get(types.NamespacedName{Name: testSecretName, Namespace: testNamespace})
+		secret, _ := secretQuery.Get(ctx, types.NamespacedName{Name: testSecretName, Namespace: testNamespace})
 		assert.Equal(t, secret.Data[testSecretDataKey], newValue)
-	})
-}
-
-func TestGetDataFromSecretName(t *testing.T) {
-	fakeClient := fake.NewClient()
-	fakeClient.Create(context.Background(), testSecret.DeepCopy())
-
-	t.Run("get secret data", func(t *testing.T) {
-		data, _ := GetDataFromSecretName(fakeClient, types.NamespacedName{Name: testSecretName, Namespace: testNamespace}, testSecretDataKey, logd.Logger{})
-		assert.Equal(t, string(dataValue), data)
 	})
 }
