@@ -24,7 +24,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
 	k8sdaemonset "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/object"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -194,17 +193,17 @@ func (r *Reconciler) updateInstancesStatus(ctx context.Context) error {
 func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Context) error {
 	configMapData := extractPublicData(r.dk)
 
-	configMap, err := configmap.CreateConfigMap(r.dk,
-		configmap.NewModifier(r.dk.OneAgentConnectionInfoConfigMapName()),
-		configmap.NewNamespaceModifier(r.dk.Namespace),
-		configmap.NewConfigMapDataModifier(configMapData))
+	configMap, err := configmap.Build(r.dk,
+		r.dk.OneAgentConnectionInfoConfigMapName(),
+		configMapData,
+	)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	query := configmap.NewQuery(ctx, r.client, r.apiReader, log)
+	query := configmap.Query(r.client, r.apiReader, log)
 
-	err = query.CreateOrUpdate(*configMap)
+	_, err = query.CreateOrUpdate(ctx, configMap)
 	if err != nil {
 		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
 		conditions.SetKubeApiError(r.dk.Conditions(), oaConditionType, err)
@@ -216,12 +215,13 @@ func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 }
 
 func (r *Reconciler) deleteOneAgentTenantConnectionInfoConfigMap(ctx context.Context) error {
-	cm, _ := configmap.CreateConfigMap(r.dk,
-		configmap.NewModifier(r.dk.OneAgentConnectionInfoConfigMapName()),
-		configmap.NewNamespaceModifier(r.dk.Namespace))
-	query := configmap.NewQuery(ctx, r.client, r.apiReader, log)
+	cm, _ := configmap.Build(r.dk,
+		r.dk.OneAgentConnectionInfoConfigMapName(),
+		nil,
+	)
+	query := configmap.Query(r.client, r.apiReader, log)
 
-	return query.Delete(*cm)
+	return query.Delete(ctx, cm)
 }
 
 func extractPublicData(dk *dynakube.DynaKube) map[string]string {
@@ -253,7 +253,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context) error {
 		return err
 	}
 
-	updated, err := k8sdaemonset.CreateOrUpdateDaemonSet(ctx, r.client, log, dsDesired)
+	updated, err := k8sdaemonset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, dsDesired)
 	if err != nil {
 		log.Info("failed to roll out new OneAgent DaemonSet")
 		conditions.SetKubeApiError(r.dk.Conditions(), oaConditionType, err)
@@ -354,7 +354,7 @@ func (r *Reconciler) reconcileInstanceStatuses(ctx context.Context, dk *dynakube
 func (r *Reconciler) removeOneAgentDaemonSet(ctx context.Context, dk *dynakube.DynaKube) error {
 	oneAgentDaemonSet := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dk.OneAgentDaemonsetName(), Namespace: dk.Namespace}}
 
-	return object.Delete(ctx, r.client, &oneAgentDaemonSet)
+	return client.IgnoreNotFound(r.client.Delete(ctx, &oneAgentDaemonSet))
 }
 
 func getInstanceStatuses(pods []corev1.Pod) map[string]dynakube.OneAgentInstance {

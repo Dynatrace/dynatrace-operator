@@ -47,18 +47,18 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dk *dynakube.DynaK
 		return errors.WithStack(err)
 	}
 
-	secret, err := k8ssecret.Create(r.dk,
-		k8ssecret.NewNameModifier(BuildSecretName(dk.Name)),
-		k8ssecret.NewNamespaceModifier(r.dk.Namespace),
-		k8ssecret.NewTypeModifier(corev1.SecretTypeOpaque),
-		k8ssecret.NewDataModifier(data))
+	secret, err := k8ssecret.Build(r.dk,
+		BuildSecretName(dk.Name),
+		data,
+		k8ssecret.SetType(corev1.SecretTypeOpaque),
+	)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	secretQuery := k8ssecret.NewQuery(ctx, r.client, r.apiReader, log)
+	secretQuery := k8ssecret.Query(r.client, r.apiReader, log)
 
-	err = secretQuery.CreateOrUpdate(*secret)
+	_, err = secretQuery.CreateOrUpdate(ctx, secret)
 
 	return errors.WithStack(err)
 }
