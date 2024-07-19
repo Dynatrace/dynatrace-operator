@@ -61,7 +61,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 			return err
 		}
 
-		_, err = k8ssecret.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, newSecret)
+		_, err = k8ssecret.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newSecret)
 		if err != nil {
 			log.Info("failed to create/update extension secret")
 			conditions.SetKubeApiError(r.dk.Conditions(), conditionType, err)

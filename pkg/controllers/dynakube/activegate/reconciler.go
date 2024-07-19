@@ -150,7 +150,7 @@ func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.C
 		return errors.WithStack(err)
 	}
 
-	query := configmap.Query(r.client, r.apiReader, log).WithOwner(r.dk)
+	query := configmap.Query(r.client, r.apiReader, log)
 
 	_, err = query.CreateOrUpdate(ctx, configMap)
 	if err != nil {

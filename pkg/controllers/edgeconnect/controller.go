@@ -602,7 +602,7 @@ func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnect
 		return errors.WithStack(err)
 	}
 
-	query := k8ssecret.Query(controller.client, controller.apiReader, _log).WithOwner(ec)
+	query := k8ssecret.Query(controller.client, controller.apiReader, _log)
 
 	_, err = query.CreateOrUpdate(ctx, ecOAuthSecret)
 	if err != nil {
@@ -808,7 +808,7 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 		return "", "", errors.WithStack(err)
 	}
 
-	query := k8ssecret.Query(controller.client, controller.apiReader, log).WithOwner(ec)
+	query := k8ssecret.Query(controller.client, controller.apiReader, log)
 
 	_, err = query.CreateOrUpdate(ctx, secretConfig)
 	if err != nil {
