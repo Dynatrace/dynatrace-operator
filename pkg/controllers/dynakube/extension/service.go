@@ -82,7 +82,7 @@ func (r *reconciler) buildService() (*corev1.Service, error) {
 		r.buildServiceName(),
 		appLabels.BuildMatchLabels(),
 		svcPort,
-		service.SetLabels(coreLabels.BuildMatchLabels()),
+		service.SetLabels(coreLabels.BuildLabels()),
 		service.SetType(corev1.ServiceTypeClusterIP),
 	)
 }

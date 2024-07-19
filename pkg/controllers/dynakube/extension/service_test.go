@@ -23,6 +23,7 @@ func TestReconciler_prepareService(t *testing.T) {
 			labels.AppComponentLabel: labels.ExtensionComponentLabel,
 			labels.AppCreatedByLabel: dk.Name,
 			labels.AppNameLabel:      version.AppName,
+			labels.AppVersionLabel:   version.Version,
 		}, svc.Labels)
 
 		assert.Equal(t, map[string]string{
