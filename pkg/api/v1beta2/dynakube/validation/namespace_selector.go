@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube" //nolint:staticcheck
 	v1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/validation"

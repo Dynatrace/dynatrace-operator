@@ -3,7 +3,7 @@ package validation
 import (
 	"context"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube" //nolint:staticcheck
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 )
 
