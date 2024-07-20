@@ -1,5 +1,5 @@
 #renovate depName=sigs.k8s.io/kustomize/kustomize/v5
-kustomize_version=v5.4.2
+kustomize_version=v5.4.3
 #renovate depName=sigs.k8s.io/controller-tools/cmd
 controller_gen_version=v0.15.0
 # renovate depName=github.com/golangci/golangci-lint
