@@ -43,5 +43,10 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
+	err = r.reconcileStatefulset(ctx)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
