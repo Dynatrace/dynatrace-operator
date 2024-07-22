@@ -40,10 +40,10 @@ func (mod EecModifier) Modify(sts *appsv1.StatefulSet) error {
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)
 
 	baseContainer.Command = []string{"/bin/sh"}
-	baseContainer.Args = []string{
-		"-c",
-		"cp -v " + eecMountPath + "/" + eecFile + " /var/lib/dynatrace/gateway/config/ ; /opt/dynatrace/gateway/entrypoint.sh",
-	}
+
+	baseContainer.Args = append(baseContainer.Args,
+		"cp -v "+eecMountPath+"/"+eecFile+" /var/lib/dynatrace/gateway/config/ ; /opt/dynatrace/gateway/entrypoint.sh",
+	)
 
 	return nil
 }
