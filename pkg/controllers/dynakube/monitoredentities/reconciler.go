@@ -17,7 +17,6 @@ type ReconcilerBuilder func(
 func NewReconciler( //nolint
 	dtClient dynatrace.Client,
 	dk *dynakube.DynaKube,
-	kubeSystemUUID string,
 ) controllers.Reconciler {
 	return &Reconciler{
 		dk:       dk,
@@ -31,9 +30,9 @@ type Reconciler struct {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	log.Info("start reconciling monitored entities")
-
 	if r.dk.Status.KubernetesClusterMEID == "" {
+		log.Info("start reconciling monitored entities")
+
 		monitoredEntities, err := r.dtClient.GetMonitoredEntitiesForKubeSystemUUID(ctx, r.dk.Status.KubeSystemUUID)
 		if err != nil {
 			log.Info("failed to retrieve MEs")
@@ -48,9 +47,9 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		}
 
 		r.dk.Status.KubernetesClusterMEID = findLatestEntity(monitoredEntities).EntityId
-	}
 
-	log.Info("kubernetesClusterMEID set in dynakube status, done reconciling", "kubernetesClusterMEID", r.dk.Status.KubernetesClusterMEID)
+		log.Info("kubernetesClusterMEID set in dynakube status, done reconciling", "kubernetesClusterMEID", r.dk.Status.KubernetesClusterMEID)
+	}
 
 	return nil
 }

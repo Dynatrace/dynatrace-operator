@@ -46,7 +46,7 @@ func (r *Reconciler) createObjectIdIfNotExists(ctx context.Context) (string, err
 	}
 
 	if r.dk.Status.KubernetesClusterMEID == "" {
-		monitoredEntitiesreconciler := monitoredentities.NewReconciler(r.dtc, r.dk, r.dk.Status.KubeSystemUUID)
+		monitoredEntitiesreconciler := monitoredentities.NewReconciler(r.dtc, r.dk)
 
 		err := monitoredEntitiesreconciler.Reconcile(ctx)
 		if err != nil {

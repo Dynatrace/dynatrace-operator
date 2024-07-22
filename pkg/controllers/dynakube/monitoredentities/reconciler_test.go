@@ -22,7 +22,7 @@ func TestReconcile(t *testing.T) {
 		dk := createDynaKube()
 		dk.Spec.MetadataEnrichment.Enabled = false
 
-		reconciler := NewReconciler(clt, &dk, "")
+		reconciler := NewReconciler(clt, &dk)
 
 		err := reconciler.Reconcile(ctx)
 
@@ -35,7 +35,7 @@ func TestReconcile(t *testing.T) {
 
 		dk := createDynaKube()
 
-		reconciler := NewReconciler(clt, &dk, dk.Status.KubeSystemUUID)
+		reconciler := NewReconciler(clt, &dk)
 
 		err := reconciler.Reconcile(ctx)
 
@@ -49,7 +49,7 @@ func TestReconcile(t *testing.T) {
 
 		dk := createDynaKube()
 
-		reconciler := NewReconciler(clt, &dk, dk.Status.KubeSystemUUID)
+		reconciler := NewReconciler(clt, &dk)
 
 		err := reconciler.Reconcile(ctx)
 
