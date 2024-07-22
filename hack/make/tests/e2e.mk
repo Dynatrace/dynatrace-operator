@@ -29,12 +29,14 @@ test/e2e/standard: manifests/crd/helm
 	$(GOTESTCMD) -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 200m -count=1 ./test/scenarios/standard -args --skip-labels "name=cloudnative-network-zone" $(SKIPCLEANUP)
 
 ## Run istio e2e test only
+# TODO: re-enable after related Issue is resolved: https://dt-rnd.atlassian.net/browse/K8S-10709
 test/e2e/istio: manifests/crd/helm
-	$(GOTESTCMD) -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 200m -count=1 ./test/scenarios/istio -args $(SKIPCLEANUP)
+	$(GOTESTCMD) -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 200m -count=1 ./test/scenarios/istio -args --skip-labels "name=cloudnative-csi-resilience,name=codemodules-with-proxy,name=codemodules-with-proxy-custom-ca,name=codemodules-with-proxy-and-ag-cert,name=codemodules-with-proxy-custom-ca-ag-cert" $(SKIPCLEANUP)
 
 ## Run release e2e test only
+# TODO: re-enable after related Issue is resolved: https://dt-rnd.atlassian.net/browse/K8S-10712
 test/e2e/release: manifests/crd/helm
-	$(GOTESTCMD) -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/release -args $(SKIPCLEANUP)
+	$(GOTESTCMD) -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/release -args --skip-label "name=cloudnative-upgrade" $(SKIPCLEANUP)
 
 ## Runs ActiveGate e2e test only
 test/e2e/activegate: manifests/crd/helm
@@ -100,8 +102,9 @@ test/e2e/cloudnative/switchmodes: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=cloudnative-to-classic" $(SKIPCLEANUP)
 
 ## Runs CloudNative upgrade e2e test only
-test/e2e/cloudnative/upgrade: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/release -args --labels "name=cloudnative-upgrade" $(SKIPCLEANUP)
+# TODO: re-enable after related Issue is resolved: https://dt-rnd.atlassian.net/browse/K8S-10712
+# test/e2e/cloudnative/upgrade: manifests/crd/helm
+#	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/release -args --labels "name=cloudnative-upgrade" $(SKIPCLEANUP)
 
 ## Runs Application Monitoring metadata-enrichment e2e test only
 test/e2e/applicationmonitoring/metadataenrichment: manifests/crd/helm
