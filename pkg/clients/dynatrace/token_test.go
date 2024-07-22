@@ -3,7 +3,7 @@ package dynatrace
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
@@ -49,7 +49,7 @@ func handleTokenScopes(request *http.Request, writer http.ResponseWriter) {
 		_ = request.Body.Close()
 	}()
 
-	d, _ := ioutil.ReadAll(request.Body)
+	d, _ := io.ReadAll(request.Body)
 
 	err := json.Unmarshal(d, &model)
 	if err != nil {
