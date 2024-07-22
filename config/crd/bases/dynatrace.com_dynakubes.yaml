@@ -7038,6 +7038,10 @@ spec:
                 description: KubeSystemUUID contains the UUID of the current Kubernetes
                   cluster
                 type: string
+              kubernetesClusterMEID:
+                description: KubernetesClusterMEID contains the ID of the monitored
+                  entity that points to the Kubernetes cluster
+                type: string
               metadataEnrichment:
                 description: Observed state of Metadata-Enrichment
                 properties:
