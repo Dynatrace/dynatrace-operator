@@ -42,6 +42,7 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
+    deprecated: true
     name: v1beta1
     schema:
       openAPIV3Schema:
@@ -2610,6 +2611,7 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
+    deprecated: true
     name: v1beta2
     schema:
       openAPIV3Schema:
