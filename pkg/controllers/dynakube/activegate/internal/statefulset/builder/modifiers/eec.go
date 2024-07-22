@@ -42,7 +42,7 @@ func (mod EecModifier) Modify(sts *appsv1.StatefulSet) error {
 	baseContainer.Command = []string{"/bin/sh"}
 	baseContainer.Args = []string{
 		"-c",
-		"echo abc ; cp -v " + eecMountPath + "/" + eecFile + " /var/lib/dynatrace/gateway/config/ ; /opt/dynatrace/gateway/entrypoint.sh",
+		"cp -v " + eecMountPath + "/" + eecFile + " /var/lib/dynatrace/gateway/config/ ; /opt/dynatrace/gateway/entrypoint.sh",
 	}
 
 	return nil
