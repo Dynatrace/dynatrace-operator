@@ -135,6 +135,23 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, svc)
 	})
+
+	t.Run("Don't create service when prometheus is disabled with minimal setup", func(t *testing.T) {
+		dk := createDynakube()
+		dk.Spec.Extensions.Prometheus.Enabled = false
+
+		mockK8sClient := fake.NewClient(dk)
+
+		r := &reconciler{client: mockK8sClient, apiReader: mockK8sClient, dk: dk, timeProvider: timeprovider.New()}
+		err := r.Reconcile(context.Background())
+
+		require.NoError(t, err)
+
+		var svc corev1.Service
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: r.buildServiceName(), Namespace: testNamespace}, &svc)
+		require.Error(t, err)
+		assert.True(t, k8serrors.IsNotFound(err))
+	})
 }
 
 func createDynakube() *dynakube.DynaKube {
