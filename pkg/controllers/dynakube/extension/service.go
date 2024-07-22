@@ -12,9 +12,7 @@ import (
 )
 
 func (r *reconciler) reconcileService(ctx context.Context) error {
-	if r.dk.PrometheusEnabled() {
-		return r.createOrUpdateService(ctx)
-	} else {
+	if !r.dk.PrometheusEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), extensionsServiceConditionType) == nil {
 			return nil
 		}
@@ -23,20 +21,22 @@ func (r *reconciler) reconcileService(ctx context.Context) error {
 		svc, err := r.buildService()
 		if err != nil {
 			log.Error(err, "could not build service during cleanup")
-			conditions.SetServiceGenFailed(r.dk.Conditions(), extensionsServiceConditionType, err)
+
+			return err
 		}
 
 		err = service.Query(r.client, r.apiReader, log).Delete(ctx, svc)
 
 		if err != nil {
 			log.Error(err, "failed to clean up extension service")
-			conditions.SetKubeApiError(r.dk.Conditions(), extensionsServiceConditionType, err)
 
 			return nil
 		}
+
+		return nil
 	}
 
-	return nil
+	return r.createOrUpdateService(ctx)
 }
 
 func (r *reconciler) createOrUpdateService(ctx context.Context) error {
@@ -68,10 +68,10 @@ func (r *reconciler) buildService() (*corev1.Service, error) {
 	appLabels := labels.NewAppLabels(labels.ExtensionComponentLabel, r.dk.Name, labels.ExtensionComponentLabel, "")
 
 	svcPort := corev1.ServicePort{
-		Name:       buildPortsName(r.dk.Name),
+		Name:       r.buildPortsName(),
 		Port:       ExtensionsCollectorComPort,
 		Protocol:   corev1.ProtocolTCP,
-		TargetPort: intstr.IntOrString{Type: 1, StrVal: ExtensionsCollectorTargetPortName},
+		TargetPort: intstr.IntOrString{Type: intstr.String, StrVal: ExtensionsCollectorTargetPortName},
 	}
 
 	return service.Build(r.dk,
@@ -87,6 +87,6 @@ func (r *reconciler) buildServiceName() string {
 	return r.dk.Name + ExtensionsControllerSuffix
 }
 
-func buildPortsName(dkName string) string {
-	return dkName + ExtensionsControllerSuffix + "com-port"
+func (r *reconciler) buildPortsName() string {
+	return r.dk.Name + ExtensionsControllerSuffix + "com-port"
 }
