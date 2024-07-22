@@ -20,8 +20,8 @@ func WaitForDaemonset(dk dynakubev1beta3.DynaKube) features.Func {
 	return helpers.ToFeatureFunc(daemonset.WaitFor(dk.OneAgentDaemonsetName(), dk.Namespace), true)
 }
 
-func WaitForDaemonsetV1Beta1(dk dynakubev1beta1.DynaKube) features.Func {
-	return helpers.ToFeatureFunc(daemonset.WaitFor(dk.OneAgentDaemonsetName(), dk.Namespace), true)
+func WaitFromDaemonSetPrevDk(prevDk dynakubev1beta1.DynaKube) features.Func {
+	return helpers.ToFeatureFunc(daemonset.WaitFor(prevDk.OneAgentDaemonsetName(), prevDk.Namespace), true)
 }
 
 func WaitForDaemonSetPodsDeletion(dk dynakubev1beta3.DynaKube) features.Func {

@@ -65,7 +65,7 @@ func CreatePreviousVersion(builder *features.FeatureBuilder, level features.Leve
 
 func VerifyStartupPreviousVersion(builder *features.FeatureBuilder, level features.Level, prevDk prevDynakube.DynaKube) {
 	if prevDk.NeedsOneAgent() {
-		builder.WithStep("oneagent started", level, oneagent.WaitForDaemonsetV1Beta1(prevDk))
+		builder.WithStep("oneagent started", level, oneagent.WaitFromDaemonSetPrevDk(prevDk))
 	}
 	builder.WithStep(
 		fmt.Sprintf("'%s' dynakube phase changes to 'Running'", prevDk.Name),
