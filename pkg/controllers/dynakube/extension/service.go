@@ -3,34 +3,34 @@ package extension
 import (
 	"context"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/service"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (r *reconciler) reconcileService(ctx context.Context) error {
 	if r.dk.PrometheusEnabled() {
-		log.Info("reconcile service")
-
-		if err := r.ensureService(ctx); err != nil {
-			return errors.WithMessage(err, "could not update service")
-		}
-
-		return nil
+		return r.createOrUpdateService(ctx)
 	} else {
+		if meta.FindStatusCondition(*r.dk.Conditions(), extensionsServiceConditionType) == nil {
+			return nil
+		}
+		defer meta.RemoveStatusCondition(r.dk.Conditions(), extensionsServiceConditionType)
+
 		svc, err := r.buildService()
 		if err != nil {
 			log.Error(err, "could not build service during cleanup")
+			conditions.SetServiceGenFailed(r.dk.Conditions(), extensionsServiceConditionType, err)
 		}
 
 		err = service.Query(r.client, r.apiReader, log).Delete(ctx, svc)
 
 		if err != nil {
 			log.Error(err, "failed to clean up extension service")
+			conditions.SetKubeApiError(r.dk.Conditions(), extensionsServiceConditionType, err)
 
 			return nil
 		}
@@ -39,31 +39,27 @@ func (r *reconciler) reconcileService(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) ensureService(ctx context.Context) error {
-	_, err := service.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKey{Name: r.buildServiceName(), Namespace: r.dk.Namespace})
-
-	if k8serrors.IsNotFound(err) {
-		log.Info("service was not found, creating service")
-
-		return r.createService(ctx)
-	} else if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *reconciler) createService(ctx context.Context) error {
+func (r *reconciler) createOrUpdateService(ctx context.Context) error {
 	log.Info("creating extension collector service")
 
 	newService, err := r.buildService()
 	if err != nil {
+		conditions.SetServiceGenFailed(r.dk.Conditions(), extensionsServiceConditionType, err)
+
 		return err
 	}
 
 	_, err = service.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newService)
+	if err != nil {
+		log.Info("failed to create/update extension service")
+		conditions.SetKubeApiError(r.dk.Conditions(), extensionsServiceConditionType, err)
 
-	return err
+		return err
+	}
+
+	conditions.SetServiceCreated(r.dk.Conditions(), extensionsServiceConditionType, r.buildServiceName())
+
+	return nil
 }
 
 func (r *reconciler) buildService() (*corev1.Service, error) {

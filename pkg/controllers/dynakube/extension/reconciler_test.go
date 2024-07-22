@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -47,7 +48,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk := createDynakube()
 
 		// mock SecretCreated condition
-		conditions.SetSecretCreated(dk.Conditions(), conditionType, dk.Name+secretSuffix)
+		conditions.SetSecretCreated(dk.Conditions(), extensionsTokenSecretConditionType, dk.Name+secretSuffix)
 
 		// mock secret
 		secretToken, _ := dttoken.New(eecTokenSecretValuePrefix)
@@ -98,8 +99,9 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		var expectedConditions []metav1.Condition
 
-		conditions.SetSecretCreated(&expectedConditions, conditionType, dk.Name+secretSuffix)
-		testutil.PartialEqual(t, &expectedConditions, dk.Conditions(), cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
+		conditions.SetSecretCreated(&expectedConditions, extensionsTokenSecretConditionType, dk.Name+secretSuffix)
+		conds := meta.FindStatusCondition(*dk.Conditions(), extensionsTokenSecretConditionType)
+		testutil.PartialEqual(t, &expectedConditions[0], conds, cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
 	})
 	t.Run(`Extension SecretCreated failure condition is set when error`, func(t *testing.T) {
 		dk := createDynakube()
@@ -115,7 +117,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		var expectedConditions []metav1.Condition
 
-		conditions.SetKubeApiError(&expectedConditions, conditionType, err)
+		conditions.SetKubeApiError(&expectedConditions, extensionsTokenSecretConditionType, err)
 		testutil.PartialEqual(t, &expectedConditions, dk.Conditions(), cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
 	})
 
@@ -134,6 +136,15 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: r.buildServiceName(), Namespace: testNamespace}, &svc)
 		require.NoError(t, err)
 		assert.NotNil(t, svc)
+
+		// assert extensions token condition is added
+		require.NotEmpty(t, dk.Conditions())
+
+		var expectedConditions []metav1.Condition
+
+		conditions.SetServiceCreated(&expectedConditions, extensionsServiceConditionType, r.buildServiceName())
+		conds := meta.FindStatusCondition(*dk.Conditions(), extensionsServiceConditionType)
+		testutil.PartialEqual(t, &expectedConditions[0], conds, cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
 	})
 
 	t.Run("Don't create service when prometheus is disabled with minimal setup", func(t *testing.T) {
