@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -47,8 +48,8 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 			return nil // no condition == nothing is there to clean up
 		}
 
-		query := k8ssecret.NewQuery(ctx, r.client, r.apiReader, log)
-		err := query.Delete(r.dk.OneagentTenantSecret(), r.dk.Namespace)
+		query := k8ssecret.Query(r.client, r.apiReader, log)
+		err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.OneagentTenantSecret(), Namespace: r.dk.Namespace}})
 
 		if err != nil {
 			log.Error(err, "failed to clean-up OneAgent tenant-secret")
@@ -121,7 +122,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 		return NoOneAgentCommunicationHostsError
 	}
 
-	err = r.createTenantTokenSecret(ctx, r.dk.OneagentTenantSecret(), r.dk, connectionInfo.ConnectionInfo)
+	err = r.createTenantTokenSecret(ctx, r.dk.OneagentTenantSecret(), connectionInfo.ConnectionInfo)
 	if err != nil {
 		return err
 	}
@@ -148,15 +149,15 @@ func copyCommunicationHosts(dest *dynakube.OneAgentConnectionInfoStatus, src []d
 	}
 }
 
-func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName string, owner metav1.Object, connectionInfo dtclient.ConnectionInfo) error {
-	secret, err := connectioninfo.BuildTenantSecret(owner, secretName, connectionInfo)
+func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName string, connectionInfo dtclient.ConnectionInfo) error {
+	secret, err := connectioninfo.BuildTenantSecret(r.dk, secretName, connectionInfo)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	query := k8ssecret.NewQuery(ctx, r.client, r.apiReader, log)
+	query := k8ssecret.Query(r.client, r.apiReader, log)
 
-	err = query.CreateOrUpdate(*secret)
+	_, err = query.CreateOrUpdate(ctx, secret)
 	if err != nil {
 		log.Info("could not create or update secret for connection info", "name", secret.Name)
 		conditions.SetKubeApiError(r.dk.Conditions(), oaConnectionInfoConditionType, err)

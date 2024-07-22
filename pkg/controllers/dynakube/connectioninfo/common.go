@@ -28,9 +28,9 @@ const (
 )
 
 func IsTenantSecretPresent(ctx context.Context, apiReader client.Reader, secretNamespacedName types.NamespacedName, log logd.Logger) (bool, error) {
-	query := k8ssecret.NewQuery(ctx, nil, apiReader, log)
+	query := k8ssecret.Query(nil, apiReader, log)
 
-	_, err := query.Get(secretNamespacedName)
+	_, err := query.Get(ctx, secretNamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("creating secret, because missing", "secretName", secretNamespacedName.Name)
@@ -47,7 +47,7 @@ func IsTenantSecretPresent(ctx context.Context, apiReader client.Reader, secretN
 func BuildTenantSecret(owner metav1.Object, secretName string, connectionInfo dtclient.ConnectionInfo) (*corev1.Secret, error) {
 	secretData := ExtractSensitiveData(connectionInfo)
 
-	return k8ssecret.Create(owner, k8ssecret.NewNameModifier(secretName), k8ssecret.NewNamespaceModifier(owner.GetNamespace()), k8ssecret.NewDataModifier(secretData))
+	return k8ssecret.Build(owner, secretName, secretData)
 }
 
 func ExtractSensitiveData(connectionInfo dtclient.ConnectionInfo) map[string][]byte {

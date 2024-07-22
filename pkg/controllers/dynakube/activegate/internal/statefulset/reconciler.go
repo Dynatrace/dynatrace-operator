@@ -2,10 +2,8 @@ package statefulset
 
 import (
 	"hash/fnv"
-	"reflect"
 	"strconv"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
@@ -13,17 +11,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 var _ controllers.Reconciler = &Reconciler{}
@@ -58,7 +52,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if err != nil {
 		log.Error(err, "could not reconcile stateful set")
 
-		return errors.WithStack(err)
+		return err
 	}
 
 	return nil
@@ -67,159 +61,47 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 func (r *Reconciler) manageStatefulSet(ctx context.Context) error {
 	desiredSts, err := r.buildDesiredStatefulSet(ctx)
 	if err != nil {
-		return errors.WithStack(err)
+		conditions.SetKubeApiError(r.dk.Conditions(), ActiveGateStatefulSetConditionType, err)
+
+		return err
 	}
 
-	if err := controllerutil.SetControllerReference(r.dk, desiredSts, scheme.Scheme); err != nil {
-		return errors.WithStack(err)
-	}
-
-	created, err := r.createStatefulSetIfNotExists(ctx, desiredSts)
+	updated, err := statefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
 	if err != nil {
 		conditions.SetKubeApiError(r.dk.Conditions(), ActiveGateStatefulSetConditionType, err)
 
-		return errors.WithStack(err)
-	} else if created {
-		conditions.SetStatefulSetCreated(r.dk.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
-
-		return nil
-	}
-
-	deleted, err := r.deleteStatefulSetIfSelectorChanged(ctx, desiredSts)
-	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), ActiveGateStatefulSetConditionType, err)
-
-		return errors.WithStack(err)
-	} else if deleted {
-		conditions.SetStatefulSetDeleted(r.dk.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
-
-		return r.manageStatefulSet(ctx)
-	}
-
-	updated, err := r.updateStatefulSetIfOutdated(ctx, desiredSts)
-	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), ActiveGateStatefulSetConditionType, err)
-
-		return errors.WithStack(err)
+		return err
 	} else if updated {
-		conditions.SetStatefulSetUpdated(r.dk.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
+		conditions.SetStatefulSetCreated(r.dk.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
 	}
 
 	return nil
 }
 
 func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context) (*appsv1.StatefulSet, error) {
-	kubeUID, err := kubesystem.GetUID(ctx, r.apiReader)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
+	kubeUID := types.UID(r.dk.Status.KubeSystemUUID)
 
-	activeGateConfigurationHash, err := r.calculateActiveGateConfigurationHash()
+	activeGateConfigurationHash, err := r.calculateActiveGateConfigurationHash(ctx)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, err
 	}
 
 	statefulSetBuilder := NewStatefulSetBuilder(kubeUID, activeGateConfigurationHash, *r.dk, r.capability)
 
 	desiredSts, err := statefulSetBuilder.CreateStatefulSet(r.modifiers)
 
-	return desiredSts, errors.WithStack(err)
+	return desiredSts, err
 }
 
-func (r *Reconciler) getStatefulSet(ctx context.Context, desiredSts *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
-	var sts appsv1.StatefulSet
-
-	err := r.client.Get(ctx, client.ObjectKey{Name: desiredSts.Name, Namespace: desiredSts.Namespace}, &sts)
+func (r *Reconciler) calculateActiveGateConfigurationHash(ctx context.Context) (string, error) {
+	customPropertyData, err := r.getCustomPropertyValue(ctx)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return "", err
 	}
 
-	return &sts, nil
-}
-
-func (r *Reconciler) createStatefulSetIfNotExists(ctx context.Context, desiredSts *appsv1.StatefulSet) (bool, error) {
-	_, err := r.getStatefulSet(ctx, desiredSts)
-	if err != nil && k8serrors.IsNotFound(errors.Cause(err)) {
-		log.Info("creating new stateful set for " + r.capability.ShortName())
-
-		return true, r.client.Create(ctx, desiredSts)
-	}
-
-	return false, err
-}
-
-func (r *Reconciler) updateStatefulSetIfOutdated(ctx context.Context, desiredSts *appsv1.StatefulSet) (bool, error) {
-	currentSts, err := r.getStatefulSet(ctx, desiredSts)
+	authTokenData, err := r.getAuthTokenValue(ctx)
 	if err != nil {
-		return false, err
-	}
-
-	if !hasher.IsAnnotationDifferent(currentSts, desiredSts) {
-		return false, nil
-	}
-
-	if labels.NotEqual(currentSts.Spec.Selector.MatchLabels, desiredSts.Spec.Selector.MatchLabels) {
-		return r.recreateStatefulSet(ctx, currentSts, desiredSts)
-	}
-
-	log.Info("updating existing stateful set")
-
-	if err = r.client.Update(ctx, desiredSts); err != nil {
-		return false, err
-	}
-
-	return true, err
-}
-
-func (r *Reconciler) recreateStatefulSet(ctx context.Context, currentSts, desiredSts *appsv1.StatefulSet) (bool, error) {
-	log.Info("immutable section changed on statefulset, deleting and recreating", "name", desiredSts.Name)
-
-	err := r.client.Delete(ctx, currentSts)
-	if err != nil {
-		return false, err
-	}
-
-	log.Info("deleted statefulset")
-	log.Info("recreating statefulset", "name", desiredSts.Name)
-
-	return true, r.client.Create(ctx, desiredSts)
-}
-
-// the selector, e.g. MatchLabels, of a stateful set is immutable.
-// if it changed, for example due to a new operator version, deleteStatefulSetIfSelectorChanged deletes the stateful set
-// so it can be updated correctly afterwards.
-func (r *Reconciler) deleteStatefulSetIfSelectorChanged(ctx context.Context, desiredSts *appsv1.StatefulSet) (bool, error) {
-	currentSts, err := r.getStatefulSet(ctx, desiredSts)
-	if err != nil {
-		return false, err
-	}
-
-	if hasSelectorChanged(desiredSts, currentSts) {
-		log.Info("deleting existing stateful set because selector changed")
-
-		if err = r.client.Delete(ctx, desiredSts); err != nil {
-			return false, err
-		}
-
-		return true, nil
-	}
-
-	return false, nil
-}
-
-func hasSelectorChanged(desiredSts *appsv1.StatefulSet, currentSts *appsv1.StatefulSet) bool {
-	return !reflect.DeepEqual(currentSts.Spec.Selector, desiredSts.Spec.Selector)
-}
-
-func (r *Reconciler) calculateActiveGateConfigurationHash() (string, error) {
-	customPropertyData, err := r.getCustomPropertyValue()
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	authTokenData, err := r.getAuthTokenValue()
-	if err != nil {
-		return "", errors.WithStack(err)
+		return "", err
 	}
 
 	if len(customPropertyData) < 1 && len(authTokenData) < 1 {
@@ -234,42 +116,42 @@ func (r *Reconciler) calculateActiveGateConfigurationHash() (string, error) {
 	return strconv.FormatUint(uint64(hash.Sum32()), 10), nil
 }
 
-func (r *Reconciler) getCustomPropertyValue() (string, error) {
+func (r *Reconciler) getCustomPropertyValue(ctx context.Context) (string, error) {
 	if !needsCustomPropertyHash(r.capability.Properties().CustomProperties) {
 		return "", nil
 	}
 
-	customPropertyData, err := r.getDataFromCustomProperty(r.capability.Properties().CustomProperties)
+	customPropertyData, err := r.getDataFromCustomProperty(ctx, r.capability.Properties().CustomProperties)
 	if err != nil {
-		return "", errors.WithStack(err)
+		return "", err
 	}
 
 	return customPropertyData, nil
 }
 
-func (r *Reconciler) getAuthTokenValue() (string, error) {
+func (r *Reconciler) getAuthTokenValue(ctx context.Context) (string, error) {
 	if !r.dk.NeedsActiveGate() {
 		return "", nil
 	}
 
-	authTokenData, err := r.getDataFromAuthTokenSecret()
+	authTokenData, err := r.getDataFromAuthTokenSecret(ctx)
 	if err != nil {
-		return "", errors.WithStack(err)
+		return "", err
 	}
 
 	return authTokenData, nil
 }
 
-func (r *Reconciler) getDataFromCustomProperty(customProperties *dynakube.DynaKubeValueSource) (string, error) {
+func (r *Reconciler) getDataFromCustomProperty(ctx context.Context, customProperties *dynakube.DynaKubeValueSource) (string, error) {
 	if customProperties.ValueFrom != "" {
-		return secret.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dk.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey, log)
+		return secret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{Namespace: r.dk.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey, log)
 	}
 
 	return customProperties.Value, nil
 }
 
-func (r *Reconciler) getDataFromAuthTokenSecret() (string, error) {
-	return secret.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dk.Namespace, Name: r.dk.ActiveGateAuthTokenSecret()}, authtoken.ActiveGateAuthTokenName, log)
+func (r *Reconciler) getDataFromAuthTokenSecret(ctx context.Context) (string, error) {
+	return secret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{Namespace: r.dk.Namespace, Name: r.dk.ActiveGateAuthTokenSecret()}, authtoken.ActiveGateAuthTokenName, log)
 }
 
 func needsCustomPropertyHash(customProperties *dynakube.DynaKubeValueSource) bool {

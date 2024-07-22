@@ -7,11 +7,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/metric/noop"
+	metricnoop "go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/sdk/resource"
 	// renovate packageName=open-telemetry/semantic-conventions depName=go.opentelemetry.io/otel/semconv
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
-	"go.opentelemetry.io/otel/trace"
+	tracenoop "go.opentelemetry.io/otel/trace/noop"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -67,8 +67,8 @@ func setupOtlpOTel(ctx context.Context, otelServiceName string, endpoint string,
 // setupNoopOTel makes sure, that OpenTelementry is properly configured so that no subsequent usage of OpenTelementry leads to panics while keeping
 // a minimal impact on runtime. Basically all collected metrics and traces get discarded right away.
 func setupNoopOTel() func() {
-	otel.SetMeterProvider(noop.NewMeterProvider())
-	otel.SetTracerProvider(trace.NewNoopTracerProvider())
+	otel.SetMeterProvider(metricnoop.NewMeterProvider())
+	otel.SetTracerProvider(tracenoop.NewTracerProvider())
 	log.Info("use Noop providers for OpenTelemetry")
 
 	return func() {}
@@ -98,19 +98,19 @@ func getOtelConfig(ctx context.Context, apiReader client.Reader, namespace strin
 		Name:      otelSecretName,
 	}
 
-	query := k8ssecret.NewQuery(ctx, nil, apiReader, log)
+	query := k8ssecret.Query(nil, apiReader, log)
 
-	secret, err := query.Get(secretName)
+	secret, err := query.Get(ctx, secretName)
 	if err != nil {
 		return "", "", errors.WithStack(err)
 	}
 
-	endpoint, err := k8ssecret.ExtractToken(&secret, otelApiEndpointKey)
+	endpoint, err := k8ssecret.ExtractToken(secret, otelApiEndpointKey)
 	if err != nil {
 		return "", "", err
 	}
 
-	token, err := k8ssecret.ExtractToken(&secret, otelAccessTokenKey)
+	token, err := k8ssecret.ExtractToken(secret, otelAccessTokenKey)
 	if err != nil {
 		return "", "", err
 	}
