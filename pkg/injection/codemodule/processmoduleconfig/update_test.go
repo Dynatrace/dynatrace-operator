@@ -1,7 +1,7 @@
 package processmoduleconfig
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -107,7 +107,7 @@ func prepTestConfFs(fs afero.Fs) {
 func assertTestConf(t *testing.T, fs afero.Fs, path, expected string) {
 	file, err := fs.Open(path)
 	require.NoError(t, err)
-	content, err := ioutil.ReadAll(file)
+	content, err := io.ReadAll(file)
 	require.NoError(t, err)
 	assert.Equal(t, expected, string(content))
 }

@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1"
-	prevDynakube "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	prevVersion "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1"
+	prevDynakube "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube" //nolint:staticcheck
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
@@ -138,7 +138,7 @@ func create(dk dynakube.DynaKube) features.Func {
 
 func createPreviousVersion(dk prevDynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		require.NoError(t, v1beta1.AddToScheme(envConfig.Client().Resources().GetScheme()))
+		require.NoError(t, prevVersion.AddToScheme(envConfig.Client().Resources().GetScheme()))
 		require.NoError(t, envConfig.Client().Resources().Create(ctx, &dk))
 
 		return ctx
