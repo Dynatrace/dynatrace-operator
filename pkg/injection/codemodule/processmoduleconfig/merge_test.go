@@ -1,7 +1,7 @@
 package processmoduleconfig
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 	"testing"
 
@@ -102,7 +102,7 @@ val key
 	require.NoError(t, err)
 
 	file, _ := memFs.Open("/dest")
-	content, _ := ioutil.ReadAll(file)
+	content, _ := io.ReadAll(file)
 	assert.Equal(t, expectedOut, string(content))
 }
 
@@ -147,11 +147,11 @@ prop5 new
 	require.NoError(t, err)
 
 	file, _ := memFs.Open("/dest")
-	content, _ := ioutil.ReadAll(file)
+	content, _ := io.ReadAll(file)
 	assert.Equal(t, expected, string(content))
 
 	source, _ = memFs.Open("/source")
-	content, _ = ioutil.ReadAll(source)
+	content, _ = io.ReadAll(source)
 	assert.Equal(t, sourceContent, string(content))
 }
 
@@ -173,11 +173,11 @@ prop3 old
 	require.NoError(t, err)
 
 	file, _ := memFs.Open("/dest")
-	content, _ := ioutil.ReadAll(file)
+	content, _ := io.ReadAll(file)
 	assert.Equal(t, sourceContent, string(content))
 
 	source, _ = memFs.Open("/source")
-	content, _ = ioutil.ReadAll(source)
+	content, _ = io.ReadAll(source)
 	assert.Equal(t, sourceContent, string(content))
 }
 
@@ -194,10 +194,10 @@ func TestUpdateConfFileEmptySource(t *testing.T) {
 	require.NoError(t, err)
 
 	file, _ := memFs.Open("/dest")
-	content, _ := ioutil.ReadAll(file)
+	content, _ := io.ReadAll(file)
 	assert.Equal(t, sourceContent, string(content))
 
 	source, _ = memFs.Open("/source")
-	content, _ = ioutil.ReadAll(source)
+	content, _ = io.ReadAll(source)
 	assert.Equal(t, sourceContent, string(content))
 }
