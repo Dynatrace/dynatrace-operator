@@ -8,6 +8,8 @@ Thanks for opening a pull request! Here are some tips to get everything merged s
 
 3. Be sure to allow edits from maintainers, so it's easier for us to help: https://help.github.com/en/articles/allowing-changes-to-a-pull-request-branch-created-from-a-fork
 
+4. NOTE: If your PR adds some new packages or does anything similar, please do not forget to adapt our ARCHITECTURE.md
+
 -->
 
 ## Description
