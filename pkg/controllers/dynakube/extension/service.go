@@ -88,5 +88,5 @@ func (r *reconciler) buildServiceName() string {
 }
 
 func (r *reconciler) buildPortsName() string {
-	return "dynatrace" + ExtensionsControllerSuffix + ExtensionsCollectorTargetPortName
+	return "dynatrace" + ExtensionsControllerSuffix + "-" + ExtensionsCollectorTargetPortName
 }
