@@ -144,9 +144,9 @@ func createPreviousVersion(dk prevDynakube.DynaKube) features.Func {
 func update(dk dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		var oldDK dynakube.DynaKube
-		require.NoError(t, envConfig.Client().Resources().Get(ctx, oldDK.Name, oldDK.Namespace, &oldDK))
-		oldDK.ResourceVersion = dk.ResourceVersion
-		require.NoError(t, envConfig.Client().Resources().Update(ctx, &oldDK))
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &oldDK))
+		dk.ResourceVersion = oldDK.ResourceVersion
+		require.NoError(t, envConfig.Client().Resources().Update(ctx, &dk))
 
 		return ctx
 	}
