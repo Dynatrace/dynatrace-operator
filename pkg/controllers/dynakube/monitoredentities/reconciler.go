@@ -40,8 +40,6 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return err
 		}
 
-		log.Info("retrieved MEs")
-
 		if len(monitoredEntities) == 0 {
 			return errors.New("MEs are empty, at this point this should not be the case")
 		}
