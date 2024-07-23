@@ -255,12 +255,12 @@ func TestReconciler(t *testing.T) {
 func TestRemoveAppInjection(t *testing.T) {
 	clt := clientRemoveAppInjection()
 	rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynakube.OneAgentSpec{
-		CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
+		CloudNativeFullStack: nil,
 	})
 	setCodeModulesInjectionCreatedCondition(rec.dk.Conditions())
 	setMetadataEnrichmentCreatedCondition(rec.dk.Conditions())
 
-	err := rec.removeAppInjection(context.Background())
+	err := rec.Reconcile(context.Background())
 	require.NoError(t, err)
 
 	var namespace corev1.Namespace
