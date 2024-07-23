@@ -16,7 +16,7 @@ var _ builder.Modifier = EecModifier{}
 
 const (
 	eecVolumeName = "eec-token"
-	eecMountPath  = "/var/lib/dynatrace/secrets/eec"
+	eecMountPath  = "/var/lib/dynatrace/secrets/eec/token"
 	eecFile       = "eec.token"
 )
 
