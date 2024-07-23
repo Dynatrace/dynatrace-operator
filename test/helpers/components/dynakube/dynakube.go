@@ -9,9 +9,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	prevVersion "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1"
 	prevDynakube "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube" //nolint:staticcheck
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -129,7 +127,6 @@ func WaitForPhasePreviousVersion(dk prevDynakube.DynaKube, phase status.Deployme
 
 func create(dk dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		require.NoError(t, v1beta3.AddToScheme(envConfig.Client().Resources().GetScheme()))
 		require.NoError(t, envConfig.Client().Resources().Create(ctx, &dk))
 
 		return ctx
@@ -138,7 +135,6 @@ func create(dk dynakube.DynaKube) features.Func {
 
 func createPreviousVersion(dk prevDynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		require.NoError(t, prevVersion.AddToScheme(envConfig.Client().Resources().GetScheme()))
 		require.NoError(t, envConfig.Client().Resources().Create(ctx, &dk))
 
 		return ctx
@@ -147,11 +143,10 @@ func createPreviousVersion(dk prevDynakube.DynaKube) features.Func {
 
 func update(dk dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		require.NoError(t, v1beta3.AddToScheme(envConfig.Client().Resources().GetScheme()))
 		var oldDK dynakube.DynaKube
-		require.NoError(t, envConfig.Client().Resources().Get(ctx, oldDK.Name, oldDK.Namespace, &oldDK))
-		oldDK.ResourceVersion = dk.ResourceVersion
-		require.NoError(t, envConfig.Client().Resources().Update(ctx, &oldDK))
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &oldDK))
+		dk.ResourceVersion = oldDK.ResourceVersion
+		require.NoError(t, envConfig.Client().Resources().Update(ctx, &dk))
 
 		return ctx
 	}
@@ -161,10 +156,7 @@ func remove(dk dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
-		err := v1beta3.AddToScheme(resources.GetScheme())
-		require.NoError(t, err)
-
-		err = resources.Delete(ctx, &dk)
+		err := resources.Delete(ctx, &dk)
 		isNoKindMatchErr := meta.IsNoMatchError(err)
 
 		if err != nil {
