@@ -40,8 +40,6 @@ func (r *reconciler) reconcileService(ctx context.Context) error {
 }
 
 func (r *reconciler) createOrUpdateService(ctx context.Context) error {
-	log.Info("creating extension collector service")
-
 	newService, err := r.buildService()
 	if err != nil {
 		conditions.SetServiceGenFailed(r.dk.Conditions(), extensionsServiceConditionType, err)
