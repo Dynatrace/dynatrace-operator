@@ -39,6 +39,7 @@ isCloudNativeFullStack true
   "k8s.pod.uid": "%s",
   "k8s.pod.name": "%s",
   "k8s.namespace.name": "%s",
+  "k8s.cluster.name": "%s",
   "k8s.cluster.uid": "%s",
   "k8s.workload.kind": "%s",
   "k8s.workload.name": "%s",
@@ -52,6 +53,7 @@ isCloudNativeFullStack true
 	propsEnrichmentContentFormatString = `k8s.pod.uid=%s
 k8s.pod.name=%s
 k8s.namespace.name=%s
+k8s.cluster.name=%s
 k8s.cluster.uid=%s
 k8s.workload.kind=%s
 k8s.workload.name=%s
@@ -98,6 +100,7 @@ func (runner *Runner) createJsonEnrichmentFile() error {
 		runner.env.K8PodUID,
 		runner.env.K8PodName,
 		runner.env.K8Namespace,
+		runner.env.K8ClusterName,
 		runner.env.K8ClusterID,
 		runner.env.WorkloadKind,
 		runner.env.WorkloadName,
@@ -115,6 +118,7 @@ func (runner *Runner) createPropsEnrichmentFile() error {
 		runner.env.K8PodUID,
 		runner.env.K8PodName,
 		runner.env.K8Namespace,
+		runner.env.K8ClusterName,
 		runner.env.K8ClusterID,
 		runner.env.WorkloadKind,
 		runner.env.WorkloadName,

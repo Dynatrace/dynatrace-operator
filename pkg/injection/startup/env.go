@@ -36,6 +36,7 @@ type environment struct {
 	K8BasePodName string `json:"k8BasePodName"`
 	K8Namespace   string `json:"k8Namespace"`
 	K8ClusterID   string `json:"k8ClusterID"`
+	K8ClusterName string `json:"k8sClusterName"`
 
 	WorkloadKind string `json:"workloadKind"`
 	WorkloadName string `json:"workloadName"`
@@ -113,6 +114,7 @@ func (env *environment) getOneAgentFieldSetters() []func() error {
 
 func (env *environment) getMetadataEnrichmentFieldSetters() []func() error {
 	return append(env.getCommonFieldSetters(),
+		env.addClusterName,
 		env.addWorkloadKind,
 		env.addWorkloadName,
 	)
@@ -287,6 +289,17 @@ func (env *environment) addWorkloadName() error {
 	}
 
 	env.WorkloadName = workloadName
+
+	return nil
+}
+
+func (env *environment) addClusterName() error {
+	clusterName, err := checkEnvVar(consts.EnrichmentClusterNameEnv)
+	if err != nil {
+		return err
+	}
+
+	env.K8ClusterName = clusterName
 
 	return nil
 }
