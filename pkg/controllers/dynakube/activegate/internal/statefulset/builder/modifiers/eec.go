@@ -39,12 +39,6 @@ func (mod EecModifier) Modify(sts *appsv1.StatefulSet) error {
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)
 
-	baseContainer.Command = []string{"/bin/sh"}
-
-	baseContainer.Args = append(baseContainer.Args,
-		"cp -v "+eecMountPath+"/"+eecFile+" /var/lib/dynatrace/gateway/config/ ; /opt/dynatrace/gateway/entrypoint.sh",
-	)
-
 	return nil
 }
 
