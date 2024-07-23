@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/codemodules"
 	cloudnativeDefault "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/default"
 	networkProblems "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/network_problems"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
@@ -30,6 +31,7 @@ func TestMain(m *testing.M) {
 	testEnv.BeforeEachTest(istio.AssertIstioNamespace())
 	testEnv.BeforeEachTest(istio.AssertIstiodDeployment())
 	testEnv.Setup(
+		helpers.SetScheme,
 		namespace.CreateForEnv(nsWithIstio),
 		tenant.CreateOtelSecret(nsWithIstio.Name),
 		operator.InstallViaMake(true),

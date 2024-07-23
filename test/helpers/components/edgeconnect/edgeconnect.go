@@ -42,7 +42,6 @@ func VerifyStartup(builder *features.FeatureBuilder, level features.Level, testE
 
 func Create(edgeConnect edgeconnect.EdgeConnect) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		require.NoError(t, v1alpha1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
 		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, &edgeConnect))
 
 		return ctx
@@ -51,7 +50,6 @@ func Create(edgeConnect edgeconnect.EdgeConnect) features.Func {
 
 func Get(ec *edgeconnect.EdgeConnect) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		require.NoError(t, v1alpha1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
 		require.NoError(t, environmentConfig.Client().Resources().Get(ctx, ec.Name, ec.Namespace, ec))
 
 		return ctx

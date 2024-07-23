@@ -6,5 +6,10 @@ const (
 	eecTokenSecretValuePrefix = "EEC dt0x01"
 	secretSuffix              = "-extensions-token"
 
-	conditionType = "ExtensionsTokenSecret"
+	extensionsTokenSecretConditionType = "ExtensionsTokenSecret"
+	extensionsServiceConditionType     = "ExtensionsService"
+
+	ExtensionsControllerSuffix        = "-extensions-controller"
+	ExtensionsCollectorComPort        = 14599
+	ExtensionsCollectorTargetPortName = "collector-com"
 )

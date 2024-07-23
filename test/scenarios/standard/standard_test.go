@@ -17,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/features/publicregistry"
 	supportArchive "github.com/Dynatrace/dynatrace-operator/test/features/support_archive"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -30,6 +31,7 @@ func TestMain(m *testing.M) {
 	cfg := environment.GetStandardKubeClusterEnvConfig()
 	testEnv = env.NewWithConfig(cfg)
 	testEnv.Setup(
+		helpers.SetScheme,
 		tenant.CreateOtelSecret(operator.DefaultNamespace),
 		operator.InstallViaMake(true),
 	)

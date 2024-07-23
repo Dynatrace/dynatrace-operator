@@ -44,6 +44,9 @@ type DynaKubeStatus struct { //nolint:revive
 	// KubeSystemUUID contains the UUID of the current Kubernetes cluster
 	KubeSystemUUID string `json:"kubeSystemUUID,omitempty"`
 
+	// KubernetesClusterMEID contains the ID of the monitored entity that points to the Kubernetes cluster
+	KubernetesClusterMEID string `json:"kubernetesClusterMEID,omitempty"`
+
 	// Conditions includes status about the current state of the instance
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }

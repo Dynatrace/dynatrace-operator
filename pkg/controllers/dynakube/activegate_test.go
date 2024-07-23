@@ -82,7 +82,8 @@ func TestReconcileActiveGate(t *testing.T) {
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
-				KubeSystemUUID: testUID,
+				KubeSystemUUID:        testUID,
+				KubernetesClusterMEID: testMEID,
 			},
 		}
 		fakeClient := fake.NewClientWithIndex(dk)
@@ -106,6 +107,12 @@ func TestReconcileActiveGate(t *testing.T) {
 			testName,
 			testUID,
 			mock.AnythingOfType("string"))
+
+		mockClient.AssertCalled(t, "GetSettingsForMonitoredEntities",
+			mock.AnythingOfType("context.backgroundCtx"),
+			[]dtclient.MonitoredEntity{{EntityId: dk.Status.KubernetesClusterMEID, DisplayName: "", LastSeenTms: 0}},
+			mock.AnythingOfType("string"))
+
 		require.NoError(t, err)
 	})
 	t.Run(`reconcile automatic kubernetes api monitoring with custom cluster name`, func(t *testing.T) {

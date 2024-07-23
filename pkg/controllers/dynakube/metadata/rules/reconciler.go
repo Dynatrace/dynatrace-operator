@@ -59,7 +59,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) getEnrichmentRules(ctx context.Context) ([]dynakube.EnrichmentRule, error) {
-	rulesResponse, err := r.dtc.GetRulesSettings(ctx, r.dk.Status.KubeSystemUUID)
+	rulesResponse, err := r.dtc.GetRulesSettings(ctx, r.dk.Status.KubeSystemUUID, r.dk.Status.KubernetesClusterMEID)
 	if err != nil {
 		conditions.SetDynatraceApiError(r.dk.Conditions(), conditionType, err)
 

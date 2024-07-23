@@ -14,10 +14,10 @@ import (
 
 func (r *reconciler) reconcileSecret(ctx context.Context) error {
 	if !r.dk.PrometheusEnabled() {
-		if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
+		if meta.FindStatusCondition(*r.dk.Conditions(), extensionsTokenSecretConditionType) == nil {
 			return nil
 		}
-		defer meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
+		defer meta.RemoveStatusCondition(r.dk.Conditions(), extensionsTokenSecretConditionType)
 
 		secret, err := r.buildSecret(dttoken.Token{})
 		if err != nil {
@@ -39,7 +39,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 	_, err := k8ssecret.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKey{Name: r.getSecretName(), Namespace: r.dk.Namespace})
 	if err != nil && !errors.IsNotFound(err) {
 		log.Info("failed to check existence of extension secret")
-		conditions.SetKubeApiError(r.dk.Conditions(), conditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), extensionsTokenSecretConditionType, err)
 
 		return err
 	}
@@ -48,7 +48,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 		newEecToken, err := dttoken.New(eecTokenSecretValuePrefix)
 		if err != nil {
 			log.Info("failed to generate eec token")
-			conditions.SetSecretGenFailed(r.dk.Conditions(), conditionType, err)
+			conditions.SetSecretGenFailed(r.dk.Conditions(), extensionsTokenSecretConditionType, err)
 
 			return err
 		}
@@ -56,7 +56,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 		newSecret, err := r.buildSecret(*newEecToken)
 		if err != nil {
 			log.Info("failed to generate extension secret")
-			conditions.SetSecretGenFailed(r.dk.Conditions(), conditionType, err)
+			conditions.SetSecretGenFailed(r.dk.Conditions(), extensionsTokenSecretConditionType, err)
 
 			return err
 		}
@@ -64,13 +64,13 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 		_, err = k8ssecret.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newSecret)
 		if err != nil {
 			log.Info("failed to create/update extension secret")
-			conditions.SetKubeApiError(r.dk.Conditions(), conditionType, err)
+			conditions.SetKubeApiError(r.dk.Conditions(), extensionsTokenSecretConditionType, err)
 
 			return err
 		}
 	}
 
-	conditions.SetSecretCreated(r.dk.Conditions(), conditionType, r.getSecretName())
+	conditions.SetSecretCreated(r.dk.Conditions(), extensionsTokenSecretConditionType, r.getSecretName())
 
 	return nil
 }
