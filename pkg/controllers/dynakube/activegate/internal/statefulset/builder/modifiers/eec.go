@@ -17,7 +17,7 @@ var _ builder.Modifier = EecModifier{}
 const (
 	eecVolumeName = "eec-token"
 	eecMountPath  = "/var/lib/dynatrace/secrets/eec"
-	eecFile       = "token/eec.token"
+	eecFile       = "eec.token"
 )
 
 func NewEecVolumeModifier(dk dynakube.DynaKube) EecModifier {
