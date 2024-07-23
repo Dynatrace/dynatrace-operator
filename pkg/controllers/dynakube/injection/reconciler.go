@@ -70,6 +70,19 @@ func NewReconciler(
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
+	var setupErrors []error
+	if err := r.setupOneAgentInjection(ctx); err != nil {
+		setupErrors = append(setupErrors, err)
+	}
+
+	if err := r.setupEnrichmentInjection(ctx); err != nil {
+		setupErrors = append(setupErrors, err)
+	}
+
+	if len(setupErrors) > 0 {
+		return goerrors.Join(setupErrors...)
+	}
+
 	dkMapper := r.createDynakubeMapper(ctx)
 
 	if !r.dk.NeedAppInjection() && !r.dk.MetadataEnrichmentEnabled() {
@@ -94,19 +107,6 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 
 			return err
 		}
-	}
-
-	var setupErrors []error
-	if err := r.setupOneAgentInjection(ctx); err != nil {
-		setupErrors = append(setupErrors, err)
-	}
-
-	if err := r.setupEnrichmentInjection(ctx); err != nil {
-		setupErrors = append(setupErrors, err)
-	}
-
-	if len(setupErrors) > 0 {
-		return goerrors.Join(setupErrors...)
 	}
 
 	log.Info("app injection reconciled")
