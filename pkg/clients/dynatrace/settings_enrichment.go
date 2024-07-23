@@ -29,20 +29,14 @@ type RulesResponseValue struct {
 	Rules []dynakube.EnrichmentRule `json:"rules"`
 }
 
-func (dtc *dynatraceClient) GetRulesSettings(ctx context.Context, kubeSystemUUID string) (GetRulesSettingsResponse, error) {
+func (dtc *dynatraceClient) GetRulesSettings(ctx context.Context, kubeSystemUUID string, entityID string) (GetRulesSettingsResponse, error) {
 	if kubeSystemUUID == "" {
 		return GetRulesSettingsResponse{}, errors.New("no kube-system namespace UUID given")
 	}
 
-	monitoredEntities, err := dtc.GetMonitoredEntitiesForKubeSystemUUID(ctx, kubeSystemUUID)
-	if err != nil {
-		log.Info("failed to retrieve MEs")
-
-		return GetRulesSettingsResponse{}, err
-	}
-
-	if len(monitoredEntities) == 0 {
-		log.Info("no MEs found, skipping getting enrichment rules")
+	if entityID == "" {
+		// if monitored entities were empty this field also stays empty, we return with no error
+		log.Info("No Monitored Entity ID, skip getting enrichment rules")
 
 		return GetRulesSettingsResponse{}, nil
 	}
@@ -54,7 +48,7 @@ func (dtc *dynatraceClient) GetRulesSettings(ctx context.Context, kubeSystemUUID
 
 	q := req.URL.Query()
 	q.Add(schemaIDsQueryParam, MetadataEnrichmentSettingsSchemaId)
-	q.Add(scopeQueryParam, findLatestEntity(monitoredEntities).EntityId)
+	q.Add(scopeQueryParam, entityID)
 	req.URL.RawQuery = q.Encode()
 
 	res, err := dtc.httpClient.Do(req)
@@ -80,15 +74,4 @@ func (dtc *dynatraceClient) GetRulesSettings(ctx context.Context, kubeSystemUUID
 	}
 
 	return resDataJson, nil
-}
-
-func findLatestEntity(monitoredEntities []MonitoredEntity) MonitoredEntity {
-	latest := monitoredEntities[0]
-	for _, entity := range monitoredEntities {
-		if entity.LastSeenTms < latest.LastSeenTms {
-			latest = entity
-		}
-	}
-
-	return latest
 }
