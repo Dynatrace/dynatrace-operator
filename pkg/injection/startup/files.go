@@ -34,7 +34,7 @@ isCloudNativeFullStack true
 	k8ClusterIDFormatString = `k8s_cluster_id %s
 `
 
-	// TODO: dt.kubernetes.* fields are deprecated
+	// TODO: dt.* fields are deprecated
 	jsonEnrichmentContentFormatString = `{
   "k8s.pod.uid": "%s",
   "k8s.pod.name": "%s",
@@ -43,13 +43,14 @@ isCloudNativeFullStack true
   "k8s.cluster.uid": "%s",
   "k8s.workload.kind": "%s",
   "k8s.workload.name": "%s",
+  "dt.entity.kubernetes_cluster": "%s",
   "dt.kubernetes.cluster.id": "%s",
-  "dt.kubernetes.workload.kind": "%s"
-  "dt.kubernetes.workload.name": "%s",
+  "dt.kubernetes.workload.kind": "%s",
+  "dt.kubernetes.workload.name": "%s"
 }
 `
 
-	// TODO: dt.kubernetes.* fields are deprecated
+	// TODO: dt.* fields are deprecated
 	propsEnrichmentContentFormatString = `k8s.pod.uid=%s
 k8s.pod.name=%s
 k8s.namespace.name=%s
@@ -57,6 +58,7 @@ k8s.cluster.name=%s
 k8s.cluster.uid=%s
 k8s.workload.kind=%s
 k8s.workload.name=%s
+dt.entity.kubernetes_cluster=%s
 dt.kubernetes.cluster.id=%s
 dt.kubernetes.workload.kind=%s
 dt.kubernetes.workload.name=%s
@@ -104,9 +106,10 @@ func (runner *Runner) createJsonEnrichmentFile() error {
 		runner.env.K8ClusterID,
 		runner.env.WorkloadKind,
 		runner.env.WorkloadName,
-		runner.env.K8ClusterID,  // old/deprecated field
-		runner.env.WorkloadKind, // old/deprecated field
-		runner.env.WorkloadName, // old/deprecated field
+		runner.env.K8ClusterName, // old/deprecated field
+		runner.env.K8ClusterID,   // old/deprecated field
+		runner.env.WorkloadKind,  // old/deprecated field
+		runner.env.WorkloadName,  // old/deprecated field
 	)
 	jsonPath := filepath.Join(consts.EnrichmentInitPath, consts.EnrichmentJsonFilename)
 
@@ -122,9 +125,10 @@ func (runner *Runner) createPropsEnrichmentFile() error {
 		runner.env.K8ClusterID,
 		runner.env.WorkloadKind,
 		runner.env.WorkloadName,
-		runner.env.K8ClusterID,  // old/deprecated field
-		runner.env.WorkloadKind, // old/deprecated field
-		runner.env.WorkloadName, // old/deprecated field
+		runner.env.K8ClusterName, // old/deprecated field
+		runner.env.K8ClusterID,   // old/deprecated field
+		runner.env.WorkloadKind,  // old/deprecated field
+		runner.env.WorkloadName,  // old/deprecated field
 	)
 	propsPath := filepath.Join(consts.EnrichmentInitPath, consts.EnrichmentPropertiesFilename)
 
