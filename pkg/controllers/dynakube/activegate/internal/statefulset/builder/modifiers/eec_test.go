@@ -42,7 +42,7 @@ func TestEecModify(t *testing.T) {
 		isSubset(t, mod.getVolumes(), sts.Spec.Template.Spec.Volumes)
 		isSubset(t, mod.getVolumeMounts(), sts.Spec.Template.Spec.Containers[0].VolumeMounts)
 		require.Equal(t, extension.EecTokenSecretKey, sts.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name)
-		require.Equal(t, eecMountPath, sts.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath)
+		require.Equal(t, eecSecretsMountPoint, sts.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath)
 		require.True(t, sts.Spec.Template.Spec.Containers[0].VolumeMounts[0].ReadOnly)
 	})
 }

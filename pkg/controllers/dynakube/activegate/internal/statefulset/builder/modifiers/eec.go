@@ -15,9 +15,10 @@ var _ volumeMountModifier = EecModifier{}
 var _ builder.Modifier = EecModifier{}
 
 const (
-	eecVolumeName = "eec-token"
-	eecMountPath  = "/var/lib/dynatrace/secrets/eec"
-	eecFile       = "token/eec.token"
+	eecVolumeName        = "eec-token"
+	eecFileName          = "eec.token"
+	eecSecretsMountPoint = "/var/lib/dynatrace/secrets/eec/token/" + eecFileName
+	eecGatewayMountPoint = consts.GatewayConfigMountPoint + "/" + eecFileName
 )
 
 func NewEecVolumeModifier(dk dynakube.DynaKube) EecModifier {
@@ -39,12 +40,6 @@ func (mod EecModifier) Modify(sts *appsv1.StatefulSet) error {
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)
 
-	baseContainer.Command = []string{"/bin/sh"}
-
-	baseContainer.Args = append(baseContainer.Args,
-		"cp -v "+eecMountPath+"/"+eecFile+" /var/lib/dynatrace/gateway/config/ ; /opt/dynatrace/gateway/entrypoint.sh",
-	)
-
 	return nil
 }
 
@@ -58,13 +53,6 @@ func (mod EecModifier) getVolumes() []corev1.Volume {
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  extension.GetSecretName(mod.dk.Name),
 					DefaultMode: &mode,
-					Items: []corev1.KeyToPath{
-						{
-							Key:  extension.EecTokenSecretKey,
-							Path: eecFile,
-							Mode: &mode,
-						},
-					},
 				},
 			},
 		},
@@ -76,7 +64,14 @@ func (mod EecModifier) getVolumeMounts() []corev1.VolumeMount {
 		{
 			ReadOnly:  true,
 			Name:      eecVolumeName,
-			MountPath: eecMountPath,
+			MountPath: eecSecretsMountPoint,
+			SubPath:   extension.EecTokenSecretKey,
+		},
+		{
+			ReadOnly:  true,
+			Name:      eecVolumeName,
+			MountPath: eecGatewayMountPoint,
+			SubPath:   extension.EecTokenSecretKey,
 		},
 	}
 }
