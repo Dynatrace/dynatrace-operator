@@ -2,7 +2,6 @@ package monitoredentities
 
 import (
 	"context"
-	"errors"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -41,7 +40,9 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		}
 
 		if len(monitoredEntities) == 0 {
-			return errors.New("MEs are empty, at this point this should not be the case")
+			log.Info("no MEs found, no monitoredentityID will be set in the dynakube status")
+
+			return nil
 		}
 
 		r.dk.Status.KubernetesClusterMEID = findLatestEntity(monitoredEntities).EntityId
