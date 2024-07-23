@@ -13,6 +13,24 @@ func TestAddWorkloadInfoEnvs(t *testing.T) {
 		workloadInfo := createTestWorkloadInfo()
 		addWorkloadInfoEnvs(container, workloadInfo)
 
-		require.Len(t, container.Env, 3)
+		require.Len(t, container.Env, 2)
+	})
+}
+
+func TestAddInjectedEnv(t *testing.T) {
+	t.Run("Add workload info envs", func(t *testing.T) {
+		container := &corev1.Container{}
+		addInjectedEnv(container)
+
+		require.Len(t, container.Env, 1)
+	})
+}
+
+func TestAddClusterNameEnv(t *testing.T) {
+	t.Run("Add workload info envs", func(t *testing.T) {
+		container := &corev1.Container{}
+		addClusterNameEnv(container, "test")
+
+		require.Len(t, container.Env, 1)
 	})
 }
