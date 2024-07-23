@@ -16,7 +16,7 @@ func TestCreateConfFile(t *testing.T) {
 		fs: fs,
 	}
 
-	t.Run(`create file`, func(t *testing.T) {
+	t.Run("create file", func(t *testing.T) {
 		path := "test"
 
 		err := runner.createConfigFile(path, "test", true)
@@ -29,7 +29,7 @@ func TestCreateConfFile(t *testing.T) {
 		require.NoError(t, err)
 		assert.Contains(t, string(content), "test")
 	})
-	t.Run(`create nested file`, func(t *testing.T) {
+	t.Run("create nested file", func(t *testing.T) {
 		path := filepath.Join("dir1", "dir2", "test")
 
 		err := runner.createConfigFile(path, "test", true)
