@@ -40,7 +40,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		}
 
 		if len(monitoredEntities) == 0 {
-			log.Info("no MEs found, no monitoredentityID will be set in the dynakube status")
+			log.Info("no MEs found, no kubernetesClusterMEID will be set in the dynakube status")
 
 			return nil
 		}
