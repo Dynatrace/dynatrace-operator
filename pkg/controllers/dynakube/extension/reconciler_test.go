@@ -174,5 +174,14 @@ func createDynakube() *dynakube.DynaKube {
 			Name:      testName,
 		},
 		Spec: dynakube.DynaKubeSpec{},
+		Status: dynakube.DynaKubeStatus{
+			ActiveGate: dynakube.ActiveGateStatus{
+				ConnectionInfoStatus: dynakube.ActiveGateConnectionInfoStatus{
+					ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
+						TenantUUID: "abc",
+					},
+				},
+			},
+		},
 	}
 }

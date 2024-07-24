@@ -21,7 +21,7 @@ var (
 func Build(owner metav1.Object, name string, container corev1.Container, options ...builder.Option[*appsv1.StatefulSet]) (*appsv1.StatefulSet, error) {
 	neededOpts := []builder.Option[*appsv1.StatefulSet]{
 		setName(name),
-		setContainer(container),
+		SetContainer(container),
 		setNamespace(owner.GetNamespace()),
 	}
 	neededOpts = append(neededOpts, options...)
@@ -74,7 +74,7 @@ func SetAllAnnotations(annotations map[string]string) builder.Option[*appsv1.Sta
 	}
 }
 
-func setContainer(container corev1.Container) builder.Option[*appsv1.StatefulSet] {
+func SetContainer(container corev1.Container) builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
 		targetIndex := 0
 		for index := range s.Spec.Template.Spec.Containers {

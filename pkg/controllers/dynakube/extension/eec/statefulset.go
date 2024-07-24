@@ -1,7 +1,8 @@
 package eec
 
 import (
-	"fmt"
+	"strconv"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
@@ -10,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
-	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
@@ -77,7 +77,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		}
 		defer meta.RemoveStatusCondition(r.dk.Conditions(), extensionsControllerStatefulSetConditionType)
 
-		sts, err := statefulset.Build(r.dk, statefulsetName)
+		sts, err := statefulset.Build(r.dk, statefulsetName, corev1.Container{})
 		if err != nil {
 			log.Error(err, "could not build "+statefulsetName+" during cleanup")
 
@@ -97,6 +97,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 
 	if r.dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID == "" {
 		conditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, statefulsetName)
+
 		return errors.New("tenantUUID unknown")
 	}
 
@@ -104,18 +105,17 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
-	desiredSts, err := statefulset.Build(r.dk, statefulsetName,
-		setReplicas(),
-		setPodManagementPolicy(),
-		setLabels(r.dk.Spec.Templates.ExtensionExecutionController.Labels, r.dk.Name),
-		setAnnotations(r.dk.Spec.Templates.ExtensionExecutionController.Annotations),
-		setAffinity(),
-		setTolerations(r.dk.Spec.Templates.ExtensionExecutionController.Tolerations),
-		setTopologySpreadConstraints(r.dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints, r.dk.Name),
+	desiredSts, err := statefulset.Build(r.dk, statefulsetName, buildContainer(),
+		statefulset.SetReplicas(1),
+		statefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
+		statefulset.SetAllLabels(buildAppLabels(r.dk.Name).BuildLabels(), r.dk.Spec.Templates.ExtensionExecutionController.Labels),
+		statefulset.SetAllAnnotations(r.dk.Spec.Templates.ExtensionExecutionController.Annotations),
+		statefulset.SetAffinity(buildAffinity()),
+		statefulset.SetTolerations(r.dk.Spec.Templates.ExtensionExecutionController.Tolerations),
+		statefulset.SetTopologySpreadConstraints(buildTopologySpreadConstraints(r.dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints, r.dk.Name)),
 		setTlsRef(r.dk.Spec.Templates.ExtensionExecutionController.TlsRefName),
 		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
 		setVolumes(r.dk.Name, r.dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim),
-		setContainer(),
 		setContainerImage(r.dk.Spec.Templates.ExtensionExecutionController.ImageRef.Repository, r.dk.Spec.Templates.ExtensionExecutionController.ImageRef.Tag),
 		setContainerResources(r.dk.Spec.Templates.ExtensionExecutionController.Resources),
 		setContainerEnvs(r.dk.Name, r.dk.Namespace, r.dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID, "activegate", r.dk.Status.KubeSystemUUID),
@@ -124,11 +124,13 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 
 	if err != nil {
 		conditions.SetKubeApiError(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, err)
+
 		return err
 	}
 
 	if err := setHash(desiredSts); err != nil {
 		conditions.SetKubeApiError(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, err)
+
 		return err
 	}
 
@@ -145,28 +147,6 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	return nil
 }
 
-func setReplicas() func(o *appsv1.StatefulSet) {
-	return func(o *appsv1.StatefulSet) {
-		replicas := int32(1)
-		o.Spec.Replicas = &replicas
-	}
-}
-
-func setPodManagementPolicy() func(o *appsv1.StatefulSet) {
-	return func(o *appsv1.StatefulSet) {
-		o.Spec.PodManagementPolicy = appsv1.ParallelPodManagement
-	}
-}
-
-func setLabels(labels map[string]string, dynakubeName string) func(o *appsv1.StatefulSet) {
-	return func(o *appsv1.StatefulSet) {
-		appLabels := buildAppLabels(dynakubeName)
-		o.ObjectMeta.Labels = appLabels.BuildLabels()
-		o.Spec.Selector = &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
-		o.Spec.Template.ObjectMeta.Labels = maputils.MergeMap(labels, appLabels.BuildLabels())
-	}
-}
-
 func buildAppLabels(dynakubeName string) *labels.AppLabels {
 	// version := statefulSetBuilder.dynakube.Status.ActiveGate.Version
 	version := "0.0.0"
@@ -174,56 +154,39 @@ func buildAppLabels(dynakubeName string) *labels.AppLabels {
 	return labels.NewAppLabels(labels.ExtensionComponentLabel, dynakubeName, labels.ExtensionComponentLabel, version)
 }
 
-func setAnnotations(annotations map[string]string) func(o *appsv1.StatefulSet) {
-	return func(o *appsv1.StatefulSet) {
-		o.ObjectMeta.Annotations = maputils.MergeMap(o.ObjectMeta.Annotations, annotations)
-		o.Spec.Template.ObjectMeta.Annotations = maputils.MergeMap(o.Spec.Template.ObjectMeta.Annotations, annotations)
-	}
-}
-
-func setAffinity() func(o *appsv1.StatefulSet) {
-	return func(o *appsv1.StatefulSet) {
-		o.Spec.Template.Spec.Affinity = &corev1.Affinity{
-			NodeAffinity: &corev1.NodeAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-					NodeSelectorTerms: []corev1.NodeSelectorTerm{
-						{
-							MatchExpressions: node.AffinityNodeRequirementForSupportedArches(),
-						},
+func buildAffinity() corev1.Affinity {
+	return corev1.Affinity{
+		NodeAffinity: &corev1.NodeAffinity{
+			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+				NodeSelectorTerms: []corev1.NodeSelectorTerm{
+					{
+						MatchExpressions: node.AffinityNodeRequirementForSupportedArches(),
 					},
 				},
 			},
-		}
+		},
 	}
 }
 
-func setTolerations(tolerations []corev1.Toleration) func(o *appsv1.StatefulSet) {
-	return func(o *appsv1.StatefulSet) {
-		o.Spec.Template.Spec.Tolerations = tolerations
-	}
-}
+func buildTopologySpreadConstraints(topologySpreadConstraints []corev1.TopologySpreadConstraint, dynakubeName string) []corev1.TopologySpreadConstraint {
+	if len(topologySpreadConstraints) > 0 {
+		return topologySpreadConstraints
+	} else {
+		appLabels := buildAppLabels(dynakubeName)
 
-func setTopologySpreadConstraints(topologySpreadConstraints []corev1.TopologySpreadConstraint, dynakubeName string) func(o *appsv1.StatefulSet) {
-	return func(o *appsv1.StatefulSet) {
-		if len(topologySpreadConstraints) > 0 {
-			o.Spec.Template.Spec.TopologySpreadConstraints = topologySpreadConstraints
-		} else {
-			appLabels := buildAppLabels(dynakubeName)
-
-			o.Spec.Template.Spec.TopologySpreadConstraints = []corev1.TopologySpreadConstraint{
-				{
-					MaxSkew:           1,
-					TopologyKey:       "topology.kubernetes.io/zone",
-					WhenUnsatisfiable: "ScheduleAnyway",
-					LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
-				},
-				{
-					MaxSkew:           1,
-					TopologyKey:       "kubernetes.io/hostname",
-					WhenUnsatisfiable: "DoNotSchedule",
-					LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
-				},
-			}
+		return []corev1.TopologySpreadConstraint{
+			{
+				MaxSkew:           1,
+				TopologyKey:       "topology.kubernetes.io/zone",
+				WhenUnsatisfiable: "ScheduleAnyway",
+				LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
+			},
+			{
+				MaxSkew:           1,
+				TopologyKey:       "kubernetes.io/hostname",
+				WhenUnsatisfiable: "DoNotSchedule",
+				LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
+			},
 		}
 	}
 }
@@ -252,36 +215,32 @@ func setContainerResources(resources corev1.ResourceRequirements) func(o *appsv1
 	}
 }
 
-func setContainer() func(o *appsv1.StatefulSet) {
-	return func(o *appsv1.StatefulSet) {
-		o.Spec.Template.Spec.Containers = []corev1.Container{
-			{
-				Name:            containerName,
-				ImagePullPolicy: corev1.PullAlways,
-				ReadinessProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Path: "/readyz",
-							// Port:   intstr.IntOrString{StrVal: "collector-com"},
-							Port:   intstr.IntOrString{IntVal: collectorPort},
-							Scheme: "HTTP",
-						},
-					},
-					InitialDelaySeconds: 15,
-					PeriodSeconds:       15,
-					FailureThreshold:    3,
-					TimeoutSeconds:      2,
-					SuccessThreshold:    1,
-				},
-				SecurityContext: buildSecurityContext(),
-				Ports: []corev1.ContainerPort{
-					{
-						Name:          "collector-com",
-						ContainerPort: collectorPort,
-					},
+func buildContainer() corev1.Container {
+	return corev1.Container{
+		Name:            containerName,
+		ImagePullPolicy: corev1.PullAlways,
+		ReadinessProbe: &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path: "/readyz",
+					// Port:   intstr.IntOrString{StrVal: "collector-com"},
+					Port:   intstr.IntOrString{IntVal: collectorPort},
+					Scheme: "HTTP",
 				},
 			},
-		}
+			InitialDelaySeconds: 15,
+			PeriodSeconds:       15,
+			FailureThreshold:    3,
+			TimeoutSeconds:      2,
+			SuccessThreshold:    1,
+		},
+		SecurityContext: buildSecurityContext(),
+		Ports: []corev1.ContainerPort{
+			{
+				Name:          "collector-com",
+				ContainerPort: collectorPort,
+			},
+		},
 	}
 }
 
@@ -300,12 +259,13 @@ func setContainerEnvs(dynakubeName, namespaceName, tenantId, activeGateName, kub
 			{Name: envTenantId, Value: tenantId},
 			{Name: envServerUrl, Value: dynakubeName + "-" + activeGateName + "." + namespaceName + ".svc.cluster.local:443"},
 			{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + eecFile},
-			{Name: envEecIngestPort, Value: fmt.Sprint(collectorPort)},
+			{Name: envEecIngestPort, Value: strconv.Itoa(int(collectorPort))},
 			{Name: envExtensionsConfPathName, Value: envExtensionsConfPath},
 			{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath},
 			{Name: envDsInstallDirName, Value: envDsInstallDir},
 			{Name: envK8sClusterId, Value: kubeSystemUid},
 		})
+
 		o.Spec.Template.Spec.Containers[0].Env = envMap.AsEnvVars()
 	}
 }
@@ -384,7 +344,6 @@ func setVolumes(dynakubeName string, claim *corev1.PersistentVolumeClaimSpec) fu
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			})
-
 		} else {
 			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
 				Name: runtimeVolumeName,
