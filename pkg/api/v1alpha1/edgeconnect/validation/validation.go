@@ -2,80 +2,72 @@ package validation
 
 import (
 	"context"
-	"net/http"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/validation"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-type edgeconnectValidator struct {
-	clt       client.Client
+type Validator struct {
 	apiReader client.Reader
 	cfg       *rest.Config
 }
 
-func newEdgeConnectValidator(clt client.Client, apiReader client.Reader, cfg *rest.Config) admission.Handler {
-	return &edgeconnectValidator{
+type validatorFunc func(ctx context.Context, dv *Validator, ec *edgeconnect.EdgeConnect) string
+
+var validatorErrorFuncs = []validatorFunc{
+	isInvalidApiServer,
+	nameTooLong,
+	checkHostPatternsValue,
+	isInvalidServiceName,
+	automationRequiresProvisionerValidation,
+}
+
+func New(apiReader client.Reader, cfg *rest.Config) admission.CustomValidator {
+	return &Validator{
 		apiReader: apiReader,
 		cfg:       cfg,
-		clt:       clt,
 	}
 }
 
-func AddEdgeConnectValidationWebhookToManager(manager ctrl.Manager) error {
-	manager.GetWebhookServer().Register("/validate/edgeconnect", &webhook.Admission{
-		Handler: newEdgeConnectValidator(manager.GetClient(), manager.GetAPIReader(), manager.GetConfig()),
-	})
-
-	return nil
-}
-
-func (validator *edgeconnectValidator) Handle(ctx context.Context, request admission.Request) admission.Response {
-	log.Info("validating edgeconnect request", "name", request.Name, "namespace", request.Namespace)
-
-	ec := &edgeconnect.EdgeConnect{}
-
-	err := decodeRequestToEdgeConnect(request, ec)
-	if err != nil {
-		return admission.Errored(http.StatusInternalServerError, errors.WithStack(err))
-	}
-
-	validationErrors := validator.runValidators(ctx, validators, ec)
-	response := admission.Allowed("")
+func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (_ admission.Warnings, err error) {
+	ec := obj.(*edgeconnect.EdgeConnect)
+	validationErrors := v.runValidators(ctx, validatorErrorFuncs, ec)
 
 	if len(validationErrors) > 0 {
-		response = admission.Denied(validation.SumErrors(validationErrors, "EdgeConnect"))
+		err = errors.New(validation.SumErrors(validationErrors, "EdgeConnect"))
 	}
 
-	return response
+	return
 }
 
-func (validator *edgeconnectValidator) runValidators(ctx context.Context, validators []validator, ec *edgeconnect.EdgeConnect) []string {
+func (v *Validator) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (warnings admission.Warnings, err error) {
+	ec := newObj.(*edgeconnect.EdgeConnect)
+	validationErrors := v.runValidators(ctx, validatorErrorFuncs, ec)
+
+	if len(validationErrors) > 0 {
+		err = errors.New(validation.SumErrors(validationErrors, "EdgeConnect"))
+	}
+
+	return
+}
+
+func (v *Validator) ValidateDelete(_ context.Context, _ runtime.Object) (warnings admission.Warnings, err error) {
+	return nil, nil
+}
+
+func (v *Validator) runValidators(ctx context.Context, validators []validatorFunc, ec *edgeconnect.EdgeConnect) []string {
 	results := []string{}
 
 	for _, validate := range validators {
-		if errMsg := validate(ctx, validator, ec); errMsg != "" {
+		if errMsg := validate(ctx, v, ec); errMsg != "" {
 			results = append(results, errMsg)
 		}
 	}
 
 	return results
-}
-
-func decodeRequestToEdgeConnect(request admission.Request, ec *edgeconnect.EdgeConnect) error {
-	decoder := admission.NewDecoder(scheme.Scheme)
-
-	err := decoder.Decode(request, ec)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
 }

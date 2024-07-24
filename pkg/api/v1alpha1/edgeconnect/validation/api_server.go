@@ -21,7 +21,7 @@ var (
 	}
 )
 
-func isInvalidApiServer(_ context.Context, _ *edgeconnectValidator, ec *edgeconnect.EdgeConnect) string {
+func isInvalidApiServer(_ context.Context, _ *Validator, ec *edgeconnect.EdgeConnect) string {
 	for _, suffix := range allowedSuffix {
 		if strings.HasSuffix(ec.Spec.ApiServer, suffix) {
 			hostnameWithDomains := strings.FieldsFunc(suffix,

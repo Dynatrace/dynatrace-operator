@@ -88,7 +88,7 @@ webhooks:
       service:
         name: dynatrace-webhook
         namespace: {{ .Release.Namespace }}
-        path: /validate/edgeconnect
+        path: /validate-dynatrace-com-v1alpha1-edgeconnect
     rules:
       - operations:
           - CREATE
@@ -99,7 +99,7 @@ webhooks:
           - v1alpha1
         resources:
           - edgeconnects
-    name: edgeconnect.webhook.dynatrace.com
+    name: v1alpha1.edgeconnect.webhook.dynatrace.com
     timeoutSeconds: {{.Values.webhook.validatingWebhook.timeoutSeconds}}
     sideEffects: None
     matchPolicy: Exact
