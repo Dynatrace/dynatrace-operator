@@ -2,6 +2,7 @@ package extension
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -13,10 +14,10 @@ import (
 
 func (r *reconciler) reconcileService(ctx context.Context) error {
 	if !r.dk.PrometheusEnabled() {
-		if meta.FindStatusCondition(*r.dk.Conditions(), extensionsServiceConditionType) == nil {
+		if meta.FindStatusCondition(*r.dk.Conditions(), consts.ExtensionsServiceConditionType) == nil {
 			return nil
 		}
-		defer meta.RemoveStatusCondition(r.dk.Conditions(), extensionsServiceConditionType)
+		defer meta.RemoveStatusCondition(r.dk.Conditions(), consts.ExtensionsServiceConditionType)
 
 		svc, err := r.buildService()
 		if err != nil {
@@ -42,7 +43,7 @@ func (r *reconciler) reconcileService(ctx context.Context) error {
 func (r *reconciler) createOrUpdateService(ctx context.Context) error {
 	newService, err := r.buildService()
 	if err != nil {
-		conditions.SetServiceGenFailed(r.dk.Conditions(), extensionsServiceConditionType, err)
+		conditions.SetServiceGenFailed(r.dk.Conditions(), consts.ExtensionsServiceConditionType, err)
 
 		return err
 	}
@@ -50,12 +51,12 @@ func (r *reconciler) createOrUpdateService(ctx context.Context) error {
 	_, err = service.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newService)
 	if err != nil {
 		log.Info("failed to create/update extension service")
-		conditions.SetKubeApiError(r.dk.Conditions(), extensionsServiceConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), consts.ExtensionsServiceConditionType, err)
 
 		return err
 	}
 
-	conditions.SetServiceCreated(r.dk.Conditions(), extensionsServiceConditionType, r.buildServiceName())
+	conditions.SetServiceCreated(r.dk.Conditions(), consts.ExtensionsServiceConditionType, r.buildServiceName())
 
 	return nil
 }
@@ -67,9 +68,9 @@ func (r *reconciler) buildService() (*corev1.Service, error) {
 
 	svcPort := corev1.ServicePort{
 		Name:       r.buildPortsName(),
-		Port:       ExtensionsCollectorComPort,
+		Port:       consts.ExtensionsCollectorComPort,
 		Protocol:   corev1.ProtocolTCP,
-		TargetPort: intstr.IntOrString{Type: intstr.String, StrVal: ExtensionsCollectorTargetPortName},
+		TargetPort: intstr.IntOrString{Type: intstr.String, StrVal: consts.ExtensionsCollectorTargetPortName},
 	}
 
 	return service.Build(r.dk,
@@ -82,9 +83,9 @@ func (r *reconciler) buildService() (*corev1.Service, error) {
 }
 
 func (r *reconciler) buildServiceName() string {
-	return r.dk.Name + ExtensionsControllerSuffix
+	return r.dk.Name + consts.ExtensionsControllerSuffix
 }
 
 func (r *reconciler) buildPortsName() string {
-	return "dynatrace" + ExtensionsControllerSuffix + "-" + ExtensionsCollectorTargetPortName
+	return "dynatrace" + consts.ExtensionsControllerSuffix + "-" + consts.ExtensionsCollectorTargetPortName
 }

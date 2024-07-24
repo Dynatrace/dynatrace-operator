@@ -1,7 +1,10 @@
-package extension
+package eec
 
 import (
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -16,6 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -47,7 +51,26 @@ const (
 	configurationMountPath  = "/var/lib/dynatrace/remotepluginmodule/agent/conf/runtime"
 )
 
-func (r *reconciler) reconcileStatefulset(ctx context.Context) error {
+type reconciler struct {
+	client    client.Client
+	apiReader client.Reader
+
+	dk *dynakube.DynaKube
+}
+
+type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler
+
+var _ ReconcilerBuilder = NewReconciler
+
+func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler {
+	return &reconciler{
+		client:    clt,
+		apiReader: apiReader,
+		dk:        dk,
+	}
+}
+
+func (r *reconciler) Reconcile(ctx context.Context) error {
 	if !r.dk.PrometheusEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), extensionsControllerStatefulSetConditionType) == nil {
 			return nil
@@ -323,11 +346,11 @@ func setVolumes(dynakubeName string, claim *corev1.PersistentVolumeClaimSpec) fu
 				Name: eecTokenVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dynakubeName + secretSuffix,
+						SecretName:  dynakubeName + consts.SecretSuffix,
 						DefaultMode: &mode,
 						Items: []corev1.KeyToPath{
 							{
-								Key:  EecTokenSecretKey,
+								Key:  consts.EecTokenSecretKey,
 								Path: eecFile,
 								Mode: &mode,
 							},

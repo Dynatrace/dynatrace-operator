@@ -1,3 +1,3 @@
-package extension
+package eec
 
 const extensionsControllerStatefulSetConditionType string = "ExtensionsControllerStatefulSet"

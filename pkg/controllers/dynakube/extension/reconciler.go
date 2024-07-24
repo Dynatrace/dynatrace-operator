@@ -2,6 +2,7 @@ package extension
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/eec"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
@@ -43,7 +44,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	err = r.reconcileStatefulset(ctx)
+	err = eec.NewReconciler(r.client, r.apiReader, r.dk).Reconcile(ctx)
 	if err != nil {
 		return err
 	}
