@@ -3,15 +3,12 @@ package eec
 import (
 	"strconv"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
@@ -19,7 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -49,28 +45,11 @@ const (
 	runtimeMountPath        = "/var/lib/dynatrace/remotepluginmodule/agent/runtime"
 	configurationVolumeName = "runtime-configuration"
 	configurationMountPath  = "/var/lib/dynatrace/remotepluginmodule/agent/conf/runtime"
+
+	activeGateName = "activegate"
 )
 
-type reconciler struct {
-	client    client.Client
-	apiReader client.Reader
-
-	dk *dynakube.DynaKube
-}
-
-type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler
-
-var _ ReconcilerBuilder = NewReconciler
-
-func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler {
-	return &reconciler{
-		client:    clt,
-		apiReader: apiReader,
-		dk:        dk,
-	}
-}
-
-func (r *reconciler) Reconcile(ctx context.Context) error {
+func (r *reconciler) reconcileStatefulset(ctx context.Context) error {
 	if !r.dk.PrometheusEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), extensionsControllerStatefulSetConditionType) == nil {
 			return nil
@@ -105,7 +84,8 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
-	desiredSts, err := statefulset.Build(r.dk, statefulsetName, buildContainer(),
+	desiredSts, err := statefulset.Build(r.dk, statefulsetName,
+		buildContainer(r.dk.Name, r.dk.Namespace, r.dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID, activeGateName, r.dk.Status.KubeSystemUUID),
 		statefulset.SetReplicas(1),
 		statefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
 		statefulset.SetAllLabels(buildAppLabels(r.dk.Name).BuildLabels(), r.dk.Spec.Templates.ExtensionExecutionController.Labels),
@@ -118,7 +98,6 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		setVolumes(r.dk.Name, r.dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim),
 		setContainerImage(r.dk.Spec.Templates.ExtensionExecutionController.ImageRef.Repository, r.dk.Spec.Templates.ExtensionExecutionController.ImageRef.Tag),
 		setContainerResources(r.dk.Spec.Templates.ExtensionExecutionController.Resources),
-		setContainerEnvs(r.dk.Name, r.dk.Namespace, r.dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID, "activegate", r.dk.Status.KubeSystemUUID),
 		setContainerVolumeMounts(),
 	)
 
@@ -172,22 +151,26 @@ func buildTopologySpreadConstraints(topologySpreadConstraints []corev1.TopologyS
 	if len(topologySpreadConstraints) > 0 {
 		return topologySpreadConstraints
 	} else {
-		appLabels := buildAppLabels(dynakubeName)
+		return buildDefaultTopologySpreadConstraints(dynakubeName)
+	}
+}
 
-		return []corev1.TopologySpreadConstraint{
-			{
-				MaxSkew:           1,
-				TopologyKey:       "topology.kubernetes.io/zone",
-				WhenUnsatisfiable: "ScheduleAnyway",
-				LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
-			},
-			{
-				MaxSkew:           1,
-				TopologyKey:       "kubernetes.io/hostname",
-				WhenUnsatisfiable: "DoNotSchedule",
-				LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
-			},
-		}
+func buildDefaultTopologySpreadConstraints(dynakubeName string) []corev1.TopologySpreadConstraint {
+	appLabels := buildAppLabels(dynakubeName)
+
+	return []corev1.TopologySpreadConstraint{
+		{
+			MaxSkew:           1,
+			TopologyKey:       "topology.kubernetes.io/zone",
+			WhenUnsatisfiable: "ScheduleAnyway",
+			LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
+		},
+		{
+			MaxSkew:           1,
+			TopologyKey:       "kubernetes.io/hostname",
+			WhenUnsatisfiable: "DoNotSchedule",
+			LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
+		},
 	}
 }
 
@@ -215,7 +198,7 @@ func setContainerResources(resources corev1.ResourceRequirements) func(o *appsv1
 	}
 }
 
-func buildContainer() corev1.Container {
+func buildContainer(dynakubeName, namespaceName, tenantId, activeGateName, kubeSystemUid string) corev1.Container {
 	return corev1.Container{
 		Name:            containerName,
 		ImagePullPolicy: corev1.PullAlways,
@@ -241,6 +224,7 @@ func buildContainer() corev1.Container {
 				ContainerPort: collectorPort,
 			},
 		},
+		Env: buildContainerEnvs(dynakubeName, namespaceName, tenantId, activeGateName, kubeSystemUid),
 	}
 }
 
@@ -252,21 +236,16 @@ func buildSecurityContext() *corev1.SecurityContext {
 	}
 }
 
-func setContainerEnvs(dynakubeName, namespaceName, tenantId, activeGateName, kubeSystemUid string) func(o *appsv1.StatefulSet) {
-	return func(o *appsv1.StatefulSet) {
-		envMap := prioritymap.New(prioritymap.WithPriority(prioritymap.DefaultPriority))
-		prioritymap.Append(envMap, []corev1.EnvVar{
-			{Name: envTenantId, Value: tenantId},
-			{Name: envServerUrl, Value: dynakubeName + "-" + activeGateName + "." + namespaceName + ".svc.cluster.local:443"},
-			{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + eecFile},
-			{Name: envEecIngestPort, Value: strconv.Itoa(int(collectorPort))},
-			{Name: envExtensionsConfPathName, Value: envExtensionsConfPath},
-			{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath},
-			{Name: envDsInstallDirName, Value: envDsInstallDir},
-			{Name: envK8sClusterId, Value: kubeSystemUid},
-		})
-
-		o.Spec.Template.Spec.Containers[0].Env = envMap.AsEnvVars()
+func buildContainerEnvs(dynakubeName, namespaceName, tenantId, activeGateName, kubeSystemUid string) []corev1.EnvVar {
+	return []corev1.EnvVar{
+		{Name: envTenantId, Value: tenantId},
+		{Name: envServerUrl, Value: dynakubeName + "-" + activeGateName + "." + namespaceName + ".svc.cluster.local:443"},
+		{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + eecFile},
+		{Name: envEecIngestPort, Value: strconv.Itoa(int(collectorPort))},
+		{Name: envExtensionsConfPathName, Value: envExtensionsConfPath},
+		{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath},
+		{Name: envDsInstallDirName, Value: envDsInstallDir},
+		{Name: envK8sClusterId, Value: kubeSystemUid},
 	}
 }
 
