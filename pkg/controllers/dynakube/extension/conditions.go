@@ -1,3 +1,0 @@
-package extension
-
-const extensionsControllerStatefulSetConditionType string = "ExtensionsControllerStatefulSet"
