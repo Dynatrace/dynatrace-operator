@@ -74,8 +74,6 @@ Relevant links:
 
 ## Code Map
 
-> TODO: Improve folder structure before documenting it more deeply, as its kind of a mess now. If I didn't mention it now, then I probably don't like its current location.
-
 ### `config`
 
 Contains the `.yaml` files that are need to deploy the `Operator` and its components into a Kubernetes cluster. Also contains the helm chart with the respective values.yaml file where one can configure components of the `Operator`.
@@ -120,7 +118,7 @@ Main logic for the CSI-Driver's `provisioner` container. Handles the setting up 
 
 ### `pkg/controllers/csi/gc`
 
-Main logic for the CSI-Driver's garbage collector. Handles the unmounting and unpublishing of volumes that are not needed anymore or outdated. Basically removes files in the respective filesystem.
+Main logic for the CSI-Driver's garbage collector. Handles the cleaning up of the filesystem, according to the database and the state of the filesystem.
 
 ### `pkg/controllers/csi/metadata`
 
@@ -341,23 +339,23 @@ Main logic of the webhook. Both `MutationWebhook` as well as `ValidationWebhook`
 
 Main logic of the `MutationWebhook` mutating `Namespaces`. Does the mapping between the `Namespaces` and `DynaKube` from the `Namespace's` side.
 
-### `pkg/webhook/mutation/pod
+### `pkg/webhook/mutation/pod`
 
 Main logic of the `MutationWebhook` mutating `Pods`. Does the mapping between the `Namespaces` and `DynaKube` from the `Namespace's` side.
 
-### `pkg/webhook/mutation/pod/metadata
+### `pkg/webhook/mutation/pod/metadata`
 
 Package that deals with necessary metadata for `Pods`. Sets up and prepares `Containers`, `Envs` and `Volumes` that are needed for mutating `Pods`.
 
-### `pkg/webhook/mutation/pod/oneagent
+### `pkg/webhook/mutation/pod/oneagent`
 
 Package that deals with necessary metadata for `OneAgent` related metadata. Sets up for example `Volumes` which hold necessary files that are needed for `OneAgent` installation.
 
-### `pkg/webhook/util
+### `pkg/webhook/util`
 
 Utils package that does operations like checking `EnvVars` in `Containers`.
 
-### `pkg/webhook/validation
+### `pkg/webhook/validation`
 
 Main logic for the `ValidationWebhook`. Deals with both `DynaKube` and `EdgeConnect`. Checks if the configuration of said Resources is valid and can be applied. Gives warnings or even errors if there is some misconfiguration.
 
@@ -388,3 +386,99 @@ Package that has all scenarios that are tested by the E2E tests. Those scenarios
 ### `test/testdata`
 
 Has every data that is needed to run the tests. This reaches from `Deployments` up to `Secrets` to be able to install the `Operator`.
+
+---
+Find here some very basic visualizations of the Operator with its components: 
+
+## Overall functionality
+
+```mermaid
+graph 
+    DK[fa:fa-dk Dynakube] --> WH(fa:fa-file Dynatrace-Webhook):::wh
+    DK[fa:fa-dk Dynakube] --> OP(fa:fa-op Dynatrace-Operator):::op
+    DK[fa:fa-dk Dynakube] --> CSI(fa:fa-csi CSI Driver):::csi
+    AG --> Dynatrace-Cluster
+    subgraph K8S Node
+    WH
+    OP -->|deploys| OA[OneAgent]:::oa
+    OP -->|deploys| AG[ActiveGate]:::ag
+    CSI --> P[Pods]:::pod
+    P --> AG
+    end
+
+    classDef op stroke:#f00
+    classDef wh stroke:#0f0
+    classDef csi stroke:#00f
+    classDef oa stroke:#ff0
+    classDef ag stroke:#000
+    classDef pod stroke:#f0f
+```
+
+## Operator
+
+```mermaid
+graph LR
+    subgraph Dynatrace Namespace
+    Dynatrace-Operator-Deployment -->|creates| RS[Dynatrace-Operator-ReplicaSet]:::rs
+    RS -->|manages| Pod[Dynatrace-Operator-Pod]:::pod
+    end
+
+    classDef rs stroke:#f00
+    classDef pod stroke:#0f0
+```
+
+## Webhook
+
+```mermaid
+graph LR
+    subgraph Dynatrace Namespace
+    Dynatrace-Webhook-Deployment -->|creates| RS[Dynatrace-Webhook-ReplicaSet]:::rs
+    RS -->|manages| Pod1[Dynatrace-Webhook-Pod]:::pod1
+    RS -->|manages| Pod2[Dynatrace-Webhook-Pod]:::pod2
+    end
+
+    classDef rs stroke:#f00
+    classDef pod1 stroke:#0f0
+    classDef pod2 stroke:#00f
+```
+
+## CSI Driver
+
+```mermaid
+graph LR
+    subgraph Dynatrace Namespace
+    Dynatrace-CSI-Driver-DaemonSet -->|creates a Pod for EVERY Node in the cluster| Pod1[Dynatrace-CSI-Driver-Pod-1]:::pod1
+    Dynatrace-CSI-Driver-DaemonSet --> Pod2[Dynatrace-CSI-Driver-Pod-2]:::pod2
+    Dynatrace-CSI-Driver-DaemonSet --> PodN[Dynatrace-CSI-Driver-Pod-N]:::podn
+    end
+
+    classDef pod1 stroke:#f00
+    classDef pod2 stroke:#0f0
+    classDef pod3 stroke:#00f
+```
+
+## OneAgent
+
+```mermaid
+graph LR
+    subgraph Dynatrace Namespace
+    Dynakube-OneAgent-DaemonSet -->|creates a Pod for EVERY Node in the cluster| Pod1[Dynakube-OneAgent-Pod-1]:::pod1
+    Dynakube-OneAgent-DaemonSet --> Pod2[Dynakube-OneAgent-Pod-2]:::pod2
+    Dynakube-OneAgent-DaemonSet --> PodN[Dynakube-OneAgent-Pod-N]:::podn
+    end
+
+    classDef pod1 stroke:#f00
+    classDef pod2 stroke:#0f0
+    classDef pod3 stroke:#00f
+```
+
+## ActiveGate
+
+```mermaid
+graph LR
+    subgraph Dynatrace Namespace
+    Dynakube-ActiveGate-StatefulSet -->|creates| Pod1[Dynakube-ActiveGate-Pod-1]:::pod1
+    end
+
+    classDef pod1 stroke:#f00
+```
