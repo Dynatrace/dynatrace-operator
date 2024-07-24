@@ -3,6 +3,8 @@ package statefulset
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -14,6 +16,9 @@ const (
 	testDeploymentName  = "deployment-as-owner-of-service"
 	testStatefulSetName = "test-statefulset-name"
 	testNamespace       = "test-namespace"
+	testDynakubeName    = "dynakube"
+	testVersion         = "1.0.0"
+	testAppName         = "dynatrace-operator"
 )
 
 func createDeployment() *appsv1.Deployment {
@@ -50,24 +55,33 @@ func TestStatefulSetBuilder(t *testing.T) {
 		container := corev1.Container{}
 		labelName := "name"
 		labelValue := "value"
-		labels := map[string]string{
+		customLabels := map[string]string{
 			labelName: labelValue,
 		}
-		appLabels := map[string]string{
-			"version": "1.0.0",
-		}
-		service, err := Build(
-			createDeployment(), testStatefulSetName, container, SetAllLabels(labels, appLabels))
+		appLabels := labels.NewAppLabels(testAppName, testDynakubeName, labels.ExtensionComponentLabel, testVersion)
+		statefulSet, err := Build(
+			createDeployment(), testStatefulSetName, container, SetAllLabels(appLabels, customLabels))
 		require.NoError(t, err)
-		require.Len(t, service.OwnerReferences, 1)
-		assert.Equal(t, testDeploymentName, service.OwnerReferences[0].Name)
-		assert.Equal(t, testStatefulSetName, service.Name)
-		require.Len(t, service.Labels, 1)
-		require.Len(t, service.Spec.Selector.MatchLabels, 1)
+		require.Len(t, statefulSet.OwnerReferences, 1)
+		assert.Equal(t, testDeploymentName, statefulSet.OwnerReferences[0].Name)
+		assert.Equal(t, testStatefulSetName, statefulSet.Name)
+		require.Len(t, statefulSet.ObjectMeta.Labels, 5)
+		require.Len(t, statefulSet.Spec.Selector.MatchLabels, 3)
 		// only Template labels must have both since we merge them
-		require.Len(t, service.Spec.Template.ObjectMeta.Labels, 2)
-		assert.Equal(t, labelValue, service.Labels[labelName])
-		assert.Equal(t, labelValue, service.Spec.Template.ObjectMeta.Labels[labelName])
-		assert.Equal(t, "1.0.0", service.Spec.Template.ObjectMeta.Labels["version"])
+		require.Len(t, statefulSet.Spec.Template.ObjectMeta.Labels, 6)
+		assert.Empty(t, statefulSet.Labels[labelName])
+		assert.Equal(t, labelValue, statefulSet.Spec.Template.ObjectMeta.Labels[labelName])
+
+		assert.Equal(t, testAppName, statefulSet.ObjectMeta.Labels[labels.AppNameLabel])
+		assert.Equal(t, testDynakubeName, statefulSet.ObjectMeta.Labels[labels.AppCreatedByLabel])
+		assert.Equal(t, version.AppName, statefulSet.ObjectMeta.Labels[labels.AppManagedByLabel])
+		assert.Equal(t, labels.ExtensionComponentLabel, statefulSet.ObjectMeta.Labels[labels.AppComponentLabel])
+		assert.Equal(t, testVersion, statefulSet.ObjectMeta.Labels[labels.AppVersionLabel])
+
+		assert.Equal(t, testAppName, statefulSet.Spec.Template.ObjectMeta.Labels[labels.AppNameLabel])
+		assert.Equal(t, testDynakubeName, statefulSet.Spec.Template.ObjectMeta.Labels[labels.AppCreatedByLabel])
+		assert.Equal(t, version.AppName, statefulSet.Spec.Template.ObjectMeta.Labels[labels.AppManagedByLabel])
+		assert.Equal(t, labels.ExtensionComponentLabel, statefulSet.Spec.Template.ObjectMeta.Labels[labels.AppComponentLabel])
+		assert.Equal(t, testVersion, statefulSet.Spec.Template.ObjectMeta.Labels[labels.AppVersionLabel])
 	})
 }

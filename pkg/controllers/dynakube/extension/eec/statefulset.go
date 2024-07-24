@@ -3,6 +3,7 @@ package eec
 import (
 	"strconv"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
@@ -84,11 +85,10 @@ func (r *reconciler) reconcileStatefulset(ctx context.Context) error {
 }
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
-	desiredSts, err := statefulset.Build(r.dk, statefulsetName,
-		buildContainer(r.dk.Name, r.dk.Namespace, r.dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID, activeGateName, r.dk.Status.KubeSystemUUID),
+	desiredSts, err := statefulset.Build(r.dk, statefulsetName, buildContainer(r.dk),
 		statefulset.SetReplicas(1),
 		statefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
-		statefulset.SetAllLabels(buildAppLabels(r.dk.Name).BuildLabels(), r.dk.Spec.Templates.ExtensionExecutionController.Labels),
+		statefulset.SetAllLabels(buildAppLabels(r.dk.Name), r.dk.Spec.Templates.ExtensionExecutionController.Labels),
 		statefulset.SetAllAnnotations(r.dk.Spec.Templates.ExtensionExecutionController.Annotations),
 		statefulset.SetAffinity(buildAffinity()),
 		statefulset.SetTolerations(r.dk.Spec.Templates.ExtensionExecutionController.Tolerations),
@@ -96,9 +96,6 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		setTlsRef(r.dk.Spec.Templates.ExtensionExecutionController.TlsRefName),
 		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
 		setVolumes(r.dk.Name, r.dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim),
-		setContainerImage(r.dk.Spec.Templates.ExtensionExecutionController.ImageRef.Repository, r.dk.Spec.Templates.ExtensionExecutionController.ImageRef.Tag),
-		setContainerResources(r.dk.Spec.Templates.ExtensionExecutionController.Resources),
-		setContainerVolumeMounts(),
 	)
 
 	if err != nil {
@@ -186,21 +183,10 @@ func setImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) func(o 
 	}
 }
 
-func setContainerImage(repository string, tag string) func(o *appsv1.StatefulSet) {
-	return func(o *appsv1.StatefulSet) {
-		o.Spec.Template.Spec.Containers[0].Image = repository + ":" + tag
-	}
-}
-
-func setContainerResources(resources corev1.ResourceRequirements) func(o *appsv1.StatefulSet) {
-	return func(o *appsv1.StatefulSet) {
-		o.Spec.Template.Spec.Containers[0].Resources = resources
-	}
-}
-
-func buildContainer(dynakubeName, namespaceName, tenantId, activeGateName, kubeSystemUid string) corev1.Container {
+func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 	return corev1.Container{
 		Name:            containerName,
+		Image:           dk.Spec.Templates.ExtensionExecutionController.ImageRef.Repository + ":" + dk.Spec.Templates.ExtensionExecutionController.ImageRef.Tag,
 		ImagePullPolicy: corev1.PullAlways,
 		ReadinessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
@@ -224,7 +210,9 @@ func buildContainer(dynakubeName, namespaceName, tenantId, activeGateName, kubeS
 				ContainerPort: collectorPort,
 			},
 		},
-		Env: buildContainerEnvs(dynakubeName, namespaceName, tenantId, activeGateName, kubeSystemUid),
+		Env:          buildContainerEnvs(dk),
+		Resources:    dk.Spec.Templates.ExtensionExecutionController.Resources,
+		VolumeMounts: buildContainerVolumeMounts(),
 	}
 }
 
@@ -236,44 +224,41 @@ func buildSecurityContext() *corev1.SecurityContext {
 	}
 }
 
-func buildContainerEnvs(dynakubeName, namespaceName, tenantId, activeGateName, kubeSystemUid string) []corev1.EnvVar {
+func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	return []corev1.EnvVar{
-		{Name: envTenantId, Value: tenantId},
-		{Name: envServerUrl, Value: dynakubeName + "-" + activeGateName + "." + namespaceName + ".svc.cluster.local:443"},
+		{Name: envTenantId, Value: dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID},
+		{Name: envServerUrl, Value: dk.Name + "-" + activeGateName + "." + dk.Namespace + ".svc.cluster.local:443"},
 		{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + eecFile},
 		{Name: envEecIngestPort, Value: strconv.Itoa(int(collectorPort))},
 		{Name: envExtensionsConfPathName, Value: envExtensionsConfPath},
 		{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath},
 		{Name: envDsInstallDirName, Value: envDsInstallDir},
-		{Name: envK8sClusterId, Value: kubeSystemUid},
+		{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID},
 	}
 }
 
-func setContainerVolumeMounts() func(o *appsv1.StatefulSet) {
-	return func(o *appsv1.StatefulSet) {
-		o.Spec.Template.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{
-
-			{
-				Name:      eecTokenVolumeName,
-				MountPath: eecTokenMountPath,
-				ReadOnly:  true,
-			},
-			{
-				Name:      logVolumeName,
-				MountPath: logMountPath,
-				ReadOnly:  false,
-			},
-			{
-				Name:      runtimeVolumeName,
-				MountPath: runtimeMountPath,
-				ReadOnly:  false,
-			},
-			{
-				Name:      configurationVolumeName,
-				MountPath: configurationMountPath,
-				ReadOnly:  true,
-			},
-		}
+func buildContainerVolumeMounts() []corev1.VolumeMount {
+	return []corev1.VolumeMount{
+		{
+			Name:      eecTokenVolumeName,
+			MountPath: eecTokenMountPath,
+			ReadOnly:  true,
+		},
+		{
+			Name:      logVolumeName,
+			MountPath: logMountPath,
+			ReadOnly:  false,
+		},
+		{
+			Name:      runtimeVolumeName,
+			MountPath: runtimeMountPath,
+			ReadOnly:  false,
+		},
+		{
+			Name:      configurationVolumeName,
+			MountPath: configurationMountPath,
+			ReadOnly:  true,
+		},
 	}
 }
 
@@ -324,6 +309,15 @@ func setVolumes(dynakubeName string, claim *corev1.PersistentVolumeClaimSpec) fu
 				},
 			})
 		} else {
+			/*
+				o.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
+					{
+						TypeMeta: metav1.TypeMeta{},
+						ObjectMeta: metav1.ObjectMeta{},
+						Spec: *claim,
+					},
+				}
+			*/
 			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
 				Name: runtimeVolumeName,
 				VolumeSource: corev1.VolumeSource{

@@ -3,6 +3,7 @@ package statefulset
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/internal/builder"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -59,11 +60,11 @@ func SetTopologySpreadConstraints(topologySpreadConstraints []corev1.TopologySpr
 	}
 }
 
-func SetAllLabels(appLabels, labels map[string]string) builder.Option[*appsv1.StatefulSet] {
+func SetAllLabels(appLabels *labels.AppLabels, customLabels map[string]string) builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
-		s.ObjectMeta.Labels = appLabels
-		s.Spec.Selector = &metav1.LabelSelector{MatchLabels: appLabels}
-		s.Spec.Template.ObjectMeta.Labels = maputils.MergeMap(labels, appLabels)
+		s.ObjectMeta.Labels = appLabels.BuildLabels()
+		s.Spec.Selector = &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
+		s.Spec.Template.ObjectMeta.Labels = maputils.MergeMap(customLabels, appLabels.BuildLabels())
 	}
 }
 
