@@ -257,6 +257,10 @@ func TestRemoveAppInjection(t *testing.T) {
 	rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynakube.OneAgentSpec{
 		CloudNativeFullStack: nil,
 	})
+	rec.versionReconciler = createVersionReconcilerMock(t)
+	rec.connectionInfoReconciler = createGenericReconcilerMock(t)
+	rec.pmcSecretreconciler = createGenericReconcilerMock(t)
+	rec.enrichmentRulesReconciler = createGenericReconcilerMock(t)
 	setCodeModulesInjectionCreatedCondition(rec.dk.Conditions())
 	setMetadataEnrichmentCreatedCondition(rec.dk.Conditions())
 
@@ -286,6 +290,9 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynakube.OneAgentSpec{
 			ClassicFullStack: &dynakube.HostInjectSpec{},
 		})
+		rec.versionReconciler = createVersionReconcilerMock(t)
+		rec.connectionInfoReconciler = createGenericReconcilerMock(t)
+		rec.pmcSecretreconciler = createGenericReconcilerMock(t)
 
 		err := rec.setupOneAgentInjection(context.Background())
 		require.NoError(t, err)
@@ -299,6 +306,9 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynakube.OneAgentSpec{
 			HostMonitoring: &dynakube.HostInjectSpec{},
 		})
+		rec.versionReconciler = createVersionReconcilerMock(t)
+		rec.connectionInfoReconciler = createGenericReconcilerMock(t)
+		rec.pmcSecretreconciler = createGenericReconcilerMock(t)
 
 		err := rec.setupOneAgentInjection(context.Background())
 		require.NoError(t, err)
@@ -312,6 +322,9 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynakube.OneAgentSpec{
 			ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{},
 		})
+		rec.versionReconciler = createVersionReconcilerMock(t)
+		rec.connectionInfoReconciler = createGenericReconcilerMock(t)
+		rec.pmcSecretreconciler = createGenericReconcilerMock(t)
 
 		err := rec.setupOneAgentInjection(context.Background())
 		require.NoError(t, err)
@@ -334,6 +347,9 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynakube.OneAgentSpec{
 			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 		})
+		rec.versionReconciler = createVersionReconcilerMock(t)
+		rec.connectionInfoReconciler = createGenericReconcilerMock(t)
+		rec.pmcSecretreconciler = createGenericReconcilerMock(t)
 
 		err := rec.setupOneAgentInjection(context.Background())
 		require.NoError(t, err)
@@ -358,6 +374,7 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynakube.OneAgentSpec{
 			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 		})
+		rec.enrichmentRulesReconciler = createGenericReconcilerMock(t)
 		rec.dk.Spec.MetadataEnrichment.Enabled = false
 
 		err := rec.setupEnrichmentInjection(context.Background())
@@ -372,6 +389,7 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynakube.OneAgentSpec{
 			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 		})
+		rec.enrichmentRulesReconciler = createGenericReconcilerMock(t)
 		rec.dk.Spec.MetadataEnrichment.Enabled = true
 
 		err := rec.setupEnrichmentInjection(context.Background())
