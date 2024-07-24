@@ -45,13 +45,11 @@ func (r *Reconciler) createObjectIdIfNotExists(ctx context.Context) (string, err
 		return "", errors.New("no kube-system namespace UUID given")
 	}
 
-	if r.dk.Status.KubernetesClusterMEID == "" {
-		monitoredEntitiesreconciler := monitoredentities.NewReconciler(r.dtc, r.dk)
+	monitoredEntitiesreconciler := monitoredentities.NewReconciler(r.dtc, r.dk)
 
-		err := monitoredEntitiesreconciler.Reconcile(ctx)
-		if err != nil {
-			return "", err
-		}
+	err := monitoredEntitiesreconciler.Reconcile(ctx)
+	if err != nil {
+		return "", err
 	}
 
 	monitoredEntity := []dtclient.MonitoredEntity{
