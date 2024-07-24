@@ -26,11 +26,34 @@ func createDeployment() *appsv1.Deployment {
 func TestStatefulSetBuilder(t *testing.T) {
 	t.Run("create StatefulSet", func(t *testing.T) {
 		service, err := Build(
-			createDeployment(), "test-name")
+			createDeployment(), testStatefulSetName)
 		require.NoError(t, err)
 		require.Len(t, service.OwnerReferences, 1)
 		assert.Equal(t, testDeploymentName, service.OwnerReferences[0].Name)
 		assert.Equal(t, testStatefulSetName, service.Name)
 		assert.Empty(t, service.Labels)
+	})
+	t.Run("create StatefulSet with labels", func(t *testing.T) {
+		labelName := "name"
+		labelValue := "value"
+		labels := map[string]string{
+			labelName: labelValue,
+		}
+		appLabels := map[string]string{
+			"version": "1.0.0",
+		}
+		service, err := Build(
+			createDeployment(), testStatefulSetName, SetAllLabels(labels, appLabels))
+		require.NoError(t, err)
+		require.Len(t, service.OwnerReferences, 1)
+		assert.Equal(t, testDeploymentName, service.OwnerReferences[0].Name)
+		assert.Equal(t, testStatefulSetName, service.Name)
+		require.Len(t, service.Labels, 1)
+		require.Len(t, service.Spec.Selector.MatchLabels, 1)
+		// only Template labels must have both since we merge them
+		require.Len(t, service.Spec.Template.ObjectMeta.Labels, 2)
+		assert.Equal(t, labelValue, service.Labels[labelName])
+		assert.Equal(t, labelValue, service.Spec.Template.ObjectMeta.Labels[labelName])
+		assert.Equal(t, "1.0.0", service.Spec.Template.ObjectMeta.Labels["version"])
 	})
 }
