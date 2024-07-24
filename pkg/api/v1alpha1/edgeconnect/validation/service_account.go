@@ -1,4 +1,4 @@
-package edgeconnect
+package validation
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"

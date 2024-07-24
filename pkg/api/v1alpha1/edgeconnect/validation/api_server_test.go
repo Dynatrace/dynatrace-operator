@@ -1,4 +1,4 @@
-package edgeconnect
+package validation
 
 import (
 	"encoding/json"

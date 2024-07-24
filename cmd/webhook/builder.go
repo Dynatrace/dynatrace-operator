@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/cmd/certificates"
 	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
+	edgeconnectv1alpha1validation "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect/validation"
 	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube" //nolint:staticcheck
 	dynakubev1beta1validation "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube/validation"
 	dynakubev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube" //nolint:staticcheck
@@ -20,7 +21,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	namespacemutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/namespace"
 	podmutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod"
-	edgeconnectvalidationhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/validation/edgeconnect"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -179,7 +179,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		err = edgeconnectvalidationhook.AddEdgeConnectValidationWebhookToManager(webhookManager)
+		err = edgeconnectv1alpha1validation.AddEdgeConnectValidationWebhookToManager(webhookManager)
 		if err != nil {
 			return err
 		}
