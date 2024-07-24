@@ -388,7 +388,7 @@ Package that has all scenarios that are tested by the E2E tests. Those scenarios
 Has every data that is needed to run the tests. This reaches from `Deployments` up to `Secrets` to be able to install the `Operator`.
 
 ---
-Find here some very basic visualizations of the Operator with its components: 
+Find here some very basic visualizations of the Operator with its components:
 
 ## Overall functionality
 
