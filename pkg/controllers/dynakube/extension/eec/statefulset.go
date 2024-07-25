@@ -11,11 +11,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
-	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -49,46 +47,6 @@ const (
 	configurationVolumeName = "runtime-configuration"
 	configurationMountPath  = "/var/lib/dynatrace/remotepluginmodule/agent/conf/runtime"
 )
-
-func (r *reconciler) reconcileStatefulset(ctx context.Context) error {
-	if !r.dk.PrometheusEnabled() {
-		if meta.FindStatusCondition(*r.dk.Conditions(), extensionsControllerStatefulSetConditionType) == nil {
-			return nil
-		}
-		defer meta.RemoveStatusCondition(r.dk.Conditions(), extensionsControllerStatefulSetConditionType)
-
-		sts, err := statefulset.Build(r.dk, statefulsetName, corev1.Container{})
-		if err != nil {
-			log.Error(err, "could not build "+statefulsetName+" during cleanup")
-
-			return err
-		}
-
-		err = statefulset.Query(r.client, r.apiReader, log).Delete(ctx, sts)
-
-		if err != nil {
-			log.Error(err, "failed to clean up "+statefulsetName+" statufulset")
-
-			return nil
-		}
-
-		return nil
-	}
-
-	if r.dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID == "" {
-		conditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, statefulsetName)
-
-		return errors.New("tenantUUID unknown")
-	}
-
-	if r.dk.Status.KubeSystemUUID == "" {
-		conditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, statefulsetName)
-
-		return errors.New("kubeSystemUUID unknown")
-	}
-
-	return r.createOrUpdateStatefulset(ctx)
-}
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	desiredSts, err := statefulset.Build(r.dk, statefulsetName, buildContainer(r.dk),
