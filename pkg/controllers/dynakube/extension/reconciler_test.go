@@ -48,7 +48,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk := createDynakube()
 
 		// mock SecretCreated condition
-		conditions.SetSecretCreated(dk.Conditions(), extensionsTokenSecretConditionType, dk.Name+secretSuffix)
+		conditions.SetSecretCreated(dk.Conditions(), extensionsSecretConditionType, dk.Name+secretSuffix)
 
 		// mock secret
 		secretToken, _ := dttoken.New(eecTokenSecretValuePrefix)
@@ -93,14 +93,16 @@ func TestReconciler_Reconcile(t *testing.T) {
 		var secretFound corev1.Secret
 		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
 		require.NoError(t, err)
+		require.NotEmpty(t, secretFound.Data[EecTokenSecretKey])
+		require.NotEmpty(t, secretFound.Data[otelcTokenSecretKey])
 
 		// assert extensions token condition is added
 		require.NotEmpty(t, dk.Conditions())
 
 		var expectedConditions []metav1.Condition
 
-		conditions.SetSecretCreated(&expectedConditions, extensionsTokenSecretConditionType, dk.Name+secretSuffix)
-		conds := meta.FindStatusCondition(*dk.Conditions(), extensionsTokenSecretConditionType)
+		conditions.SetSecretCreated(&expectedConditions, extensionsSecretConditionType, dk.Name+secretSuffix)
+		conds := meta.FindStatusCondition(*dk.Conditions(), extensionsSecretConditionType)
 		testutil.PartialEqual(t, &expectedConditions[0], conds, cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
 	})
 	t.Run(`Extension SecretCreated failure condition is set when error`, func(t *testing.T) {
@@ -117,7 +119,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		var expectedConditions []metav1.Condition
 
-		conditions.SetKubeApiError(&expectedConditions, extensionsTokenSecretConditionType, err)
+		conditions.SetKubeApiError(&expectedConditions, extensionsSecretConditionType, err)
 		testutil.PartialEqual(t, &expectedConditions, dk.Conditions(), cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
 	})
 

@@ -1,4 +1,4 @@
-package edgeconnect
+package validation
 
 import (
 	"testing"
@@ -15,7 +15,7 @@ func TestServiceAccountName(t *testing.T) {
 				ServiceAccountName: "",
 			},
 		}
-		assertDeniedResponse(t, []string{errorInvalidServiceName}, ec)
+		assertDenied(t, []string{errorInvalidServiceName}, ec)
 	})
 }
 
