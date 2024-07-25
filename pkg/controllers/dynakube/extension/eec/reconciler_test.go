@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/stretchr/testify/assert"
@@ -112,6 +113,25 @@ func TestConditions(t *testing.T) {
 		require.Error(t, err)
 
 		assert.True(t, errors.IsNotFound(err))
+	})
+
+	t.Run("prometheus is disabled", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Extensions.Prometheus.Enabled = false
+		conditions.SetStatefulSetCreated(dk.Conditions(), extensionsControllerStatefulSetConditionType, statefulsetName)
+
+		mockK8sClient := fake.NewClient(dk)
+
+		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
+		require.NoError(t, err)
+
+		statefulSet := &appsv1.StatefulSet{}
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: statefulsetName, Namespace: dk.Namespace}, statefulSet)
+		require.Error(t, err)
+
+		assert.True(t, errors.IsNotFound(err))
+
+		assert.Empty(t, dk.Conditions())
 	})
 }
 
