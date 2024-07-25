@@ -1,4 +1,4 @@
-package edgeconnect
+package validation
 
 import (
 	"context"
@@ -10,7 +10,7 @@ const (
 	errorHostPattersIsRequired = `hostPatterns is required when using provisioner mode`
 )
 
-func checkHostPatternsValue(_ context.Context, _ *edgeconnectValidator, ec *edgeconnect.EdgeConnect) string {
+func checkHostPatternsValue(_ context.Context, _ *Validator, ec *edgeconnect.EdgeConnect) string {
 	if ec.IsProvisionerModeEnabled() && len(ec.Spec.HostPatterns) == 0 && !ec.IsK8SAutomationEnabled() {
 		return errorHostPattersIsRequired
 	}

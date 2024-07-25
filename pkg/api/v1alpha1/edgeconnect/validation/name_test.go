@@ -1,4 +1,4 @@
-package edgeconnect
+package validation
 
 import (
 	"fmt"
@@ -52,10 +52,10 @@ func TestNameTooLong(t *testing.T) {
 				},
 			}
 			if test.allow {
-				assertAllowedResponse(t, ec, prepareTestServiceAccount(testServiceAccountName, testNamespace))
+				assertAllowed(t, ec, prepareTestServiceAccount(testServiceAccountName, testNamespace))
 			} else {
 				errorMessage := fmt.Sprintf(errorNameTooLong, edgeconnect.MaxNameLength)
-				assertDeniedResponse(t, []string{errorMessage}, ec)
+				assertDenied(t, []string{errorMessage}, ec)
 			}
 		})
 	}
