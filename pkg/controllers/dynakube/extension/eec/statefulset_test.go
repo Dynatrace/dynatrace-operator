@@ -434,15 +434,33 @@ func TestPersistentVolumeClaimRetentionPolicy(t *testing.T) {
 		assert.Nil(t, statefulSet.Spec.PersistentVolumeClaimRetentionPolicy)
 	})
 	t.Run("custom persistent volume claim retention policy", func(t *testing.T) {
-		/*
-			dk := getTestDynakube()
-			policy := appsv1.RetainPersistentVolumeClaimRetentionPolicyType
-			dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaimRetentionPolicy = &policy
+		// TODO: do we want to use statefulset.VolumeClaimTemplates
+	})
+}
 
-			statefulSet := getStatefulset(t, dk)
+func TestServiceAccountName(t *testing.T) {
+	t.Run("serviceAccountName is set", func(t *testing.T) {
+		statefulSet := getStatefulset(t, getTestDynakube())
 
-			assert.Equal(t, dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaimRetentionPolicy, statefulSet.Spec.PersistentVolumeClaimRetentionPolicy.WhenDeleted)
-			assert.Equal(t, dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaimRetentionPolicy, statefulSet.Spec.PersistentVolumeClaimRetentionPolicy.WhenScaled)
-		*/
+		assert.Equal(t, serviceAccountName, statefulSet.Spec.Template.Spec.ServiceAccountName)
+		assert.Equal(t, serviceAccountName, statefulSet.Spec.Template.Spec.DeprecatedServiceAccount)
+	})
+}
+
+func TestSecurityContext(t *testing.T) {
+	t.Run("the default securityContext is set", func(t *testing.T) {
+		statefulSet := getStatefulset(t, getTestDynakube())
+
+		assert.NotNil(t, statefulSet.Spec.Template.Spec.SecurityContext)
+		assert.NotNil(t, statefulSet.Spec.Template.Spec.Containers[0].SecurityContext)
+	})
+}
+
+func TestUpdateStrategy(t *testing.T) {
+	t.Run("the default update strategy is set", func(t *testing.T) {
+		statefulSet := getStatefulset(t, getTestDynakube())
+
+		assert.NotNil(t, statefulSet.Spec.UpdateStrategy.RollingUpdate.Partition)
+		assert.NotEmpty(t, statefulSet.Spec.UpdateStrategy.Type)
 	})
 }
