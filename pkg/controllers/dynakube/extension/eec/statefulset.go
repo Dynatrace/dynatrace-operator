@@ -191,8 +191,7 @@ func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 		ReadinessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
-					Path: "/readyz",
-					// Port:   intstr.IntOrString{StrVal: "collector-com"},
+					Path:   "/readyz",
 					Port:   intstr.IntOrString{IntVal: collectorPort},
 					Scheme: "HTTP",
 				},
@@ -289,11 +288,7 @@ func setVolumes(dynakubeName string, claim *corev1.PersistentVolumeClaimSpec) fu
 				},
 			},
 			{
-				/*
-				   - name: runtime-configuration
-				     configMap:
-				       name: eec-runtime-configuration
-				*/
+				// TODO: is a configMap.name: eec-runtime-configuration needed?
 				Name: configurationVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
@@ -309,15 +304,7 @@ func setVolumes(dynakubeName string, claim *corev1.PersistentVolumeClaimSpec) fu
 				},
 			})
 		} else {
-			/*
-				o.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
-					{
-						TypeMeta: metav1.TypeMeta{},
-						ObjectMeta: metav1.ObjectMeta{},
-						Spec: *claim,
-					},
-				}
-			*/
+			// TODO: do we want to use statefulset.VolumeClaimTemplates
 			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
 				Name: runtimeVolumeName,
 				VolumeSource: corev1.VolumeSource{
