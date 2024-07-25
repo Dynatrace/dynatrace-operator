@@ -114,7 +114,7 @@ func (r *reconciler) unmapDynakube(ctx context.Context) {
 
 	dkMapper := r.createDynakubeMapper(ctx)
 	if err := dkMapper.UnmapFromDynaKube(namespaces); err != nil {
-		log.Error(err, "could not unmap DynaKube from namespace", "dkName", r.dk.Name)
+		log.Error(err, "could not unmap dynakube from namespace", "dkName", r.dk.Name)
 	}
 }
 
@@ -172,14 +172,14 @@ func (r *reconciler) cleanupOneAgentInjection(ctx context.Context) {
 
 		namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, r.dk.Name)
 		if err != nil {
-			log.Error(err, "failed to clean-up code module injection")
+			log.Error(err, "failed to list injected namespace during code module injection cleanup")
 
 			return
 		}
 
 		err = initgeneration.NewInitGenerator(r.client, r.apiReader, r.dk.Namespace).Cleanup(ctx, namespaces)
 		if err != nil {
-			log.Error(err, "failed to clean-up code module injection")
+			log.Error(err, "failed to clean-up code module injection init-secrets")
 		}
 	}
 }
@@ -220,14 +220,14 @@ func (r *reconciler) cleanupEnrichmentInjection(ctx context.Context) {
 
 		namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, r.dk.Name)
 		if err != nil {
-			log.Error(err, "failed to clean-up metadata-enrichment secrets")
+			log.Error(err, "failed to list injected namespace during metadata-enrichment injection cleanup")
 
 			return
 		}
 
 		err = ingestendpoint.NewSecretGenerator(r.client, r.apiReader, r.dk.Namespace).RemoveEndpointSecrets(ctx, namespaces)
 		if err != nil {
-			log.Error(err, "failed to clean-up metadata-enrichment secrets")
+			log.Error(err, "failed to clean-up metadata-enrichment injection secrets")
 		}
 	}
 }
