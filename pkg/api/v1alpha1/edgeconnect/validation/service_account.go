@@ -1,4 +1,4 @@
-package edgeconnect
+package validation
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
@@ -10,7 +10,7 @@ const (
 `
 )
 
-func isInvalidServiceName(_ context.Context, _ *edgeconnectValidator, edgeConnectCR *edgeconnect.EdgeConnect) string {
+func isInvalidServiceName(_ context.Context, _ *Validator, edgeConnectCR *edgeconnect.EdgeConnect) string {
 	if edgeConnectCR.Spec.ServiceAccountName == "" {
 		return errorInvalidServiceName
 	}
