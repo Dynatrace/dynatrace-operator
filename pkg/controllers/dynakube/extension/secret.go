@@ -6,8 +6,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -37,18 +38,18 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 	}
 
 	_, err := k8ssecret.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKey{Name: r.getSecretName(), Namespace: r.dk.Namespace})
-	if err != nil && !errors.IsNotFound(err) {
+	if err != nil && !k8serrors.IsNotFound(err) {
 		log.Info("failed to check existence of extension secret")
 		conditions.SetKubeApiError(r.dk.Conditions(), extensionsSecretConditionType, err)
 
 		return err
 	}
 
-	if errors.IsNotFound(err) {
+	if k8serrors.IsNotFound(err) {
 		newEecToken, err := dttoken.New(eecTokenSecretValuePrefix)
 		if err != nil {
 			log.Info("failed to generate eec token")
-			conditions.SetSecretGenFailed(r.dk.Conditions(), extensionsSecretConditionType, err)
+			conditions.SetSecretGenFailed(r.dk.Conditions(), extensionsSecretConditionType, errors.Wrap(err, "error generating eec token"))
 
 			return err
 		}
@@ -56,7 +57,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 		newOtelcToken, err := dttoken.New(otelcTokenSecretValuePrefix)
 		if err != nil {
 			log.Info("failed to generate otelc token")
-			conditions.SetSecretGenFailed(r.dk.Conditions(), extensionsSecretConditionType, err)
+			conditions.SetSecretGenFailed(r.dk.Conditions(), extensionsSecretConditionType, errors.Wrap(err, "error generating otelc token"))
 
 			return err
 		}
