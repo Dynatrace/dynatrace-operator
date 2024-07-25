@@ -114,7 +114,6 @@ func (env *environment) getOneAgentFieldSetters() []func() error {
 
 func (env *environment) getMetadataEnrichmentFieldSetters() []func() error {
 	return append(env.getCommonFieldSetters(),
-		env.addClusterName,
 		env.addWorkloadKind,
 		env.addWorkloadName,
 	)
@@ -124,6 +123,7 @@ func (env *environment) setOptionalFields() {
 	env.addInstallerUrl()
 	env.addInstallerFlavor()
 	env.addInstallVersion()
+	env.addClusterName()
 }
 
 func (env *environment) setMutationTypeFields() {
@@ -293,15 +293,9 @@ func (env *environment) addWorkloadName() error {
 	return nil
 }
 
-func (env *environment) addClusterName() error {
-	clusterName, err := checkEnvVar(consts.EnrichmentClusterNameEnv)
-	if err != nil {
-		return err
-	}
-
+func (env *environment) addClusterName() {
+	clusterName, _ := checkEnvVar(consts.EnrichmentClusterNameEnv)
 	env.K8ClusterName = clusterName
-
-	return nil
 }
 
 func (env *environment) addInstallerUrl() {

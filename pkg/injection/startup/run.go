@@ -290,11 +290,7 @@ func (runner *Runner) createContainerConfigurationFiles() error {
 }
 
 func (runner *Runner) enrichMetadata() error {
-	if err := runner.createPropsEnrichmentFile(); err != nil {
-		return err
-	}
-
-	if err := runner.createJsonEnrichmentFile(); err != nil {
+	if err := runner.createEnrichmentFiles(); err != nil {
 		return err
 	}
 

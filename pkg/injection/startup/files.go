@@ -34,36 +34,6 @@ isCloudNativeFullStack true
 	k8ClusterIDFormatString = `k8s_cluster_id %s
 `
 
-	// TODO: dt.* fields are deprecated
-	jsonEnrichmentContentFormatString = `{
-  "k8s.pod.uid": "%s",
-  "k8s.pod.name": "%s",
-  "k8s.namespace.name": "%s",
-  "k8s.cluster.name": "%s",
-  "k8s.cluster.uid": "%s",
-  "k8s.workload.kind": "%s",
-  "k8s.workload.name": "%s",
-  "dt.entity.kubernetes_cluster": "%s",
-  "dt.kubernetes.cluster.id": "%s",
-  "dt.kubernetes.workload.kind": "%s",
-  "dt.kubernetes.workload.name": "%s"
-}
-`
-
-	// TODO: dt.* fields are deprecated
-	propsEnrichmentContentFormatString = `k8s.pod.uid=%s
-k8s.pod.name=%s
-k8s.namespace.name=%s
-k8s.cluster.name=%s
-k8s.cluster.uid=%s
-k8s.workload.kind=%s
-k8s.workload.name=%s
-dt.entity.kubernetes_cluster=%s
-dt.kubernetes.cluster.id=%s
-dt.kubernetes.workload.kind=%s
-dt.kubernetes.workload.name=%s
-`
-
 	curlOptionsFormatString = `initialConnectRetryMs %d
 `
 )
@@ -95,44 +65,6 @@ func (runner *Runner) getK8SClusterID() string {
 
 func (runner *Runner) getCurlOptionsContent() string {
 	return fmt.Sprintf(curlOptionsFormatString, runner.config.InitialConnectRetry)
-}
-
-func (runner *Runner) createJsonEnrichmentFile() error {
-	jsonContent := fmt.Sprintf(jsonEnrichmentContentFormatString,
-		runner.env.K8PodUID,
-		runner.env.K8PodName,
-		runner.env.K8Namespace,
-		runner.env.K8ClusterName,
-		runner.env.K8ClusterID,
-		runner.env.WorkloadKind,
-		runner.env.WorkloadName,
-		runner.env.K8ClusterName, // old/deprecated field
-		runner.env.K8ClusterID,   // old/deprecated field
-		runner.env.WorkloadKind,  // old/deprecated field
-		runner.env.WorkloadName,  // old/deprecated field
-	)
-	jsonPath := filepath.Join(consts.EnrichmentInitPath, consts.EnrichmentJsonFilename)
-
-	return runner.createConfigFile(jsonPath, jsonContent, true)
-}
-
-func (runner *Runner) createPropsEnrichmentFile() error {
-	propsContent := fmt.Sprintf(propsEnrichmentContentFormatString,
-		runner.env.K8PodUID,
-		runner.env.K8PodName,
-		runner.env.K8Namespace,
-		runner.env.K8ClusterName,
-		runner.env.K8ClusterID,
-		runner.env.WorkloadKind,
-		runner.env.WorkloadName,
-		runner.env.K8ClusterName, // old/deprecated field
-		runner.env.K8ClusterID,   // old/deprecated field
-		runner.env.WorkloadKind,  // old/deprecated field
-		runner.env.WorkloadName,  // old/deprecated field
-	)
-	propsPath := filepath.Join(consts.EnrichmentInitPath, consts.EnrichmentPropertiesFilename)
-
-	return runner.createConfigFile(propsPath, propsContent, true)
 }
 
 func (runner *Runner) createCurlOptionsFile() error {
