@@ -5,8 +5,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/hash"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
@@ -104,7 +104,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		return err
 	}
 
-	if err := setHash(desiredSts); err != nil {
+	if err := hash.SetHash(desiredSts); err != nil {
 		conditions.SetKubeApiError(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, err)
 
 		return err
@@ -124,7 +124,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 }
 
 func buildAppLabels(dynakubeName string) *labels.AppLabels {
-	// version := statefulSetBuilder.dynakube.Status.ActiveGate.Version
+	// TODO: when version is available
 	version := "0.0.0"
 
 	return labels.NewAppLabels(labels.ExtensionComponentLabel, dynakubeName, labels.ExtensionComponentLabel, version)
@@ -328,15 +328,4 @@ func setVolumes(dynakubeName string, claim *corev1.PersistentVolumeClaimSpec) fu
 			})
 		}
 	}
-}
-
-func setHash(o *appsv1.StatefulSet) error {
-	hash, err := hasher.GenerateHash(o)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	o.ObjectMeta.Annotations[hasher.AnnotationHash] = hash
-
-	return nil
 }
