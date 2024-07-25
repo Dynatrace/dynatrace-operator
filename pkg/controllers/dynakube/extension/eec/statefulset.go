@@ -39,8 +39,8 @@ const (
 	envDsInstallDir                 = "/opt/dynatrace/remotepluginmodule/agent/datasources"
 	envK8sClusterId                 = "K8sClusterId"
 
-	eecTokenVolumeName      = "eec-token"
-	eecTokenMountPath       = "/var/lib/dynatrace/remotepluginmodule/secrets/ag"
+	tokensVolumeName        = "tokens"
+	eecTokenMountPath       = "/var/lib/dynatrace/remotepluginmodule/secrets/tokens"
 	eecFile                 = "eec.token"
 	logVolumeName           = "log"
 	logMountPath            = "/var/lib/dynatrace/remotepluginmodule/log"
@@ -225,7 +225,7 @@ func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 		SecurityContext: buildSecurityContext(),
 		Ports: []corev1.ContainerPort{
 			{
-				Name:          "collector-com",
+				Name:          consts.ExtensionsCollectorTargetPortName,
 				ContainerPort: collectorPort,
 			},
 		},
@@ -273,7 +273,7 @@ func buildActiveGateServiceName(dk *dynakube.DynaKube) string {
 func buildContainerVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
-			Name:      eecTokenVolumeName,
+			Name:      tokensVolumeName,
 			MountPath: eecTokenMountPath,
 			ReadOnly:  true,
 		},
@@ -300,18 +300,11 @@ func setVolumes(dynakubeName string, claim *corev1.PersistentVolumeClaimSpec) fu
 		mode := int32(420)
 		o.Spec.Template.Spec.Volumes = []corev1.Volume{
 			{
-				Name: eecTokenVolumeName,
+				Name: tokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName:  dynakubeName + consts.SecretSuffix,
 						DefaultMode: &mode,
-						Items: []corev1.KeyToPath{
-							{
-								Key:  consts.EecTokenSecretKey,
-								Path: eecFile,
-								Mode: &mode,
-							},
-						},
 					},
 				},
 			},

@@ -3,7 +3,6 @@ package modifiers
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -41,7 +40,7 @@ func TestEecModify(t *testing.T) {
 		require.NotEmpty(t, sts)
 		isSubset(t, mod.getVolumes(), sts.Spec.Template.Spec.Volumes)
 		isSubset(t, mod.getVolumeMounts(), sts.Spec.Template.Spec.Containers[0].VolumeMounts)
-		require.Equal(t, consts.EecTokenSecretKey, sts.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name)
+		require.Equal(t, eecVolumeName, sts.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name)
 		require.Equal(t, eecMountPath, sts.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath)
 		require.True(t, sts.Spec.Template.Spec.Containers[0].VolumeMounts[0].ReadOnly)
 	})

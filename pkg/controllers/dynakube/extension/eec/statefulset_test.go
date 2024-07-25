@@ -184,7 +184,7 @@ func TestVolumes(t *testing.T) {
 
 		expectedVolumeMounts := []corev1.VolumeMount{
 			{
-				Name:      eecTokenVolumeName,
+				Name:      tokensVolumeName,
 				MountPath: eecTokenMountPath,
 				ReadOnly:  true,
 			},
@@ -215,18 +215,11 @@ func TestVolumes(t *testing.T) {
 		mode := int32(420)
 		expectedVolumes := []corev1.Volume{
 			{
-				Name: eecTokenVolumeName,
+				Name: tokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName:  dk.Name + consts.SecretSuffix,
 						DefaultMode: &mode,
-						Items: []corev1.KeyToPath{
-							{
-								Key:  consts.EecTokenSecretKey,
-								Path: eecFile,
-								Mode: &mode,
-							},
-						},
 					},
 				},
 			},
@@ -268,18 +261,11 @@ func TestVolumes(t *testing.T) {
 		mode := int32(420)
 		expectedVolumes := []corev1.Volume{
 			{
-				Name: eecTokenVolumeName,
+				Name: tokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName:  dk.Name + consts.SecretSuffix,
 						DefaultMode: &mode,
-						Items: []corev1.KeyToPath{
-							{
-								Key:  consts.EecTokenSecretKey,
-								Path: eecFile,
-								Mode: &mode,
-							},
-						},
 					},
 				},
 			},
