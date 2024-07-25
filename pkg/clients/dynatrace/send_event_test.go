@@ -81,7 +81,7 @@ func TestSendEvent(t *testing.T) {
 			strings.HasPrefix(err.Error(),
 				"error making post request to dynatrace api: Post \""+
 					dynatraceServer.URL+
-					"/v2/events\""))
+					"/v2/events/ingest\""))
 	})
 }
 
