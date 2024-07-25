@@ -67,10 +67,10 @@ func SetAllLabels(labels, matchLabels, templateLabels, customLabels map[string]s
 	}
 }
 
-func SetAllAnnotations(annotations map[string]string) builder.Option[*appsv1.StatefulSet] {
+func SetAllAnnotations(annotations, templateAnnotations map[string]string) builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
 		s.ObjectMeta.Annotations = maputils.MergeMap(s.ObjectMeta.Annotations, annotations)
-		s.Spec.Template.ObjectMeta.Annotations = maputils.MergeMap(s.Spec.Template.ObjectMeta.Annotations, annotations)
+		s.Spec.Template.ObjectMeta.Annotations = maputils.MergeMap(s.Spec.Template.ObjectMeta.Annotations, templateAnnotations)
 	}
 }
 

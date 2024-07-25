@@ -415,8 +415,8 @@ func TestAnnotations(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		assert.Len(t, statefulSet.ObjectMeta.Annotations, 2)
-		assert.Equal(t, "b", statefulSet.ObjectMeta.Annotations["a"])
+		assert.Len(t, statefulSet.ObjectMeta.Annotations, 1)
+		assert.Empty(t, statefulSet.ObjectMeta.Annotations["a"])
 		assert.Len(t, statefulSet.Spec.Template.ObjectMeta.Annotations, 1)
 		assert.Equal(t, customAnnotations, statefulSet.Spec.Template.ObjectMeta.Annotations)
 	})
