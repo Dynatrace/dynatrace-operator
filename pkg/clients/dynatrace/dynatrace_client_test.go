@@ -174,9 +174,9 @@ func handleRequest(request *http.Request, writer http.ResponseWriter) {
 		(&ipHandler{}).ServeHTTP(writer, request)
 	case "/v1/deployment/installer/agent/connectioninfo":
 		handleCommunicationHosts(request, writer)
-	case "/v1/events":
+	case "/v2/events":
 		handleSendEvent(request, writer)
-	case "/v1/tokens/lookup":
+	case "/v2/apiTokens/lookup":
 		handleTokenScopes(request, writer)
 	default:
 		writeError(writer, http.StatusBadRequest)
