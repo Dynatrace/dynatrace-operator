@@ -42,7 +42,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, dk.Status.KubernetesClusterMEID)
 	})
-	t.Run("error if no MEs are found", func(t *testing.T) {
+	t.Run("no error if no MEs are found", func(t *testing.T) {
 		clt := dtclientmock.NewClient(t)
 		clt.On("GetMonitoredEntitiesForKubeSystemUUID",
 			mock.AnythingOfType("context.backgroundCtx"), "kube-system-uuid").Return([]dtclient.MonitoredEntity{}, nil)
@@ -53,7 +53,7 @@ func TestReconcile(t *testing.T) {
 
 		err := reconciler.Reconcile(ctx)
 
-		require.Error(t, err)
+		require.NoError(t, err)
 		require.Empty(t, dk.Status.KubernetesClusterMEID)
 	})
 }
