@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/hash"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -47,8 +48,6 @@ const (
 	runtimeMountPath        = "/var/lib/dynatrace/remotepluginmodule/agent/runtime"
 	configurationVolumeName = "runtime-configuration"
 	configurationMountPath  = "/var/lib/dynatrace/remotepluginmodule/agent/conf/runtime"
-
-	activeGateName = "activegate"
 )
 
 func (r *reconciler) reconcileStatefulset(ctx context.Context) error {
@@ -188,7 +187,7 @@ func buildUpdateStrategy() appsv1.StatefulSetUpdateStrategy {
 
 func setTlsRef(tlsRefName string) func(o *appsv1.StatefulSet) {
 	return func(o *appsv1.StatefulSet) {
-
+		// TODO: EEC image is ready
 	}
 }
 
@@ -249,7 +248,7 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	return []corev1.EnvVar{
 		{Name: envTenantId, Value: dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID},
-		{Name: envServerUrl, Value: dk.Name + "-" + activeGateName + "." + dk.Namespace + ".svc.cluster.local:443"},
+		{Name: envServerUrl, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ".svc.cluster.local:443"},
 		{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + eecFile},
 		{Name: envEecIngestPort, Value: strconv.Itoa(int(collectorPort))},
 		{Name: envExtensionsConfPathName, Value: envExtensionsConfPath},
@@ -257,6 +256,12 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envDsInstallDirName, Value: envDsInstallDir},
 		{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID},
 	}
+}
+
+func buildActiveGateServiceName(dk *dynakube.DynaKube) string {
+	multiCap := capability.NewMultiCapability(dk)
+
+	return capability.CalculateStatefulSetName(multiCap, dk.Name)
 }
 
 func buildContainerVolumeMounts() []corev1.VolumeMount {

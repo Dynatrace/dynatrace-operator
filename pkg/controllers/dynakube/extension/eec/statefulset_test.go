@@ -133,7 +133,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		statefulSet := getStatefulset(t, dk)
 
 		assert.Equal(t, corev1.EnvVar{Name: envTenantId, Value: dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
-		assert.Equal(t, corev1.EnvVar{Name: envServerUrl, Value: dk.Name + "-" + activeGateName + "." + dk.Namespace + ".svc.cluster.local:443"}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
+		assert.Equal(t, corev1.EnvVar{Name: envServerUrl, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ".svc.cluster.local:443"}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
 		assert.Equal(t, corev1.EnvVar{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + eecFile}, statefulSet.Spec.Template.Spec.Containers[0].Env[2])
 		assert.Equal(t, corev1.EnvVar{Name: envEecIngestPort, Value: strconv.Itoa(int(collectorPort))}, statefulSet.Spec.Template.Spec.Containers[0].Env[3])
 		assert.Equal(t, corev1.EnvVar{Name: envExtensionsConfPathName, Value: envExtensionsConfPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
