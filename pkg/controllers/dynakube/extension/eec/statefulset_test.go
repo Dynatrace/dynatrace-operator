@@ -15,6 +15,7 @@ import (
 	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -78,6 +79,40 @@ func getStatefulset(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
 	require.NoError(t, err)
 
 	return statefulSet
+}
+
+func TestConditions(t *testing.T) {
+	t.Run("no kubeSystemUUID", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Status.KubeSystemUUID = ""
+
+		mockK8sClient := fake.NewClient(dk)
+
+		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
+		require.Error(t, err)
+
+		statefulSet := &appsv1.StatefulSet{}
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: statefulsetName, Namespace: dk.Namespace}, statefulSet)
+		require.Error(t, err)
+
+		assert.True(t, errors.IsNotFound(err))
+	})
+
+	t.Run("no tenantUUID", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID = ""
+
+		mockK8sClient := fake.NewClient(dk)
+
+		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
+		require.Error(t, err)
+
+		statefulSet := &appsv1.StatefulSet{}
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: statefulsetName, Namespace: dk.Namespace}, statefulSet)
+		require.Error(t, err)
+
+		assert.True(t, errors.IsNotFound(err))
+	})
 }
 
 func TestStatefulsetBase(t *testing.T) {

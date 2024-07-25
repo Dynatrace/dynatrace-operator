@@ -182,6 +182,7 @@ func createDynakube() *dynakube.DynaKube {
 					},
 				},
 			},
+			KubeSystemUUID: "abc",
 		},
 	}
 }

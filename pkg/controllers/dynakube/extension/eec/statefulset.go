@@ -81,6 +81,12 @@ func (r *reconciler) reconcileStatefulset(ctx context.Context) error {
 		return errors.New("tenantUUID unknown")
 	}
 
+	if r.dk.Status.KubeSystemUUID == "" {
+		conditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, statefulsetName)
+
+		return errors.New("kubeSystemUUID unknown")
+	}
+
 	return r.createOrUpdateStatefulset(ctx)
 }
 
