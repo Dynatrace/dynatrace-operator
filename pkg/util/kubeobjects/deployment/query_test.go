@@ -72,4 +72,33 @@ func TestCreateOrUpdateDeployment(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, newMatchLabels, actualDepl.Spec.Selector.MatchLabels)
 	})
+
+	t.Run("update will not remove owner reference", func(t *testing.T) {
+		fakeClient := fake.NewClient()
+		matchLabels := map[string]string{"match": "new"}
+		dummyOwner := createTestDeploymentWithMatchLabels("owner", namespaceName, nil, nil)
+
+		oldAnnotations := map[string]string{hasher.AnnotationHash: "old"}
+		oldDepl := createTestDeploymentWithMatchLabels(deploymentName, namespaceName, oldAnnotations, matchLabels)
+
+		created, err := Query(fakeClient, fakeClient, deploymentLog).WithOwner(&dummyOwner).CreateOrUpdate(ctx, &oldDepl)
+		require.NoError(t, err)
+		assert.True(t, created)
+
+		actual, err := Query(fakeClient, fakeClient, deploymentLog).Get(ctx, client.ObjectKeyFromObject(&oldDepl))
+		require.NoError(t, err)
+		assert.NotEmpty(t, actual.OwnerReferences)
+
+		newAnnotations := map[string]string{hasher.AnnotationHash: "new"}
+		newDepl := createTestDeploymentWithMatchLabels(deploymentName, namespaceName, newAnnotations, matchLabels)
+
+		updated, err := Query(fakeClient, fakeClient, deploymentLog).WithOwner(&dummyOwner).CreateOrUpdate(ctx, &newDepl)
+		require.NoError(t, err)
+		assert.True(t, updated)
+
+		actual, err = Query(fakeClient, fakeClient, deploymentLog).Get(ctx, client.ObjectKeyFromObject(&newDepl))
+		require.NoError(t, err)
+		assert.NotEmpty(t, actual.OwnerReferences)
+		assert.Equal(t, matchLabels, actual.Spec.Selector.MatchLabels)
+	})
 }

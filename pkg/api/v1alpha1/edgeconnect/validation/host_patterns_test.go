@@ -1,10 +1,9 @@
-package edgeconnect
+package validation
 
 import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
-	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,9 +24,7 @@ func TestHostPatternsRequired(t *testing.T) {
 				ServiceAccountName: testServiceAccountName,
 			},
 		}
-		response := handleRequest(t, ec, prepareTestServiceAccount(testServiceAccountName, testNamespace))
-		assert.True(t, response.Allowed)
-		assert.Empty(t, response.Warnings)
+		assertAllowed(t, ec, prepareTestServiceAccount(testServiceAccountName, testNamespace))
 	})
 
 	t.Run(`hostPatters is required - error when provisioner true`, func(t *testing.T) {
@@ -42,6 +39,6 @@ func TestHostPatternsRequired(t *testing.T) {
 				},
 			},
 		}
-		assertDeniedResponse(t, []string{errorHostPattersIsRequired}, ec)
+		assertDenied(t, []string{errorHostPattersIsRequired}, ec)
 	})
 }
