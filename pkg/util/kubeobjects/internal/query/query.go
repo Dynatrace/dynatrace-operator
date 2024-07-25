@@ -56,6 +56,13 @@ func (c Generic[T, L]) Create(ctx context.Context, object T) error {
 func (c Generic[T, L]) Update(ctx context.Context, object T) error {
 	c.log(object).Info("updating")
 
+	if c.Owner != nil {
+		err := controllerutil.SetControllerReference(c.Owner, object, scheme.Scheme)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
 	return errors.WithStack(c.KubeClient.Update(ctx, object))
 }
 
