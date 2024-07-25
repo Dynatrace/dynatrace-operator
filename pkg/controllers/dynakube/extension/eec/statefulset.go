@@ -24,6 +24,7 @@ const (
 	runtimePersistentVolumeClaimName = statefulsetName + "-runtime"
 	containerName                    = "extensions-controller"
 	collectorPort                    = int32(14599)
+	serviceAccountName               = "dynatrace-extensions-controller"
 
 	envTenantId                     = "TenantId"
 	envServerUrl                    = "ServerUrl"
@@ -93,6 +94,9 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		statefulset.SetAffinity(buildAffinity()),
 		statefulset.SetTolerations(r.dk.Spec.Templates.ExtensionExecutionController.Tolerations),
 		statefulset.SetTopologySpreadConstraints(buildTopologySpreadConstraints(r.dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints, r.dk.Name)),
+		statefulset.SetServiceAccount(serviceAccountName),
+		statefulset.SetSecurityContext(buildPodSecurityContext()),
+		statefulset.SetUpdateStrategy(buildUpdateStrategy()),
 		setTlsRef(r.dk.Spec.Templates.ExtensionExecutionController.TlsRefName),
 		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
 		setVolumes(r.dk.Name, r.dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim),
@@ -171,6 +175,17 @@ func buildDefaultTopologySpreadConstraints(dynakubeName string) []corev1.Topolog
 	}
 }
 
+func buildUpdateStrategy() appsv1.StatefulSetUpdateStrategy {
+	partition := int32(0)
+
+	return appsv1.StatefulSetUpdateStrategy{
+		RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{
+			Partition: &partition,
+		},
+		Type: appsv1.RollingUpdateStatefulSetStrategyType,
+	}
+}
+
 func setTlsRef(tlsRefName string) func(o *appsv1.StatefulSet) {
 	return func(o *appsv1.StatefulSet) {
 
@@ -217,6 +232,14 @@ func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 
 func buildSecurityContext() *corev1.SecurityContext {
 	return &corev1.SecurityContext{
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
+	}
+}
+
+func buildPodSecurityContext() *corev1.PodSecurityContext {
+	return &corev1.PodSecurityContext{
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},

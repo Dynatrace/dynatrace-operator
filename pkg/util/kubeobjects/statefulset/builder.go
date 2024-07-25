@@ -93,3 +93,22 @@ func SetContainer(container corev1.Container) builder.Option[*appsv1.StatefulSet
 		s.Spec.Template.Spec.Containers[targetIndex] = container
 	}
 }
+
+func SetServiceAccount(serviceAccountName string) builder.Option[*appsv1.StatefulSet] {
+	return func(s *appsv1.StatefulSet) {
+		s.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+		s.Spec.Template.Spec.DeprecatedServiceAccount = serviceAccountName
+	}
+}
+
+func SetSecurityContext(securityContext *corev1.PodSecurityContext) builder.Option[*appsv1.StatefulSet] {
+	return func(s *appsv1.StatefulSet) {
+		s.Spec.Template.Spec.SecurityContext = securityContext
+	}
+}
+
+func SetUpdateStrategy(updateStartegy appsv1.StatefulSetUpdateStrategy) builder.Option[*appsv1.StatefulSet] {
+	return func(s *appsv1.StatefulSet) {
+		s.Spec.UpdateStrategy = updateStartegy
+	}
+}
