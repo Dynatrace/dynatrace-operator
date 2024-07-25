@@ -60,7 +60,7 @@ func TestStatefulSetBuilder(t *testing.T) {
 		}
 		appLabels := labels.NewAppLabels(testAppName, testDynakubeName, labels.ExtensionComponentLabel, testVersion)
 		statefulSet, err := Build(
-			createDeployment(), testStatefulSetName, container, SetAllLabels(appLabels, customLabels))
+			createDeployment(), testStatefulSetName, container, SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), customLabels))
 		require.NoError(t, err)
 		require.Len(t, statefulSet.OwnerReferences, 1)
 		assert.Equal(t, testDeploymentName, statefulSet.OwnerReferences[0].Name)

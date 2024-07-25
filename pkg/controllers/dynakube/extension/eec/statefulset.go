@@ -49,10 +49,11 @@ const (
 )
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
+	appLabels := buildAppLabels(r.dk.Name)
 	desiredSts, err := statefulset.Build(r.dk, statefulsetName, buildContainer(r.dk),
 		statefulset.SetReplicas(1),
 		statefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
-		statefulset.SetAllLabels(buildAppLabels(r.dk.Name), r.dk.Spec.Templates.ExtensionExecutionController.Labels),
+		statefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), r.dk.Spec.Templates.ExtensionExecutionController.Labels),
 		statefulset.SetAllAnnotations(r.dk.Spec.Templates.ExtensionExecutionController.Annotations),
 		statefulset.SetAffinity(buildAffinity()),
 		statefulset.SetTolerations(r.dk.Spec.Templates.ExtensionExecutionController.Tolerations),
