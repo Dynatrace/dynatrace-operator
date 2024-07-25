@@ -74,7 +74,7 @@ func (dtc *dynatraceClient) getProcessModuleConfigUrl() string {
 }
 
 func (dtc *dynatraceClient) getEventsUrl() string {
-	return dtc.url + "/v2/events/ingest"
+	return dtc.url + "/v1/events"
 }
 
 func (dtc *dynatraceClient) getTokensLookupUrl() string {

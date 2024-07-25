@@ -174,7 +174,7 @@ func handleRequest(request *http.Request, writer http.ResponseWriter) {
 		(&ipHandler{}).ServeHTTP(writer, request)
 	case "/v1/deployment/installer/agent/connectioninfo":
 		handleCommunicationHosts(request, writer)
-	case "/v2/events/ingest":
+	case "/v1/events":
 		handleSendEvent(request, writer)
 	case "/v2/apiTokens/lookup":
 		handleTokenScopes(request, writer)
