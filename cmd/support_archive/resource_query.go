@@ -3,8 +3,8 @@ package support_archive
 import (
 	"reflect"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -87,7 +87,7 @@ func getCustomResourcesQueryGroup(namespace string) resourceQueryGroup {
 	return resourceQueryGroup{
 		resources: []schema.GroupVersionKind{
 			toGroupVersionKind(v1beta3.GroupVersion, dynakube.DynaKube{}),
-			toGroupVersionKind(v1alpha1.GroupVersion, edgeconnect.EdgeConnect{}),
+			toGroupVersionKind(v1beta1.GroupVersion, edgeconnect.EdgeConnect{}),
 		},
 		filters: []client.ListOption{
 			client.InNamespace(namespace),

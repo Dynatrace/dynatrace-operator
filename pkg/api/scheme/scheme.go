@@ -21,6 +21,7 @@ import (
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube" //nolint:staticcheck
+	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube" //nolint:staticcheck
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3"

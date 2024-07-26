@@ -1,6 +1,6 @@
 // +kubebuilder:object:generate=true
 // +groupName=dynatrace.com
-// +versionName=v1alpha1
+// +versionName=v1beta1
 // +kubebuilder:validation:Optional
 package edgeconnect
 
@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -46,7 +46,7 @@ type EdgeConnectSpec struct { //nolint:revive
 
 	// Restrict outgoing HTTP requests to your internal resources to specified hosts
 	// +kubebuilder:example:="internal.example.org,*.dev.example.org"
-	HostRestrictions string `json:"hostRestrictions,omitempty"`
+	HostRestrictions []string `json:"hostRestrictions,omitempty"`
 
 	// Pull secret for your private registry
 	CustomPullSecret string `json:"customPullSecret,omitempty"`
@@ -166,6 +166,7 @@ func (dk *EdgeConnectStatus) SetPhase(phase status.DeploymentPhase) bool {
 // +kubebuilder:printcolumn:name="ApiServer",type=string,JSONPath=`.spec.apiServer`
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
+// +kubebuilder:storageversion
 type EdgeConnect struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -191,7 +192,7 @@ const (
 )
 
 func init() {
-	v1alpha1.SchemeBuilder.Register(&EdgeConnect{}, &EdgeConnectList{})
+	v1beta1.SchemeBuilder.Register(&EdgeConnect{}, &EdgeConnectList{})
 }
 
 func (e *EdgeConnect) HostPatterns() []string {

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	edgeconnectv1alpha "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+	edgeconnectv1alpha "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/edgeconnect"
 	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
 	controller "github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
