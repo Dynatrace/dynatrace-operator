@@ -38,6 +38,7 @@ var (
 		namespaceSelectorViolateLabelSpec,
 		imageFieldHasTenantImage,
 		validateOneAgentVersionIsSemVerCompliant,
+		extensionControllerImage,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,
