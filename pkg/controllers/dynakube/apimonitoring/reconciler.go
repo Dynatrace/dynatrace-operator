@@ -52,10 +52,14 @@ func (r *Reconciler) createObjectIdIfNotExists(ctx context.Context) (string, err
 		return "", err
 	}
 
-	monitoredEntity := []dtclient.MonitoredEntity{
-		{
-			EntityId: r.dk.Status.KubernetesClusterMEID,
-		},
+	var monitoredEntity []dtclient.MonitoredEntity
+
+	if r.dk.Status.KubernetesClusterMEID != "" {
+		monitoredEntity = []dtclient.MonitoredEntity{
+			{
+				EntityId: r.dk.Status.KubernetesClusterMEID,
+			},
+		}
 	}
 
 	objectID, err := r.dtc.CreateOrUpdateKubernetesSetting(ctx, r.clusterLabel, r.dk.Status.KubeSystemUUID, r.dk.Status.KubernetesClusterMEID)
