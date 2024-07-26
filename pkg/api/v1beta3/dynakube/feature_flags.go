@@ -74,7 +74,7 @@ const (
 )
 
 const (
-	DefaultMaxFailedCsiMountAttempts        = 10
+	DefaultMaxFailedCsiMountAttempts        = "10m"
 	DefaultMinRequestThresholdMinutes       = 15
 	IstioDefaultOneAgentInitialConnectRetry = 6000
 )
@@ -227,9 +227,9 @@ func (dk *DynaKube) FeatureOneAgentPrivileged() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureRunOneAgentContainerPrivileged) == truePhrase
 }
 
-func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
-	maxCsiMountAttemptsValue := dk.getFeatureFlagInt(AnnotationFeatureMaxFailedCsiMountAttempts, DefaultMaxFailedCsiMountAttempts)
-	if maxCsiMountAttemptsValue < 0 {
+func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() string {
+	maxCsiMountAttemptsValue := dk.getFeatureFlagRaw(AnnotationFeatureMaxFailedCsiMountAttempts)
+	if maxCsiMountAttemptsValue == "" {
 		return DefaultMaxFailedCsiMountAttempts
 	}
 

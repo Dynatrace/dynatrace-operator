@@ -1,17 +1,21 @@
 package csivolumes
 
 import (
+	"time"
+
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 const (
-	PodNameContextKey = "csi.storage.k8s.io/pod.name"
+	PodNameContextKey       = "csi.storage.k8s.io/pod.name"
+	NamespaceNameContextKey = "csi.storage.k8s.io/pod.namespace"
 
 	// CSIVolumeAttributeModeField used for identifying the origin of the NodePublishVolume request
-	CSIVolumeAttributeModeField     = "mode"
-	CSIVolumeAttributeDynakubeField = "dynakube"
+	CSIVolumeAttributeModeField         = "mode"
+	CSIVolumeAttributeVersionField      = "version"
+	CSIVolumeAttributeMountTimeoutField = "timeout"
 )
 
 // Represents the basic information about a volume
@@ -23,9 +27,11 @@ type VolumeInfo struct {
 // Represents the config needed to mount a volume
 type VolumeConfig struct {
 	VolumeInfo
-	PodName      string
-	Mode         string
-	DynakubeName string
+	Pod       string
+	Namespace string
+	Version   string
+	Timeout   time.Duration
+	Mode      string
 }
 
 // Transforms the NodePublishVolumeRequest into a VolumeConfig
@@ -62,14 +68,28 @@ func ParseNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*VolumeCo
 		return nil, status.Error(codes.InvalidArgument, "No Pod Name included with request")
 	}
 
+	namespaceName := volCtx[NamespaceNameContextKey]
+	if podName == "" {
+		return nil, status.Error(codes.InvalidArgument, "No Namespace Name included with request")
+	}
+
 	mode := volCtx[CSIVolumeAttributeModeField]
 	if mode == "" {
 		return nil, status.Error(codes.InvalidArgument, "No mode attribute included with request")
 	}
 
-	dynakubeName := volCtx[CSIVolumeAttributeDynakubeField]
-	if dynakubeName == "" {
-		return nil, status.Error(codes.InvalidArgument, "No dynakube attribute included with request")
+	version := volCtx[CSIVolumeAttributeVersionField]
+	if version == "" {
+		return nil, status.Error(codes.InvalidArgument, "No version attribute included with request")
+	}
+
+	timeoutStr := volCtx[CSIVolumeAttributeMountTimeoutField]
+	if timeoutStr == "" {
+		return nil, status.Error(codes.InvalidArgument, "No timeout attribute included with request")
+	}
+	timeout, err := time.ParseDuration(timeoutStr)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "timeout attribute does not follow the golang time.Duration format")
 	}
 
 	return &VolumeConfig{
@@ -77,9 +97,11 @@ func ParseNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*VolumeCo
 			VolumeID:   volID,
 			TargetPath: targetPath,
 		},
-		PodName:      podName,
-		Mode:         mode,
-		DynakubeName: dynakubeName,
+		Pod:       podName,
+		Namespace: namespaceName,
+		Mode:      mode,
+		Version:   version,
+		Timeout:   timeout,
 	}, nil
 }
 

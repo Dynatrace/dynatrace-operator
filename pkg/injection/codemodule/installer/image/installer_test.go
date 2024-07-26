@@ -37,7 +37,7 @@ func TestIsAlreadyPresent(t *testing.T) {
 				PathResolver: pathResolver,
 			},
 		}
-		isDownloaded := installer.isAlreadyPresent(pathResolver.AgentSharedBinaryDirForAgent(imageDigest))
+		isDownloaded := installer.isAlreadyPresent(pathResolver.SharedCodeModulesDirForVersion(imageDigest))
 		assert.False(t, isDownloaded)
 	})
 	t.Run("returns true if path present", func(t *testing.T) {
@@ -47,14 +47,14 @@ func TestIsAlreadyPresent(t *testing.T) {
 				PathResolver: pathResolver,
 			},
 		}
-		isDownloaded := installer.isAlreadyPresent(pathResolver.AgentSharedBinaryDirForAgent(imageDigest))
+		isDownloaded := installer.isAlreadyPresent(pathResolver.SharedCodeModulesDirForVersion(imageDigest))
 		assert.True(t, isDownloaded)
 	})
 }
 
 func testFileSystemWithSharedDirPresent(pathResolver metadata.PathResolver, imageDigest string) afero.Fs {
 	fs := afero.NewMemMapFs()
-	_ = fs.MkdirAll(pathResolver.AgentSharedBinaryDirForAgent(imageDigest), 0777)
+	_ = fs.MkdirAll(pathResolver.SharedCodeModulesDirForVersion(imageDigest), 0777)
 
 	return fs
 }

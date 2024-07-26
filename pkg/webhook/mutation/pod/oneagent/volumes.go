@@ -1,6 +1,7 @@
 package oneagent
 
 import (
+	"encoding/base64"
 	"fmt"
 	"path/filepath"
 
@@ -161,13 +162,20 @@ func addVolumesForReadOnlyCSI(pod *corev1.Pod) {
 
 func getInstallerVolumeSource(dk dynakube.DynaKube) corev1.VolumeSource {
 	volumeSource := corev1.VolumeSource{}
+	version := dk.CodeModulesImage()
+	if version != "" {
+		version = base64.StdEncoding.EncodeToString([]byte(version)) // TODO: generalize logic between CSI and Webhook
+	} else {
+		version = dk.CodeModulesVersion()
+	}
 	if dk.NeedsCSIDriver() {
 		volumeSource.CSI = &corev1.CSIVolumeSource{
 			Driver:   dtcsi.DriverName,
 			ReadOnly: address.Of(dk.FeatureReadOnlyCsiVolume()),
 			VolumeAttributes: map[string]string{
-				csivolumes.CSIVolumeAttributeModeField:     appvolumes.Mode,
-				csivolumes.CSIVolumeAttributeDynakubeField: dk.Name,
+				csivolumes.CSIVolumeAttributeModeField:    appvolumes.Mode,
+				csivolumes.CSIVolumeAttributeVersionField: version,
+				csivolumes.CSIVolumeAttributeMountTimeoutField: dk.FeatureMaxFailedCsiMountAttempts(),
 			},
 		}
 	} else {

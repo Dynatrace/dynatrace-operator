@@ -12,14 +12,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 )
 
 func (provisioner *OneAgentProvisioner) installAgentImage(
 	ctx context.Context,
 	dk dynakube.DynaKube,
-	latestProcessModuleConfig *dtclient.ProcessModuleConfig,
 ) (
 	targetImage string,
 	err error,
@@ -33,17 +31,21 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 	// An image URI often contains one or several /-s, which is problematic when trying to use it as a folder name.
 	// Easiest to just base64 encode it
 	base64Image := base64.StdEncoding.EncodeToString([]byte(targetImage))
-	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(base64Image)
-	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dk.GetName())
+	targetDir := provisioner.path.SharedCodeModulesDirForVersion(base64Image)
 
-	defer func() {
-		if err == nil {
-			err = processmoduleconfig.CreateAgentConfigDir(provisioner.fs, targetConfigDir, targetDir, latestProcessModuleConfig)
-		}
-	}()
+	// defer func() {
+	// 	if err == nil {
+	// 		targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dk.GetName())
+	// 		err = processmoduleconfig.CreateAgentConfigDir(provisioner.fs, targetConfigDir, targetDir, latestProcessModuleConfig)
+	// 	}
+	// }()
 
-	codeModule, err := provisioner.db.ReadCodeModule(metadata.CodeModule{Version: targetImage})
-	if codeModule != nil {
+	targetExists, err := provisioner.fs.DirExists(targetDir)
+	if err != nil {
+		return "", err
+	}
+
+	if targetExists {
 		log.Info("target image already downloaded", "image", targetImage, "path", targetDir)
 
 		return targetImage, nil
@@ -54,7 +56,6 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 		ApiReader:    provisioner.apiReader,
 		Dynakube:     &dk,
 		PathResolver: provisioner.path,
-		Metadata:     provisioner.db,
 	}
 
 	imageInstaller, err := provisioner.imageInstallerBuilder(ctx, provisioner.fs, props)
@@ -72,37 +73,32 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 		return "", err
 	}
 
-	err = provisioner.db.CreateCodeModule(&metadata.CodeModule{
-		Version:  targetImage,
-		Location: targetDir,
-	})
-	if err != nil {
-		return "", err
-	}
-
 	return targetImage, err
 }
 
-func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dk dynakube.DynaKube, dtc dtclient.Client, latestProcessModuleConfig *dtclient.ProcessModuleConfig) (string, error) {
+func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dk dynakube.DynaKube, dtc dtclient.Client) (string, error) {
 	tenantUUID, err := dk.TenantUUIDFromConnectionInfoStatus()
 	if err != nil {
 		return "", err
 	}
 
 	targetVersion := dk.CodeModulesVersion()
+	targetDir := provisioner.path.SharedCodeModulesDirForVersion(targetVersion)
 	urlInstaller := provisioner.urlInstallerBuilder(provisioner.fs, dtc, getUrlProperties(targetVersion, provisioner.path))
 
-	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(targetVersion)
-	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dk.GetName())
+	// defer func() {
+	// 	if err == nil {
+	// 		targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dk.GetName())
+	// 		err = processmoduleconfig.CreateAgentConfigDir(provisioner.fs, targetConfigDir, targetDir, latestProcessModuleConfig)
+	// 	}
+	// }()
 
-	defer func() {
-		if err == nil {
-			err = processmoduleconfig.CreateAgentConfigDir(provisioner.fs, targetConfigDir, targetDir, latestProcessModuleConfig)
-		}
-	}()
+	targetExists, err := provisioner.fs.DirExists(targetDir)
+	if err != nil {
+		return "", err
+	}
 
-	codeModule, err := provisioner.db.ReadCodeModule(metadata.CodeModule{Version: targetVersion})
-	if codeModule != nil {
+	if targetExists {
 		log.Info("target version already downloaded", "version", targetVersion, "path", targetDir)
 
 		return targetVersion, nil
@@ -115,14 +111,6 @@ func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dk 
 	if err != nil {
 		span.RecordError(err)
 
-		return "", err
-	}
-
-	err = provisioner.db.CreateCodeModule(&metadata.CodeModule{
-		Version:  targetVersion,
-		Location: targetDir,
-	})
-	if err != nil {
 		return "", err
 	}
 

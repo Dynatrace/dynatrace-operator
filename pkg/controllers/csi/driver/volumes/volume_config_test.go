@@ -12,7 +12,7 @@ const (
 	testVolumeId     = "a-volume-id"
 	testTargetPath   = "a-target-path"
 	testPodUID       = "a-pod-uid"
-	testDynakubeName = "a-dynakube"
+	testVersion = "a-dynakube"
 )
 
 func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
@@ -107,8 +107,8 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			VolumeId:   testVolumeId,
 			TargetPath: testTargetPath,
 			VolumeContext: map[string]string{
-				PodNameContextKey:               testPodUID,
-				CSIVolumeAttributeDynakubeField: testDynakubeName,
+				PodNameContextKey:              testPodUID,
+				CSIVolumeAttributeVersionField: testVersion,
 			},
 		}
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
@@ -145,9 +145,9 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			VolumeId:   testVolumeId,
 			TargetPath: testTargetPath,
 			VolumeContext: map[string]string{
-				PodNameContextKey:               testPodUID,
-				CSIVolumeAttributeDynakubeField: testDynakubeName,
-				CSIVolumeAttributeModeField:     "test",
+				PodNameContextKey:              testPodUID,
+				CSIVolumeAttributeVersionField: testVersion,
+				CSIVolumeAttributeModeField:    "test",
 			},
 		}
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
@@ -156,8 +156,8 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		assert.NotNil(t, volumeCfg)
 		assert.Equal(t, testVolumeId, volumeCfg.VolumeID)
 		assert.Equal(t, testTargetPath, volumeCfg.TargetPath)
-		assert.Equal(t, testPodUID, volumeCfg.PodName)
+		assert.Equal(t, testPodUID, volumeCfg.Pod)
 		assert.Equal(t, "test", volumeCfg.Mode)
-		assert.Equal(t, testDynakubeName, volumeCfg.DynakubeName)
+		assert.Equal(t, testVersion, volumeCfg.Version)
 	})
 }

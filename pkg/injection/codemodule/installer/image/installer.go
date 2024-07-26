@@ -25,7 +25,6 @@ type Properties struct {
 	ApiReader    client.Reader
 	Dynakube     *dynakube.DynaKube
 	PathResolver metadata.PathResolver
-	Metadata     metadata.Access
 	ImageDigest  string
 }
 
@@ -68,7 +67,7 @@ func (installer *Installer) InstallAgent(_ context.Context, targetDir string) (b
 		return false, nil
 	}
 
-	err := installer.fs.MkdirAll(installer.props.PathResolver.AgentSharedBinaryDirBase(), common.MkDirFileMode)
+	err := installer.fs.MkdirAll(installer.props.PathResolver.SharedCodeModulesBaseDir(), common.MkDirFileMode)
 	if err != nil {
 		log.Info("failed to create the base shared agent directory", "err", err)
 

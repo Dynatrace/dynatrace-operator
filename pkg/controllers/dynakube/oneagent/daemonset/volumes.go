@@ -95,7 +95,7 @@ func prepareVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 	volumes = append(volumes, getOneAgentSecretVolume(dk))
 
 	if dk.NeedsReadOnlyOneAgents() {
-		volumes = append(volumes, getCSIStorageVolume(dk))
+		volumes = append(volumes, getCSIStorageVolume())
 	}
 
 	if dk.Spec.TrustedCAs != "" {
@@ -132,15 +132,16 @@ func getCertificateVolume(dk *dynakube.DynaKube) corev1.Volume {
 	}
 }
 
-func getCSIStorageVolume(dk *dynakube.DynaKube) corev1.Volume {
+func getCSIStorageVolume() corev1.Volume {
 	return corev1.Volume{
 		Name: csiStorageVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			CSI: &corev1.CSIVolumeSource{
 				Driver: dtcsi.DriverName,
 				VolumeAttributes: map[string]string{
-					csivolumes.CSIVolumeAttributeModeField:     hostvolumes.Mode,
-					csivolumes.CSIVolumeAttributeDynakubeField: dk.Name,
+					csivolumes.CSIVolumeAttributeModeField:         hostvolumes.Mode,
+					csivolumes.CSIVolumeAttributeVersionField:      "placeholder",
+					csivolumes.CSIVolumeAttributeMountTimeoutField: "5m",
 				},
 			},
 		},

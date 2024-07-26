@@ -3,15 +3,13 @@ package init
 import (
 	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"golang.org/x/sys/unix"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+
 )
 
 const use = "csi-init"
@@ -54,49 +52,13 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		version.LogVersion()
 		logd.LogBaseLoggerSettings()
 
-		kubeConfig, err := builder.configProvider.GetConfig()
+		err := createCsiDataPath(afero.NewOsFs())
 		if err != nil {
 			return err
 		}
 
-		csiManager, err := createManager(builder.namespace, kubeConfig)
-		if err != nil {
-			log.Info("failed to create/configure kubernetes client, will only run non-network related corrections and checks", "err", err.Error())
-		}
+		// TODO: Implement migration logic
 
-		err = createCsiDataPath(afero.NewOsFs())
-		if err != nil {
-			return err
-		}
-
-		signalHandler := ctrl.SetupSignalHandler()
-
-		// new schema
-		access, err := metadata.NewAccess(signalHandler, dtcsi.MetadataAccessPath)
-		if err != nil {
-			return err
-		}
-		// new migrations
-		err = access.SchemaMigration()
-		if err != nil {
-			return err
-		}
-
-		csiOptions := dtcsi.CSIOptions{
-			NodeId:   nodeId,
-			Endpoint: endpoint,
-			RootDir:  dtcsi.DataPath,
-		}
-
-		var apiReader client.Reader
-		if csiManager != nil {
-			apiReader = csiManager.GetAPIReader()
-		}
-
-		err = metadata.NewCorrectnessChecker(apiReader, access, csiOptions).CorrectCSI(signalHandler)
-		if err != nil {
-			return err
-		}
 
 		return nil
 	}

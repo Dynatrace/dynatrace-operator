@@ -46,7 +46,6 @@ type Server struct {
 
 	fs      afero.Afero
 	mounter mount.Interface
-	db      metadata.Access
 
 	publishers map[string]csivolumes.Publisher
 	opts       dtcsi.CSIOptions
@@ -56,12 +55,11 @@ type Server struct {
 var _ csi.IdentityServer = &Server{}
 var _ csi.NodeServer = &Server{}
 
-func NewServer(opts dtcsi.CSIOptions, db metadata.Access) *Server {
+func NewServer(opts dtcsi.CSIOptions) *Server {
 	return &Server{
 		opts:    opts,
 		fs:      afero.Afero{Fs: afero.NewOsFs()},
 		mounter: mount.New(""),
-		db:      db,
 		path:    metadata.PathResolver{RootDir: opts.RootDir},
 	}
 }
@@ -71,8 +69,6 @@ func (svr *Server) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (svr *Server) Start(ctx context.Context) error {
-	defer metadata.LogAccessOverview(svr.db)
-
 	proto, addr, err := parseEndpoint(svr.opts.Endpoint)
 	if err != nil {
 		return fmt.Errorf("failed to parse endpoint '%s': %w", svr.opts.Endpoint, err)
@@ -85,8 +81,8 @@ func (svr *Server) Start(ctx context.Context) error {
 	}
 
 	svr.publishers = map[string]csivolumes.Publisher{
-		appvolumes.Mode:  appvolumes.NewAppVolumePublisher(svr.fs, svr.mounter, svr.db, svr.path),
-		hostvolumes.Mode: hostvolumes.NewHostVolumePublisher(svr.fs, svr.mounter, svr.db, svr.path),
+		appvolumes.Mode:  appvolumes.NewAppVolumePublisher(svr.fs, svr.mounter, svr.path),
+		hostvolumes.Mode: hostvolumes.NewHostVolumePublisher(svr.fs, svr.mounter, svr.path),
 	}
 
 	log.Info("starting listener", "protocol", proto, "address", addr)

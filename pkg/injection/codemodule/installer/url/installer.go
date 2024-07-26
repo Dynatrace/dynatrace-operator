@@ -60,7 +60,7 @@ func (installer Installer) InstallAgent(ctx context.Context, targetDir string) (
 		return false, nil
 	}
 
-	err := installer.fs.MkdirAll(installer.props.PathResolver.AgentSharedBinaryDirBase(), common.MkDirFileMode)
+	err := installer.fs.MkdirAll(installer.props.PathResolver.SharedCodeModulesBaseDir(), common.MkDirFileMode)
 	if err != nil {
 		log.Info("failed to create the base shared agent directory", "err", err)
 

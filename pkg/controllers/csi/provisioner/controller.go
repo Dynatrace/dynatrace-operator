@@ -27,15 +27,13 @@ import (
 	csiotel "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/internal/otel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
+	// "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
-	"github.com/pkg/errors"
 	"github.com/spf13/afero"
-	"gorm.io/gorm"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -52,9 +50,8 @@ type imageInstallerBuilder func(context.Context, afero.Fs, *image.Properties) (i
 type OneAgentProvisioner struct {
 	client    client.Client
 	apiReader client.Reader
-	fs        afero.Fs
+	fs        afero.Afero
 	recorder  record.EventRecorder
-	db        metadata.Access
 	gc        reconcile.Reconciler
 
 	dynatraceClientBuilder dynatraceclient.Builder
@@ -65,16 +62,15 @@ type OneAgentProvisioner struct {
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
-func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.AccessCleaner) *OneAgentProvisioner {
+func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgentProvisioner {
 	return &OneAgentProvisioner{
 		client:                 mgr.GetClient(),
 		apiReader:              mgr.GetAPIReader(),
 		opts:                   opts,
-		fs:                     afero.NewOsFs(),
+		fs:                     afero.Afero{Fs: afero.NewOsFs()},
 		recorder:               mgr.GetEventRecorderFor("OneAgentProvisioner"),
-		db:                     db,
 		path:                   metadata.PathResolver{RootDir: opts.RootDir},
-		gc:                     csigc.NewCSIGarbageCollector(mgr.GetAPIReader(), opts, db),
+		gc:                     csigc.NewCSIGarbageCollector(mgr.GetAPIReader(), opts),
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
 		urlInstallerBuilder:    url.NewUrlInstaller,
 		imageInstallerBuilder:  image.NewImageInstaller,
@@ -104,16 +100,6 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return provisioner.collectGarbage(ctx, request)
 	}
 
-	err = provisioner.setupFileSystem(dk)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	tenantConfig, err := provisioner.setupTenantConfig(dk) // needed for the CSI-resilience feature
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
 	if !dk.NeedAppInjection() {
 		log.Info("app injection not necessary, skip agent codemodule download", "dynakube", dk.Name)
 
@@ -126,7 +112,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{RequeueAfter: dtcsi.ShortRequeueDuration}, err
 	}
 
-	requeue, err := provisioner.provisionCodeModules(ctx, dk, tenantConfig)
+	requeue, err := provisioner.provisionCodeModules(ctx, dk)
 	if err != nil {
 		if requeue {
 			return reconcile.Result{RequeueAfter: dtcsi.ShortRequeueDuration}, err
@@ -143,12 +129,7 @@ func (provisioner *OneAgentProvisioner) needsReconcile(ctx context.Context, requ
 	dk, err := provisioner.getDynaKube(ctx, request.NamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			log.Info("DynaKube was deleted, running cleanup")
-
-			err := provisioner.db.DeleteTenantConfig(&metadata.TenantConfig{Name: request.Name}, true)
-			if err != nil {
-				return nil, err
-			}
+			log.Info("DynaKube was deleted, nothing to do")
 		}
 
 		return nil, nil //nolint: nilnil
@@ -157,62 +138,10 @@ func (provisioner *OneAgentProvisioner) needsReconcile(ctx context.Context, requ
 	if !dk.NeedsCSIDriver() {
 		log.Info("CSI driver provisioner not needed")
 
-		err = provisioner.db.DeleteTenantConfig(&metadata.TenantConfig{Name: dk.Name}, true)
-		if err != nil {
-			return nil, err
-		}
-
 		return nil, nil //nolint: nilnil
 	}
 
 	return dk, nil
-}
-
-func (provisioner *OneAgentProvisioner) setupFileSystem(dk *dynakube.DynaKube) error {
-	tenantUUID, err := dk.TenantUUIDFromApiUrl()
-	if err != nil {
-		return err
-	}
-
-	if err := provisioner.createCSIDirectories(tenantUUID); err != nil {
-		log.Error(err, "error when creating csi directories", "path", provisioner.path.TenantDir(tenantUUID))
-
-		return errors.WithStack(err)
-	}
-
-	log.Info("csi directories exist", "path", provisioner.path.TenantDir(tenantUUID))
-
-	return nil
-}
-
-func (provisioner *OneAgentProvisioner) setupTenantConfig(dk *dynakube.DynaKube) (*metadata.TenantConfig, error) {
-	metadataTenantConfig, err := provisioner.handleMetadata(dk)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create/update the Dynakube's metadata TenantConfig entry while `LatestVersion` is not necessarily set
-	// so the host oneagent-storages can be mounted before the standalone agent binaries are ready to be mounted
-	tenantConfig, err := provisioner.db.ReadTenantConfig(metadata.TenantConfig{Name: metadataTenantConfig.Name})
-	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
-		err = provisioner.db.CreateTenantConfig(metadataTenantConfig)
-		if err != nil {
-			return nil, err
-		}
-
-		return metadataTenantConfig, nil
-	} else if err != nil {
-		return nil, err
-	}
-
-	metadataTenantConfig.UID = tenantConfig.UID
-	err = provisioner.db.UpdateTenantConfig(metadataTenantConfig)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return metadataTenantConfig, nil
 }
 
 func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -230,22 +159,16 @@ func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, requ
 	return result, nil
 }
 
-func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context, dk *dynakube.DynaKube, tenantConfig *metadata.TenantConfig) (requeue bool, err error) {
+func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context, dk *dynakube.DynaKube) (requeue bool, err error) {
 	// creates a dt client and checks tokens exist for the given dynakube
 	dtc, err := buildDtc(provisioner, ctx, dk)
 	if err != nil {
 		return true, err
 	}
 
-	requeue, err = provisioner.updateAgentInstallation(ctx, dtc, tenantConfig, dk)
+	requeue, err = provisioner.updateAgentInstallation(ctx, dtc, dk)
 	if err != nil {
 		return requeue, err
-	}
-
-	// Set/Update the `LatestVersion` field in the database entry
-	err = provisioner.db.UpdateTenantConfig(tenantConfig)
-	if err != nil {
-		return true, err
 	}
 
 	return false, nil
@@ -253,7 +176,6 @@ func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context
 
 func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 	ctx context.Context, dtc dtclient.Client,
-	tenantConfig *metadata.TenantConfig,
 	dk *dynakube.DynaKube,
 ) (
 	requeue bool,
@@ -262,54 +184,30 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
 	defer span.End()
 
-	latestProcessModuleConfig, err := processmoduleconfigsecret.GetSecretData(ctx, provisioner.apiReader, dk.Name, dk.Namespace)
-	if err != nil {
-		span.RecordError(err)
+	// latestProcessModuleConfig, err := processmoduleconfigsecret.GetSecretData(ctx, provisioner.apiReader, dk.Name, dk.Namespace)
+	// if err != nil {
+	// 	span.RecordError(err)
 
-		return false, err
-	}
+	// 	return false, err
+	// }
 
 	if dk.CodeModulesImage() != "" {
-		updatedImageURI, err := provisioner.installAgentImage(ctx, *dk, latestProcessModuleConfig)
+		_, err := provisioner.installAgentImage(ctx, *dk)
 		if err != nil {
 			log.Info("error when updating agent from image", "error", err.Error())
 			// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
 			return true, nil
 		}
-
-		tenantConfig.DownloadedCodeModuleVersion = updatedImageURI
 	} else {
-		updateVersion, err := provisioner.installAgentZip(ctx, *dk, dtc, latestProcessModuleConfig)
+		_, err := provisioner.installAgentZip(ctx, *dk, dtc)
 		if err != nil {
 			log.Info("error when updating agent from zip", "error", err.Error())
 			// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
 			return true, nil
 		}
-
-		if updateVersion != "" {
-			tenantConfig.DownloadedCodeModuleVersion = updateVersion
-		}
 	}
 
 	return false, nil
-}
-
-func (provisioner *OneAgentProvisioner) handleMetadata(dk *dynakube.DynaKube) (*metadata.TenantConfig, error) {
-	tenantUUID, err := dk.TenantUUIDFromApiUrl() // TODO update to use the tenant uuid from the DynaKube status
-	if err != nil {
-		return nil, err
-	}
-
-	newTenantConfig := &metadata.TenantConfig{
-		UID:                         string(dk.UID),
-		Name:                        dk.Name,
-		TenantUUID:                  tenantUUID,
-		DownloadedCodeModuleVersion: dk.CodeModulesVersion(),
-		MaxFailedMountAttempts:      int64(dk.FeatureMaxFailedCsiMountAttempts()),
-		ConfigDirPath:               provisioner.path.AgentConfigDir(tenantUUID, dk.Name),
-	}
-
-	return newTenantConfig, nil
 }
 
 func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynakube.DynaKube) (dtclient.Client, error) {
@@ -342,18 +240,4 @@ func (provisioner *OneAgentProvisioner) getDynaKube(ctx context.Context, name ty
 	span.RecordError(err)
 
 	return &dk, err
-}
-
-func (provisioner *OneAgentProvisioner) createCSIDirectories(tenantUUID string) error {
-	tenantDir := provisioner.path.TenantDir(tenantUUID)
-	if err := provisioner.fs.MkdirAll(tenantDir, 0755); err != nil {
-		return fmt.Errorf("failed to create directory %s: %w", tenantDir, err)
-	}
-
-	agentBinaryDir := provisioner.path.AgentBinaryDir(tenantUUID)
-	if err := provisioner.fs.MkdirAll(agentBinaryDir, 0755); err != nil {
-		return fmt.Errorf("failed to create directory %s: %w", agentBinaryDir, err)
-	}
-
-	return nil
 }

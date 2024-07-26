@@ -92,7 +92,7 @@ func TestPrepareVolumes(t *testing.T) {
 			},
 		}
 		volumes := prepareVolumes(dk)
-		assert.NotContains(t, volumes, getCSIStorageVolume(dk))
+		assert.NotContains(t, volumes, getCSIStorageVolume())
 	})
 	t.Run(`has all volumes`, func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -124,7 +124,7 @@ func TestPrepareVolumes(t *testing.T) {
 		assert.Contains(t, volumes, getRootVolume())
 		assert.Contains(t, volumes, getCertificateVolume(dk))
 		assert.Contains(t, volumes, getActiveGateCaCertVolume(dk))
-		assert.Contains(t, volumes, getCSIStorageVolume(dk))
+		assert.Contains(t, volumes, getCSIStorageVolume())
 	})
 }
 
