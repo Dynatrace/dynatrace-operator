@@ -8,6 +8,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -173,6 +174,11 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dk *d
 		oneAgentNoProxy = capability.BuildDNSEntryPointWithoutEnvVars(dk.Name, dk.Namespace, multiCap)
 	}
 
+	pmcConfig, err := processmoduleconfigsecret.GetSecretData(ctx, g.apiReader, dk.Name, dk.Namespace)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
 	return &startup.SecretConfig{
 		ApiUrl:              dk.Spec.APIURL,
 		ApiToken:            getAPIToken(tokens),
@@ -190,6 +196,7 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dk *d
 		EnforcementMode:     dk.FeatureEnforcementMode(),
 		ReadOnlyCSIDriver:   dk.FeatureReadOnlyCsiVolume(),
 		CSIMode:             dk.NeedsCSIDriver(),
+		PMCConfig:           *pmcConfig,
 	}, nil
 }
 

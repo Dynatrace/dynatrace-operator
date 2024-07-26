@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	PullSecretSuffix             = "-pmc-secret"
+	SecretSuffix                 = "-pmc-secret"
 	SecretKeyProcessModuleConfig = "ruxitagentproc.conf"
 )
 
@@ -192,7 +192,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 	}
 
 	newSecret, err := secrets.Build(r.dk,
-		extendWithSuffix(r.dk.Name),
+		GetSecretName(r.dk.Name),
 		map[string][]byte{SecretKeyProcessModuleConfig: marshaled})
 
 	secrets.SetType(corev1.SecretTypeOpaque)
@@ -223,7 +223,7 @@ func GetSecretData(ctx context.Context, apiReader client.Reader, dynakubeName st
 func getSecret(ctx context.Context, apiReader client.Reader, dynakubeName string, dynakubeNamespace string) (*corev1.Secret, error) {
 	var config corev1.Secret
 
-	err := apiReader.Get(ctx, client.ObjectKey{Name: extendWithSuffix(dynakubeName), Namespace: dynakubeNamespace}, &config)
+	err := apiReader.Get(ctx, client.ObjectKey{Name: GetSecretName(dynakubeName), Namespace: dynakubeNamespace}, &config)
 	if err != nil {
 		return nil, err
 	}
@@ -242,6 +242,6 @@ func unmarshal(secret *corev1.Secret) (*dtclient.ProcessModuleConfig, error) {
 	return config, nil
 }
 
-func extendWithSuffix(name string) string {
-	return name + PullSecretSuffix
+func GetSecretName(dkName string) string {
+	return dkName + SecretSuffix
 }

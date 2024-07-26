@@ -119,6 +119,11 @@ func (runner *Runner) Run(ctx context.Context) (resultedError error) {
 
 			log.Info("OneAgent download finished")
 		}
+		err := processmoduleconfig.UpdateProcessModuleConfigInPlace(runner.fs, consts.AgentBinDirMount, &runner.config.PMCConfig)
+		if err != nil {
+			return err
+		}
+
 	}
 
 	err := runner.configureInstallation()
@@ -168,38 +173,7 @@ func (runner *Runner) installOneAgent(ctx context.Context) error {
 		return err
 	}
 
-	processModuleConfig, err := runner.getProcessModuleConfig(ctx)
-	if err != nil {
-		return err
-	}
-
-	err = processmoduleconfig.UpdateProcessModuleConfigInPlace(runner.fs, consts.AgentBinDirMount, processModuleConfig)
-	if err != nil {
-		return err
-	}
-
 	return nil
-}
-
-func (runner *Runner) getProcessModuleConfig(ctx context.Context) (*dtclient.ProcessModuleConfig, error) {
-	processModuleConfig, err := runner.dtclient.GetProcessModuleConfig(ctx, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	if runner.config.Proxy != "" {
-		processModuleConfig = processModuleConfig.AddProxy(runner.config.Proxy)
-	}
-
-	if runner.config.OneAgentNoProxy != "" {
-		processModuleConfig = processModuleConfig.AddNoProxy(runner.config.OneAgentNoProxy)
-	}
-
-	if runner.config.HostGroup != "" {
-		processModuleConfig.AddHostGroup(runner.config.HostGroup)
-	}
-
-	return processModuleConfig, nil
 }
 
 func (runner *Runner) configureInstallation() error {

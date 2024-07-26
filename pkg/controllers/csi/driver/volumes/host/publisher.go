@@ -51,8 +51,10 @@ type HostVolumePublisher struct {
 }
 
 func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeCfg csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
+	hostDir := publisher.path.OsMountDir()
+	_ = publisher.fs.MkdirAll(hostDir, os.ModePerm)
 	// If the OSAgents were removed forcefully, we might not get the unmount request, so we can't fully relay on the database, and have to directly check if its mounted or not
-	isNotMounted, err := publisher.isNotMounted(publisher.mounter, publisher.path.OsMountDir())
+	isNotMounted, err := publisher.isNotMounted(publisher.mounter, hostDir)
 	if err != nil {
 		return nil, err
 	}
@@ -81,13 +83,11 @@ func (publisher *HostVolumePublisher) CanUnpublishVolume(ctx context.Context, vo
 }
 
 func (publisher *HostVolumePublisher) mountOneAgent(volumeCfg csivolumes.VolumeConfig) error {
-	hostDir := publisher.path.OsMountDir()
-	_ = publisher.fs.MkdirAll(hostDir, os.ModePerm)
-
 	if err := publisher.fs.MkdirAll(volumeCfg.TargetPath, os.ModePerm); err != nil {
 		return err
 	}
 
+	hostDir := publisher.path.OsMountDir()
 	if err := publisher.mounter.Mount(hostDir, volumeCfg.TargetPath, "", []string{"bind"}); err != nil {
 		_ = publisher.mounter.Unmount(hostDir)
 

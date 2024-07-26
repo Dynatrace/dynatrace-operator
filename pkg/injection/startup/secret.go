@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
@@ -30,10 +31,11 @@ type SecretConfig struct {
 	InitialConnectRetry int    `json:"initialConnectRetry"`
 	SkipCertCheck       bool   `json:"skipCertCheck"`
 
-	HasHost           bool `json:"hasHost"`
-	EnforcementMode   bool `json:"enforcementMode"`
-	CSIMode           bool `json:"csiMode"`
-	ReadOnlyCSIDriver bool `json:"readOnlyCSIDriver"`
+	HasHost           bool   `json:"hasHost"`
+	EnforcementMode   bool   `json:"enforcementMode"`
+	CSIMode           bool   `json:"csiMode"`
+	ReadOnlyCSIDriver bool   `json:"readOnlyCSIDriver"`
+	PMCConfig         dtclient.ProcessModuleConfig `json:"pmcConfig"`
 }
 
 func (secret SecretConfig) logContent() {
