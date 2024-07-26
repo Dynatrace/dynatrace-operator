@@ -99,6 +99,7 @@ func (env *environment) getCommonFieldSetters() []func() error {
 		env.addK8PodUID,
 		env.addK8Namespace,
 		env.addK8ClusterID,
+		env.addK8NodeName,
 	}
 }
 
@@ -107,7 +108,6 @@ func (env *environment) getOneAgentFieldSetters() []func() error {
 		env.addInstallerTech,
 		env.addInstallPath,
 		env.addContainers,
-		env.addK8NodeName,
 		env.addK8BasePodName,
 	)
 }

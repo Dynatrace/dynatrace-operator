@@ -10,6 +10,7 @@ import (
 type enrichmentJson struct {
 	PodUid        string `json:"k8s.pod.uid"`
 	PodName       string `json:"k8s.pod.name"`
+	NodeName      string `json:"k8s.node.name"`
 	NamespaceName string `json:"k8s.namespace.name"`
 	ClusterName   string `json:"k8s.cluster.name,omitempty"`
 	ClusterUID    string `json:"k8s.cluster.uid"`
@@ -35,6 +36,7 @@ func (runner *Runner) createEnrichmentFiles() error {
 	data := enrichmentJson{
 		PodUid:        runner.env.K8PodUID,
 		PodName:       runner.env.K8PodName,
+		NodeName:      runner.env.K8NodeName,
 		NamespaceName: runner.env.K8Namespace,
 		ClusterName:   runner.env.K8ClusterName,
 		ClusterUID:    runner.env.K8ClusterID,

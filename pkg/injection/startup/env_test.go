@@ -59,7 +59,7 @@ func TestNewEnv(t *testing.T) {
 		assert.Empty(t, env.InstallPath)
 		assert.Empty(t, env.Containers)
 
-		assert.Empty(t, env.K8NodeName)
+		assert.NotEmpty(t, env.K8NodeName)
 		assert.Empty(t, env.K8BasePodName)
 		assert.NotEmpty(t, env.K8PodName)
 		assert.NotEmpty(t, env.K8PodUID)
@@ -187,6 +187,7 @@ func prepMetadataEnrichmentTestEnv(t *testing.T, isUnknownWorkload bool) func() 
 		consts.K8sClusterIDEnv,
 		consts.K8sPodNameEnv,
 		consts.K8sPodUIDEnv,
+		consts.K8sNodeNameEnv,
 		consts.K8sNamespaceEnv,
 		consts.EnrichmentClusterNameEnv,
 	}
