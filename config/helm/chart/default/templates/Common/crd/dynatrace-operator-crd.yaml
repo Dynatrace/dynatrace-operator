@@ -7167,6 +7167,17 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.15.0
   name: edgeconnects.dynatrace.com
 spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: dynatrace-webhook
+          namespace: {{.Release.Namespace}}
+          path: /convert
+      conversionReviewVersions:
+      - v1
+      - v1beta1
   group: dynatrace.com
   names:
     categories:
@@ -7178,6 +7189,7 @@ spec:
     - ec
     - ecs
     singular: edgeconnect
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
