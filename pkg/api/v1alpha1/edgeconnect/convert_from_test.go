@@ -17,21 +17,21 @@ import (
 func TestConvertFrom(t *testing.T) {
 	t.Run("migrate from edgeconnect v1beta1 to v1alpha1", func(t *testing.T) {
 		from := edgeconnect.EdgeConnect{
-			ObjectMeta: getV1beta1Base(),
-			Spec:       getV1beta1Spec(),
-			Status:     getV1beta1Status(),
+			ObjectMeta: getCurrentBase(),
+			Spec:       getCurrentSpec(),
+			Status:     getCurrentStatus(),
 		}
 		to := EdgeConnect{}
 
 		to.ConvertFrom(&from)
 
 		assert.True(t, reflect.DeepEqual(from.ObjectMeta, to.ObjectMeta))
-		assert.True(t, fromAreSpecsEqual(&from.Spec, &to.Spec))
-		assert.True(t, fromAreStatusesEqual(&from.Status, &to.Status))
+		fromAreSpecsEqual(t, &from.Spec, &to.Spec)
+		fromAreStatusesEqual(t, &from.Status, &to.Status)
 	})
 }
 
-func getV1beta1Base() metav1.ObjectMeta {
+func getCurrentBase() metav1.ObjectMeta {
 	deletionGracePeriodSeconds := int64(1)
 
 	return metav1.ObjectMeta{
@@ -57,7 +57,7 @@ func getV1beta1Base() metav1.ObjectMeta {
 	}
 }
 
-func getV1beta1Spec() edgeconnect.EdgeConnectSpec {
+func getCurrentSpec() edgeconnect.EdgeConnectSpec {
 	replicas := int32(1)
 
 	return edgeconnect.EdgeConnectSpec{
@@ -139,7 +139,7 @@ func getV1beta1Spec() edgeconnect.EdgeConnectSpec {
 	}
 }
 
-func getV1beta1Status() edgeconnect.EdgeConnectStatus {
+func getCurrentStatus() edgeconnect.EdgeConnectStatus {
 	return edgeconnect.EdgeConnectStatus{
 		Conditions: []metav1.Condition{
 			{
@@ -164,134 +164,70 @@ func getV1beta1Status() edgeconnect.EdgeConnectStatus {
 	}
 }
 
-func fromAreSpecsEqual(src *edgeconnect.EdgeConnectSpec, dst *EdgeConnectSpec) bool { //nolint:revive
-	if !reflect.DeepEqual(src.Annotations, dst.Annotations) {
-		return false
+func fromAreSpecsEqual(t *testing.T, src *edgeconnect.EdgeConnectSpec, dst *EdgeConnectSpec) {
+	assert.True(t, reflect.DeepEqual(src.Annotations, dst.Annotations), "Annotations")
+
+	assert.True(t, reflect.DeepEqual(src.Labels, dst.Labels), "Labels")
+
+	assert.True(t, reflect.DeepEqual(src.Replicas, dst.Replicas), "Replicas")
+
+	assert.True(t, reflect.DeepEqual(src.NodeSelector, dst.NodeSelector), "NodeSelector")
+
+	assert.True(t, reflect.DeepEqual(src.KubernetesAutomation.Enabled, dst.KubernetesAutomation.Enabled), "KubernetesAutomation.Enabled")
+
+	assert.True(t, reflect.DeepEqual(src.Proxy.Port, dst.Proxy.Port), "Proxy.Port")
+
+	assert.True(t, reflect.DeepEqual(src.Proxy.NoProxy, dst.Proxy.NoProxy), "Proxy.NoProxy")
+
+	assert.True(t, reflect.DeepEqual(src.Proxy.Host, dst.Proxy.Host), "Proxy.Host")
+
+	assert.True(t, reflect.DeepEqual(src.Proxy.AuthRef, dst.Proxy.AuthRef), "Proxy.AuthRef")
+
+	assert.True(t, reflect.DeepEqual(src.ImageRef.Repository, dst.ImageRef.Repository), "ImageRef.Repository")
+
+	assert.True(t, reflect.DeepEqual(src.ImageRef.Tag, dst.ImageRef.Tag), "ImageRef.Tag")
+
+	assert.True(t, reflect.DeepEqual(src.ApiServer, dst.ApiServer), "ApiServer")
+
+	if len(src.HostRestrictions) == 0 {
+		assert.Empty(t, dst.HostRestrictions, "HostRestrictions")
+	} else {
+		assert.True(t, reflect.DeepEqual(src.HostRestrictions, strings.Split(dst.HostRestrictions, ",")), "HostRestrictions")
 	}
 
-	if !reflect.DeepEqual(src.Labels, dst.Labels) {
-		return false
-	}
+	assert.True(t, reflect.DeepEqual(src.CustomPullSecret, dst.CustomPullSecret), "CustomPullSecret")
 
-	if !reflect.DeepEqual(src.Replicas, dst.Replicas) {
-		return false
-	}
+	assert.True(t, reflect.DeepEqual(src.ServiceAccountName, dst.ServiceAccountName), "ServiceAccountName")
 
-	if !reflect.DeepEqual(src.NodeSelector, dst.NodeSelector) {
-		return false
-	}
+	assert.True(t, reflect.DeepEqual(src.OAuth.Provisioner, dst.OAuth.Provisioner), "OAuth.Provisioner")
 
-	if !reflect.DeepEqual(src.KubernetesAutomation.Enabled, dst.KubernetesAutomation.Enabled) {
-		return false
-	}
+	assert.True(t, reflect.DeepEqual(src.OAuth.Endpoint, dst.OAuth.Endpoint), "OAuth.Endpoint")
 
-	if !reflect.DeepEqual(src.Proxy.Port, dst.Proxy.Port) {
-		return false
-	}
+	assert.True(t, reflect.DeepEqual(src.OAuth.ClientSecret, dst.OAuth.ClientSecret), "OAuth.ClientSecret")
 
-	if !reflect.DeepEqual(src.Proxy.NoProxy, dst.Proxy.NoProxy) {
-		return false
-	}
+	assert.True(t, reflect.DeepEqual(src.OAuth.Resource, dst.OAuth.Resource), "OAuth.Resource")
 
-	if !reflect.DeepEqual(src.Proxy.Host, dst.Proxy.Host) {
-		return false
-	}
+	assert.True(t, reflect.DeepEqual(src.Resources, dst.Resources), "Resources")
 
-	if !reflect.DeepEqual(src.Proxy.AuthRef, dst.Proxy.AuthRef) {
-		return false
-	}
+	assert.True(t, reflect.DeepEqual(src.Env, dst.Env), "Env")
 
-	if !reflect.DeepEqual(src.ImageRef.Repository, dst.ImageRef.Repository) {
-		return false
-	}
+	assert.True(t, reflect.DeepEqual(src.Tolerations, dst.Tolerations), "Tolerations")
 
-	if !reflect.DeepEqual(src.ImageRef.Tag, dst.ImageRef.Tag) {
-		return false
-	}
+	assert.True(t, reflect.DeepEqual(src.TopologySpreadConstraints, dst.TopologySpreadConstraints), "TopologySpreadConstraints")
 
-	if !reflect.DeepEqual(src.ApiServer, dst.ApiServer) {
-		return false
-	}
+	assert.True(t, reflect.DeepEqual(src.HostPatterns, dst.HostPatterns), "HostPatterns")
 
-	if len(src.HostRestrictions) == 0 && dst.HostRestrictions != "" {
-		return false
-	}
-
-	if !reflect.DeepEqual(src.HostRestrictions, strings.Split(dst.HostRestrictions, ",")) {
-		return false
-	}
-
-	if !reflect.DeepEqual(src.CustomPullSecret, dst.CustomPullSecret) {
-		return false
-	}
-
-	if !reflect.DeepEqual(src.ServiceAccountName, dst.ServiceAccountName) {
-		return false
-	}
-
-	if !reflect.DeepEqual(src.OAuth.Provisioner, dst.OAuth.Provisioner) {
-		return false
-	}
-
-	if !reflect.DeepEqual(src.OAuth.Endpoint, dst.OAuth.Endpoint) {
-		return false
-	}
-
-	if !reflect.DeepEqual(src.OAuth.ClientSecret, dst.OAuth.ClientSecret) {
-		return false
-	}
-
-	if !reflect.DeepEqual(src.OAuth.Resource, dst.OAuth.Resource) {
-		return false
-	}
-
-	if !reflect.DeepEqual(src.Resources, dst.Resources) {
-		return false
-	}
-
-	if !reflect.DeepEqual(src.Env, dst.Env) {
-		return false
-	}
-
-	if !reflect.DeepEqual(src.Tolerations, dst.Tolerations) {
-		return false
-	}
-
-	if !reflect.DeepEqual(src.TopologySpreadConstraints, dst.TopologySpreadConstraints) {
-		return false
-	}
-
-	if !reflect.DeepEqual(src.HostPatterns, dst.HostPatterns) {
-		return false
-	}
-
-	if !reflect.DeepEqual(src.AutoUpdate, dst.AutoUpdate) {
-		return false
-	}
-
-	return true
+	assert.True(t, reflect.DeepEqual(src.AutoUpdate, dst.AutoUpdate), "AutoUpdate")
 }
 
-func fromAreStatusesEqual(src *edgeconnect.EdgeConnectStatus, dst *EdgeConnectStatus) bool {
-	if !reflect.DeepEqual(src.Conditions, dst.Conditions) {
-		return false
-	}
+func fromAreStatusesEqual(t *testing.T, src *edgeconnect.EdgeConnectStatus, dst *EdgeConnectStatus) {
+	assert.True(t, reflect.DeepEqual(src.Conditions, dst.Conditions), "Conditions")
 
-	if !reflect.DeepEqual(src.KubeSystemUID, dst.KubeSystemUID) {
-		return false
-	}
+	assert.True(t, reflect.DeepEqual(src.KubeSystemUID, dst.KubeSystemUID), "KubeSystemUID")
 
-	if !reflect.DeepEqual(src.DeploymentPhase, dst.DeploymentPhase) {
-		return false
-	}
+	assert.True(t, reflect.DeepEqual(src.DeploymentPhase, dst.DeploymentPhase), "DeploymentPhase")
 
-	if !reflect.DeepEqual(src.UpdatedTimestamp, dst.UpdatedTimestamp) {
-		return false
-	}
+	assert.True(t, reflect.DeepEqual(src.UpdatedTimestamp, dst.UpdatedTimestamp), "UpdatedTimestamp")
 
-	if !reflect.DeepEqual(src.Version, dst.Version) {
-		return false
-	}
-
-	return true
+	assert.True(t, reflect.DeepEqual(src.Version, dst.Version), "Version")
 }

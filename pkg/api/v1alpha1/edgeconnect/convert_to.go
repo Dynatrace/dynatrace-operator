@@ -42,10 +42,6 @@ func (src *EdgeConnect) toSpec(dst *edgeconnect.EdgeConnect) {
 		}
 	}
 
-	dst.Spec.Proxy.AuthRef = src.Spec.Proxy.AuthRef
-	dst.Spec.Proxy.Host = src.Spec.Proxy.Host
-	dst.Spec.Proxy.NoProxy = src.Spec.Proxy.NoProxy
-	dst.Spec.Proxy.Port = src.Spec.Proxy.Port
 	dst.Spec.ImageRef.Tag = src.Spec.ImageRef.Tag
 	dst.Spec.ImageRef.Repository = src.Spec.ImageRef.Repository
 	dst.Spec.ApiServer = src.Spec.ApiServer
