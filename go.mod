@@ -6,16 +6,13 @@ require (
 	github.com/container-storage-interface/spec v1.10.0
 	github.com/docker/cli v27.1.1+incompatible
 	github.com/evanphx/json-patch v5.9.0+incompatible
-	github.com/go-gormigrate/gormigrate/v2 v2.1.2
 	github.com/go-logr/logr v1.4.2
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.20.1
-	github.com/google/uuid v1.6.0
 	github.com/klauspost/compress v1.17.9
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.19.1
-	github.com/prometheus/client_model v0.6.1
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.9.0
@@ -39,8 +36,6 @@ require (
 	golang.org/x/sys v0.22.0
 	google.golang.org/grpc v1.65.0
 	gopkg.in/yaml.v3 v3.0.1
-	gorm.io/driver/sqlite v1.5.6
-	gorm.io/gorm v1.25.11
 	istio.io/api v1.22.3
 	istio.io/client-go v1.22.3
 	k8s.io/api v0.30.3
@@ -77,17 +72,15 @@ require (
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0 // indirect
 	github.com/imdario/mergo v0.3.15 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/lufia/plan9stats v0.0.0-20240513124658-fba389f38bae // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/mattn/go-sqlite3 v1.14.22 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -97,6 +90,7 @@ require (
 	github.com/opencontainers/image-spec v1.1.0-rc4 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
+	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.48.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/shirou/gopsutil/v4 v4.24.6 // indirect
