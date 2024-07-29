@@ -37,6 +37,7 @@ func TestNewEnv(t *testing.T) {
 
 		assert.NotEmpty(t, env.WorkloadKind)
 		assert.NotEmpty(t, env.WorkloadName)
+		assert.NotEmpty(t, env.K8ClusterName)
 
 		assert.True(t, env.OneAgentInjected)
 		assert.True(t, env.MetadataEnrichmentInjected)
@@ -58,7 +59,7 @@ func TestNewEnv(t *testing.T) {
 		assert.Empty(t, env.InstallPath)
 		assert.Empty(t, env.Containers)
 
-		assert.Empty(t, env.K8NodeName)
+		assert.NotEmpty(t, env.K8NodeName)
 		assert.Empty(t, env.K8BasePodName)
 		assert.NotEmpty(t, env.K8PodName)
 		assert.NotEmpty(t, env.K8PodUID)
@@ -67,6 +68,7 @@ func TestNewEnv(t *testing.T) {
 		assert.NotEmpty(t, env.K8ClusterID)
 		assert.NotEmpty(t, env.WorkloadKind)
 		assert.NotEmpty(t, env.WorkloadName)
+		assert.NotEmpty(t, env.K8ClusterName)
 
 		assert.False(t, env.OneAgentInjected)
 		assert.True(t, env.MetadataEnrichmentInjected)
@@ -97,6 +99,7 @@ func TestNewEnv(t *testing.T) {
 		assert.NotEmpty(t, env.K8ClusterID)
 		assert.Empty(t, env.WorkloadKind)
 		assert.Empty(t, env.WorkloadName)
+		assert.Empty(t, env.K8ClusterName)
 
 		assert.True(t, env.OneAgentInjected)
 		assert.False(t, env.MetadataEnrichmentInjected)
@@ -184,7 +187,9 @@ func prepMetadataEnrichmentTestEnv(t *testing.T, isUnknownWorkload bool) func() 
 		consts.K8sClusterIDEnv,
 		consts.K8sPodNameEnv,
 		consts.K8sPodUIDEnv,
+		consts.K8sNodeNameEnv,
 		consts.K8sNamespaceEnv,
+		consts.EnrichmentClusterNameEnv,
 	}
 	for _, envvar := range envs {
 		if isUnknownWorkload &&

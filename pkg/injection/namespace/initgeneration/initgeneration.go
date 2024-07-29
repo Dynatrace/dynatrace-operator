@@ -14,7 +14,6 @@ import (
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -53,19 +52,13 @@ func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynakube.Dy
 	}
 
 	coreLabels := k8slabels.NewCoreLabels(dk.Name, k8slabels.WebhookComponentLabel)
-	secret := &corev1.Secret{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      consts.AgentInitSecretName,
-			Namespace: targetNs,
-			Labels:    coreLabels.BuildMatchLabels(),
-		},
-		Data: data,
-		Type: corev1.SecretTypeOpaque,
-	}
-	secretQuery := k8ssecret.Query(g.client, g.apiReader, log)
 
-	_, err = secretQuery.CreateOrUpdate(ctx, secret)
+	secret, err := k8ssecret.BuildForNamespace(consts.AgentInitSecretName, targetNs, data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
+	if err != nil {
+		return err
+	}
+
+	_, err = k8ssecret.Query(g.client, g.apiReader, log).CreateOrUpdate(ctx, secret)
 
 	return errors.WithStack(err)
 }
@@ -88,18 +81,13 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.Dy
 	}
 
 	coreLabels := k8slabels.NewCoreLabels(dk.Name, k8slabels.WebhookComponentLabel)
-	secretQuery := k8ssecret.Query(g.client, g.apiReader, log)
-	secret := corev1.Secret{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   consts.AgentInitSecretName,
-			Labels: coreLabels.BuildMatchLabels(),
-		},
-		Data: data,
-		Type: corev1.SecretTypeOpaque,
+
+	secret, err := k8ssecret.BuildForNamespace(consts.AgentInitSecretName, "", data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
+	if err != nil {
+		return err
 	}
 
-	err = secretQuery.CreateOrUpdateForNamespaces(ctx, &secret, nsList)
+	err = k8ssecret.Query(g.client, g.apiReader, log).CreateOrUpdateForNamespaces(ctx, secret, nsList)
 	if err != nil {
 		return err
 	}
@@ -115,9 +103,7 @@ func (g *InitGenerator) Cleanup(ctx context.Context, namespaces []corev1.Namespa
 		nsList = append(nsList, ns.Name)
 	}
 
-	secretQuery := k8ssecret.Query(g.client, g.apiReader, log)
-
-	return secretQuery.DeleteForNamespaces(ctx, consts.AgentInitSecretName, nsList)
+	return k8ssecret.Query(g.client, g.apiReader, log).DeleteForNamespaces(ctx, consts.AgentInitSecretName, nsList)
 }
 
 // generate gets the necessary info the create the init secret data
