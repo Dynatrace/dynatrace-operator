@@ -2,6 +2,7 @@ package otel
 
 import (
 	"context"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
@@ -36,7 +37,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		}
 		defer meta.RemoveStatusCondition(r.dk.Conditions(), otelControllerStatefulSetConditionType)
 
-		sts, err := r.buildStatefulset()
+		sts, err := statefulset.Build(r.dk, statefulsetName, corev1.Container{})
 		if err != nil {
 			log.Error(err, "could not build "+statefulsetName+" during cleanup")
 
