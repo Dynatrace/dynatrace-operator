@@ -3,6 +3,7 @@ package extension
 import (
 	"context"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
@@ -15,10 +16,10 @@ import (
 
 func (r *reconciler) reconcileSecret(ctx context.Context) error {
 	if !r.dk.PrometheusEnabled() {
-		if meta.FindStatusCondition(*r.dk.Conditions(), extensionsSecretConditionType) == nil {
+		if meta.FindStatusCondition(*r.dk.Conditions(), consts.ExtensionsSecretConditionType) == nil {
 			return nil
 		}
-		defer meta.RemoveStatusCondition(r.dk.Conditions(), extensionsSecretConditionType)
+		defer meta.RemoveStatusCondition(r.dk.Conditions(), consts.ExtensionsSecretConditionType)
 
 		secret, err := r.buildSecret(dttoken.Token{}, dttoken.Token{})
 		if err != nil {
@@ -40,24 +41,24 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 	_, err := k8ssecret.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKey{Name: r.getSecretName(), Namespace: r.dk.Namespace})
 	if err != nil && !k8serrors.IsNotFound(err) {
 		log.Info("failed to check existence of extension secret")
-		conditions.SetKubeApiError(r.dk.Conditions(), extensionsSecretConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), consts.ExtensionsSecretConditionType, err)
 
 		return err
 	}
 
 	if k8serrors.IsNotFound(err) {
-		newEecToken, err := dttoken.New(eecTokenSecretValuePrefix)
+		newEecToken, err := dttoken.New(consts.EecTokenSecretValuePrefix)
 		if err != nil {
 			log.Info("failed to generate eec token")
-			conditions.SetSecretGenFailed(r.dk.Conditions(), extensionsSecretConditionType, errors.Wrap(err, "error generating eec token"))
+			conditions.SetSecretGenFailed(r.dk.Conditions(), consts.ExtensionsSecretConditionType, errors.Wrap(err, "error generating eec token"))
 
 			return err
 		}
 
-		newOtelcToken, err := dttoken.New(otelcTokenSecretValuePrefix)
+		newOtelcToken, err := dttoken.New(consts.OtelcTokenSecretValuePrefix)
 		if err != nil {
 			log.Info("failed to generate otelc token")
-			conditions.SetSecretGenFailed(r.dk.Conditions(), extensionsSecretConditionType, errors.Wrap(err, "error generating otelc token"))
+			conditions.SetSecretGenFailed(r.dk.Conditions(), consts.ExtensionsSecretConditionType, errors.Wrap(err, "error generating otelc token"))
 
 			return err
 		}
@@ -65,7 +66,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 		newSecret, err := r.buildSecret(*newEecToken, *newOtelcToken)
 		if err != nil {
 			log.Info("failed to generate extension secret")
-			conditions.SetSecretGenFailed(r.dk.Conditions(), extensionsSecretConditionType, err)
+			conditions.SetSecretGenFailed(r.dk.Conditions(), consts.ExtensionsSecretConditionType, err)
 
 			return err
 		}
@@ -73,21 +74,21 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 		_, err = k8ssecret.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newSecret)
 		if err != nil {
 			log.Info("failed to create/update extension secret")
-			conditions.SetKubeApiError(r.dk.Conditions(), extensionsSecretConditionType, err)
+			conditions.SetKubeApiError(r.dk.Conditions(), consts.ExtensionsSecretConditionType, err)
 
 			return err
 		}
 	}
 
-	conditions.SetSecretCreated(r.dk.Conditions(), extensionsSecretConditionType, r.getSecretName())
+	conditions.SetSecretCreated(r.dk.Conditions(), consts.ExtensionsSecretConditionType, r.getSecretName())
 
 	return nil
 }
 
 func (r *reconciler) buildSecret(eecToken dttoken.Token, otelcToken dttoken.Token) (*corev1.Secret, error) {
 	secretData := map[string][]byte{
-		EecTokenSecretKey:   []byte(eecToken.String()),
-		otelcTokenSecretKey: []byte(otelcToken.String()),
+		consts.EecTokenSecretKey:   []byte(eecToken.String()),
+		consts.OtelcTokenSecretKey: []byte(otelcToken.String()),
 	}
 
 	return k8ssecret.Build(r.dk, r.getSecretName(), secretData)
@@ -98,5 +99,5 @@ func (r *reconciler) getSecretName() string {
 }
 
 func GetSecretName(dynakubeName string) string {
-	return dynakubeName + secretSuffix
+	return dynakubeName + consts.SecretSuffix
 }

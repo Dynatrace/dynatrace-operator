@@ -21,7 +21,7 @@ var (
 func Build(owner metav1.Object, name string, container corev1.Container, options ...builder.Option[*appsv1.StatefulSet]) (*appsv1.StatefulSet, error) {
 	neededOpts := []builder.Option[*appsv1.StatefulSet]{
 		setName(name),
-		setContainer(container),
+		SetContainer(container),
 		setNamespace(owner.GetNamespace()),
 	}
 	neededOpts = append(neededOpts, options...)
@@ -59,22 +59,22 @@ func SetTopologySpreadConstraints(topologySpreadConstraints []corev1.TopologySpr
 	}
 }
 
-func SetAllLabels(appLabels, labels map[string]string) builder.Option[*appsv1.StatefulSet] {
+func SetAllLabels(labels, matchLabels, templateLabels, customLabels map[string]string) builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
-		s.ObjectMeta.Labels = appLabels
-		s.Spec.Selector = &metav1.LabelSelector{MatchLabels: appLabels}
-		s.Spec.Template.ObjectMeta.Labels = maputils.MergeMap(labels, appLabels)
+		s.ObjectMeta.Labels = labels
+		s.Spec.Selector = &metav1.LabelSelector{MatchLabels: matchLabels}
+		s.Spec.Template.ObjectMeta.Labels = maputils.MergeMap(customLabels, templateLabels)
 	}
 }
 
-func SetAllAnnotations(annotations map[string]string) builder.Option[*appsv1.StatefulSet] {
+func SetAllAnnotations(annotations, templateAnnotations map[string]string) builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
 		s.ObjectMeta.Annotations = maputils.MergeMap(s.ObjectMeta.Annotations, annotations)
-		s.Spec.Template.ObjectMeta.Annotations = maputils.MergeMap(s.Spec.Template.ObjectMeta.Annotations, annotations)
+		s.Spec.Template.ObjectMeta.Annotations = maputils.MergeMap(s.Spec.Template.ObjectMeta.Annotations, templateAnnotations)
 	}
 }
 
-func setContainer(container corev1.Container) builder.Option[*appsv1.StatefulSet] {
+func SetContainer(container corev1.Container) builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
 		targetIndex := 0
 		for index := range s.Spec.Template.Spec.Containers {
@@ -90,5 +90,24 @@ func setContainer(container corev1.Container) builder.Option[*appsv1.StatefulSet
 		}
 
 		s.Spec.Template.Spec.Containers[targetIndex] = container
+	}
+}
+
+func SetServiceAccount(serviceAccountName string) builder.Option[*appsv1.StatefulSet] {
+	return func(s *appsv1.StatefulSet) {
+		s.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+		s.Spec.Template.Spec.DeprecatedServiceAccount = serviceAccountName
+	}
+}
+
+func SetSecurityContext(securityContext *corev1.PodSecurityContext) builder.Option[*appsv1.StatefulSet] {
+	return func(s *appsv1.StatefulSet) {
+		s.Spec.Template.Spec.SecurityContext = securityContext
+	}
+}
+
+func SetUpdateStrategy(updateStartegy appsv1.StatefulSetUpdateStrategy) builder.Option[*appsv1.StatefulSet] {
+	return func(s *appsv1.StatefulSet) {
+		s.Spec.UpdateStrategy = updateStartegy
 	}
 }
