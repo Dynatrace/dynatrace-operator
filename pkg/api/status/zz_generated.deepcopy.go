@@ -34,9 +34,7 @@ func (in *VersionStatus) DeepCopy() *VersionStatus {
 	if in == nil {
 		return nil
 	}
-
 	out := new(VersionStatus)
 	in.DeepCopyInto(out)
-
 	return out
 }
