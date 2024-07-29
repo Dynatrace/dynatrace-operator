@@ -3,6 +3,7 @@ package startup
 import (
 	"encoding/json"
 	"path/filepath"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 )
@@ -66,10 +67,13 @@ func (runner *Runner) createEnrichmentFiles() error {
 		return err
 	}
 
-	propsContent := ""
+	var content strings.Builder
 	for key, value := range props {
-		propsContent += key + "=" + value + "\n"
+		content.WriteString(key)
+		content.WriteString("=")
+		content.WriteString(value)
+		content.WriteString("\n")
 	}
 
-	return runner.createConfigFile(enrichmentPropsPath, propsContent, true)
+	return runner.createConfigFile(enrichmentPropsPath, content.String(), true)
 }
