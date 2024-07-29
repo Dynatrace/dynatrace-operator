@@ -78,7 +78,7 @@ func (dtc *dynatraceClient) getEventsUrl() string {
 }
 
 func (dtc *dynatraceClient) getTokensLookupUrl() string {
-	return dtc.url + "/v1/tokens/lookup"
+	return dtc.url + "/v2/apiTokens/lookup"
 }
 
 func (dtc *dynatraceClient) getActiveGateAuthTokenUrl() string {

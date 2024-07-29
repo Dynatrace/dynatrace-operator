@@ -176,7 +176,7 @@ func handleRequest(request *http.Request, writer http.ResponseWriter) {
 		handleCommunicationHosts(request, writer)
 	case "/v1/events":
 		handleSendEvent(request, writer)
-	case "/v1/tokens/lookup":
+	case "/v2/apiTokens/lookup":
 		handleTokenScopes(request, writer)
 	default:
 		writeError(writer, http.StatusBadRequest)

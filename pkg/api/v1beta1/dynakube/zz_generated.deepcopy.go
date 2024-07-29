@@ -35,10 +35,8 @@ func (in *ActiveGateCapability) DeepCopy() *ActiveGateCapability {
 	if in == nil {
 		return nil
 	}
-
 	out := new(ActiveGateCapability)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -53,10 +51,8 @@ func (in *ActiveGateConnectionInfoStatus) DeepCopy() *ActiveGateConnectionInfoSt
 	if in == nil {
 		return nil
 	}
-
 	out := new(ActiveGateConnectionInfoStatus)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -66,14 +62,11 @@ func (in *ActiveGateSpec) DeepCopyInto(out *ActiveGateSpec) {
 	if in.Annotations != nil {
 		in, out := &in.Annotations, &out.Annotations
 		*out = make(map[string]string, len(*in))
-
 		for key, val := range *in {
 			(*out)[key] = val
 		}
 	}
-
 	in.CapabilityProperties.DeepCopyInto(&out.CapabilityProperties)
-
 	if in.Capabilities != nil {
 		in, out := &in.Capabilities, &out.Capabilities
 		*out = make([]CapabilityDisplayName, len(*in))
@@ -86,10 +79,8 @@ func (in *ActiveGateSpec) DeepCopy() *ActiveGateSpec {
 	if in == nil {
 		return nil
 	}
-
 	out := new(ActiveGateSpec)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -98,7 +89,6 @@ func (in *ActiveGateStatus) DeepCopyInto(out *ActiveGateStatus) {
 	*out = *in
 	in.VersionStatus.DeepCopyInto(&out.VersionStatus)
 	in.ConnectionInfoStatus.DeepCopyInto(&out.ConnectionInfoStatus)
-
 	if in.ServiceIPs != nil {
 		in, out := &in.ServiceIPs, &out.ServiceIPs
 		*out = make([]string, len(*in))
@@ -111,10 +101,8 @@ func (in *ActiveGateStatus) DeepCopy() *ActiveGateStatus {
 	if in == nil {
 		return nil
 	}
-
 	out := new(ActiveGateStatus)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -133,10 +121,8 @@ func (in *AppInjectionSpec) DeepCopy() *AppInjectionSpec {
 	if in == nil {
 		return nil
 	}
-
 	out := new(AppInjectionSpec)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -144,7 +130,6 @@ func (in *AppInjectionSpec) DeepCopy() *AppInjectionSpec {
 func (in *ApplicationMonitoringSpec) DeepCopyInto(out *ApplicationMonitoringSpec) {
 	*out = *in
 	in.AppInjectionSpec.DeepCopyInto(&out.AppInjectionSpec)
-
 	if in.UseCSIDriver != nil {
 		in, out := &in.UseCSIDriver, &out.UseCSIDriver
 		*out = new(bool)
@@ -157,10 +142,8 @@ func (in *ApplicationMonitoringSpec) DeepCopy() *ApplicationMonitoringSpec {
 	if in == nil {
 		return nil
 	}
-
 	out := new(ApplicationMonitoringSpec)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -172,55 +155,43 @@ func (in *CapabilityProperties) DeepCopyInto(out *CapabilityProperties) {
 		*out = new(int32)
 		**out = **in
 	}
-
 	if in.CustomProperties != nil {
 		in, out := &in.CustomProperties, &out.CustomProperties
 		*out = new(DynaKubeValueSource)
 		**out = **in
 	}
-
 	in.Resources.DeepCopyInto(&out.Resources)
-
 	if in.NodeSelector != nil {
 		in, out := &in.NodeSelector, &out.NodeSelector
 		*out = make(map[string]string, len(*in))
-
 		for key, val := range *in {
 			(*out)[key] = val
 		}
 	}
-
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
 		*out = make([]v1.Toleration, len(*in))
-
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-
 	if in.Labels != nil {
 		in, out := &in.Labels, &out.Labels
 		*out = make(map[string]string, len(*in))
-
 		for key, val := range *in {
 			(*out)[key] = val
 		}
 	}
-
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
 		*out = make([]v1.EnvVar, len(*in))
-
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-
 	if in.TopologySpreadConstraints != nil {
 		in, out := &in.TopologySpreadConstraints, &out.TopologySpreadConstraints
 		*out = make([]v1.TopologySpreadConstraint, len(*in))
-
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -232,10 +203,8 @@ func (in *CapabilityProperties) DeepCopy() *CapabilityProperties {
 	if in == nil {
 		return nil
 	}
-
 	out := new(CapabilityProperties)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -251,10 +220,8 @@ func (in *CloudNativeFullStackSpec) DeepCopy() *CloudNativeFullStackSpec {
 	if in == nil {
 		return nil
 	}
-
 	out := new(CloudNativeFullStackSpec)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -269,10 +236,8 @@ func (in *CodeModulesStatus) DeepCopy() *CodeModulesStatus {
 	if in == nil {
 		return nil
 	}
-
 	out := new(CodeModulesStatus)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -286,10 +251,8 @@ func (in *CommunicationHostStatus) DeepCopy() *CommunicationHostStatus {
 	if in == nil {
 		return nil
 	}
-
 	out := new(CommunicationHostStatus)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -304,10 +267,8 @@ func (in *ConnectionInfoStatus) DeepCopy() *ConnectionInfoStatus {
 	if in == nil {
 		return nil
 	}
-
 	out := new(ConnectionInfoStatus)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -325,10 +286,8 @@ func (in *DynaKube) DeepCopy() *DynaKube {
 	if in == nil {
 		return nil
 	}
-
 	out := new(DynaKube)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -337,7 +296,6 @@ func (in *DynaKube) DeepCopyObject() runtime.Object {
 	if c := in.DeepCopy(); c != nil {
 		return c
 	}
-
 	return nil
 }
 
@@ -346,11 +304,9 @@ func (in *DynaKubeList) DeepCopyInto(out *DynaKubeList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
 	in.ListMeta.DeepCopyInto(&out.ListMeta)
-
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]DynaKube, len(*in))
-
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -362,10 +318,8 @@ func (in *DynaKubeList) DeepCopy() *DynaKubeList {
 	if in == nil {
 		return nil
 	}
-
 	out := new(DynaKubeList)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -374,7 +328,6 @@ func (in *DynaKubeList) DeepCopyObject() runtime.Object {
 	if c := in.DeepCopy(); c != nil {
 		return c
 	}
-
 	return nil
 }
 
@@ -388,10 +341,8 @@ func (in *DynaKubeProxy) DeepCopy() *DynaKubeProxy {
 	if in == nil {
 		return nil
 	}
-
 	out := new(DynaKubeProxy)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -403,7 +354,6 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 		*out = new(DynaKubeProxy)
 		**out = **in
 	}
-
 	in.OneAgent.DeepCopyInto(&out.OneAgent)
 	in.ActiveGate.DeepCopyInto(&out.ActiveGate)
 	in.NamespaceSelector.DeepCopyInto(&out.NamespaceSelector)
@@ -416,10 +366,8 @@ func (in *DynaKubeSpec) DeepCopy() *DynaKubeSpec {
 	if in == nil {
 		return nil
 	}
-
 	out := new(DynaKubeSpec)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -431,16 +379,13 @@ func (in *DynaKubeStatus) DeepCopyInto(out *DynaKubeStatus) {
 	in.CodeModules.DeepCopyInto(&out.CodeModules)
 	in.UpdatedTimestamp.DeepCopyInto(&out.UpdatedTimestamp)
 	in.DynatraceApi.DeepCopyInto(&out.DynatraceApi)
-
 	if in.LastTokenProbeTimestamp != nil {
 		in, out := &in.LastTokenProbeTimestamp, &out.LastTokenProbeTimestamp
 		*out = (*in).DeepCopy()
 	}
-
 	if in.Conditions != nil {
 		in, out := &in.Conditions, &out.Conditions
 		*out = make([]metav1.Condition, len(*in))
-
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -452,10 +397,8 @@ func (in *DynaKubeStatus) DeepCopy() *DynaKubeStatus {
 	if in == nil {
 		return nil
 	}
-
 	out := new(DynaKubeStatus)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -469,10 +412,8 @@ func (in *DynaKubeValueSource) DeepCopy() *DynaKubeValueSource {
 	if in == nil {
 		return nil
 	}
-
 	out := new(DynaKubeValueSource)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -487,10 +428,8 @@ func (in *DynatraceApiStatus) DeepCopy() *DynatraceApiStatus {
 	if in == nil {
 		return nil
 	}
-
 	out := new(DynatraceApiStatus)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -500,60 +439,48 @@ func (in *HostInjectSpec) DeepCopyInto(out *HostInjectSpec) {
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
 		*out = make([]v1.Toleration, len(*in))
-
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-
 	if in.AutoUpdate != nil {
 		in, out := &in.AutoUpdate, &out.AutoUpdate
 		*out = new(bool)
 		**out = **in
 	}
-
 	if in.Annotations != nil {
 		in, out := &in.Annotations, &out.Annotations
 		*out = make(map[string]string, len(*in))
-
 		for key, val := range *in {
 			(*out)[key] = val
 		}
 	}
-
 	if in.Labels != nil {
 		in, out := &in.Labels, &out.Labels
 		*out = make(map[string]string, len(*in))
-
 		for key, val := range *in {
 			(*out)[key] = val
 		}
 	}
-
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
 		*out = make([]v1.EnvVar, len(*in))
-
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-
 	if in.Args != nil {
 		in, out := &in.Args, &out.Args
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
-
 	if in.NodeSelector != nil {
 		in, out := &in.NodeSelector, &out.NodeSelector
 		*out = make(map[string]string, len(*in))
-
 		for key, val := range *in {
 			(*out)[key] = val
 		}
 	}
-
 	in.OneAgentResources.DeepCopyInto(&out.OneAgentResources)
 }
 
@@ -562,10 +489,8 @@ func (in *HostInjectSpec) DeepCopy() *HostInjectSpec {
 	if in == nil {
 		return nil
 	}
-
 	out := new(HostInjectSpec)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -580,10 +505,8 @@ func (in *KubernetesMonitoringSpec) DeepCopy() *KubernetesMonitoringSpec {
 	if in == nil {
 		return nil
 	}
-
 	out := new(KubernetesMonitoringSpec)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -591,7 +514,6 @@ func (in *KubernetesMonitoringSpec) DeepCopy() *KubernetesMonitoringSpec {
 func (in *OneAgentConnectionInfoStatus) DeepCopyInto(out *OneAgentConnectionInfoStatus) {
 	*out = *in
 	in.ConnectionInfoStatus.DeepCopyInto(&out.ConnectionInfoStatus)
-
 	if in.CommunicationHosts != nil {
 		in, out := &in.CommunicationHosts, &out.CommunicationHosts
 		*out = make([]CommunicationHostStatus, len(*in))
@@ -604,10 +526,8 @@ func (in *OneAgentConnectionInfoStatus) DeepCopy() *OneAgentConnectionInfoStatus
 	if in == nil {
 		return nil
 	}
-
 	out := new(OneAgentConnectionInfoStatus)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -621,10 +541,8 @@ func (in *OneAgentInstance) DeepCopy() *OneAgentInstance {
 	if in == nil {
 		return nil
 	}
-
 	out := new(OneAgentInstance)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -636,19 +554,16 @@ func (in *OneAgentSpec) DeepCopyInto(out *OneAgentSpec) {
 		*out = new(HostInjectSpec)
 		(*in).DeepCopyInto(*out)
 	}
-
 	if in.CloudNativeFullStack != nil {
 		in, out := &in.CloudNativeFullStack, &out.CloudNativeFullStack
 		*out = new(CloudNativeFullStackSpec)
 		(*in).DeepCopyInto(*out)
 	}
-
 	if in.ApplicationMonitoring != nil {
 		in, out := &in.ApplicationMonitoring, &out.ApplicationMonitoring
 		*out = new(ApplicationMonitoringSpec)
 		(*in).DeepCopyInto(*out)
 	}
-
 	if in.HostMonitoring != nil {
 		in, out := &in.HostMonitoring, &out.HostMonitoring
 		*out = new(HostInjectSpec)
@@ -661,10 +576,8 @@ func (in *OneAgentSpec) DeepCopy() *OneAgentSpec {
 	if in == nil {
 		return nil
 	}
-
 	out := new(OneAgentSpec)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -672,27 +585,22 @@ func (in *OneAgentSpec) DeepCopy() *OneAgentSpec {
 func (in *OneAgentStatus) DeepCopyInto(out *OneAgentStatus) {
 	*out = *in
 	in.VersionStatus.DeepCopyInto(&out.VersionStatus)
-
 	if in.Instances != nil {
 		in, out := &in.Instances, &out.Instances
 		*out = make(map[string]OneAgentInstance, len(*in))
-
 		for key, val := range *in {
 			(*out)[key] = val
 		}
 	}
-
 	if in.LastInstanceStatusUpdate != nil {
 		in, out := &in.LastInstanceStatusUpdate, &out.LastInstanceStatusUpdate
 		*out = (*in).DeepCopy()
 	}
-
 	if in.Healthcheck != nil {
 		in, out := &in.Healthcheck, &out.Healthcheck
 		*out = new(pkgv1.HealthConfig)
 		(*in).DeepCopyInto(*out)
 	}
-
 	in.ConnectionInfoStatus.DeepCopyInto(&out.ConnectionInfoStatus)
 }
 
@@ -701,10 +609,8 @@ func (in *OneAgentStatus) DeepCopy() *OneAgentStatus {
 	if in == nil {
 		return nil
 	}
-
 	out := new(OneAgentStatus)
 	in.DeepCopyInto(out)
-
 	return out
 }
 
@@ -719,9 +625,7 @@ func (in *RoutingSpec) DeepCopy() *RoutingSpec {
 	if in == nil {
 		return nil
 	}
-
 	out := new(RoutingSpec)
 	in.DeepCopyInto(out)
-
 	return out
 }
