@@ -2,7 +2,6 @@ package csiprovisioner
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"path/filepath"
 	"testing"
@@ -16,9 +15,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	t_utils "github.com/Dynatrace/dynatrace-operator/pkg/util/testing"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
+	registrymock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/oci/registry"
+	"github.com/opencontainers/go-digest"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -36,6 +38,7 @@ const (
 func TestUpdateAgent(t *testing.T) {
 	ctx := context.Background()
 	testVersion := "test"
+	testImageDigest := "7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 
 	t.Run("zip install", func(t *testing.T) {
 		dk := createTestDynaKubeWithZip(testVersion)
@@ -112,18 +115,17 @@ func TestUpdateAgent(t *testing.T) {
 	})
 	t.Run("failed install", func(t *testing.T) {
 		dockerconfigjsonContent := `{"auths":{}}`
-		dk := createTestDynaKubeWithImage()
+		dk := createTestDynaKubeWithImage(testImageDigest)
 		provisioner := createTestProvisioner(createMockedPullSecret(dk, dockerconfigjsonContent))
 
 		var revision uint = 3
 		processModule := createTestProcessModuleConfig(revision)
-		base64Image := base64.StdEncoding.EncodeToString([]byte(dk.CodeModulesImage()))
-		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(base64Image)
+		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(testImageDigest)
 		installerMock := installermock.NewInstaller(t)
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("*context.valueCtx"), targetDir).
 			Return(false, fmt.Errorf("BOOM"))
-
+		mockRegistryClient(t, provisioner, "sha256:"+testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentImage(ctx, dk, processModule)
@@ -146,20 +148,19 @@ func TestUpdateAgent(t *testing.T) {
 		var revision uint = 3
 		processModule := createTestProcessModuleConfig(revision)
 
-		dk := createTestDynaKubeWithImage()
-		base64Image := base64.StdEncoding.EncodeToString([]byte(dk.CodeModulesImage()))
+		dk := createTestDynaKubeWithImage(testImageDigest)
 		provisioner := createTestProvisioner(createMockedPullSecret(dk, dockerconfigjsonContent))
-		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(base64Image)
+		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(testImageDigest)
 		installerMock := installermock.NewInstaller(t)
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("*context.valueCtx"), targetDir).
-			Return(true, nil).Run(mockFsAfterInstall(provisioner, base64Image))
-
+			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
+		mockRegistryClient(t, provisioner, "sha256:"+testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentImage(ctx, dk, processModule)
 		require.NoError(t, err)
-		assert.Equal(t, dk.CodeModulesImage(), currentVersion)
+		assert.Equal(t, testImageDigest, currentVersion)
 	})
 	t.Run("codeModulesImage set with custom pull secret", func(t *testing.T) {
 		pullSecretName := "test-pull-secret"
@@ -168,22 +169,21 @@ func TestUpdateAgent(t *testing.T) {
 		var revision uint = 3
 		processModule := createTestProcessModuleConfig(revision)
 
-		dk := createTestDynaKubeWithImage()
+		dk := createTestDynaKubeWithImage(testImageDigest)
 		dk.Spec.CustomPullSecret = pullSecretName
 
 		provisioner := createTestProvisioner(createMockedPullSecret(dk, dockerconfigjsonContent))
-		base64Image := base64.StdEncoding.EncodeToString([]byte(dk.CodeModulesImage()))
-		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(base64Image)
+		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(testImageDigest)
 		installerMock := installermock.NewInstaller(t)
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("*context.valueCtx"), targetDir).
-			Return(true, nil).Run(mockFsAfterInstall(provisioner, base64Image))
-
+			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
+		mockRegistryClient(t, provisioner, testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentImage(ctx, dk, processModule)
 		require.NoError(t, err)
-		assert.Equal(t, dk.CodeModulesImage(), currentVersion)
+		assert.Equal(t, testImageDigest, currentVersion)
 	})
 	t.Run("codeModulesImage + trustedCA set", func(t *testing.T) {
 		pullSecretName := "test-pull-secret"
@@ -216,23 +216,22 @@ NK85cEJwyxQ+wahdNGUD
 		var revision uint = 3
 		processModule := createTestProcessModuleConfig(revision)
 
-		dk := createTestDynaKubeWithImage()
+		dk := createTestDynaKubeWithImage(testImageDigest)
 		dk.Spec.CustomPullSecret = pullSecretName
 		dk.Spec.TrustedCAs = trustedCAName
 
 		provisioner := createTestProvisioner(createMockedPullSecret(dk, dockerconfigjsonContent), createMockedCAConfigMap(dk, customCertContent))
-		base64Image := base64.StdEncoding.EncodeToString([]byte(dk.CodeModulesImage()))
-		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(base64Image)
+		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(testImageDigest)
 		installerMock := installermock.NewInstaller(t)
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("*context.valueCtx"), targetDir).
-			Return(true, nil).Run(mockFsAfterInstall(provisioner, base64Image))
-
+			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
+		mockRegistryClient(t, provisioner, "sha256:"+testImageDigest)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentImage(ctx, dk, processModule)
 		require.NoError(t, err)
-		assert.Equal(t, dk.CodeModulesImage(), currentVersion)
+		assert.Equal(t, testImageDigest, currentVersion)
 	})
 }
 
@@ -270,8 +269,8 @@ func createMockedCAConfigMap(dynakube dynatracev1beta2.DynaKube, certContent str
 	}
 }
 
-func createTestDynaKubeWithImage() dynatracev1beta2.DynaKube {
-	imageID := "some.registry.com/image:1.234.345"
+func createTestDynaKubeWithImage(imageDigest string) dynatracev1beta2.DynaKube {
+	imageID := "some.registry.com/image:1.234.345@sha256:" + imageDigest
 
 	return *addFakeTenantUUID(&dynatracev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -329,8 +328,17 @@ func createTestProvisioner(obj ...client.Object) *OneAgentProvisioner {
 	return provisioner
 }
 
+func mockRegistryClient(t *testing.T, provisioner *OneAgentProvisioner, imageDigest string) {
+	provisioner.registryClientBuilder = func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
+		regMock := registrymock.NewImageGetter(t)
+		regMock.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Digest: digest.Digest(imageDigest)}, nil)
+
+		return regMock, nil
+	}
+}
+
 func mockImageInstallerBuilder(mock *installermock.Installer) imageInstallerBuilder {
-	return func(_ context.Context, _ afero.Fs, _ *image.Properties) (installer.Installer, error) {
+	return func(_ afero.Fs, _ *image.Properties) (installer.Installer, error) {
 		return mock, nil
 	}
 }

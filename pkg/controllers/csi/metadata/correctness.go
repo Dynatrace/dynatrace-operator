@@ -44,7 +44,7 @@ func (checker *CorrectnessChecker) CorrectCSI(ctx context.Context) error {
 		return err
 	}
 
-	if err := checker.copyCodeModulesFromDeprecatedBin(); err != nil {
+	if err := checker.copyCodeModulesFromDeprecatedBin(ctx); err != nil {
 		return err
 	}
 
@@ -59,27 +59,25 @@ func (checker *CorrectnessChecker) removeVolumesForMissingPods(ctx context.Conte
 		return nil
 	}
 
-	appMounts, err := checker.access.ReadAppMounts()
+	podNames, err := checker.access.GetPodNames(ctx)
 	if err != nil {
 		return err
 	}
 
 	pruned := []string{}
 
-	for _, appMount := range appMounts {
+	for podName := range podNames {
 		var pod corev1.Pod
-
-		if err := checker.apiReader.Get(ctx, client.ObjectKey{Name: appMount.VolumeMeta.PodName}, &pod); !k8serrors.IsNotFound(err) {
+		if err := checker.apiReader.Get(ctx, client.ObjectKey{Name: podName}, &pod); !k8serrors.IsNotFound(err) {
 			continue
 		}
 
-		volumeID := appMount.VolumeMeta.ID
-
-		if err := checker.access.DeleteAppMount(&AppMount{VolumeMetaID: appMount.VolumeMetaID}); err != nil {
+		volumeID := podNames[podName]
+		if err := checker.access.DeleteVolume(ctx, volumeID); err != nil {
 			return err
 		}
 
-		pruned = append(pruned, volumeID+"|"+appMount.VolumeMeta.PodName)
+		pruned = append(pruned, volumeID+"|"+podName)
 	}
 
 	log.Info("CSI volumes database is corrected for missing pods (volume|pod)", "prunedRows", pruned)
@@ -95,26 +93,25 @@ func (checker *CorrectnessChecker) removeMissingDynakubes(ctx context.Context) e
 		return nil
 	}
 
-	tenantConfigs, err := checker.access.ReadTenantConfigs()
+	dynakubes, err := checker.access.GetTenantsToDynakubes(ctx)
 	if err != nil {
 		return err
 	}
 
 	pruned := []string{}
 
-	for _, tenantConfig := range tenantConfigs {
+	for dynakubeName := range dynakubes {
 		var dynakube dynatracev1beta2.DynaKube
-
-		if err := checker.apiReader.Get(ctx, client.ObjectKey{Name: tenantConfig.Name}, &dynakube); !k8serrors.IsNotFound(err) {
+		if err := checker.apiReader.Get(ctx, client.ObjectKey{Name: dynakubeName}, &dynakube); !k8serrors.IsNotFound(err) {
 			continue
 		}
 
-		if err := checker.access.DeleteTenantConfig(&TenantConfig{Name: tenantConfig.Name}, true); err != nil {
+		if err := checker.access.DeleteDynakube(ctx, dynakubeName); err != nil {
 			return err
 		}
 
-		tenantUUID := tenantConfig.TenantUUID
-		pruned = append(pruned, tenantUUID+"|"+tenantConfig.Name)
+		tenantUUID := dynakubes[dynakubeName]
+		pruned = append(pruned, tenantUUID+"|"+dynakubeName)
 	}
 
 	log.Info("CSI tenants database is corrected for missing dynakubes (tenant|dynakube)", "prunedRows", pruned)
@@ -122,21 +119,21 @@ func (checker *CorrectnessChecker) removeMissingDynakubes(ctx context.Context) e
 	return nil
 }
 
-func (checker *CorrectnessChecker) copyCodeModulesFromDeprecatedBin() error {
-	tenantConfigs, err := checker.access.ReadTenantConfigs()
+func (checker *CorrectnessChecker) copyCodeModulesFromDeprecatedBin(ctx context.Context) error {
+	dynakubes, err := checker.access.GetAllDynakubes(ctx)
 	if err != nil {
 		return err
 	}
 
 	moved := []string{}
 
-	for _, tenantConfig := range tenantConfigs {
-		if tenantConfig.TenantUUID == "" || tenantConfig.DownloadedCodeModuleVersion == "" {
+	for _, dynakube := range dynakubes {
+		if dynakube.TenantUUID == "" || dynakube.LatestVersion == "" {
 			continue
 		}
 
-		deprecatedBin := checker.path.AgentBinaryDirForVersion(tenantConfig.TenantUUID, tenantConfig.DownloadedCodeModuleVersion)
-		currentBin := checker.path.AgentSharedBinaryDirForAgent(tenantConfig.DownloadedCodeModuleVersion)
+		deprecatedBin := checker.path.AgentBinaryDirForVersion(dynakube.TenantUUID, dynakube.LatestVersion)
+		currentBin := checker.path.AgentSharedBinaryDirForAgent(dynakube.LatestVersion)
 
 		linked, err := checker.safelyLinkCodeModule(deprecatedBin, currentBin)
 		if err != nil {
@@ -144,7 +141,7 @@ func (checker *CorrectnessChecker) copyCodeModulesFromDeprecatedBin() error {
 		}
 
 		if linked {
-			moved = append(moved, tenantConfig.TenantUUID+"|"+tenantConfig.DownloadedCodeModuleVersion)
+			moved = append(moved, dynakube.TenantUUID+"|"+dynakube.LatestVersion)
 		}
 	}
 

@@ -60,7 +60,6 @@ func testFileSystemWithSharedDirPresent(pathResolver metadata.PathResolver, imag
 }
 
 func TestNewImageInstaller(t *testing.T) {
-	ctx := context.Background()
 	testFS := afero.NewMemMapFs()
 	dynakube := &dynatracev1beta2.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -82,7 +81,7 @@ func TestNewImageInstaller(t *testing.T) {
 		ImageDigest:  testImageDigest,
 		ApiReader:    fakeClient,
 	}
-	in, err := NewImageInstaller(ctx, testFS, props)
+	in, err := NewImageInstaller(testFS, props)
 	require.NoError(t, err)
 	assert.NotNil(t, in)
 	assert.NotNil(t, in)

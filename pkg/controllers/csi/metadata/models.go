@@ -16,15 +16,15 @@ type TimeStampedModel struct {
 // TenantConfig holds info about a given configuration for a tenant.
 type TenantConfig struct {
 	TimeStampedModel
-	UID                         string `gorm:"primaryKey"` // auto generated UID
+	UID                         string `gorm:"primaryKey"`
 	Name                        string `gorm:"not null"`
-	DownloadedCodeModuleVersion string // can't be foreign key because of HostMonitoring edge case
+	DownloadedCodeModuleVersion string
 	ConfigDirPath               string `gorm:"not null"`
 	TenantUUID                  string `gorm:"not null"`
 	MaxFailedMountAttempts      int64  `gorm:"default:10"`
 }
 
-func (tc *TenantConfig) BeforeCreate(_ *gorm.DB) error {
+func (tc *TenantConfig) BeforeCreate(tx *gorm.DB) error {
 	tc.UID = uuid.NewString()
 
 	return nil
@@ -41,7 +41,7 @@ type CodeModule struct {
 type OSMount struct {
 	VolumeMeta VolumeMeta `gorm:"foreignKey:VolumeMetaID"`
 	TimeStampedModel
-	TenantConfigUID string
+	TenantConfigUID string       `gorm:"not null"`
 	TenantUUID      string       `gorm:"primaryKey"`
 	VolumeMetaID    string       `gorm:"not null"`
 	Location        string       `gorm:"not null"`
@@ -52,7 +52,7 @@ type OSMount struct {
 // AppMount keeps track of our mounts to user applications, where we provide the codemodules.
 type AppMount struct {
 	VolumeMeta VolumeMeta
-	CodeModule CodeModule `gorm:"foreignKey:CodeModuleVersion;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	CodeModule CodeModule `gorm:"foreignKey:CodeModuleVersion"`
 	TimeStampedModel
 	VolumeMetaID      string `gorm:"primaryKey"`
 	CodeModuleVersion string

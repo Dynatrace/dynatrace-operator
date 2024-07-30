@@ -1,19 +1,17 @@
 package csigc
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/utils/mount"
 )
 
 const (
@@ -34,7 +32,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 
 		gc := NewMockGarbageCollector()
 
-		gc.runBinaryGarbageCollection()
+		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID)
 
 		assert.InDelta(t, 1, testutil.ToFloat64(gcRunsMetric), 0.01)
 		assert.InDelta(t, 0, testutil.ToFloat64(foldersRemovedMetric), 0.01)
@@ -46,7 +44,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		gc := NewMockGarbageCollector()
 		_ = gc.fs.MkdirAll(testBinaryDir, 0770)
 
-		gc.runBinaryGarbageCollection()
+		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID)
 
 		assert.InDelta(t, 1, testutil.ToFloat64(gcRunsMetric), 0.01)
 		assert.InDelta(t, 0, testutil.ToFloat64(foldersRemovedMetric), 0.01)
@@ -57,9 +55,8 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 
 		gc := NewMockGarbageCollector()
 		gc.mockUnusedVersions(testVersion1, testVersion2, testVersion3)
-		gc.time.Set(time.Now().Add(2 * safeRemovalThreshold))
 
-		gc.runBinaryGarbageCollection()
+		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID)
 
 		assert.InDelta(t, 1, testutil.ToFloat64(gcRunsMetric), 0.01)
 		assert.InDelta(t, 3, testutil.ToFloat64(foldersRemovedMetric), 0.01)
@@ -72,7 +69,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		gc := NewMockGarbageCollector()
 		gc.mockUnusedVersions(testVersion1, testVersion2, testVersion3)
 
-		gc.runBinaryGarbageCollection()
+		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID)
 
 		assert.InDelta(t, 1, testutil.ToFloat64(gcRunsMetric), 0.01)
 		assert.InDelta(t, 0, testutil.ToFloat64(foldersRemovedMetric), 0.01)
@@ -84,9 +81,9 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		resetMetrics()
 
 		gc := NewMockGarbageCollector()
-		gc.mockUsedVersions(t, testVersion1, testVersion2, testVersion3)
+		gc.mockUsedVersions(testVersion1, testVersion2, testVersion3)
 
-		gc.runBinaryGarbageCollection()
+		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID)
 
 		assert.InDelta(t, 1, testutil.ToFloat64(gcRunsMetric), 0.01)
 		assert.InDelta(t, 0, testutil.ToFloat64(foldersRemovedMetric), 0.01)
@@ -96,42 +93,38 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 	})
 }
 
+func TestBinaryGarbageCollector_getUsedVersions(t *testing.T) {
+	gc := NewMockGarbageCollector()
+	gc.mockUsedVersions(testVersion1, testVersion2, testVersion3)
+
+	usedVersions, err := gc.db.GetUsedVersions(context.TODO(), testTenantUUID)
+	require.NoError(t, err)
+
+	assert.NotNil(t, usedVersions)
+	assert.Len(t, usedVersions, 3)
+	require.NoError(t, err)
+}
+
 func NewMockGarbageCollector() *CSIGarbageCollector {
 	return &CSIGarbageCollector{
 		fs:                    afero.NewMemMapFs(),
 		db:                    metadata.FakeMemoryDB(),
 		path:                  metadata.PathResolver{RootDir: testRootDir},
-		time:                  timeprovider.New(),
 		maxUnmountedVolumeAge: defaultMaxUnmountedCsiVolumeAge,
-		mounter:               mount.NewFakeMounter([]mount.MountPoint{}),
-		isNotMounted:          mockIsNotMounted(map[string]error{}),
 	}
 }
 
 func (gc *CSIGarbageCollector) mockUnusedVersions(versions ...string) {
 	_ = gc.fs.Mkdir(testBinaryDir, 0770)
-
-	gc.isNotMounted = mockIsNotMounted(map[string]error{})
 	for _, version := range versions {
-		gc.db.(metadata.Access).CreateCodeModule(&metadata.CodeModule{Version: version, Location: filepath.Join(testBinaryDir, version)})
 		_, _ = gc.fs.Create(filepath.Join(testBinaryDir, version))
-		gc.db.(metadata.Access).DeleteCodeModule(&metadata.CodeModule{Version: version})
 	}
 }
-func (gc *CSIGarbageCollector) mockUsedVersions(t *testing.T, versions ...string) {
+func (gc *CSIGarbageCollector) mockUsedVersions(versions ...string) {
 	_ = gc.fs.Mkdir(testBinaryDir, 0770)
 	for i, version := range versions {
 		_, _ = gc.fs.Create(filepath.Join(testBinaryDir, version))
-		appMount := metadata.AppMount{
-			VolumeMeta:        metadata.VolumeMeta{ID: fmt.Sprintf("volume%b", i), PodName: fmt.Sprintf("pod%b", i)},
-			VolumeMetaID:      fmt.Sprintf("volume%b", i),
-			CodeModuleVersion: version,
-			MountAttempts:     0,
-		}
-		err := gc.db.(metadata.Access).CreateAppMount(&appMount)
-		require.NoError(t, err)
-
-		gc.db.(metadata.Access).CreateCodeModule(&metadata.CodeModule{Version: version, Location: filepath.Join(testBinaryDir, version)})
+		_ = gc.db.InsertVolume(context.TODO(), metadata.NewVolume(fmt.Sprintf("pod%b", i), fmt.Sprintf("volume%b", i), version, testTenantUUID, 0))
 	}
 }
 

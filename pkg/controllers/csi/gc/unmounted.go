@@ -13,7 +13,6 @@ const (
 	maxUnmountedCsiVolumeAgeEnv     = "MAX_UNMOUNTED_VOLUME_AGE"
 )
 
-// TODO: Rework to use the database entries instead of the filesystem
 func (gc *CSIGarbageCollector) runUnmountedVolumeGarbageCollection(tenantUUID string) {
 	unmountedVolumes, err := gc.getUnmountedVolumes(tenantUUID)
 	if err != nil {

@@ -1,54 +1,78 @@
 package csigc
 
 import (
+	"context"
 	"os"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
-func (gc *CSIGarbageCollector) runBinaryGarbageCollection() {
+func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, tenantUUID string) {
 	fs := &afero.Afero{Fs: gc.fs}
 
 	gcRunsMetric.Inc()
 
-	codeModules, err := gc.db.ListDeletedCodeModules()
+	usedVersions, err := gc.db.GetUsedVersions(ctx, tenantUUID)
 	if err != nil {
-		log.Error(err, "failed to read deleted codemodules")
+		log.Info("failed to get used versions", "error", err)
 
 		return
 	}
 
-	for _, codeModule := range codeModules {
-		if !gc.time.Now().Time.After(codeModule.DeletedAt.Time.Add(safeRemovalThreshold)) {
-			log.Info("skipping recently orphaned codemodule", "version", codeModule.Version, "location", codeModule.Location)
+	log.Info("got all used versions (in deprecated location)", "tenantUUID", tenantUUID, "len(usedVersions)", len(usedVersions))
 
-			continue
-		}
+	storedVersions, err := gc.getStoredVersions(fs, tenantUUID)
+	if err != nil {
+		log.Info("failed to get stored versions", "error", err)
 
-		isNotMounted, err := gc.isNotMounted(gc.mounter, codeModule.Location)
-		if err != nil {
-			log.Info("failed to determine if AppMount is still mounted", "location", codeModule.Location, "version", codeModule.Version, "err", err.Error())
-
-			continue
-		}
-
-		if !isNotMounted {
-			log.Info("AppMount is still mounted", "location", codeModule.Location, "version", codeModule.Version)
-
-			continue
-		}
-
-		log.Info("cleaning up orphaned codemodule binary", "version", codeModule.Version, "location", codeModule.Location)
-		removeUnusedVersion(fs, codeModule.Location)
-
-		err = gc.db.PurgeCodeModule(&metadata.CodeModule{Version: codeModule.Version})
-		if err != nil {
-			log.Error(err, "failed to delete codemodule database entry")
-
-			return
-		}
+		return
 	}
+
+	log.Info("got all stored versions (in deprecated location)", "tenantUUID", tenantUUID, "len(storedVersions)", len(storedVersions))
+
+	setAgentBins, err := gc.db.GetLatestVersions(ctx)
+	if err != nil {
+		log.Error(err, "failed to get the set image digests")
+	}
+
+	for _, version := range storedVersions {
+		_, isPinnedVersion := setAgentBins[version]
+
+		shouldDelete := shouldDeleteVersion(version, usedVersions) && !isPinnedVersion
+		if !shouldDelete {
+			log.Info("skipped, version should not be deleted", "version", version)
+
+			continue
+		}
+
+		binaryPath := gc.path.AgentBinaryDirForVersion(tenantUUID, version)
+		log.Info("deleting unused version (in deprecated location)", "version", version, "path", binaryPath)
+		removeUnusedVersion(fs, binaryPath)
+	}
+}
+
+func (gc *CSIGarbageCollector) getStoredVersions(fs *afero.Afero, tenantUUID string) ([]string, error) {
+	bins, err := fs.ReadDir(gc.path.AgentBinaryDir(tenantUUID))
+	versions := make([]string, 0, len(bins))
+
+	if os.IsNotExist(err) {
+		log.Info("no versions stored")
+
+		return versions, nil
+	} else if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	for _, bin := range bins {
+		versions = append(versions, bin.Name())
+	}
+
+	return versions, nil
+}
+
+func shouldDeleteVersion(version string, usedVersions map[string]bool) bool {
+	return !usedVersions[version]
 }
 
 func removeUnusedVersion(fs *afero.Afero, binaryPath string) {
@@ -56,7 +80,7 @@ func removeUnusedVersion(fs *afero.Afero, binaryPath string) {
 
 	err := fs.RemoveAll(binaryPath)
 	if err != nil {
-		log.Error(err, "codemodule delete failed", "path", binaryPath)
+		log.Info("delete failed", "path", binaryPath)
 	} else {
 		foldersRemovedMetric.Inc()
 		reclaimedMemoryMetric.Add(float64(size))

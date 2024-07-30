@@ -3,34 +3,27 @@ package csigc
 import (
 	"context"
 	"os"
-	"path"
 	"time"
 
+	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
-	"k8s.io/utils/mount"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // CSIGarbageCollector removes unused and outdated agent versions
 type CSIGarbageCollector struct {
-	apiReader    client.Reader
-	fs           afero.Fs
-	db           metadata.Cleaner
-	mounter      mount.Interface
-	time         *timeprovider.Provider
-	isNotMounted mountChecker
-
-	path metadata.PathResolver
+	apiReader client.Reader
+	fs        afero.Fs
+	db        metadata.Access
+	path      metadata.PathResolver
 
 	maxUnmountedVolumeAge time.Duration
 }
-
-// necessary for mocking, as the MounterMock will use the os package
-type mountChecker func(mounter mount.Interface, file string) (bool, error)
 
 var _ reconcile.Reconciler = (*CSIGarbageCollector)(nil)
 
@@ -39,15 +32,12 @@ const (
 )
 
 // NewCSIGarbageCollector returns a new CSIGarbageCollector
-func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Cleaner) *CSIGarbageCollector {
+func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollector {
 	return &CSIGarbageCollector{
 		apiReader:             apiReader,
 		fs:                    afero.NewOsFs(),
 		db:                    db,
 		path:                  metadata.PathResolver{RootDir: opts.RootDir},
-		time:                  timeprovider.New(),
-		mounter:               mount.New(""),
-		isNotMounted:          mount.IsNotMountPoint,
 		maxUnmountedVolumeAge: determineMaxUnmountedVolumeAge(os.Getenv(maxUnmountedCsiVolumeAgeEnv)),
 	}
 }
@@ -55,80 +45,68 @@ func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db m
 func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("running OneAgent garbage collection", "namespace", request.Namespace, "name", request.Name)
 
-	log.Info("running binary garbage collection")
-	gc.runBinaryGarbageCollection()
+	defaultReconcileResult := reconcile.Result{}
 
-	if err := ctx.Err(); err != nil {
-		return reconcile.Result{RequeueAfter: dtcsi.ShortRequeueDuration}, err
+	dynakube, err := getDynakubeFromRequest(ctx, gc.apiReader, request)
+	if err != nil {
+		return defaultReconcileResult, err
 	}
 
-	tenantConfigs, err := gc.db.ListDeletedTenantConfigs()
+	if dynakube == nil {
+		return defaultReconcileResult, nil
+	}
 
+	if !dynakube.NeedAppInjection() {
+		log.Info("app injection not enabled, skip garbage collection", "dynakube", dynakube.Name)
+
+		return defaultReconcileResult, nil
+	}
+
+	tenantUUID, err := dynakube.TenantUUIDFromApiUrl()
 	if err != nil {
-		return reconcile.Result{RequeueAfter: dtcsi.ShortRequeueDuration}, err
+		log.Info("failed to get tenantUUID of DynaKube, checking later")
+
+		return defaultReconcileResult, err
+	}
+
+	log.Info("running binary garbage collection (for deprecated location)")
+	gc.runBinaryGarbageCollection(ctx, tenantUUID)
+
+	if err := ctx.Err(); err != nil {
+		return defaultReconcileResult, err
 	}
 
 	log.Info("running log garbage collection")
-
-	for _, tenantConfig := range tenantConfigs {
-		log.Info("cleaning up soft deleted tenant-config", "name", tenantConfig.Name)
-
-		gc.runUnmountedVolumeGarbageCollection(tenantConfig.TenantUUID)
-
-		err := gc.runOSMountGarbageCollection(tenantConfig)
-		if err != nil {
-			continue
-		}
-
-		err = gc.db.PurgeTenantConfig(&tenantConfig)
-		if err != nil {
-			log.Info("failed to remove the soft deleted tenant-config entry, will try again", "name", tenantConfig.Name)
-
-			return reconcile.Result{RequeueAfter: dtcsi.ShortRequeueDuration}, nil //nolint: nilerr
-		}
-	}
+	gc.runUnmountedVolumeGarbageCollection(tenantUUID)
 
 	if err := ctx.Err(); err != nil {
-		return reconcile.Result{RequeueAfter: dtcsi.ShortRequeueDuration}, err
+		return defaultReconcileResult, err
 	}
 
-	return reconcile.Result{RequeueAfter: dtcsi.LongRequeueDuration}, nil
+	log.Info("running shared binary garbage collection")
+
+	if err := gc.runSharedBinaryGarbageCollection(ctx); err != nil {
+		log.Info("failed to garbage collect the shared images")
+
+		return defaultReconcileResult, err
+	}
+
+	return defaultReconcileResult, nil
 }
 
-func (gc *CSIGarbageCollector) runOSMountGarbageCollection(tenantConfig metadata.TenantConfig) error {
-	osMounts, err := gc.db.ListDeletedOSMounts()
-	if err != nil {
-		return err
-	}
+func getDynakubeFromRequest(ctx context.Context, apiReader client.Reader, request reconcile.Request) (*dynatracev1beta2.DynaKube, error) {
+	var dynakube dynatracev1beta2.DynaKube
+	if err := apiReader.Get(ctx, request.NamespacedName, &dynakube); err != nil {
+		if k8serrors.IsNotFound(err) {
+			log.Info("given DynaKube object not found")
 
-	for _, osm := range osMounts {
-		if !gc.time.Now().Time.After(osm.DeletedAt.Time.Add(safeRemovalThreshold)) {
-			log.Info("skipping recently removed os-mount", "location", osm.Location)
-
-			continue
+			return nil, nil //nolint: nilnil
 		}
 
-		if osm.TenantConfig.UID == tenantConfig.UID {
-			isNotMounted, err := gc.isNotMounted(gc.mounter, osm.Location)
-			if err != nil {
-				log.Info("failed to determine if OSMount is still mounted", "location", osm.Location, "tenantConfig", osm.TenantConfig.Name, "err", err.Error())
+		log.Info("failed to get DynaKube object")
 
-				continue
-			}
-
-			if !isNotMounted {
-				log.Info("OSMount is still mounted", "location", osm.Location, "tenantConfig", osm.TenantConfig.Name)
-
-				continue
-			}
-
-			dir, _ := afero.ReadDir(gc.fs, osm.Location)
-			for _, d := range dir {
-				gc.fs.RemoveAll(path.Join([]string{osm.Location, d.Name()}...))
-				log.Info("removed outdate contents from OSMount folder", "location", osm.Location)
-			}
-		}
+		return nil, errors.WithStack(err)
 	}
 
-	return nil
+	return &dynakube, nil
 }

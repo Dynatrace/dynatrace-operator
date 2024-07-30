@@ -95,5 +95,5 @@ func ParseNodeUnpublishVolumeRequest(req *csi.NodeUnpublishVolumeRequest) (*Volu
 		return nil, status.Error(codes.InvalidArgument, "Target path missing in request")
 	}
 
-	return &VolumeInfo{VolumeID: volumeID, TargetPath: targetPath}, nil
+	return &VolumeInfo{volumeID, targetPath}, nil
 }
