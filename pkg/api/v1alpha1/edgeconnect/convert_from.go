@@ -7,7 +7,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
-// ConvertFrom converts v1beta3 to v1beta1.
+// ConvertFrom converts v1beta1 to v1alpha1.
 func (dst *EdgeConnect) ConvertFrom(srcRaw conversion.Hub) error {
 	src := srcRaw.(*edgeconnect.EdgeConnect)
 	dst.fromBase(src)
