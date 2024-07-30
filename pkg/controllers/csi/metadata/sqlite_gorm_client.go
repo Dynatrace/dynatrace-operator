@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
+	"github.com/glebarez/sqlite"
 	"github.com/go-gormigrate/gormigrate/v2"
 	"github.com/pkg/errors"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )

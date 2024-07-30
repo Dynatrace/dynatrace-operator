@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
@@ -611,7 +612,7 @@ func TestVolumeMetaValidation(t *testing.T) {
 }
 
 func setupDB() (*GormConn, error) {
-	db, err := NewAccess(context.Background(), "file:csi_testdb?mode=memory")
+	db, err := NewAccess(context.Background(), ":memory:"+dtcsi.SqliteParameterEnableFK)
 	if err != nil {
 		return nil, err
 	}

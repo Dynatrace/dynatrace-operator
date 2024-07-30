@@ -23,9 +23,13 @@ import (
 
 const (
 	DataPath       = "/data"
+	DbFile         = "csi.db"
 	DriverName     = "csi.oneagent.dynatrace.com"
 	AgentBinaryDir = "bin"
 	AgentRunDir    = "run"
+
+	//	https://github.com/glebarez/sqlite?tab=readme-ov-file#foreign-key-constraint-activation
+	SqliteParameterEnableFK = "?_pragma=foreign_keys(1)"
 
 	OverlayMappedDirPath = "mapped"
 	OverlayVarDirPath    = "var"
@@ -42,7 +46,7 @@ const (
 	LongRequeueDuration    = 30 * time.Minute
 )
 
-var MetadataAccessPath = filepath.Join(DataPath, "csi.db")
+var MetadataAccessPath = filepath.Join(DataPath, DbFile+SqliteParameterEnableFK)
 
 type CSIOptions struct {
 	NodeId   string
