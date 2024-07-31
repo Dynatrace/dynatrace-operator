@@ -52,13 +52,12 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	if len(monitoredEntities) == 0 {
 		log.Info("no MEs found, no kubernetesClusterMEID will be set in the dynakube status")
-		setEmptyMEIDCondition(r.dk.Conditions())
 
 		return nil
 	}
 
 	r.dk.Status.KubernetesClusterMEID = findLatestEntity(monitoredEntities).EntityId
-	conditions.SetStatusUpdated(r.dk.Conditions(), MEIDConditionType, "Kubernestes Cluster MEID is up to date in the status: "+r.dk.Status.KubernetesClusterMEID)
+	conditions.SetStatusUpdated(r.dk.Conditions(), MEIDConditionType, "Kubernestes Cluster MEID is up to date")
 
 	log.Info("kubernetesClusterMEID set in dynakube status, done reconciling", "kubernetesClusterMEID", r.dk.Status.KubernetesClusterMEID)
 
