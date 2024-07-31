@@ -21,9 +21,10 @@ type CSIGarbageCollector struct {
 	apiReader    client.Reader
 	fs           afero.Fs
 	db           metadata.Access
-	path         metadata.PathResolver
 	mounter      mount.Interface
 	isNotMounted mountChecker
+
+	path metadata.PathResolver
 
 	maxUnmountedVolumeAge time.Duration
 }

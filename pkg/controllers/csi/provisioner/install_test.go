@@ -123,6 +123,7 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("*context.valueCtx"), targetDir).
 			Return(false, fmt.Errorf("BOOM"))
+
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentImage(ctx, dk, processModule)
@@ -153,6 +154,7 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("*context.valueCtx"), targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, base64Image))
+
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentImage(ctx, dk, processModule)
@@ -176,6 +178,7 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("*context.valueCtx"), targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, base64Image))
+
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentImage(ctx, dk, processModule)
@@ -224,6 +227,7 @@ NK85cEJwyxQ+wahdNGUD
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("*context.valueCtx"), targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, base64Image))
+
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentImage(ctx, dk, processModule)

@@ -46,9 +46,9 @@ func TestRunSharedImagesGarbageCollection(t *testing.T) {
 		testDir := testPathResolver.AgentSharedBinaryDirForAgent(testImageDigest)
 		fs := createTestDirs(t, testDir)
 		gc := CSIGarbageCollector{
-			fs:   fs,
-			db:   metadata.FakeMemoryDB(),
-			path: testPathResolver,
+			fs:           fs,
+			db:           metadata.FakeMemoryDB(),
+			path:         testPathResolver,
 			isNotMounted: mockIsNotMounted(nil),
 		}
 		err := gc.runSharedBinaryGarbageCollection(ctx)
@@ -231,9 +231,9 @@ func TestDeleteImageDirs(t *testing.T) {
 		err := gc.deleteSharedBinDirs([]string{testImageDir, testZipDir})
 		require.NoError(t, err)
 		_, err = gc.fs.Stat(testImageDir)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		_, err = gc.fs.Stat(testZipDir)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 }
 

@@ -32,9 +32,9 @@ func TestReconcile(t *testing.T) {
 			},
 		}
 		gc := CSIGarbageCollector{
-			apiReader:    fake.NewClient(&dynakube),
-			fs:           afero.NewMemMapFs(),
-			db:           metadata.FakeMemoryDB(),
+			apiReader: fake.NewClient(&dynakube),
+			fs:        afero.NewMemMapFs(),
+			db:        metadata.FakeMemoryDB(),
 		}
 		result, err := gc.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakube.Name}})
 
