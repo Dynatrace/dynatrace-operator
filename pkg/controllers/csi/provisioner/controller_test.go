@@ -2,6 +2,7 @@ package csiprovisioner
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -605,10 +606,14 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		dtc, err := mockDtcBuilder.Build()
 		require.NoError(t, err)
 
+		path := metadata.PathResolver{RootDir: "test"}
+		base64Image := base64.StdEncoding.EncodeToString([]byte(dynakube.CodeModulesImage()))
+		targetDir := path.AgentSharedBinaryDirForAgent(base64Image)
+
 		mockK8sClient := createMockK8sClient(ctx, dynakube)
 		installerMock := installermock.NewInstaller(t)
 		installerMock.
-			On("InstallAgent", mock.AnythingOfType("*context.valueCtx"), "test/codemodules/test").
+			On("InstallAgent", mock.AnythingOfType("*context.valueCtx"), targetDir).
 			Return(true, nil)
 
 		provisioner := &OneAgentProvisioner{
@@ -616,25 +621,23 @@ func TestUpdateAgentInstallation(t *testing.T) {
 			dynatraceClientBuilder: mockDtcBuilder,
 			apiReader:              mockK8sClient,
 			client:                 mockK8sClient,
-			path:                   metadata.PathResolver{RootDir: "test"},
+			path:                   path,
 			fs:                     afero.NewMemMapFs(),
 			imageInstallerBuilder:  mockImageInstallerBuilder(installerMock),
 			recorder:               &record.FakeRecorder{},
 		}
 
-		ruxitAgentProcPath := filepath.Join("test", "codemodules", "test", "agent", "conf", "ruxitagentproc.conf")
-		sourceRuxitAgentProcPath := filepath.Join("test", "codemodules", "test", "agent", "conf", "_ruxitagentproc.conf")
+		ruxitAgentProcPath := filepath.Join(targetDir, "agent", "conf", "ruxitagentproc.conf")
+		sourceRuxitAgentProcPath := filepath.Join(targetDir, "agent", "conf", "_ruxitagentproc.conf")
 
 		setUpFS(provisioner.fs, ruxitAgentProcPath, sourceRuxitAgentProcPath)
-
-		mockRegistryClient(t, provisioner, "test")
 
 		dynakubeMetadata := metadata.Dynakube{TenantUUID: tenantUUID, LatestVersion: agentVersion, Name: dkName}
 		isRequeue, err := provisioner.updateAgentInstallation(ctx, dtc, &dynakubeMetadata, dynakube)
 		require.NoError(t, err)
 
 		require.Equal(t, "", dynakubeMetadata.LatestVersion)
-		require.Equal(t, "test", dynakubeMetadata.ImageDigest)
+		require.Equal(t, base64Image, dynakubeMetadata.ImageDigest)
 		assert.False(t, isRequeue)
 	})
 	t.Run("updateAgentInstallation with codeModules enabled errors and requeues", func(t *testing.T) {
@@ -649,10 +652,14 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		dtc, err := mockDtcBuilder.Build()
 		require.NoError(t, err)
 
+		path := metadata.PathResolver{RootDir: "test"}
+		base64Image := base64.StdEncoding.EncodeToString([]byte(dynakube.CodeModulesImage()))
+		targetDir := path.AgentSharedBinaryDirForAgent(base64Image)
+
 		mockK8sClient := createMockK8sClient(ctx, dynakube)
 		installerMock := installermock.NewInstaller(t)
 		installerMock.
-			On("InstallAgent", mock.AnythingOfType("*context.valueCtx"), "test/codemodules/test").
+			On("InstallAgent", mock.AnythingOfType("*context.valueCtx"), targetDir).
 			Return(true, nil)
 
 		provisioner := &OneAgentProvisioner{
@@ -665,8 +672,6 @@ func TestUpdateAgentInstallation(t *testing.T) {
 			imageInstallerBuilder:  mockImageInstallerBuilder(installerMock),
 			recorder:               &record.FakeRecorder{},
 		}
-
-		mockRegistryClient(t, provisioner, "test")
 
 		dynakubeMetadata := metadata.Dynakube{TenantUUID: tenantUUID, LatestVersion: agentVersion, Name: dkName}
 		isRequeue, err := provisioner.updateAgentInstallation(ctx, dtc, &dynakubeMetadata, dynakube)
@@ -708,7 +713,6 @@ func TestUpdateAgentInstallation(t *testing.T) {
 
 		setUpFS(provisioner.fs, ruxitAgentProcPath, sourceRuxitAgentProcPath)
 
-		mockRegistryClient(t, provisioner, "test")
 
 		dynakubeMetadata := metadata.Dynakube{TenantUUID: tenantUUID, LatestVersion: agentVersion, Name: dkName}
 		isRequeue, err := provisioner.updateAgentInstallation(ctx, dtc, &dynakubeMetadata, dynakube)
@@ -745,8 +749,6 @@ func TestUpdateAgentInstallation(t *testing.T) {
 			recorder:               &record.FakeRecorder{},
 			urlInstallerBuilder:    mockUrlInstallerBuilder(installerMock),
 		}
-
-		mockRegistryClient(t, provisioner, "test")
 
 		dynakubeMetadata := metadata.Dynakube{TenantUUID: tenantUUID, LatestVersion: agentVersion, Name: dkName}
 		isRequeue, err := provisioner.updateAgentInstallation(ctx, dtc, &dynakubeMetadata, dynakube)

@@ -65,7 +65,7 @@ func (installer *Installer) InstallAgent(_ context.Context, targetDir string) (b
 	log.Info("installing agent from image")
 
 	if installer.isAlreadyPresent(targetDir) {
-		log.Info("agent already installed", "target dir", targetDir)
+		log.Info("agent already installed", "image", installer.props.ImageUri, "target dir", targetDir)
 
 		return false, nil
 	}
@@ -77,7 +77,7 @@ func (installer *Installer) InstallAgent(_ context.Context, targetDir string) (b
 		return false, errors.WithStack(err)
 	}
 
-	log.Info("installing agent", "target dir", targetDir)
+	log.Info("installing agent", "image", installer.props.ImageUri, "target dir", targetDir)
 
 	if err := installer.installAgentFromImage(targetDir); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
@@ -109,19 +109,7 @@ func (installer *Installer) installAgentFromImage(targetDir string) error {
 	}
 
 	image := installer.props.ImageUri
-
-	if err != nil {
-		log.Info("failed to get source information", "image", image)
-
-		return errors.WithStack(err)
-	}
-
 	imageCacheDir := getCacheDirPath(installer.props.ImageDigest)
-	if err != nil {
-		log.Info("failed to get destination information", "image", image, "imageCacheDir", imageCacheDir)
-
-		return errors.WithStack(err)
-	}
 
 	err = installer.extractAgentBinariesFromImage(
 		imagePullInfo{
