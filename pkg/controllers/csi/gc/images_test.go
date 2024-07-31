@@ -49,6 +49,7 @@ func TestRunSharedImagesGarbageCollection(t *testing.T) {
 			fs:   fs,
 			db:   metadata.FakeMemoryDB(),
 			path: testPathResolver,
+			isNotMounted: mockIsNotMounted(nil),
 		}
 		err := gc.runSharedBinaryGarbageCollection(ctx)
 		require.NoError(t, err)
@@ -196,19 +197,43 @@ func TestDeleteImageDirs(t *testing.T) {
 	t.Run("deletes, no panic/error", func(t *testing.T) {
 		testImageDir := testPathResolver.AgentSharedBinaryDirForAgent(testImageDigest)
 		testZipDir := testPathResolver.AgentSharedBinaryDirForAgent(testVersion1)
-		fs := createTestDirs(t, testImageDir, testZipDir)
-		err := deleteSharedBinDirs(fs, []string{testImageDir, testZipDir})
+		gc := CSIGarbageCollector{
+			fs:           createTestDirs(t, testImageDir, testZipDir),
+			isNotMounted: mockIsNotMounted(nil),
+		}
+		err := gc.deleteSharedBinDirs([]string{testImageDir, testZipDir})
 		require.NoError(t, err)
-		_, err = fs.Stat(testImageDir)
+		_, err = gc.fs.Stat(testImageDir)
 		assert.True(t, os.IsNotExist(err))
-		_, err = fs.Stat(testZipDir)
+		_, err = gc.fs.Stat(testZipDir)
 		assert.True(t, os.IsNotExist(err))
 	})
 	t.Run("not exists, no panic/error", func(t *testing.T) {
-		fs := afero.NewMemMapFs()
+		gc := CSIGarbageCollector{
+			fs:           afero.NewMemMapFs(),
+			isNotMounted: mockIsNotMounted(nil),
+		}
 		testDir := testPathResolver.AgentSharedBinaryDirForAgent(testImageDigest)
-		err := deleteSharedBinDirs(fs, []string{testDir})
+		err := gc.deleteSharedBinDirs([]string{testDir})
 		require.NoError(t, err)
+	})
+
+	t.Run("skips mounted, no panic/error", func(t *testing.T) {
+		testImageDir := testPathResolver.AgentSharedBinaryDirForAgent(testImageDigest)
+		testZipDir := testPathResolver.AgentSharedBinaryDirForAgent(testVersion1)
+		gc := CSIGarbageCollector{
+			fs: createTestDirs(t, testImageDir, testZipDir),
+			isNotMounted: mockIsNotMounted(map[string]error{
+				testImageDir: nil,
+				testZipDir:   nil,
+			}),
+		}
+		err := gc.deleteSharedBinDirs([]string{testImageDir, testZipDir})
+		require.NoError(t, err)
+		_, err = gc.fs.Stat(testImageDir)
+		assert.NoError(t, err)
+		_, err = gc.fs.Stat(testZipDir)
+		assert.NoError(t, err)
 	})
 }
 

@@ -63,20 +63,6 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 
 		gc.assertVersionNotExists(t, testVersion1, testVersion3)
 	})
-	t.Run("ignore recently deleted", func(t *testing.T) {
-		resetMetrics()
-
-		gc := NewMockGarbageCollector()
-		gc.mockUnusedVersions(testVersion1, testVersion2, testVersion3)
-
-		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID)
-
-		assert.InDelta(t, 1, testutil.ToFloat64(gcRunsMetric), 0.01)
-		assert.InDelta(t, 0, testutil.ToFloat64(foldersRemovedMetric), 0.01)
-		assert.InDelta(t, 0, testutil.ToFloat64(reclaimedMemoryMetric), 0.01)
-
-		gc.assertVersionExists(t, testVersion1, testVersion2, testVersion3)
-	})
 	t.Run("ignore used", func(t *testing.T) {
 		resetMetrics()
 
@@ -110,6 +96,7 @@ func NewMockGarbageCollector() *CSIGarbageCollector {
 		fs:                    afero.NewMemMapFs(),
 		db:                    metadata.FakeMemoryDB(),
 		path:                  metadata.PathResolver{RootDir: testRootDir},
+		isNotMounted:          mockIsNotMounted(nil),
 		maxUnmountedVolumeAge: defaultMaxUnmountedCsiVolumeAge,
 	}
 }

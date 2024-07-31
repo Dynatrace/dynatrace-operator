@@ -47,8 +47,10 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, t
 		}
 
 		binaryPath := gc.path.AgentBinaryDirForVersion(tenantUUID, version)
-		log.Info("deleting unused version (in deprecated location)", "version", version, "path", binaryPath)
-		removeUnusedVersion(fs, binaryPath)
+		if notMountPoint, _ := gc.isNotMounted(gc.mounter, binaryPath); notMountPoint {
+			log.Info("deleting unused version (in deprecated location)", "version", version, "path", binaryPath)
+			removeUnusedVersion(fs, binaryPath)
+		}
 	}
 }
 

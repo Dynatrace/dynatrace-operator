@@ -11,25 +11,27 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/utils/mount"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // CSIGarbageCollector removes unused and outdated agent versions
 type CSIGarbageCollector struct {
-	apiReader client.Reader
-	fs        afero.Fs
-	db        metadata.Access
-	path      metadata.PathResolver
+	apiReader    client.Reader
+	fs           afero.Fs
+	db           metadata.Access
+	path         metadata.PathResolver
+	mounter      mount.Interface
+	isNotMounted mountChecker
 
 	maxUnmountedVolumeAge time.Duration
 }
 
-var _ reconcile.Reconciler = (*CSIGarbageCollector)(nil)
+// necessary for mocking, as the MounterMock will use the os package
+type mountChecker func(mounter mount.Interface, file string) (bool, error)
 
-const (
-	safeRemovalThreshold = 5 * time.Minute
-)
+var _ reconcile.Reconciler = (*CSIGarbageCollector)(nil)
 
 // NewCSIGarbageCollector returns a new CSIGarbageCollector
 func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollector {
@@ -38,6 +40,8 @@ func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db m
 		fs:                    afero.NewOsFs(),
 		db:                    db,
 		path:                  metadata.PathResolver{RootDir: opts.RootDir},
+		mounter:               mount.New(""),
+		isNotMounted:          mount.IsNotMountPoint,
 		maxUnmountedVolumeAge: determineMaxUnmountedVolumeAge(os.Getenv(maxUnmountedCsiVolumeAgeEnv)),
 	}
 }

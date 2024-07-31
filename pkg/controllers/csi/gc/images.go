@@ -31,7 +31,7 @@ func (gc *CSIGarbageCollector) runSharedBinaryGarbageCollection(ctx context.Cont
 		return nil
 	}
 
-	return deleteSharedBinDirs(gc.fs, binsToDelete)
+	return gc.deleteSharedBinDirs(binsToDelete)
 }
 
 func (gc *CSIGarbageCollector) getSharedBinDirs() ([]os.FileInfo, error) {
@@ -86,15 +86,17 @@ func (gc *CSIGarbageCollector) collectUnusedAgentBins(ctx context.Context, image
 	return toDelete, nil
 }
 
-func deleteSharedBinDirs(fs afero.Fs, imageDirs []string) error {
+func (gc *CSIGarbageCollector) deleteSharedBinDirs(imageDirs []string) error {
 	for _, dir := range imageDirs {
-		log.Info("deleting shared image dir", "dir", dir)
+		if notMountPoint, _ := gc.isNotMounted(gc.mounter, dir); notMountPoint {
+			log.Info("deleting shared image dir", "dir", dir)
 
-		err := fs.RemoveAll(dir)
-		if err != nil {
-			log.Info("failed to delete image cache", "dir", dir)
+			err := gc.fs.RemoveAll(dir)
+			if err != nil {
+				log.Info("failed to delete image cache", "dir", dir)
 
-			return errors.WithStack(err)
+				return errors.WithStack(err)
+			}
 		}
 	}
 
