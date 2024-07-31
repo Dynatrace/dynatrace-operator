@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	registrymock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/oci/registry"

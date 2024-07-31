@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	edgeconnectv1alpha "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/edgeconnect"
+	edgeconnectv1alpha2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
 	controller "github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
@@ -158,7 +158,7 @@ func createTenantConfig(clientSecret tenant.EdgeConnectSecret, edgeConnectTenant
 		ecClt, err := buildEcClient(ctx, clientSecret)
 		require.NoError(t, err)
 
-		edgeConnectRequest := edgeconnectClient.NewRequest(clientSecret.Name, []string{testHostPattern}, []edgeconnectv1alpha.HostMapping{}, "")
+		edgeConnectRequest := edgeconnectClient.NewRequest(clientSecret.Name, []string{testHostPattern}, []edgeconnectv1alpha2.HostMapping{}, "")
 		edgeConnectRequest.ManagedByDynatraceOperator = false
 
 		res, err := ecClt.CreateEdgeConnect(edgeConnectRequest)
@@ -253,7 +253,7 @@ func checkEcNotExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, edgeConn
 	}
 }
 
-func checkSettingsExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, testEdgeConnect *edgeconnectv1alpha.EdgeConnect) features.Func {
+func checkSettingsExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, testEdgeConnect *edgeconnectv1alpha2.EdgeConnect) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		ecClt, err := buildEcClient(ctx, clientSecret)
 		require.NoError(t, err)
@@ -270,7 +270,7 @@ func checkSettingsExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, testE
 	}
 }
 
-func checkSettingsNotExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, testEdgeConnect *edgeconnectv1alpha.EdgeConnect) features.Func {
+func checkSettingsNotExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, testEdgeConnect *edgeconnectv1alpha2.EdgeConnect) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		ecClt, err := buildEcClient(ctx, clientSecret)
 		require.NoError(t, err)
@@ -343,7 +343,7 @@ func serviceAccount(name string, namespace string) *corev1.ServiceAccount {
 	}
 }
 
-func updateHostPatterns(testEdgeConnect *edgeconnectv1alpha.EdgeConnect) features.Func {
+func updateHostPatterns(testEdgeConnect *edgeconnectv1alpha2.EdgeConnect) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		testEdgeConnect.Spec.HostPatterns = []string{
 			testHostPattern2,

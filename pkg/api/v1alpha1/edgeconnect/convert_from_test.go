@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -15,7 +15,7 @@ import (
 )
 
 func TestConvertFrom(t *testing.T) {
-	t.Run("migrate from edgeconnect v1beta1 to v1alpha1", func(t *testing.T) {
+	t.Run("migrate from edgeconnect v1alpha2 to v1alpha1", func(t *testing.T) {
 		from := edgeconnect.EdgeConnect{
 			ObjectMeta: getCurrentBase(),
 			Spec:       getCurrentSpec(),

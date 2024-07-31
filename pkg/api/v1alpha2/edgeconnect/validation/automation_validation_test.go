@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 )

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 )
 
 const (

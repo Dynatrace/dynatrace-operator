@@ -3,11 +3,11 @@ package edgeconnect
 import (
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
-// ConvertTo converts v1alpha1 to v1beta1.
+// ConvertTo converts v1alpha1 to v1alpha2.
 func (src *EdgeConnect) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*edgeconnect.EdgeConnect)
 	src.toBase(dst)

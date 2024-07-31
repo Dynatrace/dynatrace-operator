@@ -1,6 +1,6 @@
 // +kubebuilder:object:generate=true
 // +groupName=dynatrace.com
-// +versionName=v1beta1
+// +versionName=v1alpha2
 // +kubebuilder:validation:Optional
 package edgeconnect
 
@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -192,7 +192,7 @@ const (
 )
 
 func init() {
-	v1beta1.SchemeBuilder.Register(&EdgeConnect{}, &EdgeConnectList{})
+	v1alpha2.SchemeBuilder.Register(&EdgeConnect{}, &EdgeConnectList{})
 }
 
 func (e *EdgeConnect) HostPatterns() []string {

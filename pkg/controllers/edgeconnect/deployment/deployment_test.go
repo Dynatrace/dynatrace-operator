@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"

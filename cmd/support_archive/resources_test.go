@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -329,7 +329,7 @@ func getResourceLists() []*metav1.APIResourceList {
 	ec := metav1.APIResourceList{
 		GroupVersion: crdNameSuffix + "/" + "v1alpha1",
 		APIResources: []metav1.APIResource{
-			{Version: "v1alpha1", Group: crdNameSuffix, Name: "edgeconnects", Namespaced: true, Kind: "EdgeConnect"},
+			{Version: "v1alpha2", Group: crdNameSuffix, Name: "edgeconnects", Namespaced: true, Kind: "EdgeConnect"},
 		},
 	}
 
