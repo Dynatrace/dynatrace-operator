@@ -3,108 +3,161 @@ package csigc
 import (
 	"context"
 	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
+	mount "k8s.io/mount-utils"
 )
 
-func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, tenantUUID string) {
-	fs := &afero.Afero{Fs: gc.fs}
-
-	gcRunsMetric.Inc()
-
-	usedVersions, err := gc.db.GetUsedVersions(ctx, tenantUUID)
+func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, tenantUUID string) error {
+	binDirs, err := gc.getSharedBinDirs()
 	if err != nil {
-		log.Info("failed to get used versions", "error", err)
-
-		return
+		return err
 	}
 
-	log.Info("got all used versions (in deprecated location)", "tenantUUID", tenantUUID, "len(usedVersions)", len(usedVersions))
-
-	storedVersions, err := gc.getStoredVersions(fs, tenantUUID)
+	oldBinDirs, err := gc.getTenantBinDirs(tenantUUID)
 	if err != nil {
-		log.Info("failed to get stored versions", "error", err)
-
-		return
+		return err
 	}
 
-	log.Info("got all stored versions (in deprecated location)", "tenantUUID", tenantUUID, "len(storedVersions)", len(storedVersions))
+	binDirs = append(binDirs, oldBinDirs...)
 
-	setAgentBins, err := gc.db.GetLatestVersions(ctx)
+	binsToDelete, err := gc.collectUnusedAgentBins(ctx, binDirs, tenantUUID)
 	if err != nil {
-		log.Error(err, "failed to get the set image digests")
+		return err
 	}
 
-	for _, version := range storedVersions {
-		_, isPinnedVersion := setAgentBins[version]
+	if len(binsToDelete) == 0 {
+		log.Info("no shared binary dirs to delete on the node")
 
-		shouldDelete := shouldDeleteVersion(version, usedVersions) && !isPinnedVersion
-		if !shouldDelete {
-			log.Info("skipped, version should not be deleted", "version", version)
+		return nil
+	}
 
+	return gc.deleteBinDirs(binsToDelete)
+}
+
+func (gc *CSIGarbageCollector) collectUnusedAgentBins(ctx context.Context, imageDirs []os.FileInfo, tenantUUID string) ([]string, error) {
+	var toDelete []string
+
+	usedAgentVersions, err := gc.db.GetLatestVersions(ctx)
+	if err != nil {
+		log.Info("failed to get the used image versions")
+
+		return nil, err
+	}
+
+	usedAgentDigest, err := gc.db.GetUsedImageDigests(ctx)
+	if err != nil {
+		log.Info("failed to get the used image digests")
+
+		return nil, err
+	}
+
+	mountedAgentBins, err := getRelevantOverlayMounts(gc.mounter, []string{gc.path.AgentBinaryDir(tenantUUID), gc.path.AgentSharedBinaryDirBase()})
+	if err != nil {
+		log.Info("failed to get all mounted versions")
+
+		return nil, err
+	}
+
+	for _, imageDir := range imageDirs {
+		agentBin := imageDir.Name()
+		sharedPath := gc.path.AgentSharedBinaryDirForAgent(agentBin)
+		tenantPath := gc.path.AgentBinaryDirForVersion(tenantUUID, agentBin)
+
+		switch {
+		case usedAgentVersions[agentBin]: // versions that may not be used, but a dynakube references it
+			continue
+		case usedAgentDigest[agentBin]: // images that may not be used, but a dynakube references it
 			continue
 		}
 
-		binaryPath := gc.path.AgentBinaryDirForVersion(tenantUUID, version)
-		if notMountPoint, _ := gc.isNotMounted(gc.mounter, binaryPath); notMountPoint {
-			log.Info("deleting unused version (in deprecated location)", "version", version, "path", binaryPath)
-			removeUnusedVersion(fs, binaryPath)
+		if !mountedAgentBins[sharedPath] { // based on mount, active shared codemodule mounts
+			toDelete = append(toDelete, sharedPath)
+		}
+
+		if !mountedAgentBins[tenantPath] { // based on mount, active tenant codemodule mounts
+			toDelete = append(toDelete, tenantPath)
 		}
 	}
+
+	return toDelete, nil
 }
 
-func (gc *CSIGarbageCollector) getStoredVersions(fs *afero.Afero, tenantUUID string) ([]string, error) {
-	bins, err := fs.ReadDir(gc.path.AgentBinaryDir(tenantUUID))
-	versions := make([]string, 0, len(bins))
+func (gc *CSIGarbageCollector) deleteBinDirs(imageDirs []string) error {
+	for _, dir := range imageDirs {
+		err := gc.fs.RemoveAll(dir)
+		if err != nil {
+			log.Info("failed to delete codemodule bin dir", "dir", dir)
 
+			return errors.WithStack(err)
+		}
+	}
+
+	return nil
+}
+
+func (gc *CSIGarbageCollector) getTenantBinDirs(tenantUUID string) ([]os.FileInfo, error) {
+	binPath := gc.path.AgentBinaryDir(tenantUUID)
+
+	binDirs, err := afero.Afero{Fs: gc.fs}.ReadDir(binPath)
 	if os.IsNotExist(err) {
-		log.Info("no versions stored")
+		log.Info("no codemodule versions stored in deprecated path", "path", binPath)
 
-		return versions, nil
+		return nil, nil
 	} else if err != nil {
+		log.Info("failed to read codemodule versions stored in deprecated path", "path", binPath)
+
 		return nil, errors.WithStack(err)
 	}
 
-	for _, bin := range bins {
-		versions = append(versions, bin.Name())
+	return binDirs, nil
+}
+
+func (gc *CSIGarbageCollector) getSharedBinDirs() ([]os.FileInfo, error) {
+	sharedPath := gc.path.AgentSharedBinaryDirBase()
+
+	imageDirs, err := afero.Afero{Fs: gc.fs}.ReadDir(sharedPath)
+	if os.IsNotExist(err) {
+		log.Info("no shared codemodules stored ", "path", sharedPath)
+
+		return nil, nil
 	}
 
-	return versions, nil
-}
-
-func shouldDeleteVersion(version string, usedVersions map[string]bool) bool {
-	return !usedVersions[version]
-}
-
-func removeUnusedVersion(fs *afero.Afero, binaryPath string) {
-	size, _ := dirSize(fs, binaryPath)
-
-	err := fs.RemoveAll(binaryPath)
 	if err != nil {
-		log.Info("delete failed", "path", binaryPath)
-	} else {
-		foldersRemovedMetric.Inc()
-		reclaimedMemoryMetric.Add(float64(size))
+		log.Info("failed to read shared image directory", "path", sharedPath)
+
+		return nil, errors.WithStack(err)
 	}
 
-	log.Info("removed outdate CodeModule binary", "location", binaryPath)
+	return imageDirs, nil
 }
 
-func dirSize(fs *afero.Afero, path string) (int64, error) {
-	var size int64
+func getRelevantOverlayMounts(mounter mount.Interface, baseFolders []string) (map[string]bool, error) {
+	mountPoints, err := mounter.List()
+	if err != nil {
+		log.Error(err, "failed to list all mount points")
 
-	err := fs.Walk(path, func(_ string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
+		return nil, err
+	}
+
+	relevantMounts := map[string]bool{}
+
+	for _, mountPoint := range mountPoints {
+		if mountPoint.Device == "overlay" {
+			for _, opt := range mountPoint.Opts {
+				for _, baseFolder := range baseFolders {
+					if strings.HasPrefix(opt, "lowerdir="+baseFolder) {
+						split := strings.Split(opt, "=")
+						relevantMounts[split[1]] = true
+
+						break
+					}
+				}
+			}
 		}
+	}
 
-		if !info.IsDir() {
-			size += info.Size()
-		}
-
-		return err
-	})
-
-	return size, err
+	return relevantMounts, nil
 }

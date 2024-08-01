@@ -28,7 +28,7 @@ import (
 	"github.com/spf13/afero"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/utils/mount"
+	mount "k8s.io/mount-utils"
 )
 
 const failedToGetOsAgentVolumePrefix = "failed to get osagent volume info from database: "

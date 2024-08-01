@@ -2,150 +2,170 @@ package csigc
 
 import (
 	"context"
-	"fmt"
-	"path/filepath"
+	"os"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	mount "k8s.io/mount-utils"
 )
 
 const (
-	testTenantUUID = "asd12345"
-	testVersion1   = "1"
-	testVersion2   = "2"
-	testVersion3   = "3"
-	testRootDir    = "/tmp"
+	testVersion = "some-version"
 )
 
 var (
-	testBinaryDir = filepath.Join(testRootDir, testTenantUUID, "bin")
+	testPathResolver = metadata.PathResolver{
+		RootDir: "test",
+	}
 )
 
 func TestRunBinaryGarbageCollection(t *testing.T) {
-	t.Run("succeeds when no version present", func(t *testing.T) {
-		resetMetrics()
+	ctx := context.Background()
 
-		gc := NewMockGarbageCollector()
-
-		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID)
-
-		assert.InDelta(t, 1, testutil.ToFloat64(gcRunsMetric), 0.01)
-		assert.InDelta(t, 0, testutil.ToFloat64(foldersRemovedMetric), 0.01)
-		assert.InDelta(t, 0, testutil.ToFloat64(reclaimedMemoryMetric), 0.01)
+	t.Run("bad database", func(t *testing.T) {
+		testDir := testPathResolver.AgentSharedBinaryDirForAgent(testVersion)
+		fs := createTestDirs(t, testDir)
+		gc := CSIGarbageCollector{
+			fs:   fs,
+			db:   &metadata.FakeFailDB{},
+			path: testPathResolver,
+		}
+		err := gc.runBinaryGarbageCollection(ctx, testTenantUUID)
+		require.Error(t, err)
 	})
-	t.Run("succeeds when no version available", func(t *testing.T) {
-		resetMetrics()
-
-		gc := NewMockGarbageCollector()
-		_ = gc.fs.MkdirAll(testBinaryDir, 0770)
-
-		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID)
-
-		assert.InDelta(t, 1, testutil.ToFloat64(gcRunsMetric), 0.01)
-		assert.InDelta(t, 0, testutil.ToFloat64(foldersRemovedMetric), 0.01)
-		assert.InDelta(t, 0, testutil.ToFloat64(reclaimedMemoryMetric), 0.01)
-	})
-	t.Run("remove unused", func(t *testing.T) {
-		resetMetrics()
-
-		gc := NewMockGarbageCollector()
-		gc.mockUnusedVersions(testVersion1, testVersion2, testVersion3)
-
-		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID)
-
-		assert.InDelta(t, 1, testutil.ToFloat64(gcRunsMetric), 0.01)
-		assert.InDelta(t, 3, testutil.ToFloat64(foldersRemovedMetric), 0.01)
-
-		gc.assertVersionNotExists(t, testVersion1, testVersion3)
-	})
-	t.Run("ignore used", func(t *testing.T) {
-		resetMetrics()
-
-		gc := NewMockGarbageCollector()
-		gc.mockUsedVersions(testVersion1, testVersion2, testVersion3)
-
-		gc.runBinaryGarbageCollection(context.TODO(), testTenantUUID)
-
-		assert.InDelta(t, 1, testutil.ToFloat64(gcRunsMetric), 0.01)
-		assert.InDelta(t, 0, testutil.ToFloat64(foldersRemovedMetric), 0.01)
-		assert.InDelta(t, 0, testutil.ToFloat64(reclaimedMemoryMetric), 0.01)
-
-		gc.assertVersionExists(t, testVersion1, testVersion2, testVersion3)
-	})
-}
-
-func TestBinaryGarbageCollector_getUsedVersions(t *testing.T) {
-	gc := NewMockGarbageCollector()
-	gc.mockUsedVersions(testVersion1, testVersion2, testVersion3)
-
-	usedVersions, err := gc.db.GetUsedVersions(context.TODO(), testTenantUUID)
-	require.NoError(t, err)
-
-	assert.NotNil(t, usedVersions)
-	assert.Len(t, usedVersions, 3)
-	require.NoError(t, err)
-}
-
-func NewMockGarbageCollector() *CSIGarbageCollector {
-	return &CSIGarbageCollector{
-		fs:                    afero.NewMemMapFs(),
-		db:                    metadata.FakeMemoryDB(),
-		path:                  metadata.PathResolver{RootDir: testRootDir},
-		isNotMounted:          mockIsNotMounted(nil),
-		maxUnmountedVolumeAge: defaultMaxUnmountedCsiVolumeAge,
-	}
-}
-
-func (gc *CSIGarbageCollector) mockUnusedVersions(versions ...string) {
-	_ = gc.fs.Mkdir(testBinaryDir, 0770)
-	for _, version := range versions {
-		_, _ = gc.fs.Create(filepath.Join(testBinaryDir, version))
-	}
-}
-func (gc *CSIGarbageCollector) mockUsedVersions(versions ...string) {
-	_ = gc.fs.Mkdir(testBinaryDir, 0770)
-	for i, version := range versions {
-		_, _ = gc.fs.Create(filepath.Join(testBinaryDir, version))
-		_ = gc.db.InsertVolume(context.TODO(), metadata.NewVolume(fmt.Sprintf("pod%b", i), fmt.Sprintf("volume%b", i), version, testTenantUUID, 0))
-	}
-}
-
-func (gc *CSIGarbageCollector) assertVersionNotExists(t *testing.T, versions ...string) {
-	for _, version := range versions {
-		exists, err := afero.Exists(gc.fs, filepath.Join(testBinaryDir, version))
-		assert.False(t, exists)
+	t.Run("no error on empty fs", func(t *testing.T) {
+		gc := CSIGarbageCollector{
+			fs:      afero.NewMemMapFs(),
+			mounter: mount.NewFakeMounter(nil),
+			db:      metadata.FakeMemoryDB(),
+		}
+		err := gc.runBinaryGarbageCollection(ctx, testTenantUUID)
 		require.NoError(t, err)
-	}
-}
-
-func (gc *CSIGarbageCollector) assertVersionExists(t *testing.T, versions ...string) {
-	for _, version := range versions {
-		exists, err := afero.Exists(gc.fs, filepath.Join(testBinaryDir, version))
-		assert.True(t, exists)
+	})
+	t.Run("deletes unused", func(t *testing.T) {
+		testSharedDir := testPathResolver.AgentSharedBinaryDirForAgent(testVersion)
+		testTenantBinDir := testPathResolver.AgentBinaryDirForVersion(testTenantUUID, testVersion)
+		fs := createTestDirs(t, testSharedDir, testTenantBinDir)
+		gc := CSIGarbageCollector{
+			fs:      fs,
+			db:      metadata.FakeMemoryDB(),
+			mounter: mount.NewFakeMounter(nil),
+			path:    testPathResolver,
+		}
+		err := gc.runBinaryGarbageCollection(ctx, testTenantUUID)
 		require.NoError(t, err)
-	}
+		_, err = fs.Stat(testSharedDir)
+		require.Error(t, err)
+		assert.True(t, os.IsNotExist(err))
+
+		_, err = fs.Stat(testTenantBinDir)
+		require.Error(t, err)
+		assert.True(t, os.IsNotExist(err))
+	})
+	t.Run("deletes nothing, because of dynakube metadata present", func(t *testing.T) {
+		testDir := testPathResolver.AgentSharedBinaryDirForAgent(testVersion)
+		fs := createTestDirs(t, testDir)
+		gc := CSIGarbageCollector{
+			fs:      fs,
+			db:      metadata.FakeMemoryDB(),
+			mounter: mount.NewFakeMounter(nil),
+		}
+		gc.db.InsertDynakube(ctx, &metadata.Dynakube{
+			Name:          "test",
+			TenantUUID:    "test",
+			LatestVersion: "test",
+			ImageDigest:   testVersion,
+		})
+
+		err := gc.runBinaryGarbageCollection(ctx, testTenantUUID)
+		require.NoError(t, err)
+
+		_, err = fs.Stat(testDir)
+		require.NoError(t, err)
+	})
+	t.Run("deletes nothing, because of volume metadata present", func(t *testing.T) {
+		testDir := testPathResolver.AgentSharedBinaryDirForAgent(testVersion)
+		fs := createTestDirs(t, testDir)
+		gc := CSIGarbageCollector{
+			fs:      fs,
+			db:      metadata.FakeMemoryDB(),
+			mounter: mount.NewFakeMounter(nil),
+		}
+		gc.db.InsertVolume(ctx, &metadata.Volume{
+			VolumeID:   "test",
+			TenantUUID: "test",
+			Version:    testVersion,
+			PodName:    "test",
+		})
+
+		err := gc.runBinaryGarbageCollection(ctx, testTenantUUID)
+		require.NoError(t, err)
+
+		_, err = fs.Stat(testDir)
+		require.NoError(t, err)
+	})
+	t.Run("deletes nothing, because directory is mounted", func(t *testing.T) {
+		testSharedDir := testPathResolver.AgentSharedBinaryDirForAgent(testVersion)
+		testTenantBinDir := testPathResolver.AgentBinaryDirForVersion(testTenantUUID, testVersion)
+		fs := createTestDirs(t, testSharedDir, testTenantBinDir)
+		gc := CSIGarbageCollector{
+			fs: fs,
+			db: metadata.FakeMemoryDB(),
+			mounter: mount.NewFakeMounter([]mount.MountPoint{
+				{
+					Type: "overlay",
+					Opts: []string{"upperdir=beep", "lowerdir=" + testSharedDir, "workdir=boop"},
+				},
+				{
+					Type: "overlay",
+					Opts: []string{"lowerdir=" + testTenantBinDir, "upperdir=beep", "workdir=boop"},
+				},
+			}),
+		}
+
+		err := gc.runBinaryGarbageCollection(ctx, testTenantUUID)
+		require.NoError(t, err)
+
+		_, err = fs.Stat(testSharedDir)
+		require.NoError(t, err)
+
+		_, err = fs.Stat(testTenantBinDir)
+		require.NoError(t, err)
+	})
 }
 
-// This is a very ugly hack, but because you can't Set the value of a Counter metric you have to create new ones to reset them between runs.
-func resetMetrics() {
-	gcRunsMetric = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "test",
-		Subsystem: "csi_driver",
-		Name:      "gc_runs",
+func TestGetSharedImageDirs(t *testing.T) {
+	t.Run("no error on empty fs", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		gc := CSIGarbageCollector{
+			fs:   fs,
+			path: testPathResolver,
+		}
+		dirs, err := gc.getSharedBinDirs()
+		require.NoError(t, err)
+		assert.Nil(t, dirs)
 	})
-	foldersRemovedMetric = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "test",
-		Subsystem: "csi_driver",
-		Name:      "gc_folder_rm",
+	t.Run("get image cache dirs", func(t *testing.T) {
+		testDir := testPathResolver.AgentSharedBinaryDirForAgent(testVersion)
+		fs := createTestDirs(t, testDir)
+		gc := CSIGarbageCollector{
+			fs:   fs,
+			path: testPathResolver,
+		}
+		dirs, err := gc.getSharedBinDirs()
+		require.NoError(t, err)
+		assert.Len(t, dirs, 1)
 	})
-	reclaimedMemoryMetric = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "test",
-		Subsystem: "csi_driver",
-		Name:      "gc_memory_reclaimed",
-	})
+}
+
+func createTestDirs(t *testing.T, paths ...string) afero.Fs {
+	fs := afero.NewMemMapFs()
+	for _, path := range paths {
+		require.NoError(t, fs.MkdirAll(path, 0755))
+	}
+
+	return fs
 }

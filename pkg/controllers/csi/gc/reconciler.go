@@ -11,38 +11,35 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/utils/mount"
+	mount "k8s.io/mount-utils"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // CSIGarbageCollector removes unused and outdated agent versions
 type CSIGarbageCollector struct {
-	apiReader    client.Reader
-	fs           afero.Fs
-	db           metadata.Access
-	mounter      mount.Interface
-	isNotMounted mountChecker
+	apiReader client.Reader
+	fs        afero.Fs
+	db        metadata.Access
+	mounter   mount.Interface
 
 	path metadata.PathResolver
 
 	maxUnmountedVolumeAge time.Duration
 }
 
-// necessary for mocking, as the MounterMock will use the os package
-type mountChecker func(mounter mount.Interface, file string) (bool, error)
-
 var _ reconcile.Reconciler = (*CSIGarbageCollector)(nil)
 
 // NewCSIGarbageCollector returns a new CSIGarbageCollector
 func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollector {
+	mounter := mount.New("")
+
 	return &CSIGarbageCollector{
 		apiReader:             apiReader,
 		fs:                    afero.NewOsFs(),
 		db:                    db,
 		path:                  metadata.PathResolver{RootDir: opts.RootDir},
-		mounter:               mount.New(""),
-		isNotMounted:          mount.IsNotMountPoint,
+		mounter:               mounter,
 		maxUnmountedVolumeAge: determineMaxUnmountedVolumeAge(os.Getenv(maxUnmountedCsiVolumeAgeEnv)),
 	}
 }
@@ -74,13 +71,6 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 		return defaultReconcileResult, err
 	}
 
-	log.Info("running binary garbage collection (for deprecated location)")
-	gc.runBinaryGarbageCollection(ctx, tenantUUID)
-
-	if err := ctx.Err(); err != nil {
-		return defaultReconcileResult, err
-	}
-
 	log.Info("running log garbage collection")
 	gc.runUnmountedVolumeGarbageCollection(tenantUUID)
 
@@ -88,9 +78,9 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 		return defaultReconcileResult, err
 	}
 
-	log.Info("running shared binary garbage collection")
+	log.Info("running binary garbage collection")
 
-	if err := gc.runSharedBinaryGarbageCollection(ctx); err != nil {
+	if err := gc.runBinaryGarbageCollection(ctx, tenantUUID); err != nil {
 		log.Info("failed to garbage collect the shared images")
 
 		return defaultReconcileResult, err

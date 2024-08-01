@@ -36,7 +36,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/utils/mount"
+	mount "k8s.io/mount-utils"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -145,7 +145,7 @@ func (svr *Server) NodePublishVolume(ctx context.Context, req *csi.NodePublishVo
 		return nil, err
 	}
 
-	if isMounted, err := isMounted(svr.mounter, volumeCfg.TargetPath); err != nil {
+	if isMounted, err := svr.mounter.IsMountPoint(volumeCfg.TargetPath); err != nil && !os.IsNotExist(err) {
 		return nil, err
 	} else if isMounted {
 		return &csi.NodePublishVolumeResponse{}, nil
@@ -226,17 +226,6 @@ func (svr *Server) NodeGetVolumeStats(context.Context, *csi.NodeGetVolumeStatsRe
 
 func (svr *Server) NodeExpandVolume(context.Context, *csi.NodeExpandVolumeRequest) (*csi.NodeExpandVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "")
-}
-
-func isMounted(mounter mount.Interface, targetPath string) (bool, error) {
-	isNotMounted, err := mount.IsNotMountPoint(mounter, targetPath)
-	if os.IsNotExist(err) {
-		isNotMounted = true
-	} else if err != nil {
-		return false, status.Error(codes.Internal, err.Error())
-	}
-
-	return !isNotMounted, nil
 }
 
 func logGRPC() grpc.UnaryServerInterceptor {

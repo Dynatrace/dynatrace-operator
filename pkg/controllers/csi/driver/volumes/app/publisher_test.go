@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/utils/mount"
+	mount "k8s.io/mount-utils"
 )
 
 const (
