@@ -31,7 +31,10 @@ func Build(owner metav1.Object, name string, container corev1.Container, options
 
 func SetReplicas(replicas int32) builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
-		s.Spec.Replicas = address.Of(replicas)
+		s.Spec.Replicas = address.Of(int32(1))
+		if replicas != 0 {
+			s.Spec.Replicas = address.Of(replicas)
+		}
 	}
 }
 

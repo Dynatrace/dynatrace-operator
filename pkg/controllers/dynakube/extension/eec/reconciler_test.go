@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/utils"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -153,8 +154,8 @@ func TestTopologySpreadConstraints(t *testing.T) {
 	t.Run("the default TopologySpreadConstraints", func(t *testing.T) {
 		dk := getTestDynakube()
 		statefulSet := getStatefulset(t, dk)
-
-		assert.Equal(t, buildDefaultTopologySpreadConstraints(dk.Name), statefulSet.Spec.Template.Spec.TopologySpreadConstraints)
+		appLabels := buildAppLabels(dk.Name)
+		assert.Equal(t, utils.BuildTopologySpreadConstraints(dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints, appLabels), statefulSet.Spec.Template.Spec.TopologySpreadConstraints)
 	})
 
 	t.Run("custom TopologySpreadConstraints", func(t *testing.T) {
