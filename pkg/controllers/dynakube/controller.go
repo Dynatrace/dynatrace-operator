@@ -324,9 +324,9 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		return err
 	}
 
-	monitoredEntitiesreconciler := monitoredentities.NewReconciler(dynatraceClient, dk)
+	monitoredEntitiesReconciler := monitoredentities.NewReconciler(dynatraceClient, dk)
 
-	err = monitoredEntitiesreconciler.Reconcile(ctx)
+	err = monitoredEntitiesReconciler.Reconcile(ctx)
 	if err != nil {
 		return err
 	}
