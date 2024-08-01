@@ -41,7 +41,7 @@ Make sure all the following are true when creating a pull-request:
 
 4. Create a new branch to work on:
 
-    : Group your branch into a category using a prefix for your branch name, like `feature/`, `ci/`, `bugfix/`, `doc/`.
+    > Group your branch into a category using a prefix for your branch name, like `feature/`, `ci/`, `bugfix/`, `doc/`.
 
    ```sh
    git checkout -b feature/your-branch
@@ -60,7 +60,7 @@ Make sure all the following are true when creating a pull-request:
 
 6. To test your changes on a cluster use
 
-    > Pushing to the default container registry (`quay.io/dynatrace/dynatrace-operator) requires specific permissions.
+    > Pushing to the default container registry (`quay.io/dynatrace/dynatrace-operator`) requires specific permissions.
     > You can use your own container registry by setting the `IMAGE` environment variable to a different value.
 
     1. Connect to a cluster using `kubectl`
