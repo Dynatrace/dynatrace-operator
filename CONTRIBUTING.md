@@ -40,16 +40,18 @@ Make sure all the following are true when creating a pull-request:
    ```
 
 4. Create a new branch to work on:
-   - Group your branch into a category using a prefix for your branch name, like `feature/`, `ci/`, `bugfix/`, `doc/`.
 
-      ```sh
-      git checkout -b feature/your-branch
-      ```
+    : Group your branch into a category using a prefix for your branch name, like `feature/`, `ci/`, `bugfix/`, `doc/`.
+
+   ```sh
+   git checkout -b feature/your-branch
+   ```
 
 5. Once the changes are finished, make sure there are no warnings on the code. For debugging you can [run the unit tests](#unit-tests) and [end-to-end tests](#e2e-tests).
 
     > **NOTE:**
-    > Unit tests are always executed via pre-commit hook (installed on previous steps). Meaning, you can only commit code that passes all unit tests.
+    > Unit tests can also be automatically run via pre-commit hook, installed by running `make prerequisites/setup-pre-commit`.
+    > With the pre-commit hook can only commit code that passes all checks.
 
     ```sh
     make go/test
@@ -58,24 +60,19 @@ Make sure all the following are true when creating a pull-request:
 
 6. To test your changes on a cluster use
 
-    1. kubectl to connect to a cluster
+    > Pushing to the default container registry (`quay.io/dynatrace/dynatrace-operator) requires specific permissions.
+    > You can use your own container registry by setting the `IMAGE` environment variable to a different value.
+
+    1. Connect to a cluster using `kubectl`
     2. Use make commands to build and deploy your operator as follows:
 
     ```sh
     make build && make deploy
     ```
 
-    >**NOTE:**
-    > When building on ARM machines (such as Apple M1) podman/docker uses the local architecture if not specified otherwise.
-    > To override set the ENV var OPERATOR_DEV_BUILD_PLATFORM to the desired platform (e.g. linux/amd64).
-    >
-    > ```shell
-    >    export OPERATOR_DEV_BUILD_PLATFORM=linux/amd64
-    > ```
-
 7. Create a pull request from the fork ([see guide](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)), with a proper title and fill out the description template. Once everything is ready, set the PR ready for review.
 
-8. A maintainer will review the pull request and make comments. Prefer adding additional commits over amending and force-pushing since it can be difficult to follow code reviews when the commit history changes. Commits will be squashed when they're merged.
+8. A maintainer will review the pull request and make comments.Prefer adding additional commits over amending and force-pushing since it can be difficult to follow code reviews when the commit history changes. Commits will be squashed when they're merged.
 
 ## Unit tests
 
@@ -93,13 +90,7 @@ Mockery only has to be run when adding new mocks or have to be updated to change
 
 #### Installing _mockery_
 
-Mockery is installed by either running (see [docs](https://vektra.github.io/mockery/latest/installation/#go-install) for further information)
-
-```shell
-go install github.com/vektra/mockery/v2@v2.33.2
-```
-
-or simply calling our make target:
+Mockery is installed by running (see [docs](https://vektra.github.io/mockery/latest/installation/#go-install) for further information)
 
 ```shell
 make prerequisites
@@ -129,12 +120,6 @@ packages:
 ```
 
 then run mockery by simple running
-
-```shell
-mockery
-```
-
-or
 
 ```shell
 make go/gen_mocks
