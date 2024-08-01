@@ -45,7 +45,9 @@ func reinvokeUserContainers(request *dtwebhook.BaseRequest) bool {
 	return updated
 }
 
-func updateInstallContainer(installContainer *corev1.Container, workload *workloadInfo) {
+func updateInstallContainer(installContainer *corev1.Container, workload *workloadInfo, clusterName string) {
+	addInjectedEnv(installContainer)
+	addClusterNameEnv(installContainer, clusterName)
 	addWorkloadInfoEnvs(installContainer, workload)
 	addWorkloadEnrichmentInstallVolumeMount(installContainer)
 }

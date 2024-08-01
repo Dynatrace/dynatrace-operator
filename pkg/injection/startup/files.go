@@ -34,24 +34,6 @@ isCloudNativeFullStack true
 	k8ClusterIDFormatString = `k8s_cluster_id %s
 `
 
-	jsonEnrichmentContentFormatString = `{
-  "k8s.pod.uid": "%s",
-  "k8s.pod.name": "%s",
-  "k8s.namespace.name": "%s",
-  "dt.kubernetes.workload.kind": "%s",
-  "dt.kubernetes.workload.name": "%s",
-  "dt.kubernetes.cluster.id": "%s"
-}
-`
-
-	propsEnrichmentContentFormatString = `k8s.pod.uid=%s
-k8s.pod.name=%s
-k8s.namespace.name=%s
-dt.kubernetes.workload.kind=%s
-dt.kubernetes.workload.name=%s
-dt.kubernetes.cluster.id=%s
-`
-
 	curlOptionsFormatString = `initialConnectRetryMs %d
 `
 )
@@ -83,34 +65,6 @@ func (runner *Runner) getK8SClusterID() string {
 
 func (runner *Runner) getCurlOptionsContent() string {
 	return fmt.Sprintf(curlOptionsFormatString, runner.config.InitialConnectRetry)
-}
-
-func (runner *Runner) createJsonEnrichmentFile() error {
-	jsonContent := fmt.Sprintf(jsonEnrichmentContentFormatString,
-		runner.env.K8PodUID,
-		runner.env.K8PodName,
-		runner.env.K8Namespace,
-		runner.env.WorkloadKind,
-		runner.env.WorkloadName,
-		runner.env.K8ClusterID,
-	)
-	jsonPath := filepath.Join(consts.EnrichmentInitPath, consts.EnrichmentJsonFilename)
-
-	return runner.createConfigFile(jsonPath, jsonContent, true)
-}
-
-func (runner *Runner) createPropsEnrichmentFile() error {
-	propsContent := fmt.Sprintf(propsEnrichmentContentFormatString,
-		runner.env.K8PodUID,
-		runner.env.K8PodName,
-		runner.env.K8Namespace,
-		runner.env.WorkloadKind,
-		runner.env.WorkloadName,
-		runner.env.K8ClusterID,
-	)
-	propsPath := filepath.Join(consts.EnrichmentInitPath, consts.EnrichmentPropertiesFilename)
-
-	return runner.createConfigFile(propsPath, propsContent, true)
 }
 
 func (runner *Runner) createCurlOptionsFile() error {

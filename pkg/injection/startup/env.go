@@ -36,6 +36,7 @@ type environment struct {
 	K8BasePodName string `json:"k8BasePodName"`
 	K8Namespace   string `json:"k8Namespace"`
 	K8ClusterID   string `json:"k8ClusterID"`
+	K8ClusterName string `json:"k8sClusterName"`
 
 	WorkloadKind string `json:"workloadKind"`
 	WorkloadName string `json:"workloadName"`
@@ -98,6 +99,7 @@ func (env *environment) getCommonFieldSetters() []func() error {
 		env.addK8PodUID,
 		env.addK8Namespace,
 		env.addK8ClusterID,
+		env.addK8NodeName,
 	}
 }
 
@@ -106,7 +108,6 @@ func (env *environment) getOneAgentFieldSetters() []func() error {
 		env.addInstallerTech,
 		env.addInstallPath,
 		env.addContainers,
-		env.addK8NodeName,
 		env.addK8BasePodName,
 	)
 }
@@ -122,6 +123,7 @@ func (env *environment) setOptionalFields() {
 	env.addInstallerUrl()
 	env.addInstallerFlavor()
 	env.addInstallVersion()
+	env.addClusterName()
 }
 
 func (env *environment) setMutationTypeFields() {
@@ -289,6 +291,11 @@ func (env *environment) addWorkloadName() error {
 	env.WorkloadName = workloadName
 
 	return nil
+}
+
+func (env *environment) addClusterName() {
+	clusterName, _ := checkEnvVar(consts.EnrichmentClusterNameEnv)
+	env.K8ClusterName = clusterName
 }
 
 func (env *environment) addInstallerUrl() {

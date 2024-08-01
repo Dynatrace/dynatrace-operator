@@ -76,7 +76,7 @@ func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationReque
 
 	setupVolumes(request.Pod)
 	mutateUserContainers(request.BaseRequest)
-	updateInstallContainer(request.InstallContainer, workload)
+	updateInstallContainer(request.InstallContainer, workload, request.DynaKube.Status.KubernetesClusterMEID)
 	setInjectedAnnotation(request.Pod)
 	setWorkloadAnnotations(request.Pod, workload)
 	copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)

@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
@@ -48,12 +49,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk := createDynakube()
 
 		// mock SecretCreated condition
-		conditions.SetSecretCreated(dk.Conditions(), extensionsTokenSecretConditionType, dk.Name+secretSuffix)
+		conditions.SetSecretCreated(dk.Conditions(), consts.ExtensionsSecretConditionType, dk.Name+consts.SecretSuffix)
 
 		// mock secret
-		secretToken, _ := dttoken.New(eecTokenSecretValuePrefix)
+		secretToken, _ := dttoken.New(consts.EecTokenSecretValuePrefix)
 		secretData := map[string][]byte{
-			EecTokenSecretKey: []byte(secretToken.String()),
+			consts.EecTokenSecretKey: []byte(secretToken.String()),
 		}
 		secretMock, _ := k8ssecret.Build(dk, testName+"-extensions-token", secretData)
 
@@ -93,14 +94,16 @@ func TestReconciler_Reconcile(t *testing.T) {
 		var secretFound corev1.Secret
 		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
 		require.NoError(t, err)
+		require.NotEmpty(t, secretFound.Data[consts.EecTokenSecretKey])
+		require.NotEmpty(t, secretFound.Data[consts.OtelcTokenSecretKey])
 
 		// assert extensions token condition is added
 		require.NotEmpty(t, dk.Conditions())
 
 		var expectedConditions []metav1.Condition
 
-		conditions.SetSecretCreated(&expectedConditions, extensionsTokenSecretConditionType, dk.Name+secretSuffix)
-		conds := meta.FindStatusCondition(*dk.Conditions(), extensionsTokenSecretConditionType)
+		conditions.SetSecretCreated(&expectedConditions, consts.ExtensionsSecretConditionType, dk.Name+consts.SecretSuffix)
+		conds := meta.FindStatusCondition(*dk.Conditions(), consts.ExtensionsSecretConditionType)
 		testutil.PartialEqual(t, &expectedConditions[0], conds, cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
 	})
 	t.Run(`Extension SecretCreated failure condition is set when error`, func(t *testing.T) {
@@ -117,7 +120,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		var expectedConditions []metav1.Condition
 
-		conditions.SetKubeApiError(&expectedConditions, extensionsTokenSecretConditionType, err)
+		conditions.SetKubeApiError(&expectedConditions, consts.ExtensionsSecretConditionType, err)
 		testutil.PartialEqual(t, &expectedConditions, dk.Conditions(), cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
 	})
 
@@ -142,8 +145,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		var expectedConditions []metav1.Condition
 
-		conditions.SetServiceCreated(&expectedConditions, extensionsServiceConditionType, r.buildServiceName())
-		conds := meta.FindStatusCondition(*dk.Conditions(), extensionsServiceConditionType)
+		conditions.SetServiceCreated(&expectedConditions, consts.ExtensionsServiceConditionType, r.buildServiceName())
+		conds := meta.FindStatusCondition(*dk.Conditions(), consts.ExtensionsServiceConditionType)
 		testutil.PartialEqual(t, &expectedConditions[0], conds, cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
 	})
 
@@ -172,5 +175,15 @@ func createDynakube() *dynakube.DynaKube {
 			Name:      testName,
 		},
 		Spec: dynakube.DynaKubeSpec{},
+		Status: dynakube.DynaKubeStatus{
+			ActiveGate: dynakube.ActiveGateStatus{
+				ConnectionInfoStatus: dynakube.ActiveGateConnectionInfoStatus{
+					ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
+						TenantUUID: "abc",
+					},
+				},
+			},
+			KubeSystemUUID: "abc",
+		},
 	}
 }
