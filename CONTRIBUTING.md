@@ -47,7 +47,7 @@ Make sure all the following are true when creating a pull-request:
    git checkout -b feature/your-branch
    ```
 
-5. Once the changes are finished, make sure there are no warnings on the code. For debugging you can [run the unit tests](#unit-tests) and [end-to-end tests](#e2e-tests).
+5. Once the changes are finished, make sure there are no warnings in the code. For debugging you can [run the unit tests](#unit-tests) and [end-to-end tests](#e2e-tests).
 
     > **NOTE:**
     > Unit tests can also be automatically run via pre-commit hook, installed by running `make prerequisites/setup-pre-commit`.
