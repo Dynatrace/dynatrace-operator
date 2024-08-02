@@ -7,7 +7,6 @@ import (
 
 const (
 	ServiceCreatedReason    = "ServiceCreated"
-	ServiceUpdatedReason    = "ServiceUpdated"
 	ServiceGenerationFailed = "ServiceGenerationFailed"
 )
 
@@ -17,16 +16,6 @@ func SetServiceCreated(conditions *[]metav1.Condition, conditionType, name strin
 		Status:  metav1.ConditionTrue,
 		Reason:  ServiceCreatedReason,
 		Message: appendCreatedSuffix(name),
-	}
-	_ = meta.SetStatusCondition(conditions, condition)
-}
-
-func SetServiceUpdated(conditions *[]metav1.Condition, conditionType, name string) {
-	condition := metav1.Condition{
-		Type:    conditionType,
-		Status:  metav1.ConditionTrue,
-		Reason:  ServiceUpdatedReason,
-		Message: appendUpdatedSuffix(name),
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }

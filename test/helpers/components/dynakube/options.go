@@ -32,12 +32,6 @@ func WithName(name string) Option {
 	}
 }
 
-func WithCustomPullSecret(secretName string) Option {
-	return func(dk *dynakube.DynaKube) {
-		dk.Spec.CustomPullSecret = secretName
-	}
-}
-
 func WithCustomCAs(configMapName string) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.TrustedCAs = configMapName
@@ -124,12 +118,6 @@ func WithOneAgentNamespaceSelector(selector metav1.LabelSelector) Option {
 		case dk.ApplicationMonitoringMode():
 			dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = selector
 		}
-	}
-}
-
-func WithMetadataEnrichmentNamespaceSelector(selector metav1.LabelSelector) Option {
-	return func(dk *dynakube.DynaKube) {
-		dk.Spec.MetadataEnrichment.NamespaceSelector = selector
 	}
 }
 

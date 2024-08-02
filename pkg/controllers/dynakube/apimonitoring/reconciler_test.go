@@ -35,6 +35,9 @@ func createReconciler(t *testing.T, dk *dynakube.DynaKube, monitoredEntities []d
 	mockClient.On("GetSettingsForMonitoredEntities", mock.AnythingOfType("context.backgroundCtx"), []dtclient.MonitoredEntity{{EntityId: "test-MEID"}},
 		mock.AnythingOfType("string")).
 		Return(getSettingsResponse, nil)
+	mockClient.On("GetSettingsForMonitoredEntities", mock.AnythingOfType("context.backgroundCtx"), []dtclient.MonitoredEntity{{EntityId: "KUBERNETES_CLUSTER-119C75CCDA94799F"}},
+		mock.AnythingOfType("string")).
+		Return(getSettingsResponse, nil)
 	mockClient.On("GetSettingsForMonitoredEntities", mock.AnythingOfType("context.backgroundCtx"), monitoredEntities,
 		mock.AnythingOfType("string")).
 		Return(getSettingsResponse, nil)
@@ -63,6 +66,8 @@ func createReconcilerWithError(t *testing.T, dk *dynakube.DynaKube, monitoredEnt
 		mock.AnythingOfType("[]dynatrace.MonitoredEntity"),
 		mock.AnythingOfType("string")).
 		Return(dtclient.GetSettingsResponse{}, getSettingsResponseError)
+	mockClient.On("CreateOrUpdateKubernetesSetting", mock.AnythingOfType("context.backgroundCtx"), testName, testUID, "KUBERNETES_CLUSTER-119C75CCDA94799F").
+		Return("", createSettingsResponseError)
 	mockClient.On("CreateOrUpdateKubernetesSetting", mock.AnythingOfType("context.backgroundCtx"), testName, testUID, "test-MEID").
 		Return("", createSettingsResponseError)
 	mockClient.On("CreateOrUpdateKubernetesAppSetting", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("string")).
