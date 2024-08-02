@@ -21,16 +21,6 @@ func SetServiceCreated(conditions *[]metav1.Condition, conditionType, name strin
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func SetServiceUpdated(conditions *[]metav1.Condition, conditionType, name string) {
-	condition := metav1.Condition{
-		Type:    conditionType,
-		Status:  metav1.ConditionTrue,
-		Reason:  ServiceUpdatedReason,
-		Message: appendUpdatedSuffix(name),
-	}
-	_ = meta.SetStatusCondition(conditions, condition)
-}
-
 func SetServiceGenFailed(conditions *[]metav1.Condition, conditionType string, err error) {
 	condition := metav1.Condition{
 		Type:    conditionType,

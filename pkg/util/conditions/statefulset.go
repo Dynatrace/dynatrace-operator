@@ -21,26 +21,6 @@ func SetStatefulSetCreated(conditions *[]metav1.Condition, conditionType, name s
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func SetStatefulSetUpdated(conditions *[]metav1.Condition, conditionType, name string) {
-	condition := metav1.Condition{
-		Type:    conditionType,
-		Status:  metav1.ConditionTrue,
-		Reason:  StatefulSetUpdatedReason,
-		Message: appendUpdatedSuffix(name),
-	}
-	_ = meta.SetStatusCondition(conditions, condition)
-}
-
-func SetStatefulSetDeleted(conditions *[]metav1.Condition, conditionType, name string) {
-	condition := metav1.Condition{
-		Type:    conditionType,
-		Status:  metav1.ConditionTrue,
-		Reason:  StatefulSetUpdatedReason,
-		Message: appendDeletedSuffix(name),
-	}
-	_ = meta.SetStatusCondition(conditions, condition)
-}
-
 func SetStatefulSetOutdated(conditions *[]metav1.Condition, conditionType, name string) {
 	condition := metav1.Condition{
 		Type:    conditionType,

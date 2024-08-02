@@ -17,10 +17,6 @@ func appendUpdatedSuffix(name string) string {
 	return fmt.Sprintf("%s %s", name, updatedSuffix)
 }
 
-func appendDeletedSuffix(name string) string {
-	return fmt.Sprintf("%s %s", name, deletedSuffix)
-}
-
 func appendOutdatedSuffix(name string) string {
 	return fmt.Sprintf("%s %s", name, outdatedSuffix)
 }
