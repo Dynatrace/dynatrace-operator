@@ -78,8 +78,7 @@ func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationReque
 	installerInfo := getInstallerInfo(request.Pod, request.DynaKube)
 	mut.addVolumes(request.Pod, request.DynaKube)
 	mut.configureInitContainer(request, installerInfo)
-	injectedContainers := mut.mutateUserContainers(request)
-	mut.setContainerCount(request.InstallContainer, injectedContainers)
+	mut.mutateUserContainers(request)
 	addInjectionConfigVolumeMount(request.InstallContainer)
 	setInjectedAnnotation(request.Pod)
 
@@ -120,7 +119,7 @@ func (mut *Mutator) ensureInitSecret(request *dtwebhook.MutationRequest) error {
 	return nil
 }
 
-func containerIsInjected(container *corev1.Container) bool {
+func ContainerIsInjected(container corev1.Container) bool {
 	for _, e := range container.Env {
 		if e.Name == dynatraceMetadataEnv {
 			return true

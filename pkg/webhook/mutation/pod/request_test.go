@@ -106,6 +106,10 @@ func createTestMutationRequest(dk *dynakube.DynaKube) *dtwebhook.MutationRequest
 	return dtwebhook.NewMutationRequest(context.Background(), *getTestNamespace(), nil, getTestPod(), *dk)
 }
 
+func createTestMutationRequestWithInjectedPod(dk *dynakube.DynaKube) *dtwebhook.MutationRequest {
+	return dtwebhook.NewMutationRequest(context.Background(), *getTestNamespace(), nil, getInjectedPod(), *dk)
+}
+
 func createTestAdmissionRequest(pod *corev1.Pod) *admission.Request {
 	basePodBytes, _ := json.Marshal(pod)
 
@@ -149,6 +153,42 @@ func getTestPod() *corev1.Pod {
 			},
 		},
 	}
+}
+
+func getInjectedPod() *corev1.Pod {
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testPodName,
+			Namespace: testNamespaceName,
+		},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:            "container",
+					Image:           "alpine",
+					SecurityContext: getTestSecurityContext(),
+				},
+			},
+			InitContainers: []corev1.Container{
+				{
+					Name:  "init-container",
+					Image: "alpine",
+				},
+			},
+			Volumes: []corev1.Volume{
+				{
+					Name: "volume",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+			},
+		},
+	}
+	installContainer := createInstallInitContainerBase("test", "test", pod, *getTestDynakube())
+	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *installContainer)
+
+	return pod
 }
 
 func getTestNamespace() *corev1.Namespace {

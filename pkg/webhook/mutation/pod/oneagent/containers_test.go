@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -86,9 +85,6 @@ func TestMutateUserContainers(t *testing.T) {
 
 			mutator.mutateUserContainers(request)
 
-			require.Len(t, request.InstallContainer.Env, len(request.Pod.Spec.Containers)*2)
-			assert.Equal(t, request.Pod.Spec.Containers[0].Name, request.InstallContainer.Env[0].Value)
-			assert.Equal(t, request.Pod.Spec.Containers[0].Image, request.InstallContainer.Env[1].Value)
 			assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen+testCase.expectedAdditionalVolumeMountCount)
 			assert.Len(t, request.Pod.Spec.Containers[0].Env, initialNumberOfContainerEnvsLen+testCase.expectedAdditionalEnvCount)
 		})
@@ -125,7 +121,6 @@ func TestReinvokeUserContainers(t *testing.T) {
 			request.Pod.Spec.InitContainers = append(request.Pod.Spec.InitContainers, corev1.Container{
 				Name: dtwebhook.InstallContainerName,
 			})
-			installContainer := &request.Pod.Spec.InitContainers[1]
 
 			mutator.reinvokeUserContainers(request)
 			request.Pod.Spec.Containers = append(request.Pod.Spec.Containers, corev1.Container{
@@ -133,10 +128,6 @@ func TestReinvokeUserContainers(t *testing.T) {
 				Image: "test",
 			})
 			mutator.reinvokeUserContainers(request)
-
-			require.Len(t, installContainer.Env, 1+len(request.Pod.Spec.Containers)*2) // CONTAINERS_COUNT + N*(CONTAINER_x_IMAGE, CONTAINER_x_NAME)
-
-			assertContainersNamesAndImages(t, request, installContainer, 3)
 
 			assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen+testCase.expectedAdditionalVolumeMountCount)
 			assert.Len(t, request.Pod.Spec.Containers[0].Env, initialNumberOfContainerEnvsLen+testCase.expectedAdditionalEnvCount)
@@ -210,32 +201,12 @@ func TestContainerExclusion(t *testing.T) {
 			request.Pod.Spec.InitContainers = append(request.Pod.Spec.InitContainers, corev1.Container{
 				Name: dtwebhook.InstallContainerName,
 			})
-			installContainer := &request.Pod.Spec.InitContainers[1]
 
 			mutator.reinvokeUserContainers(request)
 
-			require.Len(t, installContainer.Env, testCase.expectedInitContainerEnvCount) // CONTAINERS_COUNT + N*(CONTAINER_x_IMAGE, CONTAINER_x_NAME)
 			assert.Len(t, request.Pod.Spec.Containers[1].VolumeMounts, initialContainerVolumeMountsLen+testCase.expectedAdditionalVolumeMountCount)
 			assert.Len(t, request.Pod.Spec.Containers[1].Env, initialNumberOfContainerEnvsLen+testCase.expectedAdditionalEnvCount)
 		})
-	}
-}
-
-func assertContainersNamesAndImages(t *testing.T, request *dtwebhook.ReinvocationRequest, installContainer *corev1.Container, containersNumber int) {
-	for containerIdx := range containersNumber {
-		internalContainerIndex := 1 + containerIdx // starting from 1
-
-		containerNameEnvVarName := getContainerNameEnv(internalContainerIndex)
-		containerImageEnvVarName := getContainerImageEnv(internalContainerIndex)
-		container := request.Pod.Spec.Containers[containerIdx]
-
-		nameEnvVar := env.FindEnvVar(installContainer.Env, containerNameEnvVarName)
-		assert.NotNil(t, nameEnvVar)
-		assert.Equal(t, container.Name, nameEnvVar.Value)
-
-		imageEnvVar := env.FindEnvVar(installContainer.Env, containerImageEnvVarName)
-		assert.NotNil(t, imageEnvVar)
-		assert.Equal(t, container.Image, imageEnvVar.Value)
 	}
 }
 

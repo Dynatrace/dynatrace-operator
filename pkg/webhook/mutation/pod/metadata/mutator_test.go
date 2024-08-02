@@ -333,14 +333,14 @@ func TestWorkloadAnnotations(t *testing.T) {
 
 func TestContainerIsInjected(t *testing.T) {
 	t.Run("is not injected", func(t *testing.T) {
-		container := &corev1.Container{}
+		container := corev1.Container{}
 
-		isInjected := containerIsInjected(container)
+		isInjected := ContainerIsInjected(container)
 
 		require.False(t, isInjected)
 	})
 	t.Run("is injected", func(t *testing.T) {
-		container := &corev1.Container{
+		container := corev1.Container{
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name: workloadEnrichmentVolumeName,
@@ -348,7 +348,7 @@ func TestContainerIsInjected(t *testing.T) {
 			},
 		}
 
-		isInjected := containerIsInjected(container)
+		isInjected := ContainerIsInjected(container)
 
 		require.True(t, isInjected)
 	})
@@ -403,8 +403,18 @@ func getTestPod(annotations map[string]string) *corev1.Pod {
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
-					Name:  "container",
-					Image: "alpine",
+					Name:  "container-1",
+					Image: "alpine-1",
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "volume",
+							MountPath: "/volume",
+						},
+					},
+				},
+				{
+					Name:  "container-2",
+					Image: "alpine-2",
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      "volume",

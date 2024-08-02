@@ -32,12 +32,31 @@ type BaseRequest struct {
 	DynaKube  dynakube.DynaKube
 }
 
-func (req BaseRequest) PodName() string {
+func (req *BaseRequest) PodName() string {
 	if req.Pod == nil {
 		return ""
 	}
 
 	return pod.GetName(*req.Pod)
+}
+
+func (req *BaseRequest) NewContainers(isInjected func(corev1.Container) bool) (newContainers []*corev1.Container) {
+	newContainers = []*corev1.Container{}
+
+	for i := range req.Pod.Spec.Containers {
+		container := &req.Pod.Spec.Containers[i]
+		if IsContainerExcludedFromInjection(req.DynaKube.Annotations, req.Pod.Annotations, container.Name) {
+			continue
+		}
+
+		if isInjected(*container) {
+			continue
+		}
+
+		newContainers = append(newContainers, container)
+	}
+
+	return
 }
 
 // MutationRequest contains all the information needed to mutate a pod

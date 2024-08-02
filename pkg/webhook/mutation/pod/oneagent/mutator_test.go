@@ -159,7 +159,6 @@ func TestMutate(t *testing.T) {
 			initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
 			initialNumberOfVolumesLen := len(request.Pod.Spec.Volumes)
 			initialContainerVolumeMountsLen := len(request.Pod.Spec.Containers[0].VolumeMounts)
-			initialContainersLen := len(request.Pod.Spec.Containers)
 			initialAnnotationsLen := len(request.Pod.Annotations)
 			initialInitContainers := request.Pod.Spec.InitContainers
 
@@ -175,7 +174,6 @@ func TestMutate(t *testing.T) {
 
 			assert.Len(t, request.Pod.Annotations, initialAnnotationsLen+1) // +1 == injected-annotation
 
-			assert.Len(t, request.InstallContainer.Env, 1+expectedBaseInitContainerEnvCount+(initialContainersLen*2))
 			assert.Len(t, request.InstallContainer.VolumeMounts, testCase.expectedAdditionalInitVolumeMountCount)
 		})
 	}
@@ -251,7 +249,6 @@ func TestReinvoke(t *testing.T) {
 			initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
 			initialNumberOfVolumesLen := len(request.Pod.Spec.Volumes)
 			initialContainerVolumeMountsLen := len(request.Pod.Spec.Containers[0].VolumeMounts)
-			initialContainersLen := len(request.Pod.Spec.Containers)
 			initialAnnotationsLen := len(request.Pod.Annotations)
 
 			updated := mutator.Reinvoke(request)
@@ -262,7 +259,6 @@ func TestReinvoke(t *testing.T) {
 
 			assert.Len(t, request.Pod.Spec.Containers[0].Env, initialNumberOfContainerEnvsLen+testCase.expectedAdditionalEnvCount)
 			assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen+testCase.expectedAdditionalVolumeMountCount)
-			assert.Len(t, request.Pod.Spec.InitContainers[1].Env, 1+initialContainersLen*2) // +1 == installer mode
 		})
 	}
 

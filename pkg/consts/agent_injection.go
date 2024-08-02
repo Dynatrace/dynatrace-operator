@@ -18,10 +18,7 @@ const (
 	AgentInstallerTechEnv    = "TECHNOLOGIES"
 	AgentInstallerVersionEnv = "VERSION"
 
-	AgentInstallPathEnv            = "INSTALLPATH"
-	AgentContainerCountEnv         = "CONTAINERS_COUNT"
-	AgentContainerNameEnvTemplate  = "CONTAINER_%d_NAME"
-	AgentContainerImageEnvTemplate = "CONTAINER_%d_IMAGE"
+	AgentInstallPathEnv = "INSTALLPATH"
 
 	AgentInjectedEnv = "ONEAGENT_INJECTED"
 

@@ -185,7 +185,7 @@ func setPodAnnotationIfNotExists(pod *corev1.Pod, key, value string) {
 	}
 }
 
-func containerIsInjected(container *corev1.Container) bool {
+func ContainerIsInjected(container corev1.Container) bool {
 	for _, volumeMount := range container.VolumeMounts {
 		if volumeMount.Name == workloadEnrichmentVolumeName || volumeMount.Name == ingestEndpointVolumeName {
 			return true

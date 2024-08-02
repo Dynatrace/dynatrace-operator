@@ -3,6 +3,8 @@ package consts
 const (
 	InjectionFailurePolicyEnv = "FAILURE_POLICY"
 
+	ContainerInfoEnv = "CONTAINER_INFO"
+
 	K8sNodeNameEnv    = "K8S_NODE_NAME"
 	K8sPodNameEnv     = "K8S_PODNAME"
 	K8sPodUIDEnv      = "K8S_PODUID"

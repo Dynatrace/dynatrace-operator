@@ -1,9 +1,8 @@
 package startup
 
 import (
-	"fmt"
+	"encoding/json"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
@@ -17,7 +16,7 @@ const (
 	failPhrase    = "fail"
 )
 
-type containerInfo struct {
+type ContainerInfo struct {
 	Name  string `json:"name"`
 	Image string `json:"image"`
 }
@@ -42,7 +41,7 @@ type environment struct {
 	WorkloadName string `json:"workloadName"`
 
 	InstallerTech []string        `json:"installerTech"`
-	Containers    []containerInfo `json:"containers"`
+	Containers    []ContainerInfo `json:"containers"`
 
 	OneAgentInjected           bool `json:"oneAgentInjected"`
 	MetadataEnrichmentInjected bool `json:"metadataEnrichmentInjected"`
@@ -68,9 +67,8 @@ func newEnv() (*environment, error) {
 func (env *environment) setRequiredFields() error {
 	errs := []error{}
 
-	requiredFieldSetters := []func() error{
-		env.addFailurePolicy,
-	}
+	requiredFieldSetters := env.getCommonFieldSetters()
+
 	if env.OneAgentInjected {
 		requiredFieldSetters = append(requiredFieldSetters, env.getOneAgentFieldSetters()...)
 	}
@@ -95,28 +93,29 @@ func (env *environment) setRequiredFields() error {
 
 func (env *environment) getCommonFieldSetters() []func() error {
 	return []func() error{
+		env.addContainers,
 		env.addK8PodName,
 		env.addK8PodUID,
 		env.addK8Namespace,
 		env.addK8ClusterID,
 		env.addK8NodeName,
+		env.addFailurePolicy,
 	}
 }
 
 func (env *environment) getOneAgentFieldSetters() []func() error {
-	return append(env.getCommonFieldSetters(),
+	return []func() error{
 		env.addInstallerTech,
 		env.addInstallPath,
-		env.addContainers,
 		env.addK8BasePodName,
-	)
+	}
 }
 
 func (env *environment) getMetadataEnrichmentFieldSetters() []func() error {
-	return append(env.getCommonFieldSetters(),
+	return []func() error{
 		env.addWorkloadKind,
 		env.addWorkloadName,
-	)
+	}
 }
 
 func (env *environment) setOptionalFields() {
@@ -179,36 +178,16 @@ func (env *environment) addInstallPath() error {
 }
 
 func (env *environment) addContainers() error {
-	containers := []containerInfo{}
-
-	containerCountStr, err := checkEnvVar(consts.AgentContainerCountEnv)
+	rawContainers, err := checkEnvVar(consts.ContainerInfoEnv)
 	if err != nil {
 		return err
 	}
 
-	countCount, err := strconv.Atoi(containerCountStr)
+	var containers []ContainerInfo
+
+	err = json.Unmarshal([]byte(rawContainers), &containers)
 	if err != nil {
 		return err
-	}
-
-	for i := 1; i <= countCount; i++ {
-		nameEnv := fmt.Sprintf(consts.AgentContainerNameEnvTemplate, i)
-		imageEnv := fmt.Sprintf(consts.AgentContainerImageEnvTemplate, i)
-
-		containerName, err := checkEnvVar(nameEnv)
-		if err != nil {
-			return err
-		}
-
-		imageName, err := checkEnvVar(imageEnv)
-		if err != nil {
-			return err
-		}
-
-		containers = append(containers, containerInfo{
-			Name:  containerName,
-			Image: imageName,
-		})
 	}
 
 	env.Containers = containers
