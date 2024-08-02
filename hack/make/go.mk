@@ -33,7 +33,7 @@ go/betteralign:
 	betteralign -apply ./...
 
 ## Runs all the linting tools
-go/lint: prerequisites/go-linting go/format go/vet go/wsl go/betteralign go/golangci
+go/lint: prerequisites/go-linting go/format go/vet go/wsl go/betteralign go/golangci go/deadcode
 
 ## Runs all go unit tests and writes the coverprofile to coverage.txt
 go/test:
