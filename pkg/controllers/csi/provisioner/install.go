@@ -24,7 +24,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 	targetImage string,
 	err error,
 ) {
-	tenantUUID, err := dk.TenantUUIDFromConnectionInfoStatus()
+	tenantUUID, err := dk.TenantUUIDFromApiUrl()
 	if err != nil {
 		return "", err
 	}
@@ -84,7 +84,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 }
 
 func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dk dynakube.DynaKube, dtc dtclient.Client, latestProcessModuleConfig *dtclient.ProcessModuleConfig) (string, error) {
-	tenantUUID, err := dk.TenantUUIDFromConnectionInfoStatus()
+	tenantUUID, err := dk.TenantUUIDFromApiUrl()
 	if err != nil {
 		return "", err
 	}

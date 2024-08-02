@@ -10,18 +10,20 @@ import (
 )
 
 type Reconciler struct {
-	dtc          dtclient.Client
-	dk           *dynakube.DynaKube
-	clusterLabel string
+	dtc                         dtclient.Client
+	dk                          *dynakube.DynaKube
+	monitoredEntitiesReconciler monitoredentities.ReconcilerBuilder
+	clusterLabel                string
 }
 
 type ReconcilerBuilder func(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel string) *Reconciler
 
 func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel string) *Reconciler {
 	return &Reconciler{
-		dtc,
-		dk,
-		clusterLabel,
+		dtc:                         dtc,
+		dk:                          dk,
+		clusterLabel:                clusterLabel,
+		monitoredEntitiesReconciler: monitoredentities.NewReconciler,
 	}
 }
 
@@ -45,17 +47,33 @@ func (r *Reconciler) createObjectIdIfNotExists(ctx context.Context) (string, err
 		return "", errors.New("no kube-system namespace UUID given")
 	}
 
-	monitoredEntitiesreconciler := monitoredentities.NewReconciler(r.dtc, r.dk)
-
-	err := monitoredEntitiesreconciler.Reconcile(ctx)
+	err := r.monitoredEntitiesReconciler(r.dtc, r.dk).Reconcile(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	monitoredEntity := []dtclient.MonitoredEntity{
-		{
-			EntityId: r.dk.Status.KubernetesClusterMEID,
-		},
+	var monitoredEntity []dtclient.MonitoredEntity
+
+	if r.dk.Status.KubernetesClusterMEID != "" {
+		monitoredEntity = []dtclient.MonitoredEntity{
+			{
+				EntityId: r.dk.Status.KubernetesClusterMEID,
+			},
+		}
+	}
+
+	objectID, err := r.dtc.CreateOrUpdateKubernetesSetting(ctx, r.clusterLabel, r.dk.Status.KubeSystemUUID, r.dk.Status.KubernetesClusterMEID)
+	if err != nil {
+		return "", errors.WithMessage(err, "error creating dynatrace settings object")
+	}
+
+	if r.dk.Status.KubernetesClusterMEID == "" {
+		// the CreateOrUpdateKubernetesSetting call will create the ME(monitored-entity) if no scope was given (scope == entity-id), this happens on the "first run"
+		// so we have to run the entity reconciler AGAIN to set it in the status.
+		err := r.monitoredEntitiesReconciler(r.dtc, r.dk).Reconcile(ctx)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	// check if Setting for ME exists
@@ -71,11 +89,6 @@ func (r *Reconciler) createObjectIdIfNotExists(ctx context.Context) (string, err
 		}
 
 		return "", nil
-	}
-
-	objectID, err := r.dtc.CreateOrUpdateKubernetesSetting(ctx, r.clusterLabel, r.dk.Status.KubeSystemUUID, r.dk.Status.KubernetesClusterMEID)
-	if err != nil {
-		return "", errors.WithMessage(err, "error creating dynatrace settings object")
 	}
 
 	return objectID, nil
