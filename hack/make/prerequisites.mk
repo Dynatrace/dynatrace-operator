@@ -36,13 +36,16 @@ prerequisites/controller-gen:
 CONTROLLER_GEN=$(shell hack/build/command.sh controller-gen)
 
 ## Install go linters
-prerequisites/go-linting:
+prerequisites/go-linting: prerequisites/go-deadcode
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(golang_ci_cmd_version)
 	go install github.com/daixiang0/gci@$(gci_version)
 	go install golang.org/x/tools/cmd/goimports@$(golang_tools_version)
 	go install github.com/bombsimon/wsl/v4/cmd...@master
-	go install golang.org/x/tools/cmd/deadcode@$(golang_tools_version)
 	go install github.com/dkorunic/betteralign/cmd/betteralign@latest
+
+## Install go deadcode
+prerequisites/go-deadcode:
+	go install golang.org/x/tools/cmd/deadcode@$(golang_tools_version)
 
 ## Install 'helm' if it is missing
 ## TODO: Have version accessible by renovate?

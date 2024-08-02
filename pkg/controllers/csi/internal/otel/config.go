@@ -14,18 +14,9 @@ const (
 )
 
 var tracer trace.Tracer
-var meter metric.Meter
+var meter metric.Meter //nolint
 
 var once = sync.Once{}
-
-func Meter() metric.Meter {
-	once.Do(func() {
-		tracer = otel.Tracer(otelInstrumentationScope)
-		meter = otel.Meter(otelInstrumentationScope)
-	})
-
-	return meter
-}
 
 func Tracer() trace.Tracer {
 	once.Do(func() {
