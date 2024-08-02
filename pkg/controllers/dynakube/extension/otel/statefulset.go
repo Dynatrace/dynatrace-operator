@@ -34,6 +34,7 @@ const (
 	envOTLPtoken            = "OTLP_TOKEN"
 	configurationVolumeName = "otelconfig"
 	configurationMountPath  = "/etc/otelcol/"
+	configMapName           = "otel-prometheus-config"
 )
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
@@ -50,7 +51,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		statefulset.SetUpdateStrategy(utils.BuildUpdateStrategy()),
 		setTlsRef(r.dk.Spec.Templates.OpenTelemetryCollector.TlsRefName),
 		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
-		setVolumes(r.dk.Name, r.dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim),
+		setVolumes(),
 	)
 
 	if err != nil {
@@ -97,6 +98,7 @@ func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 		SecurityContext: buildSecurityContext(),
 		Env:             buildContainerEnvs(dk),
 		Resources:       dk.Spec.Templates.OpenTelemetryCollector.Resources,
+		VolumeMounts:    buildContainerVolumeMounts(),
 	}
 }
 
@@ -154,14 +156,17 @@ func buildContainerVolumeMounts() []corev1.VolumeMount {
 	}
 }
 
-func setVolumes(dkName string, claim *corev1.PersistentVolumeClaimSpec) func(o *appsv1.StatefulSet) {
+func setVolumes() func(o *appsv1.StatefulSet) {
 	return func(o *appsv1.StatefulSet) {
 		o.Spec.Template.Spec.Volumes = []corev1.Volume{
 			{
-				// TODO: is a configMap.name: eec-runtime-configuration needed?
 				Name: configurationVolumeName,
 				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: configMapName,
+						},
+					},
 				},
 			},
 		}
