@@ -7,7 +7,6 @@ import (
 
 const (
 	StatefulSetCreatedReason  = "StatefulSetCreated"
-	StatefulSetUpdatedReason  = "StatefulSetUpdated"
 	StatefulSetOutdatedReason = "StatefulSetOutdated"
 )
 

@@ -5,7 +5,6 @@ import "fmt"
 const (
 	createdSuffix  = "created"
 	updatedSuffix  = "updated"
-	deletedSuffix  = "deleted"
 	outdatedSuffix = "outdated"
 )
 

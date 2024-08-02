@@ -7,7 +7,6 @@ import (
 
 const (
 	ServiceCreatedReason    = "ServiceCreated"
-	ServiceUpdatedReason    = "ServiceUpdated"
 	ServiceGenerationFailed = "ServiceGenerationFailed"
 )
 
