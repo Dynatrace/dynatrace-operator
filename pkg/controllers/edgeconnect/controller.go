@@ -47,7 +47,10 @@ const (
 	kubeSystemNamespaceName = "kube-system"
 )
 
-var ErrTokenNotFound = errors.New("token not found")
+var (
+	ErrTokenNotFound                = errors.New("token not found")
+	ErrUnsupportedConfigFileVersion = errors.New("unsupported config file version")
+)
 
 type oauthCredentialsType struct {
 	clientId     string
@@ -216,7 +219,7 @@ func (controller *Controller) reconcileEdgeConnect(ctx context.Context, ec *edge
 		if errClient := controller.updateEdgeConnectStatus(ctx, ec); errClient != nil {
 			retErr := errors.WithMessagef(errClient, "failed to update EdgeConnect after failure, original error: %s", err)
 
-			_log.Debug("reconcileEdgeConnect error")
+			_log.Debug("reconcileEdgeConnect status update error")
 
 			return reconcile.Result{RequeueAfter: fastUpdateInterval}, retErr
 		}
@@ -774,12 +777,16 @@ func (controller *Controller) createOrUpdateConnectionSetting(edgeConnectClient 
 }
 
 func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.Context, ec *edgeconnect.EdgeConnect) (token string, hash string, err error) {
+	_log := log.WithValues("namespace", ec.Namespace, "name", ec.Name)
+
 	// Get a Token from edgeconnectClient.yaml secret data
 	token, err = controller.getToken(ctx, ec)
 
 	// check token not found and not all errors
 	if err != nil {
-		if k8serrors.IsNotFound(err) || errors.Is(err, ErrTokenNotFound) {
+		if k8serrors.IsNotFound(err) || errors.Is(err, ErrTokenNotFound) || errors.Is(err, ErrUnsupportedConfigFileVersion) {
+			_log.Debug("creating new token", "error", err.Error())
+
 			newToken, err := dttoken.New("dt0e01")
 			if err != nil {
 				return "", "", err
@@ -836,7 +843,12 @@ func (controller *Controller) getToken(ctx context.Context, ec *edgeconnect.Edge
 
 	err = yaml.Unmarshal(cfg, &ecCfg)
 	if err != nil {
-		return "", err
+		var typeError *yaml.TypeError
+		if errors.As(err, &typeError) {
+			return "", ErrUnsupportedConfigFileVersion
+		}
+
+		return "", errors.WithStack(err)
 	}
 
 	if len(ecCfg.Secrets) > 0 {
