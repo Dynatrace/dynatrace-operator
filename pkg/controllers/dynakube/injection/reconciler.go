@@ -77,7 +77,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if !r.dynakube.NeedAppInjection() {
+	if !r.dynakube.NeedAppInjection() && !r.dynakube.MetadataEnrichmentEnabled() {
 		return r.removeAppInjection(ctx)
 	}
 
