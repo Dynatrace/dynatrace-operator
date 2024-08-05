@@ -118,6 +118,7 @@ func (gc *CSIGarbageCollector) mockUnusedVersions(versions ...string) {
 		gc.db.(metadata.Access).DeleteCodeModule(&metadata.CodeModule{Version: version})
 	}
 }
+
 func (gc *CSIGarbageCollector) mockUsedVersions(t *testing.T, versions ...string) {
 	_ = gc.fs.Mkdir(testBinaryDir, 0770)
 	for i, version := range versions {
