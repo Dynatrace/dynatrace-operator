@@ -2,10 +2,12 @@ package otel
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/utils"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
@@ -130,7 +132,7 @@ func TestEnvironmentVariables(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		assert.Equal(t, corev1.EnvVar{Name: envShards, Value: string(dk.Spec.Templates.OpenTelemetryCollector.Replicas)}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
+		assert.Equal(t, corev1.EnvVar{Name: envShards, Value: fmt.Sprintf("%d", dk.Spec.Templates.OpenTelemetryCollector.Replicas)}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
 		assert.Equal(t, corev1.EnvVar{Name: envPodNamePrefix, Value: defaultPodNamePrefix}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
 		assert.Equal(t, corev1.EnvVar{Name: envPodName, ValueFrom: &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{
@@ -146,7 +148,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		assert.Equal(t, corev1.EnvVar{Name: envOTLPhttpPort, Value: defaultOLTPhttpPort}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
 		assert.Equal(t, corev1.EnvVar{Name: envOTLPtoken, ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: tokenSecretName},
+				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Name + consts.SecretSuffix},
 				Key:                  tokenSecretKey,
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])

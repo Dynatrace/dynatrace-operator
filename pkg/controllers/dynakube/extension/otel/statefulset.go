@@ -2,8 +2,11 @@ package otel
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/hash"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/utils"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -15,26 +18,22 @@ import (
 )
 
 const (
-	statefulsetName         = "dynatrace-extensions-collector"
-	containerName           = "collector"
-	serviceAccountName      = "dynatrace-extensions-collector"
-	tokenSecretName         = "eec-extension-token"
-	tokenSecretKey          = "otelc-token"
-	defaultImageRepo        = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
-	defaultImageTag         = "0.7.0"
-	defaultOLTPgrpcPort     = "10001"
-	defaultOLTPhttpPort     = "10002"
-	defaultPodNamePrefix    = "extensions-collector"
-	envShards               = "SHARDS"
-	envShardId              = "SHARD_ID"
-	envPodNamePrefix        = "POD_NAME_PREFIX"
-	envPodName              = "POD_NAME"
-	envOTLPgrpcPort         = "OTLP_GRPC_PORT"
-	envOTLPhttpPort         = "OTLP_HTTP_PORT"
-	envOTLPtoken            = "OTLP_TOKEN"
-	configurationVolumeName = "otelconfig"
-	configurationMountPath  = "/etc/otelcol/"
-	configMapName           = "otel-prometheus-config"
+	statefulsetName      = "dynatrace-extensions-collector"
+	containerName        = "collector"
+	tokenSecretKey       = "otelc.token"
+	defaultImageRepo     = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
+	defaultImageTag      = "0.7.0"
+	defaultOLTPgrpcPort  = "10001"
+	defaultOLTPhttpPort  = "10002"
+	defaultPodNamePrefix = "extensions-collector"
+	defaultReplicas      = 1
+	envShards            = "SHARDS"
+	envShardId           = "SHARD_ID"
+	envPodNamePrefix     = "POD_NAME_PREFIX"
+	envPodName           = "POD_NAME"
+	envOTLPgrpcPort      = "OTLP_GRPC_PORT"
+	envOTLPhttpPort      = "OTLP_HTTP_PORT"
+	envOTLPtoken         = "OTLP_TOKEN"
 )
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
@@ -51,7 +50,6 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		statefulset.SetUpdateStrategy(utils.BuildUpdateStrategy()),
 		setTlsRef(r.dk.Spec.Templates.OpenTelemetryCollector.TlsRefName),
 		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
-		setVolumes(),
 	)
 
 	if err != nil {
@@ -98,7 +96,7 @@ func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 		SecurityContext: buildSecurityContext(),
 		Env:             buildContainerEnvs(dk),
 		Resources:       dk.Spec.Templates.OpenTelemetryCollector.Resources,
-		VolumeMounts:    buildContainerVolumeMounts(),
+		Args:            []string{fmt.Sprintf("--config=eec://%s:%d#refresh-interval=5s&insecure=true", dk.Name+consts.ExtensionsControllerSuffix, consts.ExtensionsCollectorComPort)},
 	}
 }
 
@@ -120,7 +118,7 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 
 func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	return []corev1.EnvVar{
-		{Name: envShards, Value: string(dk.Spec.Templates.OpenTelemetryCollector.Replicas)},
+		{Name: envShards, Value: strconv.Itoa(int(dk.Spec.Templates.OpenTelemetryCollector.Replicas))},
 		{Name: envPodNamePrefix, Value: defaultPodNamePrefix},
 		{Name: envPodName, ValueFrom: &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{
@@ -138,38 +136,11 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envOTLPhttpPort, Value: defaultOLTPhttpPort},
 		{Name: envOTLPtoken, ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: tokenSecretName},
+				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Name + consts.SecretSuffix},
 				Key:                  tokenSecretKey,
 			},
 		},
 		},
-	}
-}
-
-func buildContainerVolumeMounts() []corev1.VolumeMount {
-	return []corev1.VolumeMount{
-		{
-			Name:      configurationVolumeName,
-			MountPath: configurationMountPath,
-			ReadOnly:  true,
-		},
-	}
-}
-
-func setVolumes() func(o *appsv1.StatefulSet) {
-	return func(o *appsv1.StatefulSet) {
-		o.Spec.Template.Spec.Volumes = []corev1.Volume{
-			{
-				Name: configurationVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: configMapName,
-						},
-					},
-				},
-			},
-		}
 	}
 }
 
