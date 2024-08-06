@@ -10,7 +10,7 @@ import (
 	metricnoop "go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/sdk/resource"
 	// renovate packageName=open-telemetry/semantic-conventions depName=go.opentelemetry.io/otel/semconv
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.27.0"
 	tracenoop "go.opentelemetry.io/otel/trace/noop"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
