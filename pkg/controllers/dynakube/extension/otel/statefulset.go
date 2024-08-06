@@ -96,7 +96,7 @@ func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 		SecurityContext: buildSecurityContext(),
 		Env:             buildContainerEnvs(dk),
 		Resources:       dk.Spec.Templates.OpenTelemetryCollector.Resources,
-		Args:            []string{fmt.Sprintf("--config=eec://%s:%d#refresh-interval=5s&insecure=true", dk.Name+consts.ExtensionsControllerSuffix, consts.ExtensionsCollectorComPort)},
+		Args:            []string{fmt.Sprintf("--config=eec://%s.%s.svc.cluster.local:%d#refresh-interval=5s&insecure=true", dk.Name+consts.ExtensionsControllerSuffix, dk.Namespace, consts.ExtensionsCollectorComPort)},
 	}
 }
 
