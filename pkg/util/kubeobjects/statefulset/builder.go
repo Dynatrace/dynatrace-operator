@@ -66,7 +66,7 @@ func SetAllLabels(labels, matchLabels, templateLabels, customLabels map[string]s
 	return func(s *appsv1.StatefulSet) {
 		s.ObjectMeta.Labels = labels
 		s.Spec.Selector = &metav1.LabelSelector{MatchLabels: matchLabels}
-		s.Spec.Template.ObjectMeta.Labels = maputils.MergeMap(customLabels, templateLabels)
+		s.Spec.Template.ObjectMeta.Labels = maputils.MergeMap(s.Spec.Template.ObjectMeta.Labels, customLabels, templateLabels)
 	}
 }
 
