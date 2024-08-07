@@ -204,7 +204,7 @@ spec:
     #   value: |
     #     [connectivity]
     #     networkZone=
-    #   valueFrom: myCustomPropertiesConfigMap
+    #   valueFrom: myCustomPropertiesSecret
 
     # Optional: Specifies resource settings for ActiveGate instances
     # Consumption of the ActiveGate heavily depends on the workload to monitor
