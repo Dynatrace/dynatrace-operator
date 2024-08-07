@@ -93,7 +93,7 @@ Mockery only has to be run when adding new mocks or have to be updated to change
 Mockery is installed by running (see [docs](https://vektra.github.io/mockery/latest/installation/#go-install) for further information)
 
 ```shell
-make prerequisites
+make prerequisites/mockery
 ```
 
 #### Adding a mock
