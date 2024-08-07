@@ -194,6 +194,12 @@ func (checker *CorrectnessChecker) migrateAppMounts(ctx context.Context) {
 
 			continue
 		}
+
+		// we need to prevent filling the DB with entries if the CSI Pod is restarted
+		err = checker.access.DeleteAppMount(ctx, volume.VolumeID)
+		if err != nil {
+			log.Info("failed to delete app_mount entry", "id", volume.VolumeID, "error", err)
+		}
 	}
 }
 

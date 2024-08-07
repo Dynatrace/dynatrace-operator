@@ -81,7 +81,6 @@ type Access interface {
 	GetDynakube(ctx context.Context, dynakubeName string) (*Dynakube, error)
 	GetTenantsToDynakubes(ctx context.Context) (map[string]string, error)
 	GetAllDynakubes(ctx context.Context) ([]*Dynakube, error)
-	GetAllAppMounts(ctx context.Context) []*Volume
 
 	InsertOsAgentVolume(ctx context.Context, volume *OsAgentVolume) error
 	GetOsAgentVolumeViaVolumeID(ctx context.Context, volumeID string) (*OsAgentVolume, error)
@@ -99,6 +98,8 @@ type Access interface {
 	GetLatestVersions(ctx context.Context) (map[string]bool, error)
 	GetUsedImageDigests(ctx context.Context) (map[string]bool, error)
 	IsImageDigestUsed(ctx context.Context, imageDigest string) (bool, error)
+	GetAllAppMounts(ctx context.Context) []*Volume
+	DeleteAppMount(ctx context.Context, appMountName string) error
 }
 
 type AccessOverview struct {

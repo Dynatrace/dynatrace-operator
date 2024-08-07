@@ -68,9 +68,6 @@ func (f *FakeFailDB) GetTenantsToDynakubes(_ context.Context) (map[string]string
 func (f *FakeFailDB) GetAllDynakubes(_ context.Context) ([]*Dynakube, error) {
 	return nil, sql.ErrTxDone
 }
-func (f *FakeFailDB) GetAllAppMounts(_ context.Context) []*Volume {
-	return nil
-}
 
 func (f *FakeFailDB) InsertOsAgentVolume(_ context.Context, _ *OsAgentVolume) error {
 	return sql.ErrTxDone
@@ -106,6 +103,10 @@ func (f *FakeFailDB) GetAllUsedVersions(_ context.Context) (map[string]bool, err
 func (f *FakeFailDB) GetLatestVersions(_ context.Context) (map[string]bool, error) {
 	return nil, sql.ErrTxDone
 }
+func (f *FakeFailDB) GetAllAppMounts(_ context.Context) []*Volume {
+	return nil
+}
+func (f *FakeFailDB) DeleteAppMount(_ context.Context, _ string) error { return nil }
 
 func (f *FakeFailDB) GetUsedImageDigests(_ context.Context) (map[string]bool, error) {
 	return nil, sql.ErrTxDone

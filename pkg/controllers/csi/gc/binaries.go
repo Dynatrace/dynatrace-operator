@@ -93,6 +93,8 @@ func (gc *CSIGarbageCollector) deleteBinDirs(imageDirs []string) error {
 
 			return errors.WithStack(err)
 		}
+
+		log.Info("deleted codemodule bin dir", "dir", dir)
 	}
 
 	return nil

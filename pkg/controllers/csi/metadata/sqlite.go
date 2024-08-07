@@ -142,6 +142,8 @@ const (
 
 	deleteDynakubeStatement = "DELETE FROM dynakubes WHERE Name = ?;"
 
+	deleteAppMountStatement = "DELETE FROM app_mounts WHERE volume_meta_id = ?;"
+
 	// SPECIAL
 	getUsedVersionsStatement = `
 	SELECT DISTINCT Version
@@ -183,7 +185,7 @@ const (
 
 	getAllAppMountsStatement = `
 	SELECT volume_meta_id, code_module_version, location, mount_attempts
-	FROM nonexist
+	FROM app_mounts
 	WHERE deleted_at IS NULL;
 	`
 )
@@ -743,11 +745,7 @@ func (access *SqliteAccess) GetAllAppMounts(ctx context.Context) []*Volume {
 	var volumes = make([]*Volume, 0)
 
 	for rows.Next() {
-		var code_module_version string
-
-		var volume_meta_id string
-
-		var location string
+		var code_module_version, volume_meta_id, location string
 
 		var mount_attempts int
 
@@ -769,6 +767,15 @@ func (access *SqliteAccess) GetAllAppMounts(ctx context.Context) []*Volume {
 	}
 
 	return volumes
+}
+
+func (access *SqliteAccess) DeleteAppMount(ctx context.Context, appMountID string) error {
+	err := access.executeStatement(ctx, deleteAppMountStatement, appMountID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Executes the provided SQL statement on the database.
