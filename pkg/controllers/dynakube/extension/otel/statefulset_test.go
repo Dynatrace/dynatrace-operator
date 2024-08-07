@@ -1,11 +1,11 @@
-package eec
+package otel
 
 import (
-	"strconv"
+	"context"
+	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/utils"
@@ -14,7 +14,6 @@ import (
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -24,13 +23,9 @@ import (
 )
 
 const (
-	testDynakubeName       = "dynakube"
-	testNamespaceName      = "dynatrace"
-	testEecPullSecret      = "eec-pull-secret"
-	testEecImageRepository = "repo/dynatrace-eec"
-	testEecImageTag        = "1.289.0"
-	testTenantUUID         = "abc12345"
-	testKubeSystemUUID     = "12345"
+	testDynakubeName   = "dynakube"
+	testNamespaceName  = "dynatrace"
+	testOtelPullSecret = "otel-pull-secret"
 )
 
 func getTestDynakube() *dynakube.DynaKube {
@@ -46,26 +41,7 @@ func getTestDynakube() *dynakube.DynaKube {
 					Enabled: true,
 				},
 			},
-			Templates: dynakube.TemplatesSpec{
-				ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
-					ImageRef: dynakube.ImageRefSpec{
-						Repository: testEecImageRepository,
-						Tag:        testEecImageTag,
-					},
-				},
-			},
-		},
-
-		Status: dynakube.DynaKubeStatus{
-			ActiveGate: dynakube.ActiveGateStatus{
-				ConnectionInfoStatus: dynakube.ActiveGateConnectionInfoStatus{
-					ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
-						TenantUUID: testTenantUUID,
-					},
-				},
-				VersionStatus: status.VersionStatus{},
-			},
-			KubeSystemUUID: testKubeSystemUUID,
+			Templates: dynakube.TemplatesSpec{OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{}},
 		},
 	}
 }
@@ -84,42 +60,10 @@ func getStatefulset(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
 }
 
 func TestConditions(t *testing.T) {
-	t.Run("no kubeSystemUUID", func(t *testing.T) {
-		dk := getTestDynakube()
-		dk.Status.KubeSystemUUID = ""
-
-		mockK8sClient := fake.NewClient(dk)
-
-		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
-		require.Error(t, err)
-
-		statefulSet := &appsv1.StatefulSet{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: statefulsetName, Namespace: dk.Namespace}, statefulSet)
-		require.Error(t, err)
-
-		assert.True(t, errors.IsNotFound(err))
-	})
-
-	t.Run("no tenantUUID", func(t *testing.T) {
-		dk := getTestDynakube()
-		dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID = ""
-
-		mockK8sClient := fake.NewClient(dk)
-
-		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
-		require.Error(t, err)
-
-		statefulSet := &appsv1.StatefulSet{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: statefulsetName, Namespace: dk.Namespace}, statefulSet)
-		require.Error(t, err)
-
-		assert.True(t, errors.IsNotFound(err))
-	})
-
 	t.Run("prometheus is disabled", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Extensions.Prometheus.Enabled = false
-		conditions.SetStatefulSetCreated(dk.Conditions(), extensionsControllerStatefulSetConditionType, statefulsetName)
+		conditions.SetStatefulSetCreated(dk.Conditions(), otelControllerStatefulSetConditionType, statefulsetName)
 
 		mockK8sClient := fake.NewClient(dk)
 
@@ -150,12 +94,21 @@ func TestStatefulsetBase(t *testing.T) {
 	})
 }
 
+func TestServiceAccountName(t *testing.T) {
+	t.Run("serviceAccountName is set", func(t *testing.T) {
+		statefulSet := getStatefulset(t, getTestDynakube())
+
+		assert.Equal(t, serviceAccountName, statefulSet.Spec.Template.Spec.ServiceAccountName)
+		assert.Equal(t, serviceAccountName, statefulSet.Spec.Template.Spec.DeprecatedServiceAccount)
+	})
+}
+
 func TestTopologySpreadConstraints(t *testing.T) {
 	t.Run("the default TopologySpreadConstraints", func(t *testing.T) {
 		dk := getTestDynakube()
 		statefulSet := getStatefulset(t, dk)
 		appLabels := buildAppLabels(dk.Name)
-		assert.Equal(t, utils.BuildTopologySpreadConstraints(dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints, appLabels), statefulSet.Spec.Template.Spec.TopologySpreadConstraints)
+		assert.Equal(t, utils.BuildTopologySpreadConstraints(dk.Spec.Templates.OpenTelemetryCollector.TopologySpreadConstraints, appLabels), statefulSet.Spec.Template.Spec.TopologySpreadConstraints)
 	})
 
 	t.Run("custom TopologySpreadConstraints", func(t *testing.T) {
@@ -174,7 +127,7 @@ func TestTopologySpreadConstraints(t *testing.T) {
 			},
 		}
 
-		dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints = customTopologySpreadConstraints
+		dk.Spec.Templates.OpenTelemetryCollector.TopologySpreadConstraints = customTopologySpreadConstraints
 
 		statefulSet := getStatefulset(t, dk)
 
@@ -188,145 +141,32 @@ func TestEnvironmentVariables(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		assert.Equal(t, corev1.EnvVar{Name: envTenantId, Value: dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
-		assert.Equal(t, corev1.EnvVar{Name: envServerUrl, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ".svc.cluster.local:443"}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
-		assert.Equal(t, corev1.EnvVar{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + eecFile}, statefulSet.Spec.Template.Spec.Containers[0].Env[2])
-		assert.Equal(t, corev1.EnvVar{Name: envEecIngestPort, Value: strconv.Itoa(int(collectorPort))}, statefulSet.Spec.Template.Spec.Containers[0].Env[3])
-		assert.Equal(t, corev1.EnvVar{Name: envExtensionsConfPathName, Value: envExtensionsConfPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
-		assert.Equal(t, corev1.EnvVar{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
-		assert.Equal(t, corev1.EnvVar{Name: envDsInstallDirName, Value: envDsInstallDir}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
-	})
-}
-
-func TestVolumes(t *testing.T) {
-	t.Run("volume mounts", func(t *testing.T) {
-		statefulSet := getStatefulset(t, getTestDynakube())
-
-		expectedVolumeMounts := []corev1.VolumeMount{
-			{
-				Name:      tokensVolumeName,
-				MountPath: eecTokenMountPath,
-				ReadOnly:  true,
+		assert.Equal(t, corev1.EnvVar{Name: envShards, Value: fmt.Sprintf("%d", getReplicas(dk))}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
+		assert.Equal(t, corev1.EnvVar{Name: envPodNamePrefix, Value: defaultPodNamePrefix}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
+		assert.Equal(t, corev1.EnvVar{Name: envPodName, ValueFrom: &corev1.EnvVarSource{
+			FieldRef: &corev1.ObjectFieldSelector{
+				FieldPath: "metadata.labels['statefulset.kubernetes.io/pod-name']",
 			},
-			{
-				Name:      logVolumeName,
-				MountPath: logMountPath,
-				ReadOnly:  false,
+		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[2])
+		assert.Equal(t, corev1.EnvVar{Name: envShardId, ValueFrom: &corev1.EnvVarSource{
+			FieldRef: &corev1.ObjectFieldSelector{
+				FieldPath: "metadata.labels['app.kubernetes.io/pod-index']",
 			},
-			{
-				Name:      runtimeVolumeName,
-				MountPath: runtimeMountPath,
-				ReadOnly:  false,
+		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[3])
+		assert.Equal(t, corev1.EnvVar{Name: envOTLPgrpcPort, Value: defaultOLTPgrpcPort}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
+		assert.Equal(t, corev1.EnvVar{Name: envOTLPhttpPort, Value: defaultOLTPhttpPort}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
+		assert.Equal(t, corev1.EnvVar{Name: envOTLPtoken, ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Name + consts.SecretSuffix},
+				Key:                  tokenSecretKey,
 			},
-			{
-				Name:      configurationVolumeName,
-				MountPath: configurationMountPath,
-				ReadOnly:  true,
-			},
-		}
-		assert.Equal(t, expectedVolumeMounts, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts)
-	})
-
-	t.Run("volumes without PVC", func(t *testing.T) {
-		dk := getTestDynakube()
-
-		statefulSet := getStatefulset(t, dk)
-
-		mode := int32(420)
-		expectedVolumes := []corev1.Volume{
-			{
-				Name: tokensVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Name + consts.SecretSuffix,
-						DefaultMode: &mode,
-					},
-				},
-			},
-			{
-				Name: logVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: configurationVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: runtimeVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-		}
-
-		assert.Equal(t, expectedVolumes, statefulSet.Spec.Template.Spec.Volumes)
-	})
-
-	t.Run("volumes with PVC", func(t *testing.T) {
-		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim = &corev1.PersistentVolumeClaimSpec{
-			Resources: corev1.VolumeResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceStorage: resource.MustParse("1Gi"),
-				},
-			},
-		}
-
-		statefulSet := getStatefulset(t, dk)
-
-		mode := int32(420)
-		expectedVolumes := []corev1.Volume{
-			{
-				Name: tokensVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Name + consts.SecretSuffix,
-						DefaultMode: &mode,
-					},
-				},
-			},
-			{
-				Name: logVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: configurationVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: runtimeVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						ClaimName: runtimePersistentVolumeClaimName,
-					},
-				},
-			},
-		}
-
-		assert.Equal(t, expectedVolumes, statefulSet.Spec.Template.Spec.Volumes)
+		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
 	})
 }
 
 func TestAffinity(t *testing.T) {
 	t.Run("affinity", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim = &corev1.PersistentVolumeClaimSpec{
-			Resources: corev1.VolumeResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceStorage: resource.MustParse("1Gi"),
-				},
-			},
-		}
-
 		statefulSet := getStatefulset(t, dk)
 
 		expectedAffinity := &corev1.Affinity{
@@ -354,7 +194,7 @@ func TestImagePullSecrets(t *testing.T) {
 
 	t.Run("custom pull secret", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.CustomPullSecret = testEecPullSecret
+		dk.Spec.CustomPullSecret = testOtelPullSecret
 
 		statefulSet := getStatefulset(t, dk)
 
@@ -367,8 +207,6 @@ func TestImagePullSecrets(t *testing.T) {
 func TestResources(t *testing.T) {
 	t.Run("no resources", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.CustomPullSecret = testEecPullSecret
-
 		statefulSet := getStatefulset(t, dk)
 
 		assert.Empty(t, statefulSet.Spec.Template.Spec.Containers[0].Resources)
@@ -384,7 +222,7 @@ func TestResources(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		assert.Equal(t, dk.Spec.Templates.ExtensionExecutionController.Resources, statefulSet.Spec.Template.Spec.Containers[0].Resources)
+		assert.Equal(t, dk.Spec.Templates.OpenTelemetryCollector.Resources, statefulSet.Spec.Template.Spec.Containers[0].Resources)
 	})
 }
 
@@ -406,7 +244,7 @@ func TestLabels(t *testing.T) {
 		customLabels := map[string]string{
 			"a": "b",
 		}
-		dk.Spec.Templates.ExtensionExecutionController.Labels = customLabels
+		dk.Spec.Templates.OpenTelemetryCollector.Labels = customLabels
 
 		statefulSet := getStatefulset(t, dk)
 
@@ -432,7 +270,7 @@ func TestAnnotations(t *testing.T) {
 		customAnnotations := map[string]string{
 			"a": "b",
 		}
-		dk.Spec.Templates.ExtensionExecutionController.Annotations = customAnnotations
+		dk.Spec.Templates.OpenTelemetryCollector.Annotations = customAnnotations
 
 		statefulSet := getStatefulset(t, dk)
 
@@ -461,31 +299,11 @@ func TestTolerations(t *testing.T) {
 				Effect:   corev1.TaintEffectNoSchedule,
 			},
 		}
-		dk.Spec.Templates.ExtensionExecutionController.Tolerations = customTolerations
+		dk.Spec.Templates.OpenTelemetryCollector.Tolerations = customTolerations
 
 		statefulSet := getStatefulset(t, dk)
 
 		assert.Equal(t, customTolerations, statefulSet.Spec.Template.Spec.Tolerations)
-	})
-}
-
-func TestPersistentVolumeClaimRetentionPolicy(t *testing.T) {
-	t.Run("the default retention policy", func(t *testing.T) {
-		statefulSet := getStatefulset(t, getTestDynakube())
-
-		assert.Nil(t, statefulSet.Spec.PersistentVolumeClaimRetentionPolicy)
-	})
-	t.Run("custom persistent volume claim retention policy", func(t *testing.T) {
-		// TODO: do we want to use statefulset.VolumeClaimTemplates
-	})
-}
-
-func TestServiceAccountName(t *testing.T) {
-	t.Run("serviceAccountName is set", func(t *testing.T) {
-		statefulSet := getStatefulset(t, getTestDynakube())
-
-		assert.Equal(t, serviceAccountName, statefulSet.Spec.Template.Spec.ServiceAccountName)
-		assert.Equal(t, serviceAccountName, statefulSet.Spec.Template.Spec.DeprecatedServiceAccount)
 	})
 }
 
