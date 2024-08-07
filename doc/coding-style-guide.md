@@ -183,7 +183,7 @@ import (
 package abc
 
 import (
-    "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+    "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 )
 ```
 

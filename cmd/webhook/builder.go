@@ -8,6 +8,8 @@ import (
 	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	edgeconnectv1alpha1validation "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect/validation"
+	edgeconnectv1alpha2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
+	edgeconnectv1alpha2validation "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect/validation"
 	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube" //nolint:staticcheck
 	dynakubev1beta1validation "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube/validation"
 	dynakubev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube" //nolint:staticcheck
@@ -183,6 +185,13 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		ecv1alpha1Validator := edgeconnectv1alpha1validation.New(webhookManager.GetAPIReader(), webhookManager.GetConfig())
 
 		err = edgeconnectv1alpha1.SetupWebhookWithManager(webhookManager, ecv1alpha1Validator)
+		if err != nil {
+			return err
+		}
+
+		ecv1alpha2Validator := edgeconnectv1alpha2validation.New(webhookManager.GetAPIReader(), webhookManager.GetConfig())
+
+		err = edgeconnectv1alpha2.SetupWebhookWithManager(webhookManager, ecv1alpha2Validator)
 		if err != nil {
 			return err
 		}

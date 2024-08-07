@@ -22,7 +22,8 @@ import (
 const (
 	SuccessDuration = 3 * time.Hour
 
-	crdName                      = "dynakubes.dynatrace.com"
+	dkCrdName                    = "dynakubes.dynatrace.com"
+	ecCrdName                    = "edgeconnects.dynatrace.com"
 	secretPostfix                = "-certs"
 	errorCertificatesSecretEmpty = "certificates secret is empty"
 )
@@ -56,7 +57,7 @@ type WebhookCertificateController struct {
 	namespace     string
 }
 
-func (controller *WebhookCertificateController) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (controller *WebhookCertificateController) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) { //nolint:revive
 	log.Info("reconciling webhook certificates",
 		"namespace", request.Namespace, "name", request.Name)
 
@@ -123,7 +124,11 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
-	if err = controller.updateCRDConfiguration(ctx, bundle); err != nil {
+	if err = controller.updateCRDConfiguration(ctx, dkCrdName, bundle); err != nil {
+		return reconcile.Result{}, errors.WithStack(err)
+	}
+
+	if err = controller.updateCRDConfiguration(ctx, ecCrdName, bundle); err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
@@ -206,7 +211,7 @@ func (controller *WebhookCertificateController) getValidatingWebhookConfiguratio
 
 func (controller *WebhookCertificateController) getCrd(ctx context.Context) (*apiv1.CustomResourceDefinition, error) {
 	var crd apiv1.CustomResourceDefinition
-	if err := controller.apiReader.Get(ctx, types.NamespacedName{Name: crdName}, &crd); err != nil {
+	if err := controller.apiReader.Get(ctx, types.NamespacedName{Name: dkCrdName}, &crd); err != nil {
 		return nil, err
 	}
 
@@ -230,7 +235,7 @@ func (controller *WebhookCertificateController) updateClientConfigurations(ctx c
 	return nil
 }
 
-func (controller *WebhookCertificateController) updateCRDConfiguration(ctx context.Context, bundle []byte) error {
+func (controller *WebhookCertificateController) updateCRDConfiguration(ctx context.Context, crdName string, bundle []byte) error {
 	var crd apiv1.CustomResourceDefinition
 	if err := controller.apiReader.Get(ctx, types.NamespacedName{Name: crdName}, &crd); err != nil {
 		return err

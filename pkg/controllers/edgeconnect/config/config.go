@@ -12,7 +12,7 @@ type EdgeConnect struct {
 	OAuth OAuth `yaml:"oauth"`
 
 	// Restricts outgoing HTTP requests to specified hosts.
-	RestrictHostsTo string `yaml:"restrict_hosts_to,omitempty"`
+	RestrictHostsTo []string `yaml:"restrict_hosts_to,omitempty"`
 
 	// For communication over TLS-encrypted channels (HTTPS and secure WebSockets),
 	// EdgeConnect verifies the identity of a host based on its certificate.
