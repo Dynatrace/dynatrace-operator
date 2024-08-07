@@ -19,6 +19,7 @@ import (
 
 const (
 	statefulsetName      = "dynatrace-extensions-collector"
+	serviceAccountName   = "dynatrace-extensions-collector"
 	containerName        = "collector"
 	tokenSecretKey       = "otelc.token"
 	defaultImageRepo     = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
@@ -26,7 +27,6 @@ const (
 	defaultOLTPgrpcPort  = "10001"
 	defaultOLTPhttpPort  = "10002"
 	defaultPodNamePrefix = "extensions-collector"
-	defaultReplicas      = 1
 	envShards            = "SHARDS"
 	envShardId           = "SHARD_ID"
 	envPodNamePrefix     = "POD_NAME_PREFIX"
@@ -44,6 +44,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		statefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), r.dk.Spec.Templates.OpenTelemetryCollector.Labels),
 		statefulset.SetAllAnnotations(nil, r.dk.Spec.Templates.OpenTelemetryCollector.Annotations),
 		statefulset.SetAffinity(buildAffinity()),
+		statefulset.SetServiceAccount(serviceAccountName),
 		statefulset.SetTolerations(r.dk.Spec.Templates.OpenTelemetryCollector.Tolerations),
 		statefulset.SetTopologySpreadConstraints(utils.BuildTopologySpreadConstraints(r.dk.Spec.Templates.OpenTelemetryCollector.TopologySpreadConstraints, appLabels)),
 		statefulset.SetSecurityContext(buildPodSecurityContext()),

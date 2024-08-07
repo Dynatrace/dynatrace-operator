@@ -94,6 +94,15 @@ func TestStatefulsetBase(t *testing.T) {
 	})
 }
 
+func TestServiceAccountName(t *testing.T) {
+	t.Run("serviceAccountName is set", func(t *testing.T) {
+		statefulSet := getStatefulset(t, getTestDynakube())
+
+		assert.Equal(t, serviceAccountName, statefulSet.Spec.Template.Spec.ServiceAccountName)
+		assert.Equal(t, serviceAccountName, statefulSet.Spec.Template.Spec.DeprecatedServiceAccount)
+	})
+}
+
 func TestTopologySpreadConstraints(t *testing.T) {
 	t.Run("the default TopologySpreadConstraints", func(t *testing.T) {
 		dk := getTestDynakube()
