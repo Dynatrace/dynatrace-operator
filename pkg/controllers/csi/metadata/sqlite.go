@@ -184,9 +184,10 @@ const (
 	`
 
 	getAllAppMountsStatement = `
-	SELECT volume_meta_id, code_module_version, location, mount_attempts
+	SELECT volume_meta_id, code_module_version, location, mount_attempts, pod_name
 	FROM app_mounts
-	WHERE deleted_at IS NULL;
+	INNER JOIN volume_meta
+	WHERE volume_meta.id = app_mounts.volume_meta_id AND app_mounts.deleted_at IS NULL;
 	`
 )
 
@@ -745,11 +746,11 @@ func (access *SqliteAccess) GetAllAppMounts(ctx context.Context) []*Volume {
 	var volumes = make([]*Volume, 0)
 
 	for rows.Next() {
-		var code_module_version, volume_meta_id, location string
+		var code_module_version, volume_meta_id, location, pod_name string
 
 		var mount_attempts int
 
-		err := rows.Scan(&volume_meta_id, &code_module_version, &location, &mount_attempts)
+		err := rows.Scan(&volume_meta_id, &code_module_version, &location, &mount_attempts, &pod_name)
 		if err != nil {
 			log.Info("couldn't scan app_mount from database", "error", err)
 
@@ -763,7 +764,7 @@ func (access *SqliteAccess) GetAllAppMounts(ctx context.Context) []*Volume {
 			continue
 		}
 
-		volumes = append(volumes, NewVolume(volume_meta_id, "unknown", code_module_version, tenantUUID, mount_attempts))
+		volumes = append(volumes, NewVolume(volume_meta_id, pod_name, code_module_version, tenantUUID, mount_attempts))
 	}
 
 	return volumes
