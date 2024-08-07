@@ -60,7 +60,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		statefulset.SetTopologySpreadConstraints(utils.BuildTopologySpreadConstraints(r.dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints, appLabels)),
 		statefulset.SetServiceAccount(serviceAccountName),
 		statefulset.SetSecurityContext(buildPodSecurityContext()),
-		statefulset.SetUpdateStrategy(buildUpdateStrategy()),
+		statefulset.SetUpdateStrategy(utils.BuildUpdateStrategy()),
 		setTlsRef(r.dk.Spec.Templates.ExtensionExecutionController.TlsRefName),
 		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
 		setVolumes(r.dk.Name, r.dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim),
@@ -109,17 +109,6 @@ func buildAffinity() corev1.Affinity {
 				},
 			},
 		},
-	}
-}
-
-func buildUpdateStrategy() appsv1.StatefulSetUpdateStrategy {
-	partition := int32(0)
-
-	return appsv1.StatefulSetUpdateStrategy{
-		RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{
-			Partition: &partition,
-		},
-		Type: appsv1.RollingUpdateStatefulSetStrategyType,
 	}
 }
 
