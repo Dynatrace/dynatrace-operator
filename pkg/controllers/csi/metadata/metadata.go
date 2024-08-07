@@ -81,6 +81,7 @@ type Access interface {
 	GetDynakube(ctx context.Context, dynakubeName string) (*Dynakube, error)
 	GetTenantsToDynakubes(ctx context.Context) (map[string]string, error)
 	GetAllDynakubes(ctx context.Context) ([]*Dynakube, error)
+	GetAllAppMounts(ctx context.Context) []*Volume
 
 	InsertOsAgentVolume(ctx context.Context, volume *OsAgentVolume) error
 	GetOsAgentVolumeViaVolumeID(ctx context.Context, volumeID string) (*OsAgentVolume, error)

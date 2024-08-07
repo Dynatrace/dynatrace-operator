@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"strconv"
+	"strings"
 	"time"
 
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
@@ -178,6 +179,12 @@ const (
 	SELECT COUNT(*)
 	FROM dynakubes
 	WHERE ImageDigest = ?;
+	`
+
+	getAllAppMountsStatement = `
+	SELECT volume_meta_id, code_module_version, location, mount_attempts
+	FROM nonexist
+	WHERE deleted_at IS NULL;
 	`
 )
 
@@ -723,6 +730,47 @@ func (access *SqliteAccess) GetTenantsToDynakubes(ctx context.Context) (map[stri
 	return dynakubes, nil
 }
 
+func (access *SqliteAccess) GetAllAppMounts(ctx context.Context) []*Volume {
+	rows, err := access.conn.QueryContext(ctx, getAllAppMountsStatement)
+	if err != nil {
+		log.Info("skipping migration due to error getting all app mounts", "error", err)
+
+		return nil
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	var volumes = make([]*Volume, 0)
+
+	for rows.Next() {
+		var code_module_version string
+
+		var volume_meta_id string
+
+		var location string
+
+		var mount_attempts int
+
+		err := rows.Scan(&volume_meta_id, &code_module_version, &location, &mount_attempts)
+		if err != nil {
+			log.Info("couldn't scan app_mount from database", "error", err)
+
+			continue
+		}
+
+		tenantUUID := getTenantUUIDFromLocation(location)
+		if tenantUUID == "" {
+			log.Info("could not parse tenantUUID from location", "location", location)
+
+			continue
+		}
+
+		volumes = append(volumes, NewVolume(volume_meta_id, "unknown", code_module_version, tenantUUID, mount_attempts))
+	}
+
+	return volumes
+}
+
 // Executes the provided SQL statement on the database.
 // The `vars` are passed to the SQL statement (in-order), to fill in the SQL wildcards.
 func (access *SqliteAccess) executeStatement(ctx context.Context, statement string, vars ...any) error {
@@ -744,4 +792,15 @@ func (access *SqliteAccess) querySimpleStatement(ctx context.Context, statement,
 	}
 
 	return nil
+}
+
+func getTenantUUIDFromLocation(location string) string {
+	var tennantUUIDIndex = 2
+
+	result := strings.Split(location, "/")
+	if len(result) > tennantUUIDIndex {
+		return result[tennantUUIDIndex]
+	}
+
+	return ""
 }

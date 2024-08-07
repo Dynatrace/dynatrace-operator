@@ -68,6 +68,9 @@ func (f *FakeFailDB) GetTenantsToDynakubes(_ context.Context) (map[string]string
 func (f *FakeFailDB) GetAllDynakubes(_ context.Context) ([]*Dynakube, error) {
 	return nil, sql.ErrTxDone
 }
+func (f *FakeFailDB) GetAllAppMounts(_ context.Context) []*Volume {
+	return nil
+}
 
 func (f *FakeFailDB) InsertOsAgentVolume(_ context.Context, _ *OsAgentVolume) error {
 	return sql.ErrTxDone

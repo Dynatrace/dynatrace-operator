@@ -48,6 +48,8 @@ func (checker *CorrectnessChecker) CorrectCSI(ctx context.Context) error {
 		return err
 	}
 
+	checker.migrateAppMounts(ctx)
+
 	return nil
 }
 
@@ -180,6 +182,19 @@ func (checker *CorrectnessChecker) safelyLinkCodeModule(deprecatedBin, currentBi
 	}
 
 	return false, nil
+}
+
+func (checker *CorrectnessChecker) migrateAppMounts(ctx context.Context) {
+	volumes := checker.access.GetAllAppMounts(ctx)
+
+	for _, volume := range volumes {
+		err := checker.access.InsertVolume(ctx, volume)
+		if err != nil {
+			log.Info("failed to insert volume", "id", volume.VolumeID, "error", err)
+
+			continue
+		}
+	}
 }
 
 func folderExists(fs afero.Fs, filename string) bool {
