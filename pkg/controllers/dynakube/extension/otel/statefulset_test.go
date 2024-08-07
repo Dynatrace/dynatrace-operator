@@ -306,3 +306,21 @@ func TestTolerations(t *testing.T) {
 		assert.Equal(t, customTolerations, statefulSet.Spec.Template.Spec.Tolerations)
 	})
 }
+
+func TestSecurityContext(t *testing.T) {
+	t.Run("the default securityContext is set", func(t *testing.T) {
+		statefulSet := getStatefulset(t, getTestDynakube())
+
+		assert.NotNil(t, statefulSet.Spec.Template.Spec.SecurityContext)
+		assert.NotNil(t, statefulSet.Spec.Template.Spec.Containers[0].SecurityContext)
+	})
+}
+
+func TestUpdateStrategy(t *testing.T) {
+	t.Run("the default update strategy is set", func(t *testing.T) {
+		statefulSet := getStatefulset(t, getTestDynakube())
+
+		assert.NotNil(t, statefulSet.Spec.UpdateStrategy.RollingUpdate.Partition)
+		assert.NotEmpty(t, statefulSet.Spec.UpdateStrategy.Type)
+	})
+}
