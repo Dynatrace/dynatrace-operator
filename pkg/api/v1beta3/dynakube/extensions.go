@@ -11,11 +11,11 @@ type ExtensionsSpec struct {
 }
 
 type TemplatesSpec struct {
-	// +kubebuilder:validation:Optional
-	ExtensionExecutionController ExtensionExecutionControllerSpec `json:"extensionExecutionController,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	OpenTelemetryCollector OpenTelemetryCollectorSpec `json:"openTelemetryCollector,omitempty"`
+	// +kubebuilder:validation:Optional
+	ExtensionExecutionController ExtensionExecutionControllerSpec `json:"extensionExecutionController,omitempty"`
 }
 
 type PrometheusSpec struct {
@@ -69,6 +69,11 @@ type OpenTelemetryCollectorSpec struct {
 	// +kubebuilder:validation:Optional
 	Annotations map[string]string `json:"annotations,omitempty"`
 
+	// Number of replicas for your OtelCollector
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=1
+	Replicas *int32 `json:"replicas"`
+
 	// Overrides the default image
 	// +kubebuilder:validation:Optional
 	ImageRef ImageRefSpec `json:"imageRef,omitempty"`
@@ -87,11 +92,6 @@ type OpenTelemetryCollectorSpec struct {
 	// Adds TopologySpreadConstraints for the OtelCollector pods
 	// +kubebuilder:validation:Optional
 	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
-
-	// Number of replicas for your OtelCollector
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=1
-	Replicas int32 `json:"replicas"`
 }
 
 type ImageRefSpec struct {

@@ -27,6 +27,7 @@ const (
 	defaultOLTPgrpcPort  = "10001"
 	defaultOLTPhttpPort  = "10002"
 	defaultPodNamePrefix = "extensions-collector"
+	defaultReplicas      = 1
 	envShards            = "SHARDS"
 	envShardId           = "SHARD_ID"
 	envPodNamePrefix     = "POD_NAME_PREFIX"
@@ -39,7 +40,7 @@ const (
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	appLabels := buildAppLabels(r.dk.Name)
 	sts, err := statefulset.Build(r.dk, statefulsetName, buildContainer(r.dk),
-		statefulset.SetReplicas(r.dk.Spec.Templates.OpenTelemetryCollector.Replicas),
+		statefulset.SetReplicas(getReplicas(r.dk)),
 		statefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
 		statefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), r.dk.Spec.Templates.OpenTelemetryCollector.Labels),
 		statefulset.SetAllAnnotations(nil, r.dk.Spec.Templates.OpenTelemetryCollector.Annotations),
@@ -76,6 +77,14 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	conditions.SetStatefulSetCreated(r.dk.Conditions(), otelControllerStatefulSetConditionType, sts.Name)
 
 	return nil
+}
+
+func getReplicas(dk *dynakube.DynaKube) int32 {
+	if dk.Spec.Templates.OpenTelemetryCollector.Replicas != nil {
+		return *dk.Spec.Templates.OpenTelemetryCollector.Replicas
+	}
+
+	return defaultReplicas
 }
 
 func buildContainer(dk *dynakube.DynaKube) corev1.Container {
@@ -119,7 +128,7 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 
 func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	return []corev1.EnvVar{
-		{Name: envShards, Value: strconv.Itoa(int(dk.Spec.Templates.OpenTelemetryCollector.Replicas))},
+		{Name: envShards, Value: strconv.Itoa(int(getReplicas(dk)))},
 		{Name: envPodNamePrefix, Value: defaultPodNamePrefix},
 		{Name: envPodName, ValueFrom: &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{
