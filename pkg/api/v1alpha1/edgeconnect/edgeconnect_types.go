@@ -166,7 +166,6 @@ func (dk *EdgeConnectStatus) SetPhase(phase status.DeploymentPhase) bool {
 // +kubebuilder:printcolumn:name="ApiServer",type=string,JSONPath=`.spec.apiServer`
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
-// +kubebuilder:storageversion
 type EdgeConnect struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

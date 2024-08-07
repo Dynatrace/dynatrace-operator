@@ -100,6 +100,27 @@ tests:
               timeoutSeconds: 10
               sideEffects: None
               matchPolicy: Exact
+            - admissionReviewVersions:
+                - v1
+              clientConfig:
+                service:
+                  name: dynatrace-webhook
+                  namespace: NAMESPACE
+                  path: /validate-dynatrace-com-v1alpha2-edgeconnect
+              rules:
+                - apiGroups:
+                    - dynatrace.com
+                  apiVersions:
+                    - v1alpha2
+                  operations:
+                    - CREATE
+                    - UPDATE
+                  resources:
+                    - edgeconnects
+              name: v1alpha2.edgeconnect.webhook.dynatrace.com
+              timeoutSeconds: 10
+              sideEffects: None
+              matchPolicy: Exact
   - it: should change timeoutSeconds
     set:
       platform: kubernetes
