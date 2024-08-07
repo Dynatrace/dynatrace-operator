@@ -11,7 +11,7 @@
 |`customPullSecret`|Pull secret for your private registry|-|string|
 |`env`|Adds additional environment variables to the EdgeConnect pods|-|array|
 |`hostPatterns`|Host patterns to be set in the tenant, only considered when provisioning is enabled.|-|array|
-|`hostRestrictions`|Restrict outgoing HTTP requests to your internal resources to specified hosts|-|string|
+|`hostRestrictions`|Restrict outgoing HTTP requests to your internal resources to specified hosts|-|array|
 |`labels`|Adds additional labels to the EdgeConnect pods|-|object|
 |`nodeSelector`|Node selector to control the selection of nodes for the EdgeConnect pods|-|object|
 |`replicas`|Amount of replicas for your EdgeConnect (the default value is: 1)|1|integer|
