@@ -4,12 +4,12 @@ go 1.22.3
 
 require (
 	github.com/container-storage-interface/spec v1.10.0
-	github.com/docker/cli v27.0.3+incompatible
+	github.com/docker/cli v27.1.1+incompatible
 	github.com/evanphx/json-patch v5.9.0+incompatible
 	github.com/go-gormigrate/gormigrate/v2 v2.1.2
 	github.com/go-logr/logr v1.4.2
 	github.com/google/go-cmp v0.6.0
-	github.com/google/go-containerregistry v0.20.1
+	github.com/google/go-containerregistry v0.20.2
 	github.com/google/uuid v1.6.0
 	github.com/klauspost/compress v1.17.9
 	github.com/opencontainers/go-digest v1.0.0
