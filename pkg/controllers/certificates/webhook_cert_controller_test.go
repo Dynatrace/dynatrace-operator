@@ -110,9 +110,23 @@ func TestReconcileCertificate_ExistingSecretWithValidCertificate(t *testing.T) {
 }
 
 func TestReconcile(t *testing.T) {
-	crd := &apiv1.CustomResourceDefinition{
+	dkCrd := &apiv1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: crdName,
+			Name: dkCrdName,
+		},
+		Spec: apiv1.CustomResourceDefinitionSpec{
+			Conversion: &apiv1.CustomResourceConversion{
+				Strategy: strategyWebhook,
+				Webhook: &apiv1.WebhookConversion{
+					ClientConfig: &apiv1.WebhookClientConfig{},
+				},
+			},
+		},
+	}
+
+	ecCrd := &apiv1.CustomResourceDefinition{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: ecCrdName,
 		},
 		Spec: apiv1.CustomResourceDefinitionSpec{
 			Conversion: &apiv1.CustomResourceConversion{
@@ -125,7 +139,7 @@ func TestReconcile(t *testing.T) {
 	}
 
 	t.Run(`reconcile successfully without mutatingwebhookconfiguration`, func(t *testing.T) {
-		fakeClient := fake.NewClient(crd,
+		fakeClient := fake.NewClient(dkCrd, ecCrd,
 			&admissionregistrationv1.ValidatingWebhookConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: webhook.DeploymentName,
@@ -150,7 +164,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run(`reconcile successfully without validatingwebhookconfiguration`, func(t *testing.T) {
-		fakeClient := fake.NewClient(crd,
+		fakeClient := fake.NewClient(dkCrd, ecCrd,
 			&admissionregistrationv1.MutatingWebhookConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: webhook.DeploymentName,
@@ -184,7 +198,7 @@ func TestReconcile(t *testing.T) {
 				Namespace: testNamespace,
 			},
 		}
-		fakeClient := fake.NewClient(crd, deployment)
+		fakeClient := fake.NewClient(dkCrd, ecCrd, deployment)
 		cs := newCertificateSecret(deployment)
 		_ = cs.setSecretFromReader(context.TODO(), fakeClient, testNamespace)
 		_ = cs.validateCertificates(testNamespace)
@@ -199,7 +213,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		actualCrd := &apiv1.CustomResourceDefinition{}
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: crdName}, actualCrd)
+		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dkCrdName}, actualCrd)
 		require.NoError(t, err)
 		assert.Equal(t, expectedBundle, actualCrd.Spec.Conversion.Webhook.ClientConfig.CABundle)
 	})
@@ -207,7 +221,7 @@ func TestReconcile(t *testing.T) {
 	// Generation must not be skipped because webhook startup routine listens for the secret
 	// See cmd/operator/manager.go and cmd/operator/watcher.go
 	t.Run(`do not skip certificates generation if no configuration exists`, func(t *testing.T) {
-		fakeClient := fake.NewClient(crd, &appsv1.Deployment{
+		fakeClient := fake.NewClient(dkCrd, ecCrd, &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      webhook.DeploymentName,
 				Namespace: testNamespace,
@@ -374,7 +388,20 @@ func (builder *fakeClientBuilder) WithCRD() *fakeClientBuilder {
 	builder.objs = append(builder.objs,
 		&apiv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: crdName,
+				Name: dkCrdName,
+			},
+			Spec: apiv1.CustomResourceDefinitionSpec{
+				Conversion: &apiv1.CustomResourceConversion{
+					Strategy: strategyWebhook,
+					Webhook: &apiv1.WebhookConversion{
+						ClientConfig: &apiv1.WebhookClientConfig{},
+					},
+				},
+			},
+		},
+		&apiv1.CustomResourceDefinition{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: ecCrdName,
 			},
 			Spec: apiv1.CustomResourceDefinitionSpec{
 				Conversion: &apiv1.CustomResourceConversion{

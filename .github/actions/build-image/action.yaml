@@ -31,7 +31,7 @@ runs:
       run: |
         hack/build/ci/third-party-licenses.sh
     - name: Build target
-      uses: docker/build-push-action@5176d81f87c23d6fc96624dfdbcd9f3830bbe445 # v6.5.0
+      uses: docker/build-push-action@4f7cdeb0f05278b464e71357394bf2c61f94138e # v6.6.0
       with:
         builder: ${{ steps.buildx.outputs.name }}
         build-args: |
@@ -45,7 +45,7 @@ runs:
         labels: ${{ inputs.labels }}
         outputs: type=docker,dest=/tmp/operator-${{ inputs.platform }}.tar
     - name: Upload artifact
-      uses: actions/upload-artifact@89ef406dd8d7e03cfd12d9e0a4a378f454709029 # v4.3.5
+      uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
       with:
         name: operator-${{ inputs.platform }}
         path: /tmp/operator-${{ inputs.platform }}.tar

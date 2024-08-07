@@ -7,6 +7,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
+	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube" //nolint:staticcheck
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2"
@@ -26,6 +28,10 @@ func SetScheme(ctx context.Context, envConfig *envconf.Config) (context.Context,
 		return ctx, err
 	}
 	err = v1beta1.AddToScheme(envConfig.Client().Resources().GetScheme())
+	if err != nil {
+		return ctx, err
+	}
+	err = v1alpha2.AddToScheme(envConfig.Client().Resources().GetScheme())
 	if err != nil {
 		return ctx, err
 	}

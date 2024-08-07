@@ -19,6 +19,7 @@ const (
 	WebhookComponentLabel     = "webhook"
 	EdgeConnectComponentLabel = "edgeconnect"
 	ExtensionComponentLabel   = "dynatrace-extensions-controller"
+	CollectorComponentLabel   = "dynatrace-extensions-collector"
 )
 
 type AppMatchLabels struct {

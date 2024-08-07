@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/hash"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/utils"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
@@ -14,7 +15,6 @@ import (
 	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -57,10 +57,10 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		statefulset.SetAllAnnotations(nil, r.dk.Spec.Templates.ExtensionExecutionController.Annotations),
 		statefulset.SetAffinity(buildAffinity()),
 		statefulset.SetTolerations(r.dk.Spec.Templates.ExtensionExecutionController.Tolerations),
-		statefulset.SetTopologySpreadConstraints(buildTopologySpreadConstraints(r.dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints, r.dk.Name)),
+		statefulset.SetTopologySpreadConstraints(utils.BuildTopologySpreadConstraints(r.dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints, appLabels)),
 		statefulset.SetServiceAccount(serviceAccountName),
 		statefulset.SetSecurityContext(buildPodSecurityContext()),
-		statefulset.SetUpdateStrategy(buildUpdateStrategy()),
+		statefulset.SetUpdateStrategy(utils.BuildUpdateStrategy()),
 		setTlsRef(r.dk.Spec.Templates.ExtensionExecutionController.TlsRefName),
 		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
 		setVolumes(r.dk.Name, r.dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim),
@@ -109,44 +109,6 @@ func buildAffinity() corev1.Affinity {
 				},
 			},
 		},
-	}
-}
-
-func buildTopologySpreadConstraints(topologySpreadConstraints []corev1.TopologySpreadConstraint, dynakubeName string) []corev1.TopologySpreadConstraint {
-	if len(topologySpreadConstraints) > 0 {
-		return topologySpreadConstraints
-	} else {
-		return buildDefaultTopologySpreadConstraints(dynakubeName)
-	}
-}
-
-func buildDefaultTopologySpreadConstraints(dynakubeName string) []corev1.TopologySpreadConstraint {
-	appLabels := buildAppLabels(dynakubeName)
-
-	return []corev1.TopologySpreadConstraint{
-		{
-			MaxSkew:           1,
-			TopologyKey:       "topology.kubernetes.io/zone",
-			WhenUnsatisfiable: "ScheduleAnyway",
-			LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
-		},
-		{
-			MaxSkew:           1,
-			TopologyKey:       "kubernetes.io/hostname",
-			WhenUnsatisfiable: "DoNotSchedule",
-			LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
-		},
-	}
-}
-
-func buildUpdateStrategy() appsv1.StatefulSetUpdateStrategy {
-	partition := int32(0)
-
-	return appsv1.StatefulSetUpdateStrategy{
-		RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{
-			Partition: &partition,
-		},
-		Type: appsv1.RollingUpdateStatefulSetStrategyType,
 	}
 }
 
