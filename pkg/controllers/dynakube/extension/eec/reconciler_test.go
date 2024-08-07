@@ -24,13 +24,14 @@ import (
 )
 
 const (
-	testDynakubeName       = "dynakube"
-	testNamespaceName      = "dynatrace"
-	testEecPullSecret      = "eec-pull-secret"
-	testEecImageRepository = "repo/dynatrace-eec"
-	testEecImageTag        = "1.289.0"
-	testTenantUUID         = "abc12345"
-	testKubeSystemUUID     = "12345"
+	testDynakubeName              = "dynakube"
+	testNamespaceName             = "dynatrace"
+	testEecPullSecret             = "eec-pull-secret"
+	testEecImageRepository        = "repo/dynatrace-eec"
+	testEecImageTag               = "1.289.0"
+	testTenantUUID                = "abc12345"
+	testKubeSystemUUID            = "12345"
+	testCustomConfigConfigMapName = "eec-custom-config"
 )
 
 func getTestDynakube() *dynakube.DynaKube {
@@ -228,6 +229,42 @@ func TestVolumes(t *testing.T) {
 		assert.Equal(t, expectedVolumeMounts, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts)
 	})
 
+	t.Run("volume mounts with custom configuration", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Templates.ExtensionExecutionController.CustomConfig = testCustomConfigConfigMapName
+
+		statefulSet := getStatefulset(t, dk)
+
+		expectedVolumeMounts := []corev1.VolumeMount{
+			{
+				Name:      tokensVolumeName,
+				MountPath: eecTokenMountPath,
+				ReadOnly:  true,
+			},
+			{
+				Name:      logVolumeName,
+				MountPath: logMountPath,
+				ReadOnly:  false,
+			},
+			{
+				Name:      runtimeVolumeName,
+				MountPath: runtimeMountPath,
+				ReadOnly:  false,
+			},
+			{
+				Name:      configurationVolumeName,
+				MountPath: configurationMountPath,
+				ReadOnly:  true,
+			},
+			{
+				Name:      customConfigVolumeName,
+				MountPath: customConfigMountPath,
+				ReadOnly:  true,
+			},
+		}
+		assert.Equal(t, expectedVolumeMounts, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts)
+	})
+
 	t.Run("volumes without PVC", func(t *testing.T) {
 		dk := getTestDynakube()
 
@@ -307,6 +344,56 @@ func TestVolumes(t *testing.T) {
 				VolumeSource: corev1.VolumeSource{
 					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
 						ClaimName: runtimePersistentVolumeClaimName,
+					},
+				},
+			},
+		}
+
+		assert.Equal(t, expectedVolumes, statefulSet.Spec.Template.Spec.Volumes)
+	})
+
+	t.Run("volumes without PVC and with custom configuration", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Templates.ExtensionExecutionController.CustomConfig = testCustomConfigConfigMapName
+
+		statefulSet := getStatefulset(t, dk)
+
+		mode := int32(420)
+		expectedVolumes := []corev1.Volume{
+			{
+				Name: tokensVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName:  dk.Name + consts.SecretSuffix,
+						DefaultMode: &mode,
+					},
+				},
+			},
+			{
+				Name: logVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+			{
+				Name: configurationVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+			{
+				Name: runtimeVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+			{
+				Name: customConfigVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: testCustomConfigConfigMapName,
+						},
 					},
 				},
 			},

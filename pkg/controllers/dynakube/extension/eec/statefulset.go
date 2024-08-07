@@ -46,6 +46,8 @@ const (
 	runtimeMountPath        = "/var/lib/dynatrace/remotepluginmodule/agent/runtime"
 	configurationVolumeName = "runtime-configuration"
 	configurationMountPath  = "/var/lib/dynatrace/remotepluginmodule/agent/conf/runtime"
+	customConfigVolumeName  = "custom-config"
+	customConfigMountPath   = "/var/lib/dynatrace/remotepluginmodule/secrets/config"
 )
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
@@ -63,7 +65,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		statefulset.SetUpdateStrategy(utils.BuildUpdateStrategy()),
 		setTlsRef(r.dk.Spec.Templates.ExtensionExecutionController.TlsRefName),
 		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
-		setVolumes(r.dk.Name, r.dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim),
+		setVolumes(r.dk.Name, r.dk.Spec.Templates.ExtensionExecutionController.CustomConfig, r.dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim),
 	)
 
 	if err != nil {
@@ -152,7 +154,7 @@ func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 		},
 		Env:          buildContainerEnvs(dk),
 		Resources:    dk.Spec.Templates.ExtensionExecutionController.Resources,
-		VolumeMounts: buildContainerVolumeMounts(),
+		VolumeMounts: buildContainerVolumeMounts(dk.Spec.Templates.ExtensionExecutionController.CustomConfig),
 	}
 }
 
@@ -191,8 +193,8 @@ func buildActiveGateServiceName(dk *dynakube.DynaKube) string {
 	return capability.CalculateStatefulSetName(multiCap, dk.Name)
 }
 
-func buildContainerVolumeMounts() []corev1.VolumeMount {
-	return []corev1.VolumeMount{
+func buildContainerVolumeMounts(customConfig string) []corev1.VolumeMount {
+	volumeMounts := []corev1.VolumeMount{
 		{
 			Name:      tokensVolumeName,
 			MountPath: eecTokenMountPath,
@@ -214,9 +216,19 @@ func buildContainerVolumeMounts() []corev1.VolumeMount {
 			ReadOnly:  true,
 		},
 	}
+
+	if customConfig != "" {
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      customConfigVolumeName,
+			MountPath: customConfigMountPath,
+			ReadOnly:  true,
+		})
+	}
+
+	return volumeMounts
 }
 
-func setVolumes(dynakubeName string, claim *corev1.PersistentVolumeClaimSpec) func(o *appsv1.StatefulSet) {
+func setVolumes(dynakubeName string, customConfig string, claim *corev1.PersistentVolumeClaimSpec) func(o *appsv1.StatefulSet) {
 	return func(o *appsv1.StatefulSet) {
 		mode := int32(420)
 		o.Spec.Template.Spec.Volumes = []corev1.Volume{
@@ -258,6 +270,19 @@ func setVolumes(dynakubeName string, claim *corev1.PersistentVolumeClaimSpec) fu
 				VolumeSource: corev1.VolumeSource{
 					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
 						ClaimName: runtimePersistentVolumeClaimName,
+					},
+				},
+			})
+		}
+
+		if customConfig != "" {
+			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
+				Name: customConfigVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: customConfig,
+						},
 					},
 				},
 			})
