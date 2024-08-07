@@ -4984,7 +4984,8 @@ spec:
                 maxLength: 128
                 type: string
                 x-kubernetes-validations:
-                - message: Value is immutable, delete the CR and apply new one
+                - message: APIURL is immutable, please delete the CR and then apply
+                    new one
                   rule: self == oldSelf
               customPullSecret:
                 description: |-
