@@ -102,14 +102,6 @@ func TestAddInstallerInitEnvs(t *testing.T) {
 	})
 }
 
-func TestAddContainerInfoInitEnv(t *testing.T) {
-	t.Run("Add container info init env", func(t *testing.T) {
-		container := &corev1.Container{}
-		addContainerInfoInitEnv(container, 1, "test-pod", "test-namespace")
-		require.Len(t, container.Env, 2)
-	})
-}
-
 func TestAddDeploymentMetadataEnv(t *testing.T) {
 	t.Run("Add cloudNative deployment metadata env", func(t *testing.T) {
 		container := &corev1.Container{}

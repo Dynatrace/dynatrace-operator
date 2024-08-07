@@ -1,6 +1,7 @@
 package startup
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
@@ -11,7 +12,7 @@ import (
 )
 
 func TestNewEnv(t *testing.T) {
-	t.Run(`create new env for oneagent and metadata-enrichment injection`, func(t *testing.T) {
+	t.Run("create new env for oneagent and metadata-enrichment injection", func(t *testing.T) {
 		resetEnv := prepCombinedTestEnv(t)
 
 		env, err := newEnv()
@@ -42,7 +43,7 @@ func TestNewEnv(t *testing.T) {
 		assert.True(t, env.OneAgentInjected)
 		assert.True(t, env.MetadataEnrichmentInjected)
 	})
-	t.Run(`create new env for only metadata-enrichment injection`, func(t *testing.T) {
+	t.Run("create new env for only metadata-enrichment injection", func(t *testing.T) {
 		resetEnv := prepMetadataEnrichmentTestEnv(t, false)
 
 		env, err := newEnv()
@@ -57,7 +58,7 @@ func TestNewEnv(t *testing.T) {
 		assert.Empty(t, env.InstallerTech)
 		assert.Empty(t, env.InstallVersion)
 		assert.Empty(t, env.InstallPath)
-		assert.Empty(t, env.Containers)
+		assert.Len(t, env.Containers, 5)
 
 		assert.NotEmpty(t, env.K8NodeName)
 		assert.Empty(t, env.K8BasePodName)
@@ -73,7 +74,7 @@ func TestNewEnv(t *testing.T) {
 		assert.False(t, env.OneAgentInjected)
 		assert.True(t, env.MetadataEnrichmentInjected)
 	})
-	t.Run(`create new env for only oneagent`, func(t *testing.T) {
+	t.Run("create new env for only oneagent", func(t *testing.T) {
 		resetEnv := prepOneAgentTestEnv(t)
 
 		env, err := newEnv()
@@ -114,7 +115,7 @@ func TestFailurePolicyModes(t *testing.T) {
 		"other":      silentPhrase,
 	}
 	for configuredMode, expectedMode := range modes {
-		t.Run(`injection failure policy: `+configuredMode, func(t *testing.T) {
+		t.Run("injection failure policy: "+configuredMode, func(t *testing.T) {
 			resetEnv := prepMetadataEnrichmentTestEnv(t, true)
 
 			t.Setenv(consts.InjectionFailurePolicyEnv, configuredMode)
@@ -154,19 +155,11 @@ func prepOneAgentTestEnv(t *testing.T) func() {
 		consts.AgentInstallPathEnv,
 		consts.K8sClusterIDEnv,
 	}
-	for i := 1; i <= 5; i++ {
-		envs = append(envs, fmt.Sprintf(consts.AgentContainerNameEnvTemplate, i))
-		envs = append(envs, fmt.Sprintf(consts.AgentContainerImageEnvTemplate, i))
-	}
 
 	for _, envvar := range envs {
 		err := os.Setenv(envvar, fmt.Sprintf("TEST_%s", envvar))
 		require.NoError(t, err)
 	}
-
-	// Int env
-	envs = append(envs, consts.AgentContainerCountEnv)
-	t.Setenv(consts.AgentContainerCountEnv, "5")
 
 	// Mode Env
 	envs = append(envs, consts.InjectionFailurePolicyEnv)
@@ -176,6 +169,20 @@ func prepOneAgentTestEnv(t *testing.T) func() {
 	t.Setenv(consts.AgentInjectedEnv, trueStatement)
 
 	envs = append(envs, consts.AgentInjectedEnv)
+
+	// Complex envs
+	containerInfo := []ContainerInfo{}
+	for i := 1; i <= 5; i++ {
+		containerInfo = append(containerInfo, ContainerInfo{Name: fmt.Sprintf("TEST_CONTAINER_%d_NAME", i), Image: fmt.Sprintf("TEST_CONTAINER_%d_IMAGE", i)})
+	}
+
+	rawContainerInfo, err := json.Marshal(containerInfo)
+	require.NoError(t, err)
+
+	err = os.Setenv(consts.ContainerInfoEnv, string(rawContainerInfo)) //nolint: tenv
+	require.NoError(t, err)
+
+	envs = append(envs, consts.ContainerInfoEnv)
 
 	return resetTestEnv(envs)
 }
@@ -191,6 +198,7 @@ func prepMetadataEnrichmentTestEnv(t *testing.T, isUnknownWorkload bool) func() 
 		consts.K8sNamespaceEnv,
 		consts.EnrichmentClusterNameEnv,
 	}
+
 	for _, envvar := range envs {
 		if isUnknownWorkload &&
 			(envvar == consts.EnrichmentWorkloadKindEnv || envvar == consts.EnrichmentWorkloadNameEnv) {
@@ -210,6 +218,20 @@ func prepMetadataEnrichmentTestEnv(t *testing.T, isUnknownWorkload bool) func() 
 	t.Setenv(consts.EnrichmentInjectedEnv, "true")
 
 	envs = append(envs, consts.EnrichmentInjectedEnv)
+
+	// Complex envs
+	containerInfo := []ContainerInfo{}
+	for i := 1; i <= 5; i++ {
+		containerInfo = append(containerInfo, ContainerInfo{Name: fmt.Sprintf("app-%d", i), Image: fmt.Sprintf("image-%d", i)})
+	}
+
+	rawContainerInfo, err := json.Marshal(containerInfo)
+	require.NoError(t, err)
+
+	err = os.Setenv(consts.ContainerInfoEnv, string(rawContainerInfo)) //nolint: tenv
+	require.NoError(t, err)
+
+	envs = append(envs, consts.ContainerInfoEnv)
 
 	return resetTestEnv(envs)
 }

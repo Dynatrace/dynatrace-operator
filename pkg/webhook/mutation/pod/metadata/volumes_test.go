@@ -21,10 +21,16 @@ func TestSetupVolumes(t *testing.T) {
 
 func TestSetupVolumeMountsForUserContainer(t *testing.T) {
 	t.Run("should add metadata enrichment volume-mounts", func(t *testing.T) {
-		container := &corev1.Container{}
+		container := &corev1.Container{Name: "nameOfContainer"}
 
 		setupVolumeMountsForUserContainer(container)
 
 		require.Len(t, container.VolumeMounts, 3)
+
+		for _, mount := range container.VolumeMounts {
+			if mount.SubPath != "" {
+				assert.Contains(t, mount.SubPath, container.Name)
+			}
+		}
 	})
 }

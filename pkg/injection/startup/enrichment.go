@@ -2,6 +2,7 @@ package startup
 
 import (
 	"encoding/json"
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -9,6 +10,7 @@ import (
 )
 
 type enrichmentJson struct {
+	ContainerName string `json:"k8s.container.name"`
 	PodUid        string `json:"k8s.pod.uid"`
 	PodName       string `json:"k8s.pod.name"`
 	NodeName      string `json:"k8s.node.name"`
@@ -29,51 +31,59 @@ type enrichmentJson struct {
 }
 
 var (
-	enrichmentJsonPath  = filepath.Join(consts.EnrichmentInitPath, consts.EnrichmentJsonFilename)
-	enrichmentPropsPath = filepath.Join(consts.EnrichmentInitPath, consts.EnrichmentPropertiesFilename)
+	enrichmentJsonPathTemplate  = filepath.Join(consts.EnrichmentInitPath, consts.EnrichmentInitJsonFilenameTemplate)
+	enrichmentPropsPathTemplate = filepath.Join(consts.EnrichmentInitPath, consts.EnrichmentInitPropertiesFilenameTemplate)
 )
 
 func (runner *Runner) createEnrichmentFiles() error {
-	data := enrichmentJson{
-		PodUid:        runner.env.K8PodUID,
-		PodName:       runner.env.K8PodName,
-		NodeName:      runner.env.K8NodeName,
-		NamespaceName: runner.env.K8Namespace,
-		ClusterName:   runner.env.K8ClusterName,
-		ClusterUID:    runner.env.K8ClusterID,
-		WorkloadKind:  runner.env.WorkloadKind,
-		WorkloadName:  runner.env.WorkloadName,
+	for _, container := range runner.env.Containers {
+		data := enrichmentJson{
+			ContainerName: container.Name,
+			PodUid:        runner.env.K8PodUID,
+			PodName:       runner.env.K8PodName,
+			NodeName:      runner.env.K8NodeName,
+			NamespaceName: runner.env.K8Namespace,
+			ClusterName:   runner.env.K8ClusterName,
+			ClusterUID:    runner.env.K8ClusterID,
+			WorkloadKind:  runner.env.WorkloadKind,
+			WorkloadName:  runner.env.WorkloadName,
 
-		DTClusterEntity: runner.env.K8ClusterName,
-		DTClusterID:     runner.env.K8ClusterID,
-		DTWorkloadKind:  runner.env.WorkloadKind,
-		DTWorkloadName:  runner.env.WorkloadName,
+			DTClusterEntity: runner.env.K8ClusterName,
+			DTClusterID:     runner.env.K8ClusterID,
+			DTWorkloadKind:  runner.env.WorkloadKind,
+			DTWorkloadName:  runner.env.WorkloadName,
+		}
+
+		raw, err := json.Marshal(data)
+		if err != nil {
+			return err
+		}
+
+		err = runner.createConfigFile(fmt.Sprintf(enrichmentJsonPathTemplate, container.Name), string(raw), true)
+		if err != nil {
+			return err
+		}
+
+		props := map[string]string{}
+
+		err = json.Unmarshal(raw, &props)
+		if err != nil {
+			return err
+		}
+
+		var content strings.Builder
+		for key, value := range props {
+			content.WriteString(key)
+			content.WriteString("=")
+			content.WriteString(value)
+			content.WriteString("\n")
+		}
+
+		err = runner.createConfigFile(fmt.Sprintf(enrichmentPropsPathTemplate, container.Name), content.String(), true)
+		if err != nil {
+			return err
+		}
 	}
 
-	raw, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
-
-	err = runner.createConfigFile(enrichmentJsonPath, string(raw), true)
-	if err != nil {
-		return err
-	}
-
-	props := map[string]string{}
-
-	err = json.Unmarshal(raw, &props)
-	if err != nil {
-		return err
-	}
-
-	var content strings.Builder
-	for key, value := range props {
-		content.WriteString(key)
-		content.WriteString("=")
-		content.WriteString(value)
-		content.WriteString("\n")
-	}
-
-	return runner.createConfigFile(enrichmentPropsPath, content.String(), true)
+	return nil
 }

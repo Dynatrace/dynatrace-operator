@@ -2,12 +2,16 @@ package pod
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook"
 	"github.com/stretchr/testify/assert"
@@ -142,7 +146,10 @@ func TestHandlePodMutation(t *testing.T) {
 		err := podWebhook.handlePodMutation(context.Background(), mutationRequest)
 		require.NoError(t, err)
 		assert.NotNil(t, mutationRequest.InstallContainer)
-		assert.Len(t, mutationRequest.Pod.Spec.InitContainers, 2)
+
+		require.Len(t, mutationRequest.Pod.Spec.InitContainers, 2)
+
+		assertContainersInfo(t, mutationRequest.ToReinvocationRequest(), &mutationRequest.Pod.Spec.InitContainers[1])
 
 		initSecurityContext := mutationRequest.Pod.Spec.InitContainers[1].SecurityContext
 		require.NotNil(t, initSecurityContext)
@@ -191,10 +198,14 @@ func TestHandlePodReinvocation(t *testing.T) {
 		mutator2 := createAlreadyInjectedPodMutatorMock(t)
 		dk := getTestDynakube()
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{mutator1, mutator2}, nil)
-		mutationRequest := createTestMutationRequest(dk)
+		mutationRequest := createTestMutationRequestWithInjectedPod(dk)
 
 		updated := podWebhook.handlePodReinvocation(context.Background(), mutationRequest)
 		require.True(t, updated)
+
+		require.Len(t, mutationRequest.Pod.Spec.InitContainers, 2)
+		assertContainersInfo(t, mutationRequest.ToReinvocationRequest(), &mutationRequest.Pod.Spec.InitContainers[1])
+
 		mutator1.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
 		mutator1.AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
 		mutator2.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
@@ -205,7 +216,7 @@ func TestHandlePodReinvocation(t *testing.T) {
 		workingMutator := createAlreadyInjectedPodMutatorMock(t)
 		dk := getTestDynakube()
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{failingMutator, workingMutator}, nil)
-		mutationRequest := createTestMutationRequest(dk)
+		mutationRequest := createTestMutationRequestWithInjectedPod(dk)
 
 		updated := podWebhook.handlePodReinvocation(context.Background(), mutationRequest)
 		require.True(t, updated)
@@ -218,7 +229,7 @@ func TestHandlePodReinvocation(t *testing.T) {
 		failingMutator := createFailPodMutatorMock(t)
 		dk := getTestDynakube()
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{failingMutator}, nil)
-		mutationRequest := createTestMutationRequest(dk)
+		mutationRequest := createTestMutationRequestWithInjectedPod(dk)
 
 		updated := podWebhook.handlePodReinvocation(context.Background(), mutationRequest)
 		require.False(t, updated)
@@ -227,6 +238,31 @@ func TestHandlePodReinvocation(t *testing.T) {
 		failingMutator.AssertNotCalled(t, "Injected", mock.Anything)
 		failingMutator.AssertNotCalled(t, "Mutated", mock.Anything, mock.Anything)
 	})
+}
+
+func assertContainersInfo(t *testing.T, request *dtwebhook.ReinvocationRequest, installContainer *corev1.Container) {
+	rawContainerInfo := env.FindEnvVar(installContainer.Env, consts.ContainerInfoEnv)
+	require.NotNil(t, rawContainerInfo)
+
+	var containerInfo []startup.ContainerInfo
+	err := json.Unmarshal([]byte(rawContainerInfo.Value), &containerInfo)
+	require.NoError(t, err)
+
+	for _, container := range request.Pod.Spec.Containers {
+		found := false
+
+		for _, info := range containerInfo {
+			if container.Name == info.Name {
+				assert.Equal(t, container.Image, info.Image)
+
+				found = true
+
+				break
+			}
+		}
+
+		require.True(t, found)
+	}
 }
 
 func assertPodMutatorCalls(t *testing.T, mutator dtwebhook.PodMutator, expectedCalls int) {

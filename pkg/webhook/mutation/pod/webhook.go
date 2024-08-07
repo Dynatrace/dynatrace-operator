@@ -13,7 +13,6 @@ import (
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/internal/otel"
-	dtwebhookutil "github.com/Dynatrace/dynatrace-operator/pkg/webhook/util"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -161,7 +160,7 @@ func (wh *webhook) isOcDebugPod(pod *corev1.Pod) bool {
 func podNeedsInjection(mutationRequest *dtwebhook.MutationRequest) bool {
 	needsInjection := false
 	for _, container := range mutationRequest.Pod.Spec.Containers {
-		needsInjection = needsInjection || !dtwebhookutil.IsContainerExcludedFromInjection(mutationRequest.BaseRequest, container.Name)
+		needsInjection = needsInjection || !dtwebhook.IsContainerExcludedFromInjection(mutationRequest.DynaKube.Annotations, mutationRequest.Pod.Annotations, container.Name)
 	}
 
 	return needsInjection
@@ -179,7 +178,7 @@ func (wh *webhook) handlePodMutation(ctx context.Context, mutationRequest *dtweb
 
 	mutationRequest.InstallContainer = createInstallInitContainerBase(wh.webhookImage, wh.clusterID, mutationRequest.Pod, mutationRequest.DynaKube)
 
-	isMutated := false
+	isMutated := updateContainerInfo(mutationRequest.ToReinvocationRequest(), mutationRequest.InstallContainer)
 
 	for _, mutator := range wh.mutators {
 		if !mutator.Enabled(mutationRequest.BaseRequest) {
@@ -213,6 +212,8 @@ func (wh *webhook) handlePodReinvocation(ctx context.Context, mutationRequest *d
 	var needsUpdate bool
 
 	reinvocationRequest := mutationRequest.ToReinvocationRequest()
+
+	updateContainerInfo(reinvocationRequest, nil)
 
 	for _, mutator := range wh.mutators {
 		if mutator.Enabled(mutationRequest.BaseRequest) {

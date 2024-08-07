@@ -6,8 +6,12 @@ const (
 	EnrichmentWorkloadKindEnv    = "DT_WORKLOAD_KIND"
 	EnrichmentWorkloadNameEnv    = "DT_WORKLOAD_NAME"
 	EnrichmentClusterNameEnv     = "DT_CLUSTER_NAME"
+
+	EnrichmentMountPath          = "/var/lib/dynatrace/enrichment"
 	EnrichmentPropertiesFilename = "dt_metadata.properties"
 	EnrichmentJsonFilename       = "dt_metadata.json"
-	EnrichmentMountPath          = "/var/lib/dynatrace/enrichment"
-	EnrichmentInitPath           = "/tmp/enrichment"
+
+	EnrichmentInitPath                       = "/tmp/enrichment"
+	EnrichmentInitPropertiesFilenameTemplate = "dt_metadata_%s.properties"
+	EnrichmentInitJsonFilenameTemplate       = "dt_metadata_%s.json"
 )

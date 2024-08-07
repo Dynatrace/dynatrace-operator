@@ -443,7 +443,7 @@ func TestSetLDPreload(t *testing.T) {
 			filepath.Join(
 				consts.AgentShareDirMount,
 				consts.LdPreloadFilename))
-	}) // TODO: Check content ?
+	})
 }
 
 func TestEnrichMetadata(t *testing.T) {
@@ -457,7 +457,7 @@ func TestEnrichMetadata(t *testing.T) {
 
 		require.NoError(t, err)
 		assertIfEnrichmentFilesExists(t, *runner)
-	}) // TODO: Check content ?
+	})
 }
 
 func TestPropagateTLSCert(t *testing.T) {
@@ -582,16 +582,18 @@ func assertIfAgentFilesExists(t *testing.T, runner Runner) {
 }
 
 func assertIfEnrichmentFilesExists(t *testing.T, runner Runner) {
-	assertIfFileExists(t,
-		runner.fs,
-		filepath.Join(
-			consts.EnrichmentInitPath,
-			consts.EnrichmentJsonFilename))
-	assertIfFileExists(t,
-		runner.fs,
-		filepath.Join(
-			consts.EnrichmentInitPath,
-			consts.EnrichmentPropertiesFilename))
+	for _, container := range runner.env.Containers {
+		assertIfFileExists(t,
+			runner.fs,
+			filepath.Join(
+				consts.EnrichmentInitPath,
+				fmt.Sprintf(consts.EnrichmentInitJsonFilenameTemplate, container.Name)))
+		assertIfFileExists(t,
+			runner.fs,
+			filepath.Join(
+				consts.EnrichmentInitPath,
+				fmt.Sprintf(consts.EnrichmentInitPropertiesFilenameTemplate, container.Name)))
+	}
 }
 
 func assertIfAgentFilesNotExists(t *testing.T, runner Runner) {
@@ -614,16 +616,18 @@ func assertIfAgentFilesNotExists(t *testing.T, runner Runner) {
 }
 
 func assertIfEnrichmentFilesNotExists(t *testing.T, runner Runner) {
-	assertIfFileNotExists(t,
-		runner.fs,
-		filepath.Join(
-			consts.EnrichmentMountPath,
-			consts.EnrichmentJsonFilename))
-	assertIfFileNotExists(t,
-		runner.fs,
-		filepath.Join(
-			consts.EnrichmentMountPath,
-			consts.EnrichmentPropertiesFilename))
+	for _, container := range runner.env.Containers {
+		assertIfFileNotExists(t,
+			runner.fs,
+			filepath.Join(
+				consts.EnrichmentMountPath,
+				fmt.Sprintf(consts.EnrichmentInitJsonFilenameTemplate, container.Name)))
+		assertIfFileNotExists(t,
+			runner.fs,
+			filepath.Join(
+				consts.EnrichmentMountPath,
+				fmt.Sprintf(consts.EnrichmentInitPropertiesFilenameTemplate, container.Name)))
+	}
 }
 
 func assertIfReadOnlyCSIFilesExists(t *testing.T, runner Runner) {

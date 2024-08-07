@@ -1,16 +1,20 @@
 package pod
 
 import (
+	"encoding/json"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	k8spod "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/metadata"
+	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -142,4 +146,67 @@ func addSeccompProfile(ctx *corev1.SecurityContext, dk dynakube.DynaKube) {
 	if dk.FeatureInitContainerSeccomp() {
 		ctx.SeccompProfile = &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault}
 	}
+}
+
+func updateContainerInfo(request *dtwebhook.ReinvocationRequest, installContainer *corev1.Container) bool {
+	pod := request.Pod
+	if installContainer == nil {
+		installContainer = findInstallContainer(pod.Spec.InitContainers)
+	}
+
+	newContainers := request.NewContainers(containerIsInjected)
+	if len(newContainers) == 0 {
+		return false
+	}
+
+	containersEnv := env.FindEnvVar(installContainer.Env, consts.ContainerInfoEnv)
+
+	var containersEnvValue []startup.ContainerInfo //nolint: prealloc
+
+	if containersEnv == nil {
+		containersEnv = &corev1.EnvVar{
+			Name: consts.ContainerInfoEnv,
+		}
+	} else {
+		json.Unmarshal([]byte(containersEnv.Value), &containersEnvValue)
+	}
+
+	for _, container := range newContainers {
+		log.Info("updating init container with new container", "name", container.Name, "image", container.Image)
+		containerInfo := startup.ContainerInfo{
+			Name:  container.Name,
+			Image: container.Image,
+		}
+		containersEnvValue = append(containersEnvValue, containerInfo)
+	}
+
+	rawEnv, err := json.Marshal(containersEnvValue)
+	if err != nil {
+		log.Error(err, "failed to create container info env var")
+	}
+
+	containersEnv.Value = string(rawEnv)
+
+	installContainer.Env = env.AddOrUpdate(installContainer.Env, *containersEnv)
+
+	return true
+}
+
+func findInstallContainer(initContainers []corev1.Container) *corev1.Container {
+	for i := range initContainers {
+		container := &initContainers[i]
+		if container.Name == dtwebhook.InstallContainerName {
+			return container
+		}
+	}
+
+	return nil
+}
+
+func containerIsInjected(container corev1.Container) bool {
+	if metadata.ContainerIsInjected(container) || oamutation.ContainerIsInjected(container) {
+		return true
+	}
+
+	return false
 }

@@ -38,7 +38,7 @@ isCloudNativeFullStack true
 `
 )
 
-func (runner *Runner) getBaseConfContent(container containerInfo) string {
+func (runner *Runner) getBaseConfContent(container ContainerInfo) string {
 	return fmt.Sprintf(baseConfContentFormatString,
 		container.Name,
 		container.Image,

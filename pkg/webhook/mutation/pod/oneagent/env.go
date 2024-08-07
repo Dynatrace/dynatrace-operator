@@ -1,7 +1,6 @@
 package oneagent
 
 import (
-	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -76,21 +75,6 @@ func addInstallerInitEnvs(initContainer *corev1.Container, installer installerIn
 		corev1.EnvVar{Name: consts.AgentInstallerVersionEnv, Value: installer.version},
 		corev1.EnvVar{Name: consts.AgentInjectedEnv, Value: "true"},
 	)
-}
-
-func addContainerInfoInitEnv(initContainer *corev1.Container, containerIndex int, name string, image string) {
-	log.Info("updating init container with new container", "name", name, "image", image)
-	initContainer.Env = append(initContainer.Env,
-		corev1.EnvVar{Name: getContainerNameEnv(containerIndex), Value: name},
-		corev1.EnvVar{Name: getContainerImageEnv(containerIndex), Value: image})
-}
-
-func getContainerNameEnv(containerIndex int) string {
-	return fmt.Sprintf(consts.AgentContainerNameEnvTemplate, containerIndex)
-}
-
-func getContainerImageEnv(containerIndex int) string {
-	return fmt.Sprintf(consts.AgentContainerImageEnvTemplate, containerIndex)
 }
 
 func addDeploymentMetadataEnv(container *corev1.Container, dk dynakube.DynaKube, clusterID string) {
