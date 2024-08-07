@@ -5,7 +5,6 @@ import "fmt"
 const (
 	createdSuffix  = "created"
 	updatedSuffix  = "updated"
-	deletedSuffix  = "deleted"
 	outdatedSuffix = "outdated"
 )
 
@@ -15,10 +14,6 @@ func appendCreatedSuffix(name string) string {
 
 func appendUpdatedSuffix(name string) string {
 	return fmt.Sprintf("%s %s", name, updatedSuffix)
-}
-
-func appendDeletedSuffix(name string) string {
-	return fmt.Sprintf("%s %s", name, deletedSuffix)
 }
 
 func appendOutdatedSuffix(name string) string {
