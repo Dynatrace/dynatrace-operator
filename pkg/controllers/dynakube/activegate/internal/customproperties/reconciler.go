@@ -20,7 +20,8 @@ const (
 	VolumeName = "custom-properties"
 	MountPath  = "/var/lib/dynatrace/gateway/config_template/custom.properties"
 
-	ClientInternalSection = "[http.client.internal]"
+	clientInternalSection = "[http.client.internal]"
+	noProxyFieldName      = "proxy-non-proxy-hosts"
 )
 
 var _ controllers.Reconciler = &Reconciler{}
@@ -49,6 +50,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	data, err := r.buildCustomPropertiesValue(ctx)
 	if err != nil {
 		return err
+	} else if string(data) == "" {
+		return nil
 	}
 
 	customPropertiesSecret, err := secret.Build(r.dk,
@@ -101,12 +104,12 @@ func (r *Reconciler) buildCustomPropertiesValue(ctx context.Context) ([]byte, er
 func (r *Reconciler) addNonProxyHostsSettingsToValue(lines []string) []string {
 	noProxyValue := r.dk.FeatureNoProxy()
 	noProxyValue = strings.ReplaceAll(noProxyValue, ",", "|")
-	proxySettings := fmt.Sprintf("%s\nproxy-non-proxy-hosts=%s", ClientInternalSection, noProxyValue)
+	proxySettings := fmt.Sprintf("%s\n%s=%s", clientInternalSection, noProxyFieldName, noProxyValue)
 
 	found := false
 
 	for i, line := range lines {
-		if strings.Contains(line, ClientInternalSection) {
+		if strings.Contains(line, clientInternalSection) {
 			found = true
 			lines[i] = proxySettings
 

@@ -23,10 +23,119 @@ const (
 
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run(`Create works with minimal setup`, func(t *testing.T) {
-		r := NewReconciler(nil, nil, "", &dynakube.DynaKubeValueSource{})
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			}}
+
+		r := NewReconciler(nil, dk, "", &dynakube.DynaKubeValueSource{})
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 	})
+
+	t.Run(`Create creates custom properties secret for no-proxy`, func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				Proxy: &dynakube.DynaKubeProxy{
+					Value: "test",
+				},
+			}}
+		dk.Annotations = map[string]string{
+			dynakube.AnnotationFeatureNoProxy: testValue,
+		}
+
+		fakeClient := fake.NewClient(dk)
+		r := NewReconciler(fakeClient, dk, testOwner, nil)
+		err := r.Reconcile(context.Background())
+
+		require.NoError(t, err)
+
+		var customPropertiesSecret corev1.Secret
+		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: r.buildCustomPropertiesName(testName), Namespace: testNamespace}, &customPropertiesSecret)
+
+		require.NoError(t, err)
+		assert.NotNil(t, customPropertiesSecret)
+		assert.NotEmpty(t, customPropertiesSecret.Data)
+		assert.Contains(t, customPropertiesSecret.Data, DataKey)
+
+		expectedValue := "\n" + clientInternalSection + "\n" + noProxyFieldName + "=" + testValue
+
+		assert.Equal(t, []byte(expectedValue), customPropertiesSecret.Data[DataKey])
+	})
+
+	t.Run(`Create creates custom properties secret for no-proxy with custom properties`, func(t *testing.T) {
+		valueSource := dynakube.DynaKubeValueSource{Value: testValue}
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				Proxy: &dynakube.DynaKubeProxy{
+					Value: "test",
+				},
+			}}
+		dk.Annotations = map[string]string{
+			dynakube.AnnotationFeatureNoProxy: testValue,
+		}
+
+		fakeClient := fake.NewClient(dk)
+		r := NewReconciler(fakeClient, dk, testOwner, &valueSource)
+		err := r.Reconcile(context.Background())
+
+		require.NoError(t, err)
+
+		var customPropertiesSecret corev1.Secret
+		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: r.buildCustomPropertiesName(testName), Namespace: testNamespace}, &customPropertiesSecret)
+
+		require.NoError(t, err)
+		assert.NotNil(t, customPropertiesSecret)
+		assert.NotEmpty(t, customPropertiesSecret.Data)
+		assert.Contains(t, customPropertiesSecret.Data, DataKey)
+
+		expectedValue := testValue + "\n" + clientInternalSection + "\n" + noProxyFieldName + "=" + testValue
+
+		assert.Equal(t, []byte(expectedValue), customPropertiesSecret.Data[DataKey])
+	})
+
+	t.Run(`Always copy custom properties to secret`, func(t *testing.T) {
+		valueSource := dynakube.DynaKubeValueSource{ValueFrom: testKey}
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+		}
+
+		fakeClient := fake.NewClient(dk, &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testKey,
+				Namespace: testNamespace,
+			},
+			Data: map[string][]byte{
+				DataKey: []byte(testValue),
+			},
+		})
+		r := NewReconciler(fakeClient, dk, testOwner, &valueSource)
+		err := r.Reconcile(context.Background())
+
+		require.NoError(t, err)
+
+		var customPropertiesSecret corev1.Secret
+		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: r.buildCustomPropertiesName(testName), Namespace: testNamespace}, &customPropertiesSecret)
+
+		require.NoError(t, err)
+		assert.NotNil(t, customPropertiesSecret)
+		assert.NotEmpty(t, customPropertiesSecret.Data)
+		assert.Contains(t, customPropertiesSecret.Data, DataKey)
+		assert.Equal(t, []byte(testValue), customPropertiesSecret.Data[DataKey])
+	})
+
 	t.Run(`Create creates custom properties secret`, func(t *testing.T) {
 		valueSource := dynakube.DynaKubeValueSource{Value: testValue}
 		dk := &dynakube.DynaKube{

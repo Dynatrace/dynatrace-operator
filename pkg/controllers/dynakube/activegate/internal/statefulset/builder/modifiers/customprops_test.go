@@ -33,6 +33,24 @@ func TestCustomPropertyEnabled(t *testing.T) {
 		assert.True(t, mod.Enabled())
 	})
 
+	t.Run("true with NeedsCustomNoProxy", func(t *testing.T) {
+		dk := getBaseDynakube()
+		dk.Spec.Proxy = &dynakube.DynaKubeProxy{
+			Value: "test",
+		}
+		dk.Annotations = map[string]string{
+			dynakube.AnnotationFeatureNoProxy: "test.example.com",
+		}
+
+		enableKubeMonCapability(&dk)
+		multiCapability := capability.NewMultiCapability(&dk)
+		setCustomPropertyUsage(multiCapability, false)
+
+		mod := NewCustomPropertiesModifier(dk, multiCapability)
+
+		assert.True(t, mod.Enabled())
+	})
+
 	t.Run("false", func(t *testing.T) {
 		dk := getBaseDynakube()
 		enableKubeMonCapability(&dk)
