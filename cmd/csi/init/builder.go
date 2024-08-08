@@ -71,13 +71,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 
 		signalHandler := ctrl.SetupSignalHandler()
 
-		// new schema
 		access, err := metadata.NewAccess(signalHandler, dtcsi.MetadataAccessPath)
-		if err != nil {
-			return err
-		}
-		// new migrations
-		err = access.SchemaMigration()
 		if err != nil {
 			return err
 		}

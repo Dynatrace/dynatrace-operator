@@ -1,66 +1,11 @@
 package csidriver
 
 import (
-	"fmt"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/utils/mount"
 )
-
-const (
-	testTargetNotExist   = "not-exists"
-	testTargetError      = "error"
-	testTargetNotMounted = "not-mounted"
-	testTargetMounted    = "mounted"
-
-	testError = "test error message"
-)
-
-type fakeMounter struct {
-	mount.FakeMounter
-}
-
-func (*fakeMounter) IsLikelyNotMountPoint(target string) (bool, error) {
-	switch {
-	case target == testTargetNotExist:
-		return false, os.ErrNotExist
-	case target == testTargetError:
-		return false, fmt.Errorf(testError)
-	case target == testTargetMounted:
-		return true, nil
-	}
-
-	return false, nil
-}
-
-func TestCSIDriverServer_IsMounted(t *testing.T) {
-	t.Run(`mount point does not exist`, func(t *testing.T) {
-		mounted, err := isMounted(&fakeMounter{}, testTargetNotExist)
-		require.NoError(t, err)
-		assert.False(t, mounted)
-	})
-	t.Run(`mounter throws error`, func(t *testing.T) {
-		mounted, err := isMounted(&fakeMounter{}, testTargetError)
-
-		require.EqualError(t, err, "rpc error: code = Internal desc = test error message")
-		assert.False(t, mounted)
-	})
-	t.Run(`mount point is not mounted`, func(t *testing.T) {
-		mounted, err := isMounted(&fakeMounter{}, testTargetNotMounted)
-
-		require.NoError(t, err)
-		assert.True(t, mounted)
-	})
-	t.Run(`mount point is mounted`, func(t *testing.T) {
-		mounted, err := isMounted(&fakeMounter{}, testTargetMounted)
-
-		require.NoError(t, err)
-		assert.False(t, mounted)
-	})
-}
 
 func TestCSIDriverServer_parseEndpoint(t *testing.T) {
 	t.Run(`valid unix endpoint`, func(t *testing.T) {

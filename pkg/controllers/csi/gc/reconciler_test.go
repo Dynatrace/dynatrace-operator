@@ -7,14 +7,12 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/mount"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -24,7 +22,7 @@ func TestReconcile(t *testing.T) {
 	namespace := "test-namespace"
 
 	t.Run(`no latest version in status`, func(t *testing.T) {
-		dk := dynakube.DynaKube{
+		dynakube := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 			},
@@ -33,34 +31,13 @@ func TestReconcile(t *testing.T) {
 			},
 		}
 		gc := CSIGarbageCollector{
-			apiReader:    fake.NewClient(&dk),
-			fs:           afero.NewMemMapFs(),
-			db:           metadata.FakeMemoryDB(),
-			mounter:      mount.NewFakeMounter([]mount.MountPoint{}),
-			isNotMounted: mockIsNotMounted(map[string]error{}),
+			apiReader: fake.NewClient(&dynakube),
+			fs:        afero.NewMemMapFs(),
+			db:        metadata.FakeMemoryDB(),
 		}
-		result, err := gc.Reconcile(context.Background(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dk.Name}})
+		result, err := gc.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakube.Name}})
 
 		require.NoError(t, err)
-		assert.Equal(t, reconcile.Result{RequeueAfter: dtcsi.LongRequeueDuration}, result)
+		assert.Equal(t, reconcile.Result{}, result)
 	})
-}
-
-// mockIsNotMounted is rather confusing because of the double negation.
-// you can pass in a map of filepaths, each path will be considered as mounted if corresponding error value is nil. (so returns false)
-// if the filepath was not provided in the map, then the path is considered as not mounted. (so returns true)
-// if an error was provided for a filepath in the map, then that path will cause the return of that error.
-func mockIsNotMounted(files map[string]error) mountChecker {
-	return func(mounter mount.Interface, file string) (bool, error) {
-		err, ok := files[file]
-		if !ok {
-			return true, nil // unknown path => not mounted, no mocked error
-		}
-
-		if err == nil {
-			return false, nil // known path => mounted, no mocked error
-		}
-
-		return false, err // mocked error for path
-	}
 }
