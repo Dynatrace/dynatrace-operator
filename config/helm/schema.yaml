@@ -15,16 +15,15 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: 1.2.1
+  publishedVersion: 1.2.2
   publishedVersionMetadata:
     releaseNote: "<!-- Release notes generated using configuration in .github/release.yml\
-      \ at v1.2.1 -->\n\n## What's Changed\n### Bugfixes \U0001FAB2\n* Fix csv generation\
-      \ by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/3352\n\
-      * Fix reconcile interval incase of an error when updating the agent in the provisioner\
-      \ by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/3429\n\
-      * Handle the force-delete scenario in the OS volume publisher by @0sewa0 in\
-      \ https://github.com/Dynatrace/dynatrace-operator/pull/3453\n\n\n**Full Changelog**:\
-      \ https://github.com/Dynatrace/dynatrace-operator/compare/v1.2.0...v1.2.1"
+      \ at v1.2.2 -->\n\n## What's Changed\n### Bugfixes \U0001FAB2\n* Fix standalone\
+      \ metadata enrichment if no oneAgent section is configured by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/3568\n\
+      * Revert GORM changes by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/3554\n\
+      ### Component changes \U0001F6E0\uFE0F\n* Add feature flag to disable CSI volume\
+      \ by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/3569\n\
+      \n\n**Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v1.2.1...v1.2.2"
     releaseTypes:
     - Feature
     recommended: true
