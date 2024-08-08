@@ -67,7 +67,7 @@ jobs:
           make go/test
           make go/integration_test
       - name: check test coverage
-        id: check code-coverage
+        id: check-code-coverage
         run: |
           make go/check-coverage
       - name: Upload coverage reports to Codecov
