@@ -310,11 +310,40 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 	})
 
 	t.Run("Create SecretConfig with no-proxy", func(t *testing.T) {
-		dk := baseDynakube.DeepCopy()
-		expectedSecretConfig := *baseExpectedSecretConfig
 		proxyValue := "proxy-test-value"
-		setNoProxy(dk, proxyValue)
-		expectedSecretConfig.NoProxy = proxyValue
+		noProxyValue := "no-proxy-test-value"
+		dk := baseDynakube.DeepCopy()
+		dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: proxyValue}
+		setNoProxy(dk, noProxyValue)
+
+		expectedSecretConfig := *baseExpectedSecretConfig
+		expectedSecretConfig.NoProxy = noProxyValue
+		expectedSecretConfig.OneAgentNoProxy = noProxyValue
+		expectedSecretConfig.Proxy = proxyValue
+
+		testNamespace := createTestInjectedNamespace(dk, "test")
+		clt := fake.NewClientWithIndex(testNamespace, apiTokenSecret.DeepCopy(), getKubeNamespace().DeepCopy())
+		ig := NewInitGenerator(clt, clt, dk.Namespace)
+
+		secretConfig, err := ig.createSecretConfigForDynaKube(context.TODO(), dk, nil)
+		require.NoError(t, err)
+		assert.Equal(t, expectedSecretConfig, *secretConfig)
+	})
+
+	t.Run("Create SecretConfig with no-proxy + activegate", func(t *testing.T) {
+		proxyValue := "proxy-test-value"
+		noProxyValue := "no-proxy-test-value"
+		dk := baseDynakube.DeepCopy()
+		dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: proxyValue}
+		dk.Spec.ActiveGate = dynakube.ActiveGateSpec{
+			Capabilities: []dynakube.CapabilityDisplayName{dynakube.RoutingCapability.DisplayName},
+		}
+		setNoProxy(dk, noProxyValue)
+
+		expectedSecretConfig := *baseExpectedSecretConfig
+		expectedSecretConfig.NoProxy = noProxyValue
+		expectedSecretConfig.OneAgentNoProxy = noProxyValue + ",dynakube-test-activegate.dynatrace-test"
+		expectedSecretConfig.Proxy = proxyValue
 
 		testNamespace := createTestInjectedNamespace(dk, "test")
 		clt := fake.NewClientWithIndex(testNamespace, apiTokenSecret.DeepCopy(), getKubeNamespace().DeepCopy())

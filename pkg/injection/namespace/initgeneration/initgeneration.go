@@ -3,6 +3,7 @@ package initgeneration
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -152,11 +153,16 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dk *d
 		}
 	}
 
-	oneAgentNoProxy := ""
+	oneAgentNoProxyValues := []string{}
 
-	if dk.NeedsActiveGate() {
+	if dk.NeedsCustomNoProxy() {
+		oneAgentNoProxyValues = append(oneAgentNoProxyValues, dk.FeatureNoProxy())
+	}
+
+	if dk.IsRoutingActiveGateEnabled() {
 		multiCap := capability.NewMultiCapability(dk)
-		oneAgentNoProxy = capability.BuildDNSEntryPointWithoutEnvVars(dk.Name, dk.Namespace, multiCap)
+		oneAgentDNSEntry := capability.BuildDNSEntryPointWithoutEnvVars(dk.Name, dk.Namespace, multiCap)
+		oneAgentNoProxyValues = append(oneAgentNoProxyValues, oneAgentDNSEntry)
 	}
 
 	return &startup.SecretConfig{
@@ -166,7 +172,7 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dk *d
 		TenantUUID:          dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID,
 		Proxy:               proxy,
 		NoProxy:             dk.FeatureNoProxy(),
-		OneAgentNoProxy:     oneAgentNoProxy,
+		OneAgentNoProxy:     strings.Join(oneAgentNoProxyValues, ","),
 		NetworkZone:         dk.Spec.NetworkZone,
 		SkipCertCheck:       dk.Spec.SkipCertCheck,
 		HasHost:             dk.CloudNativeFullstackMode(),
