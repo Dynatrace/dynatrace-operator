@@ -37,7 +37,7 @@ go/lint: prerequisites/go-linting go/format go/vet go/wsl go/betteralign go/gola
 
 ## Runs all go unit tests and writes the coverprofile to coverage.txt
 go/test:
-	go test ./... -coverprofile=coverage.txt -covermode=atomic -tags "$(shell ./hack/build/create_go_build_tags.sh false)"
+	go test ./... -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... -tags "$(shell ./hack/build/create_go_build_tags.sh false)"
 
 ## Runs all go unit tests and opens coverage report in a browser
 go/coverage: go/test
@@ -55,3 +55,6 @@ go/gen_mocks: prerequisites/mockery
 go/deadcode: prerequisites/go-deadcode
 	# we add `tee` in the end to make it fail if it finds dead code, by default deadcode always return exit code 0
 	deadcode -test -tags="$(shell ./hack/build/create_go_build_tags.sh true)" $(LINT_TARGET) | tee deadcode.out && [ ! -s deadcode.out ]
+
+go/check-coverage: prerequisites/go-test-coverage go/test
+	go-test-coverage --config=./.testcoverage.yml

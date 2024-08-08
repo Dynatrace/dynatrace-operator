@@ -47,6 +47,10 @@ prerequisites/go-linting: prerequisites/go-deadcode
 prerequisites/go-deadcode:
 	go install golang.org/x/tools/cmd/deadcode@$(golang_tools_version)
 
+## Install go test coverage
+prerequisites/go-test-coverage:
+	go install github.com/vladopajic/go-test-coverage/v2@latest
+
 ## Install 'helm' if it is missing
 ## TODO: Have version accessible by renovate?
 prerequisites/helm-unittest:
