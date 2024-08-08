@@ -64,7 +64,7 @@ func (controller *Controller) determinePrometheusStatefulsetPhase(dk *dynakube.D
 	if dk.PrometheusEnabled() {
 		statefulSet := &appsv1.StatefulSet{}
 
-		err := controller.client.Get(context.TODO(), types.NamespacedName{Name: statefulsetName, Namespace: dk.Namespace}, statefulSet)
+		err := controller.client.Get(context.Background(), types.NamespacedName{Name: statefulsetName, Namespace: dk.Namespace}, statefulSet)
 		if k8serrors.IsNotFound(err) {
 			log.Info("statefulset to be deployed", "dynakube", dk.Name, "statefulset", statefulsetName)
 
@@ -121,7 +121,7 @@ func (controller *Controller) numberOfMissingOneagentPods(dk *dynakube.DynaKube)
 	oneAgentDaemonSet := &appsv1.DaemonSet{}
 	instanceName := dk.OneAgentDaemonsetName()
 
-	err := controller.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: dk.Namespace}, oneAgentDaemonSet)
+	err := controller.client.Get(context.Background(), types.NamespacedName{Name: instanceName, Namespace: dk.Namespace}, oneAgentDaemonSet)
 	if err != nil {
 		return 0, err
 	}
@@ -139,7 +139,7 @@ func (controller *Controller) numberOfMissingActiveGatePods(dk *dynakube.DynaKub
 		activeGateStatefulSet := &appsv1.StatefulSet{}
 		instanceName := capability.CalculateStatefulSetName(activeGateCapability, dk.Name)
 
-		err := controller.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: dk.Namespace}, activeGateStatefulSet)
+		err := controller.client.Get(context.Background(), types.NamespacedName{Name: instanceName, Namespace: dk.Namespace}, activeGateStatefulSet)
 		if k8serrors.IsNotFound(err) {
 			continue
 		}
