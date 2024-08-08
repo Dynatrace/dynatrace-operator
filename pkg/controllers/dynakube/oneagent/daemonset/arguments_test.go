@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -35,6 +36,7 @@ func TestArguments(t *testing.T) {
 
 		expectedDefaultArguments := []string{
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+			"--set-no-proxy=",
 			"--set-server={$(DT_SERVER)}",
 			"--set-tenant=$(DT_TENANT)",
 		}
@@ -74,6 +76,7 @@ func TestArguments(t *testing.T) {
 
 		expectedDefaultArguments := []string{
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+			"--set-no-proxy=",
 			"--set-server={$(DT_SERVER)}",
 			"--set-tenant=$(DT_TENANT)",
 			"test-value",
@@ -99,6 +102,7 @@ func TestArguments(t *testing.T) {
 			"--set-host-group=APP_LUSTIG_PETER",
 			"--set-host-id-source=lustiglustig",
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+			"--set-no-proxy=",
 			"--set-server={$(DT_SERVER)}",
 			"--set-server=https://hyper.super.com:9999",
 			"--set-tenant=$(DT_TENANT)",
@@ -121,6 +125,7 @@ func TestArguments(t *testing.T) {
 
 		expectedDefaultArguments := []string{
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+			"--set-no-proxy=",
 			"--set-server={$(DT_SERVER)}",
 			"--set-tenant=$(DT_TENANT)",
 		}
@@ -151,11 +156,38 @@ func TestArguments(t *testing.T) {
 			"--set-host-property=item0=value0",
 			"--set-host-property=item1=value1",
 			"--set-host-property=item2=value2",
+			"--set-no-proxy=",
 			"--set-server={$(DT_SERVER)}",
 			"--set-server=https://hyper.super.com:9999",
 			"--set-tenant=$(DT_TENANT)",
 		}
 		assert.Equal(t, expectedDefaultArguments, arguments)
+	})
+	t.Run("no-proxy is set", func(t *testing.T) {
+		builder := builder{
+			dk: &dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: "dynatrace",
+				},
+				Spec: dynakube.DynaKubeSpec{
+					Proxy: &dynakube.DynaKubeProxy{Value: testValue},
+					OneAgent: dynakube.OneAgentSpec{
+						CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
+					},
+					ActiveGate: dynakube.ActiveGateSpec{
+						Capabilities: []dynakube.CapabilityDisplayName{dynakube.RoutingCapability.DisplayName},
+					},
+				},
+			},
+		}
+		builder.dk.Annotations = map[string]string{
+			dynakube.AnnotationFeatureNoProxy: "*.dev.dynatracelabs.com",
+		}
+
+		arguments, _ := builder.arguments()
+
+		assert.Contains(t, arguments, "--set-no-proxy=*.dev.dynatracelabs.com,dynakube-activegate.dynatrace")
 	})
 }
 
