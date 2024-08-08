@@ -17,7 +17,7 @@ type TemplatesSpec struct {
 	// +kubebuilder:validation:Optional
 	ExtensionExecutionController ExtensionExecutionControllerSpec `json:"extensionExecutionController,omitempty"`
 	// +kubebuilder:validation:Optional
-	LogAgentDaemonSet LogAgentDaemonSetSpec `json:"logAgentDaemonSet,omitempty"`
+	LogAgent LogAgentDaemonSetSpec `json:"logAgent,omitempty"`
 }
 
 type PrometheusSpec struct {

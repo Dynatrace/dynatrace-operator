@@ -6624,7 +6624,7 @@ spec:
                           type: object
                         type: array
                     type: object
-                  logAgentDaemonSet:
+                  logAgent:
                     properties:
                       annotations:
                         additionalProperties:
