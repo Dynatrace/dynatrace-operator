@@ -38,9 +38,9 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		}
 		defer meta.RemoveStatusCondition(r.dk.Conditions(), extensionsControllerStatefulSetConditionType)
 
-		sts, err := statefulset.Build(r.dk, statefulsetName, corev1.Container{})
+		sts, err := statefulset.Build(r.dk, dynakube.ExtensionsExecutionControllerStatefulsetName, corev1.Container{})
 		if err != nil {
-			log.Error(err, "could not build "+statefulsetName+" during cleanup")
+			log.Error(err, "could not build "+dynakube.ExtensionsExecutionControllerStatefulsetName+" during cleanup")
 
 			return err
 		}
@@ -48,7 +48,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		err = statefulset.Query(r.client, r.apiReader, log).Delete(ctx, sts)
 
 		if err != nil {
-			log.Error(err, "failed to clean up "+statefulsetName+" statufulset")
+			log.Error(err, "failed to clean up "+dynakube.ExtensionsExecutionControllerStatefulsetName+" statufulset")
 
 			return nil
 		}
@@ -57,13 +57,13 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if r.dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID == "" {
-		conditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, statefulsetName)
+		conditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, dynakube.ExtensionsExecutionControllerStatefulsetName)
 
 		return errors.New("tenantUUID unknown")
 	}
 
 	if r.dk.Status.KubeSystemUUID == "" {
-		conditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, statefulsetName)
+		conditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, dynakube.ExtensionsExecutionControllerStatefulsetName)
 
 		return errors.New("kubeSystemUUID unknown")
 	}

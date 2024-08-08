@@ -19,8 +19,7 @@ import (
 )
 
 const (
-	statefulsetName                  = "dynatrace-extensions-controller"
-	runtimePersistentVolumeClaimName = statefulsetName + "-runtime"
+	runtimePersistentVolumeClaimName = dynakube.ExtensionsExecutionControllerStatefulsetName + "-runtime"
 	containerName                    = "extensions-controller"
 	collectorPort                    = int32(14599)
 	serviceAccountName               = "dynatrace-extensions-controller"
@@ -52,7 +51,7 @@ const (
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	appLabels := buildAppLabels(r.dk.Name)
-	desiredSts, err := statefulset.Build(r.dk, statefulsetName, buildContainer(r.dk),
+	desiredSts, err := statefulset.Build(r.dk, dynakube.ExtensionsExecutionControllerStatefulsetName, buildContainer(r.dk),
 		statefulset.SetReplicas(1),
 		statefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
 		statefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), r.dk.Spec.Templates.ExtensionExecutionController.Labels),
@@ -82,7 +81,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 
 	_, err = statefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
 	if err != nil {
-		log.Info("failed to create/update " + statefulsetName + " statefulset")
+		log.Info("failed to create/update " + dynakube.ExtensionsExecutionControllerStatefulsetName + " statefulset")
 		conditions.SetKubeApiError(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, err)
 
 		return err

@@ -53,7 +53,7 @@ func getStatefulset(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
 	require.NoError(t, err)
 
 	statefulSet := &appsv1.StatefulSet{}
-	err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: statefulsetName, Namespace: dk.Namespace}, statefulSet)
+	err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dynakube.ExtensionsCollectorStatefulsetName, Namespace: dk.Namespace}, statefulSet)
 	require.NoError(t, err)
 
 	return statefulSet
@@ -63,7 +63,7 @@ func TestConditions(t *testing.T) {
 	t.Run("prometheus is disabled", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Extensions.Prometheus.Enabled = false
-		conditions.SetStatefulSetCreated(dk.Conditions(), otelControllerStatefulSetConditionType, statefulsetName)
+		conditions.SetStatefulSetCreated(dk.Conditions(), otelControllerStatefulSetConditionType, dynakube.ExtensionsCollectorStatefulsetName)
 
 		mockK8sClient := fake.NewClient(dk)
 
@@ -71,7 +71,7 @@ func TestConditions(t *testing.T) {
 		require.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: statefulsetName, Namespace: dk.Namespace}, statefulSet)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dynakube.ExtensionsCollectorStatefulsetName, Namespace: dk.Namespace}, statefulSet)
 		require.Error(t, err)
 
 		assert.True(t, errors.IsNotFound(err))

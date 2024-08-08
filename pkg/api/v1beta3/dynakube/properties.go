@@ -46,6 +46,9 @@ const (
 
 	DefaultActiveGateImageRegistrySubPath = "/linux/activegate"
 	DefaultOneAgentImageRegistrySubPath   = "/linux/oneagent"
+
+	ExtensionsExecutionControllerStatefulsetName = "dynatrace-extensions-controller"
+	ExtensionsCollectorStatefulsetName           = "dynatrace-extensions-collector"
 )
 
 // ApiUrl is a getter for dk.Spec.APIURL.
