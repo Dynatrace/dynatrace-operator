@@ -24,7 +24,7 @@ entries:
     - https://github.com/Dynatrace/dynatrace-operator/releases/download/v1.2.2/dynatrace-operator-1.2.2.tgz
     version: 1.2.2
   - apiVersion: v2
-    appVersion: 1.1.0
+    appVersion: 1.2.1
     created: '2024-05-07T08:08:50.245013462Z'
     description: The Dynatrace Operator Helm chart for Kubernetes and OpenShift
     digest: bec58ce7445a8b898137e24d38e1d516a68a7d6b85e5b411972f2799a2570f26
