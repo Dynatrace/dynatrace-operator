@@ -67,9 +67,9 @@ jobs:
           make go/test
           make go/integration_test
       - name: check test coverage
-        uses: vladopajic/go-test-coverage@v2
-        with:
-          config: ./.testcoverage.yml
+        id: check code-coverage
+        run: |
+          make go/check-coverage
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@e28ff129e5465c2c0dcc6f003fc735cb6ae0c673 # v4.5.0
         with:
