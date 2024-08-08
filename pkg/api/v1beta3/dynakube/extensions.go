@@ -17,7 +17,7 @@ type TemplatesSpec struct {
 	// +kubebuilder:validation:Optional
 	ExtensionExecutionController ExtensionExecutionControllerSpec `json:"extensionExecutionController,omitempty"`
 	// +kubebuilder:validation:Optional
-	LogAgent LogAgentDaemonSetSpec `json:"logAgent,omitempty"`
+	LogAgent LogAgentSpec `json:"logAgent,omitempty"`
 }
 
 type PrometheusSpec struct {
@@ -105,7 +105,7 @@ type ImageRefSpec struct {
 	Tag string `json:"tag,omitempty"`
 }
 
-type LogAgentDaemonSetSpec struct {
+type LogAgentSpec struct {
 	// Add custom LogAgent annotations
 	// +kubebuilder:validation:Optional
 	Annotations map[string]string `json:"annotations,omitempty"`
