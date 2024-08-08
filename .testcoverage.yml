@@ -44,7 +44,7 @@ exclude:
   # Exclude files or packages matching their paths
   paths:
     - \.pb\.go$    # excludes all protobuf generated files
-    - ^test/mocks     # exclude package `pkg/bar`
+    - ^test/mocks
 
 # NOTES:
 # - symbol `/` in all paths regexps will be replaced by current OS file path separator
