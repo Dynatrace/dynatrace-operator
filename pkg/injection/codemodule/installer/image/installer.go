@@ -29,7 +29,8 @@ type Properties struct {
 	ImageDigest  string
 }
 
-func NewImageInstaller(ctx context.Context, fs afero.Fs, props *Properties) (installer.Installer, error) {
+func NewImageInstaller(fs afero.Fs, props *Properties) (installer.Installer, error) {
+	ctx := context.TODO()
 	pullSecret := props.Dynakube.PullSecretWithoutData()
 	defaultTransport := http.DefaultTransport.(*http.Transport).Clone()
 
@@ -64,7 +65,7 @@ func (installer *Installer) InstallAgent(_ context.Context, targetDir string) (b
 	log.Info("installing agent from image")
 
 	if installer.isAlreadyPresent(targetDir) {
-		log.Info("agent already installed", "target dir", targetDir)
+		log.Info("agent already installed", "image", installer.props.ImageUri, "target dir", targetDir)
 
 		return false, nil
 	}
@@ -76,7 +77,7 @@ func (installer *Installer) InstallAgent(_ context.Context, targetDir string) (b
 		return false, errors.WithStack(err)
 	}
 
-	log.Info("installing agent", "target dir", targetDir)
+	log.Info("installing agent", "image", installer.props.ImageUri, "target dir", targetDir)
 
 	if err := installer.installAgentFromImage(targetDir); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
