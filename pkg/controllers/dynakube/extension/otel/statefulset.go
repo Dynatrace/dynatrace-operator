@@ -18,7 +18,6 @@ import (
 )
 
 const (
-	statefulsetName      = "dynatrace-extensions-collector"
 	serviceAccountName   = "dynatrace-extensions-collector"
 	containerName        = "collector"
 	tokenSecretKey       = "otelc.token"
@@ -39,7 +38,7 @@ const (
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	appLabels := buildAppLabels(r.dk.Name)
-	sts, err := statefulset.Build(r.dk, statefulsetName, buildContainer(r.dk),
+	sts, err := statefulset.Build(r.dk, dynakube.ExtensionsCollectorStatefulsetName, buildContainer(r.dk),
 		statefulset.SetReplicas(getReplicas(r.dk)),
 		statefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
 		statefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), r.dk.Spec.Templates.OpenTelemetryCollector.Labels),
@@ -68,7 +67,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 
 	_, err = statefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, sts)
 	if err != nil {
-		log.Info("failed to create/update " + statefulsetName + " statefulset")
+		log.Info("failed to create/update " + dynakube.ExtensionsCollectorStatefulsetName + " statefulset")
 		conditions.SetKubeApiError(r.dk.Conditions(), otelControllerStatefulSetConditionType, err)
 
 		return err
