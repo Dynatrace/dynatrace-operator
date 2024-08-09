@@ -6197,6 +6197,10 @@ spec:
                         description: Adds additional annotations to the ExtensionExecutionController
                           pods
                         type: object
+                      customConfig:
+                        description: Defines name of ConfigMap containing custom configuration
+                          file
+                        type: string
                       imageRef:
                         description: Overrides the default image
                         properties:

@@ -27,6 +27,10 @@ type ExtensionExecutionControllerSpec struct {
 	// Adds additional annotations to the ExtensionExecutionController pods
 	Annotations map[string]string `json:"annotations,omitempty"`
 
+	// Determines retention policy
+	// +kubebuilder:validation:Optional
+	PersistentVolumeClaimRetentionPolicy *appsv1.PersistentVolumeClaimRetentionPolicyType `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
+
 	// Overrides the default image
 	// +kubebuilder:validation:Optional
 	ImageRef ImageRefSpec `json:"imageRef,omitempty"`
@@ -34,13 +38,13 @@ type ExtensionExecutionControllerSpec struct {
 	// +kubebuilder:validation:Optional
 	TlsRefName string `json:"tlsRefName,omitempty"`
 
+	// Defines name of ConfigMap containing custom configuration file
+	// +kubebuilder:validation:Optional
+	CustomConfig string `json:"customConfig,omitempty"`
+
 	// Define resources' requests and limits for single ExtensionExecutionController pod
 	// +kubebuilder:validation:Optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
-
-	// Determines retention policy
-	// +kubebuilder:validation:Optional
-	PersistentVolumeClaimRetentionPolicy *appsv1.PersistentVolumeClaimRetentionPolicyType `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
 
 	// Set tolerations for the ExtensionExecutionController pods
 	// +kubebuilder:validation:Optional

@@ -164,6 +164,7 @@
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
 |`annotations`|Adds additional annotations to the ExtensionExecutionController pods|-|object|
+|`customConfig`|Defines name of ConfigMap containing custom configuration file|-|string|
 |`labels`|Adds additional labels for the ExtensionExecutionController pods|-|object|
 |`persistentVolumeClaimRetentionPolicy`|Determines retention policy|-|string|
 |`resources`|Define resources' requests and limits for single ExtensionExecutionController pod|-|object|
