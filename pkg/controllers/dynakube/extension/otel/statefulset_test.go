@@ -162,6 +162,14 @@ func TestEnvironmentVariables(t *testing.T) {
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
 	})
+	t.Run("environment variables with trustedCA", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.TrustedCAs = "test-trusted-ca"
+
+		statefulSet := getStatefulset(t, dk)
+
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envTrustedCAs, Value: trustedCAVolumePath})
+	})
 }
 
 func TestAffinity(t *testing.T) {
@@ -322,5 +330,52 @@ func TestUpdateStrategy(t *testing.T) {
 
 		assert.NotNil(t, statefulSet.Spec.UpdateStrategy.RollingUpdate.Partition)
 		assert.NotEmpty(t, statefulSet.Spec.UpdateStrategy.Type)
+	})
+}
+
+func TestVolumes(t *testing.T) {
+	t.Run("volume mounts with trusted CAs", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.TrustedCAs = "test-trusted-cas"
+		statefulSet := getStatefulset(t, dk)
+
+		expectedVolumeMounts := []corev1.VolumeMount{
+			{
+				Name:      caCertsVolumeName,
+				MountPath: trustedCAVolumeMountPath,
+				ReadOnly:  true,
+			},
+		}
+		assert.Equal(t, expectedVolumeMounts, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts)
+	})
+	t.Run("volumes and volume mounts without trusted CAs", func(t *testing.T) {
+		dk := getTestDynakube()
+		statefulSet := getStatefulset(t, dk)
+
+		var expectedVolumeMounts []corev1.VolumeMount
+
+		var expectedVolumes []corev1.Volume
+
+		assert.Equal(t, expectedVolumeMounts, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts)
+		assert.Equal(t, expectedVolumes, statefulSet.Spec.Template.Spec.Volumes)
+	})
+
+	t.Run("volumes with trusted CAs", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.TrustedCAs = "test-trusted-cas"
+		statefulSet := getStatefulset(t, dk)
+
+		expectedVolumes := []corev1.Volume{
+			{
+				Name: caCertsVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: dk.Spec.TrustedCAs,
+					},
+				},
+			},
+		}
+
+		assert.Equal(t, expectedVolumes, statefulSet.Spec.Template.Spec.Volumes)
 	})
 }
