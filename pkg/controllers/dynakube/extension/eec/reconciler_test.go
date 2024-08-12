@@ -593,3 +593,53 @@ func TestUpdateStrategy(t *testing.T) {
 		assert.NotEmpty(t, statefulSet.Spec.UpdateStrategy.Type)
 	})
 }
+
+func TestActiveGateTrustedCert(t *testing.T) {
+	tlsSecretName := "ag-ca"
+	expectedEnvVar := corev1.EnvVar{Name: envActiveGateTrustedCertName, Value: envActiveGateTrustedCert}
+	expectedVolumeMount := corev1.VolumeMount{
+		Name:      activeGateTrustedCertVolumeName,
+		MountPath: activeGateTrustedCertMountPath,
+		ReadOnly:  true,
+	}
+	defaultMode := int32(420)
+	expectedVolume := corev1.Volume{
+		Name: activeGateTrustedCertVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				DefaultMode: &defaultMode,
+				SecretName:  tlsSecretName,
+				Items: []corev1.KeyToPath{
+					{
+						Key:  activeGateTrustedCertSecretKeyPath,
+						Path: activeGateTrustedCertSecretKeyPath,
+					},
+				},
+			},
+		},
+	}
+
+	t.Run("ActiveGate tls certificate is mounted to EEC", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.ActiveGate.TlsSecretName = tlsSecretName
+		statefulSet := getStatefulset(t, dk)
+
+		require.NotEmpty(t, statefulSet.Spec.Template.Spec.Containers)
+		require.NotEmpty(t, statefulSet.Spec.Template.Spec.Volumes)
+
+		require.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, expectedEnvVar)
+		require.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
+		require.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
+	})
+	t.Run("ActiveGate tls certificate is not mounted to EEC", func(t *testing.T) {
+		dk := getTestDynakube()
+		statefulSet := getStatefulset(t, dk)
+
+		require.NotEmpty(t, statefulSet.Spec.Template.Spec.Containers)
+		require.NotEmpty(t, statefulSet.Spec.Template.Spec.Volumes)
+
+		require.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, expectedEnvVar)
+		require.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
+		require.NotContains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
+	})
+}
