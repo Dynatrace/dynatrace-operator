@@ -102,7 +102,7 @@ func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volum
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 
-	publisher.umountOneAgent(volumeInfo.TargetPath)
+	publisher.unmountOneAgent(volumeInfo.TargetPath)
 
 	timestamp := time.Now()
 	volume.Mounted = false
@@ -143,7 +143,7 @@ func (publisher *HostVolumePublisher) mountOneAgent(tenantUUID string, volumeCfg
 	return nil
 }
 
-func (publisher *HostVolumePublisher) umountOneAgent(targetPath string) {
+func (publisher *HostVolumePublisher) unmountOneAgent(targetPath string) {
 	if err := publisher.mounter.Unmount(targetPath); err != nil {
 		log.Error(err, "Unmount failed", "path", targetPath)
 	}

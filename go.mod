@@ -6,11 +6,8 @@ require (
 	github.com/container-storage-interface/spec v1.10.0
 	github.com/docker/cli v27.1.1+incompatible
 	github.com/evanphx/json-patch v5.9.0+incompatible
-	github.com/go-gormigrate/gormigrate/v2 v2.1.2
 	github.com/go-logr/logr v1.4.2
-	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.20.2
-	github.com/google/uuid v1.6.0
 	github.com/klauspost/compress v1.17.9
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/opencontainers/go-digest v1.0.0
@@ -40,14 +37,13 @@ require (
 	golang.org/x/sys v0.24.0
 	google.golang.org/grpc v1.65.0
 	gopkg.in/yaml.v3 v3.0.1
-	gorm.io/driver/sqlite v1.5.6
-	gorm.io/gorm v1.25.11
 	istio.io/api v1.22.3
 	istio.io/client-go v1.22.3
 	k8s.io/api v0.30.3
 	k8s.io/apiextensions-apiserver v0.30.3
 	k8s.io/apimachinery v0.30.3
 	k8s.io/client-go v0.30.3
+	k8s.io/mount-utils v0.30.3
 	k8s.io/utils v0.0.0-20240502163921-fe8a2dddb1d0
 	sigs.k8s.io/controller-runtime v0.18.4
 	sigs.k8s.io/e2e-framework v0.4.0
@@ -77,13 +73,13 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0 // indirect
 	github.com/imdario/mergo v0.3.15 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/lufia/plan9stats v0.0.0-20240513124658-fba389f38bae // indirect
@@ -125,7 +121,6 @@ require (
 	k8s.io/component-base v0.30.3 // indirect
 	k8s.io/klog/v2 v2.120.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
-	k8s.io/mount-utils v0.30.3 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 )
