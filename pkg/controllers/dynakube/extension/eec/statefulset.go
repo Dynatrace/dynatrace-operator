@@ -35,18 +35,23 @@ const (
 	envDsInstallDirName             = "DsInstallDir"
 	envDsInstallDir                 = "/opt/dynatrace/remotepluginmodule/agent/datasources"
 	envK8sClusterId                 = "K8sClusterId"
+	envActiveGateTrustedCertName    = "ActiveGateTrustedCert"
+	envActiveGateTrustedCert        = "/var/lib/dynatrace/secrets/ag/server.crt"
 
-	tokensVolumeName        = "tokens"
-	eecTokenMountPath       = "/var/lib/dynatrace/remotepluginmodule/secrets/tokens"
-	eecFile                 = "eec.token"
-	logVolumeName           = "log"
-	logMountPath            = "/var/lib/dynatrace/remotepluginmodule/log"
-	runtimeVolumeName       = "agent-runtime"
-	runtimeMountPath        = "/var/lib/dynatrace/remotepluginmodule/agent/runtime"
-	configurationVolumeName = "runtime-configuration"
-	configurationMountPath  = "/var/lib/dynatrace/remotepluginmodule/agent/conf/runtime"
-	customConfigVolumeName  = "custom-config"
-	customConfigMountPath   = "/var/lib/dynatrace/remotepluginmodule/secrets/config"
+	tokensVolumeName                   = "tokens"
+	eecTokenMountPath                  = "/var/lib/dynatrace/remotepluginmodule/secrets/tokens"
+	eecFile                            = "eec.token"
+	logVolumeName                      = "log"
+	logMountPath                       = "/var/lib/dynatrace/remotepluginmodule/log"
+	runtimeVolumeName                  = "agent-runtime"
+	runtimeMountPath                   = "/var/lib/dynatrace/remotepluginmodule/agent/runtime"
+	configurationVolumeName            = "runtime-configuration"
+	configurationMountPath             = "/var/lib/dynatrace/remotepluginmodule/agent/conf/runtime"
+	customConfigVolumeName             = "custom-config"
+	customConfigMountPath              = "/var/lib/dynatrace/remotepluginmodule/secrets/config"
+	activeGateTrustedCertVolumeName    = "server-certs"
+	activeGateTrustedCertMountPath     = "/var/lib/dynatrace/secrets/ag"
+	activeGateTrustedCertSecretKeyPath = "server.crt"
 )
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
@@ -64,7 +69,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		statefulset.SetUpdateStrategy(utils.BuildUpdateStrategy()),
 		setTlsRef(r.dk.Spec.Templates.ExtensionExecutionController.TlsRefName),
 		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
-		setVolumes(r.dk.Name, r.dk.Spec.Templates.ExtensionExecutionController.CustomConfig, r.dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim),
+		setVolumes(r.dk),
 	)
 
 	if err != nil {
@@ -153,7 +158,7 @@ func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 		},
 		Env:          buildContainerEnvs(dk),
 		Resources:    dk.Spec.Templates.ExtensionExecutionController.Resources,
-		VolumeMounts: buildContainerVolumeMounts(dk.Spec.Templates.ExtensionExecutionController.CustomConfig),
+		VolumeMounts: buildContainerVolumeMounts(dk),
 	}
 }
 
@@ -174,7 +179,7 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 }
 
 func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
-	return []corev1.EnvVar{
+	containerEnvs := []corev1.EnvVar{
 		{Name: envTenantId, Value: dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID},
 		{Name: envServerUrl, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ".svc.cluster.local:443"},
 		{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + eecFile},
@@ -184,6 +189,12 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envDsInstallDirName, Value: envDsInstallDir},
 		{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID},
 	}
+
+	if dk.Spec.ActiveGate.TlsSecretName != "" {
+		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envActiveGateTrustedCertName, Value: envActiveGateTrustedCert})
+	}
+
+	return containerEnvs
 }
 
 func buildActiveGateServiceName(dk *dynakube.DynaKube) string {
@@ -192,7 +203,7 @@ func buildActiveGateServiceName(dk *dynakube.DynaKube) string {
 	return capability.CalculateStatefulSetName(multiCap, dk.Name)
 }
 
-func buildContainerVolumeMounts(customConfig string) []corev1.VolumeMount {
+func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
 		{
 			Name:      tokensVolumeName,
@@ -216,7 +227,7 @@ func buildContainerVolumeMounts(customConfig string) []corev1.VolumeMount {
 		},
 	}
 
-	if customConfig != "" {
+	if dk.Spec.Templates.ExtensionExecutionController.CustomConfig != "" {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
 			Name:      customConfigVolumeName,
 			MountPath: customConfigMountPath,
@@ -224,10 +235,18 @@ func buildContainerVolumeMounts(customConfig string) []corev1.VolumeMount {
 		})
 	}
 
+	if dk.Spec.ActiveGate.TlsSecretName != "" {
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      activeGateTrustedCertVolumeName,
+			MountPath: activeGateTrustedCertMountPath,
+			ReadOnly:  true,
+		})
+	}
+
 	return volumeMounts
 }
 
-func setVolumes(dynakubeName string, customConfig string, claim *corev1.PersistentVolumeClaimSpec) func(o *appsv1.StatefulSet) {
+func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	return func(o *appsv1.StatefulSet) {
 		mode := int32(420)
 		o.Spec.Template.Spec.Volumes = []corev1.Volume{
@@ -235,7 +254,7 @@ func setVolumes(dynakubeName string, customConfig string, claim *corev1.Persiste
 				Name: tokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dynakubeName + consts.SecretSuffix,
+						SecretName:  dk.Name + consts.SecretSuffix,
 						DefaultMode: &mode,
 					},
 				},
@@ -255,7 +274,7 @@ func setVolumes(dynakubeName string, customConfig string, claim *corev1.Persiste
 			},
 		}
 
-		if claim == nil {
+		if dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim == nil {
 			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
 				Name: runtimeVolumeName,
 				VolumeSource: corev1.VolumeSource{
@@ -274,13 +293,32 @@ func setVolumes(dynakubeName string, customConfig string, claim *corev1.Persiste
 			})
 		}
 
-		if customConfig != "" {
+		if dk.Spec.Templates.ExtensionExecutionController.CustomConfig != "" {
 			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
 				Name: customConfigVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: customConfig,
+							Name: dk.Spec.Templates.ExtensionExecutionController.CustomConfig,
+						},
+					},
+				},
+			})
+		}
+
+		if dk.Spec.ActiveGate.TlsSecretName != "" {
+			defaultMode := int32(420)
+			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
+				Name: activeGateTrustedCertVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						DefaultMode: &defaultMode,
+						SecretName:  dk.Spec.ActiveGate.TlsSecretName,
+						Items: []corev1.KeyToPath{
+							{
+								Key:  activeGateTrustedCertSecretKeyPath,
+								Path: activeGateTrustedCertSecretKeyPath,
+							},
 						},
 					},
 				},

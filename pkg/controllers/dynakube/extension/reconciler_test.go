@@ -10,9 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
-	testutil "github.com/Dynatrace/dynatrace-operator/pkg/util/testing"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -100,11 +98,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 		// assert extensions token condition is added
 		require.NotEmpty(t, dk.Conditions())
 
-		var expectedConditions []metav1.Condition
-
-		conditions.SetSecretCreated(&expectedConditions, consts.ExtensionsSecretConditionType, dk.Name+consts.SecretSuffix)
-		conds := meta.FindStatusCondition(*dk.Conditions(), consts.ExtensionsSecretConditionType)
-		testutil.PartialEqual(t, &expectedConditions[0], conds, cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
+		condition := meta.FindStatusCondition(*dk.Conditions(), consts.ExtensionsSecretConditionType)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
+		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
+		assert.Equal(t, dk.Name+consts.SecretSuffix+" created", condition.Message)
 	})
 	t.Run(`Extension SecretCreated failure condition is set when error`, func(t *testing.T) {
 		dk := createDynakube()
@@ -118,10 +115,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 		// assert extensions token condition is added
 		require.NotEmpty(t, dk.Conditions())
 
-		var expectedConditions []metav1.Condition
-
-		conditions.SetKubeApiError(&expectedConditions, consts.ExtensionsSecretConditionType, err)
-		testutil.PartialEqual(t, &expectedConditions, dk.Conditions(), cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
+		condition := meta.FindStatusCondition(*dk.Conditions(), consts.ExtensionsSecretConditionType)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+		assert.Equal(t, conditions.KubeApiErrorReason, condition.Reason)
+		assert.Contains(t, condition.Message, "A problem occurred when using the Kubernetes API")
 	})
 
 	t.Run("Create service when prometheus is enabled with minimal setup", func(t *testing.T) {
@@ -143,11 +140,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 		// assert extensions token condition is added
 		require.NotEmpty(t, dk.Conditions())
 
-		var expectedConditions []metav1.Condition
-
-		conditions.SetServiceCreated(&expectedConditions, consts.ExtensionsServiceConditionType, r.buildServiceName())
-		conds := meta.FindStatusCondition(*dk.Conditions(), consts.ExtensionsServiceConditionType)
-		testutil.PartialEqual(t, &expectedConditions[0], conds, cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"))
+		condition := meta.FindStatusCondition(*dk.Conditions(), consts.ExtensionsServiceConditionType)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
+		assert.Equal(t, conditions.ServiceCreatedReason, condition.Reason)
+		assert.Equal(t, dk.Name+consts.ExtensionsControllerSuffix+" created", condition.Message)
 	})
 
 	t.Run("Don't create service when prometheus is disabled with minimal setup", func(t *testing.T) {

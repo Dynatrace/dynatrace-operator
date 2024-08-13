@@ -18,22 +18,27 @@ import (
 )
 
 const (
-	serviceAccountName   = "dynatrace-extensions-collector"
-	containerName        = "collector"
-	tokenSecretKey       = "otelc.token"
-	defaultImageRepo     = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
-	defaultImageTag      = "0.7.0"
-	defaultOLTPgrpcPort  = "10001"
-	defaultOLTPhttpPort  = "10002"
-	defaultPodNamePrefix = "extensions-collector"
-	defaultReplicas      = 1
-	envShards            = "SHARDS"
-	envShardId           = "SHARD_ID"
-	envPodNamePrefix     = "POD_NAME_PREFIX"
-	envPodName           = "POD_NAME"
-	envOTLPgrpcPort      = "OTLP_GRPC_PORT"
-	envOTLPhttpPort      = "OTLP_HTTP_PORT"
-	envOTLPtoken         = "OTLP_TOKEN"
+	serviceAccountName       = "dynatrace-extensions-collector"
+	containerName            = "collector"
+	tokenSecretKey           = "otelc.token"
+	caCertsVolumeName        = "cacerts"
+	defaultImageRepo         = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
+	defaultImageTag          = "0.7.0"
+	defaultOLTPgrpcPort      = "10001"
+	defaultOLTPhttpPort      = "10002"
+	defaultPodNamePrefix     = "extensions-collector"
+	defaultReplicas          = 1
+	envShards                = "SHARDS"
+	envShardId               = "SHARD_ID"
+	envPodNamePrefix         = "POD_NAME_PREFIX"
+	envPodName               = "POD_NAME"
+	envOTLPgrpcPort          = "OTLP_GRPC_PORT"
+	envOTLPhttpPort          = "OTLP_HTTP_PORT"
+	envOTLPtoken             = "OTLP_TOKEN"
+	envTrustedCAs            = "TRUSTED_CAS"
+	trustedCAsFile           = "rootca.pem"
+	trustedCAVolumeMountPath = "/tls/custom/cacerts"
+	trustedCAVolumePath      = trustedCAVolumeMountPath + "/certs"
 )
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
@@ -51,6 +56,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		statefulset.SetUpdateStrategy(utils.BuildUpdateStrategy()),
 		setTlsRef(r.dk.Spec.Templates.OpenTelemetryCollector.TlsRefName),
 		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
+		setVolumes(r.dk),
 	)
 
 	if err != nil {
@@ -106,6 +112,7 @@ func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 		Env:             buildContainerEnvs(dk),
 		Resources:       dk.Spec.Templates.OpenTelemetryCollector.Resources,
 		Args:            []string{fmt.Sprintf("--config=eec://%s.%s.svc.cluster.local:%d#refresh-interval=5s&insecure=true", dk.Name+consts.ExtensionsControllerSuffix, dk.Namespace, consts.ExtensionsCollectorComPort)},
+		VolumeMounts:    buildContainerVolumeMounts(dk),
 	}
 }
 
@@ -126,7 +133,7 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 }
 
 func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
-	return []corev1.EnvVar{
+	envs := []corev1.EnvVar{
 		{Name: envShards, Value: strconv.Itoa(int(getReplicas(dk)))},
 		{Name: envPodNamePrefix, Value: defaultPodNamePrefix},
 		{Name: envPodName, ValueFrom: &corev1.EnvVarSource{
@@ -151,6 +158,11 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		},
 		},
 	}
+	if dk.Spec.TrustedCAs != "" {
+		envs = append(envs, corev1.EnvVar{Name: envTrustedCAs, Value: trustedCAVolumePath})
+	}
+
+	return envs
 }
 
 func buildAppLabels(dkName string) *labels.AppLabels {
@@ -186,4 +198,43 @@ func setImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) func(o 
 	return func(o *appsv1.StatefulSet) {
 		o.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
 	}
+}
+
+func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
+	return func(o *appsv1.StatefulSet) {
+		if dk.Spec.TrustedCAs != "" {
+			o.Spec.Template.Spec.Volumes = []corev1.Volume{
+				{
+					Name: caCertsVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: dk.Spec.TrustedCAs,
+							},
+							Items: []corev1.KeyToPath{
+								{
+									Key:  "certs",
+									Path: trustedCAsFile,
+								},
+							},
+						},
+					},
+				},
+			}
+		}
+	}
+}
+
+func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
+	if dk.Spec.TrustedCAs != "" {
+		return []corev1.VolumeMount{
+			{
+				Name:      caCertsVolumeName,
+				MountPath: trustedCAVolumeMountPath,
+				ReadOnly:  true,
+			},
+		}
+	}
+
+	return []corev1.VolumeMount{}
 }

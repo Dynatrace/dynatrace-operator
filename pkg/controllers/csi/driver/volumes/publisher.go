@@ -7,7 +7,7 @@ import (
 )
 
 type Publisher interface {
-	PublishVolume(ctx context.Context, volumeCfg VolumeConfig) (*csi.NodePublishVolumeResponse, error)
-	UnpublishVolume(ctx context.Context, volumeInfo VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error)
-	CanUnpublishVolume(ctx context.Context, volumeInfo VolumeInfo) (bool, error)
+	PublishVolume(ctx context.Context, volumeCfg *VolumeConfig) (*csi.NodePublishVolumeResponse, error)
+	UnpublishVolume(ctx context.Context, volumeInfo *VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error)
+	CanUnpublishVolume(ctx context.Context, volumeInfo *VolumeInfo) (bool, error)
 }

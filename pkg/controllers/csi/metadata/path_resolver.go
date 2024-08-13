@@ -40,8 +40,8 @@ func (pr PathResolver) AgentTempUnzipDir() string {
 	return filepath.Join(pr.AgentTempUnzipRootDir(), "opt", "dynatrace", "oneagent")
 }
 
-func (pr PathResolver) AgentSharedBinaryDirForAgent(versionOrImageURI string) string {
-	return filepath.Join(pr.AgentSharedBinaryDirBase(), versionOrImageURI)
+func (pr PathResolver) AgentSharedBinaryDirForAgent(versionOrDigest string) string {
+	return filepath.Join(pr.AgentSharedBinaryDirBase(), versionOrDigest)
 }
 
 func (pr PathResolver) AgentConfigDir(tenantUUID string, dynakubeName string) string {

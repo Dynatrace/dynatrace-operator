@@ -63,7 +63,7 @@ func (installer *Installer) InstallAgent(_ context.Context, targetDir string) (b
 	log.Info("installing agent from image")
 
 	if installer.isAlreadyPresent(targetDir) {
-		log.Info("agent already installed", "target dir", targetDir)
+		log.Info("agent already installed", "image", installer.props.ImageUri, "target dir", targetDir)
 
 		return false, nil
 	}
@@ -75,7 +75,7 @@ func (installer *Installer) InstallAgent(_ context.Context, targetDir string) (b
 		return false, errors.WithStack(err)
 	}
 
-	log.Info("installing agent", "target dir", targetDir)
+	log.Info("installing agent", "image", installer.props.ImageUri, "target dir", targetDir)
 
 	if err := installer.installAgentFromImage(targetDir); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
