@@ -6,9 +6,20 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	mount "k8s.io/mount-utils"
+)
+
+const (
+	testRootDir    = "root-dir"
+	testTenantUUID = "tenant-12"
+
+	testVersion1 = "v1"
+	testVersion2 = "v2"
+	testVersion3 = "v3"
 )
 
 var (
@@ -159,5 +170,15 @@ func (gc *CSIGarbageCollector) mockMountedVolumeIDPath(volumeIDs ...string) {
 func (gc *CSIGarbageCollector) mockUnmountedVolumeIDPath(volumeIDs ...string) {
 	for _, volumeID := range volumeIDs {
 		_ = gc.fs.MkdirAll(filepath.Join(testVolumeFolderPath, volumeID, "mapped"), os.ModePerm)
+	}
+}
+
+func NewMockGarbageCollector(mountPoints ...mount.MountPoint) *CSIGarbageCollector {
+	return &CSIGarbageCollector{
+		fs:                    afero.NewMemMapFs(),
+		db:                    metadata.FakeMemoryDB(),
+		path:                  metadata.PathResolver{RootDir: testRootDir},
+		mounter:               mount.NewFakeMounter(mountPoints),
+		maxUnmountedVolumeAge: defaultMaxUnmountedCsiVolumeAge,
 	}
 }
