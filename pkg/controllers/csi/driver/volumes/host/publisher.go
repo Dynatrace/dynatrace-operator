@@ -35,11 +35,10 @@ const failedToGetOsAgentVolumePrefix = "failed to get osagent volume info from d
 
 func NewHostVolumePublisher(fs afero.Afero, mounter mount.Interface, db metadata.Access, path metadata.PathResolver) csivolumes.Publisher {
 	return &HostVolumePublisher{
-		fs:           fs,
-		mounter:      mounter,
-		db:           db,
-		path:         path,
-		isNotMounted: mount.IsNotMountPoint, //nolint
+		fs:      fs,
+		mounter: mounter,
+		db:      db,
+		path:    path,
 	}
 }
 
