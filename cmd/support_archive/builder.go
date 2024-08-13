@@ -174,7 +174,7 @@ func (builder CommandBuilder) runCollectors(log logd.Logger, supportArchive arch
 	collectors := []collector{
 		newOperatorVersionCollector(log, supportArchive),
 		newLogCollector(ctx, log, supportArchive, pods, appName, collectManagedLogsFlagValue),
-		newDiagLogCollector(ctx, kubeConfig, log, supportArchive),
+		newDiagLogCollector(ctx, kubeConfig, log, supportArchive, pods),
 		newK8sObjectCollector(ctx, log, supportArchive, namespaceFlagValue, appName, apiReader, discoveryClient),
 		newTroubleshootCollector(ctx, log, supportArchive, namespaceFlagValue, apiReader, *kubeConfig),
 		newLoadSimCollector(ctx, log, supportArchive, fileSize, loadsimFilesFlagValue, clientSet.CoreV1().Pods(namespaceFlagValue)),
