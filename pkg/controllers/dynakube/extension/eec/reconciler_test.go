@@ -594,7 +594,7 @@ func TestUpdateStrategy(t *testing.T) {
 	})
 }
 
-func TestActiveGateTrustedCert(t *testing.T) {
+func TestActiveGateTrustedCAInsideEEC(t *testing.T) {
 	tlsSecretName := "ag-ca"
 	expectedEnvVar := corev1.EnvVar{Name: envActiveGateTrustedCertName, Value: envActiveGateTrustedCert}
 	expectedVolumeMount := corev1.VolumeMount{
