@@ -75,20 +75,20 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run("dynakube deleted", func(t *testing.T) {
 		gc := reconcilermock.NewReconciler(t)
 		db := metadata.FakeMemoryDB()
-		dynakube := metadata.Dynakube{TenantUUID: tenantUUID, LatestVersion: agentVersion, Name: dkName}
-		_ = db.InsertDynakube(ctx, &dynakube)
+		metadataDk := metadata.Dynakube{TenantUUID: tenantUUID, LatestVersion: agentVersion, Name: dkName}
+		_ = db.InsertDynakube(ctx, &metadataDk)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(),
 			db:        db,
 			gc:        gc,
 		}
-		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakube.Name}})
+		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: metadataDk.Name}})
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, reconcile.Result{}, result)
 
-		ten, err := db.GetDynakube(ctx, dynakube.TenantUUID)
+		ten, err := db.GetDynakube(ctx, metadataDk.TenantUUID)
 		require.NoError(t, err)
 		require.Nil(t, ten)
 	})

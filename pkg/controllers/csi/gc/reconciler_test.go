@@ -22,7 +22,7 @@ func TestReconcile(t *testing.T) {
 	namespace := "test-namespace"
 
 	t.Run(`no latest version in status`, func(t *testing.T) {
-		dynakube := dynakube.DynaKube{
+		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 			},
@@ -31,11 +31,11 @@ func TestReconcile(t *testing.T) {
 			},
 		}
 		gc := CSIGarbageCollector{
-			apiReader: fake.NewClient(&dynakube),
+			apiReader: fake.NewClient(&dk),
 			fs:        afero.NewMemMapFs(),
 			db:        metadata.FakeMemoryDB(),
 		}
-		result, err := gc.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakube.Name}})
+		result, err := gc.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dk.Name}})
 
 		require.NoError(t, err)
 		assert.Equal(t, reconcile.Result{}, result)
