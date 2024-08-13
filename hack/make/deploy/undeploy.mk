@@ -9,7 +9,7 @@ undeploy/%:
 ## Remove the operator with csi-driver, on kubernetes
 undeploy: manifests/crd/helm
 	kubectl delete dynakube --all -n dynatrace
-	kubectl get pods -n dynatrace -o=name | grep dynakube | while read -r POD ; kubectl wait --for=delete $$POD --timeout=60s; done
+	kubectl -n dynatrace wait pod --for=delete -l app.kubernetes.io/managed-by=dynatrace-operator --timeout=300s
 	helm template dynatrace-operator config/helm/chart/default \
 			--namespace dynatrace \
 			--set installCRD=true \
