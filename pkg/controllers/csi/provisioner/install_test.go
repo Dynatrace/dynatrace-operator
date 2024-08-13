@@ -36,6 +36,7 @@ const (
 func TestUpdateAgent(t *testing.T) {
 	ctx := context.Background()
 	testVersion := "test"
+	testImage := "my-image/1223:123"
 
 	t.Run("zip install", func(t *testing.T) {
 		dk := createTestDynaKubeWithZip(testVersion)
@@ -112,13 +113,12 @@ func TestUpdateAgent(t *testing.T) {
 	})
 	t.Run("failed install", func(t *testing.T) {
 		dockerconfigjsonContent := `{"auths":{}}`
-		dk := createTestDynaKubeWithImage()
+		dk := createTestDynaKubeWithImage(testImage)
 		provisioner := createTestProvisioner(createMockedPullSecret(dk, dockerconfigjsonContent))
 
 		var revision uint = 3
 		processModule := createTestProcessModuleConfig(revision)
-		base64Image := base64.StdEncoding.EncodeToString([]byte(dk.CodeModulesImage()))
-		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(base64Image)
+		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(base64.StdEncoding.EncodeToString([]byte(testImage)))
 		installerMock := installermock.NewInstaller(t)
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("*context.valueCtx"), targetDir).
@@ -146,9 +146,9 @@ func TestUpdateAgent(t *testing.T) {
 		var revision uint = 3
 		processModule := createTestProcessModuleConfig(revision)
 
-		dk := createTestDynaKubeWithImage()
-		base64Image := base64.StdEncoding.EncodeToString([]byte(dk.CodeModulesImage()))
+		dk := createTestDynaKubeWithImage(testImage)
 		provisioner := createTestProvisioner(createMockedPullSecret(dk, dockerconfigjsonContent))
+		base64Image := base64.StdEncoding.EncodeToString([]byte(testImage))
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(base64Image)
 		installerMock := installermock.NewInstaller(t)
 		installerMock.
@@ -159,7 +159,7 @@ func TestUpdateAgent(t *testing.T) {
 
 		currentVersion, err := provisioner.installAgentImage(ctx, dk, processModule)
 		require.NoError(t, err)
-		assert.Equal(t, dk.CodeModulesImage(), currentVersion)
+		assert.Equal(t, base64Image, currentVersion)
 	})
 	t.Run("codeModulesImage set with custom pull secret", func(t *testing.T) {
 		pullSecretName := "test-pull-secret"
@@ -168,11 +168,11 @@ func TestUpdateAgent(t *testing.T) {
 		var revision uint = 3
 		processModule := createTestProcessModuleConfig(revision)
 
-		dk := createTestDynaKubeWithImage()
+		dk := createTestDynaKubeWithImage(testImage)
 		dk.Spec.CustomPullSecret = pullSecretName
 
 		provisioner := createTestProvisioner(createMockedPullSecret(dk, dockerconfigjsonContent))
-		base64Image := base64.StdEncoding.EncodeToString([]byte(dk.CodeModulesImage()))
+		base64Image := base64.StdEncoding.EncodeToString([]byte(testImage))
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(base64Image)
 		installerMock := installermock.NewInstaller(t)
 		installerMock.
@@ -183,7 +183,7 @@ func TestUpdateAgent(t *testing.T) {
 
 		currentVersion, err := provisioner.installAgentImage(ctx, dk, processModule)
 		require.NoError(t, err)
-		assert.Equal(t, dk.CodeModulesImage(), currentVersion)
+		assert.Equal(t, base64Image, currentVersion)
 	})
 	t.Run("codeModulesImage + trustedCA set", func(t *testing.T) {
 		pullSecretName := "test-pull-secret"
@@ -216,12 +216,12 @@ NK85cEJwyxQ+wahdNGUD
 		var revision uint = 3
 		processModule := createTestProcessModuleConfig(revision)
 
-		dk := createTestDynaKubeWithImage()
+		dk := createTestDynaKubeWithImage(testImage)
 		dk.Spec.CustomPullSecret = pullSecretName
 		dk.Spec.TrustedCAs = trustedCAName
 
 		provisioner := createTestProvisioner(createMockedPullSecret(dk, dockerconfigjsonContent), createMockedCAConfigMap(dk, customCertContent))
-		base64Image := base64.StdEncoding.EncodeToString([]byte(dk.CodeModulesImage()))
+		base64Image := base64.StdEncoding.EncodeToString([]byte(testImage))
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(base64Image)
 		installerMock := installermock.NewInstaller(t)
 		installerMock.
@@ -232,7 +232,7 @@ NK85cEJwyxQ+wahdNGUD
 
 		currentVersion, err := provisioner.installAgentImage(ctx, dk, processModule)
 		require.NoError(t, err)
-		assert.Equal(t, dk.CodeModulesImage(), currentVersion)
+		assert.Equal(t, base64Image, currentVersion)
 	})
 }
 
@@ -270,9 +270,7 @@ func createMockedCAConfigMap(dk dynakube.DynaKube, certContent string) *corev1.C
 	}
 }
 
-func createTestDynaKubeWithImage() dynakube.DynaKube {
-	imageID := "some.registry.com/image:1.234.345"
-
+func createTestDynaKubeWithImage(image string) dynakube.DynaKube {
 	return *addFakeTenantUUID(&dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-dk",
@@ -284,7 +282,7 @@ func createTestDynaKubeWithImage() dynakube.DynaKube {
 		Status: dynakube.DynaKubeStatus{
 			CodeModules: dynakube.CodeModulesStatus{
 				VersionStatus: status.VersionStatus{
-					ImageID: imageID,
+					ImageID: image,
 				},
 			},
 		},
