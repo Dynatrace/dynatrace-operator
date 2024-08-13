@@ -103,8 +103,8 @@ func (checker *CorrectnessChecker) removeMissingDynakubes(ctx context.Context) e
 	pruned := []string{}
 
 	for dynakubeName := range dynakubes {
-		var dynakube dynakube.DynaKube
-		if err := checker.apiReader.Get(ctx, client.ObjectKey{Name: dynakubeName}, &dynakube); !k8serrors.IsNotFound(err) {
+		var dk dynakube.DynaKube
+		if err := checker.apiReader.Get(ctx, client.ObjectKey{Name: dynakubeName}, &dk); !k8serrors.IsNotFound(err) {
 			continue
 		}
 

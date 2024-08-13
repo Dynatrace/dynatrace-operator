@@ -18,28 +18,28 @@ import (
 
 func (provisioner *OneAgentProvisioner) installAgentImage(
 	ctx context.Context,
-	dynakube dynakube.DynaKube,
+	dk dynakube.DynaKube,
 	latestProcessModuleConfig *dtclient.ProcessModuleConfig,
 ) (
 	string,
 	error,
 ) {
-	tenantUUID, err := dynakube.TenantUUIDFromApiUrl()
+	tenantUUID, err := dk.TenantUUIDFromApiUrl()
 	if err != nil {
 		return "", err
 	}
 
-	targetImage := dynakube.CodeModulesImage()
+	targetImage := dk.CodeModulesImage()
 	// An image URI often contains one or several /-s, which is problematic when trying to use it as a folder name.
 	// Easiest to just base64 encode it
 	base64Image := base64.StdEncoding.EncodeToString([]byte(targetImage))
 	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(base64Image)
-	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dynakube.GetName())
+	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dk.GetName())
 
 	props := &image.Properties{
 		ImageUri:     targetImage,
 		ApiReader:    provisioner.apiReader,
-		Dynakube:     &dynakube,
+		Dynakube:     &dk,
 		PathResolver: provisioner.path,
 		Metadata:     provisioner.db,
 	}
@@ -52,7 +52,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
 	defer span.End()
 
-	err = provisioner.installAgent(ctx, imageInstaller, dynakube, targetDir, targetImage, tenantUUID)
+	err = provisioner.installAgent(ctx, imageInstaller, dk, targetDir, targetImage, tenantUUID)
 	if err != nil {
 		span.RecordError(err)
 
@@ -67,22 +67,22 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 	return base64Image, err
 }
 
-func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dynakube dynakube.DynaKube, dtc dtclient.Client, latestProcessModuleConfig *dtclient.ProcessModuleConfig) (string, error) {
-	tenantUUID, err := dynakube.TenantUUIDFromApiUrl()
+func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dk dynakube.DynaKube, dtc dtclient.Client, latestProcessModuleConfig *dtclient.ProcessModuleConfig) (string, error) {
+	tenantUUID, err := dk.TenantUUIDFromApiUrl()
 	if err != nil {
 		return "", err
 	}
 
-	targetVersion := dynakube.CodeModulesVersion()
+	targetVersion := dk.CodeModulesVersion()
 	urlInstaller := provisioner.urlInstallerBuilder(provisioner.fs, dtc, getUrlProperties(targetVersion, provisioner.path))
 
 	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(targetVersion)
-	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dynakube.GetName())
+	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dk.GetName())
 
 	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
 	defer span.End()
 
-	err = provisioner.installAgent(ctx, urlInstaller, dynakube, targetDir, targetVersion, tenantUUID)
+	err = provisioner.installAgent(ctx, urlInstaller, dk, targetDir, targetVersion, tenantUUID)
 	if err != nil {
 		span.RecordError(err)
 

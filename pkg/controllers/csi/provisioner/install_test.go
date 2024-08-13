@@ -246,11 +246,11 @@ func mockFsAfterInstall(provisioner *OneAgentProvisioner, version string) func(m
 	}
 }
 
-func createMockedPullSecret(dynakube dynakube.DynaKube, pullSecretContent string) *corev1.Secret {
+func createMockedPullSecret(dk dynakube.DynaKube, pullSecretContent string) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      dynakube.PullSecretName(),
-			Namespace: dynakube.Namespace,
+			Name:      dk.PullSecretName(),
+			Namespace: dk.Namespace,
 		},
 		Data: map[string][]byte{
 			".dockerconfigjson": []byte(pullSecretContent),

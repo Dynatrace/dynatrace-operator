@@ -90,8 +90,8 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 }
 
 func getDynakubeFromRequest(ctx context.Context, apiReader client.Reader, request reconcile.Request) (*dynakube.DynaKube, error) {
-	var dynakube dynakube.DynaKube
-	if err := apiReader.Get(ctx, request.NamespacedName, &dynakube); err != nil {
+	var dk dynakube.DynaKube
+	if err := apiReader.Get(ctx, request.NamespacedName, &dk); err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("given DynaKube object not found")
 
@@ -103,5 +103,5 @@ func getDynakubeFromRequest(ctx context.Context, apiReader client.Reader, reques
 		return nil, errors.WithStack(err)
 	}
 
-	return &dynakube, nil
+	return &dk, nil
 }
