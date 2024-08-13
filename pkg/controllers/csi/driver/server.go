@@ -36,7 +36,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/utils/mount"
+	mount "k8s.io/mount-utils"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -148,7 +148,7 @@ func (svr *Server) NodePublishVolume(ctx context.Context, req *csi.NodePublishVo
 		return nil, err
 	}
 
-	if isMounted, err := isMounted(svr.mounter, volumeCfg.TargetPath); err != nil {
+	if isMounted, err := svr.mounter.IsMountPoint(volumeCfg.TargetPath); err != nil && !os.IsNotExist(err) {
 		return nil, err
 	} else if isMounted {
 		return &csi.NodePublishVolumeResponse{}, nil
@@ -169,25 +169,25 @@ func (svr *Server) NodePublishVolume(ctx context.Context, req *csi.NodePublishVo
 		"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
 	)
 
-	return publisher.PublishVolume(ctx, *volumeCfg)
+	return publisher.PublishVolume(ctx, volumeCfg)
 }
 
-func (svr *Server) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (response *csi.NodeUnpublishVolumeResponse, err error) {
+func (svr *Server) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
 	volumeInfo, err := csivolumes.ParseNodeUnpublishVolumeRequest(req)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, publisher := range svr.publishers {
-		canUnpublish, err := publisher.CanUnpublishVolume(ctx, *volumeInfo)
+		canUnpublish, err := publisher.CanUnpublishVolume(ctx, volumeInfo)
 		if err != nil {
 			log.Error(err, "couldn't determine if volume can be unpublished", "publisher", publisher)
 		}
 
 		if canUnpublish {
-			response, err := publisher.UnpublishVolume(ctx, *volumeInfo)
+			response, err := publisher.UnpublishVolume(ctx, volumeInfo)
 			if err != nil {
-				log.Error(err, "couldn't unpublish volume properly", "publisher", publisher)
+				return nil, err
 			}
 
 			return response, nil
@@ -200,10 +200,10 @@ func (svr *Server) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpubli
 }
 
 func (svr *Server) unmountUnknownVolume(volumeInfo csivolumes.VolumeInfo) {
-	log.Info("unmounting unknown volume", "volumeID", volumeInfo.VolumeID, "targetPath", volumeInfo.TargetPath)
+	log.Info("VolumeID not present in the database", "volumeID", volumeInfo.VolumeID, "targetPath", volumeInfo.TargetPath)
 
 	if err := svr.mounter.Unmount(volumeInfo.TargetPath); err != nil {
-		log.Error(err, "failed to unmount unknown volume", "volumeID", volumeInfo.VolumeID)
+		log.Error(err, "Tried to unmount unknown volume", "volumeID", volumeInfo.VolumeID)
 	}
 }
 
@@ -229,17 +229,6 @@ func (svr *Server) NodeGetVolumeStats(context.Context, *csi.NodeGetVolumeStatsRe
 
 func (svr *Server) NodeExpandVolume(context.Context, *csi.NodeExpandVolumeRequest) (*csi.NodeExpandVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "")
-}
-
-func isMounted(mounter mount.Interface, targetPath string) (bool, error) {
-	isNotMounted, err := mount.IsNotMountPoint(mounter, targetPath)
-	if os.IsNotExist(err) {
-		isNotMounted = true
-	} else if err != nil {
-		return false, status.Error(codes.Internal, err.Error())
-	}
-
-	return !isNotMounted, nil
 }
 
 func logGRPC() grpc.UnaryServerInterceptor {
