@@ -36,6 +36,7 @@ const (
 	envOTLPhttpPort          = "OTLP_HTTP_PORT"
 	envOTLPtoken             = "OTLP_TOKEN"
 	envTrustedCAs            = "TRUSTED_CAS"
+	trustedCAsFile           = "rootca.pem"
 	trustedCAVolumeMountPath = "/tls/custom/cacerts"
 	trustedCAVolumePath      = trustedCAVolumeMountPath + "/certs"
 )
@@ -206,8 +207,16 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				{
 					Name: caCertsVolumeName,
 					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: dk.Spec.TrustedCAs,
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: dk.Spec.TrustedCAs,
+							},
+							Items: []corev1.KeyToPath{
+								{
+									Key:  "certs",
+									Path: trustedCAsFile,
+								},
+							},
 						},
 					},
 				},

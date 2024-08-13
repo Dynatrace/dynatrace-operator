@@ -369,8 +369,16 @@ func TestVolumes(t *testing.T) {
 			{
 				Name: caCertsVolumeName,
 				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Spec.TrustedCAs,
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: dk.Spec.TrustedCAs,
+						},
+						Items: []corev1.KeyToPath{
+							{
+								Key:  "certs",
+								Path: trustedCAsFile,
+							},
+						},
 					},
 				},
 			},
