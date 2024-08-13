@@ -7,27 +7,44 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/functional"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/client-go/kubernetes/scheme"
+	clientgocorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
+	"k8s.io/client-go/tools/remotecommand"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 const (
 	diagLogCollectorName = "diagLogCollector"
 	eecDiagnosticPath    = "/var/lib/dynatrace/remotepluginmodule/log/extensions/diagnostics"
 	fileNotFoundMarker   = "<NOT FOUND>"
+	eecPodName           = "dynatrace-extensions-controller"
+	eecContainerName     = "extensions-controller"
 )
+
+type executionResult struct {
+	StdOut *bytes.Buffer
+	StdErr *bytes.Buffer
+}
 
 type diagLogCollector struct {
 	ctx    context.Context
+	pods   clientgocorev1.PodInterface
 	config *rest.Config
 	collectorCommon
 }
 
-func newDiagLogCollector(context context.Context, config *rest.Config, log logd.Logger, supportArchive archiver) collector {
+var (
+	eecPodNotFoundError = errors.New("eec pod not found")
+)
+
+func newDiagLogCollector(context context.Context, config *rest.Config, log logd.Logger, supportArchive archiver, pods clientgocorev1.PodInterface) collector {
 	return diagLogCollector{
 		collectorCommon: collectorCommon{
 			log:            log,
@@ -35,6 +52,7 @@ func newDiagLogCollector(context context.Context, config *rest.Config, log logd.
 		},
 		ctx:    context,
 		config: config,
+		pods:   pods,
 	}
 }
 
@@ -42,42 +60,47 @@ func (collector diagLogCollector) Name() string {
 	return diagLogCollectorName
 }
 
-func (collector diagLogCollector) Do() error {
-	environmentResources, err := resources.New(collector.config)
-	if err != nil {
-		logErrorf(collector.log, err, "error creating resources")
-
-		return err
+func (collector diagLogCollector) getControllerPod() (*corev1.Pod, error) {
+	listOptions := metav1.ListOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind: "pod",
+		},
+		LabelSelector: fmt.Sprintf("%s=%s", "app.kubernetes.io/name", eecPodName),
 	}
 
-	var pods corev1.PodList
-	err = environmentResources.WithNamespace("dynatrace").List(collector.ctx, &pods)
-
+	podList, err := collector.pods.List(collector.ctx, listOptions)
 	if err != nil {
-		logErrorf(collector.log, err, "error listing pods")
-
-		return err
+		return nil, errors.WithStack(err)
 	}
 
-	eecPods := functional.Filter(pods.Items, func(podItem corev1.Pod) bool {
-		return strings.HasPrefix(podItem.Name, "dynatrace-extensions-controller-")
-	})
-
-	if len(eecPods) == 0 {
+	if len(podList.Items) == 0 {
 		logInfof(collector.log, "EEC pod not found, diagnostic logs will not be collected")
 
+		return nil, eecPodNotFoundError
+	}
+
+	if len(podList.Items) != 1 {
+		err := errors.New(fmt.Sprintf("expected 1 EEC pod, got %d", len(podList.Items)))
+		logErrorf(collector.log, err, "diagnostic logs will not be collected")
+
+		return nil, err
+	}
+
+	return &podList.Items[0], nil
+}
+
+func (collector diagLogCollector) Do() error {
+	eecPod, err := collector.getControllerPod()
+	if errors.Is(err, eecPodNotFoundError) {
 		return nil
 	}
 
-	if len(eecPods) != 1 {
-		err := errors.New("unexpected number of eec pods")
-		logErrorf(collector.log, err, "unexpected number of eec pods %d", len(eecPods))
-
+	if err != nil {
 		return err
 	}
 
 	fileName := "diag_executor.log"
-	if err := collector.copyDiagnosticFile(environmentResources, eecPods[0], fileName); err != nil {
+	if err := collector.copyDiagnosticFile(eecPod.Name, eecPod.Namespace, fileName); err != nil {
 		logErrorf(collector.log, err, "failed to copy %s", fileName)
 
 		return err
@@ -85,7 +108,7 @@ func (collector diagLogCollector) Do() error {
 
 	for i := range 10 {
 		fileName := fmt.Sprintf("diag_executor.%d.log", i)
-		if err := collector.copyDiagnosticFile(environmentResources, eecPods[0], fileName); err != nil {
+		if err := collector.copyDiagnosticFile(eecPod.Name, eecPod.Namespace, fileName); err != nil {
 			logErrorf(collector.log, err, "failed to copy %s", fileName)
 
 			return err
@@ -97,30 +120,23 @@ func (collector diagLogCollector) Do() error {
 	return nil
 }
 
-func (collector diagLogCollector) copyDiagnosticFile(environmentResources *resources.Resources, eecPod corev1.Pod, fileName string) error {
-	path := filepath.Join(eecDiagnosticPath, fileName)
+func (collector diagLogCollector) copyDiagnosticFile(podName string, podNamespace string, fileName string) error {
+	eecDiagLogPath := filepath.Join(eecDiagnosticPath, fileName)
 
-	command := []string{"/usr/bin/sh", "-c", "[ -e " + path + " ] && cat " + path + " || echo '" + fileNotFoundMarker + "'"}
+	command := []string{"/usr/bin/sh", "-c", "[ -e " + eecDiagLogPath + " ] && cat " + eecDiagLogPath + " || echo '" + fileNotFoundMarker + "'"}
 
-	executionResult, err := execute(collector.ctx, environmentResources,
-		eecPod,
-		"extensions-controller",
-		command...,
-	)
-
+	executionResult, err := collector.executeRemoteCommand(collector.ctx, podName, podNamespace, eecContainerName, command)
 	if err != nil {
 		return err
 	}
 
-	if executionResult.StdOut.Len() > 0 && executionResult.StdOut.Len() < len(fileNotFoundMarker)+2 {
-		if strings.TrimSpace(executionResult.StdOut.String()) == fileNotFoundMarker {
-			return nil
-		}
+	if strings.HasPrefix(executionResult.StdOut.String(), fileNotFoundMarker) {
+		return nil
 	}
 
-	zipFileName := collector.buildLogFileName(&eecPod, fileName)
+	zipFilePath := collector.buildZipFilePath(podName, fileName)
 
-	err = collector.supportArchive.addFile(zipFileName, executionResult.StdOut)
+	err = collector.supportArchive.addFile(zipFilePath, executionResult.StdOut)
 	if err != nil {
 		logErrorf(collector.log, err, "error writing to tarball")
 
@@ -130,35 +146,60 @@ func (collector diagLogCollector) copyDiagnosticFile(environmentResources *resou
 	return nil
 }
 
-func (collector diagLogCollector) buildLogFileName(pod *corev1.Pod, fileName string) string {
-	return fmt.Sprintf("%s/%s/%s.log", LogsDirectoryName, pod.Name, fileName)
+func (collector diagLogCollector) buildZipFilePath(podName string, fileName string) string {
+	return fmt.Sprintf("%s/%s/%s", LogsDirectoryName, podName, fileName)
 }
 
-type ExecutionResult struct {
-	StdOut *bytes.Buffer
-	StdErr *bytes.Buffer
-}
+func (collector diagLogCollector) executeRemoteCommand(ctx context.Context, podName string, podNamespace string, containerName string, command []string) (*executionResult, error) {
+	sch := scheme.Scheme
+	parameterCodec := scheme.ParameterCodec
 
-func execute(ctx context.Context, resource *resources.Resources, pod corev1.Pod, container string, command ...string) (*ExecutionResult, error) {
-	result := &ExecutionResult{
+	gvk := schema.GroupVersionKind{
+		Group:   "",
+		Version: "v1",
+		Kind:    "Pod",
+	}
+
+	httpClient, err := rest.HTTPClientFor(collector.config)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	restClient, err := apiutil.RESTClientForGVK(gvk, false, collector.config, serializer.NewCodecFactory(sch), httpClient)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	result := &executionResult{
 		StdOut: &bytes.Buffer{},
 		StdErr: &bytes.Buffer{},
 	}
 
-	err := resource.ExecInPod(
-		ctx,
-		pod.Namespace,
-		pod.Name,
-		container,
-		command,
-		result.StdOut,
-		result.StdErr,
-	)
+	req := restClient.Post().
+		Resource("pods").
+		Name(podName).
+		Namespace(podNamespace).
+		SubResource("exec").
+		VersionedParams(&corev1.PodExecOptions{
+			Container: containerName,
+			Command:   command,
+			Stdin:     true,
+			Stdout:    true,
+			Stderr:    true,
+			TTY:       false,
+		}, parameterCodec)
 
+	executor, err := remotecommand.NewSPDYExecutor(collector.config, "POST", req.URL())
 	if err != nil {
-		return result, errors.WithMessagef(errors.WithStack(err),
-			"stdout:\n%s\nstderr:\n%s", result.StdOut.String(), result.StdErr.String())
+		return nil, errors.WithStack(err)
 	}
 
-	return result, nil
+	err = executor.StreamWithContext(ctx, remotecommand.StreamOptions{
+		Stdin:  &bytes.Buffer{},
+		Stdout: result.StdOut,
+		Stderr: result.StdErr,
+		Tty:    false,
+	})
+
+	return result, errors.WithStack(err)
 }
