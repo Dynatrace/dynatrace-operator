@@ -3,9 +3,30 @@ package dynakube
 import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type OTLPExporterSpec struct {
+	// Namespaces where the operator should enable OTLP-Exporters
+	// +kubebuilder:validation:Optional
+	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
+	// Enable OpenTelemetry Protocol Exporters traces endpoint
+	// see https://opentelemetry.io/docs/specs/otel/protocol/exporter/#endpoint-urls-for-otlphttp
+	// +kubebuilder:validation:Optional
+	EnableTraces bool `json:"enableTraces,omitempty"`
+	// Enable OpenTelemetry Protocol Exporters metrics endpoint
+	// see https://opentelemetry.io/docs/specs/otel/protocol/exporter/#endpoint-urls-for-otlphttp
+	// +kubebuilder:validation:Optional
+	EnableMetrics bool `json:"enableMetrics,omitempty"`
+	// Enable OpenTelemetry Protocol Exporters logs endpoint
+	// see https://opentelemetry.io/docs/specs/otel/protocol/exporter/#endpoint-urls-for-otlphttp
+	// +kubebuilder:validation:Optional
+	EnableLogs bool `json:"enableLogs,omitempty"`
+}
+
 type ExtensionsSpec struct {
+	// +kubebuilder:validation:Optional
+	OTLPExporter OTLPExporterSpec `json:"otlpexporter,omitempty"`
 	// +kubebuilder:validation:Optional
 	Prometheus PrometheusSpec `json:"prometheus,omitempty"`
 }

@@ -73,6 +73,15 @@
 |:-|:-|:-|:-|
 |`enabled`||-|boolean|
 
+### .spec.extensions.otlpexporter
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`enableLogs`|Enable OpenTelemetry Protocol Exporters logs endpoint<br/>see https://opentelemetry.io/docs/specs/otel/protocol/exporter/#endpoint-urls-for-otlphttp|-|boolean|
+|`enableMetrics`|Enable OpenTelemetry Protocol Exporters metrics endpoint<br/>see https://opentelemetry.io/docs/specs/otel/protocol/exporter/#endpoint-urls-for-otlphttp|-|boolean|
+|`enableTraces`|Enable OpenTelemetry Protocol Exporters traces endpoint<br/>see https://opentelemetry.io/docs/specs/otel/protocol/exporter/#endpoint-urls-for-otlphttp|-|boolean|
+|`namespaceSelector`|Namespaces where the operator should enable OTLP-Exporters|-|object|
+
 ### .spec.oneAgent.hostMonitoring
 
 |Parameter|Description|Default value|Data type|
