@@ -26,7 +26,7 @@ Auto-detect the platform (if not set), according to the available APIVersions
 {{- end }}
 
 {{/*
-Auto-detect the platform (if not set), according to the available APIVersions
+Set install source how the Operator was installed
 */}}
 {{- define "dynatrace-operator.installSource" -}}
     {{- if .Values.olm }}
