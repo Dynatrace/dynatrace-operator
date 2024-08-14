@@ -31,9 +31,9 @@ Set install source how the Operator was installed
 {{- define "dynatrace-operator.installSource" -}}
     {{- if .Values.olm }}
       {{- printf "operatorhub" -}}
-    {{- else if .Values.manifest }}
+    {{- else if .Values.manifests }}
       {{- printf "manifest" -}}
-    {{- else if .Values.platform }}
+    {{- else if (and (.Values.platform) (not (has .Values.platform (list "kubernetes" "openshift")))) }}
         {{- printf .Values.platform -}}
     {{- else }}
         {{- printf "helm" -}}
