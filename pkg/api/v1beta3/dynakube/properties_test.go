@@ -70,7 +70,7 @@ func TestCustomActiveGateImage(t *testing.T) {
 	})
 }
 
-func TestDynaKube_UseCSIDriver(t *testing.T) {
+func TestNeedsCSIDriver(t *testing.T) {
 	t.Run(`DynaKube with application monitoring without csi driver`, func(t *testing.T) {
 		dk := DynaKube{
 			Spec: DynaKubeSpec{
@@ -99,6 +99,158 @@ func TestDynaKube_UseCSIDriver(t *testing.T) {
 	t.Run(`DynaKube with cloud native`, func(t *testing.T) {
 		dk := DynaKube{Spec: DynaKubeSpec{OneAgent: OneAgentSpec{CloudNativeFullStack: &CloudNativeFullStackSpec{}}}}
 		assert.True(t, dk.NeedsCSIDriver())
+	})
+
+	t.Run(`cloud native fullstack with readonly host agent`, func(t *testing.T) {
+		dk := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					AnnotationFeatureReadOnlyOneAgent: "true",
+				},
+			},
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{
+					CloudNativeFullStack: &CloudNativeFullStackSpec{},
+				},
+			},
+		}
+		assert.True(t, dk.NeedsCSIDriver())
+	})
+
+	t.Run(`cloud native fullstack without readonly host agent`, func(t *testing.T) {
+		dk := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					AnnotationFeatureReadOnlyOneAgent: "false",
+				},
+			},
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{
+					CloudNativeFullStack: &CloudNativeFullStackSpec{},
+				},
+			},
+		}
+		assert.True(t, dk.NeedsCSIDriver())
+	})
+
+	t.Run(`host monitoring with readonly host agent`, func(t *testing.T) {
+		dk := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					AnnotationFeatureReadOnlyOneAgent: "true",
+				},
+			},
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{
+					HostMonitoring: &HostInjectSpec{},
+				},
+			},
+		}
+		assert.True(t, dk.NeedsCSIDriver())
+	})
+
+	t.Run(`host monitoring without readonly host agent`, func(t *testing.T) {
+		dk := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					AnnotationFeatureReadOnlyOneAgent: "false",
+				},
+			},
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{
+					HostMonitoring: &HostInjectSpec{},
+				},
+			},
+		}
+		assert.False(t, dk.NeedsCSIDriver())
+	})
+}
+
+func TestNeedsReadonlyOneagent(t *testing.T) {
+	t.Run(`cloud native fullstack default`, func(t *testing.T) {
+		dk := DynaKube{
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{
+					CloudNativeFullStack: &CloudNativeFullStackSpec{},
+				},
+			},
+		}
+		assert.True(t, dk.NeedsReadOnlyOneAgents())
+	})
+
+	t.Run(`host monitoring default`, func(t *testing.T) {
+		dk := DynaKube{
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{
+					HostMonitoring: &HostInjectSpec{},
+				},
+			},
+		}
+		assert.True(t, dk.NeedsReadOnlyOneAgents())
+	})
+
+	t.Run(`cloud native fullstack with readonly host agent`, func(t *testing.T) {
+		dk := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					AnnotationFeatureReadOnlyOneAgent: "true",
+				},
+			},
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{
+					CloudNativeFullStack: &CloudNativeFullStackSpec{},
+				},
+			},
+		}
+		assert.True(t, dk.NeedsReadOnlyOneAgents())
+	})
+
+	t.Run(`cloud native fullstack without readonly host agent`, func(t *testing.T) {
+		dk := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					AnnotationFeatureReadOnlyOneAgent: "false",
+				},
+			},
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{
+					CloudNativeFullStack: &CloudNativeFullStackSpec{},
+				},
+			},
+		}
+		assert.False(t, dk.NeedsReadOnlyOneAgents())
+	})
+
+	t.Run(`host monitoring with readonly host agent`, func(t *testing.T) {
+		dk := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					AnnotationFeatureReadOnlyOneAgent: "true",
+				},
+			},
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{
+					HostMonitoring: &HostInjectSpec{},
+				},
+			},
+		}
+		assert.True(t, dk.NeedsReadOnlyOneAgents())
+	})
+
+	t.Run(`host monitoring without readonly host agent`, func(t *testing.T) {
+		dk := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					AnnotationFeatureReadOnlyOneAgent: "false",
+				},
+			},
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{
+					HostMonitoring: &HostInjectSpec{},
+				},
+			},
+		}
+		assert.False(t, dk.NeedsReadOnlyOneAgents())
 	})
 }
 
