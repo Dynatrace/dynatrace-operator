@@ -44,6 +44,7 @@ Operator labels
 {{- define "dynatrace-operator.operatorLabels" -}}
 {{ include "dynatrace-operator.commonLabels" . }}
 app.kubernetes.io/component: operator
+dynatrace.com/install-source: {{ include "dynatrace-operator.installSource" . }}
 {{- end -}}
 
 {{/*

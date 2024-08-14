@@ -26,6 +26,21 @@ Auto-detect the platform (if not set), according to the available APIVersions
 {{- end }}
 
 {{/*
+Auto-detect the platform (if not set), according to the available APIVersions
+*/}}
+{{- define "dynatrace-operator.installSource" -}}
+    {{- if .Values.olm }}
+      {{- printf "operatorhub" -}}
+    {{- else if .Values.manifest }}
+      {{- printf "manifest" -}}
+    {{- else if .Values.platform }}
+        {{- printf .Values.platform -}}
+    {{- else }}
+        {{- printf "helm" -}}
+    {{- end -}}
+{{- end }}
+
+{{/*
 Exclude Kubernetes manifest not running on OLM
 */}}
 {{- define "dynatrace-operator.openshiftOrOlm" -}}
