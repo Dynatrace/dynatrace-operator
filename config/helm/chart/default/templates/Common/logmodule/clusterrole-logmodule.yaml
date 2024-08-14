@@ -15,29 +15,36 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: dynatrace-logagent
+  name: dynatrace-logmodule
   labels:
-    {{- include "dynatrace-operator.logAgentLabels" . | nindent 4 }}
+    {{- include "dynatrace-operator.logModuleLabels" . | nindent 4 }}
 rules:
-- apiGroups: [""]
-  resources: ["nodes/proxy"]
-  verbs: ["get"]
-- apiGroups: ["security.openshift.io"]
-  resourceNames: ["privileged"]
-  resources: ["securitycontextconstraints"]
-  verbs: ["use"]
+- apiGroups:
+    - ""
+  resources:
+    - nodes/proxy
+  verbs:
+    - get
+- apiGroups:
+    - security.openshift.io"
+  resourceNames:
+    - privileged
+  resources:
+    - securitycontextconstraints
+  verbs:
+    - use
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: dynatrace-logagent
+  name: dynatrace-logmodule
   labels:
-    {{- include "dynatrace-operator.logAgentLabels" . | nindent 4 }}
+    {{- include "dynatrace-operator.logModuleLabels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: dynatrace-logagent
+  name: dynatrace-logmodule
 subjects:
 - kind: ServiceAccount
-  name: dynatrace-logagent
+  name: dynatrace-logmodule
   namespace: {{ .Release.Namespace }}
