@@ -1,0 +1,35 @@
+suite: test logagent clusterrole
+templates:
+  - Common/logagent/clusterrole-logagent.yaml
+tests:
+  - it: logagent ClusterRole should exist
+    set:
+      platform: openshift
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-logagent
+      - isNotEmpty:
+          path: metadata.labels
+      - contains:
+          path: rules
+          content:
+            apiGroups: ["security.openshift.io"]
+            resourceNames: ["privileged"]
+            resources: ["securitycontextconstraints"]
+            verbs: ["use"]
+  - it: logagent ClusterRoleBinding should exist
+    documentIndex: 1
+    set:
+      platform: openshift
+    asserts:
+      - isKind:
+          of: ClusterRoleBinding
+      - equal:
+          path: metadata.name
+          value: dynatrace-logagent
+      - isNotEmpty:
+          path: metadata.labels
