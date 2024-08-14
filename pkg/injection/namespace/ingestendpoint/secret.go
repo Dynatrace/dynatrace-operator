@@ -26,6 +26,15 @@ const (
 	configFile              = "endpoint.properties"
 )
 
+const (
+	OTLPEndpointSecretField        = "DT_OTLP_ENDPOINT"
+	OTLPTracesEndpointSecretField  = "DT_OTLP_TRACE_ENDPOINT"
+	OTLPMetricsEndpointSecretField = "DT_OTLP_METRICS_ENDPOINT"
+	OTLPLogsEndpointSecretField    = "DT_OTLP_LOGS_ENDPOINT"
+	OTLPTokensSecretField          = "DT_OTLP_API_TOKEN"
+	OTLPProtocolSecretField        = "DT_OTLP_PROTOCOL"
+)
+
 // SecretGenerator manages the mint endpoint secret generation for the user namespaces.
 type SecretGenerator struct {
 	client    client.Client
@@ -151,25 +160,38 @@ func (g *SecretGenerator) prepare(ctx context.Context, dk *dynakube.DynaKube) (m
 func (g *SecretGenerator) PrepareFields(ctx context.Context, dk *dynakube.DynaKube) (map[string]string, error) {
 	fields := make(map[string]string)
 
-	tokens, err := k8ssecret.Query(g.client, g.apiReader, log).Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: g.namespace})
-	if err != nil {
-		return nil, errors.WithMessage(err, "failed to query tokens")
-	}
-
-	if dk.MetadataEnrichmentEnabled() { // TODO: why check here and not at the very beginning?
-		if token, ok := tokens.Data[dtclient.DataIngestToken]; ok {
-			fields[MetricsTokenSecretField] = string(token)
+	if dk.MetadataEnrichmentEnabled() {
+		tokens, err := k8ssecret.Query(g.client, g.apiReader, log).Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: g.namespace})
+		if err != nil {
+			return nil, errors.WithMessage(err, "failed to query tokens")
 		}
 
+		if token, ok := tokens.Data[dtclient.DataIngestToken]; ok {
+			fields[MetricsTokenSecretField] = string(token)
+			// TODO: always add OTLP field or only when exporter is enabled?
+			// TODO: which token to use here?
+			fields[OTLPTokensSecretField] = string(token)
+		}
+		// TODO: always add OTLP fields or only when exporter is enabled?
+		// TODO: use ActiveGate mode metrics-ingest for OTLP endpoint?
 		if ingestUrl, err := ingestUrlFor(dk); err != nil {
 			return nil, err
 		} else {
-			fields[MetricsUrlSecretField] = ingestUrl
+			fields[MetricsUrlSecretField] = ingestUrl + "/v2/metrics/ingest"
+			fields[OTLPEndpointSecretField] = ingestUrl + "/v2/otlp"
+			// TODO: add only if OTLP Exporter traces/logs/metrics are enabled?
+			fields[OTLPTracesEndpointSecretField] = ingestUrl + "/v2/otlp/v1/traces"
+			fields[OTLPMetricsEndpointSecretField] = ingestUrl + "/v2/otlp/v1/metrics"
+			fields[OTLPLogsEndpointSecretField] = ingestUrl + "/v2/otlp/v1/logs"
 		}
+
+		fields[OTLPProtocolSecretField] = "http/protobuf"
 	}
 
 	return fields, nil
 }
+
+// TODO: which token to mount for OTLP token?
 
 func ingestUrlFor(dk *dynakube.DynaKube) (string, error) {
 	switch {
@@ -183,7 +205,7 @@ func ingestUrlFor(dk *dynakube.DynaKube) (string, error) {
 }
 
 func metricsIngestUrlForDynatraceActiveGate(dk *dynakube.DynaKube) (string, error) {
-	return dk.Spec.APIURL + "/v2/metrics/ingest", nil
+	return dk.Spec.APIURL, nil
 }
 
 func metricsIngestUrlForClusterActiveGate(dk *dynakube.DynaKube) (string, error) {
@@ -194,5 +216,5 @@ func metricsIngestUrlForClusterActiveGate(dk *dynakube.DynaKube) (string, error)
 
 	serviceName := capability.BuildServiceName(dk.Name, agconsts.MultiActiveGateName)
 
-	return fmt.Sprintf("http://%s.%s/e/%s/api/v2/metrics/ingest", serviceName, dk.Namespace, tenant), nil
+	return fmt.Sprintf("http://%s.%s/e/%s/api", serviceName, dk.Namespace, tenant), nil
 }
