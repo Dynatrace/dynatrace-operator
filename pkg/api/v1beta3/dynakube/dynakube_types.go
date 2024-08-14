@@ -137,14 +137,18 @@ type DynaKubeSpec struct { //nolint:revive
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Metadata Enrichment",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	MetadataEnrichment MetadataEnrichment `json:"metadataEnrichment,omitempty"`
 
+	// Configuration of OpenTelemetry-Protocol Exporters
 	// +kubebuilder:validation:Optional
-	Extensions ExtensionsSpec `json:"extensions,omitempty"`
+	OTLPExporterConfiguration OTLPExporterConfigurationSpec `json:"otlpExporterConfiguration,omitempty"`
 
 	// Configuration for thresholding Dynatrace API requests.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=15
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Dynatrace API Request Threshold",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	DynatraceApiRequestThreshold int `json:"dynatraceApiRequestThreshold,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Extensions ExtensionsSpec `json:"extensions,omitempty"`
 
 	// Disable certificate check for the connection between Dynatrace Operator and the Dynatrace Cluster.
 	// Set to true if you want to skip certification validation checks.
@@ -172,6 +176,24 @@ type TemplatesSpec struct {
 	ExtensionExecutionController ExtensionExecutionControllerSpec `json:"extensionExecutionController,omitempty"`
 	// +kubebuilder:validation:Optional
 	LogAgent LogAgentSpec `json:"logAgent,omitempty"`
+}
+
+type OTLPExporterConfigurationSpec struct {
+	// Namespaces where the operator should enable OTLP-Exporters
+	// +kubebuilder:validation:Optional
+	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
+	// Enable OpenTelemetry Protocol Exporters traces endpoint
+	// see https://opentelemetry.io/docs/specs/otel/protocol/exporter/#endpoint-urls-for-otlphttp
+	// +kubebuilder:validation:Optional
+	EnableTraces bool `json:"enableTraces,omitempty"`
+	// Enable OpenTelemetry Protocol Exporters metrics endpoint
+	// see https://opentelemetry.io/docs/specs/otel/protocol/exporter/#endpoint-urls-for-otlphttp
+	// +kubebuilder:validation:Optional
+	EnableMetrics bool `json:"enableMetrics,omitempty"`
+	// Enable OpenTelemetry Protocol Exporters logs endpoint
+	// see https://opentelemetry.io/docs/specs/otel/protocol/exporter/#endpoint-urls-for-otlphttp
+	// +kubebuilder:validation:Optional
+	EnableLogs bool `json:"enableLogs,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
