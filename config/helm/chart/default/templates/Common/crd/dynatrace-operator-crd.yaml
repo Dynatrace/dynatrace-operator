@@ -4921,7 +4921,7 @@ spec:
                     type: object
                 type: object
               logModule:
-                description: General configuration about LogModule instances.
+                description: General configuration about the LogModule feature.
                 properties:
                   enabled:
                     type: boolean
@@ -6510,24 +6510,26 @@ spec:
                         type: array
                     type: object
                   logModuleDaemonSet:
+                    description: Low-level configuration options for the LogModule
+                      feature.
                     properties:
                       annotations:
                         additionalProperties:
                           type: string
-                        description: Add custom annotations to the LogModule DaemonSet
+                        description: Add custom annotations to the LogModule pods
                         type: object
                       args:
-                        description: Set additional arguments to the LogModule DaemonSet
-                          pods
+                        description: Set additional arguments to the LogModule main
+                          container
                         items:
                           type: string
                         type: array
                       dnsPolicy:
-                        description: Sets DNS Policy for the LogModule DaemonSet
+                        description: Sets DNS Policy for the LogModule pods
                         type: string
                       imageRef:
                         description: Overrides the default image for the LogModule
-                          DaemonSet
+                          pods
                         properties:
                           repository:
                             description: Custom image repository
@@ -6540,21 +6542,21 @@ spec:
                       labels:
                         additionalProperties:
                           type: string
-                        description: Add custom labels to the LogModule DaemonSet
+                        description: Add custom labels to the LogModule pods
                         type: object
                       nodeSelector:
                         additionalProperties:
                           type: string
                         description: Node selector to control the selection of nodes
-                          for the LogModule DaemonSet pods
+                          for the LogModule pods
                         type: object
                       priorityClassName:
-                        description: Assign a priority class to the LogModule DaemonSet.
+                        description: Assign a priority class to the LogModule pods.
                           By default, no class is set
                         type: string
                       resources:
                         description: Define resources' requests and limits for all
-                          the LogModule DaemonSet pods
+                          the LogModule pods
                         properties:
                           claims:
                             description: |-
@@ -6609,10 +6611,10 @@ spec:
                       secCompProfile:
                         description: The SecComp Profile that will be configured in
                           order to run in secure computing mode for the LogModule
-                          DaemonSet
+                          pods
                         type: string
                       tolerations:
-                        description: Set tolerations for the LogModule DaemonSet pods
+                        description: Set tolerations for the LogModule pods
                         items:
                           description: |-
                             The pod this Toleration is attached to tolerates any taint that matches

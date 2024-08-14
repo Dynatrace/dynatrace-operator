@@ -99,15 +99,15 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
-|`annotations`|Add custom annotations to the LogModule DaemonSet|-|object|
-|`args`|Set additional arguments to the LogModule DaemonSet pods|-|array|
-|`dnsPolicy`|Sets DNS Policy for the LogModule DaemonSet|-|string|
-|`labels`|Add custom labels to the LogModule DaemonSet|-|object|
-|`nodeSelector`|Node selector to control the selection of nodes for the LogModule DaemonSet pods|-|object|
-|`priorityClassName`|Assign a priority class to the LogModule DaemonSet. By default, no class is set|-|string|
-|`resources`|Define resources' requests and limits for all the LogModule DaemonSet pods|-|object|
-|`secCompProfile`|The SecComp Profile that will be configured in order to run in secure computing mode for the LogModule DaemonSet|-|string|
-|`tolerations`|Set tolerations for the LogModule DaemonSet pods|-|array|
+|`annotations`|Add custom annotations to the LogModule pods|-|object|
+|`args`|Set additional arguments to the LogModule main container|-|array|
+|`dnsPolicy`|Sets DNS Policy for the LogModule pods|-|string|
+|`labels`|Add custom labels to the LogModule pods|-|object|
+|`nodeSelector`|Node selector to control the selection of nodes for the LogModule pods|-|object|
+|`priorityClassName`|Assign a priority class to the LogModule pods. By default, no class is set|-|string|
+|`resources`|Define resources' requests and limits for all the LogModule pods|-|object|
+|`secCompProfile`|The SecComp Profile that will be configured in order to run in secure computing mode for the LogModule pods|-|string|
+|`tolerations`|Set tolerations for the LogModule pods|-|array|
 
 ### .spec.oneAgent.cloudNativeFullStack
 
