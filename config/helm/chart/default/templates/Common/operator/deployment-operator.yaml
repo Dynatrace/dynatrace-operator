@@ -17,6 +17,7 @@ metadata:
   name: dynatrace-operator
   namespace: {{ .Release.Namespace }}
   labels:
+    dynatrace.com/install-source: {{ include "dynatrace-operator.installSource" . }}
       {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
   {{- if .Values.operator.labels }}
       {{- toYaml .Values.operator.labels | nindent 4 }}
