@@ -29,6 +29,8 @@ Check if default image or imageref is used
 {{- else -}}
     {{- if (.Values.imageRef).repository -}}
         {{- .Values.imageRef.tag | default (printf "v%s" .Chart.AppVersion) | printf "%s:%s" .Values.imageRef.repository -}}
+    {{- else if eq (include "dynatrace-operator.platform" .) "openshift" -}}
+        {{- printf "%s:v%s" "registry.connect.redhat.com/dynatrace/dynatrace-operator" .Chart.AppVersion }}
     {{- else if eq (include "dynatrace-operator.platform" .) "google-marketplace" -}}
     	{{- printf "%s:%s" "gcr.io/dynatrace-marketplace-prod/dynatrace-operator" .Chart.AppVersion }}
     {{- else if eq (include "dynatrace-operator.platform" .) "azure-marketplace" -}}
