@@ -162,6 +162,10 @@ type EnrichmentRule struct {
 }
 
 func (rule EnrichmentRule) ToAnnotationKey() string {
+	if rule.Mapping == "" {
+		return ""
+	}
+
 	return MetadataPrefix + "/" + rule.Mapping
 }
 

@@ -285,10 +285,12 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 		request.Namespace.Labels = map[string]string{
 			"test":  "test-label-value",
 			"test2": "test-label-value2",
+			"test3": "test-label-value3",
 		}
 		request.Namespace.Annotations = map[string]string{
 			"test":  "test-annotation-value",
 			"test2": "test-annotation-value2",
+			"test3": "test-annotation-value3",
 		}
 
 		request.DynaKube.Status.MetadataEnrichment.Rules = []dynakube.EnrichmentRule{
@@ -301,6 +303,11 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 				Type:    dynakube.EnrichmentAnnotationRule,
 				Key:     "test2",
 				Mapping: "dt.test-annotation",
+			},
+			{
+				Type:    dynakube.EnrichmentAnnotationRule,
+				Key:     "test3",
+				Mapping: "", // mapping missing => rule ignored
 			},
 		}
 
