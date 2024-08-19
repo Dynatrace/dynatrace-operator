@@ -2,7 +2,7 @@ package url
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"io"
 	"os"
 	"testing"
@@ -32,7 +32,7 @@ type failFs struct {
 }
 
 func (fs failFs) OpenFile(string, int, os.FileMode) (afero.File, error) {
-	return nil, fmt.Errorf(testErrorMessage)
+	return nil, errors.New(testErrorMessage)
 }
 
 func TestInstallAgentFromUrl(t *testing.T) {
@@ -56,10 +56,10 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			On("GetAgent", mock.AnythingOfType("context.backgroundCtx"), dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro,
 				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("[]string"),
 				mock.AnythingOfType("bool"), mock.AnythingOfType("*mem.File")).
-			Return(fmt.Errorf(testErrorMessage))
+			Return(errors.New(testErrorMessage))
 		dtc.
 			On("GetAgentVersions", mock.AnythingOfType("context.backgroundCtx"), dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro, mock.AnythingOfType("string")).
-			Return([]string{}, fmt.Errorf(testErrorMessage))
+			Return([]string{}, errors.New(testErrorMessage))
 
 		installer := &Installer{
 			fs:  fs,

@@ -285,7 +285,7 @@ func (controller *Controller) getEdgeConnect(ctx context.Context, name, namespac
 	if k8serrors.IsNotFound(err) {
 		log.Debug("EdgeConnect object not found", "name", ec.Name, "namespace", ec.Namespace)
 
-		return nil, nil //nolint: nilnil
+		return nil, nil //nolint:nilnil
 	} else if err != nil {
 		log.Debug("Unable to get EdgeConnect object ",
 			"name", ec.Name, "namespace", ec.Namespace)
@@ -399,7 +399,7 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 	return nil
 }
 
-func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Context, ec *edgeconnect.EdgeConnect) error { //nolint: revive
+func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Context, ec *edgeconnect.EdgeConnect) error { //nolint:revive
 	_log := log.WithValues("namespace", ec.Namespace, "name", ec.Name)
 
 	_log.Info("reconcileEdgeConnectProvisioner")

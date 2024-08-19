@@ -44,7 +44,7 @@ func (wh *webhook) createMutationRequestBase(ctx context.Context, request admiss
 		// in which case we don't need to do anything
 		span.RecordError(err)
 
-		return nil, nil //nolint: nilnil
+		return nil, nil //nolint:nilnil
 	}
 
 	dynakube, err := wh.getDynakube(ctx, dynakubeName)
