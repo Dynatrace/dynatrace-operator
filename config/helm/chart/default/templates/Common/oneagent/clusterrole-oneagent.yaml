@@ -1,4 +1,3 @@
-{{- include "dynatrace-operator.platformRequired" . }}
 {{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
 # Copyright 2021 Dynatrace LLC
 

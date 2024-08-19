@@ -26,29 +26,27 @@ Auto-detect the platform (if not set), according to the available APIVersions
 {{- end }}
 
 {{/*
+Set install source how the Operator was installed
+*/}}
+{{- define "dynatrace-operator.installSource" -}}
+    {{- if .Values.olm }}
+      {{- printf "operatorhub" -}}
+    {{- else if .Values.manifests }}
+      {{- printf "manifest" -}}
+    {{- else if (and (.Values.platform) (not (has .Values.platform (list "kubernetes" "openshift")))) }}
+        {{- printf .Values.platform -}}
+    {{- else }}
+        {{- printf "helm" -}}
+    {{- end -}}
+{{- end }}
+
+{{/*
 Exclude Kubernetes manifest not running on OLM
 */}}
 {{- define "dynatrace-operator.openshiftOrOlm" -}}
 {{- if and (or (eq (include "dynatrace-operator.platform" .) "openshift") (.Values.olm)) -}}
     {{ default "true" }}
 {{- end -}}
-{{- end -}}
-
-{{/*
-Check if platform is set to a valid one
-*/}}
-{{- define "dynatrace-operator.platformIsValid" -}}
-{{- $validPlatforms := list "kubernetes" "openshift" "google-marketplace" "gke-autopilot" "azure-marketplace" -}}
-{{- if has (include "dynatrace-operator.platform" .) $validPlatforms -}}
-    {{ default "set" }}
-{{- end -}}
-{{- end -}}
-
-{{/*
-Enforces that platform is set to a valid one
-*/}}
-{{- define "dynatrace-operator.platformRequired" -}}
-{{- $platformIsSet := printf "%s" (required "Platform needs to be set to kubernetes, openshift, google-marketplace, azure-marketplace or gke-autopilot" (include "dynatrace-operator.platformIsValid" .))}}
 {{- end -}}
 
 {{- define "dynatrace-operator.nodeAffinity" -}}
