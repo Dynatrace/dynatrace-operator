@@ -179,8 +179,7 @@ func prepOneAgentTestEnv(t *testing.T) func() {
 	rawContainerInfo, err := json.Marshal(containerInfo)
 	require.NoError(t, err)
 
-	err = os.Setenv(consts.ContainerInfoEnv, string(rawContainerInfo)) //nolint: tenv
-	require.NoError(t, err)
+	t.Setenv(consts.ContainerInfoEnv, string(rawContainerInfo))
 
 	envs = append(envs, consts.ContainerInfoEnv)
 
@@ -228,7 +227,7 @@ func prepMetadataEnrichmentTestEnv(t *testing.T, isUnknownWorkload bool) func() 
 	rawContainerInfo, err := json.Marshal(containerInfo)
 	require.NoError(t, err)
 
-	err = os.Setenv(consts.ContainerInfoEnv, string(rawContainerInfo)) //nolint: tenv
+	err = os.Setenv(consts.ContainerInfoEnv, string(rawContainerInfo)) //nolint:tenv
 	require.NoError(t, err)
 
 	envs = append(envs, consts.ContainerInfoEnv)

@@ -54,7 +54,7 @@ func (cl *Client) CheckIstioInstalled() (bool, error) {
 func (cl *Client) GetVirtualService(ctx context.Context, name string) (*istiov1beta1.VirtualService, error) {
 	virtualService, err := cl.IstioClientset.NetworkingV1beta1().VirtualServices(cl.Owner.GetNamespace()).Get(ctx, name, metav1.GetOptions{})
 	if k8serrors.IsNotFound(err) {
-		return nil, nil //nolint: nilnil
+		return nil, nil //nolint:nilnil
 	} else if err != nil {
 		log.Info("failed to get current virtual service", "name", name, "error", err.Error())
 
@@ -145,7 +145,7 @@ func (cl *Client) DeleteVirtualService(ctx context.Context, name string) error {
 func (cl *Client) GetServiceEntry(ctx context.Context, name string) (*istiov1beta1.ServiceEntry, error) {
 	serviceEntry, err := cl.IstioClientset.NetworkingV1beta1().ServiceEntries(cl.Owner.GetNamespace()).Get(ctx, name, metav1.GetOptions{})
 	if k8serrors.IsNotFound(err) {
-		return nil, nil //nolint: nilnil
+		return nil, nil //nolint:nilnil
 	} else if err != nil {
 		log.Info("failed to get current service entry", "name", name, "error", err.Error())
 
