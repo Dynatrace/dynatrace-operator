@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# may be set to "kubernetes", "openshift", "gke-autopilot" (deprecated)
+# special handling for "openshift" and "gke-autopilot" (deprecated)
 platform: ""
 
 #image qualifier; OBSOLETE -> use imageref instead!

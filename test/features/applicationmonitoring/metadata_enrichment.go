@@ -188,7 +188,7 @@ func deploymentPodsHaveOnlyMetadataEnrichmentInitContainer(sampleApp *sample.App
 }
 
 // podHasCompleteInitContainer checks if the sample has BOTH the metadata-enrichment and oneagent parts added to it.
-func podHasCompleteInitContainer(samplePod *sample.App) features.Func { //nolint: dupl
+func podHasCompleteInitContainer(samplePod *sample.App) features.Func { //nolint:dupl
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		testPod := samplePod.GetPods(ctx, t, envConfig.Client().Resources()).Items[0]
 		initContainers := testPod.Spec.InitContainers
@@ -211,7 +211,7 @@ func podHasCompleteInitContainer(samplePod *sample.App) features.Func { //nolint
 	}
 }
 
-func podHasOnlyOneAgentInitContainer(samplePod *sample.App) features.Func { //nolint: dupl
+func podHasOnlyOneAgentInitContainer(samplePod *sample.App) features.Func { //nolint:dupl
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		testPod := samplePod.GetPods(ctx, t, envConfig.Client().Resources()).Items[0]
 		initContainers := testPod.Spec.InitContainers

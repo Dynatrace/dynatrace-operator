@@ -239,14 +239,17 @@ func (dk *DynaKube) ImagePullSecretReferences() []corev1.LocalObjectReference {
 }
 
 func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {
-	return dk.HostMonitoringMode() || dk.CloudNativeFullstackMode()
+	return (dk.HostMonitoringMode() || dk.CloudNativeFullstackMode()) &&
+		dk.FeatureReadOnlyOneAgent()
 }
 
 func (dk *DynaKube) NeedsCSIDriver() bool {
 	isAppMonitoringWithCSI := dk.ApplicationMonitoringMode() &&
 		dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver
 
-	return dk.CloudNativeFullstackMode() || isAppMonitoringWithCSI || dk.HostMonitoringMode()
+	isHostMonitoringWithCSI := dk.HostMonitoringMode() && dk.FeatureReadOnlyOneAgent()
+
+	return dk.CloudNativeFullstackMode() || isAppMonitoringWithCSI || isHostMonitoringWithCSI
 }
 
 func (dk *DynaKube) NeedAppInjection() bool {

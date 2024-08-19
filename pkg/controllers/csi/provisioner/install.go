@@ -97,7 +97,7 @@ func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dk 
 	return targetVersion, nil
 }
 
-func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, agentInstaller installer.Installer, dk dynakube.DynaKube, targetDir, targetVersion, tenantUUID string) error { //nolint: revive
+func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, agentInstaller installer.Installer, dk dynakube.DynaKube, targetDir, targetVersion, tenantUUID string) error { //nolint:revive
 	eventRecorder := updaterEventRecorder{
 		recorder: provisioner.recorder,
 		dk:       &dk,

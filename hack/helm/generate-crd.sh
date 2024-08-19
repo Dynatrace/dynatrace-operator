@@ -18,8 +18,7 @@ sed "s/namespace: dynatrace/namespace: {{.Release.Namespace}}/" "${SOURCE_CRD_FI
 mv "${SOURCE_CRD_DIR}/tmp_crd" "${SOURCE_CRD_FILE}"
 
 # Define the header for the helm yaml file
-HELM_HEADER="{{- include \"dynatrace-operator.platformRequired\" . }}
-{{ if .Values.installCRD }}"
+HELM_HEADER="{{ if .Values.installCRD }}"
 
 # Get the previously patched crd content
 CRD_CONTENT="$(cat "${SOURCE_CRD_FILE}")"

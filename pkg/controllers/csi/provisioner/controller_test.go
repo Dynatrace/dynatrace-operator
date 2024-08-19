@@ -3,7 +3,7 @@ package csiprovisioner
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -52,7 +52,7 @@ type mkDirAllErrorFs struct {
 }
 
 func (fs *mkDirAllErrorFs) MkdirAll(_ string, _ os.FileMode) error {
-	return fmt.Errorf(errorMsg)
+	return errors.New(errorMsg)
 }
 
 func TestOneAgentProvisioner_Reconcile(t *testing.T) {
@@ -260,7 +260,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
-		mockDtcBuilder.On("Build").Return(nil, fmt.Errorf(errorMsg))
+		mockDtcBuilder.On("Build").Return(nil, errors.New(errorMsg))
 
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
