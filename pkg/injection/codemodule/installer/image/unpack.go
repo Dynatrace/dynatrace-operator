@@ -91,7 +91,7 @@ func (installer *Installer) pullOCIimage(image containerv1.Image, imageName stri
 		return errors.WithStack(err)
 	}
 
-	err = installer.unpackOciImage(layers, filepath.Join(imageCacheDir, ref.Identifier()), targetDir)
+	err = installer.unpackOciImage(layers, imageCachePath, targetDir)
 	if err != nil {
 		log.Info("failed to unpackOciImage", "error", err)
 

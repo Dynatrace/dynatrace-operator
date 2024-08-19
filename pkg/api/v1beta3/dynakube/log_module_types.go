@@ -2,48 +2,48 @@ package dynakube
 
 import corev1 "k8s.io/api/core/v1"
 
-type LogMonitoringSpec struct {
+type LogModuleSpec struct {
 	Enabled bool `json:"enabled"`
 }
 
-type LogAgentSpec struct {
-	// Add custom LogAgent annotations
+type LogModuleDaemonSetSpec struct {
+	// Add custom annotations to the LogModule pods
 	// +kubebuilder:validation:Optional
 	Annotations map[string]string `json:"annotations,omitempty"`
 
-	// Add custom LogAgent labels
+	// Add custom labels to the LogModule pods
 	// +kubebuilder:validation:Optional
 	Labels map[string]string `json:"labels,omitempty"`
 
-	// Node selector to control the selection of nodes for the LogAgent pods
+	// Node selector to control the selection of nodes for the LogModule pods
 	// +kubebuilder:validation:Optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
-	// Overrides the default image
+	// Overrides the default image for the LogModule pods
 	// +kubebuilder:validation:Optional
 	ImageRef ImageRefSpec `json:"imageRef,omitempty"`
 
-	// Sets DNS Policy for the ActiveGate pods
+	// Sets DNS Policy for the LogModule pods
 	// +kubebuilder:validation:Optional
 	DNSPolicy corev1.DNSPolicy `json:"dnsPolicy,omitempty"`
 
-	// Assign a priority class to the LogAgent pods. By default, no class is set
+	// Assign a priority class to the LogModule pods. By default, no class is set
 	// +kubebuilder:validation:Optional
 	PriorityClassName string `json:"priorityClassName,omitempty"`
 
-	// The SecComp Profile that will be configured in order to run in secure computing mode
+	// The SecComp Profile that will be configured in order to run in secure computing mode for the LogModule pods
 	// +kubebuilder:validation:Optional
 	SecCompProfile string `json:"secCompProfile,omitempty"`
 
-	// Define resources' requests and limits for single LogAgent pod
+	// Define resources' requests and limits for all the LogModule pods
 	// +kubebuilder:validation:Optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
-	// Set tolerations for the LogAgent pods
+	// Set tolerations for the LogModule pods
 	// +kubebuilder:validation:Optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
-	// Set additional arguments to the LogAgent pods
+	// Set additional arguments to the LogModule main container
 	// +kubebuilder:validation:Optional
 	Args []string `json:"args,omitempty"`
 }
