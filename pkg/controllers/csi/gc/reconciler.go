@@ -95,7 +95,7 @@ func getDynakubeFromRequest(ctx context.Context, apiReader client.Reader, reques
 		if k8serrors.IsNotFound(err) {
 			log.Info("given DynaKube object not found")
 
-			return nil, nil //nolint: nilnil
+			return nil, nil //nolint:nilnil
 		}
 
 		log.Info("failed to get DynaKube object")

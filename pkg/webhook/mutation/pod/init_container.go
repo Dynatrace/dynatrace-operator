@@ -161,7 +161,7 @@ func updateContainerInfo(request *dtwebhook.ReinvocationRequest, installContaine
 
 	containersEnv := env.FindEnvVar(installContainer.Env, consts.ContainerInfoEnv)
 
-	var containersEnvValue []startup.ContainerInfo //nolint: prealloc
+	var containersEnvValue []startup.ContainerInfo //nolint:prealloc
 
 	if containersEnv == nil {
 		containersEnv = &corev1.EnvVar{
