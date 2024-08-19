@@ -169,7 +169,7 @@ func (g *SecretGenerator) PrepareFields(ctx context.Context, dk *dynakube.DynaKu
 		if token, ok := tokens.Data[dtclient.DataIngestToken]; ok {
 			fields[MetricsTokenSecretField] = string(token)
 			// TODO: always add OTLP field or only when exporter is enabled?
-			// TODO: which token to use here?
+			// TODO: which token to use here? what to do if no token is defined?
 			fields[OTLPTokensSecretField] = string(token)
 		}
 		// TODO: always add OTLP fields or only when exporter is enabled?
