@@ -3,8 +3,6 @@ templates:
   - Common/logmodule/clusterrole-logmodule.yaml
 tests:
   - it: logmodule ClusterRole should exist
-    set:
-      platform: openshift
     documentIndex: 0
     asserts:
       - isKind:
@@ -27,8 +25,6 @@ tests:
               - use
   - it: logmodule ClusterRoleBinding should exist
     documentIndex: 1
-    set:
-      platform: openshift
     asserts:
       - isKind:
           of: ClusterRoleBinding
