@@ -82,6 +82,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, co
 func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&dynakube.DynaKube{}).
+		Named("dynakube-controller").
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&appsv1.DaemonSet{}).
 		Owns(&corev1.ConfigMap{}).

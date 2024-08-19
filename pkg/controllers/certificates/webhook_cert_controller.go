@@ -31,6 +31,7 @@ const (
 func Add(mgr manager.Manager, ns string) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
+		Named("webhook-cert-controller").
 		WithEventFilter(eventfilter.ForObjectNameAndNamespace(webhook.DeploymentName, ns)).
 		Complete(newWebhookCertificateController(mgr, nil))
 }
@@ -38,6 +39,7 @@ func Add(mgr manager.Manager, ns string) error {
 func AddBootstrap(mgr manager.Manager, ns string, cancelMgr context.CancelFunc) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
+		Named("webhook-boostrap-controller").
 		WithEventFilter(eventfilter.ForObjectNameAndNamespace(webhook.DeploymentName, ns)).
 		Complete(newWebhookCertificateController(mgr, cancelMgr))
 }
