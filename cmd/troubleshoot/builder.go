@@ -213,7 +213,7 @@ func getAllDynakubesInNamespace(ctx context.Context, log logd.Logger, apiReader 
 	if len(dynakubes.Items) == 0 {
 		logErrorf(log, "no Dynakubes found in namespace '%s'", namespaceName)
 
-		return nil, err
+		return nil, nil
 	}
 
 	return dynakubes.Items, nil
