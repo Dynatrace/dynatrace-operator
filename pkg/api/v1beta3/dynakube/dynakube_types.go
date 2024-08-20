@@ -159,9 +159,9 @@ type DynaKubeSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	Extensions ExtensionsSpec `json:"extensions,omitempty"`
 
-	// General configuration about the LogModule feature.
+	// General configuration about LogMonitoring instances.
 	// +kubebuilder:validation:Optional
-	LogModule LogModuleSpec `json:"logModule,omitempty"`
+	LogMonitoring LogMonitoringSpec `json:"logMonitoring,omitempty"`
 }
 
 type TemplatesSpec struct {
@@ -170,10 +170,8 @@ type TemplatesSpec struct {
 	OpenTelemetryCollector OpenTelemetryCollectorSpec `json:"openTelemetryCollector,omitempty"`
 	// +kubebuilder:validation:Optional
 	ExtensionExecutionController ExtensionExecutionControllerSpec `json:"extensionExecutionController,omitempty"`
-
-	// Low-level configuration options for the LogModule feature.
 	// +kubebuilder:validation:Optional
-	LogModuleDaemonSet LogModuleDaemonSetSpec `json:"logModuleDaemonSet,omitempty"`
+	LogAgent LogAgentSpec `json:"logAgent,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
