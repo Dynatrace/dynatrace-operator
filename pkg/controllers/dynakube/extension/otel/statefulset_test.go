@@ -386,8 +386,8 @@ func TestVolumes(t *testing.T) {
 					SecretName: dk.Spec.Templates.ExtensionExecutionController.TlsRefName,
 					Items: []corev1.KeyToPath{
 						{
-							Key:  consts.ExtensionsTLScertFilename,
-							Path: consts.ExtensionsTLScertFilename,
+							Key:  consts.TLSCrtDataName,
+							Path: consts.TLSCrtDataName,
 						},
 					},
 				},

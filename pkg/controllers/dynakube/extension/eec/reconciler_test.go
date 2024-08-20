@@ -336,11 +336,11 @@ func TestVolumeMounts(t *testing.T) {
 						SecretName: extensionsControllerTlsSecretName,
 						Items: []corev1.KeyToPath{
 							{
-								Key:  "tls.crt",
+								Key:  consts.TLSCrtDataName,
 								Path: "cert.pem",
 							},
 							{
-								Key:  "tls.key",
+								Key:  consts.TLSKeyDataName,
 								Path: "key.pem",
 							},
 						},
@@ -400,11 +400,11 @@ func TestVolumeMounts(t *testing.T) {
 						SecretName: extensionsControllerTlsSecretName,
 						Items: []corev1.KeyToPath{
 							{
-								Key:  "tls.crt",
+								Key:  consts.TLSCrtDataName,
 								Path: "cert.pem",
 							},
 							{
-								Key:  "tls.key",
+								Key:  consts.TLSKeyDataName,
 								Path: "key.pem",
 							},
 						},
@@ -460,11 +460,11 @@ func TestVolumeMounts(t *testing.T) {
 						SecretName: extensionsControllerTlsSecretName,
 						Items: []corev1.KeyToPath{
 							{
-								Key:  "tls.crt",
+								Key:  consts.TLSCrtDataName,
 								Path: "cert.pem",
 							},
 							{
-								Key:  "tls.key",
+								Key:  consts.TLSKeyDataName,
 								Path: "key.pem",
 							},
 						},
@@ -708,12 +708,12 @@ func TestVolumes(t *testing.T) {
 					SecretName: "custom-tls",
 					Items: []corev1.KeyToPath{
 						{
-							Key:  eecTlsCrtFilename,
-							Path: eecTlsCrtFilename,
+							Key:  consts.TLSCrtDataName,
+							Path: consts.TLSCrtDataName,
 						},
 						{
-							Key:  eecTlsKeyFilename,
-							Path: eecTlsKeyFilename,
+							Key:  consts.TLSKeyDataName,
+							Path: consts.TLSKeyDataName,
 						},
 					},
 				},

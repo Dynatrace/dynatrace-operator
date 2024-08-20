@@ -47,8 +47,8 @@ const (
 	envExtensionsModuleExecPath = "/opt/dynatrace/remotepluginmodule/agent/lib64/extensionsmodule"
 	envDsInstallDir             = "/opt/dynatrace/remotepluginmodule/agent/datasources"
 	envActiveGateTrustedCert    = "/var/lib/dynatrace/secrets/ag/server.crt"
-	envEecHttpsCertPathPem      = baseSecretsPath + "/eec/" + eecTlsCrtFilename
-	envEecHttpsPrivKeyPathPem   = baseSecretsPath + "/eec/" + eecTlsKeyFilename
+	envEecHttpsCertPathPem      = baseSecretsPath + "/eec/" + consts.TLSCrtDataName
+	envEecHttpsPrivKeyPathPem   = baseSecretsPath + "/eec/" + consts.TLSKeyDataName
 
 	// Volume names and paths
 	eecTokenMountPath                  = "/var/lib/dynatrace/remotepluginmodule/secrets/tokens"
@@ -71,11 +71,9 @@ const (
 	eecTlsCertificatesVolumeName       = "custom-tls-certificates"
 
 	// misc
-	tokensVolumeName  = "tokens"
-	eecFile           = "eec.token"
-	logVolumeName     = "log"
-	eecTlsCrtFilename = "tls.crt"
-	eecTlsKeyFilename = "tls.key"
+	tokensVolumeName = "tokens"
+	eecFile          = "eec.token"
+	logVolumeName    = "log"
 )
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
@@ -336,11 +334,11 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 						SecretName: extensionsControllerTlsSecretName,
 						Items: []corev1.KeyToPath{
 							{
-								Key:  "tls.crt",
+								Key:  consts.TLSCrtDataName,
 								Path: "cert.pem",
 							},
 							{
-								Key:  "tls.key",
+								Key:  consts.TLSKeyDataName,
 								Path: "key.pem",
 							},
 						},
@@ -389,12 +387,12 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 						SecretName: dk.Spec.Templates.ExtensionExecutionController.TlsRefName,
 						Items: []corev1.KeyToPath{
 							{
-								Key:  eecTlsCrtFilename,
-								Path: eecTlsCrtFilename,
+								Key:  consts.TLSCrtDataName,
+								Path: consts.TLSCrtDataName,
 							},
 							{
-								Key:  eecTlsKeyFilename,
-								Path: eecTlsKeyFilename,
+								Key:  consts.TLSKeyDataName,
+								Path: consts.TLSKeyDataName,
 							},
 						},
 					},

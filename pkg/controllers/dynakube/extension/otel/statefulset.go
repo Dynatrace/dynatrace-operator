@@ -239,8 +239,8 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 							SecretName: dk.Spec.Templates.ExtensionExecutionController.TlsRefName,
 							Items: []corev1.KeyToPath{
 								{
-									Key:  consts.ExtensionsTLScertFilename,
-									Path: consts.ExtensionsTLScertFilename,
+									Key:  consts.TLSCrtDataName,
+									Path: consts.TLSCrtDataName,
 								},
 							},
 						},
