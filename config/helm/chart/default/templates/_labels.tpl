@@ -116,11 +116,3 @@ Extensions OpenTelemetry Collector (OTelC) labels
 {{ include "dynatrace-operator.commonLabels" . }}
 app.kubernetes.io/component: dynatrace-extensions-collector
 {{- end -}}
-
-{{/*
-LogAgent labels
-*/}}
-{{- define "dynatrace-operator.logModuleLabels" -}}
-{{ include "dynatrace-operator.commonLabels" . }}
-app.kubernetes.io/component: logmodule
-{{- end -}}
