@@ -193,10 +193,13 @@ func TestEnvironmentVariables(t *testing.T) {
 		assert.Equal(t, corev1.EnvVar{Name: envServerUrl, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ".svc.cluster.local:443"}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
 		assert.Equal(t, corev1.EnvVar{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + eecFile}, statefulSet.Spec.Template.Spec.Containers[0].Env[2])
 		assert.Equal(t, corev1.EnvVar{Name: envEecIngestPort, Value: strconv.Itoa(int(collectorPort))}, statefulSet.Spec.Template.Spec.Containers[0].Env[3])
-		assert.Equal(t, corev1.EnvVar{Name: envExtensionsConfPathName, Value: envExtensionsConfPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
-		assert.Equal(t, corev1.EnvVar{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
-		assert.Equal(t, corev1.EnvVar{Name: envDsInstallDirName, Value: envDsInstallDir}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
+		assert.Equal(t, corev1.EnvVar{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
+		assert.Equal(t, corev1.EnvVar{Name: envDsInstallDirName, Value: envDsInstallDir}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sExtServiceUrl, Value: serviceAccountName}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
+		assert.Equal(t, corev1.EnvVar{Name: envHttpsCertPathPem, Value: httpsCertMountPath + "/" + httpsCertFile}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
+		assert.Equal(t, corev1.EnvVar{Name: envHttpsPrivKeyPathPem, Value: httpsCertMountPath + "/" + httpsPrivKeyFile}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
+		assert.Equal(t, corev1.EnvVar{Name: envDSTokenPath, Value: dsTokenPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
 	})
 }
 
@@ -223,6 +226,11 @@ func TestVolumes(t *testing.T) {
 			{
 				Name:      configurationVolumeName,
 				MountPath: configurationMountPath,
+				ReadOnly:  false,
+			},
+			{
+				Name:      httpsCertVolumeName,
+				MountPath: httpsCertMountPath,
 				ReadOnly:  true,
 			},
 		}
@@ -254,6 +262,11 @@ func TestVolumes(t *testing.T) {
 			{
 				Name:      configurationVolumeName,
 				MountPath: configurationMountPath,
+				ReadOnly:  false,
+			},
+			{
+				Name:      httpsCertVolumeName,
+				MountPath: httpsCertMountPath,
 				ReadOnly:  true,
 			},
 			{
@@ -291,6 +304,24 @@ func TestVolumes(t *testing.T) {
 				Name: configurationVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+			{
+				Name: httpsCertVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: extensionsControllerTlsSecretName,
+						Items: []corev1.KeyToPath{
+							{
+								Key:  "tls.crt",
+								Path: "cert.pem",
+							},
+							{
+								Key:  "tls.key",
+								Path: "key.pem",
+							},
+						},
+					},
 				},
 			},
 			{
@@ -340,6 +371,24 @@ func TestVolumes(t *testing.T) {
 				},
 			},
 			{
+				Name: httpsCertVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: extensionsControllerTlsSecretName,
+						Items: []corev1.KeyToPath{
+							{
+								Key:  "tls.crt",
+								Path: "cert.pem",
+							},
+							{
+								Key:  "tls.key",
+								Path: "key.pem",
+							},
+						},
+					},
+				},
+			},
+			{
 				Name: runtimeVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
@@ -379,6 +428,24 @@ func TestVolumes(t *testing.T) {
 				Name: configurationVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+			{
+				Name: httpsCertVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: extensionsControllerTlsSecretName,
+						Items: []corev1.KeyToPath{
+							{
+								Key:  "tls.crt",
+								Path: "cert.pem",
+							},
+							{
+								Key:  "tls.key",
+								Path: "key.pem",
+							},
+						},
+					},
 				},
 			},
 			{
@@ -577,11 +644,22 @@ func TestServiceAccountName(t *testing.T) {
 }
 
 func TestSecurityContext(t *testing.T) {
-	t.Run("the default securityContext is set", func(t *testing.T) {
+	t.Run("securityContext is set", func(t *testing.T) {
 		statefulSet := getStatefulset(t, getTestDynakube())
 
-		assert.NotNil(t, statefulSet.Spec.Template.Spec.SecurityContext)
-		assert.NotNil(t, statefulSet.Spec.Template.Spec.Containers[0].SecurityContext)
+		require.NotNil(t, statefulSet.Spec.Template.Spec.SecurityContext)
+		assert.Equal(t, corev1.SeccompProfileTypeRuntimeDefault, statefulSet.Spec.Template.Spec.SecurityContext.SeccompProfile.Type)
+
+		require.NotNil(t, statefulSet.Spec.Template.Spec.Containers[0].SecurityContext)
+		assert.Equal(t, int64(1001), *statefulSet.Spec.Template.Spec.Containers[0].SecurityContext.RunAsUser)
+		assert.Equal(t, int64(1001), *statefulSet.Spec.Template.Spec.Containers[0].SecurityContext.RunAsGroup)
+		assert.False(t, *statefulSet.Spec.Template.Spec.Containers[0].SecurityContext.Privileged)
+		assert.True(t, *statefulSet.Spec.Template.Spec.Containers[0].SecurityContext.RunAsNonRoot)
+		assert.True(t, *statefulSet.Spec.Template.Spec.Containers[0].SecurityContext.ReadOnlyRootFilesystem)
+		assert.False(t, *statefulSet.Spec.Template.Spec.Containers[0].SecurityContext.AllowPrivilegeEscalation)
+
+		require.Len(t, statefulSet.Spec.Template.Spec.Containers[0].SecurityContext.Capabilities.Drop, 1)
+		assert.Equal(t, corev1.Capability("ALL"), statefulSet.Spec.Template.Spec.Containers[0].SecurityContext.Capabilities.Drop[0])
 	})
 }
 

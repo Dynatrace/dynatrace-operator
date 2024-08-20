@@ -23,9 +23,9 @@ func (_m *Reconciler) EXPECT() *Reconciler_Expecter {
 	return &Reconciler_Expecter{mock: &_m.Mock}
 }
 
-// ReconcileAPIUrl provides a mock function with given fields: ctx, _a1
-func (_m *Reconciler) ReconcileAPIUrl(ctx context.Context, _a1 *dynakube.DynaKube) error {
-	ret := _m.Called(ctx, _a1)
+// ReconcileAPIUrl provides a mock function with given fields: ctx, dk
+func (_m *Reconciler) ReconcileAPIUrl(ctx context.Context, dk *dynakube.DynaKube) error {
+	ret := _m.Called(ctx, dk)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ReconcileAPIUrl")
@@ -33,7 +33,7 @@ func (_m *Reconciler) ReconcileAPIUrl(ctx context.Context, _a1 *dynakube.DynaKub
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *dynakube.DynaKube) error); ok {
-		r0 = rf(ctx, _a1)
+		r0 = rf(ctx, dk)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -48,12 +48,12 @@ type Reconciler_ReconcileAPIUrl_Call struct {
 
 // ReconcileAPIUrl is a helper method to define mock.On call
 //   - ctx context.Context
-//   - _a1 *dynakube.DynaKube
-func (_e *Reconciler_Expecter) ReconcileAPIUrl(ctx interface{}, _a1 interface{}) *Reconciler_ReconcileAPIUrl_Call {
-	return &Reconciler_ReconcileAPIUrl_Call{Call: _e.mock.On("ReconcileAPIUrl", ctx, _a1)}
+//   - dk *dynakube.DynaKube
+func (_e *Reconciler_Expecter) ReconcileAPIUrl(ctx interface{}, dk interface{}) *Reconciler_ReconcileAPIUrl_Call {
+	return &Reconciler_ReconcileAPIUrl_Call{Call: _e.mock.On("ReconcileAPIUrl", ctx, dk)}
 }
 
-func (_c *Reconciler_ReconcileAPIUrl_Call) Run(run func(ctx context.Context, _a1 *dynakube.DynaKube)) *Reconciler_ReconcileAPIUrl_Call {
+func (_c *Reconciler_ReconcileAPIUrl_Call) Run(run func(ctx context.Context, dk *dynakube.DynaKube)) *Reconciler_ReconcileAPIUrl_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*dynakube.DynaKube))
 	})
@@ -70,9 +70,9 @@ func (_c *Reconciler_ReconcileAPIUrl_Call) RunAndReturn(run func(context.Context
 	return _c
 }
 
-// ReconcileActiveGateCommunicationHosts provides a mock function with given fields: ctx, _a1
-func (_m *Reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, _a1 *dynakube.DynaKube) error {
-	ret := _m.Called(ctx, _a1)
+// ReconcileActiveGateCommunicationHosts provides a mock function with given fields: ctx, dk
+func (_m *Reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, dk *dynakube.DynaKube) error {
+	ret := _m.Called(ctx, dk)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ReconcileActiveGateCommunicationHosts")
@@ -80,7 +80,7 @@ func (_m *Reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context,
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *dynakube.DynaKube) error); ok {
-		r0 = rf(ctx, _a1)
+		r0 = rf(ctx, dk)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -95,12 +95,12 @@ type Reconciler_ReconcileActiveGateCommunicationHosts_Call struct {
 
 // ReconcileActiveGateCommunicationHosts is a helper method to define mock.On call
 //   - ctx context.Context
-//   - _a1 *dynakube.DynaKube
-func (_e *Reconciler_Expecter) ReconcileActiveGateCommunicationHosts(ctx interface{}, _a1 interface{}) *Reconciler_ReconcileActiveGateCommunicationHosts_Call {
-	return &Reconciler_ReconcileActiveGateCommunicationHosts_Call{Call: _e.mock.On("ReconcileActiveGateCommunicationHosts", ctx, _a1)}
+//   - dk *dynakube.DynaKube
+func (_e *Reconciler_Expecter) ReconcileActiveGateCommunicationHosts(ctx interface{}, dk interface{}) *Reconciler_ReconcileActiveGateCommunicationHosts_Call {
+	return &Reconciler_ReconcileActiveGateCommunicationHosts_Call{Call: _e.mock.On("ReconcileActiveGateCommunicationHosts", ctx, dk)}
 }
 
-func (_c *Reconciler_ReconcileActiveGateCommunicationHosts_Call) Run(run func(ctx context.Context, _a1 *dynakube.DynaKube)) *Reconciler_ReconcileActiveGateCommunicationHosts_Call {
+func (_c *Reconciler_ReconcileActiveGateCommunicationHosts_Call) Run(run func(ctx context.Context, dk *dynakube.DynaKube)) *Reconciler_ReconcileActiveGateCommunicationHosts_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*dynakube.DynaKube))
 	})
@@ -117,9 +117,9 @@ func (_c *Reconciler_ReconcileActiveGateCommunicationHosts_Call) RunAndReturn(ru
 	return _c
 }
 
-// ReconcileCodeModuleCommunicationHosts provides a mock function with given fields: ctx, _a1
-func (_m *Reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, _a1 *dynakube.DynaKube) error {
-	ret := _m.Called(ctx, _a1)
+// ReconcileCodeModuleCommunicationHosts provides a mock function with given fields: ctx, dk
+func (_m *Reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, dk *dynakube.DynaKube) error {
+	ret := _m.Called(ctx, dk)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ReconcileCodeModuleCommunicationHosts")
@@ -127,7 +127,7 @@ func (_m *Reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context,
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *dynakube.DynaKube) error); ok {
-		r0 = rf(ctx, _a1)
+		r0 = rf(ctx, dk)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -142,12 +142,12 @@ type Reconciler_ReconcileCodeModuleCommunicationHosts_Call struct {
 
 // ReconcileCodeModuleCommunicationHosts is a helper method to define mock.On call
 //   - ctx context.Context
-//   - _a1 *dynakube.DynaKube
-func (_e *Reconciler_Expecter) ReconcileCodeModuleCommunicationHosts(ctx interface{}, _a1 interface{}) *Reconciler_ReconcileCodeModuleCommunicationHosts_Call {
-	return &Reconciler_ReconcileCodeModuleCommunicationHosts_Call{Call: _e.mock.On("ReconcileCodeModuleCommunicationHosts", ctx, _a1)}
+//   - dk *dynakube.DynaKube
+func (_e *Reconciler_Expecter) ReconcileCodeModuleCommunicationHosts(ctx interface{}, dk interface{}) *Reconciler_ReconcileCodeModuleCommunicationHosts_Call {
+	return &Reconciler_ReconcileCodeModuleCommunicationHosts_Call{Call: _e.mock.On("ReconcileCodeModuleCommunicationHosts", ctx, dk)}
 }
 
-func (_c *Reconciler_ReconcileCodeModuleCommunicationHosts_Call) Run(run func(ctx context.Context, _a1 *dynakube.DynaKube)) *Reconciler_ReconcileCodeModuleCommunicationHosts_Call {
+func (_c *Reconciler_ReconcileCodeModuleCommunicationHosts_Call) Run(run func(ctx context.Context, dk *dynakube.DynaKube)) *Reconciler_ReconcileCodeModuleCommunicationHosts_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*dynakube.DynaKube))
 	})

@@ -47,6 +47,7 @@ func Add(mgr manager.Manager, _ string) error {
 func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Node{}).
+		Named("nodes-controller").
 		Complete(controller)
 }
 

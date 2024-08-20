@@ -2,7 +2,6 @@ package troubleshoot
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 
@@ -212,10 +211,9 @@ func getAllDynakubesInNamespace(ctx context.Context, log logd.Logger, apiReader 
 	}
 
 	if len(dynakubes.Items) == 0 {
-		err = fmt.Errorf("no Dynakubes found in namespace '%s'", namespaceName)
-		logErrorf(log, err.Error())
+		logErrorf(log, "no Dynakubes found in namespace '%s'", namespaceName)
 
-		return nil, err
+		return nil, nil
 	}
 
 	return dynakubes.Items, nil

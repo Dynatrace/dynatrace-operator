@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	dtfake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	configmock "github.com/Dynatrace/dynatrace-operator/test/mocks/cmd/config"
 	providermock "github.com/Dynatrace/dynatrace-operator/test/mocks/cmd/manager"
 	managermock "github.com/Dynatrace/dynatrace-operator/test/mocks/sigs.k8s.io/controller-runtime/pkg/manager"
@@ -165,9 +166,9 @@ func TestOperatorCommand(t *testing.T) {
 		mockMgr.On("GetScheme").Return(scheme.Scheme)
 		mockMgr.On("GetClient").Return(clt)
 		mockMgr.On("GetAPIReader").Return(clt)
-		mockMgr.On("GetControllerOptions").Return(config.Controller{})
+		mockMgr.On("GetControllerOptions").Return(config.Controller{SkipNameValidation: address.Of(true)})
 		mockMgr.On("GetLogger").Return(logr.Logger{})
-		mockMgr.On("Add", mock.AnythingOfType("*controller.Controller")).Return(nil)
+		mockMgr.On("Add", mock.AnythingOfType("*controller.Controller[sigs.k8s.io/controller-runtime/pkg/reconcile.Request]")).Return(nil)
 		mockMgr.On("GetCache").Return(nil)
 
 		mockMgrProvider := providermock.NewProvider(t)

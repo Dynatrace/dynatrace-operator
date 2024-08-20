@@ -90,6 +90,7 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metad
 func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&dynakube.DynaKube{}).
+		Named("provisioner-controller").
 		Complete(provisioner)
 }
 

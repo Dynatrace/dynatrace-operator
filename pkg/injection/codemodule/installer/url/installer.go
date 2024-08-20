@@ -30,7 +30,7 @@ type Properties struct {
 }
 
 func (props *Properties) fillEmptyWithDefaults() {
-	if props.Technologies == nil || len(props.Technologies) == 0 {
+	if len(props.Technologies) == 0 {
 		props.Technologies = []string{"all"}
 	}
 }
