@@ -1,7 +1,6 @@
 package eec
 
 import (
-	"path"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -211,8 +210,8 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envDsInstallDirName, Value: envDsInstallDir},
 		{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID},
 		{Name: envK8sExtServiceUrl, Value: serviceAccountName},
-		{Name: envHttpsCertPathPem, Value: path.Join(httpsCertMountPath, httpsCertFile)},
-		{Name: envHttpsPrivKeyPathPem, Value: path.Join(httpsCertMountPath, httpsPrivKeyFile)},
+		{Name: envHttpsCertPathPem, Value: httpsCertMountPath + "/" + httpsCertFile},
+		{Name: envHttpsPrivKeyPathPem, Value: httpsCertMountPath + "/" + httpsPrivKeyFile},
 		{Name: envDSTokenPath, Value: dsTokenPath},
 	}
 

@@ -1,7 +1,6 @@
 package eec
 
 import (
-	"path"
 	"strconv"
 	"testing"
 
@@ -198,8 +197,8 @@ func TestEnvironmentVariables(t *testing.T) {
 		assert.Equal(t, corev1.EnvVar{Name: envDsInstallDirName, Value: envDsInstallDir}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
 		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
 		assert.Equal(t, corev1.EnvVar{Name: envK8sExtServiceUrl, Value: serviceAccountName}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
-		assert.Equal(t, corev1.EnvVar{Name: envHttpsCertPathPem, Value: path.Join(httpsCertMountPath, httpsCertFile)}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
-		assert.Equal(t, corev1.EnvVar{Name: envHttpsPrivKeyPathPem, Value: path.Join(httpsCertMountPath, httpsPrivKeyFile)}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
+		assert.Equal(t, corev1.EnvVar{Name: envHttpsCertPathPem, Value: httpsCertMountPath + "/" + httpsCertFile}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
+		assert.Equal(t, corev1.EnvVar{Name: envHttpsPrivKeyPathPem, Value: httpsCertMountPath + "/" + httpsPrivKeyFile}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
 		assert.Equal(t, corev1.EnvVar{Name: envDSTokenPath, Value: dsTokenPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
 	})
 }
