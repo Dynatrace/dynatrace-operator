@@ -79,7 +79,6 @@ spec:
         - csi-server
         - --endpoint=unix://csi/csi.sock
         - --node-id=$(KUBE_NODE_NAME)
-        - --health-probe-bind-address=:10080
         env:
         - name: POD_NAMESPACE
           valueFrom:
@@ -94,16 +93,16 @@ spec:
         livenessProbe:
           failureThreshold: 3
           httpGet:
-            path: /livez
-            port: livez
+            path: /healthz
+            port: healthz
             scheme: HTTP
           initialDelaySeconds: 5
           periodSeconds: 5
           successThreshold: 1
           timeoutSeconds: 1
         ports:
-        - containerPort: 10080
-          name: livez
+        - containerPort: 9808
+          name: healthz
           protocol: TCP
         resources:
           {{- if .Values.csidriver.server.resources }}
@@ -207,7 +206,7 @@ spec:
         imagePullPolicy: Always
         args:
         - --csi-address=/csi/csi.sock
-        - --health-port=9898
+        - --health-port=9808
         command:
         - livenessprobe
         resources:
