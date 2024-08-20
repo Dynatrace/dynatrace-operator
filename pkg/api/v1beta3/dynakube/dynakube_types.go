@@ -68,7 +68,7 @@ type DynaKubeValueSource struct { //nolint:revive
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +operator-sdk:csv:customresourcedefinitions:displayName="Dynatrace DynaKube"
-// +operator-sdk:csv:customresourcedefinitions:resources={{StatefulSet,v1,},{DaemonSet,v1,},{Pod,v1,}}.
+// +operator-sdk:csv:customresourcedefinitions:resources={{StatefulSet,v1,},{DaemonSet,v1,},{Pod,v1,}}
 type DynaKube struct {
 	metav1.TypeMeta `json:",inline"`
 
