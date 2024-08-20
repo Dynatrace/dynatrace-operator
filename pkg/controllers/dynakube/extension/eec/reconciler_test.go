@@ -257,6 +257,48 @@ func TestVolumeMounts(t *testing.T) {
 		assert.Equal(t, expectedVolumeMounts, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts)
 	})
 
+	t.Run("volume mounts with PVC", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim = &corev1.PersistentVolumeClaimSpec{
+			Resources: corev1.VolumeResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceStorage: resource.MustParse("1Gi"),
+				},
+			},
+		}
+
+		statefulSet := getStatefulset(t, dk)
+
+		expectedVolumeMounts := []corev1.VolumeMount{
+			{
+				Name:      consts.ExtensionsTokensVolumeName,
+				MountPath: eecTokenMountPath,
+				ReadOnly:  true,
+			},
+			{
+				Name:      logVolumeName,
+				MountPath: logMountPath,
+				ReadOnly:  false,
+			},
+			{
+				Name:      runtimeVolumeName,
+				MountPath: runtimeMountPath,
+				ReadOnly:  false,
+			},
+			{
+				Name:      configurationVolumeName,
+				MountPath: configurationMountPath,
+				ReadOnly:  false,
+			},
+			{
+				Name:      httpsCertVolumeName,
+				MountPath: httpsCertMountPath,
+				ReadOnly:  true,
+			},
+		}
+		assert.Equal(t, expectedVolumeMounts, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts)
+	})
+
 	t.Run("volume mounts when set custom EEC tls certificate", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "custom-tls"
@@ -602,14 +644,6 @@ func TestVolumes(t *testing.T) {
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName: extensionsControllerTlsSecretName,
-					},
-				},
-			},
-			{
-				Name: runtimeVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						ClaimName: runtimePersistentVolumeClaimName,
 					},
 				},
 			},
