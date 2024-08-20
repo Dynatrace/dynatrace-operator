@@ -201,9 +201,19 @@ func TestEnvironmentVariables(t *testing.T) {
 		assert.Equal(t, corev1.EnvVar{Name: envHttpsPrivKeyPathPem, Value: httpsCertMountPath + "/" + httpsPrivKeyFile}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
 		assert.Equal(t, corev1.EnvVar{Name: envDSTokenPath, Value: dsTokenPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
 	})
+
+	t.Run("environment variables with custom EEC tls certificate", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "custom-tls"
+
+		statefulSet := getStatefulset(t, dk)
+
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envEECHttpsCertPathPem, Value: envEecHttpsCertPathPem})
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envEECHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem})
+	})
 }
 
-func TestVolumes(t *testing.T) {
+func TestVolumeMounts(t *testing.T) {
 	t.Run("volume mounts", func(t *testing.T) {
 		statefulSet := getStatefulset(t, getTestDynakube())
 
@@ -235,6 +245,19 @@ func TestVolumes(t *testing.T) {
 			},
 		}
 		assert.Equal(t, expectedVolumeMounts, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts)
+	})
+
+	t.Run("volume mounts when set custom EEC tls certificate", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "custom-tls"
+		statefulSet := getStatefulset(t, dk)
+
+		expectedVolumeMount := corev1.VolumeMount{
+			Name:      eecTlsCertificatesVolumeName,
+			MountPath: baseSecretsPath + "/eec",
+			ReadOnly:  true,
+		}
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
 	})
 
 	t.Run("volume mounts with custom configuration", func(t *testing.T) {
@@ -672,7 +695,36 @@ func TestUpdateStrategy(t *testing.T) {
 	})
 }
 
-func TestActiveGateTrustedCAInsideEEC(t *testing.T) {
+func TestVolumes(t *testing.T) {
+	t.Run("Custom EEC tls certificate is mounted to EEC", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "custom-tls"
+		statefulSet := getStatefulset(t, dk)
+
+		expectedVolume := corev1.Volume{
+			Name: eecTlsCertificatesVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: "custom-tls",
+					Items: []corev1.KeyToPath{
+						{
+							Key:  eecTlsCrtFilename,
+							Path: eecTlsCrtFilename,
+						},
+						{
+							Key:  eecTlsKeyFilename,
+							Path: eecTlsKeyFilename,
+						},
+					},
+				},
+			},
+		}
+
+		require.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
+	})
+}
+
+func TestActiveGateVolumes(t *testing.T) {
 	tlsSecretName := "ag-ca"
 	expectedEnvVar := corev1.EnvVar{Name: envActiveGateTrustedCertName, Value: envActiveGateTrustedCert}
 	expectedVolumeMount := corev1.VolumeMount{

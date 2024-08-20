@@ -24,27 +24,38 @@ const (
 	containerName                    = "extensions-controller"
 	collectorPort                    = int32(14599)
 	serviceAccountName               = "dynatrace-extensions-controller"
+	baseSecretsPath                  = "/var/lib/dynatrace/secrets"
 
+	// Env variable names
 	envTenantId                     = "TenantId"
 	envServerUrl                    = "ServerUrl"
 	envEecTokenPath                 = "EecTokenPath"
 	envEecIngestPort                = "EecIngestPort"
+	envExtensionsConfPathName       = "ExtensionsConfPath"
 	envExtensionsModuleExecPathName = "ExtensionsModuleExecPath"
-	envExtensionsModuleExecPath     = "/opt/dynatrace/remotepluginmodule/agent/lib64/extensionsmodule"
 	envDsInstallDirName             = "DsInstallDir"
 	envDsInstallDir                 = "/opt/dynatrace/remotepluginmodule/agent/datasources"
 	envK8sClusterId                 = "K8sClusterUID"
+	envK8sClusterId                 = "K8sClusterId"
 	envActiveGateTrustedCertName    = "ActiveGateTrustedCert"
 	envActiveGateTrustedCert        = "/var/lib/dynatrace/secrets/ag/server.crt"
 	envK8sExtServiceUrl             = "K8sExtServiceUrl"
 	envHttpsCertPathPem             = "HttpsCertPathPem"
 	envHttpsPrivKeyPathPem          = "HttpsPrivKeyPathPem"
 	envDSTokenPath                  = "DSTokenPath"
+	envEECHttpsCertPathPem          = "HttpsCertPathPem"
+	envEECHttpsPrivKeyPathPem       = "HttpsPrivKeyPathPem"
 
-	tokensVolumeName                   = "tokens"
+	// Env variable values
+	envExtensionsConfPath       = "/opt/dynatrace/remotepluginmodule/agent/conf/extensions.conf"
+	envExtensionsModuleExecPath = "/opt/dynatrace/remotepluginmodule/agent/lib64/extensionsmodule"
+	envDsInstallDir             = "/opt/dynatrace/remotepluginmodule/agent/datasources"
+	envActiveGateTrustedCert    = "/var/lib/dynatrace/secrets/ag/server.crt"
+	envEecHttpsCertPathPem      = baseSecretsPath + "/eec/" + eecTlsCrtFilename
+	envEecHttpsPrivKeyPathPem   = baseSecretsPath + "/eec/" + eecTlsKeyFilename
+
+	// Volume names and paths
 	eecTokenMountPath                  = "/var/lib/dynatrace/remotepluginmodule/secrets/tokens"
-	eecFile                            = "eec.token"
-	logVolumeName                      = "log"
 	logMountPath                       = "/var/lib/dynatrace/remotepluginmodule/log"
 	runtimeVolumeName                  = "agent-runtime"
 	runtimeMountPath                   = "/var/lib/dynatrace/remotepluginmodule/agent/runtime"
@@ -61,6 +72,14 @@ const (
 	httpsCertMountPath                 = "/var/lib/dynatrace/remotepluginmodule/secrets/https/"
 	extensionsControllerTlsSecretName  = "extensions-controller-tls"
 	dsTokenPath                        = "/var/lib/dynatrace/remotepluginmodule/secrets/dsauthtoken"
+	eecTlsCertificatesVolumeName       = "custom-tls-certificates"
+
+	// misc
+	tokensVolumeName  = "tokens"
+	eecFile           = "eec.token"
+	logVolumeName     = "log"
+	eecTlsCrtFilename = "tls.crt"
+	eecTlsKeyFilename = "tls.key"
 )
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
@@ -219,6 +238,11 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envActiveGateTrustedCertName, Value: envActiveGateTrustedCert})
 	}
 
+	if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
+		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envEECHttpsCertPathPem, Value: envEecHttpsCertPathPem})
+		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envEECHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem})
+	}
+
 	return containerEnvs
 }
 
@@ -269,6 +293,14 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
 			Name:      activeGateTrustedCertVolumeName,
 			MountPath: activeGateTrustedCertMountPath,
+			ReadOnly:  true,
+		})
+	}
+
+	if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      eecTlsCertificatesVolumeName,
+			MountPath: baseSecretsPath + "/eec",
 			ReadOnly:  true,
 		})
 	}
@@ -347,6 +379,27 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: dk.Spec.Templates.ExtensionExecutionController.CustomConfig,
+						},
+					},
+				},
+			})
+		}
+
+		if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
+			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
+				Name: eecTlsCertificatesVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: dk.Spec.Templates.ExtensionExecutionController.TlsRefName,
+						Items: []corev1.KeyToPath{
+							{
+								Key:  eecTlsCrtFilename,
+								Path: eecTlsCrtFilename,
+							},
+							{
+								Key:  eecTlsKeyFilename,
+								Path: eecTlsKeyFilename,
+							},
 						},
 					},
 				},
