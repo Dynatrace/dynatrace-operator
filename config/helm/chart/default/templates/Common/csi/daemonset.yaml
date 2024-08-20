@@ -15,6 +15,10 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
+  annotations:
+  {{- if .Values.csidriver.annotations }}
+    {{- toYaml .Values.csidriver.annotations | nindent 4 }}
+  {{- end }}
   labels:
       {{- include "dynatrace-operator.csiLabels" . | nindent 4 }}
   {{- if .Values.csidriver.labels }}
