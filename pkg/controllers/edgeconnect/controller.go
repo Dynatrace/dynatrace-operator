@@ -89,6 +89,7 @@ func NewController(mgr manager.Manager) *Controller {
 func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&edgeconnect.EdgeConnect{}).
+		Named("edgeconnect-controller").
 		Owns(&appsv1.Deployment{}).
 		Complete(controller)
 }

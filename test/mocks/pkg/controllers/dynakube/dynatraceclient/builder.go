@@ -85,9 +85,9 @@ func (_c *Builder_Build_Call) RunAndReturn(run func() (dynatrace.Client, error))
 	return _c
 }
 
-// BuildWithTokenVerification provides a mock function with given fields: dynaKubeStatus
-func (_m *Builder) BuildWithTokenVerification(dynaKubeStatus *dynakube.DynaKubeStatus) (dynatrace.Client, error) {
-	ret := _m.Called(dynaKubeStatus)
+// BuildWithTokenVerification provides a mock function with given fields: dkStatus
+func (_m *Builder) BuildWithTokenVerification(dkStatus *dynakube.DynaKubeStatus) (dynatrace.Client, error) {
+	ret := _m.Called(dkStatus)
 
 	if len(ret) == 0 {
 		panic("no return value specified for BuildWithTokenVerification")
@@ -96,10 +96,10 @@ func (_m *Builder) BuildWithTokenVerification(dynaKubeStatus *dynakube.DynaKubeS
 	var r0 dynatrace.Client
 	var r1 error
 	if rf, ok := ret.Get(0).(func(*dynakube.DynaKubeStatus) (dynatrace.Client, error)); ok {
-		return rf(dynaKubeStatus)
+		return rf(dkStatus)
 	}
 	if rf, ok := ret.Get(0).(func(*dynakube.DynaKubeStatus) dynatrace.Client); ok {
-		r0 = rf(dynaKubeStatus)
+		r0 = rf(dkStatus)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(dynatrace.Client)
@@ -107,7 +107,7 @@ func (_m *Builder) BuildWithTokenVerification(dynaKubeStatus *dynakube.DynaKubeS
 	}
 
 	if rf, ok := ret.Get(1).(func(*dynakube.DynaKubeStatus) error); ok {
-		r1 = rf(dynaKubeStatus)
+		r1 = rf(dkStatus)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -121,12 +121,12 @@ type Builder_BuildWithTokenVerification_Call struct {
 }
 
 // BuildWithTokenVerification is a helper method to define mock.On call
-//   - dynaKubeStatus *dynakube.DynaKubeStatus
-func (_e *Builder_Expecter) BuildWithTokenVerification(dynaKubeStatus interface{}) *Builder_BuildWithTokenVerification_Call {
-	return &Builder_BuildWithTokenVerification_Call{Call: _e.mock.On("BuildWithTokenVerification", dynaKubeStatus)}
+//   - dkStatus *dynakube.DynaKubeStatus
+func (_e *Builder_Expecter) BuildWithTokenVerification(dkStatus interface{}) *Builder_BuildWithTokenVerification_Call {
+	return &Builder_BuildWithTokenVerification_Call{Call: _e.mock.On("BuildWithTokenVerification", dkStatus)}
 }
 
-func (_c *Builder_BuildWithTokenVerification_Call) Run(run func(dynaKubeStatus *dynakube.DynaKubeStatus)) *Builder_BuildWithTokenVerification_Call {
+func (_c *Builder_BuildWithTokenVerification_Call) Run(run func(dkStatus *dynakube.DynaKubeStatus)) *Builder_BuildWithTokenVerification_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(*dynakube.DynaKubeStatus))
 	})
@@ -191,9 +191,9 @@ func (_c *Builder_SetContext_Call) RunAndReturn(run func(context.Context) dynatr
 	return _c
 }
 
-// SetDynakube provides a mock function with given fields: _a0
-func (_m *Builder) SetDynakube(_a0 dynakube.DynaKube) dynatraceclient.Builder {
-	ret := _m.Called(_a0)
+// SetDynakube provides a mock function with given fields: dk
+func (_m *Builder) SetDynakube(dk dynakube.DynaKube) dynatraceclient.Builder {
+	ret := _m.Called(dk)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SetDynakube")
@@ -201,7 +201,7 @@ func (_m *Builder) SetDynakube(_a0 dynakube.DynaKube) dynatraceclient.Builder {
 
 	var r0 dynatraceclient.Builder
 	if rf, ok := ret.Get(0).(func(dynakube.DynaKube) dynatraceclient.Builder); ok {
-		r0 = rf(_a0)
+		r0 = rf(dk)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(dynatraceclient.Builder)
@@ -217,12 +217,12 @@ type Builder_SetDynakube_Call struct {
 }
 
 // SetDynakube is a helper method to define mock.On call
-//   - _a0 dynakube.DynaKube
-func (_e *Builder_Expecter) SetDynakube(_a0 interface{}) *Builder_SetDynakube_Call {
-	return &Builder_SetDynakube_Call{Call: _e.mock.On("SetDynakube", _a0)}
+//   - dk dynakube.DynaKube
+func (_e *Builder_Expecter) SetDynakube(dk interface{}) *Builder_SetDynakube_Call {
+	return &Builder_SetDynakube_Call{Call: _e.mock.On("SetDynakube", dk)}
 }
 
-func (_c *Builder_SetDynakube_Call) Run(run func(_a0 dynakube.DynaKube)) *Builder_SetDynakube_Call {
+func (_c *Builder_SetDynakube_Call) Run(run func(dk dynakube.DynaKube)) *Builder_SetDynakube_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(dynakube.DynaKube))
 	})

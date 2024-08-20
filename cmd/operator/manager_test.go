@@ -7,6 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	managermock "github.com/Dynatrace/dynatrace-operator/test/mocks/sigs.k8s.io/controller-runtime/pkg/manager"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
@@ -79,9 +80,9 @@ func testHealthzAndReadyz(t *testing.T, createProviderAndRunManager func(mockMgr
 	mockMgr.On("GetScheme").Return(scheme.Scheme)
 	mockMgr.On("GetClient").Return(client)
 	mockMgr.On("GetAPIReader").Return(client)
-	mockMgr.On("GetControllerOptions").Return(config.Controller{})
+	mockMgr.On("GetControllerOptions").Return(config.Controller{SkipNameValidation: address.Of(true)})
 	mockMgr.On("GetLogger").Return(logr.Logger{})
-	mockMgr.On("Add", mock.AnythingOfType("*controller.Controller")).Return(nil)
+	mockMgr.On("Add", mock.AnythingOfType("*controller.Controller[sigs.k8s.io/controller-runtime/pkg/reconcile.Request]")).Return(nil)
 	mockMgr.On("GetCache").Return(nil)
 	mockMgr.On("GetRESTMapper").Return(nil)
 	mockMgr.On("GetHTTPClient").Return(http.DefaultClient)
