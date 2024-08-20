@@ -299,7 +299,7 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 
 	if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			Name:      eecTlsCertificatesVolumeName,
+			Name:      consts.ExtensionsCustomTlsCertificate,
 			MountPath: baseSecretsPath + "/eec",
 			ReadOnly:  true,
 		})

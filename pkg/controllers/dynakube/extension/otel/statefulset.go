@@ -18,27 +18,30 @@ import (
 )
 
 const (
-	serviceAccountName       = "dynatrace-extensions-collector"
-	containerName            = "collector"
-	tokenSecretKey           = "otelc.token"
-	caCertsVolumeName        = "cacerts"
-	defaultImageRepo         = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
-	defaultImageTag          = "0.7.0"
-	defaultOLTPgrpcPort      = "10001"
-	defaultOLTPhttpPort      = "10002"
-	defaultPodNamePrefix     = "extensions-collector"
-	defaultReplicas          = 1
-	envShards                = "SHARDS"
-	envShardId               = "SHARD_ID"
-	envPodNamePrefix         = "POD_NAME_PREFIX"
-	envPodName               = "POD_NAME"
-	envOTLPgrpcPort          = "OTLP_GRPC_PORT"
-	envOTLPhttpPort          = "OTLP_HTTP_PORT"
-	envOTLPtoken             = "OTLP_TOKEN"
-	envTrustedCAs            = "TRUSTED_CAS"
-	trustedCAsFile           = "rootca.pem"
-	trustedCAVolumeMountPath = "/tls/custom/cacerts"
-	trustedCAVolumePath      = trustedCAVolumeMountPath + "/certs"
+	serviceAccountName              = "dynatrace-extensions-collector"
+	containerName                   = "collector"
+	tokenSecretKey                  = "otelc.token"
+	caCertsVolumeName               = "cacerts"
+	defaultImageRepo                = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
+	defaultImageTag                 = "0.7.0"
+	defaultOLTPgrpcPort             = "10001"
+	defaultOLTPhttpPort             = "10002"
+	defaultPodNamePrefix            = "extensions-collector"
+	defaultReplicas                 = 1
+	envShards                       = "SHARDS"
+	envShardId                      = "SHARD_ID"
+	envPodNamePrefix                = "POD_NAME_PREFIX"
+	envPodName                      = "POD_NAME"
+	envOTLPgrpcPort                 = "OTLP_GRPC_PORT"
+	envOTLPhttpPort                 = "OTLP_HTTP_PORT"
+	envOTLPtoken                    = "OTLP_TOKEN"
+	envTrustedCAs                   = "TRUSTED_CAS"
+	envEECcontrollerTls             = "EXTENSIONS_CONTROLLER_TLS"
+	trustedCAsFile                  = "rootca.pem"
+	trustedCAVolumeMountPath        = "/tls/custom/cacerts"
+	trustedCAVolumePath             = trustedCAVolumeMountPath + "/certs"
+	customEecTlsCertificatePath     = "/tls/custom/eec"
+	customEecTlsCertificateFullPath = customEecTlsCertificatePath + "/tls.crt"
 )
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
@@ -162,6 +165,10 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		envs = append(envs, corev1.EnvVar{Name: envTrustedCAs, Value: trustedCAVolumePath})
 	}
 
+	if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
+		envs = append(envs, corev1.EnvVar{Name: envEECcontrollerTls, Value: customEecTlsCertificateFullPath})
+	}
+
 	return envs
 }
 
@@ -222,19 +229,45 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				},
 			}
 		}
+
+		if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
+			o.Spec.Template.Spec.Volumes = []corev1.Volume{
+				{
+					Name: consts.ExtensionsCustomTlsCertificate,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: dk.Spec.Templates.ExtensionExecutionController.TlsRefName,
+							Items: []corev1.KeyToPath{
+								{
+									Key:  consts.ExtensionsTLScertFilename,
+									Path: consts.ExtensionsTLScertFilename,
+								},
+							},
+						},
+					},
+				},
+			}
+		}
 	}
 }
 
 func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
+	var vm []corev1.VolumeMount
 	if dk.Spec.TrustedCAs != "" {
-		return []corev1.VolumeMount{
-			{
-				Name:      caCertsVolumeName,
-				MountPath: trustedCAVolumeMountPath,
-				ReadOnly:  true,
-			},
-		}
+		vm = append(vm, corev1.VolumeMount{
+			Name:      caCertsVolumeName,
+			MountPath: trustedCAVolumeMountPath,
+			ReadOnly:  true,
+		})
 	}
 
-	return []corev1.VolumeMount{}
+	if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
+		vm = append(vm, corev1.VolumeMount{
+			Name:      consts.ExtensionsCustomTlsCertificate,
+			MountPath: customEecTlsCertificatePath,
+			ReadOnly:  true,
+		})
+	}
+
+	return vm
 }

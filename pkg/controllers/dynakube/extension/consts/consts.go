@@ -16,4 +16,7 @@ const (
 	ExtensionsControllerSuffix        = "-extensions-controller"
 	ExtensionsCollectorComPort        = 14599
 	ExtensionsCollectorTargetPortName = "collector-com"
+
+	ExtensionsCustomTlsCertificate = "custom-tls-certificates"
+	ExtensionsTLScertFilename      = "tls.crt"
 )

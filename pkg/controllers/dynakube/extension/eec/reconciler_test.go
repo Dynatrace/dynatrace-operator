@@ -253,7 +253,7 @@ func TestVolumeMounts(t *testing.T) {
 		statefulSet := getStatefulset(t, dk)
 
 		expectedVolumeMount := corev1.VolumeMount{
-			Name:      eecTlsCertificatesVolumeName,
+			Name:      consts.ExtensionsCustomTlsCertificate,
 			MountPath: baseSecretsPath + "/eec",
 			ReadOnly:  true,
 		}
@@ -702,7 +702,7 @@ func TestVolumes(t *testing.T) {
 		statefulSet := getStatefulset(t, dk)
 
 		expectedVolume := corev1.Volume{
-			Name: eecTlsCertificatesVolumeName,
+			Name: consts.ExtensionsCustomTlsCertificate,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: "custom-tls",
