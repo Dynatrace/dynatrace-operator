@@ -119,7 +119,7 @@ func TestConditions(t *testing.T) {
 
 	t.Run("prometheus is disabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Extensions.Prometheus.Enabled = false
+		dk.Extensions().Prometheus.Enabled = false
 		conditions.SetStatefulSetCreated(dk.Conditions(), extensionsControllerStatefulSetConditionType, dynakube.ExtensionsExecutionControllerStatefulsetName)
 
 		mockK8sClient := fake.NewClient(dk)

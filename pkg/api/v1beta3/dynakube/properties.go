@@ -109,7 +109,7 @@ func (dk *DynaKube) ActiveGateMode() bool {
 }
 
 func (dk *DynaKube) IsExtensionsEnabled() bool {
-	return dk.Spec.Extensions.Prometheus.Enabled
+	return dk.Extensions().Prometheus.Enabled
 }
 
 func (dk *DynaKube) IsActiveGateMode(mode CapabilityDisplayName) bool {
@@ -575,5 +575,5 @@ func (dk *DynaKube) IsOneAgentCommunicationRouteClear() bool {
 }
 
 func (dk *DynaKube) PrometheusEnabled() bool {
-	return dk.Spec.Extensions.Prometheus.Enabled
+	return dk.Extensions().Prometheus.Enabled
 }

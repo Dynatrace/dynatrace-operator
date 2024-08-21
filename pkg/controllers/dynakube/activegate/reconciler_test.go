@@ -423,7 +423,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		require.NoError(t, err)
 
 		// disable extensions
-		r.dk.Spec.Extensions.Prometheus.Enabled = false
+		r.dk.Extensions().Prometheus.Enabled = false
 		r.connectionReconciler = createGenericReconcilerMock(t)
 		r.versionReconciler = createVersionReconcilerMock(t)
 		r.pullSecretReconciler = createGenericReconcilerMock(t)

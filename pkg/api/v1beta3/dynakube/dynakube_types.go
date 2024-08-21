@@ -157,7 +157,11 @@ type DynaKubeSpec struct { //nolint:revive
 	EnableIstio bool `json:"enableIstio,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Extensions ExtensionsSpec `json:"extensions,omitempty"`
+	extensions ExtensionsSpec // `json:"extensions,omitempty"`
+}
+
+func (dk *DynaKube) Extensions() *ExtensionsSpec {
+	return &dk.Spec.extensions
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
