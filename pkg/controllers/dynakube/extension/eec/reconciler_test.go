@@ -197,8 +197,8 @@ func TestEnvironmentVariables(t *testing.T) {
 		assert.Equal(t, corev1.EnvVar{Name: envDsInstallDirName, Value: envDsInstallDir}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
 		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
 		assert.Equal(t, corev1.EnvVar{Name: envK8sExtServiceUrl, Value: serviceAccountName}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
-		assert.Equal(t, corev1.EnvVar{Name: envHttpsCertPathPem, Value: httpsCertMountPath + "/" + httpsCertFile}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
-		assert.Equal(t, corev1.EnvVar{Name: envHttpsPrivKeyPathPem, Value: httpsCertMountPath + "/" + httpsPrivKeyFile}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
+		assert.Equal(t, corev1.EnvVar{Name: envHttpsCertPathPem, Value: httpsCertMountPath + "/" + consts.TLSKeyDataName}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
+		assert.Equal(t, corev1.EnvVar{Name: envHttpsPrivKeyPathPem, Value: httpsCertMountPath + "/" + consts.TLSKeyDataName}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
 		assert.Equal(t, corev1.EnvVar{Name: envDSTokenPath, Value: dsTokenPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
 	})
 
@@ -208,8 +208,8 @@ func TestEnvironmentVariables(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envEECHttpsCertPathPem, Value: envEecHttpsCertPathPem})
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envEECHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem})
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envHttpsCertPathPem, Value: envEecHttpsCertPathPem})
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem})
 	})
 }
 
@@ -288,13 +288,13 @@ func TestVolumeMounts(t *testing.T) {
 				ReadOnly:  false,
 			},
 			{
-				Name:      httpsCertVolumeName,
-				MountPath: httpsCertMountPath,
+				Name:      customConfigVolumeName,
+				MountPath: customConfigMountPath,
 				ReadOnly:  true,
 			},
 			{
-				Name:      customConfigVolumeName,
-				MountPath: customConfigMountPath,
+				Name:      httpsCertVolumeName,
+				MountPath: httpsCertMountPath,
 				ReadOnly:  true,
 			},
 		}
@@ -334,16 +334,6 @@ func TestVolumeMounts(t *testing.T) {
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName: extensionsControllerTlsSecretName,
-						Items: []corev1.KeyToPath{
-							{
-								Key:  consts.TLSCrtDataName,
-								Path: "cert.pem",
-							},
-							{
-								Key:  consts.TLSKeyDataName,
-								Path: "key.pem",
-							},
-						},
 					},
 				},
 			},
@@ -398,16 +388,6 @@ func TestVolumeMounts(t *testing.T) {
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName: extensionsControllerTlsSecretName,
-						Items: []corev1.KeyToPath{
-							{
-								Key:  consts.TLSCrtDataName,
-								Path: "cert.pem",
-							},
-							{
-								Key:  consts.TLSKeyDataName,
-								Path: "key.pem",
-							},
-						},
 					},
 				},
 			},
@@ -458,16 +438,6 @@ func TestVolumeMounts(t *testing.T) {
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName: extensionsControllerTlsSecretName,
-						Items: []corev1.KeyToPath{
-							{
-								Key:  consts.TLSCrtDataName,
-								Path: "cert.pem",
-							},
-							{
-								Key:  consts.TLSKeyDataName,
-								Path: "key.pem",
-							},
-						},
 					},
 				},
 			},
@@ -477,6 +447,7 @@ func TestVolumeMounts(t *testing.T) {
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
+
 			{
 				Name: customConfigVolumeName,
 				VolumeSource: corev1.VolumeSource{
@@ -706,16 +677,6 @@ func TestVolumes(t *testing.T) {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: "custom-tls",
-					Items: []corev1.KeyToPath{
-						{
-							Key:  consts.TLSCrtDataName,
-							Path: consts.TLSCrtDataName,
-						},
-						{
-							Key:  consts.TLSKeyDataName,
-							Path: consts.TLSKeyDataName,
-						},
-					},
 				},
 			},
 		}

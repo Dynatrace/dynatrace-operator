@@ -39,17 +39,13 @@ const (
 	envHttpsCertPathPem             = "HttpsCertPathPem"
 	envHttpsPrivKeyPathPem          = "HttpsPrivKeyPathPem"
 	envDSTokenPath                  = "DSTokenPath"
-	envEECHttpsCertPathPem          = "HttpsCertPathPem"
-	envEECHttpsPrivKeyPathPem       = "HttpsPrivKeyPathPem"
-
 	// Env variable values
 	envExtensionsConfPath       = "/opt/dynatrace/remotepluginmodule/agent/conf/extensions.conf"
 	envExtensionsModuleExecPath = "/opt/dynatrace/remotepluginmodule/agent/lib64/extensionsmodule"
 	envDsInstallDir             = "/opt/dynatrace/remotepluginmodule/agent/datasources"
-	envActiveGateTrustedCert    = "/var/lib/dynatrace/secrets/ag/server.crt"
+	envActiveGateTrustedCert    = "/var/lib/dynatrace/secrets/ag/" + activeGateTrustedCertSecretKeyPath
 	envEecHttpsCertPathPem      = baseSecretsPath + "/eec/" + consts.TLSCrtDataName
 	envEecHttpsPrivKeyPathPem   = baseSecretsPath + "/eec/" + consts.TLSKeyDataName
-
 	// Volume names and paths
 	eecTokenMountPath                  = "/var/lib/dynatrace/remotepluginmodule/secrets/tokens"
 	logMountPath                       = "/var/lib/dynatrace/remotepluginmodule/log"
@@ -63,12 +59,9 @@ const (
 	activeGateTrustedCertMountPath     = "/var/lib/dynatrace/secrets/ag"
 	activeGateTrustedCertSecretKeyPath = "server.crt"
 	httpsCertVolumeName                = "https-certs"
-	httpsCertFile                      = "cert.pem"
-	httpsPrivKeyFile                   = "key.pem"
 	httpsCertMountPath                 = "/var/lib/dynatrace/remotepluginmodule/secrets/https/"
 	extensionsControllerTlsSecretName  = "extensions-controller-tls"
 	dsTokenPath                        = "/var/lib/dynatrace/remotepluginmodule/secrets/dsauthtoken"
-	eecTlsCertificatesVolumeName       = "custom-tls-certificates"
 
 	// misc
 	tokensVolumeName = "tokens"
@@ -89,7 +82,6 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		statefulset.SetServiceAccount(serviceAccountName),
 		statefulset.SetSecurityContext(buildPodSecurityContext()),
 		statefulset.SetUpdateStrategy(utils.BuildUpdateStrategy()),
-		setTlsRef(r.dk.Spec.Templates.ExtensionExecutionController.TlsRefName),
 		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
 		setVolumes(r.dk),
 	)
@@ -137,12 +129,6 @@ func buildAffinity() corev1.Affinity {
 				},
 			},
 		},
-	}
-}
-
-func setTlsRef(tlsRefName string) func(o *appsv1.StatefulSet) {
-	return func(o *appsv1.StatefulSet) {
-		// TODO: EEC image is ready
 	}
 }
 
@@ -223,8 +209,8 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envDsInstallDirName, Value: envDsInstallDir},
 		{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID},
 		{Name: envK8sExtServiceUrl, Value: serviceAccountName},
-		{Name: envHttpsCertPathPem, Value: httpsCertMountPath + "/" + httpsCertFile},
-		{Name: envHttpsPrivKeyPathPem, Value: httpsCertMountPath + "/" + httpsPrivKeyFile},
+		{Name: envHttpsCertPathPem, Value: httpsCertMountPath + "/" + consts.TLSKeyDataName},
+		{Name: envHttpsPrivKeyPathPem, Value: httpsCertMountPath + "/" + consts.TLSKeyDataName},
 		{Name: envDSTokenPath, Value: dsTokenPath},
 	}
 
@@ -233,8 +219,8 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	}
 
 	if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
-		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envEECHttpsCertPathPem, Value: envEecHttpsCertPathPem})
-		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envEECHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem})
+		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envHttpsCertPathPem, Value: envEecHttpsCertPathPem})
+		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem})
 	}
 
 	return containerEnvs
@@ -268,11 +254,6 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 			MountPath: configurationMountPath,
 			ReadOnly:  false,
 		},
-		{
-			Name:      httpsCertVolumeName,
-			MountPath: httpsCertMountPath,
-			ReadOnly:  true,
-		},
 	}
 
 	if dk.Spec.Templates.ExtensionExecutionController.CustomConfig != "" {
@@ -297,6 +278,12 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 			MountPath: baseSecretsPath + "/eec",
 			ReadOnly:  true,
 		})
+	} else {
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      httpsCertVolumeName,
+			MountPath: httpsCertMountPath,
+			ReadOnly:  true,
+		})
 	}
 
 	return volumeMounts
@@ -304,6 +291,14 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 
 func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	return func(o *appsv1.StatefulSet) {
+		tlsSecretName := extensionsControllerTlsSecretName
+		tlsCertVolumeName := httpsCertVolumeName
+
+		if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
+			tlsSecretName = dk.Spec.Templates.ExtensionExecutionController.TlsRefName
+			tlsCertVolumeName = consts.ExtensionsCustomTlsCertificate
+		}
+
 		mode := int32(420)
 		o.Spec.Template.Spec.Volumes = []corev1.Volume{
 			{
@@ -328,20 +323,10 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				},
 			},
 			{
-				Name: httpsCertVolumeName,
+				Name: tlsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: extensionsControllerTlsSecretName,
-						Items: []corev1.KeyToPath{
-							{
-								Key:  consts.TLSCrtDataName,
-								Path: "cert.pem",
-							},
-							{
-								Key:  consts.TLSKeyDataName,
-								Path: "key.pem",
-							},
-						},
+						SecretName: tlsSecretName,
 					},
 				},
 			},
@@ -373,27 +358,6 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: dk.Spec.Templates.ExtensionExecutionController.CustomConfig,
-						},
-					},
-				},
-			})
-		}
-
-		if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
-			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
-				Name: eecTlsCertificatesVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Spec.Templates.ExtensionExecutionController.TlsRefName,
-						Items: []corev1.KeyToPath{
-							{
-								Key:  consts.TLSCrtDataName,
-								Path: consts.TLSCrtDataName,
-							},
-							{
-								Key:  consts.TLSKeyDataName,
-								Path: consts.TLSKeyDataName,
-							},
 						},
 					},
 				},

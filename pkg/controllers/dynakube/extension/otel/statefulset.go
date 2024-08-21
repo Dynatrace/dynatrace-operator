@@ -41,7 +41,7 @@ const (
 	trustedCAVolumeMountPath        = "/tls/custom/cacerts"
 	trustedCAVolumePath             = trustedCAVolumeMountPath + "/certs"
 	customEecTlsCertificatePath     = "/tls/custom/eec"
-	customEecTlsCertificateFullPath = customEecTlsCertificatePath + "/tls.crt"
+	customEecTlsCertificateFullPath = customEecTlsCertificatePath + "/" + consts.TLSCrtDataName
 )
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
@@ -57,7 +57,6 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		statefulset.SetTopologySpreadConstraints(utils.BuildTopologySpreadConstraints(r.dk.Spec.Templates.OpenTelemetryCollector.TopologySpreadConstraints, appLabels)),
 		statefulset.SetSecurityContext(buildPodSecurityContext()),
 		statefulset.SetUpdateStrategy(utils.BuildUpdateStrategy()),
-		setTlsRef(r.dk.Spec.Templates.OpenTelemetryCollector.TlsRefName),
 		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
 		setVolumes(r.dk),
 	)
@@ -192,12 +191,6 @@ func buildAffinity() corev1.Affinity {
 				},
 			},
 		},
-	}
-}
-
-func setTlsRef(tlsRefName string) func(o *appsv1.StatefulSet) {
-	return func(o *appsv1.StatefulSet) {
-		// TODO:
 	}
 }
 
