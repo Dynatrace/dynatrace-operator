@@ -209,8 +209,6 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envDsInstallDirName, Value: envDsInstallDir},
 		{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID},
 		{Name: envK8sExtServiceUrl, Value: serviceAccountName},
-		{Name: envHttpsCertPathPem, Value: httpsCertMountPath + "/" + consts.TLSKeyDataName},
-		{Name: envHttpsPrivKeyPathPem, Value: httpsCertMountPath + "/" + consts.TLSKeyDataName},
 		{Name: envDSTokenPath, Value: dsTokenPath},
 	}
 
@@ -221,6 +219,9 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
 		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envHttpsCertPathPem, Value: envEecHttpsCertPathPem})
 		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem})
+	} else {
+		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envHttpsCertPathPem, Value: httpsCertMountPath + "/" + consts.TLSKeyDataName})
+		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envHttpsPrivKeyPathPem, Value: httpsCertMountPath + "/" + consts.TLSKeyDataName})
 	}
 
 	return containerEnvs
