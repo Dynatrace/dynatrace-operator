@@ -389,7 +389,7 @@ func (b *builder) getDefaultProbeFromStatus() *corev1.Probe {
 		InitialDelaySeconds: int32(b.dk.Status.OneAgent.Healthcheck.StartPeriod.Seconds()),
 		PeriodSeconds:       int32(b.dk.Status.OneAgent.Healthcheck.Interval.Seconds()),
 		TimeoutSeconds:      int32(b.dk.Status.OneAgent.Healthcheck.Timeout.Seconds()),
-		FailureThreshold:    int32(b.dk.Status.OneAgent.Healthcheck.Retries),
+		FailureThreshold:    int32(b.dk.Status.OneAgent.Healthcheck.Retries), //nolint:gosec
 		SuccessThreshold:    probeDefaultSuccessThreshold,
 	}
 }
