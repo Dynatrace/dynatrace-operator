@@ -98,10 +98,10 @@ func mockGetRulesSettingsAPI(writer http.ResponseWriter, totalCount int) {
 func createRulesResponse(totalCount int) GetRulesSettingsResponse {
 	rules := []dynakube.EnrichmentRule{
 		{
-			Key: "rule-1",
+			Source: "rule-1",
 		},
 		{
-			Key: "rule-2",
+			Source: "rule-2",
 		},
 	}
 	rulesGetResponse := GetRulesSettingsResponse{

@@ -150,7 +150,7 @@ func createRulesResponse() dtclient.GetRulesSettingsResponse {
 
 func createRules() []dynakube.EnrichmentRule {
 	return []dynakube.EnrichmentRule{
-		{Key: "test1"},
-		{Key: "test2"},
+		{Source: "test1"},
+		{Source: "test2"},
 	}
 }

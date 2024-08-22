@@ -156,17 +156,17 @@ type MetadataEnrichmentStatus struct {
 
 type EnrichmentRule struct {
 	Type    EnrichmentRuleType `json:"type,omitempty"`
-	Key     string             `json:"key,omitempty"`
-	Mapping string             `json:"mapping,omitempty"`
+	Source  string             `json:"source,omitempty"`
+	Target  string             `json:"target,omitempty"`
 	Enabled bool               `json:"enabled,omitempty"`
 }
 
 func (rule EnrichmentRule) ToAnnotationKey() string {
-	if rule.Mapping == "" {
+	if rule.Target == "" {
 		return ""
 	}
 
-	return MetadataPrefix + "/" + rule.Mapping
+	return MetadataPrefix + "/" + rule.Target
 }
 
 // SetPhase sets the status phase on the DynaKube object.

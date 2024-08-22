@@ -4422,9 +4422,9 @@ spec:
                       properties:
                         enabled:
                           type: boolean
-                        key:
+                        source:
                           type: string
-                        mapping:
+                        target:
                           type: string
                         type:
                           type: string
@@ -7056,9 +7056,9 @@ spec:
                       properties:
                         enabled:
                           type: boolean
-                        key:
+                        source:
                           type: string
-                        mapping:
+                        target:
                           type: string
                         type:
                           type: string
