@@ -158,8 +158,8 @@ func copyMetadataAccordingToPrefix(pod *corev1.Pod, namespace corev1.Namespace) 
 
 func copyMetadataAccordingToCustomRules(pod *corev1.Pod, namespace corev1.Namespace, dk dynakube.DynaKube) {
 	for _, rule := range dk.Status.MetadataEnrichment.Rules {
-		if rule.Mapping == "" {
-			log.Info("rule without mapping set found, ignoring", "key", rule.Key, "type", rule.Type)
+		if rule.Target == "" {
+			log.Info("rule without target set found, ignoring", "source", rule.Source, "type", rule.Type)
 
 			continue
 		}
@@ -170,9 +170,9 @@ func copyMetadataAccordingToCustomRules(pod *corev1.Pod, namespace corev1.Namesp
 
 		switch rule.Type {
 		case dynakube.EnrichmentLabelRule:
-			valueFromNamespace, exists = namespace.Labels[rule.Key]
+			valueFromNamespace, exists = namespace.Labels[rule.Source]
 		case dynakube.EnrichmentAnnotationRule:
-			valueFromNamespace, exists = namespace.Annotations[rule.Key]
+			valueFromNamespace, exists = namespace.Annotations[rule.Source]
 		}
 
 		if exists {
