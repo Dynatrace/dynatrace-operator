@@ -193,14 +193,37 @@ func TestEnvironmentVariables(t *testing.T) {
 		assert.Equal(t, corev1.EnvVar{Name: envServerUrl, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ".svc.cluster.local:443"}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
 		assert.Equal(t, corev1.EnvVar{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + eecFile}, statefulSet.Spec.Template.Spec.Containers[0].Env[2])
 		assert.Equal(t, corev1.EnvVar{Name: envEecIngestPort, Value: strconv.Itoa(int(collectorPort))}, statefulSet.Spec.Template.Spec.Containers[0].Env[3])
-		assert.Equal(t, corev1.EnvVar{Name: envExtensionsConfPathName, Value: envExtensionsConfPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
-		assert.Equal(t, corev1.EnvVar{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
-		assert.Equal(t, corev1.EnvVar{Name: envDsInstallDirName, Value: envDsInstallDir}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
+		assert.Equal(t, corev1.EnvVar{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
+		assert.Equal(t, corev1.EnvVar{Name: envDsInstallDirName, Value: envDsInstallDir}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sExtServiceUrl, Value: serviceAccountName}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
+		assert.Equal(t, corev1.EnvVar{Name: envDSTokenPath, Value: dsTokenPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
+		assert.Equal(t, corev1.EnvVar{Name: envHttpsCertPathPem, Value: envEecHttpsCertPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
+		assert.Equal(t, corev1.EnvVar{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
+		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envRuntimeConfigMountPath, Value: customConfigMountPath + "/" + runtimeConfigurationFilename})
+	})
+
+	t.Run("environment variables with custom EEC tls certificate", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "custom-tls"
+
+		statefulSet := getStatefulset(t, dk)
+
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envHttpsCertPathPem, Value: envEecHttpsCertPathPem})
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem})
+	})
+
+	t.Run("environment variables with custom EEC config", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Templates.ExtensionExecutionController.CustomConfig = "abc"
+
+		statefulSet := getStatefulset(t, dk)
+
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envRuntimeConfigMountPath, Value: customConfigMountPath + "/" + runtimeConfigurationFilename})
 	})
 }
 
-func TestVolumes(t *testing.T) {
+func TestVolumeMounts(t *testing.T) {
 	t.Run("volume mounts", func(t *testing.T) {
 		statefulSet := getStatefulset(t, getTestDynakube())
 
@@ -223,10 +246,28 @@ func TestVolumes(t *testing.T) {
 			{
 				Name:      configurationVolumeName,
 				MountPath: configurationMountPath,
+				ReadOnly:  false,
+			},
+			{
+				Name:      httpsCertVolumeName,
+				MountPath: httpsCertMountPath,
 				ReadOnly:  true,
 			},
 		}
 		assert.Equal(t, expectedVolumeMounts, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts)
+	})
+
+	t.Run("volume mounts when set custom EEC tls certificate", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "custom-tls"
+		statefulSet := getStatefulset(t, dk)
+
+		expectedVolumeMount := corev1.VolumeMount{
+			Name:      httpsCertVolumeName,
+			MountPath: httpsCertMountPath,
+			ReadOnly:  true,
+		}
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
 	})
 
 	t.Run("volume mounts with custom configuration", func(t *testing.T) {
@@ -254,6 +295,11 @@ func TestVolumes(t *testing.T) {
 			{
 				Name:      configurationVolumeName,
 				MountPath: configurationMountPath,
+				ReadOnly:  false,
+			},
+			{
+				Name:      httpsCertVolumeName,
+				MountPath: httpsCertMountPath,
 				ReadOnly:  true,
 			},
 			{
@@ -263,143 +309,6 @@ func TestVolumes(t *testing.T) {
 			},
 		}
 		assert.Equal(t, expectedVolumeMounts, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts)
-	})
-
-	t.Run("volumes without PVC", func(t *testing.T) {
-		dk := getTestDynakube()
-
-		statefulSet := getStatefulset(t, dk)
-
-		mode := int32(420)
-		expectedVolumes := []corev1.Volume{
-			{
-				Name: tokensVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Name + consts.SecretSuffix,
-						DefaultMode: &mode,
-					},
-				},
-			},
-			{
-				Name: logVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: configurationVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: runtimeVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-		}
-
-		assert.Equal(t, expectedVolumes, statefulSet.Spec.Template.Spec.Volumes)
-	})
-
-	t.Run("volumes with PVC", func(t *testing.T) {
-		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim = &corev1.PersistentVolumeClaimSpec{
-			Resources: corev1.VolumeResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceStorage: resource.MustParse("1Gi"),
-				},
-			},
-		}
-
-		statefulSet := getStatefulset(t, dk)
-
-		mode := int32(420)
-		expectedVolumes := []corev1.Volume{
-			{
-				Name: tokensVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Name + consts.SecretSuffix,
-						DefaultMode: &mode,
-					},
-				},
-			},
-			{
-				Name: logVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: configurationVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: runtimeVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						ClaimName: runtimePersistentVolumeClaimName,
-					},
-				},
-			},
-		}
-
-		assert.Equal(t, expectedVolumes, statefulSet.Spec.Template.Spec.Volumes)
-	})
-
-	t.Run("volumes without PVC and with custom configuration", func(t *testing.T) {
-		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.CustomConfig = testCustomConfigConfigMapName
-
-		statefulSet := getStatefulset(t, dk)
-
-		mode := int32(420)
-		expectedVolumes := []corev1.Volume{
-			{
-				Name: tokensVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Name + consts.SecretSuffix,
-						DefaultMode: &mode,
-					},
-				},
-			},
-			{
-				Name: logVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: configurationVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: runtimeVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: customConfigVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: testCustomConfigConfigMapName,
-						},
-					},
-				},
-			},
-		}
-
-		assert.Equal(t, expectedVolumes, statefulSet.Spec.Template.Spec.Volumes)
 	})
 }
 
@@ -577,11 +486,22 @@ func TestServiceAccountName(t *testing.T) {
 }
 
 func TestSecurityContext(t *testing.T) {
-	t.Run("the default securityContext is set", func(t *testing.T) {
+	t.Run("securityContext is set", func(t *testing.T) {
 		statefulSet := getStatefulset(t, getTestDynakube())
 
-		assert.NotNil(t, statefulSet.Spec.Template.Spec.SecurityContext)
-		assert.NotNil(t, statefulSet.Spec.Template.Spec.Containers[0].SecurityContext)
+		require.NotNil(t, statefulSet.Spec.Template.Spec.SecurityContext)
+		assert.Equal(t, corev1.SeccompProfileTypeRuntimeDefault, statefulSet.Spec.Template.Spec.SecurityContext.SeccompProfile.Type)
+
+		require.NotNil(t, statefulSet.Spec.Template.Spec.Containers[0].SecurityContext)
+		assert.Equal(t, int64(1001), *statefulSet.Spec.Template.Spec.Containers[0].SecurityContext.RunAsUser)
+		assert.Equal(t, int64(1001), *statefulSet.Spec.Template.Spec.Containers[0].SecurityContext.RunAsGroup)
+		assert.False(t, *statefulSet.Spec.Template.Spec.Containers[0].SecurityContext.Privileged)
+		assert.True(t, *statefulSet.Spec.Template.Spec.Containers[0].SecurityContext.RunAsNonRoot)
+		assert.True(t, *statefulSet.Spec.Template.Spec.Containers[0].SecurityContext.ReadOnlyRootFilesystem)
+		assert.False(t, *statefulSet.Spec.Template.Spec.Containers[0].SecurityContext.AllowPrivilegeEscalation)
+
+		require.Len(t, statefulSet.Spec.Template.Spec.Containers[0].SecurityContext.Capabilities.Drop, 1)
+		assert.Equal(t, corev1.Capability("ALL"), statefulSet.Spec.Template.Spec.Containers[0].SecurityContext.Capabilities.Drop[0])
 	})
 }
 
@@ -594,7 +514,187 @@ func TestUpdateStrategy(t *testing.T) {
 	})
 }
 
-func TestActiveGateTrustedCAInsideEEC(t *testing.T) {
+func TestVolumes(t *testing.T) {
+	t.Run("volumes without PVC", func(t *testing.T) {
+		dk := getTestDynakube()
+
+		statefulSet := getStatefulset(t, dk)
+
+		mode := int32(420)
+		expectedVolumes := []corev1.Volume{
+			{
+				Name: tokensVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName:  dk.Name + consts.SecretSuffix,
+						DefaultMode: &mode,
+					},
+				},
+			},
+			{
+				Name: logVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+			{
+				Name: configurationVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+			{
+				Name: httpsCertVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: extensionsControllerTlsSecretName,
+					},
+				},
+			},
+			{
+				Name: runtimeVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+		}
+
+		assert.Equal(t, expectedVolumes, statefulSet.Spec.Template.Spec.Volumes)
+	})
+
+	t.Run("volumes with PVC", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim = &corev1.PersistentVolumeClaimSpec{
+			Resources: corev1.VolumeResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceStorage: resource.MustParse("1Gi"),
+				},
+			},
+		}
+
+		statefulSet := getStatefulset(t, dk)
+
+		mode := int32(420)
+		expectedVolumes := []corev1.Volume{
+			{
+				Name: tokensVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName:  dk.Name + consts.SecretSuffix,
+						DefaultMode: &mode,
+					},
+				},
+			},
+			{
+				Name: logVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+			{
+				Name: configurationVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+			{
+				Name: httpsCertVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: extensionsControllerTlsSecretName,
+					},
+				},
+			},
+			{
+				Name: runtimeVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+						ClaimName: runtimePersistentVolumeClaimName,
+					},
+				},
+			},
+		}
+
+		assert.Equal(t, expectedVolumes, statefulSet.Spec.Template.Spec.Volumes)
+	})
+
+	t.Run("volumes without PVC and with custom configuration", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Templates.ExtensionExecutionController.CustomConfig = testCustomConfigConfigMapName
+
+		statefulSet := getStatefulset(t, dk)
+
+		mode := int32(420)
+		expectedVolumes := []corev1.Volume{
+			{
+				Name: tokensVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName:  dk.Name + consts.SecretSuffix,
+						DefaultMode: &mode,
+					},
+				},
+			},
+			{
+				Name: logVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+			{
+				Name: configurationVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+			{
+				Name: httpsCertVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: extensionsControllerTlsSecretName,
+					},
+				},
+			},
+			{
+				Name: runtimeVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+
+			{
+				Name: customConfigVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: testCustomConfigConfigMapName,
+						},
+					},
+				},
+			},
+		}
+
+		assert.Equal(t, expectedVolumes, statefulSet.Spec.Template.Spec.Volumes)
+	})
+	t.Run("Custom EEC tls certificate is mounted to EEC", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "custom-tls"
+		statefulSet := getStatefulset(t, dk)
+
+		expectedVolume := corev1.Volume{
+			Name: httpsCertVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: "custom-tls",
+				},
+			},
+		}
+
+		require.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
+	})
+}
+
+func TestActiveGateVolumes(t *testing.T) {
 	tlsSecretName := "ag-ca"
 	expectedEnvVar := corev1.EnvVar{Name: envActiveGateTrustedCertName, Value: envActiveGateTrustedCert}
 	expectedVolumeMount := corev1.VolumeMount{

@@ -200,7 +200,7 @@ func TestHandlePodReinvocation(t *testing.T) {
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{mutator1, mutator2}, nil)
 		mutationRequest := createTestMutationRequestWithInjectedPod(dk)
 
-		updated := podWebhook.handlePodReinvocation(context.Background(), mutationRequest)
+		updated := podWebhook.handlePodReinvocation(mutationRequest)
 		require.True(t, updated)
 
 		require.Len(t, mutationRequest.Pod.Spec.InitContainers, 2)
@@ -218,7 +218,7 @@ func TestHandlePodReinvocation(t *testing.T) {
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{failingMutator, workingMutator}, nil)
 		mutationRequest := createTestMutationRequestWithInjectedPod(dk)
 
-		updated := podWebhook.handlePodReinvocation(context.Background(), mutationRequest)
+		updated := podWebhook.handlePodReinvocation(mutationRequest)
 		require.True(t, updated)
 		failingMutator.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
 		failingMutator.AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
@@ -231,7 +231,7 @@ func TestHandlePodReinvocation(t *testing.T) {
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{failingMutator}, nil)
 		mutationRequest := createTestMutationRequestWithInjectedPod(dk)
 
-		updated := podWebhook.handlePodReinvocation(context.Background(), mutationRequest)
+		updated := podWebhook.handlePodReinvocation(mutationRequest)
 		require.False(t, updated)
 		failingMutator.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
 		failingMutator.AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())

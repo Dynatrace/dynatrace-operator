@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/hash"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/utils"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
@@ -24,34 +25,48 @@ const (
 	collectorPort                    = int32(14599)
 	serviceAccountName               = "dynatrace-extensions-controller"
 
+	// Env variable names
 	envTenantId                     = "TenantId"
 	envServerUrl                    = "ServerUrl"
 	envEecTokenPath                 = "EecTokenPath"
 	envEecIngestPort                = "EecIngestPort"
-	envExtensionsConfPathName       = "ExtensionsConfPath"
-	envExtensionsConfPath           = "/opt/dynatrace/remotepluginmodule/agent/conf/extensions.conf"
 	envExtensionsModuleExecPathName = "ExtensionsModuleExecPath"
-	envExtensionsModuleExecPath     = "/opt/dynatrace/remotepluginmodule/agent/lib64/extensionsmodule"
 	envDsInstallDirName             = "DsInstallDir"
-	envDsInstallDir                 = "/opt/dynatrace/remotepluginmodule/agent/datasources"
-	envK8sClusterId                 = "K8sClusterId"
+	envK8sClusterId                 = "K8sClusterUID"
 	envActiveGateTrustedCertName    = "ActiveGateTrustedCert"
-	envActiveGateTrustedCert        = "/var/lib/dynatrace/secrets/ag/server.crt"
-
-	tokensVolumeName                   = "tokens"
+	envK8sExtServiceUrl             = "K8sExtServiceUrl"
+	envHttpsCertPathPem             = "HttpsCertPathPem"
+	envHttpsPrivKeyPathPem          = "HttpsPrivKeyPathPem"
+	envDSTokenPath                  = "DSTokenPath"
+	envRuntimeConfigMountPath       = "RuntimeConfigMountPath"
+	// Env variable values
+	envExtensionsModuleExecPath = "/opt/dynatrace/remotepluginmodule/agent/lib64/extensionsmodule"
+	envDsInstallDir             = "/opt/dynatrace/remotepluginmodule/agent/datasources"
+	envActiveGateTrustedCert    = activeGateTrustedCertMountPath + "/" + activeGateTrustedCertSecretKeyPath
+	envEecHttpsCertPathPem      = httpsCertMountPath + "/" + consts.TLSCrtDataName
+	envEecHttpsPrivKeyPathPem   = httpsCertMountPath + "/" + consts.TLSKeyDataName
+	// Volume names and paths
 	eecTokenMountPath                  = "/var/lib/dynatrace/remotepluginmodule/secrets/tokens"
-	eecFile                            = "eec.token"
-	logVolumeName                      = "log"
 	logMountPath                       = "/var/lib/dynatrace/remotepluginmodule/log"
 	runtimeVolumeName                  = "agent-runtime"
 	runtimeMountPath                   = "/var/lib/dynatrace/remotepluginmodule/agent/runtime"
 	configurationVolumeName            = "runtime-configuration"
-	configurationMountPath             = "/var/lib/dynatrace/remotepluginmodule/agent/conf/runtime"
+	configurationMountPath             = "/var/lib/dynatrace/remotepluginmodule/agent/conf"
 	customConfigVolumeName             = "custom-config"
 	customConfigMountPath              = "/var/lib/dynatrace/remotepluginmodule/secrets/config"
 	activeGateTrustedCertVolumeName    = "server-certs"
-	activeGateTrustedCertMountPath     = "/var/lib/dynatrace/secrets/ag"
+	activeGateTrustedCertMountPath     = "/var/lib/dynatrace/remotepluginmodule/secrets/ag"
 	activeGateTrustedCertSecretKeyPath = "server.crt"
+	httpsCertVolumeName                = "https-certs"
+	httpsCertMountPath                 = "/var/lib/dynatrace/remotepluginmodule/secrets/https"
+	extensionsControllerTlsSecretName  = "extensions-controller-tls"
+	dsTokenPath                        = "/var/lib/dynatrace/remotepluginmodule/secrets/dsauthtoken"
+	runtimeConfigurationFilename       = "runtimeConfiguration"
+
+	// misc
+	tokensVolumeName = "tokens"
+	eecFile          = "eec.token"
+	logVolumeName    = "log"
 )
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
@@ -67,7 +82,6 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		statefulset.SetServiceAccount(serviceAccountName),
 		statefulset.SetSecurityContext(buildPodSecurityContext()),
 		statefulset.SetUpdateStrategy(utils.BuildUpdateStrategy()),
-		setTlsRef(r.dk.Spec.Templates.ExtensionExecutionController.TlsRefName),
 		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
 		setVolumes(r.dk),
 	)
@@ -118,12 +132,6 @@ func buildAffinity() corev1.Affinity {
 	}
 }
 
-func setTlsRef(tlsRefName string) func(o *appsv1.StatefulSet) {
-	return func(o *appsv1.StatefulSet) {
-		// TODO: EEC image is ready
-	}
-}
-
 func setImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) func(o *appsv1.StatefulSet) {
 	return func(o *appsv1.StatefulSet) {
 		o.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
@@ -140,7 +148,7 @@ func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/readyz",
 					Port:   intstr.IntOrString{IntVal: collectorPort},
-					Scheme: "HTTP",
+					Scheme: "HTTPS",
 				},
 			},
 			InitialDelaySeconds: 15,
@@ -163,7 +171,20 @@ func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 }
 
 func buildSecurityContext() *corev1.SecurityContext {
+	userGroupId := int64(1001)
+
 	return &corev1.SecurityContext{
+		Capabilities: &corev1.Capabilities{
+			Drop: []corev1.Capability{
+				"ALL",
+			},
+		},
+		Privileged:               address.Of(false),
+		RunAsUser:                &userGroupId,
+		RunAsGroup:               &userGroupId,
+		RunAsNonRoot:             address.Of(true),
+		ReadOnlyRootFilesystem:   address.Of(true),
+		AllowPrivilegeEscalation: address.Of(false),
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
@@ -184,14 +205,21 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envServerUrl, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ".svc.cluster.local:443"},
 		{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + eecFile},
 		{Name: envEecIngestPort, Value: strconv.Itoa(int(collectorPort))},
-		{Name: envExtensionsConfPathName, Value: envExtensionsConfPath},
 		{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath},
 		{Name: envDsInstallDirName, Value: envDsInstallDir},
 		{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID},
+		{Name: envK8sExtServiceUrl, Value: serviceAccountName},
+		{Name: envDSTokenPath, Value: dsTokenPath},
+		{Name: envHttpsCertPathPem, Value: envEecHttpsCertPathPem},
+		{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem},
 	}
 
 	if dk.Spec.ActiveGate.TlsSecretName != "" {
 		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envActiveGateTrustedCertName, Value: envActiveGateTrustedCert})
+	}
+
+	if dk.Spec.Templates.ExtensionExecutionController.CustomConfig != "" {
+		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envRuntimeConfigMountPath, Value: customConfigMountPath + "/" + runtimeConfigurationFilename})
 	}
 
 	return containerEnvs
@@ -223,6 +251,11 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		{
 			Name:      configurationVolumeName,
 			MountPath: configurationMountPath,
+			ReadOnly:  false,
+		},
+		{
+			Name:      httpsCertVolumeName,
+			MountPath: httpsCertMountPath,
 			ReadOnly:  true,
 		},
 	}
@@ -248,6 +281,12 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 
 func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	return func(o *appsv1.StatefulSet) {
+		tlsSecretName := extensionsControllerTlsSecretName
+
+		if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
+			tlsSecretName = dk.Spec.Templates.ExtensionExecutionController.TlsRefName
+		}
+
 		mode := int32(420)
 		o.Spec.Template.Spec.Volumes = []corev1.Volume{
 			{
@@ -266,10 +305,17 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				},
 			},
 			{
-				// TODO: is a configMap.name: eec-runtime-configuration needed?
 				Name: configurationVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+			{
+				Name: httpsCertVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: tlsSecretName,
+					},
 				},
 			},
 		}

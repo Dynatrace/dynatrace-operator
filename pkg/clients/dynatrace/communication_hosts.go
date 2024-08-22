@@ -2,8 +2,8 @@ package dynatrace
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
-	"strconv"
 )
 
 func (dtc *dynatraceClient) GetCommunicationHostForClient() (CommunicationHost, error) {
@@ -34,12 +34,10 @@ func ParseEndpoint(s string) (CommunicationHost, error) {
 			p = 443
 		}
 	} else {
-		q, err := strconv.ParseUint(rp, 10, 32)
+		_, err := fmt.Sscan(rp, &p)
 		if err != nil {
 			return CommunicationHost{}, errors.New("failed to parse port")
 		}
-
-		p = uint32(q)
 	}
 
 	return CommunicationHost{

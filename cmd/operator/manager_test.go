@@ -2,7 +2,6 @@ package operator
 
 import (
 	"errors"
-	"net/http"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
@@ -85,7 +84,6 @@ func testHealthzAndReadyz(t *testing.T, createProviderAndRunManager func(mockMgr
 	mockMgr.On("Add", mock.AnythingOfType("*controller.Controller[sigs.k8s.io/controller-runtime/pkg/reconcile.Request]")).Return(nil)
 	mockMgr.On("GetCache").Return(nil)
 	mockMgr.On("GetRESTMapper").Return(nil)
-	mockMgr.On("GetHTTPClient").Return(http.DefaultClient)
 
 	err := createProviderAndRunManager(mockMgr)
 
@@ -95,7 +93,6 @@ func testHealthzAndReadyz(t *testing.T, createProviderAndRunManager func(mockMgr
 	expectedHealthzError := errors.New("healthz error")
 	mockMgr = managermock.NewManager(t)
 	mockMgr.On(addHealthzCheckMethodName, mock.Anything, mock.Anything).Return(expectedHealthzError)
-	mockMgr.On("GetHTTPClient").Return(http.DefaultClient)
 
 	err = createProviderAndRunManager(mockMgr)
 
@@ -106,7 +103,6 @@ func testHealthzAndReadyz(t *testing.T, createProviderAndRunManager func(mockMgr
 func testBootstrapHealthzAndReadyz(t *testing.T, createProviderAndRunManager func(mockMgr *managermock.Manager) error) {
 	mockMgr := managermock.NewManager(t)
 	mockMgr.On(addHealthzCheckMethodName, livezEndpointName, mock.AnythingOfType(checkerArgumentType)).Return(nil)
-	mockMgr.On("GetHTTPClient").Return(http.DefaultClient)
 
 	err := createProviderAndRunManager(mockMgr)
 
@@ -116,7 +112,6 @@ func testBootstrapHealthzAndReadyz(t *testing.T, createProviderAndRunManager fun
 	expectedHealthzError := errors.New("healthz error")
 	mockMgr = managermock.NewManager(t)
 	mockMgr.On(addHealthzCheckMethodName, mock.Anything, mock.Anything).Return(expectedHealthzError)
-	mockMgr.On("GetHTTPClient").Return(http.DefaultClient)
 
 	err = createProviderAndRunManager(mockMgr)
 

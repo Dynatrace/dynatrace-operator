@@ -170,6 +170,15 @@ func TestEnvironmentVariables(t *testing.T) {
 
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envTrustedCAs, Value: trustedCAVolumePath})
 	})
+
+	t.Run("environment variables with custom EEC TLS certificate", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "test-tls-ca"
+
+		statefulSet := getStatefulset(t, dk)
+
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envEECcontrollerTls, Value: customEecTlsCertificateFullPath})
+	})
 }
 
 func TestAffinity(t *testing.T) {
@@ -358,6 +367,34 @@ func TestVolumes(t *testing.T) {
 
 		assert.Equal(t, expectedVolumeMounts, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts)
 		assert.Equal(t, expectedVolumes, statefulSet.Spec.Template.Spec.Volumes)
+	})
+
+	t.Run("volumes and volume mounts with custom EEC TLS certificate", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "test-tls-name"
+		statefulSet := getStatefulset(t, dk)
+
+		expectedVolumeMount := corev1.VolumeMount{
+			Name:      consts.ExtensionsCustomTlsCertificate,
+			MountPath: customEecTlsCertificatePath,
+			ReadOnly:  true,
+		}
+
+		expectedVolume := corev1.Volume{Name: consts.ExtensionsCustomTlsCertificate,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: dk.Spec.Templates.ExtensionExecutionController.TlsRefName,
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSCrtDataName,
+							Path: consts.TLSCrtDataName,
+						},
+					},
+				},
+			}}
+
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
 	})
 
 	t.Run("volumes with trusted CAs", func(t *testing.T) {

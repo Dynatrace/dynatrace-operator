@@ -7,7 +7,6 @@ import (
 	csidriver "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -123,9 +122,6 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		}
 
 		signalHandler := ctrl.SetupSignalHandler()
-
-		otelShutdownFn := dtotel.Start(signalHandler, "dynatrace-csi-server", csiManager.GetAPIReader(), builder.namespace)
-		defer otelShutdownFn()
 
 		err = createCsiDataPath(builder.getFilesystem())
 		if err != nil {

@@ -403,6 +403,11 @@ tests:
       - equal:
           path: metadata.labels.testKey
           value: testValue
+      - isNotEmpty:
+          path: spec.template.metadata.labels.testKey
+      - equal:
+          path: spec.template.metadata.labels.testKey
+          value: testValue
 
   - it: should take custom annotations
     set:
@@ -410,6 +415,11 @@ tests:
       operator.annotations:
         testKey: testValue
     asserts:
+      - equal:
+          path: metadata.annotations
+          value:
+            testKey: testValue
+
       - equal:
           path: spec.template.metadata.annotations
           value:

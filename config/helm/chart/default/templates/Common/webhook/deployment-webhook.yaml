@@ -16,6 +16,10 @@ kind: Deployment
 metadata:
   name: dynatrace-webhook
   namespace: {{ .Release.Namespace }}
+  annotations:
+  {{- if .Values.webhook.annotations}}
+    {{- toYaml .Values.webhook.annotations | nindent 4 }}
+  {{- end }}
   labels:
       {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
   {{- if .Values.webhook.labels }}

@@ -67,3 +67,24 @@ tests:
       - equal:
           path: webhooks[1].timeoutSeconds
           value: 13
+  - it: should change failurePolicy
+    set:
+      webhook:
+        mutatingWebhook:
+          failurePolicy: Fail
+    asserts:
+      - equal:
+          path: webhooks[0].failurePolicy
+          value: Fail
+      - equal:
+          path: webhooks[1].failurePolicy
+          value: Fail
+  - it: failurePolicy should have safe defaults
+    set:
+    asserts:
+      - equal:
+          path: webhooks[0].failurePolicy
+          value: Ignore
+      - equal:
+          path: webhooks[1].failurePolicy
+          value: Ignore

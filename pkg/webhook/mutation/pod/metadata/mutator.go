@@ -7,10 +7,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/internal/otel"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -55,22 +53,15 @@ func (mut *Mutator) Injected(request *dtwebhook.BaseRequest) bool {
 }
 
 func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationRequest) error {
-	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
-	defer span.End()
-
 	log.Info("injecting metadata-enrichment into pod", "podName", request.PodName())
 
 	workload, err := mut.retrieveWorkload(request)
 	if err != nil {
-		span.RecordError(err)
-
 		return err
 	}
 
 	err = mut.ensureIngestEndpointSecret(request)
 	if err != nil {
-		span.RecordError(err)
-
 		return err
 	}
 
@@ -158,8 +149,8 @@ func copyMetadataAccordingToPrefix(pod *corev1.Pod, namespace corev1.Namespace) 
 
 func copyMetadataAccordingToCustomRules(pod *corev1.Pod, namespace corev1.Namespace, dk dynakube.DynaKube) {
 	for _, rule := range dk.Status.MetadataEnrichment.Rules {
-		if rule.Mapping == "" {
-			log.Info("rule without mapping set found, ignoring", "key", rule.Key, "type", rule.Type)
+		if rule.Target == "" {
+			log.Info("rule without target set found, ignoring", "source", rule.Source, "type", rule.Type)
 
 			continue
 		}
@@ -170,9 +161,9 @@ func copyMetadataAccordingToCustomRules(pod *corev1.Pod, namespace corev1.Namesp
 
 		switch rule.Type {
 		case dynakube.EnrichmentLabelRule:
-			valueFromNamespace, exists = namespace.Labels[rule.Key]
+			valueFromNamespace, exists = namespace.Labels[rule.Source]
 		case dynakube.EnrichmentAnnotationRule:
-			valueFromNamespace, exists = namespace.Annotations[rule.Key]
+			valueFromNamespace, exists = namespace.Annotations[rule.Source]
 		}
 
 		if exists {

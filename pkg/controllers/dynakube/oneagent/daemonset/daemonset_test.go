@@ -532,7 +532,7 @@ func TestPodSpecProbes(t *testing.T) {
 		assert.Equal(t, int32(expectedHealthcheck.Interval.Seconds()), actualReadinessProbe.PeriodSeconds)
 		assert.Equal(t, int32(expectedHealthcheck.Timeout.Seconds()), actualReadinessProbe.TimeoutSeconds)
 		assert.Equal(t, int32(expectedHealthcheck.StartPeriod.Seconds()), actualReadinessProbe.InitialDelaySeconds)
-		assert.Equal(t, int32(expectedHealthcheck.Retries), actualReadinessProbe.FailureThreshold)
+		assert.Equal(t, int32(expectedHealthcheck.Retries), actualReadinessProbe.FailureThreshold) //nolint:gosec
 		assert.Equal(t, probeDefaultSuccessThreshold, actualReadinessProbe.SuccessThreshold)
 
 		actualLivenessProbe := podSpec.Containers[0].LivenessProbe
@@ -541,7 +541,7 @@ func TestPodSpecProbes(t *testing.T) {
 		assert.Equal(t, int32(expectedHealthcheck.Interval.Seconds()), actualLivenessProbe.PeriodSeconds)
 		assert.Equal(t, int32(expectedHealthcheck.Timeout.Seconds()), actualLivenessProbe.TimeoutSeconds)
 		assert.Equal(t, int32(expectedHealthcheck.StartPeriod.Seconds()), actualLivenessProbe.InitialDelaySeconds)
-		assert.Equal(t, int32(expectedHealthcheck.Retries), actualLivenessProbe.FailureThreshold)
+		assert.Equal(t, int32(expectedHealthcheck.Retries), actualLivenessProbe.FailureThreshold) //nolint:gosec
 		assert.Equal(t, probeDefaultSuccessThreshold, actualLivenessProbe.SuccessThreshold)
 	})
 	t.Run("check probes with 1200s start period", func(t *testing.T) {
