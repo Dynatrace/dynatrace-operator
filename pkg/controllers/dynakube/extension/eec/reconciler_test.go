@@ -198,8 +198,8 @@ func TestEnvironmentVariables(t *testing.T) {
 		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
 		assert.Equal(t, corev1.EnvVar{Name: envK8sExtServiceUrl, Value: serviceAccountName}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
 		assert.Equal(t, corev1.EnvVar{Name: envDSTokenPath, Value: dsTokenPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
-		assert.Equal(t, corev1.EnvVar{Name: envHttpsCertPathPem, Value: httpsCertMountPath + "/" + consts.TLSKeyDataName}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
-		assert.Equal(t, corev1.EnvVar{Name: envHttpsPrivKeyPathPem, Value: httpsCertMountPath + "/" + consts.TLSKeyDataName}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
+		assert.Equal(t, corev1.EnvVar{Name: envHttpsCertPathPem, Value: envEecHttpsCertPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
+		assert.Equal(t, corev1.EnvVar{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
 	})
 
 	t.Run("environment variables with custom EEC tls certificate", func(t *testing.T) {
@@ -254,7 +254,7 @@ func TestVolumeMounts(t *testing.T) {
 
 		expectedVolumeMount := corev1.VolumeMount{
 			Name:      httpsCertVolumeName,
-			MountPath: baseSecretsPath + "/eec",
+			MountPath: httpsCertMountPath,
 			ReadOnly:  true,
 		}
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
@@ -288,13 +288,13 @@ func TestVolumeMounts(t *testing.T) {
 				ReadOnly:  false,
 			},
 			{
-				Name:      customConfigVolumeName,
-				MountPath: customConfigMountPath,
+				Name:      httpsCertVolumeName,
+				MountPath: httpsCertMountPath,
 				ReadOnly:  true,
 			},
 			{
-				Name:      httpsCertVolumeName,
-				MountPath: httpsCertMountPath,
+				Name:      customConfigVolumeName,
+				MountPath: customConfigMountPath,
 				ReadOnly:  true,
 			},
 		}

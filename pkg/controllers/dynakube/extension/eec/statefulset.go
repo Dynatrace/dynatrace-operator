@@ -40,12 +40,11 @@ const (
 	envHttpsPrivKeyPathPem          = "HttpsPrivKeyPathPem"
 	envDSTokenPath                  = "DSTokenPath"
 	// Env variable values
-	envExtensionsConfPath       = "/opt/dynatrace/remotepluginmodule/agent/conf/extensions.conf"
 	envExtensionsModuleExecPath = "/opt/dynatrace/remotepluginmodule/agent/lib64/extensionsmodule"
 	envDsInstallDir             = "/opt/dynatrace/remotepluginmodule/agent/datasources"
 	envActiveGateTrustedCert    = "/var/lib/dynatrace/secrets/ag/" + activeGateTrustedCertSecretKeyPath
-	envEecHttpsCertPathPem      = baseSecretsPath + "/eec/" + consts.TLSCrtDataName
-	envEecHttpsPrivKeyPathPem   = baseSecretsPath + "/eec/" + consts.TLSKeyDataName
+	envEecHttpsCertPathPem      = httpsCertMountPath + "/" + consts.TLSCrtDataName
+	envEecHttpsPrivKeyPathPem   = httpsCertMountPath + "/" + consts.TLSKeyDataName
 	// Volume names and paths
 	eecTokenMountPath                  = "/var/lib/dynatrace/remotepluginmodule/secrets/tokens"
 	logMountPath                       = "/var/lib/dynatrace/remotepluginmodule/log"
@@ -210,18 +209,12 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID},
 		{Name: envK8sExtServiceUrl, Value: serviceAccountName},
 		{Name: envDSTokenPath, Value: dsTokenPath},
+		{Name: envHttpsCertPathPem, Value: envEecHttpsCertPathPem},
+		{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem},
 	}
 
 	if dk.Spec.ActiveGate.TlsSecretName != "" {
 		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envActiveGateTrustedCertName, Value: envActiveGateTrustedCert})
-	}
-
-	if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
-		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envHttpsCertPathPem, Value: envEecHttpsCertPathPem})
-		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem})
-	} else {
-		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envHttpsCertPathPem, Value: httpsCertMountPath + "/" + consts.TLSKeyDataName})
-		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envHttpsPrivKeyPathPem, Value: httpsCertMountPath + "/" + consts.TLSKeyDataName})
 	}
 
 	return containerEnvs
@@ -255,6 +248,11 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 			MountPath: configurationMountPath,
 			ReadOnly:  false,
 		},
+		{
+			Name:      httpsCertVolumeName,
+			MountPath: httpsCertMountPath,
+			ReadOnly:  true,
+		},
 	}
 
 	if dk.Spec.Templates.ExtensionExecutionController.CustomConfig != "" {
@@ -269,20 +267,6 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
 			Name:      activeGateTrustedCertVolumeName,
 			MountPath: activeGateTrustedCertMountPath,
-			ReadOnly:  true,
-		})
-	}
-
-	if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			Name:      httpsCertVolumeName,
-			MountPath: baseSecretsPath + "/eec",
-			ReadOnly:  true,
-		})
-	} else {
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			Name:      httpsCertVolumeName,
-			MountPath: httpsCertMountPath,
 			ReadOnly:  true,
 		})
 	}
