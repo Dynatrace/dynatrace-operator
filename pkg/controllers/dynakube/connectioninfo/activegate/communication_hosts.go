@@ -1,8 +1,8 @@
 package activegate
 
 import (
+	"fmt"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -70,8 +70,11 @@ func getPortOrDefault(u *url.URL, defaultPort uint32) (uint32, error) {
 		return defaultPort, nil
 	}
 
-	if p, err := strconv.ParseUint(portString, 10, 32); err == nil {
-		return uint32(p), nil
+	var p uint32
+
+	_, err := fmt.Sscan(portString, &p)
+	if err == nil {
+		return p, nil
 	} else {
 		return 0, err
 	}

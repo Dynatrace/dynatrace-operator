@@ -16,6 +16,10 @@ kind: Deployment
 metadata:
   name: dynatrace-operator
   namespace: {{ .Release.Namespace }}
+  annotations:
+  {{- if .Values.operator.annotations }}
+    {{- toYaml .Values.operator.annotations | nindent 4 }}
+  {{- end }}
   labels:
     dynatrace.com/install-source: {{ include "dynatrace-operator.installSource" . }}
       {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}

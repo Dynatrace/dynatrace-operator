@@ -243,24 +243,24 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 
 		request.DynaKube.Status.MetadataEnrichment.Rules = []dynakube.EnrichmentRule{
 			{
-				Type:    dynakube.EnrichmentAnnotationRule,
-				Key:     "test-annotation",
-				Mapping: "dt.test-annotation",
+				Type:   dynakube.EnrichmentAnnotationRule,
+				Source: "test-annotation",
+				Target: "dt.test-annotation",
 			},
 			{
-				Type:    dynakube.EnrichmentLabelRule,
-				Key:     "test-label",
-				Mapping: "test-label",
+				Type:   dynakube.EnrichmentLabelRule,
+				Source: "test-label",
+				Target: "test-label",
 			},
 			{
-				Type:    dynakube.EnrichmentLabelRule,
-				Key:     dynakube.MetadataPrefix + "/copyifruleexists",
-				Mapping: "dt.copyifruleexists",
+				Type:   dynakube.EnrichmentLabelRule,
+				Source: dynakube.MetadataPrefix + "/copyifruleexists",
+				Target: "dt.copyifruleexists",
 			},
 			{
-				Type:    dynakube.EnrichmentLabelRule,
-				Key:     "does-not-exist-in-namespace",
-				Mapping: "dt.does-not-exist-in-namespace",
+				Type:   dynakube.EnrichmentLabelRule,
+				Source: "does-not-exist-in-namespace",
+				Target: "dt.does-not-exist-in-namespace",
 			},
 		}
 		request.Pod.Annotations = map[string]string{
@@ -295,19 +295,19 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 
 		request.DynaKube.Status.MetadataEnrichment.Rules = []dynakube.EnrichmentRule{
 			{
-				Type:    dynakube.EnrichmentLabelRule,
-				Key:     "test",
-				Mapping: "dt.test-label",
+				Type:   dynakube.EnrichmentLabelRule,
+				Source: "test",
+				Target: "dt.test-label",
 			},
 			{
-				Type:    dynakube.EnrichmentAnnotationRule,
-				Key:     "test2",
-				Mapping: "dt.test-annotation",
+				Type:   dynakube.EnrichmentAnnotationRule,
+				Source: "test2",
+				Target: "dt.test-annotation",
 			},
 			{
-				Type:    dynakube.EnrichmentAnnotationRule,
-				Key:     "test3",
-				Mapping: "", // mapping missing => rule ignored
+				Type:   dynakube.EnrichmentAnnotationRule,
+				Source: "test3",
+				Target: "", // mapping missing => rule ignored
 			},
 		}
 
