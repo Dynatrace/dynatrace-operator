@@ -24,7 +24,6 @@ const (
 	containerName                    = "extensions-controller"
 	collectorPort                    = int32(14599)
 	serviceAccountName               = "dynatrace-extensions-controller"
-	baseSecretsPath                  = "/var/lib/dynatrace/secrets"
 
 	// Env variable names
 	envTenantId                     = "TenantId"
