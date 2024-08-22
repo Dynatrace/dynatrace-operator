@@ -59,7 +59,7 @@ const (
 	activeGateTrustedCertMountPath     = "/var/lib/dynatrace/secrets/ag"
 	activeGateTrustedCertSecretKeyPath = "server.crt"
 	httpsCertVolumeName                = "https-certs"
-	httpsCertMountPath                 = "/var/lib/dynatrace/remotepluginmodule/secrets/https/"
+	httpsCertMountPath                 = "/var/lib/dynatrace/remotepluginmodule/secrets/https"
 	extensionsControllerTlsSecretName  = "extensions-controller-tls"
 	dsTokenPath                        = "/var/lib/dynatrace/remotepluginmodule/secrets/dsauthtoken"
 
@@ -275,7 +275,7 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 
 	if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			Name:      consts.ExtensionsCustomTlsCertificate,
+			Name:      httpsCertVolumeName,
 			MountPath: baseSecretsPath + "/eec",
 			ReadOnly:  true,
 		})
@@ -293,11 +293,9 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	return func(o *appsv1.StatefulSet) {
 		tlsSecretName := extensionsControllerTlsSecretName
-		tlsCertVolumeName := httpsCertVolumeName
 
 		if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
 			tlsSecretName = dk.Spec.Templates.ExtensionExecutionController.TlsRefName
-			tlsCertVolumeName = consts.ExtensionsCustomTlsCertificate
 		}
 
 		mode := int32(420)
@@ -324,7 +322,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				},
 			},
 			{
-				Name: tlsCertVolumeName,
+				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName: tlsSecretName,
