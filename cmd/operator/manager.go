@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes"
 	"github.com/pkg/errors"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // important for running operator locally
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -64,10 +63,6 @@ func (provider bootstrapManagerProvider) CreateManager(namespace string, config 
 		return nil, errors.WithStack(err)
 	}
 
-	// instrument webhook manager HTTP client with OpenTelemetry
-	controlManager.GetHTTPClient().Transport = otelhttp.NewTransport(
-		controlManager.GetHTTPClient().Transport)
-
 	err = controlManager.AddHealthzCheck(livezEndpointName, healthz.Ping)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -92,10 +87,6 @@ func (provider operatorManagerProvider) CreateManager(namespace string, cfg *res
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-
-	// instrument webhook manager HTTP client with OpenTelemetry
-	httpCLient := mgr.GetHTTPClient()
-	httpCLient.Transport = otelhttp.NewTransport(httpCLient.Transport)
 
 	err = mgr.AddHealthzCheck(livezEndpointName, healthz.Ping)
 	if err != nil {

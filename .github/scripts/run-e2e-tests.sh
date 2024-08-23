@@ -44,11 +44,6 @@ oAuthClientSecret: $TENANT1_OAUTH_SECRET
 resource: $TENANT1_OAUTH_URN
 EOF
 
-cat << EOF > otel-tenant.yaml
-endpoint: $TENANT1_NAME.dev.dynatracelabs.com
-apiToken: $TENANT1_OTELTOKEN
-EOF
-
 popd
 
 echo "Running tests for environment '$FLC_ENVIRONMENT'..."

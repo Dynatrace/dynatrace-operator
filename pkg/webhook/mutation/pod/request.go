@@ -4,9 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/internal/otel"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -15,42 +13,29 @@ import (
 )
 
 func (wh *webhook) createMutationRequestBase(ctx context.Context, request admission.Request) (*dtwebhook.MutationRequest, error) {
-	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
-	defer span.End()
-
 	pod, err := getPodFromRequest(request, wh.decoder)
 	if err != nil {
-		span.RecordError(err)
-
 		return nil, err
 	}
 
 	namespace, err := getNamespaceFromRequest(ctx, wh.apiReader, request)
 	if err != nil {
-		span.RecordError(err)
-
 		return nil, err
 	}
 
 	dynakubeName, err := getDynakubeName(*namespace)
 	if err != nil && !wh.deployedViaOLM {
-		span.RecordError(err)
-
 		return nil, err
 	} else if err != nil {
 		// in case of olm deployment, all pods are sent to us
 		// but not all of them need to be mutated,
 		// therefore their namespace might not have a dynakube assigned
 		// in which case we don't need to do anything
-		span.RecordError(err)
-
-		return nil, nil //nolint:nilnil
+		return nil, nil //nolint
 	}
 
 	dynakube, err := wh.getDynakube(ctx, dynakubeName)
 	if err != nil {
-		span.RecordError(err)
-
 		return nil, err
 	}
 

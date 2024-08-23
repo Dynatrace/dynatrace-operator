@@ -7,7 +7,6 @@ import (
 	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
@@ -188,9 +187,6 @@ func (builder CommandBuilder) runOperatorManager(kubeCfg *rest.Config, isDeploye
 	if err != nil {
 		return err
 	}
-
-	otelShutdownFn := dtotel.Start(builder.getSignalHandler(), "dynatrace-operator", operatorManager.GetAPIReader(), builder.namespace)
-	defer otelShutdownFn()
 
 	err = operatorManager.Start(builder.getSignalHandler())
 
