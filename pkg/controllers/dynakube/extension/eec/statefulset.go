@@ -62,9 +62,7 @@ const (
 	dsTokenPath                        = "/var/lib/dynatrace/remotepluginmodule/secrets/dsauthtoken"
 
 	// misc
-	tokensVolumeName = "tokens"
-	eecFile          = "eec.token"
-	logVolumeName    = "log"
+	logVolumeName = "log"
 )
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
@@ -201,13 +199,13 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	containerEnvs := []corev1.EnvVar{
 		{Name: envTenantId, Value: dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID},
 		{Name: envServerUrl, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ".svc.cluster.local:443"},
-		{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + eecFile},
+		{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + consts.EecTokenSecretKey},
 		{Name: envEecIngestPort, Value: strconv.Itoa(int(collectorPort))},
 		{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath},
 		{Name: envDsInstallDirName, Value: envDsInstallDir},
 		{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID},
 		{Name: envK8sExtServiceUrl, Value: serviceAccountName},
-		{Name: envDSTokenPath, Value: dsTokenPath},
+		{Name: envDSTokenPath, Value: eecTokenMountPath + "/" + consts.OtelcTokenSecretKey},
 		{Name: envHttpsCertPathPem, Value: envEecHttpsCertPathPem},
 		{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem},
 	}
@@ -228,7 +226,7 @@ func buildActiveGateServiceName(dk *dynakube.DynaKube) string {
 func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
 		{
-			Name:      tokensVolumeName,
+			Name:      consts.TokensVolumeName,
 			MountPath: eecTokenMountPath,
 			ReadOnly:  true,
 		},
@@ -284,7 +282,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 		mode := int32(420)
 		o.Spec.Template.Spec.Volumes = []corev1.Volume{
 			{
-				Name: tokensVolumeName,
+				Name: consts.TokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName:  dk.Name + consts.SecretSuffix,

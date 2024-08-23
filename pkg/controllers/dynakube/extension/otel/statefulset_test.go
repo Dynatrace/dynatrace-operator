@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/utils"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -348,27 +349,25 @@ func TestVolumes(t *testing.T) {
 		dk.Spec.TrustedCAs = "test-trusted-cas"
 		statefulSet := getStatefulset(t, dk)
 
-		expectedVolumeMounts := []corev1.VolumeMount{
-			{
-				Name:      caCertsVolumeName,
-				MountPath: trustedCAVolumeMountPath,
-				ReadOnly:  true,
-			},
+		expectedVolumeMount := corev1.VolumeMount{
+			Name:      caCertsVolumeName,
+			MountPath: trustedCAVolumeMountPath,
+			ReadOnly:  true,
 		}
-		assert.Equal(t, expectedVolumeMounts, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts)
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
 	})
-	t.Run("volumes and volume mounts without trusted CAs", func(t *testing.T) {
+	t.Run("volume mounts without trusted CAs", func(t *testing.T) {
 		dk := getTestDynakube()
 		statefulSet := getStatefulset(t, dk)
 
-		var expectedVolumeMounts []corev1.VolumeMount
+		expectedVolumeMount := corev1.VolumeMount{
+			Name:      caCertsVolumeName,
+			MountPath: trustedCAVolumeMountPath,
+			ReadOnly:  true,
+		}
 
-		var expectedVolumes []corev1.Volume
-
-		assert.Equal(t, expectedVolumeMounts, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts)
-		assert.Equal(t, expectedVolumes, statefulSet.Spec.Template.Spec.Volumes)
+		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
 	})
-
 	t.Run("volumes and volume mounts with custom EEC TLS certificate", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "test-tls-name"
@@ -396,31 +395,49 @@ func TestVolumes(t *testing.T) {
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
 	})
-
 	t.Run("volumes with trusted CAs", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.TrustedCAs = "test-trusted-cas"
 		statefulSet := getStatefulset(t, dk)
 
-		expectedVolumes := []corev1.Volume{
-			{
-				Name: caCertsVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: dk.Spec.TrustedCAs,
-						},
-						Items: []corev1.KeyToPath{
-							{
-								Key:  "certs",
-								Path: trustedCAsFile,
-							},
+		expectedVolume := corev1.Volume{
+			Name: caCertsVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: dk.Spec.TrustedCAs,
+					},
+					Items: []corev1.KeyToPath{
+						{
+							Key:  "certs",
+							Path: trustedCAsFile,
 						},
 					},
 				},
 			},
 		}
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
+	})
+	t.Run("volumes with otel token", func(t *testing.T) {
+		dk := getTestDynakube()
+		statefulSet := getStatefulset(t, dk)
 
-		assert.Equal(t, expectedVolumes, statefulSet.Spec.Template.Spec.Volumes)
+		expectedVolume := corev1.Volume{
+			Name: consts.TokensVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: dk.Name + consts.SecretSuffix,
+					Items: []corev1.KeyToPath{
+						{
+							Key:  tokenSecretKey,
+							Path: tokenSecretKey,
+						},
+					},
+					DefaultMode: address.Of(int32(420)),
+				},
+			},
+		}
+
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
 	})
 }

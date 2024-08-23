@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/hash"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/utils"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
@@ -42,6 +43,8 @@ const (
 	trustedCAVolumePath             = trustedCAVolumeMountPath + "/certs"
 	customEecTlsCertificatePath     = "/tls/custom/eec"
 	customEecTlsCertificateFullPath = customEecTlsCertificatePath + "/" + consts.TLSCrtDataName
+	secretsTokensPath               = "/secrets/tokens"
+	otelcSecretTokenFilePath        = secretsTokensPath + "/" + consts.OtelcTokenSecretKey
 )
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
@@ -113,7 +116,7 @@ func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 		SecurityContext: buildSecurityContext(),
 		Env:             buildContainerEnvs(dk),
 		Resources:       dk.Spec.Templates.OpenTelemetryCollector.Resources,
-		Args:            []string{fmt.Sprintf("--config=eec://%s.%s.svc.cluster.local:%d#refresh-interval=5s&insecure=true", dk.Name+consts.ExtensionsControllerSuffix, dk.Namespace, consts.ExtensionsCollectorComPort)},
+		Args:            []string{fmt.Sprintf("--config=eec://%s.%s.svc.cluster.local:%d/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=%s", dk.Name+consts.ExtensionsControllerSuffix, dk.Namespace, consts.ExtensionsCollectorComPort, otelcSecretTokenFilePath)},
 		VolumeMounts:    buildContainerVolumeMounts(dk),
 	}
 }
@@ -202,50 +205,66 @@ func setImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) func(o 
 
 func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	return func(o *appsv1.StatefulSet) {
-		if dk.Spec.TrustedCAs != "" {
-			o.Spec.Template.Spec.Volumes = []corev1.Volume{
-				{
-					Name: caCertsVolumeName,
-					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: dk.Spec.TrustedCAs,
+		o.Spec.Template.Spec.Volumes = []corev1.Volume{
+			{
+				Name: consts.TokensVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: dk.Name + consts.SecretSuffix,
+						Items: []corev1.KeyToPath{
+							{
+								Key:  tokenSecretKey,
+								Path: tokenSecretKey,
 							},
-							Items: []corev1.KeyToPath{
-								{
-									Key:  "certs",
-									Path: trustedCAsFile,
-								},
+						},
+						DefaultMode: address.Of(int32(420)),
+					},
+				},
+			},
+		}
+		if dk.Spec.TrustedCAs != "" {
+			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
+				Name: caCertsVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: dk.Spec.TrustedCAs,
+						},
+						Items: []corev1.KeyToPath{
+							{
+								Key:  "certs",
+								Path: trustedCAsFile,
 							},
 						},
 					},
 				},
-			}
+			})
 		}
 
 		if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
-			o.Spec.Template.Spec.Volumes = []corev1.Volume{
-				{
-					Name: consts.ExtensionsCustomTlsCertificate,
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: dk.Spec.Templates.ExtensionExecutionController.TlsRefName,
-							Items: []corev1.KeyToPath{
-								{
-									Key:  consts.TLSCrtDataName,
-									Path: consts.TLSCrtDataName,
-								},
+			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
+				Name: consts.ExtensionsCustomTlsCertificate,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: dk.Spec.Templates.ExtensionExecutionController.TlsRefName,
+						Items: []corev1.KeyToPath{
+							{
+								Key:  consts.TLSCrtDataName,
+								Path: consts.TLSCrtDataName,
 							},
 						},
 					},
 				},
-			}
+			})
 		}
 	}
 }
 
 func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
-	var vm []corev1.VolumeMount
+	vm := []corev1.VolumeMount{
+		{Name: consts.TokensVolumeName, ReadOnly: true, MountPath: secretsTokensPath},
+	}
+
 	if dk.Spec.TrustedCAs != "" {
 		vm = append(vm, corev1.VolumeMount{
 			Name:      caCertsVolumeName,

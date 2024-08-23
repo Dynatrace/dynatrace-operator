@@ -191,13 +191,13 @@ func TestEnvironmentVariables(t *testing.T) {
 
 		assert.Equal(t, corev1.EnvVar{Name: envTenantId, Value: dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
 		assert.Equal(t, corev1.EnvVar{Name: envServerUrl, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ".svc.cluster.local:443"}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
-		assert.Equal(t, corev1.EnvVar{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + eecFile}, statefulSet.Spec.Template.Spec.Containers[0].Env[2])
+		assert.Equal(t, corev1.EnvVar{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + consts.EecTokenSecretKey}, statefulSet.Spec.Template.Spec.Containers[0].Env[2])
 		assert.Equal(t, corev1.EnvVar{Name: envEecIngestPort, Value: strconv.Itoa(int(collectorPort))}, statefulSet.Spec.Template.Spec.Containers[0].Env[3])
 		assert.Equal(t, corev1.EnvVar{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
 		assert.Equal(t, corev1.EnvVar{Name: envDsInstallDirName, Value: envDsInstallDir}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
 		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
 		assert.Equal(t, corev1.EnvVar{Name: envK8sExtServiceUrl, Value: serviceAccountName}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
-		assert.Equal(t, corev1.EnvVar{Name: envDSTokenPath, Value: dsTokenPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
+		assert.Equal(t, corev1.EnvVar{Name: envDSTokenPath, Value: eecTokenMountPath + "/" + consts.OtelcTokenSecretKey}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
 		assert.Equal(t, corev1.EnvVar{Name: envHttpsCertPathPem, Value: envEecHttpsCertPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
 		assert.Equal(t, corev1.EnvVar{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
 	})
@@ -219,7 +219,7 @@ func TestVolumeMounts(t *testing.T) {
 
 		expectedVolumeMounts := []corev1.VolumeMount{
 			{
-				Name:      tokensVolumeName,
+				Name:      consts.TokensVolumeName,
 				MountPath: eecTokenMountPath,
 				ReadOnly:  true,
 			},
@@ -268,7 +268,7 @@ func TestVolumeMounts(t *testing.T) {
 
 		expectedVolumeMounts := []corev1.VolumeMount{
 			{
-				Name:      tokensVolumeName,
+				Name:      consts.TokensVolumeName,
 				MountPath: eecTokenMountPath,
 				ReadOnly:  true,
 			},
@@ -513,7 +513,7 @@ func TestVolumes(t *testing.T) {
 		mode := int32(420)
 		expectedVolumes := []corev1.Volume{
 			{
-				Name: tokensVolumeName,
+				Name: consts.TokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName:  dk.Name + consts.SecretSuffix,
@@ -567,7 +567,7 @@ func TestVolumes(t *testing.T) {
 		mode := int32(420)
 		expectedVolumes := []corev1.Volume{
 			{
-				Name: tokensVolumeName,
+				Name: consts.TokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName:  dk.Name + consts.SecretSuffix,
@@ -617,7 +617,7 @@ func TestVolumes(t *testing.T) {
 		mode := int32(420)
 		expectedVolumes := []corev1.Volume{
 			{
-				Name: tokensVolumeName,
+				Name: consts.TokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName:  dk.Name + consts.SecretSuffix,
