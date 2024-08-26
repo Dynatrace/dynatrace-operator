@@ -159,7 +159,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		assert.Equal(t, corev1.EnvVar{Name: envOTLPtoken, ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Name + consts.SecretSuffix},
-				Key:                  tokenSecretKey,
+				Key:                  consts.OtelcTokenSecretKey,
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
 		assert.Equal(t, corev1.EnvVar{Name: envCertDir, Value: customEecTlsCertificatePath}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
@@ -430,8 +430,8 @@ func TestVolumes(t *testing.T) {
 					SecretName: dk.Name + consts.SecretSuffix,
 					Items: []corev1.KeyToPath{
 						{
-							Key:  tokenSecretKey,
-							Path: tokenSecretKey,
+							Key:  consts.OtelcTokenSecretKey,
+							Path: consts.OtelcTokenSecretKey,
 						},
 					},
 					DefaultMode: address.Of(int32(420)),

@@ -19,37 +19,44 @@ import (
 )
 
 const (
-	serviceAccountName   = "dynatrace-extensions-collector"
-	containerName        = "collector"
-	tokenSecretKey       = "otelc.token"
-	caCertsVolumeName    = "cacerts"
+	serviceAccountName = "dynatrace-extensions-collector"
+	containerName      = "collector"
+
+	// default values
 	defaultImageRepo     = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
 	defaultImageTag      = "0.12.0"
 	defaultOLTPgrpcPort  = "10001"
 	defaultOLTPhttpPort  = "10002"
 	defaultPodNamePrefix = "extensions-collector"
 	defaultReplicas      = 1
-	envShards            = "SHARDS"
-	envShardId           = "SHARD_ID"
-	envPodNamePrefix     = "POD_NAME_PREFIX"
-	envPodName           = "POD_NAME"
-	envOTLPgrpcPort      = "OTLP_GRPC_PORT"
-	envOTLPhttpPort      = "OTLP_HTTP_PORT"
-	envOTLPtoken         = "OTLP_TOKEN"
-	envTrustedCAs        = "TRUSTED_CAS"
-	// certDirEnv is the environment variable which identifies which directory
-	// to check for SSL certificate files. If set this overrides the system default.
+
+	// env variables
+	envShards        = "SHARDS"
+	envShardId       = "SHARD_ID"
+	envPodNamePrefix = "POD_NAME_PREFIX"
+	envPodName       = "POD_NAME"
+	envOTLPgrpcPort  = "OTLP_GRPC_PORT"
+	envOTLPhttpPort  = "OTLP_HTTP_PORT"
+	envOTLPtoken     = "OTLP_TOKEN"
+	envTrustedCAs    = "TRUSTED_CAS"
+	// certDirEnv is the environment variable that identifies which directory
+	// to check for SSL certificate files. If set, this overrides the system default.
 	// It is a colon separated list of directories.
 	// See https://www.openssl.org/docs/man1.0.2/man1/c_rehash.html.
-	envCertDir                      = "SSL_CERT_DIR"
-	envEECcontrollerTls             = "EXTENSIONS_CONTROLLER_TLS"
-	trustedCAsFile                  = "rootca.pem"
+	envCertDir          = "SSL_CERT_DIR"
+	envEECcontrollerTls = "EXTENSIONS_CONTROLLER_TLS"
+
+	// Volume names and paths
+	caCertsVolumeName               = "cacerts"
 	trustedCAVolumeMountPath        = "/tls/custom/cacerts"
 	trustedCAVolumePath             = trustedCAVolumeMountPath + "/certs"
 	customEecTlsCertificatePath     = "/tls/custom/eec"
 	customEecTlsCertificateFullPath = customEecTlsCertificatePath + "/" + consts.TLSCrtDataName
 	secretsTokensPath               = "/secrets/tokens"
 	otelcSecretTokenFilePath        = secretsTokensPath + "/" + consts.OtelcTokenSecretKey
+
+	// misc
+	trustedCAsFile = "rootca.pem"
 )
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
@@ -163,7 +170,7 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envOTLPtoken, ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Name + consts.SecretSuffix},
-				Key:                  tokenSecretKey,
+				Key:                  consts.OtelcTokenSecretKey,
 			},
 		},
 		},
@@ -219,8 +226,8 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 						SecretName: dk.Name + consts.SecretSuffix,
 						Items: []corev1.KeyToPath{
 							{
-								Key:  tokenSecretKey,
-								Path: tokenSecretKey,
+								Key:  consts.OtelcTokenSecretKey,
+								Path: consts.OtelcTokenSecretKey,
 							},
 						},
 						DefaultMode: address.Of(int32(420)),
