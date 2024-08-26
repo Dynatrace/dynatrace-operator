@@ -7,8 +7,11 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -44,7 +47,24 @@ func NewReconciler(clt client.Client, dk *dynakube.DynaKube, customPropertiesOwn
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if r.customPropertiesSource == nil && !r.dk.NeedsCustomNoProxy() {
-		return nil
+		if meta.FindStatusCondition(*r.dk.Conditions(), customPropertiesConditionTypeString(r.customPropertiesOwnerName)) == nil {
+			return nil
+		}
+
+		query := secret.Query(r.client, r.client, log)
+
+		err := query.Delete(ctx,
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      r.buildCustomPropertiesName(r.dk.Name),
+					Namespace: r.dk.Namespace}})
+		if err != nil {
+			log.Error(err, "failed to clean-up custom properties secret")
+		}
+
+		meta.RemoveStatusCondition(r.dk.Conditions(), customPropertiesConditionTypeString(r.customPropertiesOwnerName))
+
+		return nil // clean-up shouldn't cause a failure
 	}
 
 	data, err := r.buildCustomPropertiesValue(ctx)
@@ -68,6 +88,9 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	conditions.SetSecretCreated(r.dk.Conditions(), customPropertiesConditionTypeString(r.customPropertiesOwnerName),
+		r.buildCustomPropertiesName(r.dk.Name))
 
 	return nil
 }
