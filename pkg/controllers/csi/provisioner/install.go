@@ -7,13 +7,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	csiotel "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/internal/otel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 )
 
 func (provisioner *OneAgentProvisioner) installAgentImage(
@@ -49,13 +47,8 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 		return "", err
 	}
 
-	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
-	defer span.End()
-
 	err = provisioner.installAgent(ctx, imageInstaller, dk, targetDir, targetImage, tenantUUID)
 	if err != nil {
-		span.RecordError(err)
-
 		return "", err
 	}
 
@@ -79,13 +72,8 @@ func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dk 
 	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(targetVersion)
 	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dk.GetName())
 
-	ctx, span := dtotel.StartSpan(ctx, csiotel.Tracer(), csiotel.SpanOptions()...)
-	defer span.End()
-
 	err = provisioner.installAgent(ctx, urlInstaller, dk, targetDir, targetVersion, tenantUUID)
 	if err != nil {
-		span.RecordError(err)
-
 		return "", err
 	}
 

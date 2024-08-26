@@ -7,8 +7,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
-	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/internal/otel"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,10 +38,6 @@ type webhook struct {
 //  2. if the namespace was updated by the operator => don't do the mapping: we detect this using an annotation, we do this because the operator also does the mapping
 //     but from the dynakube's side (during dynakube reconcile) and we don't want to repeat ourselves. So we just remove the annotation.
 func (wh *webhook) Handle(ctx context.Context, request admission.Request) admission.Response {
-	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
-	defer span.End()
-	countHandleMutationRequest(ctx, request.Namespace)
-
 	if wh.namespace == request.Namespace {
 		return admission.Patched("")
 	}
@@ -68,8 +62,6 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 
 	updatedNamespace, err := nsMapper.MapFromNamespace(ctx)
 	if err != nil {
-		span.RecordError(err)
-
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 

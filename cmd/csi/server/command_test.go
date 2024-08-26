@@ -3,7 +3,6 @@ package server
 import (
 	"testing"
 
-	dtfake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	configmock "github.com/Dynatrace/dynatrace-operator/test/mocks/cmd/config"
@@ -20,9 +19,7 @@ func TestCsiCommand(t *testing.T) {
 	configProvider := &configmock.Provider{}
 	configProvider.On("GetConfig").Return(&rest.Config{}, nil)
 
-	clt := dtfake.NewClient()
 	cmdMgr := managermock.NewManager(t)
-	cmdMgr.On("GetAPIReader", mock.Anything, mock.Anything).Return(clt, nil)
 
 	managerProvider := providermock.NewProvider(t)
 	managerProvider.On("CreateManager", mock.Anything, mock.Anything).Return(cmdMgr, nil)
