@@ -26,6 +26,7 @@ func (provider csiDriverManagerProvider) CreateManager(namespace string, config 
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+
 	return mgr, nil
 }
 func (provider csiDriverManagerProvider) createOptions(namespace string) ctrl.Options {
