@@ -613,7 +613,7 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		mockK8sClient := createMockK8sClient(ctx, dynakube)
 		installerMock := installermock.NewInstaller(t)
 		installerMock.
-			On("InstallAgent", mock.AnythingOfType("*context.valueCtx"), targetDir).
+			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).
 			Return(true, nil)
 
 		provisioner := &OneAgentProvisioner{
@@ -659,7 +659,7 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		mockK8sClient := createMockK8sClient(ctx, dynakube)
 		installerMock := installermock.NewInstaller(t)
 		installerMock.
-			On("InstallAgent", mock.AnythingOfType("*context.valueCtx"), targetDir).
+			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), targetDir).
 			Return(true, nil)
 
 		provisioner := &OneAgentProvisioner{
@@ -695,7 +695,7 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		mockK8sClient := createMockK8sClient(ctx, dynakube)
 		installerMock := installermock.NewInstaller(t)
 		installerMock.
-			On("InstallAgent", mock.AnythingOfType("*context.valueCtx"), "test/codemodules").
+			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), "test/codemodules").
 			Return(true, nil)
 
 		provisioner := &OneAgentProvisioner{
@@ -735,7 +735,7 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		mockK8sClient := createMockK8sClient(ctx, dynakube)
 		installerMock := installermock.NewInstaller(t)
 		installerMock.
-			On("InstallAgent", mock.AnythingOfType("*context.valueCtx"), "test/codemodules").
+			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), "test/codemodules").
 			Return(true, nil)
 
 		provisioner := &OneAgentProvisioner{
