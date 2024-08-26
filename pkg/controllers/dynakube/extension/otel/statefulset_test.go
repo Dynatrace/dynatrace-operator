@@ -162,6 +162,7 @@ func TestEnvironmentVariables(t *testing.T) {
 				Key:                  tokenSecretKey,
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
+		assert.Equal(t, corev1.EnvVar{Name: envCertDir, Value: customEecTlsCertificatePath}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
 	})
 	t.Run("environment variables with trustedCA", func(t *testing.T) {
 		dk := getTestDynakube()

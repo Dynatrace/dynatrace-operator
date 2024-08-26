@@ -19,24 +19,29 @@ import (
 )
 
 const (
-	serviceAccountName              = "dynatrace-extensions-collector"
-	containerName                   = "collector"
-	tokenSecretKey                  = "otelc.token"
-	caCertsVolumeName               = "cacerts"
-	defaultImageRepo                = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
-	defaultImageTag                 = "0.7.0"
-	defaultOLTPgrpcPort             = "10001"
-	defaultOLTPhttpPort             = "10002"
-	defaultPodNamePrefix            = "extensions-collector"
-	defaultReplicas                 = 1
-	envShards                       = "SHARDS"
-	envShardId                      = "SHARD_ID"
-	envPodNamePrefix                = "POD_NAME_PREFIX"
-	envPodName                      = "POD_NAME"
-	envOTLPgrpcPort                 = "OTLP_GRPC_PORT"
-	envOTLPhttpPort                 = "OTLP_HTTP_PORT"
-	envOTLPtoken                    = "OTLP_TOKEN"
-	envTrustedCAs                   = "TRUSTED_CAS"
+	serviceAccountName   = "dynatrace-extensions-collector"
+	containerName        = "collector"
+	tokenSecretKey       = "otelc.token"
+	caCertsVolumeName    = "cacerts"
+	defaultImageRepo     = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
+	defaultImageTag      = "0.12.0"
+	defaultOLTPgrpcPort  = "10001"
+	defaultOLTPhttpPort  = "10002"
+	defaultPodNamePrefix = "extensions-collector"
+	defaultReplicas      = 1
+	envShards            = "SHARDS"
+	envShardId           = "SHARD_ID"
+	envPodNamePrefix     = "POD_NAME_PREFIX"
+	envPodName           = "POD_NAME"
+	envOTLPgrpcPort      = "OTLP_GRPC_PORT"
+	envOTLPhttpPort      = "OTLP_HTTP_PORT"
+	envOTLPtoken         = "OTLP_TOKEN"
+	envTrustedCAs        = "TRUSTED_CAS"
+	// certDirEnv is the environment variable which identifies which directory
+	// to check for SSL certificate files. If set this overrides the system default.
+	// It is a colon separated list of directories.
+	// See https://www.openssl.org/docs/man1.0.2/man1/c_rehash.html.
+	envCertDir                      = "SSL_CERT_DIR"
 	envEECcontrollerTls             = "EXTENSIONS_CONTROLLER_TLS"
 	trustedCAsFile                  = "rootca.pem"
 	trustedCAVolumeMountPath        = "/tls/custom/cacerts"
@@ -162,6 +167,7 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 			},
 		},
 		},
+		{Name: envCertDir, Value: customEecTlsCertificatePath},
 	}
 	if dk.Spec.TrustedCAs != "" {
 		envs = append(envs, corev1.EnvVar{Name: envTrustedCAs, Value: trustedCAVolumePath})
