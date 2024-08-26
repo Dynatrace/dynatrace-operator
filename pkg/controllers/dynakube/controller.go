@@ -249,7 +249,12 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakub
 		return err
 	}
 
-	log.Info("start reconciling process module config")
+	proxyReconciler := proxy.NewReconciler(controller.client, controller.apiReader, dk)
+
+	err = proxyReconciler.Reconcile(ctx)
+	if err != nil {
+		return err
+	}
 
 	return controller.reconcileComponents(ctx, dynatraceClient, istioClient, dk)
 }
@@ -318,13 +323,6 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		log.Info("could not reconcile Extensions")
 
 		componentErrors = append(componentErrors, err)
-	}
-
-	proxyReconciler := proxy.NewReconciler(controller.client, controller.apiReader, dk)
-
-	err = proxyReconciler.Reconcile(ctx)
-	if err != nil {
-		return err
 	}
 
 	monitoredEntitiesReconciler := monitoredentities.NewReconciler(dynatraceClient, dk)
