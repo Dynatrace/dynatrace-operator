@@ -38,10 +38,11 @@ const (
 	envHttpsCertPathPem             = "HttpsCertPathPem"
 	envHttpsPrivKeyPathPem          = "HttpsPrivKeyPathPem"
 	envDSTokenPath                  = "DSTokenPath"
+	envRuntimeConfigMountPath       = "RuntimeConfigMountPath"
 	// Env variable values
 	envExtensionsModuleExecPath = "/opt/dynatrace/remotepluginmodule/agent/lib64/extensionsmodule"
 	envDsInstallDir             = "/opt/dynatrace/remotepluginmodule/agent/datasources"
-	envActiveGateTrustedCert    = "/var/lib/dynatrace/secrets/ag/" + activeGateTrustedCertSecretKeyPath
+	envActiveGateTrustedCert    = activeGateTrustedCertMountPath + "/" + activeGateTrustedCertSecretKeyPath
 	envEecHttpsCertPathPem      = httpsCertMountPath + "/" + consts.TLSCrtDataName
 	envEecHttpsPrivKeyPathPem   = httpsCertMountPath + "/" + consts.TLSKeyDataName
 	// Volume names and paths
@@ -54,12 +55,13 @@ const (
 	customConfigVolumeName             = "custom-config"
 	customConfigMountPath              = "/var/lib/dynatrace/remotepluginmodule/secrets/config"
 	activeGateTrustedCertVolumeName    = "server-certs"
-	activeGateTrustedCertMountPath     = "/var/lib/dynatrace/secrets/ag"
+	activeGateTrustedCertMountPath     = "/var/lib/dynatrace/remotepluginmodule/secrets/ag"
 	activeGateTrustedCertSecretKeyPath = "server.crt"
 	httpsCertVolumeName                = "https-certs"
 	httpsCertMountPath                 = "/var/lib/dynatrace/remotepluginmodule/secrets/https"
 	extensionsControllerTlsSecretName  = "extensions-controller-tls"
 	dsTokenPath                        = "/var/lib/dynatrace/remotepluginmodule/secrets/dsauthtoken"
+	runtimeConfigurationFilename       = "runtimeConfiguration"
 
 	// misc
 	logVolumeName = "log"
@@ -212,6 +214,10 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 
 	if dk.Spec.ActiveGate.TlsSecretName != "" {
 		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envActiveGateTrustedCertName, Value: envActiveGateTrustedCert})
+	}
+
+	if dk.Spec.Templates.ExtensionExecutionController.CustomConfig != "" {
+		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envRuntimeConfigMountPath, Value: customConfigMountPath + "/" + runtimeConfigurationFilename})
 	}
 
 	return containerEnvs
