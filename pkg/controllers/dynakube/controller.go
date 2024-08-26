@@ -315,7 +315,9 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	err = extensionReconciler.Reconcile(ctx)
 	if err != nil {
-		return err
+		log.Info("could not reconcile Extensions")
+
+		componentErrors = append(componentErrors, err)
 	}
 
 	proxyReconciler := proxy.NewReconciler(controller.client, controller.apiReader, dk)
