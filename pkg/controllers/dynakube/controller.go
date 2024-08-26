@@ -18,7 +18,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/monitoredentities"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -323,13 +322,6 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		log.Info("could not reconcile Extensions")
 
 		componentErrors = append(componentErrors, err)
-	}
-
-	monitoredEntitiesReconciler := monitoredentities.NewReconciler(dynatraceClient, dk)
-
-	err = monitoredEntitiesReconciler.Reconcile(ctx)
-	if err != nil {
-		return err
 	}
 
 	log.Info("start reconciling app injection")
