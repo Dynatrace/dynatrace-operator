@@ -203,10 +203,8 @@ func TestOperatorCommand(t *testing.T) {
 			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
 			Return(bootstrapMockMgr, nil).Maybe()
 
-		clt := dtfake.NewClient()
 		operatorMockMgr := managermock.NewManager(t)
 		operatorMockMgr.On("Start", mock.Anything).Return(nil)
-		operatorMockMgr.On("GetAPIReader", mock.Anything).Return(clt, nil)
 
 		mockOperatorMgrProvider := providermock.NewProvider(t)
 		mockOperatorMgrProvider.

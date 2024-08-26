@@ -17,9 +17,6 @@ inputs:
   tenant1-apitoken:
     description: The API token of Tenant 1
     required: true
-  tenant1-oteltoken:
-    description: The OTel token of Tenant 1
-    required: true
   tenant1-oauth-client-id:
     description: The OAuth client ID of Tenant 1
     required: true
@@ -78,7 +75,6 @@ runs:
         TARGET_BRANCH: ${{ inputs.target-branch || 'main' }}
         TENANT1_NAME: ${{ inputs.tenant1-name }}
         TENANT1_APITOKEN: ${{ inputs.tenant1-apitoken }}
-        TENANT1_OTELTOKEN: ${{ inputs.tenant1-oteltoken }}
         TENANT1_OAUTH_CLIENT_ID: ${{ inputs.tenant1-oauth-client-id }}
         TENANT1_OAUTH_SECRET: ${{ inputs.tenant1-oauth-secret }}
         TENANT1_OAUTH_URN: ${{ inputs.tenant1-oauth-urn }}

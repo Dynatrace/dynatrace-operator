@@ -7,10 +7,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/internal/otel"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -55,22 +53,15 @@ func (mut *Mutator) Injected(request *dtwebhook.BaseRequest) bool {
 }
 
 func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationRequest) error {
-	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
-	defer span.End()
-
 	log.Info("injecting metadata-enrichment into pod", "podName", request.PodName())
 
 	workload, err := mut.retrieveWorkload(request)
 	if err != nil {
-		span.RecordError(err)
-
 		return err
 	}
 
 	err = mut.ensureIngestEndpointSecret(request)
 	if err != nil {
-		span.RecordError(err)
-
 		return err
 	}
 
