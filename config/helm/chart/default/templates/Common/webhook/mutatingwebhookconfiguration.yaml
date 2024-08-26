@@ -20,7 +20,7 @@ metadata:
 webhooks:
   - name: webhook.pod.dynatrace.com
     reinvocationPolicy: IfNeeded
-    failurePolicy: Ignore
+    failurePolicy: {{.Values.webhook.mutatingWebhook.failurePolicy}}
     timeoutSeconds: {{.Values.webhook.mutatingWebhook.timeoutSeconds}}
     rules:
       - apiGroups: [ "" ]
@@ -41,7 +41,7 @@ webhooks:
     sideEffects: None
   - name: webhook.ns.dynatrace.com
     reinvocationPolicy: IfNeeded
-    failurePolicy: Ignore
+    failurePolicy: {{.Values.webhook.mutatingWebhook.failurePolicy}}
     timeoutSeconds: {{.Values.webhook.mutatingWebhook.timeoutSeconds}}
     rules:
       - apiGroups: [ "" ]
