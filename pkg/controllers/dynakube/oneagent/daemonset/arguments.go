@@ -79,7 +79,7 @@ func (b *builder) appendHostGroupArg(argMap *prioritymap.Map) {
 
 func (b *builder) appendNoProxyArg(argMap *prioritymap.Map) {
 	if b.dk.NeedsCustomNoProxy() {
-		noProxyValue := b.dk.FeatureNoProxy() // TODO: value has to be merged with active gate ip
+		noProxyValue := b.dk.FeatureNoProxy()
 
 		if b.dk.NeedsActiveGate() {
 			multiCap := capability.NewMultiCapability(b.dk)

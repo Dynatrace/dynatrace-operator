@@ -177,11 +177,14 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 		}
 
 		pmc.AddProxy(proxy)
+		multiCap := capability.NewMultiCapability(r.dk)
+		dnsEntry := capability.BuildDNSEntryPointWithoutEnvVars(r.dk.Name, r.dk.Namespace, multiCap)
 
-		if r.dk.NeedsActiveGate() {
-			multiCap := capability.NewMultiCapability(r.dk)
-			pmc.AddNoProxy(capability.BuildDNSEntryPointWithoutEnvVars(r.dk.Name, r.dk.Namespace, multiCap))
+		if r.dk.FeatureNoProxy() != "" {
+			dnsEntry += "," + r.dk.FeatureNoProxy()
 		}
+
+		pmc.AddNoProxy(dnsEntry)
 	}
 
 	marshaled, err := json.Marshal(pmc)

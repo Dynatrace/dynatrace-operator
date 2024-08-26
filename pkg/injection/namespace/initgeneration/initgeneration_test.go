@@ -374,6 +374,7 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 	t.Run("Create SecretConfig with tlsSecret", func(t *testing.T) {
 		dk := baseDynakube.DeepCopy()
 		setTlsSecret(dk, "tls-test")
+		dk.Spec.ActiveGate.Capabilities = []dynakube.CapabilityDisplayName{dynakube.RoutingCapability.DisplayName}
 
 		expectedSecretConfig := *baseExpectedSecretConfig
 		tlsValue := "tls-test-value"

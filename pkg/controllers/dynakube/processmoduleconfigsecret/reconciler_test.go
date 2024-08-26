@@ -37,15 +37,7 @@ func TestReconcile(t *testing.T) {
 			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}})
 
 		mockK8sClient := fake.NewClient(dk)
-		_ = mockK8sClient.Create(context.Background(),
-			&corev1.Secret{
-				Data: map[string][]byte{connectioninfo.TenantTokenKey: []byte(testTokenValue)},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      strings.Join([]string{testName, oneAgentTenantSecretSuffix}, "-"),
-					Namespace: testNamespace,
-				},
-			},
-		)
+		_ = createK8sClientWithOneAgentTenantSecret(testTokenValue)
 
 		mockTime := timeprovider.New().Freeze()
 
@@ -98,6 +90,23 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.Empty(t, *dk.Conditions())
 	})
+	t.Run("No proxy is set when proxy enabled and custom no proxy set", func(t *testing.T) {
+		dk := createDynakube(dynakube.OneAgentSpec{
+			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}})
+		dk.Spec.Proxy = &dynakube.DynaKubeProxy{
+			Value: "myproxy.at",
+		}
+		dk.Annotations = map[string]string{
+			dynakube.AnnotationFeatureNoProxy: "dynatraceurl.com",
+		}
+		mockK8sClient := createK8sClientWithOneAgentTenantSecret(testTokenValue)
+
+		reconciler := NewReconciler(mockK8sClient, mockK8sClient, createMockDtClient(t, 0), dk, timeprovider.New())
+		err := reconciler.Reconcile(context.Background())
+
+		require.NoError(t, err)
+		checkSecretForValue(t, mockK8sClient, "test-name-activegate.test-namespace,dynatraceurl.com")
+	})
 
 	t.Run("problem with k8s request => visible in conditions", func(t *testing.T) {
 		dk := createDynakube(dynakube.OneAgentSpec{
@@ -124,15 +133,7 @@ func TestReconcile(t *testing.T) {
 			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}})
 
 		mockK8sClient := fake.NewClient(dk)
-		_ = mockK8sClient.Create(context.Background(),
-			&corev1.Secret{
-				Data: map[string][]byte{connectioninfo.TenantTokenKey: []byte(testTokenValue)},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      strings.Join([]string{testName, oneAgentTenantSecretSuffix}, "-"),
-					Namespace: testNamespace,
-				},
-			},
-		)
+		_ = createK8sClientWithOneAgentTenantSecret(testTokenValue)
 
 		mockTime := timeprovider.New().Freeze()
 
@@ -207,21 +208,26 @@ func createBOOMK8sClient() client.Client {
 	return boomClient
 }
 
+func createK8sClientWithOneAgentTenantSecret(token string) client.Client {
+	mockK8sClient := fake.NewClient()
+	_ = mockK8sClient.Create(context.Background(),
+		&corev1.Secret{
+			Data: map[string][]byte{connectioninfo.TenantTokenKey: []byte(token)},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      strings.Join([]string{testName, oneAgentTenantSecretSuffix}, "-"),
+				Namespace: testNamespace,
+			},
+		},
+	)
+
+	return mockK8sClient
+}
 func TestGetSecretData(t *testing.T) {
 	t.Run("unmarshal secret data into struct", func(t *testing.T) {
 		// use Reconcile to automatically create the secret to test
 		dk := createDynakube(dynakube.OneAgentSpec{
 			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}})
-		mockK8sClient := fake.NewClient(dk)
-		_ = mockK8sClient.Create(context.Background(),
-			&corev1.Secret{
-				Data: map[string][]byte{connectioninfo.TenantTokenKey: []byte(testTokenValue)},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      strings.Join([]string{testName, oneAgentTenantSecretSuffix}, "-"),
-					Namespace: testNamespace,
-				},
-			},
-		)
+		mockK8sClient := createK8sClientWithOneAgentTenantSecret(testTokenValue)
 
 		mockTime := timeprovider.New().Freeze()
 		reconciler := NewReconciler(mockK8sClient,
