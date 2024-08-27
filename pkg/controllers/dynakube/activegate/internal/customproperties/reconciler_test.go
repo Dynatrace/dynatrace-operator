@@ -68,7 +68,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Equal(t, []byte(expectedValue), customPropertiesSecret.Data[DataKey])
 
 		assert.Len(t, dk.Status.Conditions, 1)
-		assert.Equal(t, customPropertiesConditionTypeString(testOwner), dk.Status.Conditions[0].Type)
+		assert.Equal(t, customPropertiesConditionType, dk.Status.Conditions[0].Type)
 	})
 
 	t.Run(`Create creates custom properties secret for no-proxy with custom properties`, func(t *testing.T) {

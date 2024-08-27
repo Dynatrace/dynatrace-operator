@@ -47,7 +47,7 @@ func NewReconciler(clt client.Client, dk *dynakube.DynaKube, customPropertiesOwn
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if r.customPropertiesSource == nil && !r.dk.NeedsCustomNoProxy() {
-		if meta.FindStatusCondition(*r.dk.Conditions(), customPropertiesConditionTypeString(r.customPropertiesOwnerName)) == nil {
+		if meta.FindStatusCondition(*r.dk.Conditions(), customPropertiesConditionType) == nil {
 			return nil
 		}
 
@@ -62,7 +62,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			log.Error(err, "failed to clean-up custom properties secret")
 		}
 
-		meta.RemoveStatusCondition(r.dk.Conditions(), customPropertiesConditionTypeString(r.customPropertiesOwnerName))
+		meta.RemoveStatusCondition(r.dk.Conditions(), customPropertiesConditionType)
 
 		return nil // clean-up shouldn't cause a failure
 	}
@@ -89,7 +89,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	conditions.SetSecretCreated(r.dk.Conditions(), customPropertiesConditionTypeString(r.customPropertiesOwnerName),
+	conditions.SetSecretCreated(r.dk.Conditions(), customPropertiesConditionType,
 		r.buildCustomPropertiesName(r.dk.Name))
 
 	return nil
