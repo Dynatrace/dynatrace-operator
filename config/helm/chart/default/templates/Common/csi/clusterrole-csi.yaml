@@ -19,16 +19,6 @@ metadata:
   labels:
     {{- include "dynatrace-operator.csiLabels" . | nindent 4 }}
 rules:
-  - apiGroups:
-      - ""
-    resources:
-      - events
-    verbs:
-      - list
-      - watch
-      - create
-      - update
-      - patch
   {{- if (eq (include "dynatrace-operator.platform" .) "openshift") }}
   - apiGroups:
       - security.openshift.io

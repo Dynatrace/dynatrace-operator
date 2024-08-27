@@ -19,27 +19,8 @@ tests:
       - equal:
           path: metadata.name
           value: dynatrace-oneagent-csi-driver
-      - isNotEmpty:
+      - isEmpty:
           path: rules
-
-  - it: should have the correct rules
-    documentIndex: 0
-    set:
-      csidriver.enabled: true
-    asserts:
-      - equal:
-          path: rules
-          value:
-            - apiGroups:
-                - ""
-              resources:
-                - events
-              verbs:
-                - list
-                - watch
-                - create
-                - update
-                - patch
 
   - it: ClusterRole should exist with extra permissions for openshift-csi.yaml
     documentIndex: 0
