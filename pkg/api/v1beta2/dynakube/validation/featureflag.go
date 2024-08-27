@@ -5,20 +5,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube" //nolint:staticcheck
 )
 
 const (
 	warningFeatureFlagDeprecated = `Feature flag %s is deprecated.`
 )
 
-var deprecatedFeatureFlags []string
-
-func init() {
-	deprecatedFeatureFlags = []string{
-		dynakube.AnnotationFeatureOneAgentIgnoreProxy,   //nolint:staticcheck
-		dynakube.AnnotationFeatureActiveGateIgnoreProxy, //nolint:staticcheck
-	}
+var deprecatedFeatureFlags = []string{
+	dynakube.AnnotationFeatureOneAgentIgnoreProxy,
+	dynakube.AnnotationFeatureActiveGateIgnoreProxy,
 }
 
 func deprecatedFeatureFlag(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {

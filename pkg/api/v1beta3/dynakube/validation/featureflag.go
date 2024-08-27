@@ -12,13 +12,9 @@ const (
 	warningFeatureFlagDeprecated = `Feature flag %s is deprecated.`
 )
 
-var deprecatedFeatureFlags []string
-
-func init() {
-	deprecatedFeatureFlags = []string{
-		dynakube.AnnotationFeatureOneAgentIgnoreProxy,   //nolint:staticcheck
-		dynakube.AnnotationFeatureActiveGateIgnoreProxy, //nolint:staticcheck
-	}
+var deprecatedFeatureFlags = []string{
+	dynakube.AnnotationFeatureOneAgentIgnoreProxy,   //nolint:staticcheck
+	dynakube.AnnotationFeatureActiveGateIgnoreProxy, //nolint:staticcheck
 }
 
 func deprecatedFeatureFlag(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {

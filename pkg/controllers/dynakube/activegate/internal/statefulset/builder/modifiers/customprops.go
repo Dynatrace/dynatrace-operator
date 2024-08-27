@@ -30,7 +30,7 @@ type CustomPropertiesModifier struct {
 }
 
 func (mod CustomPropertiesModifier) Enabled() bool {
-	return mod.hasCustomProperties() || mod.dk.NeedsCustomNoProxy()
+	return mod.hasCustomProperties()
 }
 
 func (mod CustomPropertiesModifier) Modify(sts *appsv1.StatefulSet) error {

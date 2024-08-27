@@ -102,9 +102,11 @@ func (r *Reconciler) buildCustomPropertiesValue(ctx context.Context) ([]byte, er
 		if r.customPropertiesSource.Value != "" {
 			value = r.customPropertiesSource.Value
 		} else if r.customPropertiesSource.ValueFrom != "" {
-			customPropertiesSecret := &corev1.Secret{}
+			query := secret.Query(r.client, r.client, log)
 
-			err := r.client.Get(ctx, types.NamespacedName{Name: r.customPropertiesSource.ValueFrom, Namespace: r.dk.Namespace}, customPropertiesSecret)
+			customPropertiesSecret, err := query.Get(ctx, types.NamespacedName{
+				Name:      r.customPropertiesSource.ValueFrom,
+				Namespace: r.dk.Namespace})
 			if err != nil {
 				return nil, err
 			}

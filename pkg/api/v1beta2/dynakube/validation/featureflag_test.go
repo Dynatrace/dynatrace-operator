@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube" //nolint:staticcheck
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -21,11 +21,11 @@ func DeprecatedFeatureFlagWithDeprecatedFlags(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test",
 			Annotations: map[string]string{
-				dynakube.AnnotationFeatureOneAgentIgnoreProxy: "true", //nolint:staticcheck
+				dynakube.AnnotationFeatureOneAgentIgnoreProxy: "true",
 			},
 		},
 	}
-	expected := fmt.Sprintf(warningFeatureFlagDeprecated, dynakube.AnnotationFeatureOneAgentIgnoreProxy) //nolint:staticcheck
+	expected := fmt.Sprintf(warningFeatureFlagDeprecated, dynakube.AnnotationFeatureOneAgentIgnoreProxy)
 	result := deprecatedFeatureFlag(context.Background(), nil, dk)
 
 	assert.Equal(t, expected, result)
