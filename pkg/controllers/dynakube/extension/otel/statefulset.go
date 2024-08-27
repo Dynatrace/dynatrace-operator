@@ -220,7 +220,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	return func(o *appsv1.StatefulSet) {
 		o.Spec.Template.Spec.Volumes = []corev1.Volume{
 			{
-				Name: consts.TokensVolumeName,
+				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName: dk.Name + consts.SecretSuffix,
@@ -275,7 +275,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 
 func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	vm := []corev1.VolumeMount{
-		{Name: consts.TokensVolumeName, ReadOnly: true, MountPath: secretsTokensPath},
+		{Name: consts.ExtensionsTokensVolumeName, ReadOnly: true, MountPath: secretsTokensPath},
 	}
 
 	if dk.Spec.TrustedCAs != "" {

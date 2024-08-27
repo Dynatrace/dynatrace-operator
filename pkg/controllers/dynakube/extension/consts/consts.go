@@ -11,7 +11,7 @@ const (
 	SecretSuffix = "-extensions-token"
 
 	// shared volume name between eec and OtelC
-	TokensVolumeName = "tokens"
+	ExtensionsTokensVolumeName = "tokens"
 
 	ExtensionsSecretConditionType  = "ExtensionsSecret"
 	ExtensionsServiceConditionType = "ExtensionsService"

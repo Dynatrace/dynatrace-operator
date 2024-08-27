@@ -229,7 +229,7 @@ func TestVolumeMounts(t *testing.T) {
 
 		expectedVolumeMounts := []corev1.VolumeMount{
 			{
-				Name:      consts.TokensVolumeName,
+				Name:      consts.ExtensionsTokensVolumeName,
 				MountPath: eecTokenMountPath,
 				ReadOnly:  true,
 			},
@@ -278,7 +278,7 @@ func TestVolumeMounts(t *testing.T) {
 
 		expectedVolumeMounts := []corev1.VolumeMount{
 			{
-				Name:      consts.TokensVolumeName,
+				Name:      consts.ExtensionsTokensVolumeName,
 				MountPath: eecTokenMountPath,
 				ReadOnly:  true,
 			},
@@ -523,7 +523,7 @@ func TestVolumes(t *testing.T) {
 		mode := int32(420)
 		expectedVolumes := []corev1.Volume{
 			{
-				Name: consts.TokensVolumeName,
+				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName:  dk.Name + consts.SecretSuffix,
@@ -577,7 +577,7 @@ func TestVolumes(t *testing.T) {
 		mode := int32(420)
 		expectedVolumes := []corev1.Volume{
 			{
-				Name: consts.TokensVolumeName,
+				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName:  dk.Name + consts.SecretSuffix,
@@ -627,7 +627,7 @@ func TestVolumes(t *testing.T) {
 		mode := int32(420)
 		expectedVolumes := []corev1.Volume{
 			{
-				Name: consts.TokensVolumeName,
+				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName:  dk.Name + consts.SecretSuffix,

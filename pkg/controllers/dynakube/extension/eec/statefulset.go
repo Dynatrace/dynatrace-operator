@@ -232,7 +232,7 @@ func buildActiveGateServiceName(dk *dynakube.DynaKube) string {
 func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
 		{
-			Name:      consts.TokensVolumeName,
+			Name:      consts.ExtensionsTokensVolumeName,
 			MountPath: eecTokenMountPath,
 			ReadOnly:  true,
 		},
@@ -288,7 +288,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 		mode := int32(420)
 		o.Spec.Template.Spec.Volumes = []corev1.Volume{
 			{
-				Name: consts.TokensVolumeName,
+				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName:  dk.Name + consts.SecretSuffix,

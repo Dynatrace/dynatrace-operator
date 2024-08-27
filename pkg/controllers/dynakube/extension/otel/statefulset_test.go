@@ -424,7 +424,7 @@ func TestVolumes(t *testing.T) {
 		statefulSet := getStatefulset(t, dk)
 
 		expectedVolume := corev1.Volume{
-			Name: consts.TokensVolumeName,
+			Name: consts.ExtensionsTokensVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: dk.Name + consts.SecretSuffix,
