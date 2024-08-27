@@ -213,11 +213,11 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, false)
 		request.Namespace.Labels = map[string]string{
-			dynakube.MetadataPrefix + "/nocopyoflabels": "nocopyoflabels",
+			dynakube.MetadataPrefix + "nocopyoflabels": "nocopyoflabels",
 			"test-label": "test-value",
 		}
 		request.Namespace.Annotations = map[string]string{
-			dynakube.MetadataPrefix + "/copyofannotations": "copyofannotations",
+			dynakube.MetadataPrefix + "copyofannotations": "copyofannotations",
 			"test-annotation": "test-value",
 		}
 
@@ -225,19 +225,19 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 		copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
 		require.Len(t, request.Pod.Annotations, 1)
 		require.Empty(t, request.Pod.Labels)
-		require.Equal(t, "copyofannotations", request.Pod.Annotations[dynakube.MetadataPrefix+"/copyofannotations"])
+		require.Equal(t, "copyofannotations", request.Pod.Annotations[dynakube.MetadataPrefix+"copyofannotations"])
 	})
 
 	t.Run("should copy all labels and annotations defined without override", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, false)
 		request.Namespace.Labels = map[string]string{
-			dynakube.MetadataPrefix + "/nocopyoflabels":   "nocopyoflabels",
-			dynakube.MetadataPrefix + "/copyifruleexists": "copyifruleexists",
+			dynakube.MetadataPrefix + "nocopyoflabels":   "nocopyoflabels",
+			dynakube.MetadataPrefix + "copyifruleexists": "copyifruleexists",
 			"test-label": "test-value",
 		}
 		request.Namespace.Annotations = map[string]string{
-			dynakube.MetadataPrefix + "/copyofannotations": "copyofannotations",
+			dynakube.MetadataPrefix + "copyofannotations": "copyofannotations",
 			"test-annotation": "test-value",
 		}
 
@@ -254,7 +254,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			},
 			{
 				Type:   dynakube.EnrichmentLabelRule,
-				Source: dynakube.MetadataPrefix + "/copyifruleexists",
+				Source: dynakube.MetadataPrefix + "copyifruleexists",
 				Target: "dt.copyifruleexists",
 			},
 			{
@@ -264,7 +264,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			},
 		}
 		request.Pod.Annotations = map[string]string{
-			dynakube.MetadataPrefix + "/copyofannotations": "do-not-overwrite",
+			dynakube.MetadataPrefix + "copyofannotations": "do-not-overwrite",
 		}
 
 		require.False(t, mutator.Injected(request.BaseRequest))
@@ -272,11 +272,11 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 		require.Len(t, request.Pod.Annotations, 4)
 		require.Empty(t, request.Pod.Labels)
 
-		require.Equal(t, "do-not-overwrite", request.Pod.Annotations[dynakube.MetadataPrefix+"/copyofannotations"])
-		require.Equal(t, "copyifruleexists", request.Pod.Annotations[dynakube.MetadataPrefix+"/dt.copyifruleexists"])
+		require.Equal(t, "do-not-overwrite", request.Pod.Annotations[dynakube.MetadataPrefix+"copyofannotations"])
+		require.Equal(t, "copyifruleexists", request.Pod.Annotations[dynakube.MetadataPrefix+"dt.copyifruleexists"])
 
-		require.Equal(t, "test-value", request.Pod.Annotations[dynakube.MetadataPrefix+"/dt.test-annotation"])
-		require.Equal(t, "test-value", request.Pod.Annotations[dynakube.MetadataPrefix+"/test-label"])
+		require.Equal(t, "test-value", request.Pod.Annotations[dynakube.MetadataPrefix+"dt.test-annotation"])
+		require.Equal(t, "test-value", request.Pod.Annotations[dynakube.MetadataPrefix+"test-label"])
 	})
 
 	t.Run("are custom rule types handled correctly", func(t *testing.T) {
@@ -315,8 +315,8 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 		copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
 		require.Len(t, request.Pod.Annotations, 2)
 		require.Empty(t, request.Pod.Labels)
-		require.Equal(t, "test-label-value", request.Pod.Annotations[dynakube.MetadataPrefix+"/dt.test-label"])
-		require.Equal(t, "test-annotation-value2", request.Pod.Annotations[dynakube.MetadataPrefix+"/dt.test-annotation"])
+		require.Equal(t, "test-label-value", request.Pod.Annotations[dynakube.MetadataPrefix+"dt.test-label"])
+		require.Equal(t, "test-annotation-value2", request.Pod.Annotations[dynakube.MetadataPrefix+"dt.test-annotation"])
 	})
 }
 

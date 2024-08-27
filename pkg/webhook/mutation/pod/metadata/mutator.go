@@ -2,6 +2,7 @@ package metadata
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -72,6 +73,23 @@ func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationReque
 	setWorkloadAnnotations(request.Pod, workload)
 	copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
 
+	workloadAnnotations := map[string]string{}
+
+	for key, value := range request.Pod.Annotations {
+		if !strings.HasPrefix(key, dynakube.MetadataPrefix) {
+			continue
+		}
+
+		split := strings.Split(key, dynakube.MetadataPrefix)
+		workloadAnnotations[split[1]] = value
+	}
+
+	workloadAnnotationsJson, _ := json.Marshal(workloadAnnotations)
+	request.InstallContainer.Env = append(request.InstallContainer.Env,
+		corev1.EnvVar{
+			Name: consts.EnrichmentWorkloadAnnotationsEnv, Value: string(workloadAnnotationsJson)},
+	)
+
 	return nil
 }
 
@@ -137,6 +155,7 @@ func setWorkloadAnnotations(pod *corev1.Pod, workload *workloadInfo) {
 func copyMetadataFromNamespace(pod *corev1.Pod, namespace corev1.Namespace, dk dynakube.DynaKube) {
 	copyMetadataAccordingToCustomRules(pod, namespace, dk)
 	copyMetadataAccordingToPrefix(pod, namespace)
+
 }
 
 func copyMetadataAccordingToPrefix(pod *corev1.Pod, namespace corev1.Namespace) {

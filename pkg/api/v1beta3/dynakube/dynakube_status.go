@@ -148,7 +148,7 @@ const (
 	EnrichmentAnnotationRule EnrichmentRuleType = "ANNOTATION"
 )
 
-const MetadataPrefix string = "metadata.dynatrace.com"
+const MetadataPrefix string = "metadata.dynatrace.com/"
 
 type MetadataEnrichmentStatus struct {
 	Rules []EnrichmentRule `json:"rules,omitempty"`
@@ -166,7 +166,7 @@ func (rule EnrichmentRule) ToAnnotationKey() string {
 		return ""
 	}
 
-	return MetadataPrefix + "/" + rule.Target
+	return MetadataPrefix + rule.Target
 }
 
 // SetPhase sets the status phase on the DynaKube object.
