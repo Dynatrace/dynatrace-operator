@@ -51,6 +51,14 @@ tests:
                 - get
                 - list
                 - watch
+            - apiGroups:
+                - ""
+              resources:
+                - configmaps
+              verbs:
+                - get
+                - list
+                - watch
 
   - it: RoleBinding should be built correctly with CSI enabled
     documentIndex: 1
