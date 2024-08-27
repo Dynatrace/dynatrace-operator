@@ -5,10 +5,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/internal/otel"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -57,9 +55,6 @@ func (mut *Mutator) Injected(request *dtwebhook.BaseRequest) bool {
 }
 
 func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationRequest) error {
-	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
-	defer span.End()
-
 	if !request.DynaKube.IsOneAgentCommunicationRouteClear() {
 		log.Info("OneAgent were not yet able to communicate with tenant, no direct route or ready ActiveGate available, code modules have not been injected.")
 		setNotInjectedAnnotations(request.Pod, dtwebhook.EmptyConnectionInfoReason)
@@ -70,8 +65,6 @@ func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationReque
 	log.Info("injecting OneAgent into pod", "podName", request.PodName())
 
 	if err := mut.ensureInitSecret(request); err != nil {
-		span.RecordError(err)
-
 		return err
 	}
 
