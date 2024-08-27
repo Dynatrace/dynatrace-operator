@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/hash"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/utils"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
@@ -18,30 +19,44 @@ import (
 )
 
 const (
-	serviceAccountName              = "dynatrace-extensions-collector"
-	containerName                   = "collector"
-	tokenSecretKey                  = "otelc.token"
+	serviceAccountName = "dynatrace-extensions-collector"
+	containerName      = "collector"
+
+	// default values
+	defaultImageRepo     = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
+	defaultImageTag      = "0.12.0"
+	defaultOLTPgrpcPort  = "10001"
+	defaultOLTPhttpPort  = "10002"
+	defaultPodNamePrefix = "extensions-collector"
+	defaultReplicas      = 1
+
+	// env variables
+	envShards        = "SHARDS"
+	envShardId       = "SHARD_ID"
+	envPodNamePrefix = "POD_NAME_PREFIX"
+	envPodName       = "POD_NAME"
+	envOTLPgrpcPort  = "OTLP_GRPC_PORT"
+	envOTLPhttpPort  = "OTLP_HTTP_PORT"
+	envOTLPtoken     = "OTLP_TOKEN"
+	envTrustedCAs    = "TRUSTED_CAS"
+	// certDirEnv is the environment variable that identifies which directory
+	// to check for SSL certificate files. If set, this overrides the system default.
+	// It is a colon separated list of directories.
+	// See https://www.openssl.org/docs/man1.0.2/man1/c_rehash.html.
+	envCertDir          = "SSL_CERT_DIR"
+	envEECcontrollerTls = "EXTENSIONS_CONTROLLER_TLS"
+
+	// Volume names and paths
 	caCertsVolumeName               = "cacerts"
-	defaultImageRepo                = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
-	defaultImageTag                 = "0.7.0"
-	defaultOLTPgrpcPort             = "10001"
-	defaultOLTPhttpPort             = "10002"
-	defaultPodNamePrefix            = "extensions-collector"
-	defaultReplicas                 = 1
-	envShards                       = "SHARDS"
-	envShardId                      = "SHARD_ID"
-	envPodNamePrefix                = "POD_NAME_PREFIX"
-	envPodName                      = "POD_NAME"
-	envOTLPgrpcPort                 = "OTLP_GRPC_PORT"
-	envOTLPhttpPort                 = "OTLP_HTTP_PORT"
-	envOTLPtoken                    = "OTLP_TOKEN"
-	envTrustedCAs                   = "TRUSTED_CAS"
-	envEECcontrollerTls             = "EXTENSIONS_CONTROLLER_TLS"
-	trustedCAsFile                  = "rootca.pem"
 	trustedCAVolumeMountPath        = "/tls/custom/cacerts"
 	trustedCAVolumePath             = trustedCAVolumeMountPath + "/certs"
 	customEecTlsCertificatePath     = "/tls/custom/eec"
 	customEecTlsCertificateFullPath = customEecTlsCertificatePath + "/" + consts.TLSCrtDataName
+	secretsTokensPath               = "/secrets/tokens"
+	otelcSecretTokenFilePath        = secretsTokensPath + "/" + consts.OtelcTokenSecretKey
+
+	// misc
+	trustedCAsFile = "rootca.pem"
 )
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
@@ -113,7 +128,7 @@ func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 		SecurityContext: buildSecurityContext(),
 		Env:             buildContainerEnvs(dk),
 		Resources:       dk.Spec.Templates.OpenTelemetryCollector.Resources,
-		Args:            []string{fmt.Sprintf("--config=eec://%s.%s.svc.cluster.local:%d#refresh-interval=5s&insecure=true", dk.Name+consts.ExtensionsControllerSuffix, dk.Namespace, consts.ExtensionsCollectorComPort)},
+		Args:            []string{fmt.Sprintf("--config=eec://%s.%s.svc.cluster.local:%d/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=%s", dk.Name+consts.ExtensionsControllerSuffix, dk.Namespace, consts.ExtensionsCollectorComPort, otelcSecretTokenFilePath)},
 		VolumeMounts:    buildContainerVolumeMounts(dk),
 	}
 }
@@ -155,10 +170,11 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envOTLPtoken, ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Name + consts.SecretSuffix},
-				Key:                  tokenSecretKey,
+				Key:                  consts.OtelcTokenSecretKey,
 			},
 		},
 		},
+		{Name: envCertDir, Value: customEecTlsCertificatePath},
 	}
 	if dk.Spec.TrustedCAs != "" {
 		envs = append(envs, corev1.EnvVar{Name: envTrustedCAs, Value: trustedCAVolumePath})
@@ -202,50 +218,66 @@ func setImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) func(o 
 
 func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	return func(o *appsv1.StatefulSet) {
-		if dk.Spec.TrustedCAs != "" {
-			o.Spec.Template.Spec.Volumes = []corev1.Volume{
-				{
-					Name: caCertsVolumeName,
-					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: dk.Spec.TrustedCAs,
+		o.Spec.Template.Spec.Volumes = []corev1.Volume{
+			{
+				Name: consts.ExtensionsTokensVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: dk.Name + consts.SecretSuffix,
+						Items: []corev1.KeyToPath{
+							{
+								Key:  consts.OtelcTokenSecretKey,
+								Path: consts.OtelcTokenSecretKey,
 							},
-							Items: []corev1.KeyToPath{
-								{
-									Key:  "certs",
-									Path: trustedCAsFile,
-								},
+						},
+						DefaultMode: address.Of(int32(420)),
+					},
+				},
+			},
+		}
+		if dk.Spec.TrustedCAs != "" {
+			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
+				Name: caCertsVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: dk.Spec.TrustedCAs,
+						},
+						Items: []corev1.KeyToPath{
+							{
+								Key:  "certs",
+								Path: trustedCAsFile,
 							},
 						},
 					},
 				},
-			}
+			})
 		}
 
 		if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
-			o.Spec.Template.Spec.Volumes = []corev1.Volume{
-				{
-					Name: consts.ExtensionsCustomTlsCertificate,
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: dk.Spec.Templates.ExtensionExecutionController.TlsRefName,
-							Items: []corev1.KeyToPath{
-								{
-									Key:  consts.TLSCrtDataName,
-									Path: consts.TLSCrtDataName,
-								},
+			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
+				Name: consts.ExtensionsCustomTlsCertificate,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: dk.Spec.Templates.ExtensionExecutionController.TlsRefName,
+						Items: []corev1.KeyToPath{
+							{
+								Key:  consts.TLSCrtDataName,
+								Path: consts.TLSCrtDataName,
 							},
 						},
 					},
 				},
-			}
+			})
 		}
 	}
 }
 
 func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
-	var vm []corev1.VolumeMount
+	vm := []corev1.VolumeMount{
+		{Name: consts.ExtensionsTokensVolumeName, ReadOnly: true, MountPath: secretsTokensPath},
+	}
+
 	if dk.Spec.TrustedCAs != "" {
 		vm = append(vm, corev1.VolumeMount{
 			Name:      caCertsVolumeName,
