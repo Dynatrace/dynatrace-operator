@@ -33,14 +33,6 @@ tests:
             - apiGroups:
                 - ""
               resources:
-                - namespaces
-              verbs:
-                - get
-                - list
-                - watch
-            - apiGroups:
-                - ""
-              resources:
                 - events
               verbs:
                 - list
@@ -48,30 +40,6 @@ tests:
                 - create
                 - update
                 - patch
-            - apiGroups:
-                - storage.k8s.io
-              resources:
-                - csinodes
-              verbs:
-                - get
-                - list
-                - watch
-            - apiGroups:
-                - ""
-              resources:
-                - nodes
-              verbs:
-                - get
-                - list
-                - watch
-            - apiGroups:
-                - ""
-              resources:
-                - pods
-              verbs:
-                - get
-                - list
-                - watch
 
   - it: ClusterRole should exist with extra permissions for openshift-csi.yaml
     documentIndex: 0
