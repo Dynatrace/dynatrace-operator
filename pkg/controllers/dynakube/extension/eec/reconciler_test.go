@@ -507,6 +507,43 @@ func TestTolerations(t *testing.T) {
 	})
 }
 
+func TestPersistentVolumeClaim(t *testing.T) {
+	t.Run("no PVC spec", func(t *testing.T) {
+		statefulSet := getStatefulset(t, getTestDynakube())
+
+		assert.Empty(t, statefulSet.Spec.VolumeClaimTemplates)
+	})
+	t.Run("PVC spec transferred to statefulset", func(t *testing.T) {
+		storageClassName := "standard"
+
+		dk := getTestDynakube()
+
+		dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim = &corev1.PersistentVolumeClaimSpec{
+			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOncePod},
+			Resources: corev1.VolumeResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceStorage: resource.MustParse("1Gi"),
+				},
+			},
+			StorageClassName: &storageClassName,
+		}
+
+		statefulSet := getStatefulset(t, dk)
+
+		require.Len(t, statefulSet.Spec.VolumeClaimTemplates, 1)
+		require.Len(t, statefulSet.Spec.VolumeClaimTemplates[0].Spec.AccessModes, 1)
+		assert.Equal(t, dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim.AccessModes[0], statefulSet.Spec.VolumeClaimTemplates[0].Spec.AccessModes[0])
+		assert.Nil(t, statefulSet.Spec.VolumeClaimTemplates[0].Spec.Selector)
+		assert.Nil(t, dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim.Resources.Limits)
+		assert.Equal(t, dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim.Resources.Requests, statefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests)
+		assert.Empty(t, statefulSet.Spec.VolumeClaimTemplates[0].Spec.VolumeName)
+		assert.Equal(t, *dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim.StorageClassName, *statefulSet.Spec.VolumeClaimTemplates[0].Spec.StorageClassName)
+		assert.Nil(t, statefulSet.Spec.VolumeClaimTemplates[0].Spec.VolumeMode)
+		assert.Nil(t, statefulSet.Spec.VolumeClaimTemplates[0].Spec.DataSource)
+		assert.Nil(t, statefulSet.Spec.VolumeClaimTemplates[0].Spec.DataSourceRef)
+	})
+}
+
 func TestPersistentVolumeClaimRetentionPolicy(t *testing.T) {
 	t.Run("the default retention policy", func(t *testing.T) {
 		statefulSet := getStatefulset(t, getTestDynakube())
@@ -514,7 +551,17 @@ func TestPersistentVolumeClaimRetentionPolicy(t *testing.T) {
 		assert.Nil(t, statefulSet.Spec.PersistentVolumeClaimRetentionPolicy)
 	})
 	t.Run("custom persistent volume claim retention policy", func(t *testing.T) {
-		// TODO: do we want to use statefulset.VolumeClaimTemplates
+		dk := getTestDynakube()
+		dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaimRetentionPolicy = &appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy{
+			WhenDeleted: appsv1.RetainPersistentVolumeClaimRetentionPolicyType,
+			WhenScaled:  appsv1.DeletePersistentVolumeClaimRetentionPolicyType,
+		}
+
+		statefulSet := getStatefulset(t, dk)
+
+		require.NotNil(t, statefulSet.Spec.PersistentVolumeClaimRetentionPolicy)
+		assert.Equal(t, appsv1.RetainPersistentVolumeClaimRetentionPolicyType, statefulSet.Spec.PersistentVolumeClaimRetentionPolicy.WhenDeleted)
+		assert.Equal(t, appsv1.DeletePersistentVolumeClaimRetentionPolicyType, statefulSet.Spec.PersistentVolumeClaimRetentionPolicy.WhenScaled)
 	})
 }
 
