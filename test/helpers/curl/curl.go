@@ -40,6 +40,9 @@ func NewPod(podName, namespaceName, targetUrl string, options ...Option) *corev1
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      podName,
 			Namespace: namespaceName,
+			Annotations: map[string]string{
+				dynakube.AnnotationFeatureAutomaticInjection: "false",
+			},
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
