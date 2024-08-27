@@ -36,8 +36,7 @@ func TestReconcile(t *testing.T) {
 		dk := createDynakube(dynakube.OneAgentSpec{
 			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}})
 
-		mockK8sClient := fake.NewClient(dk)
-		_ = createK8sClientWithOneAgentTenantSecret(testTokenValue)
+		mockK8sClient := createK8sClientWithOneAgentTenantSecret(testTokenValue)
 
 		mockTime := timeprovider.New().Freeze()
 

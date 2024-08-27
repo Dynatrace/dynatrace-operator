@@ -177,6 +177,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 		}
 
 		pmc.AddProxy(proxy)
+
 		multiCap := capability.NewMultiCapability(r.dk)
 		dnsEntry := capability.BuildDNSEntryPointWithoutEnvVars(r.dk.Name, r.dk.Namespace, multiCap)
 

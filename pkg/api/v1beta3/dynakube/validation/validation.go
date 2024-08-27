@@ -44,6 +44,7 @@ var (
 		missingActiveGateMemoryLimit,
 		unsupportedOneAgentImage,
 		conflictingHostGroupSettings,
+		deprecatedFeatureFlag,
 	}
 )
 
