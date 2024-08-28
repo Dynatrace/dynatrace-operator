@@ -21,28 +21,6 @@ metadata:
     {{- include "dynatrace-operator.csiLabels" . | nindent 4 }}
 rules:
   - apiGroups:
-      - ""
-    resources:
-      - endpoints
-    verbs:
-      - get
-      - watch
-      - list
-      - delete
-      - update
-      - create
-  - apiGroups:
-      - coordination.k8s.io
-    resources:
-      - leases
-    verbs:
-      - get
-      - watch
-      - list
-      - delete
-      - update
-      - create
-  - apiGroups:
       - dynatrace.com
     resources:
       - dynakubes
@@ -66,6 +44,13 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1

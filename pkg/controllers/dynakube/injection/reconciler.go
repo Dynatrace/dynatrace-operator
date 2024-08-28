@@ -11,6 +11,7 @@ import (
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/metadata/rules"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/monitoredentities"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
@@ -23,14 +24,15 @@ import (
 )
 
 type reconciler struct {
-	client                    client.Client
-	apiReader                 client.Reader
-	dk                        *dynakube.DynaKube
-	istioReconciler           istio.Reconciler
-	versionReconciler         version.Reconciler
-	pmcSecretreconciler       controllers.Reconciler
-	connectionInfoReconciler  controllers.Reconciler
-	enrichmentRulesReconciler controllers.Reconciler
+	client                      client.Client
+	apiReader                   client.Reader
+	dk                          *dynakube.DynaKube
+	istioReconciler             istio.Reconciler
+	versionReconciler           version.Reconciler
+	pmcSecretreconciler         controllers.Reconciler
+	connectionInfoReconciler    controllers.Reconciler
+	monitoredEntitiesReconciler controllers.Reconciler
+	enrichmentRulesReconciler   controllers.Reconciler
 }
 
 type ReconcilerBuilder func(
@@ -63,8 +65,9 @@ func NewReconciler(
 		versionReconciler: version.NewReconciler(apiReader, dynatraceClient, timeprovider.New().Freeze()),
 		pmcSecretreconciler: processmoduleconfigsecret.NewReconciler(
 			client, apiReader, dynatraceClient, dk, timeprovider.New().Freeze()),
-		connectionInfoReconciler:  oaconnectioninfo.NewReconciler(client, apiReader, dynatraceClient, dk),
-		enrichmentRulesReconciler: rules.NewReconciler(dynatraceClient, dk),
+		connectionInfoReconciler:    oaconnectioninfo.NewReconciler(client, apiReader, dynatraceClient, dk),
+		enrichmentRulesReconciler:   rules.NewReconciler(dynatraceClient, dk),
+		monitoredEntitiesReconciler: monitoredentities.NewReconciler(dynatraceClient, dk),
 	}
 }
 
@@ -185,7 +188,12 @@ func (r *reconciler) cleanupOneAgentInjection(ctx context.Context) {
 }
 
 func (r *reconciler) setupEnrichmentInjection(ctx context.Context) error {
-	err := r.enrichmentRulesReconciler.Reconcile(ctx)
+	err := r.monitoredEntitiesReconciler.Reconcile(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = r.enrichmentRulesReconciler.Reconcile(ctx)
 	if err != nil {
 		log.Info("couldn't reconcile metadata-enrichment rules")
 
