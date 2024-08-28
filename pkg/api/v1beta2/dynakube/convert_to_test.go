@@ -127,7 +127,7 @@ func getOldDynakubeBase() DynaKube {
 			Name:      "name",
 			Namespace: "namespace",
 			Annotations: map[string]string{
-				dynakube.AnnotationFeatureActiveGateIgnoreProxy:     "true",
+				dynakube.AnnotationFeatureActiveGateIgnoreProxy:     "true", //nolint:staticcheck
 				dynakube.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
 			},
 			Labels: map[string]string{

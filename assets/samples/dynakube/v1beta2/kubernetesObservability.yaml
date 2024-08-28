@@ -144,7 +144,7 @@ spec:
     #   value: |
     #     [connectivity]
     #     networkZone=
-    #   valueFrom: myCustomPropertiesConfigMap
+    #   valueFrom: myCustomPropertiesSecret
 
     # Optional: Specifies the name of a secret containing a TLS certificate, a TLS key and the TLS key's password to be used by ActiveGate instances
     # If unset, a self-signed certificate is used
