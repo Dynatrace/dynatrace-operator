@@ -59,18 +59,18 @@ func (runner *Runner) createEnrichmentFiles() error {
 			return err
 		}
 
-		props := map[string]string{}
+		content := map[string]string{}
 
-		err = json.Unmarshal(raw, &props)
+		err = json.Unmarshal(raw, &content)
 		if err != nil {
 			return err
 		}
 
 		for key, value := range runner.env.WorkloadAnnotations {
-			props[key] = value
+			content[key] = value
 		}
 
-		jsonContent, err := json.Marshal(props)
+		jsonContent, err := json.Marshal(content)
 		if err != nil {
 			return err
 		}
@@ -81,7 +81,7 @@ func (runner *Runner) createEnrichmentFiles() error {
 		}
 
 		var propsContent strings.Builder
-		for key, value := range props {
+		for key, value := range content {
 			propsContent.WriteString(key)
 			propsContent.WriteString("=")
 			propsContent.WriteString(value)
