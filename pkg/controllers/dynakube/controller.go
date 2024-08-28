@@ -18,7 +18,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/monitoredentities"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -249,7 +248,12 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakub
 		return err
 	}
 
-	log.Info("start reconciling process module config")
+	proxyReconciler := proxy.NewReconciler(controller.client, controller.apiReader, dk)
+
+	err = proxyReconciler.Reconcile(ctx)
+	if err != nil {
+		return err
+	}
 
 	return controller.reconcileComponents(ctx, dynatraceClient, istioClient, dk)
 }
@@ -315,21 +319,9 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	err = extensionReconciler.Reconcile(ctx)
 	if err != nil {
-		return err
-	}
+		log.Info("could not reconcile Extensions")
 
-	proxyReconciler := proxy.NewReconciler(controller.client, controller.apiReader, dk)
-
-	err = proxyReconciler.Reconcile(ctx)
-	if err != nil {
-		return err
-	}
-
-	monitoredEntitiesReconciler := monitoredentities.NewReconciler(dynatraceClient, dk)
-
-	err = monitoredEntitiesReconciler.Reconcile(ctx)
-	if err != nil {
-		return err
+		componentErrors = append(componentErrors, err)
 	}
 
 	log.Info("start reconciling app injection")

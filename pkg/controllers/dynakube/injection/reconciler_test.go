@@ -123,6 +123,9 @@ func TestReconciler(t *testing.T) {
 		istioClient := newIstioTestingClient(fakeistio.NewSimpleClientset(), dk)
 
 		rec := NewReconciler(clt, clt, dtClient, istioClient, dk)
+		fakeReconciler := createGenericReconcilerMock(t)
+		rec.(*reconciler).monitoredEntitiesReconciler = fakeReconciler
+
 		err := rec.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -173,6 +176,9 @@ func TestReconciler(t *testing.T) {
 		istioClient := setupIstioClientWithObjects(dk)
 
 		rec := NewReconciler(clt, clt, dtClient, istioClient, dk)
+		fakeReconciler := createGenericReconcilerMock(t)
+		rec.(*reconciler).monitoredEntitiesReconciler = fakeReconciler
+
 		err := rec.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -242,6 +248,7 @@ func TestReconciler(t *testing.T) {
 		rec.connectionInfoReconciler = fakeReconciler
 		rec.pmcSecretreconciler = fakeReconciler
 		rec.versionReconciler = fakeVersionReconciler
+		rec.monitoredEntitiesReconciler = fakeReconciler
 
 		err := rec.Reconcile(context.Background())
 		require.Error(t, err)
@@ -261,6 +268,7 @@ func TestRemoveAppInjection(t *testing.T) {
 	rec.connectionInfoReconciler = createGenericReconcilerMock(t)
 	rec.pmcSecretreconciler = createGenericReconcilerMock(t)
 	rec.enrichmentRulesReconciler = createGenericReconcilerMock(t)
+	rec.monitoredEntitiesReconciler = createGenericReconcilerMock(t)
 	setCodeModulesInjectionCreatedCondition(rec.dk.Conditions())
 	setMetadataEnrichmentCreatedCondition(rec.dk.Conditions())
 
@@ -293,6 +301,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		rec.versionReconciler = createVersionReconcilerMock(t)
 		rec.connectionInfoReconciler = createGenericReconcilerMock(t)
 		rec.pmcSecretreconciler = createGenericReconcilerMock(t)
+		rec.monitoredEntitiesReconciler = createGenericReconcilerMock(t)
 
 		err := rec.setupOneAgentInjection(context.Background())
 		require.NoError(t, err)
@@ -309,6 +318,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		rec.versionReconciler = createVersionReconcilerMock(t)
 		rec.connectionInfoReconciler = createGenericReconcilerMock(t)
 		rec.pmcSecretreconciler = createGenericReconcilerMock(t)
+		rec.monitoredEntitiesReconciler = createGenericReconcilerMock(t)
 
 		err := rec.setupOneAgentInjection(context.Background())
 		require.NoError(t, err)
@@ -325,6 +335,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		rec.versionReconciler = createVersionReconcilerMock(t)
 		rec.connectionInfoReconciler = createGenericReconcilerMock(t)
 		rec.pmcSecretreconciler = createGenericReconcilerMock(t)
+		rec.monitoredEntitiesReconciler = createGenericReconcilerMock(t)
 
 		err := rec.setupOneAgentInjection(context.Background())
 		require.NoError(t, err)
@@ -350,6 +361,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		rec.versionReconciler = createVersionReconcilerMock(t)
 		rec.connectionInfoReconciler = createGenericReconcilerMock(t)
 		rec.pmcSecretreconciler = createGenericReconcilerMock(t)
+		rec.monitoredEntitiesReconciler = createGenericReconcilerMock(t)
 
 		err := rec.setupOneAgentInjection(context.Background())
 		require.NoError(t, err)
@@ -375,6 +387,7 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 		})
 		rec.enrichmentRulesReconciler = createGenericReconcilerMock(t)
+		rec.monitoredEntitiesReconciler = createGenericReconcilerMock(t)
 		rec.dk.Spec.MetadataEnrichment.Enabled = false
 
 		err := rec.setupEnrichmentInjection(context.Background())
@@ -390,6 +403,7 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 		})
 		rec.enrichmentRulesReconciler = createGenericReconcilerMock(t)
+		rec.monitoredEntitiesReconciler = createGenericReconcilerMock(t)
 		rec.dk.Spec.MetadataEnrichment.Enabled = true
 
 		err := rec.setupEnrichmentInjection(context.Background())
