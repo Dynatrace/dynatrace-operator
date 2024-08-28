@@ -36,28 +36,6 @@ tests:
           path: rules
           value:
             - apiGroups:
-                - ""
-              resources:
-                - endpoints
-              verbs:
-                - get
-                - watch
-                - list
-                - delete
-                - update
-                - create
-            - apiGroups:
-                - coordination.k8s.io
-              resources:
-                - leases
-              verbs:
-                - get
-                - watch
-                - list
-                - delete
-                - update
-                - create
-            - apiGroups:
                 - dynatrace.com
               resources:
                 - dynakubes
@@ -81,6 +59,13 @@ tests:
                 - get
                 - list
                 - watch
+            - apiGroups:
+                - ""
+              resources:
+                - events
+              verbs:
+                - create
+                - patch
 
   - it: RoleBinding should be built correctly with CSI enabled
     documentIndex: 1

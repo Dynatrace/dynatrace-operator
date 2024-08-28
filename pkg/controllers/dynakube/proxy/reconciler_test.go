@@ -91,8 +91,8 @@ func TestReconcileWithoutProxy(t *testing.T) {
 					ValueFrom: "",
 				}}}
 		dk.Annotations = map[string]string{
-			dynakube.AnnotationFeatureActiveGateIgnoreProxy: "true",
-			dynakube.AnnotationFeatureOneAgentIgnoreProxy:   "true",
+			dynakube.AnnotationFeatureActiveGateIgnoreProxy: "true", //nolint:staticcheck
+			dynakube.AnnotationFeatureOneAgentIgnoreProxy:   "true", //nolint:staticcheck
 		}
 
 		var testClient = fake.NewClientBuilder().WithObjects(&corev1.Secret{
