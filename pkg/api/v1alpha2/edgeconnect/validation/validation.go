@@ -21,7 +21,6 @@ type validatorFunc func(ctx context.Context, dv *Validator, ec *edgeconnect.Edge
 
 var validatorErrorFuncs = []validatorFunc{
 	isInvalidApiServer,
-	nameTooLong,
 	checkHostPatternsValue,
 	isInvalidServiceName,
 	automationRequiresProvisionerValidation,

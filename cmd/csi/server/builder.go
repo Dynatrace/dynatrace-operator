@@ -7,7 +7,6 @@ import (
 	csidriver "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -18,7 +17,7 @@ import (
 
 const use = "csi-server"
 
-var nodeId, probeAddress, endpoint string
+var nodeId, endpoint string
 
 type CommandBuilder struct {
 	configProvider  config.Provider
@@ -76,7 +75,7 @@ func (builder CommandBuilder) getCsiOptions() dtcsi.CSIOptions {
 
 func (builder CommandBuilder) getManagerProvider() cmdManager.Provider {
 	if builder.managerProvider == nil {
-		builder.managerProvider = newCsiDriverManagerProvider(probeAddress)
+		builder.managerProvider = newCsiDriverManagerProvider()
 	}
 
 	return builder.managerProvider
@@ -104,7 +103,6 @@ func (builder CommandBuilder) Build() *cobra.Command {
 func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&nodeId, "node-id", "", "node id")
 	cmd.PersistentFlags().StringVar(&endpoint, "endpoint", "unix:///tmp/csi.sock", "CSI endpoint")
-	cmd.PersistentFlags().StringVar(&probeAddress, "health-probe-bind-address", defaultProbeAddress, "The address the probe endpoint binds to.")
 }
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
@@ -124,9 +122,6 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		}
 
 		signalHandler := ctrl.SetupSignalHandler()
-
-		otelShutdownFn := dtotel.Start(signalHandler, "dynatrace-csi-server", csiManager.GetAPIReader(), builder.namespace)
-		defer otelShutdownFn()
 
 		err = createCsiDataPath(builder.getFilesystem())
 		if err != nil {

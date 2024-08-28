@@ -3,20 +3,15 @@ package pod
 import (
 	"context"
 	"net/http"
-	"net/http/httptrace"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel/controller_runtime"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oneagentapm"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/internal/otel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/metadata"
 	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
 	"github.com/pkg/errors"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -24,15 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhookPodName string) error {
-	ctx, span := dtotel.StartSpan(context.Background(), webhookotel.Tracer())
-	defer span.End()
-
-	// Don't use mgr.GetClient() on this function, or other cache-dependent functions from the manager. The cache may
-	// not be ready at this point, and queries for Kubernetes objects may fail. mgr.GetAPIReader() doesn't depend on the
-	// cache and is safe to use.
-	ctx = httptrace.WithClientTrace(ctx, otelhttptrace.NewClientTrace(ctx))
-
+func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNamespace string, webhookPodName string) error {
 	eventRecorder := newPodMutatorEventRecorder(mgr.GetEventRecorderFor("dynatrace-webhook"))
 	kubeConfig := mgr.GetConfig()
 	kubeClient := mgr.GetClient()
@@ -70,13 +57,8 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 		return err
 	}
 
-	requestCounter, err := webhookotel.Meter().Int64Counter("handledPodMutationRequests")
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
 	mgr.GetWebhookServer().Register("/inject", &webhooks.Admission{Handler: &webhook{
-		apiReader:        controller_runtime.NewReader(apiReader),
+		apiReader:        apiReader,
 		webhookNamespace: webhookNamespace,
 		webhookImage:     webhookPodImage,
 		deployedViaOLM:   kubesystem.IsDeployedViaOlm(*webhookPod),
@@ -98,8 +80,6 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 			),
 		},
 		decoder: admission.NewDecoder(mgr.GetScheme()),
-
-		requestCounter: requestCounter,
 	}})
 	log.Info("registered /inject endpoint")
 
@@ -125,9 +105,6 @@ func getWebhookContainerImage(webhookPod corev1.Pod) (string, error) {
 }
 
 func getClusterID(ctx context.Context, apiReader client.Reader) (string, error) {
-	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
-	defer span.End()
-
 	if clusterUID, err := kubesystem.GetUID(ctx, apiReader); err != nil {
 		return "", errors.WithStack(err)
 	} else {

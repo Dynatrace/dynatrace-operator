@@ -4,19 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http/httptrace"
 	"os"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	k8spod "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/internal/otel"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/trace"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -28,13 +21,13 @@ const (
 	ocDebugAnnotationsResource  = "debug.openshift.io/source-resource"
 )
 
-func AddWebhookToManager(mgr manager.Manager, ns string) error {
+func AddWebhookToManager(ctx context.Context, mgr manager.Manager, ns string) error {
 	podName := os.Getenv(env.PodName)
 	if podName == "" {
 		log.Info("no Pod name set for webhook container")
 	}
 
-	if err := registerInjectEndpoint(mgr, ns, podName); err != nil {
+	if err := registerInjectEndpoint(ctx, mgr, ns, podName); err != nil {
 		return err
 	}
 
@@ -47,8 +40,7 @@ type webhook struct {
 	decoder  admission.Decoder
 	recorder eventRecorder
 
-	apiReader      client.Reader
-	requestCounter metric.Int64Counter
+	apiReader client.Reader
 
 	webhookImage     string
 	webhookNamespace string
@@ -60,18 +52,12 @@ type webhook struct {
 }
 
 func (wh *webhook) Handle(ctx context.Context, request admission.Request) admission.Response {
-	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
-	defer span.End()
-
-	ctx = httptrace.WithClientTrace(ctx, otelhttptrace.NewClientTrace(ctx))
-
 	emptyPatch := admission.Patched("")
 	mutationRequest, err := wh.createMutationRequestBase(ctx, request)
 
 	if err != nil {
 		emptyPatch.Result.Message = fmt.Sprintf("unable to inject into pod (err=%s)", err.Error())
 		log.Error(err, "building mutation request base encountered an error")
-		span.RecordError(err)
 
 		return emptyPatch
 	}
@@ -84,22 +70,18 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 
 	podName := mutationRequest.PodName()
 
-	// add podname as attribute (aka. dimension) to metric and span
-	countHandleMutationRequest(ctx, podName)
-	span.SetAttributes(attribute.String(mutatedPodNameKey, podName))
-
 	if !mutationRequired(mutationRequest) || wh.isOcDebugPod(mutationRequest.Pod) {
 		return emptyPatch
 	}
 
-	wh.setupEventRecorder(ctx, mutationRequest)
+	wh.setupEventRecorder(mutationRequest)
 
-	if wh.isInjected(ctx, mutationRequest) {
-		if wh.handlePodReinvocation(ctx, mutationRequest) {
+	if wh.isInjected(mutationRequest) {
+		if wh.handlePodReinvocation(mutationRequest) {
 			log.Info("reinvocation policy applied", "podName", podName)
 			wh.recorder.sendPodUpdateEvent()
 
-			return createResponseForPod(ctx, mutationRequest.Pod, request)
+			return createResponseForPod(mutationRequest.Pod, request)
 		}
 
 		log.Info("no change, all containers already injected", "podName", podName)
@@ -108,12 +90,12 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 	}
 
 	if err := wh.handlePodMutation(ctx, mutationRequest); err != nil {
-		return silentErrorResponse(ctx, mutationRequest.Pod, err)
+		return silentErrorResponse(mutationRequest.Pod, err)
 	}
 
 	log.Info("injection finished for pod", "podName", podName, "namespace", request.Namespace)
 
-	return createResponseForPod(ctx, mutationRequest.Pod, request)
+	return createResponseForPod(mutationRequest.Pod, request)
 }
 
 func mutationRequired(mutationRequest *dtwebhook.MutationRequest) bool {
@@ -124,18 +106,12 @@ func mutationRequired(mutationRequest *dtwebhook.MutationRequest) bool {
 	return maputils.GetFieldBool(mutationRequest.Pod.Annotations, dtwebhook.AnnotationDynatraceInject, true)
 }
 
-func (wh *webhook) setupEventRecorder(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) {
-	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
-	defer span.End()
-
+func (wh *webhook) setupEventRecorder(mutationRequest *dtwebhook.MutationRequest) {
 	wh.recorder.dk = &mutationRequest.DynaKube
 	wh.recorder.pod = mutationRequest.Pod
 }
 
-func (wh *webhook) isInjected(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) bool {
-	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
-	defer span.End()
-
+func (wh *webhook) isInjected(mutationRequest *dtwebhook.MutationRequest) bool {
 	for _, mutator := range wh.mutators {
 		if mutator.Injected(mutationRequest.BaseRequest) {
 			return true
@@ -167,9 +143,6 @@ func podNeedsInjection(mutationRequest *dtwebhook.MutationRequest) bool {
 }
 
 func (wh *webhook) handlePodMutation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) error {
-	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
-	defer span.End()
-
 	if !podNeedsInjection(mutationRequest) {
 		log.Info("no mutation is needed, all containers are excluded from injection.")
 
@@ -205,10 +178,7 @@ func (wh *webhook) handlePodMutation(ctx context.Context, mutationRequest *dtweb
 	return nil
 }
 
-func (wh *webhook) handlePodReinvocation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) bool {
-	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
-	defer span.End()
-
+func (wh *webhook) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequest) bool {
 	var needsUpdate bool
 
 	reinvocationRequest := mutationRequest.ToReinvocationRequest()
@@ -235,22 +205,16 @@ func setDynatraceInjectedAnnotation(mutationRequest *dtwebhook.MutationRequest) 
 }
 
 // createResponseForPod tries to format pod as json
-func createResponseForPod(ctx context.Context, pod *corev1.Pod, req admission.Request) admission.Response {
-	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
-	defer span.End()
-
+func createResponseForPod(pod *corev1.Pod, req admission.Request) admission.Response {
 	marshaledPod, err := json.MarshalIndent(pod, "", "  ")
 	if err != nil {
-		return silentErrorResponse(ctx, pod, err)
+		return silentErrorResponse(pod, err)
 	}
 
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
 }
 
-func silentErrorResponse(ctx context.Context, pod *corev1.Pod, err error) admission.Response {
-	span := trace.SpanFromContext(ctx)
-	span.RecordError(err)
-
+func silentErrorResponse(pod *corev1.Pod, err error) admission.Response {
 	rsp := admission.Patched("")
 	podName := k8spod.GetName(*pod)
 	log.Error(err, "failed to inject into pod", "podName", podName)

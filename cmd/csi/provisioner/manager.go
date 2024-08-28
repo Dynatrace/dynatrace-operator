@@ -4,7 +4,6 @@ import (
 	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/pkg/errors"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -35,9 +34,6 @@ func (provider csiDriverManagerProvider) CreateManager(namespace string, config 
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-
-	// instrument webhook manager HTTP client with OpenTelemetry
-	mgr.GetHTTPClient().Transport = otelhttp.NewTransport(mgr.GetHTTPClient().Transport)
 
 	err = provider.addHealthzCheck(mgr)
 	if err != nil {

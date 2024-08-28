@@ -4,30 +4,21 @@ import (
 	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/pkg/errors"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 const (
-	metricsBindAddress   = ":8080"
-	defaultProbeAddress  = ":10080"
-	livenessEndpointName = "/livez"
-	livezEndpointName    = "livez"
+	metricsBindAddress = ":8080"
 )
 
-type csiDriverManagerProvider struct {
-	probeAddress string
-}
+type csiDriverManagerProvider struct{}
 
-func newCsiDriverManagerProvider(probeAddress string) cmdManager.Provider {
-	return csiDriverManagerProvider{
-		probeAddress: probeAddress,
-	}
+func newCsiDriverManagerProvider() cmdManager.Provider {
+	return csiDriverManagerProvider{}
 }
 
 func (provider csiDriverManagerProvider) CreateManager(namespace string, config *rest.Config) (manager.Manager, error) {
@@ -36,26 +27,8 @@ func (provider csiDriverManagerProvider) CreateManager(namespace string, config 
 		return nil, errors.WithStack(err)
 	}
 
-	// instrument webhook manager HTTP client with OpenTelemetry
-	mgr.GetHTTPClient().Transport = otelhttp.NewTransport(mgr.GetHTTPClient().Transport)
-
-	err = provider.addHealthzCheck(mgr)
-	if err != nil {
-		return nil, err
-	}
-
 	return mgr, nil
 }
-
-func (provider csiDriverManagerProvider) addHealthzCheck(mgr manager.Manager) error {
-	err := mgr.AddHealthzCheck(livezEndpointName, healthz.Ping)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
-}
-
 func (provider csiDriverManagerProvider) createOptions(namespace string) ctrl.Options {
 	options := ctrl.Options{
 		Cache: cache.Options{
@@ -66,9 +39,7 @@ func (provider csiDriverManagerProvider) createOptions(namespace string) ctrl.Op
 		Metrics: server.Options{
 			BindAddress: metricsBindAddress,
 		},
-		Scheme:                 scheme.Scheme,
-		HealthProbeBindAddress: provider.probeAddress,
-		LivenessEndpointName:   livenessEndpointName,
+		Scheme: scheme.Scheme,
 	}
 
 	return options

@@ -105,14 +105,15 @@ func RunTroubleshootCmd(ctx context.Context, log logd.Logger, namespaceName stri
 		return
 	}
 
-	dynakubes := &dynakube.DynaKubeList{}
+	dks, err := getDynakubes(ctx, log, apiReader, namespaceName, dynakubeFlagValue)
 
-	err = apiReader.List(ctx, dynakubes, &client.ListOptions{Namespace: namespaceName})
 	if checkCRD(log, err) != nil {
+		logErrorf(log, "error during getting dynakubes: %v", err)
+
 		return
 	}
 
-	runChecksForAllDynakubes(ctx, log, apiReader, &http.Client{}, dynakubes.Items)
+	runChecksForAllDynakubes(ctx, log, apiReader, &http.Client{}, dks)
 }
 
 func GetK8SClusterAPIReader(kubeConfig *rest.Config) (client.Reader, error) {

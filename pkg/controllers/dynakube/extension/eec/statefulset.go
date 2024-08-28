@@ -38,10 +38,11 @@ const (
 	envHttpsCertPathPem             = "HttpsCertPathPem"
 	envHttpsPrivKeyPathPem          = "HttpsPrivKeyPathPem"
 	envDSTokenPath                  = "DSTokenPath"
+	envRuntimeConfigMountPath       = "RuntimeConfigMountPath"
 	// Env variable values
 	envExtensionsModuleExecPath = "/opt/dynatrace/remotepluginmodule/agent/lib64/extensionsmodule"
 	envDsInstallDir             = "/opt/dynatrace/remotepluginmodule/agent/datasources"
-	envActiveGateTrustedCert    = "/var/lib/dynatrace/secrets/ag/" + activeGateTrustedCertSecretKeyPath
+	envActiveGateTrustedCert    = activeGateTrustedCertMountPath + "/" + activeGateTrustedCertSecretKeyPath
 	envEecHttpsCertPathPem      = httpsCertMountPath + "/" + consts.TLSCrtDataName
 	envEecHttpsPrivKeyPathPem   = httpsCertMountPath + "/" + consts.TLSKeyDataName
 	// Volume names and paths
@@ -54,17 +55,16 @@ const (
 	customConfigVolumeName             = "custom-config"
 	customConfigMountPath              = "/var/lib/dynatrace/remotepluginmodule/secrets/config"
 	activeGateTrustedCertVolumeName    = "server-certs"
-	activeGateTrustedCertMountPath     = "/var/lib/dynatrace/secrets/ag"
+	activeGateTrustedCertMountPath     = "/var/lib/dynatrace/remotepluginmodule/secrets/ag"
 	activeGateTrustedCertSecretKeyPath = "server.crt"
 	httpsCertVolumeName                = "https-certs"
 	httpsCertMountPath                 = "/var/lib/dynatrace/remotepluginmodule/secrets/https"
 	extensionsControllerTlsSecretName  = "extensions-controller-tls"
 	dsTokenPath                        = "/var/lib/dynatrace/remotepluginmodule/secrets/dsauthtoken"
+	runtimeConfigurationFilename       = "runtimeConfiguration"
 
 	// misc
-	tokensVolumeName = "tokens"
-	eecFile          = "eec.token"
-	logVolumeName    = "log"
+	logVolumeName = "log"
 )
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
@@ -201,19 +201,23 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	containerEnvs := []corev1.EnvVar{
 		{Name: envTenantId, Value: dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID},
 		{Name: envServerUrl, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ".svc.cluster.local:443"},
-		{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + eecFile},
+		{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + consts.EecTokenSecretKey},
 		{Name: envEecIngestPort, Value: strconv.Itoa(int(collectorPort))},
 		{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath},
 		{Name: envDsInstallDirName, Value: envDsInstallDir},
 		{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID},
 		{Name: envK8sExtServiceUrl, Value: serviceAccountName},
-		{Name: envDSTokenPath, Value: dsTokenPath},
+		{Name: envDSTokenPath, Value: eecTokenMountPath + "/" + consts.OtelcTokenSecretKey},
 		{Name: envHttpsCertPathPem, Value: envEecHttpsCertPathPem},
 		{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem},
 	}
 
 	if dk.Spec.ActiveGate.TlsSecretName != "" {
 		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envActiveGateTrustedCertName, Value: envActiveGateTrustedCert})
+	}
+
+	if dk.Spec.Templates.ExtensionExecutionController.CustomConfig != "" {
+		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envRuntimeConfigMountPath, Value: customConfigMountPath + "/" + runtimeConfigurationFilename})
 	}
 
 	return containerEnvs
@@ -228,7 +232,7 @@ func buildActiveGateServiceName(dk *dynakube.DynaKube) string {
 func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
 		{
-			Name:      tokensVolumeName,
+			Name:      consts.ExtensionsTokensVolumeName,
 			MountPath: eecTokenMountPath,
 			ReadOnly:  true,
 		},
@@ -284,7 +288,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 		mode := int32(420)
 		o.Spec.Template.Spec.Volumes = []corev1.Volume{
 			{
-				Name: tokensVolumeName,
+				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName:  dk.Name + consts.SecretSuffix,
