@@ -36,7 +36,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	log.Info("start reconciling monitored entities")
 
 	if !conditions.IsOutdated(r.timeProvider, r.dk, MEIDConditionType) {
-		log.Info("Kubernestes Cluster MEID not outdated, skipping reconciliation")
+		log.Info("Kubernetes Cluster MEID not outdated, skipping reconciliation")
 
 		return nil
 	}
@@ -57,7 +57,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	r.dk.Status.KubernetesClusterMEID = findLatestEntity(monitoredEntities).EntityId
-	conditions.SetStatusUpdated(r.dk.Conditions(), MEIDConditionType, "Kubernestes Cluster MEID is up to date")
+	conditions.SetStatusUpdated(r.dk.Conditions(), MEIDConditionType, "Kubernetes Cluster MEID is up to date")
 
 	log.Info("kubernetesClusterMEID set in dynakube status, done reconciling", "kubernetesClusterMEID", r.dk.Status.KubernetesClusterMEID)
 
