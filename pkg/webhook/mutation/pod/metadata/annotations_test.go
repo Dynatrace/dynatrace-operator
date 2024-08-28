@@ -139,6 +139,7 @@ func TestAddMetadataToInitEnv(t *testing.T) {
 		request.Pod.Annotations = map[string]string{
 			"test-annotation": "boom",
 		}
+
 		for _, key := range expectedKeys {
 			request.Pod.Annotations[dynakube.MetadataPrefix+key] = key + "-value"
 		}
