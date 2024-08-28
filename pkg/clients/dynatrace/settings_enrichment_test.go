@@ -59,14 +59,16 @@ func TestGetRulesSetting(t *testing.T) {
 		assert.Empty(t, rulesResponse)
 	})
 
-	t.Run("no monitored-entities -> return empty, no error", func(t *testing.T) {
+	t.Run("no monitored-entities, use environment scope -> return not-empty, no error", func(t *testing.T) {
 		mockParams := v2APIMockParams{
 			entitiesAPI: entitiesMockParams{
 				status:   http.StatusOK,
 				expected: []MonitoredEntity{},
 			},
 			settingsAPI: settingsMockParams{
-				status: http.StatusBadRequest, // <- settings API shouldn't be called, if called -> error -> test fails
+				status:     http.StatusOK,
+				totalCount: 1,
+				objectID:   "test",
 			},
 		}
 
@@ -81,7 +83,7 @@ func TestGetRulesSetting(t *testing.T) {
 
 		rulesResponse, err := dtc.GetRulesSettings(ctx, "test-uuid", "")
 		require.NoError(t, err)
-		assert.Empty(t, rulesResponse)
+		assert.NotEmpty(t, rulesResponse)
 	})
 }
 
