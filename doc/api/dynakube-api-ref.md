@@ -139,7 +139,6 @@
 |`annotations`|Adds additional annotations to the ExtensionExecutionController pods|-|object|
 |`customConfig`|Defines name of ConfigMap containing custom configuration file|-|string|
 |`labels`|Adds additional labels for the ExtensionExecutionController pods|-|object|
-|`persistentVolumeClaimRetentionPolicy`|Determines retention policy|-|string|
 |`resources`|Define resources' requests and limits for single ExtensionExecutionController pod|-|object|
 |`tlsRefName`||-|string|
 |`tolerations`|Set tolerations for the ExtensionExecutionController pods|-|array|
@@ -180,3 +179,10 @@
 |`kind`|Kind is the type of resource being referenced|-|string|
 |`name`|Name is the name of resource being referenced|-|string|
 |`namespace`|Namespace is the namespace of resource being referenced<br/>Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details.<br/>(Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.|-|string|
+
+### .spec.templates.extensionExecutionController.persistentVolumeClaimRetentionPolicy
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`whenDeleted`|WhenDeleted specifies what happens to PVCs created from StatefulSet<br/>VolumeClaimTemplates when the StatefulSet is deleted. The default policy<br/>of `Retain` causes PVCs to not be affected by StatefulSet deletion. The<br/>`Delete` policy causes those PVCs to be deleted.|-|string|
+|`whenScaled`|WhenScaled specifies what happens to PVCs created from StatefulSet<br/>VolumeClaimTemplates when the StatefulSet is scaled down. The default<br/>policy of `Retain` causes PVCs to not be affected by a scaledown. The<br/>`Delete` policy causes the associated PVCs for any excess pods above<br/>the replica count to be deleted.|-|string|
