@@ -51,7 +51,7 @@ jobs:
         with:
           payload: |
             {
-              "message": "E2E tests ${{needs.run-in-k8s.result == 'success' && 'passed :green_heavy_check_mark:' || 'failed :red_circle:'}} on :kubernetes:\nE2E tests ${{needs.run-in-ocp.result == 'success' && 'passed :green_heavy_check_mark:' || 'failed :red_circle:'}} on :openshift:\n using `${{ github.event.inputs.target || 'main' }}` branch using run_id: [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})",
+              "message": "E2E tests ${{needs.run-in-k8s.result == 'success' && 'passed :green_heavy_check_mark:' || 'failed :red_circle:'}} on :kubernetes:\nE2E tests ${{needs.run-in-ocp.result == 'success' && 'passed :green_heavy_check_mark:' || 'failed :red_circle:'}} on :openshift:\n using ${{ github.event.inputs.target || 'main' }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})",
               "run_id": "${{ github.run_id }}"
             }
         env:
