@@ -16,14 +16,14 @@ import (
 	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const (
-	runtimePersistentVolumeClaimName = dynakube.ExtensionsExecutionControllerStatefulsetName + "-runtime"
-	containerName                    = "extensions-controller"
-	collectorPort                    = int32(14599)
-	serviceAccountName               = "dynatrace-extensions-controller"
+	containerName      = "extensions-controller"
+	collectorPort      = int32(14599)
+	serviceAccountName = "dynatrace-extensions-controller"
 
 	// Env variable names
 	envTenantId                     = "TenantId"
@@ -60,7 +60,6 @@ const (
 	httpsCertVolumeName                = "https-certs"
 	httpsCertMountPath                 = "/var/lib/dynatrace/remotepluginmodule/secrets/https"
 	extensionsControllerTlsSecretName  = "extensions-controller-tls"
-	dsTokenPath                        = "/var/lib/dynatrace/remotepluginmodule/secrets/dsauthtoken"
 	runtimeConfigurationFilename       = "runtimeConfiguration"
 
 	// misc
@@ -82,6 +81,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		statefulset.SetUpdateStrategy(utils.BuildUpdateStrategy()),
 		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
 		setVolumes(r.dk),
+		setPersistentVolumeClaim(r.dk),
 	)
 
 	if err != nil {
@@ -325,16 +325,6 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			})
-		} else {
-			// TODO: do we want to use statefulset.VolumeClaimTemplates
-			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
-				Name: runtimeVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						ClaimName: runtimePersistentVolumeClaimName,
-					},
-				},
-			})
 		}
 
 		if dk.Spec.Templates.ExtensionExecutionController.CustomConfig != "" {
@@ -367,6 +357,25 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 					},
 				},
 			})
+		}
+	}
+}
+
+func setPersistentVolumeClaim(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
+	return func(o *appsv1.StatefulSet) {
+		if dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim != nil {
+			o.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
+				{
+					ObjectMeta: v1.ObjectMeta{
+						Name: runtimeVolumeName,
+					},
+					Spec: *dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim,
+				},
+			}
+		}
+
+		if dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaimRetentionPolicy != nil {
+			o.Spec.PersistentVolumeClaimRetentionPolicy = dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaimRetentionPolicy
 		}
 	}
 }
