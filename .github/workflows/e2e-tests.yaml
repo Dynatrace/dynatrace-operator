@@ -25,8 +25,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: Run e2e test
-        shell: bash
-        run: exit 0
+        uses: ./.github/actions/run-e2e
+        with:
+          flc-namespace: dto-daily
+          flc-environment: dto-k8s-latest-flc
+          target-branch: ${{ github.event.inputs.target }}
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
   run-in-ocp:
     name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }})
     environment: E2E
@@ -37,8 +48,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: Run e2e test
-        shell: bash
-        run: exit 0
+        uses: ./.github/actions/run-e2e
+        with:
+          flc-namespace: dto-daily
+          flc-environment: dto-ocp-latest-flc
+          target-branch: ${{ github.event.inputs.target }}
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
   notify-slack:
     name: Notify test results in Slack
     environment: E2E
