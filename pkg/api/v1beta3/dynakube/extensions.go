@@ -37,7 +37,7 @@ type ExtensionExecutionControllerSpec struct {
 
 	// Determines retention policy
 	// +kubebuilder:validation:Optional
-	PersistentVolumeClaimRetentionPolicy *appsv1.PersistentVolumeClaimRetentionPolicyType `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
+	PersistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
 
 	// Overrides the default image
 	// +kubebuilder:validation:Optional
