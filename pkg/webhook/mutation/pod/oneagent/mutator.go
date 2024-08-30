@@ -47,7 +47,18 @@ func (mut *Mutator) Enabled(request *dtwebhook.BaseRequest) bool {
 		matchesNamespaceSelector = selector.Matches(labels.Set(request.Namespace.Labels))
 	}
 
-	return matchesNamespaceSelector && enabledOnPod && enabledOnDynakube
+	if matchesNamespaceSelector && enabledOnPod && enabledOnDynakube {
+		if !request.DynaKube.IsOneAgentCommunicationRouteClear() {
+			log.Info("OneAgent were not yet able to communicate with tenant, no direct route or ready ActiveGate available, code modules have not been injected.")
+			setNotInjectedAnnotations(request.Pod, dtwebhook.EmptyConnectionInfoReason)
+
+			return false
+		}
+
+		return true
+	}
+
+	return false
 }
 
 func (mut *Mutator) Injected(request *dtwebhook.BaseRequest) bool {
@@ -55,13 +66,6 @@ func (mut *Mutator) Injected(request *dtwebhook.BaseRequest) bool {
 }
 
 func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationRequest) error {
-	if !request.DynaKube.IsOneAgentCommunicationRouteClear() {
-		log.Info("OneAgent were not yet able to communicate with tenant, no direct route or ready ActiveGate available, code modules have not been injected.")
-		setNotInjectedAnnotations(request.Pod, dtwebhook.EmptyConnectionInfoReason)
-
-		return nil
-	}
-
 	log.Info("injecting OneAgent into pod", "podName", request.PodName())
 
 	if err := mut.ensureInitSecret(request); err != nil {
