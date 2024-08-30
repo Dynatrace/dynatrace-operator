@@ -59,27 +59,36 @@ func (runner *Runner) createEnrichmentFiles() error {
 			return err
 		}
 
-		err = runner.createConfigFile(fmt.Sprintf(enrichmentJsonPathTemplate, container.Name), string(raw), true)
+		content := map[string]string{}
+
+		err = json.Unmarshal(raw, &content)
 		if err != nil {
 			return err
 		}
 
-		props := map[string]string{}
+		for key, value := range runner.env.WorkloadAnnotations {
+			content[key] = value
+		}
 
-		err = json.Unmarshal(raw, &props)
+		jsonContent, err := json.Marshal(content)
 		if err != nil {
 			return err
 		}
 
-		var content strings.Builder
-		for key, value := range props {
-			content.WriteString(key)
-			content.WriteString("=")
-			content.WriteString(value)
-			content.WriteString("\n")
+		err = runner.createConfigFile(fmt.Sprintf(enrichmentJsonPathTemplate, container.Name), string(jsonContent), true)
+		if err != nil {
+			return err
 		}
 
-		err = runner.createConfigFile(fmt.Sprintf(enrichmentPropsPathTemplate, container.Name), content.String(), true)
+		var propsContent strings.Builder
+		for key, value := range content {
+			propsContent.WriteString(key)
+			propsContent.WriteString("=")
+			propsContent.WriteString(value)
+			propsContent.WriteString("\n")
+		}
+
+		err = runner.createConfigFile(fmt.Sprintf(enrichmentPropsPathTemplate, container.Name), propsContent.String(), true)
 		if err != nil {
 			return err
 		}
