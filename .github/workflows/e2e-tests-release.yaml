@@ -1,0 +1,111 @@
+name: E2E tests of latest release
+
+on:
+  push:
+    branches:
+      - release-*
+
+permissions:
+  checks: write
+
+jobs:
+  check:
+    name: Check branch
+    runs-on: ubuntu-latest
+    outputs:
+      run-e2e-tests: ${{ steps.run.outputs.RUN_E2E_TESTS }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          fetch-depth: 0
+      - name: Run script
+        id: run
+        run: |
+          echo "--- latestReleaseBranch"
+          latestReleaseBranch="$(git branch -r --list 'origin/release-*' | sort --version-sort | tail -n 1 | tr -d ' ')"
+          echo "$latestReleaseBranch"
+          echo "---"
+
+          echo "--- current branch"
+          echo "origin/${{ github.ref_name }}"
+          echo "---"
+
+          if [ "$latestReleaseBranch" != "origin/${{ github.ref_name }}" ]; then
+            echo "older branch - nothing to do"
+            echo "RUN_E2E_TESTS=false" >> $GITHUB_OUTPUT
+          else
+            echo "changes on current release branch - run e2e"
+            echo "RUN_E2E_TESTS=true" >> $GITHUB_OUTPUT
+          fi
+          exit 0
+
+  run-in-k8s:
+    name: Run in Kubernetes latest
+    needs: [check]
+    environment: E2E
+    runs-on:
+      - self-hosted
+      - operator-e2e
+    if: ${{ needs.check.outputs.run-e2e-tests == 'true' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - name: Run e2e test
+        uses: ./.github/actions/run-e2e
+        with:
+          flc-namespace: dto-daily
+          flc-environment: dto-k8s-latest-flc
+          target-branch: ${{ github.ref_name }}
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  run-in-ocp:
+    name: Run in OpenShift latest
+    needs: [check]
+    environment: E2E
+    runs-on:
+      - self-hosted
+      - operator-e2e
+    if: ${{ needs.check.outputs.run-e2e-tests }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - name: Run e2e test
+        uses: ./.github/actions/run-e2e
+        with:
+          flc-namespace: dto-daily
+          flc-environment: dto-ocp-latest-flc
+          target-branch: ${{ github.ref_name }}
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  notify-failure:
+    name: Notify failure in Slack
+    environment: E2E
+    needs: [ "run-in-k8s", "run-in-ocp" ]
+    if: ${{ failure() || cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify failure in Slack
+        uses: slackapi/slack-github-action@37ebaef184d7626c5f204ab8d3baff4262dd30f0 # v1.27.0
+        with:
+          payload: |
+            {
+              "message": ":x: E2E tests failed on ${{ github.ref_name}} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})",
+              "run_id": "${{ github.run_id }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
