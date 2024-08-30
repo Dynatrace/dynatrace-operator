@@ -328,13 +328,16 @@ func (controller *Controller) setupActiveGateTlsSecret(ctx context.Context, dk *
 			certDomain := fmt.Sprintf(certificates.SelfSignedCertificateActiveGateDomain, dk.Name, dk.Namespace)
 
 			certAltNames := []string{}
-			for _, ip := range dk.Status.ActiveGate.ServiceIPs {
-				certAltNames = append(certAltNames, fmt.Sprintf("IP:%s", ip))
-			}
-			certAltNames = append(certAltNames, fmt.Sprintf("DNS:%s-activegate.%s", dk.Name, dk.Name))
-			certAltNames = append(certAltNames, fmt.Sprintf("DNS:%s-activegate.%s.svc", dk.Name, dk.Name))
+			//for _, ip := range dk.Status.ActiveGate.ServiceIPs {
+			//	certAltNames = append(certAltNames, fmt.Sprintf("IP:%s", ip))
+			//}
+			//certAltNames = append(certAltNames, fmt.Sprintf("DNS:%s-activegate.%s", dk.Name, dk.Name))
+			//certAltNames = append(certAltNames, fmt.Sprintf("DNS:%s-activegate.%s.svc", dk.Name, dk.Name))
+			//certAltNames = append(certAltNames, "IP:"+os.Getenv("AGIP"))
+			certAltNames = append(certAltNames, fmt.Sprintf("%s-activegate.%s", dk.Name, dk.Name))
+			certAltNames = append(certAltNames, fmt.Sprintf("%s-activegate.%s.svc", dk.Name, dk.Name))
 
-			cert, privateKey, err := certificates.CreateSelfSignedCertificate(certDomain, certAltNames)
+			cert, privateKey, err := certificates.CreateSelfSignedCertificate(certDomain, certAltNames, os.Getenv("AGIP"))
 			if err != nil {
 				return err
 			}

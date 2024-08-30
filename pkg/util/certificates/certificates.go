@@ -6,11 +6,10 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"encoding/asn1"
 	"encoding/pem"
 	"fmt"
 	"math/big"
-	"strings"
+	"net"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -55,7 +54,7 @@ func ValidateCertificateExpiration(certData []byte, renewalThreshold time.Durati
 	return true, nil
 }
 
-func CreateSelfSignedCertificate(domain string, altNames []string) (*x509.Certificate, *ecdsa.PrivateKey, error) {
+func CreateSelfSignedCertificate(domain string, altNames []string, ip string) (*x509.Certificate, *ecdsa.PrivateKey, error) {
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to generate serial number for tls certificate: %w", err)
@@ -66,10 +65,17 @@ func CreateSelfSignedCertificate(domain string, altNames []string) (*x509.Certif
 		return nil, nil, err
 	}
 
-	extSubjectAltName := pkix.Extension{}
-	extSubjectAltName.Id = asn1.ObjectIdentifier{2, 5, 29, 17}
-	extSubjectAltName.Critical = false
-	extSubjectAltName.Value = []byte(strings.Join(altNames[:], ", "))
+	//extSubjectAltName := pkix.Extension{}
+	//extSubjectAltName.Id = asn1.ObjectIdentifier{2, 5, 29, 17}
+	//extSubjectAltName.Critical = false
+	//extSubjectAltName.Value = []byte(strings.Join(altNames[:], ", "))
+	//var e error
+	//extSubjectAltName.Value, e = asn1.Marshal(altNames[:])
+	//if e != nil {
+	//	return nil, nil, err
+	//}
+
+	netIp := net.ParseIP(ip)
 
 	cert := &x509.Certificate{
 		SerialNumber: serialNumber,
@@ -81,7 +87,8 @@ func CreateSelfSignedCertificate(domain string, altNames []string) (*x509.Certif
 			OrganizationalUnit: []string{"Operator Self-Signed"},
 			CommonName:         domain,
 		},
-		ExtraExtensions: []pkix.Extension{extSubjectAltName},
+		// ExtraExtensions: []pkix.Extension{extSubjectAltName},
+		//Extensions: []pkix.Extension{extSubjectAltName},
 
 		NotBefore: time.Now(),
 		NotAfter:  time.Now().Add(7 * 24 * time.Hour),
@@ -89,6 +96,11 @@ func CreateSelfSignedCertificate(domain string, altNames []string) (*x509.Certif
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
+
+		IsCA: true,
+
+		DNSNames:    altNames,
+		IPAddresses: []net.IP{netIp},
 	}
 
 	return cert, privateKey, nil
