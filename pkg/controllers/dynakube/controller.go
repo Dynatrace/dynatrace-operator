@@ -3,6 +3,7 @@ package dynakube
 import (
 	"context"
 	goerrors "errors"
+	"fmt"
 	"os"
 	"time"
 
@@ -22,8 +23,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -31,6 +36,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -239,6 +245,11 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakub
 		return err
 	}
 
+	err = controller.setupActiveGateTlsSecret(ctx, dk)
+	if err != nil {
+		return err
+	}
+
 	dk.Status.KubeSystemUUID = controller.clusterID
 
 	log.Info("start reconciling deployment meta data")
@@ -301,6 +312,51 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 	controller.setConditionTokenReady(dk)
 
 	return dynatraceClient, nil
+}
+
+func (controller *Controller) setupActiveGateTlsSecret(ctx context.Context, dk *dynakube.DynaKube) error {
+	if !dk.HasActiveGateCaCert() {
+		log.Info("start reconciling self-signed activegate tls certificate secret")
+
+		secretName := fmt.Sprintf(certificates.SelfSignedCertificateSecretName, dk.Name)
+
+		query := secret.Query(controller.client, controller.apiReader, log)
+
+		_, err := query.Get(ctx, types.NamespacedName{Name: secretName, Namespace: dk.Namespace})
+		if k8serrors.IsNotFound(err) {
+			log.Info("creating self-signed activegate tls certificate secret")
+			certDomain := fmt.Sprintf(certificates.SelfSignedCertificateActiveGateDomain, dk.Name, dk.Namespace)
+
+			certAltNames := []string{}
+			for _, ip := range dk.Status.ActiveGate.ServiceIPs {
+				certAltNames = append(certAltNames, fmt.Sprintf("IP:%s", ip))
+			}
+			certAltNames = append(certAltNames, fmt.Sprintf("DNS:%s-activegate.%s", dk.Name, dk.Name))
+			certAltNames = append(certAltNames, fmt.Sprintf("DNS:%s-activegate.%s.svc", dk.Name, dk.Name))
+
+			cert, privateKey, err := certificates.CreateSelfSignedCertificate(certDomain, certAltNames)
+			if err != nil {
+				return err
+			}
+			certData, err := certificates.CreateP12CertificateSecretData(cert, privateKey)
+			if err != nil {
+				return err
+			}
+
+			coreLabels := k8slabels.NewCoreLabels(dk.Name, k8slabels.ActiveGateComponentLabel)
+
+			secret, err := secret.BuildForNamespace(secretName, dk.Namespace, certData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
+
+			err = k8ssecret.Query(controller.client, controller.apiReader, log).Create(ctx, secret)
+			if err != nil {
+				return err
+			}
+
+		} else if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioClient *istio.Client, dk *dynakube.DynaKube) error {

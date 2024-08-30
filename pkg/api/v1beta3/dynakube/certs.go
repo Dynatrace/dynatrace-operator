@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -47,19 +48,23 @@ func (dk *DynaKube) TrustedCAs(ctx context.Context, kubeReader client.Reader) ([
 }
 
 func (dk *DynaKube) ActiveGateTlsCert(ctx context.Context, kubeReader client.Reader) ([]byte, error) {
+	var secretName string
+
 	if dk.HasActiveGateCaCert() {
-		secretName := dk.Spec.ActiveGate.TlsSecretName
+		secretName = dk.Spec.ActiveGate.TlsSecretName
+	} else {
+		secretName = fmt.Sprintf(certificates.SelfSignedCertificateSecretName, dk.Name)
+	}
 
-		var tlsSecret corev1.Secret
+	var tlsSecret corev1.Secret
 
-		err := kubeReader.Get(ctx, client.ObjectKey{Name: secretName, Namespace: dk.Namespace}, &tlsSecret)
-		if err != nil {
-			return nil, errors.WithMessage(err, fmt.Sprintf("failed to get activeGate tlsCert from %s secret", secretName))
-		}
+	err := kubeReader.Get(ctx, client.ObjectKey{Name: secretName, Namespace: dk.Namespace}, &tlsSecret)
+	if err != nil {
+		return nil, errors.WithMessage(err, fmt.Sprintf("failed to get activeGate tlsCert from %s secret", secretName))
+	}
 
-		if tlsCertKey, ok := tlsSecret.Data[TlsCertKey]; ok {
-			return tlsCertKey, nil
-		}
+	if tlsCertKey, ok := tlsSecret.Data[TlsCertKey]; ok {
+		return tlsCertKey, nil
 	}
 
 	return nil, nil

@@ -36,6 +36,7 @@ require (
 	sigs.k8s.io/controller-runtime v0.19.0
 	sigs.k8s.io/e2e-framework v0.4.0
 	sigs.k8s.io/yaml v1.4.0
+	software.sslmate.com/src/go-pkcs12 v0.4.0
 )
 
 require (
@@ -90,6 +91,7 @@ require (
 	github.com/vladimirvivien/gexe v0.2.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
+	golang.org/x/crypto v0.26.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/term v0.23.0 // indirect
 	golang.org/x/text v0.17.0 // indirect
@@ -106,4 +108,5 @@ require (
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
+
 )
