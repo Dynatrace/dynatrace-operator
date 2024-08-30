@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,7 +42,7 @@ func NewPod(podName, namespaceName, targetUrl string, options ...Option) *corev1
 			Name:      podName,
 			Namespace: namespaceName,
 			Annotations: map[string]string{
-				dynakube.AnnotationFeatureAutomaticInjection: "false",
+				dtwebhook.AnnotationDynatraceInject: "false",
 			},
 		},
 		Spec: corev1.PodSpec{
