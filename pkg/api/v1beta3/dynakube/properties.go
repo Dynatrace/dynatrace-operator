@@ -154,7 +154,7 @@ func (dk *DynaKube) NeedsActiveGateService() bool {
 }
 
 func (dk *DynaKube) HasActiveGateCaCert() bool {
-	return dk.ActiveGateMode() && dk.Spec.ActiveGate.TlsSecretName != ""
+	return dk.ActiveGateMode()
 }
 
 func (dk *DynaKube) NeedsOneAgentPrivileged() bool {

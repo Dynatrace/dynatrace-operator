@@ -6,11 +6,10 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"encoding/asn1"
 	"encoding/pem"
 	"fmt"
 	"math/big"
-	"strings"
+	"net"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -22,7 +21,7 @@ import (
 const (
 	intSerialNumberLimit                  = 128
 	certPassword                          = "changeit"
-	SelfSignedCertificateSecretName       = "%s-activegate-selfsigned-cert"
+	SelfSignedCertificateSecretName       = "%s-activegate-cert"
 	SelfSignedCertificateActiveGateDomain = "%s-activegate.%s"
 
 	certificatePemHeader = "CERTIFICATE"
@@ -55,7 +54,25 @@ func ValidateCertificateExpiration(certData []byte, renewalThreshold time.Durati
 	return true, nil
 }
 
-func CreateSelfSignedCertificate(domain string, altNames []string) (*x509.Certificate, *ecdsa.PrivateKey, error) {
+// type authKeyId struct {
+// 	KeyIdentifier             []byte       `asn1:"optional,tag:0"`
+// 	AuthorityCertIssuer       generalNames `asn1:"optional,tag:1"`
+// 	AuthorityCertSerialNumber *big.Int     `asn1:"optional,tag:2"`
+// }
+
+// type generalNames struct {
+// 	Name []pkix.RDNSequence `asn1:"tag:4"`
+// }
+
+// func gen(issuer *x509.Certificate) ([]byte, error) {
+// 	return asn1.Marshal(authKeyId{
+// 		KeyIdentifier:             issuer.SubjectKeyId,
+// 		AuthorityCertIssuer:       generalNames{Name: []pkix.RDNSequence{issuer.Issuer.ToRDNSequence()}},
+// 		AuthorityCertSerialNumber: issuer.SerialNumber,
+// 	})
+// }
+
+func CreateSelfSignedCertificate(domain string, altNames []string, ip string) (*x509.Certificate, *ecdsa.PrivateKey, error) {
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to generate serial number for tls certificate: %w", err)
@@ -66,10 +83,11 @@ func CreateSelfSignedCertificate(domain string, altNames []string) (*x509.Certif
 		return nil, nil, err
 	}
 
-	extSubjectAltName := pkix.Extension{}
-	extSubjectAltName.Id = asn1.ObjectIdentifier{2, 5, 29, 17}
-	extSubjectAltName.Critical = false
-	extSubjectAltName.Value = []byte(strings.Join(altNames[:], ", "))
+	// extSubjectAltName := pkix.Extension{}
+	// extSubjectAltName.Id = asn1.ObjectIdentifier{2, 5, 29, 17}
+	// extSubjectAltName.Critical = false
+	// extSubjectAltName.Value = []byte(strings.Join(altNames[:], ", "))
+	netIp := net.ParseIP(ip)
 
 	cert := &x509.Certificate{
 		SerialNumber: serialNumber,
@@ -78,18 +96,27 @@ func CreateSelfSignedCertificate(domain string, altNames []string) (*x509.Certif
 			Province:           []string{"UA"},
 			Locality:           []string{"Linz"},
 			Organization:       []string{"Dynatrace"},
-			OrganizationalUnit: []string{"Operator Self-Signed"},
+			OrganizationalUnit: []string{"Operator"},
 			CommonName:         domain,
 		},
-		ExtraExtensions: []pkix.Extension{extSubjectAltName},
+		// ExtraExtensions: []pkix.Extension{extSubjectAltName},
+		DNSNames:    altNames,
+		IPAddresses: []net.IP{netIp},
 
 		NotBefore: time.Now(),
 		NotAfter:  time.Now().Add(7 * 24 * time.Hour),
 
-		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		IsCA:                  true,
 		BasicConstraintsValid: true,
 	}
+
+	// authorityKeyIdentifierValue, err := gen(cert)
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// cert.AuthorityKeyId = authorityKeyIdentifierValue
+	// cert.SubjectKeyId = authorityKeyIdentifierValue
 
 	return cert, privateKey, nil
 }
