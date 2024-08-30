@@ -61,20 +61,19 @@ jobs:
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-
-  notify-failure:
-    name: Notify failure in Slack
+  notify-slack:
+    name: Notify test results in Slack
     environment: E2E
     needs: [ "run-in-k8s", "run-in-ocp" ]
-    if: ${{ failure() || cancelled() }}
     runs-on: ubuntu-latest
+    if: ${{ always() }}
     steps:
       - name: Notify failure in Slack
         uses: slackapi/slack-github-action@37ebaef184d7626c5f204ab8d3baff4262dd30f0 # v1.27.0
         with:
           payload: |
             {
-              "message": ":x: E2E tests failed on ${{ github.event.inputs.target || 'main' }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})",
+              "message": "tests ${{needs.run-in-k8s.result == 'success' && 'passed :green_heavy_check_mark:' || 'failed :red_circle:'}} on kubernetes :kubernetes:\ntests ${{needs.run-in-ocp.result == 'success' && 'passed :green_heavy_check_mark:' || 'failed :red_circle:'}} on openshift :openshift:\n using ${{ github.event.inputs.target || 'main' }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})",
               "run_id": "${{ github.run_id }}"
             }
         env:
