@@ -270,7 +270,11 @@ func mockDynatraceServerV2Handler(params v2APIMockParams) http.HandlerFunc {
 
 				mockHandleSettingsRequest(r, w, params.settingsAPI.totalCount, params.settingsAPI.objectID)
 			case "/v2/settings/effectiveValues":
-				if params.settingsAPI.status != http.StatusOK {
+				if r.URL.Query().Get(scopeQueryParam) == "" {
+					writeError(w, http.StatusBadRequest)
+
+					return
+				} else if params.settingsAPI.status != http.StatusOK {
 					writeError(w, params.settingsAPI.status)
 
 					return

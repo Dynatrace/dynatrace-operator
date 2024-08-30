@@ -4,59 +4,6 @@ import yaml
 import argparse
 from urllib.request import urlopen
 
-resourceTerms = {
-    "nodes": "Nodes",
-    "pods": "Pods",
-    "namespaces": "Namespaces",
-    "replicationcontrollers": "ReplicationControllers",
-    "events": "Events",
-    "resourcequotas": "ResourceQuotas",
-    "pods/proxy": "Pods/Proxy",
-    "nodes/proxy": "Nodes/Proxy",
-    "nodes/metrics": "Nodes/Metrics",
-    "services": "Services",
-    "jobs": "Jobs",
-    "cronjobs": "CronJobs",
-    "deployments": "Deployments",
-    "replicasets": "ReplicaSets",
-    "statefulsets": "StatefulSets",
-    "daemonsets": "DaemonSets",
-    "deploymentconfigs": "DeploymentConfigs",
-    "clusterversions": "ClusterVersions",
-    "secrets": "Secrets",
-    "mutatingwebhookconfigurations": "MutatingWebhookConfigurations",
-    "validatingwebhookconfigurations": "ValidatingWebhookConfigurations",
-    "customresourcedefinitions": "CustomResourceDefinitions",
-    "csinodes": "CsiNodes",
-    "dynakubes": "Dynakubes",
-    "dynakubes/finalizers": "Dynakubes/Finalizers",
-    "dynakubes/status": "Dynakubes/Status",
-    "deployments/finalizers": "Deployments/Finalizers",
-    "configmaps": "ConfigMaps",
-    "pods/log": "Pods/Log",
-    "servicemonitors": "ServiceMonitors",
-    "serviceentries": "ServiceEntries",
-    "virtualservices": "VirtualServices",
-    "leases": "Leases",
-    "endpoints": "EndPoints",
-    "securitycontextconstraints": "SecurityContextConstraints",
-    "edgeconnects": "EdgeConnects",
-    "edgeconnects/finalizers": "EdgeConnects/Finalizers",
-    "edgeconnects/status": "EdgeConnects/Status",
-    "activegates": "ActiveGates",
-    "activegates/finalizers": "ActiveGates/Finalizers",
-    "activegates/status": "ActiveGates/Status",
-}
-
-sectionTitles = {
-    "dynatrace-operator": "Dynatrace Operator",
-    "dynatrace-kubernetes-monitoring": "Dynatrace Activegate (Kubernetes Monitoring)",
-    "dynatrace-webhook": "Dynatrace webhook server",
-    "dynatrace-oneagent-csi-driver": "Dynatrace CSI driver",
-    "dynatrace-activegate": "Dynatrace ActiveGate (Default)",
-    "dynatrace-dynakube-oneagent": "Dynatrace OneAgent"
-}
-
 def get_apis(rule):
     apis = rule.get('verbs')
 
@@ -102,15 +49,22 @@ def create_role_table(role):
                 apis = get_apis(rule)
                 resource_names = get_resource_names(rule)
                 api_groups = get_api_groups(rule)
-                print(f"|`{resourceTerms[resource]}` |{api_groups} |{apis} |{resource_names} |")
+                print(f"|`{resource}` |{api_groups} |{apis} |{resource_names} |")
 
-def convert_cluster_roles_to_markdown(role):
-    print(f"\n## {sectionTitles[role['metadata']['name']]} (cluster-wide)\n")
+def beautify_section(role):
+    section = role['metadata']['name']
+    section = section.replace("-dynakube", "").replace("-", " ").title().replace("Csi", "CSI")
+
+    return section
+
+def convert_role_to_markdown(role):
+    scope = "Namespaced"
+    if role['kind'] == 'ClusterRole':
+        scope = "Cluster-wide"
+
+    print(f"\n## {beautify_section(role)} ({scope})\n")
     create_role_table(role)
 
-def convert_roles_to_markdown(role):
-    print(f"\n## {sectionTitles[role['metadata']['name']]} (namespace {role['metadata']['namespace']})\n")
-    create_role_table(role)
 
 def main():
     parser = argparse.ArgumentParser(description="Convert ClusterRoles and Roles to MD permission table",
@@ -127,17 +81,25 @@ def main():
     try:
         docs = yaml.safe_load_all(file)
 
-        manifests = []
+        core_manifests = []
+        other_manifests = []
         for manifest in docs:
-            manifests.append(manifest)
+            if not manifest['kind'] in ("Role", "ClusterRole"):
+                continue
+            
+            if any(f in manifest["metadata"]["name"] for f in ("operator", "webhook", "csi-driver")):
+                core_manifests.append(manifest)
+            else:
+                other_manifests.append(manifest)
 
-        for manifest in manifests:
-            if manifest['kind'] == 'ClusterRole':
-                convert_cluster_roles_to_markdown(manifest)
+        core_manifests.sort(key=lambda m: m["metadata"]["name"])
+        other_manifests.sort(key=lambda m: m["metadata"]["name"])
+        
+        for manifest in core_manifests:
+            convert_role_to_markdown(manifest)
+        for manifest in other_manifests:
+            convert_role_to_markdown(manifest)
 
-        for manifest in manifests:
-            if manifest['kind'] == 'Role':
-                convert_roles_to_markdown(manifest)
     finally:
         file.close()
 

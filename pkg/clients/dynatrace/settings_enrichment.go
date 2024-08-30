@@ -14,6 +14,7 @@ import (
 const (
 	MetadataEnrichmentSettingsSchemaId = "builtin:kubernetes.generic.metadata.enrichment"
 	scopeQueryParam                    = "scope"
+	globalScope                        = "environment"
 )
 
 type GetRulesSettingsResponse struct {
@@ -34,11 +35,12 @@ func (dtc *dynatraceClient) GetRulesSettings(ctx context.Context, kubeSystemUUID
 		return GetRulesSettingsResponse{}, errors.New("no kube-system namespace UUID given")
 	}
 
-	if entityID == "" {
-		// if monitored entities were empty this field also stays empty, we return with no error
-		log.Info("No Monitored Entity ID, skip getting enrichment rules")
+	scope := entityID
+	if scope == "" {
+		// if monitored entities were empty we then fallback to the enrichment-rules defined globally
+		log.Info("No Monitored Entity ID, getting environment enrichment rules")
 
-		return GetRulesSettingsResponse{}, nil
+		scope = globalScope
 	}
 
 	req, err := createBaseRequest(ctx, dtc.getEffectiveSettingsUrl(true), http.MethodGet, dtc.apiToken, nil)
@@ -48,7 +50,7 @@ func (dtc *dynatraceClient) GetRulesSettings(ctx context.Context, kubeSystemUUID
 
 	q := req.URL.Query()
 	q.Add(schemaIDsQueryParam, MetadataEnrichmentSettingsSchemaId)
-	q.Add(scopeQueryParam, entityID)
+	q.Add(scopeQueryParam, scope)
 	req.URL.RawQuery = q.Encode()
 
 	res, err := dtc.httpClient.Do(req)

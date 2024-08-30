@@ -69,6 +69,7 @@ func TestNewEnv(t *testing.T) {
 		assert.NotEmpty(t, env.K8ClusterID)
 		assert.NotEmpty(t, env.WorkloadKind)
 		assert.NotEmpty(t, env.WorkloadName)
+		assert.NotEmpty(t, env.WorkloadAnnotations)
 		assert.NotEmpty(t, env.K8ClusterName)
 
 		assert.False(t, env.OneAgentInjected)
@@ -227,10 +228,23 @@ func prepMetadataEnrichmentTestEnv(t *testing.T, isUnknownWorkload bool) func() 
 	rawContainerInfo, err := json.Marshal(containerInfo)
 	require.NoError(t, err)
 
-	err = os.Setenv(consts.ContainerInfoEnv, string(rawContainerInfo)) //nolint:tenv
+	t.Setenv(consts.ContainerInfoEnv, string(rawContainerInfo))
 	require.NoError(t, err)
 
 	envs = append(envs, consts.ContainerInfoEnv)
+
+	workloadAnnotations := map[string]string{
+		"prop1": "value1",
+		"prop2": "value2",
+	}
+
+	rawWorkloadAnnotations, err := json.Marshal(workloadAnnotations)
+	require.NoError(t, err)
+
+	t.Setenv(consts.EnrichmentWorkloadAnnotationsEnv, string(rawWorkloadAnnotations))
+	require.NoError(t, err)
+
+	envs = append(envs, consts.EnrichmentWorkloadAnnotationsEnv)
 
 	return resetTestEnv(envs)
 }
