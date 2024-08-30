@@ -2,7 +2,9 @@ package daemonset
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
@@ -29,6 +31,7 @@ func (b *builder) arguments() ([]string, error) {
 		b.appendProxyArg(argMap)
 	}
 
+	b.appendNoProxyArg(argMap)
 	b.appendNetworkZoneArg(argMap)
 
 	appendOperatorVersionArg(argMap)
@@ -71,6 +74,28 @@ func (b *builder) appendNetworkZoneArg(argMap *prioritymap.Map) {
 func (b *builder) appendHostGroupArg(argMap *prioritymap.Map) {
 	if b.dk != nil && b.dk.Spec.OneAgent.HostGroup != "" {
 		argMap.Append(argumentPrefix+"set-host-group", b.dk.Spec.OneAgent.HostGroup, prioritymap.WithPriority(prioritymap.HighPriority))
+	}
+}
+
+func (b *builder) appendNoProxyArg(argMap *prioritymap.Map) {
+	if b.dk.NeedsCustomNoProxy() {
+		noProxyValue := b.dk.FeatureNoProxy()
+
+		if b.dk.NeedsActiveGate() {
+			multiCap := capability.NewMultiCapability(b.dk)
+			noProxyActiveGateValue := capability.BuildDNSEntryPointWithoutEnvVars(b.dk.Name, b.dk.Namespace, multiCap)
+
+			if noProxyValue != "" {
+				noProxyValue = strings.Join([]string{noProxyValue, noProxyActiveGateValue}, ",")
+			} else {
+				noProxyValue = noProxyActiveGateValue
+			}
+		}
+
+		argMap.Append(argumentPrefix+"set-no-proxy", noProxyValue)
+	} else {
+		// if no-proxy is not set, we still have to set it as empty to clear proxy settings the OA might have cached
+		argMap.Append(argumentPrefix+"set-no-proxy", "")
 	}
 }
 
