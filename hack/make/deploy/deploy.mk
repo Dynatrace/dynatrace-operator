@@ -19,3 +19,15 @@ deploy: manifests/crd/helm
 			--set csidriver.enabled=$(ENABLE_CSI) \
 			--set manifests=true \
 			--set image="$(IMAGE_URI)" | kubectl apply -f -
+
+installer/%:
+	@make PLATFORM=$(@F) $(@D)
+
+installer: manifests/crd/helm
+	helm template dynatrace-operator config/helm/chart/default \
+  			--namespace dynatrace \
+  			--set installCRD=true \
+  			--set platform=$(PLATFORM) \
+  			--set csidriver.enabled=$(ENABLE_CSI) \
+  			--set manifests=true \
+  			--set image="$(IMAGE_URI)" > installer.yaml

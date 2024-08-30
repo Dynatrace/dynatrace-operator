@@ -131,7 +131,7 @@ func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 		SecurityContext: buildSecurityContext(),
 		Env:             buildContainerEnvs(dk),
 		Resources:       dk.Spec.Templates.OpenTelemetryCollector.Resources,
-		Args:            []string{fmt.Sprintf("--config=eec://%s.%s.svc.cluster.local:%d/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=%s", dk.Name+consts.ExtensionsControllerSuffix, dk.Namespace, consts.ExtensionsCollectorComPort, otelcSecretTokenFilePath)},
+		Args:            []string{fmt.Sprintf("--config=eec://%s.%s:%d/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=%s", dk.Name+consts.ExtensionsControllerSuffix, dk.Namespace, consts.ExtensionsCollectorComPort, otelcSecretTokenFilePath)},
 		VolumeMounts:    buildContainerVolumeMounts(dk),
 	}
 }
@@ -185,6 +185,9 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	if dk.Spec.TrustedCAs != "" {
 		envs = append(envs, corev1.EnvVar{Name: envTrustedCAs, Value: trustedCAVolumePath})
 	}
+	envs = append(envs, corev1.EnvVar{Name: "SSL_CERT_DIR", Value: customEecTlsCertificatePath})
+	envs = append(envs, corev1.EnvVar{Name: "K8S_CLUSTER_NAME", Value: dk.Name})
+	envs = append(envs, corev1.EnvVar{Name: "DT_ENTITY_KUBERNETES_CLUSTER", Value: dk.Status.KubernetesClusterMEID})
 
 	if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
 		envs = append(envs, corev1.EnvVar{Name: envEECcontrollerTls, Value: customEecTlsCertificateFullPath})

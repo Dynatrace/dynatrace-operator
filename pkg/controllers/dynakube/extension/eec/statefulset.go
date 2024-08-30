@@ -203,16 +203,17 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	containerEnvs := []corev1.EnvVar{
 		{Name: envTenantId, Value: dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID},
-		{Name: envServerUrl, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ".svc.cluster.local:443"},
+		{Name: envServerUrl, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ":443"},
 		{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + consts.EecTokenSecretKey},
 		{Name: envEecIngestPort, Value: strconv.Itoa(int(collectorPort))},
 		{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath},
 		{Name: envDsInstallDirName, Value: envDsInstallDir},
 		{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID},
-		{Name: envK8sExtServiceUrl, Value: serviceAccountName},
 		{Name: envDSTokenPath, Value: eecTokenMountPath + "/" + consts.OtelcTokenSecretKey},
+		{Name: envK8sExtServiceUrl, Value: "https://" + dk.Name + consts.ExtensionsControllerSuffix + "." + dk.Namespace},
 		{Name: envHttpsCertPathPem, Value: envEecHttpsCertPathPem},
 		{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem},
+		{Name: "ExtensionCustomCertificateMountPath", Value: "/ext-certs"},
 	}
 
 	if dk.Spec.ActiveGate.TlsSecretName != "" {
@@ -261,6 +262,11 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		{
 			Name:      httpsCertVolumeName,
 			MountPath: httpsCertMountPath,
+			ReadOnly:  true,
+		},
+		{
+			Name:      "extensions-certs",
+			MountPath: "/ext-certs",
 			ReadOnly:  true,
 		},
 	}
@@ -331,6 +337,14 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 					},
 				},
 			},
+			{
+				Name: "extensions-certs",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: "extensions-certs",
+					},
+				},
+			},
 		}
 
 		if dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim == nil {
@@ -347,6 +361,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				Name: customConfigVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
+						//						DefaultMode: address.Of(int32(511)),
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: dk.Spec.Templates.ExtensionExecutionController.CustomConfig,
 						},
