@@ -37,8 +37,9 @@ type environment struct {
 	K8ClusterID   string `json:"k8ClusterID"`
 	K8ClusterName string `json:"k8sClusterName"`
 
-	WorkloadKind string `json:"workloadKind"`
-	WorkloadName string `json:"workloadName"`
+	WorkloadKind        string            `json:"workloadKind"`
+	WorkloadName        string            `json:"workloadName"`
+	WorkloadAnnotations map[string]string `json:"workloadAnnotations"`
 
 	InstallerTech []string        `json:"installerTech"`
 	Containers    []ContainerInfo `json:"containers"`
@@ -115,6 +116,7 @@ func (env *environment) getMetadataEnrichmentFieldSetters() []func() error {
 	return []func() error{
 		env.addWorkloadKind,
 		env.addWorkloadName,
+		env.addWorkloadAnnotations,
 	}
 }
 
@@ -268,6 +270,24 @@ func (env *environment) addWorkloadName() error {
 	}
 
 	env.WorkloadName = workloadName
+
+	return nil
+}
+
+func (env *environment) addWorkloadAnnotations() error {
+	workloadAnnotationsJson, err := checkEnvVar(consts.EnrichmentWorkloadAnnotationsEnv)
+	if err != nil {
+		return err
+	}
+
+	workloadAnnotations := map[string]string{}
+	err = json.Unmarshal([]byte(workloadAnnotationsJson), &workloadAnnotations)
+
+	if err != nil {
+		return err
+	}
+
+	env.WorkloadAnnotations = workloadAnnotations
 
 	return nil
 }
