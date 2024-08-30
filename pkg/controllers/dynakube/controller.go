@@ -315,7 +315,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 }
 
 func (controller *Controller) setupActiveGateTlsSecret(ctx context.Context, dk *dynakube.DynaKube) error {
-	if !dk.HasActiveGateCaCert() {
+	if dk.HasActiveGateCaCert() && dk.Spec.ActiveGate.TlsSecretName == "" {
 		log.Info("start reconciling self-signed activegate tls certificate secret")
 
 		secretName := fmt.Sprintf(certificates.SelfSignedCertificateSecretName, dk.Name)

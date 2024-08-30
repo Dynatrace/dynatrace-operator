@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -572,4 +573,12 @@ func (dk *DynaKube) IsOneAgentCommunicationRouteClear() bool {
 
 func (dk *DynaKube) PrometheusEnabled() bool {
 	return dk.Spec.Extensions.Prometheus.Enabled
+}
+
+func (dk *DynaKube) GetTlsSecretName() string {
+	if dk.Spec.ActiveGate.TlsSecretName != "" {
+		return dk.Spec.ActiveGate.TlsSecretName
+	} else {
+		return fmt.Sprintf(certificates.SelfSignedCertificateSecretName, dk.Name)
+	}
 }
