@@ -14,8 +14,6 @@ import (
 func (controller *Controller) determineDynaKubePhase(dk *dynakube.DynaKube) status.DeploymentPhase {
 	components := []func(dk *dynakube.DynaKube) status.DeploymentPhase{
 		controller.determineActiveGatePhase,
-		controller.determineExtensionsExecutionControllerPhase,
-		controller.determineExtensionsCollectorPhase,
 		controller.determineOneAgentPhase,
 	}
 	for _, component := range components {
@@ -44,46 +42,6 @@ func (controller *Controller) determineActiveGatePhase(dk *dynakube.DynaKube) st
 
 		if activeGatePods < 0 {
 			log.Info("activegate statefulset not yet available", "dynakube", dk.Name)
-
-			return status.Deploying
-		}
-	}
-
-	return status.Running
-}
-
-func (controller *Controller) determineExtensionsExecutionControllerPhase(dk *dynakube.DynaKube) status.DeploymentPhase {
-	return controller.determinePrometheusStatefulsetPhase(dk, dynakube.ExtensionsExecutionControllerStatefulsetName)
-}
-
-func (controller *Controller) determineExtensionsCollectorPhase(dk *dynakube.DynaKube) status.DeploymentPhase {
-	return controller.determinePrometheusStatefulsetPhase(dk, dynakube.ExtensionsCollectorStatefulsetName)
-}
-
-func (controller *Controller) determinePrometheusStatefulsetPhase(dk *dynakube.DynaKube, statefulsetName string) status.DeploymentPhase {
-	if dk.PrometheusEnabled() {
-		statefulSet := &appsv1.StatefulSet{}
-
-		err := controller.client.Get(context.Background(), types.NamespacedName{Name: statefulsetName, Namespace: dk.Namespace}, statefulSet)
-		if k8serrors.IsNotFound(err) {
-			log.Info("statefulset to be deployed", "dynakube", dk.Name, "statefulset", statefulsetName)
-
-			return status.Deploying
-		}
-
-		if err != nil {
-			log.Error(err, "statefulset could not be accessed", "dynakube", dk.Name, "statefulset", statefulsetName)
-
-			return status.Error
-		}
-
-		scheduledReplicas := int32(0)
-		if statefulSet.Spec.Replicas != nil {
-			scheduledReplicas = *statefulSet.Spec.Replicas
-		}
-
-		if scheduledReplicas != statefulSet.Status.ReadyReplicas {
-			log.Info("statefulset is still deploying", "dynakube", dk.Name, "statefulset", statefulsetName)
 
 			return status.Deploying
 		}
