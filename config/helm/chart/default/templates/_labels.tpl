@@ -100,19 +100,3 @@ OneAgent labels
 {{ include "dynatrace-operator.commonLabels" . }}
 app.kubernetes.io/component: oneagent
 {{- end -}}
-
-{{/*
-Extensions Controller (EEC) labels
-*/}}
-{{- define "dynatrace-operator.extensionsControllerLabels" -}}
-{{ include "dynatrace-operator.commonLabels" . }}
-app.kubernetes.io/component: dynatrace-extensions-controller
-{{- end -}}
-
-{{/*
-Extensions OpenTelemetry Collector (OTelC) labels
-*/}}
-{{- define "dynatrace-operator.extensionsOpenTelemetryCollectorLabels" -}}
-{{ include "dynatrace-operator.commonLabels" . }}
-app.kubernetes.io/component: dynatrace-extensions-collector
-{{- end -}}
