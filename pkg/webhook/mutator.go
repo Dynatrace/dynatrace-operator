@@ -68,6 +68,7 @@ func (req *BaseRequest) IsInjected(injectedAnnotationKey string) bool {
 	}
 
 	isInjected := req.Pod.Annotations[injectedAnnotationKey]
+
 	parsed, err := strconv.ParseBool(isInjected)
 	if err == nil {
 		return parsed

@@ -152,7 +152,6 @@ func TestReinvoke(t *testing.T) {
 
 		initialContainerVolumeMountsLen := len(request.Pod.Spec.Containers[0].VolumeMounts)
 
-
 		updated := mutator.Reinvoke(request)
 		require.True(t, updated)
 
