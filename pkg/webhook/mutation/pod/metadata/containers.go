@@ -5,18 +5,18 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func mutateUserContainers(request *dtwebhook.BaseRequest) {
-	newContainers := request.NewContainers(ContainerIsInjected)
+func (mut *Mutator) mutateUserContainers(request *dtwebhook.BaseRequest) {
+	newContainers := request.NewContainers(mut.IsContainerInjected)
 	for i := range newContainers {
 		container := newContainers[i]
 		setupVolumeMountsForUserContainer(container)
 	}
 }
 
-func reinvokeUserContainers(request *dtwebhook.BaseRequest) bool {
+func (mut *Mutator) reinvokeUserContainers(request *dtwebhook.BaseRequest) bool {
 	var updated bool
 
-	newContainers := request.NewContainers(ContainerIsInjected)
+	newContainers := request.NewContainers(mut.IsContainerInjected)
 
 	if len(newContainers) == 0 {
 		return false

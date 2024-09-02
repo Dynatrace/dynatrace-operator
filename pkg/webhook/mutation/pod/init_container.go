@@ -13,8 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/metadata"
-	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -148,13 +146,13 @@ func addSeccompProfile(ctx *corev1.SecurityContext, dk dynakube.DynaKube) {
 	}
 }
 
-func updateContainerInfo(request *dtwebhook.ReinvocationRequest, installContainer *corev1.Container) bool {
+func (wh *webhook) updateContainerInfo(request *dtwebhook.ReinvocationRequest, installContainer *corev1.Container) bool {
 	pod := request.Pod
 	if installContainer == nil {
 		installContainer = findInstallContainer(pod.Spec.InitContainers)
 	}
 
-	newContainers := request.NewContainers(containerIsInjected)
+	newContainers := request.NewContainers(wh.containerIsInjected)
 	if len(newContainers) == 0 {
 		return false
 	}
@@ -203,10 +201,11 @@ func findInstallContainer(initContainers []corev1.Container) *corev1.Container {
 	return nil
 }
 
-func containerIsInjected(container corev1.Container) bool {
-	if metadata.ContainerIsInjected(container) || oamutation.ContainerIsInjected(container) {
-		return true
+func (wh *webhook) containerIsInjected(container corev1.Container) bool {
+	for _, mut := range wh.mutators {
+		if mut.IsContainerInjected(container) {
+			return true
+		}
 	}
-
 	return false
 }

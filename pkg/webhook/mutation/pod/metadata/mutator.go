@@ -65,7 +65,7 @@ func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationReque
 	}
 
 	setupVolumes(request.Pod)
-	mutateUserContainers(request.BaseRequest)
+	mut.mutateUserContainers(request.BaseRequest)
 	updateInstallContainer(request.InstallContainer, workload, request.DynaKube.Status.KubernetesClusterMEID)
 	propagateMetadataAnnotations(request)
 	setInjectedAnnotation(request.Pod)
@@ -81,7 +81,7 @@ func (mut *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
 
 	log.Info("reinvoking", "podName", request.PodName())
 
-	return reinvokeUserContainers(request.BaseRequest)
+	return mut.reinvokeUserContainers(request.BaseRequest)
 }
 
 func (mut *Mutator) ensureIngestEndpointSecret(request *dtwebhook.MutationRequest) error {
@@ -133,7 +133,7 @@ func setWorkloadAnnotations(pod *corev1.Pod, workload *workloadInfo) {
 	pod.Annotations[dtwebhook.AnnotationWorkloadName] = workload.name
 }
 
-func ContainerIsInjected(container corev1.Container) bool {
+func (_ *Mutator) IsContainerInjected(container corev1.Container) bool {
 	for _, volumeMount := range container.VolumeMounts {
 		if volumeMount.Name == workloadEnrichmentVolumeName || volumeMount.Name == ingestEndpointVolumeName {
 			return true

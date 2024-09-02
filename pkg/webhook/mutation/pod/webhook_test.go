@@ -315,6 +315,7 @@ func createSimplePodMutatorMock(t *testing.T) *webhookmock.PodMutator {
 	mutator.On("Injected", mock.Anything).Return(false).Maybe()
 	mutator.On("Mutate", mock.Anything, mock.Anything).Return(nil).Maybe()
 	mutator.On("Reinvoke", mock.Anything).Return(true).Maybe()
+	mutator.On("IsContainerInjected", mock.Anything).Return(false).Maybe()
 
 	return mutator
 }
@@ -325,6 +326,7 @@ func createAlreadyInjectedPodMutatorMock(t *testing.T) *webhookmock.PodMutator {
 	mutator.On("Injected", mock.Anything).Return(true).Maybe()
 	mutator.On("Mutate", mock.Anything, mock.Anything).Return(nil).Maybe()
 	mutator.On("Reinvoke", mock.Anything).Return(true).Maybe()
+	mutator.On("IsContainerInjected", mock.Anything).Return(false).Maybe()
 
 	return mutator
 }
@@ -335,6 +337,7 @@ func createFailPodMutatorMock(t *testing.T) *webhookmock.PodMutator {
 	mutator.On("Injected", mock.Anything).Return(false).Maybe()
 	mutator.On("Mutate", mock.Anything, mock.Anything).Return(fmt.Errorf("BOOM")).Maybe()
 	mutator.On("Reinvoke", mock.Anything).Return(false).Maybe()
+	mutator.On("IsContainerInjected", mock.Anything).Return(true).Maybe()
 
 	return mutator
 }

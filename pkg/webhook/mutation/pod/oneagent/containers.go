@@ -12,7 +12,7 @@ func (mut *Mutator) configureInitContainer(request *dtwebhook.MutationRequest, i
 }
 
 func (mut *Mutator) mutateUserContainers(request *dtwebhook.MutationRequest) {
-	newContainers := request.NewContainers(ContainerIsInjected)
+	newContainers := request.NewContainers(mut.IsContainerInjected)
 
 	for i := range newContainers {
 		container := newContainers[i]
@@ -21,7 +21,7 @@ func (mut *Mutator) mutateUserContainers(request *dtwebhook.MutationRequest) {
 }
 
 func (mut *Mutator) reinvokeUserContainers(request *dtwebhook.ReinvocationRequest) bool {
-	newContainers := request.NewContainers(ContainerIsInjected)
+	newContainers := request.NewContainers(mut.IsContainerInjected)
 
 	if len(newContainers) == 0 {
 		return false

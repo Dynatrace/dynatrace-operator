@@ -227,10 +227,11 @@ func TestWorkloadAnnotations(t *testing.T) {
 }
 
 func TestContainerIsInjected(t *testing.T) {
+	mutator := createTestPodMutator(nil)
 	t.Run("is not injected", func(t *testing.T) {
 		container := corev1.Container{}
 
-		isInjected := ContainerIsInjected(container)
+		isInjected := mutator.IsContainerInjected(container)
 
 		require.False(t, isInjected)
 	})
@@ -243,7 +244,7 @@ func TestContainerIsInjected(t *testing.T) {
 			},
 		}
 
-		isInjected := ContainerIsInjected(container)
+		isInjected := mutator.IsContainerInjected(container)
 
 		require.True(t, isInjected)
 	})

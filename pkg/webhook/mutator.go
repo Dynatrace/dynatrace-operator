@@ -17,6 +17,9 @@ type PodMutator interface {
 	// This is used during reinvocation to prevent multiple injections.
 	Injected(request *BaseRequest) bool
 
+	// IsContainerInjected returns true if the mutator has already injected into the given container.
+	IsContainerInjected(container corev1.Container) bool
+
 	// Mutate mutates the elements of the given MutationRequest, specifically the pod and installContainer.
 	Mutate(ctx context.Context, request *MutationRequest) error
 

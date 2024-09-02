@@ -30,58 +30,111 @@ func TestEnabled(t *testing.T) {
 	t.Run("turned off", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, map[string]string{dtwebhook.AnnotationOneAgentInject: "false"}, getTestNamespace(nil))
+		initialAnnotationsLen := len(request.Pod.Annotations)
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
 		require.False(t, enabled)
+		assert.Len(t, request.Pod.Annotations, initialAnnotationsLen)
 	})
 	t.Run("on by default", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, getTestNamespace(nil))
+		initialAnnotationsLen := len(request.Pod.Annotations)
+
 		request.DynaKube.Spec.OneAgent.ApplicationMonitoring = &dynakube.ApplicationMonitoringSpec{}
+		request.DynaKube.Status = getTestDynakubeCommunicationHostStatus()
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
 		require.True(t, enabled)
+		assert.Len(t, request.Pod.Annotations, initialAnnotationsLen)
 	})
 	t.Run("off by feature flag", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, getTestNamespace(nil))
+		initialAnnotationsLen := len(request.Pod.Annotations)
+
 		request.DynaKube.Annotations = map[string]string{dynakube.AnnotationFeatureAutomaticInjection: "false"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
 		require.False(t, enabled)
+		assert.Len(t, request.Pod.Annotations, initialAnnotationsLen)
 	})
 	t.Run("on with feature flag", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, getTestNamespace(nil))
+		initialAnnotationsLen := len(request.Pod.Annotations)
+
 		request.DynaKube.Spec.OneAgent.ApplicationMonitoring = &dynakube.ApplicationMonitoringSpec{}
+		request.DynaKube.Status = getTestDynakubeCommunicationHostStatus()
 		request.DynaKube.Annotations = map[string]string{dynakube.AnnotationFeatureAutomaticInjection: "true"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
 		require.True(t, enabled)
+		assert.Len(t, request.Pod.Annotations, initialAnnotationsLen)
 	})
 	t.Run("on with namespaceselector", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, getTestNamespaceWithMatchingLabel(nil, testLabelKeyMatching, testLabelValue))
+		initialAnnotationsLen := len(request.Pod.Annotations)
+
 		request.DynaKube.Annotations = map[string]string{dynakube.AnnotationFeatureAutomaticInjection: "true"}
+		request.DynaKube.Status = getTestDynakubeCommunicationHostStatus()
 		request.DynaKube = *addNamespaceSelector(&request.DynaKube)
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
 		require.True(t, enabled)
+		assert.Len(t, request.Pod.Annotations, initialAnnotationsLen)
 	})
 	t.Run("off due to not matching namespaceselector", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, getTestNamespaceWithMatchingLabel(nil, testLabelKeyNotMatching, testLabelValue))
+		initialAnnotationsLen := len(request.Pod.Annotations)
+
 		request.DynaKube.Annotations = map[string]string{dynakube.AnnotationFeatureAutomaticInjection: "true"}
 		request.DynaKube = *addNamespaceSelector(&request.DynaKube)
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
 		require.False(t, enabled)
+		assert.Len(t, request.Pod.Annotations, initialAnnotationsLen)
+	})
+
+	t.Run("off due to no communication hosts available", func(t *testing.T) {
+		dk := getTestNoCommunicationHostDynakube()
+
+		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
+		request := createTestMutationRequest(dk, nil, getTestNamespace(nil))
+
+		initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
+		initialNumberOfVolumesLen := len(request.Pod.Spec.Volumes)
+		initialContainerVolumeMountsLen := len(request.Pod.Spec.Containers[0].VolumeMounts)
+		initialAnnotationsLen := len(request.Pod.Annotations)
+		initialInitContainers := request.Pod.Spec.InitContainers
+
+		isEnabled := mutator.Enabled(request.BaseRequest)
+		require.False(t, isEnabled)
+
+		assert.Len(t, request.Pod.Spec.Containers[0].Env, initialNumberOfContainerEnvsLen)
+		assert.Len(t, request.Pod.Spec.Volumes, initialNumberOfVolumesLen)
+		assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen)
+
+		assert.Len(t, initialInitContainers, len(request.Pod.Spec.InitContainers)) // the init container should be added when in the PodMutator
+		assert.Equal(t, initialInitContainers, request.Pod.Spec.InitContainers)
+
+		assert.Len(t, request.Pod.Annotations, initialAnnotationsLen+2) // +2 == injected-annotation, reason-annotation
+		require.Contains(t, request.Pod.Annotations, dtwebhook.AnnotationOneAgentInjected)
+		require.Contains(t, request.Pod.Annotations, dtwebhook.AnnotationOneAgentReason)
+
+		assert.Equal(t, "false", request.Pod.Annotations[dtwebhook.AnnotationOneAgentInjected])
+		assert.Equal(t, dtwebhook.EmptyConnectionInfoReason, request.Pod.Annotations[dtwebhook.AnnotationOneAgentReason])
+
+		assert.Empty(t, request.InstallContainer.Env)
+		assert.Empty(t, request.InstallContainer.VolumeMounts)
 	})
 }
 
@@ -177,39 +230,6 @@ func TestMutate(t *testing.T) {
 			assert.Len(t, request.InstallContainer.VolumeMounts, testCase.expectedAdditionalInitVolumeMountCount)
 		})
 	}
-}
-
-func TestNoCommunicationHostsMutate(t *testing.T) {
-	dk := getTestNoCommunicationHostDynakube()
-
-	mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
-	request := createTestMutationRequest(dk, nil, getTestNamespace(nil))
-
-	initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
-	initialNumberOfVolumesLen := len(request.Pod.Spec.Volumes)
-	initialContainerVolumeMountsLen := len(request.Pod.Spec.Containers[0].VolumeMounts)
-	initialAnnotationsLen := len(request.Pod.Annotations)
-	initialInitContainers := request.Pod.Spec.InitContainers
-
-	err := mutator.Mutate(context.Background(), request)
-	require.NoError(t, err)
-
-	assert.Len(t, request.Pod.Spec.Containers[0].Env, initialNumberOfContainerEnvsLen)
-	assert.Len(t, request.Pod.Spec.Volumes, initialNumberOfVolumesLen)
-	assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen)
-
-	assert.Len(t, initialInitContainers, len(request.Pod.Spec.InitContainers)) // the init container should be added when in the PodMutator
-	assert.Equal(t, initialInitContainers, request.Pod.Spec.InitContainers)
-
-	assert.Len(t, request.Pod.Annotations, initialAnnotationsLen+2) // +2 == injected-annotation, reason-annotation
-	require.Contains(t, request.Pod.Annotations, dtwebhook.AnnotationOneAgentInjected)
-	require.Contains(t, request.Pod.Annotations, dtwebhook.AnnotationOneAgentReason)
-
-	assert.Equal(t, "false", request.Pod.Annotations[dtwebhook.AnnotationOneAgentInjected])
-	assert.Equal(t, dtwebhook.EmptyConnectionInfoReason, request.Pod.Annotations[dtwebhook.AnnotationOneAgentReason])
-
-	assert.Empty(t, request.InstallContainer.Env)
-	assert.Empty(t, request.InstallContainer.VolumeMounts)
 }
 
 type reinvokeTestCase struct {

@@ -116,7 +116,7 @@ func (mut *Mutator) ensureInitSecret(request *dtwebhook.MutationRequest) error {
 	return nil
 }
 
-func ContainerIsInjected(container corev1.Container) bool {
+func (mut *Mutator) IsContainerInjected(container corev1.Container) bool {
 	for _, e := range container.Env {
 		if e.Name == dynatraceMetadataEnv {
 			return true
