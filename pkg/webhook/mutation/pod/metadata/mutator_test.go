@@ -152,6 +152,7 @@ func TestReinvoke(t *testing.T) {
 
 		initialContainerVolumeMountsLen := len(request.Pod.Spec.Containers[0].VolumeMounts)
 
+
 		updated := mutator.Reinvoke(request)
 		require.True(t, updated)
 
@@ -228,6 +229,7 @@ func TestWorkloadAnnotations(t *testing.T) {
 
 func TestContainerIsInjected(t *testing.T) {
 	mutator := createTestPodMutator(nil)
+
 	t.Run("is not injected", func(t *testing.T) {
 		container := corev1.Container{}
 

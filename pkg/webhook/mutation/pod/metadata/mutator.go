@@ -48,7 +48,7 @@ func (mut *Mutator) Enabled(request *dtwebhook.BaseRequest) bool {
 }
 
 func (mut *Mutator) Injected(request *dtwebhook.BaseRequest) bool {
-	return maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationMetadataEnrichmentInjected, false)
+	return request.InjectionAttempted(dtwebhook.AnnotationMetadataEnrichmentInjected)
 }
 
 func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationRequest) error {
@@ -75,7 +75,7 @@ func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationReque
 }
 
 func (mut *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
-	if !mut.Injected(request.BaseRequest) {
+	if !request.IsInjected(dtwebhook.AnnotationMetadataEnrichmentInjected) {
 		return false
 	}
 

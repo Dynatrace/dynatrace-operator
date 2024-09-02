@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
@@ -41,6 +42,38 @@ func (req *BaseRequest) PodName() string {
 	}
 
 	return pod.GetName(*req.Pod)
+}
+
+func (req *BaseRequest) InjectionAttempted(injectedAnnotationKey string) bool {
+	if req.Pod == nil {
+		return false
+	}
+
+	if req.Pod.Annotations == nil {
+		return false
+	}
+
+	_, ok := req.Pod.Annotations[injectedAnnotationKey]
+
+	return ok
+}
+
+func (req *BaseRequest) IsInjected(injectedAnnotationKey string) bool {
+	if req.Pod == nil {
+		return false
+	}
+
+	if req.Pod.Annotations == nil {
+		return false
+	}
+
+	isInjected := req.Pod.Annotations[injectedAnnotationKey]
+	parsed, err := strconv.ParseBool(isInjected)
+	if err == nil {
+		return parsed
+	}
+
+	return false
 }
 
 func (req *BaseRequest) NewContainers(isInjected func(corev1.Container) bool) (newContainers []*corev1.Container) {

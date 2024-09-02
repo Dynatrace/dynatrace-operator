@@ -150,6 +150,9 @@ func (wh *webhook) updateContainerInfo(request *dtwebhook.ReinvocationRequest, i
 	pod := request.Pod
 	if installContainer == nil {
 		installContainer = findInstallContainer(pod.Spec.InitContainers)
+		if installContainer == nil {
+			return false
+		}
 	}
 
 	newContainers := request.NewContainers(wh.containerIsInjected)
@@ -207,5 +210,6 @@ func (wh *webhook) containerIsInjected(container corev1.Container) bool {
 			return true
 		}
 	}
+
 	return false
 }
