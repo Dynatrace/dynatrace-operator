@@ -32,16 +32,6 @@ func SetSecretUpdated(conditions *[]metav1.Condition, conditionType, name string
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func SetSecretGenFailed(conditions *[]metav1.Condition, conditionType string, err error) {
-	condition := metav1.Condition{
-		Type:    conditionType,
-		Status:  metav1.ConditionFalse,
-		Reason:  SecretGenerationFailed,
-		Message: "Failed to generate secret: " + err.Error(),
-	}
-	_ = meta.SetStatusCondition(conditions, condition)
-}
-
 func SetSecretOutdated(conditions *[]metav1.Condition, conditionType, message string) {
 	condition := metav1.Condition{
 		Type:    conditionType,
