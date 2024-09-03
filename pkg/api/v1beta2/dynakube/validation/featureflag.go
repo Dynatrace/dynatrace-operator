@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube" //nolint:staticcheck
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 )
 
 const (

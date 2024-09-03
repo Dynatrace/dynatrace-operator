@@ -19,7 +19,7 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	fakediscovery "k8s.io/client-go/discovery/fake"
 	fakeclientset "k8s.io/client-go/kubernetes/fake"
@@ -113,13 +113,13 @@ func TestManifestCollector_Success(t *testing.T) {
 				Name: "dynatrace-webhook",
 			},
 		},
-		&v1.CustomResourceDefinition{
+		&apiextensionsv1.CustomResourceDefinition{
 			TypeMeta: typeMeta("CustomResourceDefinition"),
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "dynakubes.dynatrace.com",
 			},
 		},
-		&v1.CustomResourceDefinition{
+		&apiextensionsv1.CustomResourceDefinition{
 			TypeMeta: typeMeta("CustomResourceDefinition"),
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "edgeconnects.dynatrace.com",
@@ -241,13 +241,13 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 				Name: "dynatrace-webhook",
 			},
 		},
-		&v1.CustomResourceDefinition{
+		&apiextensionsv1.CustomResourceDefinition{
 			TypeMeta: typeMeta("CustomResourceDefinition"),
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "dynakubes.dynatrace.com",
 			},
 		},
-		&v1.CustomResourceDefinition{
+		&apiextensionsv1.CustomResourceDefinition{
 			TypeMeta: typeMeta("CustomResourceDefinition"),
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "edgeconnects.dynatrace.com",

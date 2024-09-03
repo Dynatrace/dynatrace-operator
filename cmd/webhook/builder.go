@@ -12,7 +12,7 @@ import (
 	edgeconnectv1alpha2validation "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect/validation"
 	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube" //nolint:staticcheck
 	dynakubev1beta1validation "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube/validation"
-	dynakubev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube" //nolint:staticcheck
+	dynakubev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dynakubev1beta2validation "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube/validation"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
