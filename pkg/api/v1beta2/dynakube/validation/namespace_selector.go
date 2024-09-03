@@ -22,7 +22,7 @@ func conflictingNamespaceSelector(ctx context.Context, dv *Validator, dk *dynaku
 		return ""
 	}
 
-	dkMapper := mapper.NewDynakubeMapper(ctx, nil, dv.apiReader, dst.Namespace, dst)
+	dkMapper := mapper.NewDynakubeMapper(ctx, nil, dv.apiReader, dk.Namespace, dk)
 
 	_, err := dkMapper.MatchingNamespaces()
 	if err != nil && err.Error() == mapper.ErrorConflictingNamespace {

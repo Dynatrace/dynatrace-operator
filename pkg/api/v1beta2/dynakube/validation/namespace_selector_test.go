@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube" //nolint:staticcheck
-	v1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -59,16 +58,16 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 					},
 				},
 			},
-			&v1beta2.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "conflicting-dk",
 					Namespace: testNamespace,
 				},
-				Spec: v1beta2.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: v1beta2.OneAgentSpec{
-						ApplicationMonitoring: &v1beta2.ApplicationMonitoringSpec{
-							AppInjectionSpec: v1beta2.AppInjectionSpec{
+					OneAgent: dynakube.OneAgentSpec{
+						ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
+							AppInjectionSpec: dynakube.AppInjectionSpec{
 								NamespaceSelector: metav1.LabelSelector{
 									MatchLabels: dummyLabels,
 								},

@@ -48,6 +48,10 @@ func (dk *DynaKube) HasProxy() bool {
 	return dk.Spec.Proxy != nil && (dk.Spec.Proxy.Value != "" || dk.Spec.Proxy.ValueFrom != "")
 }
 
+func (dk *DynaKube) NeedsCustomNoProxy() bool {
+	return dk.HasProxy() && dk.FeatureNoProxy() != ""
+}
+
 func (dk *DynaKube) NeedsActiveGateProxy() bool {
 	return !dk.FeatureActiveGateIgnoreProxy() && dk.HasProxy() && dk.NeedsActiveGate()
 }
