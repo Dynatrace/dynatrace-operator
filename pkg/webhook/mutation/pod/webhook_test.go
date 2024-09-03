@@ -178,8 +178,15 @@ func TestDoubleInjection(t *testing.T) {
 	assert.True(t, response.Allowed)
 	assert.Nil(t, response.Result)
 	require.Len(t, response.Patches, 2)
-	assert.Contains(t, response.Patches[0].Path, "annotations")
-	assert.Contains(t, response.Patches[1].Path, "initContainers")
+
+	allowedPatchPaths := []string{
+		"/spec/initContainers/1",
+		"/metadata/annotations",
+	}
+
+	for _, patch := range response.Patches {
+		assert.Contains(t, allowedPatchPaths, patch.Path)
+	}
 
 	// simulate initial mutation, annotations + init-container <== skip in case on communication hosts
 	pod.Annotations = map[string]string{
