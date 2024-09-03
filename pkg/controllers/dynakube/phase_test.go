@@ -155,116 +155,6 @@ func createDaemonSet(namespace, name string, replicas, readyReplicas int32) *app
 	}
 }
 
-func TestExtensionsExecutionControllerPhaseChanges(t *testing.T) {
-	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
-		Spec: dynakube.DynaKubeSpec{
-			Extensions: dynakube.ExtensionsSpec{
-				Prometheus: dynakube.PrometheusSpec{
-					Enabled: true,
-				},
-			},
-		},
-	}
-
-	t.Run("no eec statefulsets in cluster -> deploying", func(t *testing.T) {
-		fakeClient := fake.NewClient()
-		controller := &Controller{
-			client:    fakeClient,
-			apiReader: fakeClient,
-		}
-		phase := controller.determineExtensionsExecutionControllerPhase(dk)
-		assert.Equal(t, status.Deploying, phase)
-	})
-	t.Run("error accessing k8s api -> error", func(t *testing.T) {
-		fakeClient := errorClient{}
-		controller := &Controller{
-			client:    fakeClient,
-			apiReader: fakeClient,
-		}
-		phase := controller.determineExtensionsExecutionControllerPhase(dk)
-		assert.Equal(t, status.Error, phase)
-	})
-	t.Run("eec pods not ready -> deploying", func(t *testing.T) {
-		fakeClient := fake.NewClient(createStatefulset(testNamespace, dynakube.ExtensionsExecutionControllerStatefulsetName, 1, 0))
-
-		controller := &Controller{
-			client:    fakeClient,
-			apiReader: fakeClient,
-		}
-		phase := controller.determineExtensionsExecutionControllerPhase(dk)
-		assert.Equal(t, status.Deploying, phase)
-	})
-	t.Run("eec deployed -> running", func(t *testing.T) {
-		fakeClient := fake.NewClient(createStatefulset(testNamespace, dynakube.ExtensionsExecutionControllerStatefulsetName, 1, 1))
-
-		controller := &Controller{
-			client:    fakeClient,
-			apiReader: fakeClient,
-		}
-		phase := controller.determineExtensionsExecutionControllerPhase(dk)
-		assert.Equal(t, status.Running, phase)
-	})
-}
-
-func TestExtensionsCollectorPhaseChanges(t *testing.T) {
-	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
-		Spec: dynakube.DynaKubeSpec{
-			Extensions: dynakube.ExtensionsSpec{
-				Prometheus: dynakube.PrometheusSpec{
-					Enabled: true,
-				},
-			},
-		},
-	}
-
-	t.Run("no otelc statefulsets in cluster -> deploying", func(t *testing.T) {
-		fakeClient := fake.NewClient()
-		controller := &Controller{
-			client:    fakeClient,
-			apiReader: fakeClient,
-		}
-		phase := controller.determineExtensionsCollectorPhase(dk)
-		assert.Equal(t, status.Deploying, phase)
-	})
-	t.Run("error accessing k8s api -> error", func(t *testing.T) {
-		fakeClient := errorClient{}
-		controller := &Controller{
-			client:    fakeClient,
-			apiReader: fakeClient,
-		}
-		phase := controller.determineExtensionsCollectorPhase(dk)
-		assert.Equal(t, status.Error, phase)
-	})
-	t.Run("otelc pods not ready -> deploying", func(t *testing.T) {
-		fakeClient := fake.NewClient(createStatefulset(testNamespace, dynakube.ExtensionsCollectorStatefulsetName, 2, 1))
-
-		controller := &Controller{
-			client:    fakeClient,
-			apiReader: fakeClient,
-		}
-		phase := controller.determineExtensionsCollectorPhase(dk)
-		assert.Equal(t, status.Deploying, phase)
-	})
-	t.Run("otelc deployed -> running", func(t *testing.T) {
-		fakeClient := fake.NewClient(createStatefulset(testNamespace, dynakube.ExtensionsCollectorStatefulsetName, 2, 2))
-
-		controller := &Controller{
-			client:    fakeClient,
-			apiReader: fakeClient,
-		}
-		phase := controller.determineExtensionsCollectorPhase(dk)
-		assert.Equal(t, status.Running, phase)
-	})
-}
-
 func TestDynakubePhaseChanges(t *testing.T) {
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -275,21 +165,11 @@ func TestDynakubePhaseChanges(t *testing.T) {
 			OneAgent: dynakube.OneAgentSpec{
 				ClassicFullStack: &dynakube.HostInjectSpec{},
 			},
-
-			Extensions: dynakube.ExtensionsSpec{
-				Prometheus: dynakube.PrometheusSpec{
-					Enabled: true,
-				},
-			},
 		},
 	}
 
 	agReady := createStatefulset(testNamespace, "test-name-activegate", 1, 1)
 	agNotReady := createStatefulset(testNamespace, "test-name-activegate", 1, 0)
-	eecReady := createStatefulset(testNamespace, dynakube.ExtensionsExecutionControllerStatefulsetName, 1, 1)
-	eecNotReady := createStatefulset(testNamespace, dynakube.ExtensionsExecutionControllerStatefulsetName, 1, 0)
-	otelcReady := createStatefulset(testNamespace, dynakube.ExtensionsCollectorStatefulsetName, 2, 2)
-	otelcNotReady := createStatefulset(testNamespace, dynakube.ExtensionsCollectorStatefulsetName, 2, 1)
 	oaReady := createDaemonSet(testNamespace, "test-name-oneagent", 3, 3)
 	oaNotReady := createDaemonSet(testNamespace, "test-name-oneagent", 3, 2)
 
@@ -298,67 +178,19 @@ func TestDynakubePhaseChanges(t *testing.T) {
 		phase status.DeploymentPhase
 	}{
 		{
-			clt:   fake.NewClient(agNotReady, oaNotReady, eecNotReady, otelcNotReady),
+			clt:   fake.NewClient(agNotReady, oaNotReady),
 			phase: status.Deploying,
 		},
 		{
-			clt:   fake.NewClient(agNotReady, oaNotReady, eecNotReady, otelcReady),
+			clt:   fake.NewClient(agNotReady, oaReady),
+			phase: status.Running,
+		},
+		{
+			clt:   fake.NewClient(agReady, oaNotReady),
 			phase: status.Deploying,
 		},
 		{
-			clt:   fake.NewClient(agNotReady, oaNotReady, eecReady, otelcNotReady),
-			phase: status.Deploying,
-		},
-		{
-			clt:   fake.NewClient(agNotReady, oaNotReady, eecReady, otelcReady),
-			phase: status.Deploying,
-		},
-		{
-			clt:   fake.NewClient(agNotReady, oaReady, eecNotReady, otelcNotReady),
-			phase: status.Deploying,
-		},
-		{
-			clt:   fake.NewClient(agNotReady, oaReady, eecNotReady, otelcReady),
-			phase: status.Deploying,
-		},
-		{
-			clt:   fake.NewClient(agNotReady, oaReady, eecReady, otelcNotReady),
-			phase: status.Deploying,
-		},
-		{
-			clt:   fake.NewClient(agNotReady, oaReady, eecReady, otelcReady),
-			phase: status.Deploying,
-		},
-		{
-			clt:   fake.NewClient(agReady, oaNotReady, eecNotReady, otelcNotReady),
-			phase: status.Deploying,
-		},
-		{
-			clt:   fake.NewClient(agReady, oaNotReady, eecNotReady, otelcReady),
-			phase: status.Deploying,
-		},
-		{
-			clt:   fake.NewClient(agReady, oaNotReady, eecReady, otelcNotReady),
-			phase: status.Deploying,
-		},
-		{
-			clt:   fake.NewClient(agReady, oaNotReady, eecReady, otelcReady),
-			phase: status.Deploying,
-		},
-		{
-			clt:   fake.NewClient(agReady, oaReady, eecNotReady, otelcNotReady),
-			phase: status.Deploying,
-		},
-		{
-			clt:   fake.NewClient(agReady, oaReady, eecNotReady, otelcReady),
-			phase: status.Deploying,
-		},
-		{
-			clt:   fake.NewClient(agReady, oaReady, eecReady, otelcNotReady),
-			phase: status.Deploying,
-		},
-		{
-			clt:   fake.NewClient(agReady, oaReady, eecReady, otelcReady),
+			clt:   fake.NewClient(agReady, oaReady),
 			phase: status.Running,
 		},
 	}
