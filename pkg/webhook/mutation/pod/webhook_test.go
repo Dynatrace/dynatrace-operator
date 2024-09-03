@@ -183,9 +183,13 @@ func TestDoubleInjection(t *testing.T) {
 		"/spec/initContainers/1",
 		"/metadata/annotations",
 	}
+	alreadySeenPaths := []string{}
 
 	for _, patch := range response.Patches {
-		assert.Contains(t, allowedPatchPaths, patch.Path)
+		path := patch.Path
+		assert.NotContains(t, alreadySeenPaths, path)
+		assert.Contains(t, allowedPatchPaths, path)
+		alreadySeenPaths = append(alreadySeenPaths, path)
 	}
 
 	// simulate initial mutation, annotations + init-container <== skip in case on communication hosts
