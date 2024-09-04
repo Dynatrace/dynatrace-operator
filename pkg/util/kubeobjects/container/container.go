@@ -28,7 +28,7 @@ func FindContainerInPodSpec(podSpec *corev1.PodSpec, containerName string) *core
 	return nil
 }
 
-func FinInitContainerInPodSpec(podSpec *corev1.PodSpec, containerName string) *corev1.Container {
+func FindInitContainerInPodSpec(podSpec *corev1.PodSpec, containerName string) *corev1.Container {
 	for i := range podSpec.InitContainers {
 		container := &podSpec.InitContainers[i]
 		if container.Name == containerName {

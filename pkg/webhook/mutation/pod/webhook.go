@@ -119,7 +119,7 @@ func (wh *webhook) isInjected(mutationRequest *dtwebhook.MutationRequest) bool {
 		}
 	}
 
-	installContainer := container.FinInitContainerInPodSpec(&mutationRequest.Pod.Spec, dtwebhook.InstallContainerName)
+	installContainer := container.FindInitContainerInPodSpec(&mutationRequest.Pod.Spec, dtwebhook.InstallContainerName)
 	if installContainer != nil {
 		log.Info("Dynatrace init-container already present, skipping mutation, doing reinvocation", "containerName", dtwebhook.InstallContainerName)
 
