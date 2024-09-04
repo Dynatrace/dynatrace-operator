@@ -103,7 +103,7 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 }
 
 func (runner *Runner) Run(ctx context.Context) (resultedError error) {
-	log.Info("standalone agent init started")
+	log.Info("standalone init started")
 
 	defer runner.consumeErrorIfNecessary(&resultedError)
 
@@ -123,7 +123,7 @@ func (runner *Runner) Run(ctx context.Context) (resultedError error) {
 
 	err := runner.configureInstallation()
 	if err == nil {
-		log.Info("standalone agent init completed")
+		log.Info("standalone init completed")
 	}
 
 	return err
