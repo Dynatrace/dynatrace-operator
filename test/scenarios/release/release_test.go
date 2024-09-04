@@ -16,8 +16,9 @@ import (
 
 var (
 	testEnv env.Environment
-	cfg *envconf.Config
+	cfg     *envconf.Config
 )
+
 const releaseTag = "1.1.0"
 
 func TestMain(m *testing.M) {
@@ -46,7 +47,6 @@ func TestRelease(t *testing.T) {
 			filteredFeats = append(filteredFeats, feat)
 		}
 	}
-
 
 	testEnv.Test(t, filteredFeats...)
 }

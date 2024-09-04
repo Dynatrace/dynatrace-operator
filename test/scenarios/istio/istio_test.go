@@ -22,8 +22,9 @@ import (
 
 var (
 	testEnv env.Environment
-	cfg *envconf.Config
+	cfg     *envconf.Config
 )
+
 func TestMain(m *testing.M) {
 	cfg = environment.GetStandardKubeClusterEnvConfig()
 	testEnv = env.NewWithConfig(cfg)
@@ -55,7 +56,6 @@ func TestIstio(t *testing.T) {
 		codemodules.WithProxyAndAGCert(t, proxy.ProxySpec),
 		codemodules.WithProxyCAAndAGCert(t, proxy.HttpsProxySpec),
 	}
-
 
 	filteredFeats := []features.Feature{}
 

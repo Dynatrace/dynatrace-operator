@@ -26,7 +26,7 @@ import (
 
 var (
 	testEnv env.Environment
-	cfg *envconf.Config
+	cfg     *envconf.Config
 )
 
 func TestMain(m *testing.M) {
