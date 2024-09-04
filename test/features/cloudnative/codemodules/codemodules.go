@@ -70,19 +70,21 @@ func InstallFromImage(t *testing.T) features.Feature {
 
 	cloudNativeDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithName("cloudnative-codemodules"),
-		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
-		dynakubeComponents.WithApiUrl(secretConfigs[0].ApiUrl),
 		dynakubeComponents.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
+		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
+		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),
+		dynakubeComponents.WithApiUrl(secretConfigs[0].ApiUrl),
 	)
 
 	appDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithName("app-codemodules"),
-		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
-		dynakubeComponents.WithApiUrl(secretConfigs[1].ApiUrl),
 		dynakubeComponents.WithApplicationMonitoringSpec(&dynakube.ApplicationMonitoringSpec{
 			AppInjectionSpec: *codeModulesAppInjectSpec(t),
 			UseCSIDriver:     true,
 		}),
+		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
+		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),
+		dynakubeComponents.WithApiUrl(secretConfigs[1].ApiUrl),
 	)
 
 	labels := cloudNativeDynakube.OneAgentNamespaceSelector().MatchLabels
