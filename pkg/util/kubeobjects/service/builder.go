@@ -54,9 +54,3 @@ func setSelectorLabels(labels map[string]string) builder.Option[*corev1.Service]
 		s.Spec.Selector = labels
 	}
 }
-
-func SetType(serviceType corev1.ServiceType) builder.Option[*corev1.Service] {
-	return func(s *corev1.Service) {
-		s.Spec.Type = serviceType
-	}
-}
