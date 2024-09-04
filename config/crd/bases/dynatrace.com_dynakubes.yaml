@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.16.2
   name: dynakubes.dynatrace.com
 spec:
   group: dynatrace.com
@@ -5010,8 +5010,8 @@ spec:
                 description: Configuration for Metadata Enrichment.
                 properties:
                   enabled:
-                    default: true
-                    description: Enables MetadataEnrichment, `true` by default.
+                    default: false
+                    description: Enables MetadataEnrichment, `false` by default.
                     type: boolean
                   namespaceSelector:
                     description: The namespaces where you want Dynatrace Operator
