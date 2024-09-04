@@ -26,7 +26,7 @@ test/e2e-publish:
 
 ## Run standard e2e test only
 test/e2e/standard: manifests/crd/helm
-	$(GOTESTCMD) -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 200m -count=1 ./test/scenarios/standard -args --skip-labels "name=cloudnative-network-zone" $(SKIPCLEANUP)
+	$(GOTESTCMD) -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 200m -count=1 ./test/scenarios/standard -args $(SKIPCLEANUP)
 
 ## Run istio e2e test only
 test/e2e/istio: manifests/crd/helm
