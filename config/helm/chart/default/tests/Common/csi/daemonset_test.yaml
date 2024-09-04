@@ -195,7 +195,8 @@ tests:
                 ports:
                   - containerPort: 9808
                     name: healthz
-                    protocol: TCP
+                  - containerPort: 8080
+                    name: metrics
                 resources:
                   limits:
                     cpu: 50m
@@ -259,7 +260,8 @@ tests:
                 ports:
                   - containerPort: 10090
                     name: livez
-                    protocol: TCP
+                  - containerPort: 8080
+                    name: metrics
                 resources:
                   requests:
                     cpu: 300m
