@@ -131,7 +131,7 @@ func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 		SecurityContext: buildSecurityContext(),
 		Env:             buildContainerEnvs(dk),
 		Resources:       dk.Spec.Templates.OpenTelemetryCollector.Resources,
-		Args:            []string{fmt.Sprintf("--config=eec://%s.%s.svc.cluster.local:%d/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=%s", dk.Name+consts.ExtensionsControllerSuffix, dk.Namespace, consts.ExtensionsCollectorComPort, otelcSecretTokenFilePath)},
+		Args:            []string{fmt.Sprintf("--config=eec://%s:%d/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=%s", utils.BuildFQDName(dk), consts.ExtensionsCollectorComPort, otelcSecretTokenFilePath)},
 		VolumeMounts:    buildContainerVolumeMounts(dk),
 	}
 }
