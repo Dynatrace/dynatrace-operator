@@ -96,8 +96,7 @@ var (
 // - preserved values of existing variables - build variables exist, feature flag exists, with additional configuration, values of build variables not get overwritten
 // - incorrect custom mapping - invalid name of BUILD VERSION label, reference exists but actual label doesn't exist
 func LabelVersionDetection(t *testing.T) features.Feature {
-	builder := features.New("label version")
-	builder.WithLabel("name", "app-label-version")
+	builder := features.New("label-version")
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	defaultDynakube := *dynakubeComponents.New(

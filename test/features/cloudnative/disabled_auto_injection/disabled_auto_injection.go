@@ -19,8 +19,7 @@ import (
 )
 
 func Feature(t *testing.T) features.Feature {
-	builder := features.New("cloudnative disabled auto injection")
-	builder.WithLabel("name", "cloudnative-disabled-auto-inject")
+	builder := features.New("cloudnative-disabled-auto-inject")
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	testDynakube := *dynakubeComponents.New(

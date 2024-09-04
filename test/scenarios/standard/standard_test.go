@@ -20,13 +20,17 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
 	"sigs.k8s.io/e2e-framework/pkg/env"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-var testEnv env.Environment
+var (
+	testEnv env.Environment
+	cfg *envconf.Config
+)
 
 func TestMain(m *testing.M) {
-	cfg := environment.GetStandardKubeClusterEnvConfig()
+	cfg = environment.GetStandardKubeClusterEnvConfig()
 	testEnv = env.NewWithConfig(cfg)
 	testEnv.Setup(
 		helpers.SetScheme,
@@ -59,5 +63,14 @@ func TestStandard(t *testing.T) {
 		classicToCloud.Feature(t),
 		cloudToClassic.Feature(t),
 	}
-	testEnv.Test(t, feats...)
+
+	filteredFeats := []features.Feature{}
+
+	for _, feat := range feats {
+		if cfg.FeatureRegex().Match([]byte(feat.Name())) {
+			filteredFeats = append(filteredFeats, feat)
+		}
+	}
+
+	testEnv.Test(t, filteredFeats...)
 }

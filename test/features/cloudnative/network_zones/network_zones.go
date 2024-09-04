@@ -51,8 +51,7 @@ const (
 // Prerequisites:
 // Have a tenant that has no activegates bound to it.
 func Feature(t *testing.T) features.Feature {
-	builder := features.New("dynakube in network zone")
-	builder.WithLabel("name", "cloudnative-network-zone")
+	builder := features.New("cloudnative-network-zone")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	networkZone, err := rand.GetRandomName(rand.WithPrefix("op-e2e-"), rand.WithLength(8))
