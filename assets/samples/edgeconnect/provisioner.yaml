@@ -9,6 +9,8 @@ spec:
 
   oauth:
     # OAuth client has to be created in Dynatrace account management
+    # https://docs.dynatrace.com/docs/shortlink/account-api-authentication#create-an-oauth2-client
+    #
     # required scopes:
     # - app-engine:edge-connects:connect
     # - app-engine:edge-connects:read
