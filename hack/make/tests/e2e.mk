@@ -101,11 +101,11 @@ test/e2e/cloudnative/upgrade: manifests/crd/helm
 
 ## Runs Application Monitoring metadata-enrichment e2e test only
 test/e2e/applicationmonitoring/metadataenrichment: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --feature "label-version"  $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --feature "metadata-enrichment"  $(SKIPCLEANUP)
 
 ## Runs Application Monitoring label versio detection e2e test only
 test/e2e/applicationmonitoring/labelversion: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --feature "metadata-enrichment"  $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --feature "label-version"  $(SKIPCLEANUP)
 
 ## Runs Application Monitoring readonly csi-volume e2e test only
 test/e2e/applicationmonitoring/readonlycsivolume: manifests/crd/helm

@@ -102,16 +102,20 @@ func LabelVersionDetection(t *testing.T) features.Feature {
 	defaultDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithName("dynakube-components-default"),
 		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
-		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),
-		dynakubeComponents.WithMetadataEnrichment(),
+		dynakubeComponents.WithApplicationMonitoringSpec(&dynakube.ApplicationMonitoringSpec{
+			UseCSIDriver: false,
+		}),
+		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
 	)
 
 	labelVersionDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithName("dynakube-components-labels"),
 		dynakubeComponents.WithAnnotations(map[string]string{dynakube.AnnotationFeatureLabelVersionDetection: "true"}),
 		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
-		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),
-		dynakubeComponents.WithMetadataEnrichment(),
+		dynakubeComponents.WithApplicationMonitoringSpec(&dynakube.ApplicationMonitoringSpec{
+			UseCSIDriver: false,
+		}),
+		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
 	)
 
 	sampleApps := []*sample.App{
@@ -221,7 +225,7 @@ func assertValue(ctx context.Context, t *testing.T, resource *resources.Resource
 }
 
 func buildDisabledBuildLabelNamespace(dk dynakube.DynaKube) corev1.Namespace {
-	return *namespace.New(disabledBuildLabelsNamespace, namespace.WithLabels(dk.MetadataEnrichmentNamespaceSelector().MatchLabels))
+	return *namespace.New(disabledBuildLabelsNamespace, namespace.WithLabels(dk.OneAgentNamespaceSelector().MatchLabels))
 }
 
 func buildDisabledBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *sample.App {
@@ -229,7 +233,7 @@ func buildDisabledBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *sampl
 }
 
 func buildDefaultBuildLabelNamespace(dk dynakube.DynaKube) corev1.Namespace {
-	return *namespace.New(defaultBuildLabelsNamespace, namespace.WithLabels(dk.MetadataEnrichmentNamespaceSelector().MatchLabels))
+	return *namespace.New(defaultBuildLabelsNamespace, namespace.WithLabels(dk.OneAgentNamespaceSelector().MatchLabels))
 }
 
 func buildDefaultBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *sample.App {
@@ -252,7 +256,7 @@ func buildDefaultBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *sample
 func buildCustomBuildLabelNamespace(dk dynakube.DynaKube) corev1.Namespace {
 	return *namespace.New(
 		customBuildLabelsNamespace,
-		namespace.WithLabels(dk.MetadataEnrichmentNamespaceSelector().MatchLabels),
+		namespace.WithLabels(dk.OneAgentNamespaceSelector().MatchLabels),
 		namespace.WithAnnotation(map[string]string{
 			"mapping.release.dynatrace.com/version":       "metadata.labels['my.domain/version']",
 			"mapping.release.dynatrace.com/product":       "metadata.labels['my.domain/product']",
@@ -282,7 +286,7 @@ func buildCustomBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *sample.
 func buildPreservedBuildLabelNamespace(dk dynakube.DynaKube) corev1.Namespace {
 	return *namespace.New(
 		preservedBuildLabelsNamespace,
-		namespace.WithLabels(dk.MetadataEnrichmentNamespaceSelector().MatchLabels),
+		namespace.WithLabels(dk.OneAgentNamespaceSelector().MatchLabels),
 		namespace.WithAnnotation(map[string]string{
 			"mapping.release.dynatrace.com/version":       "metadata.labels['my.domain/version']",
 			"mapping.release.dynatrace.com/product":       "metadata.labels['my.domain/product']",
@@ -350,7 +354,7 @@ func buildPreservedBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *samp
 func buildInvalidBuildLabelNamespace(dk dynakube.DynaKube) corev1.Namespace {
 	return *namespace.New(
 		invalidBuildLabelsNamespace,
-		namespace.WithLabels(dk.MetadataEnrichmentNamespaceSelector().MatchLabels),
+		namespace.WithLabels(dk.OneAgentNamespaceSelector().MatchLabels),
 		namespace.WithAnnotation(map[string]string{
 			"mapping.release.dynatrace.com/stage":         "metadata.labels['my.domain/invalid-stage']",
 			"mapping.release.dynatrace.com/build-version": "metadata.labels['my.domain/invalid-build-version']",
