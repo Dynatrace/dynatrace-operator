@@ -68,7 +68,7 @@ func (r *reconciler) buildService() (*corev1.Service, error) {
 	appLabels := labels.NewAppLabels(labels.ExtensionComponentLabel, r.dk.Name, labels.ExtensionComponentLabel, "")
 
 	svcPort := corev1.ServicePort{
-		Name:       utils.BuildPortsName(),
+		Name:       utils.BuildPortName(),
 		Port:       consts.ExtensionsCollectorComPort,
 		Protocol:   corev1.ProtocolTCP,
 		TargetPort: intstr.IntOrString{Type: intstr.String, StrVal: consts.ExtensionsCollectorTargetPortName},
