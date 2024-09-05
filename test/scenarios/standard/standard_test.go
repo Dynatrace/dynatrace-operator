@@ -19,6 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
+	"github.com/Dynatrace/dynatrace-operator/test/scenarios"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -64,17 +65,5 @@ func TestStandard(t *testing.T) {
 		cloudToClassic.Feature(t),
 	}
 
-	filteredFeats := []features.Feature{}
-
-	if cfg.FeatureRegex() != nil {
-		for _, feat := range feats {
-			if cfg.FeatureRegex().Match([]byte(feat.Name())) {
-				filteredFeats = append(filteredFeats, feat)
-			}
-		}
-	} else {
-		filteredFeats = feats
-	}
-
-	testEnv.Test(t, filteredFeats...)
+	testEnv.Test(t, scenarios.FilterFeatures(*cfg, feats)...)
 }

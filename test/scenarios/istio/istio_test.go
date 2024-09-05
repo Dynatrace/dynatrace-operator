@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
+	"github.com/Dynatrace/dynatrace-operator/test/scenarios"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -57,17 +58,5 @@ func TestIstio(t *testing.T) {
 		codemodules.WithProxyCAAndAGCert(t, proxy.HttpsProxySpec),
 	}
 
-	filteredFeats := []features.Feature{}
-
-	if cfg.FeatureRegex() != nil {
-		for _, feat := range feats {
-			if cfg.FeatureRegex().Match([]byte(feat.Name())) {
-				filteredFeats = append(filteredFeats, feat)
-			}
-		}
-	} else {
-		filteredFeats = feats
-	}
-
-	testEnv.Test(t, filteredFeats...)
+	testEnv.Test(t, scenarios.FilterFeatures(*cfg, feats)...)
 }
