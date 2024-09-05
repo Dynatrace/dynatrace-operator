@@ -159,7 +159,7 @@ spec:
           - name: livez
             containerPort: 10090
           - name: metrics
-            containerPort: 8080
+            containerPort: 8090
         resources:
           {{- if .Values.csidriver.provisioner.resources }}
           {{- toYaml .Values.csidriver.provisioner.resources | nindent 10 }}
