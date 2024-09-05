@@ -260,7 +260,7 @@ tests:
                 ports:
                   - containerPort: 10090
                     name: livez
-                  - containerPort: 8080
+                  - containerPort: 8090
                     name: metrics
                 resources:
                   requests:
