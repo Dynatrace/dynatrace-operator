@@ -42,10 +42,14 @@ func TestRelease(t *testing.T) {
 
 	filteredFeats := []features.Feature{}
 
-	for _, feat := range feats {
-		if cfg.FeatureRegex().Match([]byte(feat.Name())) {
-			filteredFeats = append(filteredFeats, feat)
+	if cfg.FeatureRegex() != nil {
+		for _, feat := range feats {
+			if cfg.FeatureRegex().Match([]byte(feat.Name())) {
+				filteredFeats = append(filteredFeats, feat)
+			}
 		}
+	} else {
+		filteredFeats = feats
 	}
 
 	testEnv.Test(t, filteredFeats...)
