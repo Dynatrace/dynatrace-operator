@@ -36,7 +36,6 @@ tests:
                 - edgeconnects/status
               verbs:
                 - update
-
             - apiGroups:
                 - apps
               resources:
@@ -77,7 +76,6 @@ tests:
                 - deployments/finalizers
               verbs:
                 - update
-
             - apiGroups:
                 - ""
               resources:
@@ -97,8 +95,6 @@ tests:
                 - get
                 - list
                 - watch
-                - delete
-                - create
             - apiGroups:
                 - ""
               resources:
@@ -115,8 +111,9 @@ tests:
               resources:
                 - events
               verbs:
-                - list
                 - create
+                - get
+                - list
             - apiGroups:
                 - ""
               resources:
@@ -135,14 +132,6 @@ tests:
               verbs:
                 - get
             - apiGroups:
-                - monitoring.coreos.com
-              resources:
-                - servicemonitors
-              verbs:
-                - get
-                - create
-
-            - apiGroups:
                 - networking.istio.io
               resources:
                 - serviceentries
@@ -153,7 +142,6 @@ tests:
                 - create
                 - update
                 - delete
-
             - apiGroups:
                 - coordination.k8s.io
               resources:
