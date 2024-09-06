@@ -88,9 +88,6 @@ test/e2e/cloudnative/istio: manifests/crd/helm
 test/e2e/cloudnative/resilience: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/istio -args --feature "cloudnative-csi-resilience" $(SKIPCLEANUP)
 
-test/e2e/cloudnative/network-zone: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --feature "cloudnative-network-zone" $(SKIPCLEANUP)
-
 ## Runs Classic/CloudNative mode switching tests
 test/e2e/cloudnative/switchmodes: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --feature "cloudnative-to-classic" $(SKIPCLEANUP)
