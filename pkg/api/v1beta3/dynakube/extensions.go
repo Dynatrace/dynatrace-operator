@@ -50,7 +50,7 @@ type ExtensionExecutionControllerSpec struct {
 	// +kubebuilder:validation:Optional
 	CustomConfig string `json:"customConfig,omitempty"`
 
-	// Defines name of Secret containing certificate files
+	// Defines name of Secret containing certificates for custom extensions signature validation
 	// +kubebuilder:validation:Optional
 	CustomExtensionCertificates string `json:"customExtensionCertificates,omitempty"`
 

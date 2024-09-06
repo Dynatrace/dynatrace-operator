@@ -6207,8 +6207,8 @@ spec:
                           file
                         type: string
                       customExtensionCertificates:
-                        description: Defines name of Secret containing certificate
-                          files
+                        description: Defines name of Secret containing certificates
+                          for custom extensions signature validation
                         type: string
                       imageRef:
                         description: Overrides the default image

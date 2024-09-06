@@ -138,7 +138,7 @@
 |:-|:-|:-|:-|
 |`annotations`|Adds additional annotations to the ExtensionExecutionController pods|-|object|
 |`customConfig`|Defines name of ConfigMap containing custom configuration file|-|string|
-|`customExtensionCertificates`|Defines name of Secret containing certificate files|-|string|
+|`customExtensionCertificates`|Defines name of Secret containing certificates for custom extensions signature validation|-|string|
 |`labels`|Adds additional labels for the ExtensionExecutionController pods|-|object|
 |`resources`|Define resources' requests and limits for single ExtensionExecutionController pod|-|object|
 |`tlsRefName`||-|string|
