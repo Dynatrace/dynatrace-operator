@@ -44,7 +44,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
-|`enabled`|Enables MetadataEnrichment, `true` by default.|True|boolean|
+|`enabled`|Enables MetadataEnrichment, `false` by default.|False|boolean|
 |`namespaceSelector`|The namespaces where you want Dynatrace Operator to inject enrichment.|-|object|
 
 ### .spec.extensions.prometheus
@@ -138,6 +138,7 @@
 |:-|:-|:-|:-|
 |`annotations`|Adds additional annotations to the ExtensionExecutionController pods|-|object|
 |`customConfig`|Defines name of ConfigMap containing custom configuration file|-|string|
+|`customExtensionCertificates`|Defines name of Secret containing certificate files|-|string|
 |`labels`|Adds additional labels for the ExtensionExecutionController pods|-|object|
 |`resources`|Define resources' requests and limits for single ExtensionExecutionController pod|-|object|
 |`tlsRefName`||-|string|

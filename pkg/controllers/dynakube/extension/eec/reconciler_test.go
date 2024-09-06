@@ -184,7 +184,7 @@ func TestTopologySpreadConstraints(t *testing.T) {
 }
 
 func TestEnvironmentVariables(t *testing.T) {
-	t.Run("environment variables", func(t *testing.T) {
+	t.Run("default environment variables", func(t *testing.T) {
 		dk := getTestDynakube()
 
 		statefulSet := getStatefulset(t, dk)
@@ -201,6 +201,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		assert.Equal(t, corev1.EnvVar{Name: envHttpsCertPathPem, Value: envEecHttpsCertPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
 		assert.Equal(t, corev1.EnvVar{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envRuntimeConfigMountPath, Value: customConfigMountPath + "/" + runtimeConfigurationFilename})
+		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envCustomCertificateMountPath, Value: eecCustomCertificateMountPath})
 	})
 
 	t.Run("environment variables with custom EEC tls certificate", func(t *testing.T) {
@@ -220,6 +221,15 @@ func TestEnvironmentVariables(t *testing.T) {
 		statefulSet := getStatefulset(t, dk)
 
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envRuntimeConfigMountPath, Value: customConfigMountPath + "/" + runtimeConfigurationFilename})
+	})
+
+	t.Run("environment variables with certificate for extension signature verification", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Templates.ExtensionExecutionController.CustomExtensionCertificates = "test"
+
+		statefulSet := getStatefulset(t, dk)
+
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envCustomCertificateMountPath, Value: eecCustomCertificateMountPath})
 	})
 }
 
@@ -307,6 +317,19 @@ func TestVolumeMounts(t *testing.T) {
 		expectedVolumeMount := corev1.VolumeMount{
 			Name:      httpsCertVolumeName,
 			MountPath: httpsCertMountPath,
+			ReadOnly:  true,
+		}
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
+	})
+
+	t.Run("volume mounts when set certificate for extension signature verification", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Templates.ExtensionExecutionController.CustomExtensionCertificates = "custom-certs"
+		statefulSet := getStatefulset(t, dk)
+
+		expectedVolumeMount := corev1.VolumeMount{
+			Name:      customCertificateVolumeName,
+			MountPath: eecCustomCertificateMountPath,
 			ReadOnly:  true,
 		}
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
@@ -767,6 +790,23 @@ func TestVolumes(t *testing.T) {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: "custom-tls",
+				},
+			},
+		}
+
+		require.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
+	})
+
+	t.Run("volumes with certificate for extension signature verification", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Templates.ExtensionExecutionController.CustomExtensionCertificates = "custom-certs"
+		statefulSet := getStatefulset(t, dk)
+
+		expectedVolume := corev1.Volume{
+			Name: customCertificateVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: "custom-certs",
 				},
 			},
 		}
