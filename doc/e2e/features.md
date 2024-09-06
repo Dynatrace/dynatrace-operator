@@ -8,14 +8,14 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/activegate"
 
 ## Index
 
-- [func Feature(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) features.Feature](<#Feature>)
+- [func Feature(t *testing.T, proxySpec *dynakube.DynaKubeProxy) features.Feature](<#Feature>)
 
 <a name="Feature"></a>
 
 ## func [Feature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/activegate/activegate.go#L58>)
 
 ```go
-func Feature(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) features.Feature
+func Feature(t *testing.T, proxySpec *dynakube.DynaKubeProxy) features.Feature
 ```
 
 ### With proxy
@@ -34,14 +34,32 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/edgeconnect"
 
 ## Index
 
-- [func Feature(t *testing.T) features.Feature](<#Feature>)
+- [func AutomationModeFeature(t *testing.T) features.Feature](<#AutomationModeFeature>)
+- [func NormalModeFeature(t *testing.T) features.Feature](<#NormalModeFeature>)
+- [func ProvisionerModeFeature(t *testing.T) features.Feature](<#ProvisionerModeFeature>)
 
-<a name="Feature"></a>
+<a name="AutomationModeFeature"></a>
 
-## func [Feature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/edgeconnect/edgeconnect.go#L15>)
+## func [AutomationModeFeature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/edgeconnect/edgeconnect.go#L111>)
 
 ```go
-func Feature(t *testing.T) features.Feature
+func AutomationModeFeature(t *testing.T) features.Feature
+```
+
+<a name="NormalModeFeature"></a>
+
+## func [NormalModeFeature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/edgeconnect/edgeconnect.go#L40>)
+
+```go
+func NormalModeFeature(t *testing.T) features.Feature
+```
+
+<a name="ProvisionerModeFeature"></a>
+
+## func [ProvisionerModeFeature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/edgeconnect/edgeconnect.go#L74>)
+
+```go
+func ProvisionerModeFeature(t *testing.T) features.Feature
 ```
 
 # classic
@@ -204,18 +222,18 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 
 ## Index
 
-- [func AssessActiveGateContainer(builder *features.FeatureBuilder, dynakube *dynatracev1beta2.DynaKube, trustedCAs []byte)](<#AssessActiveGateContainer>)
+- [func AssessActiveGateContainer(builder *features.FeatureBuilder, dk *dynakube.DynaKube, trustedCAs []byte)](<#AssessActiveGateContainer>)
 - [func AssessOneAgentContainer(builder *features.FeatureBuilder, agCrt []byte, trustedCAs []byte)](<#AssessOneAgentContainer>)
 - [func AssessSampleContainer(builder *features.FeatureBuilder, sampleApp *sample.App, agCrt []byte, trustedCAs []byte)](<#AssessSampleContainer>)
 - [func AssessSampleInitContainers(builder *features.FeatureBuilder, sampleApp *sample.App)](<#AssessSampleInitContainers>)
-- [func DefaultCloudNativeSpec() *dynatracev1beta2.CloudNativeFullStackSpec](<#DefaultCloudNativeSpec>)
+- [func DefaultCloudNativeSpec() *dynakube.CloudNativeFullStackSpec](<#DefaultCloudNativeSpec>)
 
 <a name="AssessActiveGateContainer"></a>
 
 ## func [AssessActiveGateContainer](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/container.go#L78>)
 
 ```go
-func AssessActiveGateContainer(builder *features.FeatureBuilder, dynakube *dynatracev1beta2.DynaKube, trustedCAs []byte)
+func AssessActiveGateContainer(builder *features.FeatureBuilder, dk *dynakube.DynaKube, trustedCAs []byte)
 ```
 
 <a name="AssessOneAgentContainer"></a>
@@ -247,7 +265,7 @@ func AssessSampleInitContainers(builder *features.FeatureBuilder, sampleApp *sam
 ## func [DefaultCloudNativeSpec](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/init_containers.go#L82>)
 
 ```go
-func DefaultCloudNativeSpec() *dynatracev1beta2.CloudNativeFullStackSpec
+func DefaultCloudNativeSpec() *dynakube.CloudNativeFullStackSpec
 ```
 
 # network_problems
@@ -335,10 +353,10 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/codemo
 ## Index
 
 - [func InstallFromImage(t *testing.T) features.Feature](<#InstallFromImage>)
-- [func WithProxy(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) features.Feature](<#WithProxy>)
-- [func WithProxyAndAGCert(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) features.Feature](<#WithProxyAndAGCert>)
-- [func WithProxyCA(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) features.Feature](<#WithProxyCA>)
-- [func WithProxyCAAndAGCert(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) features.Feature](<#WithProxyCAAndAGCert>)
+- [func WithProxy(t *testing.T, proxySpec *dynakube.DynaKubeProxy) features.Feature](<#WithProxy>)
+- [func WithProxyAndAGCert(t *testing.T, proxySpec *dynakube.DynaKubeProxy) features.Feature](<#WithProxyAndAGCert>)
+- [func WithProxyCA(t *testing.T, proxySpec *dynakube.DynaKubeProxy) features.Feature](<#WithProxyCA>)
+- [func WithProxyCAAndAGCert(t *testing.T, proxySpec *dynakube.DynaKubeProxy) features.Feature](<#WithProxyCAAndAGCert>)
 
 <a name="InstallFromImage"></a>
 
@@ -355,7 +373,7 @@ Verification that the storage in the CSI driver directory does not increase when
 ## func [WithProxy](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L136>)
 
 ```go
-func WithProxy(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) features.Feature
+func WithProxy(t *testing.T, proxySpec *dynakube.DynaKubeProxy) features.Feature
 ```
 
 Prerequisites: istio service mesh
@@ -364,14 +382,14 @@ Setup: CloudNative deployment with CSI driver
 
 Verification that the operator and all deployed OneAgents are able to communicate over a http proxy.
 
-Connectivity in the dynatrace namespace and sample application namespace is restricted to the local cluster. Sample application is installed. The test checks if DT_PROXY environment variable is defined in the *dynakube-oneagent* container and the *application container*.
+Connectivity in the dynatrace namespace and sample application namespace is restricted to the local cluster. Sample application is installed. The test checks if DT_PROXY environment variable is defined in the *dynakubeComponents-oneagent* container and the *application container*.
 
 <a name="WithProxyAndAGCert"></a>
 
 ## func [WithProxyAndAGCert](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L253>)
 
 ```go
-func WithProxyAndAGCert(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) features.Feature
+func WithProxyAndAGCert(t *testing.T, proxySpec *dynakube.DynaKubeProxy) features.Feature
 ```
 
 <a name="WithProxyCA"></a>
@@ -379,7 +397,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy)
 ## func [WithProxyCA](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L191>)
 
 ```go
-func WithProxyCA(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) features.Feature
+func WithProxyCA(t *testing.T, proxySpec *dynakube.DynaKubeProxy) features.Feature
 ```
 
 <a name="WithProxyCAAndAGCert"></a>
@@ -387,7 +405,7 @@ func WithProxyCA(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) featur
 ## func [WithProxyCAAndAGCert](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L319>)
 
 ```go
-func WithProxyCAAndAGCert(t *testing.T, proxySpec *dynatracev1beta2.DynaKubeProxy) features.Feature
+func WithProxyCAAndAGCert(t *testing.T, proxySpec *dynakube.DynaKubeProxy) features.Feature
 ```
 
 # _default

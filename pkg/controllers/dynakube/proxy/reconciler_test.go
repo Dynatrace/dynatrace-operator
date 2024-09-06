@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -91,8 +91,8 @@ func TestReconcileWithoutProxy(t *testing.T) {
 					ValueFrom: "",
 				}}}
 		dk.Annotations = map[string]string{
-			dynakube.AnnotationFeatureActiveGateIgnoreProxy: "true", //nolint:staticcheck
-			dynakube.AnnotationFeatureOneAgentIgnoreProxy:   "true", //nolint:staticcheck
+			dynakube.AnnotationFeatureActiveGateIgnoreProxy: "true",
+			dynakube.AnnotationFeatureOneAgentIgnoreProxy:   "true",
 		}
 
 		var testClient = fake.NewClientBuilder().WithObjects(&corev1.Secret{

@@ -195,7 +195,6 @@ package abc
 
 import (
     dynakubev1beta2  "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
-    dynakubev1beta3  "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 )
 ```
 
@@ -233,6 +232,7 @@ func (c component) getImage(dk *dynakube.DynaKube) (string, bool) {}
 package abc
 
 import (
+    dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
     dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 )
 ```

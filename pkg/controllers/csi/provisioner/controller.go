@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csigc "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/gc"

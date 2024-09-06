@@ -3,12 +3,12 @@ package dynakube
 import (
 	"strconv"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
-// ConvertFrom converts v1beta3 to v1beta1.
+// ConvertFrom converts v1beta2 to v1beta1.
 func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	src := srcRaw.(*dynakube.DynaKube)
 	dst.fromBase(src)
