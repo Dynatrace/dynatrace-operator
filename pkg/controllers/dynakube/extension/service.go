@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/utils"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/servicename"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/service"
@@ -57,7 +57,7 @@ func (r *reconciler) createOrUpdateService(ctx context.Context) error {
 		return err
 	}
 
-	conditions.SetServiceCreated(r.dk.Conditions(), consts.ExtensionsServiceConditionType, utils.BuildServiceName(r.dk))
+	conditions.SetServiceCreated(r.dk.Conditions(), consts.ExtensionsServiceConditionType, servicename.Build(r.dk))
 
 	return nil
 }
@@ -68,14 +68,14 @@ func (r *reconciler) buildService() (*corev1.Service, error) {
 	appLabels := labels.NewAppLabels(labels.ExtensionComponentLabel, r.dk.Name, labels.ExtensionComponentLabel, "")
 
 	svcPort := corev1.ServicePort{
-		Name:       utils.BuildPortName(),
+		Name:       servicename.BuildPort(),
 		Port:       consts.ExtensionsCollectorComPort,
 		Protocol:   corev1.ProtocolTCP,
 		TargetPort: intstr.IntOrString{Type: intstr.String, StrVal: consts.ExtensionsCollectorTargetPortName},
 	}
 
 	return service.Build(r.dk,
-		utils.BuildServiceName(r.dk),
+		servicename.Build(r.dk),
 		appLabels.BuildMatchLabels(),
 		svcPort,
 		service.SetLabels(coreLabels.BuildLabels()),

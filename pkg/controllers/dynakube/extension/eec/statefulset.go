@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/hash"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/servicename"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/utils"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -209,7 +210,7 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath},
 		{Name: envDsInstallDirName, Value: envDsInstallDir},
 		{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID},
-		{Name: envK8sExtServiceUrl, Value: utils.BuildFQDName(dk)},
+		{Name: envK8sExtServiceUrl, Value: servicename.BuildFQDN(dk)},
 		{Name: envDSTokenPath, Value: eecTokenMountPath + "/" + consts.OtelcTokenSecretKey},
 		{Name: envHttpsCertPathPem, Value: envEecHttpsCertPathPem},
 		{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem},

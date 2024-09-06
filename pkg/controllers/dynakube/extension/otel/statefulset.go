@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/hash"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/servicename"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/utils"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -131,7 +132,7 @@ func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 		SecurityContext: buildSecurityContext(),
 		Env:             buildContainerEnvs(dk),
 		Resources:       dk.Spec.Templates.OpenTelemetryCollector.Resources,
-		Args:            []string{fmt.Sprintf("--config=eec://%s:%d/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=%s", utils.BuildFQDName(dk), consts.ExtensionsCollectorComPort, otelcSecretTokenFilePath)},
+		Args:            []string{fmt.Sprintf("--config=eec://%s:%d/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=%s", servicename.BuildFQDN(dk), consts.ExtensionsCollectorComPort, otelcSecretTokenFilePath)},
 		VolumeMounts:    buildContainerVolumeMounts(dk),
 	}
 }

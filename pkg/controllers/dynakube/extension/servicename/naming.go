@@ -1,18 +1,18 @@
-package utils
+package servicename
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 )
 
-func BuildPortName() string {
+func BuildPort() string {
 	return "dynatrace" + consts.ExtensionsControllerSuffix + "-" + consts.ExtensionsCollectorTargetPortName
 }
 
-func BuildFQDName(dk *dynakube.DynaKube) string {
-	return BuildServiceName(dk) + "." + dk.Namespace
+func BuildFQDN(dk *dynakube.DynaKube) string {
+	return Build(dk) + "." + dk.Namespace
 }
 
-func BuildServiceName(dk *dynakube.DynaKube) string {
+func Build(dk *dynakube.DynaKube) string {
 	return dk.Name + consts.ExtensionsControllerSuffix
 }

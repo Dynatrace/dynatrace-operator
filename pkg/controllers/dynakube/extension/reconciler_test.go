@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/utils"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/servicename"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
@@ -134,7 +134,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var svc corev1.Service
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: utils.BuildServiceName(r.dk), Namespace: testNamespace}, &svc)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: servicename.Build(r.dk), Namespace: testNamespace}, &svc)
 		require.NoError(t, err)
 		assert.NotNil(t, svc)
 
@@ -159,7 +159,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var svc corev1.Service
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: utils.BuildServiceName(r.dk), Namespace: testNamespace}, &svc)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: servicename.Build(r.dk), Namespace: testNamespace}, &svc)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
