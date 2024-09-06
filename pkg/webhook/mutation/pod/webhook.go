@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	k8spod "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -116,6 +117,13 @@ func (wh *webhook) isInjected(mutationRequest *dtwebhook.MutationRequest) bool {
 		if mutator.Injected(mutationRequest.BaseRequest) {
 			return true
 		}
+	}
+
+	installContainer := container.FindInitContainerInPodSpec(&mutationRequest.Pod.Spec, dtwebhook.InstallContainerName)
+	if installContainer != nil {
+		log.Info("Dynatrace init-container already present, skipping mutation, doing reinvocation", "containerName", dtwebhook.InstallContainerName)
+
+		return true
 	}
 
 	return false
