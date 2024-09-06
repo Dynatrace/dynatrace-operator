@@ -159,7 +159,9 @@ func (wh *webhook) handlePodMutation(ctx context.Context, mutationRequest *dtweb
 
 	mutationRequest.InstallContainer = createInstallInitContainerBase(wh.webhookImage, wh.clusterID, mutationRequest.Pod, mutationRequest.DynaKube)
 
-	isMutated := updateContainerInfo(mutationRequest.ToReinvocationRequest(), mutationRequest.InstallContainer)
+	_ = updateContainerInfo(mutationRequest.ToReinvocationRequest(), mutationRequest.InstallContainer)
+
+	var isMutated bool
 
 	for _, mutator := range wh.mutators {
 		if !mutator.Enabled(mutationRequest.BaseRequest) {
