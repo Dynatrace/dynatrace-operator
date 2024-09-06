@@ -59,6 +59,14 @@ func (req *BaseRequest) NewContainers(isInjected func(corev1.Container) bool) (n
 	return
 }
 
+func (req *BaseRequest) DeepCopy() *BaseRequest {
+	return &BaseRequest{
+		Pod:       req.Pod.DeepCopy(),
+		Namespace: req.Namespace,
+		DynaKube:  req.DynaKube,
+	}
+}
+
 // MutationRequest contains all the information needed to mutate a pod
 // It is meant to be passed into each mutator, so that they can mutate the elements in the way they need to,
 // and after passing it in to all the mutator the request will have the final state which can be used to mutate the pod.
@@ -94,5 +102,13 @@ func NewMutationRequest(ctx context.Context, namespace corev1.Namespace, install
 func (request *MutationRequest) ToReinvocationRequest() *ReinvocationRequest {
 	return &ReinvocationRequest{
 		BaseRequest: request.BaseRequest,
+	}
+}
+
+func (request *MutationRequest) DeepCopy() *MutationRequest {
+	return &MutationRequest{
+		BaseRequest:      request.BaseRequest.DeepCopy(),
+		Context:          request.Context,
+		InstallContainer: request.InstallContainer.DeepCopy(),
 	}
 }

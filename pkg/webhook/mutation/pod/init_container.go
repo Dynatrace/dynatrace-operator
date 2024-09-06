@@ -149,9 +149,8 @@ func addSeccompProfile(ctx *corev1.SecurityContext, dk dynakube.DynaKube) {
 }
 
 func updateContainerInfo(request *dtwebhook.ReinvocationRequest, installContainer *corev1.Container) bool {
-	pod := request.Pod
 	if installContainer == nil {
-		installContainer = findInstallContainer(pod.Spec.InitContainers)
+		installContainer = findInstallContainer(request.Pod.Spec.InitContainers)
 	}
 
 	newContainers := request.NewContainers(containerIsInjected)

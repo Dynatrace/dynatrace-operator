@@ -3,7 +3,6 @@ package pod
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
@@ -16,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/metadata"
 	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
 	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -92,8 +92,27 @@ func TestMutator(t *testing.T) {
 			expectedResult: func(t *testing.T, response *admission.Response, mutators []dtwebhook.PodMutator) {
 				require.NotNil(t, response)
 				assert.True(t, response.Allowed)
-				assert.Contains(t, response.Result.Message, "Failed")
-				assert.Nil(t, response.Patches)
+				assert.Nil(t, response.Result)
+				assert.NotNil(t, response.Patches)
+
+				for _, mutator := range mutators {
+					assertPodMutatorCalls(t, mutator, 1)
+				}
+
+				// Logging newline so go test can parse the output correctly
+				log.Info("")
+			},
+		},
+		{
+			name:     "sad and happy",
+			mutators: []dtwebhook.PodMutator{createFailPodMutatorMock(t), createSimplePodMutatorMock(t)},
+			testPod:  getTestPod(),
+			objects:  []client.Object{getTestDynakube(), getTestNamespace()},
+			expectedResult: func(t *testing.T, response *admission.Response, mutators []dtwebhook.PodMutator) {
+				require.NotNil(t, response)
+				assert.True(t, response.Allowed)
+				assert.Nil(t, response.Result)
+				assert.NotNil(t, response.Patches)
 
 				for _, mutator := range mutators {
 					assertPodMutatorCalls(t, mutator, 1)
@@ -222,8 +241,7 @@ func TestHandlePodMutation(t *testing.T) {
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{mutator1, mutator2}, nil)
 		mutationRequest := createTestMutationRequest(dk)
 
-		err := podWebhook.handlePodMutation(context.Background(), mutationRequest)
-		require.NoError(t, err)
+		mutationRequest = podWebhook.handlePodMutation(context.Background(), mutationRequest)
 		assert.NotNil(t, mutationRequest.InstallContainer)
 
 		require.Len(t, mutationRequest.Pod.Spec.InitContainers, 2)
@@ -247,10 +265,96 @@ func TestHandlePodMutation(t *testing.T) {
 
 		assert.Equal(t, mutationRequest.Pod.Spec.InitContainers[1].Resources, testResourceRequirements)
 		assert.Equal(t, "true", mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
-		mutator1.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
-		mutator1.AssertCalled(t, "Mutate", mock.Anything, mutationRequest)
-		mutator2.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
-		mutator2.AssertCalled(t, "Mutate", mock.Anything, mutationRequest)
+		mutator1.AssertCalled(t, "Enabled", mock.Anything)
+		mutator1.AssertCalled(t, "Mutate", mock.Anything, mock.Anything)
+		mutator2.AssertCalled(t, "Enabled", mock.Anything)
+		mutator2.AssertCalled(t, "Mutate", mock.Anything, mock.Anything)
+	})
+	t.Run("apply mutation if mutator is successful", func(t *testing.T) {
+		const mockedVolumeName = "mocked-volume"
+
+		mutator1 := createMutatingPodMutatorMock(t, func(mutationRequest *dtwebhook.MutationRequest) {
+			mutationRequest.Pod.Spec.Volumes = append(mutationRequest.Pod.Spec.Volumes,
+				corev1.Volume{
+					Name: mockedVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				})
+		}, nil)
+
+		dk := getTestDynakube()
+		podWebhook := createTestWebhook([]dtwebhook.PodMutator{mutator1}, nil)
+		mutationRequest := createTestMutationRequest(dk)
+
+		mutationRequest = podWebhook.handlePodMutation(context.Background(), mutationRequest)
+		assert.NotNil(t, mutationRequest.InstallContainer)
+
+		assert.Len(t, mutationRequest.Pod.Spec.Volumes, 2)
+		assert.Equal(t, mockedVolumeName, mutationRequest.Pod.Spec.Volumes[1].Name)
+	})
+	t.Run("do not mutate if mutator fails", func(t *testing.T) {
+		const mockedVolumeName = "mocked-volume"
+
+		mutator1 := createMutatingPodMutatorMock(t, func(mutationRequest *dtwebhook.MutationRequest) {
+			mutationRequest.Pod.Spec.Volumes = append(mutationRequest.Pod.Spec.Volumes,
+				corev1.Volume{
+					Name: mockedVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				})
+		}, errors.New("BOOM"))
+
+		dk := getTestDynakube()
+		podWebhook := createTestWebhook([]dtwebhook.PodMutator{mutator1}, nil)
+		mutationRequest := createTestMutationRequest(dk)
+
+		mutationRequest = podWebhook.handlePodMutation(context.Background(), mutationRequest)
+		assert.NotNil(t, mutationRequest.InstallContainer)
+
+		assert.Len(t, mutationRequest.Pod.Spec.Volumes, 1)
+	})
+	t.Run("mutate if at least one mutator is successful", func(t *testing.T) {
+		const mockedVolumeName = "mocked-volume"
+
+		mutator1 := createMutatingPodMutatorMock(t, func(mutationRequest *dtwebhook.MutationRequest) {
+			mutationRequest.Pod.Spec.Volumes = append(mutationRequest.Pod.Spec.Volumes,
+				corev1.Volume{
+					Name: mockedVolumeName + "1",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				})
+		}, errors.New("BOOM1"))
+		mutator2 := createMutatingPodMutatorMock(t, func(mutationRequest *dtwebhook.MutationRequest) {
+			mutationRequest.Pod.Spec.Volumes = append(mutationRequest.Pod.Spec.Volumes,
+				corev1.Volume{
+					Name: mockedVolumeName + "2",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				})
+		}, nil)
+		mutator3 := createMutatingPodMutatorMock(t, func(mutationRequest *dtwebhook.MutationRequest) {
+			mutationRequest.Pod.Spec.Volumes = append(mutationRequest.Pod.Spec.Volumes,
+				corev1.Volume{
+					Name: mockedVolumeName + "3",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				})
+		}, errors.New("BOOM3"))
+
+		dk := getTestDynakube()
+		podWebhook := createTestWebhook([]dtwebhook.PodMutator{mutator1, mutator2, mutator3}, nil)
+		mutationRequest := createTestMutationRequest(dk)
+
+		mutationRequest = podWebhook.handlePodMutation(context.Background(), mutationRequest)
+		assert.NotNil(t, mutationRequest.InstallContainer)
+
+		assert.Len(t, mutationRequest.Pod.Spec.Volumes, 2)
+		assert.Equal(t, mockedVolumeName+"2", mutationRequest.Pod.Spec.Volumes[1].Name)
 	})
 	t.Run("should call 1 webhook, 1 error, no initContainer and annotation", func(t *testing.T) {
 		sadMutator := createFailPodMutatorMock(t)
@@ -259,15 +363,14 @@ func TestHandlePodMutation(t *testing.T) {
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{sadMutator, happyMutator}, nil)
 		mutationRequest := createTestMutationRequest(dk)
 
-		err := podWebhook.handlePodMutation(context.Background(), mutationRequest)
-		require.Error(t, err)
+		mutationRequest = podWebhook.handlePodMutation(context.Background(), mutationRequest)
 		assert.NotNil(t, mutationRequest.InstallContainer)
-		assert.Len(t, mutationRequest.Pod.Spec.InitContainers, 1)
-		assert.NotEqual(t, "true", mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
-		sadMutator.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
-		sadMutator.AssertCalled(t, "Mutate", mock.Anything, mutationRequest)
-		happyMutator.AssertNotCalled(t, "Enabled", mock.Anything)
-		happyMutator.AssertNotCalled(t, "Mutate", mock.Anything, mock.Anything)
+		assert.Len(t, mutationRequest.Pod.Spec.InitContainers, 2)
+		assert.Equal(t, "true", mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
+		sadMutator.AssertCalled(t, "Enabled", mock.Anything)
+		sadMutator.AssertCalled(t, "Mutate", mock.Anything, mock.Anything)
+		happyMutator.AssertCalled(t, "Enabled", mock.Anything)
+		happyMutator.AssertCalled(t, "Mutate", mock.Anything, mock.Anything)
 	})
 }
 
@@ -412,7 +515,22 @@ func createFailPodMutatorMock(t *testing.T) *webhookmock.PodMutator {
 	mutator := webhookmock.NewPodMutator(t)
 	mutator.On("Enabled", mock.Anything).Return(true).Maybe()
 	mutator.On("Injected", mock.Anything).Return(false).Maybe()
-	mutator.On("Mutate", mock.Anything, mock.Anything).Return(fmt.Errorf("BOOM")).Maybe()
+	mutator.On("Mutate", mock.Anything, mock.Anything).Return(errors.WithStack(errors.New("BOOM"))).Maybe()
+	mutator.On("Reinvoke", mock.Anything).Return(false).Maybe()
+
+	return mutator
+}
+
+func createMutatingPodMutatorMock(t *testing.T, mutatorFn func(*dtwebhook.MutationRequest), err error) *webhookmock.PodMutator {
+	mutator := webhookmock.NewPodMutator(t)
+	mutator.On("Enabled", mock.Anything).Return(true).Maybe()
+	mutator.On("Injected", mock.Anything).Return(false).Maybe()
+	mutator.On("Mutate", mock.IsType(context.Background()), mock.IsType(&dtwebhook.MutationRequest{})).
+		Run(func(args mock.Arguments) {
+			mutatorFn(args.Get(1).(*dtwebhook.MutationRequest))
+		}).
+		Return(err).Maybe()
+
 	mutator.On("Reinvoke", mock.Anything).Return(false).Maybe()
 
 	return mutator

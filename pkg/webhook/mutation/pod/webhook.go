@@ -90,9 +90,7 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 		return emptyPatch
 	}
 
-	if err := wh.handlePodMutation(ctx, mutationRequest); err != nil {
-		return silentErrorResponse(mutationRequest.Pod, err)
-	}
+	mutationRequest = wh.handlePodMutation(ctx, mutationRequest)
 
 	log.Info("injection finished for pod", "podName", podName, "namespace", request.Namespace)
 
@@ -150,11 +148,11 @@ func podNeedsInjection(mutationRequest *dtwebhook.MutationRequest) bool {
 	return needsInjection
 }
 
-func (wh *webhook) handlePodMutation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) error {
+func (wh *webhook) handlePodMutation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) *dtwebhook.MutationRequest {
 	if !podNeedsInjection(mutationRequest) {
 		log.Info("no mutation is needed, all containers are excluded from injection.")
 
-		return nil
+		return mutationRequest
 	}
 
 	mutationRequest.InstallContainer = createInstallInitContainerBase(wh.webhookImage, wh.clusterID, mutationRequest.Pod, mutationRequest.DynaKube)
@@ -166,24 +164,26 @@ func (wh *webhook) handlePodMutation(ctx context.Context, mutationRequest *dtweb
 			continue
 		}
 
-		if err := mutator.Mutate(ctx, mutationRequest); err != nil {
-			return err
+		resultMutationRequest := mutationRequest.DeepCopy()
+		if err := mutator.Mutate(ctx, resultMutationRequest); err != nil {
+			log.Error(err, "pod mutator failed", "pod", mutationRequest.Pod.Name)
+		} else {
+			mutationRequest = resultMutationRequest
+			isMutated = true
 		}
-
-		isMutated = true
 	}
 
 	if !isMutated {
-		log.Info("no mutation is enabled")
+		log.Info("pod has not been mutated", "pod", mutationRequest.Pod.Name)
 
-		return nil
+		return mutationRequest
 	}
 
 	addInitContainerToPod(mutationRequest.Pod, mutationRequest.InstallContainer)
 	wh.recorder.sendPodInjectEvent()
 	setDynatraceInjectedAnnotation(mutationRequest)
 
-	return nil
+	return mutationRequest
 }
 
 func (wh *webhook) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequest) bool {
