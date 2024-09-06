@@ -31,14 +31,17 @@ const (
 	defaultReplicas      = 1
 
 	// env variables
-	envShards        = "SHARDS"
-	envShardId       = "SHARD_ID"
-	envPodNamePrefix = "POD_NAME_PREFIX"
-	envPodName       = "POD_NAME"
-	envOTLPgrpcPort  = "OTLP_GRPC_PORT"
-	envOTLPhttpPort  = "OTLP_HTTP_PORT"
-	envOTLPtoken     = "OTLP_TOKEN"
-	envTrustedCAs    = "TRUSTED_CAS"
+	envShards             = "SHARDS"
+	envShardId            = "SHARD_ID"
+	envPodNamePrefix      = "POD_NAME_PREFIX"
+	envPodName            = "POD_NAME"
+	envOTLPgrpcPort       = "OTLP_GRPC_PORT"
+	envOTLPhttpPort       = "OTLP_HTTP_PORT"
+	envOTLPtoken          = "OTLP_TOKEN"
+	envTrustedCAs         = "TRUSTED_CAS"
+	envK8sClusterName     = "K8S_CLUSTER_NAME"
+	envK8sClusterUuid     = "K8S_CLUSTER_UID"
+	envDTentityK8sCluster = "DT_ENTITY_KUBERNETES_CLUSTER"
 	// certDirEnv is the environment variable that identifies which directory
 	// to check for SSL certificate files. If set, this overrides the system default.
 	// It is a colon separated list of directories.
@@ -175,6 +178,9 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		},
 		},
 		{Name: envCertDir, Value: customEecTlsCertificatePath},
+		{Name: envK8sClusterName, Value: dk.Name},
+		{Name: envK8sClusterUuid, Value: dk.Status.KubeSystemUUID},
+		{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID},
 	}
 	if dk.Spec.TrustedCAs != "" {
 		envs = append(envs, corev1.EnvVar{Name: envTrustedCAs, Value: trustedCAVolumePath})

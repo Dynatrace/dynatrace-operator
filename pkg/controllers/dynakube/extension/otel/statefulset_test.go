@@ -163,6 +163,9 @@ func TestEnvironmentVariables(t *testing.T) {
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
 		assert.Equal(t, corev1.EnvVar{Name: envCertDir, Value: customEecTlsCertificatePath}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterName, Value: dk.Name}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterUuid, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
+		assert.Equal(t, corev1.EnvVar{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
 	})
 	t.Run("environment variables with trustedCA", func(t *testing.T) {
 		dk := getTestDynakube()
