@@ -213,7 +213,6 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envK8sExtServiceUrl, Value: "https://" + dk.Name + consts.ExtensionsControllerSuffix + "." + dk.Namespace},
 		{Name: envHttpsCertPathPem, Value: envEecHttpsCertPathPem},
 		{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem},
-		{Name: "ExtensionCustomCertificateMountPath", Value: "/ext-certs"},
 	}
 
 	if dk.Spec.ActiveGate.TlsSecretName != "" {
@@ -262,11 +261,6 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		{
 			Name:      httpsCertVolumeName,
 			MountPath: httpsCertMountPath,
-			ReadOnly:  true,
-		},
-		{
-			Name:      "extensions-certs",
-			MountPath: "/ext-certs",
 			ReadOnly:  true,
 		},
 	}
@@ -334,14 +328,6 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName: tlsSecretName,
-					},
-				},
-			},
-			{
-				Name: "extensions-certs",
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: "extensions-certs",
 					},
 				},
 			},
