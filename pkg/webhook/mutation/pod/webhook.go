@@ -191,7 +191,11 @@ func (wh *webhook) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequ
 
 	reinvocationRequest := mutationRequest.ToReinvocationRequest()
 
-	updateContainerInfo(reinvocationRequest, nil)
+	isMutated := updateContainerInfo(reinvocationRequest, nil)
+
+	if !isMutated { // == no new containers were detected, we only mutate new containers during reinvoke
+		return false
+	}
 
 	for _, mutator := range wh.mutators {
 		if mutator.Enabled(mutationRequest.BaseRequest) {
