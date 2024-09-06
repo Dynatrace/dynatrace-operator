@@ -18,7 +18,7 @@ type SemanticVersion struct {
 
 var versionRegex = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)\.(\d+-\d+)$`)
 
-// Max sub match = orignal string + 4 groups from versionRegex ^.
+// Max sub match = original string + 4 groups from versionRegex ^.
 const maxStringSubMatch = 5
 
 // CompareSemanticVersions returns:
