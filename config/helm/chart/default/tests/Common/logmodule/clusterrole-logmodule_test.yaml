@@ -16,7 +16,7 @@ tests:
           path: rules
           content:
             apiGroups:
-              - security.openshift.io"
+              - security.openshift.io
             resourceNames:
               - privileged
             resources:
