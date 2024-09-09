@@ -25,7 +25,7 @@ rules:
   verbs:
     - get
 - apiGroups:
-    - security.openshift.io"
+    - security.openshift.io
   resourceNames:
     - privileged
   resources:
