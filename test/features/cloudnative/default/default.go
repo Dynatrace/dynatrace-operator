@@ -48,13 +48,7 @@ import (
 // Sample application Deployment is installed and restarted to check if OneAgent is
 // injected and VERSION environment variable is correct.
 func Feature(t *testing.T, istioEnabled bool) features.Feature {
-	builder := features.New("cloudnative default installation")
-	// Register operator install
-	if istioEnabled {
-		builder.WithLabel("name", "cloudnative-istio")
-	} else {
-		builder.WithLabel("name", "cloudnative-default")
-	}
+	builder := features.New("cloudnative")
 	t.Logf("istio enabled: %v", istioEnabled)
 	secretConfig := tenant.GetSingleTenantSecret(t)
 

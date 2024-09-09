@@ -20,8 +20,7 @@ import (
 
 // ApplicationMonitoring deployment without CSI driver
 func WithoutCSI(t *testing.T) features.Feature {
-	builder := features.New("application monitoring without csi driver enabled")
-	builder.WithLabel("name", "app-without-csi")
+	builder := features.New("app-monitoring-without-csi")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	appOnlyDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),

@@ -17,8 +17,7 @@ import (
 )
 
 func Feature(t *testing.T) features.Feature {
-	builder := features.New("upgrade a cloudnative installation")
-	builder.WithLabel("name", "cloudnative-upgrade")
+	builder := features.New("cloudnative-upgrade")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	testDynakube := *dynakube.New(
 		dynakube.WithApiUrl(secretConfig.ApiUrl),

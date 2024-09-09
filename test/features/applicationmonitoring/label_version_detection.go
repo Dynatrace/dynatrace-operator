@@ -96,27 +96,26 @@ var (
 // - preserved values of existing variables - build variables exist, feature flag exists, with additional configuration, values of build variables not get overwritten
 // - incorrect custom mapping - invalid name of BUILD VERSION label, reference exists but actual label doesn't exist
 func LabelVersionDetection(t *testing.T) features.Feature {
-	builder := features.New("label version")
-	builder.WithLabel("name", "app-label-version")
+	builder := features.New("label-version")
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	defaultDynakube := *dynakubeComponents.New(
-		dynakubeComponents.WithName("dynakubeComponents-default"),
+		dynakubeComponents.WithName("dynakube-components-default"),
 		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
-		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
 		dynakubeComponents.WithApplicationMonitoringSpec(&dynakube.ApplicationMonitoringSpec{
 			UseCSIDriver: false,
 		}),
+		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
 	)
 
 	labelVersionDynakube := *dynakubeComponents.New(
-		dynakubeComponents.WithName("dynakubeComponents-labels"),
+		dynakubeComponents.WithName("dynakube-components-labels"),
 		dynakubeComponents.WithAnnotations(map[string]string{dynakube.AnnotationFeatureLabelVersionDetection: "true"}),
 		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
-		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
 		dynakubeComponents.WithApplicationMonitoringSpec(&dynakube.ApplicationMonitoringSpec{
 			UseCSIDriver: false,
 		}),
+		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
 	)
 
 	sampleApps := []*sample.App{
