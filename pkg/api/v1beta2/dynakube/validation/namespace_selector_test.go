@@ -3,8 +3,7 @@ package validation
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube" //nolint:staticcheck
-	v1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -59,16 +58,16 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 					},
 				},
 			},
-			&v1beta3.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "conflicting-dk",
 					Namespace: testNamespace,
 				},
-				Spec: v1beta3.DynaKubeSpec{
+				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: v1beta3.OneAgentSpec{
-						ApplicationMonitoring: &v1beta3.ApplicationMonitoringSpec{
-							AppInjectionSpec: v1beta3.AppInjectionSpec{
+					OneAgent: dynakube.OneAgentSpec{
+						ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
+							AppInjectionSpec: dynakube.AppInjectionSpec{
 								NamespaceSelector: metav1.LabelSelector{
 									MatchLabels: dummyLabels,
 								},

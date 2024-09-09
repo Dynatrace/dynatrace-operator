@@ -39,7 +39,6 @@ rules:
       - edgeconnects/status
     verbs:
       - update
-
   - apiGroups:
       - apps
     resources:
@@ -80,7 +79,6 @@ rules:
       - deployments/finalizers
     verbs:
       - update
-
   - apiGroups:
       - ""
     resources:
@@ -100,8 +98,6 @@ rules:
       - get
       - list
       - watch
-      - delete
-      - create
   - apiGroups:
       - ""
     resources:
@@ -118,8 +114,9 @@ rules:
     resources:
       - events
     verbs:
-      - list
       - create
+      - get
+      - list
   - apiGroups:
       - ""
     resources:
@@ -137,15 +134,6 @@ rules:
       - pods/log
     verbs:
       - get
-
-  - apiGroups:
-      - monitoring.coreos.com
-    resources:
-      - servicemonitors
-    verbs:
-      - get
-      - create
-
   - apiGroups:
       - networking.istio.io
     resources:
@@ -157,7 +145,6 @@ rules:
       - create
       - update
       - delete
-
   - apiGroups:
       - coordination.k8s.io
     resources:

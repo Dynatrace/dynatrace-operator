@@ -60,6 +60,7 @@ type DynaKubeValueSource struct { //nolint:revive
 
 // DynaKube is the Schema for the DynaKube API
 // +k8s:openapi-gen=true
+// +kubebuilder:storageversion
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=dynakubes,scope=Namespaced,categories=dynatrace,shortName={dk,dks}

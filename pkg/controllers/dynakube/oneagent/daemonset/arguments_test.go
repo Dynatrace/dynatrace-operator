@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -237,7 +237,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 	// deprecated
 	t.Run(`has proxy arg but feature flag to ignore is enabled`, func(t *testing.T) {
 		dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: testValue}
-		dk.Annotations[dynakube.AnnotationFeatureOneAgentIgnoreProxy] = "true" //nolint:staticcheck
+		dk.Annotations[dynakube.AnnotationFeatureOneAgentIgnoreProxy] = "true"
 		podSpecs, _ = dsBuilder.podSpec()
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 	})
