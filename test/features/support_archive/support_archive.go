@@ -43,8 +43,7 @@ type CustomResources struct {
 // to the standard output is a valid tar.gz package and contains required *operator-version.txt*
 // file.
 func Feature(t *testing.T) features.Feature {
-	builder := features.New("support archive execution")
-	builder.WithLabel("name", "support-archive")
+	builder := features.New("support-archive")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	edgeconnectSecretConfig := tenant.GetEdgeConnectTenantSecret(t)
 

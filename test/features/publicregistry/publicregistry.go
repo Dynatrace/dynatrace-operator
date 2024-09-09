@@ -24,9 +24,7 @@ import (
 //
 // It determines the latest version of each image using the registry.
 func Feature(t *testing.T) features.Feature {
-	builder := features.New("Public registry images")
-	// Register operator install
-	builder.WithLabel("name", "public-registry-images")
+	builder := features.New("public-registry-images")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	oaSpec := cloudnative.DefaultCloudNativeSpec()

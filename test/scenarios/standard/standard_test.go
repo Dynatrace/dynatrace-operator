@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/codemodules"
 	cloudnativeDefault "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/default"
 	disabledAutoInjection "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/disabled_auto_injection"
-	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/network_zones"
 	cloudToClassic "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/switch_modes"
 	"github.com/Dynatrace/dynatrace-operator/test/features/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/features/publicregistry"
@@ -20,14 +19,19 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
+	"github.com/Dynatrace/dynatrace-operator/test/scenarios"
 	"sigs.k8s.io/e2e-framework/pkg/env"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-var testEnv env.Environment
+var (
+	testEnv env.Environment
+	cfg     *envconf.Config
+)
 
 func TestMain(m *testing.M) {
-	cfg := environment.GetStandardKubeClusterEnvConfig()
+	cfg = environment.GetStandardKubeClusterEnvConfig()
 	testEnv = env.NewWithConfig(cfg)
 	testEnv.Setup(
 		helpers.SetScheme,
@@ -42,7 +46,6 @@ func TestMain(m *testing.M) {
 
 func TestStandard(t *testing.T) {
 	feats := []features.Feature{
-		network_zones.Feature(t), // TODO: Fix so it can be enabled during pipeline tests, because if other tests deploy an ActiveGate then the network zone CAN still be present, which will make the test fail
 		activegate.Feature(t, nil),
 		cloudnativeDefault.Feature(t, false),
 		applicationmonitoring.MetadataEnrichment(t),
@@ -60,5 +63,6 @@ func TestStandard(t *testing.T) {
 		classicToCloud.Feature(t),
 		cloudToClassic.Feature(t),
 	}
-	testEnv.Test(t, feats...)
+
+	testEnv.Test(t, scenarios.FilterFeatures(*cfg, feats)...)
 }
