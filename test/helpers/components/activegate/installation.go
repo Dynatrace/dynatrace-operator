@@ -9,7 +9,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/logs"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -30,8 +29,4 @@ func GetActiveGatePodName(dk *dynakube.DynaKube, component string) string {
 
 func ReadActiveGateLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, dk *dynakube.DynaKube, component string) string {
 	return logs.ReadLog(ctx, t, envConfig, dk.Namespace, GetActiveGatePodName(dk, component), consts.ActiveGateContainerName)
-}
-
-func WaitForStatefulSetPodsDeletion(dk *dynakube.DynaKube, component string) features.Func {
-	return pod.WaitForPodsDeletionWithOwner(GetActiveGateStateFulSetName(dk, component), dk.Namespace)
 }

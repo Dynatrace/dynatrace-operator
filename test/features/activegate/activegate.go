@@ -63,11 +63,6 @@ func Feature(t *testing.T, proxySpec *dynakube.DynaKubeProxy) features.Feature {
 		dynakubeComponents.WithProxy(proxySpec))
 
 	builder := features.New("activegate")
-	if proxySpec == nil {
-		builder.WithLabel("name", "activegate-default")
-	} else {
-		builder.WithLabel("name", "activegate-proxy")
-	}
 	proxy.SetupProxyWithTeardown(t, builder, testDynakube)
 	proxy.CutOffDynatraceNamespace(builder, proxySpec)
 	proxy.IsDynatraceNamespaceCutOff(builder, testDynakube)

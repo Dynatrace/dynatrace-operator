@@ -19,19 +19,45 @@ const (
 	cmPublicECR = "public.ecr.aws/dynatrace/dynatrace-codemodules"
 )
 
+var (
+	latestActiveGateURI string
+	latestOneAgentURI   string
+	latestCodeModuleURI string
+)
+
 func GetLatestActiveGateImageURI(t *testing.T) string {
-	return getLatestImageURI(t, agPublicECR)
+	t.Helper()
+
+	if latestActiveGateURI == "" {
+		latestActiveGateURI = getLatestImageURI(t, agPublicECR)
+	}
+
+	return latestActiveGateURI
 }
 
 func GetLatestOneAgentImageURI(t *testing.T) string {
-	return getLatestImageURI(t, oaPublicECR)
+	t.Helper()
+
+	if latestOneAgentURI == "" {
+		latestOneAgentURI = getLatestImageURI(t, oaPublicECR)
+	}
+
+	return latestOneAgentURI
 }
 
 func GetLatestCodeModulesImageURI(t *testing.T) string {
-	return getLatestImageURI(t, cmPublicECR)
+	t.Helper()
+
+	if latestCodeModuleURI == "" {
+		latestCodeModuleURI = getLatestImageURI(t, cmPublicECR)
+	}
+
+	return latestCodeModuleURI
 }
 
 func getLatestImageURI(t *testing.T, repoURI string) string {
+	t.Helper()
+
 	repo, err := name.NewRepository(repoURI)
 	require.NoError(t, err)
 
