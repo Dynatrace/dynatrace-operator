@@ -21,19 +21,16 @@ tests:
             - apiGroups:
                 - ""
               resources:
-                - services
-                - configmaps
-                - secrets
+                - events
               verbs:
-                - get
-                - list
-                - watch
                 - create
-                - update
+                - patch
             - apiGroups:
                 - ""
               resources:
+                - secrets
                 - pods
+                - configmaps
               verbs:
                 - get
                 - list
@@ -47,25 +44,11 @@ tests:
                 - list
                 - watch
             - apiGroups:
-                - ""
-              resources:
-                - events
-              verbs:
-                - list
-                - create
-            - apiGroups:
-                - coordination.k8s.io
-              resources:
-                - leases
-              verbs:
-                - get
-                - update
-                - create
-            - apiGroups:
                 - apps
               resources:
                 - daemonsets
               verbs:
+                - get
                 - list
                 - watch
   - it: Role should exist on openshift
@@ -89,19 +72,16 @@ tests:
             - apiGroups:
                 - ""
               resources:
-                - services
-                - configmaps
-                - secrets
+                - events
               verbs:
-                - get
-                - list
-                - watch
                 - create
-                - update
+                - patch
             - apiGroups:
                 - ""
               resources:
+                - secrets
                 - pods
+                - configmaps
               verbs:
                 - get
                 - list
@@ -115,25 +95,11 @@ tests:
                 - list
                 - watch
             - apiGroups:
-                - ""
-              resources:
-                - events
-              verbs:
-                - list
-                - create
-            - apiGroups:
-                - coordination.k8s.io
-              resources:
-                - leases
-              verbs:
-                - get
-                - update
-                - create
-            - apiGroups:
                 - apps
               resources:
                 - daemonsets
               verbs:
+                - get
                 - list
                 - watch
   - it: RoleBinding should exist
