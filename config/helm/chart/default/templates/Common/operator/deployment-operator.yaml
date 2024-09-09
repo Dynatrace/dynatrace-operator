@@ -69,7 +69,9 @@ spec:
                   fieldPath: metadata.name
           ports:
             - containerPort: 10080
-              name: server-port
+              name: livez
+            - containerPort: 8080
+              name: metrics
           resources:
             requests:
               {{- toYaml (.Values.operator).requests | nindent 14 }}
@@ -81,7 +83,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /livez
-              port: server-port
+              port: livez
               scheme: HTTP
             initialDelaySeconds: 15
             periodSeconds: 10
