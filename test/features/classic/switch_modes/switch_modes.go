@@ -22,8 +22,7 @@ const (
 )
 
 func Feature(t *testing.T) features.Feature {
-	builder := features.New("switch from classic to cloudnative")
-	builder.WithLabel("name", "classic-to-cloudnative")
+	builder := features.New("classic-to-cloudnative")
 
 	// build classic full stack dynakube
 	secretConfig := tenant.GetSingleTenantSecret(t)

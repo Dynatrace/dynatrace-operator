@@ -30,16 +30,6 @@ tests:
             apiGroups:
               - ""
             resources:
-              - events
-            verbs:
-              - create
-              - patch
-      - contains:
-          path: rules
-          content:
-            apiGroups:
-              - ""
-            resources:
               - secrets
             verbs:
               - create

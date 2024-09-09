@@ -48,28 +48,11 @@ rules:
     resourceNames:
       - dynatrace-dynakube-config
       - dynatrace-metadata-enrichment-endpoint
-      - dynatrace-data-ingest-endpoint
-      - dynatrace-internal-proxy
     verbs:
       - get
       - update
       - delete
       - list
-  - apiGroups:
-      - ""
-    resources:
-      - services
-    resourceNames:
-      - kubernetes
-    verbs:
-      - get
-  - apiGroups:
-      - ""
-    resources:
-      - events
-    verbs:
-      - create
-      - patch
   - apiGroups:
       - admissionregistration.k8s.io
     resources:

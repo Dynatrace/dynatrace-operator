@@ -38,8 +38,7 @@ type tenantConfig struct {
 }
 
 func NormalModeFeature(t *testing.T) features.Feature {
-	builder := features.New("install edgeconnect - normal mode")
-	builder.WithLabel("name", "edgeconnect-install")
+	builder := features.New("edgeconnect-install")
 
 	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
 
@@ -72,8 +71,7 @@ func NormalModeFeature(t *testing.T) features.Feature {
 }
 
 func ProvisionerModeFeature(t *testing.T) features.Feature {
-	builder := features.New("install edgeconnect - provisioner mode")
-	builder.WithLabel("name", "edgeconnect-install-provisioner")
+	builder := features.New("edgeconnect-install-provisioner")
 
 	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
 
@@ -109,8 +107,7 @@ func ProvisionerModeFeature(t *testing.T) features.Feature {
 }
 
 func AutomationModeFeature(t *testing.T) features.Feature {
-	builder := features.New("install edgeconnect - k8s automation mode")
-	builder.WithLabel("name", "edgeconnect-install-k8s-automation")
+	builder := features.New("edgeconnect-install-k8s-automation")
 
 	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
 
