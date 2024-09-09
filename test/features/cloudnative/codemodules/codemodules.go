@@ -63,27 +63,28 @@ const (
 // Verification that the storage in the CSI driver directory does not increase when
 // there are multiple tenants and pods which are monitored.
 func InstallFromImage(t *testing.T) features.Feature {
-	builder := features.New("cloudnative codemodules injection from image")
-	builder.WithLabel("name", "cloudnative-codemodules-image")
+	builder := features.New("cloudnative-codemodules-image")
 	storageMap := make(map[string]int)
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
 
 	cloudNativeDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithName("cloudnative-codemodules"),
-		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
-		dynakubeComponents.WithApiUrl(secretConfigs[0].ApiUrl),
 		dynakubeComponents.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
+		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
+		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),
+		dynakubeComponents.WithApiUrl(secretConfigs[0].ApiUrl),
 	)
 
 	appDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithName("app-codemodules"),
-		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
-		dynakubeComponents.WithApiUrl(secretConfigs[1].ApiUrl),
 		dynakubeComponents.WithApplicationMonitoringSpec(&dynakube.ApplicationMonitoringSpec{
 			AppInjectionSpec: *codeModulesAppInjectSpec(t),
 			UseCSIDriver:     true,
 		}),
+		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
+		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),
+		dynakubeComponents.WithApiUrl(secretConfigs[1].ApiUrl),
 	)
 
 	labels := cloudNativeDynakube.OneAgentNamespaceSelector().MatchLabels
@@ -134,8 +135,7 @@ const (
 // the local cluster. Sample application is installed. The test checks if DT_PROXY environment
 // variable is defined in the *dynakubeComponents-oneagent* container and the *application container*.
 func WithProxy(t *testing.T, proxySpec *dynakube.DynaKubeProxy) features.Feature {
-	builder := features.New("codemodules injection with proxy")
-	builder.WithLabel("name", "codemodules-with-proxy")
+	builder := features.New("codemodules-with-proxy")
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
 
@@ -190,8 +190,7 @@ func WithProxy(t *testing.T, proxySpec *dynakube.DynaKubeProxy) features.Feature
 
 func WithProxyCA(t *testing.T, proxySpec *dynakube.DynaKubeProxy) features.Feature {
 	const configMapName = "proxy-ca"
-	builder := features.New("codemodules injection with proxy and custom CA")
-	builder.WithLabel("name", "codemodules-with-proxy-custom-ca")
+	builder := features.New("codemodules-with-proxy-custom-ca")
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
 
@@ -251,8 +250,7 @@ func WithProxyCA(t *testing.T, proxySpec *dynakube.DynaKubeProxy) features.Featu
 }
 
 func WithProxyAndAGCert(t *testing.T, proxySpec *dynakube.DynaKubeProxy) features.Feature {
-	builder := features.New("codemodules injection with proxy and AG certificate")
-	builder.WithLabel("name", "codemodules-with-proxy-and-ag-cert")
+	builder := features.New("codemodules-with-proxy-and-ag-cert")
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
 
@@ -317,8 +315,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *dynakube.DynaKubeProxy) feature
 }
 
 func WithProxyCAAndAGCert(t *testing.T, proxySpec *dynakube.DynaKubeProxy) features.Feature {
-	builder := features.New("codemodules injection with proxy and custom CA and AG certificate")
-	builder.WithLabel("name", "codemodules-with-proxy-custom-ca-ag-cert")
+	builder := features.New("codemodules-with-proxy-custom-ca-ag-cert")
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
 

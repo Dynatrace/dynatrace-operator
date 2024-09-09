@@ -47,8 +47,7 @@ var (
 // checks if init container was attached, run successfully and that the sample
 // pods are up and running.
 func ResilienceFeature(t *testing.T) features.Feature {
-	builder := features.New("cloudnative resilience in case of network problems")
-	builder.WithLabel("name", "cloudnative-csi-resilience")
+	builder := features.New("cloudnative-csi-resilience")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	restrictCSI(builder)
