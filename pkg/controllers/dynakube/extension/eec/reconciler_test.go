@@ -201,7 +201,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		assert.Equal(t, corev1.EnvVar{Name: envHttpsCertPathPem, Value: envEecHttpsCertPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
 		assert.Equal(t, corev1.EnvVar{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envRuntimeConfigMountPath, Value: customConfigMountPath + "/" + runtimeConfigurationFilename})
-		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envCustomCertificateMountPath, Value: eecCustomCertificateMountPath})
+		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envCustomCertificateMountPath, Value: customCertificateMountPath})
 	})
 
 	t.Run("environment variables with custom EEC tls certificate", func(t *testing.T) {
@@ -229,7 +229,7 @@ func TestEnvironmentVariables(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envCustomCertificateMountPath, Value: eecCustomCertificateMountPath})
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envCustomCertificateMountPath, Value: customCertificateMountPath})
 	})
 }
 
@@ -329,7 +329,7 @@ func TestVolumeMounts(t *testing.T) {
 
 		expectedVolumeMount := corev1.VolumeMount{
 			Name:      customCertificateVolumeName,
-			MountPath: eecCustomCertificateMountPath,
+			MountPath: customCertificateMountPath,
 			ReadOnly:  true,
 		}
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)

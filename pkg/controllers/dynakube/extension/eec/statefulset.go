@@ -48,7 +48,7 @@ const (
 	envEecHttpsPrivKeyPathPem   = httpsCertMountPath + "/" + consts.TLSKeyDataName
 	// Volume names and paths
 	eecTokenMountPath                  = "/var/lib/dynatrace/remotepluginmodule/secrets/tokens"
-	eecCustomCertificateMountPath      = "/var/lib/dynatrace/remotepluginmodule/secrets/extensions"
+	customCertificateMountPath         = "/var/lib/dynatrace/remotepluginmodule/secrets/extensions"
 	customCertificateVolumeName        = "extension-custom-certs"
 	logMountPath                       = "/var/lib/dynatrace/remotepluginmodule/log"
 	runtimeVolumeName                  = "agent-runtime"
@@ -224,7 +224,7 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	}
 
 	if dk.Spec.Templates.ExtensionExecutionController.CustomExtensionCertificates != "" {
-		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envCustomCertificateMountPath, Value: eecCustomCertificateMountPath})
+		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envCustomCertificateMountPath, Value: customCertificateMountPath})
 	}
 
 	return containerEnvs
@@ -284,7 +284,7 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	if dk.Spec.Templates.ExtensionExecutionController.CustomExtensionCertificates != "" {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
 			Name:      customCertificateVolumeName,
-			MountPath: eecCustomCertificateMountPath,
+			MountPath: customCertificateMountPath,
 			ReadOnly:  true,
 		})
 	}
