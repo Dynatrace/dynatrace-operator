@@ -150,9 +150,3 @@ func WithApplicationMonitoringSpec(applicationMonitoringSpec *dynakube.Applicati
 		dk.Spec.OneAgent.ApplicationMonitoring = applicationMonitoringSpec
 	}
 }
-
-func WithNetworkZone(networkZone string) Option {
-	return func(dk *dynakube.DynaKube) {
-		dk.Spec.NetworkZone = networkZone
-	}
-}

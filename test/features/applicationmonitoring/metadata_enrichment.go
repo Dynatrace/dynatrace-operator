@@ -43,7 +43,6 @@ type metadata struct {
 // file contains required fields.
 func MetadataEnrichment(t *testing.T) features.Feature {
 	builder := features.New("metadata-enrichment")
-	builder.WithLabel("name", "app-metadata-enrichment")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	testDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),

@@ -152,6 +152,9 @@ func updateContainerInfo(request *dtwebhook.ReinvocationRequest, installContaine
 	pod := request.Pod
 	if installContainer == nil {
 		installContainer = findInstallContainer(pod.Spec.InitContainers)
+		if installContainer == nil {
+			return false
+		}
 	}
 
 	newContainers := request.NewContainers(containerIsInjected)

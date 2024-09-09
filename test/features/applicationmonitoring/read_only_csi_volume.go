@@ -28,8 +28,7 @@ import (
 var readOnlyInjection = map[string]string{dynakube.AnnotationFeatureReadOnlyCsiVolume: "true"}
 
 func ReadOnlyCSIVolume(t *testing.T) features.Feature {
-	builder := features.New("read only csi volume")
-	builder.WithLabel("name", "app-read-only-csi-volume")
+	builder := features.New("app-read-only-csi-volume")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	testDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithAnnotations(readOnlyInjection),
