@@ -20,6 +20,12 @@
 |:-|:-|:-|:-|
 |`hostGroup`|Sets a host group for OneAgent.|-|string|
 
+### .spec.logModule
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`enabled`||-|boolean|
+
 ### .spec.activeGate
 
 |Parameter|Description|Default value|Data type|
@@ -89,6 +95,20 @@
 |`tolerations`|Tolerations to include with the OneAgent DaemonSet. For details, see Taints and Tolerations (<https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/>).|-|array|
 |`version`|The OneAgent version to be used.|-|string|
 
+### .spec.templates.logModuleDaemonSet
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`annotations`|Add custom annotations to the LogModule pods|-|object|
+|`args`|Set additional arguments to the LogModule main container|-|array|
+|`dnsPolicy`|Sets DNS Policy for the LogModule pods|-|string|
+|`labels`|Add custom labels to the LogModule pods|-|object|
+|`nodeSelector`|Node selector to control the selection of nodes for the LogModule pods|-|object|
+|`priorityClassName`|Assign a priority class to the LogModule pods. By default, no class is set|-|string|
+|`resources`|Define resources' requests and limits for all the LogModule pods|-|object|
+|`secCompProfile`|The SecComp Profile that will be configured in order to run in secure computing mode for the LogModule pods|-|string|
+|`tolerations`|Set tolerations for the LogModule pods|-|array|
+
 ### .spec.oneAgent.cloudNativeFullStack
 
 |Parameter|Description|Default value|Data type|
@@ -131,6 +151,13 @@
 |`tlsRefName`||-|string|
 |`tolerations`|Set tolerations for the OtelCollector pods|-|array|
 |`topologySpreadConstraints`|Adds TopologySpreadConstraints for the OtelCollector pods|-|array|
+
+### .spec.templates.logModuleDaemonSet.imageRef
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`repository`|Custom image repository|-|string|
+|`tag`|Indicates a tag of the image to use|-|string|
 
 ### .spec.templates.extensionExecutionController
 
