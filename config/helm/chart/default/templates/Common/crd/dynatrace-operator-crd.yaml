@@ -8346,7 +8346,6 @@ spec:
             required:
             - apiServer
             - oauth
-            - serviceAccountName
             type: object
           status:
             description: EdgeConnectStatus defines the observed state of EdgeConnect.
