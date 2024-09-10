@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	helmRepoUrl = "https://raw.githubusercontent.com/Dynatrace/dynatrace-operator/main/config/helm/repos/stable"
+	helmRegistryUrl = "oci://public.ecr.aws/dynatrace/dynatrace-operator"
 )
 
 func InstallViaMake(withCSI bool) env.Func {
@@ -91,23 +91,15 @@ func execMakeCommand(rootDir, makeTarget string, envVariables ...string) error {
 
 func installViaHelm(releaseTag string, withCsi bool, namespace string) error {
 	manager := helm.New("''")
-	err := manager.RunRepo(helm.WithArgs("add", "dynatrace", helmRepoUrl))
-	if err != nil {
-		return err
-	}
-
-	err = manager.RunRepo(helm.WithArgs("install"))
-	if err != nil {
-		return err
-	}
 
 	_platform, err := platform.NewResolver().GetPlatform()
 	if err != nil {
 		return err
 	}
 
-	return manager.RunUpgrade(helm.WithName("dynatrace-operator"), helm.WithNamespace(namespace),
-		helm.WithReleaseName("dynatrace/dynatrace-operator"),
+	return manager.RunUpgrade(helm.WithNamespace(namespace),
+		helm.WithReleaseName("dynatrace-operator"),
+		helm.WithArgs(helmRegistryUrl),
 		helm.WithVersion(releaseTag),
 		helm.WithArgs("--create-namespace"),
 		helm.WithArgs("--install"),
