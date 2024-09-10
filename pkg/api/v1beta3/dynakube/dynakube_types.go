@@ -172,7 +172,7 @@ type TemplatesSpec struct {
 	ExtensionExecutionController ExtensionExecutionControllerSpec `json:"extensionExecutionController,omitempty"`
 	// Low-level configuration options for the LogModule feature.
 	// +kubebuilder:validation:Optional
-	LogModuleDaemonSet LogModuleDaemonSetSpec `json:"logModuleDaemonSet,omitempty"`
+	LogModule LogModuleTemplateSpec `json:"logModule,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

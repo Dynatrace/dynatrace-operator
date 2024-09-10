@@ -6651,7 +6651,7 @@ spec:
                           type: object
                         type: array
                     type: object
-                  logModuleDaemonSet:
+                  logModule:
                     description: Low-level configuration options for the LogModule
                       feature.
                     properties:

@@ -8,7 +8,7 @@ type LogModuleSpec struct {
 	Enabled bool `json:"enabled"`
 }
 
-type LogModuleDaemonSetSpec struct {
+type LogModuleTemplateSpec struct {
 	// Add custom annotations to the LogModule pods
 	// +kubebuilder:validation:Optional
 	Annotations map[string]string `json:"annotations,omitempty"`
