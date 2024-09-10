@@ -22,16 +22,8 @@ spec:
     # OAuth client has to be created in Dynatrace account management
     # https://docs.dynatrace.com/docs/shortlink/account-api-authentication#create-an-oauth2-client
     #
-    # required scopes:
-    # - app-engine:edge-connects:connect
-    # - app-engine:edge-connects:read
-    # - app-engine:edge-connects:write
-    # - app-engine:edge-connects:delete
-    # - oauth2:client:manage
-    # - settings:objects:read
-    # - settings:objects:write
-    # - settings:schemas:read
-    # - app-settings:objects:read
+    # Please consult https://docs.dynatrace.com/docs/setup-and-configuration/setup-on-k8s/guides/operation/edgeconnect/kubernetes-automation/edge-connect-kubernetes-automation-operator-supported-setup
+    # for the scopes required specific to EdgeConnect with Kubernetes Automation enabled
     clientSecret: provisioner-automation-oauth-client-secret
     endpoint: https://sso-dev.dynatracelabs.com/sso/oauth2/token
     resource: urn:dtaccount:cd99bbd6-3b73-467e-b1fb-c09b9db9e7cc
