@@ -303,7 +303,7 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 		return err
 	}
 
-	ts := uint64(cachedNode.LastSeen.Add(-10*time.Minute).UnixNano()) / uint64(time.Millisecond)
+	ts := uint64(cachedNode.LastSeen.Add(-10*time.Minute).UnixNano()) / uint64(time.Millisecond) //nolint:gosec
 
 	return dynatraceClient.SendEvent(ctx, &dtclient.EventData{
 		EventType:     dtclient.MarkedForTerminationEvent,
