@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/functional"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
@@ -43,8 +43,7 @@ type CustomResources struct {
 // to the standard output is a valid tar.gz package and contains required *operator-version.txt*
 // file.
 func Feature(t *testing.T) features.Feature {
-	builder := features.New("support archive execution")
-	builder.WithLabel("name", "support-archive")
+	builder := features.New("support-archive")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	edgeconnectSecretConfig := tenant.GetEdgeConnectTenantSecret(t)
 

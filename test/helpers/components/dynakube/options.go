@@ -3,7 +3,7 @@
 package dynakube
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -148,11 +148,5 @@ func WithCloudNativeSpec(cloudNativeFullStackSpec *dynakube.CloudNativeFullStack
 func WithApplicationMonitoringSpec(applicationMonitoringSpec *dynakube.ApplicationMonitoringSpec) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.OneAgent.ApplicationMonitoring = applicationMonitoringSpec
-	}
-}
-
-func WithNetworkZone(networkZone string) Option {
-	return func(dk *dynakube.DynaKube) {
-		dk.Spec.NetworkZone = networkZone
 	}
 }

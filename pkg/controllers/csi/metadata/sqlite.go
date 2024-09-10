@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
 )

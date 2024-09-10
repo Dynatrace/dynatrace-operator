@@ -106,6 +106,8 @@ spec:
               containerPort: 8443
             - name: livez
               containerPort: 10080
+            - name: metrics
+              containerPort: 8080
           resources:
             requests:
               {{- toYaml (.Values.webhook).requests | nindent 14 }}

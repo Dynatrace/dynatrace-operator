@@ -5,7 +5,7 @@ package disabled_auto_injection
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
@@ -19,8 +19,7 @@ import (
 )
 
 func Feature(t *testing.T) features.Feature {
-	builder := features.New("cloudnative disabled auto injection")
-	builder.WithLabel("name", "cloudnative-disabled-auto-inject")
+	builder := features.New("cloudnative-disabled-auto-inject")
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	testDynakube := *dynakubeComponents.New(

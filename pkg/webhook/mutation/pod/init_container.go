@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
@@ -152,6 +152,9 @@ func updateContainerInfo(request *dtwebhook.ReinvocationRequest, installContaine
 	pod := request.Pod
 	if installContainer == nil {
 		installContainer = findInstallContainer(pod.Spec.InitContainers)
+		if installContainer == nil {
+			return false
+		}
 	}
 
 	newContainers := request.NewContainers(containerIsInjected)

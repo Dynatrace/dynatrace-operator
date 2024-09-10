@@ -159,7 +159,9 @@ func (wh *webhook) handlePodMutation(ctx context.Context, mutationRequest *dtweb
 
 	mutationRequest.InstallContainer = createInstallInitContainerBase(wh.webhookImage, wh.clusterID, mutationRequest.Pod, mutationRequest.DynaKube)
 
-	isMutated := updateContainerInfo(mutationRequest.ToReinvocationRequest(), mutationRequest.InstallContainer)
+	_ = updateContainerInfo(mutationRequest.ToReinvocationRequest(), mutationRequest.InstallContainer)
+
+	var isMutated bool
 
 	for _, mutator := range wh.mutators {
 		if !mutator.Enabled(mutationRequest.BaseRequest) {
@@ -191,7 +193,11 @@ func (wh *webhook) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequ
 
 	reinvocationRequest := mutationRequest.ToReinvocationRequest()
 
-	updateContainerInfo(reinvocationRequest, nil)
+	isMutated := updateContainerInfo(reinvocationRequest, nil)
+
+	if !isMutated { // == no new containers were detected, we only mutate new containers during reinvoke
+		return false
+	}
 
 	for _, mutator := range wh.mutators {
 		if mutator.Enabled(mutationRequest.BaseRequest) {

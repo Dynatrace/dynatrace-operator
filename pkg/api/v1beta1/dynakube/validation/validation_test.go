@@ -7,7 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube" //nolint:staticcheck
-	v1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	v1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -138,16 +138,16 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 					},
 				},
 			},
-			&v1beta3.DynaKube{
+			&v1beta2.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "conflict1",
 					Namespace: testNamespace,
 				},
-				Spec: v1beta3.DynaKubeSpec{
+				Spec: v1beta2.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: v1beta3.OneAgentSpec{
-						ApplicationMonitoring: &v1beta3.ApplicationMonitoringSpec{
-							AppInjectionSpec: v1beta3.AppInjectionSpec{
+					OneAgent: v1beta2.OneAgentSpec{
+						ApplicationMonitoring: &v1beta2.ApplicationMonitoringSpec{
+							AppInjectionSpec: v1beta2.AppInjectionSpec{
 								NamespaceSelector: metav1.LabelSelector{
 									MatchLabels: dummyLabels,
 								},

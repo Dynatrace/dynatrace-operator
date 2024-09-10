@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	maputil "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -43,7 +43,6 @@ type metadata struct {
 // file contains required fields.
 func MetadataEnrichment(t *testing.T) features.Feature {
 	builder := features.New("metadata-enrichment")
-	builder.WithLabel("name", "app-metadata-enrichment")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	testDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),

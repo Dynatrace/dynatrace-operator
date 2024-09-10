@@ -3,7 +3,7 @@ package validation
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube" //nolint:staticcheck
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 )
 
 func TestMissingCSIDaemonSet(t *testing.T) {

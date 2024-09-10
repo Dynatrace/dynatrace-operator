@@ -5,7 +5,7 @@ package switch_modes
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
@@ -22,8 +22,7 @@ const (
 )
 
 func Feature(t *testing.T) features.Feature {
-	builder := features.New("switch from classic to cloudnative")
-	builder.WithLabel("name", "classic-to-cloudnative")
+	builder := features.New("classic-to-cloudnative")
 
 	// build classic full stack dynakube
 	secretConfig := tenant.GetSingleTenantSecret(t)

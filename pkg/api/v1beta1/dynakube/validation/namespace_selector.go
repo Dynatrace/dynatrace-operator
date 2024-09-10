@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube" //nolint:staticcheck
-	v1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	v1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -23,7 +23,7 @@ func conflictingNamespaceSelector(ctx context.Context, dv *Validator, dk *dynaku
 		return ""
 	}
 
-	dst := &v1beta3.DynaKube{}
+	dst := &v1beta2.DynaKube{}
 
 	err := dk.ConvertTo(dst)
 	if err != nil {

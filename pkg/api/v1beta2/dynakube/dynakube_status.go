@@ -2,6 +2,8 @@ package dynakube
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
@@ -52,6 +54,15 @@ type DynaKubeStatus struct { //nolint:revive
 type DynatraceApiStatus struct {
 	// Time of the last token request
 	LastTokenScopeRequest metav1.Time `json:"lastTokenScopeRequest,omitempty"`
+}
+
+func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time, timeout time.Duration) string {
+	remaining := timeout - time.Since(lastRequestTimestamp.Time)
+
+	return fmt.Sprintf("skipping %s, last request was made less than %d minutes ago, %d minutes remaining until next request",
+		functionName,
+		int(timeout.Minutes()),
+		int(remaining.Minutes()))
 }
 
 type ConnectionInfoStatus struct {
@@ -137,7 +148,7 @@ const (
 	EnrichmentAnnotationRule EnrichmentRuleType = "ANNOTATION"
 )
 
-const MetadataPrefix string = "metadata.dynatrace.com"
+const MetadataPrefix string = "metadata.dynatrace.com/"
 
 type MetadataEnrichmentStatus struct {
 	Rules []EnrichmentRule `json:"rules,omitempty"`
@@ -151,7 +162,7 @@ type EnrichmentRule struct {
 }
 
 func (rule EnrichmentRule) ToAnnotationKey() string {
-	return MetadataPrefix + "/" + rule.Target
+	return MetadataPrefix + rule.Target
 }
 
 // SetPhase sets the status phase on the DynaKube object.

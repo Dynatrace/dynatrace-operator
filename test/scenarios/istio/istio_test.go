@@ -15,14 +15,19 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
+	"github.com/Dynatrace/dynatrace-operator/test/scenarios"
 	"sigs.k8s.io/e2e-framework/pkg/env"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-var testEnv env.Environment
+var (
+	testEnv env.Environment
+	cfg     *envconf.Config
+)
 
 func TestMain(m *testing.M) {
-	cfg := environment.GetStandardKubeClusterEnvConfig()
+	cfg = environment.GetStandardKubeClusterEnvConfig()
 	testEnv = env.NewWithConfig(cfg)
 
 	nsWithIstio := *namespace.New(operator.DefaultNamespace, namespace.WithIstio())
@@ -52,5 +57,6 @@ func TestIstio(t *testing.T) {
 		codemodules.WithProxyAndAGCert(t, proxy.ProxySpec),
 		codemodules.WithProxyCAAndAGCert(t, proxy.HttpsProxySpec),
 	}
-	testEnv.Test(t, feats...)
+
+	testEnv.Test(t, scenarios.FilterFeatures(*cfg, feats)...)
 }

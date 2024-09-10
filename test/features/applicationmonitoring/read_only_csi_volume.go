@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/codemodules"
@@ -28,8 +28,7 @@ import (
 var readOnlyInjection = map[string]string{dynakube.AnnotationFeatureReadOnlyCsiVolume: "true"}
 
 func ReadOnlyCSIVolume(t *testing.T) features.Feature {
-	builder := features.New("read only csi volume")
-	builder.WithLabel("name", "app-read-only-csi-volume")
+	builder := features.New("app-read-only-csi-volume")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	testDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithAnnotations(readOnlyInjection),
