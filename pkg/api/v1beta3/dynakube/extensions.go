@@ -50,6 +50,10 @@ type ExtensionExecutionControllerSpec struct {
 	// +kubebuilder:validation:Optional
 	CustomConfig string `json:"customConfig,omitempty"`
 
+	// Defines name of Secret containing certificates for custom extensions signature validation
+	// +kubebuilder:validation:Optional
+	CustomExtensionCertificates string `json:"customExtensionCertificates,omitempty"`
+
 	// Define resources' requests and limits for single ExtensionExecutionController pod
 	// +kubebuilder:validation:Optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`

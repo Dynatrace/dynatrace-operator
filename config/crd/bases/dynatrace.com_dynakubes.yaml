@@ -6194,6 +6194,10 @@ spec:
                         description: Defines name of ConfigMap containing custom configuration
                           file
                         type: string
+                      customExtensionCertificates:
+                        description: Defines name of Secret containing certificates
+                          for custom extensions signature validation
+                        type: string
                       imageRef:
                         description: Overrides the default image
                         properties:
