@@ -103,6 +103,14 @@ jobs:
         id: deadcode
         run: |
           make go/deadcode
+      - name: Deepcopy generation
+        id: deepcopy
+        run: |
+          make manifests/deepcopy
+      - name: Check if deepcopy generation changed files
+        id: check-deepcopy
+        run: |
+          git diff --exit-code
 
   security:
     name: Code security scanning alerts
