@@ -187,9 +187,7 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		envs = append(envs, corev1.EnvVar{Name: envTrustedCAs, Value: trustedCAVolumePath})
 	}
 
-	if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
-		envs = append(envs, corev1.EnvVar{Name: envEECcontrollerTls, Value: customEecTlsCertificateFullPath})
-	}
+	envs = append(envs, corev1.EnvVar{Name: envEECcontrollerTls, Value: customEecTlsCertificateFullPath})
 
 	return envs
 }
@@ -224,6 +222,12 @@ func setImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) func(o 
 }
 
 func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
+	tlsSecretName := dk.Name + consts.ExtensionsTlsSecretSuffix
+
+	if tlsSecretName != "" {
+		tlsSecretName = dk.Spec.Templates.ExtensionExecutionController.TlsRefName
+	}
+
 	return func(o *appsv1.StatefulSet) {
 		o.Spec.Template.Spec.Volumes = []corev1.Volume{
 			{
@@ -261,22 +265,20 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 			})
 		}
 
-		if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
-			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
-				Name: consts.ExtensionsCustomTlsCertificate,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Spec.Templates.ExtensionExecutionController.TlsRefName,
-						Items: []corev1.KeyToPath{
-							{
-								Key:  consts.TLSCrtDataName,
-								Path: consts.TLSCrtDataName,
-							},
+		o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
+			Name: tlsSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: tlsSecretName,
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSCrtDataName,
+							Path: consts.TLSCrtDataName,
 						},
 					},
 				},
-			})
-		}
+			},
+		})
 	}
 }
 
@@ -293,13 +295,11 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		})
 	}
 
-	if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
-		vm = append(vm, corev1.VolumeMount{
-			Name:      consts.ExtensionsCustomTlsCertificate,
-			MountPath: customEecTlsCertificatePath,
-			ReadOnly:  true,
-		})
-	}
+	vm = append(vm, corev1.VolumeMount{
+		Name:      dk.Name + consts.ExtensionsTlsSecretSuffix,
+		MountPath: customEecTlsCertificatePath,
+		ReadOnly:  true,
+	})
 
 	return vm
 }

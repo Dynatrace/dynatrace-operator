@@ -3,12 +3,18 @@ package eec
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -56,6 +62,11 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
+	err := r.reconcileTlsSecret(ctx)
+	if err != nil {
+		return err
+	}
+
 	if r.dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID == "" {
 		conditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, dynakube.ExtensionsExecutionControllerStatefulsetName)
 
@@ -69,4 +80,58 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	return r.createOrUpdateStatefulset(ctx)
+}
+
+func (r *reconciler) reconcileTlsSecret(ctx context.Context) error {
+	query := k8ssecret.Query(r.client, r.client, log)
+
+	secret, err := query.Get(ctx, types.NamespacedName{
+		Name:      r.getSelfSignedTlsSecretName(),
+		Namespace: r.dk.Namespace,
+	})
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return err
+	}
+
+	if r.dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
+		if secret != nil {
+			return query.Delete(ctx, secret)
+		}
+	} else {
+		if k8serrors.IsNotFound(err) {
+			// TODO: domain/altNames/ip ?
+			cert, err := certificates.New("", []string{}, "")
+			if err != nil {
+				return err
+			}
+
+			err = cert.SelfSign()
+			if err != nil {
+				return err
+			}
+
+			certPem, pkPem := cert.ToPEM()
+
+			coreLabels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.ExtensionComponentLabel)
+			secretData := map[string][]byte{consts.TLSCrtDataName: certPem, consts.TLSKeyDataName: pkPem}
+
+			secret, err := k8ssecret.Build(r.dk, r.getSelfSignedTlsSecretName(), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
+			if err != nil {
+				return err
+			}
+
+			secret.Type = corev1.SecretTypeTLS
+
+			_, err = query.CreateOrUpdate(ctx, secret)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (r *reconciler) getSelfSignedTlsSecretName() string {
+	return r.dk.Name + consts.ExtensionsTlsSecretSuffix
 }

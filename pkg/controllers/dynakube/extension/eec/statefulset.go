@@ -17,7 +17,7 @@ import (
 	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -63,7 +63,6 @@ const (
 	activeGateTrustedCertSecretKeyPath = "server.crt"
 	httpsCertVolumeName                = "https-certs"
 	httpsCertMountPath                 = "/var/lib/dynatrace/remotepluginmodule/secrets/https"
-	extensionsControllerTlsSecretName  = "extensions-controller-tls"
 	runtimeConfigurationFilename       = "runtimeConfiguration"
 
 	// misc
@@ -295,7 +294,7 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 
 func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	return func(o *appsv1.StatefulSet) {
-		tlsSecretName := extensionsControllerTlsSecretName
+		tlsSecretName := dk.Name + consts.ExtensionsTlsSecretSuffix
 
 		if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
 			tlsSecretName = dk.Spec.Templates.ExtensionExecutionController.TlsRefName
