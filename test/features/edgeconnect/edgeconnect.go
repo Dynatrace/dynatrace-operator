@@ -5,7 +5,9 @@ package edgeconnect
 import (
 	"fmt"
 	"testing"
+	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	edgeconnectv1alpha2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
 	controller "github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect"
@@ -19,6 +21,9 @@ import (
 	"golang.org/x/net/context"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/e2e-framework/klient/k8s"
+	"sigs.k8s.io/e2e-framework/klient/wait"
+	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -38,8 +43,7 @@ type tenantConfig struct {
 }
 
 func NormalModeFeature(t *testing.T) features.Feature {
-	builder := features.New("install edgeconnect - normal mode")
-	builder.WithLabel("name", "edgeconnect-install")
+	builder := features.New("edgeconnect-install")
 
 	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
 
@@ -72,8 +76,7 @@ func NormalModeFeature(t *testing.T) features.Feature {
 }
 
 func ProvisionerModeFeature(t *testing.T) features.Feature {
-	builder := features.New("install edgeconnect - provisioner mode")
-	builder.WithLabel("name", "edgeconnect-install-provisioner")
+	builder := features.New("edgeconnect-install-provisioner")
 
 	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
 
@@ -109,8 +112,7 @@ func ProvisionerModeFeature(t *testing.T) features.Feature {
 }
 
 func AutomationModeFeature(t *testing.T) features.Feature {
-	builder := features.New("install edgeconnect - k8s automation mode")
-	builder.WithLabel("name", "edgeconnect-install-k8s-automation")
+	builder := features.New("edgeconnect-install-k8s-automation")
 
 	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
 
@@ -354,6 +356,15 @@ func updateHostPatterns(testEdgeConnect *edgeconnectv1alpha2.EdgeConnect) featur
 
 			return ctx
 		}
+		const timeout = 2 * time.Minute
+		resources := envConfig.Client().Resources()
+		err = wait.For(conditions.New(resources).ResourceMatch(testEdgeConnect, func(object k8s.Object) bool {
+			ec, isEC := object.(*edgeconnectv1alpha2.EdgeConnect)
+
+			return isEC && ec.Status.DeploymentPhase == status.Running
+		}), wait.WithTimeout(timeout))
+
+		require.NoError(t, err)
 
 		return ctx
 	}

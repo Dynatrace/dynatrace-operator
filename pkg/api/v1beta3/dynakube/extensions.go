@@ -10,14 +10,6 @@ type ExtensionsSpec struct {
 	Prometheus PrometheusSpec `json:"prometheus,omitempty"`
 }
 
-type TemplatesSpec struct {
-
-	// +kubebuilder:validation:Optional
-	OpenTelemetryCollector OpenTelemetryCollectorSpec `json:"openTelemetryCollector,omitempty"`
-	// +kubebuilder:validation:Optional
-	ExtensionExecutionController ExtensionExecutionControllerSpec `json:"extensionExecutionController,omitempty"`
-}
-
 type PrometheusSpec struct {
 	Enabled bool `json:"enabled"`
 }
@@ -49,6 +41,10 @@ type ExtensionExecutionControllerSpec struct {
 	// Defines name of ConfigMap containing custom configuration file
 	// +kubebuilder:validation:Optional
 	CustomConfig string `json:"customConfig,omitempty"`
+
+	// Defines name of Secret containing certificates for custom extensions signature validation
+	// +kubebuilder:validation:Optional
+	CustomExtensionCertificates string `json:"customExtensionCertificates,omitempty"`
 
 	// Define resources' requests and limits for single ExtensionExecutionController pod
 	// +kubebuilder:validation:Optional

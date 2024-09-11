@@ -17,6 +17,7 @@ import (
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmodule"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -339,6 +340,9 @@ func TestReconcileComponents(t *testing.T) {
 		mockInjectionReconciler := injectionmock.NewReconciler(t)
 		mockInjectionReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
+		mockLogModuleReconciler := controllermock.NewReconciler(t)
+		mockLogModuleReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
+
 		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
@@ -347,6 +351,7 @@ func TestReconcileComponents(t *testing.T) {
 			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
 			injectionReconcilerBuilder:  createInjectionReconcilerBuilder(mockInjectionReconciler),
 			oneAgentReconcilerBuilder:   createOneAgentReconcilerBuilder(mockOneAgentReconciler),
+			logModuleReconcilerBuilder:  createLogModuleReconcilerBuilder(mockLogModuleReconciler),
 		}
 		mockedDtc := dtclientmock.NewClient(t)
 
@@ -354,7 +359,7 @@ func TestReconcileComponents(t *testing.T) {
 
 		require.Error(t, err)
 		// goerrors.Join concats errors with \n
-		assert.Len(t, strings.Split(err.Error(), "\n"), 3) // ActiveGate, OneAgent and Injection reconcilers
+		assert.Len(t, strings.Split(err.Error(), "\n"), 4) // ActiveGate, OneAgent LogModule, and Injection reconcilers
 	})
 
 	t.Run("exit early in case of no oneagent conncection info", func(t *testing.T) {
@@ -392,6 +397,12 @@ func createActivegateReconcilerBuilder(reconciler controllers.Reconciler) active
 
 func createOneAgentReconcilerBuilder(reconciler controllers.Reconciler) oneagent.ReconcilerBuilder {
 	return func(_ client.Client, _ client.Reader, _ dtclient.Client, _ *dynakube.DynaKube, _ token.Tokens, _ string) controllers.Reconciler {
+		return reconciler
+	}
+}
+
+func createLogModuleReconcilerBuilder(reconciler controllers.Reconciler) logmodule.ReconcilerBuilder {
+	return func(_ client.Client, _ client.Reader, _ dtclient.Client, _ *dynakube.DynaKube) controllers.Reconciler {
 		return reconciler
 	}
 }

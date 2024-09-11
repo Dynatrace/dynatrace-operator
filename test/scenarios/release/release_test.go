@@ -9,16 +9,21 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
+	"github.com/Dynatrace/dynatrace-operator/test/scenarios"
 	"sigs.k8s.io/e2e-framework/pkg/env"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-var testEnv env.Environment
+var (
+	testEnv env.Environment
+	cfg     *envconf.Config
+)
 
-const releaseTag = "1.1.0"
+const releaseTag = "1.2.2"
 
 func TestMain(m *testing.M) {
-	cfg := environment.GetStandardKubeClusterEnvConfig()
+	cfg = environment.GetStandardKubeClusterEnvConfig()
 	testEnv = env.NewWithConfig(cfg)
 	testEnv.Setup(
 		helpers.SetScheme,
@@ -35,5 +40,6 @@ func TestRelease(t *testing.T) {
 	feats := []features.Feature{
 		upgrade.Feature(t),
 	}
-	testEnv.Test(t, feats...)
+
+	testEnv.Test(t, scenarios.FilterFeatures(*cfg, feats)...)
 }

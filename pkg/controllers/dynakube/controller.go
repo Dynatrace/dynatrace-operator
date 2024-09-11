@@ -18,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmodule"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -75,6 +76,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, co
 		injectionReconcilerBuilder:          injection.NewReconciler,
 		istioReconcilerBuilder:              istio.NewReconciler,
 		extensionBuilder:                    extension.NewReconciler,
+		logModuleReconcilerBuilder:          logmodule.NewReconciler,
 	}
 }
 
@@ -108,6 +110,7 @@ type Controller struct {
 	injectionReconcilerBuilder          injection.ReconcilerBuilder
 	istioReconcilerBuilder              istio.ReconcilerBuilder
 	extensionBuilder                    extension.ReconcilerBuilder
+	logModuleReconcilerBuilder          logmodule.ReconcilerBuilder
 
 	tokens            token.Tokens
 	operatorNamespace string
@@ -342,6 +345,17 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		}
 
 		log.Info("could not reconcile app injection")
+
+		componentErrors = append(componentErrors, err)
+	}
+
+	log.Info("start reconciling LogModule")
+
+	logModuleReconciler := controller.logModuleReconcilerBuilder(controller.client, controller.apiReader, dynatraceClient, dk)
+
+	err = logModuleReconciler.Reconcile(ctx)
+	if err != nil {
+		log.Info("could not reconcile LogModule")
 
 		componentErrors = append(componentErrors, err)
 	}

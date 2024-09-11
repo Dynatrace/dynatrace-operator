@@ -41,10 +41,6 @@ const (
 	defaultUpdateInterval = 30 * time.Minute
 
 	finalizerName = "server"
-
-	defaultNamespaceName    = "default"
-	kubernetesServiceName   = "kubernetes"
-	kubeSystemNamespaceName = "kube-system"
 )
 
 var (

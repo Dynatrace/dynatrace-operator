@@ -45,6 +45,8 @@ const (
 
 	testClusterIP = "1.2.3.4"
 	testUID       = "1-2-3-4"
+
+	kubeSystemNamespaceName = "kube-system"
 )
 
 var (
@@ -89,7 +91,6 @@ func TestReconcile(t *testing.T) {
 		}
 		controller := createFakeClientAndReconciler(t, ec,
 			createClientSecret(testOauthClientSecret, ec.Namespace),
-			createKubernetesService(),
 			createKubeSystemNamespace(),
 		)
 
@@ -127,7 +128,6 @@ func TestReconcile(t *testing.T) {
 
 		controller := createFakeClientAndReconciler(t, ec,
 			createClientSecret(testOauthClientSecret, ec.Namespace),
-			createKubernetesService(),
 			createKubeSystemNamespace(),
 		)
 		controller.timeProvider.Freeze()
@@ -162,7 +162,6 @@ func TestReconcile(t *testing.T) {
 		}
 		controller := createFakeClientAndReconciler(t, ec,
 			createClientSecret(testOauthClientSecret, ec.Namespace),
-			createKubernetesService(),
 			createKubeSystemNamespace(),
 		)
 
@@ -212,7 +211,7 @@ func TestReconcile(t *testing.T) {
 		customCA := newConfigMap(testCAConfigMapName, ec.Namespace, data)
 		clientSecret := createClientSecret(testOauthClientSecret, ec.Namespace)
 
-		controller := createFakeClientAndReconciler(t, ec, clientSecret, customCA, createKubernetesService(), createKubeSystemNamespace())
+		controller := createFakeClientAndReconciler(t, ec, clientSecret, customCA, createKubeSystemNamespace())
 
 		_, err := controller.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -237,7 +236,6 @@ func TestReconcileProvisionerCreate(t *testing.T) {
 			ec,
 			mockNewEdgeConnectClientCreate(edgeConnectClient, testHostPatterns),
 			createOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace),
-			createKubernetesService(),
 			createKubeSystemNamespace(),
 		)
 
@@ -300,7 +298,6 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 			ec,
 			mockNewEdgeConnectClientRecreate(edgeConnectClient, testCreatedId),
 			createOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace),
-			createKubernetesService(),
 			createKubeSystemNamespace(),
 		)
 
@@ -361,7 +358,6 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 			mockNewEdgeConnectClientRecreate(edgeConnectClient, testRecreatedInvalidId),
 			createOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace),
 			createClientSecret(ec.ClientSecretName(), ec.Namespace),
-			createKubernetesService(),
 			createKubeSystemNamespace(),
 		)
 
@@ -510,7 +506,6 @@ func TestReconcileProvisionerUpdate(t *testing.T) {
 			mockNewEdgeConnectClientUpdate(edgeConnectClient, testHostPatterns, testHostPatterns2),
 			createOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace),
 			createClientSecret(ec.ClientSecretName(), ec.Namespace),
-			createKubernetesService(),
 			createKubeSystemNamespace(),
 		)
 
@@ -545,7 +540,6 @@ func TestReconcileProvisionerWithK8sAutomationsCreate(t *testing.T) {
 			ec,
 			mockNewEdgeConnectClientCreate(edgeConnectClient, testHostPatterns),
 			createOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace),
-			createKubernetesService(),
 			createKubeSystemNamespace(),
 		)
 
@@ -608,7 +602,6 @@ func TestReconcileProvisionerWithK8sAutomationsUpdate(t *testing.T) {
 			mockNewEdgeConnectClientUpdate(edgeConnectClient, testHostPatterns, testHostPatterns2),
 			createOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace),
 			createClientSecret(ec.ClientSecretName(), ec.Namespace),
-			createKubernetesService(),
 			createKubeSystemNamespace(),
 		)
 
@@ -890,18 +883,6 @@ func createEdgeConnectProvisionerCR(finalizers []string, deletionTimestamp *meta
 			KubernetesAutomation: &edgeconnect.KubernetesAutomationSpec{Enabled: true},
 		},
 		Status: edgeconnect.EdgeConnectStatus{KubeSystemUID: testUID},
-	}
-}
-
-func createKubernetesService() *corev1.Service {
-	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      kubernetesServiceName,
-			Namespace: defaultNamespaceName,
-		},
-		Spec: corev1.ServiceSpec{
-			ClusterIP: testClusterIP,
-		},
 	}
 }
 
