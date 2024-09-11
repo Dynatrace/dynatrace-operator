@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmodule"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -417,6 +418,7 @@ func createFakeClientAndReconciler(t *testing.T, mockClient dtclient.Client, dk 
 		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
 		injectionReconcilerBuilder:          injection.NewReconciler,
 		oneAgentReconcilerBuilder:           oneagent.NewReconciler,
+		logModuleReconcilerBuilder:          logmodule.NewReconciler,
 		clusterID:                           testUID,
 	}
 
