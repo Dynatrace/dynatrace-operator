@@ -1,24 +1,25 @@
-import yaml
 import sys
 
+from ruamel.yaml import YAML
+
 # version file contains a list of strings
-versionFile = sys.argv[1]
-renovateFile = sys.argv[2]
+version_file = sys.argv[1]
+ondemand_file = sys.argv[2]
 
+version = ""
 # read versions to list
-versions = ["$default"]
-with open(versionFile, "r") as f:
-    versions += f.readlines()
-    versions = [x.strip() for x in versions]
-    versions = [x.replace("origin/", "") for x in versions]
+with open(version_file, "r") as f:
+    version = f.readline().strip().replace("origin/", "")
 
-# read renovate file to dict and update
-with open(renovateFile, "r") as f:
-    data = json5.load(f)
+yaml = YAML()
 
-    data["baseBranches"] = versions
-    data["packageRules"][0]["matchBaseBranches"] = versions
+# read ondemand_file file to dict and update
+with open(ondemand_file, "r") as f:
+    data = yaml.load(f)
+    data["on"]["workflow_dispatch"]["inputs"]["target"]["default"] = version
 
-# write updated renovate file
-with open(renovateFile, "w") as output:
-    json5.dump(data, output, indent=2)
+print(data)
+# write ondemand_file renovate file
+with open(ondemand_file, "wb") as output:
+    yaml.indent(mapping=2, sequence=4, offset=2)
+    yaml.dump(data, output)
