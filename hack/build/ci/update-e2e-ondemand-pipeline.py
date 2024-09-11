@@ -12,6 +12,7 @@ with open(version_file, "r") as f:
     version = f.readline().strip().replace("origin/", "")
 
 yaml = YAML()
+yaml.width = 4096
 
 # read ondemand_file file to dict and update
 with open(ondemand_file, "r") as f:
