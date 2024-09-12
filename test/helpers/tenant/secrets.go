@@ -44,11 +44,6 @@ type EdgeConnectSecret struct {
 	Resource          string `yaml:"resource"`
 }
 
-type OtelSecret struct {
-	Endpoint string `yaml:"endpoint"`
-	ApiToken string `yaml:"apiToken"`
-}
-
 func manyFromConfig(fs afero.Fs, path string) ([]Secret, error) {
 	secretConfigFile, err := afero.ReadFile(fs, path)
 
