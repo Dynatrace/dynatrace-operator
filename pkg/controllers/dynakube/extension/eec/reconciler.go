@@ -88,7 +88,7 @@ func (r *reconciler) reconcileTlsSecret(ctx context.Context) error {
 	query := k8ssecret.Query(r.client, r.client, log)
 
 	secret, err := query.Get(ctx, types.NamespacedName{
-		Name:      consts.GetTlsSecretName(r.dk.Name),
+		Name:      getTlsSecretName(r.dk.Name),
 		Namespace: r.dk.Namespace,
 	})
 
@@ -125,7 +125,7 @@ func (r *reconciler) reconcileTlsSecret(ctx context.Context) error {
 
 func (r *reconciler) createTlsSecret(ctx context.Context) error {
 	cert, err := certificates.New()
-	cert.Cert.DNSNames = consts.GetCertificateAltNames(r.dk.Name)
+	cert.Cert.DNSNames = getCertificateAltNames(r.dk.Name)
 	cert.Cert.KeyUsage = x509.KeyUsageKeyEncipherment | x509.KeyUsageDataEncipherment
 	cert.Cert.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
 
@@ -146,7 +146,7 @@ func (r *reconciler) createTlsSecret(ctx context.Context) error {
 	coreLabels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.ExtensionComponentLabel)
 	secretData := map[string][]byte{consts.TLSCrtDataName: certPem, consts.TLSKeyDataName: pkPem}
 
-	secret, err := k8ssecret.Build(r.dk, consts.GetTlsSecretName(r.dk.Name), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
+	secret, err := k8ssecret.Build(r.dk, getTlsSecretName(r.dk.Name), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
 		return err
 	}
