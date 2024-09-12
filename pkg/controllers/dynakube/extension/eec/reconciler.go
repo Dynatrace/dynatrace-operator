@@ -170,6 +170,7 @@ func (r *reconciler) reconcileTLSSecretExpiration(ctx context.Context, secret *c
 	if cert.NotAfter.After(time.Now()) {
 		return r.createOrUpdateTLSSecret(ctx)
 	}
+
 	return nil
 }
 
