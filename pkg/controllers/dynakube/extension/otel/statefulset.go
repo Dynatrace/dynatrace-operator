@@ -222,12 +222,6 @@ func setImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) func(o 
 }
 
 func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
-	tlsSecretName := dk.Name + consts.ExtensionsTlsSecretSuffix
-
-	if tlsSecretName != "" {
-		tlsSecretName = dk.Spec.Templates.ExtensionExecutionController.TlsRefName
-	}
-
 	return func(o *appsv1.StatefulSet) {
 		o.Spec.Template.Spec.Volumes = []corev1.Volume{
 			{
@@ -266,10 +260,10 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 		}
 
 		o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
-			Name: tlsSecretName,
+			Name: dk.GetTlsSecretName(),
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: tlsSecretName,
+					SecretName: dk.GetTlsSecretName(),
 					Items: []corev1.KeyToPath{
 						{
 							Key:  consts.TLSCrtDataName,

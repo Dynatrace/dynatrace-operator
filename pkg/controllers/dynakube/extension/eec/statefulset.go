@@ -294,12 +294,6 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 
 func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	return func(o *appsv1.StatefulSet) {
-		tlsSecretName := dk.Name + consts.ExtensionsTlsSecretSuffix
-
-		if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
-			tlsSecretName = dk.Spec.Templates.ExtensionExecutionController.TlsRefName
-		}
-
 		mode := int32(420)
 		o.Spec.Template.Spec.Volumes = []corev1.Volume{
 			{
@@ -327,7 +321,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: tlsSecretName,
+						SecretName: dk.GetTlsSecretName(),
 					},
 				},
 			},
