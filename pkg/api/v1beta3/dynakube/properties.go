@@ -96,6 +96,10 @@ func (dk *DynaKube) NeedsOneAgent() bool {
 	return dk.ClassicFullStackMode() || dk.CloudNativeFullstackMode() || dk.HostMonitoringMode()
 }
 
+func (dk *DynaKube) NeedsLogModule() bool {
+	return dk.Spec.LogModule.Enabled
+}
+
 func (dk *DynaKube) OneAgentDaemonsetName() string {
 	return fmt.Sprintf("%s-%s", dk.Name, PodNameOsAgent)
 }
