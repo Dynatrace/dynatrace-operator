@@ -3240,6 +3240,8 @@ spec:
                   Disabled by default.
                 type: boolean
               metadataEnrichment:
+                default:
+                  enabled: true
                 description: Configuration for Metadata Enrichment.
                 properties:
                   enabled:

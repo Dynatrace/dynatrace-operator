@@ -128,6 +128,7 @@ type DynaKubeSpec struct { //nolint:revive
 	ActiveGate ActiveGateSpec `json:"activeGate,omitempty"`
 
 	// Configuration for Metadata Enrichment.
+	// +kubebuilder:default:={enabled: true}
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Metadata Enrichment",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	MetadataEnrichment MetadataEnrichment `json:"metadataEnrichment,omitempty"`
