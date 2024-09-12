@@ -6,11 +6,14 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func TestFindRootOwnerOfPod(t *testing.T) {
@@ -203,6 +206,28 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		assert.Equal(t, resourceName, workloadInfo.name)
 		assert.Equal(t, "Deployment", workloadInfo.kind)
 	})
+	t.Run("should not make an api-call if workload is not well known", func(t *testing.T) {
+		pod := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: "some.unknown.kind.com/v1alpha1",
+						Kind:       "SomeUnknownKind",
+						Name:       "some-owner",
+						Controller: address.Of(true),
+					},
+				},
+				Name:      resourceName,
+				Namespace: namespaceName,
+			},
+		}
+
+		client := createFailK8sClient()
+
+		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
+		require.NoError(t, err)
+		assert.Equal(t, resourceName, workloadInfo.name)
+	})
 }
 
 func createTestWorkloadInfo() *workloadInfo {
@@ -210,4 +235,14 @@ func createTestWorkloadInfo() *workloadInfo {
 		kind: "test",
 		name: "test",
 	}
+}
+
+func createFailK8sClient() client.Client {
+	boomClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+		Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+			return errors.New("BOOM")
+		},
+	})
+
+	return boomClient
 }
