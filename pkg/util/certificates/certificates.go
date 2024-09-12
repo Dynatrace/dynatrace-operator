@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"math/big"
 	"net"
 	"time"
@@ -15,22 +16,32 @@ import (
 )
 
 const (
-	intSerialNumberLimit = 128
-
-	certificatePemHeader = "CERTIFICATE"
-	privateKeyPemHeader  = "PRIVATE KEY"
+	intSerialNumberLimit  = 128
+	defaultCertExpiration = 7 * 24 * time.Hour
+	certificatePemHeader  = "CERTIFICATE"
+	privateKeyPemHeader   = "PRIVATE KEY"
 )
 
-var serialNumberLimit = new(big.Int).Lsh(big.NewInt(1), intSerialNumberLimit)
+var (
+	serialNumberLimit  = new(big.Int).Lsh(big.NewInt(1), intSerialNumberLimit)
+	defaultCertSubject = pkix.Name{
+		Country:            []string{"AT"},
+		Province:           []string{"UA"},
+		Locality:           []string{"Linz"},
+		Organization:       []string{"Dynatrace"},
+		OrganizationalUnit: []string{"Operator"},
+	}
+)
 
 type Certificate struct {
-	cert       *x509.Certificate
+	Cert       *x509.Certificate
 	pk         *ecdsa.PrivateKey
 	signedCert []byte
 	signedPk   []byte
+	signed     bool
 }
 
-func New(domain string, altNames []string, ip string) (*Certificate, error) {
+func New() (*Certificate, error) {
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
 		return nil, err
@@ -41,33 +52,54 @@ func New(domain string, altNames []string, ip string) (*Certificate, error) {
 		return nil, err
 	}
 
-	netIp := net.ParseIP(ip)
-
 	cert := &x509.Certificate{
-		SerialNumber: serialNumber,
-		Subject: pkix.Name{
-			Country:            []string{"AT"},
-			Province:           []string{"UA"},
-			Locality:           []string{"Linz"},
-			Organization:       []string{"Dynatrace"},
-			OrganizationalUnit: []string{"Operator"},
-			CommonName:         domain,
-		},
-		DNSNames:    altNames,
-		IPAddresses: []net.IP{netIp},
-
-		NotBefore: time.Now(),
-		NotAfter:  time.Now().Add(7 * 24 * time.Hour),
-
+		SerialNumber:          serialNumber,
+		Subject:               defaultCertSubject,
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().Add(defaultCertExpiration),
 		IsCA:                  true,
 		BasicConstraintsValid: true,
 	}
 
-	return &Certificate{cert: cert, pk: pk}, nil
+	return &Certificate{Cert: cert, pk: pk, signed: false}, nil
+}
+
+func New2(domain string, altNames []string, ip string, keyUsages []x509.ExtKeyUsage) (*Certificate, error) {
+	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
+	if err != nil {
+		return nil, err
+	}
+
+	pk, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return nil, err
+	}
+
+	cert := &x509.Certificate{
+		SerialNumber:          serialNumber,
+		Subject:               defaultCertSubject,
+		DNSNames:              altNames,
+		ExtKeyUsage:           keyUsages,
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().Add(defaultCertExpiration),
+		IsCA:                  true,
+		BasicConstraintsValid: true,
+	}
+
+	if domain != "" {
+		cert.Subject.CommonName = domain
+	}
+
+	if ip != "" {
+		netIp := net.ParseIP(ip)
+		cert.IPAddresses = []net.IP{netIp}
+	}
+
+	return &Certificate{Cert: cert, pk: pk, signed: false}, nil
 }
 
 func (c *Certificate) SelfSign() error {
-	certBytes, err := x509.CreateCertificate(rand.Reader, c.cert, c.cert, c.pk.Public(), c.pk)
+	certBytes, err := x509.CreateCertificate(rand.Reader, c.Cert, c.Cert, c.pk.Public(), c.pk)
 	if err != nil {
 		return err
 	}
@@ -86,12 +118,13 @@ func (c *Certificate) SelfSign() error {
 
 	c.signedCert = certPem
 	c.signedPk = pkPem
+	c.signed = true
 
 	return nil
 }
 
-func (c *Certificate) CaSign(ca *x509.Certificate, caPk *ecdsa.PrivateKey) error {
-	certBytes, err := x509.CreateCertificate(rand.Reader, c.cert, ca, c.pk.Public(), caPk)
+func (c *Certificate) CASign(ca *x509.Certificate, caPk *ecdsa.PrivateKey) error {
+	certBytes, err := x509.CreateCertificate(rand.Reader, c.Cert, ca, c.pk.Public(), caPk)
 	if err != nil {
 		return err
 	}
@@ -110,11 +143,16 @@ func (c *Certificate) CaSign(ca *x509.Certificate, caPk *ecdsa.PrivateKey) error
 
 	c.signedCert = certPem
 	c.signedPk = pkPem
+	c.signed = true
 
 	return nil
 }
 
-func (c *Certificate) ToPEM() (certPem []byte, pkPem []byte) {
+func (c *Certificate) ToPEM() (certPem []byte, pkPem []byte, err error) {
+	if !c.signed {
+		return nil, nil, errors.New("failed parsing certificate to PEM format: certificate hasn't been signed")
+	}
+
 	certPem = pem.EncodeToMemory(&pem.Block{
 		Type:  certificatePemHeader,
 		Bytes: c.signedCert,
@@ -125,7 +163,7 @@ func (c *Certificate) ToPEM() (certPem []byte, pkPem []byte) {
 		Bytes: c.signedPk,
 	})
 
-	return certPem, pkPem
+	return certPem, pkPem, nil
 }
 
 func ValidateCertificateExpiration(certData []byte, renewalThreshold time.Duration, now time.Time, log logd.Logger) (bool, error) {

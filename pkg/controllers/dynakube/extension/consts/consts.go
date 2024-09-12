@@ -28,3 +28,15 @@ const (
 	// TLSCrtDataName is the key used to store a TLS certificate in the secret's data field.
 	TLSCrtDataName = "tls.crt"
 )
+
+func GetCertificateAltNames(dkName string) []string {
+	return []string{
+		dkName + "-extensions-controller.dynatrace",
+		dkName + "-extensions-controller.dynatrace.svc",
+		dkName + "-extensions-controller.dynatrace.svc.cluster.local",
+	}
+}
+
+func GetTlsSecretName(dkName string) string {
+	return dkName + ExtensionsTlsSecretSuffix
+}

@@ -1,6 +1,8 @@
 package eec
 
 import (
+	"crypto/x509"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
@@ -86,9 +88,10 @@ func (r *reconciler) reconcileTlsSecret(ctx context.Context) error {
 	query := k8ssecret.Query(r.client, r.client, log)
 
 	secret, err := query.Get(ctx, types.NamespacedName{
-		Name:      r.getSelfSignedTlsSecretName(),
+		Name:      consts.GetTlsSecretName(r.dk.Name),
 		Namespace: r.dk.Namespace,
 	})
+
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
@@ -97,41 +100,70 @@ func (r *reconciler) reconcileTlsSecret(ctx context.Context) error {
 		if secret != nil {
 			return query.Delete(ctx, secret)
 		}
-	} else {
-		if k8serrors.IsNotFound(err) {
-			// TODO: domain/altNames/ip ?
-			cert, err := certificates.New("", []string{}, "")
-			if err != nil {
-				return err
-			}
 
-			err = cert.SelfSign()
-			if err != nil {
-				return err
-			}
+		return nil
+	}
 
-			certPem, pkPem := cert.ToPEM()
+	if k8serrors.IsNotFound(err) {
+		err = r.createTlsSecret(ctx)
+		if err != nil {
+			return err
+		}
 
-			coreLabels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.ExtensionComponentLabel)
-			secretData := map[string][]byte{consts.TLSCrtDataName: certPem, consts.TLSKeyDataName: pkPem}
+		return nil
+	}
 
-			secret, err := k8ssecret.Build(r.dk, r.getSelfSignedTlsSecretName(), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
-			if err != nil {
-				return err
-			}
-
-			secret.Type = corev1.SecretTypeTLS
-
-			_, err = query.CreateOrUpdate(ctx, secret)
-			if err != nil {
-				return err
-			}
+	if secret != nil {
+		err = r.reconcileTlsSecretExpiration(ctx, secret)
+		if err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
-func (r *reconciler) getSelfSignedTlsSecretName() string {
-	return r.dk.Name + consts.ExtensionsTlsSecretSuffix
+func (r *reconciler) createTlsSecret(ctx context.Context) error {
+	cert, err := certificates.New()
+	cert.Cert.DNSNames = consts.GetCertificateAltNames(r.dk.Name)
+	cert.Cert.KeyUsage = x509.KeyUsageKeyEncipherment | x509.KeyUsageDataEncipherment
+	cert.Cert.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
+
+	if err != nil {
+		return err
+	}
+
+	err = cert.SelfSign()
+	if err != nil {
+		return err
+	}
+
+	certPem, pkPem, err := cert.ToPEM()
+	if err != nil {
+		return err
+	}
+
+	coreLabels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.ExtensionComponentLabel)
+	secretData := map[string][]byte{consts.TLSCrtDataName: certPem, consts.TLSKeyDataName: pkPem}
+
+	secret, err := k8ssecret.Build(r.dk, consts.GetTlsSecretName(r.dk.Name), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
+	if err != nil {
+		return err
+	}
+
+	secret.Type = corev1.SecretTypeTLS
+
+	query := k8ssecret.Query(r.client, r.client, log)
+
+	_, err = query.CreateOrUpdate(ctx, secret)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *reconciler) reconcileTlsSecretExpiration(ctx context.Context, secret *corev1.Secret) error {
+	// WIP
+	return nil
 }

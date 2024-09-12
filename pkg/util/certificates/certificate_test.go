@@ -37,12 +37,12 @@ func TestValidateCertificateExpiration(t *testing.T) {
 
 func TestNewCertificate(t *testing.T) {
 	t.Run("create new certificate", func(t *testing.T) {
-		cert, err := New("domain", []string{"altName"}, "192.0.0.0")
+		cert, err := New()
 
 		require.NoError(t, err)
 
 		require.NotNil(t, cert)
-		require.NotNil(t, cert.cert)
+		require.NotNil(t, cert.Cert)
 		require.NotNil(t, cert.pk)
 		require.Nil(t, cert.signedCert)
 		require.Nil(t, cert.signedPk)
@@ -51,7 +51,7 @@ func TestNewCertificate(t *testing.T) {
 
 func TestSelfSign(t *testing.T) {
 	t.Run("self sign certificate", func(t *testing.T) {
-		cert, _ := New("domain", []string{"altName"}, "192.0.0.0")
+		cert, _ := New()
 		err := cert.SelfSign()
 
 		require.NoError(t, err)
@@ -62,10 +62,10 @@ func TestSelfSign(t *testing.T) {
 }
 
 func TestCaSign(t *testing.T) {
-	t.Run("self sign certificate", func(t *testing.T) {
-		ca, _ := New("domain", []string{"altName"}, "192.0.0.0")
-		cert, _ := New("domain", []string{"altName"}, "192.0.0.0")
-		err := cert.CaSign(ca.cert, ca.pk)
+	t.Run("CA sign certificate", func(t *testing.T) {
+		ca, _ := New()
+		cert, _ := New()
+		err := cert.CASign(ca.Cert, ca.pk)
 
 		require.NoError(t, err)
 
@@ -75,12 +75,23 @@ func TestCaSign(t *testing.T) {
 }
 
 func TestToPem(t *testing.T) {
-	t.Run("self sign certificate", func(t *testing.T) {
-		cert, _ := New("domain", []string{"altName"}, "192.0.0.0")
+	t.Run("parse signed certificate to PEM", func(t *testing.T) {
+		cert, _ := New()
 		cert.SelfSign()
-		certPem, pkPem := cert.ToPEM()
+		certPem, pkPem, err := cert.ToPEM()
+
+		require.NoError(t, err)
 
 		require.NotEmpty(t, certPem)
 		require.NotEmpty(t, pkPem)
+	})
+	t.Run("parse unsigned certificate to PEM", func(t *testing.T) {
+		cert, _ := New()
+		certPem, pkPem, err := cert.ToPEM()
+
+		require.Error(t, err)
+
+		require.Nil(t, certPem)
+		require.Nil(t, pkPem)
 	})
 }
