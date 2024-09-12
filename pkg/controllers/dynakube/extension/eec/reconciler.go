@@ -2,6 +2,7 @@ package eec
 
 import (
 	"crypto/x509"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
@@ -64,7 +65,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	err := r.reconcileTlsSecret(ctx)
+	err := r.reconcileTLSSecret(ctx)
 	if err != nil {
 		return err
 	}
@@ -84,11 +85,11 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	return r.createOrUpdateStatefulset(ctx)
 }
 
-func (r *reconciler) reconcileTlsSecret(ctx context.Context) error {
+func (r *reconciler) reconcileTLSSecret(ctx context.Context) error {
 	query := k8ssecret.Query(r.client, r.client, log)
 
 	secret, err := query.Get(ctx, types.NamespacedName{
-		Name:      getTlsSecretName(r.dk.Name),
+		Name:      getTLSSecretName(r.dk.Name),
 		Namespace: r.dk.Namespace,
 	})
 
@@ -105,7 +106,7 @@ func (r *reconciler) reconcileTlsSecret(ctx context.Context) error {
 	}
 
 	if k8serrors.IsNotFound(err) {
-		err = r.createTlsSecret(ctx)
+		err = r.createOrUpdateTLSSecret(ctx)
 		if err != nil {
 			return err
 		}
@@ -114,7 +115,7 @@ func (r *reconciler) reconcileTlsSecret(ctx context.Context) error {
 	}
 
 	if secret != nil {
-		err = r.reconcileTlsSecretExpiration(ctx, secret)
+		err = r.reconcileTLSSecretExpiration(ctx, secret)
 		if err != nil {
 			return err
 		}
@@ -123,7 +124,7 @@ func (r *reconciler) reconcileTlsSecret(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) createTlsSecret(ctx context.Context) error {
+func (r *reconciler) createOrUpdateTLSSecret(ctx context.Context) error {
 	cert, err := certificates.New()
 	cert.Cert.DNSNames = getCertificateAltNames(r.dk.Name)
 	cert.Cert.KeyUsage = x509.KeyUsageKeyEncipherment | x509.KeyUsageDataEncipherment
@@ -146,7 +147,7 @@ func (r *reconciler) createTlsSecret(ctx context.Context) error {
 	coreLabels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.ExtensionComponentLabel)
 	secretData := map[string][]byte{consts.TLSCrtDataName: certPem, consts.TLSKeyDataName: pkPem}
 
-	secret, err := k8ssecret.Build(r.dk, getTlsSecretName(r.dk.Name), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
+	secret, err := k8ssecret.Build(r.dk, getTLSSecretName(r.dk.Name), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
 		return err
 	}
@@ -163,8 +164,12 @@ func (r *reconciler) createTlsSecret(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) reconcileTlsSecretExpiration(ctx context.Context, secret *corev1.Secret) error {
-	// WIP
+func (r *reconciler) reconcileTLSSecretExpiration(ctx context.Context, secret *corev1.Secret) error {
+	cert := x509.Certificate{Raw: secret.Data[consts.TLSCrtDataName]}
+
+	if cert.NotAfter.After(time.Now()) {
+		return r.createOrUpdateTLSSecret(ctx)
+	}
 	return nil
 }
 
@@ -176,6 +181,6 @@ func getCertificateAltNames(dkName string) []string {
 	}
 }
 
-func getTlsSecretName(dkName string) string {
+func getTLSSecretName(dkName string) string {
 	return dkName + consts.ExtensionsTlsSecretSuffix
 }
