@@ -9,7 +9,6 @@ import (
 	"encoding/pem"
 	"errors"
 	"math/big"
-	"net"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -59,40 +58,6 @@ func New() (*Certificate, error) {
 		NotAfter:              time.Now().Add(defaultCertExpiration),
 		IsCA:                  true,
 		BasicConstraintsValid: true,
-	}
-
-	return &Certificate{Cert: cert, pk: pk, signed: false}, nil
-}
-
-func New2(domain string, altNames []string, ip string, keyUsages []x509.ExtKeyUsage) (*Certificate, error) {
-	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
-	if err != nil {
-		return nil, err
-	}
-
-	pk, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		return nil, err
-	}
-
-	cert := &x509.Certificate{
-		SerialNumber:          serialNumber,
-		Subject:               defaultCertSubject,
-		DNSNames:              altNames,
-		ExtKeyUsage:           keyUsages,
-		NotBefore:             time.Now(),
-		NotAfter:              time.Now().Add(defaultCertExpiration),
-		IsCA:                  true,
-		BasicConstraintsValid: true,
-	}
-
-	if domain != "" {
-		cert.Subject.CommonName = domain
-	}
-
-	if ip != "" {
-		netIp := net.ParseIP(ip)
-		cert.IPAddresses = []net.IP{netIp}
 	}
 
 	return &Certificate{Cert: cert, pk: pk, signed: false}, nil
