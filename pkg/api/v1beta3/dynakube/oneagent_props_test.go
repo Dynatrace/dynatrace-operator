@@ -18,57 +18,13 @@ package dynakube
 
 import (
 	"testing"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-const testAPIURL = "http://test-endpoint/api"
-
-func TestDefaultActiveGateImage(t *testing.T) {
-	t.Run(`ActiveGateImage with no API URL`, func(t *testing.T) {
-		dk := DynaKube{}
-		assert.Equal(t, "", dk.DefaultActiveGateImage(""))
-	})
-
-	t.Run(`ActiveGateImage adds raw postfix`, func(t *testing.T) {
-		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
-		assert.Equal(t, "test-endpoint/linux/activegate:1.234.5-raw", dk.DefaultActiveGateImage("1.234.5"))
-	})
-
-	t.Run("ActiveGateImage doesn't add 'raw' postfix if present", func(t *testing.T) {
-		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
-		assert.Equal(t, "test-endpoint/linux/activegate:1.234.5-raw", dk.DefaultActiveGateImage("1.234.5-raw"))
-	})
-
-	t.Run(`ActiveGateImage truncates build date`, func(t *testing.T) {
-		version := "1.239.14.20220325-164521"
-		expectedImage := "test-endpoint/linux/activegate:1.239.14-raw"
-		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
-
-		assert.Equal(t, expectedImage, dk.DefaultActiveGateImage(version))
-	})
-}
-
-func TestCustomActiveGateImage(t *testing.T) {
-	t.Run(`ActiveGateImage with custom image`, func(t *testing.T) {
-		customImg := "registry/my/activegate:latest"
-		dk := DynaKube{Spec: DynaKubeSpec{ActiveGate: ActiveGateSpec{CapabilityProperties: CapabilityProperties{
-			Image: customImg,
-		}}}}
-		assert.Equal(t, customImg, dk.CustomActiveGateImage())
-	})
-
-	t.Run(`ActiveGateImage with no custom image`, func(t *testing.T) {
-		dk := DynaKube{Spec: DynaKubeSpec{ActiveGate: ActiveGateSpec{CapabilityProperties: CapabilityProperties{}}}}
-		assert.Equal(t, "", dk.CustomActiveGateImage())
-	})
-}
 
 func TestNeedsCSIDriver(t *testing.T) {
 	t.Run(`DynaKube with application monitoring without csi driver`, func(t *testing.T) {
@@ -301,91 +257,6 @@ func TestOneAgentDaemonsetName(t *testing.T) {
 	assert.Equal(t, "test-name-oneagent", dk.OneAgentDaemonsetName())
 }
 
-func TestTokens(t *testing.T) {
-	testName := "test-name"
-	testValue := "test-value"
-
-	t.Run(`GetTokensName returns custom token name`, func(t *testing.T) {
-		dk := DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: testName},
-			Spec:       DynaKubeSpec{Tokens: testValue},
-		}
-		assert.Equal(t, dk.Tokens(), testValue)
-	})
-	t.Run(`GetTokensName uses instance name as default value`, func(t *testing.T) {
-		dk := DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testName}}
-		assert.Equal(t, dk.Tokens(), testName)
-	})
-}
-
-func TestTenantUUID(t *testing.T) {
-	t.Run("happy path", func(t *testing.T) {
-		apiUrl := "https://demo.dev.dynatracelabs.com/api"
-		expectedTenantId := "demo"
-
-		actualTenantId, err := tenantUUID(apiUrl)
-
-		require.NoErrorf(t, err, "Expected that getting tenant id from '%s' will be successful", apiUrl)
-		assert.Equalf(t, expectedTenantId, actualTenantId, "Expected that tenant id of %s is %s, but found %s",
-			apiUrl, expectedTenantId, actualTenantId,
-		)
-	})
-
-	t.Run("happy path (alternative)", func(t *testing.T) {
-		apiUrl := "https://dynakube-activegate.dynatrace/e/tenant/api/v2/metrics/ingest"
-		expectedTenantId := "tenant"
-
-		actualTenantId, err := tenantUUID(apiUrl)
-
-		require.NoErrorf(t, err, "Expected that getting tenant id from '%s' will be successful", apiUrl)
-		assert.Equalf(t, expectedTenantId, actualTenantId, "Expected that tenant id of %s is %s, but found %s",
-			apiUrl, expectedTenantId, actualTenantId,
-		)
-	})
-
-	t.Run("happy path (alternative, no domain)", func(t *testing.T) {
-		apiUrl := "https://dynakube-activegate/e/tenant/api/v2/metrics/ingest"
-		expectedTenantId := "tenant"
-
-		actualTenantId, err := tenantUUID(apiUrl)
-
-		require.NoErrorf(t, err, "Expected that getting tenant id from '%s' will be successful", apiUrl)
-		assert.Equalf(t, expectedTenantId, actualTenantId, "Expected that tenant id of %s is %s, but found %s",
-			apiUrl, expectedTenantId, actualTenantId,
-		)
-	})
-
-	t.Run("missing API URL protocol", func(t *testing.T) {
-		apiUrl := "demo.dev.dynatracelabs.com/api"
-		expectedTenantId := ""
-		expectedError := "problem getting tenant id from API URL 'demo.dev.dynatracelabs.com/api'"
-
-		actualTenantId, err := tenantUUID(apiUrl)
-
-		require.EqualErrorf(t, err, expectedError, "Expected that getting tenant id from '%s' will result in: '%v'",
-			apiUrl, expectedError,
-		)
-		assert.Equalf(t, expectedTenantId, actualTenantId, "Expected that tenant id of %s is %s, but found %s",
-			apiUrl, expectedTenantId, actualTenantId,
-		)
-	})
-
-	t.Run("suffix-only, relative API URL", func(t *testing.T) {
-		apiUrl := "/api"
-		expectedTenantId := ""
-		expectedError := "problem getting tenant id from API URL '/api'"
-
-		actualTenantId, err := tenantUUID(apiUrl)
-
-		require.EqualErrorf(t, err, expectedError, "Expected that getting tenant id from '%s' will result in: '%v'",
-			apiUrl, expectedError,
-		)
-		assert.Equalf(t, expectedTenantId, actualTenantId, "Expected that tenant id of %s is %s, but found %s",
-			apiUrl, expectedTenantId, actualTenantId,
-		)
-	})
-}
-
 func TestCodeModulesVersion(t *testing.T) {
 	testVersion := "1.2.3"
 
@@ -426,33 +297,6 @@ func TestCodeModulesVersion(t *testing.T) {
 		}
 		version := dk.CustomCodeModulesVersion()
 		assert.Equal(t, testVersion, version)
-	})
-}
-
-func TestGetRawImageTag(t *testing.T) {
-	t.Run(`with tag`, func(t *testing.T) {
-		expectedTag := "test"
-		rawTag := getRawImageTag("example.test:" + expectedTag)
-		require.Equal(t, expectedTag, rawTag)
-	})
-	t.Run(`without tag`, func(t *testing.T) {
-		expectedTag := "latest"
-		rawTag := getRawImageTag("example.test")
-		require.Equal(t, expectedTag, rawTag)
-	})
-	t.Run(`local URI with port`, func(t *testing.T) {
-		expectedTag := "test"
-		// based on https://docs.docker.com/engine/reference/commandline/tag/#tag-an-image-for-a-private-repository
-		rawTag := getRawImageTag("myregistryhost:5000/fedora/httpd:" + expectedTag)
-		require.Equal(t, expectedTag, rawTag)
-	})
-	t.Run(`wrong URI => no panic`, func(t *testing.T) {
-		rawTag := getRawImageTag("example.test:")
-		require.Equal(t, "", rawTag)
-	})
-	t.Run(`very wrong URI => no panic`, func(t *testing.T) {
-		rawTag := getRawImageTag(":")
-		require.Equal(t, "", rawTag)
 	})
 }
 
@@ -573,90 +417,6 @@ func TestGetOneAgentEnvironment(t *testing.T) {
 		require.NotNil(t, env)
 		assert.Empty(t, env)
 	})
-}
-
-func TestDynaKube_ShallUpdateActiveGateConnectionInfo(t *testing.T) {
-	dk := DynaKube{
-		Status: DynaKubeStatus{
-			DynatraceApi: DynatraceApiStatus{
-				LastTokenScopeRequest: metav1.Time{},
-			},
-			OneAgent: OneAgentStatus{
-				ConnectionInfoStatus: OneAgentConnectionInfoStatus{
-					ConnectionInfoStatus: ConnectionInfoStatus{},
-				},
-			},
-			ActiveGate: ActiveGateStatus{
-				ConnectionInfoStatus: ActiveGateConnectionInfoStatus{
-					ConnectionInfoStatus: ConnectionInfoStatus{},
-				},
-			},
-		},
-	}
-
-	timeProvider := timeprovider.New().Freeze()
-	tests := map[string]struct {
-		lastRequestTimeDeltaMinutes int
-		updateExpected              bool
-		threshold                   int
-	}{
-		"Do not update after 10 minutes using default interval": {
-			lastRequestTimeDeltaMinutes: -10,
-			updateExpected:              false,
-			threshold:                   -1,
-		},
-		"Do update after 20 minutes using default interval": {
-			lastRequestTimeDeltaMinutes: -20,
-			updateExpected:              true,
-			threshold:                   -1,
-		},
-		"Do not update after 3 minutes using 5m interval": {
-			lastRequestTimeDeltaMinutes: -3,
-			updateExpected:              false,
-			threshold:                   5,
-		},
-		"Do update after 7 minutes using 5m interval": {
-			lastRequestTimeDeltaMinutes: -7,
-			updateExpected:              true,
-			threshold:                   5,
-		},
-		"Do not update after 17 minutes using 20m interval": {
-			lastRequestTimeDeltaMinutes: -17,
-			updateExpected:              false,
-			threshold:                   20,
-		},
-		"Do update after 22 minutes using 20m interval": {
-			lastRequestTimeDeltaMinutes: -22,
-			updateExpected:              true,
-			threshold:                   20,
-		},
-		"Do update immediately using 0m interval": {
-			lastRequestTimeDeltaMinutes: 0,
-			updateExpected:              true,
-			threshold:                   0,
-		},
-		"Do update after 1 minute using 0m interval": {
-			lastRequestTimeDeltaMinutes: -1,
-			updateExpected:              true,
-			threshold:                   0,
-		},
-		"Do update after 20 minutes using 0m interval": {
-			lastRequestTimeDeltaMinutes: -20,
-			updateExpected:              true,
-			threshold:                   0,
-		},
-	}
-
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			dk.Spec.DynatraceApiRequestThreshold = test.threshold
-
-			lastRequestTime := timeProvider.Now().Add(time.Duration(test.lastRequestTimeDeltaMinutes) * time.Minute)
-			dk.Status.DynatraceApi.LastTokenScopeRequest.Time = lastRequestTime
-
-			assert.Equal(t, test.updateExpected, dk.IsTokenScopeVerificationAllowed(timeProvider))
-		})
-	}
 }
 
 func TestOneAgentHostGroup(t *testing.T) {
