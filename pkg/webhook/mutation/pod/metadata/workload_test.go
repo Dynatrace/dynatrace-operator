@@ -222,7 +222,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			},
 		}
 
-		client := createFailK8sClient()
+		client := createFailK8sClient(t)
 
 		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
 		require.NoError(t, err)
@@ -230,14 +230,18 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 	})
 }
 
-func createTestWorkloadInfo() *workloadInfo {
+func createTestWorkloadInfo(t *testing.T) *workloadInfo {
+	t.Helper()
+
 	return &workloadInfo{
 		kind: "test",
 		name: "test",
 	}
 }
 
-func createFailK8sClient() client.Client {
+func createFailK8sClient(t *testing.T) client.Client {
+	t.Helper()
+
 	boomClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 		Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 			return errors.New("BOOM")

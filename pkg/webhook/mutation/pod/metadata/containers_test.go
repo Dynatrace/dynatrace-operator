@@ -86,7 +86,7 @@ func TestUpdateInstallContainer(t *testing.T) {
 		container := &corev1.Container{}
 		clusterName := "test-cluster"
 
-		updateInstallContainer(container, createTestWorkloadInfo(), clusterName)
+		updateInstallContainer(container, createTestWorkloadInfo(t), clusterName)
 
 		require.Len(t, container.VolumeMounts, 1)
 		require.Len(t, container.Env, 4)
