@@ -321,7 +321,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.GetTlsSecretName(),
+						SecretName: dk.GetExtensionsTlsSecretName(),
 					},
 				},
 			},

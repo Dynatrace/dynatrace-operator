@@ -260,10 +260,10 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 		}
 
 		o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
-			Name: dk.GetTlsSecretName(),
+			Name: dk.GetExtensionsTlsSecretName(),
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: dk.GetTlsSecretName(),
+					SecretName: dk.GetExtensionsTlsSecretName(),
 					Items: []corev1.KeyToPath{
 						{
 							Key:  consts.TLSCrtDataName,

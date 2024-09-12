@@ -104,7 +104,7 @@ type ImageRefSpec struct {
 	Tag string `json:"tag,omitempty"`
 }
 
-func (dk *DynaKube) GetTlsSecretName() string {
+func (dk *DynaKube) GetExtensionsTlsSecretName() string {
 	if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
 		return dk.Spec.Templates.ExtensionExecutionController.TlsRefName
 	}
