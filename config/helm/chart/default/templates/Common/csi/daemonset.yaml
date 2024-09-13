@@ -83,6 +83,7 @@ spec:
         - csi-server
         - --endpoint=unix://csi/csi.sock
         - --node-id=$(KUBE_NODE_NAME)
+        - --csi-host-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock
         env:
         - name: POD_NAMESPACE
           valueFrom:
@@ -97,8 +98,8 @@ spec:
         livenessProbe:
           failureThreshold: 3
           httpGet:
-            path: /healthz
-            port: healthz
+            path: /livez
+            port: livez
             scheme: HTTP
           initialDelaySeconds: 5
           periodSeconds: 5
@@ -106,7 +107,7 @@ spec:
           timeoutSeconds: 1
         ports:
         - containerPort: 9808
-          name: healthz
+          name: livez
         - containerPort: 8080
           name: metrics
         resources:
@@ -128,6 +129,8 @@ spec:
           mountPropagation: Bidirectional
         - name: tmp-dir
           mountPath: /tmp
+        - mountPath: /registration
+          name: registration-dir
       - name: provisioner
         image: {{ include "dynatrace-operator.image" . }}
         imagePullPolicy: Always
@@ -179,53 +182,53 @@ spec:
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
         # Used for registering the driver with kubelet
         # - Needs access to the registration socket, needs to read/write to it, needs root permissions to do so.
-      - name: registrar
-        image: {{ include "dynatrace-operator.image" . }}
-        imagePullPolicy: Always
-        env:
-        - name: DRIVER_REG_SOCK_PATH
-          value: {{ include "dynatrace-operator.CSISocketPath" . }}
-        args:
-        - --csi-address=/csi/csi.sock
-        - --kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)
-        command:
-        - csi-node-driver-registrar
-        resources:
-          {{- if .Values.csidriver.registrar.resources }}
-          {{- toYaml .Values.csidriver.registrar.resources | nindent 10 }}
-          {{- end }}
-        securityContext:
-        {{- toYaml .Values.csidriver.registrar.securityContext | nindent 10 }}
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
-        volumeMounts:
-        - mountPath: /csi
-          name: plugin-dir
-        - mountPath: /registration
-          name: registration-dir
-        - mountPath: {{ include "dynatrace-operator.CSIPluginDir" . }}
-          name: lockfile-dir
-        # Used to make a gRPC request (Probe()) to the driver to check if its running
-        # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
-      - name: liveness-probe
-        image: {{ include "dynatrace-operator.image" . }}
-        imagePullPolicy: Always
-        args:
-        - --csi-address=/csi/csi.sock
-        - --health-port=9808
-        command:
-        - livenessprobe
-        resources:
-          {{- if .Values.csidriver.livenessprobe.resources }}
-          {{- toYaml .Values.csidriver.livenessprobe.resources | nindent 10 }}
-          {{- end }}
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
-        securityContext:
-        {{- toYaml .Values.csidriver.livenessprobe.securityContext| nindent 10 }}
-        volumeMounts:
-        - mountPath: /csi
-          name: plugin-dir
+{{/*      - name: registrar*/}}
+{{/*        image: {{ include "dynatrace-operator.image" . }}*/}}
+{{/*        imagePullPolicy: Always*/}}
+{{/*        env:*/}}
+{{/*        - name: DRIVER_REG_SOCK_PATH*/}}
+{{/*          value: {{ include "dynatrace-operator.CSISocketPath" . }}*/}}
+{{/*        args:*/}}
+{{/*        - --csi-address=/csi/csi.sock*/}}
+{{/*        - --kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)*/}}
+{{/*        command:*/}}
+{{/*        - csi-node-driver-registrar*/}}
+{{/*        resources:*/}}
+{{/*          {{- if .Values.csidriver.registrar.resources }}*/}}
+{{/*          {{- toYaml .Values.csidriver.registrar.resources | nindent 10 }}*/}}
+{{/*          {{- end }}*/}}
+{{/*        securityContext:*/}}
+{{/*        {{- toYaml .Values.csidriver.registrar.securityContext | nindent 10 }}*/}}
+{{/*        terminationMessagePath: /dev/termination-log*/}}
+{{/*        terminationMessagePolicy: File*/}}
+{{/*        volumeMounts:*/}}
+{{/*        - mountPath: /csi*/}}
+{{/*          name: plugin-dir*/}}
+{{/*        - mountPath: /registration*/}}
+{{/*          name: registration-dir*/}}
+{{/*        - mountPath: {{ include "dynatrace-operator.CSIPluginDir" . }}*/}}
+{{/*          name: lockfile-dir*/}}
+{{/*        # Used to make a gRPC request (Probe()) to the driver to check if its running*/}}
+{{/*        # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.*/}}
+{{/*      - name: liveness-probe*/}}
+{{/*        image: {{ include "dynatrace-operator.image" . }}*/}}
+{{/*        imagePullPolicy: Always*/}}
+{{/*        args:*/}}
+{{/*        - --csi-address=/csi/csi.sock*/}}
+{{/*        - --health-port=9808*/}}
+{{/*        command:*/}}
+{{/*        - livenessprobe*/}}
+{{/*        resources:*/}}
+{{/*          {{- if .Values.csidriver.livenessprobe.resources }}*/}}
+{{/*          {{- toYaml .Values.csidriver.livenessprobe.resources | nindent 10 }}*/}}
+{{/*          {{- end }}*/}}
+{{/*        terminationMessagePath: /dev/termination-log*/}}
+{{/*        terminationMessagePolicy: File*/}}
+{{/*        securityContext:*/}}
+{{/*        {{- toYaml .Values.csidriver.livenessprobe.securityContext| nindent 10 }}*/}}
+{{/*        volumeMounts:*/}}
+{{/*        - mountPath: /csi*/}}
+{{/*          name: plugin-dir*/}}
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler

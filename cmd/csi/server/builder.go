@@ -17,7 +17,7 @@ import (
 
 const use = "csi-server"
 
-var nodeId, endpoint string
+var nodeId, endpoint, csiHostPath string
 
 type CommandBuilder struct {
 	configProvider  config.Provider
@@ -103,6 +103,7 @@ func (builder CommandBuilder) Build() *cobra.Command {
 func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&nodeId, "node-id", "", "node id")
 	cmd.PersistentFlags().StringVar(&endpoint, "endpoint", "unix:///tmp/csi.sock", "CSI endpoint")
+	cmd.PersistentFlags().StringVar(&csiHostPath, "csi-host-path", "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock", "CSI host path")
 }
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {

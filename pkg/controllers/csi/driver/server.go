@@ -23,6 +23,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
@@ -36,6 +37,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	registerapi "k8s.io/kubelet/pkg/apis/pluginregistration/v1"
 	mount "k8s.io/mount-utils"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -71,16 +73,39 @@ func (svr *Server) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (svr *Server) Start(ctx context.Context) error {
+	// start registration and csi server in parallel
+	ctx, cancelFunc := context.WithCancel(ctx)
+
+	var wg sync.WaitGroup
+
+	numberOfGoRoutines := 2
+	wg.Add(numberOfGoRoutines)
+
+	go svr.startCSIDriver(ctx, cancelFunc, &wg)
+	go startRegistrationServer(ctx, cancelFunc, &wg)
+
+	wg.Wait()
+
+	return nil
+}
+
+func (svr *Server) startCSIDriver(ctx context.Context, cancel context.CancelFunc, wg *sync.WaitGroup) {
 	defer metadata.LogAccessOverview(svr.db)
+	defer cancel()
+	defer wg.Done()
 
 	proto, addr, err := parseEndpoint(svr.opts.Endpoint)
 	if err != nil {
-		return fmt.Errorf("failed to parse endpoint '%s': %w", svr.opts.Endpoint, err)
+		log.Error(err, "failed to parse endpoint", "endpoint", svr.opts.Endpoint)
+
+		return
 	}
 
 	if proto == "unix" {
 		if err := svr.fs.Remove(addr); err != nil && !os.IsNotExist(err) {
-			return fmt.Errorf("failed to remove old endpoint on '%s': %w", addr, err)
+			log.Error(err, "failed to remove old endpoint", "address", addr)
+
+			return
 		}
 	}
 
@@ -89,11 +114,13 @@ func (svr *Server) Start(ctx context.Context) error {
 		hostvolumes.Mode: hostvolumes.NewHostVolumePublisher(svr.fs, svr.mounter, svr.db, svr.path),
 	}
 
-	log.Info("starting listener", "protocol", proto, "address", addr)
+	log.Info("starting csi server", "protocol", proto, "address", addr)
 
 	listener, err := net.Listen(proto, addr)
 	if err != nil {
-		return fmt.Errorf("failed to start server: %w", err)
+		log.Error(err, "failed to listen on address", "address", addr)
+
+		return
 	}
 
 	server := grpc.NewServer(grpc.UnaryInterceptor(logGRPC()))
@@ -122,12 +149,54 @@ func (svr *Server) Start(ctx context.Context) error {
 	csi.RegisterIdentityServer(server, svr)
 	csi.RegisterNodeServer(server, svr)
 
-	log.Info("listening for connections on address", "address", listener.Addr())
+	go func() {
+		log.Info("listening for connections on address", "address", listener.Addr())
 
-	err = server.Serve(listener)
+		if err := server.Serve(listener); err != nil {
+			log.Error(err, "failed to serve")
+		}
+	}()
+
+	<-ctx.Done()
 	server.GracefulStop()
+}
 
-	return err
+func startRegistrationServer(ctx context.Context, cancel context.CancelFunc, wg *sync.WaitGroup) {
+	defer cancel()
+	defer wg.Done()
+
+	socketPath := buildRegistrationSocketPath()
+	if err := CleanupSocketFile(socketPath); err != nil {
+		log.Error(err, "failed to clean up socket file")
+
+		return
+	}
+
+	lis, err := net.Listen("unix", socketPath)
+	if err != nil {
+		log.Error(err, "failed to listen on socket")
+
+		return
+	}
+
+	server := grpc.NewServer()
+	registrar := newRegistrationServer(dtcsi.DriverName, "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock", []string{"v1.0.0"}) // TODO remove hardcoding
+	registerapi.RegisterRegistrationServer(server, registrar)
+
+	go func() {
+		log.Info("starting registration server", "address", lis.Addr())
+
+		if err := server.Serve(lis); err != nil {
+			log.Error(err, "failed to serve")
+		}
+	}()
+
+	<-ctx.Done()
+	server.GracefulStop()
+}
+
+func buildRegistrationSocketPath() string {
+	return fmt.Sprintf("/registration/%s-reg.sock", dtcsi.DriverName)
 }
 
 func (svr *Server) GetPluginInfo(context.Context, *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
