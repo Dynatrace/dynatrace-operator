@@ -659,7 +659,7 @@ func TestVolumes(t *testing.T) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Name + consts.ExtensionsTlsSecretSuffix,
+						SecretName: dk.GetExtensionsTLSSecretName(),
 					},
 				},
 			},
@@ -713,7 +713,7 @@ func TestVolumes(t *testing.T) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Name + consts.ExtensionsTlsSecretSuffix,
+						SecretName: dk.GetExtensionsTLSSecretName(),
 					},
 				},
 			},
@@ -755,7 +755,7 @@ func TestVolumes(t *testing.T) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Name + consts.ExtensionsTlsSecretSuffix,
+						SecretName: dk.GetExtensionsTLSSecretName(),
 					},
 				},
 			},

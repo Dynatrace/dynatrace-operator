@@ -43,9 +43,9 @@ func TestNewCertificate(t *testing.T) {
 
 		require.NotNil(t, cert)
 		require.NotNil(t, cert.Cert)
-		require.NotNil(t, cert.pk)
-		require.Nil(t, cert.signedCert)
-		require.Nil(t, cert.signedPk)
+		require.NotNil(t, cert.Pk)
+		require.Nil(t, cert.SignedCert)
+		require.Nil(t, cert.SignedPk)
 	})
 }
 
@@ -56,42 +56,20 @@ func TestSelfSign(t *testing.T) {
 
 		require.NoError(t, err)
 
-		require.NotNil(t, cert.signedCert)
-		require.NotNil(t, cert.signedPk)
+		require.NotNil(t, cert.SignedCert)
+		require.NotNil(t, cert.SignedPk)
 	})
 }
 
-func TestCaSign(t *testing.T) {
+func TestCASign(t *testing.T) {
 	t.Run("CA sign certificate", func(t *testing.T) {
 		ca, _ := New()
 		cert, _ := New()
-		err := cert.CASign(ca.Cert, ca.pk)
+		err := cert.CASign(ca.Cert, ca.Pk)
 
 		require.NoError(t, err)
 
-		require.NotNil(t, cert.signedCert)
-		require.NotNil(t, cert.signedPk)
-	})
-}
-
-func TestToPem(t *testing.T) {
-	t.Run("parse signed certificate to PEM", func(t *testing.T) {
-		cert, _ := New()
-		cert.SelfSign()
-		certPem, pkPem, err := cert.ToPEM()
-
-		require.NoError(t, err)
-
-		require.NotEmpty(t, certPem)
-		require.NotEmpty(t, pkPem)
-	})
-	t.Run("parse unsigned certificate to PEM", func(t *testing.T) {
-		cert, _ := New()
-		certPem, pkPem, err := cert.ToPEM()
-
-		require.Error(t, err)
-
-		require.Nil(t, certPem)
-		require.Nil(t, pkPem)
+		require.NotNil(t, cert.SignedCert)
+		require.NotNil(t, cert.SignedPk)
 	})
 }

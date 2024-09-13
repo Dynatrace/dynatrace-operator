@@ -2,6 +2,7 @@ package eec
 
 import (
 	"crypto/x509"
+	"encoding/pem"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -89,7 +90,7 @@ func (r *reconciler) reconcileTLSSecret(ctx context.Context) error {
 	query := k8ssecret.Query(r.client, r.client, log)
 
 	secret, err := query.Get(ctx, types.NamespacedName{
-		Name:      getTLSSecretName(r.dk.Name),
+		Name:      getSelfSignedTLSSecretName(r.dk.Name),
 		Namespace: r.dk.Namespace,
 	})
 
@@ -139,15 +140,15 @@ func (r *reconciler) createOrUpdateTLSSecret(ctx context.Context) error {
 		return err
 	}
 
-	certPem, pkPem, err := cert.ToPEM()
+	pemCert, pemPk, err := cert.ToPEM()
 	if err != nil {
 		return err
 	}
 
 	coreLabels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.ExtensionComponentLabel)
-	secretData := map[string][]byte{consts.TLSCrtDataName: certPem, consts.TLSKeyDataName: pkPem}
+	secretData := map[string][]byte{consts.TLSCrtDataName: pemCert, consts.TLSKeyDataName: pemPk}
 
-	secret, err := k8ssecret.Build(r.dk, getTLSSecretName(r.dk.Name), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
+	secret, err := k8ssecret.Build(r.dk, getSelfSignedTLSSecretName(r.dk.Name), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
 		return err
 	}
@@ -165,7 +166,12 @@ func (r *reconciler) createOrUpdateTLSSecret(ctx context.Context) error {
 }
 
 func (r *reconciler) reconcileTLSSecretExpiration(ctx context.Context, secret *corev1.Secret) error {
-	cert := x509.Certificate{Raw: secret.Data[consts.TLSCrtDataName]}
+	pemBlock, _ := pem.Decode(secret.Data[consts.TLSCrtDataName])
+
+	cert, err := x509.ParseCertificate(pemBlock.Bytes)
+	if err != nil {
+		return err
+	}
 
 	if cert.NotAfter.After(time.Now()) {
 		return r.createOrUpdateTLSSecret(ctx)
@@ -182,6 +188,6 @@ func getCertificateAltNames(dkName string) []string {
 	}
 }
 
-func getTLSSecretName(dkName string) string {
-	return dkName + consts.ExtensionsTlsSecretSuffix
+func getSelfSignedTLSSecretName(dkName string) string {
+	return dkName + consts.ExtensionsSelfSignedTLSSecretSuffix
 }

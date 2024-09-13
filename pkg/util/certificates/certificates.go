@@ -34,9 +34,9 @@ var (
 
 type Certificate struct {
 	Cert       *x509.Certificate
-	pk         *ecdsa.PrivateKey
-	signedCert []byte
-	signedPk   []byte
+	Pk         *ecdsa.PrivateKey
+	SignedCert []byte
+	SignedPk   []byte
 	signed     bool
 }
 
@@ -60,75 +60,61 @@ func New() (*Certificate, error) {
 		BasicConstraintsValid: true,
 	}
 
-	return &Certificate{Cert: cert, pk: pk, signed: false}, nil
+	return &Certificate{Cert: cert, Pk: pk, signed: false}, nil
 }
 
 func (c *Certificate) SelfSign() error {
-	certBytes, err := x509.CreateCertificate(rand.Reader, c.Cert, c.Cert, c.pk.Public(), c.pk)
+	certBytes, err := x509.CreateCertificate(rand.Reader, c.Cert, c.Cert, c.Pk.Public(), c.Pk)
 	if err != nil {
 		return err
 	}
 
-	certPem := pem.EncodeToMemory(&pem.Block{Type: certificatePemHeader, Bytes: certBytes})
-
-	pkx509Encoded, err := x509.MarshalECPrivateKey(c.pk)
+	pkBytes, err := x509.MarshalECPrivateKey(c.Pk)
 	if err != nil {
 		return err
 	}
 
-	pkPem := pem.EncodeToMemory(&pem.Block{
-		Type:  privateKeyPemHeader,
-		Bytes: pkx509Encoded,
-	})
-
-	c.signedCert = certPem
-	c.signedPk = pkPem
+	c.SignedCert = certBytes
+	c.SignedPk = pkBytes
 	c.signed = true
 
 	return nil
 }
 
 func (c *Certificate) CASign(ca *x509.Certificate, caPk *ecdsa.PrivateKey) error {
-	certBytes, err := x509.CreateCertificate(rand.Reader, c.Cert, ca, c.pk.Public(), caPk)
+	certBytes, err := x509.CreateCertificate(rand.Reader, c.Cert, ca, c.Pk.Public(), caPk)
 	if err != nil {
 		return err
 	}
 
-	certPem := pem.EncodeToMemory(&pem.Block{Type: certificatePemHeader, Bytes: certBytes})
-
-	pkx509Encoded, err := x509.MarshalECPrivateKey(c.pk)
+	pkBytes, err := x509.MarshalECPrivateKey(c.Pk)
 	if err != nil {
 		return err
 	}
 
-	pkPem := pem.EncodeToMemory(&pem.Block{
-		Type:  privateKeyPemHeader,
-		Bytes: pkx509Encoded,
-	})
-
-	c.signedCert = certPem
-	c.signedPk = pkPem
+	c.SignedCert = certBytes
+	c.SignedPk = pkBytes
 	c.signed = true
 
 	return nil
 }
 
-func (c *Certificate) ToPEM() (certPem []byte, pkPem []byte, err error) {
+func (c *Certificate) ToPEM() (pemCert []byte, pemPk []byte, err error) {
 	if !c.signed {
 		return nil, nil, errors.New("failed parsing certificate to PEM format: certificate hasn't been signed")
 	}
 
-	certPem = pem.EncodeToMemory(&pem.Block{
+	pemCert = pem.EncodeToMemory(&pem.Block{
 		Type:  certificatePemHeader,
-		Bytes: c.signedCert,
+		Bytes: c.SignedCert,
 	})
 
-	pkPem = pem.EncodeToMemory(&pem.Block{
+	pemPk = pem.EncodeToMemory(&pem.Block{
 		Type:  privateKeyPemHeader,
-		Bytes: c.signedPk,
+		Bytes: c.SignedPk,
 	})
 
-	return certPem, pkPem, nil
+	return pemCert, pemPk, nil
 }
 
 func ValidateCertificateExpiration(certData []byte, renewalThreshold time.Duration, now time.Time, log logd.Logger) (bool, error) {

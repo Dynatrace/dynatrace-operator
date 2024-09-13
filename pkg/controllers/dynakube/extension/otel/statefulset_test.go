@@ -378,7 +378,7 @@ func TestVolumes(t *testing.T) {
 		statefulSet := getStatefulset(t, dk)
 
 		expectedVolumeMount := corev1.VolumeMount{
-			Name:      dk.Name + consts.ExtensionsTlsSecretSuffix,
+			Name:      dk.GetExtensionsTLSSecretName(),
 			MountPath: customEecTlsCertificatePath,
 			ReadOnly:  true,
 		}
