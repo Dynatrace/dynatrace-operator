@@ -6,6 +6,7 @@ const (
 	EnrichmentWorkloadKindEnv        = "DT_WORKLOAD_KIND"
 	EnrichmentWorkloadNameEnv        = "DT_WORKLOAD_NAME"
 	EnrichmentWorkloadAnnotationsEnv = "DT_WORKLOAD_ANNOTATIONS"
+	EnrichmentClusterEntityIDEnv     = "DT_ENTITY_ID"
 	EnrichmentClusterNameEnv         = "DT_CLUSTER_NAME"
 
 	EnrichmentMountPath          = "/var/lib/dynatrace/enrichment"
