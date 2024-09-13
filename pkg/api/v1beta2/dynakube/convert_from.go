@@ -99,6 +99,8 @@ func (dst *DynaKube) fromStatus(src *v1beta3.DynaKube) {
 	dst.Status.Phase = src.Status.Phase
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
 	dst.Status.KubeSystemUUID = src.Status.KubeSystemUUID
+	dst.Status.KubernetesClusterMEID = src.Status.KubernetesClusterMEID
+	dst.Status.KubernetesClusterName = src.Status.KubernetesClusterName
 }
 
 func (dst *DynaKube) fromOneAgentStatus(src v1beta3.DynaKube) {
