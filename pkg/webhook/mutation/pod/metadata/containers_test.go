@@ -85,10 +85,11 @@ func TestUpdateInstallContainer(t *testing.T) {
 	t.Run("Add volume mounts and envs", func(t *testing.T) {
 		container := &corev1.Container{}
 		clusterName := "test-cluster"
+		entityID := "test-entity"
 
-		updateInstallContainer(container, createTestWorkloadInfo(), clusterName)
+		updateInstallContainer(container, createTestWorkloadInfo(t), entityID, clusterName)
 
 		require.Len(t, container.VolumeMounts, 1)
-		require.Len(t, container.Env, 4)
+		require.Len(t, container.Env, 5)
 	})
 }

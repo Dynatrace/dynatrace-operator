@@ -65,6 +65,10 @@ func findRootOwner(ctx context.Context, clt client.Client, childObjectMetadata *
 				},
 			}
 
+			if !isWellKnownWorkload(parentObjectMetadata) {
+				return childObjectMetadata, nil
+			}
+
 			err = clt.Get(ctx, client.ObjectKey{Name: owner.Name, Namespace: objectMetadata.Namespace}, parentObjectMetadata)
 			if err != nil {
 				log.Error(err, "failed to query the object",
@@ -82,11 +86,7 @@ func findRootOwner(ctx context.Context, clt client.Client, childObjectMetadata *
 				return childObjectMetadata, err
 			}
 
-			if isWellKnownWorkload(parentObjectMetadata) {
-				return parentObjectMetadata, nil
-			}
-
-			return childObjectMetadata, nil
+			return parentObjectMetadata, nil
 		}
 	}
 

@@ -10,7 +10,7 @@ import (
 func TestAddWorkloadInfoEnvs(t *testing.T) {
 	t.Run("Add workload info envs", func(t *testing.T) {
 		container := &corev1.Container{}
-		workloadInfo := createTestWorkloadInfo()
+		workloadInfo := createTestWorkloadInfo(t)
 		addWorkloadInfoEnvs(container, workloadInfo)
 
 		require.Len(t, container.Env, 2)
@@ -29,8 +29,8 @@ func TestAddInjectedEnv(t *testing.T) {
 func TestAddClusterNameEnv(t *testing.T) {
 	t.Run("Add workload info envs", func(t *testing.T) {
 		container := &corev1.Container{}
-		addClusterNameEnv(container, "test")
+		addDTClusterEnvs(container, "entityID", "clusterName")
 
-		require.Len(t, container.Env, 1)
+		require.Len(t, container.Env, 2)
 	})
 }
