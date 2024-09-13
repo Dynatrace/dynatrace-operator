@@ -197,6 +197,7 @@ func prepMetadataEnrichmentTestEnv(t *testing.T, isUnknownWorkload bool) func() 
 		consts.K8sNodeNameEnv,
 		consts.K8sNamespaceEnv,
 		consts.EnrichmentClusterNameEnv,
+		consts.EnrichmentClusterEntityIDEnv,
 	}
 
 	for _, envvar := range envs {
