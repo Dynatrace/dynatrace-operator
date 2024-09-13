@@ -18,8 +18,9 @@ func addWorkloadInfoEnvs(container *corev1.Container, workload *workloadInfo) {
 	)
 }
 
-func addClusterNameEnv(container *corev1.Container, clusterName string) {
+func addDTClusterEnvs(container *corev1.Container, clusterName, entityID string) {
 	container.Env = append(container.Env,
 		corev1.EnvVar{Name: consts.EnrichmentClusterNameEnv, Value: clusterName},
+		corev1.EnvVar{Name: consts.EnrichmentClusterEntityIDEnv, Value: entityID},
 	)
 }

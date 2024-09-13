@@ -140,7 +140,7 @@ func TestMutate(t *testing.T) {
 		assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen+3)
 		assert.Len(t, request.Pod.Annotations, initialAnnotationsLen+3)
 
-		assert.Len(t, request.InstallContainer.Env, 5)
+		assert.Len(t, request.InstallContainer.Env, 6)
 		assert.Len(t, request.InstallContainer.VolumeMounts, 1)
 	})
 }

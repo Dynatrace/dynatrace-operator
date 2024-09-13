@@ -4402,6 +4402,11 @@ spec:
                 description: KubernetesClusterMEID contains the ID of the monitored
                   entity that points to the Kubernetes cluster
                 type: string
+              kubernetesClusterName:
+                description: KubernetesClusterName contains the display name (also
+                  know as label) of the monitored entity that points to the Kubernetes
+                  cluster
+                type: string
               metadataEnrichment:
                 description: Observed state of Metadata-Enrichment
                 properties:
@@ -7222,6 +7227,11 @@ spec:
               kubernetesClusterMEID:
                 description: KubernetesClusterMEID contains the ID of the monitored
                   entity that points to the Kubernetes cluster
+                type: string
+              kubernetesClusterName:
+                description: KubernetesClusterName contains the display name (also
+                  know as label) of the monitored entity that points to the Kubernetes
+                  cluster
                 type: string
               metadataEnrichment:
                 description: Observed state of Metadata-Enrichment
