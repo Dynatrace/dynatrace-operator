@@ -100,6 +100,8 @@ func (src *DynaKube) toStatus(dst *dynakube.DynaKube) {
 	dst.Status.Phase = src.Status.Phase
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
 	dst.Status.KubeSystemUUID = src.Status.KubeSystemUUID
+	dst.Status.KubernetesClusterMEID = src.Status.KubernetesClusterMEID
+	dst.Status.KubernetesClusterName = src.Status.KubernetesClusterName
 }
 
 func (src *DynaKube) toOneAgentStatus(dst *dynakube.DynaKube) {

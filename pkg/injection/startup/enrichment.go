@@ -10,18 +10,17 @@ import (
 )
 
 type enrichmentJson struct {
-	ContainerName string `json:"k8s.container.name"`
-	PodUid        string `json:"k8s.pod.uid"`
-	PodName       string `json:"k8s.pod.name"`
-	NodeName      string `json:"k8s.node.name"`
-	NamespaceName string `json:"k8s.namespace.name"`
-	ClusterName   string `json:"k8s.cluster.name,omitempty"`
-	ClusterUID    string `json:"k8s.cluster.uid"`
-	WorkloadKind  string `json:"k8s.workload.kind"`
-	WorkloadName  string `json:"k8s.workload.name"`
-
-	// Deprecated
+	ContainerName   string `json:"k8s.container.name"`
+	PodUid          string `json:"k8s.pod.uid"`
+	PodName         string `json:"k8s.pod.name"`
+	NodeName        string `json:"k8s.node.name"`
+	NamespaceName   string `json:"k8s.namespace.name"`
+	ClusterName     string `json:"k8s.cluster.name,omitempty"`
+	ClusterUID      string `json:"k8s.cluster.uid"`
+	WorkloadKind    string `json:"k8s.workload.kind"`
+	WorkloadName    string `json:"k8s.workload.name"`
 	DTClusterEntity string `json:"dt.entity.kubernetes_cluster,omitempty"`
+
 	// Deprecated
 	DTClusterID string `json:"dt.kubernetes.cluster.id"`
 	// Deprecated
@@ -48,7 +47,7 @@ func (runner *Runner) createEnrichmentFiles() error {
 			WorkloadKind:  runner.env.WorkloadKind,
 			WorkloadName:  runner.env.WorkloadName,
 
-			DTClusterEntity: runner.env.K8ClusterName,
+			DTClusterEntity: runner.env.K8ClusterEntityID,
 			DTClusterID:     runner.env.K8ClusterID,
 			DTWorkloadKind:  runner.env.WorkloadKind,
 			DTWorkloadName:  runner.env.WorkloadName,
