@@ -127,13 +127,13 @@ func (r *reconciler) reconcileTLSSecret(ctx context.Context) error {
 
 func (r *reconciler) createOrUpdateTLSSecret(ctx context.Context) error {
 	cert, err := certificates.New()
-	cert.Cert.DNSNames = getCertificateAltNames(r.dk.Name)
-	cert.Cert.KeyUsage = x509.KeyUsageKeyEncipherment | x509.KeyUsageDataEncipherment
-	cert.Cert.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
-
 	if err != nil {
 		return err
 	}
+
+	cert.Cert.DNSNames = getCertificateAltNames(r.dk.Name)
+	cert.Cert.KeyUsage = x509.KeyUsageKeyEncipherment | x509.KeyUsageDataEncipherment
+	cert.Cert.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
 
 	err = cert.SelfSign()
 	if err != nil {
