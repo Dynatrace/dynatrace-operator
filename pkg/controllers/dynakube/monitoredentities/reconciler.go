@@ -57,6 +57,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	r.dk.Status.KubernetesClusterMEID = findLatestEntity(monitoredEntities).EntityId
+	r.dk.Status.KubernetesClusterName = findLatestEntity(monitoredEntities).DisplayName
 	conditions.SetStatusUpdated(r.dk.Conditions(), MEIDConditionType, "Kubernetes Cluster MEID is up to date")
 
 	log.Info("kubernetesClusterMEID set in dynakube status, done reconciling", "kubernetesClusterMEID", r.dk.Status.KubernetesClusterMEID)

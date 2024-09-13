@@ -44,7 +44,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
-|`enabled`|Enables MetadataEnrichment, `true` by default.|True|boolean|
+|`enabled`|Enables MetadataEnrichment, `false` by default.|False|boolean|
 |`namespaceSelector`|The namespaces where you want Dynatrace Operator to inject enrichment.|-|object|
 
 ### .spec.oneAgent.hostMonitoring
