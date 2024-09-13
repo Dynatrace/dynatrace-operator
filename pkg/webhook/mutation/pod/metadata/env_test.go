@@ -10,7 +10,7 @@ import (
 func TestAddWorkloadInfoEnvs(t *testing.T) {
 	t.Run("Add workload info envs", func(t *testing.T) {
 		container := &corev1.Container{}
-		workloadInfo := createTestWorkloadInfo()
+		workloadInfo := createTestWorkloadInfo(t)
 		addWorkloadInfoEnvs(container, workloadInfo)
 
 		require.Len(t, container.Env, 2)
