@@ -1,12 +1,12 @@
-name: Self update on new release
+name: Self update codebase on new release
 on:
   push:
     branches:
       - release-*
 
 jobs:
-  update-e2e-ondemand-release:
-    name: Self update e2e ondemand release version
+  self-update-on-new-release:
+    name: Self update when new release branch has been created
     permissions:
       contents: write
       pull-requests: write
@@ -25,15 +25,19 @@ jobs:
       - name: Find last 3 release branches
         run: |
           git fetch --prune --tags
-          git branch -r --list 'origin/release-*' | sort --version-sort | tail -n 1 | tr -d ' ' > release-branches.txt
+          git branch -r --list 'origin/release-*' | sort --version-sort | tail -n 3 | tr -d ' ' > release-branches.txt
 
           echo latest branches:
           cat release-branches.txt
+      - name: Update renovate file
+        run: |
+          source local/.venv/bin/activate
+          python3 hack/build/ci/update-renovate-json5.py release-branches.txt .github/renovate.json5
       - name: Update e2e-tests-ondemand.yaml file
         run: |
           source local/.venv/bin/activate
           python3 hack/build/ci/update-e2e-ondemand-pipeline.py release-branches.txt .github/workflows/e2e-tests-ondemand.yaml
-      - name: Create pull request for adding new release branches to e2e-tests-ondemand.yaml
+      - name: Create pull request for updating all files
         uses: peter-evans/create-pull-request@v7
         with:
           base: main
@@ -42,15 +46,13 @@ jobs:
           branch-suffix: short-commit-hash
           add-paths: |
             .github/renovate.json5
-          title: '[Automatic] Update .github/workflows/e2e-tests-ondemand.yaml config for ${{ github.ref }}'
+          title: '[Automatic] Update because new branch created ${{ github.ref_name }}'
           labels: 'ci'
-          commit-message: Update e2e-tests-ondemand.yaml
+          commit-message: self update on new release ${{ github.ref_name }}
           committer: GitHub <noreply@github.com>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
           body: |
             # Description
-            Upgrade `e2e-tests-ondemand.yaml` to include last release branche as default.
-            ## How can this be tested?
-            Check renovate app.
-            ## Checklist
-            - [x] PR is labeled accordingly
+            This PR updates files after new release has been created:
+            - `renovate.json5`;
+            - `e2e-tests-ondemand.yaml` to include last release branch as default.
