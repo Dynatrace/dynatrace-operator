@@ -16,7 +16,7 @@ import (
 
 const (
 	intSerialNumberLimit  = 128
-	defaultCertExpiration = 7 * 24 * time.Hour
+	defaultCertExpiration = 365 * 24 * time.Hour
 	certificatePemHeader  = "CERTIFICATE"
 	privateKeyPemHeader   = "PRIVATE KEY"
 )
