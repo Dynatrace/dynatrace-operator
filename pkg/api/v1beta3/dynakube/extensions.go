@@ -98,3 +98,15 @@ type ImageRefSpec struct {
 	// Indicates a tag of the image to use
 	Tag string `json:"tag,omitempty"`
 }
+
+func (ref ImageRefSpec) String(defaultRepo, defaultTag string) string {
+	if ref.Repository == "" {
+		ref.Repository = defaultRepo
+	}
+
+	if ref.Tag == "" {
+		ref.Tag = defaultTag
+	}
+
+	return ref.Repository + ":" + ref.Tag
+}
