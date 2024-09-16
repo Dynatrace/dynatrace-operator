@@ -16,6 +16,7 @@ import (
 const (
 	intSerialNumberLimit  = 128
 	defaultCertExpiration = 365 * 24 * time.Hour
+	rsaKeyBits            = 2048
 	certificatePemHeader  = "CERTIFICATE"
 	privateKeyPemHeader   = "PRIVATE KEY"
 )
@@ -45,7 +46,7 @@ func New() (*Certificate, error) {
 		return nil, err
 	}
 
-	pk, err := rsa.GenerateKey(rand.Reader, 2048)
+	pk, err := rsa.GenerateKey(rand.Reader, rsaKeyBits)
 	if err != nil {
 		return nil, err
 	}
