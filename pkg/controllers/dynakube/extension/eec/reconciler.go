@@ -2,7 +2,6 @@ package eec
 
 import (
 	"crypto/x509"
-	"encoding/pem"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -166,14 +165,10 @@ func (r *reconciler) createOrUpdateTLSSecret(ctx context.Context) error {
 }
 
 func (r *reconciler) reconcileTLSSecretExpiration(ctx context.Context, secret *corev1.Secret) error {
-	pemBlock, _ := pem.Decode(secret.Data[consts.TLSCrtDataName])
+	isValid, err := certificates.ValidateCertificateExpiration(secret.Data[consts.TLSCrtDataName], consts.ExtensionsSelfSignedTLSRenewalThreshold, time.Now(), log)
+	if err != nil || !isValid {
+		log.Info("server certificate failed to parse or is outdated")
 
-	cert, err := x509.ParseCertificate(pemBlock.Bytes)
-	if err != nil {
-		return err
-	}
-
-	if cert.NotAfter.After(time.Now()) {
 		return r.createOrUpdateTLSSecret(ctx)
 	}
 

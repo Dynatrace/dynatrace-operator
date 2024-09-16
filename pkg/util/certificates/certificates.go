@@ -1,9 +1,8 @@
 package certificates
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
@@ -34,7 +33,7 @@ var (
 
 type Certificate struct {
 	Cert       *x509.Certificate
-	Pk         *ecdsa.PrivateKey
+	Pk         *rsa.PrivateKey
 	SignedCert []byte
 	SignedPk   []byte
 	signed     bool
@@ -46,7 +45,7 @@ func New() (*Certificate, error) {
 		return nil, err
 	}
 
-	pk, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	pk, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return nil, err
 	}
@@ -58,6 +57,7 @@ func New() (*Certificate, error) {
 		NotAfter:              time.Now().Add(defaultCertExpiration),
 		IsCA:                  true,
 		BasicConstraintsValid: true,
+		SignatureAlgorithm:    x509.SHA256WithRSA,
 	}
 
 	return &Certificate{Cert: cert, Pk: pk, signed: false}, nil
@@ -69,28 +69,7 @@ func (c *Certificate) SelfSign() error {
 		return err
 	}
 
-	pkBytes, err := x509.MarshalECPrivateKey(c.Pk)
-	if err != nil {
-		return err
-	}
-
-	c.SignedCert = certBytes
-	c.SignedPk = pkBytes
-	c.signed = true
-
-	return nil
-}
-
-func (c *Certificate) CASign(ca *x509.Certificate, caPk *ecdsa.PrivateKey) error {
-	certBytes, err := x509.CreateCertificate(rand.Reader, c.Cert, ca, c.Pk.Public(), caPk)
-	if err != nil {
-		return err
-	}
-
-	pkBytes, err := x509.MarshalECPrivateKey(c.Pk)
-	if err != nil {
-		return err
-	}
+	pkBytes := x509.MarshalPKCS1PrivateKey(c.Pk)
 
 	c.SignedCert = certBytes
 	c.SignedPk = pkBytes

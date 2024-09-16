@@ -1,5 +1,7 @@
 package consts
 
+import "time"
+
 const (
 	// secret
 	EecTokenSecretKey         = "eec.token"
@@ -20,8 +22,8 @@ const (
 	ExtensionsCollectorComPort        = 14599
 	ExtensionsCollectorTargetPortName = "collector-com"
 
-	ExtensionsSelfSignedTLSSecretSuffix = "-extensions-controller-tls"
-
+	ExtensionsSelfSignedTLSSecretSuffix     = "-extensions-controller-tls"
+	ExtensionsSelfSignedTLSRenewalThreshold = 12 * time.Hour
 	// TLSKeyDataName is the key used to store a TLS private key in the secret's data field.
 	TLSKeyDataName = "tls.key"
 

@@ -60,16 +60,3 @@ func TestSelfSign(t *testing.T) {
 		require.NotNil(t, cert.SignedPk)
 	})
 }
-
-func TestCASign(t *testing.T) {
-	t.Run("CA sign certificate", func(t *testing.T) {
-		ca, _ := New()
-		cert, _ := New()
-		err := cert.CASign(ca.Cert, ca.Pk)
-
-		require.NoError(t, err)
-
-		require.NotNil(t, cert.SignedCert)
-		require.NotNil(t, cert.SignedPk)
-	})
-}
