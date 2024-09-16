@@ -2,6 +2,7 @@ package configsecret
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -68,7 +69,7 @@ func TestReconcile(t *testing.T) {
 
 		var secretConfig corev1.Secret
 		err = mockK8sClient.Get(ctx, types.NamespacedName{
-			Name:      getSecretName(dk.Name),
+			Name:      GetSecretName(dk.Name),
 			Namespace: dk.Namespace,
 		}, &secretConfig)
 		require.True(t, k8serrors.IsNotFound(err))
@@ -94,17 +95,17 @@ func TestReconcile(t *testing.T) {
 
 func checkSecretForValue(t *testing.T, k8sClient client.Client, dk *dynakube.DynaKube) {
 	var secret corev1.Secret
-	err := k8sClient.Get(context.Background(), client.ObjectKey{Name: getSecretName((dk.Name)), Namespace: dk.Namespace}, &secret)
+	err := k8sClient.Get(context.Background(), client.ObjectKey{Name: GetSecretName((dk.Name)), Namespace: dk.Namespace}, &secret)
 	require.NoError(t, err)
 
-	deploymentConfig, ok := secret.Data[deploymentConfigFilename]
+	deploymentConfig, ok := secret.Data[DeploymentConfigFilename]
 	require.True(t, ok)
 
 	tenantUUID, err := dk.TenantUUIDFromConnectionInfoStatus()
 	require.NoError(t, err)
 
 	expectedLines := []string{
-		serverKey + "=" + dk.ApiUrl(),
+		serverKey + "=" + fmt.Sprintf("{%s}", dk.Status.OneAgent.ConnectionInfoStatus.Endpoints),
 		tenantKey + "=" + tenantUUID,
 		tenantTokenKey + "=" + tokenValue,
 		hostIdSourceKey + "=k8s-node-name",
@@ -135,6 +136,7 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 				ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
 					ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
 						TenantUUID: "test-uuid",
+						Endpoints:  "https://endpoint1.com;https://endpoint2.com",
 					},
 				},
 			},
