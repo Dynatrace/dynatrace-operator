@@ -17,7 +17,7 @@ const (
 
 	errorImageFieldSetWithoutCSIFlag = `The DynaKube specification attempts to enable ApplicationMonitoring mode and retrieve the respective image, but the CSI driver is not enabled.`
 
-	errorNodeSelectorConflict = `The DynaKube specification attempts to specify a %s nodeSelector, which conflicts with another DynaKube's %s nodeSelector. This is not supported.
+	errorNodeSelectorConflict = `The DynaKube specification attempts to deploy a %s, which conflicts with another DynaKube's %s. Only one per namespace is supported.
 Conflicting DynaKube: %s`
 
 	errorVolumeStorageReadOnlyModeConflict = `The DynaKube specification specifies a read-only host file system while OneAgent has volume storage enabled.`
