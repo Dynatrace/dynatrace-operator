@@ -122,7 +122,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Contains(t, condition.Message, "A problem occurred when using the Kubernetes API")
 	})
 
-	t.Run("Create service when prometheus is enabled with minimal setup", func(t *testing.T) {
+	t.Run("Create service when extensions are enabled with minimal setup", func(t *testing.T) {
 		dk := createDynakube()
 		dk.Spec.Extensions.Enabled = true
 
@@ -147,7 +147,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Equal(t, dk.Name+consts.ExtensionsControllerSuffix+" created", condition.Message)
 	})
 
-	t.Run("Don't create service when prometheus is disabled with minimal setup", func(t *testing.T) {
+	t.Run("Don't create service when extensions are disabled with minimal setup", func(t *testing.T) {
 		dk := createDynakube()
 		dk.Spec.Extensions.Enabled = false
 

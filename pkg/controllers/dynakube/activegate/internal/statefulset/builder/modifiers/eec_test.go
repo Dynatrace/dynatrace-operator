@@ -8,7 +8,7 @@ import (
 )
 
 func TestEecEnabled(t *testing.T) {
-	t.Run("Prometheus extension is enabled", func(t *testing.T) {
+	t.Run("Extensions are enabled", func(t *testing.T) {
 		dk := getBaseDynakube()
 		dk.Spec.Extensions.Enabled = true
 
@@ -17,7 +17,7 @@ func TestEecEnabled(t *testing.T) {
 		assert.True(t, mod.Enabled())
 	})
 
-	t.Run("Prometheus extension is disabled", func(t *testing.T) {
+	t.Run("Extension are disabled", func(t *testing.T) {
 		dk := getBaseDynakube()
 		dk.Spec.Extensions.Enabled = false
 

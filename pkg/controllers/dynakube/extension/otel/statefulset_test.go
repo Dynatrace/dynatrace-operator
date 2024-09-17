@@ -59,7 +59,7 @@ func getStatefulset(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
 }
 
 func TestConditions(t *testing.T) {
-	t.Run("prometheus is disabled", func(t *testing.T) {
+	t.Run("extensions are disabled", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Extensions.Enabled = false
 		conditions.SetStatefulSetCreated(dk.Conditions(), otelControllerStatefulSetConditionType, dynakube.ExtensionsCollectorStatefulsetName)
