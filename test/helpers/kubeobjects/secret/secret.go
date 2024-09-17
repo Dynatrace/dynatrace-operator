@@ -24,6 +24,19 @@ func New(name, namespace string, data map[string][]byte) corev1.Secret {
 	}
 }
 
+func NewDockerConfigJson(name, namespace, customPullSecret string) corev1.Secret {
+	return corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Data: map[string][]byte{
+			corev1.DockerConfigJsonKey: []byte(customPullSecret),
+		},
+		Type: corev1.SecretTypeDockerConfigJson,
+	}
+}
+
 func Create(secret corev1.Secret) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		err := envConfig.Client().Resources().Create(ctx, &secret)
