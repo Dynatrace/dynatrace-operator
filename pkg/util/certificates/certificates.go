@@ -15,8 +15,8 @@ import (
 
 const (
 	intSerialNumberLimit  = 128
-	defaultCertExpiration = 365 * 24 * time.Hour
-	rsaKeyBits            = 2048
+	defaultCertExpiration = 2 * 365 * 24 * time.Hour
+	rsaKeyBits            = 4096
 	certificatePemHeader  = "CERTIFICATE"
 	privateKeyPemHeader   = "PRIVATE KEY"
 )
@@ -68,7 +68,10 @@ func (c *Certificate) SelfSign() error {
 		return err
 	}
 
-	pkBytes := x509.MarshalPKCS1PrivateKey(c.Pk)
+	pkBytes, err := x509.MarshalPKCS8PrivateKey(c.Pk)
+	if err != nil {
+		return err
+	}
 
 	c.SignedCert = certBytes
 	c.SignedPk = pkBytes
