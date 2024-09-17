@@ -129,7 +129,7 @@ func (dk *DynaKube) OneAgentSecCompProfile() string {
 	}
 }
 
-func (dk *DynaKube) NodeSelector() map[string]string {
+func (dk *DynaKube) OneAgentNodeSelector() map[string]string {
 	switch {
 	case dk.ClassicFullStackMode():
 		return dk.Spec.OneAgent.ClassicFullStack.NodeSelector
@@ -140,6 +140,10 @@ func (dk *DynaKube) NodeSelector() map[string]string {
 	}
 
 	return nil
+}
+
+func (dk *DynaKube) LogModuleNodeSelector() map[string]string {
+	return dk.Spec.Templates.LogModule.NodeSelector
 }
 
 // CodeModulesVersion provides version set in Status for the CodeModules.

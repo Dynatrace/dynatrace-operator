@@ -113,7 +113,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 				errorConflictingNamespaceSelector,
 				fmt.Sprintf(errorDuplicateActiveGateCapability, dynakube.KubeMonCapability.DisplayName),
 				fmt.Sprintf(errorInvalidActiveGateCapability, "me dumb"),
-				fmt.Sprintf(errorNodeSelectorConflict, "conflict2")},
+				fmt.Sprintf(errorNodeSelectorConflict, oneAgentComponentName, oneAgentComponentName, "conflict2")},
 			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,

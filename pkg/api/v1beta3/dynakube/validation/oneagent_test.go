@@ -160,6 +160,22 @@ func TestConflictingNodeSelector(t *testing.T) {
 					},
 				},
 			}, &defaultCSIDaemonSet)
+
+		assertAllowedWithoutWarnings(t, newCloudNativeDynakube("dk1", map[string]string{}, "1"),
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testApiUrl,
+					LogModule: dynakube.LogModuleSpec{
+						Enabled: true,
+					},
+					Templates: dynakube.TemplatesSpec{
+						LogModule: dynakube.LogModuleTemplateSpec{
+							NodeSelector: map[string]string{"node": "12"},
+						},
+					},
+				},
+			}, &defaultCSIDaemonSet)
 	})
 	t.Run(`valid dynakube specs with multitenant hostMonitoring`, func(t *testing.T) {
 		assertAllowedWithWarnings(t, 0,
@@ -182,7 +198,7 @@ func TestConflictingNodeSelector(t *testing.T) {
 	})
 	t.Run(`invalid dynakube specs`, func(t *testing.T) {
 		assertDenied(t,
-			[]string{fmt.Sprintf(errorNodeSelectorConflict, "conflicting-dk")},
+			[]string{fmt.Sprintf(errorNodeSelectorConflict, oneAgentComponentName, oneAgentComponentName, "conflicting-dk")},
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
@@ -238,6 +254,36 @@ func TestConflictingNodeSelector(t *testing.T) {
 			newCloudNativeDynakube("dk1", map[string]string{}, "1"),
 			newCloudNativeDynakube("dk2", map[string]string{}, "1"),
 			&defaultCSIDaemonSet)
+	})
+	t.Run(`invalid dynakube specs with existing log module`, func(t *testing.T) {
+		assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, oneAgentComponentName, logModuleComponentName, testName)},
+			newCloudNativeDynakube("dk1", map[string]string{}, "1"),
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testApiUrl,
+					LogModule: dynakube.LogModuleSpec{
+						Enabled: true,
+					},
+				},
+			}, &defaultCSIDaemonSet)
+
+		assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, oneAgentComponentName, logModuleComponentName, testName)},
+			newCloudNativeDynakube("dk1", map[string]string{}, "1"),
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testApiUrl,
+					LogModule: dynakube.LogModuleSpec{
+						Enabled: true,
+					},
+					Templates: dynakube.TemplatesSpec{
+						LogModule: dynakube.LogModuleTemplateSpec{
+							NodeSelector: map[string]string{"node": "1"},
+						},
+					},
+				},
+			}, &defaultCSIDaemonSet)
 	})
 }
 
