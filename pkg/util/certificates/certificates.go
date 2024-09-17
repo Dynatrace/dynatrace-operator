@@ -52,13 +52,11 @@ func New() (*Certificate, error) {
 	}
 
 	cert := &x509.Certificate{
-		SerialNumber:          serialNumber,
-		Subject:               defaultCertSubject,
-		NotBefore:             time.Now(),
-		NotAfter:              time.Now().Add(defaultCertExpiration),
-		IsCA:                  true,
-		BasicConstraintsValid: true,
-		SignatureAlgorithm:    x509.SHA256WithRSA,
+		SerialNumber:       serialNumber,
+		Subject:            defaultCertSubject,
+		NotBefore:          time.Now(),
+		NotAfter:           time.Now().Add(defaultCertExpiration),
+		SignatureAlgorithm: x509.SHA256WithRSA,
 	}
 
 	return &Certificate{Cert: cert, Pk: pk, signed: false}, nil

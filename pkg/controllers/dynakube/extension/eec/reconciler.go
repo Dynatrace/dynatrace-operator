@@ -133,6 +133,7 @@ func (r *reconciler) createOrUpdateTLSSecret(ctx context.Context) error {
 	cert.Cert.DNSNames = getCertificateAltNames(r.dk.Name)
 	cert.Cert.KeyUsage = x509.KeyUsageKeyEncipherment | x509.KeyUsageDataEncipherment
 	cert.Cert.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
+	cert.Cert.Subject.CommonName = r.dk.Name + "-extensions-controller.dynatrace"
 
 	err = cert.SelfSign()
 	if err != nil {
