@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.2
+    controller-gen.kubebuilder.io/version: v0.16.3
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -5015,13 +5015,8 @@ spec:
                 type: boolean
               extensions:
                 properties:
-                  prometheus:
-                    properties:
-                      enabled:
-                        type: boolean
-                    required:
-                    - enabled
-                    type: object
+                  enabled:
+                    type: boolean
                 type: object
               logModule:
                 description: General configuration about the LogModule feature.
@@ -7363,7 +7358,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.2
+    controller-gen.kubebuilder.io/version: v0.16.3
   name: edgeconnects.dynatrace.com
 spec:
   conversion:

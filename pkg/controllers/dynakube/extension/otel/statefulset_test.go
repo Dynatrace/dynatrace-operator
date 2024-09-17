@@ -38,9 +38,7 @@ func getTestDynakube() *dynakube.DynaKube {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			Extensions: dynakube.ExtensionsSpec{
-				Prometheus: dynakube.PrometheusSpec{
-					Enabled: true,
-				},
+				Enabled: true,
 			},
 			Templates: dynakube.TemplatesSpec{OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{}},
 		},
@@ -63,7 +61,7 @@ func getStatefulset(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
 func TestConditions(t *testing.T) {
 	t.Run("prometheus is disabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Extensions.Prometheus.Enabled = false
+		dk.Spec.Extensions.Enabled = false
 		conditions.SetStatefulSetCreated(dk.Conditions(), otelControllerStatefulSetConditionType, dynakube.ExtensionsCollectorStatefulsetName)
 
 		mockK8sClient := fake.NewClient(dk)
