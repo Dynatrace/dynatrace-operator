@@ -1,20 +1,23 @@
 package daemonset
 
 import (
+	"fmt"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmodule/configsecret"
 	corev1 "k8s.io/api/core/v1"
 )
 
 const (
 	// for configuring the logmodule
-	configVolumeName = "config"
-	configVolumePath = "/var/lib/dynatrace/oneagent/agent/config/deployment.conf"
+	configVolumeName      = "config"
+	configVolumeMountPath = "/var/lib/dynatrace/oneagent/agent/config/deployment.conf"
 
 	// for the logmodule to read/write
-	dtLibVolumeName = "var-lib-dynatrace"
-	dtLibVolumePath = "/var/lib/dynatrace"
-	dtLogVolumeName = "var-log-dynatrace"
-	dtLogVolumePath = "/var/log/dynatrace"
+	dtLibVolumeName         = "var-lib-dynatrace"
+	dtLibVolumeMountPath    = "/var/lib/dynatrace"
+	dtLibVolumePathTemplate = "/tmp/dynatrace-logmodule-%s"
+	dtLogVolumeName         = "var-log-dynatrace"
+	dtLogVolumeMountPath    = "/var/log/dynatrace"
 
 	// for the logs that the logmodule will ingest
 	podLogsVolumeName       = "var-log-pods"
@@ -29,7 +32,7 @@ const (
 func getConfigVolumeMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
 		Name:      configVolumeName,
-		MountPath: configVolumePath,
+		MountPath: configVolumeMountPath,
 		SubPath:   configsecret.DeploymentConfigFilename,
 	}
 }
@@ -51,27 +54,29 @@ func getDTVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
 			Name:      dtLibVolumeName,
-			MountPath: dtLibVolumePath,
+			MountPath: dtLibVolumeMountPath,
 		},
 		{
 			Name:      dtLogVolumeName,
-			MountPath: dtLogVolumePath,
+			MountPath: dtLogVolumeMountPath,
 		},
 	}
 }
 
 // getDTVolumes provides the Volumes for the dynatrace specific folders
-func getDTVolumes() []corev1.Volume {
+func getDTVolumes(tenantUUID string) []corev1.Volume {
 	return []corev1.Volume{
 		{
-			Name:         dtLibVolumeName,
-			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
-			// TODO: hostPath /tmp/dynatrace-logmodule-<tenantUUID or dk-name>/lib needed?
+			Name: dtLibVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: fmt.Sprintf(dtLibVolumePathTemplate, tenantUUID),
+				},
+			},
 		},
 		{
 			Name:         dtLogVolumeName,
 			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
-			// TODO: hostPath /tmp/dynatrace-logmodule-<tenantUUID or dk-name>/log needed?
 		},
 	}
 }
@@ -136,10 +141,10 @@ func getVolumeMounts() []corev1.VolumeMount {
 	return mounts
 }
 
-func getVolumes(dkName string) []corev1.Volume {
+func getVolumes(dkName, tenantUUID string) []corev1.Volume {
 	volumes := []corev1.Volume{}
 	volumes = append(volumes, getConfigVolume(dkName))
-	volumes = append(volumes, getDTVolumes()...)
+	volumes = append(volumes, getDTVolumes(tenantUUID)...)
 	volumes = append(volumes, getIngestVolumes()...)
 
 	return volumes

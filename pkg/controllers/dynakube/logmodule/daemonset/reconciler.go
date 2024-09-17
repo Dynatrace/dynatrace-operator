@@ -57,6 +57,11 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil // clean-up shouldn't cause a failure
 	}
 
+	tenantUUID, err := r.dk.TenantUUIDFromConnectionInfoStatus()
+	if err != nil {
+		return err
+	}
+
 	labels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.LogModuleComponentLabel)
 
 	maxUnavailable := intstr.FromInt(r.dk.FeatureOneAgentMaxUnavailable())
@@ -76,7 +81,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 				MaxUnavailable: &maxUnavailable,
 			},
 		}),
-		daemonset.SetVolumes(getVolumes(r.dk.Name)),
+		daemonset.SetVolumes(getVolumes(r.dk.Name, tenantUUID)),
 	)
 	if err != nil {
 		return err
