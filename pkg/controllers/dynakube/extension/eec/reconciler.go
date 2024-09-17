@@ -98,7 +98,7 @@ func (r *reconciler) reconcileTLSSecret(ctx context.Context) error {
 	}
 
 	if r.dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
-		if secret != nil {
+		if err == nil {
 			return query.Delete(ctx, secret)
 		}
 
