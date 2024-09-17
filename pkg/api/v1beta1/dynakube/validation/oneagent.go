@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube" //nolint:staticcheck
+	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"golang.org/x/mod/semver"
 	"k8s.io/apimachinery/pkg/labels"
@@ -17,14 +18,18 @@ const (
 `
 	errorImageFieldSetWithoutCSIFlag = `The DynaKube's specification tries to enable ApplicationMonitoring mode and get the respective image, but the CSI driver is not enabled.`
 
-	errorNodeSelectorConflict = `The DynaKube's specification tries to specify a nodeSelector conflicts with an another Dynakube's nodeSelector, which is not supported.
-The conflicting Dynakube: %s
-`
+	errorNodeSelectorConflict = `The DynaKube specification attempts to specify a %s nodeSelector, which conflicts with another DynaKube's %s nodeSelector. This is not supported.
+Conflicting DynaKube: %s`
+
 	errorVolumeStorageReadOnlyModeConflict = `The DynaKube's specification specifies a read-only host file system and OneAgent has volume storage enabled.`
 
 	warningOneAgentInstallerEnvVars = `Environment variables ONEAGENT_INSTALLER_SCRIPT_URL and ONEAGENT_INSTALLER_TOKEN are only relevant for an unsupported image type. Please make sure you are using a supported image.`
 
 	warningHostGroupConflict = `DynaKube's specification sets the host group using --set-host-group parameter. Instead, specify the new spec.oneagent.hostGroup field. If you use both settings, the new field precedes the parameter.`
+
+	oneAgentComponentName = "OneAgent"
+
+	logModuleComponentName = "LogModule"
 )
 
 func conflictingOneAgentConfiguration(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -59,26 +64,33 @@ func conflictingNodeSelector(ctx context.Context, dv *Validator, dk *dynakube.Dy
 		return ""
 	}
 
-	validDynakubes := &dynakube.DynaKubeList{}
+	validDynakubes := &dynakubev1beta3.DynaKubeList{}
 	if err := dv.apiReader.List(ctx, validDynakubes, &client.ListOptions{Namespace: dk.Namespace}); err != nil {
 		log.Info("error occurred while listing dynakubes", "err", err.Error())
 
 		return ""
 	}
 
+	oneAgentNodeSelector := dk.NodeSelector()
+
 	for _, item := range validDynakubes.Items {
-		if !item.NeedsOneAgent() {
+		if item.Name == dk.Name {
 			continue
 		}
 
-		nodeSelectorMap := dk.NodeSelector()
-		validNodeSelectorMap := item.NodeSelector()
+		if item.NeedsOneAgent() {
+			if hasConflictingMatchLabels(oneAgentNodeSelector, item.OneAgentNodeSelector()) {
+				log.Info("requested dynakube has conflicting OneAgent nodeSelector", "name", dk.Name, "namespace", dk.Namespace)
 
-		if item.Name != dk.Name {
-			if hasConflictingMatchLabels(nodeSelectorMap, validNodeSelectorMap) {
-				log.Info("requested dynakube has conflicting nodeSelector", "name", dk.Name, "namespace", dk.Namespace)
+				return fmt.Sprintf(errorNodeSelectorConflict, oneAgentComponentName, oneAgentComponentName, item.Name)
+			}
+		}
 
-				return fmt.Sprintf(errorNodeSelectorConflict, item.Name)
+		if item.NeedsLogModule() {
+			if hasConflictingMatchLabels(oneAgentNodeSelector, item.LogModuleNodeSelector()) {
+				log.Info("requested dynakube has conflicting LogModule nodeSelector", "name", dk.Name, "namespace", dk.Namespace)
+
+				return fmt.Sprintf(errorNodeSelectorConflict, oneAgentComponentName, logModuleComponentName, item.Name)
 			}
 		}
 	}

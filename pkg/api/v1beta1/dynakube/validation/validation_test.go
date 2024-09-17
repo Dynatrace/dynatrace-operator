@@ -113,7 +113,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 				errorConflictingNamespaceSelector,
 				fmt.Sprintf(errorDuplicateActiveGateCapability, dynakube.KubeMonCapability.DisplayName),
 				fmt.Sprintf(errorInvalidActiveGateCapability, "me dumb"),
-				fmt.Sprintf(errorNodeSelectorConflict, "conflict2")},
+				fmt.Sprintf(errorNodeSelectorConflict, oneAgentComponentName, oneAgentComponentName, "conflict2")},
 			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
@@ -156,15 +156,15 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 					},
 				},
 			},
-			&dynakube.DynaKube{
+			&v1beta3.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "conflict2",
 					Namespace: testNamespace,
 				},
-				Spec: dynakube.DynaKubeSpec{
+				Spec: v1beta3.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynakube.OneAgentSpec{
-						HostMonitoring: &dynakube.HostInjectSpec{},
+					OneAgent: v1beta3.OneAgentSpec{
+						HostMonitoring: &v1beta3.HostInjectSpec{},
 					},
 				},
 			}, &dummyNamespace, &dummyNamespace2)
@@ -175,8 +175,8 @@ func assertDenied(t *testing.T, errMessages []string, dk *dynakube.DynaKube, oth
 	_, err := runValidators(dk, other...)
 	require.Error(t, err)
 
-	for _, errMsg := range errMessages {
-		assert.Contains(t, err.Error(), errMsg)
+	for i, errMsg := range errMessages {
+		assert.Contains(t, err.Error(), errMsg, "error nr %d", i)
 	}
 }
 
