@@ -67,7 +67,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	err := r.reconcileTLSSecret(ctx)
+	err := r.reconcileTlsSecret(ctx)
 	if err != nil {
 		return err
 	}
@@ -87,11 +87,15 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	return r.createOrUpdateStatefulset(ctx)
 }
 
-func (r *reconciler) reconcileTLSSecret(ctx context.Context) error {
+func (r *reconciler) reconcileTlsSecret(ctx context.Context) error {
 	query := k8ssecret.Query(r.client, r.client, log)
 
+	if r.dk.GetExtensionsTlsRefName() != "" {
+		return query.DeleteForNamespaces(ctx, getSelfSignedTlsSecretName(r.dk.Name), []string{r.dk.Namespace})
+	}
+
 	secret, err := query.Get(ctx, types.NamespacedName{
-		Name:      getSelfSignedTLSSecretName(r.dk.Name),
+		Name:      getSelfSignedTlsSecretName(r.dk.Name),
 		Namespace: r.dk.Namespace,
 	})
 
@@ -99,16 +103,8 @@ func (r *reconciler) reconcileTLSSecret(ctx context.Context) error {
 		return err
 	}
 
-	if r.dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
-		if err == nil {
-			return query.Delete(ctx, secret)
-		}
-
-		return nil
-	}
-
 	if k8serrors.IsNotFound(err) {
-		err = r.createOrUpdateTLSSecret(ctx)
+		err = r.createOrUpdateTlsSecret(ctx)
 		if err != nil {
 			return err
 		}
@@ -116,17 +112,15 @@ func (r *reconciler) reconcileTLSSecret(ctx context.Context) error {
 		return nil
 	}
 
-	if secret != nil {
-		err = r.reconcileTLSSecretExpiration(ctx, secret)
-		if err != nil {
-			return err
-		}
+	err = r.reconcileTlsSecretExpiration(ctx, secret)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (r *reconciler) createOrUpdateTLSSecret(ctx context.Context) error {
+func (r *reconciler) createOrUpdateTlsSecret(ctx context.Context) error {
 	cert, err := certificates.New(r.timeProvider)
 	if err != nil {
 		return err
@@ -150,7 +144,7 @@ func (r *reconciler) createOrUpdateTLSSecret(ctx context.Context) error {
 	coreLabels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.ExtensionComponentLabel)
 	secretData := map[string][]byte{consts.TlsCrtDataName: pemCert, consts.TlsKeyDataName: pemPk}
 
-	secret, err := k8ssecret.Build(r.dk, getSelfSignedTLSSecretName(r.dk.Name), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
+	secret, err := k8ssecret.Build(r.dk, getSelfSignedTlsSecretName(r.dk.Name), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
 		return err
 	}
@@ -167,12 +161,12 @@ func (r *reconciler) createOrUpdateTLSSecret(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) reconcileTLSSecretExpiration(ctx context.Context, secret *corev1.Secret) error {
+func (r *reconciler) reconcileTlsSecretExpiration(ctx context.Context, secret *corev1.Secret) error {
 	isValid, err := certificates.ValidateCertificateExpiration(secret.Data[consts.TlsCrtDataName], consts.ExtensionsSelfSignedTlsRenewalThreshold, r.timeProvider.Now().Time, log)
 	if err != nil || !isValid {
 		log.Info("server certificate failed to parse or is outdated")
 
-		return r.createOrUpdateTLSSecret(ctx)
+		return r.createOrUpdateTlsSecret(ctx)
 	}
 
 	return nil
@@ -186,6 +180,6 @@ func getCertificateAltNames(dkName string) []string {
 	}
 }
 
-func getSelfSignedTLSSecretName(dkName string) string {
+func getSelfSignedTlsSecretName(dkName string) string {
 	return dkName + consts.ExtensionsSelfSignedTlsSecretSuffix
 }
