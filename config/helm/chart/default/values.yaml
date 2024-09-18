@@ -194,3 +194,16 @@ csidriver:
         cpu: 20m
         memory: 30Mi
 
+rbac:
+  activeGate:
+    annotations:
+    kubernetesMonitoring:
+      annotations:
+  edgeConnect:
+    annotations:
+  extensions:
+    annotations:
+  logModule:
+    annotations:
+  oneAgent:
+    annotations:
