@@ -62,6 +62,10 @@ func setUpdatedViaDynakubeAnnotation(ns *corev1.Namespace) {
 }
 
 func match(dk *dynakube.DynaKube, namespace *corev1.Namespace) (bool, error) {
+	if isIgnoredNamespace(dk, namespace.Name) {
+		return false, nil
+	}
+
 	matchesOneAgent, err := matchOneAgent(dk, namespace)
 	if err != nil {
 		return false, err
@@ -116,9 +120,6 @@ func updateNamespace(namespace *corev1.Namespace, deployedDynakubes *dynakube.Dy
 
 	for i := range deployedDynakubes.Items {
 		dk := &deployedDynakubes.Items[i]
-		if isIgnoredNamespace(dk, namespace.Name) {
-			continue
-		}
 
 		matches, err := match(dk, namespace)
 		if err != nil {
