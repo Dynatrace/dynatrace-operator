@@ -22,13 +22,13 @@ const (
 	ExtensionsCollectorComPort        = 14599
 	ExtensionsCollectorTargetPortName = "collector-com"
 
-	ExtensionsSelfSignedTlsSecretSuffix     = "-extensions-controller-tls"
-	ExtensionsSelfSignedTlsCommonNameSuffix = "-extensions-controller.dynatrace"
-	ExtensionsSelfSignedTlsRenewalThreshold = 12 * time.Hour
+	ExtensionsSelfSignedTLSSecretSuffix     = "-extensions-controller-tls"
+	ExtensionsSelfSignedTLSCommonNameSuffix = "-extensions-controller.dynatrace"
+	ExtensionsSelfSignedTLSRenewalThreshold = 12 * time.Hour
 
-	// TlsKeyDataName is the key used to store a TLS private key in the secret's data field.
-	TlsKeyDataName = "tls.key"
+	// TLSKeyDataName is the key used to store a TLS private key in the secret's data field.
+	TLSKeyDataName = "tls.key"
 
-	// TlsCrtDataName is the key used to store a TLS certificate in the secret's data field.
-	TlsCrtDataName = "tls.crt"
+	// TLSCrtDataName is the key used to store a TLS certificate in the secret's data field.
+	TLSCrtDataName = "tls.crt"
 )

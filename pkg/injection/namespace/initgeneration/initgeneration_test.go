@@ -543,7 +543,7 @@ func createTestCaConfigMap(dk *dynakube.DynaKube, value string) *corev1.ConfigMa
 func createTestTlsSecret(dk *dynakube.DynaKube, value string) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{Name: dk.Spec.ActiveGate.TlsSecretName, Namespace: dk.Namespace},
-		Data:       map[string][]byte{dynakube.TlsCertKey: []byte(value)},
+		Data:       map[string][]byte{dynakube.TLSCertKey: []byte(value)},
 	}
 }
 

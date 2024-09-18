@@ -11,14 +11,14 @@ func (dk *DynaKube) IsExtensionsEnabled() bool {
 	return dk.Spec.Extensions.Enabled
 }
 
-func (dk *DynaKube) ExtensionsTlsRefName() string {
+func (dk *DynaKube) ExtensionsTLSRefName() string {
 	return dk.Spec.Templates.ExtensionExecutionController.TlsRefName
 }
 
-func (dk *DynaKube) ExtensionsTlsSecretName() string {
-	if dk.ExtensionsTlsRefName() != "" {
-		return dk.ExtensionsTlsRefName()
+func (dk *DynaKube) ExtensionsTLSSecretName() string {
+	if dk.ExtensionsTLSRefName() != "" {
+		return dk.ExtensionsTLSRefName()
 	}
 
-	return dk.Name + consts.ExtensionsSelfSignedTlsSecretSuffix
+	return dk.Name + consts.ExtensionsSelfSignedTLSSecretSuffix
 }

@@ -45,8 +45,8 @@ const (
 	envExtensionsModuleExecPath = "/opt/dynatrace/remotepluginmodule/agent/lib64/extensionsmodule"
 	envDsInstallDir             = "/opt/dynatrace/remotepluginmodule/agent/datasources"
 	envActiveGateTrustedCert    = activeGateTrustedCertMountPath + "/" + activeGateTrustedCertSecretKeyPath
-	envEecHttpsCertPathPem      = httpsCertMountPath + "/" + consts.TlsCrtDataName
-	envEecHttpsPrivKeyPathPem   = httpsCertMountPath + "/" + consts.TlsKeyDataName
+	envEecHttpsCertPathPem      = httpsCertMountPath + "/" + consts.TLSCrtDataName
+	envEecHttpsPrivKeyPathPem   = httpsCertMountPath + "/" + consts.TLSKeyDataName
 	// Volume names and paths
 	eecTokenMountPath                  = "/var/lib/dynatrace/remotepluginmodule/secrets/tokens"
 	customCertificateMountPath         = "/var/lib/dynatrace/remotepluginmodule/secrets/extensions"
@@ -321,7 +321,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.ExtensionsTlsSecretName(),
+						SecretName: dk.ExtensionsTLSSecretName(),
 					},
 				},
 			},

@@ -67,7 +67,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	err := r.reconcileTlsSecret(ctx)
+	err := r.reconcileTLSSecret(ctx)
 	if err != nil {
 		return err
 	}
@@ -87,15 +87,15 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	return r.createOrUpdateStatefulset(ctx)
 }
 
-func (r *reconciler) reconcileTlsSecret(ctx context.Context) error {
+func (r *reconciler) reconcileTLSSecret(ctx context.Context) error {
 	query := k8ssecret.Query(r.client, r.client, log)
 
-	if r.dk.ExtensionsTlsRefName() != "" {
-		return query.DeleteForNamespaces(ctx, getSelfSignedTlsSecretName(r.dk.Name), []string{r.dk.Namespace})
+	if r.dk.ExtensionsTLSRefName() != "" {
+		return query.DeleteForNamespaces(ctx, getSelfSignedTLSSecretName(r.dk.Name), []string{r.dk.Namespace})
 	}
 
 	secret, err := query.Get(ctx, types.NamespacedName{
-		Name:      getSelfSignedTlsSecretName(r.dk.Name),
+		Name:      getSelfSignedTLSSecretName(r.dk.Name),
 		Namespace: r.dk.Namespace,
 	})
 
@@ -104,7 +104,7 @@ func (r *reconciler) reconcileTlsSecret(ctx context.Context) error {
 	}
 
 	if k8serrors.IsNotFound(err) {
-		err = r.createOrUpdateTlsSecret(ctx)
+		err = r.createOrUpdateTLSSecret(ctx)
 		if err != nil {
 			return err
 		}
@@ -112,7 +112,7 @@ func (r *reconciler) reconcileTlsSecret(ctx context.Context) error {
 		return nil
 	}
 
-	err = r.reconcileTlsSecretExpiration(ctx, secret)
+	err = r.reconcileTLSSecretExpiration(ctx, secret)
 	if err != nil {
 		return err
 	}
@@ -120,7 +120,7 @@ func (r *reconciler) reconcileTlsSecret(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) createOrUpdateTlsSecret(ctx context.Context) error {
+func (r *reconciler) createOrUpdateTLSSecret(ctx context.Context) error {
 	cert, err := certificates.New(r.timeProvider)
 	if err != nil {
 		return err
@@ -129,7 +129,7 @@ func (r *reconciler) createOrUpdateTlsSecret(ctx context.Context) error {
 	cert.Cert.DNSNames = getCertificateAltNames(r.dk.Name)
 	cert.Cert.KeyUsage = x509.KeyUsageKeyEncipherment | x509.KeyUsageDataEncipherment
 	cert.Cert.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
-	cert.Cert.Subject.CommonName = r.dk.Name + consts.ExtensionsSelfSignedTlsCommonNameSuffix
+	cert.Cert.Subject.CommonName = r.dk.Name + consts.ExtensionsSelfSignedTLSCommonNameSuffix
 
 	err = cert.SelfSign()
 	if err != nil {
@@ -142,9 +142,9 @@ func (r *reconciler) createOrUpdateTlsSecret(ctx context.Context) error {
 	}
 
 	coreLabels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.ExtensionComponentLabel)
-	secretData := map[string][]byte{consts.TlsCrtDataName: pemCert, consts.TlsKeyDataName: pemPk}
+	secretData := map[string][]byte{consts.TLSCrtDataName: pemCert, consts.TLSKeyDataName: pemPk}
 
-	secret, err := k8ssecret.Build(r.dk, getSelfSignedTlsSecretName(r.dk.Name), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
+	secret, err := k8ssecret.Build(r.dk, getSelfSignedTLSSecretName(r.dk.Name), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
 		return err
 	}
@@ -161,12 +161,12 @@ func (r *reconciler) createOrUpdateTlsSecret(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) reconcileTlsSecretExpiration(ctx context.Context, secret *corev1.Secret) error {
-	isValid, err := certificates.ValidateCertificateExpiration(secret.Data[consts.TlsCrtDataName], consts.ExtensionsSelfSignedTlsRenewalThreshold, r.timeProvider.Now().Time, log)
+func (r *reconciler) reconcileTLSSecretExpiration(ctx context.Context, secret *corev1.Secret) error {
+	isValid, err := certificates.ValidateCertificateExpiration(secret.Data[consts.TLSCrtDataName], consts.ExtensionsSelfSignedTLSRenewalThreshold, r.timeProvider.Now().Time, log)
 	if err != nil || !isValid {
 		log.Info("server certificate failed to parse or is outdated")
 
-		return r.createOrUpdateTlsSecret(ctx)
+		return r.createOrUpdateTLSSecret(ctx)
 	}
 
 	return nil
@@ -180,6 +180,6 @@ func getCertificateAltNames(dkName string) []string {
 	}
 }
 
-func getSelfSignedTlsSecretName(dkName string) string {
-	return dkName + consts.ExtensionsSelfSignedTlsSecretSuffix
+func getSelfSignedTLSSecretName(dkName string) string {
+	return dkName + consts.ExtensionsSelfSignedTLSSecretSuffix
 }
