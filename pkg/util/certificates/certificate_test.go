@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,7 +38,7 @@ func TestValidateCertificateExpiration(t *testing.T) {
 
 func TestNewCertificate(t *testing.T) {
 	t.Run("create new certificate", func(t *testing.T) {
-		cert, err := New()
+		cert, err := New(timeprovider.New())
 
 		require.NoError(t, err)
 
@@ -51,7 +52,7 @@ func TestNewCertificate(t *testing.T) {
 
 func TestSelfSign(t *testing.T) {
 	t.Run("self sign certificate", func(t *testing.T) {
-		cert, _ := New()
+		cert, _ := New(timeprovider.New())
 		err := cert.SelfSign()
 
 		require.NoError(t, err)

@@ -16,8 +16,8 @@ func (dk *DynaKube) ExtensionsTlsRefName() string {
 }
 
 func (dk *DynaKube) ExtensionsTlsSecretName() string {
-	if dk.GetExtensionsTlsRefName() != "" {
-		return dk.GetExtensionsTlsRefName()
+	if dk.ExtensionsTlsRefName() != "" {
+		return dk.ExtensionsTlsRefName()
 	}
 
 	return dk.Name + consts.ExtensionsSelfSignedTlsSecretSuffix

@@ -90,7 +90,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 func (r *reconciler) reconcileTlsSecret(ctx context.Context) error {
 	query := k8ssecret.Query(r.client, r.client, log)
 
-	if r.dk.GetExtensionsTlsRefName() != "" {
+	if r.dk.ExtensionsTlsRefName() != "" {
 		return query.DeleteForNamespaces(ctx, getSelfSignedTlsSecretName(r.dk.Name), []string{r.dk.Namespace})
 	}
 
