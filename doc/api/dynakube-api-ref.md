@@ -46,6 +46,12 @@
 |`tolerations`|Set tolerations for the ActiveGate pods|-|array|
 |`topologySpreadConstraints`|Adds TopologySpreadConstraints for the ActiveGate pods|-|array|
 
+### .spec.extensions
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`enabled`||-|boolean|
+
 ### .spec.metadataEnrichment
 
 |Parameter|Description|Default value|Data type|
@@ -66,12 +72,6 @@
 |`resources`|Define resources' requests and limits for all the LogModule pods|-|object|
 |`secCompProfile`|The SecComp Profile that will be configured in order to run in secure computing mode for the LogModule pods|-|string|
 |`tolerations`|Set tolerations for the LogModule pods|-|array|
-
-### .spec.extensions.prometheus
-
-|Parameter|Description|Default value|Data type|
-|:-|:-|:-|:-|
-|`enabled`||-|boolean|
 
 ### .spec.oneAgent.hostMonitoring
 

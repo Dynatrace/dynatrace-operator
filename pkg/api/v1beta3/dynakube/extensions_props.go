@@ -6,9 +6,5 @@ const (
 )
 
 func (dk *DynaKube) IsExtensionsEnabled() bool {
-	return dk.Spec.Extensions.Prometheus.Enabled
-}
-
-func (dk *DynaKube) PrometheusEnabled() bool {
-	return dk.Spec.Extensions.Prometheus.Enabled
+	return dk.Spec.Extensions.Enabled
 }

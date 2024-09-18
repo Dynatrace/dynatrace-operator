@@ -14,7 +14,7 @@ import (
 )
 
 func (r *reconciler) reconcileService(ctx context.Context) error {
-	if !r.dk.PrometheusEnabled() {
+	if !r.dk.IsExtensionsEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), consts.ExtensionsServiceConditionType) == nil {
 			return nil
 		}

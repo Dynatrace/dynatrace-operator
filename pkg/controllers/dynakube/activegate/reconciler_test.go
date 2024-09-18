@@ -242,9 +242,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{}},
 				Extensions: dynakube.ExtensionsSpec{
-					Prometheus: dynakube.PrometheusSpec{
-						Enabled: false,
-					},
+					Enabled: false,
 				},
 			},
 		}
@@ -275,9 +273,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				Extensions: dynakube.ExtensionsSpec{
-					Prometheus: dynakube.PrometheusSpec{
-						Enabled: true,
-					},
+					Enabled: true,
 				},
 			},
 		}
@@ -310,9 +306,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{}},
 				Extensions: dynakube.ExtensionsSpec{
-					Prometheus: dynakube.PrometheusSpec{
-						Enabled: true,
-					},
+					Enabled: true,
 				},
 			},
 		}
@@ -345,9 +339,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName}},
 				Extensions: dynakube.ExtensionsSpec{
-					Prometheus: dynakube.PrometheusSpec{
-						Enabled: true,
-					},
+					Enabled: true,
 				},
 			},
 		}
@@ -380,9 +372,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName}},
 				Extensions: dynakube.ExtensionsSpec{
-					Prometheus: dynakube.PrometheusSpec{
-						Enabled: true,
-					},
+					Enabled: true,
 				},
 			},
 		}
@@ -423,7 +413,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		require.NoError(t, err)
 
 		// disable extensions
-		r.dk.Spec.Extensions.Prometheus.Enabled = false
+		r.dk.Spec.Extensions.Enabled = false
 		r.connectionReconciler = createGenericReconcilerMock(t)
 		r.versionReconciler = createVersionReconcilerMock(t)
 		r.pullSecretReconciler = createGenericReconcilerMock(t)

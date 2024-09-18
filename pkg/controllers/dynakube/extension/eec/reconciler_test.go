@@ -43,9 +43,7 @@ func getTestDynakube() *dynakube.DynaKube {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			Extensions: dynakube.ExtensionsSpec{
-				Prometheus: dynakube.PrometheusSpec{
-					Enabled: true,
-				},
+				Enabled: true,
 			},
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
@@ -117,9 +115,9 @@ func TestConditions(t *testing.T) {
 		assert.True(t, errors.IsNotFound(err))
 	})
 
-	t.Run("prometheus is disabled", func(t *testing.T) {
+	t.Run("extensions are disabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Extensions.Prometheus.Enabled = false
+		dk.Spec.Extensions.Enabled = false
 		conditions.SetStatefulSetCreated(dk.Conditions(), extensionsControllerStatefulSetConditionType, dynakube.ExtensionsExecutionControllerStatefulsetName)
 
 		mockK8sClient := fake.NewClient(dk)
