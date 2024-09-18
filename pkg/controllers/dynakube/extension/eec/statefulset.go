@@ -17,7 +17,7 @@ import (
 	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -45,8 +45,8 @@ const (
 	envExtensionsModuleExecPath = "/opt/dynatrace/remotepluginmodule/agent/lib64/extensionsmodule"
 	envDsInstallDir             = "/opt/dynatrace/remotepluginmodule/agent/datasources"
 	envActiveGateTrustedCert    = activeGateTrustedCertMountPath + "/" + activeGateTrustedCertSecretKeyPath
-	envEecHttpsCertPathPem      = httpsCertMountPath + "/" + consts.TLSCrtDataName
-	envEecHttpsPrivKeyPathPem   = httpsCertMountPath + "/" + consts.TLSKeyDataName
+	envEecHttpsCertPathPem      = httpsCertMountPath + "/" + consts.TlsCrtDataName
+	envEecHttpsPrivKeyPathPem   = httpsCertMountPath + "/" + consts.TlsKeyDataName
 	// Volume names and paths
 	eecTokenMountPath                  = "/var/lib/dynatrace/remotepluginmodule/secrets/tokens"
 	customCertificateMountPath         = "/var/lib/dynatrace/remotepluginmodule/secrets/extensions"
@@ -321,7 +321,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.GetExtensionsTLSSecretName(),
+						SecretName: dk.GetExtensionsTlsSecretName(),
 					},
 				},
 			},

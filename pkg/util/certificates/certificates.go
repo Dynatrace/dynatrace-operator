@@ -11,14 +11,15 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 )
 
 const (
 	intSerialNumberLimit  = 128
 	defaultCertExpiration = 2 * 365 * 24 * time.Hour
 	rsaKeyBits            = 4096
-	certificatePemHeader  = "CERTIFICATE"
-	privateKeyPemHeader   = "PRIVATE KEY"
+	pemHeaderCert         = "CERTIFICATE"
+	pemHeaderPk           = "PRIVATE KEY"
 )
 
 var (
@@ -40,7 +41,7 @@ type Certificate struct {
 	signed     bool
 }
 
-func New() (*Certificate, error) {
+func New(timeProvider *timeprovider.Provider) (*Certificate, error) {
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
 		return nil, err
@@ -54,8 +55,8 @@ func New() (*Certificate, error) {
 	cert := &x509.Certificate{
 		SerialNumber:       serialNumber,
 		Subject:            defaultCertSubject,
-		NotBefore:          time.Now(),
-		NotAfter:           time.Now().Add(defaultCertExpiration),
+		NotBefore:          timeProvider.Now().Time,
+		NotAfter:           timeProvider.Now().Time.Add(defaultCertExpiration),
 		SignatureAlgorithm: x509.SHA256WithRSA,
 	}
 
@@ -86,12 +87,12 @@ func (c *Certificate) ToPEM() (pemCert []byte, pemPk []byte, err error) {
 	}
 
 	pemCert = pem.EncodeToMemory(&pem.Block{
-		Type:  certificatePemHeader,
+		Type:  pemHeaderCert,
 		Bytes: c.SignedCert,
 	})
 
 	pemPk = pem.EncodeToMemory(&pem.Block{
-		Type:  privateKeyPemHeader,
+		Type:  pemHeaderPk,
 		Bytes: c.SignedPk,
 	})
 

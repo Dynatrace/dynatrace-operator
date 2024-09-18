@@ -55,7 +55,7 @@ const (
 	trustedCAVolumeMountPath        = "/tls/custom/cacerts"
 	trustedCAVolumePath             = trustedCAVolumeMountPath + "/certs"
 	customEecTlsCertificatePath     = "/tls/custom/eec"
-	customEecTlsCertificateFullPath = customEecTlsCertificatePath + "/" + consts.TLSCrtDataName
+	customEecTlsCertificateFullPath = customEecTlsCertificatePath + "/" + consts.TlsCrtDataName
 	secretsTokensPath               = "/secrets/tokens"
 	otelcSecretTokenFilePath        = secretsTokensPath + "/" + consts.OtelcTokenSecretKey
 
@@ -260,14 +260,14 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 		}
 
 		o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
-			Name: dk.GetExtensionsTLSSecretName(),
+			Name: dk.GetExtensionsTlsSecretName(),
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: dk.GetExtensionsTLSSecretName(),
+					SecretName: dk.GetExtensionsTlsSecretName(),
 					Items: []corev1.KeyToPath{
 						{
-							Key:  consts.TLSCrtDataName,
-							Path: consts.TLSCrtDataName,
+							Key:  consts.TlsCrtDataName,
+							Path: consts.TlsCrtDataName,
 						},
 					},
 				},
@@ -290,7 +290,7 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	}
 
 	vm = append(vm, corev1.VolumeMount{
-		Name:      dk.GetExtensionsTLSSecretName(),
+		Name:      dk.GetExtensionsTlsSecretName(),
 		MountPath: customEecTlsCertificatePath,
 		ReadOnly:  true,
 	})
