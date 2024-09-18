@@ -163,9 +163,7 @@ func TestExtensionsExecutionControllerPhaseChanges(t *testing.T) {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			Extensions: dynakube.ExtensionsSpec{
-				Prometheus: dynakube.PrometheusSpec{
-					Enabled: true,
-				},
+				Enabled: true,
 			},
 		},
 	}
@@ -218,9 +216,7 @@ func TestExtensionsCollectorPhaseChanges(t *testing.T) {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			Extensions: dynakube.ExtensionsSpec{
-				Prometheus: dynakube.PrometheusSpec{
-					Enabled: true,
-				},
+				Enabled: true,
 			},
 		},
 	}
@@ -277,9 +273,7 @@ func TestDynakubePhaseChanges(t *testing.T) {
 			},
 
 			Extensions: dynakube.ExtensionsSpec{
-				Prometheus: dynakube.PrometheusSpec{
-					Enabled: true,
-				},
+				Enabled: true,
 			},
 		},
 	}
