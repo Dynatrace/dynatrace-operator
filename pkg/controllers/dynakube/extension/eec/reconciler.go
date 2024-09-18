@@ -91,7 +91,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 func (r *reconciler) reconcileTLSSecret(ctx context.Context) error {
 	query := k8ssecret.Query(r.client, r.client, log)
 
-	if r.dk.ExtensionsTLSRefName() != "" {
+	if !r.dk.ExtensionsNeedsSelfSignedTLS() {
 		return query.Delete(ctx, &corev1.Secret{ObjectMeta: v1.ObjectMeta{Name: getSelfSignedTLSSecretName(r.dk.Name), Namespace: r.dk.Namespace}})
 	}
 

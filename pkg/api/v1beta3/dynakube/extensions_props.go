@@ -15,10 +15,14 @@ func (dk *DynaKube) ExtensionsTLSRefName() string {
 	return dk.Spec.Templates.ExtensionExecutionController.TlsRefName
 }
 
+func (dk *DynaKube) ExtensionsNeedsSelfSignedTLS() bool {
+	return dk.ExtensionsTLSRefName() == ""
+}
+
 func (dk *DynaKube) ExtensionsTLSSecretName() string {
-	if dk.ExtensionsTLSRefName() != "" {
-		return dk.ExtensionsTLSRefName()
+	if dk.ExtensionsNeedsSelfSignedTLS() {
+		return dk.Name + consts.ExtensionsSelfSignedTLSSecretSuffix
 	}
 
-	return dk.Name + consts.ExtensionsSelfSignedTLSSecretSuffix
+	return dk.ExtensionsTLSRefName()
 }
