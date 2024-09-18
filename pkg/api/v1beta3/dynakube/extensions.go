@@ -1,7 +1,6 @@
 package dynakube
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -102,12 +101,4 @@ type ImageRefSpec struct {
 
 	// Indicates a tag of the image to use
 	Tag string `json:"tag,omitempty"`
-}
-
-func (dk *DynaKube) GetExtensionsTLSSecretName() string {
-	if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
-		return dk.Spec.Templates.ExtensionExecutionController.TlsRefName
-	}
-
-	return dk.Name + consts.ExtensionsSelfSignedTLSSecretSuffix
 }
