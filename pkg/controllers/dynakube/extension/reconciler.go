@@ -45,6 +45,11 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
+	err = r.reconcileTLSSecret(ctx)
+	if err != nil {
+		return err
+	}
+
 	err = eec.NewReconciler(r.client, r.apiReader, r.dk).Reconcile(ctx)
 	if err != nil {
 		return err
