@@ -19,7 +19,7 @@ func (dk *DynaKube) ExtensionsTlsRefName() string {
 	return dk.Spec.Templates.ExtensionExecutionController.TlsRefName
 }
 
-func (dk *DynaKube) GetExtensionsTlsSecretName() string {
+func (dk *DynaKube) ExtensionsTlsSecretName() string {
 	if dk.GetExtensionsTlsRefName() != "" {
 		return dk.GetExtensionsTlsRefName()
 	}
