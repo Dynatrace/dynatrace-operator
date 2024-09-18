@@ -5,7 +5,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	corev1 "k8s.io/api/core/v1"
@@ -14,9 +13,8 @@ import (
 )
 
 type reconciler struct {
-	client       client.Client
-	apiReader    client.Reader
-	timeProvider *timeprovider.Provider
+	client    client.Client
+	apiReader client.Reader
 
 	dk *dynakube.DynaKube
 }
@@ -27,10 +25,9 @@ var _ ReconcilerBuilder = NewReconciler
 
 func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler {
 	return &reconciler{
-		client:       clt,
-		apiReader:    apiReader,
-		dk:           dk,
-		timeProvider: timeprovider.New(),
+		client:    clt,
+		apiReader: apiReader,
+		dk:        dk,
 	}
 }
 

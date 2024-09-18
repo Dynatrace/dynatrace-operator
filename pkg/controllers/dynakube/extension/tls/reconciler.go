@@ -1,20 +1,41 @@
-package extension
+package tls
 
 import (
 	"context"
 	"crypto/x509"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *reconciler) reconcileTLSSecret(ctx context.Context) error {
+type reconciler struct {
+	client       client.Client
+	apiReader    client.Reader
+	timeProvider *timeprovider.Provider
+
+	dk *dynakube.DynaKube
+}
+
+func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler {
+	return &reconciler{
+		client:       clt,
+		apiReader:    apiReader,
+		dk:           dk,
+		timeProvider: timeprovider.New(),
+	}
+}
+
+func (r *reconciler) Reconcile(ctx context.Context) error {
 	query := k8ssecret.Query(r.client, r.client, log)
 
 	if !r.dk.ExtensionsNeedsSelfSignedTLS() {
@@ -39,7 +60,7 @@ func (r *reconciler) reconcileTLSSecret(ctx context.Context) error {
 		return nil
 	}
 
-	err = r.reconcileTLSSecretExpiration(ctx, secret)
+	err = r.reconcileCertificateExpiration(ctx, secret)
 	if err != nil {
 		return err
 	}
@@ -88,7 +109,7 @@ func (r *reconciler) createOrUpdateTLSSecret(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) reconcileTLSSecretExpiration(ctx context.Context, secret *corev1.Secret) error {
+func (r *reconciler) reconcileCertificateExpiration(ctx context.Context, secret *corev1.Secret) error {
 	isValid, err := certificates.ValidateCertificateExpiration(secret.Data[consts.TLSCrtDataName], consts.ExtensionsSelfSignedTLSRenewalThreshold, r.timeProvider.Now().Time, log)
 	if err != nil || !isValid {
 		log.Info("server certificate failed to parse or is outdated")
