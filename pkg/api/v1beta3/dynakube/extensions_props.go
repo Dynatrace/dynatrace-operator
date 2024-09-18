@@ -15,7 +15,7 @@ func (dk *DynaKube) PrometheusEnabled() bool {
 	return dk.Spec.Extensions.Prometheus.Enabled
 }
 
-func (dk *DynaKube) GetExtensionsTlsRefName() string {
+func (dk *DynaKube) ExtensionsTlsRefName() string {
 	return dk.Spec.Templates.ExtensionExecutionController.TlsRefName
 }
 
