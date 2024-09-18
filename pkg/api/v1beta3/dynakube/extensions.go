@@ -7,11 +7,7 @@ import (
 
 type ExtensionsSpec struct {
 	// +kubebuilder:validation:Optional
-	Prometheus PrometheusSpec `json:"prometheus,omitempty"`
-}
-
-type PrometheusSpec struct {
-	Enabled bool `json:"enabled"`
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 type ExtensionExecutionControllerSpec struct {

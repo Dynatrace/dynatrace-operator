@@ -38,9 +38,7 @@ func buildDynakube(capabilities []dynakube.CapabilityDisplayName, enableExtensio
 				Capabilities: capabilities,
 			},
 			Extensions: dynakube.ExtensionsSpec{
-				Prometheus: dynakube.PrometheusSpec{
-					Enabled: enableExtensions,
-				},
+				Enabled: enableExtensions,
 			},
 		},
 	}

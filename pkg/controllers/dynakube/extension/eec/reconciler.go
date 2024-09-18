@@ -43,7 +43,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.PrometheusEnabled() {
+	if !r.dk.IsExtensionsEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), extensionsControllerStatefulSetConditionType) == nil {
 			return nil
 		}

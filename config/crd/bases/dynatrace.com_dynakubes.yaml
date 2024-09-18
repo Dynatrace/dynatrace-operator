@@ -5003,13 +5003,8 @@ spec:
                 type: boolean
               extensions:
                 properties:
-                  prometheus:
-                    properties:
-                      enabled:
-                        type: boolean
-                    required:
-                    - enabled
-                    type: object
+                  enabled:
+                    type: boolean
                 type: object
               logModule:
                 description: General configuration about the LogModule feature.
