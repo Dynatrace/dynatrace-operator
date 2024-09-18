@@ -64,6 +64,7 @@ const (
 	httpsCertVolumeName                = "https-certs"
 	httpsCertMountPath                 = "/var/lib/dynatrace/remotepluginmodule/secrets/https"
 	runtimeConfigurationFilename       = "runtimeConfiguration"
+	serviceUrlScheme                   = "https://"
 
 	// misc
 	logVolumeName = "log"
@@ -209,7 +210,7 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath},
 		{Name: envDsInstallDirName, Value: envDsInstallDir},
 		{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID},
-		{Name: envK8sExtServiceUrl, Value: servicename.BuildFQDN(dk)},
+		{Name: envK8sExtServiceUrl, Value: serviceUrlScheme + servicename.BuildFQDN(dk)},
 		{Name: envDSTokenPath, Value: eecTokenMountPath + "/" + consts.OtelcTokenSecretKey},
 		{Name: envHttpsCertPathPem, Value: envEecHttpsCertPathPem},
 		{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem},
