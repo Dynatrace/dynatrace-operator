@@ -17,6 +17,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -91,7 +92,7 @@ func (r *reconciler) reconcileTLSSecret(ctx context.Context) error {
 	query := k8ssecret.Query(r.client, r.client, log)
 
 	if r.dk.ExtensionsTLSRefName() != "" {
-		return query.DeleteForNamespaces(ctx, getSelfSignedTLSSecretName(r.dk.Name), []string{r.dk.Namespace})
+		return query.Delete(ctx, &corev1.Secret{ObjectMeta: v1.ObjectMeta{Name: getSelfSignedTLSSecretName(r.dk.Name), Namespace: r.dk.Namespace}})
 	}
 
 	secret, err := query.Get(ctx, types.NamespacedName{
