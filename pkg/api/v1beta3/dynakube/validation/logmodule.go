@@ -12,8 +12,6 @@ const (
 	errorConflictingLogModule = "The DynaKube's specification tries to enable LogModule in a namespace where another DynaKube already deploys the OneAgent, which is not supported. The conflicting DynaKube: %s"
 
 	errorConflictingOneAgentSpec = "The DynaKube's specification tries to enable LogModule and OneAgent at the same time, which is not supported. Please disable the LogModule or OneAgent"
-
-	logModuleComponentName = "LogModule"
 )
 
 func conflictingLogModuleNodeSelector(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {

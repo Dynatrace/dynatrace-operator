@@ -18,18 +18,14 @@ const (
 `
 	errorImageFieldSetWithoutCSIFlag = `The DynaKube's specification tries to enable ApplicationMonitoring mode and get the respective image, but the CSI driver is not enabled.`
 
-	errorNodeSelectorConflict = `The DynaKube specification attempts to deploy a %s, which conflicts with another DynaKube's %s. Only one Agent per node is supported.
-Use a nodeSelector to avoid this conflict. Conflicting DynaKube: %s`
+	errorNodeSelectorConflict = `The DynaKube specification attempts to deploy a OneAgent/LogModule, which conflicts with another DynaKube's OneAgent/LogModule. Only one Agent per node is supported.
+Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 
 	errorVolumeStorageReadOnlyModeConflict = `The DynaKube's specification specifies a read-only host file system and OneAgent has volume storage enabled.`
 
 	warningOneAgentInstallerEnvVars = `Environment variables ONEAGENT_INSTALLER_SCRIPT_URL and ONEAGENT_INSTALLER_TOKEN are only relevant for an unsupported image type. Please make sure you are using a supported image.`
 
 	warningHostGroupConflict = `DynaKube's specification sets the host group using --set-host-group parameter. Instead, specify the new spec.oneagent.hostGroup field. If you use both settings, the new field precedes the parameter.`
-
-	oneAgentComponentName = "OneAgent"
-
-	logModuleComponentName = "LogModule"
 )
 
 func conflictingOneAgentConfiguration(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -72,6 +68,7 @@ func conflictingNodeSelector(ctx context.Context, dv *Validator, dk *dynakube.Dy
 	}
 
 	oneAgentNodeSelector := dk.NodeSelector()
+	conflictingDynakubes := make(map[string]bool)
 
 	for _, item := range validDynakubes.Items {
 		if item.Name == dk.Name {
@@ -82,7 +79,7 @@ func conflictingNodeSelector(ctx context.Context, dv *Validator, dk *dynakube.Dy
 			if hasConflictingMatchLabels(oneAgentNodeSelector, item.OneAgentNodeSelector()) {
 				log.Info("requested dynakube has conflicting OneAgent nodeSelector", "name", dk.Name, "namespace", dk.Namespace)
 
-				return fmt.Sprintf(errorNodeSelectorConflict, oneAgentComponentName, oneAgentComponentName, item.Name)
+				conflictingDynakubes[item.Name] = true
 			}
 		}
 
@@ -90,12 +87,25 @@ func conflictingNodeSelector(ctx context.Context, dv *Validator, dk *dynakube.Dy
 			if hasConflictingMatchLabels(oneAgentNodeSelector, item.LogModuleNodeSelector()) {
 				log.Info("requested dynakube has conflicting LogModule nodeSelector", "name", dk.Name, "namespace", dk.Namespace)
 
-				return fmt.Sprintf(errorNodeSelectorConflict, oneAgentComponentName, logModuleComponentName, item.Name)
+				conflictingDynakubes[item.Name] = true
 			}
 		}
 	}
 
+	if len(conflictingDynakubes) > 0 {
+		return fmt.Sprintf(errorNodeSelectorConflict, mapKeysToString(conflictingDynakubes, ", "))
+	}
+
 	return ""
+}
+
+func mapKeysToString(m map[string]bool, sep string) string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+
+	return strings.Join(keys, sep)
 }
 
 func imageFieldSetWithoutCSIFlag(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
