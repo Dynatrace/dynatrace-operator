@@ -57,8 +57,7 @@ type EdgeConnectSpec struct { //nolint:revive
 
 	// ServiceAccountName that allows EdgeConnect to access the Kubernetes API
 	// +kubebuilder:default:=dynatrace-edgeconnect
-	// +kubebuilder:validation:MinLength=1
-	ServiceAccountName string `json:"serviceAccountName"`
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 
 	// EdgeConnect uses the OAuth client to authenticate itself with the Dynatrace platform.
 	// +kubebuilder:validation:Required
