@@ -63,11 +63,13 @@ func Feature(t *testing.T) features.Feature {
 	testEdgeConnect := *edgeconnectComponents.New(
 		// this name should match with tenant edge connect name
 		edgeconnectComponents.WithName(edgeconnectSecretConfig.Name),
+		edgeconnectComponents.WithServiceAccountName("ec-service-account"),
 		edgeconnectComponents.WithApiServer(edgeconnectSecretConfig.ApiServer),
 		edgeconnectComponents.WithOAuthClientSecret(fmt.Sprintf("%s-client-secret", edgeconnectSecretConfig.Name)),
 		edgeconnectComponents.WithOAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
 		edgeconnectComponents.WithOAuthResource(fmt.Sprintf("urn:dtenvironment:%s", edgeconnectSecretConfig.TenantUid)),
 	)
+	testEdgeConnect.Spec.ServiceAccountName = "test"
 
 	builder.Assess("deploy injected namespace", namespace.Create(*namespace.New(testAppNameInjected, namespace.WithLabels(injectLabels))))
 	builder.Assess("deploy NOT injected namespace", namespace.Create(*namespace.New(testAppNameNotInjected)))

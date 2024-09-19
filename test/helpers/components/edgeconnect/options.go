@@ -36,6 +36,12 @@ func WithName(name string) Option {
 	}
 }
 
+func WithServiceAccountName(name string) Option {
+	return func(ec *edgeconnect.EdgeConnect) {
+		ec.Spec.ServiceAccountName = name
+	}
+}
+
 func WithApiServer(apiURL string) Option {
 	return func(ec *edgeconnect.EdgeConnect) {
 		ec.Spec.ApiServer = apiURL
