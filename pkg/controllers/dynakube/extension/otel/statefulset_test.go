@@ -160,7 +160,7 @@ func TestEnvironmentVariables(t *testing.T) {
 				Key:                  consts.OtelcTokenSecretKey,
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
-		assert.Equal(t, corev1.EnvVar{Name: envCertDir, Value: customEecTlsCertificatePath}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
+		assert.Equal(t, corev1.EnvVar{Name: envCertDir, Value: customEecTLSCertificatePath}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
 		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterName, Value: dk.Name}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
 		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterUuid, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
 		assert.Equal(t, corev1.EnvVar{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
@@ -180,7 +180,7 @@ func TestEnvironmentVariables(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envEECcontrollerTls, Value: customEecTlsCertificateFullPath})
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envEECcontrollerTLS, Value: customEecTLSCertificateFullPath})
 	})
 }
 
@@ -376,12 +376,12 @@ func TestVolumes(t *testing.T) {
 		statefulSet := getStatefulset(t, dk)
 
 		expectedVolumeMount := corev1.VolumeMount{
-			Name:      consts.ExtensionsCustomTlsCertificate,
-			MountPath: customEecTlsCertificatePath,
+			Name:      dk.ExtensionsTLSSecretName(),
+			MountPath: customEecTLSCertificatePath,
 			ReadOnly:  true,
 		}
 
-		expectedVolume := corev1.Volume{Name: consts.ExtensionsCustomTlsCertificate,
+		expectedVolume := corev1.Volume{Name: dk.Spec.Templates.ExtensionExecutionController.TlsRefName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: dk.Spec.Templates.ExtensionExecutionController.TlsRefName,

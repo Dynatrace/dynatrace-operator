@@ -119,7 +119,7 @@ func (g *InitGenerator) generate(ctx context.Context, dk *dynakube.DynaKube) (ma
 		return nil, err
 	}
 
-	agCerts, err := dk.ActiveGateTlsCert(ctx, g.apiReader)
+	agCerts, err := dk.ActiveGateTLSCert(ctx, g.apiReader)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
