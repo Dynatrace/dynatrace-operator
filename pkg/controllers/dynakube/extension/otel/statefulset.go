@@ -48,14 +48,14 @@ const (
 	// It is a colon separated list of directories.
 	// See https://www.openssl.org/docs/man1.0.2/man1/c_rehash.html.
 	envCertDir          = "SSL_CERT_DIR"
-	envEECcontrollerTls = "EXTENSIONS_CONTROLLER_TLS"
+	envEECcontrollerTLS = "EXTENSIONS_CONTROLLER_TLS"
 
 	// Volume names and paths
 	caCertsVolumeName               = "cacerts"
 	trustedCAVolumeMountPath        = "/tls/custom/cacerts"
 	trustedCAVolumePath             = trustedCAVolumeMountPath + "/certs"
-	customEecTlsCertificatePath     = "/tls/custom/eec"
-	customEecTlsCertificateFullPath = customEecTlsCertificatePath + "/" + consts.TLSCrtDataName
+	customEecTLSCertificatePath     = "/tls/custom/eec"
+	customEecTLSCertificateFullPath = customEecTLSCertificatePath + "/" + consts.TLSCrtDataName
 	secretsTokensPath               = "/secrets/tokens"
 	otelcSecretTokenFilePath        = secretsTokensPath + "/" + consts.OtelcTokenSecretKey
 
@@ -178,7 +178,7 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 			},
 		},
 		},
-		{Name: envCertDir, Value: customEecTlsCertificatePath},
+		{Name: envCertDir, Value: customEecTLSCertificatePath},
 		{Name: envK8sClusterName, Value: dk.Name},
 		{Name: envK8sClusterUuid, Value: dk.Status.KubeSystemUUID},
 		{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID},
@@ -187,9 +187,7 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		envs = append(envs, corev1.EnvVar{Name: envTrustedCAs, Value: trustedCAVolumePath})
 	}
 
-	if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
-		envs = append(envs, corev1.EnvVar{Name: envEECcontrollerTls, Value: customEecTlsCertificateFullPath})
-	}
+	envs = append(envs, corev1.EnvVar{Name: envEECcontrollerTLS, Value: customEecTLSCertificateFullPath})
 
 	return envs
 }
@@ -261,22 +259,20 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 			})
 		}
 
-		if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
-			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
-				Name: consts.ExtensionsCustomTlsCertificate,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Spec.Templates.ExtensionExecutionController.TlsRefName,
-						Items: []corev1.KeyToPath{
-							{
-								Key:  consts.TLSCrtDataName,
-								Path: consts.TLSCrtDataName,
-							},
+		o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
+			Name: dk.ExtensionsTLSSecretName(),
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: dk.ExtensionsTLSSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSCrtDataName,
+							Path: consts.TLSCrtDataName,
 						},
 					},
 				},
-			})
-		}
+			},
+		})
 	}
 }
 
@@ -293,13 +289,11 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		})
 	}
 
-	if dk.Spec.Templates.ExtensionExecutionController.TlsRefName != "" {
-		vm = append(vm, corev1.VolumeMount{
-			Name:      consts.ExtensionsCustomTlsCertificate,
-			MountPath: customEecTlsCertificatePath,
-			ReadOnly:  true,
-		})
-	}
+	vm = append(vm, corev1.VolumeMount{
+		Name:      dk.ExtensionsTLSSecretName(),
+		MountPath: customEecTLSCertificatePath,
+		ReadOnly:  true,
+	})
 
 	return vm
 }

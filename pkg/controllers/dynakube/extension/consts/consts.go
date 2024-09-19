@@ -20,7 +20,8 @@ const (
 	ExtensionsCollectorComPort        = 14599
 	ExtensionsCollectorTargetPortName = "collector-com"
 
-	ExtensionsCustomTlsCertificate = "custom-tls-certificates"
+	ExtensionsSelfSignedTLSSecretSuffix     = "-extensions-controller-tls"
+	ExtensionsSelfSignedTLSCommonNameSuffix = "-extensions-controller.dynatrace"
 
 	// TLSKeyDataName is the key used to store a TLS private key in the secret's data field.
 	TLSKeyDataName = "tls.key"
