@@ -211,4 +211,22 @@ func TestUpdateNamespace(t *testing.T) {
 		require.True(t, updated)
 		assert.Empty(t, namespace.Labels)
 	})
+	t.Run("Remove injection label from ignored-namespaces if present from previous setup", func(t *testing.T) {
+		labels := map[string]string{"test": "selector"}
+		dk := createDynakubeWithAppInject("dk-test", convertToLabelSelector(labels))
+		namespace := createNamespace("test-namespace", labels)
+
+		updated, err := updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}})
+
+		require.NoError(t, err)
+		require.True(t, updated)
+		assert.Len(t, namespace.Labels, 2)
+		require.Equal(t, namespace.Labels[dtwebhook.InjectionInstanceLabel], dk.Name)
+		dk.SetAnnotations(map[string]string{dynakube.AnnotationFeatureIgnoredNamespaces: "[\"" + namespace.Name + "\"]"})
+		updated, err = updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}})
+
+		require.NoError(t, err)
+		require.True(t, updated)
+		assert.Len(t, namespace.Labels, 1)
+	})
 }
