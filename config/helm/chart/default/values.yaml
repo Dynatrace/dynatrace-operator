@@ -196,12 +196,12 @@ csidriver:
 
 rbac:
   activeGate:
-    annotations:
+    annotations: {}
   edgeConnect:
-    annotations:
+    annotations: {}
   extensions:
-    annotations:
+    annotations: {}
   logModule:
-    annotations:
+    annotations: {}
   oneAgent:
-    annotations:
+    annotations: {}
