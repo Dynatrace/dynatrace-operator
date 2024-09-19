@@ -197,8 +197,6 @@ csidriver:
 rbac:
   activeGate:
     annotations:
-    kubernetesMonitoring:
-      annotations:
   edgeConnect:
     annotations:
   extensions:
