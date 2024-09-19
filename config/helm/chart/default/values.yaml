@@ -194,3 +194,14 @@ csidriver:
         cpu: 20m
         memory: 30Mi
 
+rbac:
+  activeGate:
+    annotations: {}
+  edgeConnect:
+    annotations: {}
+  extensions:
+    annotations: {}
+  logModule:
+    annotations: {}
+  oneAgent:
+    annotations: {}
