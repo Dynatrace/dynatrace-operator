@@ -37,8 +37,6 @@ func NewReconciler(clt client.Client,
 	}
 }
 
-// TODO:
-// - Add tests
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if !r.dk.NeedsLogModule() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
@@ -57,9 +55,30 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil // clean-up shouldn't cause a failure
 	}
 
-	tenantUUID, err := r.dk.TenantUUIDFromConnectionInfoStatus()
+	ds, err := r.generateDaemonSet()
 	if err != nil {
 		return err
+	}
+
+	updated, err := daemonset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, ds)
+	if err != nil {
+		conditions.SetKubeApiError(r.dk.Conditions(), conditionType, err)
+
+		return err
+	}
+
+	if updated {
+		conditions.SetDaemonSetOutdated(r.dk.Conditions(), conditionType, GetName(r.dk.Name)) // needed to reset the timestamp
+		conditions.SetDaemonSetCreated(r.dk.Conditions(), conditionType, GetName(r.dk.Name))
+	}
+
+	return nil
+}
+
+func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
+	tenantUUID, err := r.dk.TenantUUIDFromConnectionInfoStatus()
+	if err != nil {
+		return nil, err
 	}
 
 	labels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.LogModuleComponentLabel)
@@ -84,27 +103,15 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		daemonset.SetVolumes(getVolumes(r.dk.Name, tenantUUID)),
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = hasher.AddAnnotation(ds)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	updated, err := daemonset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, ds)
-	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), conditionType, err)
-
-		return err
-	}
-
-	if updated {
-		conditions.SetDaemonSetOutdated(r.dk.Conditions(), conditionType, GetName(r.dk.Name)) // needed to reset the timestamp
-		conditions.SetDaemonSetCreated(r.dk.Conditions(), conditionType, GetName(r.dk.Name))
-	}
-
-	return nil
+	return ds, nil
 }
 
 func GetName(dkName string) string {

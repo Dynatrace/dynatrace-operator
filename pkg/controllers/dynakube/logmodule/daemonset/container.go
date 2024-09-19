@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	defaultImageRepo = "registry.lab.dynatrace.org/oneagent/dynatrace-logmodule-amd64"
+	defaultImageRepo = "registry.lab.dynatrace.org/oneagent/dynatrace-logmodule-amd64" // TODO: finalize
 	defaultImageTag  = "latest"
 
 	containerName       = "main"
