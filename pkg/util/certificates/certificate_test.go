@@ -1,6 +1,7 @@
 package certificates
 
 import (
+	"crypto/x509"
 	"testing"
 	"time"
 
@@ -47,6 +48,9 @@ func TestNewCertificate(t *testing.T) {
 		require.NotNil(t, cert.Pk)
 		require.Nil(t, cert.SignedCert)
 		require.Nil(t, cert.SignedPk)
+
+		require.Equal(t, defaultCertSubject, cert.Cert.Subject)
+		require.Equal(t, x509.SHA256WithRSA, cert.Cert.SignatureAlgorithm)
 	})
 }
 
@@ -57,7 +61,28 @@ func TestSelfSign(t *testing.T) {
 
 		require.NoError(t, err)
 
-		require.NotNil(t, cert.SignedCert)
-		require.NotNil(t, cert.SignedPk)
+		require.NotEmpty(t, cert.SignedCert)
+		require.NotEmpty(t, cert.SignedPk)
+	})
+}
+
+func TestToPEM(t *testing.T) {
+	t.Run("signed certificate to PEM", func(t *testing.T) {
+		cert, _ := New(timeprovider.New())
+		cert.SelfSign()
+		pemCert, pemPk, err := cert.ToPEM()
+
+		require.NoError(t, err)
+		require.NotEmpty(t, pemCert)
+		require.NotEmpty(t, pemPk)
+	})
+	t.Run("unsigned certificate to PEM", func(t *testing.T) {
+		cert, _ := New(timeprovider.New())
+		pemCert, pemPk, err := cert.ToPEM()
+
+		require.Error(t, err)
+
+		require.Empty(t, pemCert)
+		require.Empty(t, pemPk)
 	})
 }
