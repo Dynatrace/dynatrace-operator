@@ -42,7 +42,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return query.Delete(ctx, &corev1.Secret{ObjectMeta: v1.ObjectMeta{Name: getSelfSignedTLSSecretName(r.dk.Name), Namespace: r.dk.Namespace}})
 	}
 
-	secret, err := query.Get(ctx, types.NamespacedName{
+	_, err := query.Get(ctx, types.NamespacedName{
 		Name:      getSelfSignedTLSSecretName(r.dk.Name),
 		Namespace: r.dk.Namespace,
 	})
@@ -58,11 +58,6 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		}
 
 		return nil
-	}
-
-	err = r.reconcileCertificateExpiration(ctx, secret)
-	if err != nil {
-		return err
 	}
 
 	return nil
@@ -104,17 +99,6 @@ func (r *reconciler) createOrUpdateTLSSecret(ctx context.Context) error {
 	_, err = query.CreateOrUpdate(ctx, secret)
 	if err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func (r *reconciler) reconcileCertificateExpiration(ctx context.Context, secret *corev1.Secret) error {
-	isValid, err := certificates.ValidateCertificateExpiration(secret.Data[consts.TLSCrtDataName], consts.ExtensionsSelfSignedTLSRenewalThreshold, r.timeProvider.Now().Time, log)
-	if err != nil || !isValid {
-		log.Info("server certificate failed to parse or is outdated")
-
-		return r.createOrUpdateTLSSecret(ctx)
 	}
 
 	return nil

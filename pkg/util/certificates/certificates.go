@@ -16,7 +16,7 @@ import (
 
 const (
 	intSerialNumberLimit  = 128
-	defaultCertExpiration = 2 * 365 * 24 * time.Hour
+	defaultCertExpiration = 100 * 365 * 24 * time.Hour // 100 years = no expiration
 	rsaKeyBits            = 4096
 	pemHeaderCert         = "CERTIFICATE"
 	pemHeaderPk           = "PRIVATE KEY"

@@ -1,7 +1,5 @@
 package consts
 
-import "time"
-
 const (
 	// secret
 	EecTokenSecretKey         = "eec.token"
@@ -24,7 +22,6 @@ const (
 
 	ExtensionsSelfSignedTLSSecretSuffix     = "-extensions-controller-tls"
 	ExtensionsSelfSignedTLSCommonNameSuffix = "-extensions-controller.dynatrace"
-	ExtensionsSelfSignedTLSRenewalThreshold = 12 * time.Hour
 
 	// TLSKeyDataName is the key used to store a TLS private key in the secret's data field.
 	TLSKeyDataName = "tls.key"
