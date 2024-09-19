@@ -32,7 +32,7 @@ type EecModifier struct {
 }
 
 func (mod EecModifier) Enabled() bool {
-	return mod.dk.PrometheusEnabled()
+	return mod.dk.IsExtensionsEnabled()
 }
 
 func (mod EecModifier) Modify(sts *appsv1.StatefulSet) error {

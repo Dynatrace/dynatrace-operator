@@ -9,8 +9,8 @@ const (
 	errorExtensionExecutionControllerImageNotSpecified = `DynaKube's specification enables the Prometheus feature, make sure you correctly specify the ExtensionExecutionController image.`
 )
 
-func extensionControllerImage(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
-	if !dk.PrometheusEnabled() {
+func extensionControllerImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if !dk.IsExtensionsEnabled() {
 		return ""
 	}
 

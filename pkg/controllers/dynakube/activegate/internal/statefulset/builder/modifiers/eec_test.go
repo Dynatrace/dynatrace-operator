@@ -8,18 +8,18 @@ import (
 )
 
 func TestEecEnabled(t *testing.T) {
-	t.Run("Prometheus extension is enabled", func(t *testing.T) {
+	t.Run("Extensions are enabled", func(t *testing.T) {
 		dk := getBaseDynakube()
-		dk.Spec.Extensions.Prometheus.Enabled = true
+		dk.Spec.Extensions.Enabled = true
 
 		mod := NewEecVolumeModifier(dk)
 
 		assert.True(t, mod.Enabled())
 	})
 
-	t.Run("Prometheus extension is disabled", func(t *testing.T) {
+	t.Run("Extension are disabled", func(t *testing.T) {
 		dk := getBaseDynakube()
-		dk.Spec.Extensions.Prometheus.Enabled = false
+		dk.Spec.Extensions.Enabled = false
 
 		mod := NewEecVolumeModifier(dk)
 
@@ -30,7 +30,7 @@ func TestEecEnabled(t *testing.T) {
 func TestEecModify(t *testing.T) {
 	t.Run("Statefulset is successfully modified with eec volume", func(t *testing.T) {
 		dk := getBaseDynakube()
-		dk.Spec.Extensions.Prometheus.Enabled = true
+		dk.Spec.Extensions.Enabled = true
 
 		mod := NewEecVolumeModifier(dk)
 		builder := createBuilderForTesting()

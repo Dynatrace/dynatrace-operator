@@ -69,7 +69,6 @@ type DynaKubeValueSource struct { //nolint:revive
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +operator-sdk:csv:customresourcedefinitions:displayName="Dynatrace DynaKube"
 // +operator-sdk:csv:customresourcedefinitions:resources={{StatefulSet,v1,},{DaemonSet,v1,},{Pod,v1,}}
-// +kubebuilder:validation:XValidation:rule="size(self.metadata.name) <= 40",reason="FieldValueInvalid",fieldPath=".metadata",message="The length limit for the name of a DynaKube is 40, because it is the base for the name of resources related to the DynaKube. (example: dkName-activegate-<some-hash>) The limit is necessary because kubernetes uses the name of some resources (example: StatefulSet) for the label value, which has a limit of 63 characters. (see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set)"
 type DynaKube struct {
 	metav1.TypeMeta `json:",inline"`
 

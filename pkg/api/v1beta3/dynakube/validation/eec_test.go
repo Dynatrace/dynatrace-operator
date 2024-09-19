@@ -14,9 +14,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
 					Extensions: dynakube.ExtensionsSpec{
-						Prometheus: dynakube.PrometheusSpec{
-							Enabled: true,
-						},
+						Enabled: true,
 					},
 					Templates: dynakube.TemplatesSpec{
 						ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
@@ -38,9 +36,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
 					Extensions: dynakube.ExtensionsSpec{
-						Prometheus: dynakube.PrometheusSpec{
-							Enabled: true,
-						},
+						Enabled: true,
 					},
 					Templates: dynakube.TemplatesSpec{
 						ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
@@ -61,9 +57,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
 					Extensions: dynakube.ExtensionsSpec{
-						Prometheus: dynakube.PrometheusSpec{
-							Enabled: true,
-						},
+						Enabled: true,
 					},
 					Templates: dynakube.TemplatesSpec{
 						ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
@@ -84,9 +78,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
 					Extensions: dynakube.ExtensionsSpec{
-						Prometheus: dynakube.PrometheusSpec{
-							Enabled: true,
-						},
+						Enabled: true,
 					},
 				},
 			})
