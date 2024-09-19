@@ -23,6 +23,7 @@ var validatorErrorFuncs = []validatorFunc{
 	isInvalidApiServer,
 	nameTooLong,
 	checkHostPatternsValue,
+	isInvalidServiceName,
 	automationRequiresProvisionerValidation,
 }
 
