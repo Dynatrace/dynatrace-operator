@@ -211,7 +211,7 @@ func TestUpdateNamespace(t *testing.T) {
 		require.True(t, updated)
 		assert.Empty(t, namespace.Labels)
 	})
-	t.Run("Do not inject into pods when adding namespace to ignored namespaces", func(t *testing.T) {
+	t.Run("Remove injection label from ignored-namespaces if present from previous setup", func(t *testing.T) {
 		labels := map[string]string{"test": "selector"}
 		dk := createDynakubeWithAppInject("dk-test", convertToLabelSelector(labels))
 		namespace := createNamespace("test-namespace", labels)
