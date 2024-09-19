@@ -4,12 +4,9 @@ on:
   schedule:
     # every Mon/Wed/Fri at 08:00 UTC
     - cron: 0 8 * * 1,3,5
-  workflow_dispatch:
-    inputs:
-      target:
-        description: Target branch to run E2E tests over
-        required: true
-        default: release-1.3
+
+env:
+  branch: 'release-1.3'
 
 permissions:
   checks: write
@@ -56,13 +53,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
-          ref: ${{ inputs.target }}
+          ref: ${{ env.branch }}
       - name: Run e2e test
         uses: ./.github/actions/run-e2e
         with:
           flc-namespace: ${{ format('dto-{0}-ondemand', matrix.platform ) }}
           flc-environment: ${{ format('dto-{0}-{1}',  matrix.platform, matrix.version ) }}
-          target-branch: ${{ inputs.target }}
+          target-branch: ${{ env.branch }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
           tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
@@ -84,6 +81,6 @@ jobs:
         uses: slackapi/slack-github-action@37ebaef184d7626c5f204ab8d3baff4262dd30f0 # v1.27.0
         with:
           channel-id: int-cp-operator
-          slack-message: ":x: E2E ondemand tests failed on ${{ github.event.inputs.target || 'main' }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          slack-message: ":x: E2E ondemand tests failed on ${{ env.branch }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

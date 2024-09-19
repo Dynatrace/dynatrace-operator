@@ -17,7 +17,7 @@ yaml.width = 4096
 # read ondemand_file file to dict and update
 with open(ondemand_file, "r") as f:
     data = yaml.load(f)
-    data["on"]["workflow_dispatch"]["inputs"]["target"]["default"] = version
+    data["env"]["branch"] = version
 
 print(data)
 # write ondemand_file renovate file
