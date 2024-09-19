@@ -12,6 +12,10 @@ import (
 )
 
 const (
+	// MaxNameLength is the maximum length of a DynaKube's name, we tend to add suffixes to the name to avoid name collisions for resources related to the DynaKube. (example: dkName-activegate-<some-hash>)
+	// The limit is necessary because kubernetes uses the name of some resources (ActiveGate StatefulSet) for the label value, which has a limit of 63 characters. (see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set)
+	MaxNameLength = 40
+
 	// PullSecretSuffix is the suffix appended to the DynaKube name to n.
 	PullSecretSuffix = "-pull-secret"
 )

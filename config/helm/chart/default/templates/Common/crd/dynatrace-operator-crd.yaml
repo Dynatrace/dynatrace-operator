@@ -4519,15 +4519,6 @@ spec:
                 type: string
             type: object
         type: object
-        x-kubernetes-validations:
-        - fieldPath: .metadata
-          message: 'The length limit for the name of a DynaKube is 40, because it
-            is the base for the name of resources related to the DynaKube. (example:
-            dkName-activegate-<some-hash>) The limit is necessary because kubernetes
-            uses the name of some resources (example: StatefulSet) for the label value,
-            which has a limit of 63 characters. (see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set)'
-          reason: FieldValueInvalid
-          rule: size(self.metadata.name) <= 40
     served: true
     storage: false
     subresources:
@@ -7340,15 +7331,6 @@ spec:
                 type: string
             type: object
         type: object
-        x-kubernetes-validations:
-        - fieldPath: .metadata
-          message: 'The length limit for the name of a DynaKube is 40, because it
-            is the base for the name of resources related to the DynaKube. (example:
-            dkName-activegate-<some-hash>) The limit is necessary because kubernetes
-            uses the name of some resources (example: StatefulSet) for the label value,
-            which has a limit of 63 characters. (see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set)'
-          reason: FieldValueInvalid
-          rule: size(self.metadata.name) <= 40
     served: true
     storage: true
     subresources:
@@ -8607,14 +8589,6 @@ spec:
                 type: object
             type: object
         type: object
-        x-kubernetes-validations:
-        - fieldPath: .metadata
-          message: The length limit for the name of a EdgeConnect is 40, because it
-            is the base for the name of resources related to the EdgeConnect. The
-            limit is necessary because kubernetes uses the name of some resources
-            for the label value, which has a limit of 63 characters.
-          reason: FieldValueInvalid
-          rule: size(self.metadata.name) <= 40
     served: true
     storage: true
     subresources:
