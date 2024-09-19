@@ -57,8 +57,7 @@ type EdgeConnectSpec struct { //nolint:revive
 
 	// ServiceAccountName that allows EdgeConnect to access the Kubernetes API
 	// +kubebuilder:default:=dynatrace-edgeconnect
-	// +kubebuilder:validation:MinLength=1
-	ServiceAccountName string `json:"serviceAccountName"`
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 
 	// EdgeConnect uses the OAuth client to authenticate itself with the Dynatrace platform.
 	// +kubebuilder:validation:Required
@@ -168,7 +167,6 @@ func (dk *EdgeConnectStatus) SetPhase(phase status.DeploymentPhase) bool {
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:storageversion
-// +kubebuilder:validation:XValidation:rule="size(self.metadata.name) <= 40",reason="FieldValueInvalid",fieldPath=".metadata",message="The length limit for the name of a EdgeConnect is 40, because it is the base for the name of resources related to the EdgeConnect. The limit is necessary because kubernetes uses the name of some resources for the label value, which has a limit of 63 characters."
 type EdgeConnect struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

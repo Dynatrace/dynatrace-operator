@@ -86,12 +86,12 @@ func NewReconciler(clt client.Client, //nolint
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	err := r.createActiveGateTenantConnectionInfoConfigMap(ctx)
+	err := r.connectionReconciler.Reconcile(ctx)
 	if err != nil {
 		return err
 	}
 
-	err = r.connectionReconciler.Reconcile(ctx)
+	err = r.createActiveGateTenantConnectionInfoConfigMap(ctx)
 	if err != nil {
 		return err
 	}
