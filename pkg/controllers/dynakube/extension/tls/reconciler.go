@@ -52,18 +52,17 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if k8serrors.IsNotFound(err) {
-		err = r.createOrUpdateTLSSecret(ctx)
+		// we create the self-signed TLS once - no rotation needed
+		err = r.createTLSSecret(ctx)
 		if err != nil {
 			return err
 		}
-
-		return nil
 	}
 
 	return nil
 }
 
-func (r *reconciler) createOrUpdateTLSSecret(ctx context.Context) error {
+func (r *reconciler) createTLSSecret(ctx context.Context) error {
 	cert, err := certificates.New(r.timeProvider)
 	if err != nil {
 		return err
@@ -96,7 +95,7 @@ func (r *reconciler) createOrUpdateTLSSecret(ctx context.Context) error {
 
 	query := k8ssecret.Query(r.client, r.client, log)
 
-	_, err = query.CreateOrUpdate(ctx, secret)
+	err = query.Create(ctx, secret)
 	if err != nil {
 		return err
 	}
