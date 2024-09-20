@@ -11,10 +11,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
@@ -38,6 +41,11 @@ func VerifyStartup(builder *features.FeatureBuilder, level features.Level, testE
 		fmt.Sprintf("'%s' edgeconnect phase changes to 'Running'", testEdgeConnect.Name),
 		level,
 		WaitForPhase(testEdgeConnect, status.Running))
+
+	builder.WithStep(
+		fmt.Sprintf("'%s' edgeconnect deployment changes to 'Available'", testEdgeConnect.Name),
+		level,
+		WaitForDeployment(testEdgeConnect))
 }
 
 func Create(edgeConnect edgeconnect.EdgeConnect) features.Func {
@@ -92,6 +100,15 @@ func WaitForPhase(edgeConnect edgeconnect.EdgeConnect, phase status.DeploymentPh
 		}), wait.WithTimeout(5*time.Minute))
 
 		require.NoError(t, err)
+
+		return ctx
+	}
+}
+
+func WaitForDeployment(ec edgeconnect.EdgeConnect) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		dep := appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Namespace: ec.Namespace, Name: ec.Name}}
+		deployment.WaitUntilReady(envConfig.Client().Resources(), &dep)
 
 		return ctx
 	}
