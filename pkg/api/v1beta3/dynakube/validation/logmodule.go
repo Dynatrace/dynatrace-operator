@@ -3,13 +3,14 @@ package validation
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	errorConflictingLogModule = "The DynaKube's specification tries to enable LogModule in a namespace where another DynaKube already deploys the OneAgent, which is not supported. The conflicting DynaKube: %s"
+	errorConflictingLogModule = "The DynaKube's specification tries to enable LogModule in a namespace where another DynaKube already deploys the OneAgent, which is not supported. The conflicting DynaKubes: %s"
 
 	errorConflictingOneAgentSpec = "The DynaKube's specification tries to enable LogModule and OneAgent at the same time, which is not supported. Please disable the LogModule or OneAgent"
 )
@@ -30,6 +31,8 @@ func conflictingLogModuleNodeSelector(ctx context.Context, dv *Validator, dk *dy
 		return ""
 	}
 
+	conflictingDynakubes := []string{}
+
 	for _, item := range validDynakubes.Items {
 		if item.Name == dk.Name {
 			continue
@@ -38,10 +41,13 @@ func conflictingLogModuleNodeSelector(ctx context.Context, dv *Validator, dk *dy
 		if item.NeedsOneAgent() {
 			if hasConflictingMatchLabels(dk.LogModuleNodeSelector(), item.OneAgentNodeSelector()) {
 				log.Info("requested dynakube has conflicting LogModule nodeSelector", "name", dk.Name, "namespace", dk.Namespace)
-
-				return fmt.Sprintf(errorConflictingLogModule, item.Name)
+				conflictingDynakubes = append(conflictingDynakubes, item.Name)
 			}
 		}
+	}
+
+	if len(conflictingDynakubes) > 0 {
+		return fmt.Sprintf(errorConflictingLogModule, strings.Join(conflictingDynakubes, ", "))
 	}
 
 	return ""

@@ -29,19 +29,26 @@ func TestConflictingLogModuleNodeSelector(t *testing.T) {
 		assertAllowedWithoutWarnings(t, createLogModuleDynakube(testName, "dd"),
 			createLogModuleDynakube("other", "othernodeselector"))
 		assertAllowedWithoutWarnings(t, createLogModuleDynakube(testName, "dd"),
-			createCloudNativeFullStackDynakube("othernodeselector"))
+			createCloudNativeFullStackDynakube(testCnfsDynakubeName, "othernodeselector"))
 	})
 
 	t.Run("conflict with global oneagent", func(t *testing.T) {
 		assertDenied(t, []string{fmt.Sprintf(errorConflictingLogModule, testCnfsDynakubeName)},
 			createLogModuleDynakube(testName, testNodeSelector),
-			createCloudNativeFullStackDynakube(""))
+			createCloudNativeFullStackDynakube(testCnfsDynakubeName, ""))
 	})
 
 	t.Run("conflict with oneagent on the same node", func(t *testing.T) {
 		assertDenied(t, []string{fmt.Sprintf(errorConflictingLogModule, testCnfsDynakubeName)},
 			createLogModuleDynakube(testName, testNodeSelector),
-			createCloudNativeFullStackDynakube(testNodeSelector))
+			createCloudNativeFullStackDynakube(testCnfsDynakubeName, testNodeSelector))
+	})
+
+	t.Run("conflict with multiple dynakubes", func(t *testing.T) {
+		assertDenied(t, []string{fmt.Sprintf(errorConflictingLogModule, ""), testCnfsDynakubeName, "conflicting2"},
+			createLogModuleDynakube(testName, ""),
+			createCloudNativeFullStackDynakube(testCnfsDynakubeName, testNodeSelector),
+			createCloudNativeFullStackDynakube("conflicting2", "othernodeselector"))
 	})
 }
 
@@ -66,10 +73,10 @@ func createLogModuleDynakube(name, nodeSelector string) *dynakube.DynaKube {
 	return dk
 }
 
-func createCloudNativeFullStackDynakube(nodeSelector string) *dynakube.DynaKube {
+func createCloudNativeFullStackDynakube(name string, nodeSelector string) *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      testCnfsDynakubeName,
+			Name:      name,
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
