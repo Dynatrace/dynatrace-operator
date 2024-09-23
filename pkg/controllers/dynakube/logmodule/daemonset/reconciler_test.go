@@ -52,7 +52,7 @@ func TestReconcile(t *testing.T) {
 
 		var daemonset appsv1.DaemonSet
 		err = mockK8sClient.Get(ctx, types.NamespacedName{
-			Name:      GetName(dk.Name),
+			Name:      dk.LogModuleDaemonSetName(),
 			Namespace: dk.Namespace,
 		}, &daemonset)
 		require.False(t, k8serrors.IsNotFound(err))
@@ -62,7 +62,7 @@ func TestReconcile(t *testing.T) {
 		dk := createDynakube(false)
 
 		previousDaemonSet := appsv1.DaemonSet{}
-		previousDaemonSet.Name = GetName(dkName)
+		previousDaemonSet.Name = dk.LogModuleDaemonSetName()
 		previousDaemonSet.Namespace = dk.Namespace
 		mockK8sClient := fake.NewClient(&previousDaemonSet)
 
@@ -76,7 +76,7 @@ func TestReconcile(t *testing.T) {
 
 		var daemonset appsv1.DaemonSet
 		err = mockK8sClient.Get(ctx, types.NamespacedName{
-			Name:      GetName(dk.Name),
+			Name:      dk.LogModuleDaemonSetName(),
 			Namespace: dk.Namespace,
 		}, &daemonset)
 		require.True(t, k8serrors.IsNotFound(err))
@@ -113,7 +113,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		assert.Len(t, daemonset.Spec.Template.Spec.InitContainers, 1)
 		assert.Len(t, daemonset.Spec.Template.Spec.Containers, 1)
 		assert.NotEmpty(t, daemonset.Spec.Template.Spec.Volumes)
-		assert.Equal(t, GetName(dk.Name), daemonset.Name)
+		assert.Equal(t, dk.LogModuleDaemonSetName(), daemonset.Name)
 		assert.Equal(t, dk.Namespace, daemonset.Namespace)
 		assert.NotEmpty(t, daemonset.Labels)
 		assert.NotEmpty(t, daemonset.Spec.Template.Labels)

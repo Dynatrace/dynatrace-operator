@@ -44,7 +44,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		}
 
 		query := daemonset.Query(r.client, r.apiReader, log)
-		err := query.Delete(ctx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: GetName(r.dk.Name), Namespace: r.dk.Namespace}})
+		err := query.Delete(ctx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: r.dk.LogModuleDaemonSetName(), Namespace: r.dk.Namespace}})
 
 		if err != nil {
 			log.Error(err, "failed to clean-up LogModule config-secret")
@@ -68,8 +68,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if updated {
-		conditions.SetDaemonSetOutdated(r.dk.Conditions(), conditionType, GetName(r.dk.Name)) // needed to reset the timestamp
-		conditions.SetDaemonSetCreated(r.dk.Conditions(), conditionType, GetName(r.dk.Name))
+		conditions.SetDaemonSetOutdated(r.dk.Conditions(), conditionType, r.dk.LogModuleDaemonSetName()) // needed to reset the timestamp
+		conditions.SetDaemonSetCreated(r.dk.Conditions(), conditionType, r.dk.LogModuleDaemonSetName())
 	}
 
 	return nil
@@ -85,7 +85,7 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 
 	maxUnavailable := intstr.FromInt(r.dk.FeatureOneAgentMaxUnavailable())
 
-	ds, err := daemonset.Build(r.dk, GetName(r.dk.Name), getContainer(*r.dk),
+	ds, err := daemonset.Build(r.dk, r.dk.LogModuleDaemonSetName(), getContainer(*r.dk),
 		daemonset.SetInitContainer(getInitContainer(*r.dk)),
 		daemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.LogModuleTemplates().Labels),
 		daemonset.SetAllAnnotations(nil, r.dk.LogModuleTemplates().Annotations),
@@ -112,8 +112,4 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 	}
 
 	return ds, nil
-}
-
-func GetName(dkName string) string {
-	return dkName + nameSuffix
 }
