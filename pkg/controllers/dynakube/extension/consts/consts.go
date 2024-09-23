@@ -1,6 +1,9 @@
 package consts
 
 const (
+	InternalPrefix                 = "internal.operator.dynatrace.com/"
+	ExtensionsAnnotationSecretHash = InternalPrefix + "secret-hash"
+
 	// secret
 	EecTokenSecretKey         = "eec.token"
 	EecTokenSecretValuePrefix = "EEC dt0x01"
