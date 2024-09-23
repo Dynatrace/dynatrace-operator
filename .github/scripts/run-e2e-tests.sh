@@ -8,6 +8,9 @@ cd target
 FLC_ENVIRONMENT_KUBECONFIG="$RUNNER_TEMP/environment-kubeconfig"
 FLC_ENVIRONMENT_SECRET_NAME="$FLC_ENVIRONMENT-kubeconfig"
 
+echo "Wait 30s for secret is created '$FLC_ENVIRONMENT_SECRET_NAME'"
+kubectl wait --timeout=30s --for=create secret --namespace "$FLC_NAMESPACE" "$FLC_ENVIRONMENT_SECRET_NAME"
+
 echo "Loading kubeconfig from secret for environment '$FLC_ENVIRONMENT' from namespace '$FLC_NAMESPACE'"
 kubectl get secret --namespace "$FLC_NAMESPACE" "$FLC_ENVIRONMENT_SECRET_NAME" -o jsonpath='{.data.kubeconfig}' | base64 --decode > "$FLC_ENVIRONMENT_KUBECONFIG"
 
