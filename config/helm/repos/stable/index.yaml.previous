@@ -2,10 +2,10 @@ apiVersion: v1
 entries:
   dynatrace-operator:
   - apiVersion: v2
-    appVersion: 1.1.0
-    created: '2024-05-07T08:08:50.245013462Z'
+    appVersion: 1.2.2
+    created: '2024-08-08T11:38:53.628185919Z'
     description: The Dynatrace Operator Helm chart for Kubernetes and OpenShift
-    digest: 555e879b1c85881acf88b81e8a55fb19e398631d80a3532b6fb45d9f5d162f2a
+    digest: 412beaa0ba6409a0c2678a5812a9d2bc0dcdc75377cfe88b3616efce8498f9f4
     home: https://www.dynatrace.com/
     icon: https://assets.dynatrace.com/global/resources/Signet_Logo_RGB_CP_512x512px.png
     kubeVersion: '>=1.19.0-0'
@@ -21,10 +21,98 @@ entries:
     - https://github.com/Dynatrace/dynatrace-operator
     type: application
     urls:
-    - https://github.com/Dynatrace/dynatrace-operator/releases/download/v1.1.0/dynatrace-operator-1.1.0.tgz
+    - https://github.com/Dynatrace/dynatrace-operator/releases/download/v1.2.2/dynatrace-operator-1.2.2.tgz
+    version: 1.2.2
+  - apiVersion: v2
+    appVersion: 1.2.1
+    created: '2024-05-07T08:08:50.245013462Z'
+    description: The Dynatrace Operator Helm chart for Kubernetes and OpenShift
+    digest: bec58ce7445a8b898137e24d38e1d516a68a7d6b85e5b411972f2799a2570f26
+    home: https://www.dynatrace.com/
+    icon: https://assets.dynatrace.com/global/resources/Signet_Logo_RGB_CP_512x512px.png
+    kubeVersion: '>=1.19.0-0'
+    maintainers:
+    - email: marcell.sevcsik@dynatrace.com
+      name: 0sewa0
+    - email: christoph.muellner@dynatrace.com
+      name: chrismuellner
+    - email: lukas.hinterreiter@dynatrace.com
+      name: luhi-DT
+    name: dynatrace-operator
+    sources:
+    - https://github.com/Dynatrace/dynatrace-operator
+    type: application
+    urls:
+    - https://github.com/Dynatrace/dynatrace-operator/releases/download/v1.2.1/dynatrace-operator-1.2.1.tgz
+    version: 1.2.1
+  - apiVersion: v2
+    appVersion: 1.2.0
+    created: '2024-06-24T09:52:03.850374583Z'
+    description: The Dynatrace Operator Helm chart for Kubernetes and OpenShift
+    digest: c18766b5c45f720aa3c1bae87de6c7cf8b07a933519874d6fcc7c5150cdaee89
+    home: https://www.dynatrace.com/
+    icon: https://assets.dynatrace.com/global/resources/Signet_Logo_RGB_CP_512x512px.png
+    kubeVersion: '>=1.19.0-0'
+    maintainers:
+    - email: marcell.sevcsik@dynatrace.com
+      name: 0sewa0
+    - email: christoph.muellner@dynatrace.com
+      name: chrismuellner
+    - email: lukas.hinterreiter@dynatrace.com
+      name: luhi-DT
+    name: dynatrace-operator
+    sources:
+    - https://github.com/Dynatrace/dynatrace-operator
+    type: application
+    urls:
+    - https://github.com/Dynatrace/dynatrace-operator/releases/download/v1.2.0/dynatrace-operator-1.2.0.tgz
+    version: 1.2.0
+  - apiVersion: v2
+    appVersion: 1.1.1
+    created: '2024-06-13T11:07:44.846349839Z'
+    description: The Dynatrace Operator Helm chart for Kubernetes and OpenShift
+    digest: f89d779fc754554a314ca97ddd6e74e7c8208bb2977c09d022697b141d7a696c
+    home: https://www.dynatrace.com/
+    icon: https://assets.dynatrace.com/global/resources/Signet_Logo_RGB_CP_512x512px.png
+    kubeVersion: '>=1.19.0-0'
+    maintainers:
+    - email: marcell.sevcsik@dynatrace.com
+      name: 0sewa0
+    - email: christoph.muellner@dynatrace.com
+      name: chrismuellner
+    - email: lukas.hinterreiter@dynatrace.com
+      name: luhi-DT
+    name: dynatrace-operator
+    sources:
+    - https://github.com/Dynatrace/dynatrace-operator
+    type: application
+    urls:
+    - https://github.com/Dynatrace/dynatrace-operator/releases/download/v1.1.1/dynatrace-operator-1.1.1.tgz
+    version: 1.1.1
+  - apiVersion: v2
+    appVersion: 1.1.0
+    created: '2024-05-07T08:08:50.245013462Z'
+    description: The Dynatrace Operator Helm chart for Kubernetes and OpenShift
+    digest: 555e879b1c85881acf88b81e8a55fb19e398631d80a3532b6fb45d9f5d162f2a
+    home: https://www.dynatrace.com/
+    icon: https://assets.dynatrace.com/global/resources/Signet_Logo_RGB_CP_512x512px.png
+    kubeVersion: '>=1.19.0-0'
+    maintainers:
+      - email: marcell.sevcsik@dynatrace.com
+        name: 0sewa0
+      - email: christoph.muellner@dynatrace.com
+        name: chrismuellner
+      - email: lukas.hinterreiter@dynatrace.com
+        name: luhi-DT
+    name: dynatrace-operator
+    sources:
+      - https://github.com/Dynatrace/dynatrace-operator
+    type: application
+    urls:
+      - https://github.com/Dynatrace/dynatrace-operator/releases/download/v1.1.0/dynatrace-operator-1.1.0.tgz
     version: 1.1.0
   - apiVersion: v2
-    appVersion: 1.0.0
+    appVersion: 1.0.1
     created: '2024-03-25T13:43:30.06159871Z'
     description: The Dynatrace Operator Helm chart for Kubernetes and OpenShift
     digest: 859a0db655486a477d7026393c79108ade697a6494bbebed1ee612fe20d4121e
@@ -54,18 +142,18 @@ entries:
     icon: https://assets.dynatrace.com/global/resources/Signet_Logo_RGB_CP_512x512px.png
     kubeVersion: '>=1.19.0-0'
     maintainers:
-      - email: marcell.sevcsik@dynatrace.com
-        name: 0sewa0
-      - email: christoph.muellner@dynatrace.com
-        name: chrismuellner
-      - email: lukas.hinterreiter@dynatrace.com
-        name: luhi-DT
+    - email: marcell.sevcsik@dynatrace.com
+      name: 0sewa0
+    - email: christoph.muellner@dynatrace.com
+      name: chrismuellner
+    - email: lukas.hinterreiter@dynatrace.com
+      name: luhi-DT
     name: dynatrace-operator
     sources:
-      - https://github.com/Dynatrace/dynatrace-operator
+    - https://github.com/Dynatrace/dynatrace-operator
     type: application
     urls:
-      - https://github.com/Dynatrace/dynatrace-operator/releases/download/v1.0.0/dynatrace-operator-1.0.0.tgz
+    - https://github.com/Dynatrace/dynatrace-operator/releases/download/v1.0.0/dynatrace-operator-1.0.0.tgz
     version: 1.0.0
   - apiVersion: v2
     appVersion: 0.15.0
@@ -862,4 +950,4 @@ entries:
     urls:
     - https://raw.githubusercontent.com/Dynatrace/helm-charts/master/repos/stable/dynatrace-operator-0.1.0.tgz
     version: 0.1.0
-generated: '2024-05-07T08:08:50.243142529Z'
+generated: '2024-08-08T11:38:53.625316605Z'
