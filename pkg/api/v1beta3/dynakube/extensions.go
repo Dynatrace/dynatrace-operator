@@ -89,24 +89,3 @@ type OpenTelemetryCollectorSpec struct {
 	// +kubebuilder:validation:Optional
 	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 }
-
-type ImageRefSpec struct {
-	// Custom image repository
-	// +kubebuilder:example:="docker.io/dynatrace/image-name"
-	Repository string `json:"repository,omitempty"`
-
-	// Indicates a tag of the image to use
-	Tag string `json:"tag,omitempty"`
-}
-
-func (ref ImageRefSpec) String(defaultRepo, defaultTag string) string {
-	if ref.Repository == "" {
-		ref.Repository = defaultRepo
-	}
-
-	if ref.Tag == "" {
-		ref.Tag = defaultTag
-	}
-
-	return ref.Repository + ":" + ref.Tag
-}
