@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
+	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
@@ -48,8 +49,11 @@ func Feature(t *testing.T) features.Feature {
 	customPullSecret := secret.NewDockerConfigJson(customPullSecretName, testDynakube.Namespace, secretConfig.CustomPullSecret)
 	builder.Assess("create custom pull secret", secret.Create(customPullSecret))
 
-	agCrt, _ := os.ReadFile(path.Join(project.TestDataDir(), agCertificate))
-	agP12, _ := os.ReadFile(path.Join(project.TestDataDir(), agCertificateAndPrivateKey))
+	agCrt, err := os.ReadFile(path.Join(project.TestDataDir(), agCertificate))
+	require.NoError(t, err)
+
+	agP12, err := os.ReadFile(path.Join(project.TestDataDir(), agCertificateAndPrivateKey))
+	require.NoError(t, err)
 
 	agSecret := secret.New(agSecretName, testDynakube.Namespace,
 		map[string][]byte{
