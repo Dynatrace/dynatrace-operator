@@ -145,7 +145,6 @@ func TestGenerateDaemonSet(t *testing.T) {
 		require.NotNil(t, daemonset)
 
 		assert.Subset(t, daemonset.Spec.Template.Labels, customLabels)
-		// assert.Subset(t, daemonset.Labels, customLabels) TODO: Should this be the case?
 	})
 
 	t.Run("respect custom annotations", func(t *testing.T) {
@@ -163,7 +162,6 @@ func TestGenerateDaemonSet(t *testing.T) {
 		require.NotNil(t, daemonset)
 
 		assert.Subset(t, daemonset.Spec.Template.Annotations, customAnnotations)
-		// assert.Subset(t, daemonset.Annotations, customAnnotations) TODO: Should this be the case?
 	})
 
 	t.Run("respect dns policy", func(t *testing.T) {
