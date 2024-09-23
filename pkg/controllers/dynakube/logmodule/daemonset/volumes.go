@@ -13,18 +13,18 @@ const (
 	configVolumeMountPath = "/var/lib/dynatrace/oneagent/agent/config/deployment.conf"
 
 	// for the logmodule to read/write
-	dtLibVolumeName         = "var-lib-dynatrace"
+	dtLibVolumeName         = "dynatrace-lib"
 	dtLibVolumeMountPath    = "/var/lib/dynatrace"
 	dtLibVolumePathTemplate = "/tmp/dynatrace-logmodule-%s"
-	dtLogVolumeName         = "var-log-dynatrace"
+	dtLogVolumeName         = "dynatrace-logs"
 	dtLogVolumeMountPath    = "/var/log/dynatrace"
 
 	// for the logs that the logmodule will ingest
 	podLogsVolumeName       = "var-log-pods"
 	podLogsVolumePath       = "/var/log/pods"
-	dockerLogsVolumeName    = "var-lib-docker-containers"
+	dockerLogsVolumeName    = "docker-container-logs"
 	dockerLogsVolumePath    = "/var/lib/docker/containers"
-	containerLogsVolumeName = "var-log-containers"
+	containerLogsVolumeName = "container-logs"
 	containerLogsVolumePath = "/var/log/containers"
 )
 
