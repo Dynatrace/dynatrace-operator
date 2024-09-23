@@ -18,8 +18,7 @@ import (
 )
 
 const (
-	logModuleSecretSuffix    = "-logmodule-config"
-	DeploymentConfigFilename = "deployment.conf"
+	logModuleSecretSuffix = "-logmodule-config"
 
 	tenantKey       = "Tenant"
 	tenantTokenKey  = "TenantToken"
@@ -127,7 +126,7 @@ func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, erro
 	}
 
 	deploymentConfigContent := map[string]string{
-		serverKey:       fmt.Sprintf("{%s}", r.dk.Status.OneAgent.ConnectionInfoStatus.Endpoints),
+		serverKey:       fmt.Sprintf("{%s}", r.dk.OneAgentEndpoints()),
 		tenantKey:       tenantUUID,
 		tenantTokenKey:  tenantToken,
 		hostIdSourceKey: "k8s-node-name",
