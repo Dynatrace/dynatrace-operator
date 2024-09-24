@@ -70,7 +70,7 @@ const (
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	appLabels := buildAppLabels(r.dk.Name)
 
-	annotations, err := r.buildAnnotations(ctx)
+	templateAnnotations, err := r.buildTemplateAnnotations(ctx)
 	if err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		statefulset.SetReplicas(getReplicas(r.dk)),
 		statefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
 		statefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), r.dk.Spec.Templates.OpenTelemetryCollector.Labels),
-		statefulset.SetAllAnnotations(annotations, r.dk.Spec.Templates.OpenTelemetryCollector.Annotations),
+		statefulset.SetAllAnnotations(nil, templateAnnotations),
 		statefulset.SetAffinity(buildAffinity()),
 		statefulset.SetServiceAccount(serviceAccountName),
 		statefulset.SetTolerations(r.dk.Spec.Templates.OpenTelemetryCollector.Tolerations),
@@ -115,8 +115,8 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) buildAnnotations(ctx context.Context) (map[string]string, error) {
-	annotations := map[string]string{}
+func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]string, error) {
+	templateAnnotations := r.dk.Spec.Templates.OpenTelemetryCollector.Annotations
 
 	query := k8ssecret.Query(r.client, r.client, log)
 
@@ -133,9 +133,9 @@ func (r *reconciler) buildAnnotations(ctx context.Context) (map[string]string, e
 		return nil, err
 	}
 
-	annotations[consts.ExtensionsAnnotationSecretHash] = tlsSecretHash
+	templateAnnotations[consts.ExtensionsAnnotationSecretHash] = tlsSecretHash
 
-	return annotations, nil
+	return templateAnnotations, nil
 }
 
 func getReplicas(dk *dynakube.DynaKube) int32 {
