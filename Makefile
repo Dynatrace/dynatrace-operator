@@ -46,6 +46,7 @@ help:
 SHELL ?= bash
 
 -include hack/make/*.mk
+-include hack/make/debug/*.mk
 -include hack/make/deploy/*.mk
 -include hack/make/doc/*.mk
 -include hack/make/helm/*.mk
