@@ -3,19 +3,22 @@
 package extensions
 
 import (
+	"context"
 	"os"
 	"path"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
@@ -36,7 +39,6 @@ func Feature(t *testing.T) features.Feature {
 
 	options := []componentDynakube.Option{
 		componentDynakube.WithApiUrl(secretConfig.ApiUrl),
-		componentDynakube.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
 		componentDynakube.WithActiveGateTLSSecret(agSecretName),
 		componentDynakube.WithCustomPullSecret(customPullSecretName),
 		componentDynakube.WithExtensionsEnabledSpec(true),
@@ -64,6 +66,8 @@ func Feature(t *testing.T) features.Feature {
 
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
+	builder.Assess("active gate pod is running", checkActiveGateContainer(&testDynakube))
+
 	builder.Assess("extensions execution controller started", statefulset.WaitFor(dynakube.ExtensionsExecutionControllerStatefulsetName, testDynakube.Namespace))
 
 	builder.Assess("extension collector started", statefulset.WaitFor(dynakube.ExtensionsCollectorStatefulsetName, testDynakube.Namespace))
@@ -73,4 +77,18 @@ func Feature(t *testing.T) features.Feature {
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
 
 	return builder.Feature()
+}
+
+func checkActiveGateContainer(dk *dynakube.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+
+		var activeGatePod corev1.Pod
+		require.NoError(t, resources.WithNamespace(dk.Namespace).Get(ctx, activegate.GetActiveGatePodName(dk, "activegate"), dk.Namespace, &activeGatePod))
+
+		require.NotNil(t, activeGatePod.Spec)
+		require.NotEmpty(t, activeGatePod.Spec.Containers)
+
+		return ctx
+	}
 }
