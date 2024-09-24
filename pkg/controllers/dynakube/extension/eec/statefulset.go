@@ -86,7 +86,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		statefulset.SetReplicas(1),
 		statefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
 		statefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), r.dk.Spec.Templates.ExtensionExecutionController.Labels),
-		statefulset.SetAllAnnotations(nil, annotations),
+		statefulset.SetAllAnnotations(annotations, r.dk.Spec.Templates.ExtensionExecutionController.Annotations),
 		statefulset.SetAffinity(buildAffinity()),
 		statefulset.SetTolerations(r.dk.Spec.Templates.ExtensionExecutionController.Tolerations),
 		statefulset.SetTopologySpreadConstraints(utils.BuildTopologySpreadConstraints(r.dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints, appLabels)),
@@ -124,7 +124,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 }
 
 func (r *reconciler) buildAnnotations(ctx context.Context) (map[string]string, error) {
-	annotations := r.dk.Spec.Templates.ExtensionExecutionController.Annotations
+	annotations := map[string]string{}
 
 	query := k8ssecret.Query(r.client, r.client, log)
 
