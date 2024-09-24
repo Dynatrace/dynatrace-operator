@@ -1,4 +1,4 @@
-apiVersion: dynatrace.com/v1alpha1
+apiVersion: dynatrace.com/v1alpha2
 kind: EdgeConnect
 metadata:
   name: edge-connect-sample
