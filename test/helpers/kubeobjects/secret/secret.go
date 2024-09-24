@@ -24,14 +24,14 @@ func New(name, namespace string, data map[string][]byte) corev1.Secret {
 	}
 }
 
-func NewDockerConfigJson(name, namespace, customPullSecret string) corev1.Secret {
+func NewDockerConfigJson(name, namespace string, customPullSecret []byte) corev1.Secret {
 	return corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
 		Data: map[string][]byte{
-			corev1.DockerConfigJsonKey: []byte(customPullSecret),
+			corev1.DockerConfigJsonKey: customPullSecret,
 		},
 		Type: corev1.SecretTypeDockerConfigJson,
 	}

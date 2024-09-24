@@ -4,6 +4,7 @@ package extensions
 
 import (
 	"context"
+	"encoding/base64"
 	"os"
 	"path"
 	"testing"
@@ -47,8 +48,12 @@ func Feature(t *testing.T) features.Feature {
 
 	testDynakube := *componentDynakube.New(options...)
 
+	// decode custom pulls secret to bytes
+	data, err := base64.StdEncoding.DecodeString(secretConfig.CustomPullSecret)
+	require.NoError(t, err)
+
 	// Create customPull secret
-	customPullSecret := secret.NewDockerConfigJson(customPullSecretName, testDynakube.Namespace, secretConfig.CustomPullSecret)
+	customPullSecret := secret.NewDockerConfigJson(customPullSecretName, testDynakube.Namespace, data)
 	builder.Assess("create custom pull secret", secret.Create(customPullSecret))
 
 	agCrt, err := os.ReadFile(path.Join(project.TestDataDir(), agCertificate))
