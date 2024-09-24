@@ -259,7 +259,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *dynakube.DynaKubeProxy) feature
 		dynakubeComponents.WithApiUrl(secretConfigs[0].ApiUrl),
 		dynakubeComponents.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
 		dynakubeComponents.WithActiveGate(),
-		dynakubeComponents.WithActiveGateTlsSecret(agSecretName),
+		dynakubeComponents.WithActiveGateTLSSecret(agSecretName),
 		dynakubeComponents.WithIstioIntegration(),
 		dynakubeComponents.WithProxy(proxySpec),
 	)
@@ -279,7 +279,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *dynakube.DynaKubeProxy) feature
 	agP12, _ := os.ReadFile(path.Join(project.TestDataDir(), agCertificateAndPrivateKey))
 	agSecret := secret.New(agSecretName, cloudNativeDynakube.Namespace,
 		map[string][]byte{
-			dynakube.TlsCertKey:             agCrt,
+			dynakube.TLSCertKey:             agCrt,
 			agCertificateAndPrivateKeyField: agP12,
 		})
 	builder.Assess("create AG TLS secret", secret.Create(agSecret))
@@ -325,7 +325,7 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *dynakube.DynaKubeProxy) featu
 		dynakubeComponents.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
 		dynakubeComponents.WithCustomCAs(configMapName),
 		dynakubeComponents.WithActiveGate(),
-		dynakubeComponents.WithActiveGateTlsSecret(agSecretName),
+		dynakubeComponents.WithActiveGateTLSSecret(agSecretName),
 		dynakubeComponents.WithIstioIntegration(),
 		dynakubeComponents.WithProxy(proxySpec),
 	)
@@ -345,7 +345,7 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *dynakube.DynaKubeProxy) featu
 	agP12, _ := os.ReadFile(path.Join(project.TestDataDir(), agCertificateAndPrivateKey))
 	agSecret := secret.New(agSecretName, cloudNativeDynakube.Namespace,
 		map[string][]byte{
-			dynakube.TlsCertKey:             agCrt,
+			dynakube.TLSCertKey:             agCrt,
 			agCertificateAndPrivateKeyField: agP12,
 		})
 	builder.Assess("create AG TLS secret", secret.Create(agSecret))

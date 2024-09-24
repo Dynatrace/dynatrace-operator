@@ -35,6 +35,7 @@ var (
 		imageFieldSetWithoutCSIFlag,
 		conflictingOneAgentVolumeStorageSettings,
 		nameViolatesDNS1035,
+		nameTooLong,
 		namespaceSelectorViolateLabelSpec,
 		imageFieldHasTenantImage,
 		validateOneAgentVersionIsSemVerCompliant,

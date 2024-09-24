@@ -100,7 +100,7 @@ func activeGateTlsCertificate(t *testing.T) {
 
 	t.Run("get tls certificates from server.crt", func(t *testing.T) {
 		testFunc(t, map[string][]byte{
-			dynakube.TlsCertKey: []byte(testSecretValue),
+			dynakube.TLSCertKey: []byte(testSecretValue),
 		})
 	})
 }

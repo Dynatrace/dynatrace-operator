@@ -71,7 +71,7 @@ func WithMetadataEnrichment() Option {
 	}
 }
 
-func WithActiveGateTlsSecret(tlsSecretName string) Option {
+func WithActiveGateTLSSecret(tlsSecretName string) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.ActiveGate.TlsSecretName = tlsSecretName
 	}

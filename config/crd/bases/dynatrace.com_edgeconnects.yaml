@@ -963,7 +963,6 @@ spec:
                 default: dynatrace-edgeconnect
                 description: ServiceAccountName that allows EdgeConnect to access
                   the Kubernetes API
-                minLength: 1
                 type: string
               tolerations:
                 description: Sets tolerations for the EdgeConnect pods
@@ -1240,14 +1239,6 @@ spec:
                 type: object
             type: object
         type: object
-        x-kubernetes-validations:
-        - fieldPath: .metadata
-          message: The length limit for the name of a EdgeConnect is 40, because it
-            is the base for the name of resources related to the EdgeConnect. The
-            limit is necessary because kubernetes uses the name of some resources
-            for the label value, which has a limit of 63 characters.
-          reason: FieldValueInvalid
-          rule: size(self.metadata.name) <= 40
     served: true
     storage: true
     subresources:
