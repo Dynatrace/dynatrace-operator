@@ -77,6 +77,7 @@ func Feature(t *testing.T) features.Feature {
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
 
 	builder.WithTeardown("deleted ag secret", secret.Delete(agSecret))
+	builder.WithTeardown("deleted custom pull secret", secret.Delete(customPullSecret))
 
 	return builder.Feature()
 }
