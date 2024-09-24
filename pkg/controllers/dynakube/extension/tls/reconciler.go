@@ -8,14 +8,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -38,37 +36,25 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	var secretHash string
-
-	var err error
-
 	if r.dk.ExtensionsNeedsSelfSignedTLS() {
-		secretHash, err = r.reconcileSelfSignedMode(ctx)
+		err := r.reconcileSelfSignedMode(ctx)
 		if err != nil {
 			return err
 		}
 	} else {
-		secretHash, err = r.reconcileTLSRefNameMode(ctx)
+		err := r.reconcileTLSRefNameMode(ctx)
 		if err != nil {
 			return err
 		}
-	}
-
-	err = r.reconcileStsSecretHash(ctx, dynakube.ExtensionsExecutionControllerStatefulsetName, secretHash)
-	if err != nil {
-		return err
-	}
-
-	err = r.reconcileStsSecretHash(ctx, dynakube.ExtensionsCollectorStatefulsetName, secretHash)
-	if err != nil {
-		return err
 	}
 
 	return nil
 }
 
-func (r *reconciler) reconcileSelfSignedMode(ctx context.Context) (secretHash string, err error) {
-	secret, err := k8ssecret.Query(r.client, r.client, log).Get(ctx, types.NamespacedName{
+func (r *reconciler) reconcileSelfSignedMode(ctx context.Context) error {
+	query := k8ssecret.Query(r.client, r.client, log)
+
+	_, err := query.Get(ctx, types.NamespacedName{
 		Name:      getSelfSignedTLSSecretName(r.dk.Name),
 		Namespace: r.dk.Namespace,
 	})
@@ -78,40 +64,27 @@ func (r *reconciler) reconcileSelfSignedMode(ctx context.Context) (secretHash st
 	}
 
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	return hasher.GenerateHash(secret.Data)
+	return nil
 }
 
-func (r *reconciler) reconcileTLSRefNameMode(ctx context.Context) (secretHash string, err error) {
+func (r *reconciler) reconcileTLSRefNameMode(ctx context.Context) error {
 	query := k8ssecret.Query(r.client, r.client, log)
 
-	err = query.Delete(ctx, &corev1.Secret{
+	return query.Delete(ctx, &corev1.Secret{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      getSelfSignedTLSSecretName(r.dk.Name),
 			Namespace: r.dk.Namespace,
 		},
 	})
-	if err != nil {
-		return "", err
-	}
-
-	secret, err := query.Get(ctx, types.NamespacedName{
-		Name:      r.dk.ExtensionsTLSRefName(),
-		Namespace: r.dk.Namespace,
-	})
-	if err != nil {
-		return "", err
-	}
-
-	return hasher.GenerateHash(secret.Data)
 }
 
-func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context) (hash string, err error) {
+func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
 	cert, err := certificates.New(r.timeProvider)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	cert.Cert.DNSNames = getCertificateAltNames(r.dk.Name)
@@ -121,12 +94,12 @@ func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context) (hash string
 
 	err = cert.SelfSign()
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	pemCert, pemPk, err := cert.ToPEM()
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	coreLabels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.ExtensionComponentLabel)
@@ -134,7 +107,7 @@ func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context) (hash string
 
 	secret, err := k8ssecret.Build(r.dk, getSelfSignedTLSSecretName(r.dk.Name), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	secret.Type = corev1.SecretTypeTLS
@@ -143,32 +116,22 @@ func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context) (hash string
 
 	err = query.Create(ctx, secret)
 	if err != nil {
-		return "", err
-	}
-
-	return hasher.GenerateHash(secret.Data)
-}
-
-func (r *reconciler) reconcileStsSecretHash(ctx context.Context, stsName string, secretHash string) error {
-	query := statefulset.Query(r.client, r.apiReader, log)
-
-	sts, err := query.Get(ctx, types.NamespacedName{Name: stsName, Namespace: r.dk.Namespace})
-	if k8serrors.IsNotFound(err) {
-		// no need to reconcile - sts is not created yet
-		return nil
-	}
-
-	if err != nil {
 		return err
 	}
 
-	if sts.Spec.Template.Annotations[consts.ExtensionsAnnotationSecretHash] != secretHash {
-		sts.Spec.Template.Annotations[consts.ExtensionsAnnotationSecretHash] = secretHash
+	return nil
+}
 
-		return query.Update(ctx, sts)
+func GetTLSSecretName(dk *dynakube.DynaKube) string {
+	if dk.ExtensionsNeedsSelfSignedTLS() {
+		return getSelfSignedTLSSecretName(dk.Name)
 	}
 
-	return nil
+	return dk.ExtensionsTLSRefName()
+}
+
+func getSelfSignedTLSSecretName(dkName string) string {
+	return dkName + consts.ExtensionsSelfSignedTLSSecretSuffix
 }
 
 func getCertificateAltNames(dkName string) []string {
@@ -177,8 +140,4 @@ func getCertificateAltNames(dkName string) []string {
 		dkName + "-extensions-controller.dynatrace.svc",
 		dkName + "-extensions-controller.dynatrace.svc.cluster.local",
 	}
-}
-
-func getSelfSignedTLSSecretName(dkName string) string {
-	return dkName + consts.ExtensionsSelfSignedTLSSecretSuffix
 }
