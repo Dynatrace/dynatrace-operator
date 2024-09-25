@@ -87,6 +87,9 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+          envFrom:
+            - configMapRef:
+                name: operator-config
           readinessProbe:
             httpGet:
               path: /readyz
