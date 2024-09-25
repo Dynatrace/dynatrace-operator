@@ -1,7 +1,6 @@
 package eec
 
 import (
-	"maps"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -128,7 +127,7 @@ func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 	templateAnnotations := map[string]string{}
 
 	if r.dk.Spec.Templates.ExtensionExecutionController.Annotations != nil {
-		maps.Copy(templateAnnotations, r.dk.Spec.Templates.ExtensionExecutionController.Annotations)
+		templateAnnotations = r.dk.Spec.Templates.ExtensionExecutionController.Annotations
 	}
 
 	query := k8ssecret.Query(r.client, r.client, log)
