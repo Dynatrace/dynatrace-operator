@@ -1,4 +1,5 @@
 {{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+{{- if .Values.rbac.extensions.create }}
 # Copyright 2021 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,4 +40,5 @@ roleRef:
   kind: Role
   name: dynatrace-extensions-controller
   apiGroup: rbac.authorization.k8s.io
+{{ end }}
 {{ end }}

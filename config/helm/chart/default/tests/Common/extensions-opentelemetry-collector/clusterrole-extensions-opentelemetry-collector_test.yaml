@@ -53,3 +53,10 @@ tests:
           value: prometheus-service-detector
       - isNotEmpty:
           path: metadata.labels
+
+  - it: shouldn't exist if turned off
+    set:
+      rbac.extensions.create: false
+    asserts:
+      - hasDocuments:
+        count: 0
