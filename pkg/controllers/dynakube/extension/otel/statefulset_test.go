@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/tls"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/utils"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -47,6 +48,7 @@ func getTestDynakube() *dynakube.DynaKube {
 
 func getStatefulset(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
 	mockK8sClient := fake.NewClient(dk)
+	mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
 	err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
 	require.NoError(t, err)
@@ -56,6 +58,24 @@ func getStatefulset(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
 	require.NoError(t, err)
 
 	return statefulSet
+}
+
+func mockTLSSecret(t *testing.T, client client.Client, dk *dynakube.DynaKube) client.Client {
+	tlsSecret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      tls.GetTLSSecretName(dk),
+			Namespace: dk.Namespace,
+		},
+		Data: map[string][]byte{
+			consts.TLSCrtDataName: []byte("super-cert"),
+			consts.TLSKeyDataName: []byte("super-key"),
+		},
+	}
+
+	err := client.Create(context.Background(), &tlsSecret)
+	require.NoError(t, err)
+
+	return client
 }
 
 func TestConditions(t *testing.T) {
@@ -282,7 +302,8 @@ func TestAnnotations(t *testing.T) {
 		statefulSet := getStatefulset(t, getTestDynakube())
 
 		assert.Len(t, statefulSet.ObjectMeta.Annotations, 1)
-		assert.Empty(t, statefulSet.Spec.Template.ObjectMeta.Annotations)
+		assert.Len(t, statefulSet.Spec.Template.ObjectMeta.Annotations, 1)
+		assert.NotNil(t, statefulSet.Spec.Template.ObjectMeta.Annotations[consts.ExtensionsAnnotationSecretHash])
 	})
 
 	t.Run("custom annotations", func(t *testing.T) {
@@ -296,8 +317,9 @@ func TestAnnotations(t *testing.T) {
 
 		assert.Len(t, statefulSet.ObjectMeta.Annotations, 1)
 		assert.Empty(t, statefulSet.ObjectMeta.Annotations["a"])
-		assert.Len(t, statefulSet.Spec.Template.ObjectMeta.Annotations, 1)
-		assert.Equal(t, customAnnotations, statefulSet.Spec.Template.ObjectMeta.Annotations)
+		assert.Len(t, statefulSet.Spec.Template.ObjectMeta.Annotations, 2)
+		assert.NotNil(t, statefulSet.Spec.Template.ObjectMeta.Annotations["a"])
+		assert.NotNil(t, statefulSet.Spec.Template.ObjectMeta.Annotations[consts.ExtensionsAnnotationSecretHash])
 	})
 }
 

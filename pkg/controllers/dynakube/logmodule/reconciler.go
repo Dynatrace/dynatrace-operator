@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmodule/configsecret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmodule/daemonset"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -18,6 +19,7 @@ type Reconciler struct {
 	dtc       dtclient.Client
 
 	configSecretReconciler           controllers.Reconciler
+	daemonsetReconciler              controllers.Reconciler
 	oneAgentConnectionInfoReconciler controllers.Reconciler
 }
 
@@ -34,6 +36,7 @@ func NewReconciler(clt client.Client,
 		dtc:       dtc,
 
 		configSecretReconciler:           configsecret.NewReconciler(clt, apiReader, dk),
+		daemonsetReconciler:              daemonset.NewReconciler(clt, apiReader, dk),
 		oneAgentConnectionInfoReconciler: oaconnectioninfo.NewReconciler(clt, apiReader, dtc, dk),
 	}
 }
@@ -45,6 +48,11 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	err = r.configSecretReconciler.Reconcile(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = r.daemonsetReconciler.Reconcile(ctx)
 	if err != nil {
 		return err
 	}

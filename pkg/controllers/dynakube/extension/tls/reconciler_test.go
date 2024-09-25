@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/stretchr/testify/require"
-	"k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -87,21 +86,6 @@ func TestReconcile(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, expectedTLSSecret, secret)
-	})
-	t.Run("update eec and otelc statefulsets", func(t *testing.T) {
-		dk := getTestDynakube()
-		fakeClient := fake.NewClient()
-		fakeClient.Create(context.Background(), &v1.StatefulSet{ObjectMeta: metav1.ObjectMeta{}})
-
-		reconciler := NewReconciler(fakeClient, fakeClient, dk)
-
-		reconciler.Reconcile(context.Background())
-
-		var secret corev1.Secret
-		err := fakeClient.Get(context.Background(), TLSSecretObjectKey, &secret)
-
-		require.NoError(t, err)
-		require.NotNil(t, secret)
 	})
 }
 
