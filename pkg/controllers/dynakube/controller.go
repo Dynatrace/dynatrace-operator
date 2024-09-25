@@ -355,6 +355,14 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	err = logModuleReconciler.Reconcile(ctx)
 	if err != nil {
+		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
+			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
+			// this situation will clear itself after AG has been started
+			controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
+
+			return goerrors.Join(componentErrors...)
+		}
+
 		log.Info("could not reconcile LogModule")
 
 		componentErrors = append(componentErrors, err)

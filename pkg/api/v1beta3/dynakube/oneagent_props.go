@@ -300,3 +300,7 @@ func (dk *DynaKube) GetOneAgentEnvironment() []corev1.EnvVar {
 
 	return []corev1.EnvVar{}
 }
+
+func (dk *DynaKube) OneAgentEndpoints() string {
+	return dk.Status.OneAgent.ConnectionInfoStatus.Endpoints
+}

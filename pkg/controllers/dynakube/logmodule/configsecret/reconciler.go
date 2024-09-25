@@ -2,6 +2,7 @@ package configsecret
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -17,8 +18,7 @@ import (
 )
 
 const (
-	logModuleSecretSuffix    = "-logmodule-config"
-	deploymentConfigFilename = "deployment.conf"
+	logModuleSecretSuffix = "-logmodule-config"
 
 	tenantKey       = "Tenant"
 	tenantTokenKey  = "TenantToken"
@@ -49,7 +49,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		}
 
 		query := k8ssecret.Query(r.client, r.apiReader, log)
-		err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: getSecretName(r.dk.Name), Namespace: r.dk.Namespace}})
+		err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: GetSecretName(r.dk.Name), Namespace: r.dk.Namespace}})
 
 		if err != nil {
 			log.Error(err, "failed to clean-up LogModule config-secret")
@@ -94,7 +94,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 	coreLabels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.LogModuleComponentLabel).BuildLabels()
 
 	newSecret, err := k8ssecret.Build(r.dk,
-		getSecretName(r.dk.Name),
+		GetSecretName(r.dk.Name),
 		data,
 		k8ssecret.SetLabels(coreLabels),
 	)
@@ -126,7 +126,7 @@ func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, erro
 	}
 
 	deploymentConfigContent := map[string]string{
-		serverKey:       r.dk.ApiUrl(),
+		serverKey:       fmt.Sprintf("{%s}", r.dk.OneAgentEndpoints()),
 		tenantKey:       tenantUUID,
 		tenantTokenKey:  tenantToken,
 		hostIdSourceKey: "k8s-node-name",
@@ -140,9 +140,9 @@ func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, erro
 		content.WriteString("\n")
 	}
 
-	return map[string][]byte{deploymentConfigFilename: []byte(content.String())}, nil
+	return map[string][]byte{DeploymentConfigFilename: []byte(content.String())}, nil
 }
 
-func getSecretName(dkName string) string {
+func GetSecretName(dkName string) string {
 	return dkName + logModuleSecretSuffix
 }
