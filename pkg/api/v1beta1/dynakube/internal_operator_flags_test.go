@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,9 +35,9 @@ func TestGetInternalFlags(t *testing.T) {
 		annotatedObject := &corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					InternalFlagPrefix + "some-flag":                  "something",
-					InternalFlagPrefix + "other-flag":                 "nothing",
-					"unexpected." + InternalFlagPrefix + "not-a-flag": "oh, no",
+					api.InternalFlagPrefix + "some-flag":                  "something",
+					api.InternalFlagPrefix + "other-flag":                 "nothing",
+					"unexpected." + api.InternalFlagPrefix + "not-a-flag": "oh, no",
 				},
 			},
 		}
@@ -83,26 +84,26 @@ func TestIsInternalFlagsEqual(t *testing.T) {
 	t.Run("Expected that objects with internal operator flags compare as equal if the flags are identical", func(t *testing.T) {
 		assert.True(t, IsInternalFlagsEqual(
 			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
-				"dyna": "trace", InternalFlagPrefix + "flag": "value",
+				"dyna": "trace", api.InternalFlagPrefix + "flag": "value",
 			}}},
 			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
-				"dyna": "truce", InternalFlagPrefix + "flag": "value",
+				"dyna": "truce", api.InternalFlagPrefix + "flag": "value",
 			}}},
 		))
 		assert.True(t, IsInternalFlagsEqual(
 			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
-				"dyna": "trace", InternalFlagPrefix + "flag": "value",
+				"dyna": "trace", api.InternalFlagPrefix + "flag": "value",
 			}}},
 			&corev1.Service{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
-				"dyna": "tarce", InternalFlagPrefix + "flag": "value",
+				"dyna": "tarce", api.InternalFlagPrefix + "flag": "value",
 			}}},
 		))
 		assert.True(t, IsInternalFlagsEqual(
 			&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
-				"dyna": "trace", InternalFlagPrefix + "flag": "value",
+				"dyna": "trace", api.InternalFlagPrefix + "flag": "value",
 			}}},
 			&corev1.Service{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
-				"dyna": "trcue", InternalFlagPrefix + "flag": "value",
+				"dyna": "trcue", api.InternalFlagPrefix + "flag": "value",
 			}}},
 		))
 	})
@@ -110,26 +111,26 @@ func TestIsInternalFlagsEqual(t *testing.T) {
 	t.Run("Expected that objects with internal operator flags compare as different if the flags have different values or are missing", func(t *testing.T) {
 		assert.False(t, IsInternalFlagsEqual(
 			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
-				"dyna": "trace", InternalFlagPrefix + "flag": "value",
+				"dyna": "trace", api.InternalFlagPrefix + "flag": "value",
 			}}},
 			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
-				"dyna": "trace", InternalFlagPrefix + "flag": "other value",
+				"dyna": "trace", api.InternalFlagPrefix + "flag": "other value",
 			}}},
 		))
 		assert.False(t, IsInternalFlagsEqual(
 			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
-				"dyna": "trace", InternalFlagPrefix + "flag": "value",
+				"dyna": "trace", api.InternalFlagPrefix + "flag": "value",
 			}}},
 			&corev1.Service{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
-				"dyna": "trace", InternalFlagPrefix + "flag": "other value",
+				"dyna": "trace", api.InternalFlagPrefix + "flag": "other value",
 			}}},
 		))
 		assert.False(t, IsInternalFlagsEqual(
 			&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
-				"dyna": "trace", InternalFlagPrefix + "flag": "value",
+				"dyna": "trace", api.InternalFlagPrefix + "flag": "value",
 			}}},
 			&corev1.Service{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
-				"dyna": "trace", InternalFlagPrefix + "flag": "other value",
+				"dyna": "trace", api.InternalFlagPrefix + "flag": "other value",
 			}}},
 		))
 	})

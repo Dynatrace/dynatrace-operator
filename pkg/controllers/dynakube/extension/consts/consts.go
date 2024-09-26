@@ -1,8 +1,9 @@
 package consts
 
+import "github.com/Dynatrace/dynatrace-operator/pkg/api"
+
 const (
-	InternalPrefix                 = "internal.operator.dynatrace.com/"
-	ExtensionsAnnotationSecretHash = InternalPrefix + "secret-hash"
+	ExtensionsAnnotationSecretHash = api.InternalFlagPrefix + "secret-hash"
 
 	// secret
 	EecTokenSecretKey         = "eec.token"
