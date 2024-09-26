@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 
+	v1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	v1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/validation"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -59,7 +61,11 @@ func New(apiReader client.Reader, cfg *rest.Config) admission.CustomValidator {
 }
 
 func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
-	dk := obj.(*dynakube.DynaKube)
+	dk, err := getDynakube(obj)
+	if err != nil {
+		return
+	}
+
 	errMessages := v.runValidators(ctx, validatorErrorFuncs, dk)
 	warnings = v.runValidators(ctx, validatorWarningFuncs, dk)
 
@@ -70,8 +76,12 @@ func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (war
 	return
 }
 
-func (v *Validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (warnings admission.Warnings, err error) {
-	dk := newObj.(*dynakube.DynaKube)
+func (v *Validator) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (warnings admission.Warnings, err error) {
+	dk, err := getDynakube(newObj)
+	if err != nil {
+		return
+	}
+
 	errMessages := v.runValidators(ctx, validatorErrorFuncs, dk)
 	warnings = v.runValidators(ctx, validatorWarningFuncs, dk)
 
@@ -96,4 +106,25 @@ func (v *Validator) runValidators(ctx context.Context, validators []validatorFun
 	}
 
 	return results
+}
+
+func getDynakube(obj runtime.Object) (dk *dynakube.DynaKube, err error) {
+	dk = &dynakube.DynaKube{}
+
+	switch v := obj.(type) {
+	case *dynakube.DynaKube:
+		dk = v
+	case *v1beta2.DynaKube:
+		err = v.ConvertTo(dk)
+		if err != nil {
+			return
+		}
+	case *v1beta1.DynaKube:
+		err = v.ConvertTo(dk)
+		if err != nil {
+			return
+		}
+	}
+
+	return
 }
