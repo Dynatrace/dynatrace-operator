@@ -58,7 +58,7 @@ func TestReconcile(t *testing.T) {
 		err := fakeClient.Get(context.Background(), SelfSignedTLSSecretObjectKey, &secret)
 
 		require.NoError(t, err)
-		require.NotNil(t, secret)
+		require.NotEmpty(t, secret)
 	})
 	t.Run("do not renew self-signed tls secret if it exists", func(t *testing.T) {
 		dk := getTestDynakube()
@@ -91,8 +91,8 @@ func TestReconcile(t *testing.T) {
 		var secret corev1.Secret
 		err := fakeClient.Get(context.Background(), SelfSignedTLSSecretObjectKey, &secret)
 
-		require.True(t, k8serrors.IsNotFound(err)) // self-signed tls secret got deleted
-		require.NotNil(t, secret)
+		require.True(t, k8serrors.IsNotFound(err))
+		require.Empty(t, secret)
 	})
 }
 
@@ -103,7 +103,6 @@ func TestGetTLSSecretName(t *testing.T) {
 
 		secretName := GetTLSSecretName(dk)
 
-		assert.NotEmpty(t, secretName)
 		assert.Equal(t, getSelfSignedTLSSecretName(dk.Name), secretName)
 	})
 	t.Run("tlsRefName secret", func(t *testing.T) {
@@ -112,7 +111,6 @@ func TestGetTLSSecretName(t *testing.T) {
 
 		secretName := GetTLSSecretName(dk)
 
-		assert.NotEmpty(t, secretName)
 		assert.Equal(t, "dummy-value", secretName)
 	})
 }
