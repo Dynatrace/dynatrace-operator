@@ -504,7 +504,7 @@ func TestAnnotations(t *testing.T) {
 
 		assert.Len(t, statefulSet.ObjectMeta.Annotations, 1)
 		require.Len(t, statefulSet.Spec.Template.ObjectMeta.Annotations, 1)
-		assert.NotNil(t, statefulSet.Spec.Template.ObjectMeta.Annotations[consts.ExtensionsAnnotationSecretHash])
+		assert.NotEmpty(t, statefulSet.Spec.Template.ObjectMeta.Annotations[consts.ExtensionsAnnotationSecretHash])
 	})
 
 	t.Run("custom annotations", func(t *testing.T) {

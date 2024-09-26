@@ -302,8 +302,8 @@ func TestAnnotations(t *testing.T) {
 		statefulSet := getStatefulset(t, getTestDynakube())
 
 		assert.Len(t, statefulSet.ObjectMeta.Annotations, 1)
-		assert.Len(t, statefulSet.Spec.Template.ObjectMeta.Annotations, 1)
-		assert.NotNil(t, statefulSet.Spec.Template.ObjectMeta.Annotations[consts.ExtensionsAnnotationSecretHash])
+		require.Len(t, statefulSet.Spec.Template.ObjectMeta.Annotations, 1)
+		assert.NotEmpty(t, statefulSet.Spec.Template.ObjectMeta.Annotations[consts.ExtensionsAnnotationSecretHash])
 	})
 
 	t.Run("custom annotations", func(t *testing.T) {
@@ -315,11 +315,11 @@ func TestAnnotations(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		assert.Len(t, statefulSet.ObjectMeta.Annotations, 1)
+		require.Len(t, statefulSet.ObjectMeta.Annotations, 1)
 		assert.Empty(t, statefulSet.ObjectMeta.Annotations["a"])
-		assert.Len(t, statefulSet.Spec.Template.ObjectMeta.Annotations, 2)
-		assert.NotNil(t, statefulSet.Spec.Template.ObjectMeta.Annotations["a"])
-		assert.NotNil(t, statefulSet.Spec.Template.ObjectMeta.Annotations[consts.ExtensionsAnnotationSecretHash])
+		require.Len(t, statefulSet.Spec.Template.ObjectMeta.Annotations, 2)
+		assert.Equal(t, "b", statefulSet.Spec.Template.ObjectMeta.Annotations["a"])
+		assert.NotEmpty(t, statefulSet.Spec.Template.ObjectMeta.Annotations[consts.ExtensionsAnnotationSecretHash])
 	})
 }
 
