@@ -150,3 +150,24 @@ func WithApplicationMonitoringSpec(applicationMonitoringSpec *dynakube.Applicati
 		dk.Spec.OneAgent.ApplicationMonitoring = applicationMonitoringSpec
 	}
 }
+
+func WithExtensionsEnabledSpec(promEnabled bool) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.Extensions.Enabled = promEnabled
+	}
+}
+
+func WithExtensionsEECImageRefSpec(repo, tag string) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.Templates.ExtensionExecutionController.ImageRef = dynakube.ImageRefSpec{
+			Repository: repo,
+			Tag:        tag,
+		}
+	}
+}
+
+func WithCustomPullSecret(secretName string) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.CustomPullSecret = secretName
+	}
+}

@@ -30,9 +30,10 @@ type Secrets struct {
 }
 
 type Secret struct {
-	TenantUid string `yaml:"tenantUid"`
-	ApiUrl    string `yaml:"apiUrl"`
-	ApiToken  string `yaml:"apiToken"`
+	TenantUid        string `yaml:"tenantUid"`
+	ApiUrl           string `yaml:"apiUrl"`
+	ApiToken         string `yaml:"apiToken"`
+	CustomPullSecret string `yaml:"customPullSecret"`
 }
 
 type EdgeConnectSecret struct {
