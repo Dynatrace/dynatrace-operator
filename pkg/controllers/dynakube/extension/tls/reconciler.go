@@ -13,7 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -37,21 +37,13 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
 	if r.dk.ExtensionsNeedsSelfSignedTLS() {
-		err := r.reconcileSelfSignedMode(ctx)
-		if err != nil {
-			return err
-		}
-	} else {
-		err := r.reconcileTLSRefNameMode(ctx)
-		if err != nil {
-			return err
-		}
+		return r.reconcileSelfSigned(ctx)
 	}
 
-	return nil
+	return r.reconcileTLSRefName(ctx)
 }
 
-func (r *reconciler) reconcileSelfSignedMode(ctx context.Context) error {
+func (r *reconciler) reconcileSelfSigned(ctx context.Context) error {
 	query := k8ssecret.Query(r.client, r.client, log)
 
 	_, err := query.Get(ctx, types.NamespacedName{
@@ -63,18 +55,14 @@ func (r *reconciler) reconcileSelfSignedMode(ctx context.Context) error {
 		return r.createSelfSignedTLSSecret(ctx)
 	}
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
-func (r *reconciler) reconcileTLSRefNameMode(ctx context.Context) error {
+func (r *reconciler) reconcileTLSRefName(ctx context.Context) error {
 	query := k8ssecret.Query(r.client, r.client, log)
 
 	return query.Delete(ctx, &corev1.Secret{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      getSelfSignedTLSSecretName(r.dk.Name),
 			Namespace: r.dk.Namespace,
 		},
