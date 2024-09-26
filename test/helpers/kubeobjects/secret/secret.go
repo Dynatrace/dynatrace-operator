@@ -24,6 +24,19 @@ func New(name, namespace string, data map[string][]byte) corev1.Secret {
 	}
 }
 
+func NewDockerConfigJson(name, namespace string, customPullSecret []byte) corev1.Secret {
+	return corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Data: map[string][]byte{
+			corev1.DockerConfigJsonKey: customPullSecret,
+		},
+		Type: corev1.SecretTypeDockerConfigJson,
+	}
+}
+
 func Create(secret corev1.Secret) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		err := envConfig.Client().Resources().Create(ctx, &secret)
@@ -33,6 +46,20 @@ func Create(secret corev1.Secret) features.Func {
 			}
 			require.NoError(t, err)
 		}
+
+		return ctx
+	}
+}
+
+func Delete(secret corev1.Secret) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		err := envConfig.Client().Resources().Delete(ctx, &secret)
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				err = nil
+			}
+		}
+		require.NoError(t, err)
 
 		return ctx
 	}
