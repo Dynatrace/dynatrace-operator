@@ -159,7 +159,7 @@
         "sigs.k8s.io/e2e-framework",
       ],
       enabled: false,
-    }
+    },
   ],
   platformAutomerge: true,
 }
