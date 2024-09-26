@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-const InternalFlagPrefix = "internal.operator.dynatrace.com/"
 
 func FlagsWithPrefix(obj metav1.Object, prefix string) map[string]string {
 	filteredAnnotations := make(map[string]string)
@@ -22,7 +21,7 @@ func FlagsWithPrefix(obj metav1.Object, prefix string) map[string]string {
 }
 
 func InternalFlags(obj metav1.Object) map[string]string {
-	return FlagsWithPrefix(obj, InternalFlagPrefix)
+	return FlagsWithPrefix(obj, api.InternalFlagPrefix)
 }
 
 func IsInternalFlagsEqual(obj1, obj2 metav1.Object) bool {
