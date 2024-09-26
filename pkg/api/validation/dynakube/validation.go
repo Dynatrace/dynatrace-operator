@@ -23,8 +23,10 @@ type Validator struct {
 
 var (
 	validatorErrorFuncs = []validatorFunc{
-		isOneAgentModuleDisabled,
 		isActiveGateModuleDisabled,
+		isExtensionsModuleDisabled,
+		isLogModuleModuleDisabled,
+		isOneAgentModuleDisabled,
 		NoApiUrl,
 		IsInvalidApiUrl,
 		IsThirdGenAPIUrl,

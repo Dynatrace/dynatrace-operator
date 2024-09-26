@@ -63,6 +63,48 @@ func TestIsModuleDisabled(t *testing.T) {
 			moduleFunc:      isActiveGateModuleDisabled,
 			expectedMessage: "",
 		},
+		{
+			title:           "ecc module disabled but also configured in dk => error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Extensions: dynakube.ExtensionsSpec{Enabled: true}}},
+			modules:         operatorconfig.Modules{Extensions: false},
+			moduleFunc:      isExtensionsModuleDisabled,
+			expectedMessage: errorExtensionsModuleDisabled,
+		},
+		{
+			title:           "ecc module disabled but not configured => no error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{}},
+			modules:         operatorconfig.Modules{Extensions: false},
+			moduleFunc:      isExtensionsModuleDisabled,
+			expectedMessage: "",
+		},
+		{
+			title:           "ecc module enabled and also configured => no error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Extensions: dynakube.ExtensionsSpec{Enabled: true}}},
+			modules:         operatorconfig.Modules{Extensions: true},
+			moduleFunc:      isExtensionsModuleDisabled,
+			expectedMessage: "",
+		},
+		{
+			title:           "logmodule module disabled but also configured in dk => error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{LogModule: dynakube.LogModuleSpec{Enabled: true}}},
+			modules:         operatorconfig.Modules{LogModule: false},
+			moduleFunc:      isLogModuleModuleDisabled,
+			expectedMessage: errorLogModuleModuleDisabled,
+		},
+		{
+			title:           "logmodule module disabled but not configured => no error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{}},
+			modules:         operatorconfig.Modules{LogModule: false},
+			moduleFunc:      isLogModuleModuleDisabled,
+			expectedMessage: "",
+		},
+		{
+			title:           "logmodule module enabled and also configured => no error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{LogModule: dynakube.LogModuleSpec{Enabled: true}}},
+			modules:         operatorconfig.Modules{LogModule: true},
+			moduleFunc:      isLogModuleModuleDisabled,
+			expectedMessage: "",
+		},
 	}
 
 	for _, test := range testCases {
