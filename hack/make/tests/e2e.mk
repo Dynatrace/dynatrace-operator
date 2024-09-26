@@ -2,7 +2,7 @@ GOTESTCMD:=go test
 
 ## Start a test and save the result to an xml file
 test/e2e/%/publish:
-	@make GOTESTCMD='gotestsum --junitfile results/$(notdir $(@D)).xml --' $(@D)
+	@make GOTESTCMD='gotestsum --format standard-verbose --junitfile results/$(notdir $(@D)).xml --' $(@D)
 
 ## Start a test and skip TEARDOWN steps if it fails
 test/e2e/%/debug:
