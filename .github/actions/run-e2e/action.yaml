@@ -32,6 +32,9 @@ inputs:
   tenant2-apitoken:
     description: The API token of Tenant 2
     required: true
+  eec-pull-secret:
+    description: EEC custom pull secret
+    required: true
   github-token:
     description: The GitHub token
     required: true
@@ -39,11 +42,11 @@ runs:
   using: composite
   steps:
     - name: Checkout workflow scripts from ref branch
-      uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
       with:
         path: ref
     - name: Checkout target branch
-      uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
       with:
         ref: ${{ inputs.target-branch || 'main' }}
         path: target
@@ -80,6 +83,7 @@ runs:
         TENANT1_OAUTH_URN: ${{ inputs.tenant1-oauth-urn }}
         TENANT2_NAME: ${{ inputs.tenant2-name }}
         TENANT2_APITOKEN: ${{ inputs.tenant2-apitoken }}
+        EEC_PULL_SECRET: ${{ inputs.eec-pull-secret }}
     - name: Destroy cluster
       shell: bash
       run: ref/.github/scripts/destroy-cluster.sh
