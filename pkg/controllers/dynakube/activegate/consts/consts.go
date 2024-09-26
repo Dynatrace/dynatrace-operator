@@ -1,7 +1,7 @@
 package consts
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 )
 
@@ -27,7 +27,7 @@ const (
 	EnvDtDnsEntryPoint   = "DT_DNS_ENTRY_POINT"
 	EnvDtHttpPort        = "DT_HTTP_PORT"
 
-	AnnotationActiveGateConfigurationHash = dynakube.InternalFlagPrefix + "activegate-configuration-hash"
+	AnnotationActiveGateConfigurationHash = api.InternalFlagPrefix + "activegate-configuration-hash"
 	AnnotationActiveGateContainerAppArmor = "container.apparmor.security.beta.kubernetes.io/" + ActiveGateContainerName
 
 	GatewayConfigVolumeName  = "ag-lib-gateway-config"
