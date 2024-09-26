@@ -21,7 +21,7 @@ func (controller *Controller) determineEdgeConnectPhase(ec *edgeconnect.EdgeConn
 	}
 
 	if err != nil {
-		log.Error(err, "edgeConnect deployment could not be accessed", "edgeConnect", ec.Name, "deployment", ec.Namespace)
+		log.Error(err, "edgeConnect deployment could not be accessed", "edgeConnect", ec.Name, "namespace", ec.Namespace)
 
 		return status.Error
 	}
@@ -32,7 +32,7 @@ func (controller *Controller) determineEdgeConnectPhase(ec *edgeconnect.EdgeConn
 	}
 
 	if scheduledReplicas != deployment.Status.ReadyReplicas {
-		log.Info("edgeConnect deployment is still deploying", "edgeConnect", ec.Name, "deployment", ec.Name)
+		log.Info("edgeConnect deployment is still deploying", "edgeConnect", ec.Name, "namespace", ec.Name)
 
 		return status.Deploying
 	}
