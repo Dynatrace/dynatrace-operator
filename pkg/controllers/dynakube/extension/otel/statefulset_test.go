@@ -134,6 +134,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 
 		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dynakube.ExtensionsCollectorStatefulsetName, Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
+
 		originalSecretHash := statefulSet.Spec.Template.Annotations[consts.ExtensionsAnnotationSecretHash]
 
 		// then update the TLS Secret and call reconcile again
@@ -145,6 +146,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 		require.NoError(t, err)
 		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dynakube.ExtensionsCollectorStatefulsetName, Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
+
 		resultingSecretHash := statefulSet.Spec.Template.Annotations[consts.ExtensionsAnnotationSecretHash]
 
 		// original hash and resulting hash should be different, value got updated on reconcile
