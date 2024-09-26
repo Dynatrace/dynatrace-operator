@@ -3,16 +3,14 @@ kind: ConfigMap
 metadata:
   name: operator-config
   namespace: {{ .Release.Namespace }}
-  annotations:
-  {{- if .Values.operator.annotations }}
-    {{- toYaml .Values.operator.annotations | nindent 4 }}
-  {{- end }}
+  labels:
+    {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
 data:
   modules.json: |
     {
-      "activeGate": {{ .Values.rbac.activeGate.create | default true }},
-      "oneAgent": {{ .Values.rbac.oneAgent.create | default true }},
-      "extensions": {{ .Values.rbac.extensions.create | default true }},
-      "logModule": {{ .Values.rbac.logModule.create | default true }},
-      "edgeConnect": {{ .Values.rbac.edgeConnect.create | default true }}
+      "activeGate": {{ .Values.rbac.activeGate.create }},
+      "oneAgent": {{ .Values.rbac.oneAgent.create }},
+      "extensions": {{ .Values.rbac.extensions.create }},
+      "logModule": {{ .Values.rbac.logModule.create }},
+      "edgeConnect": {{ .Values.rbac.edgeConnect.create }}
     }
