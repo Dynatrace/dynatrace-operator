@@ -82,7 +82,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		return err
 	}
 
-	desiredSts, err := statefulset.Build(r.dk, dynakube.ExtensionsExecutionControllerStatefulsetName, buildContainer(r.dk),
+	desiredSts, err := statefulset.Build(r.dk, r.dk.ExtensionsExecutionControllerStatefulsetName(), buildContainer(r.dk),
 		statefulset.SetReplicas(1),
 		statefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
 		statefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), r.dk.Spec.Templates.ExtensionExecutionController.Labels),
@@ -112,7 +112,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 
 	_, err = statefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
 	if err != nil {
-		log.Info("failed to create/update " + dynakube.ExtensionsExecutionControllerStatefulsetName + " statefulset")
+		log.Info("failed to create/update " + r.dk.ExtensionsExecutionControllerStatefulsetName() + " statefulset")
 		conditions.SetKubeApiError(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, err)
 
 		return err

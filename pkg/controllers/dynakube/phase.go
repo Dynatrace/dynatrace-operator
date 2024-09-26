@@ -53,11 +53,11 @@ func (controller *Controller) determineActiveGatePhase(dk *dynakube.DynaKube) st
 }
 
 func (controller *Controller) determineExtensionsExecutionControllerPhase(dk *dynakube.DynaKube) status.DeploymentPhase {
-	return controller.determinePrometheusStatefulsetPhase(dk, dynakube.ExtensionsExecutionControllerStatefulsetName)
+	return controller.determinePrometheusStatefulsetPhase(dk, dk.ExtensionsExecutionControllerStatefulsetName())
 }
 
 func (controller *Controller) determineExtensionsCollectorPhase(dk *dynakube.DynaKube) status.DeploymentPhase {
-	return controller.determinePrometheusStatefulsetPhase(dk, dynakube.ExtensionsCollectorStatefulsetName)
+	return controller.determinePrometheusStatefulsetPhase(dk, dk.ExtensionsCollectorStatefulsetName())
 }
 
 func (controller *Controller) determinePrometheusStatefulsetPhase(dk *dynakube.DynaKube, statefulsetName string) status.DeploymentPhase {

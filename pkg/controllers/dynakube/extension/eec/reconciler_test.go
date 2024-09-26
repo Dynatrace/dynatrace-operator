@@ -78,7 +78,7 @@ func getStatefulset(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
 	require.NoError(t, err)
 
 	statefulSet := &appsv1.StatefulSet{}
-	err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dynakube.ExtensionsExecutionControllerStatefulsetName, Namespace: dk.Namespace}, statefulSet)
+	err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 	require.NoError(t, err)
 
 	return statefulSet
@@ -117,7 +117,7 @@ func TestConditions(t *testing.T) {
 		require.Error(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dynakube.ExtensionsExecutionControllerStatefulsetName, Namespace: dk.Namespace}, statefulSet)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.Error(t, err)
 
 		assert.True(t, errors.IsNotFound(err))
@@ -133,7 +133,7 @@ func TestConditions(t *testing.T) {
 		require.Error(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dynakube.ExtensionsExecutionControllerStatefulsetName, Namespace: dk.Namespace}, statefulSet)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.Error(t, err)
 
 		assert.True(t, errors.IsNotFound(err))
@@ -142,7 +142,7 @@ func TestConditions(t *testing.T) {
 	t.Run("extensions are disabled", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Extensions.Enabled = false
-		conditions.SetStatefulSetCreated(dk.Conditions(), extensionsControllerStatefulSetConditionType, dynakube.ExtensionsExecutionControllerStatefulsetName)
+		conditions.SetStatefulSetCreated(dk.Conditions(), extensionsControllerStatefulSetConditionType, dk.ExtensionsExecutionControllerStatefulsetName())
 
 		mockK8sClient := fake.NewClient(dk)
 
@@ -150,7 +150,7 @@ func TestConditions(t *testing.T) {
 		require.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dynakube.ExtensionsExecutionControllerStatefulsetName, Namespace: dk.Namespace}, statefulSet)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.Error(t, err)
 
 		assert.True(t, errors.IsNotFound(err))
@@ -202,7 +202,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 		err := reconciler.Reconcile(context.Background())
 		require.NoError(t, err)
 
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dynakube.ExtensionsExecutionControllerStatefulsetName, Namespace: dk.Namespace}, statefulSet)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
 
 		originalSecretHash := statefulSet.Spec.Template.Annotations[consts.ExtensionsAnnotationSecretHash]
@@ -214,7 +214,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 
 		err = reconciler.Reconcile(context.Background())
 		require.NoError(t, err)
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dynakube.ExtensionsExecutionControllerStatefulsetName, Namespace: dk.Namespace}, statefulSet)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
 
 		resultingSecretHash := statefulSet.Spec.Template.Annotations[consts.ExtensionsAnnotationSecretHash]
