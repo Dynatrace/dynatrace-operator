@@ -11,19 +11,6 @@ import (
 )
 
 func (controller *Controller) determineEdgeConnectPhase(ec *edgeconnect.EdgeConnect) status.DeploymentPhase {
-	components := []func(ec *edgeconnect.EdgeConnect) status.DeploymentPhase{
-		controller.determineDeploymentPhase,
-	}
-	for _, component := range components {
-		if phase := component(ec); phase != status.Running {
-			return phase
-		}
-	}
-
-	return status.Running
-}
-
-func (controller *Controller) determineDeploymentPhase(ec *edgeconnect.EdgeConnect) status.DeploymentPhase {
 	deployment := &appsv1.Deployment{}
 
 	err := controller.client.Get(context.Background(), types.NamespacedName{Name: ec.Name, Namespace: ec.Namespace}, deployment)
@@ -40,7 +27,7 @@ func (controller *Controller) determineDeploymentPhase(ec *edgeconnect.EdgeConne
 	}
 
 	scheduledReplicas := int32(0)
-	if ec.Spec.Replicas != nil {
+	if deployment.Spec.Replicas != nil {
 		scheduledReplicas = *deployment.Spec.Replicas
 	}
 

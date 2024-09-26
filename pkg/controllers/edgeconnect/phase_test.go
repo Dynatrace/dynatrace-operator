@@ -43,7 +43,7 @@ func TestEdgeConnectPhaseChanges(t *testing.T) {
 	t.Run("edgeConnect pods not ready -> deploying", func(t *testing.T) {
 		replicas, readyReplicas := int32(1), int32(0)
 		objects := []client.Object{
-			createDeployment(testNamespace, "test-name", replicas, readyReplicas),
+			createDeployment(testNamespace, testName, replicas, readyReplicas),
 		}
 
 		fakeClient := fake.NewClient(objects...)
@@ -59,7 +59,7 @@ func TestEdgeConnectPhaseChanges(t *testing.T) {
 	t.Run("edgeConnect deployed -> running", func(t *testing.T) {
 		replicas, readyReplicas := int32(1), int32(1)
 		objects := []client.Object{
-			createDeployment(testNamespace, "test-name", replicas, readyReplicas),
+			createDeployment(testNamespace, testName, replicas, readyReplicas),
 		}
 
 		fakeClient := fake.NewClient(objects...)
@@ -69,6 +69,6 @@ func TestEdgeConnectPhaseChanges(t *testing.T) {
 			apiReader: fakeClient,
 		}
 		phase := controller.determineEdgeConnectPhase(ec)
-		assert.Equal(t, status.Deploying, phase)
+		assert.Equal(t, status.Running, phase)
 	})
 }
