@@ -9,14 +9,18 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/hash"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/servicename"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/tls"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/utils"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
+	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -65,11 +69,17 @@ const (
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	appLabels := buildAppLabels(r.dk.Name)
+
+	templateAnnotations, err := r.buildTemplateAnnotations(ctx)
+	if err != nil {
+		return err
+	}
+
 	sts, err := statefulset.Build(r.dk, dynakube.ExtensionsCollectorStatefulsetName, buildContainer(r.dk),
 		statefulset.SetReplicas(getReplicas(r.dk)),
 		statefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
 		statefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), r.dk.Spec.Templates.OpenTelemetryCollector.Labels),
-		statefulset.SetAllAnnotations(nil, r.dk.Spec.Templates.OpenTelemetryCollector.Annotations),
+		statefulset.SetAllAnnotations(nil, templateAnnotations),
 		statefulset.SetAffinity(buildAffinity()),
 		statefulset.SetServiceAccount(serviceAccountName),
 		statefulset.SetTolerations(r.dk.Spec.Templates.OpenTelemetryCollector.Tolerations),
@@ -103,6 +113,33 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	conditions.SetStatefulSetCreated(r.dk.Conditions(), otelControllerStatefulSetConditionType, sts.Name)
 
 	return nil
+}
+
+func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]string, error) {
+	templateAnnotations := map[string]string{}
+
+	if r.dk.Spec.Templates.OpenTelemetryCollector.Annotations != nil {
+		templateAnnotations = r.dk.Spec.Templates.OpenTelemetryCollector.Annotations
+	}
+
+	query := k8ssecret.Query(r.client, r.client, log)
+
+	tlsSecret, err := query.Get(ctx, types.NamespacedName{
+		Name:      tls.GetTLSSecretName(r.dk),
+		Namespace: r.dk.Namespace,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	tlsSecretHash, err := hasher.GenerateHash(tlsSecret.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	templateAnnotations[consts.ExtensionsAnnotationSecretHash] = tlsSecretHash
+
+	return templateAnnotations, nil
 }
 
 func getReplicas(dk *dynakube.DynaKube) int32 {

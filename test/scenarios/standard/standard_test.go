@@ -14,7 +14,6 @@ import (
 	disabledAutoInjection "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/disabled_auto_injection"
 	cloudToClassic "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/switch_modes"
 	"github.com/Dynatrace/dynatrace-operator/test/features/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/test/features/extensions"
 	"github.com/Dynatrace/dynatrace-operator/test/features/publicregistry"
 	supportArchive "github.com/Dynatrace/dynatrace-operator/test/features/support_archive"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
@@ -55,7 +54,6 @@ func TestStandard(t *testing.T) {
 		applicationmonitoring.WithoutCSI(t),
 		codemodules.InstallFromImage(t),
 		publicregistry.Feature(t),
-		extensions.Feature(t),
 		disabledAutoInjection.Feature(t),
 		supportArchive.Feature(t),
 		edgeconnect.NormalModeFeature(t),

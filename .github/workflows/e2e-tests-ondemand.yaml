@@ -65,7 +65,6 @@ jobs:
           tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
           tenant2-name: ${{ secrets.TENANT2_NAME }}
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
-          eec-pull-secret: ${{ secrets.EEC_PULL_SECRET }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
 

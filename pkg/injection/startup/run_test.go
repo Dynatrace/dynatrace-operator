@@ -34,10 +34,9 @@ func getTestProcessModuleConfig() *dtclient.ProcessModuleConfig {
 func TestNewRunner(t *testing.T) {
 	fs := prepTestFs(t)
 	t.Run("create runner with oneagent and metadata-enrichment injection", func(t *testing.T) {
-		resetEnv := prepCombinedTestEnv(t)
-		runner, err := NewRunner(fs)
+		prepCombinedTestEnv(t)
 
-		resetEnv()
+		runner, err := NewRunner(fs)
 
 		require.NoError(t, err)
 		require.NotNil(t, runner)
@@ -49,10 +48,9 @@ func TestNewRunner(t *testing.T) {
 		assert.Empty(t, runner.hostTenant)
 	})
 	t.Run("create runner with only oneagent", func(t *testing.T) {
-		resetEnv := prepOneAgentTestEnv(t)
-		runner, err := NewRunner(fs)
+		prepOneAgentTestEnv(t)
 
-		resetEnv()
+		runner, err := NewRunner(fs)
 
 		require.NoError(t, err)
 		assert.NotNil(t, runner.fs)
@@ -63,10 +61,9 @@ func TestNewRunner(t *testing.T) {
 		assert.Empty(t, runner.hostTenant)
 	})
 	t.Run("create runner with only metadata-enrichment injection", func(t *testing.T) {
-		resetEnv := prepMetadataEnrichmentTestEnv(t, false)
-		runner, err := NewRunner(fs)
+		prepMetadataEnrichmentTestEnv(t, false)
 
-		resetEnv()
+		runner, err := NewRunner(fs)
 
 		require.NoError(t, err)
 		assert.NotNil(t, runner.fs)
@@ -547,11 +544,10 @@ func TestWriteCurlOptions(t *testing.T) {
 
 func createTestRunner(t *testing.T) *Runner {
 	fs := prepTestFs(t)
-	resetEnv := prepCombinedTestEnv(t)
+	prepCombinedTestEnv(t)
 
 	runner, err := NewRunner(fs)
 
-	resetEnv()
 	require.NoError(t, err)
 	require.NotNil(t, runner)
 
