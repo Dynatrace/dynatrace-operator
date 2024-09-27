@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/operatorconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,7 +15,7 @@ func TestIsModuleDisabled(t *testing.T) {
 	type testCase struct {
 		title           string
 		dk              dynakube.DynaKube
-		modules         operatorconfig.Modules
+		modules         installconfig.Modules
 		moduleFunc      validatorFunc
 		expectedMessage string
 	}
@@ -24,84 +24,84 @@ func TestIsModuleDisabled(t *testing.T) {
 		{
 			title:           "oa module disabled but also configured in dk => error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: dynakube.OneAgentSpec{CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}}}},
-			modules:         operatorconfig.Modules{OneAgent: false},
+			modules:         installconfig.Modules{OneAgent: false},
 			moduleFunc:      isOneAgentModuleDisabled,
 			expectedMessage: errorOneAgentModuleDisabled,
 		},
 		{
 			title:           "oa module disabled but not configured => no error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: dynakube.OneAgentSpec{CloudNativeFullStack: nil}}},
-			modules:         operatorconfig.Modules{OneAgent: false},
+			modules:         installconfig.Modules{OneAgent: false},
 			moduleFunc:      isOneAgentModuleDisabled,
 			expectedMessage: "",
 		},
 		{
 			title:           "oa module enabled and also configured => no error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: dynakube.OneAgentSpec{CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}}}},
-			modules:         operatorconfig.Modules{OneAgent: true},
+			modules:         installconfig.Modules{OneAgent: true},
 			moduleFunc:      isOneAgentModuleDisabled,
 			expectedMessage: "",
 		},
 		{
 			title:           "ag module disabled but also configured in dk => error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName}}}},
-			modules:         operatorconfig.Modules{ActiveGate: false},
+			modules:         installconfig.Modules{ActiveGate: false},
 			moduleFunc:      isActiveGateModuleDisabled,
 			expectedMessage: errorActiveGateModuleDisabled,
 		},
 		{
 			title:           "ag module disabled but not configured => no error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{}},
-			modules:         operatorconfig.Modules{ActiveGate: false},
+			modules:         installconfig.Modules{ActiveGate: false},
 			moduleFunc:      isActiveGateModuleDisabled,
 			expectedMessage: "",
 		},
 		{
 			title:           "ag module enabled and also configured => no error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName}}}},
-			modules:         operatorconfig.Modules{ActiveGate: true},
+			modules:         installconfig.Modules{ActiveGate: true},
 			moduleFunc:      isActiveGateModuleDisabled,
 			expectedMessage: "",
 		},
 		{
 			title:           "ecc module disabled but also configured in dk => error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Extensions: dynakube.ExtensionsSpec{Enabled: true}}},
-			modules:         operatorconfig.Modules{Extensions: false},
+			modules:         installconfig.Modules{Extensions: false},
 			moduleFunc:      isExtensionsModuleDisabled,
 			expectedMessage: errorExtensionsModuleDisabled,
 		},
 		{
 			title:           "ecc module disabled but not configured => no error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{}},
-			modules:         operatorconfig.Modules{Extensions: false},
+			modules:         installconfig.Modules{Extensions: false},
 			moduleFunc:      isExtensionsModuleDisabled,
 			expectedMessage: "",
 		},
 		{
 			title:           "ecc module enabled and also configured => no error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Extensions: dynakube.ExtensionsSpec{Enabled: true}}},
-			modules:         operatorconfig.Modules{Extensions: true},
+			modules:         installconfig.Modules{Extensions: true},
 			moduleFunc:      isExtensionsModuleDisabled,
 			expectedMessage: "",
 		},
 		{
 			title:           "logmodule module disabled but also configured in dk => error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{LogModule: dynakube.LogModuleSpec{Enabled: true}}},
-			modules:         operatorconfig.Modules{LogModule: false},
+			modules:         installconfig.Modules{LogModule: false},
 			moduleFunc:      isLogModuleModuleDisabled,
 			expectedMessage: errorLogModuleModuleDisabled,
 		},
 		{
 			title:           "logmodule module disabled but not configured => no error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{}},
-			modules:         operatorconfig.Modules{LogModule: false},
+			modules:         installconfig.Modules{LogModule: false},
 			moduleFunc:      isLogModuleModuleDisabled,
 			expectedMessage: "",
 		},
 		{
 			title:           "logmodule module enabled and also configured => no error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{LogModule: dynakube.LogModuleSpec{Enabled: true}}},
-			modules:         operatorconfig.Modules{LogModule: true},
+			modules:         installconfig.Modules{LogModule: true},
 			moduleFunc:      isLogModuleModuleDisabled,
 			expectedMessage: "",
 		},

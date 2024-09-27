@@ -6,7 +6,7 @@ import (
 
 	v1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube" //nolint:staticcheck
 	v1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube" //nolint:staticcheck
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/operatorconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/validation"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -18,7 +18,7 @@ import (
 type Validator struct {
 	apiReader client.Reader
 	cfg       *rest.Config
-	modules   operatorconfig.Modules
+	modules   installconfig.Modules
 }
 
 var (
@@ -63,7 +63,7 @@ func New(apiReader client.Reader, cfg *rest.Config) admission.CustomValidator {
 	return &Validator{
 		apiReader: apiReader,
 		cfg:       cfg,
-		modules:   operatorconfig.GetModules(),
+		modules:   installconfig.GetModules(),
 	}
 }
 

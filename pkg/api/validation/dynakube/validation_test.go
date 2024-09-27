@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/operatorconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -208,7 +208,7 @@ func runValidators(dk *dynakube.DynaKube, other ...client.Object) (admission.War
 	validator := &Validator{
 		apiReader: clt,
 		cfg:       &rest.Config{},
-		modules:   operatorconfig.GetModules(),
+		modules:   installconfig.GetModules(),
 	}
 
 	return validator.ValidateCreate(context.Background(), dk)

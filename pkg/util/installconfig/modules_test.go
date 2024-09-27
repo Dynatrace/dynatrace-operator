@@ -1,4 +1,4 @@
-package operatorconfig
+package installconfig
 
 import (
 	"sync"

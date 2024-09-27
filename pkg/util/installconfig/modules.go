@@ -1,4 +1,4 @@
-package operatorconfig
+package installconfig
 
 import (
 	"encoding/json"
@@ -25,7 +25,7 @@ var (
 		EdgeConnect: true,
 	}
 
-	log = logd.Get().WithName("operator-config")
+	log = logd.Get().WithName("install-config")
 )
 
 type Modules struct {
@@ -40,19 +40,19 @@ func GetModules() Modules {
 	once.Do(func() {
 		modulesJson := os.Getenv(modulesJsonEnv)
 		if modulesJson == "" {
-			log.Info("operator config envvar not set, using default", "envvar", modulesJsonEnv)
+			log.Info("envvar not set, using default", "envvar", modulesJsonEnv)
 
 			modules = fallbackModules
 		}
 
 		err := json.Unmarshal([]byte(modulesJson), &modules)
 		if err != nil {
-			log.Info("problem unmarshalling operator-config, using default", "envvar", modulesJsonEnv, "err", err)
+			log.Info("problem unmarshalling envvar content, using default", "envvar", modulesJsonEnv, "err", err)
 
 			modules = fallbackModules
 		}
 
-		log.Info("operator-config read and set", "envvar", modulesJsonEnv, "value", modulesJson)
+		log.Info("envvar content read and set", "envvar", modulesJsonEnv, "value", modulesJson)
 	})
 
 	return modules

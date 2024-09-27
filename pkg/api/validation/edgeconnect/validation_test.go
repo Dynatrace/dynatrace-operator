@@ -6,7 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/operatorconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/rest"
@@ -38,7 +38,7 @@ func runValidators(ec *edgeconnect.EdgeConnect, other ...client.Object) (admissi
 	validator := &Validator{
 		apiReader: clt,
 		cfg:       &rest.Config{},
-		modules:   operatorconfig.GetModules(),
+		modules:   installconfig.GetModules(),
 	}
 
 	return validator.ValidateCreate(context.Background(), ec)

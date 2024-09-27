@@ -1,12 +1,12 @@
 suite: test role for oneagent on kubernetes
 templates:
-  - Common/operator/operator-config.yaml
+  - Common/operator/install-config.yaml
 tests:
   - it: ConfigMap should exist
     asserts:
       - equal:
           path: metadata.name
-          value: operator-config
+          value: install-config
       - equal:
           path: metadata.namespace
           value: NAMESPACE
@@ -33,7 +33,7 @@ tests:
     asserts:
       - equal:
           path: metadata.name
-          value: operator-config
+          value: install-config
       - equal:
           path: metadata.namespace
           value: NAMESPACE

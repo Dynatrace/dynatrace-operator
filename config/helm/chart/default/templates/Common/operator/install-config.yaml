@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: operator-config
+  name: install-config
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}

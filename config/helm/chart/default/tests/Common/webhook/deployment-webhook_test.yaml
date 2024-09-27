@@ -118,7 +118,7 @@ tests:
                         fieldPath: metadata.name
                 envFrom:
                   - configMapRef:
-                      name: operator-config
+                      name: install-config
                 livenessProbe:
                   httpGet:
                     path: /livez
@@ -299,7 +299,7 @@ tests:
                         fieldPath: metadata.name
                 envFrom:
                   - configMapRef:
-                      name: operator-config
+                      name: install-config
                 livenessProbe:
                   httpGet:
                     path: /livez
@@ -445,7 +445,7 @@ tests:
                         fieldPath: metadata.name
                 envFrom:
                   - configMapRef:
-                      name: operator-config
+                      name: install-config
                 livenessProbe:
                   httpGet:
                     path: /livez

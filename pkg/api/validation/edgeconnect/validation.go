@@ -5,7 +5,7 @@ import (
 
 	v1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/operatorconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/validation"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -17,7 +17,7 @@ import (
 type Validator struct {
 	apiReader client.Reader
 	cfg       *rest.Config
-	modules   operatorconfig.Modules
+	modules   installconfig.Modules
 }
 
 type validatorFunc func(ctx context.Context, dv *Validator, ec *edgeconnect.EdgeConnect) string
@@ -35,7 +35,7 @@ func New(apiReader client.Reader, cfg *rest.Config) admission.CustomValidator {
 	return &Validator{
 		apiReader: apiReader,
 		cfg:       cfg,
-		modules:   operatorconfig.GetModules(),
+		modules:   installconfig.GetModules(),
 	}
 }
 
