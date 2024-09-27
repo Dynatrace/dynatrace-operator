@@ -44,6 +44,7 @@ tests:
           path: metadata.labels
   - it: shouldn't exist if turned off
     set:
+      platform: openshift
       rbac.extensions.create: false
     asserts:
       - hasDocuments:
