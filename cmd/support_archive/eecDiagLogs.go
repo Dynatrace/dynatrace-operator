@@ -3,7 +3,7 @@ package support_archive
 import (
 	"bytes"
 	"fmt"
-	"path/filepath"
+	"io"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -22,7 +22,7 @@ import (
 
 const (
 	diagLogCollectorName = "diagLogCollector"
-	eecDiagnosticPath    = "/var/lib/dynatrace/remotepluginmodule/log/extensions/diagnostics"
+	eecExtensionsPath    = "/var/lib/dynatrace/remotepluginmodule/log/extensions"
 	fileNotFoundMarker   = "<NOT FOUND>"
 	eecPodName           = "dynatrace-extensions-controller"
 	eecContainerName     = "extensions-controller"
@@ -99,30 +99,77 @@ func (collector diagLogCollector) Do() error {
 		return err
 	}
 
-	fileName := "diag_executor.log"
-	if err := collector.copyDiagnosticFile(eecPod.Name, eecPod.Namespace, fileName); err != nil {
-		logErrorf(collector.log, err, "failed to copy %s", fileName)
+	logFiles, err := collector.findLogFilesRecursively(eecPod.Name, eecPod.Namespace, eecExtensionsPath)
+	if err != nil {
+		logErrorf(collector.log, err, "log files lookup failed")
 
 		return err
 	}
 
-	for i := range 10 {
-		fileName := fmt.Sprintf("diag_executor.%d.log", i)
-		if err := collector.copyDiagnosticFile(eecPod.Name, eecPod.Namespace, fileName); err != nil {
-			logErrorf(collector.log, err, "failed to copy %s", fileName)
+	for _, logFilePath := range logFiles {
+		if err := collector.copyDiagnosticFile(eecPod.Name, eecPod.Namespace, logFilePath); err != nil {
+			logErrorf(collector.log, err, "failed to copy %s", logFilePath)
 
 			return err
 		}
-	}
 
-	logInfof(collector.log, "Successfully collected EEC diagnostic logs")
+		logInfof(collector.log, "Successfully collected EEC diagnostic logs logs/%s%s", eecPod.Name, logFilePath)
+	}
 
 	return nil
 }
 
-func (collector diagLogCollector) copyDiagnosticFile(podName string, podNamespace string, fileName string) error {
-	eecDiagLogPath := filepath.Join(eecDiagnosticPath, fileName)
+func (collector diagLogCollector) findLogFilesRecursively(podName string, podNamespace string, rootPath string) ([]string, error) {
+	// command := []string{"/usr/bin/sh", "-c", "[ -d " + rootPath + " ] && ls -R1 " + rootPath + " || echo '" + fileNotFoundMarker + "'"}
+	command := []string{"/usr/bin/sh", "-c", "if [ -d '" + rootPath + "' ]; then ls -R1 '" + rootPath + "' ; else echo '" + fileNotFoundMarker + "' ; fi"}
 
+	executionResult, err := collector.executeRemoteCommand(collector.ctx, podName, podNamespace, eecContainerName, command)
+	if err != nil {
+		return []string{}, err
+	}
+
+	if strings.HasPrefix(executionResult.StdOut.String(), fileNotFoundMarker) {
+		return []string{}, nil
+	}
+
+	zipFilePath := collector.buildZipFilePath(podName, "ls.txt")
+
+	var buf bytes.Buffer
+	tee := io.TeeReader(executionResult.StdOut, &buf)
+
+	err = collector.supportArchive.addFile(zipFilePath, tee)
+	if err != nil {
+		logErrorf(collector.log, err, "error writing to tarball")
+
+		return []string{}, err
+	}
+
+	logFiles := []string{}
+	pwd := ""
+
+	for _, line := range strings.Split(buf.String(), "\n") {
+		line = strings.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+
+		if line[0] == '/' && line[len(line)-1] == ':' {
+			pwd = strings.TrimSuffix(line, ":") + "/"
+
+			continue
+		}
+
+		if !strings.HasSuffix(line, ".log") {
+			continue
+		}
+
+		logFiles = append(logFiles, pwd+line)
+	}
+
+	return logFiles, nil
+}
+
+func (collector diagLogCollector) copyDiagnosticFile(podName string, podNamespace string, eecDiagLogPath string) error {
 	command := []string{"/usr/bin/sh", "-c", "[ -e " + eecDiagLogPath + " ] && cat " + eecDiagLogPath + " || echo '" + fileNotFoundMarker + "'"}
 
 	executionResult, err := collector.executeRemoteCommand(collector.ctx, podName, podNamespace, eecContainerName, command)
@@ -134,7 +181,8 @@ func (collector diagLogCollector) copyDiagnosticFile(podName string, podNamespac
 		return nil
 	}
 
-	zipFilePath := collector.buildZipFilePath(podName, fileName)
+	// eecDiagLogPath is an absolute path, remove leading slash to avoid '//' in zipFilePath
+	zipFilePath := collector.buildZipFilePath(podName, eecDiagLogPath[1:])
 
 	err = collector.supportArchive.addFile(zipFilePath, executionResult.StdOut)
 	if err != nil {
