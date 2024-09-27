@@ -4,13 +4,14 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 )
 
-const (
-	errorOneAgentModuleDisabled   = `OneAgent features has been disabled during Operator install. The necessary resources for deploying a OneAgent DaemonSet to work are not present on the cluster. Redeploy the Operator with all the necessary resources`
-	errorActiveGateModuleDisabled = `ActiveGate features has been disabled during Operator install. The necessary resources for deploying a ActiveGate Statefulset to work are not present on the cluster. Redeploy the Operator with all the necessary resources`
-	errorExtensionsModuleDisabled = `Extensions features has been disabled during Operator install. The necessary resources for deploying components for the Extension feature to work are not present on the cluster. Redeploy the Operator with all the necessary resources`
-	errorLogModuleModuleDisabled  = `LogModule features has been disabled during Operator install. The necessary resources for deploying a LogModule DaemonSet to work are not present on the cluster. Redeploy the Operator with all the necessary resources`
+var (
+	errorOneAgentModuleDisabled   = installconfig.GetModuleValidationErrorMessage("OneAgent")
+	errorActiveGateModuleDisabled = installconfig.GetModuleValidationErrorMessage("ActiveGate")
+	errorExtensionsModuleDisabled = installconfig.GetModuleValidationErrorMessage("Extensions")
+	errorLogModuleModuleDisabled  = installconfig.GetModuleValidationErrorMessage("LogModule")
 )
 
 func isOneAgentModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {

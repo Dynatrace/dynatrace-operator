@@ -2,6 +2,7 @@ package installconfig
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"sync"
 
@@ -10,6 +11,8 @@ import (
 
 const (
 	modulesJsonEnv = "modules.json"
+
+	validationErrorTemplate = "%s has been disabled during Operator install. The necessary resources for %s to work are not present on the cluster. Redeploy the Operator via Helm with all the necessary resources enabled."
 )
 
 var (
@@ -56,4 +59,8 @@ func GetModules() Modules {
 	})
 
 	return modules
+}
+
+func GetModuleValidationErrorMessage(moduleName string) string {
+	return fmt.Sprintf(validationErrorTemplate, moduleName, moduleName)
 }
