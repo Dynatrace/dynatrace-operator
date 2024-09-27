@@ -11,8 +11,8 @@ import (
 	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube" //nolint:staticcheck
 	dynakubev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube" //nolint:staticcheck
 	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	dkvalidation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/dynakube"
-	ecvalidation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/edgeconnect"
+	dynakubevalidation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/dynakube"
+	edgeconnectvalidation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
@@ -150,7 +150,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		dkValidator := dkvalidation.New(webhookManager.GetAPIReader(), webhookManager.GetConfig())
+		dkValidator := dynakubevalidation.New(webhookManager.GetAPIReader(), webhookManager.GetConfig())
 
 		err = dynakubev1beta1.SetupWebhookWithManager(webhookManager, dkValidator)
 		if err != nil {
@@ -167,7 +167,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		ecValidator := ecvalidation.New(webhookManager.GetAPIReader(), webhookManager.GetConfig())
+		ecValidator := edgeconnectvalidation.New(webhookManager.GetAPIReader(), webhookManager.GetConfig())
 
 		err = edgeconnectv1alpha1.SetupWebhookWithManager(webhookManager, ecValidator)
 		if err != nil {
