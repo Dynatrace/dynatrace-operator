@@ -200,12 +200,13 @@ func (controller *Controller) reconcileEdgeConnect(ctx context.Context, ec *edge
 	oldStatus := *ec.Status.DeepCopy()
 
 	err := controller.reconcileEdgeConnectCR(ctx, ec)
+
 	if err != nil {
 		ec.Status.SetPhase(status.Error)
 		_log.Debug("error reconciling EdgeConnect, setting phase 'Error'")
 	} else {
-		_log.Debug("moving EdgeConnect to phase 'Running'")
-		ec.Status.SetPhase(status.Running)
+		_log.Debug("moving EdgeConnect to correct phase")
+		ec.Status.SetPhase(controller.determineEdgeConnectPhase(ec))
 	}
 
 	if isDifferentStatus, err := hasher.IsDifferent(oldStatus, ec.Status); err != nil {
