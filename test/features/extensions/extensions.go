@@ -64,9 +64,9 @@ func Feature(t *testing.T) features.Feature {
 
 	builder.Assess("active gate pod is running", checkActiveGateContainer(&testDynakube))
 
-	builder.Assess("extensions execution controller started", statefulset.WaitFor(dynakube.ExtensionsExecutionControllerStatefulsetName, testDynakube.Namespace))
+	builder.Assess("extensions execution controller started", statefulset.WaitFor(testDynakube.ExtensionsExecutionControllerStatefulsetName(), testDynakube.Namespace))
 
-	builder.Assess("extension collector started", statefulset.WaitFor(dynakube.ExtensionsCollectorStatefulsetName, testDynakube.Namespace))
+	builder.Assess("extension collector started", statefulset.WaitFor(testDynakube.ExtensionsCollectorStatefulsetName(), testDynakube.Namespace))
 
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 
