@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	corev1 "k8s.io/api/core/v1"
@@ -38,21 +39,23 @@ type diagLogCollector struct {
 	pods   clientgocorev1.PodInterface
 	config *rest.Config
 	collectorCommon
+	supportabilityEnabled bool
 }
 
 var (
 	eecPodNotFoundError = errors.New("eec pod not found")
 )
 
-func newDiagLogCollector(context context.Context, config *rest.Config, log logd.Logger, supportArchive archiver, pods clientgocorev1.PodInterface) collector {
+func newDiagLogCollector(context context.Context, config *rest.Config, log logd.Logger, supportArchive archiver, pods clientgocorev1.PodInterface, supportabilityEnabled bool) collector { //nolint:revive
 	return diagLogCollector{
 		collectorCommon: collectorCommon{
 			log:            log,
 			supportArchive: supportArchive,
 		},
-		ctx:    context,
-		config: config,
-		pods:   pods,
+		ctx:                   context,
+		config:                config,
+		pods:                  pods,
+		supportabilityEnabled: supportabilityEnabled,
 	}
 }
 
@@ -90,6 +93,12 @@ func (collector diagLogCollector) getControllerPod() (*corev1.Pod, error) {
 }
 
 func (collector diagLogCollector) Do() error {
+	if !collector.supportabilityEnabled {
+		logInfof(collector.log, "%s", installconfig.GetModuleValidationErrorMessage("EEC Diagnostic Log Collection"))
+
+		return nil
+	}
+
 	eecPod, err := collector.getControllerPod()
 	if errors.Is(err, eecPodNotFoundError) {
 		return nil
@@ -120,7 +129,6 @@ func (collector diagLogCollector) Do() error {
 }
 
 func (collector diagLogCollector) findLogFilesRecursively(podName string, podNamespace string, rootPath string) ([]string, error) {
-	// command := []string{"/usr/bin/sh", "-c", "[ -d " + rootPath + " ] && ls -R1 " + rootPath + " || echo '" + fileNotFoundMarker + "'"}
 	command := []string{"/usr/bin/sh", "-c", "if [ -d '" + rootPath + "' ]; then ls -R1 '" + rootPath + "' ; else echo '" + fileNotFoundMarker + "' ; fi"}
 
 	executionResult, err := collector.executeRemoteCommand(collector.ctx, podName, podNamespace, eecContainerName, command)
@@ -144,6 +152,25 @@ func (collector diagLogCollector) findLogFilesRecursively(podName string, podNam
 		return []string{}, err
 	}
 
+	/*
+		Output of ls command is used to find all *.log files recursively
+		in the /var/lib/dynatrace/remotepluginmodule/log/extensions directory.
+
+		$ ls -R1 /var/lib/dynatrace/remotepluginmodule/log/extensions
+
+		/var/lib/dynatrace/remotepluginmodule/log/extensions/:
+		datasources
+		diagnostics
+		oneagent-logmon-detailed.log
+		oneagent-logmon-general.log
+		ruxitagent_extensionsmodule_14.0.log
+
+		/var/lib/dynatrace/remotepluginmodule/log/extensions/datasources:
+
+		/var/lib/dynatrace/remotepluginmodule/log/extensions/diagnostics:
+		diag_executor.log
+	*/
+
 	logFiles := []string{}
 	pwd := ""
 
@@ -153,6 +180,7 @@ func (collector diagLogCollector) findLogFilesRecursively(podName string, podNam
 			continue
 		}
 
+		// new subdirectory
 		if line[0] == '/' && line[len(line)-1] == ':' {
 			pwd = strings.TrimSuffix(line, ":") + "/"
 
@@ -163,6 +191,7 @@ func (collector diagLogCollector) findLogFilesRecursively(podName string, podNam
 			continue
 		}
 
+		// add absolute path of the file to the list
 		logFiles = append(logFiles, pwd+line)
 	}
 

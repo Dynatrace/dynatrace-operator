@@ -5,6 +5,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/config"
@@ -35,6 +36,8 @@ const (
 	loadsimFilesFlagName           = "loadsim-files"
 	collectManagedLogsFlagName     = "managed-logs"
 	defaultSimFileSize             = 10
+	installConfigMap               = "install-config"
+	supportabilityField            = "supportability"
 )
 
 const (
@@ -168,13 +171,18 @@ func (builder CommandBuilder) runCollectors(log logd.Logger, supportArchive arch
 	pods := clientSet.CoreV1().Pods(namespaceFlagValue)
 	appName := getAppNameLabel(ctx, pods)
 
+	supportabilityEnabled, err := isSupportabilityEnabled(ctx, clientSet)
+	if err != nil {
+		return err
+	}
+
 	logInfof(log, "%s=%s", labels.AppNameLabel, appName)
 
 	fileSize := loadsimFileSizeFlagValue * Mebi
 	collectors := []collector{
 		newOperatorVersionCollector(log, supportArchive),
-		newLogCollector(ctx, log, supportArchive, pods, appName, collectManagedLogsFlagValue),
-		newDiagLogCollector(ctx, kubeConfig, log, supportArchive, pods),
+		newLogCollector(ctx, log, supportArchive, pods, appName, collectManagedLogsFlagValue, supportabilityEnabled),
+		newDiagLogCollector(ctx, kubeConfig, log, supportArchive, pods, supportabilityEnabled),
 		newK8sObjectCollector(ctx, log, supportArchive, namespaceFlagValue, appName, apiReader, discoveryClient),
 		newTroubleshootCollector(ctx, log, supportArchive, namespaceFlagValue, apiReader, *kubeConfig),
 		newLoadSimCollector(ctx, log, supportArchive, fileSize, loadsimFilesFlagValue, clientSet.CoreV1().Pods(namespaceFlagValue)),
@@ -220,4 +228,18 @@ func printCopyCommand(log logd.Logger, tarballToStdout bool, tarFileName string)
 		logInfof(log, "kubectl -n %s cp %s:%s .%s\n",
 			podNamespace, podName, tarFileName, tarFileName)
 	}
+}
+
+func isSupportabilityEnabled(ctx context.Context, clientSet *kubernetes.Clientset) (bool, error) {
+	configMaps := clientSet.CoreV1().ConfigMaps(namespaceFlagValue)
+	options := metav1.GetOptions{}
+
+	configMap, err := configMaps.Get(ctx, installConfigMap, options)
+	if err != nil {
+		return false, err
+	}
+
+	supportabilityEnabled := strings.ToLower(configMap.Data[supportabilityField]) == "true"
+
+	return supportabilityEnabled, nil
 }
