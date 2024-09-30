@@ -69,7 +69,7 @@ tests:
                     internal.dynatrace.com/app: webhook
                     internal.dynatrace.com/component: webhook
             volumes:
-              - emptyDir: { }
+              - emptyDir: {}
                 name: certs-dir
             affinity:
               nodeAffinity:
@@ -116,6 +116,9 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
+                envFrom:
+                  - configMapRef:
+                      name: install-config
                 livenessProbe:
                   httpGet:
                     path: /livez
@@ -172,24 +175,24 @@ tests:
           key: a-special-taint
           value: a-special-value
     asserts:
-    - equal:
-        path: spec.template.spec.tolerations
-        value:
-          - effect: NoSchedule
-            key: a-special-taint
-            value: a-special-value
-          - effect: NoSchedule
-            key: kubernetes.io/arch
-            value: arm64
-          - effect: NoSchedule
-            key: kubernetes.io/arch
-            value: amd64
-          - effect: NoSchedule
-            key: kubernetes.io/arch
-            value: ppc64le
-          - effect: NoSchedule
-            key: kubernetes.io/arch
-            value: s390x
+      - equal:
+          path: spec.template.spec.tolerations
+          value:
+            - effect: NoSchedule
+              key: a-special-taint
+              value: a-special-value
+            - effect: NoSchedule
+              key: kubernetes.io/arch
+              value: arm64
+            - effect: NoSchedule
+              key: kubernetes.io/arch
+              value: amd64
+            - effect: NoSchedule
+              key: kubernetes.io/arch
+              value: ppc64le
+            - effect: NoSchedule
+              key: kubernetes.io/arch
+              value: s390x
 
   - it: should have nodeSelectors if set
     set:
@@ -197,10 +200,10 @@ tests:
       webhook.nodeSelector:
         test-key: test-value
     asserts:
-    - equal:
-        path: spec.template.spec.nodeSelector
-        value:
-          test-key: test-value
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            test-key: test-value
 
   - it: should exist (without highavailabilty mode)
     set:
@@ -294,6 +297,9 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
+                envFrom:
+                  - configMapRef:
+                      name: install-config
                 livenessProbe:
                   httpGet:
                     path: /livez
@@ -437,6 +443,9 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
+                envFrom:
+                  - configMapRef:
+                      name: install-config
                 livenessProbe:
                   httpGet:
                     path: /livez

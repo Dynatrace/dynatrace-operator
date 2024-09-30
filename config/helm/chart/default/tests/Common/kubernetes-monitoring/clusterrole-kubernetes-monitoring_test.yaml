@@ -149,3 +149,9 @@ tests:
             kind: ServiceAccount
             name: dynatrace-kubernetes-monitoring
             namespace: NAMESPACE
+  - it: shouldn't exist if turned off
+    set:
+      rbac.activeGate.create: false
+    asserts:
+      - hasDocuments:
+        count: 0
