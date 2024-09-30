@@ -127,3 +127,7 @@ test/e2e/edgeconnect: manifests/crd/helm
 ## Runs e2e tests on gke-autopilot
 test/e2e/gke-autopilot: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --feature "app-metadata-enrichment|app-read-only-csi-volume|app-read-only-csi-volume|app-without-csi|activegate" $(SKIPCLEANUP)
+
+## Runs extensions related e2e tests
+test/e2e/extensions: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --feature "extensions-components-rollout" $(SKIPCLEANUP)
