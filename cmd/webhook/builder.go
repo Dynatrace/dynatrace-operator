@@ -7,15 +7,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
-	edgeconnectv1alpha1validation "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect/validation"
 	edgeconnectv1alpha2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	edgeconnectv1alpha2validation "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect/validation"
 	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube" //nolint:staticcheck
-	dynakubev1beta1validation "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube/validation"
 	dynakubev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube" //nolint:staticcheck
-	dynakubev1beta2validation "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube/validation"
 	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	dynakubev1beta3validation "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/validation"
+	dynakubevalidation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/dynakube"
+	edgeconnectvalidation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
@@ -153,37 +150,31 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		dkv1beta1Validator := dynakubev1beta1validation.New(webhookManager.GetAPIReader(), webhookManager.GetConfig())
+		dkValidator := dynakubevalidation.New(webhookManager.GetAPIReader(), webhookManager.GetConfig())
 
-		err = dynakubev1beta1.SetupWebhookWithManager(webhookManager, dkv1beta1Validator)
+		err = dynakubev1beta1.SetupWebhookWithManager(webhookManager, dkValidator)
 		if err != nil {
 			return err
 		}
 
-		dkv1beta2Validator := dynakubev1beta2validation.New(webhookManager.GetAPIReader(), webhookManager.GetConfig())
-
-		err = dynakubev1beta2.SetupWebhookWithManager(webhookManager, dkv1beta2Validator)
+		err = dynakubev1beta2.SetupWebhookWithManager(webhookManager, dkValidator)
 		if err != nil {
 			return err
 		}
 
-		dkv1beta3Validator := dynakubev1beta3validation.New(webhookManager.GetAPIReader(), webhookManager.GetConfig())
-
-		err = dynakubev1beta3.SetupWebhookWithManager(webhookManager, dkv1beta3Validator)
+		err = dynakubev1beta3.SetupWebhookWithManager(webhookManager, dkValidator)
 		if err != nil {
 			return err
 		}
 
-		ecv1alpha1Validator := edgeconnectv1alpha1validation.New(webhookManager.GetAPIReader(), webhookManager.GetConfig())
+		ecValidator := edgeconnectvalidation.New(webhookManager.GetAPIReader(), webhookManager.GetConfig())
 
-		err = edgeconnectv1alpha1.SetupWebhookWithManager(webhookManager, ecv1alpha1Validator)
+		err = edgeconnectv1alpha1.SetupWebhookWithManager(webhookManager, ecValidator)
 		if err != nil {
 			return err
 		}
 
-		ecv1alpha2Validator := edgeconnectv1alpha2validation.New(webhookManager.GetAPIReader(), webhookManager.GetConfig())
-
-		err = edgeconnectv1alpha2.SetupWebhookWithManager(webhookManager, ecv1alpha2Validator)
+		err = edgeconnectv1alpha2.SetupWebhookWithManager(webhookManager, ecValidator)
 		if err != nil {
 			return err
 		}

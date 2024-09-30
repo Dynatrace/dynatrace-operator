@@ -3,6 +3,7 @@ package validation
 import (
 	"context"
 
+	v1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/validation"
 	"github.com/pkg/errors"
@@ -35,7 +36,11 @@ func New(apiReader client.Reader, cfg *rest.Config) admission.CustomValidator {
 }
 
 func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (_ admission.Warnings, err error) {
-	ec := obj.(*edgeconnect.EdgeConnect)
+	ec, err := getEdgeConnect(obj)
+	if err != nil {
+		return
+	}
+
 	validationErrors := v.runValidators(ctx, validatorErrorFuncs, ec)
 
 	if len(validationErrors) > 0 {
@@ -46,7 +51,11 @@ func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (_ a
 }
 
 func (v *Validator) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (warnings admission.Warnings, err error) {
-	ec := newObj.(*edgeconnect.EdgeConnect)
+	ec, err := getEdgeConnect(newObj)
+	if err != nil {
+		return
+	}
+
 	validationErrors := v.runValidators(ctx, validatorErrorFuncs, ec)
 
 	if len(validationErrors) > 0 {
@@ -70,4 +79,20 @@ func (v *Validator) runValidators(ctx context.Context, validators []validatorFun
 	}
 
 	return results
+}
+
+func getEdgeConnect(obj runtime.Object) (ec *edgeconnect.EdgeConnect, err error) {
+	ec = &edgeconnect.EdgeConnect{}
+
+	switch v := obj.(type) {
+	case *edgeconnect.EdgeConnect:
+		ec = v
+	case *v1alpha1.EdgeConnect:
+		err = v.ConvertTo(ec)
+		if err != nil {
+			return
+		}
+	}
+
+	return
 }
