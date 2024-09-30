@@ -124,12 +124,6 @@ tests:
                 - list
                 - watch
             - apiGroups:
-                - ""
-              resources:
-                - pods/log
-              verbs:
-                - get
-            - apiGroups:
                 - networking.istio.io
               resources:
                 - serviceentries

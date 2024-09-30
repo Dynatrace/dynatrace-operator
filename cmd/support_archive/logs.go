@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -18,26 +19,34 @@ const logCollectorName = "logCollector"
 type logCollector struct {
 	collectorCommon
 
-	ctx                context.Context
-	pods               clientgocorev1.PodInterface
-	appName            string
-	collectManagedLogs bool
+	ctx                   context.Context
+	pods                  clientgocorev1.PodInterface
+	appName               string
+	collectManagedLogs    bool
+	supportabilityEnabled bool
 }
 
-func newLogCollector(context context.Context, log logd.Logger, supportArchive archiver, pods clientgocorev1.PodInterface, appName string, collectManagedLogs bool) collector { //nolint:revive // argument-limit doesn't apply to constructors
+func newLogCollector(context context.Context, log logd.Logger, supportArchive archiver, pods clientgocorev1.PodInterface, appName string, collectManagedLogs bool, supportabilityEnabled bool) collector { //nolint:revive // argument-limit doesn't apply to constructors
 	return logCollector{
 		collectorCommon: collectorCommon{
 			log:            log,
 			supportArchive: supportArchive,
 		},
-		ctx:                context,
-		pods:               pods,
-		appName:            appName,
-		collectManagedLogs: collectManagedLogs,
+		ctx:                   context,
+		pods:                  pods,
+		appName:               appName,
+		collectManagedLogs:    collectManagedLogs,
+		supportabilityEnabled: supportabilityEnabled,
 	}
 }
 
 func (collector logCollector) Do() error {
+	if !collector.supportabilityEnabled {
+		logInfof(collector.log, "%s", installconfig.GetModuleValidationErrorMessage("Log Collection"))
+
+		return nil
+	}
+
 	logInfof(collector.log, "Starting log collection")
 
 	podList, err := collector.getPodList(labels.AppNameLabel)
