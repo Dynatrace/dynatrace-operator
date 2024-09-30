@@ -42,3 +42,9 @@ tests:
           value: dynatrace-dynakube-oneagent
       - isNotEmpty:
           path: metadata.labels
+  - it: shouldn't exist if turned off
+    set:
+      rbac.oneAgent.create: false
+    asserts:
+      - hasDocuments:
+        count: 0

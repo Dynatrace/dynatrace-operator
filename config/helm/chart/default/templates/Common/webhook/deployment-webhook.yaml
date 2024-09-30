@@ -87,6 +87,9 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+          envFrom:
+            - configMapRef:
+                name: install-config
           readinessProbe:
             httpGet:
               path: /readyz

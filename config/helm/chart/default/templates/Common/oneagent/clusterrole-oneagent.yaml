@@ -1,4 +1,4 @@
-{{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+{{- if and .Values.rbac.oneAgent.create (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
 # Copyright 2021 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
