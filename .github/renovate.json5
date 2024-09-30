@@ -154,6 +154,12 @@
       pinVersions: true,
       automerge: true,
     },
+    {
+      matchPackageNames: [
+        "sigs.k8s.io/e2e-framework",
+      ],
+      enabled: false,
+    },
   ],
   platformAutomerge: true,
 }
