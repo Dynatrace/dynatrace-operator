@@ -14,3 +14,4 @@ data:
       "logModule": {{ .Values.rbac.logModule.create }},
       "edgeConnect": {{ .Values.rbac.edgeConnect.create }}
     }
+  supportability: "{{ .Values.rbac.supportability }}"
