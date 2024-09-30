@@ -232,7 +232,7 @@ func (g *InitGenerator) calculateImNodes(dk *dynakube.DynaKube, tenantUUID strin
 		return nil, err
 	}
 
-	nodeSelector := labels.SelectorFromSet(dk.NodeSelector())
+	nodeSelector := labels.SelectorFromSet(dk.OneAgentNodeSelector())
 	updateNodeInfImNodes(dk, nodeInf, nodeSelector, tenantUUID)
 
 	return nodeInf.imNodes, nil
