@@ -4,6 +4,7 @@ package edgeconnect
 
 import (
 	"fmt"
+	"math/rand/v2"
 	"testing"
 	"time"
 
@@ -29,8 +30,6 @@ import (
 )
 
 const (
-	testHostPattern        = "e2eTestHostPattern.internal.org"
-	testHostPattern2       = "e2eTestHostPattern2.internal.org"
 	testServiceAccountName = "custom-edgeconnect-service-name"
 	testNamespaceName      = "dynatrace"
 )
@@ -49,7 +48,9 @@ func NormalModeFeature(t *testing.T) features.Feature {
 
 	edgeConnectTenantConfig := &tenantConfig{}
 
-	builder.Assess("create EC configuration on the tenant", createTenantConfig(secretConfig, edgeConnectTenantConfig))
+	testHostPattern := fmt.Sprintf("e2eTestHostPattern%d.internal.org", rand.IntN(100)) //nolint
+
+	builder.Assess("create EC configuration on the tenant", createTenantConfig(secretConfig, edgeConnectTenantConfig, testHostPattern))
 
 	testEdgeConnect := *edgeconnect.New(
 		// this tenantConfigName should match with tenant edge connect tenantConfigName
@@ -82,6 +83,9 @@ func ProvisionerModeFeature(t *testing.T) features.Feature {
 
 	edgeConnectTenantConfig := &tenantConfig{}
 
+	testHostPattern := fmt.Sprintf("e2eTestHostPattern%d.internal.org", rand.IntN(100))   //nolint
+	testHostPattern2 := fmt.Sprintf("e2eTestHostPattern2%d.internal.org", rand.IntN(100)) //nolint
+
 	testEdgeConnect := *edgeconnect.New(
 		// this tenantConfigName should match with tenant edge connect tenantConfigName
 		edgeconnect.WithName(secretConfig.Name),
@@ -101,7 +105,7 @@ func ProvisionerModeFeature(t *testing.T) features.Feature {
 
 	builder.Assess("check if EC configuration exists on the tenant", checkEcExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
 	builder.Assess("check hostPatterns on the tenant - testHostPattern", checkHostPatternOnTheTenant(secretConfig, edgeConnectTenantConfig, func() string { return testHostPattern }))
-	builder.Assess("update hostPatterns", updateHostPatterns(&testEdgeConnect))
+	builder.Assess("update hostPatterns", updateHostPatterns(&testEdgeConnect, testHostPattern2))
 	builder.Assess("check hostPatterns on the tenant - testHostPattern2", checkHostPatternOnTheTenant(secretConfig, edgeConnectTenantConfig, func() string { return testHostPattern2 }))
 	builder.Assess("delete EC custom resource", edgeconnect.Delete(testEdgeConnect))
 	builder.Assess("check if EC configuration is deleted on the tenant", checkEcNotExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
@@ -155,7 +159,7 @@ func AutomationModeFeature(t *testing.T) features.Feature {
 }
 
 // createTenantConfig for Normal mode only, preserves the id and OAuth secret of EdgeConnect configuration on the tenant
-func createTenantConfig(clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *tenantConfig) features.Func {
+func createTenantConfig(clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *tenantConfig, testHostPattern string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		ecClt, err := buildEcClient(ctx, clientSecret)
 		require.NoError(t, err)
@@ -345,10 +349,10 @@ func serviceAccount(name string, namespace string) *corev1.ServiceAccount {
 	}
 }
 
-func updateHostPatterns(testEdgeConnect *edgeconnectv1alpha2.EdgeConnect) features.Func {
+func updateHostPatterns(testEdgeConnect *edgeconnectv1alpha2.EdgeConnect, hostPattern string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		testEdgeConnect.Spec.HostPatterns = []string{
-			testHostPattern2,
+			hostPattern,
 		}
 		err := envConfig.Client().Resources().Update(ctx, testEdgeConnect)
 		if err != nil {
