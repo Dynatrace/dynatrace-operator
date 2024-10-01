@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"math/rand/v2"
 	"strings"
 	"testing"
 
@@ -60,11 +61,11 @@ func Feature(t *testing.T) features.Feature {
 		dynakubeComponents.WithActiveGate(),
 	)
 
+	testECname := fmt.Sprintf("test-edgeconnect-support-%d", rand.IntN(100)) //nolint
 	testEdgeConnect := *edgeconnectComponents.New(
-		// this name should match with tenant edge connect name
-		edgeconnectComponents.WithName(edgeconnectSecretConfig.Name),
+		edgeconnectComponents.WithName(testECname),
 		edgeconnectComponents.WithApiServer(edgeconnectSecretConfig.ApiServer),
-		edgeconnectComponents.WithOAuthClientSecret(fmt.Sprintf("%s-client-secret", edgeconnectSecretConfig.Name)),
+		edgeconnectComponents.WithOAuthClientSecret(fmt.Sprintf("%s-client-secret", testECname)),
 		edgeconnectComponents.WithOAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
 		edgeconnectComponents.WithOAuthResource(fmt.Sprintf("urn:dtenvironment:%s", edgeconnectSecretConfig.TenantUid)),
 	)
