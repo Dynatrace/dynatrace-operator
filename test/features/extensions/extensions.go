@@ -29,7 +29,7 @@ const (
 	agCertificateAndPrivateKey      = "custom-cas/agcrtkey.p12"
 	agCertificateAndPrivateKeyField = "server.p12"
 	eecImageRepo                    = "478983378254.dkr.ecr.us-east-1.amazonaws.com/dynatrace/dynatrace-eec"
-	eecImageTag                     = "1.303.0.20240925-200145"
+	eecImageTag                     = "1.303.0.20240930-081133"
 )
 
 func Feature(t *testing.T) features.Feature {
