@@ -49,7 +49,7 @@ func NormalModeFeature(t *testing.T) features.Feature {
 	edgeConnectTenantConfig := &tenantConfig{}
 
 	testECname := uuid.NewString()
-	testHostPattern := fmt.Sprintf("e2eTestHostPattern%s.internal.org", testECname)
+	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
 
 	builder.Assess("create EC configuration on the tenant", createTenantConfig(testECname, secretConfig, edgeConnectTenantConfig, testHostPattern))
 
@@ -85,8 +85,8 @@ func ProvisionerModeFeature(t *testing.T) features.Feature {
 	edgeConnectTenantConfig := &tenantConfig{}
 
 	testECname := uuid.NewString()
-	testHostPattern := fmt.Sprintf("e2eTestHostPattern%s.internal.org", testECname)
-	testHostPattern2 := fmt.Sprintf("e2eTestHostPattern2%s.internal.org", testECname)
+	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
+	testHostPattern2 := fmt.Sprintf("%s.e2eTestHostPattern2.internal.org", testECname)
 
 	testEdgeConnect := *edgeconnect.New(
 		// this tenantConfigName should match with tenant edge connect tenantConfigName
