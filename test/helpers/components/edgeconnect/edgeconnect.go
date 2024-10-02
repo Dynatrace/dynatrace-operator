@@ -34,7 +34,7 @@ type TenantConfig struct {
 
 func Install(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.EdgeConnectSecret, testEdgeConnect edgeconnect.EdgeConnect) {
 	if secretConfig != nil {
-		builder.WithStep("create edgeconnect client Secret", level, tenant.CreateClientSecret(*secretConfig, BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
+		builder.WithStep("create edgeconnect client Secret", level, tenant.CreateClientSecret(secretConfig, BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
 	}
 	builder.WithStep(
 		fmt.Sprintf("'%s' edgeconnect created", testEdgeConnect.Name),
@@ -157,4 +157,28 @@ func BuildEcClient(ctx context.Context, secret tenant.EdgeConnectSecret) (edgeco
 
 func BuildOAuthClientSecretName(secretName string) string {
 	return fmt.Sprintf("client-secret-%s", secretName)
+}
+
+func DeleteTenantConfig(clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *TenantConfig) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		ecClt, err := BuildEcClient(ctx, clientSecret)
+		require.NoError(t, err)
+
+		err = ecClt.DeleteEdgeConnect(edgeConnectTenantConfig.ID)
+		require.NoError(t, err)
+
+		return ctx
+	}
+}
+
+func CheckEcExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, edgeConnectTenantConfig *TenantConfig) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		ecClt, err := BuildEcClient(ctx, clientSecret)
+		require.NoError(t, err)
+
+		_, err = ecClt.GetEdgeConnect(edgeConnectTenantConfig.ID)
+		require.NoError(t, err)
+
+		return ctx
+	}
 }

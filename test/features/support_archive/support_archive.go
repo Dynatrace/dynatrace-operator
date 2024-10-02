@@ -74,12 +74,17 @@ func Feature(t *testing.T) features.Feature {
 		edgeconnectComponents.WithApiServer(edgeconnectSecretConfig.ApiServer),
 		edgeconnectComponents.WithOAuthClientSecret(edgeconnectComponents.BuildOAuthClientSecretName(testECname)),
 		edgeconnectComponents.WithOAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
+		edgeconnectComponents.WithOAuthResource(fmt.Sprintf("urn:dtenvironment:%s", edgeconnectSecretConfig.TenantUid)),
 	)
+
+	// create OAuth client secret related to the specific EdgeConnect configuration on the tenant
+	builder.Assess("create client secret", tenant.CreateClientSecret(&edgeConnectTenantConfig.Secret, edgeconnectComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
 
 	builder.Assess("deploy injected namespace", namespace.Create(*namespace.New(testAppNameInjected, namespace.WithLabels(injectLabels))))
 	builder.Assess("deploy NOT injected namespace", namespace.Create(*namespace.New(testAppNameNotInjected)))
 	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
-	edgeconnectComponents.Install(builder, helpers.LevelAssess, &edgeconnectSecretConfig, testEdgeConnect)
+	edgeconnectComponents.Install(builder, helpers.LevelAssess, nil, testEdgeConnect)
+	builder.Assess("check EC configuration on the tenant", edgeconnectComponents.CheckEcExistsOnTheTenant(edgeconnectSecretConfig, edgeConnectTenantConfig))
 
 	// Register actual test
 	builder.Assess("support archive subcommand can be executed correctly with managed logs", testSupportArchiveCommand(testDynakube, testEdgeConnect, true))
@@ -89,6 +94,8 @@ func Feature(t *testing.T) features.Feature {
 	builder.WithTeardown("remove NOT injected namespace", namespace.Delete(testAppNameNotInjected))
 	dynakubeComponents.Delete(builder, helpers.LevelTeardown, testDynakube)
 	builder.WithTeardown("remove edgeconnect CR", edgeconnectComponents.Delete(testEdgeConnect))
+	builder.Teardown(tenant.DeleteTenantSecret(edgeconnectComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
+	builder.Teardown(edgeconnectComponents.DeleteTenantConfig(edgeconnectSecretConfig, edgeConnectTenantConfig))
 
 	return builder.Feature()
 }
