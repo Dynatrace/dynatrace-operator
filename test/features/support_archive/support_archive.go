@@ -19,8 +19,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/rand"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
@@ -64,8 +64,7 @@ func Feature(t *testing.T) features.Feature {
 		dynakubeComponents.WithActiveGate(),
 	)
 
-	testECname, err := rand.GetRandomName(rand.WithLength(defaultRandomLength), rand.WithPrefix("test-edgeconnect-support-"))
-	require.NoError(t, err)
+	testECname := "test-edgeconnect-support-" + uuid.NewString()[:defaultRandomLength]
 
 	testEdgeConnect := *edgeconnectComponents.New(
 		edgeconnectComponents.WithName(testECname),
