@@ -33,7 +33,6 @@ import (
 const (
 	testAppNameNotInjected = "application1"
 	testAppNameInjected    = "application2"
-	defaultRandomLength    = 5
 )
 
 type CustomResources struct {
@@ -64,8 +63,7 @@ func Feature(t *testing.T) features.Feature {
 		dynakubeComponents.WithActiveGate(),
 	)
 
-	testECname := "test-edgeconnect-support-" + uuid.NewString()[:defaultRandomLength]
-
+	testECname := uuid.NewString()
 	testEdgeConnect := *edgeconnectComponents.New(
 		edgeconnectComponents.WithName(testECname),
 		edgeconnectComponents.WithApiServer(edgeconnectSecretConfig.ApiServer),
