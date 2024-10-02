@@ -64,12 +64,16 @@ func Feature(t *testing.T) features.Feature {
 	)
 
 	testECname := uuid.NewString()
+	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
+	edgeConnectTenantConfig := &edgeconnectComponents.TenantConfig{}
+
+	builder.Assess("create EC configuration on the tenant", edgeconnectComponents.CreateTenantConfig(testECname, edgeconnectSecretConfig, edgeConnectTenantConfig, testHostPattern))
+
 	testEdgeConnect := *edgeconnectComponents.New(
 		edgeconnectComponents.WithName(testECname),
 		edgeconnectComponents.WithApiServer(edgeconnectSecretConfig.ApiServer),
-		edgeconnectComponents.WithOAuthClientSecret(fmt.Sprintf("%s-client-secret", testECname)),
+		edgeconnectComponents.WithOAuthClientSecret(edgeconnectComponents.BuildOAuthClientSecretName(testECname)),
 		edgeconnectComponents.WithOAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
-		edgeconnectComponents.WithOAuthResource(fmt.Sprintf("urn:dtenvironment:%s", edgeconnectSecretConfig.TenantUid)),
 	)
 
 	builder.Assess("deploy injected namespace", namespace.Create(*namespace.New(testAppNameInjected, namespace.WithLabels(injectLabels))))
