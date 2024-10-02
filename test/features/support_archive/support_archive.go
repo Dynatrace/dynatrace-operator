@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"math/rand/v2"
 	"strings"
 	"testing"
 
@@ -20,6 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/rand"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,8 +30,11 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-const testAppNameNotInjected = "application1"
-const testAppNameInjected = "application2"
+const (
+	testAppNameNotInjected = "application1"
+	testAppNameInjected    = "application2"
+	defaultRandomLength    = 5
+)
 
 type CustomResources struct {
 	dk dynakube.DynaKube
@@ -61,7 +64,9 @@ func Feature(t *testing.T) features.Feature {
 		dynakubeComponents.WithActiveGate(),
 	)
 
-	testECname := fmt.Sprintf("test-edgeconnect-support-%d", rand.IntN(100)) //nolint
+	testECname, err := rand.GetRandomName(rand.WithLength(defaultRandomLength), rand.WithPrefix("test-edgeconnect-support-"))
+	require.NoError(t, err)
+
 	testEdgeConnect := *edgeconnectComponents.New(
 		edgeconnectComponents.WithName(testECname),
 		edgeconnectComponents.WithApiServer(edgeconnectSecretConfig.ApiServer),

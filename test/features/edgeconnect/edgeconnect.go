@@ -4,7 +4,6 @@ package edgeconnect
 
 import (
 	"fmt"
-	"math/rand/v2"
 	"testing"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 	controller "github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/rand"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -32,6 +32,7 @@ import (
 const (
 	testServiceAccountName = "custom-edgeconnect-service-name"
 	testNamespaceName      = "dynatrace"
+	defaultRandomLength    = 5
 )
 
 type tenantConfig struct {
@@ -48,8 +49,12 @@ func NormalModeFeature(t *testing.T) features.Feature {
 
 	edgeConnectTenantConfig := &tenantConfig{}
 
-	testECname := fmt.Sprintf("test-edgeconnect-normal-%d", rand.IntN(100))             //nolint
-	testHostPattern := fmt.Sprintf("e2eTestHostPattern%d.internal.org", rand.IntN(100)) //nolint
+	testECname, err := rand.GetRandomName(rand.WithLength(defaultRandomLength), rand.WithPrefix("test-edgeconnect-normal-"))
+	require.NoError(t, err)
+
+	hostPatterSuffix, err := rand.GetRandomName(rand.WithLength(defaultRandomLength))
+	require.NoError(t, err)
+	testHostPattern := fmt.Sprintf("e2eTestHostPattern%s.internal.org", hostPatterSuffix)
 
 	builder.Assess("create EC configuration on the tenant", createTenantConfig(testECname, secretConfig, edgeConnectTenantConfig, testHostPattern))
 
@@ -84,9 +89,14 @@ func ProvisionerModeFeature(t *testing.T) features.Feature {
 
 	edgeConnectTenantConfig := &tenantConfig{}
 
-	testHostPattern := fmt.Sprintf("e2eTestHostPattern%d.internal.org", rand.IntN(100))   //nolint
-	testHostPattern2 := fmt.Sprintf("e2eTestHostPattern2%d.internal.org", rand.IntN(100)) //nolint
-	testECname := fmt.Sprintf("test-edgeconnect-provisioner-%d", rand.IntN(100))          //nolint
+	hostPatterSuffix, err := rand.GetRandomName(rand.WithLength(defaultRandomLength))
+	require.NoError(t, err)
+
+	testHostPattern := fmt.Sprintf("e2eTestHostPattern%s.internal.org", hostPatterSuffix)
+	testHostPattern2 := fmt.Sprintf("e2eTestHostPattern2%s.internal.org", hostPatterSuffix)
+
+	testECname, err := rand.GetRandomName(rand.WithLength(defaultRandomLength), rand.WithPrefix("test-edgeconnect-provisioner-"))
+	require.NoError(t, err)
 
 	testEdgeConnect := *edgeconnect.New(
 		// this tenantConfigName should match with tenant edge connect tenantConfigName
@@ -123,7 +133,8 @@ func AutomationModeFeature(t *testing.T) features.Feature {
 	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
 
 	edgeConnectTenantConfig := &tenantConfig{}
-	testECname := fmt.Sprintf("test-edgeconnect-automation-%d", rand.IntN(100)) //nolint
+	testECname, err := rand.GetRandomName(rand.WithLength(defaultRandomLength), rand.WithPrefix("test-edgeconnect-automation-"))
+	require.NoError(t, err)
 
 	testEdgeConnect := *edgeconnect.New(
 		// this tenantConfigName should match with tenant edge connect tenantConfigName
