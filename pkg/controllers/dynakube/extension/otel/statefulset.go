@@ -29,7 +29,7 @@ const (
 
 	// default values
 	defaultImageRepo     = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
-	defaultImageTag      = "0.12.0"
+	defaultImageTag      = "latest"
 	defaultOLTPgrpcPort  = "10001"
 	defaultOLTPhttpPort  = "10002"
 	defaultPodNamePrefix = "extensions-collector"
