@@ -37,3 +37,17 @@ func Create(secret corev1.Secret) features.Func {
 		return ctx
 	}
 }
+
+func Delete(secret corev1.Secret) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		err := envConfig.Client().Resources().Delete(ctx, &secret)
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				err = nil
+			}
+		}
+		require.NoError(t, err)
+
+		return ctx
+	}
+}
