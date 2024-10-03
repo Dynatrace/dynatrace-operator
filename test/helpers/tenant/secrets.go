@@ -151,7 +151,7 @@ func DeleteTenantSecret(secretName, secretNamespace string) features.Func {
 	}
 }
 
-func CreateClientSecret(secretConfig EdgeConnectSecret, name, namespace string) features.Func {
+func CreateClientSecret(secretConfig *EdgeConnectSecret, name, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		defaultSecret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
