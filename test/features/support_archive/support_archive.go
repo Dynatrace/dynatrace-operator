@@ -20,6 +20,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
@@ -29,8 +30,10 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-const testAppNameNotInjected = "application1"
-const testAppNameInjected = "application2"
+const (
+	testAppNameNotInjected = "application1"
+	testAppNameInjected    = "application2"
+)
 
 type CustomResources struct {
 	dk dynakube.DynaKube
@@ -60,19 +63,28 @@ func Feature(t *testing.T) features.Feature {
 		dynakubeComponents.WithActiveGate(),
 	)
 
+	testECname := uuid.NewString()
+	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
+	edgeConnectTenantConfig := &edgeconnectComponents.TenantConfig{}
+
+	builder.Assess("create EC configuration on the tenant", edgeconnectComponents.CreateTenantConfig(testECname, edgeconnectSecretConfig, edgeConnectTenantConfig, testHostPattern))
+
 	testEdgeConnect := *edgeconnectComponents.New(
-		// this name should match with tenant edge connect name
-		edgeconnectComponents.WithName(edgeconnectSecretConfig.Name),
+		edgeconnectComponents.WithName(testECname),
 		edgeconnectComponents.WithApiServer(edgeconnectSecretConfig.ApiServer),
-		edgeconnectComponents.WithOAuthClientSecret(fmt.Sprintf("%s-client-secret", edgeconnectSecretConfig.Name)),
+		edgeconnectComponents.WithOAuthClientSecret(edgeconnectComponents.BuildOAuthClientSecretName(testECname)),
 		edgeconnectComponents.WithOAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
 		edgeconnectComponents.WithOAuthResource(fmt.Sprintf("urn:dtenvironment:%s", edgeconnectSecretConfig.TenantUid)),
 	)
 
+	// create OAuth client secret related to the specific EdgeConnect configuration on the tenant
+	builder.Assess("create client secret", tenant.CreateClientSecret(&edgeConnectTenantConfig.Secret, edgeconnectComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
+
 	builder.Assess("deploy injected namespace", namespace.Create(*namespace.New(testAppNameInjected, namespace.WithLabels(injectLabels))))
 	builder.Assess("deploy NOT injected namespace", namespace.Create(*namespace.New(testAppNameNotInjected)))
 	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
-	edgeconnectComponents.Install(builder, helpers.LevelAssess, &edgeconnectSecretConfig, testEdgeConnect)
+	edgeconnectComponents.Install(builder, helpers.LevelAssess, nil, testEdgeConnect)
+	builder.Assess("check EC configuration on the tenant", edgeconnectComponents.CheckEcExistsOnTheTenant(edgeconnectSecretConfig, edgeConnectTenantConfig))
 
 	// Register actual test
 	builder.Assess("support archive subcommand can be executed correctly with managed logs", testSupportArchiveCommand(testDynakube, testEdgeConnect, true))
@@ -82,6 +94,8 @@ func Feature(t *testing.T) features.Feature {
 	builder.WithTeardown("remove NOT injected namespace", namespace.Delete(testAppNameNotInjected))
 	dynakubeComponents.Delete(builder, helpers.LevelTeardown, testDynakube)
 	builder.WithTeardown("remove edgeconnect CR", edgeconnectComponents.Delete(testEdgeConnect))
+	builder.Teardown(tenant.DeleteTenantSecret(edgeconnectComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
+	builder.Teardown(edgeconnectComponents.DeleteTenantConfig(edgeconnectSecretConfig, edgeConnectTenantConfig))
 
 	return builder.Feature()
 }
