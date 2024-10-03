@@ -34,11 +34,12 @@ func TestArguments(t *testing.T) {
 		builder := builder{
 			dk: &dynakube.DynaKube{},
 		}
-		arguments, _ := builder.arguments()
+		arguments := builder.arguments()
 
 		expectedDefaultArguments := []string{
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
 			"--set-no-proxy=",
+			"--set-proxy=",
 			"--set-server={$(DT_SERVER)}",
 			"--set-tenant=$(DT_TENANT)",
 		}
@@ -62,7 +63,7 @@ func TestArguments(t *testing.T) {
 				clusterID:      testClusterID,
 			},
 		}
-		podSpecs, _ := dsBuilder.podSpec()
+		podSpecs := dsBuilder.podSpec()
 		assert.NotNil(t, podSpecs)
 		assert.NotEmpty(t, podSpecs.Containers)
 		assert.Contains(t, podSpecs.Containers[0].Args, testValue)
@@ -74,11 +75,12 @@ func TestArguments(t *testing.T) {
 			hostInjectSpec: &dynakube.HostInjectSpec{Args: args},
 		}
 
-		arguments, _ := builder.arguments()
+		arguments := builder.arguments()
 
 		expectedDefaultArguments := []string{
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
 			"--set-no-proxy=",
+			"--set-proxy=",
 			"--set-server={$(DT_SERVER)}",
 			"--set-tenant=$(DT_TENANT)",
 			"test-value",
@@ -97,7 +99,7 @@ func TestArguments(t *testing.T) {
 			hostInjectSpec: &dynakube.HostInjectSpec{Args: args},
 		}
 
-		arguments, _ := builder.arguments()
+		arguments := builder.arguments()
 
 		expectedDefaultArguments := []string{
 			"--set-app-log-content-access=true",
@@ -105,6 +107,7 @@ func TestArguments(t *testing.T) {
 			"--set-host-id-source=lustiglustig",
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
 			"--set-no-proxy=",
+			"--set-proxy=",
 			"--set-server={$(DT_SERVER)}",
 			"--set-server=https://hyper.super.com:9999",
 			"--set-tenant=$(DT_TENANT)",
@@ -123,11 +126,12 @@ func TestArguments(t *testing.T) {
 				},
 			},
 		}
-		arguments, _ := builder.arguments()
+		arguments := builder.arguments()
 
 		expectedDefaultArguments := []string{
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
 			"--set-no-proxy=",
+			"--set-proxy=",
 			"--set-server={$(DT_SERVER)}",
 			"--set-tenant=$(DT_TENANT)",
 		}
@@ -148,7 +152,7 @@ func TestArguments(t *testing.T) {
 			hostInjectSpec: &dynakube.HostInjectSpec{Args: args},
 		}
 
-		arguments, _ := builder.arguments()
+		arguments := builder.arguments()
 
 		expectedDefaultArguments := []string{
 			"--set-app-log-content-access=true",
@@ -159,6 +163,7 @@ func TestArguments(t *testing.T) {
 			"--set-host-property=item1=value1",
 			"--set-host-property=item2=value2",
 			"--set-no-proxy=",
+			"--set-proxy=",
 			"--set-server={$(DT_SERVER)}",
 			"--set-server=https://hyper.super.com:9999",
 			"--set-tenant=$(DT_TENANT)",
@@ -187,7 +192,7 @@ func TestArguments(t *testing.T) {
 			dynakube.AnnotationFeatureNoProxy: "*.dev.dynatracelabs.com",
 		}
 
-		arguments, _ := builder.arguments()
+		arguments := builder.arguments()
 
 		assert.Contains(t, arguments, "--set-no-proxy=*.dev.dynatracelabs.com,dynakube-activegate.dynatrace")
 	})
@@ -214,7 +219,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 	}
 
 	dk.Annotations = map[string]string{}
-	podSpecs, _ := dsBuilder.podSpec()
+	podSpecs := dsBuilder.podSpec()
 	require.NotNil(t, podSpecs)
 	require.NotEmpty(t, podSpecs.Containers)
 
@@ -228,28 +233,28 @@ func TestPodSpec_Arguments(t *testing.T) {
 	t.Run(`has proxy arg`, func(t *testing.T) {
 		dk.Status.OneAgent.Version = "1.272.0.0-0"
 		dk.Spec.Proxy = &value.Source{Value: testValue}
-		podSpecs, _ = dsBuilder.podSpec()
+		podSpecs = dsBuilder.podSpec()
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 
 		dk.Spec.Proxy = nil
 		dk.Status.OneAgent.Version = ""
-		podSpecs, _ = dsBuilder.podSpec()
+		podSpecs = dsBuilder.podSpec()
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 	})
 	// deprecated
 	t.Run(`has proxy arg but feature flag to ignore is enabled`, func(t *testing.T) {
 		dk.Spec.Proxy = &value.Source{Value: testValue}
 		dk.Annotations[dynakube.AnnotationFeatureOneAgentIgnoreProxy] = "true" //nolint:staticcheck
-		podSpecs, _ = dsBuilder.podSpec()
+		podSpecs = dsBuilder.podSpec()
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 	})
 	t.Run(`has network zone arg`, func(t *testing.T) {
 		dk.Spec.NetworkZone = testValue
-		podSpecs, _ = dsBuilder.podSpec()
+		podSpecs = dsBuilder.podSpec()
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-network-zone="+testValue)
 
 		dk.Spec.NetworkZone = ""
-		podSpecs, _ = dsBuilder.podSpec()
+		podSpecs = dsBuilder.podSpec()
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-network-zone="+testValue)
 	})
 	t.Run(`has host-id-source arg for classic fullstack`, func(t *testing.T) {
@@ -321,8 +326,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 				hostInjectSpec: classicInstance.Spec.OneAgent.ClassicFullStack,
 			},
 		}
-		arguments, err := dsBuilder.arguments()
-		require.NoError(t, err)
+		arguments := dsBuilder.arguments()
 		assert.Contains(t, arguments, testNewHostGroupArgument)
 	})
 	t.Run(`has host-group for cloudNativeFullstack`, func(t *testing.T) {
@@ -343,8 +347,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 				hostInjectSpec: &cloudNativeInstance.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
 			},
 		}
-		arguments, err := dsBuilder.arguments()
-		require.NoError(t, err)
+		arguments := dsBuilder.arguments()
 		assert.Contains(t, arguments, testNewHostGroupArgument)
 	})
 	t.Run(`has host-group for HostMonitoring`, func(t *testing.T) {
@@ -365,8 +368,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 				hostInjectSpec: hostMonitoringInstance.Spec.OneAgent.HostMonitoring,
 			},
 		}
-		arguments, err := dsBuilder.arguments()
-		require.NoError(t, err)
+		arguments := dsBuilder.arguments()
 		assert.Contains(t, arguments, testNewHostGroupArgument)
 	})
 }

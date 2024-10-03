@@ -1,13 +1,11 @@
 package daemonset
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
-	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -29,7 +27,7 @@ const (
 const customEnvPriority = prioritymap.HighPriority
 const defaultEnvPriority = prioritymap.DefaultPriority
 
-func (b *builder) environmentVariables() ([]corev1.EnvVar, error) {
+func (b *builder) environmentVariables() []corev1.EnvVar {
 	envMap := prioritymap.New(prioritymap.WithPriority(defaultEnvPriority))
 
 	if b.hostInjectSpec != nil {
@@ -42,18 +40,9 @@ func (b *builder) environmentVariables() ([]corev1.EnvVar, error) {
 	b.addOperatorVersionInfoEnv(envMap)
 	b.addConnectionInfoEnvs(envMap)
 	b.addReadOnlyEnv(envMap)
+	b.addProxyEnv(envMap)
 
-	isProxyAsEnvDeprecated, err := isProxyAsEnvVarDeprecated(b.dk.OneAgentVersion())
-	if err != nil {
-		return []corev1.EnvVar{}, err
-	}
-
-	if !isProxyAsEnvDeprecated {
-		// deprecated
-		b.addProxyEnv(envMap)
-	}
-
-	return envMap.AsEnvVars(), nil
+	return envMap.AsEnvVars()
 }
 
 func addNodeNameEnv(envVarMap *prioritymap.Map) {
@@ -144,30 +133,4 @@ func addDefaultValueSource(envVarMap *prioritymap.Map, name string, value *corev
 		Name:      name,
 		ValueFrom: value,
 	})
-}
-
-func isProxyAsEnvVarDeprecated(oneAgentVersion string) (bool, error) {
-	if oneAgentVersion == "" || oneAgentVersion == string(status.CustomImageVersionSource) {
-		// If the version is unknown or from a custom image, then we don't care about deprecation.
-		return true, nil
-	}
-
-	runningVersion, err := version.ExtractSemanticVersion(oneAgentVersion)
-	if err != nil {
-		return false, err
-	}
-
-	versionConstraint, err := version.ExtractSemanticVersion(ProxyAsEnvVarDeprecatedVersion)
-	if err != nil {
-		return false, err
-	}
-
-	result := version.CompareSemanticVersions(runningVersion, versionConstraint)
-
-	// if a current OneAgent version is older than fix version
-	if result < 0 {
-		return false, nil
-	}
-
-	return true, nil
 }

@@ -130,11 +130,7 @@ func (classic *classicFullStack) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	dk := b.dk
 
-	podSpec, err := b.podSpec()
-	if err != nil {
-		return nil, err
-	}
-
+	podSpec := b.podSpec()
 	versionLabelValue := dk.OneAgentVersion()
 
 	appLabels := labels.NewAppLabels(labels.OneAgentComponentLabel, dk.Name,
@@ -180,20 +176,11 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	return result, nil
 }
 
-func (b *builder) podSpec() (corev1.PodSpec, error) {
+func (b *builder) podSpec() corev1.PodSpec {
 	resources := b.resources()
 	dnsPolicy := b.dnsPolicy()
-
-	arguments, err := b.arguments()
-	if err != nil {
-		return corev1.PodSpec{}, err
-	}
-
-	environmentVariables, err := b.environmentVariables()
-	if err != nil {
-		return corev1.PodSpec{}, err
-	}
-
+	arguments := b.arguments()
+	environmentVariables := b.environmentVariables()
 	volumeMounts := b.volumeMounts()
 	volumes := b.volumes()
 	imagePullSecrets := b.imagePullSecrets()
@@ -229,7 +216,7 @@ func (b *builder) podSpec() (corev1.PodSpec, error) {
 		podSpec.Containers[0].LivenessProbe = b.getDefaultProbeFromStatus()
 	}
 
-	return podSpec, nil
+	return podSpec
 }
 
 func (b *builder) immutableOneAgentImage() string {

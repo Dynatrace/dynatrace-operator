@@ -14,23 +14,14 @@ const argumentPrefix = "--"
 const customArgumentPriority = 2
 const defaultArgumentPriority = 1
 
-func (b *builder) arguments() ([]string, error) {
+func (b *builder) arguments() []string {
 	argMap := prioritymap.New(
 		prioritymap.WithSeparator(prioritymap.DefaultSeparator),
 		prioritymap.WithPriority(defaultArgumentPriority),
 		prioritymap.WithAllowDuplicates(),
 	)
 
-	isProxyAsEnvDeprecated, err := isProxyAsEnvVarDeprecated(b.dk.OneAgentVersion())
-	if err != nil {
-		return []string{}, err
-	}
-
-	if !isProxyAsEnvDeprecated {
-		// deprecated
-		b.appendProxyArg(argMap)
-	}
-
+	b.appendProxyArg(argMap)
 	b.appendNoProxyArg(argMap)
 	b.appendNetworkZoneArg(argMap)
 
@@ -47,7 +38,7 @@ func (b *builder) arguments() ([]string, error) {
 
 	b.appendHostGroupArg(argMap)
 
-	return argMap.AsKeyValueStrings(), nil
+	return argMap.AsKeyValueStrings()
 }
 
 func appendImmutableImageArgs(argMap *prioritymap.Map) {

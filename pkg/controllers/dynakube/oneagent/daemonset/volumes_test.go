@@ -221,7 +221,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 			},
 		}
 
-		podSpec, _ := dsBuilder.podSpec()
+		podSpec := dsBuilder.podSpec()
 		volumeMounts := podSpec.Containers[0].VolumeMounts
 
 		assert.Contains(t, volumeMounts, getReadOnlyRootMount())

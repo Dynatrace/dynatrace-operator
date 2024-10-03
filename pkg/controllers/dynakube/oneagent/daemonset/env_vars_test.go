@@ -21,7 +21,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		dsBuilder := builder{
 			dk: &dynakube.DynaKube{},
 		}
-		envVars, _ := dsBuilder.environmentVariables()
+		envVars := dsBuilder.environmentVariables()
 
 		assert.Contains(t, envVars, corev1.EnvVar{Name: dtClusterId, ValueFrom: nil})
 		assert.True(t, k8senv.IsIn(envVars, dtNodeName))
@@ -45,7 +45,7 @@ func TestEnvironmentVariables(t *testing.T) {
 			dk:        dk,
 			clusterID: clusterID,
 		}
-		envVars, _ := dsBuilder.environmentVariables()
+		envVars := dsBuilder.environmentVariables()
 
 		assertClusterIDEnv(t, envVars, clusterID)
 		assertNodeNameEnv(t, envVars)
@@ -68,7 +68,7 @@ func TestEnvironmentVariables(t *testing.T) {
 			dk:             &dynakube.DynaKube{},
 			hostInjectSpec: &dynakube.HostInjectSpec{Env: potentiallyOverriddenEnvVars},
 		}
-		envVars, _ := builder.environmentVariables()
+		envVars := builder.environmentVariables()
 
 		assertEnvVarNameAndValue(t, envVars, dtNodeName, testValue)
 		assertEnvVarNameAndValue(t, envVars, dtClusterId, testValue)
@@ -288,58 +288,4 @@ func assertReadOnlyEnv(t *testing.T, envs []corev1.EnvVar) {
 	env := k8senv.FindEnvVar(envs, oneagentReadOnlyMode)
 	assert.Equal(t, oneagentReadOnlyMode, env.Name)
 	assert.Equal(t, "true", env.Value)
-}
-
-func TestIsProxyAsEnvVarDeprecated(t *testing.T) {
-	tests := []struct {
-		name            string
-		oneAgentVersion string
-		want            bool
-		wantErr         bool
-	}{
-		{
-			name:            "empty version",
-			oneAgentVersion: "",
-			want:            true,
-			wantErr:         false,
-		},
-		{
-			name:            "wrong version format",
-			oneAgentVersion: "1.2",
-			want:            false,
-			wantErr:         true,
-		},
-		{
-			name:            "older version",
-			oneAgentVersion: "1.261.2.20220212-223432",
-			want:            false,
-			wantErr:         false,
-		},
-		{
-			name:            "newer version",
-			oneAgentVersion: "1.285.0.20240122-141707",
-			want:            true,
-			wantErr:         false,
-		},
-		{
-			name:            "custom-image -> hard-coded version placeholder",
-			oneAgentVersion: string(status.CustomImageVersionSource),
-			want:            true,
-			wantErr:         false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := isProxyAsEnvVarDeprecated(tt.oneAgentVersion)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("isProxyAsEnvVarDeprecated() error = %v, wantErr %v", err, tt.wantErr)
-
-				return
-			}
-
-			if got != tt.want {
-				t.Errorf("isProxyAsEnvVarDeprecated() = %v, want %v", got, tt.want)
-			}
-		})
-	}
 }

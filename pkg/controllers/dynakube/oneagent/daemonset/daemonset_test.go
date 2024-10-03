@@ -470,7 +470,7 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 		builder := builder{
 			dk: &dynakube.DynaKube{},
 		}
-		podSpec, _ := builder.podSpec()
+		podSpec := builder.podSpec()
 
 		assert.Equal(t, serviceAccountName, podSpec.ServiceAccountName)
 	})
@@ -484,7 +484,7 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 				},
 			},
 		}
-		podSpec, _ := builder.podSpec()
+		podSpec := builder.podSpec()
 
 		assert.Equal(t, serviceAccountName, podSpec.ServiceAccountName)
 	})
@@ -499,7 +499,7 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 		builder := builder{
 			dk: dk,
 		}
-		podSpec, _ := builder.podSpec()
+		podSpec := builder.podSpec()
 
 		assert.Equal(t, serviceAccountName, podSpec.ServiceAccountName)
 	})
@@ -524,7 +524,7 @@ func TestPodSpecProbes(t *testing.T) {
 				},
 			},
 		}
-		podSpec, _ := builder.podSpec()
+		podSpec := builder.podSpec()
 
 		actualReadinessProbe := podSpec.Containers[0].ReadinessProbe
 		require.NotNil(t, actualReadinessProbe)
@@ -557,7 +557,7 @@ func TestPodSpecProbes(t *testing.T) {
 				},
 			},
 		}
-		podSpec, _ := builder.podSpec()
+		podSpec := builder.podSpec()
 
 		actualReadinessProbe := podSpec.Containers[0].ReadinessProbe
 		require.NotNil(t, actualReadinessProbe)
@@ -571,7 +571,7 @@ func TestPodSpecProbes(t *testing.T) {
 		builder := builder{
 			dk: &dynakube.DynaKube{},
 		}
-		podSpec, _ := builder.podSpec()
+		podSpec := builder.podSpec()
 
 		assert.Nil(t, podSpec.Containers[0].ReadinessProbe)
 		assert.Nil(t, podSpec.Containers[0].LivenessProbe)
@@ -948,6 +948,7 @@ func TestDefaultArguments(t *testing.T) {
 			"--set-host-id-source=fqdn",
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
 			"--set-no-proxy=",
+			"--set-proxy=",
 			"--set-server={$(DT_SERVER)}",
 			"--set-server=https://hyper.super.com:9999",
 			"--set-tenant=$(DT_TENANT)",
@@ -973,6 +974,7 @@ func TestDefaultArguments(t *testing.T) {
 			"--set-host-id-source=auto",
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
 			"--set-no-proxy=",
+			"--set-proxy=",
 			"--set-server={$(DT_SERVER)}",
 			"--set-server=https://hyper.super.com:9999",
 			"--set-tenant=$(DT_TENANT)",
