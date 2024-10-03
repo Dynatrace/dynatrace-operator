@@ -92,9 +92,7 @@ func TestReconcileWithoutProxy(t *testing.T) {
 
 		var proxySecret corev1.Secret
 
-		mockK8sClient := dtfake.NewClient()
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: BuildSecretName(testDynakubeName), Namespace: testNamespace}, &proxySecret)
-
+		err = r.(*Reconciler).client.Get(context.Background(), client.ObjectKey{Name: BuildSecretName(testDynakubeName), Namespace: testNamespace}, &proxySecret)
 		require.Error(t, err)
 		assert.Empty(t, proxySecret)
 		assert.True(t, k8serrors.IsNotFound(err))
@@ -113,7 +111,7 @@ func TestReconcileWithoutProxy(t *testing.T) {
 		require.NoError(t, err)
 
 		var proxySecret corev1.Secret
-		err = testClient.Get(context.Background(), client.ObjectKey{Name: BuildSecretName(testDynakubeName), Namespace: testNamespace}, &proxySecret)
+		err = r.(*Reconciler).client.Get(context.Background(), client.ObjectKey{Name: BuildSecretName(testDynakubeName), Namespace: testNamespace}, &proxySecret)
 
 		require.Error(t, err)
 		assert.Empty(t, proxySecret)
@@ -146,7 +144,7 @@ func TestReconcileWithoutProxy(t *testing.T) {
 		var proxySecret corev1.Secret
 
 		name := BuildSecretName(testDynakubeName)
-		err = testClient.Get(context.Background(), client.ObjectKey{Name: name, Namespace: testNamespace}, &proxySecret)
+		err = r.(*Reconciler).client.Get(context.Background(), client.ObjectKey{Name: name, Namespace: testNamespace}, &proxySecret)
 
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
@@ -164,7 +162,7 @@ func TestReconcileProxyValue(t *testing.T) {
 		require.NoError(t, err)
 
 		var proxySecret corev1.Secret
-		_ = testClient.Get(context.Background(), client.ObjectKey{Name: BuildSecretName(testDynakubeName), Namespace: testNamespace}, &proxySecret)
+		_ = r.(*Reconciler).client.Get(context.Background(), client.ObjectKey{Name: BuildSecretName(testDynakubeName), Namespace: testNamespace}, &proxySecret)
 
 		assert.Empty(t, proxySecret.Data[passwordField])
 		assert.Equal(t, []byte(proxyPort), proxySecret.Data[portField])
@@ -180,7 +178,7 @@ func TestReconcileProxyValue(t *testing.T) {
 		require.NoError(t, err)
 
 		var proxySecret corev1.Secret
-		_ = testClient.Get(context.Background(), client.ObjectKey{Name: BuildSecretName(testDynakubeName), Namespace: testNamespace}, &proxySecret)
+		_ = r.(*Reconciler).client.Get(context.Background(), client.ObjectKey{Name: BuildSecretName(testDynakubeName), Namespace: testNamespace}, &proxySecret)
 
 		assert.Equal(t, []byte(proxyPassword), proxySecret.Data[passwordField])
 		assert.Equal(t, []byte(proxyPort), proxySecret.Data[portField])
@@ -196,7 +194,7 @@ func TestReconcileProxyValue(t *testing.T) {
 		require.NoError(t, err)
 
 		var proxySecret corev1.Secret
-		_ = testClient.Get(context.Background(), client.ObjectKey{Name: BuildSecretName(testDynakubeName), Namespace: testNamespace}, &proxySecret)
+		_ = r.(*Reconciler).client.Get(context.Background(), client.ObjectKey{Name: BuildSecretName(testDynakubeName), Namespace: testNamespace}, &proxySecret)
 
 		assert.Empty(t, proxySecret.Data[passwordField])
 		assert.Equal(t, []byte(proxyPort), proxySecret.Data[portField])
@@ -212,7 +210,7 @@ func TestReconcileProxyValue(t *testing.T) {
 		require.NoError(t, err)
 
 		var proxySecret corev1.Secret
-		_ = testClient.Get(context.Background(), client.ObjectKey{Name: BuildSecretName(testDynakubeName), Namespace: testNamespace}, &proxySecret)
+		_ = r.(*Reconciler).client.Get(context.Background(), client.ObjectKey{Name: BuildSecretName(testDynakubeName), Namespace: testNamespace}, &proxySecret)
 
 		assert.Empty(t, proxySecret.Data[passwordField])
 		assert.Equal(t, []byte(proxyPort), proxySecret.Data[portField])
@@ -228,7 +226,7 @@ func TestReconcileProxyValue(t *testing.T) {
 		require.NoError(t, err)
 
 		var proxySecret corev1.Secret
-		_ = testClient.Get(context.Background(), client.ObjectKey{Name: BuildSecretName(testDynakubeName), Namespace: testNamespace}, &proxySecret)
+		_ = r.(*Reconciler).client.Get(context.Background(), client.ObjectKey{Name: BuildSecretName(testDynakubeName), Namespace: testNamespace}, &proxySecret)
 
 		assert.Equal(t, []byte(proxyPassword), proxySecret.Data[passwordField])
 		assert.Equal(t, []byte(proxyPort), proxySecret.Data[portField])
@@ -244,7 +242,7 @@ func TestReconcileProxyValue(t *testing.T) {
 		require.NoError(t, err)
 
 		var proxySecret corev1.Secret
-		_ = testClient.Get(context.Background(), client.ObjectKey{Name: BuildSecretName(testDynakubeName), Namespace: testNamespace}, &proxySecret)
+		_ = r.(*Reconciler).client.Get(context.Background(), client.ObjectKey{Name: BuildSecretName(testDynakubeName), Namespace: testNamespace}, &proxySecret)
 
 		assert.Equal(t, []byte(proxyPassword), proxySecret.Data[passwordField])
 		assert.Equal(t, []byte(proxyPort), proxySecret.Data[portField])
@@ -258,7 +256,7 @@ func TestReconcileProxyValue(t *testing.T) {
 		require.NoError(t, err)
 
 		var proxySecret corev1.Secret
-		_ = testClient.Get(context.Background(), client.ObjectKey{Name: BuildSecretName(testDynakubeName), Namespace: testNamespace}, &proxySecret)
+		_ = r.(*Reconciler).client.Get(context.Background(), client.ObjectKey{Name: BuildSecretName(testDynakubeName), Namespace: testNamespace}, &proxySecret)
 
 		assert.Equal(t, []byte(nil), proxySecret.Data[passwordField])
 		assert.Equal(t, []byte(nil), proxySecret.Data[portField])
@@ -279,12 +277,41 @@ func TestReconcileProxyValueFrom(t *testing.T) {
 		require.NoError(t, err)
 
 		var proxySecret corev1.Secret
-		_ = testClient.Get(context.Background(), client.ObjectKey{Name: BuildSecretName(testDynakubeName), Namespace: testNamespace}, &proxySecret)
+		_ = r.(*Reconciler).client.Get(context.Background(), client.ObjectKey{Name: BuildSecretName(testDynakubeName), Namespace: testNamespace}, &proxySecret)
 
 		assert.Equal(t, []byte(proxyPassword), proxySecret.Data[passwordField])
 		assert.Equal(t, []byte(proxyPort), proxySecret.Data[portField])
 		assert.Equal(t, []byte(proxyHost), proxySecret.Data[hostField])
 		assert.Equal(t, []byte(proxyUsername), proxySecret.Data[usernameField])
+		assert.Equal(t, []byte(proxyHttpScheme), proxySecret.Data[schemeField])
+	})
+	t.Run(`Change of Proxy ValueFrom to Value`, func(t *testing.T) {
+		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&dynakube.DynaKubeProxy{ValueFrom: customProxySecret}))
+		err := r.Reconcile(context.Background())
+		require.NoError(t, err)
+
+		var proxySecret corev1.Secret
+
+		r.(*Reconciler).client.Get(context.Background(), client.ObjectKey{Name: BuildSecretName(testDynakubeName), Namespace: testNamespace}, &proxySecret)
+
+		assert.Equal(t, []byte(proxyPassword), proxySecret.Data[passwordField])
+		assert.Equal(t, []byte(proxyPort), proxySecret.Data[portField])
+		assert.Equal(t, []byte(proxyHost), proxySecret.Data[hostField])
+		assert.Equal(t, []byte(proxyUsername), proxySecret.Data[usernameField])
+		assert.Equal(t, []byte(proxyHttpScheme), proxySecret.Data[schemeField])
+
+		r.(*Reconciler).dk.Spec.Proxy.ValueFrom = ""
+		r.(*Reconciler).dk.Spec.Proxy.Value = buildProxyUrl(proxyHttpScheme, proxyDifferentUsername, proxyPassword, proxyHost, proxyPort)
+		err = r.Reconcile(context.Background())
+
+		require.NoError(t, err)
+
+		_ = r.(*Reconciler).client.Get(context.Background(), client.ObjectKey{Name: BuildSecretName(testDynakubeName), Namespace: testNamespace}, &proxySecret)
+
+		assert.Equal(t, []byte(proxyPassword), proxySecret.Data[passwordField])
+		assert.Equal(t, []byte(proxyPort), proxySecret.Data[portField])
+		assert.Equal(t, []byte(proxyHost), proxySecret.Data[hostField])
+		assert.Equal(t, []byte(proxyDifferentUsername), proxySecret.Data[usernameField])
 		assert.Equal(t, []byte(proxyHttpScheme), proxySecret.Data[schemeField])
 	})
 	t.Run(`reconcile proxy ValueFrom with non existing secret`, func(t *testing.T) {
