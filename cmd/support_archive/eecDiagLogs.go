@@ -39,23 +39,21 @@ type diagLogCollector struct {
 	pods   clientgocorev1.PodInterface
 	config *rest.Config
 	collectorCommon
-	supportabilityEnabled bool
 }
 
 var (
 	eecPodNotFoundError = errors.New("eec pod not found")
 )
 
-func newDiagLogCollector(context context.Context, config *rest.Config, log logd.Logger, supportArchive archiver, pods clientgocorev1.PodInterface, supportabilityEnabled bool) collector { //nolint:revive
+func newDiagLogCollector(context context.Context, config *rest.Config, log logd.Logger, supportArchive archiver, pods clientgocorev1.PodInterface) collector {
 	return diagLogCollector{
 		collectorCommon: collectorCommon{
 			log:            log,
 			supportArchive: supportArchive,
 		},
-		ctx:                   context,
-		config:                config,
-		pods:                  pods,
-		supportabilityEnabled: supportabilityEnabled,
+		ctx:    context,
+		config: config,
+		pods:   pods,
 	}
 }
 
@@ -93,7 +91,7 @@ func (collector diagLogCollector) getControllerPod() (*corev1.Pod, error) {
 }
 
 func (collector diagLogCollector) Do() error {
-	if !collector.supportabilityEnabled {
+	if !installconfig.GetModules().Supportability {
 		logInfof(collector.log, "%s", installconfig.GetModuleValidationErrorMessage("EEC Diagnostic Log Collection"))
 
 		return nil
