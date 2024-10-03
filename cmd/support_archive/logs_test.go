@@ -60,8 +60,7 @@ func testLogCollection(t *testing.T, collectManagedLogs bool) {
 		supportArchive,
 		fakeClientSet.CoreV1().Pods("dynatrace"),
 		defaultOperatorAppName,
-		collectManagedLogs,
-		true)
+		collectManagedLogs)
 
 	require.NoError(t, logCollector.Do())
 
@@ -117,7 +116,6 @@ func TestLogCollectorPodListError(t *testing.T) {
 		supportArchive,
 		mockedPods,
 		defaultOperatorAppName,
-		true,
 		true)
 	require.Error(t, logCollector.Do())
 }
@@ -161,7 +159,7 @@ func TestLogCollectorGetPodFail(t *testing.T) {
 		Get(ctx, "oneagent", metav1.GetOptions{}).
 		Return(nil, assert.AnError)
 
-	logCollector := newLogCollector(ctx, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods, defaultOperatorAppName, true, true)
+	logCollector := newLogCollector(ctx, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods, defaultOperatorAppName, true)
 	require.NoError(t, logCollector.Do())
 }
 
@@ -234,7 +232,7 @@ func TestLogCollectorGetLogsFail(t *testing.T) {
 		NotBefore(getLogsPod2Container2Call).
 		Return(nil, assert.AnError)
 
-	logCollector := newLogCollector(ctx, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods, defaultOperatorAppName, true, true)
+	logCollector := newLogCollector(ctx, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods, defaultOperatorAppName, true)
 	require.NoError(t, logCollector.Do())
 
 	assert.Contains(t, logBuffer.String(), "Unable to retrieve log stream for pod pod1, container container1")
@@ -295,7 +293,7 @@ func TestLogCollectorNoAbortOnError(t *testing.T) {
 		NotBefore(getLogsPod2Container2Call).
 		Return(nil, assert.AnError)
 
-	logCollector := newLogCollector(ctx, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods, defaultOperatorAppName, true, true)
+	logCollector := newLogCollector(ctx, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods, defaultOperatorAppName, true)
 	require.NoError(t, logCollector.Do())
 
 	assertNoErrorOnClose(t, supportArchive)

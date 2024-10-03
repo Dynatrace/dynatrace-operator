@@ -21,9 +21,9 @@ tests:
                   "oneAgent": true,
                   "extensions": true,
                   "logMonitoring": true,
-                  "edgeConnect": true
+                  "edgeConnect": true,
+                  "supportability": true
                 }
-            supportability: "true"
   - it: ConfigMap should respect the set values
     set:
       rbac.oneAgent.create: false
@@ -50,6 +50,6 @@ tests:
                   "oneAgent": false,
                   "extensions": false,
                   "logMonitoring": false,
-                  "edgeConnect": false
+                  "edgeConnect": false,
+                  "supportability": false
                 }
-            supportability: "false"

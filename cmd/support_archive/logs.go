@@ -19,29 +19,27 @@ const logCollectorName = "logCollector"
 type logCollector struct {
 	collectorCommon
 
-	ctx                   context.Context
-	pods                  clientgocorev1.PodInterface
-	appName               string
-	collectManagedLogs    bool
-	supportabilityEnabled bool
+	ctx                context.Context
+	pods               clientgocorev1.PodInterface
+	appName            string
+	collectManagedLogs bool
 }
 
-func newLogCollector(context context.Context, log logd.Logger, supportArchive archiver, pods clientgocorev1.PodInterface, appName string, collectManagedLogs bool, supportabilityEnabled bool) collector { //nolint:revive // argument-limit doesn't apply to constructors
+func newLogCollector(context context.Context, log logd.Logger, supportArchive archiver, pods clientgocorev1.PodInterface, appName string, collectManagedLogs bool) collector { //nolint:revive
 	return logCollector{
 		collectorCommon: collectorCommon{
 			log:            log,
 			supportArchive: supportArchive,
 		},
-		ctx:                   context,
-		pods:                  pods,
-		appName:               appName,
-		collectManagedLogs:    collectManagedLogs,
-		supportabilityEnabled: supportabilityEnabled,
+		ctx:                context,
+		pods:               pods,
+		appName:            appName,
+		collectManagedLogs: collectManagedLogs,
 	}
 }
 
 func (collector logCollector) Do() error {
-	if !collector.supportabilityEnabled {
+	if !installconfig.GetModules().Supportability {
 		logInfof(collector.log, "%s", installconfig.GetModuleValidationErrorMessage("Log Collection"))
 
 		return nil

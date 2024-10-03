@@ -11,7 +11,8 @@ data:
       "activeGate": {{ .Values.rbac.activeGate.create }},
       "oneAgent": {{ .Values.rbac.oneAgent.create }},
       "extensions": {{ .Values.rbac.extensions.create }},
-      "logMonitoring": {{ .Values.rbac.logMonitoring.create }},
-      "edgeConnect": {{ .Values.rbac.edgeConnect.create }}
+      "logMonitoring": {{ .Values.rbac.logModule.create }},
+      "edgeConnect": {{ .Values.rbac.edgeConnect.create }},
+      "supportability": {{ .Values.rbac.supportability }}
     }
-  supportability: "{{ .Values.rbac.supportability }}"
+
