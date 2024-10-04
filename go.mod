@@ -8,8 +8,9 @@ require (
 	github.com/evanphx/json-patch v5.9.0+incompatible
 	github.com/go-logr/logr v1.4.2
 	github.com/google/go-containerregistry v0.20.2
+	github.com/google/uuid v1.6.0
 	github.com/klauspost/compress v1.17.10
-	github.com/mattn/go-sqlite3 v1.14.23
+	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.20.4
@@ -61,7 +62,6 @@ require (
 	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/imdario/mergo v0.3.15 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
