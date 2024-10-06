@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
@@ -22,16 +23,6 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-const (
-	agSecretName                    = "ag-ca"
-	devRegistryPullSecretName       = "devregistry"
-	agCertificate                   = "custom-cas/agcrt.pem"
-	agCertificateAndPrivateKey      = "custom-cas/agcrtkey.p12"
-	agCertificateAndPrivateKeyField = "server.p12"
-	eecImageRepo                    = "478983378254.dkr.ecr.us-east-1.amazonaws.com/dynatrace/dynatrace-eec"
-	eecImageTag                     = "1.303.0.20240930-183404"
-)
-
 func Feature(t *testing.T) features.Feature {
 	builder := features.New("extensions-components-rollout")
 
@@ -39,24 +30,24 @@ func Feature(t *testing.T) features.Feature {
 
 	options := []componentDynakube.Option{
 		componentDynakube.WithApiUrl(secretConfig.ApiUrl),
-		componentDynakube.WithActiveGateTLSSecret(agSecretName),
-		componentDynakube.WithCustomPullSecret(devRegistryPullSecretName),
+		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
+		componentDynakube.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 		componentDynakube.WithExtensionsEnabledSpec(true),
-		componentDynakube.WithExtensionsEECImageRefSpec(eecImageRepo, eecImageTag),
+		componentDynakube.WithExtensionsEECImageRefSpec(consts.EecImageRepo, consts.EecImageTag),
 	}
 
 	testDynakube := *componentDynakube.New(options...)
 
-	agCrt, err := os.ReadFile(path.Join(project.TestDataDir(), agCertificate))
+	agCrt, err := os.ReadFile(path.Join(project.TestDataDir(), consts.AgCertificate))
 	require.NoError(t, err)
 
-	agP12, err := os.ReadFile(path.Join(project.TestDataDir(), agCertificateAndPrivateKey))
+	agP12, err := os.ReadFile(path.Join(project.TestDataDir(), consts.AgCertificateAndPrivateKey))
 	require.NoError(t, err)
 
-	agSecret := secret.New(agSecretName, testDynakube.Namespace,
+	agSecret := secret.New(consts.AgSecretName, testDynakube.Namespace,
 		map[string][]byte{
-			dynakube.TLSCertKey:             agCrt,
-			agCertificateAndPrivateKeyField: agP12,
+			dynakube.TLSCertKey:                    agCrt,
+			consts.AgCertificateAndPrivateKeyField: agP12,
 		})
 	builder.Assess("create AG TLS secret", secret.Create(agSecret))
 
