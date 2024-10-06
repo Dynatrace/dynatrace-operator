@@ -8,10 +8,12 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apilabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -25,7 +27,7 @@ const (
 	diagLogCollectorName = "diagLogCollector"
 	eecExtensionsPath    = "/var/lib/dynatrace/remotepluginmodule/log/extensions"
 	fileNotFoundMarker   = "<NOT FOUND>"
-	eecPodName           = "dynatrace-extensions-controller"
+	EecPodName           = "dynatrace-extensions-controller"
 	eecContainerName     = "extensions-controller"
 )
 
@@ -39,21 +41,25 @@ type diagLogCollector struct {
 	pods   clientgocorev1.PodInterface
 	config *rest.Config
 	collectorCommon
+	appName            string
+	collectManagedLogs bool
 }
 
 var (
 	eecPodNotFoundError = errors.New("eec pod not found")
 )
 
-func newDiagLogCollector(context context.Context, config *rest.Config, log logd.Logger, supportArchive archiver, pods clientgocorev1.PodInterface) collector {
+func newDiagLogCollector(context context.Context, config *rest.Config, log logd.Logger, supportArchive archiver, pods clientgocorev1.PodInterface, appName string, collectManagedLogs bool) collector { //nolint:revive
 	return diagLogCollector{
 		collectorCommon: collectorCommon{
 			log:            log,
 			supportArchive: supportArchive,
 		},
-		ctx:    context,
-		config: config,
-		pods:   pods,
+		ctx:                context,
+		config:             config,
+		pods:               pods,
+		appName:            appName,
+		collectManagedLogs: collectManagedLogs,
 	}
 }
 
@@ -61,12 +67,19 @@ func (collector diagLogCollector) Name() string {
 	return diagLogCollectorName
 }
 
-func (collector diagLogCollector) getControllerPod() (*corev1.Pod, error) {
+func (collector diagLogCollector) getControllerPodList() (*corev1.PodList, error) {
+	ls := metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			labels.AppNameLabel:      EecPodName,
+			labels.AppManagedByLabel: collector.appName,
+		},
+	}
+
 	listOptions := metav1.ListOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "pod",
 		},
-		LabelSelector: fmt.Sprintf("%s=%s", "app.kubernetes.io/name", eecPodName),
+		LabelSelector: apilabels.Set(ls.MatchLabels).String(),
 	}
 
 	podList, err := collector.pods.List(collector.ctx, listOptions)
@@ -80,14 +93,13 @@ func (collector diagLogCollector) getControllerPod() (*corev1.Pod, error) {
 		return nil, eecPodNotFoundError
 	}
 
-	if len(podList.Items) != 1 {
-		err := errors.New(fmt.Sprintf("expected 1 EEC pod, got %d", len(podList.Items)))
-		logErrorf(collector.log, err, "diagnostic logs will not be collected")
+	if !collector.collectManagedLogs {
+		logInfof(collector.log, "%s", "EEC diagnostic logs will not be collected")
 
-		return nil, err
+		return nil, eecPodNotFoundError
 	}
 
-	return &podList.Items[0], nil
+	return podList, nil
 }
 
 func (collector diagLogCollector) Do() error {
@@ -97,7 +109,7 @@ func (collector diagLogCollector) Do() error {
 		return nil
 	}
 
-	eecPod, err := collector.getControllerPod()
+	eecPodList, err := collector.getControllerPodList()
 	if errors.Is(err, eecPodNotFoundError) {
 		return nil
 	}
@@ -106,21 +118,21 @@ func (collector diagLogCollector) Do() error {
 		return err
 	}
 
-	logFiles, err := collector.findLogFilesRecursively(eecPod.Name, eecPod.Namespace, eecExtensionsPath)
-	if err != nil {
-		logErrorf(collector.log, err, "log files lookup failed")
+	for _, eecPod := range eecPodList.Items {
+		logFiles, err := collector.findLogFilesRecursively(eecPod.Name, eecPod.Namespace, eecExtensionsPath)
+		if err != nil {
+			logErrorf(collector.log, err, "log files lookup failed, podName: %s", eecPod.Name)
 
-		return err
-	}
-
-	for _, logFilePath := range logFiles {
-		if err := collector.copyDiagnosticFile(eecPod.Name, eecPod.Namespace, logFilePath); err != nil {
-			logErrorf(collector.log, err, "failed to copy %s", logFilePath)
-
-			return err
+			continue
 		}
 
-		logInfof(collector.log, "Successfully collected EEC diagnostic logs logs/%s%s", eecPod.Name, logFilePath)
+		for _, logFilePath := range logFiles {
+			if err := collector.copyDiagnosticFile(eecPod.Name, eecPod.Namespace, logFilePath); err != nil {
+				logErrorf(collector.log, err, "failed to copy %s from pod: %s", logFilePath, eecPod.Name)
+			} else {
+				logInfof(collector.log, "Successfully collected EEC diagnostic logs logs/%s%s", eecPod.Name, logFilePath)
+			}
+		}
 	}
 
 	return nil
@@ -138,7 +150,7 @@ func (collector diagLogCollector) findLogFilesRecursively(podName string, podNam
 		return []string{}, nil
 	}
 
-	zipFilePath := collector.buildZipFilePath(podName, "ls.txt")
+	zipFilePath := BuildZipFilePath(podName, "ls.txt")
 
 	var buf bytes.Buffer
 	tee := io.TeeReader(executionResult.StdOut, &buf)
@@ -209,7 +221,7 @@ func (collector diagLogCollector) copyDiagnosticFile(podName string, podNamespac
 	}
 
 	// eecDiagLogPath is an absolute path, remove leading slash to avoid '//' in zipFilePath
-	zipFilePath := collector.buildZipFilePath(podName, eecDiagLogPath[1:])
+	zipFilePath := BuildZipFilePath(podName, eecDiagLogPath[1:])
 
 	err = collector.supportArchive.addFile(zipFilePath, executionResult.StdOut)
 	if err != nil {
@@ -221,7 +233,7 @@ func (collector diagLogCollector) copyDiagnosticFile(podName string, podNamespac
 	return nil
 }
 
-func (collector diagLogCollector) buildZipFilePath(podName string, fileName string) string {
+func BuildZipFilePath(podName string, fileName string) string {
 	return fmt.Sprintf("%s/%s/%s", LogsDirectoryName, podName, fileName)
 }
 
