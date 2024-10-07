@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -137,6 +138,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				Proxy:      &dynakube.DynaKubeProxy{Value: testProxyName},
 				ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName}},
+				Proxy:      &common.ValueSource{Value: testProxyName},
 			},
 		}
 		dkNoProxy := &dynakube.DynaKube{
@@ -163,7 +165,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			newCapabilityReconcilerFunc: func(_ client.Client, _ capability.Capability, _ *dynakube.DynaKube, _ controllers.Reconciler, _ controllers.Reconciler) controllers.Reconciler {
 				return fakeReconciler
 			},
-			newCustomPropertiesReconcilerFunc: func(_ string, customPropertiesSource *dynakube.DynaKubeValueSource) controllers.Reconciler {
+			newCustomPropertiesReconcilerFunc: func(_ string, customPropertiesSource *common.ValueSource) controllers.Reconciler {
 				return fakeReconciler
 			},
 			connectionReconciler: createGenericReconcilerMock(t),
@@ -184,7 +186,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			newCapabilityReconcilerFunc: func(_ client.Client, _ capability.Capability, _ *dynakube.DynaKube, _ controllers.Reconciler, _ controllers.Reconciler) controllers.Reconciler {
 				return fakeReconciler
 			},
-			newCustomPropertiesReconcilerFunc: func(_ string, customPropertiesSource *dynakube.DynaKubeValueSource) controllers.Reconciler {
+			newCustomPropertiesReconcilerFunc: func(_ string, customPropertiesSource *common.ValueSource) controllers.Reconciler {
 				return fakeReconciler
 			},
 			connectionReconciler: createGenericReconcilerMock(t),
@@ -574,7 +576,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 			newCapabilityReconcilerFunc: func(_ client.Client, _ capability.Capability, _ *dynakube.DynaKube, _ controllers.Reconciler, _ controllers.Reconciler) controllers.Reconciler {
 				return fakeReconciler
 			},
-			newCustomPropertiesReconcilerFunc: func(_ string, _ *dynakube.DynaKubeValueSource) controllers.Reconciler {
+			newCustomPropertiesReconcilerFunc: func(_ string, _ *common.ValueSource) controllers.Reconciler {
 				return fakeReconciler
 			},
 			connectionReconciler: createGenericReconcilerMock(t),

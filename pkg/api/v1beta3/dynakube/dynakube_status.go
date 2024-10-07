@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/pkg/errors"
@@ -68,20 +69,9 @@ func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time,
 		int(remaining.Minutes()))
 }
 
-type ConnectionInfoStatus struct {
-
-	// Time of the last connection request
-	LastRequest metav1.Time `json:"lastRequest,omitempty"`
-	// UUID of the tenant, received from the tenant
-	TenantUUID string `json:"tenantUUID,omitempty"`
-
-	// Available connection endpoints
-	Endpoints string `json:"endpoints,omitempty"`
-}
-
 type OneAgentConnectionInfoStatus struct {
 	// Information for communicating with the tenant
-	ConnectionInfoStatus `json:",inline"`
+	common.ConnectionInfo `json:",inline"`
 
 	// List of communication hosts
 	CommunicationHosts []CommunicationHostStatus `json:"communicationHosts,omitempty"`

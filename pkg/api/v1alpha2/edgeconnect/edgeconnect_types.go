@@ -7,6 +7,7 @@ package edgeconnect
 import (
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
@@ -35,10 +36,10 @@ type EdgeConnectSpec struct { //nolint:revive
 
 	// General configurations for proxy settings.
 	// +kubebuilder:validation:Optional
-	Proxy *ProxySpec `json:"proxy,omitempty"`
+	Proxy *common.ProxySpec `json:"proxy,omitempty"`
 
 	// Overrides the default image
-	ImageRef ImageRefSpec `json:"imageRef,omitempty"`
+	ImageRef common.ImageRefSpec `json:"imageRef,omitempty"`
 
 	// Location of the Dynatrace API to connect to, including your specific environment UUID
 	// +kubebuilder:validation:Required
@@ -97,32 +98,6 @@ type OAuthSpec struct {
 	// Determines if the operator will create the EdgeConnect and light OAuth client on the cluster using the credentials provided. Requires more scopes than default behavior.
 	// +kubebuilder:validation:Optional
 	Provisioner bool `json:"provisioner"`
-}
-
-type ImageRefSpec struct {
-	// Custom EdgeConnect image repository
-	// +kubebuilder:example:="docker.io/dynatrace/edgeconnect"
-	Repository string `json:"repository,omitempty"`
-
-	// Indicates version of the EdgeConnect image to use
-	Tag string `json:"tag,omitempty"`
-}
-
-type ProxySpec struct {
-	// Server address (hostname or IP address) of the proxy.
-	Host string `json:"host,omitempty"`
-
-	// NoProxy represents the NO_PROXY or no_proxy environment
-	// variable. It specifies a string that contains comma-separated values
-	// specifying hosts that should be excluded from proxying.
-	NoProxy string `json:"noProxy,omitempty"`
-
-	// Secret name which contains the username and password used for authentication with the proxy, using the
-	// "Basic" HTTP authentication scheme.
-	AuthRef string `json:"authRef,omitempty"`
-
-	// Port of the proxy.
-	Port uint32 `json:"port,omitempty"`
 }
 
 type KubernetesAutomationSpec struct {

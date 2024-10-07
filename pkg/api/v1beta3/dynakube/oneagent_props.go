@@ -142,10 +142,6 @@ func (dk *DynaKube) OneAgentNodeSelector() map[string]string {
 	return nil
 }
 
-func (dk *DynaKube) LogModuleNodeSelector() map[string]string {
-	return dk.Spec.Templates.LogModule.NodeSelector
-}
-
 // CodeModulesVersion provides version set in Status for the CodeModules.
 func (dk *DynaKube) CodeModulesVersion() string {
 	return dk.Status.CodeModules.Version

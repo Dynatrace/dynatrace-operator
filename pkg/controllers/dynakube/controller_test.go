@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -636,16 +637,14 @@ func assertCondition(t *testing.T, dk *dynakube.DynaKube, expectedConditionType 
 func getTestDynkubeStatus() *dynakube.DynaKubeStatus {
 	return &dynakube.DynaKubeStatus{
 		ActiveGate: dynakube.ActiveGateStatus{
-			ConnectionInfoStatus: dynakube.ActiveGateConnectionInfoStatus{
-				ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
-					TenantUUID: testUUID,
-					Endpoints:  "endpoint",
-				},
+			ConnectionInfo: common.ConnectionInfo{
+				TenantUUID: testUUID,
+				Endpoints:  "endpoint",
 			},
 		},
 		OneAgent: dynakube.OneAgentStatus{
 			ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
-				ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
+				ConnectionInfo: common.ConnectionInfo{
 					TenantUUID: testUUID,
 					Endpoints:  "endpoint",
 				},

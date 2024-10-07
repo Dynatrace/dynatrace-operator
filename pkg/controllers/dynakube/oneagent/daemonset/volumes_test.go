@@ -3,6 +3,7 @@ package daemonset
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/stretchr/testify/assert"
@@ -57,7 +58,7 @@ func TestPrepareVolumes(t *testing.T) {
 		dk := &dynakube.DynaKube{}
 		dk.Spec =
 			dynakube.DynaKubeSpec{
-				Proxy: &dynakube.DynaKubeProxy{ValueFrom: proxy.BuildSecretName(dk.Name)},
+				Proxy: &common.ValueSource{ValueFrom: proxy.BuildSecretName(dk.Name)},
 			}
 
 		volumes := prepareVolumes(dk)
@@ -237,7 +238,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
-				Proxy: &dynakube.DynaKubeProxy{ValueFrom: proxy.BuildSecretName("Dynakube")},
+				Proxy: &common.ValueSource{ValueFrom: proxy.BuildSecretName("Dynakube")},
 				OneAgent: dynakube.OneAgentSpec{
 					HostMonitoring: &dynakube.HostInjectSpec{},
 				},

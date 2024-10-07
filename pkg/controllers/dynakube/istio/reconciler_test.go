@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
@@ -398,7 +399,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		require.Equal(t, "IstioForActiveGateChanged", statusCondition.Reason)
 
 		// disable endpoints, make request within api threshold
-		dk.Status.ActiveGate.ConnectionInfoStatus.Endpoints = ""
+		dk.Status.ActiveGate.ConnectionInfo.Endpoints = ""
 
 		err = r.ReconcileActiveGateCommunicationHosts(ctx, dk)
 		require.NoError(t, err)
@@ -510,11 +511,9 @@ func createTestDynaKube() *dynakube.DynaKube {
 				},
 			},
 			ActiveGate: dynakube.ActiveGateStatus{
-				ConnectionInfoStatus: dynakube.ActiveGateConnectionInfoStatus{
-					ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
-						TenantUUID: "test-tenant",
-						Endpoints:  endpoints,
-					},
+				ConnectionInfo: common.ConnectionInfo{
+					TenantUUID: "test-tenant",
+					Endpoints:  endpoints,
 				},
 			},
 		},

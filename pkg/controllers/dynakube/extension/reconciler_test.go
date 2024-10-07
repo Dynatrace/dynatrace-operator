@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
@@ -174,10 +175,8 @@ func createDynakube() *dynakube.DynaKube {
 		Spec: dynakube.DynaKubeSpec{},
 		Status: dynakube.DynaKubeStatus{
 			ActiveGate: dynakube.ActiveGateStatus{
-				ConnectionInfoStatus: dynakube.ActiveGateConnectionInfoStatus{
-					ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
-						TenantUUID: "abc",
-					},
+				ConnectionInfo: common.ConnectionInfo{
+					TenantUUID: "abc",
 				},
 			},
 			KubeSystemUUID: "abc",

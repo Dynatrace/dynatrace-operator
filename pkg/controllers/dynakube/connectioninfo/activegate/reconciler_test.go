@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -49,7 +50,7 @@ func TestReconcile(t *testing.T) {
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
-		assert.Empty(t, dk.Status.ActiveGate.ConnectionInfoStatus)
+		assert.Empty(t, dk.Status.ActiveGate.ConnectionInfo)
 		assert.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, activeGateConnectionInfoConditionType))
 
 		var actualSecret corev1.Secret
@@ -74,8 +75,8 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 
-		assert.Equal(t, testTenantUUID, dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
-		assert.Equal(t, testTenantEndpoints, dk.Status.ActiveGate.ConnectionInfoStatus.Endpoints)
+		assert.Equal(t, testTenantUUID, dk.Status.ActiveGate.ConnectionInfo.TenantUUID)
+		assert.Equal(t, testTenantEndpoints, dk.Status.ActiveGate.ConnectionInfo.Endpoints)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.ActivegateTenantSecret(), Namespace: testNamespace}, &actualSecret)
@@ -90,11 +91,9 @@ func TestReconcile(t *testing.T) {
 		dtc.On("GetActiveGateConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestActiveGateConnectionInfo(), nil)
 
 		fakeClient := fake.NewClient(dk, buildActiveGateSecret(*dk, testTenantUUID))
-		dk.Status.ActiveGate.ConnectionInfoStatus = dynakube.ActiveGateConnectionInfoStatus{
-			ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
-				TenantUUID: testOutdated,
-				Endpoints:  testOutdated,
-			},
+		dk.Status.ActiveGate.ConnectionInfo = common.ConnectionInfo{
+			TenantUUID: testOutdated,
+			Endpoints:  testOutdated,
 		}
 
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
@@ -108,8 +107,8 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 
-		assert.Equal(t, testTenantUUID, dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
-		assert.Equal(t, testTenantEndpoints, dk.Status.ActiveGate.ConnectionInfoStatus.Endpoints)
+		assert.Equal(t, testTenantUUID, dk.Status.ActiveGate.ConnectionInfo.TenantUUID)
+		assert.Equal(t, testTenantEndpoints, dk.Status.ActiveGate.ConnectionInfo.Endpoints)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.ActivegateTenantSecret(), Namespace: testNamespace}, &actualSecret)
@@ -124,11 +123,9 @@ func TestReconcile(t *testing.T) {
 
 		fakeClient := fake.NewClient(dk)
 
-		dk.Status.ActiveGate.ConnectionInfoStatus = dynakube.ActiveGateConnectionInfoStatus{
-			ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
-				TenantUUID: testOutdated,
-				Endpoints:  testOutdated,
-			},
+		dk.Status.ActiveGate.ConnectionInfo = common.ConnectionInfo{
+			TenantUUID: testOutdated,
+			Endpoints:  testOutdated,
 		}
 
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
@@ -139,8 +136,8 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 
-		assert.Equal(t, testTenantUUID, dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
-		assert.Equal(t, testTenantEndpoints, dk.Status.ActiveGate.ConnectionInfoStatus.Endpoints)
+		assert.Equal(t, testTenantUUID, dk.Status.ActiveGate.ConnectionInfo.TenantUUID)
+		assert.Equal(t, testTenantEndpoints, dk.Status.ActiveGate.ConnectionInfo.Endpoints)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.ActivegateTenantSecret(), Namespace: testNamespace}, &actualSecret)

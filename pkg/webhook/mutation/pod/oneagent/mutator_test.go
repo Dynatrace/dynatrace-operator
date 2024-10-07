@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -412,7 +413,7 @@ func getTestDynakubeMeta() metav1.ObjectMeta {
 
 func getTestComplexDynakube() *dynakube.DynaKube {
 	dk := getTestCSIDynakube()
-	dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: "test-proxy"}
+	dk.Spec.Proxy = &common.ValueSource{Value: "test-proxy"}
 	dk.Spec.NetworkZone = "test-network-zone"
 	dk.Spec.ActiveGate = dynakube.ActiveGateSpec{
 		Capabilities:  []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName},

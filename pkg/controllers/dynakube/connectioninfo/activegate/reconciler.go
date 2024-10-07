@@ -3,6 +3,7 @@ package activegate
 import (
 	"context"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
@@ -47,7 +48,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 			return nil
 		}
 
-		r.dk.Status.ActiveGate.ConnectionInfoStatus = dynakube.ActiveGateConnectionInfoStatus{}
+		r.dk.Status.ActiveGate.ConnectionInfo = common.ConnectionInfo{}
 		query := k8ssecret.Query(r.client, r.apiReader, log)
 
 		err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.ActivegateTenantSecret(), Namespace: r.dk.Namespace}})
@@ -115,8 +116,8 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 }
 
 func (r *reconciler) setDynakubeStatus(connectionInfo dtclient.ActiveGateConnectionInfo) {
-	r.dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID = connectionInfo.TenantUUID
-	r.dk.Status.ActiveGate.ConnectionInfoStatus.Endpoints = connectionInfo.Endpoints
+	r.dk.Status.ActiveGate.ConnectionInfo.TenantUUID = connectionInfo.TenantUUID
+	r.dk.Status.ActiveGate.ConnectionInfo.Endpoints = connectionInfo.Endpoints
 }
 
 func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName string, connectionInfo dtclient.ConnectionInfo) error {

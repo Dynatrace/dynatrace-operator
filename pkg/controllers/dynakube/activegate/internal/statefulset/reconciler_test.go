@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dynafake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -109,7 +110,7 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, statefulSet)
 		require.NoError(t, err)
 
-		r.dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: testValue}
+		r.dk.Spec.Proxy = &common.ValueSource{Value: testValue}
 		err = r.Reconcile(ctx)
 
 		require.NoError(t, err)
@@ -162,12 +163,12 @@ func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
-	r.dk.Spec.ActiveGate.CustomProperties = &dynakube.DynaKubeValueSource{Value: testValue}
+	r.dk.Spec.ActiveGate.CustomProperties = &common.ValueSource{Value: testValue}
 	hash, err = r.calculateActiveGateConfigurationHash(ctx)
 	require.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
-	r.dk.Spec.ActiveGate.CustomProperties = &dynakube.DynaKubeValueSource{ValueFrom: testName}
+	r.dk.Spec.ActiveGate.CustomProperties = &common.ValueSource{ValueFrom: testName}
 	hash, err = r.calculateActiveGateConfigurationHash(ctx)
 	require.Error(t, err)
 	assert.Empty(t, hash)

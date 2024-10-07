@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -199,7 +200,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		Spec:       dkSpec,
 	}
 
-	dk.Status.OneAgent.ConnectionInfoStatus.ConnectionInfoStatus.TenantUUID = "test-tenant"
+	dk.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo.TenantUUID = "test-tenant"
 	dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynakube.CommunicationHostStatus{
 		{
 			Protocol: "http",
@@ -724,7 +725,7 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 	dk.Status = dynakube.DynaKubeStatus{
 		OneAgent: dynakube.OneAgentStatus{
 			ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
-				ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
+				ConnectionInfo: common.ConnectionInfo{
 					TenantUUID: testTenantUUID,
 					Endpoints:  testTenantEndpoints,
 				},

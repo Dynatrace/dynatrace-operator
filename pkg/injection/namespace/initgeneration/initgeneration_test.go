@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -313,7 +314,7 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 		proxyValue := "proxy-test-value"
 		noProxyValue := "no-proxy-test-value"
 		dk := baseDynakube.DeepCopy()
-		dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: proxyValue}
+		dk.Spec.Proxy = &common.ValueSource{Value: proxyValue}
 		setNoProxy(dk, noProxyValue)
 
 		expectedSecretConfig := *baseExpectedSecretConfig
@@ -334,9 +335,9 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 		proxyValue := "proxy-test-value"
 		noProxyValue := "no-proxy-test-value"
 		dk := baseDynakube.DeepCopy()
-		dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: proxyValue}
 		dk.Spec.ActiveGate = dynakube.ActiveGateSpec{
 			Capabilities: []dynakube.CapabilityDisplayName{dynakube.RoutingCapability.DisplayName},
+		dk.Spec.Proxy = &common.ValueSource{Value: proxyValue}
 		}
 		setNoProxy(dk, noProxyValue)
 
@@ -472,7 +473,7 @@ func createDynakube() *dynakube.DynaKube {
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: dynakube.OneAgentStatus{
 				ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
-					ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
+					ConnectionInfo: common.ConnectionInfo{
 						TenantUUID: "test-tenant",
 						Endpoints:  "beep.com;bop.com",
 					},
@@ -483,7 +484,7 @@ func createDynakube() *dynakube.DynaKube {
 }
 
 func setProxy(dk *dynakube.DynaKube, value string) {
-	dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: value}
+	dk.Spec.Proxy = &common.ValueSource{Value: value}
 }
 
 func setAnnotation(dk *dynakube.DynaKube, value map[string]string) {

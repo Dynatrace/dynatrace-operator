@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -92,7 +93,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("No proxy is set when proxy enabled and custom no proxy set", func(t *testing.T) {
 		dk := createDynakube(dynakube.OneAgentSpec{
 			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}})
-		dk.Spec.Proxy = &dynakube.DynaKubeProxy{
+		dk.Spec.Proxy = &common.ValueSource{
 			Value: "myproxy.at",
 		}
 		dk.Annotations = map[string]string{

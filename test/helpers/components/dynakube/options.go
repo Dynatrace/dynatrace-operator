@@ -3,6 +3,7 @@
 package dynakube
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -121,7 +122,7 @@ func WithOneAgentNamespaceSelector(selector metav1.LabelSelector) Option {
 	}
 }
 
-func WithProxy(proxy *dynakube.DynaKubeProxy) Option {
+func WithProxy(proxy *common.ValueSource) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.Proxy = proxy
 	}

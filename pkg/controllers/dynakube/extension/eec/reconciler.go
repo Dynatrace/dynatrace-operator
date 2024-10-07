@@ -56,7 +56,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	if r.dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID == "" {
+	if r.dk.Status.ActiveGate.ConnectionInfo.TenantUUID == "" {
 		conditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, r.dk.ExtensionsExecutionControllerStatefulsetName())
 
 		return errors.New("tenantUUID unknown")

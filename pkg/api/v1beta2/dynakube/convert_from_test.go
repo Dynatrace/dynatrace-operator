@@ -3,6 +3,7 @@ package dynakube
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
@@ -247,7 +248,7 @@ func getNewDynakubeBase() dynakube.DynaKube {
 			CustomPullSecret: "pull-secret",
 			EnableIstio:      true,
 			SkipCertCheck:    true,
-			Proxy: &dynakube.DynaKubeProxy{
+			Proxy: &common.ValueSource{
 				Value:     "proxy-value",
 				ValueFrom: "proxy-from",
 			},
@@ -366,7 +367,7 @@ func getNewActiveGateSpec() dynakube.ActiveGateSpec {
 			Image:    "activegate-image",
 			Replicas: 42,
 			Group:    "activegate-group",
-			CustomProperties: &dynakube.DynaKubeValueSource{
+			CustomProperties: &common.ValueSource{
 				Value:     "activegate-cp-value",
 				ValueFrom: "activegate-cp-value-from",
 			},
@@ -409,7 +410,7 @@ func getNewStatus() dynakube.DynaKubeStatus {
 				Test: []string{"oa-health-check-test"},
 			},
 			ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
-				ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
+				ConnectionInfo: common.ConnectionInfo{
 					LastRequest: testTime,
 					TenantUUID:  "oa-tenant-uuid",
 					Endpoints:   "oa-endpoints",
