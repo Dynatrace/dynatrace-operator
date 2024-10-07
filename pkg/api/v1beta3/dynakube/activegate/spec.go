@@ -1,12 +1,13 @@
-package dynakube
+package activegate
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	corev1 "k8s.io/api/core/v1"
 )
 
 type CapabilityDisplayName string
 
-type ActiveGateCapability struct {
+type Capability struct {
 
 	// The name of the capability known by the user, mainly used in the CR
 	DisplayName CapabilityDisplayName
@@ -19,44 +20,63 @@ type ActiveGateCapability struct {
 }
 
 var (
-	RoutingCapability = ActiveGateCapability{
+	RoutingCapability = Capability{
 		DisplayName:  "routing",
 		ShortName:    "routing",
 		ArgumentName: "MSGrouter",
 	}
 
-	KubeMonCapability = ActiveGateCapability{
+	KubeMonCapability = Capability{
 		DisplayName:  "kubernetes-monitoring",
 		ShortName:    "kubemon",
 		ArgumentName: "kubernetes_monitoring",
 	}
 
-	MetricsIngestCapability = ActiveGateCapability{
+	MetricsIngestCapability = Capability{
 		DisplayName:  "metrics-ingest",
 		ShortName:    "metrics-ingest",
 		ArgumentName: "metrics_ingest",
 	}
 
-	DynatraceApiCapability = ActiveGateCapability{
+	DynatraceApiCapability = Capability{
 		DisplayName:  "dynatrace-api",
 		ShortName:    "dynatrace-api",
 		ArgumentName: "restInterface",
 	}
 )
 
-var ActiveGateDisplayNames = map[CapabilityDisplayName]struct{}{
+var CapabilityDisplayNames = map[CapabilityDisplayName]struct{}{
 	RoutingCapability.DisplayName:       {},
 	KubeMonCapability.DisplayName:       {},
 	MetricsIngestCapability.DisplayName: {},
 	DynatraceApiCapability.DisplayName:  {},
 }
 
-type ActiveGateSpec struct {
+type ActiveGate struct {
+	*Spec
+	*Status
+}
+
+// dependencies is a collection of possible other feature/components that need an ActiveGate, but is not directly configured in the ActiveGate section
+type dependencies struct {
+	extensions bool
+}
+
+func (d dependencies) Any() bool {
+	return d.extensions
+}
+
+// +kubebuilder:object:generate=true
+
+type Spec struct {
 
 	// Adds additional annotations to the ActiveGate pods
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Annotations",order=27,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Annotations map[string]string `json:"annotations,omitempty"`
+
+	name   string
+	apiUrl string
 
 	// The name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.
 	// server.p12: certificate+key pair in pkcs12 format
@@ -80,7 +100,11 @@ type ActiveGateSpec struct {
 	Capabilities []CapabilityDisplayName `json:"capabilities,omitempty"`
 
 	CapabilityProperties `json:",inline"`
+
+	enabledDependencies dependencies
 }
+
+// +kubebuilder:object:generate=true
 
 // CapabilityProperties is a struct which can be embedded by ActiveGate capabilities
 // Such as KubernetesMonitoring or Routing
@@ -90,7 +114,7 @@ type CapabilityProperties struct {
 	// Add a custom properties file by providing it as a value or reference it from a secret
 	// +kubebuilder:validation:Optional
 	// If referenced from a secret, make sure the key is called 'customProperties'
-	CustomProperties *DynaKubeValueSource `json:"customProperties,omitempty"`
+	CustomProperties *common.ValueSource `json:"customProperties,omitempty"`
 
 	// Node selector to control the selection of nodes
 	// +kubebuilder:validation:Optional

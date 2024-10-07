@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -335,9 +336,9 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 		proxyValue := "proxy-test-value"
 		noProxyValue := "no-proxy-test-value"
 		dk := baseDynakube.DeepCopy()
-		dk.Spec.ActiveGate = dynakube.ActiveGateSpec{
-			Capabilities: []dynakube.CapabilityDisplayName{dynakube.RoutingCapability.DisplayName},
 		dk.Spec.Proxy = &common.ValueSource{Value: proxyValue}
+		dk.Spec.ActiveGate = activegate.Spec{
+			Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 		}
 		setNoProxy(dk, noProxyValue)
 
@@ -375,7 +376,7 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 	t.Run("Create SecretConfig with tlsSecret", func(t *testing.T) {
 		dk := baseDynakube.DeepCopy()
 		setTlsSecret(dk, "tls-test")
-		dk.Spec.ActiveGate.Capabilities = []dynakube.CapabilityDisplayName{dynakube.RoutingCapability.DisplayName}
+		dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName}
 
 		expectedSecretConfig := *baseExpectedSecretConfig
 		tlsValue := "tls-test-value"
@@ -511,9 +512,9 @@ func setInitialConnectRetry(dk *dynakube.DynaKube, value string) {
 }
 
 func setTlsSecret(dk *dynakube.DynaKube, value string) {
-	dk.Spec.ActiveGate = dynakube.ActiveGateSpec{
-		Capabilities: []dynakube.CapabilityDisplayName{
-			dynakube.KubeMonCapability.DisplayName,
+	dk.Spec.ActiveGate = activegate.Spec{
+		Capabilities: []activegate.CapabilityDisplayName{
+			activegate.KubeMonCapability.DisplayName,
 		},
 		TlsSecretName: value,
 	}

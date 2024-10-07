@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -163,7 +164,7 @@ func compareApplicationMonitoringSpec(t *testing.T, oldSpec ApplicationMonitorin
 	assert.Equal(t, oldSpec.Version, newSpec.Version)
 }
 
-func compareActiveGateSpec(t *testing.T, oldSpec ActiveGateSpec, newSpec dynakube.ActiveGateSpec) {
+func compareActiveGateSpec(t *testing.T, oldSpec ActiveGateSpec, newSpec activegate.Spec) {
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
 	assert.Equal(t, oldSpec.DNSPolicy, newSpec.DNSPolicy)
 	assert.Equal(t, oldSpec.Env, newSpec.Env)
@@ -200,9 +201,9 @@ func compareStatus(t *testing.T, oldStatus DynaKubeStatus, newStatus dynakube.Dy
 
 	// ActiveGate
 	assert.Equal(t, oldStatus.ActiveGate.VersionStatus, newStatus.ActiveGate.VersionStatus)
-	assert.Equal(t, oldStatus.ActiveGate.ConnectionInfoStatus.Endpoints, newStatus.ActiveGate.ConnectionInfoStatus.Endpoints)
-	assert.Equal(t, oldStatus.ActiveGate.ConnectionInfoStatus.LastRequest, newStatus.ActiveGate.ConnectionInfoStatus.LastRequest)
-	assert.Equal(t, oldStatus.ActiveGate.ConnectionInfoStatus.TenantUUID, newStatus.ActiveGate.ConnectionInfoStatus.TenantUUID)
+	assert.Equal(t, oldStatus.ActiveGate.ConnectionInfoStatus.Endpoints, newStatus.ActiveGate.ConnectionInfo.Endpoints)
+	assert.Equal(t, oldStatus.ActiveGate.ConnectionInfoStatus.LastRequest, newStatus.ActiveGate.ConnectionInfo.LastRequest)
+	assert.Equal(t, oldStatus.ActiveGate.ConnectionInfoStatus.TenantUUID, newStatus.ActiveGate.ConnectionInfo.TenantUUID)
 
 	// OneAgent
 	assert.Equal(t, oldStatus.OneAgent.VersionStatus, newStatus.OneAgent.VersionStatus)
@@ -332,20 +333,20 @@ func getNewApplicationMonitoringSpec() dynakube.ApplicationMonitoringSpec {
 	}
 }
 
-func getNewActiveGateSpec() dynakube.ActiveGateSpec {
-	return dynakube.ActiveGateSpec{
+func getNewActiveGateSpec() activegate.Spec {
+	return activegate.Spec{
 		DNSPolicy: corev1.DNSClusterFirstWithHostNet,
 		Annotations: map[string]string{
 			"activegate-annotation-key": "activegate-annotation-value",
 		},
 		TlsSecretName:     "activegate-tls-secret-name",
 		PriorityClassName: "activegate-priority-class-name",
-		Capabilities: []dynakube.CapabilityDisplayName{
-			dynakube.DynatraceApiCapability.DisplayName,
-			dynakube.KubeMonCapability.DisplayName,
-			dynakube.MetricsIngestCapability.DisplayName,
+		Capabilities: []activegate.CapabilityDisplayName{
+			activegate.DynatraceApiCapability.DisplayName,
+			activegate.KubeMonCapability.DisplayName,
+			activegate.MetricsIngestCapability.DisplayName,
 		},
-		CapabilityProperties: dynakube.CapabilityProperties{
+		CapabilityProperties: activegate.CapabilityProperties{
 			Labels: map[string]string{
 				"activegate-label-key": "activegate-label-value",
 			},
@@ -429,7 +430,7 @@ func getNewStatus() dynakube.DynaKubeStatus {
 				},
 			},
 		},
-		ActiveGate: dynakube.ActiveGateStatus{
+		ActiveGate: activegate.Status{
 			VersionStatus: status.VersionStatus{
 				ImageID:            "ag-image-id",
 				Version:            "ag-version",

@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -443,7 +444,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		require.NotNil(t, statusCondition)
 		require.Equal(t, "IstioForActiveGateChanged", statusCondition.Reason)
 
-		dk.Spec.ActiveGate.Capabilities = []dynakube.CapabilityDisplayName{}
+		dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{}
 		err = reconciler.ReconcileActiveGateCommunicationHosts(ctx, dk)
 		require.NoError(t, err)
 
@@ -483,9 +484,9 @@ func createTestDynaKube() *dynakube.DynaKube {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://test.dev.dynatracelabs.com/api",
-			ActiveGate: dynakube.ActiveGateSpec{
-				Capabilities: []dynakube.CapabilityDisplayName{
-					dynakube.RoutingCapability.DisplayName,
+			ActiveGate: activegate.Spec{
+				Capabilities: []activegate.CapabilityDisplayName{
+					activegate.RoutingCapability.DisplayName,
 				},
 			},
 			OneAgent: dynakube.OneAgentSpec{
@@ -510,7 +511,7 @@ func createTestDynaKube() *dynakube.DynaKube {
 					},
 				},
 			},
-			ActiveGate: dynakube.ActiveGateStatus{
+			ActiveGate: activegate.Status{
 				ConnectionInfo: common.ConnectionInfo{
 					TenantUUID: "test-tenant",
 					Endpoints:  endpoints,

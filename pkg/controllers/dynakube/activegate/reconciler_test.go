@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
@@ -98,8 +99,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				EnableIstio: true,
-				ActiveGate: dynakube.ActiveGateSpec{
-					Capabilities: []dynakube.CapabilityDisplayName{dynakube.RoutingCapability.DisplayName},
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 				},
 			},
 		}
@@ -119,7 +120,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		// remove AG from spec
-		dk.Spec.ActiveGate = dynakube.ActiveGateSpec{}
+		dk.Spec.ActiveGate = activegate.Spec{}
 		r.connectionReconciler = createGenericReconcilerMock(t)
 		r.versionReconciler = createVersionReconcilerMock(t)
 		r.pullSecretReconciler = createGenericReconcilerMock(t)
@@ -136,9 +137,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      "proxyDk",
 			},
 			Spec: dynakube.DynaKubeSpec{
-				Proxy:      &dynakube.DynaKubeProxy{Value: testProxyName},
-				ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName}},
 				Proxy:      &common.ValueSource{Value: testProxyName},
+				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 			},
 		}
 		dkNoProxy := &dynakube.DynaKube{
@@ -147,7 +147,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      "noProxyDk",
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName}},
+				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 			},
 		}
 		fakeClient := fake.NewClient()
@@ -203,9 +203,9 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: "test-api-url",
-				ActiveGate: dynakube.ActiveGateSpec{
-					Capabilities: []dynakube.CapabilityDisplayName{
-						dynakube.KubeMonCapability.DisplayName,
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
 					},
 				},
 			},
@@ -242,7 +242,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{}},
+				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{}},
 				Extensions: dynakube.ExtensionsSpec{
 					Enabled: false,
 				},
@@ -306,7 +306,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{}},
+				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{}},
 				Extensions: dynakube.ExtensionsSpec{
 					Enabled: true,
 				},
@@ -339,7 +339,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName}},
+				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 				Extensions: dynakube.ExtensionsSpec{
 					Enabled: true,
 				},
@@ -372,7 +372,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName}},
+				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 				Extensions: dynakube.ExtensionsSpec{
 					Enabled: true,
 				},
@@ -399,7 +399,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		require.NoError(t, err)
 
 		// remove AG from spec
-		r.dk.Spec.ActiveGate = dynakube.ActiveGateSpec{}
+		r.dk.Spec.ActiveGate = activegate.Spec{}
 		r.connectionReconciler = createGenericReconcilerMock(t)
 		r.versionReconciler = createVersionReconcilerMock(t)
 		r.pullSecretReconciler = createGenericReconcilerMock(t)
@@ -440,23 +440,23 @@ func TestServiceCreation(t *testing.T) {
 			Name:      testName,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			ActiveGate: dynakube.ActiveGateSpec{},
+			ActiveGate: activegate.Spec{},
 		},
 	}
 
 	t.Run("service exposes correct ports for single capabilities", func(t *testing.T) {
-		expectedCapabilityPorts := map[dynakube.CapabilityDisplayName][]string{
-			dynakube.RoutingCapability.DisplayName: {
+		expectedCapabilityPorts := map[activegate.CapabilityDisplayName][]string{
+			activegate.RoutingCapability.DisplayName: {
 				consts.HttpsServicePortName,
 			},
-			dynakube.MetricsIngestCapability.DisplayName: {
+			activegate.MetricsIngestCapability.DisplayName: {
 				consts.HttpsServicePortName,
 				consts.HttpServicePortName,
 			},
-			dynakube.DynatraceApiCapability.DisplayName: {
+			activegate.DynatraceApiCapability.DisplayName: {
 				consts.HttpsServicePortName,
 			},
-			dynakube.KubeMonCapability.DisplayName: {},
+			activegate.KubeMonCapability.DisplayName: {},
 		}
 
 		for capName, expectedPorts := range expectedCapabilityPorts {
@@ -467,7 +467,7 @@ func TestServiceCreation(t *testing.T) {
 			reconciler.versionReconciler = createVersionReconcilerMock(t)
 			reconciler.pullSecretReconciler = createGenericReconcilerMock(t)
 
-			dk.Spec.ActiveGate.Capabilities = []dynakube.CapabilityDisplayName{
+			dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{
 				capName,
 			}
 
@@ -495,8 +495,8 @@ func TestServiceCreation(t *testing.T) {
 		reconciler.versionReconciler = createVersionReconcilerMock(t)
 		reconciler.pullSecretReconciler = createGenericReconcilerMock(t)
 
-		dk.Spec.ActiveGate.Capabilities = []dynakube.CapabilityDisplayName{
-			dynakube.RoutingCapability.DisplayName,
+		dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{
+			activegate.RoutingCapability.DisplayName,
 		}
 		expectedPorts := []string{
 			consts.HttpsServicePortName,
@@ -545,15 +545,13 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 			Name:      testName,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName}},
+			ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 		},
 		Status: dynakube.DynaKubeStatus{
-			ActiveGate: dynakube.ActiveGateStatus{
-				ConnectionInfoStatus: dynakube.ActiveGateConnectionInfoStatus{
-					ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
-						TenantUUID: testTenantUUID,
-						Endpoints:  testTenantEndpoints,
-					},
+			ActiveGate: activegate.Status{
+				ConnectionInfo: common.ConnectionInfo{
+					TenantUUID: testTenantUUID,
+					Endpoints:  testTenantEndpoints,
 				},
 			},
 		},
@@ -586,7 +584,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 		require.NoError(t, err)
 
 		var actual corev1.ConfigMap
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dk.ActiveGateConnectionInfoConfigMapName(), Namespace: testNamespace}, &actual)
+		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dk.ActiveGate().GetConnectionInfoConfigMapName(), Namespace: testNamespace}, &actual)
 		require.NoError(t, err)
 		assert.Equal(t, testTenantUUID, actual.Data[connectioninfo.TenantUUIDKey])
 		assert.Equal(t, testTenantEndpoints, actual.Data[connectioninfo.CommunicationEndpointsKey])

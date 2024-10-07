@@ -41,7 +41,7 @@ type KubernetesMonitoringModifier struct {
 }
 
 func (mod KubernetesMonitoringModifier) Enabled() bool {
-	return mod.dk.IsKubernetesMonitoringActiveGateEnabled()
+	return mod.dk.ActiveGate().IsKubernetesMonitoringEnabled()
 }
 
 func (mod KubernetesMonitoringModifier) Modify(sts *appsv1.StatefulSet) error {
@@ -66,7 +66,7 @@ func (mod KubernetesMonitoringModifier) getInitContainers() []corev1.Container {
 	return []corev1.Container{
 		{
 			Name:            initContainerTemplateName,
-			Image:           mod.dk.ActiveGateImage(),
+			Image:           mod.dk.ActiveGate().GetImage(),
 			ImagePullPolicy: corev1.PullAlways,
 			WorkingDir:      k8scrt2jksWorkingDir,
 			Command:         []string{"/bin/bash"},

@@ -48,7 +48,7 @@ func (mod RawImageModifier) getVolumes() []corev1.Volume {
 			Name: connectioninfo.TenantSecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: mod.dk.ActivegateTenantSecret(),
+					SecretName: mod.dk.ActiveGate().GetTenantSecretName(),
 				},
 			},
 		},
@@ -79,7 +79,7 @@ func (mod RawImageModifier) tenantUUIDEnvVar() corev1.EnvVar {
 		Name: connectioninfo.EnvDtTenant,
 		ValueFrom: &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 			LocalObjectReference: corev1.LocalObjectReference{
-				Name: mod.dk.ActiveGateConnectionInfoConfigMapName(),
+				Name: mod.dk.ActiveGate().GetConnectionInfoConfigMapName(),
 			},
 			Key:      connectioninfo.TenantUUIDKey,
 			Optional: address.Of(false),
@@ -91,7 +91,7 @@ func (mod RawImageModifier) communicationEndpointEnvVar() corev1.EnvVar {
 		Name: connectioninfo.EnvDtServer,
 		ValueFrom: &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 			LocalObjectReference: corev1.LocalObjectReference{
-				Name: mod.dk.ActiveGateConnectionInfoConfigMapName(),
+				Name: mod.dk.ActiveGate().GetConnectionInfoConfigMapName(),
 			},
 			Key:      connectioninfo.CommunicationEndpointsKey,
 			Optional: address.Of(false),

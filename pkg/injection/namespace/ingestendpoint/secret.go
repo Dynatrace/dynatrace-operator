@@ -173,7 +173,7 @@ func (g *SecretGenerator) PrepareFields(ctx context.Context, dk *dynakube.DynaKu
 
 func ingestUrlFor(dk *dynakube.DynaKube) (string, error) {
 	switch {
-	case dk.IsActiveGateMode(dynakube.MetricsIngestCapability.DisplayName):
+	case dk.ActiveGate().IsMetricsIngestEnabled():
 		return metricsIngestUrlForClusterActiveGate(dk)
 	case len(dk.Spec.APIURL) > 0:
 		return metricsIngestUrlForDynatraceActiveGate(dk)

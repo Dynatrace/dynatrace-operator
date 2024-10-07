@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -369,8 +370,8 @@ func getTestDynakube() *dynakube.DynaKube {
 			OneAgent: dynakube.OneAgentSpec{
 				ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{},
 			},
-			ActiveGate: dynakube.ActiveGateSpec{
-				Capabilities: []dynakube.CapabilityDisplayName{dynakube.MetricsIngestCapability.DisplayName},
+			ActiveGate: activegate.Spec{
+				Capabilities: []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName},
 			},
 		},
 		Status: dynakube.DynaKubeStatus{

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
@@ -63,7 +64,7 @@ func getBaseDynakube() dynakube.DynaKube {
 }
 
 func enableKubeMonCapability(dk *dynakube.DynaKube) {
-	dk.Spec.ActiveGate.Capabilities = append(dk.Spec.ActiveGate.Capabilities, dynakube.KubeMonCapability.DisplayName)
+	dk.Spec.ActiveGate.Capabilities = append(dk.Spec.ActiveGate.Capabilities, activegate.KubeMonCapability.DisplayName)
 }
 
 func isSubset[T any](t *testing.T, subset, superset []T) {

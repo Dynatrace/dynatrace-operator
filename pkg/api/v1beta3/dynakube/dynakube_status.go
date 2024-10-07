@@ -7,6 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -22,7 +23,7 @@ type DynaKubeStatus struct { //nolint:revive
 	OneAgent OneAgentStatus `json:"oneAgent,omitempty"`
 
 	// Observed state of ActiveGate
-	ActiveGate ActiveGateStatus `json:"activeGate,omitempty"`
+	ActiveGate activegate.Status `json:"activeGate,omitempty"`
 
 	// Observed state of Code Modules
 	CodeModules CodeModulesStatus `json:"codeModules,omitempty"`
@@ -77,11 +78,6 @@ type OneAgentConnectionInfoStatus struct {
 	CommunicationHosts []CommunicationHostStatus `json:"communicationHosts,omitempty"`
 }
 
-type ActiveGateConnectionInfoStatus struct {
-	// Information about Active Gate's connections
-	ConnectionInfoStatus `json:",inline"`
-}
-
 type CommunicationHostStatus struct {
 	// Connection protocol
 	Protocol string `json:"protocol,omitempty"`
@@ -91,16 +87,6 @@ type CommunicationHostStatus struct {
 
 	// Connection port
 	Port uint32 `json:"port,omitempty"`
-}
-
-type ActiveGateStatus struct {
-	status.VersionStatus `json:",inline"`
-
-	// Information about Active Gate's connections
-	ConnectionInfoStatus ActiveGateConnectionInfoStatus `json:"connectionInfoStatus,omitempty"`
-
-	// The ClusterIPs set by Kubernetes on the ActiveGate Service created by the Operator
-	ServiceIPs []string `json:"serviceIPs,omitempty"`
 }
 
 type CodeModulesStatus struct {

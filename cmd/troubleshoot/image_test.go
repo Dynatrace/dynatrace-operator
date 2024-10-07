@@ -12,6 +12,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/dockerkeychain"
@@ -82,7 +83,7 @@ func TestImagePullable(t *testing.T) {
 			"/v2" + dynakube.DefaultOneAgentImageRegistrySubPath + "/manifests/" + testVersion + "-raw",
 			"/v2/" + testCustomOneAgentImage + "/manifests/" + testVersion,
 			"/v2/" + testOneAgentCodeModulesImage + "/manifests/" + testVersion,
-			"/v2" + dynakube.DefaultActiveGateImageRegistrySubPath + "/manifests/" + testVersion + "-raw",
+			"/v2" + activegate.DefaultImageRegistrySubPath + "/manifests/" + testVersion + "-raw",
 			"/v2/" + testActiveGateCustomImage + "/manifests/" + testVersion,
 		})
 	require.NoError(t, err)
@@ -151,7 +152,7 @@ func TestImagePullable(t *testing.T) {
 		// Active Gate images
 		{
 			name:         "ActiveGate default image",
-			dk:           dynakubeBuilder(dockerServer.URL).withActiveGateCapability(dynakube.RoutingCapability.DisplayName).build(),
+			dk:           dynakubeBuilder(dockerServer.URL).withActiveGateCapability(activegate.RoutingCapability.DisplayName).build(),
 			component:    componentActiveGate,
 			proxyWarning: false,
 		},
@@ -233,7 +234,7 @@ func TestImageNotPullable(t *testing.T) {
 		{
 			name: "ActiveGate image",
 			dk: dynakubeBuilder(dockerServer.URL).
-				withActiveGateCapability(dynakube.RoutingCapability.DisplayName).
+				withActiveGateCapability(activegate.RoutingCapability.DisplayName).
 				build(),
 			component: componentActiveGate,
 		},
@@ -241,7 +242,7 @@ func TestImageNotPullable(t *testing.T) {
 			name: "ActiveGate custom image",
 			dk: dynakubeBuilder(dockerServer.URL).
 				withActiveGateCustomImage(server + "/" + testActiveGateCustomImage).
-				withActiveGateCapability(dynakube.RoutingCapability.DisplayName).
+				withActiveGateCapability(activegate.RoutingCapability.DisplayName).
 				build(),
 			component: componentActiveGate,
 		},
@@ -249,7 +250,7 @@ func TestImageNotPullable(t *testing.T) {
 			name: "ActiveGate custom image non-existing server",
 			dk: dynakubeBuilder(dockerServer.URL).
 				withActiveGateCustomImage("myunknownserver.com/foobar/image").
-				withActiveGateCapability(dynakube.RoutingCapability.DisplayName).
+				withActiveGateCapability(activegate.RoutingCapability.DisplayName).
 				build(),
 			component: componentActiveGate,
 		},

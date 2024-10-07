@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -176,8 +177,8 @@ func TestArguments(t *testing.T) {
 					OneAgent: dynakube.OneAgentSpec{
 						CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 					},
-					ActiveGate: dynakube.ActiveGateSpec{
-						Capabilities: []dynakube.CapabilityDisplayName{dynakube.RoutingCapability.DisplayName},
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 					},
 				},
 			},

@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	v1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
@@ -81,7 +82,7 @@ func (src *DynaKube) toActiveGateSpec(dst *v1beta3.DynaKube) {
 	dst.Spec.ActiveGate.Resources = src.Spec.ActiveGate.Resources
 
 	for _, capability := range src.Spec.ActiveGate.Capabilities {
-		dst.Spec.ActiveGate.Capabilities = append(dst.Spec.ActiveGate.Capabilities, v1beta3.CapabilityDisplayName(capability))
+		dst.Spec.ActiveGate.Capabilities = append(dst.Spec.ActiveGate.Capabilities, activegate.CapabilityDisplayName(capability))
 	}
 
 	if src.Spec.ActiveGate.CustomProperties != nil {

@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dynafake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
@@ -49,7 +50,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		}).
 		WithObjects(&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName + dynakube.AuthTokenSecretSuffix,
+				Name:      testName + activegate.AuthTokenSecretSuffix,
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
@@ -57,9 +58,9 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		Build()
 	dk := &dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
-			ActiveGate: dynakube.ActiveGateSpec{
-				Capabilities: []dynakube.CapabilityDisplayName{
-					dynakube.RoutingCapability.DisplayName,
+			ActiveGate: activegate.Spec{
+				Capabilities: []activegate.CapabilityDisplayName{
+					activegate.RoutingCapability.DisplayName,
 				}},
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -198,7 +199,7 @@ func TestReconcile_GetActiveGateAuthTokenHash(t *testing.T) {
 
 	err = r.client.Create(context.Background(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      r.dk.ActiveGateAuthTokenSecret(),
+			Name:      r.dk.ActiveGate().GetAuthTokenSecretName(),
 			Namespace: r.dk.Namespace,
 		},
 		Data: map[string][]byte{

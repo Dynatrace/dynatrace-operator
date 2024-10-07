@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -189,9 +190,9 @@ func TestGenerateMetadataEnrichmentSecret_ForDynakube(t *testing.T) {
 	t.Run(`metadata-enrichment endpoint secret created (local AG) in all namespaces and apiUrl updated`, func(t *testing.T) {
 		fakeClient := buildTestClientBeforeGenerate(buildTestDynakube())
 		{
-			dk := buildTestDynakubeWithMetricsIngestCapability([]dynakube.CapabilityDisplayName{
-				dynakube.CapabilityDisplayName(dynakube.KubeMonCapability.ShortName),
-				dynakube.CapabilityDisplayName(dynakube.MetricsIngestCapability.ShortName),
+			dk := buildTestDynakubeWithMetricsIngestCapability([]activegate.CapabilityDisplayName{
+				activegate.CapabilityDisplayName(activegate.KubeMonCapability.ShortName),
+				activegate.CapabilityDisplayName(activegate.MetricsIngestCapability.ShortName),
 			})
 			addFakeTenantUUID(dk)
 
@@ -201,9 +202,9 @@ func TestGenerateMetadataEnrichmentSecret_ForDynakube(t *testing.T) {
 			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace2, Name: consts.EnrichmentEndpointSecretName}, testMetadataEnrichmentSecretLocalAGWithMetrics)
 		}
 		{
-			newInstance := updatedTestDynakubeWithMetricsIngestCapability([]dynakube.CapabilityDisplayName{
-				dynakube.CapabilityDisplayName(dynakube.KubeMonCapability.ShortName),
-				dynakube.CapabilityDisplayName(dynakube.MetricsIngestCapability.ShortName),
+			newInstance := updatedTestDynakubeWithMetricsIngestCapability([]activegate.CapabilityDisplayName{
+				activegate.CapabilityDisplayName(activegate.KubeMonCapability.ShortName),
+				activegate.CapabilityDisplayName(activegate.MetricsIngestCapability.ShortName),
 			})
 			addFakeTenantUUID(newInstance)
 
@@ -307,14 +308,14 @@ func updatedTestDynakube() *dynakube.DynaKube {
 	}
 }
 
-func updatedTestDynakubeWithMetricsIngestCapability(capabilities []dynakube.CapabilityDisplayName) *dynakube.DynaKube {
+func updatedTestDynakubeWithMetricsIngestCapability(capabilities []activegate.CapabilityDisplayName) *dynakube.DynaKube {
 	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testDynakubeName,
 			Namespace: testNamespaceDynatrace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			ActiveGate: dynakube.ActiveGateSpec{
+			ActiveGate: activegate.Spec{
 				Capabilities: capabilities,
 			},
 			APIURL:             testUpdatedApiUrl,
@@ -347,14 +348,14 @@ func buildTestDynakube() *dynakube.DynaKube {
 	}
 }
 
-func buildTestDynakubeWithMetricsIngestCapability(capabilities []dynakube.CapabilityDisplayName) *dynakube.DynaKube {
+func buildTestDynakubeWithMetricsIngestCapability(capabilities []activegate.CapabilityDisplayName) *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testDynakubeName,
 			Namespace: testNamespaceDynatrace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			ActiveGate: dynakube.ActiveGateSpec{
+			ActiveGate: activegate.Spec{
 				Capabilities: capabilities,
 			},
 			APIURL: testApiUrl,

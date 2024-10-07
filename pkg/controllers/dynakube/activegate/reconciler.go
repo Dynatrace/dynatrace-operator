@@ -136,7 +136,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.Context) error {
-	if !r.dk.NeedsActiveGate() {
+	if !r.dk.ActiveGate().IsEnabled() {
 		// TODO: Add clean up of the config map
 		return nil
 	}
@@ -144,7 +144,7 @@ func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.C
 	configMapData := extractPublicData(r.dk)
 
 	configMap, err := configmap.Build(r.dk,
-		r.dk.ActiveGateConnectionInfoConfigMapName(),
+		r.dk.ActiveGate().GetConnectionInfoConfigMapName(),
 		configMapData,
 	)
 	if err != nil {
@@ -166,20 +166,20 @@ func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.C
 func extractPublicData(dk *dynakube.DynaKube) map[string]string {
 	data := map[string]string{}
 
-	if dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID != "" {
-		data[connectioninfo.TenantUUIDKey] = dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID
+	if dk.Status.ActiveGate.ConnectionInfo.TenantUUID != "" {
+		data[connectioninfo.TenantUUIDKey] = dk.Status.ActiveGate.ConnectionInfo.TenantUUID
 	}
 
-	if dk.Status.ActiveGate.ConnectionInfoStatus.Endpoints != "" {
-		data[connectioninfo.CommunicationEndpointsKey] = dk.Status.ActiveGate.ConnectionInfoStatus.Endpoints
+	if dk.Status.ActiveGate.ConnectionInfo.Endpoints != "" {
+		data[connectioninfo.CommunicationEndpointsKey] = dk.Status.ActiveGate.ConnectionInfo.Endpoints
 	}
 
 	return data
 }
 
 func (r *Reconciler) createCapability(ctx context.Context, agCapability capability.Capability) error {
-	customPropertiesReconciler := r.newCustomPropertiesReconcilerFunc(r.dk.ActiveGateServiceAccountOwner(), agCapability.Properties().CustomProperties) //nolint:typeCheck
-	statefulsetReconciler := r.newStatefulsetReconcilerFunc(r.client, r.apiReader, r.dk, agCapability)                                                  //nolint:typeCheck
+	customPropertiesReconciler := r.newCustomPropertiesReconcilerFunc(r.dk.ActiveGate().GetServiceAccountOwner(), agCapability.Properties().CustomProperties) //nolint:typeCheck
+	statefulsetReconciler := r.newStatefulsetReconcilerFunc(r.client, r.apiReader, r.dk, agCapability)                                                        //nolint:typeCheck
 
 	capabilityReconciler := r.newCapabilityReconcilerFunc(r.client, agCapability, r.dk, statefulsetReconciler, customPropertiesReconciler)
 
@@ -199,7 +199,7 @@ func (r *Reconciler) deleteCapability(ctx context.Context, agCapability capabili
 }
 
 func (r *Reconciler) deleteService(ctx context.Context, agCapability capability.Capability) error {
-	if r.dk.NeedsActiveGateService() {
+	if r.dk.ActiveGate().NeedsService() {
 		return nil
 	}
 

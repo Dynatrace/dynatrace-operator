@@ -131,7 +131,7 @@ func (r *Reconciler) getCustomPropertyValue(ctx context.Context) (string, error)
 }
 
 func (r *Reconciler) getAuthTokenValue(ctx context.Context) (string, error) {
-	if !r.dk.NeedsActiveGate() {
+	if !r.dk.ActiveGate().IsEnabled() {
 		return "", nil
 	}
 

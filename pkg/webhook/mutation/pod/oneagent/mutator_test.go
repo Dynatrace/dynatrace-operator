@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
@@ -415,8 +416,8 @@ func getTestComplexDynakube() *dynakube.DynaKube {
 	dk := getTestCSIDynakube()
 	dk.Spec.Proxy = &common.ValueSource{Value: "test-proxy"}
 	dk.Spec.NetworkZone = "test-network-zone"
-	dk.Spec.ActiveGate = dynakube.ActiveGateSpec{
-		Capabilities:  []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName},
+	dk.Spec.ActiveGate = activegate.Spec{
+		Capabilities:  []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName},
 		TlsSecretName: "super-secret",
 	}
 	dk.Annotations = map[string]string{
