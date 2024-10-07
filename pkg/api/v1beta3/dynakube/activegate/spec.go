@@ -57,7 +57,7 @@ type ActiveGate struct {
 	*Status
 }
 
-// dependencies is a collection of possible other feature/components that need an ActiveGate, but is not directly configured in the ActiveGate section
+// dependencies is a collection of possible other feature/components that need an ActiveGate, but is not directly configured in the ActiveGate section.
 type dependencies struct {
 	extensions bool
 }

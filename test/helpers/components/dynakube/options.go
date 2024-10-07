@@ -161,7 +161,7 @@ func WithExtensionsEnabledSpec(promEnabled bool) Option {
 
 func WithExtensionsEECImageRefSpec(repo, tag string) Option {
 	return func(dk *dynakube.DynaKube) {
-		dk.Spec.Templates.ExtensionExecutionController.ImageRef = dynakube.ImageRefSpec{
+		dk.Spec.Templates.ExtensionExecutionController.ImageRef = common.ImageRefSpec{
 			Repository: repo,
 			Tag:        tag,
 		}
