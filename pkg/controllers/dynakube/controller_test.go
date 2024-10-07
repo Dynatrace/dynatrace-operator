@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmodule"
@@ -343,6 +344,9 @@ func TestReconcileComponents(t *testing.T) {
 		mockLogModuleReconciler := controllermock.NewReconciler(t)
 		mockLogModuleReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
+		mockExtensionReconciler := controllermock.NewReconciler(t)
+		mockExtensionReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
+
 		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
@@ -352,6 +356,7 @@ func TestReconcileComponents(t *testing.T) {
 			injectionReconcilerBuilder:  createInjectionReconcilerBuilder(mockInjectionReconciler),
 			oneAgentReconcilerBuilder:   createOneAgentReconcilerBuilder(mockOneAgentReconciler),
 			logModuleReconcilerBuilder:  createLogModuleReconcilerBuilder(mockLogModuleReconciler),
+			extensionReconcilerBuilder:  createExtensionReconcilerBuilder(mockExtensionReconciler),
 		}
 		mockedDtc := dtclientmock.NewClient(t)
 
@@ -359,7 +364,7 @@ func TestReconcileComponents(t *testing.T) {
 
 		require.Error(t, err)
 		// goerrors.Join concats errors with \n
-		assert.Len(t, strings.Split(err.Error(), "\n"), 4) // ActiveGate, OneAgent LogModule, and Injection reconcilers
+		assert.Len(t, strings.Split(err.Error(), "\n"), 5) // ActiveGate, Extension, OneAgent LogModule, and Injection reconcilers
 	})
 
 	t.Run("exit early in case of no oneagent conncection info", func(t *testing.T) {
@@ -368,6 +373,9 @@ func TestReconcileComponents(t *testing.T) {
 
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
+
+		mockExtensionReconciler := controllermock.NewReconciler(t)
+		mockExtensionReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
 		mockInjectionReconciler := injectionmock.NewReconciler(t)
 		mockInjectionReconciler.On("Reconcile", mock.Anything).Return(oaconnectioninfo.NoOneAgentCommunicationHostsError)
@@ -378,6 +386,7 @@ func TestReconcileComponents(t *testing.T) {
 			fs:                          afero.Afero{Fs: afero.NewMemMapFs()},
 			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
 			injectionReconcilerBuilder:  createInjectionReconcilerBuilder(mockInjectionReconciler),
+			extensionReconcilerBuilder:  createExtensionReconcilerBuilder(mockExtensionReconciler),
 		}
 		mockedDtc := dtclientmock.NewClient(t)
 
@@ -385,7 +394,7 @@ func TestReconcileComponents(t *testing.T) {
 
 		require.Error(t, err)
 		// goerrors.Join concats errors with \n
-		assert.Len(t, strings.Split(err.Error(), "\n"), 1) // ActiveGate, no OneAgent connection info is not an error
+		assert.Len(t, strings.Split(err.Error(), "\n"), 2) // ActiveGate, Extension, no OneAgent connection info is not an error
 	})
 }
 
@@ -403,6 +412,12 @@ func createOneAgentReconcilerBuilder(reconciler controllers.Reconciler) oneagent
 
 func createLogModuleReconcilerBuilder(reconciler controllers.Reconciler) logmodule.ReconcilerBuilder {
 	return func(_ client.Client, _ client.Reader, _ dtclient.Client, _ *dynakube.DynaKube) controllers.Reconciler {
+		return reconciler
+	}
+}
+
+func createExtensionReconcilerBuilder(reconciler controllers.Reconciler) extension.ReconcilerBuilder {
+	return func(_ client.Client, _ client.Reader, _ *dynakube.DynaKube) controllers.Reconciler {
 		return reconciler
 	}
 }
