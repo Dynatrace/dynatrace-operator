@@ -3,7 +3,8 @@
 package dynakube
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
@@ -123,7 +124,7 @@ func WithOneAgentNamespaceSelector(selector metav1.LabelSelector) Option {
 	}
 }
 
-func WithProxy(proxy *common.ValueSource) Option {
+func WithProxy(proxy *value.Source) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.Proxy = proxy
 	}
@@ -161,7 +162,7 @@ func WithExtensionsEnabledSpec(promEnabled bool) Option {
 
 func WithExtensionsEECImageRefSpec(repo, tag string) Option {
 	return func(dk *dynakube.DynaKube) {
-		dk.Spec.Templates.ExtensionExecutionController.ImageRef = common.ImageRefSpec{
+		dk.Spec.Templates.ExtensionExecutionController.ImageRef = image.Ref{
 			Repository: repo,
 			Tag:        tag,
 		}

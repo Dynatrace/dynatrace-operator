@@ -4,7 +4,7 @@ import (
 	"hash/fnv"
 	"strconv"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
@@ -143,7 +143,7 @@ func (r *Reconciler) getAuthTokenValue(ctx context.Context) (string, error) {
 	return authTokenData, nil
 }
 
-func (r *Reconciler) getDataFromCustomProperty(ctx context.Context, customProperties *common.ValueSource) (string, error) {
+func (r *Reconciler) getDataFromCustomProperty(ctx context.Context, customProperties *value.Source) (string, error) {
 	if customProperties.ValueFrom != "" {
 		return secret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{Namespace: r.dk.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey, log)
 	}
@@ -155,6 +155,6 @@ func (r *Reconciler) getDataFromAuthTokenSecret(ctx context.Context) (string, er
 	return secret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{Namespace: r.dk.Namespace, Name: r.dk.ActiveGate().GetAuthTokenSecretName()}, authtoken.ActiveGateAuthTokenName, log)
 }
 
-func needsCustomPropertyHash(customProperties *common.ValueSource) bool {
+func needsCustomPropertyHash(customProperties *value.Source) bool {
 	return customProperties != nil && (customProperties.Value != "" || customProperties.ValueFrom != "")
 }

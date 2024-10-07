@@ -6,8 +6,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -315,7 +316,7 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 		proxyValue := "proxy-test-value"
 		noProxyValue := "no-proxy-test-value"
 		dk := baseDynakube.DeepCopy()
-		dk.Spec.Proxy = &common.ValueSource{Value: proxyValue}
+		dk.Spec.Proxy = &value.Source{Value: proxyValue}
 		setNoProxy(dk, noProxyValue)
 
 		expectedSecretConfig := *baseExpectedSecretConfig
@@ -336,7 +337,7 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 		proxyValue := "proxy-test-value"
 		noProxyValue := "no-proxy-test-value"
 		dk := baseDynakube.DeepCopy()
-		dk.Spec.Proxy = &common.ValueSource{Value: proxyValue}
+		dk.Spec.Proxy = &value.Source{Value: proxyValue}
 		dk.Spec.ActiveGate = activegate.Spec{
 			Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 		}
@@ -474,7 +475,7 @@ func createDynakube() *dynakube.DynaKube {
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: dynakube.OneAgentStatus{
 				ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
-					ConnectionInfo: common.ConnectionInfo{
+					ConnectionInfo: communication.ConnectionInfo{
 						TenantUUID: "test-tenant",
 						Endpoints:  "beep.com;bop.com",
 					},
@@ -484,8 +485,8 @@ func createDynakube() *dynakube.DynaKube {
 	}
 }
 
-func setProxy(dk *dynakube.DynaKube, value string) {
-	dk.Spec.Proxy = &common.ValueSource{Value: value}
+func setProxy(dk *dynakube.DynaKube, proxyValue string) {
+	dk.Spec.Proxy = &value.Source{Value: proxyValue}
 }
 
 func setAnnotation(dk *dynakube.DynaKube, value map[string]string) {

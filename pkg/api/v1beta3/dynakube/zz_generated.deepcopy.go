@@ -19,7 +19,7 @@ limitations under the License.
 package dynakube
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	pkgv1 "github.com/google/go-containerregistry/pkg/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -176,7 +176,7 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 	*out = *in
 	if in.Proxy != nil {
 		in, out := &in.Proxy, &out.Proxy
-		*out = new(common.ValueSource)
+		*out = new(value.Source)
 		**out = **in
 	}
 	in.OneAgent.DeepCopyInto(&out.OneAgent)

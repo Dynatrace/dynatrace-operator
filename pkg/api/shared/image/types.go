@@ -1,7 +1,7 @@
-package common
+package image
 
 // +kubebuilder:object:generate=true
-type ImageRefSpec struct {
+type Ref struct {
 	// Custom image repository
 	// +kubebuilder:example:="docker.io/dynatrace/image-name"
 	Repository string `json:"repository,omitempty"`
@@ -11,7 +11,7 @@ type ImageRefSpec struct {
 }
 
 // StringWithDefaults will use the provided default values for fields that were not already set.
-func (ref ImageRefSpec) StringWithDefaults(repo, tag string) string {
+func (ref Ref) StringWithDefaults(repo, tag string) string {
 	if ref.Repository == "" {
 		ref.Repository = repo
 	}
@@ -23,6 +23,6 @@ func (ref ImageRefSpec) StringWithDefaults(repo, tag string) string {
 	return ref.String()
 }
 
-func (ref ImageRefSpec) String() string {
+func (ref Ref) String() string {
 	return ref.Repository + ":" + ref.Tag
 }

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	dtfake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -70,7 +70,7 @@ func newTestReconcilerWithCustomDynaKube(client client.Client, dk *dynakube.Dyna
 	return r
 }
 
-func createDynaKubeWithProxy(proxy *common.ValueSource) *dynakube.DynaKube {
+func createDynaKubeWithProxy(proxy *value.Source) *dynakube.DynaKube {
 	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
@@ -127,7 +127,7 @@ func TestReconcileWithoutProxy(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: "https://testing.dev.dynatracelabs.com/api",
-				Proxy: &common.ValueSource{
+				Proxy: &value.Source{
 					Value:     "https://proxy:1234",
 					ValueFrom: "",
 				}}}
@@ -159,7 +159,7 @@ func TestReconcileProxyValue(t *testing.T) {
 	t.Run(`reconcile proxy Value - no scheme, no username`, func(t *testing.T) {
 		var proxyValue = buildProxyUrl("", "", "", proxyHost, proxyPort)
 
-		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&common.ValueSource{Value: proxyValue}))
+		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&value.Source{Value: proxyValue}))
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -175,7 +175,7 @@ func TestReconcileProxyValue(t *testing.T) {
 	t.Run(`reconcile proxy Value - no scheme, with username`, func(t *testing.T) {
 		var proxyValue = buildProxyUrl("", proxyUsername, proxyPassword, proxyHost, proxyPort)
 
-		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&common.ValueSource{Value: proxyValue}))
+		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&value.Source{Value: proxyValue}))
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -191,7 +191,7 @@ func TestReconcileProxyValue(t *testing.T) {
 	t.Run(`reconcile proxy Value - http scheme, no username`, func(t *testing.T) {
 		var proxyValue = buildProxyUrl(proxyHttpScheme, "", "", proxyHost, proxyPort)
 
-		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&common.ValueSource{Value: proxyValue}))
+		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&value.Source{Value: proxyValue}))
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -207,7 +207,7 @@ func TestReconcileProxyValue(t *testing.T) {
 	t.Run(`reconcile proxy Value - https scheme, no username`, func(t *testing.T) {
 		var proxyValue = buildProxyUrl(proxyHttpsScheme, "", "", proxyHost, proxyPort)
 
-		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&common.ValueSource{Value: proxyValue}))
+		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&value.Source{Value: proxyValue}))
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -223,7 +223,7 @@ func TestReconcileProxyValue(t *testing.T) {
 	t.Run(`reconcile proxy Value - http scheme`, func(t *testing.T) {
 		var proxyValue = buildProxyUrl(proxyHttpScheme, proxyUsername, proxyPassword, proxyHost, proxyPort)
 
-		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&common.ValueSource{Value: proxyValue}))
+		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&value.Source{Value: proxyValue}))
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -239,7 +239,7 @@ func TestReconcileProxyValue(t *testing.T) {
 	t.Run(`reconcile proxy Value - https scheme`, func(t *testing.T) {
 		var proxyValue = buildProxyUrl("https", proxyUsername, proxyPassword, proxyHost, proxyPort)
 
-		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&common.ValueSource{Value: proxyValue}))
+		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&value.Source{Value: proxyValue}))
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -253,7 +253,7 @@ func TestReconcileProxyValue(t *testing.T) {
 		assert.Equal(t, []byte(proxyHttpsScheme), proxySecret.Data[schemeField])
 	})
 	t.Run(`reconcile empty proxy Value`, func(t *testing.T) {
-		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&common.ValueSource{Value: ""}))
+		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&value.Source{Value: ""}))
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -274,7 +274,7 @@ func TestReconcileProxyValueFrom(t *testing.T) {
 	var testClient = fake.NewClientBuilder().WithObjects(createProxySecret(proxyUrl)).Build()
 
 	t.Run(`reconcile proxy ValueFrom`, func(t *testing.T) {
-		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&common.ValueSource{ValueFrom: customProxySecret}))
+		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&value.Source{ValueFrom: customProxySecret}))
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -288,7 +288,7 @@ func TestReconcileProxyValueFrom(t *testing.T) {
 		assert.Equal(t, []byte(proxyHttpScheme), proxySecret.Data[schemeField])
 	})
 	t.Run(`Change of Proxy ValueFrom to Value`, func(t *testing.T) {
-		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&common.ValueSource{ValueFrom: customProxySecret}))
+		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&value.Source{ValueFrom: customProxySecret}))
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -317,7 +317,7 @@ func TestReconcileProxyValueFrom(t *testing.T) {
 		assert.Equal(t, []byte(proxyHttpScheme), proxySecret.Data[schemeField])
 	})
 	t.Run(`reconcile proxy ValueFrom with non existing secret`, func(t *testing.T) {
-		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&common.ValueSource{ValueFrom: "secret"}))
+		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&value.Source{ValueFrom: "secret"}))
 		err := r.Reconcile(context.Background())
 
 		require.Error(t, err)

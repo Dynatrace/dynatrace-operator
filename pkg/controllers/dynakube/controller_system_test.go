@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
@@ -83,7 +83,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				Proxy: &common.ValueSource{
+				Proxy: &value.Source{
 					Value:     "https://proxy:1234",
 					ValueFrom: "",
 				},

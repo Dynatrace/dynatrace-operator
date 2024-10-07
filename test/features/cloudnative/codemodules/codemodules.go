@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
@@ -135,7 +135,7 @@ const (
 // Connectivity in the dynatrace namespace and sample application namespace is restricted to
 // the local cluster. Sample application is installed. The test checks if DT_PROXY environment
 // variable is defined in the *dynakubeComponents-oneagent* container and the *application container*.
-func WithProxy(t *testing.T, proxySpec *common.ValueSource) features.Feature {
+func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature {
 	builder := features.New("codemodules-with-proxy")
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
@@ -189,7 +189,7 @@ func WithProxy(t *testing.T, proxySpec *common.ValueSource) features.Feature {
 	return builder.Feature()
 }
 
-func WithProxyCA(t *testing.T, proxySpec *common.ValueSource) features.Feature {
+func WithProxyCA(t *testing.T, proxySpec *value.Source) features.Feature {
 	const configMapName = "proxy-ca"
 	builder := features.New("codemodules-with-proxy-custom-ca")
 	secretConfigs := tenant.GetMultiTenantSecret(t)
@@ -250,7 +250,7 @@ func WithProxyCA(t *testing.T, proxySpec *common.ValueSource) features.Feature {
 	return builder.Feature()
 }
 
-func WithProxyAndAGCert(t *testing.T, proxySpec *common.ValueSource) features.Feature {
+func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature {
 	builder := features.New("codemodules-with-proxy-and-ag-cert")
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
@@ -315,7 +315,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *common.ValueSource) features.Fe
 	return builder.Feature()
 }
 
-func WithProxyCAAndAGCert(t *testing.T, proxySpec *common.ValueSource) features.Feature {
+func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature {
 	builder := features.New("codemodules-with-proxy-custom-ca-ag-cert")
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)

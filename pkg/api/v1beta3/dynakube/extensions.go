@@ -1,7 +1,7 @@
 package dynakube
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -30,7 +30,7 @@ type ExtensionExecutionControllerSpec struct {
 
 	// Overrides the default image
 	// +kubebuilder:validation:Optional
-	ImageRef common.ImageRefSpec `json:"imageRef,omitempty"`
+	ImageRef image.Ref `json:"imageRef,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	TlsRefName string `json:"tlsRefName,omitempty"`
@@ -73,7 +73,7 @@ type OpenTelemetryCollectorSpec struct {
 
 	// Overrides the default image
 	// +kubebuilder:validation:Optional
-	ImageRef common.ImageRefSpec `json:"imageRef,omitempty"`
+	ImageRef image.Ref `json:"imageRef,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	TlsRefName string `json:"tlsRefName,omitempty"`

@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,7 +18,7 @@ const (
 	testNetworkZone = "zone-1"
 )
 
-func createTestDynakubeWithProxy(proxy common.ValueSource) *dynakube.DynaKube {
+func createTestDynakubeWithProxy(proxy value.Source) *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
 			Proxy: &proxy,
@@ -71,7 +71,7 @@ func TestOptions(t *testing.T) {
 		require.NoError(t, err)
 		assert.Empty(t, opts.Opts)
 
-		err = opts.appendProxySettings(nil, createTestDynakubeWithProxy(common.ValueSource{Value: testValue}))
+		err = opts.appendProxySettings(nil, createTestDynakubeWithProxy(value.Source{Value: testValue}))
 
 		require.NoError(t, err)
 		assert.NotEmpty(t, opts.Opts)
@@ -87,7 +87,7 @@ func TestOptions(t *testing.T) {
 				},
 			})
 		opts = newOptions(context.Background())
-		err = opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(common.ValueSource{ValueFrom: testName}))
+		err = opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(value.Source{ValueFrom: testName}))
 
 		require.NoError(t, err)
 		assert.NotEmpty(t, opts.Opts)
@@ -95,7 +95,7 @@ func TestOptions(t *testing.T) {
 	t.Run(`AppendProxySettings handles missing or malformed secret`, func(t *testing.T) {
 		fakeClient := fake.NewClient()
 		opts := newOptions(context.Background())
-		err := opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(common.ValueSource{ValueFrom: testName}))
+		err := opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(value.Source{ValueFrom: testName}))
 
 		require.Error(t, err)
 		assert.Empty(t, opts.Opts)
@@ -109,7 +109,7 @@ func TestOptions(t *testing.T) {
 				Data: map[string][]byte{},
 			})
 		opts = newOptions(context.Background())
-		err = opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(common.ValueSource{ValueFrom: testName}))
+		err = opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(value.Source{ValueFrom: testName}))
 
 		require.Error(t, err)
 		assert.Empty(t, opts.Opts)

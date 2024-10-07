@@ -3,8 +3,8 @@ package dynatraceclient
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -89,7 +89,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testEndpoint,
-				Proxy: &common.ValueSource{
+				Proxy: &value.Source{
 					ValueFrom: testKey,
 				}}}
 		fakeClient := fake.NewClient(dk)

@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/pkg/errors"
@@ -261,7 +261,7 @@ func (builder *testDynaKubeBuilder) withCustomPullSecret(secretName string) *tes
 }
 
 func (builder *testDynaKubeBuilder) withProxy(proxyURL string) *testDynaKubeBuilder {
-	builder.dynakube.Spec.Proxy = &common.ValueSource{
+	builder.dynakube.Spec.Proxy = &value.Source{
 		Value: proxyURL,
 	}
 
@@ -269,7 +269,7 @@ func (builder *testDynaKubeBuilder) withProxy(proxyURL string) *testDynaKubeBuil
 }
 
 func (builder *testDynaKubeBuilder) withProxySecret(secretName string) *testDynaKubeBuilder {
-	builder.dynakube.Spec.Proxy = &common.ValueSource{
+	builder.dynakube.Spec.Proxy = &value.Source{
 		ValueFrom: secretName,
 	}
 

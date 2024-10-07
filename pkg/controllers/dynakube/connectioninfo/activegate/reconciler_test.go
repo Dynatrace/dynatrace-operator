@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -92,7 +92,7 @@ func TestReconcile(t *testing.T) {
 		dtc.On("GetActiveGateConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestActiveGateConnectionInfo(), nil)
 
 		fakeClient := fake.NewClient(dk, buildActiveGateSecret(*dk, testTenantUUID))
-		dk.Status.ActiveGate.ConnectionInfo = common.ConnectionInfo{
+		dk.Status.ActiveGate.ConnectionInfo = communication.ConnectionInfo{
 			TenantUUID: testOutdated,
 			Endpoints:  testOutdated,
 		}
@@ -124,7 +124,7 @@ func TestReconcile(t *testing.T) {
 
 		fakeClient := fake.NewClient(dk)
 
-		dk.Status.ActiveGate.ConnectionInfo = common.ConnectionInfo{
+		dk.Status.ActiveGate.ConnectionInfo = communication.ConnectionInfo{
 			TenantUUID: testOutdated,
 			Endpoints:  testOutdated,
 		}

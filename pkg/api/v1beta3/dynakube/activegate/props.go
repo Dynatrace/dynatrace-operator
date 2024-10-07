@@ -104,17 +104,6 @@ func (ag *Spec) GetConnectionInfoConfigMapName() string {
 	return ag.name + ConnectionInfoConfigMapSuffix
 }
 
-// Image provides the image reference set in Status for the ActiveGate.
-// Format: repo@sha256:digest.
-func (ag *Status) GetImage() string {
-	return ag.ImageID
-}
-
-// Version provides version set in Status for the ActiveGate.
-func (ag *Status) GetVersion() string {
-	return ag.Version
-}
-
 // DefaultImage provides the image reference for the ActiveGate from tenant registry.
 // Format: repo:tag.
 func (ag *Spec) GetDefaultImage(version string) string {

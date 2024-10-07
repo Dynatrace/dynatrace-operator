@@ -3,7 +3,7 @@ package edgeconnect
 import (
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
@@ -35,7 +35,7 @@ func (src *EdgeConnect) toSpec(dst *edgeconnect.EdgeConnect) {
 	}
 
 	if src.Spec.Proxy != nil {
-		dst.Spec.Proxy = &common.ProxySpec{
+		dst.Spec.Proxy = &proxy.Spec{
 			Host:    src.Spec.Proxy.Host,
 			NoProxy: src.Spec.Proxy.NoProxy,
 			AuthRef: src.Spec.Proxy.AuthRef,

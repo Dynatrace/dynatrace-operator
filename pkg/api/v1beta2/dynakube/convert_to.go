@@ -1,7 +1,8 @@
 package dynakube
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
@@ -32,7 +33,7 @@ func (src *DynaKube) toBase(dst *dynakube.DynaKube) {
 	dst.Spec.Tokens = src.Spec.Tokens
 	dst.Spec.CustomPullSecret = src.Spec.CustomPullSecret
 	dst.Spec.SkipCertCheck = src.Spec.SkipCertCheck
-	dst.Spec.Proxy = (*common.ValueSource)(src.Spec.Proxy)
+	dst.Spec.Proxy = (*value.Source)(src.Spec.Proxy)
 	dst.Spec.TrustedCAs = src.Spec.TrustedCAs
 	dst.Spec.NetworkZone = src.Spec.NetworkZone
 	dst.Spec.EnableIstio = src.Spec.EnableIstio
@@ -80,7 +81,7 @@ func (src *DynaKube) toActiveGateSpec(dst *dynakube.DynaKube) {
 	}
 
 	if src.Spec.ActiveGate.CustomProperties != nil {
-		dst.Spec.ActiveGate.CustomProperties = &common.ValueSource{
+		dst.Spec.ActiveGate.CustomProperties = &value.Source{
 			Value:     src.Spec.ActiveGate.CustomProperties.Value,
 			ValueFrom: src.Spec.ActiveGate.CustomProperties.ValueFrom,
 		}
@@ -121,7 +122,7 @@ func (src *DynaKube) toOneAgentStatus(dst *dynakube.DynaKube) {
 	dst.Status.OneAgent.LastInstanceStatusUpdate = src.Status.OneAgent.LastInstanceStatusUpdate
 
 	// Connection-Info
-	dst.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo = (common.ConnectionInfo)(src.Status.OneAgent.ConnectionInfoStatus.ConnectionInfoStatus)
+	dst.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo = (communication.ConnectionInfo)(src.Status.OneAgent.ConnectionInfoStatus.ConnectionInfoStatus)
 
 	for _, host := range src.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts {
 		tmp := dynakube.CommunicationHostStatus{
@@ -138,7 +139,7 @@ func (src *DynaKube) toOneAgentStatus(dst *dynakube.DynaKube) {
 }
 
 func (src *DynaKube) toActiveGateStatus(dst *dynakube.DynaKube) {
-	dst.Status.ActiveGate.ConnectionInfo = (common.ConnectionInfo)(src.Status.ActiveGate.ConnectionInfoStatus.ConnectionInfoStatus)
+	dst.Status.ActiveGate.ConnectionInfo = (communication.ConnectionInfo)(src.Status.ActiveGate.ConnectionInfoStatus.ConnectionInfoStatus)
 	dst.Status.ActiveGate.ServiceIPs = src.Status.ActiveGate.ServiceIPs
 	dst.Status.ActiveGate.VersionStatus = src.Status.ActiveGate.VersionStatus
 }

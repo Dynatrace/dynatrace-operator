@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
@@ -72,7 +72,7 @@ func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time,
 
 type OneAgentConnectionInfoStatus struct {
 	// Information for communicating with the tenant
-	common.ConnectionInfo `json:",inline"`
+	communication.ConnectionInfo `json:",inline"`
 
 	// List of communication hosts
 	CommunicationHosts []CommunicationHostStatus `json:"communicationHosts,omitempty"`

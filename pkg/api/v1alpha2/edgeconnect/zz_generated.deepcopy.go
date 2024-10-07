@@ -19,7 +19,7 @@ limitations under the License.
 package edgeconnect
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/proxy"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -120,7 +120,7 @@ func (in *EdgeConnectSpec) DeepCopyInto(out *EdgeConnectSpec) {
 	}
 	if in.Proxy != nil {
 		in, out := &in.Proxy, &out.Proxy
-		*out = new(common.ProxySpec)
+		*out = new(proxy.Spec)
 		**out = **in
 	}
 	out.ImageRef = in.ImageRef

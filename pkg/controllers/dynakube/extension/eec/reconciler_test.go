@@ -4,8 +4,9 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
@@ -50,7 +51,7 @@ func getTestDynakube() *dynakube.DynaKube {
 			},
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
-					ImageRef: common.ImageRefSpec{
+					ImageRef: image.Ref{
 						Repository: testEecImageRepository,
 						Tag:        testEecImageTag,
 					},
@@ -60,7 +61,7 @@ func getTestDynakube() *dynakube.DynaKube {
 
 		Status: dynakube.DynaKubeStatus{
 			ActiveGate: activegate.Status{
-				ConnectionInfo: common.ConnectionInfo{
+				ConnectionInfo: communication.ConnectionInfo{
 					TenantUUID: testTenantUUID,
 				},
 				VersionStatus: status.VersionStatus{},

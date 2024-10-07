@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -512,7 +512,7 @@ func createTestDynaKube() *dynakube.DynaKube {
 				},
 			},
 			ActiveGate: activegate.Status{
-				ConnectionInfo: common.ConnectionInfo{
+				ConnectionInfo: communication.ConnectionInfo{
 					TenantUUID: "test-tenant",
 					Endpoints:  endpoints,
 				},

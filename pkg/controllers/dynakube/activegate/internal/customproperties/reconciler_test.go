@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,7 +30,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			}}
 
-		r := NewReconciler(nil, dk, "", &common.ValueSource{})
+		r := NewReconciler(nil, dk, "", &value.Source{})
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 	})
@@ -42,7 +42,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				Proxy: &common.ValueSource{
+				Proxy: &value.Source{
 					Value: "test",
 				},
 			}}
@@ -73,14 +73,14 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 
 	t.Run(`Create creates custom properties secret for no-proxy with custom properties`, func(t *testing.T) {
-		valueSource := common.ValueSource{Value: testValue}
+		valueSource := value.Source{Value: testValue}
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				Proxy: &common.ValueSource{
+				Proxy: &value.Source{
 					Value: "test",
 				},
 			}}
@@ -108,7 +108,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 
 	t.Run(`Always copy custom properties to secret`, func(t *testing.T) {
-		valueSource := common.ValueSource{ValueFrom: testKey}
+		valueSource := value.Source{ValueFrom: testKey}
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -141,7 +141,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 
 	t.Run(`Create creates custom properties secret`, func(t *testing.T) {
-		valueSource := common.ValueSource{Value: testValue}
+		valueSource := value.Source{Value: testValue}
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -163,7 +163,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Equal(t, customPropertiesSecret.Data[DataKey], []byte(testValue))
 	})
 	t.Run(`Create updates custom properties only if data changed`, func(t *testing.T) {
-		valueSource := common.ValueSource{Value: testValue}
+		valueSource := value.Source{Value: testValue}
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,

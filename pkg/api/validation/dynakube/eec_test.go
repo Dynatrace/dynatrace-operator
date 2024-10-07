@@ -3,7 +3,7 @@ package validation
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 )
 
@@ -19,7 +19,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
-							ImageRef: common.ImageRefSpec{
+							ImageRef: image.Ref{
 								Repository: "a",
 								Tag:        "b",
 							},
@@ -41,7 +41,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
-							ImageRef: common.ImageRefSpec{
+							ImageRef: image.Ref{
 								Repository: "a",
 							},
 						},
@@ -62,7 +62,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
-							ImageRef: common.ImageRefSpec{
+							ImageRef: image.Ref{
 								Tag: "b",
 							},
 						},

@@ -3,7 +3,7 @@ package activegate
 import (
 	"context"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
@@ -48,7 +48,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 			return nil
 		}
 
-		r.dk.Status.ActiveGate.ConnectionInfo = common.ConnectionInfo{}
+		r.dk.Status.ActiveGate.ConnectionInfo = communication.ConnectionInfo{}
 		query := k8ssecret.Query(r.client, r.apiReader, log)
 
 		err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.ActiveGate().GetTenantSecretName(), Namespace: r.dk.Namespace}})

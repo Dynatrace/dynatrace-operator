@@ -3,7 +3,7 @@ package oaconnectioninfo
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
@@ -19,7 +19,7 @@ func TestGetCommunicationHosts(t *testing.T) {
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: dynakube.OneAgentStatus{
 				ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
-					ConnectionInfo: common.ConnectionInfo{},
+					ConnectionInfo: communication.ConnectionInfo{},
 				},
 			},
 		},

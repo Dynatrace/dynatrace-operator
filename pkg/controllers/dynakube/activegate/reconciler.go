@@ -1,7 +1,7 @@
 package activegate
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
@@ -38,7 +38,7 @@ type Reconciler struct {
 	pullSecretReconciler              controllers.Reconciler
 	newStatefulsetReconcilerFunc      statefulset.NewReconcilerFunc
 	newCapabilityReconcilerFunc       capabilityInternal.NewReconcilerFunc
-	newCustomPropertiesReconcilerFunc func(customPropertiesOwnerName string, customPropertiesSource *common.ValueSource) controllers.Reconciler
+	newCustomPropertiesReconcilerFunc func(customPropertiesOwnerName string, customPropertiesSource *value.Source) controllers.Reconciler
 }
 
 var _ controllers.Reconciler = (*Reconciler)(nil)
@@ -67,7 +67,7 @@ func NewReconciler(clt client.Client, //nolint
 	connectionInfoReconciler := agconnectioninfo.NewReconciler(clt, apiReader, dtc, dk)
 	pullSecretReconciler := dtpullsecret.NewReconciler(clt, apiReader, dk, tokens)
 
-	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *common.ValueSource) controllers.Reconciler {
+	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *value.Source) controllers.Reconciler {
 		return customproperties.NewReconciler(clt, dk, customPropertiesOwnerName, customPropertiesSource)
 	}
 

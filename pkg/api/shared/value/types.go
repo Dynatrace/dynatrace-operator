@@ -1,7 +1,7 @@
-package common
+package value
 
 // +kubebuilder:object:generate=true
-type ValueSource struct {
+type Source struct {
 	// Raw value for given property.
 	// +nullable
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="property value",order=32,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}

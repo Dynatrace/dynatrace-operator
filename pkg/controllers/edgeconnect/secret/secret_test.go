@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/config"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
@@ -80,7 +80,7 @@ root_certificate_paths:
 				},
 				CaCertsRef:         "certs",
 				ServiceAccountName: "test",
-				Proxy: &common.ProxySpec{
+				Proxy: &proxy.Spec{
 					Host:    "proxy.com",
 					NoProxy: "*.internal.com",
 					Port:    443,

@@ -1,4 +1,4 @@
-package common
+package communication
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,16 +14,4 @@ type ConnectionInfo struct {
 
 	// Available connection endpoints
 	Endpoints string `json:"endpoints,omitempty"`
-}
-
-// +kubebuilder:object:generate=true
-type CommunicationHostStatus struct {
-	// Connection protocol
-	Protocol string `json:"protocol,omitempty"`
-
-	// Host domain
-	Host string `json:"host,omitempty"`
-
-	// Connection port
-	Port uint32 `json:"port,omitempty"`
 }

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -135,7 +135,7 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: dynakube.OneAgentStatus{
 				ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
-					ConnectionInfo: common.ConnectionInfo{
+					ConnectionInfo: communication.ConnectionInfo{
 						TenantUUID: "test-uuid",
 						Endpoints:  "https://endpoint1.com;https://endpoint2.com",
 					},
