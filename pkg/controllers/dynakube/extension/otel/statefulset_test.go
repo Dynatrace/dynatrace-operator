@@ -235,10 +235,16 @@ func TestEnvironmentVariables(t *testing.T) {
 				Key:                  consts.OtelcTokenSecretKey,
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
-		assert.Equal(t, corev1.EnvVar{Name: envCertDir, Value: customEecTLSCertificatePath}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterName, Value: dk.Name}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterUuid, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
-		assert.Equal(t, corev1.EnvVar{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
+		assert.Equal(t, corev1.EnvVar{Name: envEECDStoken, ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Name + consts.SecretSuffix},
+				Key:                  consts.OtelcTokenSecretKey,
+			},
+		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
+		assert.Equal(t, corev1.EnvVar{Name: envCertDir, Value: customEecTLSCertificatePath}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterName, Value: dk.Name}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterUuid, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
+		assert.Equal(t, corev1.EnvVar{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID}, statefulSet.Spec.Template.Spec.Containers[0].Env[11])
 	})
 	t.Run("environment variables with trustedCA", func(t *testing.T) {
 		dk := getTestDynakube()

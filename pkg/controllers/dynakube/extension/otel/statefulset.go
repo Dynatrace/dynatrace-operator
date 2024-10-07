@@ -42,6 +42,7 @@ const (
 	envOTLPgrpcPort       = "OTLP_GRPC_PORT"
 	envOTLPhttpPort       = "OTLP_HTTP_PORT"
 	envOTLPtoken          = "OTLP_TOKEN"
+	envEECDStoken         = "EEC_DS_TOKEN"
 	envTrustedCAs         = "TRUSTED_CAS"
 	envK8sClusterName     = "K8S_CLUSTER_NAME"
 	envK8sClusterUuid     = "K8S_CLUSTER_UID"
@@ -208,6 +209,13 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envOTLPgrpcPort, Value: defaultOLTPgrpcPort},
 		{Name: envOTLPhttpPort, Value: defaultOLTPhttpPort},
 		{Name: envOTLPtoken, ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Name + consts.SecretSuffix},
+				Key:                  consts.OtelcTokenSecretKey,
+			},
+		},
+		},
+		{Name: envEECDStoken, ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Name + consts.SecretSuffix},
 				Key:                  consts.OtelcTokenSecretKey,
