@@ -224,7 +224,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[2])
 		assert.Equal(t, corev1.EnvVar{Name: envShardId, ValueFrom: &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{
-				FieldPath: "metadata.labels['app.kubernetes.io/pod-index']",
+				FieldPath: "metadata.labels['apps.kubernetes.io/pod-index']",
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[3])
 		assert.Equal(t, corev1.EnvVar{Name: envOTLPgrpcPort, Value: defaultOLTPgrpcPort}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])

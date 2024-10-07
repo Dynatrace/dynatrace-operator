@@ -201,7 +201,7 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		},
 		{Name: envShardId, ValueFrom: &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{
-				FieldPath: "metadata.labels['app.kubernetes.io/pod-index']",
+				FieldPath: "metadata.labels['apps.kubernetes.io/pod-index']",
 			},
 		},
 		},
