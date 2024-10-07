@@ -6,50 +6,51 @@ This document outlines the distinct debugging requirements for various component
 
 ### CSI-Driver-server
 
-- **Run CSI driver executables on the node** for file system operations.
-- **Use Delve debugger**: Include it in the image build, remove `-s` and `-w` flags, allocate more RAM, change container command to use `dlv`, and forward debugger port to localhost.
+- **Run CSI driver executables on the node** for file system operations.
 - **Makefile commands**:
-  - `debug/prepare/csi-server`: Prepare for debugging.
-  - `debug/tunnel/csi-driver`: Open tunnel for debugging.
-  - `debug/remove/csi-server`: Remove debugging patches.
-- **IntelliJ setup**: Configure “Go Remote” with `localhost` and port `40000`, and set “On disconnect” to “Leave it running”.
+  - `make debug/build`: Build image with Delve included.
+  - `make debug/deploy`: Install image with necessary changes to deployments.
+  - `make debug/tunnel`: Open tunnel from local machine to CSI driver pod.
+- **IntelliJ setup**: Configure "Go Remote" with `localhost` and port `40000`, and set "On disconnect" to "Leave it running".
 - **VSCode:** Add a debug configuration to "Connect to Server" with `127.0.0.1` as the host and `40000` as the port, and set "remotePath" to `github.com/Dynatrace/dynatrace-operator`.
 
 ### CSI-driver-provisioner
 
 - **Same steps as CSI-Driver-server**:
-  - `make debug/prepare/csi-provisioner`
-  - `debug/tunnel/csi-driver`
-  - Same IntelliJ & VSCode debug configuration than previously.
+  - Same IntelliJ & VSCode debug configuration than previously, but **port changes to** `40001`.
 
 ### Operator main code
 
-- **Run operator locally** on your machine.
+- **Run operator locally** on your machine.
 - **Debugging steps**:
-  - Scale down cluster operator: `kubectl -n dynatrace scale --replicas 0 deployment/dynatrace-operator`
-  - Run locally with `POD_NAMESPACE=dynatrace RUN_LOCAL=true`.
-  - **IntelliJ setup**: Create debug configuration, use `go build`, set directory to `./cmd`, program arguments to `operator`, and set env variables.
+  - Scale down cluster operator: `kubectl -n dynatrace scale --replicas 0 deployment/dynatrace-operator`
+  - Run locally with `POD_NAMESPACE=dynatrace RUN_LOCAL=true`.
+  - **IntelliJ setup**: Create debug configuration, use `go build`, set directory to `./cmd`, program arguments to `operator`, and set env variables.
   - **VSCode:** Add a new debug configuration using 'Go: Launch package', set the program to `${workspaceFolder}/cmd/main.go`, environment variables to `POD_NAMESPACE=dynatrace RUN_LOCAL=true`, and arguments to `operator`.
   - **In the terminal**: `make debug/operator` to run the operator locally.
+- **After debugging**:
+  - Scale up cluster operator: `kubectl -n dynatrace scale --replicas 1 deployment/dynatrace-operator`.
 
 ### Webhook
 
-- **Run webhook locally** using Telepresence.
+- **Run webhook locally** using Telepresence.
 - **Steps**:
-  - Remove `securityContext` in Helm values.
-  - Install operator in cluster.
-  - Install Telepresence daemon: `telepresence helm install`.
-  - Connect to cluster: `telepresence connect -n dynatrace`.
-  - Intercept webhook requests: `telepresence intercept dynatrace-webhook --port 8443 --env-file ./local/telepresence.env`.
-  - Start webhook locally in debug mode with env vars from `local/telepresence.env`.
-  - **IntelliJ setup**: Install `EnvFile` extension, configure run/debug with `go build`, set directory to `./cmd`, and program arguments to `webhook-server --certs-dir=./local/certs/`.
+  - Make sure Telepresence is installed
+  - `make debug/build`
+  - `make debug/deploy`
+  - Install and setup : `make debug/telepresence/install`.
+  - All request sent to the service are tunneled to the local port 8443.
+  - Start webhook locally in debug mode with env vars from `local/telepresence.env`.
+  - **IntelliJ setup**: Install `EnvFile` extension, configure run/debug with `go build`, set directory to `./cmd`, and program arguments to `webhook-server --certs-dir=./local/certs/`.
   - **In VSCode**: Add debug configuration with env file set to `${workspaceFolder}/local/telepresence.env` and args set to `webhook-server --certs-dir=./local/certs/`
-  - Stop Telepresence with `telepresence quit`.
-  - Uninstall telepresence from cluster: `telepresence helm uninstall`
+  - **In terminal**: `make debug/webhook` to start debugging.
+  - When done:
+    - Remove tunnel: `make debug/telepresence/stop`
+    - Remove all deployed debugging changes: `make install`
 
 ### Init-Container
 
-- **Delve debugger injection** is not possible due to port-forwarding limitations.
+- **Delve debugger injection** is not possible due to port-forwarding limitations.
 
 ## Longer version
 
@@ -64,26 +65,36 @@ This document outlines the distinct debugging requirements for various component
   - Change the container command to use `dlv`, which then starts up the actual operator code.
   - Forward the debugger port to localhost.
 - To simplify these steps, I created Makefile commands:
-  - `debug/prepare/csi-server`: Patches all files so you have enough RAM and the debugger is included when building.
-  - `debug/tunnel/csi-driver`: Opens a tunnel between the debugger and your PC. This must run while debugging.
-  - `debug/remove/csi-server`: Removes the patches from before.
+  - `debug/build`: Builds the image with Delve included.
+  - `debug/deploy`: Install the image into the cluster. In addition, it
+    - Removes the security context from the webhook pod, as Telepresence would copy it and fail.
+    - Scales down the webhook pod to 1 replica.
+    - Removes the limits from the CSI driver containers, as Delve requires more RAM.
+    - Changes the startup command for the CSI driver to use Delve.
+  - `debug/tunnel`: Opens a tunnel from your local machine to the CSI driver pod, so your IDE can connect to it.
 - After that, just use it in your IDE:
   - IntelliJ:
-    - Add a new debug configuration for “Go Remote”.
+    - Add a new debug configuration for "Go Remote".
     - Enter `localhost` as the host and `40000` as the port.
-    - Set “On disconnect” to “Leave it running”.
+    - Set "On disconnect" to "Leave it running".
   - VSCode:
     - Add a debug configuration.
-    - Go to “Connect to Server”.
+    - Go to "Connect to Server".
     - Enter `127.0.0.1` as the host and `40000` as the port.
-    - Change “remotePath” to “github.com/Dynatrace/dynatrace-operator”.
+    - Change "remotePath" to "github.com/Dynatrace/dynatrace-operator".
+- When you are done
+  - Remove the debugging patches with `make install`.
+  - Turn off the tunnel with `make debug/tunnel/stop`
 
 ### CSI-Driver Provisioner
 
 - The same steps as for the server:
-  - `make debug/prepare/csi-provisioner`
-  - `debug/tunnel/csi-driver`
-  - Use the same debug configuration as for the server.
+- Makefile commands:
+  - `debug/build`: Builds the image with Delve included.
+  - `debug/deploy`: Install the image into the cluster.
+  - `debug/tunnel`: Opens a tunnel from your local machine to the CSI driver pod.
+- After that, just use it in your IDE:
+  - Same as before, but **change the port** to `40001`.
 
 ### Operator Main Code
 
@@ -125,12 +136,14 @@ This document outlines the distinct debugging requirements for various component
 - There is a useful tunneling application called Telepresence that does exactly that for us.
   - The following steps require Telepresence, which you can [download here](https://www.telepresence.io/docs/install/client).
   - To install:
-    - **Remove the securityContext** in the Helm values YAML file.
-      - The problem is that Telepresence would copy it and fail.
-    - Ensure that you have installed the operator into the cluster as usual.
-    - Install their daemon in your cluster: `telepresence helm install`.
-    - Connect to the cluster: `telepresence connect -n dynatrace`.
-    - Intercept the request to the webhook: `telepresence intercept dynatrace-webhook --port 8443 --env-file telepresence.env`.
+    - `make debug/build`: Not necessary for the webhook, but the next command will also inject the debugger into the CSI driver, so a debug build is required.
+    - `make debug/deploy`: Install the image with necessary changes to deployments.
+      - This scales down the webhook to 1 replica.
+      - It removes the security context from the webhook pod, as Telepresence would copy it and fail.
+    - `make debug/telepresence/install`:
+      - Install the Telepresence daemon in your cluster.
+      - Connect to the cluster.
+      - Intercept the request to the webhook.
     - Start the webhook locally in debug mode.
       - You have to add the environment variables in `local/telepresence.env`.
       - In IntelliJ:
