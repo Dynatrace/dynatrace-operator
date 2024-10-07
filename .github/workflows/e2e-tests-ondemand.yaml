@@ -80,7 +80,7 @@ jobs:
         with:
           payload: |
             {
-              "message": "ONDEMAND\ntests ${{needs.run-in-k8s.result == 'success' && 'passed :green_heavy_check_mark:' || 'failed :red_circle:'}} on kubernetes :kubernetes:\ntests ${{needs.run-in-ocp.result == 'success' && 'passed :green_heavy_check_mark:' || 'failed :red_circle:'}} on openshift :openshift:\n using ${{ env.branch }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})",
+              "message": ":x: E2E ondemand tests failed on ${{ env.branch }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})",
               "run_id": "${{ github.run_id }}"
             }
         env:
