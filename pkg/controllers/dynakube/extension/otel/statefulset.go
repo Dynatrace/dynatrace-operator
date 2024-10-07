@@ -212,8 +212,13 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Name + consts.SecretSuffix},
 				Key:                  consts.OtelcTokenSecretKey,
 			},
-		},
-		},
+		}},
+		{Name: "EEC_DS_TOKEN", ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Name + consts.SecretSuffix},
+				Key:                  consts.OtelcTokenSecretKey,
+			},
+		}},
 		{Name: envCertDir, Value: customEecTLSCertificatePath},
 		{Name: envK8sClusterName, Value: dk.Name},
 		{Name: envK8sClusterUuid, Value: dk.Status.KubeSystemUUID},
