@@ -41,7 +41,7 @@ func (ag *Spec) IsEnabled() bool {
 	return len(ag.Capabilities) > 0 || ag.enabledDependencies.Any()
 }
 
-func (ag *Spec) IsActiveGateMode(mode CapabilityDisplayName) bool {
+func (ag *Spec) IsMode(mode CapabilityDisplayName) bool {
 	for _, capability := range ag.Capabilities {
 		if capability == mode {
 			return true
@@ -64,19 +64,19 @@ func (ag *Spec) GetServiceAccountName() string {
 }
 
 func (ag *Spec) IsKubernetesMonitoringEnabled() bool {
-	return ag.IsActiveGateMode(KubeMonCapability.DisplayName)
+	return ag.IsMode(KubeMonCapability.DisplayName)
 }
 
 func (ag *Spec) IsRoutingEnabled() bool {
-	return ag.IsActiveGateMode(RoutingCapability.DisplayName)
+	return ag.IsMode(RoutingCapability.DisplayName)
 }
 
 func (ag *Spec) IsApiEnabled() bool {
-	return ag.IsActiveGateMode(DynatraceApiCapability.DisplayName)
+	return ag.IsMode(DynatraceApiCapability.DisplayName)
 }
 
 func (ag *Spec) IsMetricsIngestEnabled() bool {
-	return ag.IsActiveGateMode(MetricsIngestCapability.DisplayName)
+	return ag.IsMode(MetricsIngestCapability.DisplayName)
 }
 
 func (ag *Spec) NeedsService() bool {

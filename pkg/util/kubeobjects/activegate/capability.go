@@ -6,7 +6,7 @@ import (
 )
 
 func SwitchCapability(dk *dynakube.DynaKube, capability activegate.Capability, wantEnabled bool) {
-	hasEnabled := dk.ActiveGate().IsActiveGateMode(capability.DisplayName)
+	hasEnabled := dk.ActiveGate().IsMode(capability.DisplayName)
 	capabilities := &dk.Spec.ActiveGate.Capabilities
 
 	if wantEnabled && !hasEnabled {
