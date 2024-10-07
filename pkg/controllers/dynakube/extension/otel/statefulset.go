@@ -28,12 +28,11 @@ const (
 	containerName      = "collector"
 
 	// default values
-	defaultImageRepo     = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
-	defaultImageTag      = "latest"
-	defaultOLTPgrpcPort  = "10001"
-	defaultOLTPhttpPort  = "10002"
-	defaultPodNamePrefix = "extensions-collector"
-	defaultReplicas      = 1
+	defaultImageRepo    = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
+	defaultImageTag     = "latest"
+	defaultOLTPgrpcPort = "10001"
+	defaultOLTPhttpPort = "10002"
+	defaultReplicas     = 1
 
 	// env variables
 	envShards             = "SHARDS"
@@ -193,7 +192,7 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	envs := []corev1.EnvVar{
 		{Name: envShards, Value: strconv.Itoa(int(getReplicas(dk)))},
-		{Name: envPodNamePrefix, Value: defaultPodNamePrefix},
+		{Name: envPodNamePrefix, Value: dk.ExtensionsCollectorStatefulsetName()},
 		{Name: envPodName, ValueFrom: &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{
 				FieldPath: "metadata.labels['statefulset.kubernetes.io/pod-name']",
@@ -202,7 +201,7 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		},
 		{Name: envShardId, ValueFrom: &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{
-				FieldPath: "metadata.labels['app.kubernetes.io/pod-index']",
+				FieldPath: "metadata.labels['apps.kubernetes.io/pod-index']",
 			},
 		},
 		},
