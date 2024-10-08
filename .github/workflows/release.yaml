@@ -232,7 +232,7 @@ jobs:
           registry-type: public
       - name: Create sbom for ${{matrix.registry}}
         id: sbom
-        uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8 # 0.24.0
+        uses: aquasecurity/trivy-action@f781cce5aab226378ee181d764ab90ea0be3cdd8 # 0.25.0
         with:
           image-ref: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.manifest.outputs.digest }}
           format: 'cyclonedx'
