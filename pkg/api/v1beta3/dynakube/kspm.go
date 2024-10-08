@@ -10,6 +10,10 @@ type KspmSpec struct {
 }
 
 type KspmNodeConfigurationCollectorSpec struct {
+
+	// Define the NodeConfigurationCollector daemonSet updateStrategy
+	// +kubebuilder:validation:Optional
+	UpdateStrategy appsv1.DaemonSetUpdateStrategy `json:"updateStrategy,omitempty"`
 	// Adds additional labels for the NodeConfigurationCollector pods
 	// +kubebuilder:validation:Optional
 	Labels map[string]string `json:"labels,omitempty"`
@@ -18,30 +22,30 @@ type KspmNodeConfigurationCollectorSpec struct {
 	// +kubebuilder:validation:Optional
 	Annotations map[string]string `json:"annotations,omitempty"`
 
+	// Specify the node selector that controls on which nodes NodeConfigurationCollector pods will be deployed.
+	// +kubebuilder:validation:Optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
 	// Overrides the default image
 	// +kubebuilder:validation:Optional
 	ImageRef ImageRefSpec `json:"imageRef,omitempty"`
-
-	// Define the nodeAffinity for the DaemonSet of the NodeConfigurationCollector
-	// +kubebuilder:validation:Optional
-	NodeAffinity corev1.NodeAffinity `json:"nodeAffinity,omitempty"`
-
-	// Define resources' requests and limits for single NodeConfigurationCollector pod
-	// +kubebuilder:validation:Optional
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
-
-	// Set tolerations for the NodeConfigurationCollector pods
-	// +kubebuilder:validation:Optional
-	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
 	// If specified, indicates the pod's priority. Name must be defined by creating a PriorityClass object with that
 	// name. If not specified the setting will be removed from the DaemonSet.
 	// +kubebuilder:validation:Optional
 	PriorityClassName string `json:"priorityClassName,omitempty"`
 
-	// Specify the node selector that controls on which nodes NodeConfigurationCollector pods will be deployed.
+	// Define resources' requests and limits for single NodeConfigurationCollector pod
 	// +kubebuilder:validation:Optional
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Define the nodeAffinity for the DaemonSet of the NodeConfigurationCollector
+	// +kubebuilder:validation:Optional
+	NodeAffinity corev1.NodeAffinity `json:"nodeAffinity,omitempty"`
+
+	// Set tolerations for the NodeConfigurationCollector pods
+	// +kubebuilder:validation:Optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
 	// Set additional arguments to the NodeConfigurationCollector pods
 	// +kubebuilder:validation:Optional
@@ -50,8 +54,4 @@ type KspmNodeConfigurationCollectorSpec struct {
 	// Set additional environment variables for the NodeConfigurationCollector pods
 	// +kubebuilder:validation:Optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
-
-	// Define the NodeConfigurationCollector daemonSet updateStrategy
-	// +kubebuilder:validation:Optional
-	UpdateStrategy appsv1.DaemonSetUpdateStrategy `json:"updateStrategy,omitempty"`
 }
