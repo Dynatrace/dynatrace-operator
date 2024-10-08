@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	diagLogCollectorName = "diagLogCollector"
+	diagLogCollectorName = "fsLogCollector"
 	eecExtensionsPath    = "/var/lib/dynatrace/remotepluginmodule/log/extensions"
 	fileNotFoundMarker   = "<NOT FOUND>"
 	EecPodName           = "dynatrace-extensions-controller"
@@ -36,7 +36,7 @@ type executionResult struct {
 	StdErr *bytes.Buffer
 }
 
-type diagLogCollector struct {
+type fsLogCollector struct {
 	ctx    context.Context
 	pods   clientgocorev1.PodInterface
 	config *rest.Config
@@ -49,8 +49,8 @@ var (
 	eecPodNotFoundError = errors.New("eec pod not found")
 )
 
-func newDiagLogCollector(context context.Context, config *rest.Config, log logd.Logger, supportArchive archiver, pods clientgocorev1.PodInterface, appName string, collectManagedLogs bool) collector { //nolint:revive
-	return diagLogCollector{
+func newFsLogCollector(context context.Context, config *rest.Config, log logd.Logger, supportArchive archiver, pods clientgocorev1.PodInterface, appName string, collectManagedLogs bool) collector { //nolint:revive
+	return fsLogCollector{
 		collectorCommon: collectorCommon{
 			log:            log,
 			supportArchive: supportArchive,
@@ -63,11 +63,11 @@ func newDiagLogCollector(context context.Context, config *rest.Config, log logd.
 	}
 }
 
-func (collector diagLogCollector) Name() string {
+func (collector fsLogCollector) Name() string {
 	return diagLogCollectorName
 }
 
-func (collector diagLogCollector) getControllerPodList() (*corev1.PodList, error) {
+func (collector fsLogCollector) getControllerPodList() (*corev1.PodList, error) {
 	ls := metav1.LabelSelector{
 		MatchLabels: map[string]string{
 			labels.AppNameLabel:      EecPodName,
@@ -102,7 +102,7 @@ func (collector diagLogCollector) getControllerPodList() (*corev1.PodList, error
 	return podList, nil
 }
 
-func (collector diagLogCollector) Do() error {
+func (collector fsLogCollector) Do() error {
 	if !installconfig.GetModules().Supportability {
 		logInfof(collector.log, "%s", installconfig.GetModuleValidationErrorMessage("EEC Diagnostic Log Collection"))
 
@@ -138,7 +138,7 @@ func (collector diagLogCollector) Do() error {
 	return nil
 }
 
-func (collector diagLogCollector) findLogFilesRecursively(podName string, podNamespace string, rootPath string) ([]string, error) {
+func (collector fsLogCollector) findLogFilesRecursively(podName string, podNamespace string, rootPath string) ([]string, error) {
 	command := []string{"/usr/bin/sh", "-c", "if [ -d '" + rootPath + "' ]; then ls -R1 '" + rootPath + "' ; else echo '" + fileNotFoundMarker + "' ; fi"}
 
 	executionResult, err := collector.executeRemoteCommand(collector.ctx, podName, podNamespace, eecContainerName, command)
@@ -208,7 +208,7 @@ func (collector diagLogCollector) findLogFilesRecursively(podName string, podNam
 	return logFiles, nil
 }
 
-func (collector diagLogCollector) copyDiagnosticFile(podName string, podNamespace string, eecDiagLogPath string) error {
+func (collector fsLogCollector) copyDiagnosticFile(podName string, podNamespace string, eecDiagLogPath string) error {
 	command := []string{"/usr/bin/sh", "-c", "[ -e " + eecDiagLogPath + " ] && cat " + eecDiagLogPath + " || echo '" + fileNotFoundMarker + "'"}
 
 	executionResult, err := collector.executeRemoteCommand(collector.ctx, podName, podNamespace, eecContainerName, command)
@@ -237,7 +237,7 @@ func BuildZipFilePath(podName string, fileName string) string {
 	return fmt.Sprintf("%s/%s/%s", LogsDirectoryName, podName, fileName)
 }
 
-func (collector diagLogCollector) executeRemoteCommand(ctx context.Context, podName string, podNamespace string, containerName string, command []string) (*executionResult, error) {
+func (collector fsLogCollector) executeRemoteCommand(ctx context.Context, podName string, podNamespace string, containerName string, command []string) (*executionResult, error) {
 	sch := scheme.Scheme
 	parameterCodec := scheme.ParameterCodec
 
