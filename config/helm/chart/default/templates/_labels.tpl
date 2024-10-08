@@ -130,5 +130,5 @@ KSPM labels
 */}}
 {{- define "dynatrace-operator.kspmLabels" -}}
 {{ include "dynatrace-operator.commonLabels" . }}
-app.kubernetes.io/component: kspm
+app.kubernetes.io/component: node-config-collector
 {{- end -}}
