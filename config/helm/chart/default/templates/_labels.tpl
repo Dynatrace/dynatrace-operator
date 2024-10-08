@@ -126,9 +126,9 @@ app.kubernetes.io/component: logmodule
 {{- end -}}
 
 {{/*
-KSPM labels
+Node-config-collector labels
 */}}
-{{- define "dynatrace-operator.kspmLabels" -}}
+{{- define "dynatrace-operator.nodeConfigCollectorLabels" -}}
 {{ include "dynatrace-operator.commonLabels" . }}
 app.kubernetes.io/component: node-config-collector
 {{- end -}}

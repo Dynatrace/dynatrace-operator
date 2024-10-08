@@ -210,6 +210,6 @@ rbac:
   oneAgent:
     create: true
     annotations: {}
-  kspm:
+  nodeConfigCollector:
     create: true
     annotations: {}
