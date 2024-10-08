@@ -2,6 +2,8 @@ package oneagent
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
@@ -55,11 +57,10 @@ func (mut *Mutator) Injected(request *dtwebhook.BaseRequest) bool {
 }
 
 func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationRequest) error {
-	if !request.DynaKube.IsOneAgentCommunicationRouteClear() {
-		log.Info("OneAgent were not yet able to communicate with tenant, no direct route or ready ActiveGate available, code modules have not been injected.")
-		setNotInjectedAnnotations(request.Pod, dtwebhook.EmptyConnectionInfoReason)
+	if ok, reason := mut.isInjectionPossible(request); !ok {
+		setNotInjectedAnnotations(request.Pod, reason)
 
-		return nil
+		return fmt.Errorf("injection into pod '%s' not possible: %s", request.PodName(), reason)
 	}
 
 	log.Info("injecting OneAgent into pod", "podName", request.PodName())
@@ -110,6 +111,37 @@ func (mut *Mutator) ensureInitSecret(request *dtwebhook.MutationRequest) error {
 	}
 
 	return nil
+}
+
+func (mut *Mutator) isInjectionPossible(request *dtwebhook.MutationRequest) (bool, string) {
+	reasons := []string{}
+
+	status := request.DynaKube.Status
+
+	_, err := request.DynaKube.TenantUUIDFromConnectionInfoStatus()
+	if err != nil {
+		log.Info("tenant UUID is not available, OneAgent cannot be injected", "pod", request.PodName())
+
+		reasons = append(reasons, EmptyTenantUUIDReason)
+	}
+
+	if !request.DynaKube.IsOneAgentCommunicationRouteClear() {
+		log.Info("OneAgent communication route is not clear, OneAgent cannot be injected", "pod", request.PodName())
+
+		reasons = append(reasons, EmptyConnectionInfoReason)
+	}
+
+	if status.CodeModules.Version == "" {
+		log.Info("code modules version is not available, OneAgent cannot be injected", "pod", request.PodName())
+
+		reasons = append(reasons, EmptyCodeModulesVersionReason)
+	}
+
+	if len(reasons) > 0 {
+		return false, strings.Join(reasons, ", ")
+	}
+
+	return true, ""
 }
 
 func ContainerIsInjected(container corev1.Container) bool {
