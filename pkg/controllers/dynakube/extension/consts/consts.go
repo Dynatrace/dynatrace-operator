@@ -12,8 +12,6 @@ const (
 	OtelcTokenSecretKey         = "otelc.token"
 	OtelcTokenSecretValuePrefix = "dt0x01"
 
-	SecretSuffix = "-extensions-token"
-
 	// shared volume name between eec and OtelC
 	ExtensionsTokensVolumeName = "tokens"
 

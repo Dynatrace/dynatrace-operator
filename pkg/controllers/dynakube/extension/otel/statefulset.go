@@ -210,14 +210,14 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envOTLPhttpPort, Value: defaultOLTPhttpPort},
 		{Name: envOTLPtoken, ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Name + consts.SecretSuffix},
+				LocalObjectReference: corev1.LocalObjectReference{Name: dk.ExtensionsTokenSecretName()},
 				Key:                  consts.OtelcTokenSecretKey,
 			},
 		},
 		},
 		{Name: envEECDStoken, ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Name + consts.SecretSuffix},
+				LocalObjectReference: corev1.LocalObjectReference{Name: dk.ExtensionsTokenSecretName()},
 				Key:                  consts.OtelcTokenSecretKey,
 			},
 		},
@@ -272,7 +272,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Name + consts.SecretSuffix,
+						SecretName: dk.ExtensionsTokenSecretName(),
 						Items: []corev1.KeyToPath{
 							{
 								Key:  consts.OtelcTokenSecretKey,

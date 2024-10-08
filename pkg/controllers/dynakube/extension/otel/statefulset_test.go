@@ -231,13 +231,13 @@ func TestEnvironmentVariables(t *testing.T) {
 		assert.Equal(t, corev1.EnvVar{Name: envOTLPhttpPort, Value: defaultOLTPhttpPort}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
 		assert.Equal(t, corev1.EnvVar{Name: envOTLPtoken, ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Name + consts.SecretSuffix},
+				LocalObjectReference: corev1.LocalObjectReference{Name: dk.ExtensionsTokenSecretName()},
 				Key:                  consts.OtelcTokenSecretKey,
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
 		assert.Equal(t, corev1.EnvVar{Name: envEECDStoken, ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Name + consts.SecretSuffix},
+				LocalObjectReference: corev1.LocalObjectReference{Name: dk.ExtensionsTokenSecretName()},
 				Key:                  consts.OtelcTokenSecretKey,
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
@@ -511,7 +511,7 @@ func TestVolumes(t *testing.T) {
 			Name: consts.ExtensionsTokensVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: dk.Name + consts.SecretSuffix,
+					SecretName: dk.ExtensionsTokenSecretName(),
 					Items: []corev1.KeyToPath{
 						{
 							Key:  consts.OtelcTokenSecretKey,

@@ -713,7 +713,7 @@ func TestVolumes(t *testing.T) {
 				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Name + consts.SecretSuffix,
+						SecretName:  dk.ExtensionsTokenSecretName(),
 						DefaultMode: &mode,
 					},
 				},
@@ -767,7 +767,7 @@ func TestVolumes(t *testing.T) {
 				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Name + consts.SecretSuffix,
+						SecretName:  dk.ExtensionsTokenSecretName(),
 						DefaultMode: &mode,
 					},
 				},
@@ -809,7 +809,7 @@ func TestVolumes(t *testing.T) {
 				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Name + consts.SecretSuffix,
+						SecretName:  dk.ExtensionsTokenSecretName(),
 						DefaultMode: &mode,
 					},
 				},
