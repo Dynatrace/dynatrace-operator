@@ -822,11 +822,11 @@ spec:
                 description: Overrides the default image
                 properties:
                   repository:
-                    description: Custom EdgeConnect image repository
-                    example: docker.io/dynatrace/edgeconnect
+                    description: Custom image repository
+                    example: docker.io/dynatrace/image-name
                     type: string
                   tag:
-                    description: Indicates version of the EdgeConnect image to use
+                    description: Indicates a tag of the image to use
                     type: string
                 type: object
               kubernetesAutomation:
