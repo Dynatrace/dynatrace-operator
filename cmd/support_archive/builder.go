@@ -35,8 +35,6 @@ const (
 	loadsimFilesFlagName           = "loadsim-files"
 	collectManagedLogsFlagName     = "managed-logs"
 	defaultSimFileSize             = 10
-	installConfigMap               = "install-config"
-	supportabilityField            = "supportability"
 )
 
 const (
@@ -176,7 +174,7 @@ func (builder CommandBuilder) runCollectors(log logd.Logger, supportArchive arch
 	collectors := []collector{
 		newOperatorVersionCollector(log, supportArchive),
 		newLogCollector(ctx, log, supportArchive, pods, appName, collectManagedLogsFlagValue),
-		newDiagLogCollector(ctx, kubeConfig, log, supportArchive, pods, appName, collectManagedLogsFlagValue),
+		newFsLogCollector(ctx, kubeConfig, log, supportArchive, pods, appName, collectManagedLogsFlagValue),
 		newK8sObjectCollector(ctx, log, supportArchive, namespaceFlagValue, appName, apiReader, discoveryClient),
 		newTroubleshootCollector(ctx, log, supportArchive, namespaceFlagValue, apiReader, *kubeConfig),
 		newLoadSimCollector(ctx, log, supportArchive, fileSize, loadsimFilesFlagValue, clientSet.CoreV1().Pods(namespaceFlagValue)),
