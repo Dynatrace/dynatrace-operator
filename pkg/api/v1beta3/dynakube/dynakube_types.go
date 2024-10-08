@@ -188,6 +188,10 @@ type DynaKubeSpec struct { //nolint:revive
 	// General configuration about the LogModule feature.
 	// +kubebuilder:validation:Optional
 	LogModule LogModuleSpec `json:"logModule,omitempty"`
+
+	// General configuration about the KSPM feature.
+	// +kubebuilder:validation:Optional
+	Kspm KspmSpec `json:"kspm,omitempty"`
 }
 
 type TemplatesSpec struct {
@@ -198,6 +202,8 @@ type TemplatesSpec struct {
 	// Low-level configuration options for the LogModule feature.
 	// +kubebuilder:validation:Optional
 	LogModule LogModuleTemplateSpec `json:"logModule,omitempty"`
+	// +kubebuilder:validation:Optional
+	KspmNodeConfigurationCollector KspmNodeConfigurationCollectorSpec `json:"kspmNodeConfigurationCollector,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
