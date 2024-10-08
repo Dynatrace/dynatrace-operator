@@ -124,3 +124,11 @@ LogAgent labels
 {{ include "dynatrace-operator.commonLabels" . }}
 app.kubernetes.io/component: logmodule
 {{- end -}}
+
+{{/*
+KSPM labels
+*/}}
+{{- define "dynatrace-operator.kspmLabels" -}}
+{{ include "dynatrace-operator.commonLabels" . }}
+app.kubernetes.io/component: kspm
+{{- end -}}
