@@ -45,7 +45,12 @@ func (src *EdgeConnect) toSpec(dst *edgeconnect.EdgeConnect) {
 	dst.Spec.ImageRef.Tag = src.Spec.ImageRef.Tag
 	dst.Spec.ImageRef.Repository = src.Spec.ImageRef.Repository
 	dst.Spec.ApiServer = src.Spec.ApiServer
-	dst.Spec.HostRestrictions = strings.Split(src.Spec.HostRestrictions, ",")
+
+	// Note: strings.Split returns [""] if we apply it to empty "" string
+	if src.Spec.HostRestrictions != "" {
+		dst.Spec.HostRestrictions = strings.Split(src.Spec.HostRestrictions, ",")
+	}
+
 	dst.Spec.CustomPullSecret = src.Spec.CustomPullSecret
 	dst.Spec.CaCertsRef = src.Spec.CaCertsRef
 	dst.Spec.ServiceAccountName = src.Spec.ServiceAccountName
