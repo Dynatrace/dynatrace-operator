@@ -54,7 +54,7 @@ def main():
                 description=clean_description(raw_desc),
                 default=obj.get("default", "-"),
             )
-        res.append(template)
+            res.append(template)
         print("\n".join(res))
 
 
