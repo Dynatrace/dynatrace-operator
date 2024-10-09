@@ -3,7 +3,10 @@
 package dynakube
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -54,12 +57,12 @@ func WithApiUrl(apiUrl string) Option {
 
 func WithActiveGate() Option {
 	return func(dk *dynakube.DynaKube) {
-		dk.Spec.ActiveGate = dynakube.ActiveGateSpec{
-			Capabilities: []dynakube.CapabilityDisplayName{
-				dynakube.KubeMonCapability.DisplayName,
-				dynakube.DynatraceApiCapability.DisplayName,
-				dynakube.RoutingCapability.DisplayName,
-				dynakube.MetricsIngestCapability.DisplayName,
+		dk.Spec.ActiveGate = activegate.Spec{
+			Capabilities: []activegate.CapabilityDisplayName{
+				activegate.KubeMonCapability.DisplayName,
+				activegate.DynatraceApiCapability.DisplayName,
+				activegate.RoutingCapability.DisplayName,
+				activegate.MetricsIngestCapability.DisplayName,
 			},
 		}
 	}
@@ -121,7 +124,7 @@ func WithOneAgentNamespaceSelector(selector metav1.LabelSelector) Option {
 	}
 }
 
-func WithProxy(proxy *dynakube.DynaKubeProxy) Option {
+func WithProxy(proxy *value.Source) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.Proxy = proxy
 	}
@@ -159,7 +162,7 @@ func WithExtensionsEnabledSpec(promEnabled bool) Option {
 
 func WithExtensionsEECImageRefSpec(repo, tag string) Option {
 	return func(dk *dynakube.DynaKube) {
-		dk.Spec.Templates.ExtensionExecutionController.ImageRef = dynakube.ImageRefSpec{
+		dk.Spec.Templates.ExtensionExecutionController.ImageRef = image.Ref{
 			Repository: repo,
 			Tag:        tag,
 		}

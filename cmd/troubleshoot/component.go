@@ -45,11 +45,11 @@ func (c component) getImage(dk *dynakube.DynaKube) (string, bool) {
 	case componentCodeModules:
 		return dk.CustomCodeModulesImage(), true
 	case componentActiveGate:
-		if dk.CustomActiveGateImage() != "" {
-			return dk.CustomActiveGateImage(), true
+		if dk.ActiveGate().GetCustomImage() != "" {
+			return dk.ActiveGate().GetCustomImage(), true
 		}
 
-		return dk.ActiveGateImage(), false
+		return dk.ActiveGate().GetImage(), false
 	}
 
 	return "", false

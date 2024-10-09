@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -259,7 +261,7 @@ func (builder *testDynaKubeBuilder) withCustomPullSecret(secretName string) *tes
 }
 
 func (builder *testDynaKubeBuilder) withProxy(proxyURL string) *testDynaKubeBuilder {
-	builder.dynakube.Spec.Proxy = &dynakube.DynaKubeProxy{
+	builder.dynakube.Spec.Proxy = &value.Source{
 		Value: proxyURL,
 	}
 
@@ -267,20 +269,20 @@ func (builder *testDynaKubeBuilder) withProxy(proxyURL string) *testDynaKubeBuil
 }
 
 func (builder *testDynaKubeBuilder) withProxySecret(secretName string) *testDynaKubeBuilder {
-	builder.dynakube.Spec.Proxy = &dynakube.DynaKubeProxy{
+	builder.dynakube.Spec.Proxy = &value.Source{
 		ValueFrom: secretName,
 	}
 
 	return builder
 }
 
-func (builder *testDynaKubeBuilder) withActiveGateCapability(capability dynakube.CapabilityDisplayName) *testDynaKubeBuilder {
+func (builder *testDynaKubeBuilder) withActiveGateCapability(capability activegate.CapabilityDisplayName) *testDynaKubeBuilder {
 	if builder.dynakube.Spec.ActiveGate.Capabilities == nil {
-		builder.dynakube.Spec.ActiveGate.Capabilities = make([]dynakube.CapabilityDisplayName, 0)
+		builder.dynakube.Spec.ActiveGate.Capabilities = make([]activegate.CapabilityDisplayName, 0)
 	}
 
 	builder.dynakube.Spec.ActiveGate.Capabilities = append(builder.dynakube.Spec.ActiveGate.Capabilities, capability)
-	builder.dynakube.Status.ActiveGate.ImageID = builder.dynakube.DefaultActiveGateImage(testVersion)
+	builder.dynakube.Status.ActiveGate.ImageID = builder.dynakube.ActiveGate().GetDefaultImage(testVersion)
 
 	return builder
 }

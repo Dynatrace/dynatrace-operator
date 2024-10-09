@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -12,15 +13,15 @@ import (
 func TestDuplicateActiveGateCapabilities(t *testing.T) {
 	t.Run(`conflicting dynakube specs`, func(t *testing.T) {
 		assertDenied(t,
-			[]string{fmt.Sprintf(errorDuplicateActiveGateCapability, dynakube.RoutingCapability.DisplayName)},
+			[]string{fmt.Sprintf(errorDuplicateActiveGateCapability, activegate.RoutingCapability.DisplayName)},
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					ActiveGate: dynakube.ActiveGateSpec{
-						Capabilities: []dynakube.CapabilityDisplayName{
-							dynakube.RoutingCapability.DisplayName,
-							dynakube.RoutingCapability.DisplayName,
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.RoutingCapability.DisplayName,
+							activegate.RoutingCapability.DisplayName,
 						},
 					},
 				},
@@ -36,8 +37,8 @@ func TestInvalidActiveGateCapabilities(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					ActiveGate: dynakube.ActiveGateSpec{
-						Capabilities: []dynakube.CapabilityDisplayName{
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
 							"invalid-capability",
 						},
 					},
@@ -53,11 +54,11 @@ func TestMissingActiveGateMemoryLimit(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					ActiveGate: dynakube.ActiveGateSpec{
-						Capabilities: []dynakube.CapabilityDisplayName{
-							dynakube.RoutingCapability.DisplayName,
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.RoutingCapability.DisplayName,
 						},
-						CapabilityProperties: dynakube.CapabilityProperties{
+						CapabilityProperties: activegate.CapabilityProperties{
 							Resources: corev1.ResourceRequirements{},
 						},
 					},
@@ -70,11 +71,11 @@ func TestMissingActiveGateMemoryLimit(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					ActiveGate: dynakube.ActiveGateSpec{
-						Capabilities: []dynakube.CapabilityDisplayName{
-							dynakube.RoutingCapability.DisplayName,
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.RoutingCapability.DisplayName,
 						},
-						CapabilityProperties: dynakube.CapabilityProperties{
+						CapabilityProperties: activegate.CapabilityProperties{
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
 									corev1.ResourceLimitsMemory: *resource.NewMilliQuantity(1, ""),

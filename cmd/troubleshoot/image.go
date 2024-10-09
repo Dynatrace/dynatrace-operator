@@ -40,7 +40,7 @@ func verifyAllImagesAvailable(ctx context.Context, baseLog logd.Logger, keychain
 		verifyImageIsAvailable(log, imagePullFunc, dk, componentCodeModules, true)
 	}
 
-	if dk.NeedsActiveGate() {
+	if dk.ActiveGate().IsEnabled() {
 		verifyImageIsAvailable(log, imagePullFunc, dk, componentActiveGate, false)
 	}
 

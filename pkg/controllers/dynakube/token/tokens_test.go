@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
@@ -110,8 +111,8 @@ func TestTokens(t *testing.T) {
 	})
 	t.Run("activegate enabled dynakube, no permissions in api token => fail", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
-		dk.Spec.ActiveGate.Capabilities = []dynakube.CapabilityDisplayName{
-			dynakube.KubeMonCapability.DisplayName,
+		dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{
+			activegate.KubeMonCapability.DisplayName,
 		}
 
 		apiToken := newToken(dtclient.ApiToken, fakeTokenNoPermissions)
@@ -162,9 +163,9 @@ func TestTokens(t *testing.T) {
 }
 
 func enableKubernetesMonitoringAndMetricsIngest(dk *dynakube.DynaKube) *dynakube.DynaKube {
-	dk.Spec.ActiveGate.Capabilities = []dynakube.CapabilityDisplayName{
-		dynakube.KubeMonCapability.DisplayName,
-		dynakube.MetricsIngestCapability.DisplayName,
+	dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{
+		activegate.KubeMonCapability.DisplayName,
+		activegate.MetricsIngestCapability.DisplayName,
 	}
 
 	return dk

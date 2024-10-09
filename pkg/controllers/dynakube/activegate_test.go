@@ -7,6 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
@@ -23,13 +24,13 @@ func TestReconcileActiveGate(t *testing.T) {
 			Namespace: "dynatrace",
 		},
 		Spec: dynakube.DynaKubeSpec{
-			ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName}},
+			ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 		},
 	}
 
 	t.Run("no active-gate configured => nothing happens (only call active-gate reconciler)", func(t *testing.T) {
 		dk := dkBase.DeepCopy()
-		dk.Spec.ActiveGate = dynakube.ActiveGateSpec{}
+		dk.Spec.ActiveGate = activegate.Spec{}
 
 		fakeClient := fake.NewClientWithIndex(dk)
 
@@ -47,7 +48,7 @@ func TestReconcileActiveGate(t *testing.T) {
 	})
 	t.Run("no active-gate configured => active-gate reconcile returns error => returns error", func(t *testing.T) {
 		dk := dkBase.DeepCopy()
-		dk.Spec.ActiveGate = dynakube.ActiveGateSpec{}
+		dk.Spec.ActiveGate = activegate.Spec{}
 
 		fakeClient := fake.NewClientWithIndex(dk)
 
@@ -75,9 +76,9 @@ func TestReconcileActiveGate(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				ActiveGate: dynakube.ActiveGateSpec{
-					Capabilities: []dynakube.CapabilityDisplayName{
-						dynakube.KubeMonCapability.DisplayName,
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
 					},
 				},
 			},
@@ -129,9 +130,9 @@ func TestReconcileActiveGate(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				ActiveGate: dynakube.ActiveGateSpec{
-					Capabilities: []dynakube.CapabilityDisplayName{
-						dynakube.KubeMonCapability.DisplayName,
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
 					},
 				},
 			},

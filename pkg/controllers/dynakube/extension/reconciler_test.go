@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/servicename"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -48,7 +50,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk := createDynakube()
 
 		// mock SecretCreated condition
-		conditions.SetSecretCreated(dk.Conditions(), consts.ExtensionsSecretConditionType, dk.Name+consts.SecretSuffix)
+		conditions.SetSecretCreated(dk.Conditions(), consts.ExtensionsSecretConditionType, dk.ExtensionsTokenSecretName())
 
 		// mock secret
 		secretToken, _ := dttoken.New(consts.EecTokenSecretValuePrefix)
@@ -102,7 +104,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		condition := meta.FindStatusCondition(*dk.Conditions(), consts.ExtensionsSecretConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
-		assert.Equal(t, dk.Name+consts.SecretSuffix+" created", condition.Message)
+		assert.Equal(t, dk.ExtensionsTokenSecretName()+" created", condition.Message)
 	})
 	t.Run(`Extension SecretCreated failure condition is set when error`, func(t *testing.T) {
 		dk := createDynakube()
@@ -173,11 +175,9 @@ func createDynakube() *dynakube.DynaKube {
 		},
 		Spec: dynakube.DynaKubeSpec{},
 		Status: dynakube.DynaKubeStatus{
-			ActiveGate: dynakube.ActiveGateStatus{
-				ConnectionInfoStatus: dynakube.ActiveGateConnectionInfoStatus{
-					ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
-						TenantUUID: "abc",
-					},
+			ActiveGate: activegate.Status{
+				ConnectionInfo: communication.ConnectionInfo{
+					TenantUUID: "abc",
 				},
 			},
 			KubeSystemUUID: "abc",

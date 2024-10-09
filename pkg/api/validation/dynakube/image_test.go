@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,8 +30,8 @@ func TestImageFieldHasTenantImage(t *testing.T) {
 						Image: "BOOM",
 					},
 				},
-				ActiveGate: dynakube.ActiveGateSpec{
-					CapabilityProperties: dynakube.CapabilityProperties{
+				ActiveGate: activegate.Spec{
+					CapabilityProperties: activegate.CapabilityProperties{
 						Image: "BOOM",
 					},
 				},
@@ -54,8 +55,8 @@ func TestImageFieldHasTenantImage(t *testing.T) {
 						Image: testTenantUrl + "/linux/oneagent:latest",
 					},
 				},
-				ActiveGate: dynakube.ActiveGateSpec{
-					CapabilityProperties: dynakube.CapabilityProperties{
+				ActiveGate: activegate.Spec{
+					CapabilityProperties: activegate.CapabilityProperties{
 						Image: testTenantUrl + "/linux/activegate:latest",
 					},
 				},
@@ -76,8 +77,8 @@ func TestImageFieldHasTenantImage(t *testing.T) {
 						Image: testRegistryUrl + "/linux/oneagent:latest",
 					},
 				},
-				ActiveGate: dynakube.ActiveGateSpec{
-					CapabilityProperties: dynakube.CapabilityProperties{
+				ActiveGate: activegate.Spec{
+					CapabilityProperties: activegate.CapabilityProperties{
 						Image: testRegistryUrl + "/linux/activegate:latest",
 					},
 				},

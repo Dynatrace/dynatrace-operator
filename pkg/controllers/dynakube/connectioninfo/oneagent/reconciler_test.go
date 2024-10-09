@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -38,7 +39,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("cleanup when oneagent is not needed", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Status.OneAgent.ConnectionInfoStatus = dynakube.OneAgentConnectionInfoStatus{
-			ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
+			ConnectionInfo: communication.ConnectionInfo{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
 			},
@@ -67,7 +68,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("does not cleanup when only host oneagent is needed", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Status.OneAgent.ConnectionInfoStatus = dynakube.OneAgentConnectionInfoStatus{
-			ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
+			ConnectionInfo: communication.ConnectionInfo{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
 			},
@@ -150,7 +151,7 @@ func TestReconcile(t *testing.T) {
 		dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestOneAgentConnectionInfo(), nil)
 
 		dk.Status.OneAgent.ConnectionInfoStatus = dynakube.OneAgentConnectionInfoStatus{
-			ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
+			ConnectionInfo: communication.ConnectionInfo{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
 			},
@@ -185,7 +186,7 @@ func TestReconcile(t *testing.T) {
 		dtc := dtclientmock.NewClient(t)
 
 		dk.Status.OneAgent.ConnectionInfoStatus = dynakube.OneAgentConnectionInfoStatus{
-			ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
+			ConnectionInfo: communication.ConnectionInfo{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
 			},
@@ -217,7 +218,7 @@ func TestReconcile(t *testing.T) {
 		dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestOneAgentConnectionInfo(), nil)
 
 		dk.Status.OneAgent.ConnectionInfoStatus = dynakube.OneAgentConnectionInfoStatus{
-			ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
+			ConnectionInfo: communication.ConnectionInfo{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
 			},
@@ -250,7 +251,7 @@ func TestReconcile(t *testing.T) {
 		dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestOneAgentConnectionInfo(), nil)
 
 		dk.Status.OneAgent.ConnectionInfoStatus = dynakube.OneAgentConnectionInfoStatus{
-			ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
+			ConnectionInfo: communication.ConnectionInfo{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
 			},

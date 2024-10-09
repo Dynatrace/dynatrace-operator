@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -40,7 +41,7 @@ func TestReconciler_GenerateData(t *testing.T) {
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: dynakube.OneAgentStatus{
 				ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
-					ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
+					ConnectionInfo: communication.ConnectionInfo{
 						TenantUUID: testTenant,
 					},
 				},

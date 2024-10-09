@@ -45,7 +45,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.NeedsActiveGate() {
+	if !r.dk.ActiveGate().IsEnabled() {
 		_ = meta.RemoveStatusCondition(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
 
 		return nil
@@ -63,7 +63,7 @@ func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context) error {
 	var secret corev1.Secret
 
 	err := r.apiReader.Get(ctx,
-		client.ObjectKey{Name: r.dk.ActiveGateAuthTokenSecret(), Namespace: r.dk.Namespace},
+		client.ObjectKey{Name: r.dk.ActiveGate().GetAuthTokenSecretName(), Namespace: r.dk.Namespace},
 		&secret)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -97,7 +97,7 @@ func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context) error {
 func (r *Reconciler) ensureAuthTokenSecret(ctx context.Context) error {
 	agSecretData, err := r.getActiveGateAuthToken(ctx)
 	if err != nil {
-		return errors.WithMessagef(err, "failed to create secret '%s'", r.dk.ActiveGateAuthTokenSecret())
+		return errors.WithMessagef(err, "failed to create secret '%s'", r.dk.ActiveGate().GetAuthTokenSecretName())
 	}
 
 	return r.createSecret(ctx, agSecretData)
@@ -117,7 +117,7 @@ func (r *Reconciler) getActiveGateAuthToken(ctx context.Context) (map[string][]b
 }
 
 func (r *Reconciler) createSecret(ctx context.Context, secretData map[string][]byte) error {
-	secretName := r.dk.ActiveGateAuthTokenSecret()
+	secretName := r.dk.ActiveGate().GetAuthTokenSecretName()
 
 	secret, err := secret.Build(r.dk,
 		secretName,

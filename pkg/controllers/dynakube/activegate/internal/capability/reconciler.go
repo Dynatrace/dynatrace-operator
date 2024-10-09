@@ -42,7 +42,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return errors.WithStack(err)
 	}
 
-	if r.dk.NeedsActiveGateService() {
+	if r.dk.ActiveGate().NeedsService() {
 		err = r.createOrUpdateService(ctx)
 		if err != nil {
 			return err

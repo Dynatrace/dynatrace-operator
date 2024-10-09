@@ -24,7 +24,7 @@ type SSLVolumeModifier struct {
 }
 
 func (mod SSLVolumeModifier) Enabled() bool {
-	return mod.dk.HasActiveGateCaCert() || mod.dk.Spec.TrustedCAs != ""
+	return mod.dk.ActiveGate().HasCaCert() || mod.dk.Spec.TrustedCAs != ""
 }
 
 func (mod SSLVolumeModifier) Modify(sts *appsv1.StatefulSet) error {

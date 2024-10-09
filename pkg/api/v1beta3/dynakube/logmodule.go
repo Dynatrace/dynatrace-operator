@@ -1,6 +1,7 @@
 package dynakube
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -23,7 +24,7 @@ type LogModuleTemplateSpec struct {
 
 	// Overrides the default image for the LogModule pods
 	// +kubebuilder:validation:Optional
-	ImageRef ImageRefSpec `json:"imageRef,omitempty"`
+	ImageRef image.Ref `json:"imageRef,omitempty"`
 
 	// Sets DNS Policy for the LogModule pods
 	// +kubebuilder:validation:Optional

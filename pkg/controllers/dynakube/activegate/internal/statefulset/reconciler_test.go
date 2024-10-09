@@ -7,7 +7,9 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dynafake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
@@ -48,7 +50,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		}).
 		WithObjects(&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName + dynakube.AuthTokenSecretSuffix,
+				Name:      testName + activegate.AuthTokenSecretSuffix,
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
@@ -56,9 +58,9 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		Build()
 	dk := &dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
-			ActiveGate: dynakube.ActiveGateSpec{
-				Capabilities: []dynakube.CapabilityDisplayName{
-					dynakube.RoutingCapability.DisplayName,
+			ActiveGate: activegate.Spec{
+				Capabilities: []activegate.CapabilityDisplayName{
+					activegate.RoutingCapability.DisplayName,
 				}},
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -109,7 +111,7 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, statefulSet)
 		require.NoError(t, err)
 
-		r.dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: testValue}
+		r.dk.Spec.Proxy = &value.Source{Value: testValue}
 		err = r.Reconcile(ctx)
 
 		require.NoError(t, err)
@@ -162,12 +164,12 @@ func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
-	r.dk.Spec.ActiveGate.CustomProperties = &dynakube.DynaKubeValueSource{Value: testValue}
+	r.dk.Spec.ActiveGate.CustomProperties = &value.Source{Value: testValue}
 	hash, err = r.calculateActiveGateConfigurationHash(ctx)
 	require.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
-	r.dk.Spec.ActiveGate.CustomProperties = &dynakube.DynaKubeValueSource{ValueFrom: testName}
+	r.dk.Spec.ActiveGate.CustomProperties = &value.Source{ValueFrom: testName}
 	hash, err = r.calculateActiveGateConfigurationHash(ctx)
 	require.Error(t, err)
 	assert.Empty(t, hash)
@@ -197,7 +199,7 @@ func TestReconcile_GetActiveGateAuthTokenHash(t *testing.T) {
 
 	err = r.client.Create(context.Background(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      r.dk.ActiveGateAuthTokenSecret(),
+			Name:      r.dk.ActiveGate().GetAuthTokenSecretName(),
 			Namespace: r.dk.Namespace,
 		},
 		Data: map[string][]byte{

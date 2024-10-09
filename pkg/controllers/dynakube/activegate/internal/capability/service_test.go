@@ -4,8 +4,9 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/activegate"
+	agutil "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/stretchr/testify/assert"
@@ -74,7 +75,7 @@ func TestCreateService(t *testing.T) {
 
 	t.Run("check AG service if metrics-ingest disabled", func(t *testing.T) {
 		dk := createTestDynaKube()
-		activegate.SwitchCapability(dk, dynakube.RoutingCapability, true)
+		agutil.SwitchCapability(dk, activegate.RoutingCapability, true)
 
 		service := CreateService(dk, testComponentFeature)
 		ports := service.Spec.Ports
@@ -84,7 +85,7 @@ func TestCreateService(t *testing.T) {
 	})
 	t.Run("check AG service if metrics-ingest enabled", func(t *testing.T) {
 		dk := createTestDynaKube()
-		activegate.SwitchCapability(dk, dynakube.MetricsIngestCapability, true)
+		agutil.SwitchCapability(dk, activegate.MetricsIngestCapability, true)
 
 		service := CreateService(dk, testComponentFeature)
 		ports := service.Spec.Ports
