@@ -26,7 +26,7 @@ func (b *builder) arguments() ([]string, error) {
 		return []string{}, err
 	}
 
-	if !isProxyAsEnvDeprecated {
+	if !isProxyAsEnvDeprecated || b.dk.FeatureOneAgentIgnoreProxy() {
 		// deprecated
 		b.appendProxyArg(argMap)
 	}

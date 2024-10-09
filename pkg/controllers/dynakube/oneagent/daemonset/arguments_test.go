@@ -133,6 +133,53 @@ func TestArguments(t *testing.T) {
 		}
 		assert.Equal(t, expectedDefaultArguments, arguments)
 	})
+	t.Run("proxy settings are not properly removed from OneAgent", func(t *testing.T) {
+		builder := builder{
+			dk: &dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: "dynatrace",
+					Annotations: map[string]string{
+						"feature.dynatrace.com/oneagent-ignore-proxy": "true",
+					},
+				},
+			},
+		}
+		arguments, _ := builder.arguments()
+
+		expectedDefaultArguments := []string{
+			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+			"--set-no-proxy=",
+			"--set-proxy=",
+			"--set-server={$(DT_SERVER)}",
+			"--set-tenant=$(DT_TENANT)",
+		}
+		assert.Equal(t, expectedDefaultArguments, arguments)
+	})
+	t.Run("proxy settings are not properly removed from OneAgent when we still have some left over", func(t *testing.T) {
+		builder := builder{
+			dk: &dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: "dynatrace",
+					Annotations: map[string]string{
+						"feature.dynatrace.com/oneagent-ignore-proxy": "true",
+					},
+				},
+				Spec: dynakube.DynaKubeSpec{Proxy: &value.Source{Value: testValue}},
+			},
+		}
+		arguments, _ := builder.arguments()
+
+		expectedDefaultArguments := []string{
+			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+			"--set-no-proxy=",
+			"--set-proxy=",
+			"--set-server={$(DT_SERVER)}",
+			"--set-tenant=$(DT_TENANT)",
+		}
+		assert.Equal(t, expectedDefaultArguments, arguments)
+	})
 	t.Run("multiple set-host-property entries are possible", func(t *testing.T) {
 		args := []string{
 			"--set-app-log-content-access=true",
