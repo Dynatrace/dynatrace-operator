@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -143,12 +144,12 @@ type DynaKubeSpec struct { //nolint:revive
 
 	// General configuration about the KSPM feature.
 	// +kubebuilder:validation:Optional
-	Kspm KspmSpec `json:"kspm,omitempty"`
+	Kspm kspm.Spec `json:"kspm,omitempty"`
 }
 
 type TemplatesSpec struct {
 	// +kubebuilder:validation:Optional
-	KspmNodeConfigurationCollector KspmNodeConfigurationCollectorSpec `json:"kspmNodeConfigurationCollector,omitempty"`
+	KspmNodeConfigurationCollector kspm.NodeConfigurationCollectorSpec `json:"kspmNodeConfigurationCollector,omitempty"`
 	// +kubebuilder:validation:Optional
 	ExtensionExecutionController ExtensionExecutionControllerSpec `json:"extensionExecutionController,omitempty"`
 	// Low-level configuration options for the LogModule feature.
