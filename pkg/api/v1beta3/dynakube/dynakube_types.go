@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -140,16 +141,22 @@ type DynaKubeSpec struct { //nolint:revive
 	// General configuration about the LogModule feature.
 	// +kubebuilder:validation:Optional
 	LogModule LogModuleSpec `json:"logModule,omitempty"`
+
+	// General configuration about the KSPM feature.
+	// +kubebuilder:validation:Optional
+	Kspm kspm.Spec `json:"kspm,omitempty"`
 }
 
 type TemplatesSpec struct {
 	// +kubebuilder:validation:Optional
-	OpenTelemetryCollector OpenTelemetryCollectorSpec `json:"openTelemetryCollector,omitempty"`
+	KspmNodeConfigurationCollector kspm.NodeConfigurationCollectorSpec `json:"kspmNodeConfigurationCollector,omitempty"`
 	// +kubebuilder:validation:Optional
 	ExtensionExecutionController ExtensionExecutionControllerSpec `json:"extensionExecutionController,omitempty"`
 	// Low-level configuration options for the LogModule feature.
 	// +kubebuilder:validation:Optional
 	LogModule LogModuleTemplateSpec `json:"logModule,omitempty"`
+	// +kubebuilder:validation:Optional
+	OpenTelemetryCollector OpenTelemetryCollectorSpec `json:"openTelemetryCollector,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
