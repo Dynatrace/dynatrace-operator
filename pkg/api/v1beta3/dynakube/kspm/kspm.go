@@ -6,9 +6,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// +kubebuilder:object:generate=true
+
 type Spec struct {
 	Enabled bool `json:"enabled"`
 }
+
+// +kubebuilder:object:generate=true
 
 type NodeConfigurationCollectorSpec struct {
 
