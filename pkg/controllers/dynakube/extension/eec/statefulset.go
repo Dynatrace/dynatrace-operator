@@ -338,7 +338,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Name + consts.SecretSuffix,
+						SecretName:  dk.ExtensionsTokenSecretName(),
 						DefaultMode: &mode,
 					},
 				},

@@ -29,3 +29,7 @@ func (dk *DynaKube) ExtensionsExecutionControllerStatefulsetName() string {
 func (dk *DynaKube) ExtensionsCollectorStatefulsetName() string {
 	return dk.Name + "-extensions-collector"
 }
+
+func (dk *DynaKube) ExtensionsTokenSecretName() string {
+	return dk.Name + "-extensions-token"
+}
