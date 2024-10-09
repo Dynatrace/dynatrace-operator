@@ -4,7 +4,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension"
 	eecconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
 	appsv1 "k8s.io/api/apps/v1"
@@ -51,7 +50,7 @@ func (mod EecModifier) getVolumes() []corev1.Volume {
 			Name: eecVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  extension.GetSecretName(mod.dk.Name),
+					SecretName:  mod.dk.ExtensionsTokenSecretName(),
 					DefaultMode: &mode,
 					Items: []corev1.KeyToPath{
 						{

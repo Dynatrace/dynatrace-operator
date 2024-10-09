@@ -50,7 +50,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk := createDynakube()
 
 		// mock SecretCreated condition
-		conditions.SetSecretCreated(dk.Conditions(), consts.ExtensionsSecretConditionType, dk.Name+consts.SecretSuffix)
+		conditions.SetSecretCreated(dk.Conditions(), consts.ExtensionsSecretConditionType, dk.ExtensionsTokenSecretName())
 
 		// mock secret
 		secretToken, _ := dttoken.New(consts.EecTokenSecretValuePrefix)
@@ -104,7 +104,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		condition := meta.FindStatusCondition(*dk.Conditions(), consts.ExtensionsSecretConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
-		assert.Equal(t, dk.Name+consts.SecretSuffix+" created", condition.Message)
+		assert.Equal(t, dk.ExtensionsTokenSecretName()+" created", condition.Message)
 	})
 	t.Run(`Extension SecretCreated failure condition is set when error`, func(t *testing.T) {
 		dk := createDynakube()
