@@ -124,3 +124,11 @@ LogAgent labels
 {{ include "dynatrace-operator.commonLabels" . }}
 app.kubernetes.io/component: logmodule
 {{- end -}}
+
+{{/*
+Node-config-collector labels
+*/}}
+{{- define "dynatrace-operator.nodeConfigCollectorLabels" -}}
+{{ include "dynatrace-operator.commonLabels" . }}
+app.kubernetes.io/component: node-config-collector
+{{- end -}}
