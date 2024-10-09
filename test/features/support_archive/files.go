@@ -115,7 +115,7 @@ func (r requiredFiles) getRequiredPodDiagnosticLogFiles(collectManaged bool) []s
 		appNamelabel, okAppNamelabel := podItem.Labels[labels.AppNameLabel]
 		appManagedByLabel, okAppManagedByLabel := podItem.Labels[labels.AppManagedByLabel]
 
-		return okAppNamelabel && appNamelabel == support_archive.EecPodName && okAppManagedByLabel && appManagedByLabel == operator.DeploymentName
+		return okAppNamelabel && appNamelabel == support_archive.LabelEecPodName && okAppManagedByLabel && appManagedByLabel == operator.DeploymentName
 	})
 
 	for _, pod := range podList {

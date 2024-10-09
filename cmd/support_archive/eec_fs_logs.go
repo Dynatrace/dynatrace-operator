@@ -6,6 +6,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/cmd/remote_command"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -14,32 +15,23 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apilabels "k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/client-go/kubernetes/scheme"
 	clientgocorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/remotecommand"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 const (
 	diagLogCollectorName = "fsLogCollector"
 	eecExtensionsPath    = "/var/lib/dynatrace/remotepluginmodule/log/extensions"
 	fileNotFoundMarker   = "<NOT FOUND>"
-	EecPodName           = "dynatrace-extensions-controller"
+	LabelEecPodName      = "dynatrace-extensions-controller"
 	eecContainerName     = "extensions-controller"
 )
 
-type executionResult struct {
-	StdOut *bytes.Buffer
-	StdErr *bytes.Buffer
-}
-
 type fsLogCollector struct {
-	ctx    context.Context
-	pods   clientgocorev1.PodInterface
-	config *rest.Config
+	ctx                   context.Context
+	pods                  clientgocorev1.PodInterface
+	remoteCommandExecutor remote_command.Executor
+	config                *rest.Config
 	collectorCommon
 	appName            string
 	collectManagedLogs bool
@@ -49,17 +41,18 @@ var (
 	eecPodNotFoundError = errors.New("eec pod not found")
 )
 
-func newFsLogCollector(context context.Context, config *rest.Config, log logd.Logger, supportArchive archiver, pods clientgocorev1.PodInterface, appName string, collectManagedLogs bool) collector { //nolint:revive
+func newFsLogCollector(context context.Context, config *rest.Config, command remote_command.Executor, log logd.Logger, supportArchive archiver, pods clientgocorev1.PodInterface, appName string, collectManagedLogs bool) collector { //nolint:revive
 	return fsLogCollector{
 		collectorCommon: collectorCommon{
 			log:            log,
 			supportArchive: supportArchive,
 		},
-		ctx:                context,
-		config:             config,
-		pods:               pods,
-		appName:            appName,
-		collectManagedLogs: collectManagedLogs,
+		ctx:                   context,
+		config:                config,
+		pods:                  pods,
+		appName:               appName,
+		collectManagedLogs:    collectManagedLogs,
+		remoteCommandExecutor: command,
 	}
 }
 
@@ -70,7 +63,7 @@ func (collector fsLogCollector) Name() string {
 func (collector fsLogCollector) getControllerPodList() (*corev1.PodList, error) {
 	ls := metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			labels.AppNameLabel:      EecPodName,
+			labels.AppNameLabel:      LabelEecPodName,
 			labels.AppManagedByLabel: collector.appName,
 		},
 	}
@@ -141,19 +134,19 @@ func (collector fsLogCollector) Do() error {
 func (collector fsLogCollector) findLogFilesRecursively(podName string, podNamespace string, rootPath string) ([]string, error) {
 	command := []string{"/usr/bin/sh", "-c", "if [ -d '" + rootPath + "' ]; then ls -R1 '" + rootPath + "' ; else echo '" + fileNotFoundMarker + "' ; fi"}
 
-	executionResult, err := collector.executeRemoteCommand(collector.ctx, podName, podNamespace, eecContainerName, command)
+	stdOut, _, err := collector.remoteCommandExecutor.Exec(collector.ctx, collector.config, podName, podNamespace, eecContainerName, command)
 	if err != nil {
 		return []string{}, err
 	}
 
-	if strings.HasPrefix(executionResult.StdOut.String(), fileNotFoundMarker) {
+	if strings.HasPrefix(stdOut.String(), fileNotFoundMarker) {
 		return []string{}, nil
 	}
 
 	zipFilePath := BuildZipFilePath(podName, "ls.txt")
 
 	var buf bytes.Buffer
-	tee := io.TeeReader(executionResult.StdOut, &buf)
+	tee := io.TeeReader(stdOut, &buf)
 
 	err = collector.supportArchive.addFile(zipFilePath, tee)
 	if err != nil {
@@ -211,19 +204,19 @@ func (collector fsLogCollector) findLogFilesRecursively(podName string, podNames
 func (collector fsLogCollector) copyDiagnosticFile(podName string, podNamespace string, eecDiagLogPath string) error {
 	command := []string{"/usr/bin/sh", "-c", "[ -e " + eecDiagLogPath + " ] && cat " + eecDiagLogPath + " || echo '" + fileNotFoundMarker + "'"}
 
-	executionResult, err := collector.executeRemoteCommand(collector.ctx, podName, podNamespace, eecContainerName, command)
+	stdOut, _, err := collector.remoteCommandExecutor.Exec(collector.ctx, collector.config, podName, podNamespace, eecContainerName, command)
 	if err != nil {
 		return err
 	}
 
-	if strings.HasPrefix(executionResult.StdOut.String(), fileNotFoundMarker) {
+	if strings.HasPrefix(stdOut.String(), fileNotFoundMarker) {
 		return nil
 	}
 
 	// eecDiagLogPath is an absolute path, remove leading slash to avoid '//' in zipFilePath
 	zipFilePath := BuildZipFilePath(podName, eecDiagLogPath[1:])
 
-	err = collector.supportArchive.addFile(zipFilePath, executionResult.StdOut)
+	err = collector.supportArchive.addFile(zipFilePath, stdOut)
 	if err != nil {
 		logErrorf(collector.log, err, "error writing to tarball")
 
@@ -235,58 +228,4 @@ func (collector fsLogCollector) copyDiagnosticFile(podName string, podNamespace 
 
 func BuildZipFilePath(podName string, fileName string) string {
 	return fmt.Sprintf("%s/%s/%s", LogsDirectoryName, podName, fileName)
-}
-
-func (collector fsLogCollector) executeRemoteCommand(ctx context.Context, podName string, podNamespace string, containerName string, command []string) (*executionResult, error) {
-	sch := scheme.Scheme
-	parameterCodec := scheme.ParameterCodec
-
-	gvk := schema.GroupVersionKind{
-		Group:   "",
-		Version: "v1",
-		Kind:    "Pod",
-	}
-
-	httpClient, err := rest.HTTPClientFor(collector.config)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	restClient, err := apiutil.RESTClientForGVK(gvk, false, collector.config, serializer.NewCodecFactory(sch), httpClient)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	result := &executionResult{
-		StdOut: &bytes.Buffer{},
-		StdErr: &bytes.Buffer{},
-	}
-
-	req := restClient.Post().
-		Resource("pods").
-		Name(podName).
-		Namespace(podNamespace).
-		SubResource("exec").
-		VersionedParams(&corev1.PodExecOptions{
-			Container: containerName,
-			Command:   command,
-			Stdin:     true,
-			Stdout:    true,
-			Stderr:    true,
-			TTY:       false,
-		}, parameterCodec)
-
-	executor, err := remotecommand.NewSPDYExecutor(collector.config, "POST", req.URL())
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	err = executor.StreamWithContext(ctx, remotecommand.StreamOptions{
-		Stdin:  &bytes.Buffer{},
-		Stdout: result.StdOut,
-		Stderr: result.StdErr,
-		Tty:    false,
-	})
-
-	return result, errors.WithStack(err)
 }
