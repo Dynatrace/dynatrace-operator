@@ -4,7 +4,9 @@
 package dynakube
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -31,56 +33,6 @@ const (
 	// ReasonTokenError is set when an unknown error has been found when verifying the token.
 	ReasonTokenError string = "TokenError"
 )
-
-type DynaKubeProxy struct { //nolint:revive
-	// Proxy URL. It has preference over ValueFrom.
-	// +nullable
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Proxy value",order=32,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
-	Value string `json:"value,omitempty"`
-
-	// Secret containing proxy URL.
-	// +nullable
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Proxy secret",order=33,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Secret"}
-	ValueFrom string `json:"valueFrom,omitempty"`
-}
-
-type ImageRefSpec struct {
-	// Custom image repository
-	// +kubebuilder:example:="docker.io/dynatrace/image-name"
-	Repository string `json:"repository,omitempty"`
-
-	// Indicates a tag of the image to use
-	Tag string `json:"tag,omitempty"`
-}
-
-// StringWithDefaults will use the provided default values for fields that were not already set.
-func (ref ImageRefSpec) StringWithDefaults(repo, tag string) string {
-	if ref.Repository == "" {
-		ref.Repository = repo
-	}
-
-	if ref.Tag == "" {
-		ref.Tag = tag
-	}
-
-	return ref.String()
-}
-
-func (ref ImageRefSpec) String() string {
-	return ref.Repository + ":" + ref.Tag
-}
-
-type DynaKubeValueSource struct { //nolint:revive
-	// Custom properties value.
-	// +nullable
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom properties value",order=32,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
-	Value string `json:"value,omitempty"`
-
-	// Custom properties secret.
-	// +nullable
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom properties secret",order=33,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Secret"}
-	ValueFrom string `json:"valueFrom,omitempty"`
-}
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -113,10 +65,7 @@ type DynaKubeSpec struct { //nolint:revive
 	// Note: Applies to Dynatrace Operator, ActiveGate, and OneAgents.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Proxy",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
-	Proxy *DynaKubeProxy `json:"proxy,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	Templates TemplatesSpec `json:"templates,omitempty"`
+	Proxy *value.Source `json:"proxy,omitempty"`
 
 	// General configuration about OneAgent instances.
 	// You can't enable more than one module (classicFullStack, cloudNativeFullStack, hostMonitoring, or applicationMonitoring).
@@ -154,14 +103,17 @@ type DynaKubeSpec struct { //nolint:revive
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom PullSecret",order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Secret"}
 	CustomPullSecret string `json:"customPullSecret,omitempty"`
 
-	// General configuration about ActiveGate instances.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="ActiveGate",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	ActiveGate ActiveGateSpec `json:"activeGate,omitempty"`
+	// +kubebuilder:validation:Optional
+	Templates TemplatesSpec `json:"templates,omitempty"`
 
 	// Configuration for Metadata Enrichment.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Metadata Enrichment",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	MetadataEnrichment MetadataEnrichment `json:"metadataEnrichment,omitempty"`
+
+	// General configuration about ActiveGate instances.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="ActiveGate",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	ActiveGate activegate.Spec `json:"activeGate,omitempty"`
 
 	// Configuration for thresholding Dynatrace API requests.
 	// +kubebuilder:validation:Optional

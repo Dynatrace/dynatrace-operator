@@ -31,7 +31,7 @@ type CertificatesModifier struct {
 }
 
 func (mod CertificatesModifier) Enabled() bool {
-	return mod.dk.HasActiveGateCaCert()
+	return mod.dk.ActiveGate().HasCaCert()
 }
 
 func (mod CertificatesModifier) Modify(sts *appsv1.StatefulSet) error {

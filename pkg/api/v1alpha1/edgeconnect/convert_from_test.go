@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/stretchr/testify/assert"
@@ -72,13 +74,13 @@ func getCurrentSpec() edgeconnect.EdgeConnectSpec {
 		KubernetesAutomation: &edgeconnect.KubernetesAutomationSpec{
 			Enabled: true,
 		},
-		Proxy: &edgeconnect.ProxySpec{
+		Proxy: &proxy.Spec{
 			Host:    "e",
 			NoProxy: "f",
 			AuthRef: "g",
 			Port:    1,
 		},
-		ImageRef: edgeconnect.ImageRefSpec{
+		ImageRef: image.Ref{
 			Repository: "h",
 			Tag:        "i",
 		},

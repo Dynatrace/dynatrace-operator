@@ -53,7 +53,7 @@ func (dk *DynaKube) NeedsCustomNoProxy() bool {
 }
 
 func (dk *DynaKube) NeedsActiveGateProxy() bool {
-	return !dk.FeatureActiveGateIgnoreProxy() && dk.HasProxy() && dk.NeedsActiveGate()
+	return !dk.FeatureActiveGateIgnoreProxy() && dk.HasProxy() && dk.ActiveGate().IsEnabled()
 }
 
 func (dk *DynaKube) NeedsOneAgentProxy() bool {

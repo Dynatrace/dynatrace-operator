@@ -15,7 +15,7 @@ const (
 )
 
 func GetEndpointsAsCommunicationHosts(dk *dynakube.DynaKube) []dtclient.CommunicationHost {
-	activegateEndpointsString := dk.Status.ActiveGate.ConnectionInfoStatus.Endpoints
+	activegateEndpointsString := dk.Status.ActiveGate.ConnectionInfo.Endpoints
 	if activegateEndpointsString == "" {
 		return []dtclient.CommunicationHost{}
 	}

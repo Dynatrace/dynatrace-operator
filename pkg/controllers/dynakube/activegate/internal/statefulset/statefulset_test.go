@@ -7,12 +7,13 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/activegate"
+	agutil "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/stretchr/testify/assert"
@@ -42,17 +43,17 @@ func getTestDynakube() dynakube.DynaKube {
 			Annotations: map[string]string{},
 		},
 		Spec: dynakube.DynaKubeSpec{
-			ActiveGate: dynakube.ActiveGateSpec{
-				Capabilities: []dynakube.CapabilityDisplayName{
-					dynakube.RoutingCapability.DisplayName,
+			ActiveGate: activegate.Spec{
+				Capabilities: []activegate.CapabilityDisplayName{
+					activegate.RoutingCapability.DisplayName,
 				},
-				CapabilityProperties: dynakube.CapabilityProperties{
+				CapabilityProperties: activegate.CapabilityProperties{
 					Replicas: testReplicas,
 				},
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
-			ActiveGate: dynakube.ActiveGateStatus{
+			ActiveGate: activegate.Status{
 				VersionStatus: status.VersionStatus{},
 			},
 		},
@@ -195,14 +196,14 @@ func TestAddTemplateSpec(t *testing.T) {
 
 	t.Run("adds capability specific stuff", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.ActiveGate.Capabilities = append(dk.Spec.ActiveGate.Capabilities, dynakube.KubeMonCapability.DisplayName)
+		dk.Spec.ActiveGate.Capabilities = append(dk.Spec.ActiveGate.Capabilities, activegate.KubeMonCapability.DisplayName)
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts := appsv1.StatefulSet{}
 
 		builder.addTemplateSpec(&sts)
 		spec := sts.Spec.Template.Spec
-		assert.Contains(t, spec.ServiceAccountName, dk.ActiveGateServiceAccountName())
+		assert.Contains(t, spec.ServiceAccountName, dk.ActiveGate().GetServiceAccountName())
 	})
 
 	t.Run("set node selector", func(t *testing.T) {
@@ -314,7 +315,7 @@ func TestBuildBaseContainer(t *testing.T) {
 
 		require.Len(t, containers, 1)
 		container := containers[0]
-		assert.Equal(t, dk.ActiveGateImage(), container.Image)
+		assert.Equal(t, dk.ActiveGate().GetImage(), container.Image)
 		assert.NotEmpty(t, container.Env)
 		assert.NotNil(t, container.ReadinessProbe)
 		assert.NotNil(t, container.SecurityContext)
@@ -405,8 +406,8 @@ func TestBuildCommonEnvs(t *testing.T) {
 	t.Run("metrics-ingest env", func(t *testing.T) {
 		dk := getTestDynakube()
 
-		activegate.SwitchCapability(&dk, dynakube.RoutingCapability, false)
-		activegate.SwitchCapability(&dk, dynakube.MetricsIngestCapability, true)
+		agutil.SwitchCapability(&dk, activegate.RoutingCapability, false)
+		agutil.SwitchCapability(&dk, activegate.MetricsIngestCapability, true)
 
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
@@ -438,7 +439,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 func TestSecurityContexts(t *testing.T) {
 	t.Run("containers have the same security context if read-only filesystem", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.ActiveGate.Capabilities = append(dk.Spec.ActiveGate.Capabilities, dynakube.KubeMonCapability.DisplayName)
+		dk.Spec.ActiveGate.Capabilities = append(dk.Spec.ActiveGate.Capabilities, activegate.KubeMonCapability.DisplayName)
 
 		multiCapability := capability.NewMultiCapability(&dk)
 

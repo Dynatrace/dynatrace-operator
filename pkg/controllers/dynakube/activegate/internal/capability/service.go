@@ -13,7 +13,7 @@ import (
 func CreateService(dk *dynakube.DynaKube, feature string) *corev1.Service {
 	var ports []corev1.ServicePort
 
-	if dk.NeedsActiveGateService() {
+	if dk.ActiveGate().NeedsService() {
 		ports = append(ports,
 			corev1.ServicePort{
 				Name:       consts.HttpsServicePortName,
@@ -22,7 +22,7 @@ func CreateService(dk *dynakube.DynaKube, feature string) *corev1.Service {
 				TargetPort: intstr.FromString(consts.HttpsServicePortName),
 			},
 		)
-		if dk.IsMetricsIngestActiveGateEnabled() {
+		if dk.ActiveGate().IsMetricsIngestEnabled() {
 			ports = append(ports, corev1.ServicePort{
 				Name:       consts.HttpServicePortName,
 				Protocol:   corev1.ProtocolTCP,

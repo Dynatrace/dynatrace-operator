@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -145,7 +146,7 @@ func TestReconcileRequired(t *testing.T) {
 		edgeConnectTime := metav1.Now()
 		edgeConnect.Status.Version.LastProbeTimestamp = &edgeConnectTime
 		edgeConnect.Status.Version.ImageID = edgeConnect.Image()
-		edgeConnect.Spec.ImageRef = edgeconnect.ImageRefSpec{
+		edgeConnect.Spec.ImageRef = image.Ref{
 			Repository: "docker.io/dynatrace/superfancynew",
 		}
 

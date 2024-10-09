@@ -20,7 +20,7 @@ import (
 	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -240,7 +240,7 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 
 func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	containerEnvs := []corev1.EnvVar{
-		{Name: envTenantId, Value: dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID},
+		{Name: envTenantId, Value: dk.Status.ActiveGate.ConnectionInfo.TenantUUID},
 		{Name: envServerUrl, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ".svc.cluster.local:443"},
 		{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + consts.EecTokenSecretKey},
 		{Name: envEecIngestPort, Value: strconv.Itoa(int(collectorPort))},
@@ -424,7 +424,7 @@ func setPersistentVolumeClaim(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet)
 		if dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim != nil {
 			o.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 				{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: runtimeVolumeName,
 					},
 					Spec: *dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim,

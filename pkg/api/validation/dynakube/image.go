@@ -27,7 +27,7 @@ func imageFieldHasTenantImage(_ context.Context, _ *Validator, dk *dynakube.Dyna
 	imageFields := []imageField{
 		{
 			section: "ActiveGate",
-			value:   dk.CustomActiveGateImage(),
+			value:   dk.ActiveGate().GetCustomImage(),
 		},
 		{
 			section: "OneAgent",

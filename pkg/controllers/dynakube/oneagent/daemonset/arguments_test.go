@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -171,12 +173,12 @@ func TestArguments(t *testing.T) {
 					Namespace: "dynatrace",
 				},
 				Spec: dynakube.DynaKubeSpec{
-					Proxy: &dynakube.DynaKubeProxy{Value: testValue},
+					Proxy: &value.Source{Value: testValue},
 					OneAgent: dynakube.OneAgentSpec{
 						CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 					},
-					ActiveGate: dynakube.ActiveGateSpec{
-						Capabilities: []dynakube.CapabilityDisplayName{dynakube.RoutingCapability.DisplayName},
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 					},
 				},
 			},
@@ -225,7 +227,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 	// deprecated
 	t.Run(`has proxy arg`, func(t *testing.T) {
 		dk.Status.OneAgent.Version = "1.272.0.0-0"
-		dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: testValue}
+		dk.Spec.Proxy = &value.Source{Value: testValue}
 		podSpecs, _ = dsBuilder.podSpec()
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 
@@ -236,7 +238,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 	})
 	// deprecated
 	t.Run(`has proxy arg but feature flag to ignore is enabled`, func(t *testing.T) {
-		dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: testValue}
+		dk.Spec.Proxy = &value.Source{Value: testValue}
 		dk.Annotations[dynakube.AnnotationFeatureOneAgentIgnoreProxy] = "true" //nolint:staticcheck
 		podSpecs, _ = dsBuilder.podSpec()
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")

@@ -7,7 +7,10 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -313,7 +316,7 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 		proxyValue := "proxy-test-value"
 		noProxyValue := "no-proxy-test-value"
 		dk := baseDynakube.DeepCopy()
-		dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: proxyValue}
+		dk.Spec.Proxy = &value.Source{Value: proxyValue}
 		setNoProxy(dk, noProxyValue)
 
 		expectedSecretConfig := *baseExpectedSecretConfig
@@ -334,9 +337,9 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 		proxyValue := "proxy-test-value"
 		noProxyValue := "no-proxy-test-value"
 		dk := baseDynakube.DeepCopy()
-		dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: proxyValue}
-		dk.Spec.ActiveGate = dynakube.ActiveGateSpec{
-			Capabilities: []dynakube.CapabilityDisplayName{dynakube.RoutingCapability.DisplayName},
+		dk.Spec.Proxy = &value.Source{Value: proxyValue}
+		dk.Spec.ActiveGate = activegate.Spec{
+			Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 		}
 		setNoProxy(dk, noProxyValue)
 
@@ -374,7 +377,7 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 	t.Run("Create SecretConfig with tlsSecret", func(t *testing.T) {
 		dk := baseDynakube.DeepCopy()
 		setTlsSecret(dk, "tls-test")
-		dk.Spec.ActiveGate.Capabilities = []dynakube.CapabilityDisplayName{dynakube.RoutingCapability.DisplayName}
+		dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName}
 
 		expectedSecretConfig := *baseExpectedSecretConfig
 		tlsValue := "tls-test-value"
@@ -472,7 +475,7 @@ func createDynakube() *dynakube.DynaKube {
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: dynakube.OneAgentStatus{
 				ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
-					ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
+					ConnectionInfo: communication.ConnectionInfo{
 						TenantUUID: "test-tenant",
 						Endpoints:  "beep.com;bop.com",
 					},
@@ -482,8 +485,8 @@ func createDynakube() *dynakube.DynaKube {
 	}
 }
 
-func setProxy(dk *dynakube.DynaKube, value string) {
-	dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: value}
+func setProxy(dk *dynakube.DynaKube, proxyValue string) {
+	dk.Spec.Proxy = &value.Source{Value: proxyValue}
 }
 
 func setAnnotation(dk *dynakube.DynaKube, value map[string]string) {
@@ -510,9 +513,9 @@ func setInitialConnectRetry(dk *dynakube.DynaKube, value string) {
 }
 
 func setTlsSecret(dk *dynakube.DynaKube, value string) {
-	dk.Spec.ActiveGate = dynakube.ActiveGateSpec{
-		Capabilities: []dynakube.CapabilityDisplayName{
-			dynakube.KubeMonCapability.DisplayName,
+	dk.Spec.ActiveGate = activegate.Spec{
+		Capabilities: []activegate.CapabilityDisplayName{
+			activegate.KubeMonCapability.DisplayName,
 		},
 		TlsSecretName: value,
 	}

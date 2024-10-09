@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/servicename"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -173,11 +175,9 @@ func createDynakube() *dynakube.DynaKube {
 		},
 		Spec: dynakube.DynaKubeSpec{},
 		Status: dynakube.DynaKubeStatus{
-			ActiveGate: dynakube.ActiveGateStatus{
-				ConnectionInfoStatus: dynakube.ActiveGateConnectionInfoStatus{
-					ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
-						TenantUUID: "abc",
-					},
+			ActiveGate: activegate.Status{
+				ConnectionInfo: communication.ConnectionInfo{
+					TenantUUID: "abc",
 				},
 			},
 			KubeSystemUUID: "abc",

@@ -78,5 +78,5 @@ func (mod CustomPropertiesModifier) hasCustomProperties() bool {
 }
 
 func (mod CustomPropertiesModifier) determineCustomPropertiesSource() string {
-	return fmt.Sprintf("%s-%s-%s", mod.dk.Name, mod.dk.ActiveGateServiceAccountOwner(), customproperties.Suffix)
+	return fmt.Sprintf("%s-%s-%s", mod.dk.Name, mod.dk.ActiveGate().GetServiceAccountOwner(), customproperties.Suffix)
 }

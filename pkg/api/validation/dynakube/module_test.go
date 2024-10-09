@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
 )
@@ -44,7 +45,7 @@ func TestIsModuleDisabled(t *testing.T) {
 		},
 		{
 			title:           "ag module disabled but also configured in dk => error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName}}}},
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}}}},
 			modules:         installconfig.Modules{ActiveGate: false},
 			moduleFunc:      isActiveGateModuleDisabled,
 			expectedMessage: errorActiveGateModuleDisabled,
@@ -58,7 +59,7 @@ func TestIsModuleDisabled(t *testing.T) {
 		},
 		{
 			title:           "ag module enabled and also configured => no error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{ActiveGate: dynakube.ActiveGateSpec{Capabilities: []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName}}}},
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}}}},
 			modules:         installconfig.Modules{ActiveGate: true},
 			moduleFunc:      isActiveGateModuleDisabled,
 			expectedMessage: "",
