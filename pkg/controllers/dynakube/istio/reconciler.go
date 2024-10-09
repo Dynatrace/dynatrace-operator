@@ -104,7 +104,7 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 		return errors.New("can't reconcile activegate communication hosts of nil dynakube")
 	}
 
-	if !dk.NeedsActiveGate() {
+	if !dk.ActiveGate().IsEnabled() {
 		if isIstioConfigured(dk, ActiveGateComponent) {
 			log.Info("activegate disabled, cleaning up")
 

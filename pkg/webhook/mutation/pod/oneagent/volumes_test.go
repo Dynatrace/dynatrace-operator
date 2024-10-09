@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
 	"github.com/pkg/errors"
@@ -69,8 +70,8 @@ func TestAddCertVolumeMounts(t *testing.T) {
 	t.Run("shouldn't add proxy cert volume mounts", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: dynakube.ActiveGateSpec{
-					Capabilities: []dynakube.CapabilityDisplayName{
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
 						"routing",
 					},
 					TlsSecretName: "test",

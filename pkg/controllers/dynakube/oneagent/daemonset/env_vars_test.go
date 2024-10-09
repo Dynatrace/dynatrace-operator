@@ -3,6 +3,7 @@ package daemonset
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -32,7 +33,7 @@ func TestEnvironmentVariables(t *testing.T) {
 				Name: "test",
 			},
 			Spec: dynakube.DynaKubeSpec{
-				Proxy: &dynakube.DynaKubeProxy{
+				Proxy: &value.Source{
 					Value: "test",
 				},
 				OneAgent: dynakube.OneAgentSpec{
@@ -199,7 +200,7 @@ func TestAddProxyEnvs(t *testing.T) {
 				Name: "test",
 			},
 			Spec: dynakube.DynaKubeSpec{
-				Proxy: &dynakube.DynaKubeProxy{
+				Proxy: &value.Source{
 					Value: "test",
 				},
 			},
@@ -219,7 +220,7 @@ func TestAddProxyEnvs(t *testing.T) {
 				Name: "test",
 			},
 			Spec: dynakube.DynaKubeSpec{
-				Proxy: &dynakube.DynaKubeProxy{
+				Proxy: &value.Source{
 					ValueFrom: "test",
 				},
 			},

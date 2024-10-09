@@ -3,7 +3,9 @@ package daemonset
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -57,7 +59,7 @@ func TestPrepareVolumes(t *testing.T) {
 		dk := &dynakube.DynaKube{}
 		dk.Spec =
 			dynakube.DynaKubeSpec{
-				Proxy: &dynakube.DynaKubeProxy{ValueFrom: proxy.BuildSecretName(dk.Name)},
+				Proxy: &value.Source{ValueFrom: proxy.BuildSecretName(dk.Name)},
 			}
 
 		volumes := prepareVolumes(dk)
@@ -69,9 +71,9 @@ func TestPrepareVolumes(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				TrustedCAs: testName,
-				ActiveGate: dynakube.ActiveGateSpec{
-					Capabilities: []dynakube.CapabilityDisplayName{
-						dynakube.KubeMonCapability.DisplayName,
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
 					},
 					TlsSecretName: "testing",
 				},
@@ -101,9 +103,9 @@ func TestPrepareVolumes(t *testing.T) {
 				OneAgent: dynakube.OneAgentSpec{
 					HostMonitoring: &dynakube.HostInjectSpec{},
 				},
-				ActiveGate: dynakube.ActiveGateSpec{
-					Capabilities: []dynakube.CapabilityDisplayName{
-						dynakube.KubeMonCapability.DisplayName,
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
 					},
 					TlsSecretName: "testing",
 				},
@@ -169,9 +171,9 @@ func TestPrepareVolumeMounts(t *testing.T) {
 					HostMonitoring: &dynakube.HostInjectSpec{},
 				},
 				TrustedCAs: testName,
-				ActiveGate: dynakube.ActiveGateSpec{
-					Capabilities: []dynakube.CapabilityDisplayName{
-						dynakube.KubeMonCapability.DisplayName,
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
 					},
 					TlsSecretName: "testing",
 				},
@@ -203,9 +205,9 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				OneAgent: dynakube.OneAgentSpec{
 					HostMonitoring: &dynakube.HostInjectSpec{},
 				},
-				ActiveGate: dynakube.ActiveGateSpec{
-					Capabilities: []dynakube.CapabilityDisplayName{
-						dynakube.KubeMonCapability.DisplayName,
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
 					},
 					TlsSecretName: "testing",
 				},
@@ -237,7 +239,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
-				Proxy: &dynakube.DynaKubeProxy{ValueFrom: proxy.BuildSecretName("Dynakube")},
+				Proxy: &value.Source{ValueFrom: proxy.BuildSecretName("Dynakube")},
 				OneAgent: dynakube.OneAgentSpec{
 					HostMonitoring: &dynakube.HostInjectSpec{},
 				},

@@ -95,9 +95,5 @@ func (r *reconciler) buildSecret(eecToken dttoken.Token, otelcToken dttoken.Toke
 }
 
 func (r *reconciler) getSecretName() string {
-	return GetSecretName(r.dk.Name)
-}
-
-func GetSecretName(dynakubeName string) string {
-	return dynakubeName + consts.SecretSuffix
+	return r.dk.ExtensionsTokenSecretName()
 }

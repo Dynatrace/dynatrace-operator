@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
@@ -23,7 +24,7 @@ import (
 const (
 	testDynakubeName = "test-dynakube"
 	testNamespace    = "test-namespace"
-	secretName       = testDynakubeName + dynakube.AuthTokenSecretSuffix
+	secretName       = testDynakubeName + activegate.AuthTokenSecretSuffix
 	testToken        = "dt.testtoken.test"
 )
 
@@ -42,9 +43,9 @@ func newDynaKube() *dynakube.DynaKube {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://testing.dev.dynatracelabs.com/api",
-			ActiveGate: dynakube.ActiveGateSpec{
-				Capabilities: []dynakube.CapabilityDisplayName{
-					dynakube.RoutingCapability.DisplayName,
+			ActiveGate: activegate.Spec{
+				Capabilities: []activegate.CapabilityDisplayName{
+					activegate.RoutingCapability.DisplayName,
 				},
 			},
 		},
@@ -83,7 +84,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var authToken corev1.Secret
-		_ = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
+		_ = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.ActiveGate().GetAuthTokenSecretName(), Namespace: testNamespace}, &authToken)
 
 		assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
 
@@ -108,7 +109,7 @@ func TestReconcile(t *testing.T) {
 		firstTransition := condition.LastTransitionTime
 
 		var authToken corev1.Secret
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.ActiveGate().GetAuthTokenSecretName(), Namespace: testNamespace}, &authToken)
 		require.NoError(t, err)
 		assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
 
@@ -133,7 +134,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 		secondTransition := condition.LastTransitionTime
 
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.ActiveGate().GetAuthTokenSecretName(), Namespace: testNamespace}, &authToken)
 		require.NoError(t, err)
 		assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
 		secondCreationTimestamp := authToken.CreationTimestamp
@@ -160,7 +161,7 @@ func TestReconcile(t *testing.T) {
 		firstTransition := condition.LastTransitionTime
 
 		var authToken corev1.Secret
-		_ = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
+		_ = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.ActiveGate().GetAuthTokenSecretName(), Namespace: testNamespace}, &authToken)
 
 		require.NoError(t, err)
 		assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
@@ -186,7 +187,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 		secondTransition := condition.LastTransitionTime
 
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.ActiveGate().GetAuthTokenSecretName(), Namespace: testNamespace}, &authToken)
 		require.NoError(t, err)
 		assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
 		secondCreationTimestamp := authToken.CreationTimestamp

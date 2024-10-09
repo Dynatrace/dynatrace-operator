@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -20,9 +21,9 @@ Make sure you don't duplicate an Activegate capability in your custom resource.
 )
 
 func duplicateActiveGateCapabilities(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if dk.ActiveGateMode() {
+	if dk.ActiveGate().IsEnabled() {
 		capabilities := dk.Spec.ActiveGate.Capabilities
-		duplicateChecker := map[dynakube.CapabilityDisplayName]bool{}
+		duplicateChecker := map[activegate.CapabilityDisplayName]bool{}
 
 		for _, capability := range capabilities {
 			if duplicateChecker[capability] {
@@ -39,10 +40,10 @@ func duplicateActiveGateCapabilities(_ context.Context, _ *Validator, dk *dynaku
 }
 
 func invalidActiveGateCapabilities(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if dk.ActiveGateMode() {
+	if dk.ActiveGate().IsEnabled() {
 		capabilities := dk.Spec.ActiveGate.Capabilities
 		for _, capability := range capabilities {
-			if _, ok := dynakube.ActiveGateDisplayNames[capability]; !ok {
+			if _, ok := activegate.CapabilityDisplayNames[capability]; !ok {
 				log.Info("requested dynakube has invalid active gate capability", "name", dk.Name, "namespace", dk.Namespace)
 
 				return fmt.Sprintf(errorInvalidActiveGateCapability, capability)
@@ -54,7 +55,7 @@ func invalidActiveGateCapabilities(_ context.Context, _ *Validator, dk *dynakube
 }
 
 func missingActiveGateMemoryLimit(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if dk.ActiveGateMode() &&
+	if dk.ActiveGate().IsEnabled() &&
 		!memoryLimitSet(dk.Spec.ActiveGate.Resources) {
 		return warningMissingActiveGateMemoryLimit
 	}

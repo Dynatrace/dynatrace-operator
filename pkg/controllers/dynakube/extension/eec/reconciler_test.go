@@ -5,8 +5,11 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/tls"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/utils"
@@ -48,7 +51,7 @@ func getTestDynakube() *dynakube.DynaKube {
 			},
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
-					ImageRef: dynakube.ImageRefSpec{
+					ImageRef: image.Ref{
 						Repository: testEecImageRepository,
 						Tag:        testEecImageTag,
 					},
@@ -57,11 +60,9 @@ func getTestDynakube() *dynakube.DynaKube {
 		},
 
 		Status: dynakube.DynaKubeStatus{
-			ActiveGate: dynakube.ActiveGateStatus{
-				ConnectionInfoStatus: dynakube.ActiveGateConnectionInfoStatus{
-					ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
-						TenantUUID: testTenantUUID,
-					},
+			ActiveGate: activegate.Status{
+				ConnectionInfo: communication.ConnectionInfo{
+					TenantUUID: testTenantUUID,
 				},
 				VersionStatus: status.VersionStatus{},
 			},
@@ -125,7 +126,7 @@ func TestConditions(t *testing.T) {
 
 	t.Run("no tenantUUID", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID = ""
+		dk.Status.ActiveGate.ConnectionInfo.TenantUUID = ""
 
 		mockK8sClient := fake.NewClient(dk)
 
@@ -262,7 +263,7 @@ func TestEnvironmentVariables(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		assert.Equal(t, corev1.EnvVar{Name: envTenantId, Value: dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
+		assert.Equal(t, corev1.EnvVar{Name: envTenantId, Value: dk.Status.ActiveGate.ConnectionInfo.TenantUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
 		assert.Equal(t, corev1.EnvVar{Name: envServerUrl, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ".svc.cluster.local:443"}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
 		assert.Equal(t, corev1.EnvVar{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + consts.EecTokenSecretKey}, statefulSet.Spec.Template.Spec.Containers[0].Env[2])
 		assert.Equal(t, corev1.EnvVar{Name: envEecIngestPort, Value: strconv.Itoa(int(collectorPort))}, statefulSet.Spec.Template.Spec.Containers[0].Env[3])
@@ -713,7 +714,7 @@ func TestVolumes(t *testing.T) {
 				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Name + consts.SecretSuffix,
+						SecretName:  dk.ExtensionsTokenSecretName(),
 						DefaultMode: &mode,
 					},
 				},
@@ -767,7 +768,7 @@ func TestVolumes(t *testing.T) {
 				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Name + consts.SecretSuffix,
+						SecretName:  dk.ExtensionsTokenSecretName(),
 						DefaultMode: &mode,
 					},
 				},
@@ -809,7 +810,7 @@ func TestVolumes(t *testing.T) {
 				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Name + consts.SecretSuffix,
+						SecretName:  dk.ExtensionsTokenSecretName(),
 						DefaultMode: &mode,
 					},
 				},

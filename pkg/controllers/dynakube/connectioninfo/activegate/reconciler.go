@@ -3,6 +3,7 @@ package activegate
 import (
 	"context"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
@@ -42,15 +43,15 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dtc dtclient.Clie
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.NeedsActiveGate() {
+	if !r.dk.ActiveGate().IsEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), activeGateConnectionInfoConditionType) == nil {
 			return nil
 		}
 
-		r.dk.Status.ActiveGate.ConnectionInfoStatus = dynakube.ActiveGateConnectionInfoStatus{}
+		r.dk.Status.ActiveGate.ConnectionInfo = communication.ConnectionInfo{}
 		query := k8ssecret.Query(r.client, r.apiReader, log)
 
-		err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.ActivegateTenantSecret(), Namespace: r.dk.Namespace}})
+		err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.ActiveGate().GetTenantSecretName(), Namespace: r.dk.Namespace}})
 		if err != nil {
 			log.Error(err, "failed to clean-up ActiveGate tenant-secret")
 		}
@@ -70,7 +71,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
-	secretNamespacedName := types.NamespacedName{Name: r.dk.ActivegateTenantSecret(), Namespace: r.dk.Namespace}
+	secretNamespacedName := types.NamespacedName{Name: r.dk.ActiveGate().GetTenantSecretName(), Namespace: r.dk.Namespace}
 
 	if !conditions.IsOutdated(r.timeProvider, r.dk, activeGateConnectionInfoConditionType) {
 		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.apiReader, secretNamespacedName, log)
@@ -104,7 +105,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 		log.Info("tenant has no endpoints", "tenant", connectionInfo.TenantUUID)
 	}
 
-	err = r.createTenantTokenSecret(ctx, r.dk.ActivegateTenantSecret(), connectionInfo.ConnectionInfo)
+	err = r.createTenantTokenSecret(ctx, r.dk.ActiveGate().GetTenantSecretName(), connectionInfo.ConnectionInfo)
 	if err != nil {
 		return err
 	}
@@ -115,8 +116,8 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 }
 
 func (r *reconciler) setDynakubeStatus(connectionInfo dtclient.ActiveGateConnectionInfo) {
-	r.dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID = connectionInfo.TenantUUID
-	r.dk.Status.ActiveGate.ConnectionInfoStatus.Endpoints = connectionInfo.Endpoints
+	r.dk.Status.ActiveGate.ConnectionInfo.TenantUUID = connectionInfo.TenantUUID
+	r.dk.Status.ActiveGate.ConnectionInfo.Endpoints = connectionInfo.Endpoints
 }
 
 func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName string, connectionInfo dtclient.ConnectionInfo) error {

@@ -39,7 +39,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !(r.dk.NeedsOneAgent() || r.dk.NeedsActiveGate()) {
+	if !(r.dk.NeedsOneAgent() || r.dk.ActiveGate().IsEnabled()) {
 		if meta.FindStatusCondition(*r.dk.Conditions(), PullSecretConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}

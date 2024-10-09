@@ -4470,11 +4470,11 @@ spec:
                       If referenced from a secret, make sure the key is called 'customProperties'
                     properties:
                       value:
-                        description: Custom properties value.
+                        description: Raw value for given property.
                         nullable: true
                         type: string
                       valueFrom:
-                        description: Custom properties secret.
+                        description: Name of the secret to get the property from.
                         nullable: true
                         type: string
                     type: object
@@ -6045,11 +6045,11 @@ spec:
                   Note: Applies to Dynatrace Operator, ActiveGate, and OneAgents.
                 properties:
                   value:
-                    description: Proxy URL. It has preference over ValueFrom.
+                    description: Raw value for given property.
                     nullable: true
                     type: string
                   valueFrom:
-                    description: Secret containing proxy URL.
+                    description: Name of the secret to get the property from.
                     nullable: true
                     type: string
                 type: object
@@ -8465,11 +8465,11 @@ spec:
                 description: Overrides the default image
                 properties:
                   repository:
-                    description: Custom EdgeConnect image repository
-                    example: docker.io/dynatrace/edgeconnect
+                    description: Custom image repository
+                    example: docker.io/dynatrace/image-name
                     type: string
                   tag:
-                    description: Indicates version of the EdgeConnect image to use
+                    description: Indicates a tag of the image to use
                     type: string
                 type: object
               kubernetesAutomation:

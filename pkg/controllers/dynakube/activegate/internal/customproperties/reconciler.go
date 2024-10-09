@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -31,12 +32,12 @@ var _ controllers.Reconciler = &Reconciler{}
 
 type Reconciler struct {
 	client                    client.Client
-	customPropertiesSource    *dynakube.DynaKubeValueSource
+	customPropertiesSource    *value.Source
 	dk                        *dynakube.DynaKube
 	customPropertiesOwnerName string
 }
 
-func NewReconciler(clt client.Client, dk *dynakube.DynaKube, customPropertiesOwnerName string, customPropertiesSource *dynakube.DynaKubeValueSource) *Reconciler {
+func NewReconciler(clt client.Client, dk *dynakube.DynaKube, customPropertiesOwnerName string, customPropertiesSource *value.Source) *Reconciler {
 	return &Reconciler{
 		client:                    clt,
 		dk:                        dk,

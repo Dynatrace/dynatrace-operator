@@ -15,3 +15,7 @@ func (dk *DynaKube) LogModuleTemplates() LogModuleTemplateSpec {
 func (dk *DynaKube) LogModuleDaemonSetName() string {
 	return dk.Name + logModuleDaemonSetSuffix
 }
+
+func (dk *DynaKube) LogModuleNodeSelector() map[string]string {
+	return dk.Spec.Templates.LogModule.NodeSelector
+}

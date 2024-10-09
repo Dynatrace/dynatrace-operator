@@ -210,3 +210,6 @@ rbac:
   oneAgent:
     create: true
     annotations: {}
+  nodeConfigCollector:
+    create: true
+    annotations: {}

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
@@ -13,7 +14,7 @@ import (
 
 func setServicePortUsage(dk *dynakube.DynaKube, isUsed bool) {
 	if isUsed {
-		dk.Spec.ActiveGate.Capabilities = append(dk.Spec.ActiveGate.Capabilities, dynakube.MetricsIngestCapability.DisplayName)
+		dk.Spec.ActiveGate.Capabilities = append(dk.Spec.ActiveGate.Capabilities, activegate.MetricsIngestCapability.DisplayName)
 	}
 }
 

@@ -5,8 +5,11 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -128,7 +131,7 @@ func getTestDynakube() *dynakube.DynaKube {
 			},
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
-					ImageRef: dynakube.ImageRefSpec{
+					ImageRef: image.Ref{
 						Repository: testEecImageRepository,
 						Tag:        testEecImageTag,
 					},
@@ -137,11 +140,9 @@ func getTestDynakube() *dynakube.DynaKube {
 		},
 
 		Status: dynakube.DynaKubeStatus{
-			ActiveGate: dynakube.ActiveGateStatus{
-				ConnectionInfoStatus: dynakube.ActiveGateConnectionInfoStatus{
-					ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
-						TenantUUID: testTenantUUID,
-					},
+			ActiveGate: activegate.Status{
+				ConnectionInfo: communication.ConnectionInfo{
+					TenantUUID: testTenantUUID,
 				},
 				VersionStatus: status.VersionStatus{},
 			},
