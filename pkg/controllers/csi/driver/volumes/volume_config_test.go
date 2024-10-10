@@ -2,6 +2,7 @@ package csivolumes
 
 import (
 	"testing"
+	"time"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/stretchr/testify/assert"
@@ -90,6 +91,11 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			},
 			VolumeId:   testVolumeId,
 			TargetPath: testTargetPath,
+			VolumeContext: map[string]string{
+				CSIVolumeAttributeDynakubeField: testDynakubeName,
+				CSIVolumeAttributeModeField:     "test",
+				CSIVolumeAttributeRetryTimeout:  "5m",
+			},
 		}
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
@@ -108,6 +114,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			VolumeContext: map[string]string{
 				PodNameContextKey:               testPodUID,
 				CSIVolumeAttributeDynakubeField: testDynakubeName,
+				CSIVolumeAttributeRetryTimeout:  "5m",
 			},
 		}
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
@@ -125,8 +132,50 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			VolumeId:   testVolumeId,
 			TargetPath: testTargetPath,
 			VolumeContext: map[string]string{
-				PodNameContextKey:           testPodUID,
-				CSIVolumeAttributeModeField: "test",
+				PodNameContextKey:              testPodUID,
+				CSIVolumeAttributeModeField:    "test",
+				CSIVolumeAttributeRetryTimeout: "5m",
+			},
+		}
+		volumeCfg, err := ParseNodePublishVolumeRequest(request)
+
+		require.Error(t, err)
+		assert.Nil(t, volumeCfg)
+	})
+	t.Run(`retryTimeout missing from requests volume context`, func(t *testing.T) {
+		request := &csi.NodePublishVolumeRequest{
+			VolumeCapability: &csi.VolumeCapability{
+				AccessType: &csi.VolumeCapability_Mount{
+					Mount: &csi.VolumeCapability_MountVolume{},
+				},
+			},
+			VolumeId:   testVolumeId,
+			TargetPath: testTargetPath,
+			VolumeContext: map[string]string{
+				PodNameContextKey:               testPodUID,
+				CSIVolumeAttributeDynakubeField: testDynakubeName,
+				CSIVolumeAttributeModeField:     "test",
+			},
+		}
+		volumeCfg, err := ParseNodePublishVolumeRequest(request)
+
+		require.Error(t, err)
+		assert.Nil(t, volumeCfg)
+	})
+	t.Run(`retryTimeout has incorrect format`, func(t *testing.T) {
+		request := &csi.NodePublishVolumeRequest{
+			VolumeCapability: &csi.VolumeCapability{
+				AccessType: &csi.VolumeCapability_Mount{
+					Mount: &csi.VolumeCapability_MountVolume{},
+				},
+			},
+			VolumeId:   testVolumeId,
+			TargetPath: testTargetPath,
+			VolumeContext: map[string]string{
+				PodNameContextKey:               testPodUID,
+				CSIVolumeAttributeDynakubeField: testDynakubeName,
+				CSIVolumeAttributeModeField:     "test",
+				CSIVolumeAttributeRetryTimeout:  "5",
 			},
 		}
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
@@ -147,6 +196,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 				PodNameContextKey:               testPodUID,
 				CSIVolumeAttributeDynakubeField: testDynakubeName,
 				CSIVolumeAttributeModeField:     "test",
+				CSIVolumeAttributeRetryTimeout:  "5m",
 			},
 		}
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
@@ -158,5 +208,6 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		assert.Equal(t, testPodUID, volumeCfg.PodName)
 		assert.Equal(t, "test", volumeCfg.Mode)
 		assert.Equal(t, testDynakubeName, volumeCfg.DynakubeName)
+		assert.Equal(t, time.Minute*5, volumeCfg.RetryTimeout)
 	})
 }
