@@ -116,7 +116,7 @@ func TestArguments(t *testing.T) {
 		builder := builder{
 			dk: &dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
-					Proxy: &value.Source{Value: "something"},
+					Proxy: &dynakube.DynaKubeProxy{Value: testValue},
 				},
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: dynakube.OneAgentStatus{
@@ -141,7 +141,7 @@ func TestArguments(t *testing.T) {
 		builder := builder{
 			dk: &dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
-					Proxy: &value.Source{Value: "something"},
+					Proxy: &dynakube.DynaKubeProxy{Value: testValue},
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "dynakube",
@@ -173,7 +173,7 @@ func TestArguments(t *testing.T) {
 						"feature.dynatrace.com/oneagent-ignore-proxy": "true",
 					},
 				},
-				Spec: dynakube.DynaKubeSpec{Proxy: &value.Source{Value: testValue}},
+				Spec: dynakube.DynaKubeSpec{Proxy: &dynakube.DynaKubeProxy{Value: testValue}},
 			},
 		}
 		arguments, _ := builder.arguments()
