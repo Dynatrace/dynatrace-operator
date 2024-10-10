@@ -12,6 +12,11 @@ RUN go mod download -x
 ARG GO_LINKER_ARGS
 ARG GO_BUILD_TAGS
 
+ARG DEBUG_TOOLS
+RUN if [ "$DEBUG_TOOLS" = "true" ]; then \
+      GOBIN=/app/build/_output/bin go install github.com/go-delve/delve/cmd/dlv@latest; \
+    fi
+
 COPY pkg ./pkg
 COPY cmd ./cmd
 RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" \

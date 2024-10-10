@@ -1,4 +1,6 @@
 IMAGE ?= quay.io/dynatrace/dynatrace-operator
+DEBUG ?= false
+
 #Needed for the e2e pipeline to work
 BRANCH ?= $(shell git branch --show-current)
 SNAPSHOT_SUFFIX ?= $(shell echo "${BRANCH}" | sed "s/[^a-zA-Z0-9_-]/-/g")
@@ -24,7 +26,7 @@ endif
 
 ## Builds an Operator image with a given IMAGE and TAG
 images/build: ensure-tag-not-snapshot
-	./hack/build/build_image.sh "${IMAGE}" "${TAG}"
+	./hack/build/build_image.sh "${IMAGE}" "${TAG}" "${DEBUG}"
 
 ## Pushes an ALREADY BUILT Operator image with a given IMAGE and TAG
 images/push: ensure-tag-not-snapshot

@@ -667,3 +667,42 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].image
           value: "some-repo:v1.0.1"
+
+  - it: debug flag deletes resources and adds debug command
+    set:
+      platform: kubernetes
+      csidriver.enabled: true
+      debug: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value:
+            - /usr/local/bin/dlv
+            - --listen=:40000
+            - --headless=true
+            - --api-version=2
+            - --log
+            - exec
+            - --continue
+            - --accept-multiclient
+            - --
+            - /usr/local/bin/dynatrace-operator
+      - equal:
+          path: spec.template.spec.containers[1].command
+          value:
+              - /usr/local/bin/dlv
+              - --listen=:40001
+              - --headless=true
+              - --api-version=2
+              - --log
+              - exec
+              - --continue
+              - --accept-multiclient
+              - --
+              - /usr/local/bin/dynatrace-operator
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value: null
+      - equal:
+          path: spec.template.spec.containers[1].resources
+          value: null
