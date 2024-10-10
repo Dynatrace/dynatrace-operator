@@ -3,6 +3,7 @@ package dynakube
 import (
 	"strconv"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
@@ -89,9 +90,9 @@ func (dst *DynaKube) fromActiveGateSpec(src *dynakube.DynaKube) {
 }
 
 func (dst *DynaKube) fromMovedFields(src *dynakube.DynaKube) error {
-	dst.Annotations[AnnotationFeatureMetadataEnrichment] = strconv.FormatBool(src.Spec.MetadataEnrichment.Enabled)
-	dst.Annotations[AnnotationFeatureApiRequestThreshold] = strconv.FormatInt(int64(src.Spec.DynatraceApiRequestThreshold), 10)
-	dst.Annotations[AnnotationFeatureOneAgentSecCompProfile] = src.OneAgentSecCompProfile()
+	dst.Annotations[exp.MetadataEnrichmentAnnotation] = strconv.FormatBool(src.Spec.MetadataEnrichment.Enabled)
+	dst.Annotations[exp.ApiRequestThresholdAnnotation] = strconv.FormatInt(int64(src.Spec.DynatraceApiRequestThreshold), 10)
+	dst.Annotations[exp.OneAgentSecCompProfileAnnotation] = src.OneAgentSecCompProfile()
 
 	if selector := src.OneAgentNamespaceSelector(); selector != nil {
 		dst.Spec.NamespaceSelector = *selector

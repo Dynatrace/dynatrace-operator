@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
@@ -300,7 +301,7 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 		proxyValue := "proxy-test-value"
 		setProxy(dk, proxyValue)
 		setAnnotation(dk, map[string]string{
-			dynakube.AnnotationFeatureOneAgentIgnoreProxy: "true", //nolint:staticcheck
+			exp.OneAgentIgnoreProxyAnnotation: "true", //nolint:staticcheck
 		})
 
 		testNamespace := createTestInjectedNamespace(dk, "test")
@@ -505,11 +506,11 @@ func checkProxy(t *testing.T, generatedSecret corev1.Secret, expectedValue strin
 }
 
 func setNoProxy(dk *dynakube.DynaKube, value string) {
-	dk.Annotations[dynakube.AnnotationFeatureNoProxy] = value
+	dk.Annotations[exp.NoProxyAnnotation] = value
 }
 
 func setInitialConnectRetry(dk *dynakube.DynaKube, value string) {
-	dk.Annotations[dynakube.AnnotationFeatureOneAgentInitialConnectRetry] = value
+	dk.Annotations[exp.OneAgentInitialConnectRetryAnnotation] = value
 }
 
 func setTlsSecret(dk *dynakube.DynaKube, value string) {

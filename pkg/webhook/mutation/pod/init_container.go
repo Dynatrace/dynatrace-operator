@@ -25,7 +25,7 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Args:            []string{"init"},
 		Env: []corev1.EnvVar{
-			{Name: consts.InjectionFailurePolicyEnv, Value: maputils.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, dk.FeatureInjectionFailurePolicy())},
+			{Name: consts.InjectionFailurePolicyEnv, Value: maputils.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, dk.FF().GetInjectionFailurePolicy())},
 			{Name: consts.K8sPodNameEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.name")},
 			{Name: consts.K8sPodUIDEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.uid")},
 			{Name: consts.K8sBasePodNameEnv, Value: getBasePodName(pod)},
@@ -143,7 +143,7 @@ func addInitContainerToPod(pod *corev1.Pod, initContainer *corev1.Container) {
 }
 
 func addSeccompProfile(ctx *corev1.SecurityContext, dk dynakube.DynaKube) {
-	if dk.FeatureInitContainerSeccomp() {
+	if dk.FF().IsInitContainerSeccompEnabled() {
 		ctx.SeccompProfile = &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault}
 	}
 }

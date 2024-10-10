@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -178,7 +179,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run(`Reconciliation only runs every 15 min`, func(t *testing.T) {
 		dk := createTestDynakube()
-		dk.Spec.DynatraceApiRequestThreshold = dynakube.DefaultMinRequestThresholdMinutes
+		dk.Spec.DynatraceApiRequestThreshold = exp.DefaultMinRequestThresholdMinutes
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dk, token.Tokens{
 			dtclient.ApiToken: &token.Token{Value: testValue},

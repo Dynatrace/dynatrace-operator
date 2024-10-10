@@ -3,6 +3,7 @@ package dynakube
 import (
 	"strconv"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -44,9 +45,9 @@ func (src *DynaKube) toBase(dst *dynakube.DynaKube) {
 }
 
 func (src *DynaKube) convertMaxMountAttempts(dst *dynakube.DynaKube) {
-	configuredMountAttempts := src.FeatureMaxFailedCsiMountAttempts()
-	if configuredMountAttempts != DefaultMaxFailedCsiMountAttempts {
-		dst.Annotations[dynakube.AnnotationFeatureMaxCsiMountTimeout] = dynakube.MountAttemptsToTimeout(configuredMountAttempts)
+	configuredMountAttempts := src.FF().GetMaxFailedCsiMountAttempts()
+	if configuredMountAttempts != exp.DefaultMaxFailedCsiMountAttempts {
+		dst.Annotations[exp.MaxCsiMountTimeoutAnnotation] = exp.MountAttemptsToTimeout(configuredMountAttempts)
 	}
 }
 
@@ -106,33 +107,33 @@ func (src *DynaKube) toActiveGateSpec(dst *dynakube.DynaKube) {
 }
 
 func (src *DynaKube) toMovedFields(dst *dynakube.DynaKube) error {
-	if src.Annotations[AnnotationFeatureMetadataEnrichment] == "false" ||
+	if src.Annotations[exp.MetadataEnrichmentAnnotation] == "false" ||
 		!src.NeedAppInjection() {
 		dst.Spec.MetadataEnrichment = dynakube.MetadataEnrichment{Enabled: false}
-		delete(dst.Annotations, AnnotationFeatureMetadataEnrichment)
+		delete(dst.Annotations, exp.MetadataEnrichmentAnnotation)
 	} else {
 		dst.Spec.MetadataEnrichment = dynakube.MetadataEnrichment{Enabled: true}
-		delete(dst.Annotations, AnnotationFeatureMetadataEnrichment)
+		delete(dst.Annotations, exp.MetadataEnrichmentAnnotation)
 	}
 
 	src.convertMaxMountAttempts(dst)
 
-	if src.Annotations[AnnotationFeatureApiRequestThreshold] != "" {
-		duration, err := strconv.ParseInt(src.Annotations[AnnotationFeatureApiRequestThreshold], 10, 32)
+	if src.Annotations[exp.ApiRequestThresholdAnnotation] != "" {
+		duration, err := strconv.ParseInt(src.Annotations[exp.ApiRequestThresholdAnnotation], 10, 32)
 		if err != nil {
 			return err
 		}
 
 		dst.Spec.DynatraceApiRequestThreshold = int(duration)
-		delete(dst.Annotations, AnnotationFeatureApiRequestThreshold)
+		delete(dst.Annotations, exp.ApiRequestThresholdAnnotation)
 	} else {
-		dst.Spec.DynatraceApiRequestThreshold = DefaultMinRequestThresholdMinutes
-		delete(dst.Annotations, AnnotationFeatureApiRequestThreshold)
+		dst.Spec.DynatraceApiRequestThreshold = exp.DefaultMinRequestThresholdMinutes
+		delete(dst.Annotations, exp.ApiRequestThresholdAnnotation)
 	}
 
-	if src.Annotations[AnnotationFeatureOneAgentSecCompProfile] != "" {
-		secCompProfile := src.Annotations[AnnotationFeatureOneAgentSecCompProfile]
-		delete(dst.Annotations, AnnotationFeatureOneAgentSecCompProfile)
+	if src.Annotations[exp.OneAgentSecCompProfileAnnotation] != "" {
+		secCompProfile := src.Annotations[exp.OneAgentSecCompProfileAnnotation]
+		delete(dst.Annotations, exp.OneAgentSecCompProfileAnnotation)
 
 		switch {
 		case src.CloudNativeFullstackMode():

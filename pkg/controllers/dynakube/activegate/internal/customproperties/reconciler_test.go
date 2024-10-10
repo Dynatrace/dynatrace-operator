@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -47,7 +48,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				},
 			}}
 		dk.Annotations = map[string]string{
-			dynakube.AnnotationFeatureNoProxy: testValue,
+			exp.NoProxyAnnotation: testValue,
 		}
 
 		fakeClient := fake.NewClient(dk)
@@ -85,7 +86,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				},
 			}}
 		dk.Annotations = map[string]string{
-			dynakube.AnnotationFeatureNoProxy: testValue,
+			exp.NoProxyAnnotation: testValue,
 		}
 
 		fakeClient := fake.NewClient(dk)

@@ -67,11 +67,11 @@ func (updater activeGateUpdater) CustomVersion() string {
 }
 
 func (updater activeGateUpdater) IsAutoUpdateEnabled() bool {
-	return !updater.dk.FeatureDisableActiveGateUpdates()
+	return !updater.dk.FF().IsActiveGateUpdatesDisabled()
 }
 
 func (updater activeGateUpdater) IsPublicRegistryEnabled() bool {
-	isPublicRegistry := updater.dk.FeaturePublicRegistry() && !updater.dk.ClassicFullStackMode()
+	isPublicRegistry := updater.dk.FF().IsPublicRegistryEnabled() && !updater.dk.ClassicFullStackMode()
 	if isPublicRegistry {
 		setVerifiedCondition(updater.dk.Conditions(), activeGateVersionConditionType) // Bit hacky, as things can still go wrong, but if so we will just overwrite this is LatestImageInfo.
 	}

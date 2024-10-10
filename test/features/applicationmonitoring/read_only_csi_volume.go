@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
@@ -25,7 +26,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-var readOnlyInjection = map[string]string{dynakube.AnnotationFeatureReadOnlyCsiVolume: "true"}
+var readOnlyInjection = map[string]string{exp.ReadOnlyCsiVolumeAnnotation: "true"}
 
 func ReadOnlyCSIVolume(t *testing.T) features.Feature {
 	builder := features.New("app-read-only-csi-volume")

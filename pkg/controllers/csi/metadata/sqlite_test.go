@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -135,8 +135,8 @@ func TestCreateTables(t *testing.T) {
 			if column == "MaxFailedMountAttempts" {
 				maxFailedMountAttempts, err := strconv.Atoi(*defaultValue)
 				require.NoError(t, err)
-				assert.Equal(t, strconv.Itoa(dynakube.DefaultMaxFailedCsiMountAttempts), *defaultValue)
-				assert.Equal(t, dynakube.DefaultMaxFailedCsiMountAttempts, maxFailedMountAttempts)
+				assert.Equal(t, strconv.Itoa(exp.DefaultMaxFailedCsiMountAttempts), *defaultValue)
+				assert.Equal(t, exp.DefaultMaxFailedCsiMountAttempts, maxFailedMountAttempts)
 				assert.Equal(t, "1", notNull)
 			}
 		}

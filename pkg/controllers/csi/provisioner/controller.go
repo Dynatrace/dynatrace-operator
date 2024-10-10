@@ -261,7 +261,7 @@ func (provisioner *OneAgentProvisioner) handleMetadata(ctx context.Context, dk *
 		tenantUUID,
 		oldDynakubeMetadata.LatestVersion,
 		oldDynakubeMetadata.ImageDigest,
-		dk.FeatureMaxFailedCsiMountAttempts())
+		dk.FF().GetMaxFailedCsiMountAttempts())
 
 	return dynakubeMetadata, oldDynakubeMetadata, nil
 }

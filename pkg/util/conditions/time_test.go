@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -33,7 +34,7 @@ func TestIsOutdated(t *testing.T) {
 		tp := timeprovider.New()
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				DynatraceApiRequestThreshold: dynakube.DefaultMinRequestThresholdMinutes,
+				DynatraceApiRequestThreshold: exp.DefaultMinRequestThresholdMinutes,
 			},
 		}
 

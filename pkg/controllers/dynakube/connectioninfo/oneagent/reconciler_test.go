@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -181,7 +182,7 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run("do not update OneAgent connection info within timeout", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.DynatraceApiRequestThreshold = dynakube.DefaultMinRequestThresholdMinutes
+		dk.Spec.DynatraceApiRequestThreshold = exp.DefaultMinRequestThresholdMinutes
 		fakeClient := fake.NewClient(dk, buildOneAgentTenantSecret(dk, testOutdated))
 		dtc := dtclientmock.NewClient(t)
 

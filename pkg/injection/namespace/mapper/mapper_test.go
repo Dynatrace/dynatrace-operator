@@ -3,6 +3,7 @@ package mapper
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
@@ -170,7 +171,7 @@ func TestUpdateNamespace(t *testing.T) {
 		ignoreDk := createDynakubeWithAppInject("appMonitoring", convertToLabelSelector(otherLabels))
 		notIgnoreDk := createDynakubeWithAppInject("boom", convertToLabelSelector(labels))
 		notIgnoreDk.Annotations = map[string]string{
-			dynakube.AnnotationFeatureIgnoredNamespaces: "[\"asd\"]",
+			exp.IgnoredNamespacesAnnotation: "[\"asd\"]",
 		}
 		namespace := createNamespace("openshift-something", labels)
 
@@ -187,7 +188,7 @@ func TestUpdateNamespace(t *testing.T) {
 		ignoreDk := createDynakubeWithAppInject("appMonitoring", convertToLabelSelector(otherLabels))
 		notIgnoreDk := createDynakubeWithAppInject("boom", convertToLabelSelector(labels))
 		notIgnoreDk.Annotations = map[string]string{
-			dynakube.AnnotationFeatureIgnoredNamespaces: "[\"asd\"]",
+			exp.IgnoredNamespacesAnnotation: "[\"asd\"]",
 		}
 		namespace := createNamespace("openshift-something", labels)
 
@@ -222,7 +223,7 @@ func TestUpdateNamespace(t *testing.T) {
 		require.True(t, updated)
 		assert.Len(t, namespace.Labels, 2)
 		require.Equal(t, namespace.Labels[dtwebhook.InjectionInstanceLabel], dk.Name)
-		dk.SetAnnotations(map[string]string{dynakube.AnnotationFeatureIgnoredNamespaces: "[\"" + namespace.Name + "\"]"})
+		dk.SetAnnotations(map[string]string{exp.IgnoredNamespacesAnnotation: "[\"" + namespace.Name + "\"]"})
 		updated, err = updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}})
 
 		require.NoError(t, err)

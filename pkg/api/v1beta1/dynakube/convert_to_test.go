@@ -3,6 +3,7 @@ package dynakube
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
@@ -109,9 +110,9 @@ func TestConvertTo(t *testing.T) {
 
 func getMovedFeatureFlagList() []string {
 	return []string{
-		AnnotationFeatureApiRequestThreshold,
-		AnnotationFeatureOneAgentSecCompProfile,
-		AnnotationFeatureMetadataEnrichment,
+		exp.ApiRequestThresholdAnnotation,
+		exp.OneAgentSecCompProfileAnnotation,
+		exp.MetadataEnrichmentAnnotation,
 	}
 }
 
@@ -136,12 +137,12 @@ func getOldDynakubeBase() DynaKube {
 			Name:      "name",
 			Namespace: "namespace",
 			Annotations: map[string]string{
-				AnnotationFeatureApiRequestThreshold:       "42",
-				AnnotationFeatureOneAgentSecCompProfile:    "seccomp",
-				AnnotationFeatureMetadataEnrichment:        "false",
-				AnnotationFeatureActiveGateIgnoreProxy:     "true",
-				AnnotationFeatureAutomaticK8sApiMonitoring: "true",
-				AnnotationFeatureMaxFailedCsiMountAttempts: "9",
+				exp.ApiRequestThresholdAnnotation:       "42",
+				exp.OneAgentSecCompProfileAnnotation:    "seccomp",
+				exp.MetadataEnrichmentAnnotation:        "false",
+				exp.ActiveGateIgnoreProxyAnnotation:     "true",
+				exp.AutomaticK8sApiMonitoringAnnotation: "true",
+				exp.MaxFailedCsiMountAttemptsAnnotation: "9",
 			},
 			Labels: map[string]string{
 				"label": "label-value",

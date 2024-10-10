@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -279,7 +280,7 @@ func enablePublicRegistry(dk *dynakube.DynaKube) *dynakube.DynaKube {
 		dk.Annotations = make(map[string]string)
 	}
 
-	dk.Annotations[dynakube.AnnotationFeaturePublicRegistry] = "true"
+	dk.Annotations[exp.PublicRegistryAnnotation] = "true"
 
 	return dk
 }

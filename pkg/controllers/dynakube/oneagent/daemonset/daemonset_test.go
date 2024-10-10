@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
@@ -341,7 +342,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+					exp.OneAgentPrivilegedAnnotation: "true",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
@@ -372,7 +373,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+					exp.OneAgentPrivilegedAnnotation: "true",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
@@ -435,7 +436,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+					exp.OneAgentPrivilegedAnnotation: "true",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
@@ -479,7 +480,7 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 			dk: &dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						dynakube.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+						exp.OneAgentPrivilegedAnnotation: "true",
 					},
 				},
 			},
@@ -492,7 +493,7 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureRunOneAgentContainerPrivileged: "false",
+					exp.OneAgentPrivilegedAnnotation: "false",
 				},
 			},
 		}

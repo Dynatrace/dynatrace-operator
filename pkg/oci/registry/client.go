@@ -250,7 +250,7 @@ func PrepareTransportForDynaKube(ctx context.Context, apiReader client.Reader, t
 	}
 
 	if proxy != "" {
-		transport, err = addProxy(transport, proxy, dk.FeatureNoProxy())
+		transport, err = addProxy(transport, proxy, dk.FF().GetNoProxy())
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to add proxy to default transport")
 		}
