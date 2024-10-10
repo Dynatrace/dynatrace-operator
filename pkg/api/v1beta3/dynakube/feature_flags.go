@@ -268,7 +268,7 @@ func (dk *DynaKube) FeatureMaxCSIRetryTimeout() time.Duration {
 func MountAttemptsToTimeout(maxAttempts int) string {
 	var power float64 = 2
 
-	var baseDelay = 1 * time.Second / 2
+	var baseDelay = time.Second / 2
 
 	var delaySum time.Duration
 
