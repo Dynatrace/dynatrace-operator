@@ -3,6 +3,7 @@ package dynakube
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -139,7 +140,7 @@ func compareMovedFields(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 	assert.Equal(t, *oldDk.NamespaceSelector(), newDk.Spec.MetadataEnrichment.NamespaceSelector)
 
 	if oldDk.FeatureMaxFailedCsiMountAttempts() != DefaultMaxFailedCsiMountAttempts {
-		assert.Equal(t, dynakube.MountAttemptsToTimeout(oldDk.FeatureMaxFailedCsiMountAttempts()), newDk.FeatureMaxCSIRetryTimeout().String())
+		assert.Equal(t, exp.MountAttemptsToTimeout(oldDk.FeatureMaxFailedCsiMountAttempts()), newDk.FF().GetMaxCSIRetryTimeout().String())
 	}
 
 	if newDk.NeedAppInjection() {

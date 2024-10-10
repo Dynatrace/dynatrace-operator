@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -104,7 +105,7 @@ func TestMapFromNamespace(t *testing.T) {
 	t.Run("ComponentFeature flag for monitoring system namespaces", func(t *testing.T) {
 		dk := createDynakubeWithAppInject("appMonitoring", metav1.LabelSelector{})
 		dk.Annotations = map[string]string{
-			dynakube.AnnotationFeatureIgnoredNamespaces: "[]",
+			exp.IgnoredNamespacesAnnotation: "[]",
 		}
 		namespace := createNamespace("openshift-something", nil)
 		clt := fake.NewClient(dk)

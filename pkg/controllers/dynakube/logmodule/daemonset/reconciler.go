@@ -83,7 +83,7 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 
 	labels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.LogModuleComponentLabel)
 
-	maxUnavailable := intstr.FromInt(r.dk.FeatureOneAgentMaxUnavailable())
+	maxUnavailable := intstr.FromInt(r.dk.FF().GetMaxUnavailableOneAgent())
 
 	ds, err := daemonset.Build(r.dk, r.dk.LogModuleDaemonSetName(), getContainer(*r.dk),
 		daemonset.SetInitContainer(getInitContainer(*r.dk)),

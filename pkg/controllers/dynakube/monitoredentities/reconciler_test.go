@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
@@ -64,7 +65,7 @@ func createDynaKube() dynakube.DynaKube {
 			Name: "test-dk",
 		},
 		Spec: dynakube.DynaKubeSpec{
-			DynatraceApiRequestThreshold: dynakube.DefaultMinRequestThresholdMinutes,
+			DynatraceApiRequestThreshold: exp.DefaultMinRequestThresholdMinutes,
 			MetadataEnrichment: dynakube.MetadataEnrichment{
 				Enabled: true,
 			},

@@ -47,7 +47,7 @@ func (dk *DynaKube) OneAgentDaemonsetName() string {
 }
 
 func (dk *DynaKube) NeedsOneAgentPrivileged() bool {
-	return dk.FeatureOneAgentPrivileged()
+	return dk.FF().IsOneAgentPrivileged()
 }
 
 func (dk *DynaKube) NeedsOneAgentProbe() bool {
@@ -79,14 +79,14 @@ func (dk *DynaKube) OneAgentConnectionInfoConfigMapName() string {
 
 func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {
 	return (dk.HostMonitoringMode() || dk.CloudNativeFullstackMode()) &&
-		dk.FeatureReadOnlyOneAgent()
+		dk.FF().IsOneAgentReadOnly()
 }
 
 func (dk *DynaKube) NeedsCSIDriver() bool {
 	isAppMonitoringWithCSI := dk.ApplicationMonitoringMode() &&
 		dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver
 
-	isHostMonitoringWithCSI := dk.HostMonitoringMode() && dk.FeatureReadOnlyOneAgent()
+	isHostMonitoringWithCSI := dk.HostMonitoringMode() && dk.FF().IsOneAgentReadOnly()
 
 	return dk.CloudNativeFullstackMode() || isAppMonitoringWithCSI || isHostMonitoringWithCSI
 }

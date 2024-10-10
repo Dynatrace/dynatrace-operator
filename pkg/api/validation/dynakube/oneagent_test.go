@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -180,19 +181,19 @@ func TestConflictingNodeSelector(t *testing.T) {
 	t.Run(`valid dynakube specs with multitenant hostMonitoring`, func(t *testing.T) {
 		assertAllowedWithWarnings(t, 0,
 			newCloudNativeDynakube("dk1", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "true",
+				exp.MultipleOsAgentsOnNodeAnnotation: "true",
 			}, "1"),
 			newCloudNativeDynakube("dk2", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "true",
+				exp.MultipleOsAgentsOnNodeAnnotation: "true",
 			}, "2"),
 			&defaultCSIDaemonSet)
 
 		assertAllowedWithWarnings(t, 0,
 			newCloudNativeDynakube("dk1", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "true",
+				exp.MultipleOsAgentsOnNodeAnnotation: "true",
 			}, "1"),
 			newCloudNativeDynakube("dk2", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "true",
+				exp.MultipleOsAgentsOnNodeAnnotation: "true",
 			}, "1"),
 			&defaultCSIDaemonSet)
 	})
@@ -234,19 +235,19 @@ func TestConflictingNodeSelector(t *testing.T) {
 	t.Run(`invalid dynakube specs with multitenant hostMonitoring`, func(t *testing.T) {
 		assertDenied(t, nil,
 			newCloudNativeDynakube("dk1", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "false",
+				exp.MultipleOsAgentsOnNodeAnnotation: "false",
 			}, "1"),
 			newCloudNativeDynakube("dk2", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "true",
+				exp.MultipleOsAgentsOnNodeAnnotation: "true",
 			}, "1"),
 			&defaultCSIDaemonSet)
 
 		assertDenied(t, nil,
 			newCloudNativeDynakube("dk1", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "false",
+				exp.MultipleOsAgentsOnNodeAnnotation: "false",
 			}, "1"),
 			newCloudNativeDynakube("dk2", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "false",
+				exp.MultipleOsAgentsOnNodeAnnotation: "false",
 			}, "1"),
 			&defaultCSIDaemonSet)
 

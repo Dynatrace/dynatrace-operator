@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -122,7 +123,7 @@ func (dk *DynaKube) TenantUUIDFromConnectionInfoStatus() (string, error) {
 
 func (dk *DynaKube) ApiRequestThreshold() time.Duration {
 	if dk.Spec.DynatraceApiRequestThreshold < 0 {
-		dk.Spec.DynatraceApiRequestThreshold = DefaultMinRequestThresholdMinutes
+		dk.Spec.DynatraceApiRequestThreshold = exp.DefaultMinRequestThresholdMinutes
 	}
 
 	return time.Duration(dk.Spec.DynatraceApiRequestThreshold) * time.Minute

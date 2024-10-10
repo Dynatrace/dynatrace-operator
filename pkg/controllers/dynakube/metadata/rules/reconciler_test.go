@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -125,7 +126,7 @@ func createDynaKube() dynakube.DynaKube {
 			Name: "rules-dk",
 		},
 		Spec: dynakube.DynaKubeSpec{
-			DynatraceApiRequestThreshold: dynakube.DefaultMinRequestThresholdMinutes,
+			DynatraceApiRequestThreshold: exp.DefaultMinRequestThresholdMinutes,
 			MetadataEnrichment: dynakube.MetadataEnrichment{
 				Enabled: true,
 			},

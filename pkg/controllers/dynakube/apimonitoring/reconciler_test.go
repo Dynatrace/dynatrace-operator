@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
@@ -346,7 +347,7 @@ func newDynaKube() *dynakube.DynaKube {
 			Namespace: "my-namespace",
 			UID:       "69e98f18-805a-42de-84b5-3eae66534f75",
 			Annotations: map[string]string{
-				dynakube.AnnotationFeatureK8sAppEnabled: "true",
+				exp.K8sAppEnabledAnnotation: "true",
 			},
 		},
 		Spec: dynakube.DynaKubeSpec{

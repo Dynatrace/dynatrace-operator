@@ -3,6 +3,7 @@ package dynakube
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -133,7 +134,7 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 	}
 
 	if oldDk.FeatureMaxFailedCsiMountAttempts() != DefaultMaxFailedCsiMountAttempts {
-		assert.Equal(t, dynakube.MountAttemptsToTimeout(oldDk.FeatureMaxFailedCsiMountAttempts()), newDk.FeatureMaxCSIRetryTimeout().String())
+		assert.Equal(t, exp.MountAttemptsToTimeout(oldDk.FeatureMaxFailedCsiMountAttempts()), newDk.FF().GetMaxCSIRetryTimeout().String())
 	}
 }
 
@@ -241,8 +242,8 @@ func getNewDynakubeBase() dynakube.DynaKube {
 			Name:      "name",
 			Namespace: "namespace",
 			Annotations: map[string]string{
-				dynakube.AnnotationFeatureActiveGateIgnoreProxy:     "true", //nolint:staticcheck
-				dynakube.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
+				exp.ActiveGateIgnoreProxyAnnotation: "true", //nolint:staticcheck
+				exp.AutomaticK8sApiMonitoringAnnotation:    "true",
 			},
 			Labels: map[string]string{
 				"label": "label-value",

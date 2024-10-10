@@ -1,6 +1,7 @@
 package dynakube
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -45,7 +46,7 @@ func (src *DynaKube) toBase(dst *dynakube.DynaKube) {
 func (src *DynaKube) convertMaxMountAttempts(dst *dynakube.DynaKube) {
 	configuredMountAttempts := src.FeatureMaxFailedCsiMountAttempts()
 	if configuredMountAttempts != DefaultMaxFailedCsiMountAttempts {
-		dst.Annotations[dynakube.AnnotationFeatureMaxCsiMountTimeout] = dynakube.MountAttemptsToTimeout(configuredMountAttempts)
+		dst.Annotations[exp.AnnotationFeatureMaxCsiMountTimeout] = exp.MountAttemptsToTimeout(configuredMountAttempts)
 	}
 }
 

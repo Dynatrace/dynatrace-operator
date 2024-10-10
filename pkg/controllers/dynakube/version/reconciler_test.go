@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -206,7 +207,7 @@ func TestNeedsUpdate(t *testing.T) {
 			OneAgent: dynakube.OneAgentSpec{
 				ClassicFullStack: &dynakube.HostInjectSpec{},
 			},
-			DynatraceApiRequestThreshold: dynakube.DefaultMinRequestThresholdMinutes,
+			DynatraceApiRequestThreshold: exp.DefaultMinRequestThresholdMinutes,
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: dynakube.OneAgentStatus{

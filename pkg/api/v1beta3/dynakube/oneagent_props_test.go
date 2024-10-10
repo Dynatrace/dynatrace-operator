@@ -19,6 +19,7 @@ package dynakube
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -61,7 +62,7 @@ func TestNeedsCSIDriver(t *testing.T) {
 		dk := DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					AnnotationFeatureReadOnlyOneAgent: "true",
+					exp.ReadOnlyOneAgentAnnotation: "true",
 				},
 			},
 			Spec: DynaKubeSpec{
@@ -77,7 +78,7 @@ func TestNeedsCSIDriver(t *testing.T) {
 		dk := DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					AnnotationFeatureReadOnlyOneAgent: "false",
+					exp.ReadOnlyOneAgentAnnotation: "false",
 				},
 			},
 			Spec: DynaKubeSpec{
@@ -93,7 +94,7 @@ func TestNeedsCSIDriver(t *testing.T) {
 		dk := DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					AnnotationFeatureReadOnlyOneAgent: "true",
+					exp.ReadOnlyOneAgentAnnotation: "true",
 				},
 			},
 			Spec: DynaKubeSpec{
@@ -109,7 +110,7 @@ func TestNeedsCSIDriver(t *testing.T) {
 		dk := DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					AnnotationFeatureReadOnlyOneAgent: "false",
+					exp.ReadOnlyOneAgentAnnotation: "false",
 				},
 			},
 			Spec: DynaKubeSpec{
@@ -149,7 +150,7 @@ func TestNeedsReadonlyOneagent(t *testing.T) {
 		dk := DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					AnnotationFeatureReadOnlyOneAgent: "true",
+					exp.ReadOnlyOneAgentAnnotation: "true",
 				},
 			},
 			Spec: DynaKubeSpec{
@@ -165,7 +166,7 @@ func TestNeedsReadonlyOneagent(t *testing.T) {
 		dk := DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					AnnotationFeatureReadOnlyOneAgent: "false",
+					exp.ReadOnlyOneAgentAnnotation: "false",
 				},
 			},
 			Spec: DynaKubeSpec{
@@ -181,7 +182,7 @@ func TestNeedsReadonlyOneagent(t *testing.T) {
 		dk := DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					AnnotationFeatureReadOnlyOneAgent: "true",
+					exp.ReadOnlyOneAgentAnnotation: "true",
 				},
 			},
 			Spec: DynaKubeSpec{
@@ -197,7 +198,7 @@ func TestNeedsReadonlyOneagent(t *testing.T) {
 		dk := DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					AnnotationFeatureReadOnlyOneAgent: "false",
+					exp.ReadOnlyOneAgentAnnotation: "false",
 				},
 			},
 			Spec: DynaKubeSpec{
@@ -297,36 +298,6 @@ func TestCodeModulesVersion(t *testing.T) {
 		}
 		version := dk.CustomCodeModulesVersion()
 		assert.Equal(t, testVersion, version)
-	})
-}
-
-func TestIsOneAgentPrivileged(t *testing.T) {
-	t.Run("is false by default", func(t *testing.T) {
-		dk := DynaKube{}
-
-		assert.False(t, dk.FeatureOneAgentPrivileged())
-	})
-	t.Run("is true when annotation is set to true", func(t *testing.T) {
-		dk := DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					AnnotationFeatureRunOneAgentContainerPrivileged: "true",
-				},
-			},
-		}
-
-		assert.True(t, dk.FeatureOneAgentPrivileged())
-	})
-	t.Run("is false when annotation is set to false", func(t *testing.T) {
-		dk := DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					AnnotationFeatureRunOneAgentContainerPrivileged: "false",
-				},
-			},
-		}
-
-		assert.False(t, dk.FeatureOneAgentPrivileged())
 	})
 }
 
