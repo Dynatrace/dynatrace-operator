@@ -56,15 +56,15 @@ func newFsLogCollector(context context.Context, config *rest.Config, command rem
 	}
 }
 
-func (collector fsLogCollector) Name() string {
+func (flc fsLogCollector) Name() string {
 	return diagLogCollectorName
 }
 
-func (collector fsLogCollector) getControllerPodList() (*corev1.PodList, error) {
+func (flc fsLogCollector) getControllerPodList() (*corev1.PodList, error) {
 	ls := metav1.LabelSelector{
 		MatchLabels: map[string]string{
 			labels.AppNameLabel:      LabelEecPodName,
-			labels.AppManagedByLabel: collector.appName,
+			labels.AppManagedByLabel: flc.appName,
 		},
 	}
 
@@ -75,19 +75,19 @@ func (collector fsLogCollector) getControllerPodList() (*corev1.PodList, error) 
 		LabelSelector: apilabels.Set(ls.MatchLabels).String(),
 	}
 
-	podList, err := collector.pods.List(collector.ctx, listOptions)
+	podList, err := flc.pods.List(flc.ctx, listOptions)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	if len(podList.Items) == 0 {
-		logInfof(collector.log, "EEC pod not found, diagnostic logs will not be collected")
+		logInfof(flc.log, "EEC pod not found, diagnostic logs will not be collected")
 
 		return nil, eecPodNotFoundError
 	}
 
-	if !collector.collectManagedLogs {
-		logInfof(collector.log, "%s", "EEC diagnostic logs will not be collected")
+	if !flc.collectManagedLogs {
+		logInfof(flc.log, "%s", "EEC diagnostic logs will not be collected")
 
 		return nil, eecPodNotFoundError
 	}
@@ -95,14 +95,14 @@ func (collector fsLogCollector) getControllerPodList() (*corev1.PodList, error) 
 	return podList, nil
 }
 
-func (collector fsLogCollector) Do() error {
+func (flc fsLogCollector) Do() error {
 	if !installconfig.GetModules().Supportability {
-		logInfof(collector.log, "%s", installconfig.GetModuleValidationErrorMessage("EEC Diagnostic Log Collection"))
+		logInfof(flc.log, "%s", installconfig.GetModuleValidationErrorMessage("EEC Diagnostic Log Collection"))
 
 		return nil
 	}
 
-	eecPodList, err := collector.getControllerPodList()
+	eecPodList, err := flc.getControllerPodList()
 	if errors.Is(err, eecPodNotFoundError) {
 		return nil
 	}
@@ -112,18 +112,18 @@ func (collector fsLogCollector) Do() error {
 	}
 
 	for _, eecPod := range eecPodList.Items {
-		logFiles, err := collector.findLogFilesRecursively(eecPod.Name, eecPod.Namespace, eecExtensionsPath)
+		logFiles, err := flc.findLogFilesRecursively(eecPod.Name, eecPod.Namespace, eecExtensionsPath)
 		if err != nil {
-			logErrorf(collector.log, err, "log files lookup failed, podName: %s", eecPod.Name)
+			logErrorf(flc.log, err, "log files lookup failed, podName: %s", eecPod.Name)
 
 			continue
 		}
 
 		for _, logFilePath := range logFiles {
-			if err := collector.copyDiagnosticFile(eecPod.Name, eecPod.Namespace, logFilePath); err != nil {
-				logErrorf(collector.log, err, "failed to copy %s from pod: %s", logFilePath, eecPod.Name)
+			if err := flc.copyDiagnosticFile(eecPod.Name, eecPod.Namespace, logFilePath); err != nil {
+				logErrorf(flc.log, err, "failed to copy %s from pod: %s", logFilePath, eecPod.Name)
 			} else {
-				logInfof(collector.log, "Successfully collected EEC diagnostic logs logs/%s%s", eecPod.Name, logFilePath)
+				logInfof(flc.log, "Successfully collected EEC diagnostic logs logs/%s%s", eecPod.Name, logFilePath)
 			}
 		}
 	}
@@ -131,10 +131,10 @@ func (collector fsLogCollector) Do() error {
 	return nil
 }
 
-func (collector fsLogCollector) findLogFilesRecursively(podName string, podNamespace string, rootPath string) ([]string, error) {
+func (flc fsLogCollector) findLogFilesRecursively(podName string, podNamespace string, rootPath string) ([]string, error) {
 	command := []string{"/usr/bin/sh", "-c", "if [ -d '" + rootPath + "' ]; then ls -R1 '" + rootPath + "' ; else echo '" + fileNotFoundMarker + "' ; fi"}
 
-	stdOut, _, err := collector.remoteCommandExecutor.Exec(collector.ctx, collector.config, podName, podNamespace, eecContainerName, command)
+	stdOut, _, err := flc.remoteCommandExecutor.Exec(flc.ctx, flc.config, podName, podNamespace, eecContainerName, command)
 	if err != nil {
 		return []string{}, err
 	}
@@ -148,9 +148,9 @@ func (collector fsLogCollector) findLogFilesRecursively(podName string, podNames
 	var buf bytes.Buffer
 	tee := io.TeeReader(stdOut, &buf)
 
-	err = collector.supportArchive.addFile(zipFilePath, tee)
+	err = flc.supportArchive.addFile(zipFilePath, tee)
 	if err != nil {
-		logErrorf(collector.log, err, "error writing to tarball")
+		logErrorf(flc.log, err, "error writing to tarball")
 
 		return []string{}, err
 	}
@@ -201,10 +201,10 @@ func (collector fsLogCollector) findLogFilesRecursively(podName string, podNames
 	return logFiles, nil
 }
 
-func (collector fsLogCollector) copyDiagnosticFile(podName string, podNamespace string, eecDiagLogPath string) error {
+func (flc fsLogCollector) copyDiagnosticFile(podName string, podNamespace string, eecDiagLogPath string) error {
 	command := []string{"/usr/bin/sh", "-c", "[ -e " + eecDiagLogPath + " ] && cat " + eecDiagLogPath + " || echo '" + fileNotFoundMarker + "'"}
 
-	stdOut, _, err := collector.remoteCommandExecutor.Exec(collector.ctx, collector.config, podName, podNamespace, eecContainerName, command)
+	stdOut, _, err := flc.remoteCommandExecutor.Exec(flc.ctx, flc.config, podName, podNamespace, eecContainerName, command)
 	if err != nil {
 		return err
 	}
@@ -216,9 +216,9 @@ func (collector fsLogCollector) copyDiagnosticFile(podName string, podNamespace 
 	// eecDiagLogPath is an absolute path, remove leading slash to avoid '//' in zipFilePath
 	zipFilePath := BuildZipFilePath(podName, eecDiagLogPath[1:])
 
-	err = collector.supportArchive.addFile(zipFilePath, stdOut)
+	err = flc.supportArchive.addFile(zipFilePath, stdOut)
 	if err != nil {
-		logErrorf(collector.log, err, "error writing to tarball")
+		logErrorf(flc.log, err, "error writing to tarball")
 
 		return err
 	}
