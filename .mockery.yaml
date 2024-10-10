@@ -12,6 +12,9 @@ packages:
   github.com/Dynatrace/dynatrace-operator/cmd/manager:
     interfaces:
       Provider:
+  github.com/Dynatrace/dynatrace-operator/cmd/remote_command:
+    interfaces:
+      Executor:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace:
     interfaces:
       Client:

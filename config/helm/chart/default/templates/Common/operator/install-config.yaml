@@ -12,5 +12,7 @@ data:
       "oneAgent": {{ .Values.rbac.oneAgent.create }},
       "extensions": {{ .Values.rbac.extensions.create }},
       "logModule": {{ .Values.rbac.logModule.create }},
-      "edgeConnect": {{ .Values.rbac.edgeConnect.create }}
+      "edgeConnect": {{ .Values.rbac.edgeConnect.create }},
+      "supportability": {{ .Values.rbac.supportability }}
     }
+
