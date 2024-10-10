@@ -138,6 +138,10 @@ func compareMovedFields(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 	assert.Equal(t, !oldDk.FeatureDisableMetadataEnrichment(), newDk.MetadataEnrichmentEnabled())
 	assert.Equal(t, *oldDk.NamespaceSelector(), newDk.Spec.MetadataEnrichment.NamespaceSelector)
 
+	if oldDk.FeatureMaxFailedCsiMountAttempts() != DefaultMaxFailedCsiMountAttempts {
+		assert.Equal(t, dynakube.MountAttemptsToTimeout(oldDk.FeatureMaxFailedCsiMountAttempts()), newDk.FeatureMaxCSIRetryTimeout().String())
+	}
+
 	if newDk.NeedAppInjection() {
 		assert.Equal(t, oldDk.NamespaceSelector(), newDk.OneAgentNamespaceSelector())
 	}
