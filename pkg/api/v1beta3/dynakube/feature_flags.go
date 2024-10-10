@@ -266,19 +266,11 @@ func (dk *DynaKube) FeatureMaxCSIRetryTimeout() time.Duration {
 // The converted value is based on the exponential backoff's algorithm.
 // The output is string because it's main purpose is to convert the value of an annotation to another annotation.
 func MountAttemptsToTimeout(maxAttempts int) string {
-	var power float64 = 2
-
 	var baseDelay = time.Second / 2
 
-	var delaySum time.Duration
+	delay := time.Duration(math.Exp2(float64(maxAttempts))) * baseDelay
 
-	for i := range maxAttempts {
-		secRetry := math.Pow(power, float64(i))
-		delay := time.Duration(secRetry) * baseDelay
-		delaySum += delay
-	}
-
-	return delaySum.String()
+	return delay.String()
 }
 
 func (dk *DynaKube) FeatureReadOnlyCsiVolume() bool {
