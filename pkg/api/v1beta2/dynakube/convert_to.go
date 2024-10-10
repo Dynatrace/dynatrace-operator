@@ -29,6 +29,8 @@ func (src *DynaKube) toBase(dst *dynakube.DynaKube) {
 		dst.Annotations = map[string]string{}
 	}
 
+	src.convertMaxMountAttempts(dst)
+
 	dst.Spec.APIURL = src.Spec.APIURL
 	dst.Spec.Tokens = src.Spec.Tokens
 	dst.Spec.CustomPullSecret = src.Spec.CustomPullSecret
@@ -38,6 +40,13 @@ func (src *DynaKube) toBase(dst *dynakube.DynaKube) {
 	dst.Spec.NetworkZone = src.Spec.NetworkZone
 	dst.Spec.EnableIstio = src.Spec.EnableIstio
 	dst.Spec.DynatraceApiRequestThreshold = src.Spec.DynatraceApiRequestThreshold
+}
+
+func (src *DynaKube) convertMaxMountAttempts(dst *dynakube.DynaKube) {
+	configuredMountAttempts := src.FeatureMaxFailedCsiMountAttempts()
+	if configuredMountAttempts != DefaultMaxFailedCsiMountAttempts {
+		dst.Annotations[dynakube.AnnotationFeatureMaxCsiMountTimeout] = dynakube.MountAttemptsToTimeout(configuredMountAttempts)
+	}
 }
 
 func (src *DynaKube) toOneAgentSpec(dst *dynakube.DynaKube) {

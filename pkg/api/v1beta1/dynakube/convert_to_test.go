@@ -141,6 +141,7 @@ func getOldDynakubeBase() DynaKube {
 				AnnotationFeatureMetadataEnrichment:        "false",
 				AnnotationFeatureActiveGateIgnoreProxy:     "true",
 				AnnotationFeatureAutomaticK8sApiMonitoring: "true",
+				AnnotationFeatureMaxFailedCsiMountAttempts: "9",
 			},
 			Labels: map[string]string{
 				"label": "label-value",

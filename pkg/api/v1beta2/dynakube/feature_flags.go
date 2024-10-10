@@ -43,12 +43,16 @@ const (
 	AnnotationFeatureDisableMetadataEnrichment = AnnotationFeaturePrefix + "disable-metadata-enrichment"
 	AnnotationFeatureMetadataEnrichment        = AnnotationFeaturePrefix + "metadata-enrichment"
 
+	// CSI.
+	AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
+
 	falsePhrase = "false"
 	truePhrase  = "true"
 )
 
 const (
 	DefaultMinRequestThresholdMinutes = 15
+	DefaultMaxFailedCsiMountAttempts  = 10
 )
 
 var (
@@ -89,6 +93,15 @@ func (dk *DynaKube) FeatureApiRequestThreshold() time.Duration {
 	}
 
 	return time.Duration(interval) * time.Minute
+}
+
+func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
+	maxCsiMountAttemptsValue := dk.getFeatureFlagInt(AnnotationFeatureMaxFailedCsiMountAttempts, DefaultMaxFailedCsiMountAttempts)
+	if maxCsiMountAttemptsValue < 0 {
+		return DefaultMaxFailedCsiMountAttempts
+	}
+
+	return maxCsiMountAttemptsValue
 }
 
 // FeatureDisableMetadataEnrichment is a feature flag to disable metadata enrichment,.

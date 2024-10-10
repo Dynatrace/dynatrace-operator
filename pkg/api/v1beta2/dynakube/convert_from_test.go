@@ -131,6 +131,10 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 		assert.Equal(t, oldDk.Spec.Proxy.Value, newDk.Spec.Proxy.Value)
 		assert.Equal(t, oldDk.Spec.Proxy.ValueFrom, newDk.Spec.Proxy.ValueFrom)
 	}
+
+	if oldDk.FeatureMaxFailedCsiMountAttempts() != DefaultMaxFailedCsiMountAttempts {
+		assert.Equal(t, dynakube.MountAttemptsToTimeout(oldDk.FeatureMaxFailedCsiMountAttempts()), newDk.FeatureMaxCSIRetryTimeout().String())
+	}
 }
 
 func compareHostInjectSpec(t *testing.T, oldSpec HostInjectSpec, newSpec dynakube.HostInjectSpec) {

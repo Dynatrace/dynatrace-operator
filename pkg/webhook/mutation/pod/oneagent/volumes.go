@@ -168,6 +168,7 @@ func getInstallerVolumeSource(dk dynakube.DynaKube) corev1.VolumeSource {
 			VolumeAttributes: map[string]string{
 				csivolumes.CSIVolumeAttributeModeField:     appvolumes.Mode,
 				csivolumes.CSIVolumeAttributeDynakubeField: dk.Name,
+				csivolumes.CSIVolumeAttributeRetryTimeout:  dk.FeatureMaxCSIRetryTimeout().String(),
 			},
 		}
 	} else {
