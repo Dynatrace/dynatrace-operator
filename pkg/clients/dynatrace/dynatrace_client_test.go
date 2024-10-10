@@ -9,9 +9,21 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+)
+
+var (
+	flavorUri = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
+		OsUnix, InstallerTypeDefault, arch.FlavorMultidistro+"a", arch.Arch)
+	archUri = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
+		OsUnix, InstallerTypeDefault, arch.FlavorMultidistro, arch.Arch+"a")
+	flavorArchUri = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
+		OsUnix, InstallerTypeDefault, arch.FlavorMultidistro+"a", arch.Arch+"a")
+	oaLatestMetainfoUri = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
+		"aix", InstallerTypeDefault, arch.FlavorDefault, arch.Arch)
 )
 
 func TestMakeRequest(t *testing.T) {
@@ -144,6 +156,8 @@ func TestDynatraceClientWithServer(t *testing.T) {
 	testCommunicationHostsGetCommunicationHosts(t, dtc)
 	testSendEvent(t, dtc)
 	testGetTokenScopes(t, dtc)
+
+	testServerErrors(t)
 }
 
 func dynatraceServerHandler() http.HandlerFunc {
@@ -266,4 +280,122 @@ func createTestDynatraceClientWithFunc(t *testing.T, handler http.HandlerFunc) (
 	require.NotNil(t, dynatraceClient)
 
 	return dynatraceServer, dynatraceClient
+}
+
+func testServerErrors(t *testing.T) {
+	dynatraceServer := httptest.NewServer(dynatraceServerErrorsHandler())
+	defer dynatraceServer.Close()
+
+	skipCert := SkipCertificateValidation(true)
+	dtcI, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert)
+	require.NoError(t, err)
+
+	dtc := dtcI.(*dynatraceClient)
+
+	t.Run("GetLatestAgentVersion - invalid query", func(t *testing.T) {
+		response := struct {
+			LatestAgentVersion string `json:"latestAgentVersion"`
+		}{}
+
+		err := dtc.makeRequestAndUnmarshal(context.Background(), dtc.url+flavorUri, dynatracePaaSToken, &response)
+		assert.Equal(t, "dynatrace server error 400: Constraints violated.\n\t- flavor: 'multidistroa' must be any of [default, multidistro, musl]", err.Error())
+
+		err = dtc.makeRequestAndUnmarshal(context.Background(), dtc.url+archUri, dynatracePaaSToken, &response)
+		assert.Equal(t, "dynatrace server error 400: Constraints violated.\n\t- arch: 'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]", err.Error())
+
+		err = dtc.makeRequestAndUnmarshal(context.Background(), dtc.url+flavorArchUri, dynatracePaaSToken, &response)
+		assert.Equal(t, "dynatrace server error 400: Constraints violated.\n\t- flavor: 'multidistroa' must be any of [default, multidistro, musl]\n\t- arch: 'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]", err.Error())
+	})
+
+	t.Run("GetLatestAgentVersion - invalid architecture", func(t *testing.T) {
+		_, err = dtc.GetLatestAgentVersion(context.Background(), "aix", InstallerTypeDefault)
+		assert.Equal(t, "dynatrace server error 404: non supported architecture <OS_ARCHITECTURE_X86> on OS <OS_TYPE_AIX>", err.Error())
+	})
+}
+
+func dynatraceServerErrorsHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		if r.FormValue("Api-Token") == "" && r.Header.Get("Authorization") == "" {
+			writeServerError(w, http.StatusUnauthorized, ServerError{
+				Message:              "Missing authorization parameter.",
+				Code:                 http.StatusUnauthorized,
+				ConstraintViolations: nil,
+			})
+		} else {
+			handleInvalidRequest(r, w)
+		}
+	}
+}
+
+func handleInvalidRequest(request *http.Request, writer http.ResponseWriter) {
+	switch request.URL.RequestURI() {
+	case flavorUri:
+		writeServerError(writer, http.StatusBadRequest, ServerError{
+			Code:    http.StatusBadRequest,
+			Message: "Constraints violated.",
+			ConstraintViolations: []ConstraintViolation{
+				{
+					Path:              "flavor",
+					Message:           "'multidistroa' must be any of [default, multidistro, musl]",
+					ParameterLocation: "QUERY",
+					Location:          "",
+				},
+			},
+		})
+	case archUri:
+		writeServerError(writer, http.StatusBadRequest, ServerError{
+			Code:    http.StatusBadRequest,
+			Message: "Constraints violated.",
+			ConstraintViolations: []ConstraintViolation{
+				{
+					Path:              "arch",
+					Message:           "'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]",
+					ParameterLocation: "QUERY",
+					Location:          "",
+				},
+			},
+		})
+	case flavorArchUri:
+		writeServerError(writer, http.StatusBadRequest, ServerError{
+			Code:    http.StatusBadRequest,
+			Message: "Constraints violated.",
+			ConstraintViolations: []ConstraintViolation{
+				{
+					Path:              "flavor",
+					Message:           "'multidistroa' must be any of [default, multidistro, musl]",
+					ParameterLocation: "QUERY",
+					Location:          "",
+				},
+				{
+					Path:              "arch",
+					Message:           "'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]",
+					ParameterLocation: "QUERY",
+					Location:          "",
+				},
+			},
+		})
+	case oaLatestMetainfoUri:
+		writeServerError(writer, http.StatusBadRequest, ServerError{
+			Code:    http.StatusNotFound,
+			Message: "non supported architecture <OS_ARCHITECTURE_X86> on OS <OS_TYPE_AIX>",
+		})
+	default:
+		writeServerError(writer, http.StatusBadRequest, ServerError{
+			Message:              "unsupported url",
+			Code:                 http.StatusBadRequest,
+			ConstraintViolations: nil,
+		})
+	}
+}
+
+func writeServerError(w http.ResponseWriter, status int, srvErr ServerError) {
+	message := serverErrorResponse{
+		ErrorMessage: srvErr,
+	}
+	result, _ := json.Marshal(&message)
+
+	w.WriteHeader(status)
+	_, _ = w.Write(result)
 }
