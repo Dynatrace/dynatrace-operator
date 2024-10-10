@@ -39,6 +39,7 @@ func TestArguments(t *testing.T) {
 		expectedDefaultArguments := []string{
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
 			"--set-no-proxy=",
+			"--set-proxy=",
 			"--set-server={$(DT_SERVER)}",
 			"--set-tenant=$(DT_TENANT)",
 		}
@@ -79,6 +80,7 @@ func TestArguments(t *testing.T) {
 		expectedDefaultArguments := []string{
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
 			"--set-no-proxy=",
+			"--set-proxy=",
 			"--set-server={$(DT_SERVER)}",
 			"--set-tenant=$(DT_TENANT)",
 			"test-value",
@@ -105,6 +107,7 @@ func TestArguments(t *testing.T) {
 			"--set-host-id-source=lustiglustig",
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
 			"--set-no-proxy=",
+			"--set-proxy=",
 			"--set-server={$(DT_SERVER)}",
 			"--set-server=https://hyper.super.com:9999",
 			"--set-tenant=$(DT_TENANT)",
@@ -114,6 +117,9 @@ func TestArguments(t *testing.T) {
 	t.Run("--set-proxy is not set with OneAgent version >=1.271.0", func(t *testing.T) {
 		builder := builder{
 			dk: &dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					Proxy: &value.Source{Value: "something"},
+				},
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: dynakube.OneAgentStatus{
 						VersionStatus: status.VersionStatus{
@@ -133,9 +139,12 @@ func TestArguments(t *testing.T) {
 		}
 		assert.Equal(t, expectedDefaultArguments, arguments)
 	})
-	t.Run("proxy settings are not properly removed from OneAgent", func(t *testing.T) {
+	t.Run("proxy settings are not properly removed from OneAgent in case of feature-flag", func(t *testing.T) {
 		builder := builder{
 			dk: &dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					Proxy: &value.Source{Value: "something"},
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "dynakube",
 					Namespace: "dynatrace",
@@ -206,6 +215,7 @@ func TestArguments(t *testing.T) {
 			"--set-host-property=item1=value1",
 			"--set-host-property=item2=value2",
 			"--set-no-proxy=",
+			"--set-proxy=",
 			"--set-server={$(DT_SERVER)}",
 			"--set-server=https://hyper.super.com:9999",
 			"--set-tenant=$(DT_TENANT)",
