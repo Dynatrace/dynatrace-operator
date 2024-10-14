@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -15,7 +16,10 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("connection-info fail => error", func(t *testing.T) {
 		failOAConnectionInfo := createFailingReconciler(t)
+		dk := &dynakube.DynaKube{}
 		r := Reconciler{
+			dk:                               dk,
+			monitoredEntitiesReconciler:      createPassingMonitoredEntityReconciler(t, dk),
 			oneAgentConnectionInfoReconciler: failOAConnectionInfo,
 		}
 
@@ -28,7 +32,10 @@ func TestReconcile(t *testing.T) {
 	t.Run("config-secret fail => error", func(t *testing.T) {
 		failConfigSecret := createFailingReconciler(t)
 		passOAConnectionInfo := createPassingReconciler(t)
+		dk := &dynakube.DynaKube{}
 		r := Reconciler{
+			dk:                               dk,
+			monitoredEntitiesReconciler:      createPassingMonitoredEntityReconciler(t, dk),
 			oneAgentConnectionInfoReconciler: passOAConnectionInfo,
 			configSecretReconciler:           failConfigSecret,
 		}
@@ -44,7 +51,10 @@ func TestReconcile(t *testing.T) {
 		passOAConnectionInfo := createPassingReconciler(t)
 		passConfigSecret := createPassingReconciler(t)
 		passDaemonSet := createPassingReconciler(t)
+		dk := &dynakube.DynaKube{}
 		r := Reconciler{
+			dk:                               dk,
+			monitoredEntitiesReconciler:      createPassingMonitoredEntityReconciler(t, dk),
 			oneAgentConnectionInfoReconciler: passOAConnectionInfo,
 			configSecretReconciler:           passConfigSecret,
 			daemonsetReconciler:              passDaemonSet,
@@ -68,6 +78,16 @@ func createFailingReconciler(t *testing.T) *controllermock.Reconciler {
 func createPassingReconciler(t *testing.T) *controllermock.Reconciler {
 	passMock := controllermock.NewReconciler(t)
 	passMock.On("Reconcile", mock.Anything).Return(nil)
+
+	return passMock
+}
+
+func createPassingMonitoredEntityReconciler(t *testing.T, dk *dynakube.DynaKube) *controllermock.Reconciler {
+	passMock := controllermock.NewReconciler(t)
+	passMock.On("Reconcile", mock.Anything).Run(func(args mock.Arguments) {
+		dk.Status.KubernetesClusterMEID = "meid"
+		dk.Status.KubernetesClusterName = "cluster-name"
+	}).Return(nil)
 
 	return passMock
 }

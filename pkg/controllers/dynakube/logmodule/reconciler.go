@@ -9,7 +9,13 @@ import (
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmodule/configsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmodule/daemonset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/monitoredentities"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+var (
+	log = logd.Get().WithName("logmodule-daemonset")
 )
 
 type Reconciler struct {
@@ -21,6 +27,7 @@ type Reconciler struct {
 	configSecretReconciler           controllers.Reconciler
 	daemonsetReconciler              controllers.Reconciler
 	oneAgentConnectionInfoReconciler controllers.Reconciler
+	monitoredEntitiesReconciler      controllers.Reconciler
 }
 
 type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler
@@ -38,11 +45,23 @@ func NewReconciler(clt client.Client,
 		configSecretReconciler:           configsecret.NewReconciler(clt, apiReader, dk),
 		daemonsetReconciler:              daemonset.NewReconciler(clt, apiReader, dk),
 		oneAgentConnectionInfoReconciler: oaconnectioninfo.NewReconciler(clt, apiReader, dtc, dk),
+		monitoredEntitiesReconciler:      monitoredentities.NewReconciler(dtc, dk),
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	err := r.oneAgentConnectionInfoReconciler.Reconcile(ctx)
+	err := r.monitoredEntitiesReconciler.Reconcile(ctx)
+	if err != nil {
+		return err
+	}
+
+	if r.dk.Status.KubernetesClusterMEID == "" || r.dk.Status.KubernetesClusterName == "" {
+		log.Info("the status of the DynaKube is missing information about the kubernetes monitored-entity, skipping logmodule deployment")
+
+		return nil
+	}
+
+	err = r.oneAgentConnectionInfoReconciler.Reconcile(ctx)
 	if err != nil {
 		return err
 	}
