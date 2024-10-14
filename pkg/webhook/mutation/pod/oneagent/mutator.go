@@ -2,7 +2,6 @@ package oneagent
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -60,7 +59,7 @@ func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationReque
 	if ok, reason := mut.isInjectionPossible(request); !ok {
 		setNotInjectedAnnotations(request.Pod, reason)
 
-		return fmt.Errorf("injection into pod '%s' not possible: %s", request.PodName(), reason)
+		return nil
 	}
 
 	log.Info("injecting OneAgent into pod", "podName", request.PodName())
