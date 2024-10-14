@@ -25,6 +25,18 @@ const (
 	OneAgentIgnoreProxyAnnotation = AnnotationPrefix + "oneagent-ignore-proxy"
 )
 
+var (
+	DeprecatedFeatureFlags = []string{
+		DisableActiveGateUpdatesAnnotation,
+		ActiveGateIgnoreProxyAnnotation,
+		ApiRequestThresholdAnnotation,
+		OneAgentSecCompProfileAnnotation,
+		DisableMetadataEnrichmentAnnotation,
+		MetadataEnrichmentAnnotation,
+		OneAgentIgnoreProxyAnnotation,
+	}
+)
+
 // Deprecated
 func (f *FeatureFlags) ApiRequestThreshold() time.Duration {
 	interval := f.getIntValue(ApiRequestThresholdAnnotation, DefaultMinRequestThresholdMinutes)

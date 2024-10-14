@@ -13,15 +13,10 @@ const (
 	warningFeatureFlagDeprecated = `Feature flag %s is deprecated.`
 )
 
-var deprecatedFeatureFlags = []string{
-	exp.ActiveGateIgnoreProxyAnnotation,   //nolint:staticcheck
-	exp.OneAgentIgnoreProxyAnnotation, //nolint:staticcheck
-}
-
 func deprecatedFeatureFlag(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	results := strings.Builder{}
 
-	for _, flag := range deprecatedFeatureFlags {
+	for _, flag := range exp.DeprecatedFeatureFlags {
 		if dk.Annotations != nil && dk.Annotations[flag] != "" {
 			results.WriteString(fmt.Sprintf(warningFeatureFlagDeprecated, flag))
 		}
