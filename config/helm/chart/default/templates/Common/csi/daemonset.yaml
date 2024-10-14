@@ -79,7 +79,7 @@ spec:
       - name: server
         image: {{ include "dynatrace-operator.image" . }}
         imagePullPolicy: Always
-        {{- if eq .Values.debug true }}
+        {{- if .Values.debug }}
         command:
           - /usr/local/bin/dlv
           - --listen=:40000
@@ -107,6 +107,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
+        {{- if not .Values.debug }}
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -117,6 +118,7 @@ spec:
           periodSeconds: 5
           successThreshold: 1
           timeoutSeconds: 1
+        {{- end }}
         ports:
         - containerPort: 9808
           name: healthz
@@ -142,7 +144,7 @@ spec:
       - name: provisioner
         image: {{ include "dynatrace-operator.image" . }}
         imagePullPolicy: Always
-        {{- if eq .Values.debug true }}
+        {{- if .Values.debug }}
         command:
           - /usr/local/bin/dlv
           - --listen=:40001
@@ -169,6 +171,7 @@ spec:
             value: "{{ .Values.csidriver.maxUnmountedVolumeAge}}"
           {{- end }}
         {{- include "dynatrace-operator.startupProbe" . | nindent 8 }}
+        {{- if not .Values.debug }}
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -179,6 +182,7 @@ spec:
           periodSeconds: 5
           successThreshold: 1
           timeoutSeconds: 1
+        {{- end }}
         ports:
           - name: livez
             containerPort: 10090
