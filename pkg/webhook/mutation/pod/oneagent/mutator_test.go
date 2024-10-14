@@ -285,6 +285,76 @@ func TestReinvoke(t *testing.T) {
 	})
 }
 
+func TestIsInjectionPossible(t *testing.T) {
+	t.Run("possible with valid tenant UUID", injectionPossibleWithValidTenantUUID)
+	t.Run("not possible without tenant UUID", injectionNotPossibleWithoutTenantUUID)
+	t.Run("not possible without communication route", injectionNotPossibleWithoutCommunicationRoute)
+	t.Run("not possible without code modules version", injectionNotPossibleWithoutCodeModulesVersion)
+	t.Run("not possible with multiple issues", injectionNotPossibleWithMultipleIssues)
+}
+
+func injectionPossibleWithValidTenantUUID(t *testing.T) {
+	mutator := createTestPodMutator(nil)
+	request := createTestMutationRequest(getTestDynakube(), nil, getTestNamespace(nil))
+
+	ok, reason := mutator.isInjectionPossible(request)
+
+	require.True(t, ok)
+	require.Empty(t, reason)
+}
+
+func injectionNotPossibleWithoutTenantUUID(t *testing.T) {
+	mutator := createTestPodMutator(nil)
+	dk := getTestDynakube()
+	dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID = ""
+	request := createTestMutationRequest(dk, nil, getTestNamespace(nil))
+
+	ok, reason := mutator.isInjectionPossible(request)
+
+	require.False(t, ok)
+	require.Contains(t, reason, EmptyTenantUUIDReason)
+}
+
+func injectionNotPossibleWithoutCommunicationRoute(t *testing.T) {
+	mutator := createTestPodMutator(nil)
+	dk := getTestDynakube()
+	dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynakube.CommunicationHostStatus{}
+	request := createTestMutationRequest(dk, nil, getTestNamespace(nil))
+
+	ok, reason := mutator.isInjectionPossible(request)
+
+	require.False(t, ok)
+	require.Contains(t, reason, EmptyConnectionInfoReason)
+}
+
+func injectionNotPossibleWithoutCodeModulesVersion(t *testing.T) {
+	mutator := createTestPodMutator(nil)
+	dk := getTestDynakube()
+	dk.Status.CodeModules.VersionStatus.Version = ""
+	request := createTestMutationRequest(dk, nil, getTestNamespace(nil))
+
+	ok, reason := mutator.isInjectionPossible(request)
+
+	require.False(t, ok)
+	require.Contains(t, reason, EmptyCodeModulesVersionReason)
+}
+
+func injectionNotPossibleWithMultipleIssues(t *testing.T) {
+	mutator := createTestPodMutator(nil)
+	dk := getTestDynakube()
+	dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID = ""
+	dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynakube.CommunicationHostStatus{}
+	dk.Status.CodeModules.VersionStatus.Version = ""
+	request := createTestMutationRequest(dk, nil, getTestNamespace(nil))
+
+	ok, reason := mutator.isInjectionPossible(request)
+
+	require.False(t, ok)
+	require.Contains(t, reason, EmptyTenantUUIDReason)
+	require.Contains(t, reason, EmptyConnectionInfoReason)
+	require.Contains(t, reason, EmptyCodeModulesVersionReason)
+}
+
 func createTestPodMutator(objects []client.Object) *Mutator {
 	return &Mutator{
 		client:           fake.NewClient(objects...),
