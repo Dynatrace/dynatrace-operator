@@ -1,11 +1,22 @@
----
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.4
+  creationTimestamp: null
   name: edgeconnects.dynatrace.com
 spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: dynatrace-webhook
+          namespace: dynatrace
+          path: /convert
+      conversionReviewVersions:
+      - v1
+      - v1beta1
   group: dynatrace.com
   names:
     categories:
@@ -1243,3 +1254,9 @@ spec:
     storage: true
     subresources:
       status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null
