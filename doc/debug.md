@@ -2,162 +2,274 @@
 
 This document outlines the distinct debugging requirements for various components, providing detailed instructions for each to ensure effective troubleshooting and development.
 
-## TLDR
+**Important:** Read the [One-Time Setup](#one-time-setup) section before proceeding with the debugging instructions.
 
-### CSI-Driver-server
+## Makefile Helpers
 
-- **Run CSI driver executables on the node** for file system operations.
-- **Makefile commands**:
-  - `make debug/build`: Build image with Delve included.
-  - `make debug/deploy`: Install image with necessary changes to deployments.
-  - `make debug/tunnel`: Open tunnel from local machine to CSI driver pod.
-- **IntelliJ setup**: Configure "Go Remote" with `localhost` and port `40000`, and set "On disconnect" to "Leave it running".
-- **VSCode:** Add a debug configuration to "Connect to Server" with `127.0.0.1` as the host and `40000` as the port, and set "remotePath" to `github.com/Dynatrace/dynatrace-operator`.
+| Command                             | Description                                                                                                                                                                                               |
+|-------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `make debug/build`                  | Build image with Delve debugger included.                                                                                                                                                                 |
+| `make debug/deploy`                 | Install image with necessary changes to deployments. (Changes to resources, lifenessprobes, commands)                                                                                                     |
+| `make debug/operator`               | Run the operator locally. Would recommend to use your IDE here instead, to have breakpoints.                                                                                                              |
+| `make debug/webhook`                | Run the webhook locally. Would recommend to use your IDE here instead, to have breakpoints.                                                                                                               |
+| `make debug/csi/redeploy`           | In case of code changes, closes the tunnel, rebuilds/deploys the image and opens the tunnel again.                                                                                                        |
+| `make debug/tunnel/start`           | Open a tunnel from your local machine to CSI driver pod, to access debugger running in the CSI driver container. <br/>It forwards ports 40000 and 40001 to the alphabetically first CSI driver container. |
+| `make debug/tunnel/stop`            | Stop the tunnel from local machine to CSI driver pod.                                                                                                                                                     |
+| `make debug/telepresence/install`   | Install and setup Telepresence to intercept requests to the webhook and forward them to your local machine.                                                                                               |
+| `make debug/telepresence/uninstall` | Stop Telepresence and remove all changes made to the cluster.                                                                                                                                             |
 
-### CSI-driver-provisioner
+## Debug Instructions
 
-- **Same steps as CSI-Driver-server**:
-  - Same IntelliJ & VSCode debug configuration than previously, but **port changes to** `40001`.
+### Summary
 
-### Operator main code
-
-- **Run operator locally** on your machine.
-- **Debugging steps**:
-  - Scale down cluster operator: `kubectl -n dynatrace scale --replicas 0 deployment/dynatrace-operator`
-  - Run locally with `POD_NAMESPACE=dynatrace RUN_LOCAL=true`.
-  - **IntelliJ setup**: Create debug configuration, use `go build`, set directory to `./cmd`, program arguments to `operator`, and set env variables.
-  - **VSCode:** Add a new debug configuration using 'Go: Launch package', set the program to `${workspaceFolder}/cmd/main.go`, environment variables to `POD_NAMESPACE=dynatrace RUN_LOCAL=true`, and arguments to `operator`.
-  - **In the terminal**: `make debug/operator` to run the operator locally.
-- **After debugging**:
-  - Scale up cluster operator: `kubectl -n dynatrace scale --replicas 1 deployment/dynatrace-operator`.
-
-### Webhook
-
-- **Run webhook locally** using Telepresence.
-- **Steps**:
-  - Make sure Telepresence is installed
-  - `make debug/build`
-  - `make debug/deploy`
-  - Install and setup : `make debug/telepresence/install`.
-  - All request sent to the service are tunneled to the local port 8443.
-  - Start webhook locally in debug mode with env vars from `local/telepresence.env`.
-  - **IntelliJ setup**: Install `EnvFile` extension, configure run/debug with `go build`, set directory to `./cmd`, and program arguments to `webhook-server --certs-dir=./local/certs/`.
-  - **In VSCode**: Add debug configuration with env file set to `${workspaceFolder}/local/telepresence.env` and args set to `webhook-server --certs-dir=./local/certs/`
-  - **In terminal**: `make debug/webhook` to start debugging.
-  - When done:
-    - Remove tunnel: `make debug/telepresence/stop`
-    - Remove all deployed debugging changes: `make install`
-
-### Init-Container
-
-- **Delve debugger injection** is not possible due to port-forwarding limitations.
-
-## Longer version
-
-### CSI-Driver Server
-
-- The CSI driver executables must run on the node for all file system-specific operations. This means we need to build the application and remote debug it. Delve, one of the GoLang debuggers, is capable of doing this. However, several changes are required to use its functionality:
-  - Include Delve in the image build process, as the debugger must run on the node too.
-  - Remove the `extldflags -s` and `-w`:
-    - **`-s`**: This flag omits the symbol table and debug information from the binary. The symbol table is used for debugging and profiling, so removing it can significantly reduce the binary size.
-    - **`-w`**: This flag omits the DWARF debugging information. DWARF is a widely used, standardized debugging data format. By excluding this information, the binary size is further reduced.
-  - Run the relevant container with more RAM, as the debugger uses around 300MB of RAM.
-  - Change the container command to use `dlv`, which then starts up the actual operator code.
-  - Forward the debugger port to localhost.
-- To simplify these steps, I created Makefile commands:
-  - `debug/build`: Builds the image with Delve included.
-  - `debug/deploy`: Install the image into the cluster. In addition, it
-    - Removes the security context from the webhook pod, as Telepresence would copy it and fail.
-    - Scales down the webhook pod to 1 replica.
-    - Removes the limits from the CSI driver containers, as Delve requires more RAM.
-    - Changes the startup command for the CSI driver to use Delve.
-  - `debug/tunnel`: Opens a tunnel from your local machine to the CSI driver pod, so your IDE can connect to it.
-- After that, just use it in your IDE:
-  - IntelliJ:
-    - Add a new debug configuration for "Go Remote".
-    - Enter `localhost` as the host and `40000` as the port.
-    - Set "On disconnect" to "Leave it running".
-  - VSCode:
-    - Add a debug configuration.
-    - Go to "Connect to Server".
-    - Enter `127.0.0.1` as the host and `40000` as the port.
-    - Change "remotePath" to "github.com/Dynatrace/dynatrace-operator".
-- When you are done
-  - Remove the debugging patches with `make install`.
-  - Turn off the tunnel with `make debug/tunnel/stop`
-
-### CSI-Driver Provisioner
-
-- The same steps as for the server:
-- Makefile commands:
-  - `debug/build`: Builds the image with Delve included.
-  - `debug/deploy`: Install the image into the cluster.
-  - `debug/tunnel`: Opens a tunnel from your local machine to the CSI driver pod.
-- After that, just use it in your IDE:
-  - Same as before, but **change the port** to `40001`.
+| Component          | What is possible                                                                                                            |
+|--------------------|-----------------------------------------------------------------------------------------------------------------------------|
+| Operator Main Code | Run operator locally on your machine. Debug from within your IDE.                                                           |
+| Webhook            | Run webhook locally and forward cluster traffic using Telepresence. Debug from within your IDE.                             |
+| CSI-Driver Server  | Run CSI driver executables on the node with debugger included. <br/> Forward debugging port and debug from within your IDE. |
 
 ### Operator Main Code
 
-- The operator can run locally on your machine and does not need to run in the cluster.
-- For debugging:
-  - Scale down your operator running in the cluster: `kubectl -n dynatrace scale --replicas 0 deployment/dynatrace-operator`.
-  - Run the operator in debug mode with the following environment variables set: `POD_NAMESPACE=dynatrace RUN_LOCAL=true`.
-  - In IntelliJ:
-    - Create a new debug configuration.
-    - Use `go build`.
-    - Set the directory to `./cmd`.
-    - Set the program arguments to `operator`.
-    - Set the environment variables as stated above.
-  - In VSCode:
-    - Add a new debug configuration.
-    - Use 'Go: Launch package'.
-    - Set the following thing:
+#### Context
 
-      ```json
-      {
-        "name": "Debug operator",
-        "type": "go",
-        "request": "launch",
-        "mode": "auto",
-        "program": "${workspaceFolder}/cmd/main.go",
-        "env": {
-          "POD_NAMESPACE": "dynatrace",
-          "RUN_LOCAL": "true"
-        },
-        "args": [
-          "operator"
-        ],
-      }
-      ```
+The operator can be run locally on your machine.
+As the operator only sends requests to the Kubernetes API, but never receives any, it can be run locally without any issues.
+
+#### Setup
+
+1. Deploy the operator as usual:
+```shell
+make deploy
+```
+2. Scale down the cluster operator:
+```shell
+kubectl -n dynatrace scale --replicas 0 deployment/dynatrace-operator
+```
+
+#### Run
+
+Select the 'Debug Operator' configuration in your IDE and start the debugger.
+Breakpoints will be respected.
+
+#### Teardown
+
+1. Scale up the cluster operator:
+```shell
+kubectl -n dynatrace scale --replicas 1 deployment/dynatrace-operator
+```
 
 ### Webhook
 
-- In theory, it is possible to run the webhook locally. The problem is that every mutation or validation request is sent from kubelet to the webhook service. So, we need a way to tunnel all requests sent to the service to the local webhook we are running.
-- There is a useful tunneling application called Telepresence that does exactly that for us.
-  - The following steps require Telepresence, which you can [download here](https://www.telepresence.io/docs/install/client).
-  - To install:
-    - `make debug/build`: Not necessary for the webhook, but the next command will also inject the debugger into the CSI driver, so a debug build is required.
-    - `make debug/deploy`: Install the image with necessary changes to deployments.
-      - This scales down the webhook to 1 replica.
-      - It removes the security context from the webhook pod, as Telepresence would copy it and fail.
-    - `make debug/telepresence/install`:
-      - Install the Telepresence daemon in your cluster.
-      - Connect to the cluster.
-      - Intercept the request to the webhook.
-    - Start the webhook locally in debug mode.
-      - You have to add the environment variables in `local/telepresence.env`.
-      - In IntelliJ:
-        - Install the following extension: `EnvFile` (link).
-        - Go to run/debug configurations.
-        - Add a new one with `go build`.
-        - Set the directory to `./cmd`.
-        - Set the program arguments to `webhook-server --certs-dir=./local/certs/`.
-      - In VSCode
-        - Add the following debug configuration:
+#### Context
 
-        ``` json
+The webhook can be run locally, however, as it is a webserver, kubernetes requests have to be forwarded to your local machine.
+This can be achieved using Telepresence. It does this by adding a sidecar container to the webhook pod, which forwards all requests to your local machine.
+The security context of the webhook pod has to be removed, as Telepresence would copy it and fail.
+
+#### Setup
+
+1. Build the debug image, to include the Delve debugger for the CSI driver (requirement for step 2):
+```shell
+make debug/build
+```
+2. Deploy the debug image with necessary changes to the webhook deployment (enables the debugger for the CSI driver too):
+```shell
+make debug/deploy
+```
+3. Install Telepresence in the cluster and connect to it:
+```shell
+make debug/telepresence/install
+```
+
+#### Run
+
+Select the 'Debug Webhook' configuration in your IDE and start the debugger.
+Breakpoints will be respected.
+
+#### Teardown
+
+1. Stop Telepresence and remove all changes made to the cluster:
+```shell
+make debug/telepresence/uninstall
+```
+2. Deploy without debugging changes:
+```shell
+make deploy
+```
+
+### CSI-Driver Server
+
+#### Context
+
+Due to the file handling operations of the CSI driver, it is not possible to run the CSI driver locally.
+However, the CSI driver can be run on the node with the debugger included.
+The debugging port has to be forwarded to your local machine, where the IDE can attach to the running process in the CSI driver container.
+
+#### Setup
+
+1. Build the debug image, to include the Delve debugger:
+```shell
+make debug/build
+```
+2. Deploy the debug image with necessary changes to the CSI driver deployment:
+```shell
+make debug/deploy
+```
+3. Open a tunnel from your local machine to the CSI driver pod:
+```shell
+make debug/tunnel/start
+```
+
+#### Run
+
+Select the 'Debug CSI driver (server)' configuration in your IDE and start the debugger.
+Breakpoints will be respected.
+
+If changes are made to the CSI driver, the image has to be rebuilt and redeployed:
+```shell
+make debug/csi/redeploy
+```
+After redeployment, select the 'Debug CSI driver (server)' configuration in your IDE again and start the debugger.
+
+#### Teardown
+
+1. Stop the tunnel from your local machine to the CSI driver pod:
+```shell
+make debug/tunnel/stop
+```
+2. Deploy without debugging changes:
+```shell
+make deploy
+```
+
+### CSI-Driver Provisioner
+
+The same as for the CSI-Driver Server, but use the 'Debug CSI driver (provisioner)' configuration in your IDE.
+
+#### Context
+
+The debugging process is the same as for the CSI-Driver Server, but the debugging port changes from 40000 to 40001.
+That's why the 'Debug CSI driver (provisioner)' configuration has to be used in your IDE.
+
+### Init Container
+
+Debugging the init container is not possible, due to port-forwarding limitations of Kubernetes.
+
+## One-Time Setup
+
+For the above debugging steps to work, Telepresence has to be installed and configurations have to be set up in your IDE.
+This section has to be done only once.
+
+### Telepresence
+
+Telepresence has to be installed on your local machine to forward requests to the webhook service to your local machine.
+For installation instructions, refer to the [Telepresence documentation](https://www.telepresence.io/docs/install/client).
+
+### IntelliJ
+
+**1. Install environment file plugin**
+
+The following plugin is required to deal with environment files: [EnvFile](https://plugins.jetbrains.com/plugin/7861-envfile)
+
+**2. Create debug configuration**
+
+1. Create a `.run` directory and create the following files:
+    - `Debug CSI driver (provisioner).run.xml`
+    - `Debug CSI driver (server).run.xml`
+    - `Debug Operator.run.xml`
+    - `Debug Webhook.run.xml`
+
+2. Copy the following content into the respective files:
+
+`Debug CSI driver (provisioner).run.xml`:
+```xml
+<component name="ProjectRunConfigurationManager">
+<configuration default="false" name="Debug CSI driver (provisioner)" type="GoRemoteDebugConfigurationType" factoryName="Go Remote" port="40001">
+<option name="disconnectOption" value="LEAVE" />
+<disconnect value="LEAVE" />
+<method v="2" />
+</configuration>
+</component>
+```
+
+`Debug CSI driver (server).run.xml`:
+```xml
+<component name="ProjectRunConfigurationManager">
+    <configuration default="false" name="Debug CSI driver (server)" type="GoRemoteDebugConfigurationType" factoryName="Go Remote" port="40000">
+        <option name="disconnectOption" value="LEAVE" />
+        <disconnect value="LEAVE" />
+        <method v="2" />
+    </configuration>
+</component>
+```
+
+`Debug Operator.run.xml`:
+```xml
+<component name="ProjectRunConfigurationManager">
+    <configuration default="false" name="Debug Operator" type="GoApplicationRunConfiguration" factoryName="Go Application">
+        <module name="dynatrace-operator" />
+        <working_directory value="$PROJECT_DIR$" />
+        <parameters value="operator" />
+        <envs>
+            <env name="POD_NAMESPACE" value="dynatrace" />
+            <env name="RUN_LOCAL" value="true" />
+        </envs>
+        <EXTENSION ID="net.ashald.envfile">
+            <option name="IS_ENABLED" value="false" />
+            <option name="IS_SUBST" value="false" />
+            <option name="IS_PATH_MACRO_SUPPORTED" value="false" />
+            <option name="IS_IGNORE_MISSING_FILES" value="false" />
+            <option name="IS_ENABLE_EXPERIMENTAL_INTEGRATIONS" value="false" />
+            <ENTRIES>
+                <ENTRY IS_ENABLED="true" PARSER="runconfig" IS_EXECUTABLE="false" />
+            </ENTRIES>
+        </EXTENSION>
+        <kind value="DIRECTORY" />
+        <package value="github.com/Dynatrace/dynatrace-operator" />
+        <directory value="$PROJECT_DIR$/cmd" />
+        <filePath value="$PROJECT_DIR$" />
+        <method v="2" />
+    </configuration>
+</component>
+```
+
+`Debug Webhook.run.xml`:
+```xml
+<component name="ProjectRunConfigurationManager">
+    <configuration default="false" name="Debug Webhook" type="GoApplicationRunConfiguration" factoryName="Go Application">
+        <module name="dynatrace-operator" />
+        <working_directory value="$PROJECT_DIR$" />
+        <parameters value="webhook-server --certs-dir=./local/certs/" />
+        <EXTENSION ID="net.ashald.envfile">
+            <option name="IS_ENABLED" value="true" />
+            <option name="IS_SUBST" value="false" />
+            <option name="IS_PATH_MACRO_SUPPORTED" value="false" />
+            <option name="IS_IGNORE_MISSING_FILES" value="false" />
+            <option name="IS_ENABLE_EXPERIMENTAL_INTEGRATIONS" value="false" />
+            <ENTRIES>
+                <ENTRY IS_ENABLED="true" PARSER="runconfig" IS_EXECUTABLE="false" />
+                <ENTRY IS_ENABLED="true" PARSER="env" IS_EXECUTABLE="false" PATH="local/telepresence.env" />
+            </ENTRIES>
+        </EXTENSION>
+        <kind value="DIRECTORY" />
+        <package value="github.com/Dynatrace/dynatrace-operator" />
+        <directory value="$PROJECT_DIR$/cmd" />
+        <filePath value="$PROJECT_DIR$" />
+        <method v="2" />
+    </configuration>
+</component>
+```
+
+### VSCode
+
+Add the following to your `launch.json`:
+
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
         {
-            "name": "Debug webhook",
+            "name": "Debug Webhook",
             "type": "go",
             "request": "launch",
             "mode": "auto",
@@ -172,12 +284,40 @@ This document outlines the distinct debugging requirements for various component
                 "--certs-dir=./local/certs/"
             ]
         },
-        ```
-
-      - Set breakpoints and start debugging.
-    - When you are done, stop Telepresence with `telepresence quit`.
-    - Uninstall from the cluster: `telepresence helm uninstall`.
-
-### Init-Container
-
-- I tried to use the Delve debugger injection, but the problem is that port-forwarding is not possible as long as the pod is not ready. So, we can’t debug there.
+        {
+            "name": "Debug Operator",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/main.go",
+            "env": {
+                "POD_NAMESPACE": "dynatrace",
+                "RUN_LOCAL": "true"
+            },
+            "args": [
+                "operator"
+            ]
+        },
+        {
+            "name": "Debug CSI driver (server)",
+            "type": "go",
+            "request": "attach",
+            "mode": "remote",
+            "remotePath": "github.com/Dynatrace/dynatrace-operator",
+            "port": 40000,
+            "host": "127.0.0.1",
+            "apiVersion": 2
+        },
+        {
+            "name": "Debug CSI driver (provisioner)",
+            "type": "go",
+            "request": "attach",
+            "mode": "remote",
+            "remotePath": "github.com/Dynatrace/dynatrace-operator",
+            "port": 40001,
+            "host": "127.0.0.1",
+            "apiVersion": 2
+        }
+    ]
+}
+```
