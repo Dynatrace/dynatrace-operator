@@ -10,7 +10,7 @@ debug/webhook:
 
 ## In case of code changes, closes the tunnel, rebuilds/deploys the image and opens the tunnel again.
 debug/csi/redeploy: debug/tunnel/stop debug/build
-	kd delete pod -l internal.oneagent.dynatrace.com/app=csi-driver # Delete the pod to force a redownload of the image
+	kubectl -n dynatrace delete pod -l internal.oneagent.dynatrace.com/app=csi-driver # Delete the pod to force a redownload of the image
 	make debug/tunnel/start
 
 ## Build image with Delve debugger included.
@@ -34,12 +34,9 @@ debug/telepresence/uninstall:
 
 ## Opens a tunnel from your local machine to the CSI driver pod
 debug/tunnel/start:
-	kubectl port-forward -n dynatrace $$(kubectl get pod -n dynatrace -l app.kubernetes.io/component=csi-driver -o jsonpath='{.items[0].metadata.name}') 40000:40000 40001:40001 & echo $$! > /tmp/csi-driver-port-forward.pid
+	kubectl -n dynatrace wait --for=condition=ready pod $$(kubectl get pod -n dynatrace -l app.kubernetes.io/component=csi-driver -o jsonpath='{.items[0].metadata.name}')
+	kubectl -n dynatrace port-forward $$(kubectl get pod -n dynatrace -l app.kubernetes.io/component=csi-driver -o jsonpath='{.items[0].metadata.name}') 40000:40000 40001:40001 > /dev/null &
 
 ## Stop the tunnel from local machine to CSI driver pod.
 debug/tunnel/stop:
-	@if [ -f /tmp/csi-driver-port-forward.pid ]; then \
-		kill $$(cat /tmp/csi-driver-port-forward.pid) && rm /tmp/csi-driver-port-forward.pid; \
-	else \
-		echo "No port-forward process found."; \
-	fi
+	ps aux | grep '[k]ubectl -n dynatrace port-forward' | awk '{print $$2}' | xargs kill -9
