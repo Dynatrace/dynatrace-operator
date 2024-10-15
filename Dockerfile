@@ -6,16 +6,16 @@ RUN --mount=type=cache,target=/var/cache/apt \
 
 WORKDIR /app
 
+ARG DEBUG_TOOLS
+RUN if [ "$DEBUG_TOOLS" = "true" ]; then \
+      GOBIN=/app/build/_output/bin go install github.com/go-delve/delve/cmd/dlv@latest; \
+    fi
+
 COPY go.mod go.sum ./
 RUN go mod download -x
 
 ARG GO_LINKER_ARGS
 ARG GO_BUILD_TAGS
-
-ARG DEBUG_TOOLS
-RUN if [ "$DEBUG_TOOLS" = "true" ]; then \
-      GOBIN=/app/build/_output/bin go install github.com/go-delve/delve/cmd/dlv@latest; \
-    fi
 
 COPY pkg ./pkg
 COPY cmd ./cmd
