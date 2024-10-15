@@ -115,25 +115,25 @@ func (mut *Mutator) ensureInitSecret(request *dtwebhook.MutationRequest) error {
 func (mut *Mutator) isInjectionPossible(request *dtwebhook.MutationRequest) (bool, string) {
 	reasons := []string{}
 
-	status := request.DynaKube.Status
+	dk := request.DynaKube
 
-	_, err := request.DynaKube.TenantUUIDFromConnectionInfoStatus()
+	_, err := dk.TenantUUIDFromConnectionInfoStatus()
 	if err != nil {
 		log.Info("tenant UUID is not available, OneAgent cannot be injected", "pod", request.PodName())
 
 		reasons = append(reasons, EmptyTenantUUIDReason)
 	}
 
-	if !request.DynaKube.IsOneAgentCommunicationRouteClear() {
+	if !dk.IsOneAgentCommunicationRouteClear() {
 		log.Info("OneAgent communication route is not clear, OneAgent cannot be injected", "pod", request.PodName())
 
 		reasons = append(reasons, EmptyConnectionInfoReason)
 	}
 
-	if status.CodeModules.Version == "" {
-		log.Info("code modules version is not available, OneAgent cannot be injected", "pod", request.PodName())
+	if dk.CodeModulesVersion() == "" && dk.CodeModulesImage() == "" {
+		log.Info("codemodules version and image are not available, OneAgent cannot be injected", "pod", request.PodName())
 
-		reasons = append(reasons, EmptyCodeModulesVersionReason)
+		reasons = append(reasons, EmptyCodeModulesVersionAndImageReason)
 	}
 
 	if len(reasons) > 0 {

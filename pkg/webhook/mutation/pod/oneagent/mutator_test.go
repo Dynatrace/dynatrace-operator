@@ -212,7 +212,7 @@ func TestNoInjectionMutate(t *testing.T) {
 	assert.Equal(t, "false", request.Pod.Annotations[dtwebhook.AnnotationOneAgentInjected])
 	assert.Contains(t, request.Pod.Annotations[dtwebhook.AnnotationOneAgentReason], EmptyConnectionInfoReason)
 	assert.Contains(t, request.Pod.Annotations[dtwebhook.AnnotationOneAgentReason], EmptyTenantUUIDReason)
-	assert.Contains(t, request.Pod.Annotations[dtwebhook.AnnotationOneAgentReason], EmptyCodeModulesVersionReason)
+	assert.Contains(t, request.Pod.Annotations[dtwebhook.AnnotationOneAgentReason], EmptyCodeModulesVersionAndImageReason)
 
 	assert.Empty(t, request.InstallContainer.Env)
 	assert.Empty(t, request.InstallContainer.VolumeMounts)
@@ -287,6 +287,7 @@ func TestReinvoke(t *testing.T) {
 
 func TestIsInjectionPossible(t *testing.T) {
 	t.Run("possible with valid tenant UUID", injectionPossibleWithValidTenantUUID)
+	t.Run("possible without code modules version but with image", injectionPossibleWithCodeModulesImage)
 	t.Run("not possible without tenant UUID", injectionNotPossibleWithoutTenantUUID)
 	t.Run("not possible without communication route", injectionNotPossibleWithoutCommunicationRoute)
 	t.Run("not possible without code modules version", injectionNotPossibleWithoutCodeModulesVersion)
@@ -296,6 +297,19 @@ func TestIsInjectionPossible(t *testing.T) {
 func injectionPossibleWithValidTenantUUID(t *testing.T) {
 	mutator := createTestPodMutator(nil)
 	request := createTestMutationRequest(getTestDynakube(), nil, getTestNamespace(nil))
+
+	ok, reason := mutator.isInjectionPossible(request)
+
+	require.True(t, ok)
+	require.Empty(t, reason)
+}
+
+func injectionPossibleWithCodeModulesImage(t *testing.T) {
+	mutator := createTestPodMutator(nil)
+	dk := getTestDynakube()
+	dk.Status.CodeModules.VersionStatus.Version = ""
+	dk.Status.CodeModules.VersionStatus.ImageID = "test-image-id"
+	request := createTestMutationRequest(dk, nil, getTestNamespace(nil))
 
 	ok, reason := mutator.isInjectionPossible(request)
 
@@ -336,7 +350,7 @@ func injectionNotPossibleWithoutCodeModulesVersion(t *testing.T) {
 	ok, reason := mutator.isInjectionPossible(request)
 
 	require.False(t, ok)
-	require.Contains(t, reason, EmptyCodeModulesVersionReason)
+	require.Contains(t, reason, EmptyCodeModulesVersionAndImageReason)
 }
 
 func injectionNotPossibleWithMultipleIssues(t *testing.T) {
@@ -352,7 +366,7 @@ func injectionNotPossibleWithMultipleIssues(t *testing.T) {
 	require.False(t, ok)
 	require.Contains(t, reason, EmptyTenantUUIDReason)
 	require.Contains(t, reason, EmptyConnectionInfoReason)
-	require.Contains(t, reason, EmptyCodeModulesVersionReason)
+	require.Contains(t, reason, EmptyCodeModulesVersionAndImageReason)
 }
 
 func createTestPodMutator(objects []client.Object) *Mutator {
