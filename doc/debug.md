@@ -38,10 +38,13 @@ As the operator only sends requests to the Kubernetes API, but never receives an
 #### Setup
 
 1. Deploy the operator as usual:
+
 ```shell
 make deploy/helm
 ```
+
 2. Scale down the cluster operator:
+
 ```shell
 kubectl -n dynatrace scale --replicas 0 deployment/dynatrace-operator
 ```
@@ -54,6 +57,7 @@ Breakpoints will be respected.
 #### Teardown
 
 1. Scale up the cluster operator:
+
 ```shell
 kubectl -n dynatrace scale --replicas 1 deployment/dynatrace-operator
 ```
@@ -69,14 +73,19 @@ The security context of the webhook pod has to be removed, as Telepresence would
 #### Setup
 
 1. Build the debug image, to include the Delve debugger for the CSI driver (requirement for step 2):
+
 ```shell
 make debug/build
 ```
+
 2. Deploy the debug image with necessary changes to the webhook deployment (enables the debugger for the CSI driver too):
+
 ```shell
 make debug/deploy
 ```
+
 3. Install Telepresence in the cluster and connect to it:
+
 ```shell
 make debug/telepresence/install
 ```
@@ -89,10 +98,13 @@ Breakpoints will be respected.
 #### Teardown
 
 1. Stop Telepresence and remove all changes made to the cluster:
+
 ```shell
 make debug/telepresence/uninstall
 ```
+
 2. Deploy without debugging changes:
+
 ```shell
 make deploy/helm
 ```
@@ -108,14 +120,19 @@ The debugging port has to be forwarded to your local machine, where the IDE can 
 #### Setup
 
 1. Build the debug image, to include the Delve debugger:
+
 ```shell
 make debug/build
 ```
+
 2. Deploy the debug image with necessary changes to the CSI driver deployment:
+
 ```shell
 make debug/deploy
 ```
+
 3. Open a tunnel from your local machine to the CSI driver pod:
+
 ```shell
 make debug/tunnel/start
 ```
@@ -126,18 +143,23 @@ Select the 'Debug CSI driver (server)' configuration in your IDE and start the d
 Breakpoints will be respected.
 
 If changes are made to the CSI driver, the image has to be rebuilt and redeployed:
+
 ```shell
 make debug/csi/redeploy
 ```
+
 After redeployment, select the 'Debug CSI driver (server)' configuration in your IDE again and start the debugger.
 
 #### Teardown
 
 1. Stop the tunnel from your local machine to the CSI driver pod:
+
 ```shell
 make debug/tunnel/stop
 ```
+
 2. Deploy without debugging changes:
+
 ```shell
 make deploy/helm
 ```
@@ -167,11 +189,11 @@ For installation instructions, refer to the [Telepresence documentation](https:/
 
 ### IntelliJ
 
-**1. Install environment file plugin**
+#### 1. Install environment file plugin
 
 The following plugin is required to deal with environment files: [EnvFile](https://plugins.jetbrains.com/plugin/7861-envfile)
 
-**2. Create debug configuration**
+#### 2. Create debug configuration
 
 1. Create a `.run` directory and create the following files:
     - `Debug CSI driver (provisioner).run.xml`
@@ -182,6 +204,7 @@ The following plugin is required to deal with environment files: [EnvFile](https
 2. Copy the following content into the respective files:
 
 `Debug CSI driver (provisioner).run.xml`:
+
 ```xml
 <component name="ProjectRunConfigurationManager">
 <configuration default="false" name="Debug CSI driver (provisioner)" type="GoRemoteDebugConfigurationType" factoryName="Go Remote" port="40001">
@@ -193,6 +216,7 @@ The following plugin is required to deal with environment files: [EnvFile](https
 ```
 
 `Debug CSI driver (server).run.xml`:
+
 ```xml
 <component name="ProjectRunConfigurationManager">
     <configuration default="false" name="Debug CSI driver (server)" type="GoRemoteDebugConfigurationType" factoryName="Go Remote" port="40000">
@@ -204,6 +228,7 @@ The following plugin is required to deal with environment files: [EnvFile](https
 ```
 
 `Debug Operator.run.xml`:
+
 ```xml
 <component name="ProjectRunConfigurationManager">
     <configuration default="false" name="Debug Operator" type="GoApplicationRunConfiguration" factoryName="Go Application">
@@ -234,6 +259,7 @@ The following plugin is required to deal with environment files: [EnvFile](https
 ```
 
 `Debug Webhook.run.xml`:
+
 ```xml
 <component name="ProjectRunConfigurationManager">
     <configuration default="false" name="Debug Webhook" type="GoApplicationRunConfiguration" factoryName="Go Application">
