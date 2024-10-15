@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,21 +21,21 @@ const (
 	expectedArgNameWithExtensionsOnly = "extension_controller"
 )
 
-var capabilities = []dynakube.CapabilityDisplayName{
-	dynakube.RoutingCapability.DisplayName,
-	dynakube.KubeMonCapability.DisplayName,
-	dynakube.MetricsIngestCapability.DisplayName,
-	dynakube.DynatraceApiCapability.DisplayName,
+var capabilities = []activegate.CapabilityDisplayName{
+	activegate.RoutingCapability.DisplayName,
+	activegate.KubeMonCapability.DisplayName,
+	activegate.MetricsIngestCapability.DisplayName,
+	activegate.DynatraceApiCapability.DisplayName,
 }
 
-func buildDynakube(capabilities []dynakube.CapabilityDisplayName, enableExtensions bool) *dynakube.DynaKube {
+func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtensions bool) *dynakube.DynaKube {
 	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace, Name: testName,
 		},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testApiUrl,
-			ActiveGate: dynakube.ActiveGateSpec{
+			ActiveGate: activegate.Spec{
 				Capabilities: capabilities,
 			},
 			Extensions: dynakube.ExtensionsSpec{
@@ -72,7 +73,7 @@ func TestNewMultiCapability(t *testing.T) {
 		assert.Equal(t, expectedArgName, mc.ArgName())
 	})
 	t.Run(`creates new multicapability without capabilities set in dynakube`, func(t *testing.T) {
-		var emptyCapabilites []dynakube.CapabilityDisplayName
+		var emptyCapabilites []activegate.CapabilityDisplayName
 		dk := buildDynakube(emptyCapabilites, false)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
@@ -92,7 +93,7 @@ func TestNewMultiCapabilityWithExtensions(t *testing.T) {
 		assert.Equal(t, expectedArgNameWithExtensions, mc.ArgName())
 	})
 	t.Run(`creates new multicapability without capabilities set in dynakube and Extensions enabled`, func(t *testing.T) {
-		var emptyCapabilites []dynakube.CapabilityDisplayName
+		var emptyCapabilites []activegate.CapabilityDisplayName
 		dk := buildDynakube(emptyCapabilites, true)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
@@ -136,14 +137,14 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 					Namespace: "dynatrace",
 				},
 				Spec: dynakube.DynaKubeSpec{
-					ActiveGate: dynakube.ActiveGateSpec{
-						Capabilities: []dynakube.CapabilityDisplayName{
-							dynakube.RoutingCapability.DisplayName,
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.RoutingCapability.DisplayName,
 						},
 					},
 				},
 				Status: dynakube.DynaKubeStatus{
-					ActiveGate: dynakube.ActiveGateStatus{
+					ActiveGate: activegate.Status{
 						ServiceIPs: []string{"1.2.3.4"},
 					},
 				},
@@ -159,14 +160,14 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 					Namespace: "dynatrace",
 				},
 				Spec: dynakube.DynaKubeSpec{
-					ActiveGate: dynakube.ActiveGateSpec{
-						Capabilities: []dynakube.CapabilityDisplayName{
-							dynakube.RoutingCapability.DisplayName,
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.RoutingCapability.DisplayName,
 						},
 					},
 				},
 				Status: dynakube.DynaKubeStatus{
-					ActiveGate: dynakube.ActiveGateStatus{
+					ActiveGate: activegate.Status{
 						ServiceIPs: []string{"1.2.3.4", "4.3.2.1"},
 					},
 				},
@@ -182,14 +183,14 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 					Namespace: "dynatrace",
 				},
 				Spec: dynakube.DynaKubeSpec{
-					ActiveGate: dynakube.ActiveGateSpec{
-						Capabilities: []dynakube.CapabilityDisplayName{
-							dynakube.RoutingCapability.DisplayName,
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.RoutingCapability.DisplayName,
 						},
 					},
 				},
 				Status: dynakube.DynaKubeStatus{
-					ActiveGate: dynakube.ActiveGateStatus{
+					ActiveGate: activegate.Status{
 						ServiceIPs: []string{"1.2.3.4", "2600:2d00:0:4:f9b7:bd67:1d97:5994", "4.3.2.1", "2600:2d00:0:4:f9b7:bd67:1d97:5996"},
 					},
 				},
@@ -205,14 +206,14 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 					Namespace: "dynatrace",
 				},
 				Spec: dynakube.DynaKubeSpec{
-					ActiveGate: dynakube.ActiveGateSpec{
-						Capabilities: []dynakube.CapabilityDisplayName{
-							dynakube.KubeMonCapability.DisplayName,
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.KubeMonCapability.DisplayName,
 						},
 					},
 				},
 				Status: dynakube.DynaKubeStatus{
-					ActiveGate: dynakube.ActiveGateStatus{
+					ActiveGate: activegate.Status{
 						ServiceIPs: []string{"1.2.3.4"},
 					},
 				},
@@ -228,15 +229,15 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 					Namespace: "dynatrace",
 				},
 				Spec: dynakube.DynaKubeSpec{
-					ActiveGate: dynakube.ActiveGateSpec{
-						Capabilities: []dynakube.CapabilityDisplayName{
-							dynakube.KubeMonCapability.DisplayName,
-							dynakube.RoutingCapability.DisplayName,
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.KubeMonCapability.DisplayName,
+							activegate.RoutingCapability.DisplayName,
 						},
 					},
 				},
 				Status: dynakube.DynaKubeStatus{
-					ActiveGate: dynakube.ActiveGateStatus{
+					ActiveGate: activegate.Status{
 						ServiceIPs: []string{"1.2.3.4"},
 					},
 				},
@@ -252,12 +253,12 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 					Namespace: "dynatrace",
 				},
 				Spec: dynakube.DynaKubeSpec{
-					ActiveGate: dynakube.ActiveGateSpec{
+					ActiveGate: activegate.Spec{
 						Capabilities: capabilities,
 					},
 				},
 				Status: dynakube.DynaKubeStatus{
-					ActiveGate: dynakube.ActiveGateStatus{
+					ActiveGate: activegate.Status{
 						ServiceIPs: []string{"1.2.3.4"},
 					},
 				},
@@ -274,7 +275,7 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 				},
 				Spec: dynakube.DynaKubeSpec{},
 				Status: dynakube.DynaKubeStatus{
-					ActiveGate: dynakube.ActiveGateStatus{
+					ActiveGate: activegate.Status{
 						ServiceIPs: []string{"1.2.3.4"},
 					},
 				},

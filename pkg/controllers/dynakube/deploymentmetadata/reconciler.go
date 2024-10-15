@@ -48,7 +48,7 @@ func (r *Reconciler) addOneAgentDeploymentMetadata(configMapData map[string]stri
 }
 
 func (r *Reconciler) addActiveGateDeploymentMetadata(configMapData map[string]string) {
-	if !r.dk.NeedsActiveGate() {
+	if !r.dk.ActiveGate().IsEnabled() {
 		return
 	}
 

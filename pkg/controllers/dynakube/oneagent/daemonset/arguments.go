@@ -26,7 +26,8 @@ func (b *builder) arguments() ([]string, error) {
 		return []string{}, err
 	}
 
-	if !isProxyAsEnvDeprecated {
+	// the !NeedsOneAgentProxy check is needed, if no proxy is set, we still have to set it as empty to clear proxy settings the OA might have cached
+	if !isProxyAsEnvDeprecated || !b.dk.NeedsOneAgentProxy() {
 		// deprecated
 		b.appendProxyArg(argMap)
 	}
@@ -81,7 +82,7 @@ func (b *builder) appendNoProxyArg(argMap *prioritymap.Map) {
 	if b.dk.NeedsCustomNoProxy() {
 		noProxyValue := b.dk.FeatureNoProxy()
 
-		if b.dk.NeedsActiveGate() {
+		if b.dk.ActiveGate().IsEnabled() {
 			multiCap := capability.NewMultiCapability(b.dk)
 			noProxyActiveGateValue := capability.BuildDNSEntryPointWithoutEnvVars(b.dk.Name, b.dk.Namespace, multiCap)
 

@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -41,9 +42,9 @@ func TestReconcile(t *testing.T) {
 			OneAgent: dynakube.OneAgentSpec{
 				CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 			},
-			ActiveGate: dynakube.ActiveGateSpec{
-				Capabilities: []dynakube.CapabilityDisplayName{
-					dynakube.CapabilityDisplayName(dynakube.KubeMonCapability.ShortName),
+			ActiveGate: activegate.Spec{
+				Capabilities: []activegate.CapabilityDisplayName{
+					activegate.CapabilityDisplayName(activegate.KubeMonCapability.ShortName),
 				},
 			},
 		},
@@ -98,7 +99,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, verifiedReason, condition.Reason)
 		assert.Equal(t, "Version verified for component.", condition.Message)
 
-		assertStatusBasedOnTenantRegistry(t, dk.DefaultActiveGateImage(testActiveGateImage.Tag), testActiveGateImage.Tag, dkStatus.ActiveGate.VersionStatus)
+		assertStatusBasedOnTenantRegistry(t, dk.ActiveGate().GetDefaultImage(testActiveGateImage.Tag), testActiveGateImage.Tag, dkStatus.ActiveGate.VersionStatus)
 		assertStatusBasedOnTenantRegistry(t, dk.DefaultOneAgentImage(testOneAgentImage.Tag), testOneAgentImage.Tag, dkStatus.OneAgent.VersionStatus)
 		assert.Equal(t, latestAgentVersion, dkStatus.CodeModules.VersionStatus.Version)
 

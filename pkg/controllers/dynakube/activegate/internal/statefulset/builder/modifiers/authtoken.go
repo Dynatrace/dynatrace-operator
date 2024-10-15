@@ -42,7 +42,7 @@ func (mod AuthTokenModifier) getVolumes() []corev1.Volume {
 			Name: consts.AuthTokenSecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: mod.dk.ActiveGateAuthTokenSecret(),
+					SecretName: mod.dk.ActiveGate().GetAuthTokenSecretName(),
 				},
 			},
 		},

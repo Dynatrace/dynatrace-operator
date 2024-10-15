@@ -39,9 +39,18 @@ def main():
         res = [f"\n### {k}\n", table_header(), "|:-|:-|:-|:-|"]
         for name, obj in d[k]:
             raw_desc = obj.get("description", "")
+
+            if "anyOf" in obj:
+                any_type = []
+                for subtype in obj["anyOf"]:
+                    any_type.append(subtype["type"])
+                type_ = " or ".join(any_type)
+            else:
+                type_ = obj["type"]
+
             template = "|{field}|{description}|{default}|{type}|".format(
                 field=f"`{name}`",
-                type=obj["type"],
+                type=type_,
                 description=clean_description(raw_desc),
                 default=obj.get("default", "-"),
             )

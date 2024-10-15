@@ -63,7 +63,7 @@ func getContainerConfSubPath(containerName string) string {
 }
 
 func addCertVolumeMounts(container *corev1.Container, dk dynakube.DynaKube) {
-	if dk.HasActiveGateCaCert() || dk.Spec.TrustedCAs != "" {
+	if dk.ActiveGate().HasCaCert() || dk.Spec.TrustedCAs != "" {
 		container.VolumeMounts = append(container.VolumeMounts,
 			corev1.VolumeMount{
 				Name:      oneAgentShareVolumeName,
@@ -168,6 +168,7 @@ func getInstallerVolumeSource(dk dynakube.DynaKube) corev1.VolumeSource {
 			VolumeAttributes: map[string]string{
 				csivolumes.CSIVolumeAttributeModeField:     appvolumes.Mode,
 				csivolumes.CSIVolumeAttributeDynakubeField: dk.Name,
+				csivolumes.CSIVolumeAttributeRetryTimeout:  dk.FeatureMaxCSIRetryTimeout().String(),
 			},
 		}
 	} else {

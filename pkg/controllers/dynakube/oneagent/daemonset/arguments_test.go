@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -37,6 +39,7 @@ func TestArguments(t *testing.T) {
 		expectedDefaultArguments := []string{
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
 			"--set-no-proxy=",
+			"--set-proxy=",
 			"--set-server={$(DT_SERVER)}",
 			"--set-tenant=$(DT_TENANT)",
 		}
@@ -77,6 +80,7 @@ func TestArguments(t *testing.T) {
 		expectedDefaultArguments := []string{
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
 			"--set-no-proxy=",
+			"--set-proxy=",
 			"--set-server={$(DT_SERVER)}",
 			"--set-tenant=$(DT_TENANT)",
 			"test-value",
@@ -103,6 +107,7 @@ func TestArguments(t *testing.T) {
 			"--set-host-id-source=lustiglustig",
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
 			"--set-no-proxy=",
+			"--set-proxy=",
 			"--set-server={$(DT_SERVER)}",
 			"--set-server=https://hyper.super.com:9999",
 			"--set-tenant=$(DT_TENANT)",
@@ -112,6 +117,9 @@ func TestArguments(t *testing.T) {
 	t.Run("--set-proxy is not set with OneAgent version >=1.271.0", func(t *testing.T) {
 		builder := builder{
 			dk: &dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					Proxy: &value.Source{Value: "something"},
+				},
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: dynakube.OneAgentStatus{
 						VersionStatus: status.VersionStatus{
@@ -126,6 +134,56 @@ func TestArguments(t *testing.T) {
 		expectedDefaultArguments := []string{
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
 			"--set-no-proxy=",
+			"--set-server={$(DT_SERVER)}",
+			"--set-tenant=$(DT_TENANT)",
+		}
+		assert.Equal(t, expectedDefaultArguments, arguments)
+	})
+	t.Run("proxy settings are not properly removed from OneAgent in case of feature-flag", func(t *testing.T) {
+		builder := builder{
+			dk: &dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					Proxy: &value.Source{Value: "something"},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: "dynatrace",
+					Annotations: map[string]string{
+						"feature.dynatrace.com/oneagent-ignore-proxy": "true",
+					},
+				},
+			},
+		}
+		arguments, _ := builder.arguments()
+
+		expectedDefaultArguments := []string{
+			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+			"--set-no-proxy=",
+			"--set-proxy=",
+			"--set-server={$(DT_SERVER)}",
+			"--set-tenant=$(DT_TENANT)",
+		}
+		assert.Equal(t, expectedDefaultArguments, arguments)
+	})
+	t.Run("proxy settings are not properly removed from OneAgent when we still have some left over", func(t *testing.T) {
+		builder := builder{
+			dk: &dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: "dynatrace",
+					Annotations: map[string]string{
+						"feature.dynatrace.com/oneagent-ignore-proxy": "true",
+					},
+				},
+				Spec: dynakube.DynaKubeSpec{Proxy: &value.Source{Value: testValue}},
+			},
+		}
+		arguments, _ := builder.arguments()
+
+		expectedDefaultArguments := []string{
+			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+			"--set-no-proxy=",
+			"--set-proxy=",
 			"--set-server={$(DT_SERVER)}",
 			"--set-tenant=$(DT_TENANT)",
 		}
@@ -157,6 +215,7 @@ func TestArguments(t *testing.T) {
 			"--set-host-property=item1=value1",
 			"--set-host-property=item2=value2",
 			"--set-no-proxy=",
+			"--set-proxy=",
 			"--set-server={$(DT_SERVER)}",
 			"--set-server=https://hyper.super.com:9999",
 			"--set-tenant=$(DT_TENANT)",
@@ -171,12 +230,12 @@ func TestArguments(t *testing.T) {
 					Namespace: "dynatrace",
 				},
 				Spec: dynakube.DynaKubeSpec{
-					Proxy: &dynakube.DynaKubeProxy{Value: testValue},
+					Proxy: &value.Source{Value: testValue},
 					OneAgent: dynakube.OneAgentSpec{
 						CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 					},
-					ActiveGate: dynakube.ActiveGateSpec{
-						Capabilities: []dynakube.CapabilityDisplayName{dynakube.RoutingCapability.DisplayName},
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 					},
 				},
 			},
@@ -225,7 +284,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 	// deprecated
 	t.Run(`has proxy arg`, func(t *testing.T) {
 		dk.Status.OneAgent.Version = "1.272.0.0-0"
-		dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: testValue}
+		dk.Spec.Proxy = &value.Source{Value: testValue}
 		podSpecs, _ = dsBuilder.podSpec()
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 
@@ -236,7 +295,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 	})
 	// deprecated
 	t.Run(`has proxy arg but feature flag to ignore is enabled`, func(t *testing.T) {
-		dk.Spec.Proxy = &dynakube.DynaKubeProxy{Value: testValue}
+		dk.Spec.Proxy = &value.Source{Value: testValue}
 		dk.Annotations[dynakube.AnnotationFeatureOneAgentIgnoreProxy] = "true" //nolint:staticcheck
 		podSpecs, _ = dsBuilder.podSpec()
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")

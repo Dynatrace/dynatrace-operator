@@ -3,6 +3,7 @@ package dynakube
 import (
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -134,6 +135,84 @@ func TestMaxMountAttempts(t *testing.T) {
 		AnnotationFeatureMaxFailedCsiMountAttempts, "-5")
 
 	assert.Equal(t, DefaultMaxFailedCsiMountAttempts, dk.FeatureMaxFailedCsiMountAttempts())
+}
+
+func TestMaxCSIMountTimeout(t *testing.T) {
+	type testCase struct {
+		title    string
+		input    string
+		expected time.Duration
+	}
+
+	defaultDuration, err := time.ParseDuration(DefaultMaxCsiMountTimeout)
+	require.NoError(t, err)
+
+	tests := []testCase{
+		{
+			title:    "no annotation -> use default",
+			input:    "",
+			expected: defaultDuration,
+		},
+		{
+			title:    "incorrect annotation (format) -> use default",
+			input:    "5",
+			expected: defaultDuration,
+		},
+		{
+			title:    "incorrect annotation (negative) -> use default",
+			input:    "-5m",
+			expected: defaultDuration,
+		},
+		{
+			title:    "correct annotation -> use value",
+			input:    "5m",
+			expected: time.Minute * 5,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.title, func(t *testing.T) {
+			dk := createDynakubeWithAnnotation(AnnotationFeatureMaxCsiMountTimeout, test.input)
+
+			assert.Equal(t, test.expected, dk.FeatureMaxCSIRetryTimeout())
+		})
+	}
+}
+
+func TestMountAttemptsToTimeout(t *testing.T) {
+	type testCase struct {
+		title    string
+		input    int
+		expected time.Duration
+		delta    float64
+	}
+
+	defaultDuration, err := time.ParseDuration(DefaultMaxCsiMountTimeout)
+	require.NoError(t, err)
+
+	tests := []testCase{
+		{
+			title:    "default attempts ~ default duration", // 10 attempts ==> ~8 minutes
+			input:    DefaultMaxFailedCsiMountAttempts,
+			expected: defaultDuration,
+			delta:    float64(time.Minute * 2),
+		},
+
+		{
+			title:    "1/2 of default attempts ~ NOT 1/2 of default duration (so it is actually exponential)", // 5 attempts ==> ~15 seconds
+			input:    DefaultMaxFailedCsiMountAttempts / 2,
+			expected: defaultDuration / DefaultMaxFailedCsiMountAttempts / 4,
+			delta:    float64(time.Second * 5),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.title, func(t *testing.T) {
+			duration, err := time.ParseDuration(MountAttemptsToTimeout(test.input))
+			require.NoError(t, err)
+			assert.InDelta(t, test.expected, duration, test.delta)
+		})
+	}
 }
 
 func TestDynaKube_FeatureIgnoredNamespaces(t *testing.T) {

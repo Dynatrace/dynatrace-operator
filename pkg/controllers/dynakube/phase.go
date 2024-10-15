@@ -28,7 +28,7 @@ func (controller *Controller) determineDynaKubePhase(dk *dynakube.DynaKube) stat
 }
 
 func (controller *Controller) determineActiveGatePhase(dk *dynakube.DynaKube) status.DeploymentPhase {
-	if dk.NeedsActiveGate() {
+	if dk.ActiveGate().IsEnabled() {
 		activeGatePods, err := controller.numberOfMissingActiveGatePods(dk)
 		if err != nil {
 			log.Error(err, "activegate statefulset could not be accessed", "dynakube", dk.Name)

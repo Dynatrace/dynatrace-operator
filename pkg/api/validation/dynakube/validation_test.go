@@ -7,6 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
@@ -76,11 +77,11 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 						},
 					},
 				},
-				ActiveGate: dynakube.ActiveGateSpec{
-					Capabilities: []dynakube.CapabilityDisplayName{
-						dynakube.RoutingCapability.DisplayName,
-						dynakube.KubeMonCapability.DisplayName,
-						dynakube.MetricsIngestCapability.DisplayName,
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.RoutingCapability.DisplayName,
+						activegate.KubeMonCapability.DisplayName,
+						activegate.MetricsIngestCapability.DisplayName,
 					},
 				},
 			},
@@ -112,7 +113,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 				errorCSIRequired,
 				errorNoApiUrl,
 				errorConflictingNamespaceSelector,
-				fmt.Sprintf(errorDuplicateActiveGateCapability, dynakube.KubeMonCapability.DisplayName),
+				fmt.Sprintf(errorDuplicateActiveGateCapability, activegate.KubeMonCapability.DisplayName),
 				fmt.Sprintf(errorInvalidActiveGateCapability, "me dumb"),
 				fmt.Sprintf(errorNodeSelectorConflict, "conflict2")},
 			&dynakube.DynaKube{
@@ -131,10 +132,10 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 							},
 						},
 					},
-					ActiveGate: dynakube.ActiveGateSpec{
-						Capabilities: []dynakube.CapabilityDisplayName{
-							dynakube.KubeMonCapability.DisplayName,
-							dynakube.KubeMonCapability.DisplayName,
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.KubeMonCapability.DisplayName,
+							activegate.KubeMonCapability.DisplayName,
 							"me dumb",
 						},
 					},

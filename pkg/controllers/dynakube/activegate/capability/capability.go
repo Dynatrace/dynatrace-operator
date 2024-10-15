@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"k8s.io/utils/net"
 )
@@ -12,11 +13,11 @@ import (
 type baseFunc func() *capabilityBase
 
 var (
-	activeGateCapabilities = map[dynakube.CapabilityDisplayName]baseFunc{
-		dynakube.KubeMonCapability.DisplayName:       kubeMonBase,
-		dynakube.RoutingCapability.DisplayName:       routingBase,
-		dynakube.MetricsIngestCapability.DisplayName: metricsIngestBase,
-		dynakube.DynatraceApiCapability.DisplayName:  dynatraceApiBase,
+	activeGateCapabilities = map[activegate.CapabilityDisplayName]baseFunc{
+		activegate.KubeMonCapability.DisplayName:       kubeMonBase,
+		activegate.RoutingCapability.DisplayName:       routingBase,
+		activegate.MetricsIngestCapability.DisplayName: metricsIngestBase,
+		activegate.DynatraceApiCapability.DisplayName:  dynatraceApiBase,
 	}
 )
 
@@ -25,11 +26,11 @@ type Capability interface {
 	ShortName() string
 	ArgName() string
 	DisplayName() string
-	Properties() *dynakube.CapabilityProperties
+	Properties() *activegate.CapabilityProperties
 }
 
 type capabilityBase struct {
-	properties  *dynakube.CapabilityProperties
+	properties  *activegate.CapabilityProperties
 	shortName   string
 	argName     string
 	displayName string
@@ -40,7 +41,7 @@ func (capability *capabilityBase) Enabled() bool {
 	return capability.enabled
 }
 
-func (capability *capabilityBase) Properties() *dynakube.CapabilityProperties {
+func (capability *capabilityBase) Properties() *activegate.CapabilityProperties {
 	return capability.properties
 }
 
@@ -70,7 +71,7 @@ func NewMultiCapability(dk *dynakube.DynaKube) Capability {
 			shortName: consts.MultiActiveGateName,
 		},
 	}
-	if dk == nil || !dk.ActiveGateMode() {
+	if dk == nil || !dk.ActiveGate().IsEnabled() {
 		return &mc
 	}
 
@@ -108,9 +109,9 @@ func NewMultiCapability(dk *dynakube.DynaKube) Capability {
 
 func kubeMonBase() *capabilityBase {
 	c := capabilityBase{
-		shortName:   dynakube.KubeMonCapability.ShortName,
-		argName:     dynakube.KubeMonCapability.ArgumentName,
-		displayName: string(dynakube.KubeMonCapability.DisplayName),
+		shortName:   activegate.KubeMonCapability.ShortName,
+		argName:     activegate.KubeMonCapability.ArgumentName,
+		displayName: string(activegate.KubeMonCapability.DisplayName),
 	}
 
 	return &c
@@ -118,9 +119,9 @@ func kubeMonBase() *capabilityBase {
 
 func routingBase() *capabilityBase {
 	c := capabilityBase{
-		shortName:   dynakube.RoutingCapability.ShortName,
-		argName:     dynakube.RoutingCapability.ArgumentName,
-		displayName: string(dynakube.RoutingCapability.DisplayName),
+		shortName:   activegate.RoutingCapability.ShortName,
+		argName:     activegate.RoutingCapability.ArgumentName,
+		displayName: string(activegate.RoutingCapability.DisplayName),
 	}
 
 	return &c
@@ -128,9 +129,9 @@ func routingBase() *capabilityBase {
 
 func metricsIngestBase() *capabilityBase {
 	c := capabilityBase{
-		shortName:   dynakube.MetricsIngestCapability.ShortName,
-		argName:     dynakube.MetricsIngestCapability.ArgumentName,
-		displayName: string(dynakube.MetricsIngestCapability.DisplayName),
+		shortName:   activegate.MetricsIngestCapability.ShortName,
+		argName:     activegate.MetricsIngestCapability.ArgumentName,
+		displayName: string(activegate.MetricsIngestCapability.DisplayName),
 	}
 
 	return &c
@@ -138,9 +139,9 @@ func metricsIngestBase() *capabilityBase {
 
 func dynatraceApiBase() *capabilityBase {
 	c := capabilityBase{
-		shortName:   dynakube.DynatraceApiCapability.ShortName,
-		argName:     dynakube.DynatraceApiCapability.ArgumentName,
-		displayName: string(dynakube.DynatraceApiCapability.DisplayName),
+		shortName:   activegate.DynatraceApiCapability.ShortName,
+		argName:     activegate.DynatraceApiCapability.ArgumentName,
+		displayName: string(activegate.DynatraceApiCapability.DisplayName),
 	}
 
 	return &c
@@ -172,7 +173,7 @@ func BuildDNSEntryPoint(dk dynakube.DynaKube, capability Capability) string {
 		entries = append(entries, serviceHostEntry)
 	}
 
-	if dk.IsRoutingActiveGateEnabled() {
+	if dk.ActiveGate().IsRoutingEnabled() {
 		serviceDomain := buildServiceDomainName(dk.Name, dk.Namespace, capability.ShortName())
 		serviceDomainEntry := buildDNSEntry(serviceDomain)
 		entries = append(entries, serviceDomainEntry)

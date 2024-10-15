@@ -1,4 +1,5 @@
-CRD_OPTIONS ?= "crd:crdVersions=v1,maxDescLen=512"
+CRD_OPTIONS ?= "crd:crdVersions=v1,maxDescLen=350,ignoreUnexportedFields=true"
+
 OLM ?= false
 
 HELM_CHART_DEFAULT_DIR=config/helm/chart/default/

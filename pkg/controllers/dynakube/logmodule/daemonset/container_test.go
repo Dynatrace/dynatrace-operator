@@ -3,6 +3,7 @@ package daemonset
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,7 +30,7 @@ func TestGetContainer(t *testing.T) {
 		expectedRepo := "my-test-repo"
 		expectedTag := "my-test-tag"
 		dk := dynakube.DynaKube{}
-		dk.Spec.Templates.LogModule.ImageRef = dynakube.ImageRefSpec{
+		dk.Spec.Templates.LogModule.ImageRef = image.Ref{
 			Repository: expectedRepo,
 			Tag:        expectedTag,
 		}
@@ -65,7 +66,7 @@ func TestGetInitContainer(t *testing.T) {
 		expectedRepo := "my-test-repo"
 		expectedTag := "my-test-tag"
 		dk := dynakube.DynaKube{}
-		dk.Spec.Templates.LogModule.ImageRef = dynakube.ImageRefSpec{
+		dk.Spec.Templates.LogModule.ImageRef = image.Ref{
 			Repository: expectedRepo,
 			Tag:        expectedTag,
 		}

@@ -92,10 +92,6 @@ spec:
                         any service environment variables. If a variable cannot be resolved,
                         the reference in the input string will be unchanged. Double $$ are reduced
                         to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
-                        "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
-                        Escaped references will never be expanded, regardless of whether the variable
-                        exists or not.
-                        Defaults to "".
                       type: string
                     valueFrom:
                       description: Source for the environment variable's value. Cannot
@@ -452,8 +448,7 @@ spec:
                         spreading will be calculated. The keys are used to lookup values from the
                         incoming pod labels, those key-value labels are ANDed with labelSelector
                         to select the group of existing pods over which spreading will be calculated
-                        for the incoming pod. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-                        MatchLabelKeys cannot be set when LabelSelector isn't set.
+                        for the incoming pod.
                       items:
                         type: string
                       type: array
@@ -463,8 +458,6 @@ spec:
                         MaxSkew describes the degree to which pods may be unevenly distributed.
                         When `whenUnsatisfiable=DoNotSchedule`, it is the maximum permitted difference
                         between the number of matching pods in the target topology and the global minimum.
-                        The global minimum is the minimum number of matching pods in an eligible domain
-                        or zero if the number of eligible domains is less than MinDomains.
                       format: int32
                       type: integer
                     minDomains:
@@ -472,8 +465,6 @@ spec:
                         MinDomains indicates a minimum number of eligible domains.
                         When the number of eligible domains with matching topology keys is less than minDomains,
                         Pod Topology Spread treats "global minimum" as 0, and then the calculation of Skew is performed.
-                        And when the number of eligible domains with matching topology keys equals or greater than minDomains,
-                        this value has no effect on scheduling.
                       format: int32
                       type: integer
                     nodeAffinityPolicy:
@@ -482,9 +473,6 @@ spec:
                         when calculating pod topology spread skew. Options are:
                         - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
                         - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
-
-                        If this value is nil, the behavior is equivalent to the Honor policy.
-                        This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                       type: string
                     nodeTaintsPolicy:
                       description: |-
@@ -493,9 +481,6 @@ spec:
                         - Honor: nodes without taints, along with tainted nodes for which the incoming pod
                         has a toleration, are included.
                         - Ignore: node taints are ignored. All nodes are included.
-
-                        If this value is nil, the behavior is equivalent to the Ignore policy.
-                        This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                       type: string
                     topologyKey:
                       description: |-
@@ -504,9 +489,6 @@ spec:
                         We consider each <key, value> as a "bucket", and try to put balanced number
                         of pods into each bucket.
                         We define a domain as a particular instance of a topology.
-                        Also, we define an eligible domain as a domain whose nodes meet the requirements of
-                        nodeAffinityPolicy and nodeTaintsPolicy.
-                        e.g. If TopologyKey is "kubernetes.
                       type: string
                     whenUnsatisfiable:
                       description: |-
@@ -516,9 +498,6 @@ spec:
                         - ScheduleAnyway tells the scheduler to schedule the pod in any location,
                           but giving higher precedence to topologies that would help reduce the
                           skew.
-                        A constraint is considered "Unsatisfiable" for an incoming pod
-                        if and only if every possible node assignment for that pod would violate
-                        "MaxSkew" on some topology.
                       type: string
                   required:
                   - maxSkew
@@ -703,10 +682,6 @@ spec:
                         any service environment variables. If a variable cannot be resolved,
                         the reference in the input string will be unchanged. Double $$ are reduced
                         to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
-                        "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
-                        Escaped references will never be expanded, regardless of whether the variable
-                        exists or not.
-                        Defaults to "".
                       type: string
                     valueFrom:
                       description: Source for the environment variable's value. Cannot
@@ -822,11 +797,11 @@ spec:
                 description: Overrides the default image
                 properties:
                   repository:
-                    description: Custom EdgeConnect image repository
-                    example: docker.io/dynatrace/edgeconnect
+                    description: Custom image repository
+                    example: docker.io/dynatrace/image-name
                     type: string
                   tag:
-                    description: Indicates version of the EdgeConnect image to use
+                    description: Indicates a tag of the image to use
                     type: string
                 type: object
               kubernetesAutomation:
@@ -1065,8 +1040,7 @@ spec:
                         spreading will be calculated. The keys are used to lookup values from the
                         incoming pod labels, those key-value labels are ANDed with labelSelector
                         to select the group of existing pods over which spreading will be calculated
-                        for the incoming pod. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-                        MatchLabelKeys cannot be set when LabelSelector isn't set.
+                        for the incoming pod.
                       items:
                         type: string
                       type: array
@@ -1076,8 +1050,6 @@ spec:
                         MaxSkew describes the degree to which pods may be unevenly distributed.
                         When `whenUnsatisfiable=DoNotSchedule`, it is the maximum permitted difference
                         between the number of matching pods in the target topology and the global minimum.
-                        The global minimum is the minimum number of matching pods in an eligible domain
-                        or zero if the number of eligible domains is less than MinDomains.
                       format: int32
                       type: integer
                     minDomains:
@@ -1085,8 +1057,6 @@ spec:
                         MinDomains indicates a minimum number of eligible domains.
                         When the number of eligible domains with matching topology keys is less than minDomains,
                         Pod Topology Spread treats "global minimum" as 0, and then the calculation of Skew is performed.
-                        And when the number of eligible domains with matching topology keys equals or greater than minDomains,
-                        this value has no effect on scheduling.
                       format: int32
                       type: integer
                     nodeAffinityPolicy:
@@ -1095,9 +1065,6 @@ spec:
                         when calculating pod topology spread skew. Options are:
                         - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
                         - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
-
-                        If this value is nil, the behavior is equivalent to the Honor policy.
-                        This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                       type: string
                     nodeTaintsPolicy:
                       description: |-
@@ -1106,9 +1073,6 @@ spec:
                         - Honor: nodes without taints, along with tainted nodes for which the incoming pod
                         has a toleration, are included.
                         - Ignore: node taints are ignored. All nodes are included.
-
-                        If this value is nil, the behavior is equivalent to the Ignore policy.
-                        This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                       type: string
                     topologyKey:
                       description: |-
@@ -1117,9 +1081,6 @@ spec:
                         We consider each <key, value> as a "bucket", and try to put balanced number
                         of pods into each bucket.
                         We define a domain as a particular instance of a topology.
-                        Also, we define an eligible domain as a domain whose nodes meet the requirements of
-                        nodeAffinityPolicy and nodeTaintsPolicy.
-                        e.g. If TopologyKey is "kubernetes.
                       type: string
                     whenUnsatisfiable:
                       description: |-
@@ -1129,9 +1090,6 @@ spec:
                         - ScheduleAnyway tells the scheduler to schedule the pod in any location,
                           but giving higher precedence to topologies that would help reduce the
                           skew.
-                        A constraint is considered "Unsatisfiable" for an incoming pod
-                        if and only if every possible node assignment for that pod would violate
-                        "MaxSkew" on some topology.
                       type: string
                   required:
                   - maxSkew

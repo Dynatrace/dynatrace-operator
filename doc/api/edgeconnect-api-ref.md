@@ -42,8 +42,8 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
-|`repository`|Custom EdgeConnect image repository|-|string|
-|`tag`|Indicates version of the EdgeConnect image to use|-|string|
+|`repository`|Custom image repository|-|string|
+|`tag`|Indicates a tag of the image to use|-|string|
 
 ### .spec.kubernetesAutomation
 

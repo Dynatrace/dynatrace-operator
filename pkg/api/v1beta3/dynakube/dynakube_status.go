@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -21,7 +23,7 @@ type DynaKubeStatus struct { //nolint:revive
 	OneAgent OneAgentStatus `json:"oneAgent,omitempty"`
 
 	// Observed state of ActiveGate
-	ActiveGate ActiveGateStatus `json:"activeGate,omitempty"`
+	ActiveGate activegate.Status `json:"activeGate,omitempty"`
 
 	// Observed state of Code Modules
 	CodeModules CodeModulesStatus `json:"codeModules,omitempty"`
@@ -68,28 +70,12 @@ func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time,
 		int(remaining.Minutes()))
 }
 
-type ConnectionInfoStatus struct {
-
-	// Time of the last connection request
-	LastRequest metav1.Time `json:"lastRequest,omitempty"`
-	// UUID of the tenant, received from the tenant
-	TenantUUID string `json:"tenantUUID,omitempty"`
-
-	// Available connection endpoints
-	Endpoints string `json:"endpoints,omitempty"`
-}
-
 type OneAgentConnectionInfoStatus struct {
 	// Information for communicating with the tenant
-	ConnectionInfoStatus `json:",inline"`
+	communication.ConnectionInfo `json:",inline"`
 
 	// List of communication hosts
 	CommunicationHosts []CommunicationHostStatus `json:"communicationHosts,omitempty"`
-}
-
-type ActiveGateConnectionInfoStatus struct {
-	// Information about Active Gate's connections
-	ConnectionInfoStatus `json:",inline"`
 }
 
 type CommunicationHostStatus struct {
@@ -101,16 +87,6 @@ type CommunicationHostStatus struct {
 
 	// Connection port
 	Port uint32 `json:"port,omitempty"`
-}
-
-type ActiveGateStatus struct {
-	status.VersionStatus `json:",inline"`
-
-	// Information about Active Gate's connections
-	ConnectionInfoStatus ActiveGateConnectionInfoStatus `json:"connectionInfoStatus,omitempty"`
-
-	// The ClusterIPs set by Kubernetes on the ActiveGate Service created by the Operator
-	ServiceIPs []string `json:"serviceIPs,omitempty"`
 }
 
 type CodeModulesStatus struct {
