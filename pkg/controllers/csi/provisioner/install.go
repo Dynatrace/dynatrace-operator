@@ -3,6 +3,7 @@ package csiprovisioner
 import (
 	"context"
 	"encoding/base64"
+	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
@@ -10,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
 )
@@ -47,7 +49,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 		return "", err
 	}
 
-	err = provisioner.installAgent(ctx, imageInstaller, dk, targetDir, targetImage, tenantUUID)
+	err = provisioner.installAgent(ctx, imageInstaller, dk, targetDir, targetImage, tenantUUID, base64Image)
 	if err != nil {
 		return "", err
 	}
@@ -72,7 +74,7 @@ func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dk 
 	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(targetVersion)
 	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dk.GetName())
 
-	err = provisioner.installAgent(ctx, urlInstaller, dk, targetDir, targetVersion, tenantUUID)
+	err = provisioner.installAgent(ctx, urlInstaller, dk, targetDir, targetVersion, tenantUUID, "")
 	if err != nil {
 		return "", err
 	}
@@ -85,7 +87,7 @@ func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dk 
 	return targetVersion, nil
 }
 
-func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, agentInstaller installer.Installer, dk dynakube.DynaKube, targetDir, targetVersion, tenantUUID string) error { //nolint:revive
+func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, agentInstaller installer.Installer, dk dynakube.DynaKube, targetDir, targetVersion, tenantUUID, base64Image string) error { //nolint:revive
 	eventRecorder := updaterEventRecorder{
 		recorder: provisioner.recorder,
 		dk:       &dk,
@@ -100,6 +102,18 @@ func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, agentI
 
 	if isNewlyInstalled {
 		eventRecorder.sendInstalledAgentVersionEvent(targetVersion, tenantUUID)
+	}
+
+	if base64Image != "" {
+		symLinkPath := filepath.Join(provisioner.opts.RootDir, tenantUUID, dk.GetName(), "latest-codemodule")
+		if err := symlink.RemoveSymLink(provisioner.fs, symLinkPath); err != nil {
+			return err
+		}
+
+		err = symlink.CreateSymlinkForLatestVersion(provisioner.fs, provisioner.opts.RootDir, dk, symLinkPath, base64Image)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
