@@ -18,6 +18,10 @@ import (
 
 var _ controllers.Reconciler = &Reconciler{}
 
+var _ ReconcilerBuilder = NewReconciler
+
+type ReconcilerBuilder func(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler
+
 // Reconciler manages the proxy secret generation for the dynatrace namespace.
 type Reconciler struct {
 	client    client.Client
@@ -33,7 +37,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	return r.ensureDeleted(ctx, r.dk)
 }
 
-func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) *Reconciler {
+func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler {
 	return &Reconciler{
 		client:    client,
 		apiReader: apiReader,

@@ -8,30 +8,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// TODO: Move these conditions related consts to a place where they are used, so we don't bloat this package further.
-const (
-	// TokenConditionType identifies the token validity condition.
-	TokenConditionType string = "Tokens"
-
-	// APITokenConditionType identifies the API Token validity condition.
-	APITokenConditionType string = "APIToken"
-
-	// PaaSTokenConditionType identifies the PaaS Token validity condition.
-	PaaSTokenConditionType string = "PaaSToken"
-
-	// DataIngestTokenConditionType identifies the DataIngest Token validity condition.
-	DataIngestTokenConditionType string = "DataIngestToken"
-)
-
-// Possible reasons for ApiToken and PaaSToken conditions.
-const (
-	// ReasonTokenReady is set when a token has passed verifications.
-	ReasonTokenReady string = "TokenReady"
-
-	// ReasonTokenError is set when an unknown error has been found when verifying the token.
-	ReasonTokenError string = "TokenError"
-)
-
 type DynaKubeProxy struct { //nolint:revive
 	// Proxy URL. It has preference over ValueFrom.
 	// +nullable

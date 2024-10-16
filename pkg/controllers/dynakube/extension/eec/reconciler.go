@@ -38,9 +38,9 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		}
 		defer meta.RemoveStatusCondition(r.dk.Conditions(), extensionsControllerStatefulSetConditionType)
 
-		sts, err := statefulset.Build(r.dk, dynakube.ExtensionsExecutionControllerStatefulsetName, corev1.Container{})
+		sts, err := statefulset.Build(r.dk, r.dk.ExtensionsExecutionControllerStatefulsetName(), corev1.Container{})
 		if err != nil {
-			log.Error(err, "could not build "+dynakube.ExtensionsExecutionControllerStatefulsetName+" during cleanup")
+			log.Error(err, "could not build "+r.dk.ExtensionsExecutionControllerStatefulsetName()+" during cleanup")
 
 			return err
 		}
@@ -48,7 +48,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		err = statefulset.Query(r.client, r.apiReader, log).Delete(ctx, sts)
 
 		if err != nil {
-			log.Error(err, "failed to clean up "+dynakube.ExtensionsExecutionControllerStatefulsetName+" statufulset")
+			log.Error(err, "failed to clean up "+r.dk.ExtensionsExecutionControllerStatefulsetName()+" statufulset")
 
 			return nil
 		}
@@ -56,14 +56,14 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	if r.dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID == "" {
-		conditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, dynakube.ExtensionsExecutionControllerStatefulsetName)
+	if r.dk.Status.ActiveGate.ConnectionInfo.TenantUUID == "" {
+		conditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, r.dk.ExtensionsExecutionControllerStatefulsetName())
 
 		return errors.New("tenantUUID unknown")
 	}
 
 	if r.dk.Status.KubeSystemUUID == "" {
-		conditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, dynakube.ExtensionsExecutionControllerStatefulsetName)
+		conditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, r.dk.ExtensionsExecutionControllerStatefulsetName())
 
 		return errors.New("kubeSystemUUID unknown")
 	}

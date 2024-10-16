@@ -19,7 +19,9 @@ package dynakube
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"strconv"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
@@ -69,6 +71,7 @@ const (
 
 	// CSI.
 	AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
+	AnnotationFeatureMaxCsiMountTimeout        = AnnotationFeaturePrefix + "max-csi-mount-timeout"
 	AnnotationFeatureReadOnlyCsiVolume         = AnnotationFeaturePrefix + "injection-readonly-volume"
 
 	falsePhrase  = "false"
@@ -78,6 +81,7 @@ const (
 )
 
 const (
+	DefaultMaxCsiMountTimeout               = "10m"
 	DefaultMaxFailedCsiMountAttempts        = 10
 	DefaultMinRequestThresholdMinutes       = 15
 	IstioDefaultOneAgentInitialConnectRetry = 6000
@@ -245,6 +249,28 @@ func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
 	}
 
 	return maxCsiMountAttemptsValue
+}
+
+func (dk *DynaKube) FeatureMaxCSIRetryTimeout() time.Duration {
+	maxCsiMountTimeoutValue := dk.getFeatureFlagRaw(AnnotationFeatureMaxCsiMountTimeout)
+
+	duration, err := time.ParseDuration(maxCsiMountTimeoutValue)
+	if err != nil || duration < 0 {
+		duration, _ = time.ParseDuration(DefaultMaxCsiMountTimeout)
+	}
+
+	return duration
+}
+
+// MountAttemptsToTimeout converts the (old) number of csi mount attempts into a time.Duration string.
+// The converted value is based on the exponential backoff's algorithm.
+// The output is string because it's main purpose is to convert the value of an annotation to another annotation.
+func MountAttemptsToTimeout(maxAttempts int) string {
+	var baseDelay = time.Second / 2
+
+	delay := time.Duration(math.Exp2(float64(maxAttempts))) * baseDelay
+
+	return delay.String()
 }
 
 func (dk *DynaKube) FeatureReadOnlyCsiVolume() bool {

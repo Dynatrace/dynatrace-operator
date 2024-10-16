@@ -1,8 +1,9 @@
 package consts
 
+import "github.com/Dynatrace/dynatrace-operator/pkg/api"
+
 const (
-	InternalPrefix                   = "internal.operator.dynatrace.com/"
-	EdgeConnectAnnotationSecretHash  = InternalPrefix + "secret-hash"
+	EdgeConnectAnnotationSecretHash  = api.InternalFlagPrefix + "secret-hash"
 	EdgeConnectUserProvisioned       = "user-provisioned"
 	EdgeConnectContainerName         = "edge-connect"
 	EdgeConnectServiceAccountName    = "dynatrace-edgeconnect"

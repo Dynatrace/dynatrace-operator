@@ -2,11 +2,6 @@ package dynakube
 
 import "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 
-const (
-	ExtensionsExecutionControllerStatefulsetName = "dynatrace-extensions-controller"
-	ExtensionsCollectorStatefulsetName           = "dynatrace-extensions-collector"
-)
-
 func (dk *DynaKube) IsExtensionsEnabled() bool {
 	return dk.Spec.Extensions.Enabled
 }
@@ -25,4 +20,16 @@ func (dk *DynaKube) ExtensionsTLSSecretName() string {
 	}
 
 	return dk.ExtensionsTLSRefName()
+}
+
+func (dk *DynaKube) ExtensionsExecutionControllerStatefulsetName() string {
+	return dk.Name + "-extensions-controller"
+}
+
+func (dk *DynaKube) ExtensionsCollectorStatefulsetName() string {
+	return dk.Name + "-extensions-collector"
+}
+
+func (dk *DynaKube) ExtensionsTokenSecretName() string {
+	return dk.Name + "-extensions-token"
 }

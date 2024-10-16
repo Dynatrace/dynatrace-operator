@@ -43,14 +43,6 @@ tests:
                 - get
                 - list
                 - watch
-            - apiGroups:
-                - apps
-              resources:
-                - daemonsets
-              verbs:
-                - get
-                - list
-                - watch
   - it: Role should exist on openshift
     documentIndex: 0
     set:
@@ -90,14 +82,6 @@ tests:
                 - dynatrace.com
               resources:
                 - dynakubes
-              verbs:
-                - get
-                - list
-                - watch
-            - apiGroups:
-                - apps
-              resources:
-                - daemonsets
               verbs:
                 - get
                 - list

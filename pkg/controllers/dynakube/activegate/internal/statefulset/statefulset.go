@@ -121,7 +121,7 @@ func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
 	podSpec := corev1.PodSpec{
 		Containers:         statefulSetBuilder.buildBaseContainer(),
 		NodeSelector:       statefulSetBuilder.capability.Properties().NodeSelector,
-		ServiceAccountName: statefulSetBuilder.dynakube.ActiveGateServiceAccountName(),
+		ServiceAccountName: statefulSetBuilder.dynakube.ActiveGate().GetServiceAccountName(),
 		Affinity:           nodeAffinity(),
 		Tolerations:        statefulSetBuilder.capability.Properties().Tolerations,
 		SecurityContext: &corev1.PodSecurityContext{
@@ -168,7 +168,7 @@ func (statefulSetBuilder Builder) defaultTopologyConstraints() []corev1.Topology
 func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 	container := corev1.Container{
 		Name:            consts.ActiveGateContainerName,
-		Image:           statefulSetBuilder.dynakube.ActiveGateImage(),
+		Image:           statefulSetBuilder.dynakube.ActiveGate().GetImage(),
 		Resources:       statefulSetBuilder.buildResources(),
 		Env:             statefulSetBuilder.buildCommonEnvs(),
 		ImagePullPolicy: corev1.PullAlways,
@@ -219,7 +219,7 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 		prioritymap.Append(statefulSetBuilder.envMap, corev1.EnvVar{Name: consts.EnvDtNetworkZone, Value: statefulSetBuilder.dynakube.Spec.NetworkZone})
 	}
 
-	if statefulSetBuilder.dynakube.IsMetricsIngestActiveGateEnabled() {
+	if statefulSetBuilder.dynakube.ActiveGate().IsMetricsIngestEnabled() {
 		prioritymap.Append(statefulSetBuilder.envMap, corev1.EnvVar{Name: consts.EnvDtHttpPort, Value: strconv.Itoa(consts.HttpContainerPort)})
 	}
 

@@ -26,7 +26,7 @@ func prepareVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		volumeMounts = append(volumeMounts, getClusterCaCertVolumeMount())
 	}
 
-	if dk != nil && dk.HasActiveGateCaCert() {
+	if dk != nil && dk.ActiveGate().HasCaCert() {
 		volumeMounts = append(volumeMounts, getActiveGateCaCertVolumeMount())
 	}
 
@@ -102,7 +102,7 @@ func prepareVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 		volumes = append(volumes, getCertificateVolume(dk))
 	}
 
-	if dk.HasActiveGateCaCert() {
+	if dk.ActiveGate().HasCaCert() {
 		volumes = append(volumes, getActiveGateCaCertVolume(dk))
 	}
 
@@ -141,6 +141,7 @@ func getCSIStorageVolume(dk *dynakube.DynaKube) corev1.Volume {
 				VolumeAttributes: map[string]string{
 					csivolumes.CSIVolumeAttributeModeField:     hostvolumes.Mode,
 					csivolumes.CSIVolumeAttributeDynakubeField: dk.Name,
+					csivolumes.CSIVolumeAttributeRetryTimeout:  dk.FeatureMaxCSIRetryTimeout().String(),
 				},
 			},
 		},

@@ -13,7 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -36,33 +36,40 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	query := k8ssecret.Query(r.client, r.client, log)
-
-	if !r.dk.ExtensionsNeedsSelfSignedTLS() {
-		return query.Delete(ctx, &corev1.Secret{ObjectMeta: v1.ObjectMeta{Name: getSelfSignedTLSSecretName(r.dk.Name), Namespace: r.dk.Namespace}})
+	if r.dk.ExtensionsNeedsSelfSignedTLS() {
+		return r.reconcileSelfSigned(ctx)
 	}
+
+	return r.reconcileTLSRefName(ctx)
+}
+
+func (r *reconciler) reconcileSelfSigned(ctx context.Context) error {
+	query := k8ssecret.Query(r.client, r.client, log)
 
 	_, err := query.Get(ctx, types.NamespacedName{
 		Name:      getSelfSignedTLSSecretName(r.dk.Name),
 		Namespace: r.dk.Namespace,
 	})
 
-	if err != nil && !k8serrors.IsNotFound(err) {
-		return err
+	if err != nil && k8serrors.IsNotFound(err) {
+		return r.createSelfSignedTLSSecret(ctx)
 	}
 
-	if k8serrors.IsNotFound(err) {
-		// we create the self-signed TLS once - no rotation needed
-		err = r.createTLSSecret(ctx)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return err
 }
 
-func (r *reconciler) createTLSSecret(ctx context.Context) error {
+func (r *reconciler) reconcileTLSRefName(ctx context.Context) error {
+	query := k8ssecret.Query(r.client, r.client, log)
+
+	return query.Delete(ctx, &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      getSelfSignedTLSSecretName(r.dk.Name),
+			Namespace: r.dk.Namespace,
+		},
+	})
+}
+
+func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
 	cert, err := certificates.New(r.timeProvider)
 	if err != nil {
 		return err
@@ -103,14 +110,22 @@ func (r *reconciler) createTLSSecret(ctx context.Context) error {
 	return nil
 }
 
+func GetTLSSecretName(dk *dynakube.DynaKube) string {
+	if dk.ExtensionsNeedsSelfSignedTLS() {
+		return getSelfSignedTLSSecretName(dk.Name)
+	}
+
+	return dk.ExtensionsTLSRefName()
+}
+
+func getSelfSignedTLSSecretName(dkName string) string {
+	return dkName + consts.ExtensionsSelfSignedTLSSecretSuffix
+}
+
 func getCertificateAltNames(dkName string) []string {
 	return []string{
 		dkName + "-extensions-controller.dynatrace",
 		dkName + "-extensions-controller.dynatrace.svc",
 		dkName + "-extensions-controller.dynatrace.svc.cluster.local",
 	}
-}
-
-func getSelfSignedTLSSecretName(dkName string) string {
-	return dkName + consts.ExtensionsSelfSignedTLSSecretSuffix
 }

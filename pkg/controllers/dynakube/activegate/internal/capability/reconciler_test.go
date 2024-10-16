@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
@@ -26,15 +27,15 @@ const (
 	testDynakube = "test-dynakube"
 )
 
-var capabilitiesWithService = []dynakube.CapabilityDisplayName{
-	dynakube.RoutingCapability.DisplayName,
-	dynakube.KubeMonCapability.DisplayName,
-	dynakube.MetricsIngestCapability.DisplayName,
-	dynakube.DynatraceApiCapability.DisplayName,
+var capabilitiesWithService = []activegate.CapabilityDisplayName{
+	activegate.RoutingCapability.DisplayName,
+	activegate.KubeMonCapability.DisplayName,
+	activegate.MetricsIngestCapability.DisplayName,
+	activegate.DynatraceApiCapability.DisplayName,
 }
 
-var capabilitiesWithoutService = []dynakube.CapabilityDisplayName{
-	dynakube.KubeMonCapability.DisplayName,
+var capabilitiesWithoutService = []activegate.CapabilityDisplayName{
+	activegate.KubeMonCapability.DisplayName,
 }
 
 func createClient() client.WithWatch {
@@ -48,7 +49,7 @@ func createClient() client.WithWatch {
 		}).
 		WithObjects(&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      dynakube.AuthTokenSecretSuffix,
+				Name:      activegate.AuthTokenSecretSuffix,
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
@@ -56,7 +57,7 @@ func createClient() client.WithWatch {
 		Build()
 }
 
-func buildDynakube(capabilities []dynakube.CapabilityDisplayName) *dynakube.DynaKube {
+func buildDynakube(capabilities []activegate.CapabilityDisplayName) *dynakube.DynaKube {
 	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
@@ -64,7 +65,7 @@ func buildDynakube(capabilities []dynakube.CapabilityDisplayName) *dynakube.Dyna
 		},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testApiUrl,
-			ActiveGate: dynakube.ActiveGateSpec{
+			ActiveGate: activegate.Spec{
 				Capabilities: capabilities,
 			},
 		},

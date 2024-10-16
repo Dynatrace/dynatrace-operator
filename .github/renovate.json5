@@ -48,6 +48,15 @@
       ],
       datasourceTemplate: "go",
     },
+    {
+      fileMatch: [
+        "(^|/|\\.)action.yaml$",
+      ],
+      matchStrings: [
+        "depName=(?<depName>.*?)\\s.*?PREFLIGHT_VERSION\\:\\s(?<currentValue>.*)\\s",
+      ],
+      datasourceTemplate: "github-releases",
+    }
   ],
   packageRules: [
     {
@@ -153,6 +162,12 @@
       enabled: true,
       pinVersions: true,
       automerge: true,
+    },
+    {
+      matchPackageNames: [
+        "sigs.k8s.io/e2e-framework",
+      ],
+      enabled: false,
     },
   ],
   platformAutomerge: true,

@@ -40,7 +40,7 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 				dtclient.TokenScopeSettingsRead,
 				dtclient.TokenScopeSettingsWrite},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
-				return dk.IsKubernetesMonitoringActiveGateEnabled() &&
+				return dk.ActiveGate().IsKubernetesMonitoringEnabled() &&
 					dk.FeatureAutomaticKubernetesApiMonitoring()
 			},
 		},
@@ -48,7 +48,7 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 			Name:           "Automatic ActiveGate Token Creation",
 			RequiredScopes: []string{dtclient.TokenScopeActiveGateTokenCreate},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
-				return dk.NeedsActiveGate()
+				return dk.ActiveGate().IsEnabled()
 			},
 		},
 		{
@@ -79,7 +79,7 @@ func getFeaturesForDataIngest() []Feature {
 			Name:           "Data Ingest",
 			RequiredScopes: []string{dtclient.TokenScopeMetricsIngest},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
-				return dk.IsMetricsIngestActiveGateEnabled()
+				return dk.ActiveGate().IsMetricsIngestEnabled()
 			},
 		},
 	}

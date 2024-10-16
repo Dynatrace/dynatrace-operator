@@ -113,8 +113,8 @@ func tenantUUID(apiUrl string) (string, error) {
 func (dk *DynaKube) TenantUUIDFromConnectionInfoStatus() (string, error) {
 	if dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID != "" {
 		return dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID, nil
-	} else if dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID != "" {
-		return dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID, nil
+	} else if dk.Status.ActiveGate.ConnectionInfo.TenantUUID != "" {
+		return dk.Status.ActiveGate.ConnectionInfo.TenantUUID, nil
 	}
 
 	return "", errors.New("tenant UUID not available")

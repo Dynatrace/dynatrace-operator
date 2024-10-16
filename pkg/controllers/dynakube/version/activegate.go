@@ -39,7 +39,7 @@ func (updater activeGateUpdater) Name() string {
 }
 
 func (updater activeGateUpdater) IsEnabled() bool {
-	if updater.dk.NeedsActiveGate() {
+	if updater.dk.ActiveGate().IsEnabled() {
 		return true
 	}
 
@@ -54,7 +54,7 @@ func (updater *activeGateUpdater) Target() *status.VersionStatus {
 }
 
 func (updater activeGateUpdater) CustomImage() string {
-	customImage := updater.dk.CustomActiveGateImage()
+	customImage := updater.dk.ActiveGate().GetCustomImage()
 	if customImage != "" {
 		setVerificationSkippedReasonCondition(updater.dk.Conditions(), activeGateVersionConditionType)
 	}
@@ -101,7 +101,7 @@ func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {
 		return err
 	}
 
-	defaultImage := updater.dk.DefaultActiveGateImage(latestVersion)
+	defaultImage := updater.dk.ActiveGate().GetDefaultImage(latestVersion)
 
 	err = updateVersionStatusForTenantRegistry(updater.Target(), defaultImage, latestVersion)
 	if err != nil {

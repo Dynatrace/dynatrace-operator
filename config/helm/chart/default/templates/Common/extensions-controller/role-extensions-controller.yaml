@@ -1,4 +1,4 @@
-{{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+{{- if and .Values.rbac.extensions.create (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
 # Copyright 2021 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,10 +20,14 @@ metadata:
   labels:
     {{- include "dynatrace-operator.extensionsControllerLabels" . | nindent 4 }}
 rules:
-  - apiGroups: ["security.openshift.io"]
-    resources: ["securitycontextconstraints"]
-    resourceNames: ["privileged"]
-    verbs: ["use"]
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - privileged
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1

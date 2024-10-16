@@ -1,3 +1,4 @@
+{{- if .Values.rbac.extensions.create }}
 # Copyright 2021 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,41 +15,54 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: prometheus-service-detector
+  name: dynatrace-extensions-prometheus
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "dynatrace-operator.extensionsOpenTelemetryCollectorLabels" . | nindent 4 }}
 rules:
-- apiGroups:
-    - ""
-  resources:
-    - pods
-    - namespaces
-  verbs:
-    - list
-    - get
-    - watch
-- apiGroups:
-    - apps
-  resources:
-    - replicasets
-  verbs:
-    - list
-    - get
-    - watch
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - namespaces
+      - endpoints
+      - services
+      - nodes
+      - nodes/metrics
+    verbs:
+      - get
+      - watch
+      - list
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - daemonsets
+      - replicasets
+      - statefulsets
+    verbs:
+      - get
+      - list
+      - watch
+  - nonResourceURLs:
+      - /metrics
+      - /metrics/cadvisor
+    verbs:
+      - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: prometheus-service-detector
+  name: dynatrace-extensions-prometheus
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "dynatrace-operator.extensionsOpenTelemetryCollectorLabels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: prometheus-service-detector
+  name: dynatrace-extensions-prometheus
 subjects:
   - kind: ServiceAccount
     name: dynatrace-extensions-collector
     namespace: {{ .Release.Namespace }}
+{{ end }}

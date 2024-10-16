@@ -75,8 +75,9 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, co
 		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
 		injectionReconcilerBuilder:          injection.NewReconciler,
 		istioReconcilerBuilder:              istio.NewReconciler,
-		extensionBuilder:                    extension.NewReconciler,
+		extensionReconcilerBuilder:          extension.NewReconciler,
 		logModuleReconcilerBuilder:          logmodule.NewReconciler,
+		proxyReconcilerBuilder:              proxy.NewReconciler,
 	}
 }
 
@@ -109,8 +110,9 @@ type Controller struct {
 	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
 	injectionReconcilerBuilder          injection.ReconcilerBuilder
 	istioReconcilerBuilder              istio.ReconcilerBuilder
-	extensionBuilder                    extension.ReconcilerBuilder
+	extensionReconcilerBuilder          extension.ReconcilerBuilder
 	logModuleReconcilerBuilder          logmodule.ReconcilerBuilder
+	proxyReconcilerBuilder              proxy.ReconcilerBuilder
 
 	tokens            token.Tokens
 	operatorNamespace string
@@ -251,7 +253,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakub
 		return err
 	}
 
-	proxyReconciler := proxy.NewReconciler(controller.client, controller.apiReader, dk)
+	proxyReconciler := controller.proxyReconcilerBuilder(controller.client, controller.apiReader, dk)
 
 	err = proxyReconciler.Reconcile(ctx)
 	if err != nil {
@@ -318,7 +320,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		componentErrors = append(componentErrors, err)
 	}
 
-	extensionReconciler := extension.NewReconciler(controller.client, controller.apiReader, dk)
+	extensionReconciler := controller.extensionReconcilerBuilder(controller.client, controller.apiReader, dk)
 
 	err = extensionReconciler.Reconcile(ctx)
 	if err != nil {
@@ -355,6 +357,14 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	err = logModuleReconciler.Reconcile(ctx)
 	if err != nil {
+		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
+			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
+			// this situation will clear itself after AG has been started
+			controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
+
+			return goerrors.Join(componentErrors...)
+		}
+
 		log.Info("could not reconcile LogModule")
 
 		componentErrors = append(componentErrors, err)

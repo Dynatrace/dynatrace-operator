@@ -948,3 +948,27 @@ func mockController() *Controller {
 		edgeConnectClientBuilder: newEdgeConnectClient(),
 	}
 }
+
+type errorClient struct {
+	client.Client
+}
+
+func (clt errorClient) Get(_ context.Context, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
+	return errors.New("fake error")
+}
+
+func createDeployment(namespace, name string, replicas, readyReplicas int32) *appsv1.Deployment {
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
+		},
+		Status: appsv1.DeploymentStatus{
+			Replicas:      replicas,
+			ReadyReplicas: readyReplicas,
+		},
+	}
+}

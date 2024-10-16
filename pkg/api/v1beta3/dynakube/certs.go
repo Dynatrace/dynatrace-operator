@@ -47,7 +47,7 @@ func (dk *DynaKube) TrustedCAs(ctx context.Context, kubeReader client.Reader) ([
 }
 
 func (dk *DynaKube) ActiveGateTLSCert(ctx context.Context, kubeReader client.Reader) ([]byte, error) {
-	if dk.HasActiveGateCaCert() {
+	if dk.ActiveGate().HasCaCert() {
 		secretName := dk.Spec.ActiveGate.TlsSecretName
 
 		var tlsSecret corev1.Secret

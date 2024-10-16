@@ -129,7 +129,7 @@ func (dk *DynaKube) OneAgentSecCompProfile() string {
 	}
 }
 
-func (dk *DynaKube) NodeSelector() map[string]string {
+func (dk *DynaKube) OneAgentNodeSelector() map[string]string {
 	switch {
 	case dk.ClassicFullStackMode():
 		return dk.Spec.OneAgent.ClassicFullStack.NodeSelector
@@ -295,4 +295,8 @@ func (dk *DynaKube) GetOneAgentEnvironment() []corev1.EnvVar {
 	}
 
 	return []corev1.EnvVar{}
+}
+
+func (dk *DynaKube) OneAgentEndpoints() string {
+	return dk.Status.OneAgent.ConnectionInfoStatus.Endpoints
 }

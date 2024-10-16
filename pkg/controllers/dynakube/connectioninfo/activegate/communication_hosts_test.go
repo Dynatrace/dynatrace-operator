@@ -3,6 +3,7 @@ package activegate
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,7 +18,7 @@ func TestParseCommunicationHostsFromActiveGateEndpoints(t *testing.T) {
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: dynakube.OneAgentStatus{
 				ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
-					ConnectionInfoStatus: dynakube.ConnectionInfoStatus{},
+					ConnectionInfo: communication.ConnectionInfo{},
 				},
 			},
 		},
@@ -29,7 +30,7 @@ func TestParseCommunicationHostsFromActiveGateEndpoints(t *testing.T) {
 	})
 
 	t.Run(`activegate endpoint set`, func(t *testing.T) {
-		dk.Status.ActiveGate.ConnectionInfoStatus.Endpoints = "https://abcd123.some.activegate.endpointurl.com:443"
+		dk.Status.ActiveGate.ConnectionInfo.Endpoints = "https://abcd123.some.activegate.endpointurl.com:443"
 
 		hosts := GetEndpointsAsCommunicationHosts(dk)
 		assert.Len(t, hosts, 1)
@@ -38,7 +39,7 @@ func TestParseCommunicationHostsFromActiveGateEndpoints(t *testing.T) {
 		assert.Equal(t, uint32(443), hosts[0].Port)
 	})
 	t.Run(`activegate multiple endpoints set`, func(t *testing.T) {
-		dk.Status.ActiveGate.ConnectionInfoStatus.Endpoints = "https://abcd123.some.activegate.endpointurl.com:443,https://efg5678.some.other.activegate.endpointurl.com"
+		dk.Status.ActiveGate.ConnectionInfo.Endpoints = "https://abcd123.some.activegate.endpointurl.com:443,https://efg5678.some.other.activegate.endpointurl.com"
 
 		hosts := GetEndpointsAsCommunicationHosts(dk)
 		assert.Len(t, hosts, 2)
@@ -47,7 +48,7 @@ func TestParseCommunicationHostsFromActiveGateEndpoints(t *testing.T) {
 		assert.Contains(t, hostNames, "efg5678.some.other.activegate.endpointurl.com")
 	})
 	t.Run(`activegate duplicate endpoints set`, func(t *testing.T) {
-		dk.Status.ActiveGate.ConnectionInfoStatus.Endpoints = "https://abcd123.some.activegate.endpointurl.com:443,https://abcd123.some.activegate.endpointurl.com:443,https://abcd123.some.activegate.endpointurl.com:443"
+		dk.Status.ActiveGate.ConnectionInfo.Endpoints = "https://abcd123.some.activegate.endpointurl.com:443,https://abcd123.some.activegate.endpointurl.com:443,https://abcd123.some.activegate.endpointurl.com:443"
 
 		hosts := GetEndpointsAsCommunicationHosts(dk)
 		assert.Len(t, hosts, 1)

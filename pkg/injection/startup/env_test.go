@@ -3,7 +3,6 @@ package startup
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -13,11 +12,9 @@ import (
 
 func TestNewEnv(t *testing.T) {
 	t.Run("create new env for oneagent and metadata-enrichment injection", func(t *testing.T) {
-		resetEnv := prepCombinedTestEnv(t)
+		prepCombinedTestEnv(t)
 
 		env, err := newEnv()
-
-		resetEnv()
 
 		require.NoError(t, err)
 		require.NotNil(t, env)
@@ -44,11 +41,9 @@ func TestNewEnv(t *testing.T) {
 		assert.True(t, env.MetadataEnrichmentInjected)
 	})
 	t.Run("create new env for only metadata-enrichment injection", func(t *testing.T) {
-		resetEnv := prepMetadataEnrichmentTestEnv(t, false)
+		prepMetadataEnrichmentTestEnv(t, false)
 
 		env, err := newEnv()
-
-		resetEnv()
 
 		require.NoError(t, err)
 		require.NotNil(t, env)
@@ -76,11 +71,9 @@ func TestNewEnv(t *testing.T) {
 		assert.True(t, env.MetadataEnrichmentInjected)
 	})
 	t.Run("create new env for only oneagent", func(t *testing.T) {
-		resetEnv := prepOneAgentTestEnv(t)
+		prepOneAgentTestEnv(t)
 
 		env, err := newEnv()
-
-		resetEnv()
 
 		require.NoError(t, err)
 		require.NotNil(t, env)
@@ -117,13 +110,11 @@ func TestFailurePolicyModes(t *testing.T) {
 	}
 	for configuredMode, expectedMode := range modes {
 		t.Run("injection failure policy: "+configuredMode, func(t *testing.T) {
-			resetEnv := prepMetadataEnrichmentTestEnv(t, true)
+			prepMetadataEnrichmentTestEnv(t, true)
 
 			t.Setenv(consts.InjectionFailurePolicyEnv, configuredMode)
 
 			env, err := newEnv()
-
-			resetEnv()
 
 			require.NoError(t, err)
 			require.NotNil(t, env)
@@ -133,17 +124,12 @@ func TestFailurePolicyModes(t *testing.T) {
 	}
 }
 
-func prepCombinedTestEnv(t *testing.T) func() {
-	resetMetadataEnrichmentEnvs := prepMetadataEnrichmentTestEnv(t, false)
-	resetOneAgentEnvs := prepOneAgentTestEnv(t)
-
-	return func() {
-		resetMetadataEnrichmentEnvs()
-		resetOneAgentEnvs()
-	}
+func prepCombinedTestEnv(t *testing.T) {
+	prepMetadataEnrichmentTestEnv(t, false)
+	prepOneAgentTestEnv(t)
 }
 
-func prepOneAgentTestEnv(t *testing.T) func() {
+func prepOneAgentTestEnv(t *testing.T) {
 	envs := []string{
 		consts.AgentInstallerFlavorEnv,
 		consts.AgentInstallerTechEnv,
@@ -158,18 +144,14 @@ func prepOneAgentTestEnv(t *testing.T) func() {
 	}
 
 	for _, envvar := range envs {
-		err := os.Setenv(envvar, fmt.Sprintf("TEST_%s", envvar))
-		require.NoError(t, err)
+		t.Setenv(envvar, fmt.Sprintf("TEST_%s", envvar))
 	}
 
 	// Mode Env
-	envs = append(envs, consts.InjectionFailurePolicyEnv)
 	t.Setenv(consts.InjectionFailurePolicyEnv, "fail")
 
 	// Bool envs
 	t.Setenv(consts.AgentInjectedEnv, trueStatement)
-
-	envs = append(envs, consts.AgentInjectedEnv)
 
 	// Complex envs
 	containerInfo := []ContainerInfo{}
@@ -181,13 +163,9 @@ func prepOneAgentTestEnv(t *testing.T) func() {
 	require.NoError(t, err)
 
 	t.Setenv(consts.ContainerInfoEnv, string(rawContainerInfo))
-
-	envs = append(envs, consts.ContainerInfoEnv)
-
-	return resetTestEnv(envs)
 }
 
-func prepMetadataEnrichmentTestEnv(t *testing.T, isUnknownWorkload bool) func() {
+func prepMetadataEnrichmentTestEnv(t *testing.T, isUnknownWorkload bool) {
 	envs := []string{
 		consts.EnrichmentWorkloadKindEnv,
 		consts.EnrichmentWorkloadNameEnv,
@@ -203,22 +181,17 @@ func prepMetadataEnrichmentTestEnv(t *testing.T, isUnknownWorkload bool) func() 
 	for _, envvar := range envs {
 		if isUnknownWorkload &&
 			(envvar == consts.EnrichmentWorkloadKindEnv || envvar == consts.EnrichmentWorkloadNameEnv) {
-			err := os.Setenv(envvar, "UNKNOWN")
-			require.NoError(t, err)
+			t.Setenv(envvar, "UNKNOWN")
 		} else {
-			err := os.Setenv(envvar, fmt.Sprintf("TEST_%s", envvar))
-			require.NoError(t, err)
+			t.Setenv(envvar, fmt.Sprintf("TEST_%s", envvar))
 		}
 	}
 
 	// Mode Env
-	envs = append(envs, consts.InjectionFailurePolicyEnv)
 	t.Setenv(consts.InjectionFailurePolicyEnv, "fail")
 
 	// Bool envs
 	t.Setenv(consts.EnrichmentInjectedEnv, "true")
-
-	envs = append(envs, consts.EnrichmentInjectedEnv)
 
 	// Complex envs
 	containerInfo := []ContainerInfo{}
@@ -232,8 +205,6 @@ func prepMetadataEnrichmentTestEnv(t *testing.T, isUnknownWorkload bool) func() 
 	t.Setenv(consts.ContainerInfoEnv, string(rawContainerInfo))
 	require.NoError(t, err)
 
-	envs = append(envs, consts.ContainerInfoEnv)
-
 	workloadAnnotations := map[string]string{
 		"prop1": "value1",
 		"prop2": "value2",
@@ -244,16 +215,4 @@ func prepMetadataEnrichmentTestEnv(t *testing.T, isUnknownWorkload bool) func() 
 
 	t.Setenv(consts.EnrichmentWorkloadAnnotationsEnv, string(rawWorkloadAnnotations))
 	require.NoError(t, err)
-
-	envs = append(envs, consts.EnrichmentWorkloadAnnotationsEnv)
-
-	return resetTestEnv(envs)
-}
-
-func resetTestEnv(envs []string) func() {
-	return func() {
-		for _, envvar := range envs {
-			_ = os.Unsetenv(envvar)
-		}
-	}
 }

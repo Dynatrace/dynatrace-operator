@@ -3,6 +3,7 @@ package edgeconnect
 import (
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
@@ -34,7 +35,7 @@ func (src *EdgeConnect) toSpec(dst *edgeconnect.EdgeConnect) {
 	}
 
 	if src.Spec.Proxy != nil {
-		dst.Spec.Proxy = &edgeconnect.ProxySpec{
+		dst.Spec.Proxy = &proxy.Spec{
 			Host:    src.Spec.Proxy.Host,
 			NoProxy: src.Spec.Proxy.NoProxy,
 			AuthRef: src.Spec.Proxy.AuthRef,
@@ -45,7 +46,12 @@ func (src *EdgeConnect) toSpec(dst *edgeconnect.EdgeConnect) {
 	dst.Spec.ImageRef.Tag = src.Spec.ImageRef.Tag
 	dst.Spec.ImageRef.Repository = src.Spec.ImageRef.Repository
 	dst.Spec.ApiServer = src.Spec.ApiServer
-	dst.Spec.HostRestrictions = strings.Split(src.Spec.HostRestrictions, ",")
+
+	// Note: strings.Split returns [""] if we apply it to empty "" string
+	if src.Spec.HostRestrictions != "" {
+		dst.Spec.HostRestrictions = strings.Split(src.Spec.HostRestrictions, ",")
+	}
+
 	dst.Spec.CustomPullSecret = src.Spec.CustomPullSecret
 	dst.Spec.CaCertsRef = src.Spec.CaCertsRef
 	dst.Spec.ServiceAccountName = src.Spec.ServiceAccountName

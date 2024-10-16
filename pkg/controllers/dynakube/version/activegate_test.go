@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
@@ -30,9 +31,9 @@ func TestActiveGateUpdater(t *testing.T) {
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: dynakube.ActiveGateSpec{
-					Capabilities: []dynakube.CapabilityDisplayName{dynakube.DynatraceApiCapability.DisplayName},
-					CapabilityProperties: dynakube.CapabilityProperties{
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{activegate.DynatraceApiCapability.DisplayName},
+					CapabilityProperties: activegate.CapabilityProperties{
 						Image: testImage.String(),
 					},
 				},
@@ -59,12 +60,12 @@ func TestActiveGateUseDefault(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				ActiveGate: dynakube.ActiveGateSpec{
-					CapabilityProperties: dynakube.CapabilityProperties{},
+				ActiveGate: activegate.Spec{
+					CapabilityProperties: activegate.CapabilityProperties{},
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
-				ActiveGate: dynakube.ActiveGateStatus{
+				ActiveGate: activegate.Status{
 					VersionStatus: status.VersionStatus{
 						Version: "prev",
 					},
@@ -72,7 +73,7 @@ func TestActiveGateUseDefault(t *testing.T) {
 			},
 		}
 		expectedVersion := "1.2.3.4-5"
-		expectedImage := dk.DefaultActiveGateImage(expectedVersion)
+		expectedImage := dk.ActiveGate().GetDefaultImage(expectedVersion)
 		mockClient := dtclientmock.NewClient(t)
 
 		mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(expectedVersion, nil)
@@ -90,7 +91,7 @@ func TestActiveGateIsEnabled(t *testing.T) {
 	t.Run("cleans up if not enabled", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
-				ActiveGate: dynakube.ActiveGateStatus{
+				ActiveGate: activegate.Status{
 					VersionStatus: status.VersionStatus{
 						Version: "prev",
 					},

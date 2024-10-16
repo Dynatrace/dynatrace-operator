@@ -5,8 +5,6 @@
 package edgeconnect
 
 import (
-	"strings"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -185,45 +183,6 @@ type EdgeConnectList struct { //nolint:revive
 	Items           []EdgeConnect `json:"items"`
 }
 
-const (
-	KubernetesDefaultDNS     = "kubernetes.default.svc.cluster.local"
-	kubernetesHostnameSuffix = "kubernetes-automation"
-)
-
 func init() {
 	v1alpha1.SchemeBuilder.Register(&EdgeConnect{}, &EdgeConnectList{})
-}
-
-func (e *EdgeConnect) HostPatterns() []string {
-	if !e.IsK8SAutomationEnabled() {
-		return e.Spec.HostPatterns
-	}
-
-	var hostPatterns []string
-
-	for _, hostPattern := range e.Spec.HostPatterns {
-		if !strings.EqualFold(hostPattern, e.K8sAutomationHostPattern()) {
-			hostPatterns = append(hostPatterns, hostPattern)
-		}
-	}
-
-	hostPatterns = append(hostPatterns, e.K8sAutomationHostPattern())
-
-	return hostPatterns
-}
-
-type HostMapping struct {
-	From string `json:"from"`
-	To   string `json:"to"`
-}
-
-func (e *EdgeConnect) HostMappings() []HostMapping {
-	hostMappings := make([]HostMapping, 0)
-	hostMappings = append(hostMappings, HostMapping{From: e.K8sAutomationHostPattern(), To: KubernetesDefaultDNS})
-
-	return hostMappings
-}
-
-func (e *EdgeConnect) K8sAutomationHostPattern() string {
-	return e.Name + "." + e.Namespace + "." + e.Status.KubeSystemUID + "." + kubernetesHostnameSuffix
 }

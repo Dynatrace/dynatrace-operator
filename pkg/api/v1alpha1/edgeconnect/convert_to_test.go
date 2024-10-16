@@ -29,6 +29,15 @@ func TestConvertTo(t *testing.T) {
 		toAreSpecsEqual(t, &from.Spec, &to.Spec)
 		toAreStatusesEqual(t, &from.Status, &to.Status)
 	})
+	t.Run("migrate from edgeconnect v1alpha1 to v1alpha2 .spec.hostRestrictions is not provided", func(t *testing.T) {
+		from := EdgeConnect{
+			Spec: EdgeConnectSpec{},
+		}
+		to := edgeconnect.EdgeConnect{}
+
+		from.ConvertTo(&to)
+		assert.Nil(t, to.Spec.HostRestrictions)
+	})
 }
 
 func getV1alpha1Base() metav1.ObjectMeta {

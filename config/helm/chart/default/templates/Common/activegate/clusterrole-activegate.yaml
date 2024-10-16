@@ -1,5 +1,4 @@
-{{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
-
+{{- if and .Values.rbac.activeGate.create (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
 # Copyright 2021 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -44,4 +43,4 @@ roleRef:
   kind: ClusterRole
   name: dynatrace-activegate
   apiGroup: rbac.authorization.k8s.io
-{{- end -}}
+{{ end }}

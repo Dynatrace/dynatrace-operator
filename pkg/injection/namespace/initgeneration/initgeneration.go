@@ -159,7 +159,7 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dk *d
 		oneAgentNoProxyValues = append(oneAgentNoProxyValues, dk.FeatureNoProxy())
 	}
 
-	if dk.IsRoutingActiveGateEnabled() {
+	if dk.ActiveGate().IsRoutingEnabled() {
 		multiCap := capability.NewMultiCapability(dk)
 		oneAgentDNSEntry := capability.BuildDNSEntryPointWithoutEnvVars(dk.Name, dk.Namespace, multiCap)
 		oneAgentNoProxyValues = append(oneAgentNoProxyValues, oneAgentDNSEntry)
@@ -232,7 +232,7 @@ func (g *InitGenerator) calculateImNodes(dk *dynakube.DynaKube, tenantUUID strin
 		return nil, err
 	}
 
-	nodeSelector := labels.SelectorFromSet(dk.NodeSelector())
+	nodeSelector := labels.SelectorFromSet(dk.OneAgentNodeSelector())
 	updateNodeInfImNodes(dk, nodeInf, nodeSelector, tenantUUID)
 
 	return nodeInf.imNodes, nil

@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/tls"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/utils"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -47,22 +48,45 @@ func getTestDynakube() *dynakube.DynaKube {
 
 func getStatefulset(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
 	mockK8sClient := fake.NewClient(dk)
+	mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
 	err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
 	require.NoError(t, err)
 
 	statefulSet := &appsv1.StatefulSet{}
-	err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dynakube.ExtensionsCollectorStatefulsetName, Namespace: dk.Namespace}, statefulSet)
+	err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 	require.NoError(t, err)
 
 	return statefulSet
+}
+
+func mockTLSSecret(t *testing.T, client client.Client, dk *dynakube.DynaKube) client.Client {
+	tlsSecret := getTLSSecret(tls.GetTLSSecretName(dk), dk.Namespace, "super-cert", "super-key")
+
+	err := client.Create(context.Background(), &tlsSecret)
+	require.NoError(t, err)
+
+	return client
+}
+
+func getTLSSecret(name string, namespace string, crt string, key string) corev1.Secret {
+	return corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Data: map[string][]byte{
+			consts.TLSCrtDataName: []byte(crt),
+			consts.TLSKeyDataName: []byte(key),
+		},
+	}
 }
 
 func TestConditions(t *testing.T) {
 	t.Run("extensions are disabled", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Extensions.Enabled = false
-		conditions.SetStatefulSetCreated(dk.Conditions(), otelControllerStatefulSetConditionType, dynakube.ExtensionsCollectorStatefulsetName)
+		conditions.SetStatefulSetCreated(dk.Conditions(), otelControllerStatefulSetConditionType, dk.ExtensionsCollectorStatefulsetName())
 
 		mockK8sClient := fake.NewClient(dk)
 
@@ -70,12 +94,63 @@ func TestConditions(t *testing.T) {
 		require.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dynakube.ExtensionsCollectorStatefulsetName, Namespace: dk.Namespace}, statefulSet)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.Error(t, err)
 
 		assert.True(t, errors.IsNotFound(err))
 
 		assert.Empty(t, dk.Conditions())
+	})
+}
+
+func TestSecretHashAnnotation(t *testing.T) {
+	t.Run("annotation is set with self-signed tls secret", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = ""
+		statefulSet := getStatefulset(t, dk)
+
+		require.Len(t, statefulSet.Spec.Template.Annotations, 1)
+		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[consts.ExtensionsAnnotationSecretHash])
+	})
+	t.Run("annotation is set with tlsRefName", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "dummy-secret"
+		statefulSet := getStatefulset(t, dk)
+
+		require.Len(t, statefulSet.Spec.Template.Annotations, 1)
+		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[consts.ExtensionsAnnotationSecretHash])
+	})
+	t.Run("annotation is updated when TLS Secret gets updated", func(t *testing.T) {
+		statefulSet := &appsv1.StatefulSet{}
+		dk := getTestDynakube()
+
+		// first reconcile a basic setup - TLS Secret gets created
+		mockK8sClient := fake.NewClient(dk)
+		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
+
+		reconciler := NewReconciler(mockK8sClient, mockK8sClient, dk)
+		err := reconciler.Reconcile(context.Background())
+		require.NoError(t, err)
+
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		require.NoError(t, err)
+
+		originalSecretHash := statefulSet.Spec.Template.Annotations[consts.ExtensionsAnnotationSecretHash]
+
+		// then update the TLS Secret and call reconcile again
+		updatedTLSSecret := getTLSSecret(tls.GetTLSSecretName(dk), dk.Namespace, "updated-cert", "updated-key")
+		err = mockK8sClient.Update(context.Background(), &updatedTLSSecret)
+		require.NoError(t, err)
+
+		err = reconciler.Reconcile(context.Background())
+		require.NoError(t, err)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		require.NoError(t, err)
+
+		resultingSecretHash := statefulSet.Spec.Template.Annotations[consts.ExtensionsAnnotationSecretHash]
+
+		// original hash and resulting hash should be different, value got updated on reconcile
+		assert.NotEqual(t, originalSecretHash, resultingSecretHash)
 	})
 }
 
@@ -141,7 +216,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		statefulSet := getStatefulset(t, dk)
 
 		assert.Equal(t, corev1.EnvVar{Name: envShards, Value: fmt.Sprintf("%d", getReplicas(dk))}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
-		assert.Equal(t, corev1.EnvVar{Name: envPodNamePrefix, Value: defaultPodNamePrefix}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
+		assert.Equal(t, corev1.EnvVar{Name: envPodNamePrefix, Value: dk.Name + "-extensions-collector"}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
 		assert.Equal(t, corev1.EnvVar{Name: envPodName, ValueFrom: &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{
 				FieldPath: "metadata.labels['statefulset.kubernetes.io/pod-name']",
@@ -149,21 +224,27 @@ func TestEnvironmentVariables(t *testing.T) {
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[2])
 		assert.Equal(t, corev1.EnvVar{Name: envShardId, ValueFrom: &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{
-				FieldPath: "metadata.labels['app.kubernetes.io/pod-index']",
+				FieldPath: "metadata.labels['apps.kubernetes.io/pod-index']",
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[3])
 		assert.Equal(t, corev1.EnvVar{Name: envOTLPgrpcPort, Value: defaultOLTPgrpcPort}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
 		assert.Equal(t, corev1.EnvVar{Name: envOTLPhttpPort, Value: defaultOLTPhttpPort}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
 		assert.Equal(t, corev1.EnvVar{Name: envOTLPtoken, ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Name + consts.SecretSuffix},
+				LocalObjectReference: corev1.LocalObjectReference{Name: dk.ExtensionsTokenSecretName()},
 				Key:                  consts.OtelcTokenSecretKey,
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
-		assert.Equal(t, corev1.EnvVar{Name: envCertDir, Value: customEecTLSCertificatePath}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterName, Value: dk.Name}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterUuid, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
-		assert.Equal(t, corev1.EnvVar{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
+		assert.Equal(t, corev1.EnvVar{Name: envEECDStoken, ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: dk.ExtensionsTokenSecretName()},
+				Key:                  consts.OtelcTokenSecretKey,
+			},
+		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
+		assert.Equal(t, corev1.EnvVar{Name: envCertDir, Value: customEecTLSCertificatePath}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterName, Value: dk.Name}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterUuid, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
+		assert.Equal(t, corev1.EnvVar{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID}, statefulSet.Spec.Template.Spec.Containers[0].Env[11])
 	})
 	t.Run("environment variables with trustedCA", func(t *testing.T) {
 		dk := getTestDynakube()
@@ -282,7 +363,8 @@ func TestAnnotations(t *testing.T) {
 		statefulSet := getStatefulset(t, getTestDynakube())
 
 		assert.Len(t, statefulSet.ObjectMeta.Annotations, 1)
-		assert.Empty(t, statefulSet.Spec.Template.ObjectMeta.Annotations)
+		require.Len(t, statefulSet.Spec.Template.ObjectMeta.Annotations, 1)
+		assert.NotEmpty(t, statefulSet.Spec.Template.ObjectMeta.Annotations[consts.ExtensionsAnnotationSecretHash])
 	})
 
 	t.Run("custom annotations", func(t *testing.T) {
@@ -294,10 +376,11 @@ func TestAnnotations(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		assert.Len(t, statefulSet.ObjectMeta.Annotations, 1)
+		require.Len(t, statefulSet.ObjectMeta.Annotations, 1)
 		assert.Empty(t, statefulSet.ObjectMeta.Annotations["a"])
-		assert.Len(t, statefulSet.Spec.Template.ObjectMeta.Annotations, 1)
-		assert.Equal(t, customAnnotations, statefulSet.Spec.Template.ObjectMeta.Annotations)
+		require.Len(t, statefulSet.Spec.Template.ObjectMeta.Annotations, 2)
+		assert.Equal(t, "b", statefulSet.Spec.Template.ObjectMeta.Annotations["a"])
+		assert.NotEmpty(t, statefulSet.Spec.Template.ObjectMeta.Annotations[consts.ExtensionsAnnotationSecretHash])
 	})
 }
 
@@ -428,7 +511,7 @@ func TestVolumes(t *testing.T) {
 			Name: consts.ExtensionsTokensVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: dk.Name + consts.SecretSuffix,
+					SecretName: dk.ExtensionsTokenSecretName(),
 					Items: []corev1.KeyToPath{
 						{
 							Key:  consts.OtelcTokenSecretKey,

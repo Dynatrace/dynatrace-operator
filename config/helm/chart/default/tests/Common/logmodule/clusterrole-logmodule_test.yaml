@@ -3,6 +3,8 @@ templates:
   - Common/logmodule/clusterrole-logmodule.yaml
 tests:
   - it: logmodule ClusterRole should exist
+    set:
+      platform: openshift
     documentIndex: 0
     asserts:
       - isKind:
@@ -25,6 +27,8 @@ tests:
               - use
   - it: logmodule ClusterRoleBinding should exist
     documentIndex: 1
+    set:
+      platform: openshift
     asserts:
       - isKind:
           of: ClusterRoleBinding
@@ -33,3 +37,16 @@ tests:
           value: dynatrace-logmodule
       - isNotEmpty:
           path: metadata.labels
+  - it: shouldn't exist if not openshift
+    set:
+      rbac.logModule.create: true
+      platform: NOT-openshift
+    asserts:
+      - hasDocuments:
+        count: 0
+  - it: shouldn't exist if turned off
+    set:
+      rbac.logModule.create: false
+    asserts:
+      - hasDocuments:
+        count: 0

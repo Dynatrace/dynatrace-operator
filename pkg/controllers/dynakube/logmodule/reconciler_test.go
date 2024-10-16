@@ -43,9 +43,11 @@ func TestReconcile(t *testing.T) {
 	t.Run("all reconcilers pass", func(t *testing.T) {
 		passOAConnectionInfo := createPassingReconciler(t)
 		passConfigSecret := createPassingReconciler(t)
+		passDaemonSet := createPassingReconciler(t)
 		r := Reconciler{
 			oneAgentConnectionInfoReconciler: passOAConnectionInfo,
 			configSecretReconciler:           passConfigSecret,
+			daemonsetReconciler:              passDaemonSet,
 		}
 
 		err := r.Reconcile(ctx)

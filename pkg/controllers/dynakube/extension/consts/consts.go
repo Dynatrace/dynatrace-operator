@@ -1,14 +1,16 @@
 package consts
 
+import "github.com/Dynatrace/dynatrace-operator/pkg/api"
+
 const (
+	ExtensionsAnnotationSecretHash = api.InternalFlagPrefix + "secret-hash"
+
 	// secret
 	EecTokenSecretKey         = "eec.token"
 	EecTokenSecretValuePrefix = "EEC dt0x01"
 
 	OtelcTokenSecretKey         = "otelc.token"
 	OtelcTokenSecretValuePrefix = "dt0x01"
-
-	SecretSuffix = "-extensions-token"
 
 	// shared volume name between eec and OtelC
 	ExtensionsTokensVolumeName = "tokens"

@@ -1,0 +1,52 @@
+suite: test role for oneagent on kubernetes
+templates:
+  - Common/operator/install-config.yaml
+tests:
+  - it: ConfigMap should exist
+    asserts:
+      - equal:
+          path: metadata.name
+          value: install-config
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - isNotEmpty:
+          path: metadata.labels
+      - equal:
+          path: data
+          value:
+            modules.json: |
+                {
+                  "activeGate": true,
+                  "oneAgent": true,
+                  "extensions": true,
+                  "logModule": true,
+                  "edgeConnect": true
+                }
+  - it: ConfigMap should respect the set values
+    set:
+      rbac.oneAgent.create: false
+      rbac.logModule.create: false
+      rbac.edgeConnect.create: false
+      rbac.activeGate.create: false
+      rbac.extensions.create: false
+    asserts:
+      - equal:
+          path: metadata.name
+          value: install-config
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - isNotEmpty:
+          path: metadata.labels
+      - equal:
+          path: data
+          value:
+            modules.json: |
+                {
+                  "activeGate": false,
+                  "oneAgent": false,
+                  "extensions": false,
+                  "logModule": false,
+                  "edgeConnect": false
+                }

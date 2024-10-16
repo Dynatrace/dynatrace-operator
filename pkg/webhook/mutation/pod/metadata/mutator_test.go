@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -368,14 +370,14 @@ func getTestDynakube() *dynakube.DynaKube {
 			OneAgent: dynakube.OneAgentSpec{
 				ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{},
 			},
-			ActiveGate: dynakube.ActiveGateSpec{
-				Capabilities: []dynakube.CapabilityDisplayName{dynakube.MetricsIngestCapability.DisplayName},
+			ActiveGate: activegate.Spec{
+				Capabilities: []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName},
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: dynakube.OneAgentStatus{
 				ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
-					ConnectionInfoStatus: dynakube.ConnectionInfoStatus{
+					ConnectionInfo: communication.ConnectionInfo{
 						TenantUUID: "test-tenant",
 					},
 				},

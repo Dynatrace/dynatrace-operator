@@ -37,9 +37,9 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		}
 		defer meta.RemoveStatusCondition(r.dk.Conditions(), otelControllerStatefulSetConditionType)
 
-		sts, err := statefulset.Build(r.dk, dynakube.ExtensionsCollectorStatefulsetName, corev1.Container{})
+		sts, err := statefulset.Build(r.dk, r.dk.ExtensionsCollectorStatefulsetName(), corev1.Container{})
 		if err != nil {
-			log.Error(err, "could not build "+dynakube.ExtensionsCollectorStatefulsetName+" during cleanup")
+			log.Error(err, "could not build "+r.dk.ExtensionsCollectorStatefulsetName()+" during cleanup")
 
 			return err
 		}
@@ -47,7 +47,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		err = statefulset.Query(r.client, r.apiReader, log).Delete(ctx, sts)
 
 		if err != nil {
-			log.Error(err, "failed to clean up "+dynakube.ExtensionsCollectorStatefulsetName+" statufulset")
+			log.Error(err, "failed to clean up "+r.dk.ExtensionsCollectorStatefulsetName()+" statufulset")
 
 			return nil
 		}

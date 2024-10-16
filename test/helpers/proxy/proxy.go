@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -48,10 +49,10 @@ var (
 	proxyWithCustomCADeploymentPath = path.Join(project.TestDataDir(), "network/proxy-ssl.yaml")
 	proxySCCPath                    = path.Join(project.TestDataDir(), "network/proxy-scc.yaml")
 
-	ProxySpec = &dynakube.DynaKubeProxy{
+	ProxySpec = &value.Source{
 		Value: "http://squid.proxy.svc.cluster.local:3128",
 	}
-	HttpsProxySpec = &dynakube.DynaKubeProxy{
+	HttpsProxySpec = &value.Source{
 		Value: "https://squid.proxy.svc.cluster.local:3128",
 	}
 )
@@ -96,7 +97,7 @@ func checkProxyReady() features.Func {
 	}
 }
 
-func CutOffDynatraceNamespace(builder *features.FeatureBuilder, proxySpec *dynakube.DynaKubeProxy) {
+func CutOffDynatraceNamespace(builder *features.FeatureBuilder, proxySpec *value.Source) {
 	if proxySpec != nil {
 		builder.Assess("cut off dynatrace namespace", helpers.ToFeatureFunc(manifests.InstallFromFile(dynatraceNetworkPolicy), true))
 		builder.Teardown(helpers.ToFeatureFunc(manifests.UninstallFromFile(dynatraceNetworkPolicy), false))
@@ -116,7 +117,7 @@ func isNetworkTrafficCutOff(builder *features.FeatureBuilder, directionName, pod
 	builder.Teardown(curl.DeleteCutOffCurlPod(podName, podNamespaceName, targetUrl))
 }
 
-func CheckRuxitAgentProcFileHasProxySetting(sampleApp sample.App, proxySpec *dynakube.DynaKubeProxy) features.Func {
+func CheckRuxitAgentProcFileHasProxySetting(sampleApp sample.App, proxySpec *value.Source) features.Func {
 	return func(ctx context.Context, t *testing.T, e *envconf.Config) context.Context {
 		resources := e.Client().Resources()
 

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: install-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
+data:
+  modules.json: |
+    {
+      "activeGate": {{ .Values.rbac.activeGate.create }},
+      "oneAgent": {{ .Values.rbac.oneAgent.create }},
+      "extensions": {{ .Values.rbac.extensions.create }},
+      "logModule": {{ .Values.rbac.logModule.create }},
+      "edgeConnect": {{ .Values.rbac.edgeConnect.create }}
+    }

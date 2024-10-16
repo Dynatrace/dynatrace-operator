@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.3
+    controller-gen.kubebuilder.io/version: v0.16.4
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -114,10 +114,6 @@ spec:
                             any service environment variables. If a variable cannot be resolved,
                             the reference in the input string will be unchanged. Double $$ are reduced
                             to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
-                            "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
-                            Escaped references will never be expanded, regardless of whether the variable
-                            exists or not.
-                            Defaults to "".
                           type: string
                         valueFrom:
                           description: Source for the environment variable's value.
@@ -410,8 +406,7 @@ spec:
                             spreading will be calculated. The keys are used to lookup values from the
                             incoming pod labels, those key-value labels are ANDed with labelSelector
                             to select the group of existing pods over which spreading will be calculated
-                            for the incoming pod. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-                            MatchLabelKeys cannot be set when LabelSelector isn't set.
+                            for the incoming pod.
                           items:
                             type: string
                           type: array
@@ -421,8 +416,6 @@ spec:
                             MaxSkew describes the degree to which pods may be unevenly distributed.
                             When `whenUnsatisfiable=DoNotSchedule`, it is the maximum permitted difference
                             between the number of matching pods in the target topology and the global minimum.
-                            The global minimum is the minimum number of matching pods in an eligible domain
-                            or zero if the number of eligible domains is less than MinDomains.
                           format: int32
                           type: integer
                         minDomains:
@@ -430,8 +423,6 @@ spec:
                             MinDomains indicates a minimum number of eligible domains.
                             When the number of eligible domains with matching topology keys is less than minDomains,
                             Pod Topology Spread treats "global minimum" as 0, and then the calculation of Skew is performed.
-                            And when the number of eligible domains with matching topology keys equals or greater than minDomains,
-                            this value has no effect on scheduling.
                           format: int32
                           type: integer
                         nodeAffinityPolicy:
@@ -440,9 +431,6 @@ spec:
                             when calculating pod topology spread skew. Options are:
                             - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
                             - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
-
-                            If this value is nil, the behavior is equivalent to the Honor policy.
-                            This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                           type: string
                         nodeTaintsPolicy:
                           description: |-
@@ -451,9 +439,6 @@ spec:
                             - Honor: nodes without taints, along with tainted nodes for which the incoming pod
                             has a toleration, are included.
                             - Ignore: node taints are ignored. All nodes are included.
-
-                            If this value is nil, the behavior is equivalent to the Ignore policy.
-                            This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                           type: string
                         topologyKey:
                           description: |-
@@ -462,9 +447,6 @@ spec:
                             We consider each <key, value> as a "bucket", and try to put balanced number
                             of pods into each bucket.
                             We define a domain as a particular instance of a topology.
-                            Also, we define an eligible domain as a domain whose nodes meet the requirements of
-                            nodeAffinityPolicy and nodeTaintsPolicy.
-                            e.g. If TopologyKey is "kubernetes.
                           type: string
                         whenUnsatisfiable:
                           description: |-
@@ -474,9 +456,6 @@ spec:
                             - ScheduleAnyway tells the scheduler to schedule the pod in any location,
                               but giving higher precedence to topologies that would help reduce the
                               skew.
-                            A constraint is considered "Unsatisfiable" for an incoming pod
-                            if and only if every possible node assignment for that pod would violate
-                            "MaxSkew" on some topology.
                           type: string
                       required:
                       - maxSkew
@@ -488,13 +467,13 @@ spec:
               apiUrl:
                 description: |-
                   Dynatrace apiUrl, including the /api path at the end. For SaaS, set YOUR_ENVIRONMENT_ID to your environment ID. For Managed, change the apiUrl address.
-                  For instructions on how to determine the environment ID and how to configure the apiUrl address, see Environment ID (https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id).
+                  For instructions on how to determine the environment ID and how to configure the apiUrl address, see Environment ID (https://www.dynatrace.
                 type: string
               customPullSecret:
                 description: |-
                   Defines a custom pull secret in case you use a private registry when pulling images from the Dynatrace environment.
                   To define a custom pull secret and learn about the expected behavior, see Configure customPullSecret
-                  (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#custompullsecret).
+                  (https://www.dynatrace.
                 type: string
               enableIstio:
                 description: |-
@@ -539,10 +518,6 @@ spec:
                             any service environment variables. If a variable cannot be resolved,
                             the reference in the input string will be unchanged. Double $$ are reduced
                             to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
-                            "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
-                            Escaped references will never be expanded, regardless of whether the variable
-                            exists or not.
-                            Defaults to "".
                           type: string
                         valueFrom:
                           description: Source for the environment variable's value.
@@ -824,8 +799,7 @@ spec:
                             spreading will be calculated. The keys are used to lookup values from the
                             incoming pod labels, those key-value labels are ANDed with labelSelector
                             to select the group of existing pods over which spreading will be calculated
-                            for the incoming pod. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-                            MatchLabelKeys cannot be set when LabelSelector isn't set.
+                            for the incoming pod.
                           items:
                             type: string
                           type: array
@@ -835,8 +809,6 @@ spec:
                             MaxSkew describes the degree to which pods may be unevenly distributed.
                             When `whenUnsatisfiable=DoNotSchedule`, it is the maximum permitted difference
                             between the number of matching pods in the target topology and the global minimum.
-                            The global minimum is the minimum number of matching pods in an eligible domain
-                            or zero if the number of eligible domains is less than MinDomains.
                           format: int32
                           type: integer
                         minDomains:
@@ -844,8 +816,6 @@ spec:
                             MinDomains indicates a minimum number of eligible domains.
                             When the number of eligible domains with matching topology keys is less than minDomains,
                             Pod Topology Spread treats "global minimum" as 0, and then the calculation of Skew is performed.
-                            And when the number of eligible domains with matching topology keys equals or greater than minDomains,
-                            this value has no effect on scheduling.
                           format: int32
                           type: integer
                         nodeAffinityPolicy:
@@ -854,9 +824,6 @@ spec:
                             when calculating pod topology spread skew. Options are:
                             - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
                             - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
-
-                            If this value is nil, the behavior is equivalent to the Honor policy.
-                            This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                           type: string
                         nodeTaintsPolicy:
                           description: |-
@@ -865,9 +832,6 @@ spec:
                             - Honor: nodes without taints, along with tainted nodes for which the incoming pod
                             has a toleration, are included.
                             - Ignore: node taints are ignored. All nodes are included.
-
-                            If this value is nil, the behavior is equivalent to the Ignore policy.
-                            This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                           type: string
                         topologyKey:
                           description: |-
@@ -876,9 +840,6 @@ spec:
                             We consider each <key, value> as a "bucket", and try to put balanced number
                             of pods into each bucket.
                             We define a domain as a particular instance of a topology.
-                            Also, we define an eligible domain as a domain whose nodes meet the requirements of
-                            nodeAffinityPolicy and nodeTaintsPolicy.
-                            e.g. If TopologyKey is "kubernetes.
                           type: string
                         whenUnsatisfiable:
                           description: |-
@@ -888,9 +849,6 @@ spec:
                             - ScheduleAnyway tells the scheduler to schedule the pod in any location,
                               but giving higher precedence to topologies that would help reduce the
                               skew.
-                            A constraint is considered "Unsatisfiable" for an incoming pod
-                            if and only if every possible node assignment for that pod would violate
-                            "MaxSkew" on some topology.
                           type: string
                       required:
                       - maxSkew
@@ -902,7 +860,7 @@ spec:
               namespaceSelector:
                 description: |-
                   Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.
-                  For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate).
+                  For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -1050,7 +1008,7 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/docker/set-up-dynatrace-oneagent-as-docker-container#limitations).
+                          For the list of limitations, see Limitations (https://www.dynatrace.
                         items:
                           type: string
                         type: array
@@ -1082,10 +1040,6 @@ spec:
                                 any service environment variables. If a variable cannot be resolved,
                                 the reference in the input string will be unchanged. Double $$ are reduced
                                 to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
-                                "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
-                                Escaped references will never be expanded, regardless of whether the variable
-                                exists or not.
-                                Defaults to "".
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -1327,7 +1281,7 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/docker/set-up-dynatrace-oneagent-as-docker-container#limitations).
+                          For the list of limitations, see Limitations (https://www.dynatrace.
                         items:
                           type: string
                         type: array
@@ -1363,10 +1317,6 @@ spec:
                                 any service environment variables. If a variable cannot be resolved,
                                 the reference in the input string will be unchanged. Double $$ are reduced
                                 to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
-                                "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
-                                Escaped references will never be expanded, regardless of whether the variable
-                                exists or not.
-                                Defaults to "".
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -1671,7 +1621,7 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/docker/set-up-dynatrace-oneagent-as-docker-container#limitations).
+                          For the list of limitations, see Limitations (https://www.dynatrace.
                         items:
                           type: string
                         type: array
@@ -1703,10 +1653,6 @@ spec:
                                 any service environment variables. If a variable cannot be resolved,
                                 the reference in the input string will be unchanged. Double $$ are reduced
                                 to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
-                                "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
-                                Escaped references will never be expanded, regardless of whether the variable
-                                exists or not.
-                                Defaults to "".
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -1984,10 +1930,6 @@ spec:
                             any service environment variables. If a variable cannot be resolved,
                             the reference in the input string will be unchanged. Double $$ are reduced
                             to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
-                            "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
-                            Escaped references will never be expanded, regardless of whether the variable
-                            exists or not.
-                            Defaults to "".
                           type: string
                         valueFrom:
                           description: Source for the environment variable's value.
@@ -2269,8 +2211,7 @@ spec:
                             spreading will be calculated. The keys are used to lookup values from the
                             incoming pod labels, those key-value labels are ANDed with labelSelector
                             to select the group of existing pods over which spreading will be calculated
-                            for the incoming pod. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-                            MatchLabelKeys cannot be set when LabelSelector isn't set.
+                            for the incoming pod.
                           items:
                             type: string
                           type: array
@@ -2280,8 +2221,6 @@ spec:
                             MaxSkew describes the degree to which pods may be unevenly distributed.
                             When `whenUnsatisfiable=DoNotSchedule`, it is the maximum permitted difference
                             between the number of matching pods in the target topology and the global minimum.
-                            The global minimum is the minimum number of matching pods in an eligible domain
-                            or zero if the number of eligible domains is less than MinDomains.
                           format: int32
                           type: integer
                         minDomains:
@@ -2289,8 +2228,6 @@ spec:
                             MinDomains indicates a minimum number of eligible domains.
                             When the number of eligible domains with matching topology keys is less than minDomains,
                             Pod Topology Spread treats "global minimum" as 0, and then the calculation of Skew is performed.
-                            And when the number of eligible domains with matching topology keys equals or greater than minDomains,
-                            this value has no effect on scheduling.
                           format: int32
                           type: integer
                         nodeAffinityPolicy:
@@ -2299,9 +2236,6 @@ spec:
                             when calculating pod topology spread skew. Options are:
                             - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
                             - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
-
-                            If this value is nil, the behavior is equivalent to the Honor policy.
-                            This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                           type: string
                         nodeTaintsPolicy:
                           description: |-
@@ -2310,9 +2244,6 @@ spec:
                             - Honor: nodes without taints, along with tainted nodes for which the incoming pod
                             has a toleration, are included.
                             - Ignore: node taints are ignored. All nodes are included.
-
-                            If this value is nil, the behavior is equivalent to the Ignore policy.
-                            This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                           type: string
                         topologyKey:
                           description: |-
@@ -2321,9 +2252,6 @@ spec:
                             We consider each <key, value> as a "bucket", and try to put balanced number
                             of pods into each bucket.
                             We define a domain as a particular instance of a topology.
-                            Also, we define an eligible domain as a domain whose nodes meet the requirements of
-                            nodeAffinityPolicy and nodeTaintsPolicy.
-                            e.g. If TopologyKey is "kubernetes.
                           type: string
                         whenUnsatisfiable:
                           description: |-
@@ -2333,9 +2261,6 @@ spec:
                             - ScheduleAnyway tells the scheduler to schedule the pod in any location,
                               but giving higher precedence to topologies that would help reduce the
                               skew.
-                            A constraint is considered "Unsatisfiable" for an incoming pod
-                            if and only if every possible node assignment for that pod would violate
-                            "MaxSkew" on some topology.
                           type: string
                       required:
                       - maxSkew
@@ -2677,10 +2602,6 @@ spec:
                             any service environment variables. If a variable cannot be resolved,
                             the reference in the input string will be unchanged. Double $$ are reduced
                             to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
-                            "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
-                            Escaped references will never be expanded, regardless of whether the variable
-                            exists or not.
-                            Defaults to "".
                           type: string
                         valueFrom:
                           description: Source for the environment variable's value.
@@ -2977,8 +2898,7 @@ spec:
                             spreading will be calculated. The keys are used to lookup values from the
                             incoming pod labels, those key-value labels are ANDed with labelSelector
                             to select the group of existing pods over which spreading will be calculated
-                            for the incoming pod. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-                            MatchLabelKeys cannot be set when LabelSelector isn't set.
+                            for the incoming pod.
                           items:
                             type: string
                           type: array
@@ -2988,8 +2908,6 @@ spec:
                             MaxSkew describes the degree to which pods may be unevenly distributed.
                             When `whenUnsatisfiable=DoNotSchedule`, it is the maximum permitted difference
                             between the number of matching pods in the target topology and the global minimum.
-                            The global minimum is the minimum number of matching pods in an eligible domain
-                            or zero if the number of eligible domains is less than MinDomains.
                           format: int32
                           type: integer
                         minDomains:
@@ -2997,8 +2915,6 @@ spec:
                             MinDomains indicates a minimum number of eligible domains.
                             When the number of eligible domains with matching topology keys is less than minDomains,
                             Pod Topology Spread treats "global minimum" as 0, and then the calculation of Skew is performed.
-                            And when the number of eligible domains with matching topology keys equals or greater than minDomains,
-                            this value has no effect on scheduling.
                           format: int32
                           type: integer
                         nodeAffinityPolicy:
@@ -3007,9 +2923,6 @@ spec:
                             when calculating pod topology spread skew. Options are:
                             - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
                             - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
-
-                            If this value is nil, the behavior is equivalent to the Honor policy.
-                            This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                           type: string
                         nodeTaintsPolicy:
                           description: |-
@@ -3018,9 +2931,6 @@ spec:
                             - Honor: nodes without taints, along with tainted nodes for which the incoming pod
                             has a toleration, are included.
                             - Ignore: node taints are ignored. All nodes are included.
-
-                            If this value is nil, the behavior is equivalent to the Ignore policy.
-                            This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                           type: string
                         topologyKey:
                           description: |-
@@ -3029,9 +2939,6 @@ spec:
                             We consider each <key, value> as a "bucket", and try to put balanced number
                             of pods into each bucket.
                             We define a domain as a particular instance of a topology.
-                            Also, we define an eligible domain as a domain whose nodes meet the requirements of
-                            nodeAffinityPolicy and nodeTaintsPolicy.
-                            e.g. If TopologyKey is "kubernetes.
                           type: string
                         whenUnsatisfiable:
                           description: |-
@@ -3041,9 +2948,6 @@ spec:
                             - ScheduleAnyway tells the scheduler to schedule the pod in any location,
                               but giving higher precedence to topologies that would help reduce the
                               skew.
-                            A constraint is considered "Unsatisfiable" for an incoming pod
-                            if and only if every possible node assignment for that pod would violate
-                            "MaxSkew" on some topology.
                           type: string
                       required:
                       - maxSkew
@@ -3057,13 +2961,13 @@ spec:
                   Dynatrace `apiUrl`, including the `/api` path at the end.
                   - For SaaS, set `YOUR_ENVIRONMENT_ID` to your environment ID.
                   - For Managed, change the `apiUrl` address.
-                  For instructions on how to determine the environment ID and how to configure the apiUrl address, see Environment ID (https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id).
+                  For instructions on how to determine the environment ID and how to configure the apiUrl address, see Environment ID (https://www.dynatrace.
                 type: string
               customPullSecret:
                 description: |-
                   Defines a custom pull secret in case you use a private registry when pulling images from the Dynatrace environment.
                   To define a custom pull secret and learn about the expected behavior, see Configure customPullSecret
-                  (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#custompullsecret).
+                  (https://www.dynatrace.
                 type: string
               dynatraceApiRequestThreshold:
                 default: 15
@@ -3213,7 +3117,7 @@ spec:
                       namespaceSelector:
                         description: |-
                           Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.
-                          For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate).
+                          For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.
                         properties:
                           matchExpressions:
                             description: matchExpressions is a list of label selector
@@ -3283,7 +3187,7 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/docker/set-up-dynatrace-oneagent-as-docker-container#limitations).
+                          For the list of limitations, see Limitations (https://www.dynatrace.
                         items:
                           type: string
                         type: array
@@ -3316,10 +3220,6 @@ spec:
                                 any service environment variables. If a variable cannot be resolved,
                                 the reference in the input string will be unchanged. Double $$ are reduced
                                 to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
-                                "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
-                                Escaped references will never be expanded, regardless of whether the variable
-                                exists or not.
-                                Defaults to "".
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -3568,7 +3468,7 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/docker/set-up-dynatrace-oneagent-as-docker-container#limitations).
+                          For the list of limitations, see Limitations (https://www.dynatrace.
                         items:
                           type: string
                         type: array
@@ -3605,10 +3505,6 @@ spec:
                                 any service environment variables. If a variable cannot be resolved,
                                 the reference in the input string will be unchanged. Double $$ are reduced
                                 to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
-                                "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
-                                Escaped references will never be expanded, regardless of whether the variable
-                                exists or not.
-                                Defaults to "".
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -3782,7 +3678,7 @@ spec:
                       namespaceSelector:
                         description: |-
                           Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.
-                          For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate).
+                          For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.
                         properties:
                           matchExpressions:
                             description: matchExpressions is a list of label selector
@@ -3971,7 +3867,7 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/docker/set-up-dynatrace-oneagent-as-docker-container#limitations).
+                          For the list of limitations, see Limitations (https://www.dynatrace.
                         items:
                           type: string
                         type: array
@@ -4004,10 +3900,6 @@ spec:
                                 any service environment variables. If a variable cannot be resolved,
                                 the reference in the input string will be unchanged. Double $$ are reduced
                                 to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
-                                "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
-                                Escaped references will never be expanded, regardless of whether the variable
-                                exists or not.
-                                Defaults to "".
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -4578,11 +4470,11 @@ spec:
                       If referenced from a secret, make sure the key is called 'customProperties'
                     properties:
                       value:
-                        description: Custom properties value.
+                        description: Raw value for given property.
                         nullable: true
                         type: string
                       valueFrom:
-                        description: Custom properties secret.
+                        description: Name of the secret to get the property from.
                         nullable: true
                         type: string
                     type: object
@@ -4606,10 +4498,6 @@ spec:
                             any service environment variables. If a variable cannot be resolved,
                             the reference in the input string will be unchanged. Double $$ are reduced
                             to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
-                            "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
-                            Escaped references will never be expanded, regardless of whether the variable
-                            exists or not.
-                            Defaults to "".
                           type: string
                         valueFrom:
                           description: Source for the environment variable's value.
@@ -4903,8 +4791,7 @@ spec:
                             spreading will be calculated. The keys are used to lookup values from the
                             incoming pod labels, those key-value labels are ANDed with labelSelector
                             to select the group of existing pods over which spreading will be calculated
-                            for the incoming pod. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-                            MatchLabelKeys cannot be set when LabelSelector isn't set.
+                            for the incoming pod.
                           items:
                             type: string
                           type: array
@@ -4914,8 +4801,6 @@ spec:
                             MaxSkew describes the degree to which pods may be unevenly distributed.
                             When `whenUnsatisfiable=DoNotSchedule`, it is the maximum permitted difference
                             between the number of matching pods in the target topology and the global minimum.
-                            The global minimum is the minimum number of matching pods in an eligible domain
-                            or zero if the number of eligible domains is less than MinDomains.
                           format: int32
                           type: integer
                         minDomains:
@@ -4923,8 +4808,6 @@ spec:
                             MinDomains indicates a minimum number of eligible domains.
                             When the number of eligible domains with matching topology keys is less than minDomains,
                             Pod Topology Spread treats "global minimum" as 0, and then the calculation of Skew is performed.
-                            And when the number of eligible domains with matching topology keys equals or greater than minDomains,
-                            this value has no effect on scheduling.
                           format: int32
                           type: integer
                         nodeAffinityPolicy:
@@ -4933,9 +4816,6 @@ spec:
                             when calculating pod topology spread skew. Options are:
                             - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
                             - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
-
-                            If this value is nil, the behavior is equivalent to the Honor policy.
-                            This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                           type: string
                         nodeTaintsPolicy:
                           description: |-
@@ -4944,9 +4824,6 @@ spec:
                             - Honor: nodes without taints, along with tainted nodes for which the incoming pod
                             has a toleration, are included.
                             - Ignore: node taints are ignored. All nodes are included.
-
-                            If this value is nil, the behavior is equivalent to the Ignore policy.
-                            This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                           type: string
                         topologyKey:
                           description: |-
@@ -4955,9 +4832,6 @@ spec:
                             We consider each <key, value> as a "bucket", and try to put balanced number
                             of pods into each bucket.
                             We define a domain as a particular instance of a topology.
-                            Also, we define an eligible domain as a domain whose nodes meet the requirements of
-                            nodeAffinityPolicy and nodeTaintsPolicy.
-                            e.g. If TopologyKey is "kubernetes.
                           type: string
                         whenUnsatisfiable:
                           description: |-
@@ -4967,9 +4841,6 @@ spec:
                             - ScheduleAnyway tells the scheduler to schedule the pod in any location,
                               but giving higher precedence to topologies that would help reduce the
                               skew.
-                            A constraint is considered "Unsatisfiable" for an incoming pod
-                            if and only if every possible node assignment for that pod would violate
-                            "MaxSkew" on some topology.
                           type: string
                       required:
                       - maxSkew
@@ -4981,7 +4852,7 @@ spec:
               apiUrl:
                 description: |-
                   Dynatrace apiUrl, including the /api path at the end. For SaaS, set YOUR_ENVIRONMENT_ID to your environment ID. For Managed, change the apiUrl address.
-                  For instructions on how to determine the environment ID and how to configure the apiUrl address, see Environment ID (https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id).
+                  For instructions on how to determine the environment ID and how to configure the apiUrl address, see Environment ID (https://www.dynatrace.
                 maxLength: 128
                 type: string
                 x-kubernetes-validations:
@@ -4992,7 +4863,7 @@ spec:
                 description: |-
                   Defines a custom pull secret in case you use a private registry when pulling images from the Dynatrace environment.
                   To define a custom pull secret and learn about the expected behavior, see Configure customPullSecret
-                  (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#custompullsecret).
+                  (https://www.dynatrace.
                 type: string
               dynatraceApiRequestThreshold:
                 default: 15
@@ -5008,6 +4879,14 @@ spec:
                 properties:
                   enabled:
                     type: boolean
+                type: object
+              kspm:
+                description: General configuration about the KSPM feature.
+                properties:
+                  enabled:
+                    type: boolean
+                required:
+                - enabled
                 type: object
               logModule:
                 description: General configuration about the LogModule feature.
@@ -5156,7 +5035,7 @@ spec:
                       namespaceSelector:
                         description: |-
                           Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.
-                          For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate).
+                          For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.
                         properties:
                           matchExpressions:
                             description: matchExpressions is a list of label selector
@@ -5226,7 +5105,7 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/docker/set-up-dynatrace-oneagent-as-docker-container#limitations).
+                          For the list of limitations, see Limitations (https://www.dynatrace.
                         items:
                           type: string
                         type: array
@@ -5259,10 +5138,6 @@ spec:
                                 any service environment variables. If a variable cannot be resolved,
                                 the reference in the input string will be unchanged. Double $$ are reduced
                                 to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
-                                "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
-                                Escaped references will never be expanded, regardless of whether the variable
-                                exists or not.
-                                Defaults to "".
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -5508,7 +5383,7 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/docker/set-up-dynatrace-oneagent-as-docker-container#limitations).
+                          For the list of limitations, see Limitations (https://www.dynatrace.
                         items:
                           type: string
                         type: array
@@ -5545,10 +5420,6 @@ spec:
                                 any service environment variables. If a variable cannot be resolved,
                                 the reference in the input string will be unchanged. Double $$ are reduced
                                 to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
-                                "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
-                                Escaped references will never be expanded, regardless of whether the variable
-                                exists or not.
-                                Defaults to "".
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -5722,7 +5593,7 @@ spec:
                       namespaceSelector:
                         description: |-
                           Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.
-                          For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate).
+                          For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.
                         properties:
                           matchExpressions:
                             description: matchExpressions is a list of label selector
@@ -5905,7 +5776,7 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/docker/set-up-dynatrace-oneagent-as-docker-container#limitations).
+                          For the list of limitations, see Limitations (https://www.dynatrace.
                         items:
                           type: string
                         type: array
@@ -5938,10 +5809,6 @@ spec:
                                 any service environment variables. If a variable cannot be resolved,
                                 the reference in the input string will be unchanged. Double $$ are reduced
                                 to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
-                                "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
-                                Escaped references will never be expanded, regardless of whether the variable
-                                exists or not.
-                                Defaults to "".
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -6178,11 +6045,11 @@ spec:
                   Note: Applies to Dynatrace Operator, ActiveGate, and OneAgents.
                 properties:
                   value:
-                    description: Proxy URL. It has preference over ValueFrom.
+                    description: Raw value for given property.
                     nullable: true
                     type: string
                   valueFrom:
-                    description: Secret containing proxy URL.
+                    description: Name of the secret to get the property from.
                     nullable: true
                     type: string
                 type: object
@@ -6267,9 +6134,6 @@ spec:
                               dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
                               volume is desired. This may be any object from a non-empty API group (non
                               core object) or a PersistentVolumeClaim object.
-                              When this field is specified, volume binding will only succeed if the type of
-                              the specified object matches some installed volume populator or dynamic
-                              provisioner.
                             properties:
                               apiGroup:
                                 description: |-
@@ -6287,7 +6151,6 @@ spec:
                                 description: |-
                                   Namespace is the namespace of resource being referenced
                                   Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details.
-                                  (Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.
                                 type: string
                             required:
                             - kind
@@ -6299,7 +6162,7 @@ spec:
                               If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
                               that are lower than previous value but must still be higher than capacity recorded in the
                               status field of the claim.
-                              More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
+                              More info: https://kubernetes.
                             properties:
                               limits:
                                 additionalProperties:
@@ -6383,8 +6246,7 @@ spec:
                               volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
                               If specified, the CSI driver will create or update the volume with the attributes defined
                               in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
-                              it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
-                              will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
+                              it can be changed after the claim is created.
                             type: string
                           volumeMode:
                             description: |-
@@ -6579,8 +6441,7 @@ spec:
                                 spreading will be calculated. The keys are used to lookup values from the
                                 incoming pod labels, those key-value labels are ANDed with labelSelector
                                 to select the group of existing pods over which spreading will be calculated
-                                for the incoming pod. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-                                MatchLabelKeys cannot be set when LabelSelector isn't set.
+                                for the incoming pod.
                               items:
                                 type: string
                               type: array
@@ -6590,8 +6451,6 @@ spec:
                                 MaxSkew describes the degree to which pods may be unevenly distributed.
                                 When `whenUnsatisfiable=DoNotSchedule`, it is the maximum permitted difference
                                 between the number of matching pods in the target topology and the global minimum.
-                                The global minimum is the minimum number of matching pods in an eligible domain
-                                or zero if the number of eligible domains is less than MinDomains.
                               format: int32
                               type: integer
                             minDomains:
@@ -6599,8 +6458,6 @@ spec:
                                 MinDomains indicates a minimum number of eligible domains.
                                 When the number of eligible domains with matching topology keys is less than minDomains,
                                 Pod Topology Spread treats "global minimum" as 0, and then the calculation of Skew is performed.
-                                And when the number of eligible domains with matching topology keys equals or greater than minDomains,
-                                this value has no effect on scheduling.
                               format: int32
                               type: integer
                             nodeAffinityPolicy:
@@ -6609,9 +6466,6 @@ spec:
                                 when calculating pod topology spread skew. Options are:
                                 - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
                                 - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
-
-                                If this value is nil, the behavior is equivalent to the Honor policy.
-                                This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                               type: string
                             nodeTaintsPolicy:
                               description: |-
@@ -6620,9 +6474,6 @@ spec:
                                 - Honor: nodes without taints, along with tainted nodes for which the incoming pod
                                 has a toleration, are included.
                                 - Ignore: node taints are ignored. All nodes are included.
-
-                                If this value is nil, the behavior is equivalent to the Ignore policy.
-                                This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                               type: string
                             topologyKey:
                               description: |-
@@ -6631,9 +6482,6 @@ spec:
                                 We consider each <key, value> as a "bucket", and try to put balanced number
                                 of pods into each bucket.
                                 We define a domain as a particular instance of a topology.
-                                Also, we define an eligible domain as a domain whose nodes meet the requirements of
-                                nodeAffinityPolicy and nodeTaintsPolicy.
-                                e.g. If TopologyKey is "kubernetes.
                               type: string
                             whenUnsatisfiable:
                               description: |-
@@ -6643,9 +6491,6 @@ spec:
                                 - ScheduleAnyway tells the scheduler to schedule the pod in any location,
                                   but giving higher precedence to topologies that would help reduce the
                                   skew.
-                                A constraint is considered "Unsatisfiable" for an incoming pod
-                                if and only if every possible node assignment for that pod would violate
-                                "MaxSkew" on some topology.
                               type: string
                           required:
                           - maxSkew
@@ -6653,6 +6498,497 @@ spec:
                           - whenUnsatisfiable
                           type: object
                         type: array
+                    type: object
+                  kspmNodeConfigurationCollector:
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Adds additional annotations for the NodeConfigurationCollector
+                          pods
+                        type: object
+                      args:
+                        description: Set additional arguments to the NodeConfigurationCollector
+                          pods
+                        items:
+                          type: string
+                        type: array
+                      env:
+                        description: Set additional environment variables for the
+                          NodeConfigurationCollector pods
+                        items:
+                          description: EnvVar represents an environment variable present
+                            in a Container.
+                          properties:
+                            name:
+                              description: Name of the environment variable. Must
+                                be a C_IDENTIFIER.
+                              type: string
+                            value:
+                              description: |-
+                                Variable references $(VAR_NAME) are expanded
+                                using the previously defined environment variables in the container and
+                                any service environment variables. If a variable cannot be resolved,
+                                the reference in the input string will be unchanged. Double $$ are reduced
+                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                              type: string
+                            valueFrom:
+                              description: Source for the environment variable's value.
+                                Cannot be used if value is not empty.
+                              properties:
+                                configMapKeyRef:
+                                  description: Selects a key of a ConfigMap.
+                                  properties:
+                                    key:
+                                      description: The key to select.
+                                      type: string
+                                    name:
+                                      default: ""
+                                      description: |-
+                                        Name of the referent.
+                                        This field is effectively required, but due to backwards compatibility is
+                                        allowed to be empty. Instances of this type with an empty value here are
+                                        almost certainly wrong.
+                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      type: string
+                                    optional:
+                                      description: Specify whether the ConfigMap or
+                                        its key must be defined
+                                      type: boolean
+                                  required:
+                                  - key
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                                fieldRef:
+                                  description: |-
+                                    Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
+                                    spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
+                                  properties:
+                                    apiVersion:
+                                      description: Version of the schema the FieldPath
+                                        is written in terms of, defaults to "v1".
+                                      type: string
+                                    fieldPath:
+                                      description: Path of the field to select in
+                                        the specified API version.
+                                      type: string
+                                  required:
+                                  - fieldPath
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                                resourceFieldRef:
+                                  description: |-
+                                    Selects a resource of the container: only resources limits and requests
+                                    (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
+                                  properties:
+                                    containerName:
+                                      description: 'Container name: required for volumes,
+                                        optional for env vars'
+                                      type: string
+                                    divisor:
+                                      anyOf:
+                                      - type: integer
+                                      - type: string
+                                      description: Specifies the output format of
+                                        the exposed resources, defaults to "1"
+                                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                      x-kubernetes-int-or-string: true
+                                    resource:
+                                      description: 'Required: resource to select'
+                                      type: string
+                                  required:
+                                  - resource
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                                secretKeyRef:
+                                  description: Selects a key of a secret in the pod's
+                                    namespace
+                                  properties:
+                                    key:
+                                      description: The key of the secret to select
+                                        from.  Must be a valid secret key.
+                                      type: string
+                                    name:
+                                      default: ""
+                                      description: |-
+                                        Name of the referent.
+                                        This field is effectively required, but due to backwards compatibility is
+                                        allowed to be empty. Instances of this type with an empty value here are
+                                        almost certainly wrong.
+                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      type: string
+                                    optional:
+                                      description: Specify whether the Secret or its
+                                        key must be defined
+                                      type: boolean
+                                  required:
+                                  - key
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                              type: object
+                          required:
+                          - name
+                          type: object
+                        type: array
+                      imageRef:
+                        description: Overrides the default image
+                        properties:
+                          repository:
+                            description: Custom image repository
+                            example: docker.io/dynatrace/image-name
+                            type: string
+                          tag:
+                            description: Indicates a tag of the image to use
+                            type: string
+                        type: object
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Adds additional labels for the NodeConfigurationCollector
+                          pods
+                        type: object
+                      nodeAffinity:
+                        description: Define the nodeAffinity for the DaemonSet of
+                          the NodeConfigurationCollector
+                        properties:
+                          preferredDuringSchedulingIgnoredDuringExecution:
+                            description: |-
+                              The scheduler will prefer to schedule pods to nodes that satisfy
+                              the affinity expressions specified by this field, but it may choose
+                              a node that violates one or more of the expressions. The node that is
+                              most preferred is the one with the greatest sum of weights, i.e.
+                            items:
+                              description: |-
+                                An empty preferred scheduling term matches all objects with implicit weight 0
+                                (i.e. it's a no-op). A null preferred scheduling term matches no objects (i.e. is also a no-op).
+                              properties:
+                                preference:
+                                  description: A node selector term, associated with
+                                    the corresponding weight.
+                                  properties:
+                                    matchExpressions:
+                                      description: A list of node selector requirements
+                                        by node's labels.
+                                      items:
+                                        description: |-
+                                          A node selector requirement is a selector that contains values, a key, and an operator
+                                          that relates the key and values.
+                                        properties:
+                                          key:
+                                            description: The label key that the selector
+                                              applies to.
+                                            type: string
+                                          operator:
+                                            description: |-
+                                              Represents a key's relationship to a set of values.
+                                              Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
+                                            type: string
+                                          values:
+                                            description: |-
+                                              An array of string values. If the operator is In or NotIn,
+                                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                              the values array must be empty. If the operator is Gt or Lt, the values
+                                              array must have a single element, which will be interpreted as an integer.
+                                              This array is replaced during a strategic merge patch.
+                                            items:
+                                              type: string
+                                            type: array
+                                            x-kubernetes-list-type: atomic
+                                        required:
+                                        - key
+                                        - operator
+                                        type: object
+                                      type: array
+                                      x-kubernetes-list-type: atomic
+                                    matchFields:
+                                      description: A list of node selector requirements
+                                        by node's fields.
+                                      items:
+                                        description: |-
+                                          A node selector requirement is a selector that contains values, a key, and an operator
+                                          that relates the key and values.
+                                        properties:
+                                          key:
+                                            description: The label key that the selector
+                                              applies to.
+                                            type: string
+                                          operator:
+                                            description: |-
+                                              Represents a key's relationship to a set of values.
+                                              Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
+                                            type: string
+                                          values:
+                                            description: |-
+                                              An array of string values. If the operator is In or NotIn,
+                                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                              the values array must be empty. If the operator is Gt or Lt, the values
+                                              array must have a single element, which will be interpreted as an integer.
+                                              This array is replaced during a strategic merge patch.
+                                            items:
+                                              type: string
+                                            type: array
+                                            x-kubernetes-list-type: atomic
+                                        required:
+                                        - key
+                                        - operator
+                                        type: object
+                                      type: array
+                                      x-kubernetes-list-type: atomic
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                                weight:
+                                  description: Weight associated with matching the
+                                    corresponding nodeSelectorTerm, in the range 1-100.
+                                  format: int32
+                                  type: integer
+                              required:
+                              - preference
+                              - weight
+                              type: object
+                            type: array
+                            x-kubernetes-list-type: atomic
+                          requiredDuringSchedulingIgnoredDuringExecution:
+                            description: |-
+                              If the affinity requirements specified by this field are not met at
+                              scheduling time, the pod will not be scheduled onto the node.
+                              If the affinity requirements specified by this field cease to be met
+                              at some point during pod execution (e.g. due to an update), the system
+                              may or may not try to eventually evict the pod from its node.
+                            properties:
+                              nodeSelectorTerms:
+                                description: Required. A list of node selector terms.
+                                  The terms are ORed.
+                                items:
+                                  description: |-
+                                    A null or empty node selector term matches no objects. The requirements of
+                                    them are ANDed.
+                                    The TopologySelectorTerm type implements a subset of the NodeSelectorTerm.
+                                  properties:
+                                    matchExpressions:
+                                      description: A list of node selector requirements
+                                        by node's labels.
+                                      items:
+                                        description: |-
+                                          A node selector requirement is a selector that contains values, a key, and an operator
+                                          that relates the key and values.
+                                        properties:
+                                          key:
+                                            description: The label key that the selector
+                                              applies to.
+                                            type: string
+                                          operator:
+                                            description: |-
+                                              Represents a key's relationship to a set of values.
+                                              Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
+                                            type: string
+                                          values:
+                                            description: |-
+                                              An array of string values. If the operator is In or NotIn,
+                                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                              the values array must be empty. If the operator is Gt or Lt, the values
+                                              array must have a single element, which will be interpreted as an integer.
+                                              This array is replaced during a strategic merge patch.
+                                            items:
+                                              type: string
+                                            type: array
+                                            x-kubernetes-list-type: atomic
+                                        required:
+                                        - key
+                                        - operator
+                                        type: object
+                                      type: array
+                                      x-kubernetes-list-type: atomic
+                                    matchFields:
+                                      description: A list of node selector requirements
+                                        by node's fields.
+                                      items:
+                                        description: |-
+                                          A node selector requirement is a selector that contains values, a key, and an operator
+                                          that relates the key and values.
+                                        properties:
+                                          key:
+                                            description: The label key that the selector
+                                              applies to.
+                                            type: string
+                                          operator:
+                                            description: |-
+                                              Represents a key's relationship to a set of values.
+                                              Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
+                                            type: string
+                                          values:
+                                            description: |-
+                                              An array of string values. If the operator is In or NotIn,
+                                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                              the values array must be empty. If the operator is Gt or Lt, the values
+                                              array must have a single element, which will be interpreted as an integer.
+                                              This array is replaced during a strategic merge patch.
+                                            items:
+                                              type: string
+                                            type: array
+                                            x-kubernetes-list-type: atomic
+                                        required:
+                                        - key
+                                        - operator
+                                        type: object
+                                      type: array
+                                      x-kubernetes-list-type: atomic
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                                type: array
+                                x-kubernetes-list-type: atomic
+                            required:
+                            - nodeSelectorTerms
+                            type: object
+                            x-kubernetes-map-type: atomic
+                        type: object
+                      nodeSelector:
+                        additionalProperties:
+                          type: string
+                        description: Specify the node selector that controls on which
+                          nodes NodeConfigurationCollector pods will be deployed.
+                        type: object
+                      priorityClassName:
+                        description: |-
+                          If specified, indicates the pod's priority. Name must be defined by creating a PriorityClass object with that
+                          name. If not specified the setting will be removed from the DaemonSet.
+                        type: string
+                      resources:
+                        description: Define resources' requests and limits for single
+                          NodeConfigurationCollector pod
+                        properties:
+                          claims:
+                            description: |-
+                              Claims lists the names of resources, defined in spec.resourceClaims,
+                              that are used by this container.
+
+                              This is an alpha field and requires enabling the
+                              DynamicResourceAllocation feature gate.
+
+                              This field is immutable. It can only be set for containers.
+                            items:
+                              description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                              properties:
+                                name:
+                                  description: |-
+                                    Name must match the name of one entry in pod.spec.resourceClaims of
+                                    the Pod where this field is used. It makes that resource available
+                                    inside a container.
+                                  type: string
+                                request:
+                                  description: |-
+                                    Request is the name chosen for a request in the referenced claim.
+                                    If empty, everything from the claim is made available, otherwise
+                                    only the result of this request.
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                            type: array
+                            x-kubernetes-list-map-keys:
+                            - name
+                            x-kubernetes-list-type: map
+                          limits:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: |-
+                              Limits describes the maximum amount of compute resources allowed.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                            type: object
+                          requests:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: |-
+                              Requests describes the minimum amount of compute resources required.
+                              If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                              otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                            type: object
+                        type: object
+                      tolerations:
+                        description: Set tolerations for the NodeConfigurationCollector
+                          pods
+                        items:
+                          description: |-
+                            The pod this Toleration is attached to tolerates any taint that matches
+                            the triple <key,value,effect> using the matching operator <operator>.
+                          properties:
+                            effect:
+                              description: |-
+                                Effect indicates the taint effect to match. Empty means match all taint effects.
+                                When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.
+                              type: string
+                            key:
+                              description: |-
+                                Key is the taint key that the toleration applies to. Empty means match all taint keys.
+                                If the key is empty, operator must be Exists; this combination means to match all values and all keys.
+                              type: string
+                            operator:
+                              description: |-
+                                Operator represents a key's relationship to the value.
+                                Valid operators are Exists and Equal. Defaults to Equal.
+                                Exists is equivalent to wildcard for value, so that a pod can
+                                tolerate all taints of a particular category.
+                              type: string
+                            tolerationSeconds:
+                              description: |-
+                                TolerationSeconds represents the period of time the toleration (which must be
+                                of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+                                it is not set, which means tolerate the taint forever (do not evict). Zero and
+                                negative values will be treated as 0 (evict immediately) by the system.
+                              format: int64
+                              type: integer
+                            value:
+                              description: |-
+                                Value is the taint value the toleration matches to.
+                                If the operator is Exists, the value should be empty, otherwise just a regular string.
+                              type: string
+                          type: object
+                        type: array
+                      updateStrategy:
+                        description: Define the NodeConfigurationCollector daemonSet
+                          updateStrategy
+                        properties:
+                          rollingUpdate:
+                            description: Rolling update config params. Present only
+                              if type = "RollingUpdate".
+                            properties:
+                              maxSurge:
+                                anyOf:
+                                - type: integer
+                                - type: string
+                                description: |-
+                                  The maximum number of nodes with an existing available DaemonSet pod that
+                                  can have an updated DaemonSet pod during during an update.
+                                  Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%).
+                                  This can not be 0 if MaxUnavailable is 0.
+                                  Absolute number is calculated from percentage by rounding up to a minimum of 1.
+                                x-kubernetes-int-or-string: true
+                              maxUnavailable:
+                                anyOf:
+                                - type: integer
+                                - type: string
+                                description: |-
+                                  The maximum number of DaemonSet pods that can be unavailable during the
+                                  update. Value can be an absolute number (ex: 5) or a percentage of total
+                                  number of DaemonSet pods at the start of the update (ex: 10%). Absolute
+                                  number is calculated from percentage by rounding up.
+                                  This cannot be 0 if MaxSurge is 0
+                                  Default value is 1.
+                                x-kubernetes-int-or-string: true
+                            type: object
+                          type:
+                            description: Type of daemon set update. Can be "RollingUpdate"
+                              or "OnDelete". Default is RollingUpdate.
+                            type: string
+                        type: object
                     type: object
                   logModule:
                     description: Low-level configuration options for the LogModule
@@ -6997,8 +7333,7 @@ spec:
                                 spreading will be calculated. The keys are used to lookup values from the
                                 incoming pod labels, those key-value labels are ANDed with labelSelector
                                 to select the group of existing pods over which spreading will be calculated
-                                for the incoming pod. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-                                MatchLabelKeys cannot be set when LabelSelector isn't set.
+                                for the incoming pod.
                               items:
                                 type: string
                               type: array
@@ -7008,8 +7343,6 @@ spec:
                                 MaxSkew describes the degree to which pods may be unevenly distributed.
                                 When `whenUnsatisfiable=DoNotSchedule`, it is the maximum permitted difference
                                 between the number of matching pods in the target topology and the global minimum.
-                                The global minimum is the minimum number of matching pods in an eligible domain
-                                or zero if the number of eligible domains is less than MinDomains.
                               format: int32
                               type: integer
                             minDomains:
@@ -7017,8 +7350,6 @@ spec:
                                 MinDomains indicates a minimum number of eligible domains.
                                 When the number of eligible domains with matching topology keys is less than minDomains,
                                 Pod Topology Spread treats "global minimum" as 0, and then the calculation of Skew is performed.
-                                And when the number of eligible domains with matching topology keys equals or greater than minDomains,
-                                this value has no effect on scheduling.
                               format: int32
                               type: integer
                             nodeAffinityPolicy:
@@ -7027,9 +7358,6 @@ spec:
                                 when calculating pod topology spread skew. Options are:
                                 - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
                                 - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
-
-                                If this value is nil, the behavior is equivalent to the Honor policy.
-                                This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                               type: string
                             nodeTaintsPolicy:
                               description: |-
@@ -7038,9 +7366,6 @@ spec:
                                 - Honor: nodes without taints, along with tainted nodes for which the incoming pod
                                 has a toleration, are included.
                                 - Ignore: node taints are ignored. All nodes are included.
-
-                                If this value is nil, the behavior is equivalent to the Ignore policy.
-                                This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                               type: string
                             topologyKey:
                               description: |-
@@ -7049,9 +7374,6 @@ spec:
                                 We consider each <key, value> as a "bucket", and try to put balanced number
                                 of pods into each bucket.
                                 We define a domain as a particular instance of a topology.
-                                Also, we define an eligible domain as a domain whose nodes meet the requirements of
-                                nodeAffinityPolicy and nodeTaintsPolicy.
-                                e.g. If TopologyKey is "kubernetes.
                               type: string
                             whenUnsatisfiable:
                               description: |-
@@ -7061,9 +7383,6 @@ spec:
                                 - ScheduleAnyway tells the scheduler to schedule the pod in any location,
                                   but giving higher precedence to topologies that would help reduce the
                                   skew.
-                                A constraint is considered "Unsatisfiable" for an incoming pod
-                                if and only if every possible node assignment for that pod would violate
-                                "MaxSkew" on some topology.
                               type: string
                           required:
                           - maxSkew
@@ -7340,7 +7659,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.3
+    controller-gen.kubebuilder.io/version: v0.16.4
   name: edgeconnects.dynatrace.com
 spec:
   conversion:
@@ -7441,10 +7760,6 @@ spec:
                         any service environment variables. If a variable cannot be resolved,
                         the reference in the input string will be unchanged. Double $$ are reduced
                         to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
-                        "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
-                        Escaped references will never be expanded, regardless of whether the variable
-                        exists or not.
-                        Defaults to "".
                       type: string
                     valueFrom:
                       description: Source for the environment variable's value. Cannot
@@ -7801,8 +8116,7 @@ spec:
                         spreading will be calculated. The keys are used to lookup values from the
                         incoming pod labels, those key-value labels are ANDed with labelSelector
                         to select the group of existing pods over which spreading will be calculated
-                        for the incoming pod. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-                        MatchLabelKeys cannot be set when LabelSelector isn't set.
+                        for the incoming pod.
                       items:
                         type: string
                       type: array
@@ -7812,8 +8126,6 @@ spec:
                         MaxSkew describes the degree to which pods may be unevenly distributed.
                         When `whenUnsatisfiable=DoNotSchedule`, it is the maximum permitted difference
                         between the number of matching pods in the target topology and the global minimum.
-                        The global minimum is the minimum number of matching pods in an eligible domain
-                        or zero if the number of eligible domains is less than MinDomains.
                       format: int32
                       type: integer
                     minDomains:
@@ -7821,8 +8133,6 @@ spec:
                         MinDomains indicates a minimum number of eligible domains.
                         When the number of eligible domains with matching topology keys is less than minDomains,
                         Pod Topology Spread treats "global minimum" as 0, and then the calculation of Skew is performed.
-                        And when the number of eligible domains with matching topology keys equals or greater than minDomains,
-                        this value has no effect on scheduling.
                       format: int32
                       type: integer
                     nodeAffinityPolicy:
@@ -7831,9 +8141,6 @@ spec:
                         when calculating pod topology spread skew. Options are:
                         - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
                         - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
-
-                        If this value is nil, the behavior is equivalent to the Honor policy.
-                        This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                       type: string
                     nodeTaintsPolicy:
                       description: |-
@@ -7842,9 +8149,6 @@ spec:
                         - Honor: nodes without taints, along with tainted nodes for which the incoming pod
                         has a toleration, are included.
                         - Ignore: node taints are ignored. All nodes are included.
-
-                        If this value is nil, the behavior is equivalent to the Ignore policy.
-                        This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                       type: string
                     topologyKey:
                       description: |-
@@ -7853,9 +8157,6 @@ spec:
                         We consider each <key, value> as a "bucket", and try to put balanced number
                         of pods into each bucket.
                         We define a domain as a particular instance of a topology.
-                        Also, we define an eligible domain as a domain whose nodes meet the requirements of
-                        nodeAffinityPolicy and nodeTaintsPolicy.
-                        e.g. If TopologyKey is "kubernetes.
                       type: string
                     whenUnsatisfiable:
                       description: |-
@@ -7865,9 +8166,6 @@ spec:
                         - ScheduleAnyway tells the scheduler to schedule the pod in any location,
                           but giving higher precedence to topologies that would help reduce the
                           skew.
-                        A constraint is considered "Unsatisfiable" for an incoming pod
-                        if and only if every possible node assignment for that pod would violate
-                        "MaxSkew" on some topology.
                       type: string
                   required:
                   - maxSkew
@@ -8052,10 +8350,6 @@ spec:
                         any service environment variables. If a variable cannot be resolved,
                         the reference in the input string will be unchanged. Double $$ are reduced
                         to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
-                        "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
-                        Escaped references will never be expanded, regardless of whether the variable
-                        exists or not.
-                        Defaults to "".
                       type: string
                     valueFrom:
                       description: Source for the environment variable's value. Cannot
@@ -8171,11 +8465,11 @@ spec:
                 description: Overrides the default image
                 properties:
                   repository:
-                    description: Custom EdgeConnect image repository
-                    example: docker.io/dynatrace/edgeconnect
+                    description: Custom image repository
+                    example: docker.io/dynatrace/image-name
                     type: string
                   tag:
-                    description: Indicates version of the EdgeConnect image to use
+                    description: Indicates a tag of the image to use
                     type: string
                 type: object
               kubernetesAutomation:
@@ -8414,8 +8708,7 @@ spec:
                         spreading will be calculated. The keys are used to lookup values from the
                         incoming pod labels, those key-value labels are ANDed with labelSelector
                         to select the group of existing pods over which spreading will be calculated
-                        for the incoming pod. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-                        MatchLabelKeys cannot be set when LabelSelector isn't set.
+                        for the incoming pod.
                       items:
                         type: string
                       type: array
@@ -8425,8 +8718,6 @@ spec:
                         MaxSkew describes the degree to which pods may be unevenly distributed.
                         When `whenUnsatisfiable=DoNotSchedule`, it is the maximum permitted difference
                         between the number of matching pods in the target topology and the global minimum.
-                        The global minimum is the minimum number of matching pods in an eligible domain
-                        or zero if the number of eligible domains is less than MinDomains.
                       format: int32
                       type: integer
                     minDomains:
@@ -8434,8 +8725,6 @@ spec:
                         MinDomains indicates a minimum number of eligible domains.
                         When the number of eligible domains with matching topology keys is less than minDomains,
                         Pod Topology Spread treats "global minimum" as 0, and then the calculation of Skew is performed.
-                        And when the number of eligible domains with matching topology keys equals or greater than minDomains,
-                        this value has no effect on scheduling.
                       format: int32
                       type: integer
                     nodeAffinityPolicy:
@@ -8444,9 +8733,6 @@ spec:
                         when calculating pod topology spread skew. Options are:
                         - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
                         - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
-
-                        If this value is nil, the behavior is equivalent to the Honor policy.
-                        This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                       type: string
                     nodeTaintsPolicy:
                       description: |-
@@ -8455,9 +8741,6 @@ spec:
                         - Honor: nodes without taints, along with tainted nodes for which the incoming pod
                         has a toleration, are included.
                         - Ignore: node taints are ignored. All nodes are included.
-
-                        If this value is nil, the behavior is equivalent to the Ignore policy.
-                        This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
                       type: string
                     topologyKey:
                       description: |-
@@ -8466,9 +8749,6 @@ spec:
                         We consider each <key, value> as a "bucket", and try to put balanced number
                         of pods into each bucket.
                         We define a domain as a particular instance of a topology.
-                        Also, we define an eligible domain as a domain whose nodes meet the requirements of
-                        nodeAffinityPolicy and nodeTaintsPolicy.
-                        e.g. If TopologyKey is "kubernetes.
                       type: string
                     whenUnsatisfiable:
                       description: |-
@@ -8478,9 +8758,6 @@ spec:
                         - ScheduleAnyway tells the scheduler to schedule the pod in any location,
                           but giving higher precedence to topologies that would help reduce the
                           skew.
-                        A constraint is considered "Unsatisfiable" for an incoming pod
-                        if and only if every possible node assignment for that pod would violate
-                        "MaxSkew" on some topology.
                       type: string
                   required:
                   - maxSkew

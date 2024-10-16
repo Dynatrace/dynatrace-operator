@@ -258,7 +258,7 @@ func createTestDynakube() *dynakube.DynaKube {
 }
 
 func addFakeTennantUUID(dk *dynakube.DynaKube) *dynakube.DynaKube {
-	dk.Status.OneAgent.ConnectionInfoStatus.ConnectionInfoStatus.TenantUUID = testTenant
+	dk.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo.TenantUUID = testTenant
 
 	return dk
 }

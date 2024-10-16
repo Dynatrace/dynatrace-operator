@@ -1,3 +1,4 @@
+{{- if .Values.rbac.activeGate.create }}
 # Copyright 2021 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -112,3 +113,4 @@ subjects:
   - kind: ServiceAccount
     name: dynatrace-kubernetes-monitoring
     namespace: {{ .Release.Namespace }}
+{{ end }}

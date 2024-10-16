@@ -196,12 +196,20 @@ csidriver:
 
 rbac:
   activeGate:
+    create: true
     annotations: {}
   edgeConnect:
+    create: true
     annotations: {}
   extensions:
+    create: true
     annotations: {}
   logModule:
+    create: true
     annotations: {}
   oneAgent:
+    create: true
+    annotations: {}
+  nodeConfigCollector:
+    create: true
     annotations: {}

@@ -6,12 +6,12 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const AnnotationHash = dynakube.InternalFlagPrefix + "template-hash"
+const AnnotationHash = api.InternalFlagPrefix + "template-hash"
 
 func GenerateHash(ds any) (string, error) {
 	data, err := json.Marshal(ds)

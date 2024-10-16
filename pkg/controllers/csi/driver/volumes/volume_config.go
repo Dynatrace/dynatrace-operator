@@ -1,6 +1,8 @@
 package csivolumes
 
 import (
+	"time"
+
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -12,6 +14,7 @@ const (
 	// CSIVolumeAttributeModeField used for identifying the origin of the NodePublishVolume request
 	CSIVolumeAttributeModeField     = "mode"
 	CSIVolumeAttributeDynakubeField = "dynakube"
+	CSIVolumeAttributeRetryTimeout  = "retryTimeout"
 )
 
 // Represents the basic information about a volume
@@ -26,6 +29,7 @@ type VolumeConfig struct {
 	PodName      string
 	Mode         string
 	DynakubeName string
+	RetryTimeout time.Duration
 }
 
 // Transforms the NodePublishVolumeRequest into a VolumeConfig
@@ -72,6 +76,16 @@ func ParseNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*VolumeCo
 		return nil, status.Error(codes.InvalidArgument, "No dynakube attribute included with request")
 	}
 
+	retryTimeoutValue := volCtx[CSIVolumeAttributeRetryTimeout]
+	if retryTimeoutValue == "" {
+		return nil, status.Error(codes.InvalidArgument, "No retryTimeout attribute included with request")
+	}
+
+	retryTimeout, err := time.ParseDuration(retryTimeoutValue)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "The retryTimeout attribute has incorrect format")
+	}
+
 	return &VolumeConfig{
 		VolumeInfo: VolumeInfo{
 			VolumeID:   volID,
@@ -80,6 +94,7 @@ func ParseNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*VolumeCo
 		PodName:      podName,
 		Mode:         mode,
 		DynakubeName: dynakubeName,
+		RetryTimeout: retryTimeout,
 	}, nil
 }
 

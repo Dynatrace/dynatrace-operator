@@ -8,16 +8,20 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/hash"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/servicename"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/tls"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/utils"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
+	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
 	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -36,8 +40,8 @@ const (
 	envK8sClusterId                 = "K8sClusterUID"
 	envActiveGateTrustedCertName    = "ActiveGateTrustedCert"
 	envK8sExtServiceUrl             = "K8sExtServiceUrl"
-	envHttpsCertPathPem             = "HttpsCertPathPem"
-	envHttpsPrivKeyPathPem          = "HttpsPrivKeyPathPem"
+	envHttpsCertPathPem             = "DsHttpsCertPathPem"
+	envHttpsPrivKeyPathPem          = "DsHttpsPrivKeyPathPem"
 	envDSTokenPath                  = "DSTokenPath"
 	envRuntimeConfigMountPath       = "RuntimeConfigMountPath"
 	envCustomCertificateMountPath   = "ExtensionCustomCertificateMountPath"
@@ -72,11 +76,17 @@ const (
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	appLabels := buildAppLabels(r.dk.Name)
-	desiredSts, err := statefulset.Build(r.dk, dynakube.ExtensionsExecutionControllerStatefulsetName, buildContainer(r.dk),
+
+	templateAnnotations, err := r.buildTemplateAnnotations(ctx)
+	if err != nil {
+		return err
+	}
+
+	desiredSts, err := statefulset.Build(r.dk, r.dk.ExtensionsExecutionControllerStatefulsetName(), buildContainer(r.dk),
 		statefulset.SetReplicas(1),
 		statefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
 		statefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), r.dk.Spec.Templates.ExtensionExecutionController.Labels),
-		statefulset.SetAllAnnotations(nil, r.dk.Spec.Templates.ExtensionExecutionController.Annotations),
+		statefulset.SetAllAnnotations(nil, templateAnnotations),
 		statefulset.SetAffinity(buildAffinity()),
 		statefulset.SetTolerations(r.dk.Spec.Templates.ExtensionExecutionController.Tolerations),
 		statefulset.SetTopologySpreadConstraints(utils.BuildTopologySpreadConstraints(r.dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints, appLabels)),
@@ -102,7 +112,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 
 	_, err = statefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
 	if err != nil {
-		log.Info("failed to create/update " + dynakube.ExtensionsExecutionControllerStatefulsetName + " statefulset")
+		log.Info("failed to create/update " + r.dk.ExtensionsExecutionControllerStatefulsetName() + " statefulset")
 		conditions.SetKubeApiError(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, err)
 
 		return err
@@ -111,6 +121,33 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	conditions.SetStatefulSetCreated(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, desiredSts.Name)
 
 	return nil
+}
+
+func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]string, error) {
+	templateAnnotations := map[string]string{}
+
+	if r.dk.Spec.Templates.ExtensionExecutionController.Annotations != nil {
+		templateAnnotations = r.dk.Spec.Templates.ExtensionExecutionController.Annotations
+	}
+
+	query := k8ssecret.Query(r.client, r.client, log)
+
+	tlsSecret, err := query.Get(ctx, types.NamespacedName{
+		Name:      tls.GetTLSSecretName(r.dk),
+		Namespace: r.dk.Namespace,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	tlsSecretHash, err := hasher.GenerateHash(tlsSecret.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	templateAnnotations[consts.ExtensionsAnnotationSecretHash] = tlsSecretHash
+
+	return templateAnnotations, nil
 }
 
 func buildAppLabels(dynakubeName string) *labels.AppLabels {
@@ -203,7 +240,7 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 
 func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	containerEnvs := []corev1.EnvVar{
-		{Name: envTenantId, Value: dk.Status.ActiveGate.ConnectionInfoStatus.TenantUUID},
+		{Name: envTenantId, Value: dk.Status.ActiveGate.ConnectionInfo.TenantUUID},
 		{Name: envServerUrl, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ".svc.cluster.local:443"},
 		{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + consts.EecTokenSecretKey},
 		{Name: envEecIngestPort, Value: strconv.Itoa(int(collectorPort))},
@@ -301,7 +338,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Name + consts.SecretSuffix,
+						SecretName:  dk.ExtensionsTokenSecretName(),
 						DefaultMode: &mode,
 					},
 				},
@@ -387,7 +424,7 @@ func setPersistentVolumeClaim(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet)
 		if dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim != nil {
 			o.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 				{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: runtimeVolumeName,
 					},
 					Spec: *dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim,
