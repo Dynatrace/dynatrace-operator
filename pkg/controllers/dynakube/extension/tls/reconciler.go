@@ -8,11 +8,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,6 +39,11 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
 	if !r.dk.IsExtensionsEnabled() || !r.dk.ExtensionsNeedsSelfSignedTLS() {
+		if meta.FindStatusCondition(*r.dk.Conditions(), extensionsSelfSignedTLSConditionType) == nil {
+			return nil
+		}
+		defer meta.RemoveStatusCondition(r.dk.Conditions(), extensionsSelfSignedTLSConditionType)
+
 		return r.deleteSelfSignedTLSSecret(ctx)
 	}
 
@@ -52,7 +59,12 @@ func (r *reconciler) reconcileSelfSignedTLSSecret(ctx context.Context) error {
 	})
 
 	if err != nil && k8serrors.IsNotFound(err) {
-		return r.createSelfSignedTLSSecret(ctx)
+		err = r.createSelfSignedTLSSecret(ctx)
+		if err != nil {
+			return err
+		}
+
+		conditions.SetSecretCreated(r.dk.Conditions(), extensionsSelfSignedTLSConditionType, getSelfSignedTLSSecretName(r.dk.Name))
 	}
 
 	return err
