@@ -14,7 +14,7 @@ tests:
           of: ClusterRole
       - equal:
           path: metadata.name
-          value: prometheus-service-detector
+          value: dynatrace-extensions-prometheus
       - isNotEmpty:
           path: metadata.labels
       - isNotEmpty:
@@ -27,21 +27,36 @@ tests:
             resources:
               - pods
               - namespaces
+              - endpoints
+              - services
+              - nodes
+              - nodes/metrics
             verbs:
-              - list
               - get
               - watch
+              - list
       - contains:
           path: rules
           content:
             apiGroups:
               - apps
             resources:
+              - deployments
+              - daemonsets
               - replicasets
+              - statefulsets
             verbs:
-              - list
               - get
+              - list
               - watch
+      - contains:
+          path: rules
+          content:
+            nonResourceURLs:
+              - /metrics
+              - /metrics/cadvisor
+            verbs:
+              - get
 
   - it: ClusterRoleBinding exists
     documentIndex: 1
@@ -50,7 +65,7 @@ tests:
           of: ClusterRoleBinding
       - equal:
           path: metadata.name
-          value: prometheus-service-detector
+          value: dynatrace-extensions-prometheus
       - isNotEmpty:
           path: metadata.labels
 
