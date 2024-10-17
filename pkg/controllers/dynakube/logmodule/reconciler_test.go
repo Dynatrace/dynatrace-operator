@@ -14,7 +14,7 @@ import (
 func TestReconcile(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run("monitored-entity not available => no error, but return early", func(t *testing.T) {
+	t.Run("monitored-entity not available => error", func(t *testing.T) {
 		dk := &dynakube.DynaKube{}
 		notEffectiveMonitoredEntity := createIneffectiveMonitoredEntityReconciler(t, dk)
 		r := Reconciler{
@@ -23,7 +23,7 @@ func TestReconcile(t *testing.T) {
 		}
 
 		err := r.Reconcile(ctx)
-		require.NoError(t, err)
+		require.Error(t, err)
 
 		notEffectiveMonitoredEntity.AssertCalled(t, "Reconcile", ctx)
 	})

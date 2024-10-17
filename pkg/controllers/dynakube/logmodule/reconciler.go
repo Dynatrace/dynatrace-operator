@@ -10,12 +10,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmodule/configsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmodule/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/monitoredentities"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-var (
-	log = logd.Get().WithName("logmodule-daemonset")
 )
 
 type Reconciler struct {
@@ -56,9 +52,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if r.dk.Status.KubernetesClusterMEID == "" || r.dk.Status.KubernetesClusterName == "" {
-		log.Info("the status of the DynaKube is missing information about the kubernetes monitored-entity, skipping logmodule deployment")
-
-		return nil
+		return errors.New("the status of the DynaKube is missing information about the kubernetes monitored-entity, skipping logmodule deployment")
 	}
 
 	err = r.oneAgentConnectionInfoReconciler.Reconcile(ctx)
