@@ -1,5 +1,5 @@
-package kspm
+package consts
 
 const (
-	KSPMSecretSuffix = ""
+	KSPMSecretKey = "kspm-token"
 )
