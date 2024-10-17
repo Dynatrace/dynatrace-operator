@@ -9,24 +9,30 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) query.Generic[*corev1.Secret, *corev1.SecretList] {
-	return query.Generic[*corev1.Secret, *corev1.SecretList]{
-		Target:     &corev1.Secret{},
-		ListTarget: &corev1.SecretList{},
-		ToList: func(sl *corev1.SecretList) []*corev1.Secret {
-			out := []*corev1.Secret{}
-			for _, s := range sl.Items {
-				out = append(out, &s)
-			}
+type QueryObject struct {
+	query.Generic[*corev1.Secret, *corev1.SecretList]
+}
 
-			return out
+func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) QueryObject {
+	return QueryObject{
+		query.Generic[*corev1.Secret, *corev1.SecretList]{
+			Target:     &corev1.Secret{},
+			ListTarget: &corev1.SecretList{},
+			ToList: func(sl *corev1.SecretList) []*corev1.Secret {
+				out := []*corev1.Secret{}
+				for _, s := range sl.Items {
+					out = append(out, &s)
+				}
+
+				return out
+			},
+			IsEqual:      isEqual,
+			MustRecreate: func(_, _ *corev1.Secret) bool { return false },
+
+			KubeClient: kubeClient,
+			KubeReader: kubeReader,
+			Log:        log,
 		},
-		IsEqual:      isEqual,
-		MustRecreate: func(_, _ *corev1.Secret) bool { return false },
-
-		KubeClient: kubeClient,
-		KubeReader: kubeReader,
-		Log:        log,
 	}
 }
 

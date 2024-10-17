@@ -50,21 +50,19 @@ func CreateSymlinkForCurrentVersionIfNotExists(fs afero.Fs, targetDir string) er
 	return nil
 }
 
-func CreateSymlinkForLatestVersion(fs afero.Fs, targetDir string, dk dynakube.DynaKube, symLinkPath, imageDigest string) error {
+func CreateSymlinkForLatestVersion(fs afero.Fs, dk dynakube.DynaKube, latestVersionDir, symlinkDir string) error {
 	// MemMapFs (used for testing) doesn't comply with the Linker interface
 	linker, ok := fs.(afero.Linker)
 	if !ok {
-		log.Info("symlinking not possible", "targetDir", targetDir, "fs", fs)
+		log.Info("symlinking not possible", "targetDir", latestVersionDir, "fs", fs)
 
 		return nil
 	}
 
-	relativeSymlinkPath := "/data/codemodules/" + imageDigest
+	log.Info("creating symlink", "points-to(relative)", latestVersionDir, "location", symlinkDir)
 
-	log.Info("creating symlink", "points-to(relative)", relativeSymlinkPath, "location", symLinkPath)
-
-	if err := linker.SymlinkIfPossible(relativeSymlinkPath, symLinkPath); err != nil {
-		log.Info("symlinking failed", "codemodules-version", relativeSymlinkPath)
+	if err := linker.SymlinkIfPossible(latestVersionDir, symlinkDir); err != nil {
+		log.Info("symlinking failed", "codemodules-version", latestVersionDir)
 
 		return errors.WithStack(err)
 	}

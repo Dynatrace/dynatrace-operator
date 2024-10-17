@@ -26,7 +26,7 @@ metadata:
       {{- toYaml .Values.webhook.labels | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ (default false (.Values.webhook).highAvailability) | ternary 2 1 }}
+  replicas: {{ and (.Values.webhook.highAvailability) (not .Values.debug) | ternary 2 1 }}
   revisionHistoryLimit: 1
   selector:
     matchLabels:
@@ -120,7 +120,7 @@ spec:
             - name: certs-dir
               mountPath: /tmp/k8s-webhook-server/serving-certs/
           securityContext:
-          {{- toYaml .Values.webhook.securityContext | nindent 12 }}
+          {{- include "webhook.securityContext" . | nindent 12 }}
       serviceAccountName: dynatrace-webhook
       {{- if (.Values.webhook).hostNetwork }}
       hostNetwork: true

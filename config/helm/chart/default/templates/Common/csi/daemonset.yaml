@@ -79,6 +79,19 @@ spec:
       - name: server
         image: {{ include "dynatrace-operator.image" . }}
         imagePullPolicy: Always
+        {{- if .Values.debug }}
+        command:
+          - /usr/local/bin/dlv
+          - --listen=:40000
+          - --headless=true
+          - --api-version=2
+          - --log
+          - exec
+          - --continue
+          - --accept-multiclient
+          - --
+          - /usr/local/bin/dynatrace-operator
+        {{- end }}
         args:
         - csi-server
         - --endpoint=unix://csi/csi.sock
@@ -94,6 +107,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
+        {{- if not .Values.debug }}
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -104,15 +118,14 @@ spec:
           periodSeconds: 5
           successThreshold: 1
           timeoutSeconds: 1
+        {{- end }}
         ports:
         - containerPort: 9808
           name: healthz
         - containerPort: 8080
           name: metrics
         resources:
-          {{- if .Values.csidriver.server.resources }}
-          {{- toYaml .Values.csidriver.server.resources | nindent 10 }}
-          {{- end }}
+          {{- include "csidriver.server.resources" . | nindent 10 }}
         securityContext:
         {{- toYaml .Values.csidriver.server.securityContext | nindent 10 }}
         terminationMessagePath: /dev/termination-log
@@ -131,6 +144,19 @@ spec:
       - name: provisioner
         image: {{ include "dynatrace-operator.image" . }}
         imagePullPolicy: Always
+        {{- if .Values.debug }}
+        command:
+          - /usr/local/bin/dlv
+          - --listen=:40001
+          - --headless=true
+          - --api-version=2
+          - --log
+          - exec
+          - --continue
+          - --accept-multiclient
+          - --
+          - /usr/local/bin/dynatrace-operator
+        {{- end }}
         args:
           - csi-provisioner
           - --health-probe-bind-address=:10090
@@ -145,6 +171,7 @@ spec:
             value: "{{ .Values.csidriver.maxUnmountedVolumeAge}}"
           {{- end }}
         {{- include "dynatrace-operator.startupProbe" . | nindent 8 }}
+        {{- if not .Values.debug }}
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -155,15 +182,14 @@ spec:
           periodSeconds: 5
           successThreshold: 1
           timeoutSeconds: 1
+        {{- end }}
         ports:
           - name: livez
             containerPort: 10090
           - name: metrics
             containerPort: 8090
         resources:
-          {{- if .Values.csidriver.provisioner.resources }}
-          {{- toYaml .Values.csidriver.provisioner.resources | nindent 10 }}
-          {{- end }}
+          {{- include "csidriver.provisioner.resources" . | nindent 10 }}
         securityContext:
         {{- toYaml .Values.csidriver.provisioner.securityContext | nindent 10 }}
         terminationMessagePath: /dev/termination-log
