@@ -8,11 +8,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,14 +38,19 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	if r.dk.ExtensionsNeedsSelfSignedTLS() {
-		return r.reconcileSelfSigned(ctx)
+	if !r.dk.IsExtensionsEnabled() || !r.dk.ExtensionsNeedsSelfSignedTLS() {
+		if meta.FindStatusCondition(*r.dk.Conditions(), extensionsSelfSignedTLSSecretConditionType) == nil {
+			return nil
+		}
+		defer meta.RemoveStatusCondition(r.dk.Conditions(), extensionsSelfSignedTLSSecretConditionType)
+
+		return r.deleteSelfSignedTLSSecret(ctx)
 	}
 
-	return r.reconcileTLSRefName(ctx)
+	return r.reconcileSelfSignedTLSSecret(ctx)
 }
 
-func (r *reconciler) reconcileSelfSigned(ctx context.Context) error {
+func (r *reconciler) reconcileSelfSignedTLSSecret(ctx context.Context) error {
 	query := k8ssecret.Query(r.client, r.client, log)
 
 	_, err := query.Get(ctx, types.NamespacedName{
@@ -52,13 +59,18 @@ func (r *reconciler) reconcileSelfSigned(ctx context.Context) error {
 	})
 
 	if err != nil && k8serrors.IsNotFound(err) {
-		return r.createSelfSignedTLSSecret(ctx)
+		err = r.createSelfSignedTLSSecret(ctx)
+		if err != nil {
+			return err
+		}
+
+		conditions.SetSecretCreated(r.dk.Conditions(), extensionsSelfSignedTLSSecretConditionType, getSelfSignedTLSSecretName(r.dk.Name))
 	}
 
 	return err
 }
 
-func (r *reconciler) reconcileTLSRefName(ctx context.Context) error {
+func (r *reconciler) deleteSelfSignedTLSSecret(ctx context.Context) error {
 	query := k8ssecret.Query(r.client, r.client, log)
 
 	return query.Delete(ctx, &corev1.Secret{
