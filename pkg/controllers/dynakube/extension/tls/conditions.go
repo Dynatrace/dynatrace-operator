@@ -1,3 +1,3 @@
 package tls
 
-const extensionsSelfSignedTLSConditionType string = "ExtensionsSelfSignedTLS"
+const extensionsSelfSignedTLSSecretConditionType string = "ExtensionsSelfSignedTLSSecret"

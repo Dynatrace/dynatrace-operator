@@ -39,10 +39,10 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
 	if !r.dk.IsExtensionsEnabled() || !r.dk.ExtensionsNeedsSelfSignedTLS() {
-		if meta.FindStatusCondition(*r.dk.Conditions(), extensionsSelfSignedTLSConditionType) == nil {
+		if meta.FindStatusCondition(*r.dk.Conditions(), extensionsSelfSignedTLSSecretConditionType) == nil {
 			return nil
 		}
-		defer meta.RemoveStatusCondition(r.dk.Conditions(), extensionsSelfSignedTLSConditionType)
+		defer meta.RemoveStatusCondition(r.dk.Conditions(), extensionsSelfSignedTLSSecretConditionType)
 
 		return r.deleteSelfSignedTLSSecret(ctx)
 	}
@@ -64,7 +64,7 @@ func (r *reconciler) reconcileSelfSignedTLSSecret(ctx context.Context) error {
 			return err
 		}
 
-		conditions.SetSecretCreated(r.dk.Conditions(), extensionsSelfSignedTLSConditionType, getSelfSignedTLSSecretName(r.dk.Name))
+		conditions.SetSecretCreated(r.dk.Conditions(), extensionsSelfSignedTLSSecretConditionType, getSelfSignedTLSSecretName(r.dk.Name))
 	}
 
 	return err

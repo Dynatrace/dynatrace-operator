@@ -70,7 +70,7 @@ func TestReconcile(t *testing.T) {
 
 		conditionResult := (*dk.Conditions())[0]
 
-		assert.Equal(t, extensionsSelfSignedTLSConditionType, conditionResult.Type)
+		assert.Equal(t, extensionsSelfSignedTLSSecretConditionType, conditionResult.Type)
 		assert.Equal(t, conditions.SecretCreatedReason, conditionResult.Reason)
 		assert.Equal(t, metav1.ConditionTrue, conditionResult.Status)
 		assert.Equal(t, getSelfSignedTLSSecretName(dk.Name)+" created", conditionResult.Message)
@@ -191,7 +191,7 @@ func mockSelfSignedTLSSecret(t *testing.T, client client.Client, dk *dynakube.Dy
 	err := client.Create(context.Background(), &tlsSecret)
 	require.NoError(t, err)
 
-	conditions.SetSecretCreated(dk.Conditions(), extensionsSelfSignedTLSConditionType, getSelfSignedTLSSecretName(dk.Name))
+	conditions.SetSecretCreated(dk.Conditions(), extensionsSelfSignedTLSSecretConditionType, getSelfSignedTLSSecretName(dk.Name))
 
 	return client
 }
