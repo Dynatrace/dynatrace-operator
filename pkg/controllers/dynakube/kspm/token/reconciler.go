@@ -8,6 +8,7 @@ import (
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -61,23 +62,11 @@ func ensureKSPMSecret(ctx context.Context, client client.Client, apiReader clien
 }
 
 func removeKSPMSecret(ctx context.Context, client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) error {
-	kspmSecretName := dk.Name + "-" + dynakube.KSPMSecretKey
-
 	query := k8ssecret.Query(client, apiReader, log)
-	secret, err := query.Get(ctx, types.NamespacedName{Name: kspmSecretName, Namespace: dk.Namespace})
+	err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.GetKSPMSecretName(), Namespace: dk.Namespace}})
 
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			return nil
-		}
-
-		return err
-	}
-
-	err = query.Delete(ctx, secret)
-
-	if err != nil {
-		log.Info("could not delete kspm token", "name", secret.Name)
+		log.Info("could not delete kspm token", "name", dk.GetKSPMSecretName())
 
 		return err
 	}
