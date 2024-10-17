@@ -97,6 +97,23 @@ func TestReconcile(t *testing.T) {
 		require.True(t, k8serrors.IsNotFound(err))
 		require.Empty(t, secret)
 	})
+	t.Run("self-signed tls secret is deleted if spec.extensions is not enabled", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Extensions.Enabled = false
+
+		fakeClient := fake.NewClient()
+		fakeClient = mockSelfSignedTLSSecret(t, fakeClient, dk)
+
+		reconciler := NewReconciler(fakeClient, fakeClient, dk)
+
+		reconciler.Reconcile(context.Background())
+
+		var secret corev1.Secret
+		err := fakeClient.Get(context.Background(), SelfSignedTLSSecretObjectKey, &secret)
+
+		require.True(t, k8serrors.IsNotFound(err))
+		require.Equal(t, corev1.Secret{}, secret)
+	})
 }
 
 func TestGetTLSSecretName(t *testing.T) {
