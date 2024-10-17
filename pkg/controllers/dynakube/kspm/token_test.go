@@ -22,7 +22,7 @@ func TestTokenCreation(t *testing.T) {
 
 		dk := createDynaKube(true)
 
-		err := ensureKSPMToken(ctx, clt, clt, &dk)
+		err := ensureKSPMSecret(ctx, clt, clt, &dk)
 		require.NoError(t, err)
 
 		var secret v1.Secret
@@ -44,7 +44,7 @@ func TestTokenCreation(t *testing.T) {
 		}
 		clt := dtfake.NewClient(objs...)
 
-		err := ensureKSPMToken(ctx, clt, clt, &dk)
+		err := ensureKSPMSecret(ctx, clt, clt, &dk)
 		require.NoError(t, err)
 
 		var secret v1.Secret
@@ -66,7 +66,7 @@ func TestTokenCreation(t *testing.T) {
 		}
 		clt := dtfake.NewClient(objs...)
 
-		err := removeKSPMToken(ctx, clt, clt, &dk)
+		err := removeKSPMSecret(ctx, clt, clt, &dk)
 		require.NoError(t, err)
 
 		var secret v1.Secret

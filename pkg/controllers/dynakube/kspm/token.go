@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func ensureKSPMToken(ctx context.Context, client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) error {
+func ensureKSPMSecret(ctx context.Context, client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) error {
 	kspmSecretName := dk.Name + "-" + consts.KSPMSecretKey
 
 	query := k8ssecret.Query(client, apiReader, log)
@@ -39,7 +39,7 @@ func ensureKSPMToken(ctx context.Context, client client.Client, apiReader client
 	return nil
 }
 
-func removeKSPMToken(ctx context.Context, client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) error {
+func removeKSPMSecret(ctx context.Context, client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) error {
 	kspmSecretName := dk.Name + "-" + consts.KSPMSecretKey
 
 	query := k8ssecret.Query(client, apiReader, log)
@@ -49,7 +49,7 @@ func removeKSPMToken(ctx context.Context, client client.Client, apiReader client
 		if k8serrors.IsNotFound(err) {
 			return nil
 		}
-		
+
 		return err
 	}
 
