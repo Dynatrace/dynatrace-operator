@@ -18,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmodule"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
@@ -78,6 +79,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, co
 		extensionReconcilerBuilder:          extension.NewReconciler,
 		logModuleReconcilerBuilder:          logmodule.NewReconciler,
 		proxyReconcilerBuilder:              proxy.NewReconciler,
+		kspmReconcilerBuilder:               kspm.NewReconciler,
 	}
 }
 
@@ -113,6 +115,7 @@ type Controller struct {
 	extensionReconcilerBuilder          extension.ReconcilerBuilder
 	logModuleReconcilerBuilder          logmodule.ReconcilerBuilder
 	proxyReconcilerBuilder              proxy.ReconcilerBuilder
+	kspmReconcilerBuilder               kspm.ReconcilerBuilder
 
 	tokens            token.Tokens
 	operatorNamespace string
@@ -391,6 +394,15 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		}
 
 		log.Info("could not reconcile OneAgent")
+
+		componentErrors = append(componentErrors, err)
+	}
+
+	kspmReconciler := controller.kspmReconcilerBuilder(controller.client, controller.apiReader, dk)
+
+	err = kspmReconciler.Reconcile(ctx)
+	if err != nil {
+		log.Info("could not reconcile kspm")
 
 		componentErrors = append(componentErrors, err)
 	}
