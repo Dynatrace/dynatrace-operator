@@ -28,12 +28,12 @@ rules:
       - get
       - list
       - watch
+      - update
   - apiGroups:
       - dynatrace.com
     resources:
       - dynakubes/finalizers
       - dynakubes/status
-      - edgeconnects/finalizers
       - edgeconnects/status
     verbs:
       - update
