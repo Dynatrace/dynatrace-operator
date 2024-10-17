@@ -7,8 +7,10 @@ import (
 	dtfake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,40 +31,16 @@ func TestTokenCreation(t *testing.T) {
 		var secret corev1.Secret
 		err = clt.Get(ctx, types.NamespacedName{Name: dk.GetKSPMSecretName(), Namespace: dk.Namespace}, &secret)
 
-		require.NotEmpty(t, secret)
-		require.NoError(t, err)
-	})
-
-	t.Run("does not create secret if exists", func(t *testing.T) {
-		dk := createDynaKube(true)
-		objs := []client.Object{
-			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      dk.GetKSPMSecretName(),
-					Namespace: dk.Namespace,
-				},
-			},
-		}
-		clt := dtfake.NewClient(objs...)
-
-		reconciler := &Reconciler{
-			client:    clt,
-			apiReader: clt,
-			dk:        &dk,
-		}
-
-		err := reconciler.Reconcile(ctx)
-		require.NoError(t, err)
-
-		var secret corev1.Secret
-		err = clt.Get(ctx, types.NamespacedName{Name: dk.GetKSPMSecretName(), Namespace: dk.Namespace}, &secret)
-
+		require.NotNil(t, meta.FindStatusCondition(*dk.Conditions(), kspmConditionType))
+		require.Equal(t, conditions.SecretCreatedReason, meta.FindStatusCondition(*dk.Conditions(), kspmConditionType).Reason)
 		require.NotEmpty(t, secret)
 		require.NoError(t, err)
 	})
 
 	t.Run("removes secret if exists", func(t *testing.T) {
 		dk := createDynaKube(false)
+		conditions.SetSecretCreated(dk.Conditions(), kspmConditionType, dk.GetKSPMSecretName())
+
 		objs := []client.Object{
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{

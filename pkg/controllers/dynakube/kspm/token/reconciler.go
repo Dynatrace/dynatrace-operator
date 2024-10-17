@@ -4,10 +4,12 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -47,21 +49,30 @@ func ensureKSPMSecret(ctx context.Context, client client.Client, apiReader clien
 		secretConfig, err := generateKSPMTokenSecret(dk.GetKSPMSecretName(), dk)
 
 		if err != nil {
+			conditions.SetSecretGenFailed(dk.Conditions(), kspmConditionType, err)
+
 			return err
 		}
 
 		err = query.Create(ctx, secretConfig)
 		if err != nil {
 			log.Info("could not create secret for kspm token", "name", secretConfig.Name)
+			conditions.SetKubeApiError(dk.Conditions(), kspmConditionType, err)
 
 			return err
 		}
 	}
 
+	conditions.SetSecretCreated(dk.Conditions(), kspmConditionType, dk.GetKSPMSecretName())
+
 	return nil
 }
 
 func removeKSPMSecret(ctx context.Context, client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) error {
+	if meta.FindStatusCondition(*dk.Conditions(), kspmConditionType) == nil {
+		return nil // no condition == nothing is there to clean up
+	}
+
 	query := k8ssecret.Query(client, apiReader, log)
 	err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.GetKSPMSecretName(), Namespace: dk.Namespace}})
 
@@ -70,6 +81,8 @@ func removeKSPMSecret(ctx context.Context, client client.Client, apiReader clien
 
 		return err
 	}
+
+	meta.RemoveStatusCondition(dk.Conditions(), kspmConditionType)
 
 	return nil
 }
