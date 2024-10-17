@@ -44,7 +44,7 @@ func ensureKSPMSecret(ctx context.Context, client client.Client, apiReader clien
 	_, err := query.Get(ctx, types.NamespacedName{Name: dk.GetKSPMSecretName(), Namespace: dk.Namespace})
 
 	if err != nil && k8serrors.IsNotFound(err) {
-		log.Info("creating new token for kspm", "error", err.Error())
+		log.Info("creating new token for kspm")
 
 		secretConfig, err := generateKSPMTokenSecret(dk.GetKSPMSecretName(), dk)
 
