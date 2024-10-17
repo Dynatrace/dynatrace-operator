@@ -23,17 +23,12 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 	string,
 	error,
 ) {
-	tenantUUID, err := dk.TenantUUIDFromApiUrl()
-	if err != nil {
-		return "", err
-	}
-
 	targetImage := dk.CodeModulesImage()
 	// An image URI often contains one or several /-s, which is problematic when trying to use it as a folder name.
 	// Easiest to just base64 encode it
 	base64Image := base64.StdEncoding.EncodeToString([]byte(targetImage))
 	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(base64Image)
-	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dk.GetName())
+	targetConfigDir := provisioner.path.AgentConfigDir(dk.GetName())
 
 	props := &image.Properties{
 		ImageUri:     targetImage,
@@ -62,18 +57,13 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 }
 
 func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dk dynakube.DynaKube, dtc dtclient.Client, latestProcessModuleConfig *dtclient.ProcessModuleConfig) (string, error) {
-	tenantUUID, err := dk.TenantUUIDFromApiUrl()
-	if err != nil {
-		return "", err
-	}
-
 	targetVersion := dk.CodeModulesVersion()
 	urlInstaller := provisioner.urlInstallerBuilder(provisioner.fs, dtc, getUrlProperties(targetVersion, provisioner.path))
 
 	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(targetVersion)
-	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dk.GetName())
+	targetConfigDir := provisioner.path.AgentConfigDir(dk.GetName())
 
-	err = provisioner.installAgent(ctx, urlInstaller, dk, targetDir, targetVersion)
+	err := provisioner.installAgent(ctx, urlInstaller, dk, targetDir, targetVersion)
 	if err != nil {
 		return "", err
 	}

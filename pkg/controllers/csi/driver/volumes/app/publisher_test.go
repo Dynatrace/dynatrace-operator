@@ -344,7 +344,7 @@ func mockUrlDynakubeMetadata(t *testing.T, publisher *AppVolumePublisher) {
 }
 
 func mockSharedRuxitAgentProcConf(t *testing.T, publisher *AppVolumePublisher, content ...byte) {
-	file, err := publisher.fs.Create(publisher.path.AgentSharedRuxitAgentProcConf(testTenantUUID, testDynakubeName))
+	file, err := publisher.fs.Create(publisher.path.AgentSharedRuxitAgentProcConf(testDynakubeName))
 	defer func() { _ = file.Close() }()
 	require.NoError(t, err)
 
