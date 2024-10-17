@@ -50,9 +50,10 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return nil
 		}
 
+		defer meta.RemoveStatusCondition(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
+
 		secret, _ := k8ssecret.Build(r.dk, r.dk.ActiveGate().GetAuthTokenSecretName(), nil)
 		_ = r.deleteSecret(ctx, secret)
-		_ = meta.RemoveStatusCondition(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
 
 		return nil
 	}
