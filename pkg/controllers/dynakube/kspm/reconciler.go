@@ -35,7 +35,7 @@ type Reconciler struct {
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if r.dk.IsKSPMEnabled() {
 		return ensureKSPMToken(ctx, r.client, r.apiReader, r.dk)
+	} else {
+		return removeKSPMToken(ctx, r.client, r.apiReader, r.dk)
 	}
-
-	return nil
 }

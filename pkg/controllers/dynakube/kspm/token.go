@@ -39,6 +39,31 @@ func ensureKSPMToken(ctx context.Context, client client.Client, apiReader client
 	return nil
 }
 
+func removeKSPMToken(ctx context.Context, client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) error {
+	kspmSecretName := dk.Name + "-" + consts.KSPMSecretKey
+
+	query := k8ssecret.Query(client, apiReader, log)
+	secret, err := query.Get(ctx, types.NamespacedName{Name: kspmSecretName, Namespace: dk.Namespace})
+
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			return nil
+		}
+		
+		return err
+	}
+
+	err = query.Delete(ctx, secret)
+
+	if err != nil {
+		log.Info("could not delete kspm token", "name", secret.Name)
+
+		return err
+	}
+
+	return nil
+}
+
 func generateKSPMTokenSecret(name string, dk *dynakube.DynaKube) (secret *v1.Secret, err error) {
 	newToken, err := dttoken.New("dt0n01")
 	if err != nil {

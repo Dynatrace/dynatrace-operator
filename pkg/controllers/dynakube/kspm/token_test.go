@@ -53,4 +53,26 @@ func TestTokenCreation(t *testing.T) {
 		require.NotEmpty(t, secret)
 		require.NoError(t, err)
 	})
+
+	t.Run("removes secret if exists", func(t *testing.T) {
+		dk := createDynaKube(true)
+		objs := []client.Object{
+			&v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      dk.Name + "-" + consts.KSPMSecretKey,
+					Namespace: dk.Namespace,
+				},
+			},
+		}
+		clt := dtfake.NewClient(objs...)
+
+		err := removeKSPMToken(ctx, clt, clt, &dk)
+		require.NoError(t, err)
+
+		var secret v1.Secret
+		err = clt.Get(ctx, types.NamespacedName{Name: dk.Name + "-" + consts.KSPMSecretKey, Namespace: dk.Namespace}, &secret)
+
+		require.Empty(t, secret)
+		require.Error(t, err)
+	})
 }
