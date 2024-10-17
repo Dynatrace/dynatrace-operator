@@ -29,7 +29,6 @@ tests:
             - apiGroups:
                 - dynatrace.com
               resources:
-                - dynakubes/finalizers
                 - dynakubes/status
                 - edgeconnects/status
               verbs:
