@@ -27,6 +27,11 @@ import (
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 )
 
+const (
+	diagExecutorLogFile = "var/lib/dynatrace/remotepluginmodule/log/extensions/diagnostics/diag_executor.log"
+	lsLogFile           = "ls.txt"
+)
+
 type requiredFiles struct {
 	t              *testing.T
 	ctx            context.Context
@@ -54,6 +59,7 @@ func (r requiredFiles) collectRequiredFiles() []string {
 	requiredFiles = append(requiredFiles, support_archive.SupportArchiveOutputFileName)
 	requiredFiles = append(requiredFiles, r.getRequiredPodFiles(labels.AppNameLabel, true)...)
 	requiredFiles = append(requiredFiles, r.getRequiredPodFiles(labels.AppManagedByLabel, r.collectManaged)...)
+	requiredFiles = append(requiredFiles, r.getRequiredPodDiagnosticLogFiles(r.collectManaged)...)
 	requiredFiles = append(requiredFiles, r.getRequiredReplicaSetFiles()...)
 	requiredFiles = append(requiredFiles, r.getRequiredServiceFiles()...)
 	requiredFiles = append(requiredFiles, r.getRequiredWorkloadFiles()...)
@@ -91,6 +97,30 @@ func (r requiredFiles) getRequiredPodFiles(labelKey string, collectManaged bool)
 					fmt.Sprintf("%s/%s/%s.log", support_archive.LogsDirectoryName, operatorPod.Name, container.Name))
 			}
 		}
+	}
+
+	return requiredFiles
+}
+
+func (r requiredFiles) getRequiredPodDiagnosticLogFiles(collectManaged bool) []string {
+	requiredFiles := make([]string, 0)
+
+	if !collectManaged {
+		return requiredFiles
+	}
+
+	pods := pod.List(r.t, r.ctx, r.resources, r.dk.Namespace)
+
+	podList := functional.Filter(pods.Items, func(podItem corev1.Pod) bool {
+		appNamelabel, okAppNamelabel := podItem.Labels[labels.AppNameLabel]
+		appManagedByLabel, okAppManagedByLabel := podItem.Labels[labels.AppManagedByLabel]
+
+		return okAppNamelabel && appNamelabel == support_archive.LabelEecPodName && okAppManagedByLabel && appManagedByLabel == operator.DeploymentName
+	})
+
+	for _, pod := range podList {
+		requiredFiles = append(requiredFiles, support_archive.BuildZipFilePath(pod.Name, diagExecutorLogFile))
+		requiredFiles = append(requiredFiles, support_archive.BuildZipFilePath(pod.Name, lsLogFile))
 	}
 
 	return requiredFiles
