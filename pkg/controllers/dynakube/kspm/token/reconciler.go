@@ -61,9 +61,9 @@ func ensureKSPMSecret(ctx context.Context, client client.Client, apiReader clien
 
 			return err
 		}
-	}
 
-	conditions.SetSecretCreated(dk.Conditions(), kspmConditionType, dk.GetKSPMSecretName())
+		conditions.SetSecretCreated(dk.Conditions(), kspmConditionType, dk.GetKSPMSecretName())
+	}
 
 	return nil
 }
