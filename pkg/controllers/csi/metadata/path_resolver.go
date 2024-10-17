@@ -19,6 +19,7 @@ func (pr PathResolver) OsAgentDir(tenantUUID string) string {
 	return filepath.Join(pr.TenantDir(tenantUUID), "osagent")
 }
 
+// Deprecated
 func (pr PathResolver) AgentBinaryDir(tenantUUID string) string {
 	return filepath.Join(pr.TenantDir(tenantUUID), dtcsi.AgentBinaryDir)
 }
@@ -31,6 +32,11 @@ func (pr PathResolver) AgentBinaryDirForVersion(tenantUUID string, version strin
 func (pr PathResolver) AgentSharedBinaryDirBase() string {
 	return filepath.Join(pr.RootDir, dtcsi.SharedAgentBinDir)
 }
+
+func (pr PathResolver) LatestAgentBinaryForDynaKube(dynakubeName string) string {
+	return filepath.Join(pr.RootDir, dynakubeName, "latest-codemodule")
+}
+
 
 func (pr PathResolver) AgentTempUnzipRootDir() string {
 	return filepath.Join(pr.RootDir, "tmp_zip")
