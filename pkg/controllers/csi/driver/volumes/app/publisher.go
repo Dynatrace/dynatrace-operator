@@ -177,7 +177,7 @@ func (publisher *AppVolumePublisher) prepareUpperDir(bindCfg *csivolumes.BindCon
 		return "", errors.WithMessagef(err, "failed create overlay upper directory agent config directory structure, path: %s", upperDir)
 	}
 
-	srcAgentConfPath := publisher.path.AgentSharedRuxitAgentProcConf(bindCfg.TenantUUID, volumeCfg.DynakubeName)
+	srcAgentConfPath := publisher.path.AgentSharedRuxitAgentProcConf(volumeCfg.DynakubeName)
 	srcFile, err := publisher.fs.Open(srcAgentConfPath)
 
 	if err != nil {
