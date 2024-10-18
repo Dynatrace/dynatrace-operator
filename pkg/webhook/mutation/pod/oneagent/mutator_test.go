@@ -212,7 +212,7 @@ func TestNoInjectionMutate(t *testing.T) {
 	assert.Equal(t, "false", request.Pod.Annotations[dtwebhook.AnnotationOneAgentInjected])
 	assert.Contains(t, request.Pod.Annotations[dtwebhook.AnnotationOneAgentReason], EmptyConnectionInfoReason)
 	assert.Contains(t, request.Pod.Annotations[dtwebhook.AnnotationOneAgentReason], EmptyTenantUUIDReason)
-	assert.Contains(t, request.Pod.Annotations[dtwebhook.AnnotationOneAgentReason], EmptyCodeModulesVersionAndImageReason)
+	assert.Contains(t, request.Pod.Annotations[dtwebhook.AnnotationOneAgentReason], UnknownCodeModuleReason)
 
 	assert.Empty(t, request.InstallContainer.Env)
 	assert.Empty(t, request.InstallContainer.VolumeMounts)
@@ -350,7 +350,7 @@ func injectionNotPossibleWithoutCodeModulesVersion(t *testing.T) {
 	ok, reason := mutator.isInjectionPossible(request)
 
 	require.False(t, ok)
-	require.Contains(t, reason, EmptyCodeModulesVersionAndImageReason)
+	require.Contains(t, reason, UnknownCodeModuleReason)
 }
 
 func injectionNotPossibleWithMultipleIssues(t *testing.T) {
@@ -366,7 +366,7 @@ func injectionNotPossibleWithMultipleIssues(t *testing.T) {
 	require.False(t, ok)
 	require.Contains(t, reason, EmptyTenantUUIDReason)
 	require.Contains(t, reason, EmptyConnectionInfoReason)
-	require.Contains(t, reason, EmptyCodeModulesVersionAndImageReason)
+	require.Contains(t, reason, UnknownCodeModuleReason)
 }
 
 func createTestPodMutator(objects []client.Object) *Mutator {

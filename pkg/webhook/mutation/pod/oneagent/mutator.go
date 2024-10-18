@@ -131,9 +131,9 @@ func (mut *Mutator) isInjectionPossible(request *dtwebhook.MutationRequest) (boo
 	}
 
 	if dk.CodeModulesVersion() == "" && dk.CodeModulesImage() == "" {
-		log.Info("codemodules version and image are not available, OneAgent cannot be injected", "pod", request.PodName())
+		log.Info("information about the codemodules (version or image) is not available, OneAgent cannot be injected", "pod", request.PodName())
 
-		reasons = append(reasons, EmptyCodeModulesVersionAndImageReason)
+		reasons = append(reasons, UnknownCodeModuleReason)
 	}
 
 	if len(reasons) > 0 {
