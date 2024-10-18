@@ -93,12 +93,12 @@ func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, agentI
 		eventRecorder.sendInstalledAgentVersionEvent(targetVersion, dk.GetName())
 	}
 
-	symLinkPath := provisioner.path.LatestAgentBinaryForDynaKube(dk.GetName())
-	if err := symlink.RemoveSymLink(provisioner.fs, symLinkPath); err != nil {
+	symlinkPath := provisioner.path.LatestAgentBinaryForDynaKube(dk.GetName())
+	if err := symlink.RemoveSymlink(provisioner.fs, symlinkPath); err != nil {
 		return err
 	}
 
-	err = symlink.CreateSymlinkForLatestVersion(provisioner.fs, dk, targetDir, symLinkPath)
+	err = symlink.CreateSymlinkForLatestVersion(provisioner.fs, dk, targetDir, symlinkPath)
 	if err != nil {
 		return err
 	}

@@ -70,11 +70,11 @@ func CreateSymlinkForLatestVersion(fs afero.Fs, dk dynakube.DynaKube, latestVers
 	return nil
 }
 
-func RemoveSymLink(fs afero.Fs, symLinkPath string) error {
-	if info, _ := fs.Stat(symLinkPath); info != nil {
+func RemoveSymlink(fs afero.Fs, symlinkPath string) error {
+	if info, _ := fs.Stat(symlinkPath); info != nil {
 		log.Info("symlink to codemodule directory exists, removing it due to the possibility of the agent being installed again")
 
-		if err := fs.RemoveAll(symLinkPath); err != nil {
+		if err := fs.RemoveAll(symlinkPath); err != nil {
 			return err
 		}
 	}
