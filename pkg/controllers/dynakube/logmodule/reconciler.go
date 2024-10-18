@@ -51,7 +51,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if r.dk.Status.KubernetesClusterMEID == "" || r.dk.Status.KubernetesClusterName == "" {
+	if !r.isMEConfigured() {
 		return errors.New("the status of the DynaKube is missing information about the kubernetes monitored-entity, skipping logmodule deployment")
 	}
 
@@ -71,4 +71,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (r *Reconciler) isMEConfigured() bool {
+	return r.dk.Status.KubernetesClusterMEID != "" && r.dk.Status.KubernetesClusterName != ""
 }
