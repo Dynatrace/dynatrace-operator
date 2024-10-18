@@ -331,6 +331,25 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling app injection")
 
+	log.Info("start reconciling LogModule")
+
+	logModuleReconciler := controller.logModuleReconcilerBuilder(controller.client, controller.apiReader, dynatraceClient, dk)
+
+	err = logModuleReconciler.Reconcile(ctx)
+	if err != nil {
+		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
+			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
+			// this situation will clear itself after AG has been started
+			controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
+
+			return goerrors.Join(componentErrors...)
+		}
+
+		log.Info("could not reconcile LogModule")
+
+		componentErrors = append(componentErrors, err)
+	}
+
 	err = controller.injectionReconcilerBuilder(controller.client,
 		controller.apiReader,
 		dynatraceClient,
@@ -347,25 +366,6 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		}
 
 		log.Info("could not reconcile app injection")
-
-		componentErrors = append(componentErrors, err)
-	}
-
-	log.Info("start reconciling LogModule")
-
-	logModuleReconciler := controller.logModuleReconcilerBuilder(controller.client, controller.apiReader, dynatraceClient, dk)
-
-	err = logModuleReconciler.Reconcile(ctx)
-	if err != nil {
-		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
-			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
-			// this situation will clear itself after AG has been started
-			controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
-
-			return goerrors.Join(componentErrors...)
-		}
-
-		log.Info("could not reconcile LogModule")
 
 		componentErrors = append(componentErrors, err)
 	}
