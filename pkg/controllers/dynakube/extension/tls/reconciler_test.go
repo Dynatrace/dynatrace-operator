@@ -60,7 +60,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var secret corev1.Secret
-		fakeClient.Get(context.Background(), SelfSignedTLSSecretObjectKey, &secret)
+		err = fakeClient.Get(context.Background(), SelfSignedTLSSecretObjectKey, &secret)
 
 		require.NoError(t, err)
 		assert.NotEmpty(t, secret)
