@@ -607,3 +607,17 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].image
           value: "some-repo:v1.0.1"
+
+  - it: debug flag disables high availability and security context
+    set:
+      platform: kubernetes
+      image: image-name
+      debug: true
+      webhook.highAvailability: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value: null
+      - equal:
+          path: spec.replicas
+          value: 1

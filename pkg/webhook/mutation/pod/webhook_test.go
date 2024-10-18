@@ -195,7 +195,7 @@ func TestDoubleInjection(t *testing.T) {
 	// simulate initial mutation, annotations + init-container <== skip in case on communication hosts
 	pod.Annotations = map[string]string{
 		dtwebhook.AnnotationOneAgentInjected: "false",
-		dtwebhook.AnnotationOneAgentReason:   dtwebhook.EmptyConnectionInfoReason,
+		dtwebhook.AnnotationOneAgentReason:   oamutation.EmptyConnectionInfoReason,
 	}
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{Name: dtwebhook.InstallContainerName})
 
