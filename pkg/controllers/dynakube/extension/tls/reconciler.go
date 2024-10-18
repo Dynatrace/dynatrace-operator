@@ -36,14 +36,14 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	if r.dk.ExtensionsNeedsSelfSignedTLS() {
-		return r.reconcileSelfSigned(ctx)
+	if r.dk.IsExtensionsEnabled() && r.dk.ExtensionsNeedsSelfSignedTLS() {
+		return r.reconcileSelfSignedTLSSecret(ctx)
 	}
 
-	return r.reconcileTLSRefName(ctx)
+	return r.deleteSelfSignedTLSSecret(ctx)
 }
 
-func (r *reconciler) reconcileSelfSigned(ctx context.Context) error {
+func (r *reconciler) reconcileSelfSignedTLSSecret(ctx context.Context) error {
 	query := k8ssecret.Query(r.client, r.client, log)
 
 	_, err := query.Get(ctx, types.NamespacedName{
@@ -58,7 +58,7 @@ func (r *reconciler) reconcileSelfSigned(ctx context.Context) error {
 	return err
 }
 
-func (r *reconciler) reconcileTLSRefName(ctx context.Context) error {
+func (r *reconciler) deleteSelfSignedTLSSecret(ctx context.Context) error {
 	query := k8ssecret.Query(r.client, r.client, log)
 
 	return query.Delete(ctx, &corev1.Secret{
