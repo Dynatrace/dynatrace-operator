@@ -379,15 +379,15 @@ func TestReconcileComponents(t *testing.T) {
 		mockExtensionReconciler := controllermock.NewReconciler(t)
 		mockExtensionReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
-		mockInjectionReconciler := injectionmock.NewReconciler(t)
-		mockInjectionReconciler.On("Reconcile", mock.Anything).Return(oaconnectioninfo.NoOneAgentCommunicationHostsError)
+		mockLogmoduleReconciler := injectionmock.NewReconciler(t)
+		mockLogmoduleReconciler.On("Reconcile", mock.Anything).Return(oaconnectioninfo.NoOneAgentCommunicationHostsError)
 
 		controller := &Controller{
 			client:                      fakeClient,
 			apiReader:                   fakeClient,
 			fs:                          afero.Afero{Fs: afero.NewMemMapFs()},
 			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
-			injectionReconcilerBuilder:  createInjectionReconcilerBuilder(mockInjectionReconciler),
+			logModuleReconcilerBuilder:  createLogModuleReconcilerBuilder(mockLogmoduleReconciler),
 			extensionReconcilerBuilder:  createExtensionReconcilerBuilder(mockExtensionReconciler),
 		}
 		mockedDtc := dtclientmock.NewClient(t)
