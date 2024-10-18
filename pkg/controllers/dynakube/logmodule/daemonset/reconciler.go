@@ -39,13 +39,13 @@ func NewReconciler(clt client.Client,
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.NeedsLogModule() {
+	if !r.dk.LogMonitoring().Needed() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}
 
 		query := daemonset.Query(r.client, r.apiReader, log)
-		err := query.Delete(ctx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: r.dk.LogModuleDaemonSetName(), Namespace: r.dk.Namespace}})
+		err := query.Delete(ctx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: r.dk.LogMonitoring().GetDaemonSetName(), Namespace: r.dk.Namespace}})
 
 		if err != nil {
 			log.Error(err, "failed to clean-up LogModule config-secret")
@@ -73,8 +73,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if updated {
-		conditions.SetDaemonSetOutdated(r.dk.Conditions(), conditionType, r.dk.LogModuleDaemonSetName()) // needed to reset the timestamp
-		conditions.SetDaemonSetCreated(r.dk.Conditions(), conditionType, r.dk.LogModuleDaemonSetName())
+		conditions.SetDaemonSetOutdated(r.dk.Conditions(), conditionType, r.dk.LogMonitoring().GetDaemonSetName()) // needed to reset the timestamp
+		conditions.SetDaemonSetCreated(r.dk.Conditions(), conditionType, r.dk.LogMonitoring().GetDaemonSetName())
 	}
 
 	return nil
@@ -90,15 +90,15 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 
 	maxUnavailable := intstr.FromInt(r.dk.FeatureOneAgentMaxUnavailable())
 
-	ds, err := daemonset.Build(r.dk, r.dk.LogModuleDaemonSetName(), getContainer(*r.dk),
+	ds, err := daemonset.Build(r.dk, r.dk.LogMonitoring().GetDaemonSetName(), getContainer(*r.dk),
 		daemonset.SetInitContainer(getInitContainer(*r.dk)),
-		daemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.LogModuleTemplates().Labels),
-		daemonset.SetAllAnnotations(nil, r.dk.LogModuleTemplates().Annotations),
+		daemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.LogMonitoringTemplates().Labels),
+		daemonset.SetAllAnnotations(nil, r.dk.LogMonitoringTemplates().Annotations),
 		daemonset.SetServiceAccount(serviceAccountName),
-		daemonset.SetDNSPolicy(r.dk.LogModuleTemplates().DNSPolicy),
+		daemonset.SetDNSPolicy(r.dk.LogMonitoringTemplates().DNSPolicy),
 		daemonset.SetAffinity(node.Affinity()),
-		daemonset.SetPriorityClass(r.dk.LogModuleTemplates().PriorityClassName),
-		daemonset.SetTolerations(r.dk.LogModuleTemplates().Tolerations),
+		daemonset.SetPriorityClass(r.dk.LogMonitoringTemplates().PriorityClassName),
+		daemonset.SetTolerations(r.dk.LogMonitoringTemplates().Tolerations),
 		daemonset.SetPullSecret(r.dk.ImagePullSecretReferences()...),
 		daemonset.SetUpdateStrategy(appsv1.DaemonSetUpdateStrategy{
 			RollingUpdate: &appsv1.RollingUpdateDaemonSet{

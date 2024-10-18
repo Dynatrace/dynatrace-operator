@@ -39,7 +39,7 @@ func isExtensionsModuleDisabled(_ context.Context, v *Validator, dk *dynakube.Dy
 }
 
 func isLogModuleModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if dk.NeedsLogModule() && !v.modules.LogModule {
+	if dk.LogMonitoring().Needed() && !v.modules.LogModule {
 		return errorLogModuleModuleDisabled
 	}
 

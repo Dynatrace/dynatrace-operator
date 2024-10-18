@@ -1,15 +1,24 @@
-package dynakube
+package logmonitoring
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	corev1 "k8s.io/api/core/v1"
 )
 
-type LogModuleSpec struct {
+type LogMonitoring struct {
+	*Spec
+}
+
+// +kubebuilder:object:generate=true
+type Spec struct {
+	name         string
+	templateSpec TemplateSpec
+
 	Enabled bool `json:"enabled"`
 }
 
-type LogModuleTemplateSpec struct {
+// +kubebuilder:object:generate=true
+type TemplateSpec struct {
 	// Add custom annotations to the LogModule pods
 	// +kubebuilder:validation:Optional
 	Annotations map[string]string `json:"annotations,omitempty"`

@@ -82,8 +82,8 @@ func conflictingOneAgentNodeSelector(ctx context.Context, dv *Validator, dk *dyn
 			}
 		}
 
-		if item.NeedsLogModule() {
-			if hasConflictingMatchLabels(oneAgentNodeSelector, item.LogModuleNodeSelector()) {
+		if item.LogMonitoring().Needed() {
+			if hasConflictingMatchLabels(oneAgentNodeSelector, item.LogMonitoringTemplates().NodeSelector) {
 				log.Info("requested dynakube has conflicting LogModule nodeSelector", "name", dk.Name, "namespace", dk.Namespace)
 
 				conflictingDynakubes[item.Name] = true

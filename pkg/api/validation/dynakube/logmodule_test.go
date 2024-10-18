@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -60,14 +61,14 @@ func createLogModuleDynakube(name, nodeSelector string) *dynakube.DynaKube {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testApiUrl,
-			LogModule: dynakube.LogModuleSpec{
+			LogMonitoring: logmonitoring.Spec{
 				Enabled: true,
 			},
 		},
 	}
 
 	if nodeSelector != "" {
-		dk.Spec.Templates.LogModule.NodeSelector = map[string]string{"node": nodeSelector}
+		dk.Spec.Templates.LogMonitoring.NodeSelector = map[string]string{"node": nodeSelector}
 	}
 
 	return dk

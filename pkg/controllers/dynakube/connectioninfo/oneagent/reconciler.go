@@ -43,7 +43,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dtc dtclient.Clie
 var NoOneAgentCommunicationHostsError = errors.New("no communication hosts for OneAgent are available")
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.NeedAppInjection() && !r.dk.NeedsOneAgent() && !r.dk.NeedsLogModule() {
+	if !r.dk.NeedAppInjection() && !r.dk.NeedsOneAgent() && !r.dk.LogMonitoring().Needed() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), oaConnectionInfoConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}

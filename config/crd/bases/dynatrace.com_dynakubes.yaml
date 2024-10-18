@@ -6978,8 +6978,8 @@ spec:
                             type: string
                         type: object
                     type: object
-                  logModule:
-                    description: Low-level configuration options for the LogModule
+                  logMonitoring:
+                    description: Low-level configuration options for the LogMonitoring
                       feature.
                     properties:
                       annotations:

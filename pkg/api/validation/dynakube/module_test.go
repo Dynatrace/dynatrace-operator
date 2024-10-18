@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
 )
@@ -87,7 +88,7 @@ func TestIsModuleDisabled(t *testing.T) {
 		},
 		{
 			title:           "logmodule module disabled but also configured in dk => error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{LogModule: dynakube.LogModuleSpec{Enabled: true}}},
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{LogMonitoring: logmonitoring.Spec{Enabled: true}}},
 			modules:         installconfig.Modules{LogModule: false},
 			moduleFunc:      isLogModuleModuleDisabled,
 			expectedMessage: errorLogModuleModuleDisabled,
@@ -101,7 +102,7 @@ func TestIsModuleDisabled(t *testing.T) {
 		},
 		{
 			title:           "logmodule module enabled and also configured => no error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{LogModule: dynakube.LogModuleSpec{Enabled: true}}},
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{LogMonitoring: logmonitoring.Spec{Enabled: true}}},
 			modules:         installconfig.Modules{LogModule: true},
 			moduleFunc:      isLogModuleModuleDisabled,
 			expectedMessage: "",

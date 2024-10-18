@@ -27,15 +27,15 @@ func TestGetInitArgs(t *testing.T) {
 	t.Run("add user defined args to existing init args", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
 		dk.Name = "dk-name-test"
-		dk.Spec.Templates.LogModule.Args = []string{
+		dk.Spec.Templates.LogMonitoring.Args = []string{
 			"customArg1",
 			"customArg2",
 		}
 		args := getInitArgs(dk)
 
-		assert.Len(t, args, expectedBaseInitArgsLen+len(dk.Spec.Templates.LogModule.Args))
+		assert.Len(t, args, expectedBaseInitArgsLen+len(dk.LogMonitoringTemplates().Args))
 
-		for _, customArg := range dk.Spec.Templates.LogModule.Args {
+		for _, customArg := range dk.LogMonitoringTemplates().Args {
 			assert.Contains(t, args, customArg)
 		}
 	})
