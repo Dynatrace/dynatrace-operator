@@ -6,7 +6,6 @@ import (
 	context "context"
 
 	dynakube "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-
 	mock "github.com/stretchr/testify/mock"
 )
 
