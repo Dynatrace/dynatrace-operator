@@ -222,7 +222,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run(`SecretConfigConditionType is set SecretCreated`, func(t *testing.T) {
+	t.Run(`consts.SecretConfigConditionType is set SecretCreated`, func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -252,13 +252,13 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, ec.Conditions())
 
-		condition := meta.FindStatusCondition(*ec.Conditions(), SecretConfigConditionType)
+		condition := meta.FindStatusCondition(*ec.Conditions(), consts.SecretConfigConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 		assert.Equal(t, ec.Name+"-"+consts.EdgeConnectSecretSuffix+" created", condition.Message)
 	})
 
-	t.Run(`SecretConfigConditionType is set SecretGenFailed`, func(t *testing.T) {
+	t.Run(`consts.SecretConfigConditionType is set SecretGenFailed`, func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -288,7 +288,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, ec.Conditions())
 
-		condition := meta.FindStatusCondition(*ec.Conditions(), SecretConfigConditionType)
+		condition := meta.FindStatusCondition(*ec.Conditions(), consts.SecretConfigConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 		assert.Equal(t, ec.Name+"-"+consts.EdgeConnectSecretSuffix+" created", condition.Message)

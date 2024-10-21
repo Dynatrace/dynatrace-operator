@@ -788,14 +788,14 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 
 			newToken, err := dttoken.New("dt0e01")
 			if err != nil {
-				conditions.SetSecretGenFailed(ec.Conditions(), SecretConfigConditionType, err)
+				conditions.SetSecretGenFailed(ec.Conditions(), consts.SecretConfigConditionType, err)
 
 				return "", "", err
 			}
 
 			token = newToken.String()
 		} else {
-			conditions.SetSecretGenFailed(ec.Conditions(), SecretConfigConditionType, err)
+			conditions.SetSecretGenFailed(ec.Conditions(), consts.SecretConfigConditionType, err)
 
 			return "", "", err
 		}
@@ -803,7 +803,7 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 
 	configFile, err := secret.PrepareConfigFile(ctx, ec, controller.apiReader, token)
 	if err != nil {
-		conditions.SetSecretGenFailed(ec.Conditions(), SecretConfigConditionType, err)
+		conditions.SetSecretGenFailed(ec.Conditions(), consts.SecretConfigConditionType, err)
 
 		return "", "", err
 	}
@@ -817,7 +817,7 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 	)
 
 	if err != nil {
-		conditions.SetSecretGenFailed(ec.Conditions(), SecretConfigConditionType, err)
+		conditions.SetSecretGenFailed(ec.Conditions(), consts.SecretConfigConditionType, err)
 
 		return "", "", errors.WithStack(err)
 	}
@@ -827,20 +827,20 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 	created, err := query.CreateOrUpdate(ctx, secretConfig)
 	if err != nil {
 		log.Info("could not create or update secret for ec.yaml", "name", secretConfig.Name)
-		conditions.SetKubeApiError(ec.Conditions(), SecretConfigConditionType, err)
+		conditions.SetKubeApiError(ec.Conditions(), consts.SecretConfigConditionType, err)
 
 		return "", "", err
 	}
 
 	if created {
-		conditions.SetSecretCreated(ec.Conditions(), SecretConfigConditionType, secretConfig.Name)
+		conditions.SetSecretCreated(ec.Conditions(), consts.SecretConfigConditionType, secretConfig.Name)
 	} else {
-		conditions.SetSecretUpdated(ec.Conditions(), SecretConfigConditionType, secretConfig.Name)
+		conditions.SetSecretUpdated(ec.Conditions(), consts.SecretConfigConditionType, secretConfig.Name)
 	}
 
 	hash, err = hasher.GenerateHash(secretConfig.Data)
 	if err != nil {
-		conditions.SetSecretGenFailed(ec.Conditions(), SecretConfigConditionType, err)
+		conditions.SetSecretGenFailed(ec.Conditions(), consts.SecretConfigConditionType, err)
 	}
 
 	return token, hash, err
