@@ -6,7 +6,6 @@ const (
 	EdgeConnectAnnotationSecretHash  = api.InternalFlagPrefix + "secret-hash"
 	EdgeConnectUserProvisioned       = "user-provisioned"
 	EdgeConnectContainerName         = "edge-connect"
-	EdgeConnectServiceAccountName    = "dynatrace-edgeconnect"
 	EdgeConnectMountPath             = "/etc/ssl"
 	EdgeConnectCustomCertificateName = "certificate.cer"
 	EdgeConnectCustomCAVolumeName    = "ca-certs"

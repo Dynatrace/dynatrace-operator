@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	k8sdeployment "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/deployment"
@@ -798,6 +799,8 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 
 	configFile, err := secret.PrepareConfigFile(ctx, ec, controller.apiReader, token)
 	if err != nil {
+		conditions.SetSecretGenFailed(ec.Conditions(), SecretConfigConditionType, err)
+
 		return "", "", err
 	}
 
@@ -810,16 +813,25 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 	)
 
 	if err != nil {
+		conditions.SetSecretGenFailed(ec.Conditions(), SecretConfigConditionType, err)
+
 		return "", "", errors.WithStack(err)
 	}
 
 	query := k8ssecret.Query(controller.client, controller.apiReader, log)
 
-	_, err = query.CreateOrUpdate(ctx, secretConfig)
+	created, err := query.CreateOrUpdate(ctx, secretConfig)
 	if err != nil {
 		log.Info("could not create or update secret for ec.yaml", "name", secretConfig.Name)
+		conditions.SetSecretGenFailed(ec.Conditions(), SecretConfigConditionType, err)
 
 		return "", "", err
+	}
+
+	if created {
+		conditions.SetSecretCreated(ec.Conditions(), SecretConfigConditionType, secretConfig.Name)
+	} else {
+		conditions.SetSecretUpdated(ec.Conditions(), SecretConfigConditionType, secretConfig.Name)
 	}
 
 	hash, err = hasher.GenerateHash(secretConfig.Data)
