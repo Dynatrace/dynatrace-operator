@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-func CreateSymlinkForCurrentVersionIfNotExists(fs afero.Fs, targetDir string) error {
+func CreateForCurrentVersionIfNotExists(fs afero.Fs, targetDir string) error {
 	var relativeSymlinkPath string
 
 	var err error
@@ -50,7 +50,7 @@ func CreateSymlinkForCurrentVersionIfNotExists(fs afero.Fs, targetDir string) er
 	return nil
 }
 
-func CreateSymlinkForLatestVersion(fs afero.Fs, dk dynakube.DynaKube, latestVersionDir, symlinkDir string) error {
+func CreateForLatestVersion(fs afero.Fs, dk dynakube.DynaKube, latestVersionDir, symlinkDir string) error {
 	// MemMapFs (used for testing) doesn't comply with the Linker interface
 	linker, ok := fs.(afero.Linker)
 	if !ok {
@@ -70,7 +70,7 @@ func CreateSymlinkForLatestVersion(fs afero.Fs, dk dynakube.DynaKube, latestVers
 	return nil
 }
 
-func RemoveSymlink(fs afero.Fs, symlinkPath string) error {
+func Remove(fs afero.Fs, symlinkPath string) error {
 	if info, _ := fs.Stat(symlinkPath); info != nil {
 		log.Info("symlink to codemodule directory exists, removing it due to the possibility of the agent being installed again")
 
