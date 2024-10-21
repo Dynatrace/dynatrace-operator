@@ -56,7 +56,7 @@
         "depName=(?<depName>.*?)\\s.*?PREFLIGHT_VERSION\\:\\s(?<currentValue>.*)\\s",
       ],
       datasourceTemplate: "github-releases",
-    }
+    },
   ],
   packageRules: [
     {
