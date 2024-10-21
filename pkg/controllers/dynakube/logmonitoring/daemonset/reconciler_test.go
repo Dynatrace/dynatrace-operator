@@ -247,16 +247,19 @@ func TestGenerateDaemonSet(t *testing.T) {
 }
 
 func createDynakube(isEnabled bool) *dynakube.DynaKube {
+	var logMonitoring *logmonitoring.Spec
+	if isEnabled {
+		logMonitoring = &logmonitoring.Spec{}
+	}
+
 	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: dkNamespace,
 			Name:      dkName,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL: "test-url",
-			LogMonitoring: logmonitoring.Spec{
-				Enabled: isEnabled,
-			},
+			APIURL:        "test-url",
+			LogMonitoring: logMonitoring,
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: dynakube.OneAgentStatus{

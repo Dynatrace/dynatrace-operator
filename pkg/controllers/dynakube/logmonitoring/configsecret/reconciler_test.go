@@ -121,17 +121,20 @@ func checkSecretForValue(t *testing.T, k8sClient client.Client, dk *dynakube.Dyn
 	}
 }
 
-func createDynakube(isEnabled bool) *dynakube.DynaKube {
+func createDynakube(isLogMonitoringEnabled bool) *dynakube.DynaKube {
+	var logMonitoringSpec *logmonitoring.Spec
+	if isLogMonitoringEnabled {
+		logMonitoringSpec = &logmonitoring.Spec{}
+	}
+
 	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: dkNamespace,
 			Name:      dkName,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL: "test-url",
-			LogMonitoring: logmonitoring.Spec{
-				Enabled: isEnabled,
-			},
+			APIURL:        "test-url",
+			LogMonitoring: logMonitoringSpec,
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: dynakube.OneAgentStatus{

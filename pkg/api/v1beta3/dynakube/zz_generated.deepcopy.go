@@ -20,6 +20,7 @@ package dynakube
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	pkgv1 "github.com/google/go-containerregistry/pkg/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -181,7 +182,11 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 	}
 	in.OneAgent.DeepCopyInto(&out.OneAgent)
 	in.Templates.DeepCopyInto(&out.Templates)
-	in.LogMonitoring.DeepCopyInto(&out.LogMonitoring)
+	if in.LogMonitoring != nil {
+		in, out := &in.LogMonitoring, &out.LogMonitoring
+		*out = new(logmonitoring.Spec)
+		**out = **in
+	}
 	in.MetadataEnrichment.DeepCopyInto(&out.MetadataEnrichment)
 	in.ActiveGate.DeepCopyInto(&out.ActiveGate)
 	out.Extensions = in.Extensions

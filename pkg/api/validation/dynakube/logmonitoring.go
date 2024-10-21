@@ -16,7 +16,7 @@ const (
 )
 
 func conflictingLogMonitoringNodeSelector(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
-	if !dk.LogMonitoring().Needed() {
+	if !dk.LogMonitoring().IsEnabled() {
 		return ""
 	}
 

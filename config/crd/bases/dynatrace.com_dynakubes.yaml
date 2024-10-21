@@ -4878,11 +4878,6 @@ spec:
                 type: object
               logMonitoring:
                 description: General configuration about the LogMonitoring feature.
-                properties:
-                  enabled:
-                    type: boolean
-                required:
-                - enabled
                 type: object
               metadataEnrichment:
                 description: Configuration for Metadata Enrichment.

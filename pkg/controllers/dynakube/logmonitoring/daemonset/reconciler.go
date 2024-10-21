@@ -39,7 +39,7 @@ func NewReconciler(clt client.Client,
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.LogMonitoring().Needed() {
+	if !r.dk.LogMonitoring().IsEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}

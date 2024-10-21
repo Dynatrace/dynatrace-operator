@@ -4,14 +4,14 @@ const (
 	logMonitoringDaemonSetSuffix = "-logmonitoring"
 )
 
-func (logMonitoring *Spec) SetName(name string) {
+func (logMonitoring *LogMonitoring) SetName(name string) {
 	logMonitoring.name = name
 }
 
-func (logMonitoring *Spec) Needed() bool {
-	return logMonitoring.Enabled
+func (logMonitoring *LogMonitoring) IsEnabled() bool {
+	return logMonitoring.Spec != nil
 }
 
-func (logMonitoring *Spec) GetDaemonSetName() string {
+func (logMonitoring *LogMonitoring) GetDaemonSetName() string {
 	return logMonitoring.name + logMonitoringDaemonSetSuffix
 }

@@ -7,14 +7,12 @@ import (
 
 type LogMonitoring struct {
 	*Spec
+
+	name string
 }
 
 // +kubebuilder:object:generate=true
 type Spec struct {
-	name         string
-	templateSpec TemplateSpec
-
-	Enabled bool `json:"enabled"`
 }
 
 // +kubebuilder:object:generate=true

@@ -166,10 +166,8 @@ func TestConflictingNodeSelector(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
-					LogMonitoring: logmonitoring.Spec{
-						Enabled: true,
-					},
+					APIURL:        testApiUrl,
+					LogMonitoring: &logmonitoring.Spec{},
 					Templates: dynakube.TemplatesSpec{
 						LogMonitoring: logmonitoring.TemplateSpec{
 							NodeSelector: map[string]string{"node": "12"},
@@ -262,10 +260,8 @@ func TestConflictingNodeSelector(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
-					LogMonitoring: logmonitoring.Spec{
-						Enabled: true,
-					},
+					APIURL:        testApiUrl,
+					LogMonitoring: &logmonitoring.Spec{},
 				},
 			}, &defaultCSIDaemonSet)
 
@@ -274,10 +270,8 @@ func TestConflictingNodeSelector(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
-					LogMonitoring: logmonitoring.Spec{
-						Enabled: true,
-					},
+					APIURL:        testApiUrl,
+					LogMonitoring: &logmonitoring.Spec{},
 				},
 			},
 			newCloudNativeDynakube("dk2", map[string]string{}, "1"),
@@ -288,10 +282,8 @@ func TestConflictingNodeSelector(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
-					LogMonitoring: logmonitoring.Spec{
-						Enabled: true,
-					},
+					APIURL:        testApiUrl,
+					LogMonitoring: &logmonitoring.Spec{},
 					Templates: dynakube.TemplatesSpec{
 						LogMonitoring: logmonitoring.TemplateSpec{
 							NodeSelector: map[string]string{"node": "1"},

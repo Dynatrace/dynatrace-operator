@@ -88,7 +88,7 @@ func TestIsModuleDisabled(t *testing.T) {
 		},
 		{
 			title:           "logmonitoring module disabled but also configured in dk => error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{LogMonitoring: logmonitoring.Spec{Enabled: true}}},
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{LogMonitoring: &logmonitoring.Spec{}}},
 			modules:         installconfig.Modules{LogMonitoring: false},
 			moduleFunc:      isLogMonitoringModuleDisabled,
 			expectedMessage: errorLogMonitoringModuleDisabled,
@@ -102,7 +102,7 @@ func TestIsModuleDisabled(t *testing.T) {
 		},
 		{
 			title:           "logmonitoring module enabled and also configured => no error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{LogMonitoring: logmonitoring.Spec{Enabled: true}}},
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{LogMonitoring: &logmonitoring.Spec{}}},
 			modules:         installconfig.Modules{LogMonitoring: true},
 			moduleFunc:      isLogMonitoringModuleDisabled,
 			expectedMessage: "",

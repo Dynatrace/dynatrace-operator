@@ -60,10 +60,8 @@ func createLogMonitoringDynakube(name, nodeSelector string) *dynakube.DynaKube {
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL: testApiUrl,
-			LogMonitoring: logmonitoring.Spec{
-				Enabled: true,
-			},
+			APIURL:        testApiUrl,
+			LogMonitoring: &logmonitoring.Spec{},
 		},
 	}
 

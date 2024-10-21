@@ -5,11 +5,12 @@ import (
 )
 
 func (dk *DynaKube) LogMonitoring() *logmonitoring.LogMonitoring {
-	dk.Spec.LogMonitoring.SetName(dk.Name)
-
-	return &logmonitoring.LogMonitoring{
-		Spec: &dk.Spec.LogMonitoring,
+	lm := &logmonitoring.LogMonitoring{
+		Spec: dk.Spec.LogMonitoring,
 	}
+	lm.SetName(dk.Name)
+
+	return lm
 }
 
 func (dk *DynaKube) LogMonitoringTemplates() logmonitoring.TemplateSpec {
