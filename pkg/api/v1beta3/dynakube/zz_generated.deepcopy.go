@@ -181,10 +181,10 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 	}
 	in.OneAgent.DeepCopyInto(&out.OneAgent)
 	in.Templates.DeepCopyInto(&out.Templates)
+	in.LogMonitoring.DeepCopyInto(&out.LogMonitoring)
 	in.MetadataEnrichment.DeepCopyInto(&out.MetadataEnrichment)
 	in.ActiveGate.DeepCopyInto(&out.ActiveGate)
 	out.Extensions = in.Extensions
-	in.LogMonitoring.DeepCopyInto(&out.LogMonitoring)
 	out.Kspm = in.Kspm
 }
 

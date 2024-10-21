@@ -204,7 +204,7 @@ rbac:
   extensions:
     create: true
     annotations: {}
-  logModule:
+  logMonitoring:
     create: true
     annotations: {}
   oneAgent:

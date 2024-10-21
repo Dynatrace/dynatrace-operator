@@ -18,8 +18,8 @@ import (
 )
 
 const (
-	nameSuffix         = "-logmodule"
-	serviceAccountName = "dynatrace-logmodule"
+	nameSuffix         = "-logmonitoring"
+	serviceAccountName = "dynatrace-logmonitoring"
 )
 
 type Reconciler struct {
@@ -48,7 +48,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		err := query.Delete(ctx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: r.dk.LogMonitoring().GetDaemonSetName(), Namespace: r.dk.Namespace}})
 
 		if err != nil {
-			log.Error(err, "failed to clean-up LogModule config-secret")
+			log.Error(err, "failed to clean-up LogMonitoring config-secret")
 		}
 
 		meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
@@ -86,7 +86,7 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 		return nil, err
 	}
 
-	labels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.LogModuleComponentLabel)
+	labels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.LogMonitoringComponentLabel)
 
 	maxUnavailable := intstr.FromInt(r.dk.FeatureOneAgentMaxUnavailable())
 

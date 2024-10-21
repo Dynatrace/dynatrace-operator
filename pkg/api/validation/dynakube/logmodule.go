@@ -10,12 +10,12 @@ import (
 )
 
 const (
-	errorConflictingLogModule = "The DynaKube's specification tries to enable LogModule in a namespace where another DynaKube already deploys the OneAgent, which is not supported. The conflicting DynaKubes: %s"
+	errorConflictingLogMonitoring = "The DynaKube's specification tries to enable LogMonitoring in a namespace where another DynaKube already deploys the OneAgent, which is not supported. The conflicting DynaKubes: %s"
 
-	errorConflictingOneAgentSpec = "The DynaKube's specification tries to enable LogModule and OneAgent at the same time, which is not supported. Please disable the LogModule or OneAgent"
+	errorConflictingOneAgentSpec = "The DynaKube's specification tries to enable LogMonitoring and OneAgent at the same time, which is not supported. Please disable the LogMonitoring or OneAgent"
 )
 
-func conflictingLogModuleNodeSelector(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+func conflictingLogMonitoringNodeSelector(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
 	if !dk.LogMonitoring().Needed() {
 		return ""
 	}
@@ -40,14 +40,14 @@ func conflictingLogModuleNodeSelector(ctx context.Context, dv *Validator, dk *dy
 
 		if item.NeedsOneAgent() {
 			if hasConflictingMatchLabels(dk.LogMonitoringTemplates().NodeSelector, item.OneAgentNodeSelector()) {
-				log.Info("requested dynakube has conflicting LogModule nodeSelector", "name", dk.Name, "namespace", dk.Namespace)
+				log.Info("requested dynakube has conflicting LogMonitoring nodeSelector", "name", dk.Name, "namespace", dk.Namespace)
 				conflictingDynakubes = append(conflictingDynakubes, item.Name)
 			}
 		}
 	}
 
 	if len(conflictingDynakubes) > 0 {
-		return fmt.Sprintf(errorConflictingLogModule, strings.Join(conflictingDynakubes, ", "))
+		return fmt.Sprintf(errorConflictingLogMonitoring, strings.Join(conflictingDynakubes, ", "))
 	}
 
 	return ""

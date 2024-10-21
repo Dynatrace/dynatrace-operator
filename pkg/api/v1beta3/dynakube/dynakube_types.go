@@ -108,9 +108,9 @@ type DynaKubeSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	Templates TemplatesSpec `json:"templates,omitempty"`
 
-	// General configuration about the LogModule feature.
+	// General configuration about the LogMonitoring feature.
 	// +kubebuilder:validation:Optional
-	LogMonitoring logmonitoring.Spec `json:"logModule,omitempty"`
+	LogMonitoring logmonitoring.Spec `json:"logMonitoring,omitempty"`
 
 	// Configuration for Metadata Enrichment.
 	// +kubebuilder:validation:Optional

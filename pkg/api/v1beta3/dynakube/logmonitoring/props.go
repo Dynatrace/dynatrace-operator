@@ -1,7 +1,7 @@
 package logmonitoring
 
 const (
-	logModuleDaemonSetSuffix = "-logmodule"
+	logMonitoringDaemonSetSuffix = "-logmonitoring"
 )
 
 func (logMonitoring *Spec) SetName(name string) {
@@ -13,9 +13,5 @@ func (logMonitoring *Spec) Needed() bool {
 }
 
 func (logMonitoring *Spec) GetDaemonSetName() string {
-	return logMonitoring.name + logModuleDaemonSetSuffix
-}
-
-func (template *TemplateSpec) GetLogModuleNodeSelector() map[string]string {
-	return template.NodeSelector
+	return logMonitoring.name + logMonitoringDaemonSetSuffix
 }

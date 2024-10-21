@@ -9,5 +9,5 @@ const (
 )
 
 var (
-	log = logd.Get().WithName("logmodule-config-secret")
+	log = logd.Get().WithName("logmonitoring-config-secret")
 )

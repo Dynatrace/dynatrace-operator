@@ -17,7 +17,7 @@ const (
 
 	errorImageFieldSetWithoutCSIFlag = `The DynaKube specification attempts to enable ApplicationMonitoring mode and retrieve the respective image, but the CSI driver is not enabled.`
 
-	errorNodeSelectorConflict = `The DynaKube specification attempts to deploy a OneAgent, which conflicts with another DynaKube's OneAgent/LogModule. Only one Agent per node is supported.
+	errorNodeSelectorConflict = `The DynaKube specification attempts to deploy a OneAgent, which conflicts with another DynaKube's OneAgent/LogMonitoring. Only one Agent per node is supported.
 Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 
 	errorVolumeStorageReadOnlyModeConflict = `The DynaKube specification specifies a read-only host file system while OneAgent has volume storage enabled.`
@@ -84,7 +84,7 @@ func conflictingOneAgentNodeSelector(ctx context.Context, dv *Validator, dk *dyn
 
 		if item.LogMonitoring().Needed() {
 			if hasConflictingMatchLabels(oneAgentNodeSelector, item.LogMonitoringTemplates().NodeSelector) {
-				log.Info("requested dynakube has conflicting LogModule nodeSelector", "name", dk.Name, "namespace", dk.Namespace)
+				log.Info("requested dynakube has conflicting LogMonitoring nodeSelector", "name", dk.Name, "namespace", dk.Namespace)
 
 				conflictingDynakubes[item.Name] = true
 			}
