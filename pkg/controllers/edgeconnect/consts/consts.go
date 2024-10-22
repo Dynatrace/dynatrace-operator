@@ -23,6 +23,6 @@ const (
 
 	AnnotationEdgeConnectContainerAppArmor = "container.apparmor.security.beta.kubernetes.io/" + EdgeConnectContainerName
 
-	// consts.SecretConfigConditionType identifies the secret config condition.
-	SecretConfigConditionType = "consts.SecretConfigConditionType"
+	// SecretConfigConditionType identifies the secret config condition.
+	SecretConfigConditionType = "SecretConfigConditionType"
 )

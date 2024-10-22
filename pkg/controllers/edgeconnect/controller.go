@@ -824,7 +824,7 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 
 	query := k8ssecret.Query(controller.client, controller.apiReader, log)
 
-	created, err := query.CreateOrUpdate(ctx, secretConfig)
+	_, err = query.CreateOrUpdate(ctx, secretConfig)
 	if err != nil {
 		log.Info("could not create or update secret for ec.yaml", "name", secretConfig.Name)
 		conditions.SetKubeApiError(ec.Conditions(), consts.SecretConfigConditionType, err)
@@ -832,11 +832,7 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 		return "", "", err
 	}
 
-	if created {
-		conditions.SetSecretCreated(ec.Conditions(), consts.SecretConfigConditionType, secretConfig.Name)
-	} else {
-		conditions.SetSecretUpdated(ec.Conditions(), consts.SecretConfigConditionType, secretConfig.Name)
-	}
+	conditions.SetSecretCreated(ec.Conditions(), consts.SecretConfigConditionType, secretConfig.Name)
 
 	hash, err = hasher.GenerateHash(secretConfig.Data)
 	if err != nil {

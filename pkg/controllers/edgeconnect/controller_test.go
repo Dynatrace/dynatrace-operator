@@ -3,7 +3,6 @@ package edgeconnect
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -245,7 +244,7 @@ func TestReconcile(t *testing.T) {
 			createKubeSystemNamespace(),
 		)
 
-		_, err := controller.Reconcile(context.TODO(), reconcile.Request{
+		_, err := controller.Reconcile(context.Background(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 		})
 		require.NoError(t, err)
@@ -260,7 +259,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, ec.Name+"-"+consts.EdgeConnectSecretSuffix+" created", condition.Message)
 	})
 
-	t.Run(`SecretConfigConditionType is set SecretGenFailed`, func(t *testing.T) {
+	t.Run(`SecretConfigConditionType is set SecretGenFailed failed to get clientSecret`, func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -278,31 +277,55 @@ func TestReconcile(t *testing.T) {
 		}
 
 		controller := createFakeClientAndReconciler(t, ec,
-			createClientSecret(testOauthClientSecret, ec.Namespace),
 			createKubeSystemNamespace(),
 		)
-		fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
-			Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-				if _, ok := obj.(*corev1.Secret); ok {
-					return fmt.Errorf("get secret error")
-				}
 
-				return nil
-			},
-		})
-		controller.apiReader = fakeClient
-
-		err := controller.reconcileEdgeConnectRegular(context.TODO(), ec)
+		err := controller.reconcileEdgeConnectRegular(context.Background(), ec)
 		require.Error(t, err)
-
-		err = controller.apiReader.Get(context.TODO(), client.ObjectKey{Name: ec.Name, Namespace: ec.Namespace}, ec)
-		require.NoError(t, err)
 		require.NotEmpty(t, ec.Conditions())
 
 		condition := meta.FindStatusCondition(*ec.Conditions(), consts.SecretConfigConditionType)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 		assert.Equal(t, conditions.SecretGenerationFailed, condition.Reason)
-		assert.Equal(t, "Failed to generate secret: get secret error", condition.Message)
+		assert.Contains(t, condition.Message, "Failed to generate secret: failed to get clientSecret")
+	})
+
+	t.Run(`SecretConfigConditionType is set SecretGenFailed failed`, func(t *testing.T) {
+		ec := &edgeconnect.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: edgeconnect.EdgeConnectSpec{
+				ApiServer: "abc12345.dynatrace.com",
+				OAuth: edgeconnect.OAuthSpec{
+					Endpoint:     "https://test.com/sso/oauth2/token",
+					Resource:     "urn:dtenvironment:test12345",
+					ClientSecret: testOauthClientSecret,
+					Provisioner:  false,
+				},
+			},
+		}
+
+		controller := createFakeClientAndReconciler(t, ec,
+			createKubeSystemNamespace(),
+		)
+
+		boomClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+				return errors.New("BOOM")
+			},
+		})
+		controller.apiReader = boomClient
+
+		err := controller.reconcileEdgeConnectRegular(context.Background(), ec)
+		require.Error(t, err)
+		require.NotEmpty(t, ec.Conditions())
+
+		condition := meta.FindStatusCondition(*ec.Conditions(), consts.SecretConfigConditionType)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+		assert.Equal(t, conditions.SecretGenerationFailed, condition.Reason)
+		assert.Contains(t, condition.Message, "Failed to generate secret: BOOM")
 	})
 }
 
