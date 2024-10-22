@@ -99,6 +99,20 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, conditions.KubeApiErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
+
+	t.Run("returns an error if no clusterMEID set", func(t *testing.T) {
+		dk := createDynakube(true)
+		dk.Status.KubernetesClusterMEID = ""
+
+		mockK8sClient := fake.NewClient()
+
+		reconciler := NewReconciler(mockK8sClient,
+			mockK8sClient, dk)
+
+		err := reconciler.Reconcile(context.Background())
+
+		require.Error(t, err)
+	})
 }
 
 func TestGenerateDaemonSet(t *testing.T) {
@@ -251,6 +265,8 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 					},
 				},
 			},
+			KubernetesClusterMEID: "test-cluster-me-id",
+			KubernetesClusterName: "test-cluster-name",
 		},
 	}
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmodule/configsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmodule/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/monitoredentities"
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -51,10 +50,6 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if !r.isMEConfigured() {
-		return errors.New("the status of the DynaKube is missing information about the kubernetes monitored-entity, skipping logmodule deployment")
-	}
-
 	err = r.oneAgentConnectionInfoReconciler.Reconcile(ctx)
 	if err != nil {
 		return err
@@ -71,8 +66,4 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func (r *Reconciler) isMEConfigured() bool {
-	return r.dk.Status.KubernetesClusterMEID != "" && r.dk.Status.KubernetesClusterName != ""
 }
