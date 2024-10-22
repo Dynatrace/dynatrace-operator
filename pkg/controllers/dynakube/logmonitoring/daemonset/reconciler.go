@@ -92,13 +92,13 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 
 	ds, err := daemonset.Build(r.dk, r.dk.LogMonitoring().GetDaemonSetName(), getContainer(*r.dk),
 		daemonset.SetInitContainer(getInitContainer(*r.dk)),
-		daemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.LogMonitoringTemplates().Labels),
-		daemonset.SetAllAnnotations(nil, r.dk.LogMonitoringTemplates().Annotations),
+		daemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.LogMonitoring().Labels),
+		daemonset.SetAllAnnotations(nil, r.dk.LogMonitoring().Annotations),
 		daemonset.SetServiceAccount(serviceAccountName),
-		daemonset.SetDNSPolicy(r.dk.LogMonitoringTemplates().DNSPolicy),
+		daemonset.SetDNSPolicy(r.dk.LogMonitoring().DNSPolicy),
 		daemonset.SetAffinity(node.Affinity()),
-		daemonset.SetPriorityClass(r.dk.LogMonitoringTemplates().PriorityClassName),
-		daemonset.SetTolerations(r.dk.LogMonitoringTemplates().Tolerations),
+		daemonset.SetPriorityClass(r.dk.LogMonitoring().PriorityClassName),
+		daemonset.SetTolerations(r.dk.LogMonitoring().Tolerations),
 		daemonset.SetPullSecret(r.dk.ImagePullSecretReferences()...),
 		daemonset.SetUpdateStrategy(appsv1.DaemonSetUpdateStrategy{
 			RollingUpdate: &appsv1.RollingUpdateDaemonSet{

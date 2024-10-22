@@ -33,7 +33,7 @@ func getContainer(dk dynakube.DynaKube) corev1.Container {
 
 	container := corev1.Container{
 		Name:            containerName,
-		Image:           dk.LogMonitoringTemplates().ImageRef.StringWithDefaults(defaultImageRepo, defaultImageTag),
+		Image:           dk.LogMonitoring().ImageRef.StringWithDefaults(defaultImageRepo, defaultImageTag),
 		ImagePullPolicy: corev1.PullAlways,
 		VolumeMounts:    getVolumeMounts(),
 		Env:             getEnvs(),
@@ -49,7 +49,7 @@ func getInitContainer(dk dynakube.DynaKube) corev1.Container {
 
 	container := corev1.Container{
 		Name:            initContainerName,
-		Image:           dk.LogMonitoringTemplates().ImageRef.StringWithDefaults(defaultImageRepo, defaultImageTag),
+		Image:           dk.LogMonitoring().ImageRef.StringWithDefaults(defaultImageRepo, defaultImageTag),
 		ImagePullPolicy: corev1.PullAlways,
 		VolumeMounts:    getDTVolumeMounts(),
 		Command:         []string{bootstrapCommand},
@@ -74,7 +74,7 @@ func getBaseSecurityContext(dk dynakube.DynaKube) corev1.SecurityContext {
 		},
 	}
 
-	seccomp := dk.LogMonitoringTemplates().SecCompProfile
+	seccomp := dk.LogMonitoring().SecCompProfile
 	if seccomp != "" {
 		securityContext.SeccompProfile = &corev1.SeccompProfile{LocalhostProfile: &seccomp}
 	}

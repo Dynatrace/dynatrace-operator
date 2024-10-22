@@ -7,6 +7,7 @@ import (
 
 type LogMonitoring struct {
 	*Spec
+	*TemplateSpec
 
 	name string
 }

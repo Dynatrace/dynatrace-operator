@@ -33,9 +33,9 @@ func TestGetInitArgs(t *testing.T) {
 		}
 		args := getInitArgs(dk)
 
-		assert.Len(t, args, expectedBaseInitArgsLen+len(dk.LogMonitoringTemplates().Args))
+		assert.Len(t, args, expectedBaseInitArgsLen+len(dk.LogMonitoring().Args))
 
-		for _, customArg := range dk.LogMonitoringTemplates().Args {
+		for _, customArg := range dk.LogMonitoring().Args {
 			assert.Contains(t, args, customArg)
 		}
 	})
