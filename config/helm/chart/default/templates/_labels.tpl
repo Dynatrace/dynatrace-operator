@@ -120,9 +120,9 @@ app.kubernetes.io/component: dynatrace-extensions-collector
 {{/*
 LogAgent labels
 */}}
-{{- define "dynatrace-operator.logModuleLabels" -}}
+{{- define "dynatrace-operator.logMonitoringLabels" -}}
 {{ include "dynatrace-operator.commonLabels" . }}
-app.kubernetes.io/component: logmodule
+app.kubernetes.io/component: logmonitoring
 {{- end -}}
 
 {{/*

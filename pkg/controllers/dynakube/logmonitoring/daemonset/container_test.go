@@ -30,7 +30,7 @@ func TestGetContainer(t *testing.T) {
 		expectedRepo := "my-test-repo"
 		expectedTag := "my-test-tag"
 		dk := dynakube.DynaKube{}
-		dk.Spec.Templates.LogModule.ImageRef = image.Ref{
+		dk.Spec.Templates.LogMonitoring.ImageRef = image.Ref{
 			Repository: expectedRepo,
 			Tag:        expectedTag,
 		}
@@ -66,7 +66,7 @@ func TestGetInitContainer(t *testing.T) {
 		expectedRepo := "my-test-repo"
 		expectedTag := "my-test-tag"
 		dk := dynakube.DynaKube{}
-		dk.Spec.Templates.LogModule.ImageRef = image.Ref{
+		dk.Spec.Templates.LogMonitoring.ImageRef = image.Ref{
 			Repository: expectedRepo,
 			Tag:        expectedTag,
 		}
@@ -100,7 +100,7 @@ func TestSecurityContext(t *testing.T) {
 	t.Run("set seccomp is present", func(t *testing.T) {
 		expectedSeccomp := "test-seccomp"
 		dk := dynakube.DynaKube{}
-		dk.Spec.Templates.LogModule.SecCompProfile = expectedSeccomp
+		dk.Spec.Templates.LogMonitoring.SecCompProfile = expectedSeccomp
 		sc := getBaseSecurityContext(dk)
 
 		require.NotNil(t, sc)

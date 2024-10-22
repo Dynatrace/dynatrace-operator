@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/pkg/errors"
@@ -53,7 +54,7 @@ func TestReconcile(t *testing.T) {
 
 		var daemonset appsv1.DaemonSet
 		err = mockK8sClient.Get(ctx, types.NamespacedName{
-			Name:      dk.LogModuleDaemonSetName(),
+			Name:      dk.LogMonitoring().GetDaemonSetName(),
 			Namespace: dk.Namespace,
 		}, &daemonset)
 		require.False(t, k8serrors.IsNotFound(err))
@@ -63,7 +64,7 @@ func TestReconcile(t *testing.T) {
 		dk := createDynakube(false)
 
 		previousDaemonSet := appsv1.DaemonSet{}
-		previousDaemonSet.Name = dk.LogModuleDaemonSetName()
+		previousDaemonSet.Name = dk.LogMonitoring().GetDaemonSetName()
 		previousDaemonSet.Namespace = dk.Namespace
 		mockK8sClient := fake.NewClient(&previousDaemonSet)
 
@@ -77,7 +78,7 @@ func TestReconcile(t *testing.T) {
 
 		var daemonset appsv1.DaemonSet
 		err = mockK8sClient.Get(ctx, types.NamespacedName{
-			Name:      dk.LogModuleDaemonSetName(),
+			Name:      dk.LogMonitoring().GetDaemonSetName(),
 			Namespace: dk.Namespace,
 		}, &daemonset)
 		require.True(t, k8serrors.IsNotFound(err))
@@ -128,7 +129,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		assert.Len(t, daemonset.Spec.Template.Spec.InitContainers, 1)
 		assert.Len(t, daemonset.Spec.Template.Spec.Containers, 1)
 		assert.NotEmpty(t, daemonset.Spec.Template.Spec.Volumes)
-		assert.Equal(t, dk.LogModuleDaemonSetName(), daemonset.Name)
+		assert.Equal(t, dk.LogMonitoring().GetDaemonSetName(), daemonset.Name)
 		assert.Equal(t, dk.Namespace, daemonset.Namespace)
 		assert.NotEmpty(t, daemonset.Labels)
 		assert.NotEmpty(t, daemonset.Spec.Template.Labels)
@@ -151,7 +152,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		dk := createDynakube(true)
-		dk.Spec.Templates.LogModule.Labels = customLabels
+		dk.Spec.Templates.LogMonitoring.Labels = customLabels
 
 		reconciler := NewReconciler(nil,
 			nil, dk)
@@ -168,7 +169,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		dk := createDynakube(true)
-		dk.Spec.Templates.LogModule.Annotations = customAnnotations
+		dk.Spec.Templates.LogMonitoring.Annotations = customAnnotations
 
 		reconciler := NewReconciler(nil,
 			nil, dk)
@@ -183,7 +184,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		customPolicy := corev1.DNSClusterFirst
 
 		dk := createDynakube(true)
-		dk.Spec.Templates.LogModule.DNSPolicy = customPolicy
+		dk.Spec.Templates.LogMonitoring.DNSPolicy = customPolicy
 
 		reconciler := NewReconciler(nil,
 			nil, dk)
@@ -198,7 +199,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		customClass := "custom-class"
 
 		dk := createDynakube(true)
-		dk.Spec.Templates.LogModule.PriorityClassName = customClass
+		dk.Spec.Templates.LogMonitoring.PriorityClassName = customClass
 
 		reconciler := NewReconciler(nil,
 			nil, dk)
@@ -234,7 +235,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		dk := createDynakube(true)
-		dk.Spec.Templates.LogModule.Tolerations = customTolerations
+		dk.Spec.Templates.LogMonitoring.Tolerations = customTolerations
 		reconciler := NewReconciler(nil,
 			nil, dk)
 		daemonset, err := reconciler.generateDaemonSet()
@@ -246,16 +247,19 @@ func TestGenerateDaemonSet(t *testing.T) {
 }
 
 func createDynakube(isEnabled bool) *dynakube.DynaKube {
+	var logMonitoring *logmonitoring.Spec
+	if isEnabled {
+		logMonitoring = &logmonitoring.Spec{}
+	}
+
 	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: dkNamespace,
 			Name:      dkName,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL: "test-url",
-			LogModule: dynakube.LogModuleSpec{
-				Enabled: isEnabled,
-			},
+			APIURL:        "test-url",
+			LogMonitoring: logMonitoring,
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: dynakube.OneAgentStatus{
