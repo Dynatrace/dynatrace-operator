@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,6 +54,10 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
 
 		return nil // clean-up shouldn't cause a failure
+	}
+
+	if !r.isMEConfigured() {
+		return errors.New("the status of the DynaKube is missing information about the kubernetes monitored-entity, skipping logmodule deployment")
 	}
 
 	ds, err := r.generateDaemonSet()
@@ -112,4 +117,8 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 	}
 
 	return ds, nil
+}
+
+func (r *Reconciler) isMEConfigured() bool {
+	return r.dk.Status.KubernetesClusterMEID != "" && r.dk.Status.KubernetesClusterName != ""
 }
