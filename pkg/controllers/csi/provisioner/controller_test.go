@@ -256,19 +256,18 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
-				addFakeTenantUUID(
-					&dynakube.DynaKube{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: dkName,
-						},
-						Spec: dynakube.DynaKubeSpec{
-							APIURL: testAPIURL,
-							OneAgent: oneagent.Spec{
-								ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
-							},
+				&dynakube.DynaKube{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: dkName,
+					},
+					Spec: dynakube.DynaKubeSpec{
+						APIURL: testAPIURL,
+						OneAgent: oneagent.Spec{
+							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 						},
 					},
-				),
+				},
+
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
@@ -285,7 +284,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
-		require.EqualError(t, err, "failed to create directory "+tenantUUID+": "+errorMsg)
+		require.EqualError(t, err, "failed to create directory "+dkName+": "+errorMsg)
 		require.NotNil(t, result)
 		require.Equal(t, reconcile.Result{}, result)
 
@@ -296,19 +295,17 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		gc := reconcilermock.NewReconciler[reconcile.Request](t)
 		memFs := afero.NewMemMapFs()
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
-		dynakube := addFakeTenantUUID(
-			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: dkName,
-				},
-				Spec: dynakube.DynaKubeSpec{
-					APIURL: testAPIURL,
-					OneAgent: oneagent.Spec{
-						ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
-					},
+		dynakube := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: dkName,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testAPIURL,
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 				},
 			},
-		)
+		}
 		installerMock := installermock.NewInstaller(t)
 
 		provisioner := &OneAgentProvisioner{
@@ -348,7 +345,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, result)
 
-		exists, err := afero.Exists(memFs, tenantUUID)
+		exists, err := afero.Exists(memFs, dkName)
 
 		require.NoError(t, err)
 		require.True(t, exists)
@@ -399,19 +396,17 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		gc := reconcilermock.NewReconciler[reconcile.Request](t)
 		memFs := afero.NewMemMapFs()
 		memDB := metadata.FakeMemoryDB()
-		dynakube := addFakeTenantUUID(
-			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: dkName,
-				},
-				Spec: dynakube.DynaKubeSpec{
-					APIURL: testAPIURL,
-					OneAgent: oneagent.Spec{
-						HostMonitoring: &oneagent.HostInjectSpec{},
-					},
+		dynakube := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: dkName,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testAPIURL,
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
 				},
 			},
-		)
+		}
 
 		r := &OneAgentProvisioner{
 			apiReader: fake.NewClient(dynakube),
@@ -425,12 +420,12 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, result)
 
-		exists, err := afero.Exists(memFs, tenantUUID)
+		exists, err := afero.Exists(memFs, dkName)
 
 		require.NoError(t, err)
 		require.True(t, exists)
 
-		fileInfo, err := memFs.Stat(tenantUUID)
+		fileInfo, err := memFs.Stat(dkName)
 
 		require.NoError(t, err)
 		require.True(t, fileInfo.IsDir())

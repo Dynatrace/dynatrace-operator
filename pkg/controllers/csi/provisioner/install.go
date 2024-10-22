@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
 )
@@ -22,17 +23,12 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 	string,
 	error,
 ) {
-	tenantUUID, err := dk.TenantUUIDFromApiUrl()
-	if err != nil {
-		return "", err
-	}
-
 	targetImage := dk.OneAgent().GetCodeModulesImage()
 	// An image URI often contains one or several /-s, which is problematic when trying to use it as a folder name.
 	// Easiest to just base64 encode it
 	base64Image := base64.StdEncoding.EncodeToString([]byte(targetImage))
 	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(base64Image)
-	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dk.GetName())
+	targetConfigDir := provisioner.path.AgentConfigDir(dk.GetName())
 
 	props := &image.Properties{
 		ImageUri:     targetImage,
@@ -47,7 +43,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 		return "", err
 	}
 
-	err = provisioner.installAgent(ctx, imageInstaller, dk, targetDir, targetImage, tenantUUID)
+	err = provisioner.installAgent(ctx, imageInstaller, dk, targetDir, targetImage)
 	if err != nil {
 		return "", err
 	}
@@ -61,18 +57,13 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 }
 
 func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dk dynakube.DynaKube, dtc dtclient.Client, latestProcessModuleConfig *dtclient.ProcessModuleConfig) (string, error) {
-	tenantUUID, err := dk.TenantUUIDFromApiUrl()
-	if err != nil {
-		return "", err
-	}
-
 	targetVersion := dk.OneAgent().GetCodeModulesVersion()
 	urlInstaller := provisioner.urlInstallerBuilder(provisioner.fs, dtc, getUrlProperties(targetVersion, provisioner.path))
 
 	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(targetVersion)
-	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID, dk.GetName())
+	targetConfigDir := provisioner.path.AgentConfigDir(dk.GetName())
 
-	err = provisioner.installAgent(ctx, urlInstaller, dk, targetDir, targetVersion, tenantUUID)
+	err := provisioner.installAgent(ctx, urlInstaller, dk, targetDir, targetVersion)
 	if err != nil {
 		return "", err
 	}
@@ -85,7 +76,7 @@ func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dk 
 	return targetVersion, nil
 }
 
-func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, agentInstaller installer.Installer, dk dynakube.DynaKube, targetDir, targetVersion, tenantUUID string) error { //nolint:revive
+func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, agentInstaller installer.Installer, dk dynakube.DynaKube, targetDir, targetVersion string) error {
 	eventRecorder := updaterEventRecorder{
 		recorder: provisioner.recorder,
 		dk:       &dk,
@@ -93,13 +84,23 @@ func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, agentI
 	isNewlyInstalled, err := agentInstaller.InstallAgent(ctx, targetDir)
 
 	if err != nil {
-		eventRecorder.sendFailedInstallAgentVersionEvent(targetVersion, tenantUUID)
+		eventRecorder.sendFailedInstallAgentVersionEvent(targetVersion, dk.GetName())
 
 		return err
 	}
 
 	if isNewlyInstalled {
-		eventRecorder.sendInstalledAgentVersionEvent(targetVersion, tenantUUID)
+		eventRecorder.sendInstalledAgentVersionEvent(targetVersion, dk.GetName())
+	}
+
+	symlinkPath := provisioner.path.LatestAgentBinaryForDynaKube(dk.GetName())
+	if err := symlink.Remove(provisioner.fs, symlinkPath); err != nil {
+		return err
+	}
+
+	err = symlink.CreateForLatestVersion(provisioner.fs, dk, targetDir, symlinkPath)
+	if err != nil {
+		return err
 	}
 
 	return nil
