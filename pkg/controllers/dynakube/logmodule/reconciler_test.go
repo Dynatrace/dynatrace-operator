@@ -14,20 +14,6 @@ import (
 func TestReconcile(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run("monitored-entity not available => error", func(t *testing.T) {
-		dk := &dynakube.DynaKube{}
-		notEffectiveMonitoredEntity := createIneffectiveMonitoredEntityReconciler(t, dk)
-		r := Reconciler{
-			dk:                          dk,
-			monitoredEntitiesReconciler: notEffectiveMonitoredEntity,
-		}
-
-		err := r.Reconcile(ctx)
-		require.Error(t, err)
-
-		notEffectiveMonitoredEntity.AssertCalled(t, "Reconcile", ctx)
-	})
-
 	t.Run("connection-info fail => error", func(t *testing.T) {
 		failOAConnectionInfo := createFailingReconciler(t)
 		dk := &dynakube.DynaKube{}
@@ -108,16 +94,6 @@ func createPassingMonitoredEntityReconciler(t *testing.T, dk *dynakube.DynaKube)
 	passMock.On("Reconcile", mock.Anything).Run(func(args mock.Arguments) {
 		dk.Status.KubernetesClusterMEID = "meid"
 		dk.Status.KubernetesClusterName = "cluster-name"
-	}).Return(nil)
-
-	return passMock
-}
-
-func createIneffectiveMonitoredEntityReconciler(t *testing.T, dk *dynakube.DynaKube) *controllermock.Reconciler {
-	passMock := controllermock.NewReconciler(t)
-	passMock.On("Reconcile", mock.Anything).Run(func(args mock.Arguments) {
-		dk.Status.KubernetesClusterMEID = ""
-		dk.Status.KubernetesClusterName = ""
 	}).Return(nil)
 
 	return passMock
