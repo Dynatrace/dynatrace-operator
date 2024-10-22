@@ -3,6 +3,7 @@ package edgeconnect
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -28,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -222,7 +224,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run(`consts.SecretConfigConditionType is set SecretCreated`, func(t *testing.T) {
+	t.Run(`SecretConfigConditionType is set SecretCreated`, func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -258,7 +260,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, ec.Name+"-"+consts.EdgeConnectSecretSuffix+" created", condition.Message)
 	})
 
-	t.Run(`consts.SecretConfigConditionType is set SecretGenFailed`, func(t *testing.T) {
+	t.Run(`SecretConfigConditionType is set SecretGenFailed`, func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -274,24 +276,33 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 		}
+
 		controller := createFakeClientAndReconciler(t, ec,
 			createClientSecret(testOauthClientSecret, ec.Namespace),
 			createKubeSystemNamespace(),
 		)
+		fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+				if _, ok := obj.(*corev1.Secret); ok {
+					return fmt.Errorf("get secret error")
+				}
 
-		_, err := controller.Reconcile(context.TODO(), reconcile.Request{
-			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
+				return nil
+			},
 		})
-		require.NoError(t, err)
+		controller.apiReader = fakeClient
+
+		err := controller.reconcileEdgeConnectRegular(context.TODO(), ec)
+		require.Error(t, err)
 
 		err = controller.apiReader.Get(context.TODO(), client.ObjectKey{Name: ec.Name, Namespace: ec.Namespace}, ec)
 		require.NoError(t, err)
 		require.NotEmpty(t, ec.Conditions())
 
 		condition := meta.FindStatusCondition(*ec.Conditions(), consts.SecretConfigConditionType)
-		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
-		assert.Equal(t, ec.Name+"-"+consts.EdgeConnectSecretSuffix+" created", condition.Message)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+		assert.Equal(t, conditions.SecretGenerationFailed, condition.Reason)
+		assert.Equal(t, "Failed to generate secret: get secret error", condition.Message)
 	})
 }
 
