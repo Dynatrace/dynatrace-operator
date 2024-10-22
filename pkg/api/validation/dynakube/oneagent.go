@@ -7,7 +7,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-	"golang.org/x/mod/semver"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -159,20 +158,6 @@ func conflictingOneAgentVolumeStorageSettings(_ context.Context, _ *Validator, d
 func conflictingHostGroupSettings(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	if dk.HostGroupAsParam() != "" {
 		return warningHostGroupConflict
-	}
-
-	return ""
-}
-
-func validateOneAgentVersionIsSemVerCompliant(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	agentVersion := dk.CustomOneAgentVersion()
-	if agentVersion == "" {
-		return ""
-	}
-
-	version := "v" + agentVersion
-	if !(semver.IsValid(version) && semver.Prerelease(version) == "" && semver.Build(version) == "" && len(strings.Split(version, ".")) == 3) {
-		return "Only semantic versions in the form of major.minor.patch (e.g. 1.0.0) are allowed!"
 	}
 
 	return ""
