@@ -5,11 +5,12 @@ import (
 	"path/filepath"
 	"regexp"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
-func CreateSymlinkForCurrentVersionIfNotExists(fs afero.Fs, targetDir string) error {
+func CreateForCurrentVersionIfNotExists(fs afero.Fs, targetDir string) error {
 	var relativeSymlinkPath string
 
 	var err error
@@ -44,6 +45,38 @@ func CreateSymlinkForCurrentVersionIfNotExists(fs afero.Fs, targetDir string) er
 		log.Info("symlinking failed", "version", relativeSymlinkPath)
 
 		return errors.WithStack(err)
+	}
+
+	return nil
+}
+
+func CreateForLatestVersion(fs afero.Fs, dk dynakube.DynaKube, latestVersionDir, symlinkDir string) error {
+	// MemMapFs (used for testing) doesn't comply with the Linker interface
+	linker, ok := fs.(afero.Linker)
+	if !ok {
+		log.Info("symlinking not possible", "targetDir", latestVersionDir, "fs", fs)
+
+		return nil
+	}
+
+	log.Info("creating symlink", "points-to(relative)", latestVersionDir, "location", symlinkDir)
+
+	if err := linker.SymlinkIfPossible(latestVersionDir, symlinkDir); err != nil {
+		log.Info("symlinking failed", "codemodules-version", latestVersionDir)
+
+		return errors.WithStack(err)
+	}
+
+	return nil
+}
+
+func Remove(fs afero.Fs, symlinkPath string) error {
+	if info, _ := fs.Stat(symlinkPath); info != nil {
+		log.Info("symlink to codemodule directory exists, removing it due to the possibility of the agent being installed again")
+
+		if err := fs.RemoveAll(symlinkPath); err != nil {
+			return err
+		}
 	}
 
 	return nil
