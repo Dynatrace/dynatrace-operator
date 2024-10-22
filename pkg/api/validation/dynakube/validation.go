@@ -46,7 +46,6 @@ var (
 		nameTooLong,
 		namespaceSelectorViolateLabelSpec,
 		imageFieldHasTenantImage,
-		validateOneAgentVersionIsSemVerCompliant,
 		extensionControllerImage,
 	}
 	validatorWarningFuncs = []validatorFunc{
