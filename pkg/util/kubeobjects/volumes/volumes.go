@@ -16,3 +16,13 @@ func GetVolumeMountByName(mounts []corev1.VolumeMount, volumeName string) (*core
 		volumeName, len(mounts),
 	)
 }
+
+func IsIn(mounts []corev1.VolumeMount, volumeName string) bool {
+	for _, vm := range mounts {
+		if vm.Name == volumeName {
+			return true
+		}
+	}
+
+	return false
+}

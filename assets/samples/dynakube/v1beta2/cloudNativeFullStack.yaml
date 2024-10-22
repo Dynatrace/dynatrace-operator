@@ -170,8 +170,8 @@ spec:
       # Optional: If specified, indicates the OneAgent version to use
       # Defaults to the configured version on your Dynatrace environment
       # Available versions can be found using the UI or the Dynatrace API
-      # The version is expected to be provided in the semver format
-      # Example: <major>.<minor>.<release>.<timestamp>, e.g. 1.200.0.20240501-085142
+      # The version is expected to be provided in the semver plus timestamp format
+      # Example: <major>.<minor>.<release>.<timestamp>, e.g. 1.200.0.20240101-000000
       #
       # version: ""
 

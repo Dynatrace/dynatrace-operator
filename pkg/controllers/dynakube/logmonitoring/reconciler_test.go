@@ -1,4 +1,4 @@
-package logmodule
+package logmonitoring
 
 import (
 	"context"

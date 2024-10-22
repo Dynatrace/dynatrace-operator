@@ -21,22 +21,22 @@ var (
 	modules Modules
 
 	fallbackModules = Modules{
-		ActiveGate:  true,
-		OneAgent:    true,
-		Extensions:  true,
-		LogModule:   true,
-		EdgeConnect: true,
+		ActiveGate:    true,
+		OneAgent:      true,
+		Extensions:    true,
+		LogMonitoring: true,
+		EdgeConnect:   true,
 	}
 
 	log = logd.Get().WithName("install-config")
 )
 
 type Modules struct {
-	ActiveGate  bool `json:"activeGate"`
-	OneAgent    bool `json:"oneAgent"`
-	Extensions  bool `json:"extensions"`
-	LogModule   bool `json:"logModule"`
-	EdgeConnect bool `json:"edgeConnect"`
+	ActiveGate    bool `json:"activeGate"`
+	OneAgent      bool `json:"oneAgent"`
+	Extensions    bool `json:"extensions"`
+	LogMonitoring bool `json:"logMonitoring"`
+	EdgeConnect   bool `json:"edgeConnect"`
 }
 
 func GetModules() Modules {

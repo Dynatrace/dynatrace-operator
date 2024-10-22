@@ -6,6 +6,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/pkg/errors"
@@ -144,11 +146,8 @@ func (mut *Mutator) isInjectionPossible(request *dtwebhook.MutationRequest) (boo
 }
 
 func ContainerIsInjected(container corev1.Container) bool {
-	for _, e := range container.Env {
-		if e.Name == dynatraceMetadataEnv {
-			return true
-		}
-	}
-
-	return false
+	return env.IsIn(container.Env, dynatraceMetadataEnv) &&
+		env.IsIn(container.Env, preloadEnv) &&
+		volumes.IsIn(container.VolumeMounts, OneAgentBinVolumeName) &&
+		volumes.IsIn(container.VolumeMounts, oneAgentShareVolumeName)
 }

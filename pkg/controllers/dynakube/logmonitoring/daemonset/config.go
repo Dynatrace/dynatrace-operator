@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logd.Get().WithName("logmodule-daemonset")
+	log = logd.Get().WithName("logmonitoring-daemonset")
 )

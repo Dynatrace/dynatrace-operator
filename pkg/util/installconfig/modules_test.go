@@ -32,15 +32,15 @@ func TestGet(t *testing.T) {
 			"activeGate": true,
 			"oneAgent": false,
 			"extensions": true,
-			"logModule": false,
+			"logMonitoring": false,
 			"edgeConnect": true
 		}`
 		expected := Modules{
-			ActiveGate:  true,
-			OneAgent:    false,
-			Extensions:  true,
-			LogModule:   false,
-			EdgeConnect: true,
+			ActiveGate:    true,
+			OneAgent:      false,
+			Extensions:    true,
+			LogMonitoring: false,
+			EdgeConnect:   true,
 		}
 
 		t.Setenv(modulesJsonEnv, jsonValue)
@@ -57,15 +57,15 @@ func TestGet(t *testing.T) {
 			"activeGate": true,
 			"oneAgent": false,
 			"extensions": true,
-			"logModule": false,
+			"logMonitoring": false,
 			"edgeConnect": true
 		}`
 		expected := Modules{
-			ActiveGate:  true,
-			OneAgent:    false,
-			Extensions:  true,
-			LogModule:   false,
-			EdgeConnect: true,
+			ActiveGate:    true,
+			OneAgent:      false,
+			Extensions:    true,
+			LogMonitoring: false,
+			EdgeConnect:   true,
 		}
 
 		t.Setenv(modulesJsonEnv, jsonValue)
