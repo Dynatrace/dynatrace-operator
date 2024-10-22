@@ -17,13 +17,20 @@ import (
 
 var (
 	flavorUri = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
-		OsUnix, InstallerTypeDefault, arch.FlavorMultidistro+"a", arch.Arch)
+		OsUnix, InstallerTypeDefault, arch.FlavorDefault+"a", arch.Arch)
+	flavourUriResponse = `{"error":{"code":400,"message":"Constraints violated.","constraintViolations":[{"path":"flavor","message":"'defaulta' must be any of [default, multidistro, musl]","parameterLocation":"QUERY","location":null}]}}`
+
 	archUri = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
-		OsUnix, InstallerTypeDefault, arch.FlavorMultidistro, arch.Arch+"a")
+		OsUnix, InstallerTypeDefault, arch.FlavorDefault, arch.Arch+"a")
+	archUriResponse = `{"error":{"code":400,"message":"Constraints violated.","constraintViolations":[{"path":"arch","message":"'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]","parameterLocation":"QUERY","location":null}]}}`
+
 	flavorArchUri = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
-		OsUnix, InstallerTypeDefault, arch.FlavorMultidistro+"a", arch.Arch+"a")
+		OsUnix, InstallerTypeDefault, arch.FlavorDefault+"a", arch.Arch+"a")
+	flavourArchUriResponse = `{"error":{"code":400,"message":"Constraints violated.","constraintViolations":[{"path":"flavor","message":"'defaulta' must be any of [default, multidistro, musl]","parameterLocation":"QUERY","location":null},{"path":"arch","message":"'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]","parameterLocation":"QUERY","location":null}]}}`
+
 	oaLatestMetainfoUri = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
 		"aix", InstallerTypeDefault, arch.FlavorDefault, arch.Arch)
+	oaLatestMetainfoUriResponse = `{"error":{"code":404,"message":"non supported architecture <OS_ARCHITECTURE_X86> on OS <OS_TYPE_AIX>"}}`
 )
 
 func TestMakeRequest(t *testing.T) {
@@ -298,13 +305,13 @@ func testServerErrors(t *testing.T) {
 		}{}
 
 		err := dtc.makeRequestAndUnmarshal(context.Background(), dtc.url+flavorUri, dynatracePaaSToken, &response)
-		assert.Equal(t, "dynatrace server error 400: Constraints violated.\n\t- flavor: 'multidistroa' must be any of [default, multidistro, musl]", err.Error())
+		assert.Equal(t, "dynatrace server error 400: Constraints violated.\n\t- flavor: 'defaulta' must be any of [default, multidistro, musl]", err.Error())
 
 		err = dtc.makeRequestAndUnmarshal(context.Background(), dtc.url+archUri, dynatracePaaSToken, &response)
 		assert.Equal(t, "dynatrace server error 400: Constraints violated.\n\t- arch: 'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]", err.Error())
 
 		err = dtc.makeRequestAndUnmarshal(context.Background(), dtc.url+flavorArchUri, dynatracePaaSToken, &response)
-		assert.Equal(t, "dynatrace server error 400: Constraints violated.\n\t- flavor: 'multidistroa' must be any of [default, multidistro, musl]\n\t- arch: 'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]", err.Error())
+		assert.Equal(t, "dynatrace server error 400: Constraints violated.\n\t- flavor: 'defaulta' must be any of [default, multidistro, musl]\n\t- arch: 'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]", err.Error())
 	})
 
 	t.Run("GetLatestAgentVersion - invalid architecture", func(t *testing.T) {
@@ -318,11 +325,14 @@ func dynatraceServerErrorsHandler() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 
 		if r.FormValue("Api-Token") == "" && r.Header.Get("Authorization") == "" {
-			writeServerError(w, http.StatusUnauthorized, ServerError{
-				Message:              "Missing authorization parameter.",
-				Code:                 http.StatusUnauthorized,
-				ConstraintViolations: nil,
-			})
+			writeServerErrorResponse(w, http.StatusUnauthorized, `
+				{
+				  "error": {
+					"code": 401,
+					"message": "Missing authorization parameter."
+				  }
+				}
+			`)
 		} else {
 			handleInvalidRequest(r, w)
 		}
@@ -332,70 +342,19 @@ func dynatraceServerErrorsHandler() http.HandlerFunc {
 func handleInvalidRequest(request *http.Request, writer http.ResponseWriter) {
 	switch request.URL.RequestURI() {
 	case flavorUri:
-		writeServerError(writer, http.StatusBadRequest, ServerError{
-			Code:    http.StatusBadRequest,
-			Message: "Constraints violated.",
-			ConstraintViolations: []ConstraintViolation{
-				{
-					Path:              "flavor",
-					Message:           "'multidistroa' must be any of [default, multidistro, musl]",
-					ParameterLocation: "QUERY",
-					Location:          "",
-				},
-			},
-		})
+		writeServerErrorResponse(writer, http.StatusBadRequest, flavourUriResponse)
 	case archUri:
-		writeServerError(writer, http.StatusBadRequest, ServerError{
-			Code:    http.StatusBadRequest,
-			Message: "Constraints violated.",
-			ConstraintViolations: []ConstraintViolation{
-				{
-					Path:              "arch",
-					Message:           "'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]",
-					ParameterLocation: "QUERY",
-					Location:          "",
-				},
-			},
-		})
+		writeServerErrorResponse(writer, http.StatusBadRequest, archUriResponse)
 	case flavorArchUri:
-		writeServerError(writer, http.StatusBadRequest, ServerError{
-			Code:    http.StatusBadRequest,
-			Message: "Constraints violated.",
-			ConstraintViolations: []ConstraintViolation{
-				{
-					Path:              "flavor",
-					Message:           "'multidistroa' must be any of [default, multidistro, musl]",
-					ParameterLocation: "QUERY",
-					Location:          "",
-				},
-				{
-					Path:              "arch",
-					Message:           "'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]",
-					ParameterLocation: "QUERY",
-					Location:          "",
-				},
-			},
-		})
+		writeServerErrorResponse(writer, http.StatusBadRequest, flavourArchUriResponse)
 	case oaLatestMetainfoUri:
-		writeServerError(writer, http.StatusBadRequest, ServerError{
-			Code:    http.StatusNotFound,
-			Message: "non supported architecture <OS_ARCHITECTURE_X86> on OS <OS_TYPE_AIX>",
-		})
+		writeServerErrorResponse(writer, http.StatusNotFound, oaLatestMetainfoUriResponse)
 	default:
-		writeServerError(writer, http.StatusBadRequest, ServerError{
-			Message:              "unsupported url",
-			Code:                 http.StatusBadRequest,
-			ConstraintViolations: nil,
-		})
+		writeServerErrorResponse(writer, http.StatusNotFound, `{"error":{"code":404,"message":"HTTP 404 Not Found"}}`)
 	}
 }
 
-func writeServerError(w http.ResponseWriter, status int, srvErr ServerError) {
-	message := serverErrorResponse{
-		ErrorMessage: srvErr,
-	}
-	result, _ := json.Marshal(&message)
-
+func writeServerErrorResponse(w http.ResponseWriter, status int, srvErrResp string) {
 	w.WriteHeader(status)
-	_, _ = w.Write(result)
+	_, _ = w.Write([]byte(srvErrResp))
 }
