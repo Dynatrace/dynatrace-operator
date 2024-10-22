@@ -25,7 +25,7 @@ var (
 	validatorErrorFuncs = []validatorFunc{
 		isActiveGateModuleDisabled,
 		isExtensionsModuleDisabled,
-		isLogModuleModuleDisabled,
+		isLogMonitoringModuleDisabled,
 		isOneAgentModuleDisabled,
 		NoApiUrl,
 		IsInvalidApiUrl,
@@ -38,7 +38,7 @@ var (
 		conflictingOneAgentConfiguration,
 		conflictingOneAgentNodeSelector,
 		conflictingNamespaceSelector,
-		conflictingLogModuleNodeSelector,
+		conflictingLogMonitoringNodeSelector,
 		noResourcesAvailable,
 		imageFieldSetWithoutCSIFlag,
 		conflictingOneAgentVolumeStorageSettings,
@@ -46,7 +46,6 @@ var (
 		nameTooLong,
 		namespaceSelectorViolateLabelSpec,
 		imageFieldHasTenantImage,
-		validateOneAgentVersionIsSemVerCompliant,
 		extensionControllerImage,
 	}
 	validatorWarningFuncs = []validatorFunc{

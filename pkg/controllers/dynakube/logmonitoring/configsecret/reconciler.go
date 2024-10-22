@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	logModuleSecretSuffix = "-logmodule-config"
+	logMonitoringSecretSuffix = "-logmonitoring-config"
 
 	tenantKey       = "Tenant"
 	tenantTokenKey  = "TenantToken"
@@ -43,7 +43,7 @@ func NewReconciler(clt client.Client,
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.NeedsLogModule() {
+	if !r.dk.LogMonitoring().IsEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), lmcConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}
@@ -52,7 +52,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: GetSecretName(r.dk.Name), Namespace: r.dk.Namespace}})
 
 		if err != nil {
-			log.Error(err, "failed to clean-up LogModule config-secret")
+			log.Error(err, "failed to clean-up LogMonitoring config-secret")
 		}
 
 		meta.RemoveStatusCondition(r.dk.Conditions(), lmcConditionType)
@@ -91,7 +91,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 		return nil, err
 	}
 
-	coreLabels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.LogModuleComponentLabel).BuildLabels()
+	coreLabels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.LogMonitoringComponentLabel).BuildLabels()
 
 	newSecret, err := k8ssecret.Build(r.dk,
 		GetSecretName(r.dk.Name),
@@ -144,5 +144,5 @@ func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, erro
 }
 
 func GetSecretName(dkName string) string {
-	return dkName + logModuleSecretSuffix
+	return dkName + logMonitoringSecretSuffix
 }

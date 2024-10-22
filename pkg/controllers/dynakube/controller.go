@@ -19,7 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmodule"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -77,7 +77,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, co
 		injectionReconcilerBuilder:          injection.NewReconciler,
 		istioReconcilerBuilder:              istio.NewReconciler,
 		extensionReconcilerBuilder:          extension.NewReconciler,
-		logModuleReconcilerBuilder:          logmodule.NewReconciler,
+		logMonitoringReconcilerBuilder:      logmonitoring.NewReconciler,
 		proxyReconcilerBuilder:              proxy.NewReconciler,
 		kspmReconcilerBuilder:               kspm.NewReconciler,
 	}
@@ -113,7 +113,7 @@ type Controller struct {
 	injectionReconcilerBuilder          injection.ReconcilerBuilder
 	istioReconcilerBuilder              istio.ReconcilerBuilder
 	extensionReconcilerBuilder          extension.ReconcilerBuilder
-	logModuleReconcilerBuilder          logmodule.ReconcilerBuilder
+	logMonitoringReconcilerBuilder      logmonitoring.ReconcilerBuilder
 	proxyReconcilerBuilder              proxy.ReconcilerBuilder
 	kspmReconcilerBuilder               kspm.ReconcilerBuilder
 
@@ -334,11 +334,11 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling app injection")
 
-	log.Info("start reconciling LogModule")
+	log.Info("start reconciling LogMonitoring")
 
-	logModuleReconciler := controller.logModuleReconcilerBuilder(controller.client, controller.apiReader, dynatraceClient, dk)
+	logMonitoringReconciler := controller.logMonitoringReconcilerBuilder(controller.client, controller.apiReader, dynatraceClient, dk)
 
-	err = logModuleReconciler.Reconcile(ctx)
+	err = logMonitoringReconciler.Reconcile(ctx)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
 			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
@@ -348,7 +348,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 			return goerrors.Join(componentErrors...)
 		}
 
-		log.Info("could not reconcile LogModule")
+		log.Info("could not reconcile LogMonitoring")
 
 		componentErrors = append(componentErrors, err)
 	}

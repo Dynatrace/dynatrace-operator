@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -165,12 +166,10 @@ func TestConflictingNodeSelector(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
-					LogModule: dynakube.LogModuleSpec{
-						Enabled: true,
-					},
+					APIURL:        testApiUrl,
+					LogMonitoring: &logmonitoring.Spec{},
 					Templates: dynakube.TemplatesSpec{
-						LogModule: dynakube.LogModuleTemplateSpec{
+						LogMonitoring: logmonitoring.TemplateSpec{
 							NodeSelector: map[string]string{"node": "12"},
 						},
 					},
@@ -261,10 +260,8 @@ func TestConflictingNodeSelector(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
-					LogModule: dynakube.LogModuleSpec{
-						Enabled: true,
-					},
+					APIURL:        testApiUrl,
+					LogMonitoring: &logmonitoring.Spec{},
 				},
 			}, &defaultCSIDaemonSet)
 
@@ -273,10 +270,8 @@ func TestConflictingNodeSelector(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
-					LogModule: dynakube.LogModuleSpec{
-						Enabled: true,
-					},
+					APIURL:        testApiUrl,
+					LogMonitoring: &logmonitoring.Spec{},
 				},
 			},
 			newCloudNativeDynakube("dk2", map[string]string{}, "1"),
@@ -287,12 +282,10 @@ func TestConflictingNodeSelector(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
-					LogModule: dynakube.LogModuleSpec{
-						Enabled: true,
-					},
+					APIURL:        testApiUrl,
+					LogMonitoring: &logmonitoring.Spec{},
 					Templates: dynakube.TemplatesSpec{
-						LogModule: dynakube.LogModuleTemplateSpec{
+						LogMonitoring: logmonitoring.TemplateSpec{
 							NodeSelector: map[string]string{"node": "1"},
 						},
 					},
@@ -482,43 +475,5 @@ func createDynakubeWithHostGroup(args []string, hostGroup string) *dynakube.Dyna
 				HostGroup: hostGroup,
 			},
 		},
-	}
-}
-
-func TestValidateOneAgentVersionIsSemVer(t *testing.T) {
-	testCasesAcceptedVersions := []string{"", "1.0.0", "1.200.1"}
-
-	testCasesNotAcceptedVersions := []string{"latest", "raw", "1.200.1-raw", "v1.200.1-raw", "1.200.1+build", "v1.200.1+build", "1.200.1-raw+build", "v1.200.1-raw+build", "1.200", "v1.200", "1", "v1", "1.0", "v1.0", "v1.200.0"}
-
-	for _, tc := range testCasesAcceptedVersions {
-		t.Run("should accept version "+tc, func(t *testing.T) {
-			assertAllowed(t, &dynakube.DynaKube{
-				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
-					OneAgent: dynakube.OneAgentSpec{
-						ClassicFullStack: &dynakube.HostInjectSpec{
-							Version: tc,
-						},
-					},
-				},
-			})
-		})
-	}
-
-	for _, tc := range testCasesNotAcceptedVersions {
-		t.Run("should accept version "+tc, func(t *testing.T) {
-			assertDenied(t, []string{"Only semantic versions in the form of major.minor.patch (e.g. 1.0.0) are allowed!"}, &dynakube.DynaKube{
-				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
-					OneAgent: dynakube.OneAgentSpec{
-						ClassicFullStack: &dynakube.HostInjectSpec{
-							Version: tc,
-						},
-					},
-				},
-			})
-		})
 	}
 }

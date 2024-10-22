@@ -4888,13 +4888,8 @@ spec:
                 required:
                 - enabled
                 type: object
-              logModule:
-                description: General configuration about the LogModule feature.
-                properties:
-                  enabled:
-                    type: boolean
-                required:
-                - enabled
+              logMonitoring:
+                description: General configuration about the LogMonitoring feature.
                 type: object
               metadataEnrichment:
                 description: Configuration for Metadata Enrichment.
@@ -6990,26 +6985,26 @@ spec:
                             type: string
                         type: object
                     type: object
-                  logModule:
-                    description: Low-level configuration options for the LogModule
+                  logMonitoring:
+                    description: Low-level configuration options for the LogMonitoring
                       feature.
                     properties:
                       annotations:
                         additionalProperties:
                           type: string
-                        description: Add custom annotations to the LogModule pods
+                        description: Add custom annotations to the LogMonitoring pods
                         type: object
                       args:
-                        description: Set additional arguments to the LogModule main
-                          container
+                        description: Set additional arguments to the LogMonitoring
+                          main container
                         items:
                           type: string
                         type: array
                       dnsPolicy:
-                        description: Sets DNS Policy for the LogModule pods
+                        description: Sets DNS Policy for the LogMonitoring pods
                         type: string
                       imageRef:
-                        description: Overrides the default image for the LogModule
+                        description: Overrides the default image for the LogMonitoring
                           pods
                         properties:
                           repository:
@@ -7023,21 +7018,21 @@ spec:
                       labels:
                         additionalProperties:
                           type: string
-                        description: Add custom labels to the LogModule pods
+                        description: Add custom labels to the LogMonitoring pods
                         type: object
                       nodeSelector:
                         additionalProperties:
                           type: string
                         description: Node selector to control the selection of nodes
-                          for the LogModule pods
+                          for the LogMonitoring pods
                         type: object
                       priorityClassName:
-                        description: Assign a priority class to the LogModule pods.
-                          By default, no class is set
+                        description: Assign a priority class to the LogMonitoring
+                          pods. By default, no class is set
                         type: string
                       resources:
                         description: Define resources' requests and limits for all
-                          the LogModule pods
+                          the LogMonitoring pods
                         properties:
                           claims:
                             description: |-
@@ -7097,11 +7092,11 @@ spec:
                         type: object
                       secCompProfile:
                         description: The SecComp Profile that will be configured in
-                          order to run in secure computing mode for the LogModule
+                          order to run in secure computing mode for the LogMonitoring
                           pods
                         type: string
                       tolerations:
-                        description: Set tolerations for the LogModule pods
+                        description: Set tolerations for the LogMonitoring pods
                         items:
                           description: |-
                             The pod this Toleration is attached to tolerates any taint that matches

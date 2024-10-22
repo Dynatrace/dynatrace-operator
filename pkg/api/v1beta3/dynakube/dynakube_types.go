@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -107,6 +108,10 @@ type DynaKubeSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	Templates TemplatesSpec `json:"templates,omitempty"`
 
+	// General configuration about the LogMonitoring feature.
+	// +kubebuilder:validation:Optional
+	LogMonitoring *logmonitoring.Spec `json:"logMonitoring,omitempty"`
+
 	// Configuration for Metadata Enrichment.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Metadata Enrichment",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
@@ -138,10 +143,6 @@ type DynaKubeSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	Extensions ExtensionsSpec `json:"extensions,omitempty"`
 
-	// General configuration about the LogModule feature.
-	// +kubebuilder:validation:Optional
-	LogModule LogModuleSpec `json:"logModule,omitempty"`
-
 	// General configuration about the KSPM feature.
 	// +kubebuilder:validation:Optional
 	Kspm kspm.Spec `json:"kspm,omitempty"`
@@ -152,9 +153,9 @@ type TemplatesSpec struct {
 	KspmNodeConfigurationCollector kspm.NodeConfigurationCollectorSpec `json:"kspmNodeConfigurationCollector,omitempty"`
 	// +kubebuilder:validation:Optional
 	ExtensionExecutionController ExtensionExecutionControllerSpec `json:"extensionExecutionController,omitempty"`
-	// Low-level configuration options for the LogModule feature.
+	// Low-level configuration options for the LogMonitoring feature.
 	// +kubebuilder:validation:Optional
-	LogModule LogModuleTemplateSpec `json:"logModule,omitempty"`
+	LogMonitoring logmonitoring.TemplateSpec `json:"logMonitoring,omitempty"`
 	// +kubebuilder:validation:Optional
 	OpenTelemetryCollector OpenTelemetryCollectorSpec `json:"openTelemetryCollector,omitempty"`
 }
