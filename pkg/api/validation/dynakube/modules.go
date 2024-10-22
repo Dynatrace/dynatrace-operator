@@ -8,10 +8,10 @@ import (
 )
 
 var (
-	errorOneAgentModuleDisabled   = installconfig.GetModuleValidationErrorMessage("OneAgent")
-	errorActiveGateModuleDisabled = installconfig.GetModuleValidationErrorMessage("ActiveGate")
-	errorExtensionsModuleDisabled = installconfig.GetModuleValidationErrorMessage("Extensions")
-	errorLogModuleModuleDisabled  = installconfig.GetModuleValidationErrorMessage("LogModule")
+	errorOneAgentModuleDisabled      = installconfig.GetModuleValidationErrorMessage("OneAgent")
+	errorActiveGateModuleDisabled    = installconfig.GetModuleValidationErrorMessage("ActiveGate")
+	errorExtensionsModuleDisabled    = installconfig.GetModuleValidationErrorMessage("Extensions")
+	errorLogMonitoringModuleDisabled = installconfig.GetModuleValidationErrorMessage("LogMonitoring")
 )
 
 func isOneAgentModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
@@ -38,9 +38,9 @@ func isExtensionsModuleDisabled(_ context.Context, v *Validator, dk *dynakube.Dy
 	return ""
 }
 
-func isLogModuleModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if dk.NeedsLogModule() && !v.modules.LogModule {
-		return errorLogModuleModuleDisabled
+func isLogMonitoringModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
+	if dk.LogMonitoring().IsEnabled() && !v.modules.LogMonitoring {
+		return errorLogMonitoringModuleDisabled
 	}
 
 	return ""

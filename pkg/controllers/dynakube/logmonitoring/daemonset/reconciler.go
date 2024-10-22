@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,8 +18,8 @@ import (
 )
 
 const (
-	nameSuffix         = "-logmodule"
-	serviceAccountName = "dynatrace-logmodule"
+	nameSuffix         = "-logmonitoring"
+	serviceAccountName = "dynatrace-logmonitoring"
 )
 
 type Reconciler struct {
@@ -38,21 +39,25 @@ func NewReconciler(clt client.Client,
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.NeedsLogModule() {
+	if !r.dk.LogMonitoring().IsEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}
 
 		query := daemonset.Query(r.client, r.apiReader, log)
-		err := query.Delete(ctx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: r.dk.LogModuleDaemonSetName(), Namespace: r.dk.Namespace}})
+		err := query.Delete(ctx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: r.dk.LogMonitoring().GetDaemonSetName(), Namespace: r.dk.Namespace}})
 
 		if err != nil {
-			log.Error(err, "failed to clean-up LogModule config-secret")
+			log.Error(err, "failed to clean-up LogMonitoring config-secret")
 		}
 
 		meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
 
 		return nil // clean-up shouldn't cause a failure
+	}
+
+	if !r.isMEConfigured() {
+		return errors.New("the status of the DynaKube is missing information about the kubernetes monitored-entity, skipping logmodule deployment")
 	}
 
 	ds, err := r.generateDaemonSet()
@@ -68,8 +73,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if updated {
-		conditions.SetDaemonSetOutdated(r.dk.Conditions(), conditionType, r.dk.LogModuleDaemonSetName()) // needed to reset the timestamp
-		conditions.SetDaemonSetCreated(r.dk.Conditions(), conditionType, r.dk.LogModuleDaemonSetName())
+		conditions.SetDaemonSetOutdated(r.dk.Conditions(), conditionType, r.dk.LogMonitoring().GetDaemonSetName()) // needed to reset the timestamp
+		conditions.SetDaemonSetCreated(r.dk.Conditions(), conditionType, r.dk.LogMonitoring().GetDaemonSetName())
 	}
 
 	return nil
@@ -81,19 +86,19 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 		return nil, err
 	}
 
-	labels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.LogModuleComponentLabel)
+	labels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.LogMonitoringComponentLabel)
 
 	maxUnavailable := intstr.FromInt(r.dk.FeatureOneAgentMaxUnavailable())
 
-	ds, err := daemonset.Build(r.dk, r.dk.LogModuleDaemonSetName(), getContainer(*r.dk),
+	ds, err := daemonset.Build(r.dk, r.dk.LogMonitoring().GetDaemonSetName(), getContainer(*r.dk),
 		daemonset.SetInitContainer(getInitContainer(*r.dk)),
-		daemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.LogModuleTemplates().Labels),
-		daemonset.SetAllAnnotations(nil, r.dk.LogModuleTemplates().Annotations),
+		daemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.LogMonitoring().Labels),
+		daemonset.SetAllAnnotations(nil, r.dk.LogMonitoring().Annotations),
 		daemonset.SetServiceAccount(serviceAccountName),
-		daemonset.SetDNSPolicy(r.dk.LogModuleTemplates().DNSPolicy),
+		daemonset.SetDNSPolicy(r.dk.LogMonitoring().DNSPolicy),
 		daemonset.SetAffinity(node.Affinity()),
-		daemonset.SetPriorityClass(r.dk.LogModuleTemplates().PriorityClassName),
-		daemonset.SetTolerations(r.dk.LogModuleTemplates().Tolerations),
+		daemonset.SetPriorityClass(r.dk.LogMonitoring().PriorityClassName),
+		daemonset.SetTolerations(r.dk.LogMonitoring().Tolerations),
 		daemonset.SetPullSecret(r.dk.ImagePullSecretReferences()...),
 		daemonset.SetUpdateStrategy(appsv1.DaemonSetUpdateStrategy{
 			RollingUpdate: &appsv1.RollingUpdateDaemonSet{
@@ -112,4 +117,8 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 	}
 
 	return ds, nil
+}
+
+func (r *Reconciler) isMEConfigured() bool {
+	return r.dk.Status.KubernetesClusterMEID != "" && r.dk.Status.KubernetesClusterName != ""
 }

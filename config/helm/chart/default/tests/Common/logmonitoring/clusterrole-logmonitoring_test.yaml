@@ -1,8 +1,8 @@
-suite: test logmodule clusterrole
+suite: test logmonitoring clusterrole
 templates:
-  - Common/logmodule/clusterrole-logmodule.yaml
+  - Common/logmonitoring/clusterrole-logmonitoring.yaml
 tests:
-  - it: logmodule ClusterRole should exist
+  - it: logmonitoring ClusterRole should exist
     set:
       platform: openshift
     documentIndex: 0
@@ -11,7 +11,7 @@ tests:
           of: ClusterRole
       - equal:
           path: metadata.name
-          value: dynatrace-logmodule
+          value: dynatrace-logmonitoring
       - isNotEmpty:
           path: metadata.labels
       - contains:
@@ -25,7 +25,7 @@ tests:
               - securitycontextconstraints
             verbs:
               - use
-  - it: logmodule ClusterRoleBinding should exist
+  - it: logmonitoring ClusterRoleBinding should exist
     documentIndex: 1
     set:
       platform: openshift
@@ -34,19 +34,19 @@ tests:
           of: ClusterRoleBinding
       - equal:
           path: metadata.name
-          value: dynatrace-logmodule
+          value: dynatrace-logmonitoring
       - isNotEmpty:
           path: metadata.labels
   - it: shouldn't exist if not openshift
     set:
-      rbac.logModule.create: true
+      rbac.logMonitoring.create: true
       platform: NOT-openshift
     asserts:
       - hasDocuments:
         count: 0
   - it: shouldn't exist if turned off
     set:
-      rbac.logModule.create: false
+      rbac.logMonitoring.create: false
     asserts:
       - hasDocuments:
         count: 0

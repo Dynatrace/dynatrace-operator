@@ -20,13 +20,13 @@ tests:
                   "activeGate": true,
                   "oneAgent": true,
                   "extensions": true,
-                  "logModule": true,
+                  "logMonitoring": true,
                   "edgeConnect": true
                 }
   - it: ConfigMap should respect the set values
     set:
       rbac.oneAgent.create: false
-      rbac.logModule.create: false
+      rbac.logMonitoring.create: false
       rbac.edgeConnect.create: false
       rbac.activeGate.create: false
       rbac.extensions.create: false
@@ -47,6 +47,6 @@ tests:
                   "activeGate": false,
                   "oneAgent": false,
                   "extensions": false,
-                  "logModule": false,
+                  "logMonitoring": false,
                   "edgeConnect": false
                 }

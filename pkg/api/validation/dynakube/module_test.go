@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
 )
@@ -86,24 +87,24 @@ func TestIsModuleDisabled(t *testing.T) {
 			expectedMessage: "",
 		},
 		{
-			title:           "logmodule module disabled but also configured in dk => error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{LogModule: dynakube.LogModuleSpec{Enabled: true}}},
-			modules:         installconfig.Modules{LogModule: false},
-			moduleFunc:      isLogModuleModuleDisabled,
-			expectedMessage: errorLogModuleModuleDisabled,
+			title:           "logmonitoring module disabled but also configured in dk => error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{LogMonitoring: &logmonitoring.Spec{}}},
+			modules:         installconfig.Modules{LogMonitoring: false},
+			moduleFunc:      isLogMonitoringModuleDisabled,
+			expectedMessage: errorLogMonitoringModuleDisabled,
 		},
 		{
-			title:           "logmodule module disabled but not configured => no error",
+			title:           "logmonitoring module disabled but not configured => no error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{}},
-			modules:         installconfig.Modules{LogModule: false},
-			moduleFunc:      isLogModuleModuleDisabled,
+			modules:         installconfig.Modules{LogMonitoring: false},
+			moduleFunc:      isLogMonitoringModuleDisabled,
 			expectedMessage: "",
 		},
 		{
-			title:           "logmodule module enabled and also configured => no error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{LogModule: dynakube.LogModuleSpec{Enabled: true}}},
-			modules:         installconfig.Modules{LogModule: true},
-			moduleFunc:      isLogModuleModuleDisabled,
+			title:           "logmonitoring module enabled and also configured => no error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{LogMonitoring: &logmonitoring.Spec{}}},
+			modules:         installconfig.Modules{LogMonitoring: true},
+			moduleFunc:      isLogMonitoringModuleDisabled,
 			expectedMessage: "",
 		},
 	}

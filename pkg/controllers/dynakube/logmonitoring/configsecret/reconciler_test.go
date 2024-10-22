@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/pkg/errors"
@@ -120,17 +121,20 @@ func checkSecretForValue(t *testing.T, k8sClient client.Client, dk *dynakube.Dyn
 	}
 }
 
-func createDynakube(isEnabled bool) *dynakube.DynaKube {
+func createDynakube(isLogMonitoringEnabled bool) *dynakube.DynaKube {
+	var logMonitoringSpec *logmonitoring.Spec
+	if isLogMonitoringEnabled {
+		logMonitoringSpec = &logmonitoring.Spec{}
+	}
+
 	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: dkNamespace,
 			Name:      dkName,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL: "test-url",
-			LogModule: dynakube.LogModuleSpec{
-				Enabled: isEnabled,
-			},
+			APIURL:        "test-url",
+			LogMonitoring: logMonitoringSpec,
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: dynakube.OneAgentStatus{

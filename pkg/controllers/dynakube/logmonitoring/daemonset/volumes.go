@@ -3,23 +3,23 @@ package daemonset
 import (
 	"fmt"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmodule/configsecret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/configsecret"
 	corev1 "k8s.io/api/core/v1"
 )
 
 const (
-	// for configuring the logmodule
+	// for configuring the logmonitoring
 	configVolumeName      = "config"
 	configVolumeMountPath = "/var/lib/dynatrace/oneagent/agent/config/deployment.conf"
 
-	// for the logmodule to read/write
+	// for the logmonitoring to read/write
 	dtLibVolumeName         = "dynatrace-lib"
 	dtLibVolumeMountPath    = "/var/lib/dynatrace"
-	dtLibVolumePathTemplate = "/tmp/dynatrace-logmodule-%s"
+	dtLibVolumePathTemplate = "/tmp/dynatrace-logmonitoring-%s"
 	dtLogVolumeName         = "dynatrace-logs"
 	dtLogVolumeMountPath    = "/var/log/dynatrace"
 
-	// for the logs that the logmodule will ingest
+	// for the logs that the logmonitoring will ingest
 	podLogsVolumeName       = "var-log-pods"
 	podLogsVolumePath       = "/var/log/pods"
 	dockerLogsVolumeName    = "docker-container-logs"
@@ -81,7 +81,7 @@ func getDTVolumes(tenantUUID string) []corev1.Volume {
 	}
 }
 
-// getIngestVolumeMounts provides the VolumeMounts for the log folders that will be ingested by the logmodule
+// getIngestVolumeMounts provides the VolumeMounts for the log folders that will be ingested by the logmonitoring
 func getIngestVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
@@ -102,7 +102,7 @@ func getIngestVolumeMounts() []corev1.VolumeMount {
 	}
 }
 
-// getIngestVolumeMounts provides the VolumeMounts for the log folders that will be ingested by the logmodule
+// getIngestVolumeMounts provides the VolumeMounts for the log folders that will be ingested by the logmonitoring
 func getIngestVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
