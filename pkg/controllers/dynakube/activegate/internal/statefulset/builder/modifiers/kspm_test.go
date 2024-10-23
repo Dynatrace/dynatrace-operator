@@ -56,5 +56,8 @@ func TestKspmModify(t *testing.T) {
 		require.NotEmpty(t, sts)
 		isSubset(t, mod.getVolumes(), sts.Spec.Template.Spec.Volumes)
 		isSubset(t, mod.getVolumeMounts(), sts.Spec.Template.Spec.Containers[0].VolumeMounts)
+
+		require.NotEmpty(t, sts.Spec.Template.Annotations)
+		assert.NotEmpty(t, sts.Spec.Template.Annotations[kspmTokenSecretHashAnnotation])
 	})
 }
