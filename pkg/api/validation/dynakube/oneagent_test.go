@@ -517,6 +517,7 @@ func TestIsOneAgentVersionValid(t *testing.T) {
 			assertAllowed(t, &dk)
 		})
 	}
+
 	for _, invalidVersion := range invalidVersions {
 		dk.Spec.OneAgent.ClassicFullStack.Version = invalidVersion
 		t.Run(fmt.Sprintf("OneAgent custom version %s is not allowed", invalidVersion), func(t *testing.T) {
