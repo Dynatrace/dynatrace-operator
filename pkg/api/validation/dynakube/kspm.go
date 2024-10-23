@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	errorKSPMMissingKubemon = `For the KSPM feature, the "kubernetes-monitoring" capability also needs to be enabled on the ActiveGate. `
+	errorKSPMMissingKubemon = `The Dynakube's specification specifies KSPM, but "kubernetes-monitoring" is not enabled on the Activegate.`
 )
 
 func missingKSPMDependency(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
