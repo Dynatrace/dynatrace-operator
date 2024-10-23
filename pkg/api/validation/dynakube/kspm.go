@@ -11,13 +11,10 @@ const (
 )
 
 func missingKSPMDependecy(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if !dk.KSPM().IsEnabled() {
-		return ""
+	if dk.KSPM().IsEnabled() &&
+		!dk.ActiveGate().IsKubernetesMonitoringEnabled() {
+		return errorKSPMMissingKubemon
 	}
 
-	if dk.ActiveGate().IsKubernetesMonitoringEnabled() {
-		return ""
-	}
-
-	return errorKSPMMissingKubemon
+	return ""
 }
