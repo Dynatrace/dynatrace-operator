@@ -3,8 +3,10 @@ package validation
 import (
 	"context"
 	"fmt"
+	"regexp"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,6 +25,10 @@ The conflicting Dynakube: %s
 	warningOneAgentInstallerEnvVars = `Environment variables ONEAGENT_INSTALLER_SCRIPT_URL and ONEAGENT_INSTALLER_TOKEN are only relevant for an unsupported image type. Please make sure you are using a supported image.`
 
 	warningHostGroupConflict = `DynaKube's specification sets the host group using --set-host-group parameter. Instead, specify the new spec.oneagent.hostGroup field. If you use both settings, the new field precedes the parameter.`
+
+	versionRegex = `^\d+.\d+.\d+.\d{8}-\d{6}$`
+
+	versionInvalidMessage = "The OneAgent's version is only valid in the format 'major.minor.patch.timestamp', e.g. 1.0.0.20240101-000000"
 )
 
 func conflictingOneAgentConfiguration(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -136,6 +142,25 @@ func conflictingOneAgentVolumeStorageSettings(_ context.Context, _ *Validator, d
 func conflictingHostGroupSettings(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	if dk.HostGroupAsParam() != "" {
 		return warningHostGroupConflict
+	}
+
+	return ""
+}
+
+func isOneAgentVersionValid(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	agentVersion := dk.CustomOneAgentVersion()
+	if agentVersion == "" {
+		return ""
+	}
+
+	_, err := dtversion.ToSemver(agentVersion)
+	if err != nil {
+		return versionInvalidMessage
+	}
+
+	match, err := regexp.MatchString(versionRegex, agentVersion)
+	if err != nil || !match {
+		return versionInvalidMessage
 	}
 
 	return ""

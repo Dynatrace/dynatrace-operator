@@ -3,11 +3,11 @@ package validation
 import (
 	"context"
 	"fmt"
-	"strings"
+	"regexp"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube" //nolint:staticcheck
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-	"golang.org/x/mod/semver"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -25,6 +25,10 @@ The conflicting Dynakube: %s
 	warningOneAgentInstallerEnvVars = `Environment variables ONEAGENT_INSTALLER_SCRIPT_URL and ONEAGENT_INSTALLER_TOKEN are only relevant for an unsupported image type. Please make sure you are using a supported image.`
 
 	warningHostGroupConflict = `DynaKube's specification sets the host group using --set-host-group parameter. Instead, specify the new spec.oneagent.hostGroup field. If you use both settings, the new field precedes the parameter.`
+
+	versionRegex = `^\d+.\d+.\d+.\d{8}-\d{6}$`
+
+	versionInvalidMessage = "The OneAgent's version is only valid in the format 'major.minor.patch.timestamp', e.g. 1.0.0.20240101-000000"
 )
 
 func conflictingOneAgentConfiguration(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -143,15 +147,20 @@ func conflictingHostGroupSettings(_ context.Context, _ *Validator, dk *dynakube.
 	return ""
 }
 
-func validateOneAgentVersionIsSemVerCompliant(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func isOneAgentVersionValid(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	agentVersion := dk.CustomOneAgentVersion()
 	if agentVersion == "" {
 		return ""
 	}
 
-	version := "v" + agentVersion
-	if !(semver.IsValid(version) && semver.Prerelease(version) == "" && semver.Build(version) == "" && len(strings.Split(version, ".")) == 3) {
-		return "Only semantic versions in the form of major.minor.patch (e.g. 1.0.0) are allowed!"
+	_, err := dtversion.ToSemver(agentVersion)
+	if err != nil {
+		return versionInvalidMessage
+	}
+
+	match, err := regexp.MatchString(versionRegex, agentVersion)
+	if err != nil || !match {
+		return versionInvalidMessage
 	}
 
 	return ""
