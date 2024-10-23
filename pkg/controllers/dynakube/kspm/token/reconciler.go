@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
@@ -32,7 +33,7 @@ func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.D
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if r.dk.IsKSPMEnabled() {
+	if r.dk.KSPM().IsEnabled() {
 		return ensureKSPMSecret(ctx, r.client, r.apiReader, r.dk)
 	}
 
@@ -41,12 +42,12 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 func ensureKSPMSecret(ctx context.Context, client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) error {
 	query := k8ssecret.Query(client, apiReader, log)
-	_, err := query.Get(ctx, types.NamespacedName{Name: dk.GetKSPMSecretName(), Namespace: dk.Namespace})
+	_, err := query.Get(ctx, types.NamespacedName{Name: dk.KSPM().GetTokenSecretName(), Namespace: dk.Namespace})
 
 	if err != nil && k8serrors.IsNotFound(err) {
 		log.Info("creating new token for kspm")
 
-		secretConfig, err := generateKSPMTokenSecret(dk.GetKSPMSecretName(), dk)
+		secretConfig, err := generateKSPMTokenSecret(dk.KSPM().GetTokenSecretName(), dk)
 
 		if err != nil {
 			conditions.SetSecretGenFailed(dk.Conditions(), kspmConditionType, err)
@@ -62,7 +63,7 @@ func ensureKSPMSecret(ctx context.Context, client client.Client, apiReader clien
 			return err
 		}
 
-		conditions.SetSecretCreated(dk.Conditions(), kspmConditionType, dk.GetKSPMSecretName())
+		conditions.SetSecretCreated(dk.Conditions(), kspmConditionType, dk.KSPM().GetTokenSecretName())
 	}
 
 	return nil
@@ -74,10 +75,10 @@ func removeKSPMSecret(ctx context.Context, client client.Client, apiReader clien
 	}
 
 	query := k8ssecret.Query(client, apiReader, log)
-	err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.GetKSPMSecretName(), Namespace: dk.Namespace}})
+	err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.KSPM().GetTokenSecretName(), Namespace: dk.Namespace}})
 
 	if err != nil {
-		log.Info("could not delete kspm token", "name", dk.GetKSPMSecretName())
+		log.Info("could not delete kspm token", "name", dk.KSPM().GetTokenSecretName())
 
 		return err
 	}
@@ -94,7 +95,7 @@ func generateKSPMTokenSecret(name string, dk *dynakube.DynaKube) (secret *corev1
 	}
 
 	secretData := make(map[string][]byte)
-	secretData[dynakube.KSPMSecretKey] = []byte(newToken.String())
+	secretData[kspm.TokenSecretKey] = []byte(newToken.String())
 	secretConfig, err := k8ssecret.Build(dk,
 		name,
 		secretData,

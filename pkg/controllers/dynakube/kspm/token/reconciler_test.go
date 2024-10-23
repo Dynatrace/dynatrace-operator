@@ -29,7 +29,7 @@ func TestTokenCreation(t *testing.T) {
 		require.NoError(t, err)
 
 		var secret corev1.Secret
-		err = clt.Get(ctx, types.NamespacedName{Name: dk.GetKSPMSecretName(), Namespace: dk.Namespace}, &secret)
+		err = clt.Get(ctx, types.NamespacedName{Name: dk.KSPM().GetTokenSecretName(), Namespace: dk.Namespace}, &secret)
 
 		require.NotNil(t, meta.FindStatusCondition(*dk.Conditions(), kspmConditionType))
 		require.Equal(t, conditions.SecretCreatedReason, meta.FindStatusCondition(*dk.Conditions(), kspmConditionType).Reason)
@@ -39,12 +39,12 @@ func TestTokenCreation(t *testing.T) {
 
 	t.Run("removes secret if exists", func(t *testing.T) {
 		dk := createDynaKube(false)
-		conditions.SetSecretCreated(dk.Conditions(), kspmConditionType, dk.GetKSPMSecretName())
+		conditions.SetSecretCreated(dk.Conditions(), kspmConditionType, dk.KSPM().GetTokenSecretName())
 
 		objs := []client.Object{
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      dk.GetKSPMSecretName(),
+					Name:      dk.KSPM().GetTokenSecretName(),
 					Namespace: dk.Namespace,
 				},
 			},
@@ -61,7 +61,7 @@ func TestTokenCreation(t *testing.T) {
 		require.NoError(t, err)
 
 		var secret corev1.Secret
-		err = clt.Get(ctx, types.NamespacedName{Name: dk.GetKSPMSecretName(), Namespace: dk.Namespace}, &secret)
+		err = clt.Get(ctx, types.NamespacedName{Name: dk.KSPM().GetTokenSecretName(), Namespace: dk.Namespace}, &secret)
 
 		require.Empty(t, secret)
 		require.Error(t, err)
