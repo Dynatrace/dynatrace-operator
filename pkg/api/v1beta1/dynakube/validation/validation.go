@@ -22,6 +22,7 @@ var (
 		NoApiUrl,
 		IsInvalidApiUrl,
 		IsThirdGenAPIUrl,
+		isOneAgentVersionValid,
 		missingCSIDaemonSet,
 		disabledCSIForReadonlyCSIVolume,
 		invalidActiveGateCapabilities,
@@ -37,7 +38,6 @@ var (
 		nameTooLong,
 		namespaceSelectorViolateLabelSpec,
 		imageFieldHasTenantImage,
-		validateOneAgentVersionIsSemVerCompliant,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,

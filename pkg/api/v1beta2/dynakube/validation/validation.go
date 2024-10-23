@@ -19,6 +19,7 @@ type Validator struct {
 
 var (
 	validatorErrorFuncs = []validatorFunc{
+		isOneAgentVersionValid,
 		NoApiUrl,
 		IsInvalidApiUrl,
 		IsThirdGenAPIUrl,
