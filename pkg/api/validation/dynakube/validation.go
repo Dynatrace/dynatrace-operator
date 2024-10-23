@@ -47,6 +47,7 @@ var (
 		namespaceSelectorViolateLabelSpec,
 		imageFieldHasTenantImage,
 		extensionControllerImage,
+		missingKSPMDependecy,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,
