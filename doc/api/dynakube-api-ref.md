@@ -8,6 +8,7 @@
 |`customPullSecret`|Defines a custom pull secret in case you use a private registry when pulling images from the Dynatrace environment.<br/>To define a custom pull secret and learn about the expected behavior, see Configure customPullSecret<br/>(<https://www.dynatrace.|-|string|
 |`dynatraceApiRequestThreshold`|Configuration for thresholding Dynatrace API requests.|15|integer|
 |`enableIstio`|When enabled, and if Istio is installed on the Kubernetes environment, Dynatrace Operator will create the corresponding<br/>VirtualService and ServiceEntry objects to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate.<br/>Disabled by default.|-|boolean|
+|`logMonitoring`|General configuration about the LogMonitoring feature.|-|object|
 |`networkZone`|Sets a network zone for the OneAgent and ActiveGate pods.|-|string|
 |`proxy`|Set custom proxy settings either directly or from a secret with the field proxy.<br/>Note: Applies to Dynatrace Operator, ActiveGate, and OneAgents.|-|object|
 |`skipCertCheck`|Disable certificate check for the connection between Dynatrace Operator and the Dynatrace Cluster.<br/>Set to true if you want to skip certification validation checks.|-|boolean|
@@ -25,12 +26,6 @@
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
 |`hostGroup`|Sets a host group for OneAgent.|-|string|
-
-### .spec.logMonitoring
-
-|Parameter|Description|Default value|Data type|
-|:-|:-|:-|:-|
-|`enabled`||-|boolean|
 
 ### .spec.activeGate
 
@@ -65,20 +60,6 @@
 |`enabled`|Enables MetadataEnrichment, `false` by default.|False|boolean|
 |`namespaceSelector`|The namespaces where you want Dynatrace Operator to inject enrichment.|-|object|
 
-### .spec.templates.logMonitoring
-
-|Parameter|Description|Default value|Data type|
-|:-|:-|:-|:-|
-|`annotations`|Add custom annotations to the LogMonitoring pods|-|object|
-|`args`|Set additional arguments to the LogMonitoring main container|-|array|
-|`dnsPolicy`|Sets DNS Policy for the LogMonitoring pods|-|string|
-|`labels`|Add custom labels to the LogMonitoring pods|-|object|
-|`nodeSelector`|Node selector to control the selection of nodes for the LogMonitoring pods|-|object|
-|`priorityClassName`|Assign a priority class to the LogMonitoring pods. By default, no class is set|-|string|
-|`resources`|Define resources' requests and limits for all the LogMonitoring pods|-|object|
-|`secCompProfile`|The SecComp Profile that will be configured in order to run in secure computing mode for the LogMonitoring pods|-|string|
-|`tolerations`|Set tolerations for the LogMonitoring pods|-|array|
-
 ### .spec.oneAgent.hostMonitoring
 
 |Parameter|Description|Default value|Data type|
@@ -97,6 +78,20 @@
 |`tolerations`|Tolerations to include with the OneAgent DaemonSet. For details, see Taints and Tolerations (<https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/>).|-|array|
 |`version`|The OneAgent version to be used.|-|string|
 
+### .spec.templates.logMonitoring
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`annotations`|Add custom annotations to the LogMonitoring pods|-|object|
+|`args`|Set additional arguments to the LogMonitoring main container|-|array|
+|`dnsPolicy`|Sets DNS Policy for the LogMonitoring pods|-|string|
+|`labels`|Add custom labels to the LogMonitoring pods|-|object|
+|`nodeSelector`|Node selector to control the selection of nodes for the LogMonitoring pods|-|object|
+|`priorityClassName`|Assign a priority class to the LogMonitoring pods. By default, no class is set|-|string|
+|`resources`|Define resources' requests and limits for all the LogMonitoring pods|-|object|
+|`secCompProfile`|The SecComp Profile that will be configured in order to run in secure computing mode for the LogMonitoring pods|-|string|
+|`tolerations`|Set tolerations for the LogMonitoring pods|-|array|
+
 ### .spec.oneAgent.classicFullStack
 
 |Parameter|Description|Default value|Data type|
@@ -114,13 +109,6 @@
 |`secCompProfile`|The SecComp Profile that will be configured in order to run in secure computing mode.|-|string|
 |`tolerations`|Tolerations to include with the OneAgent DaemonSet. For details, see Taints and Tolerations (<https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/>).|-|array|
 |`version`|The OneAgent version to be used.|-|string|
-
-### .spec.templates.logMonitoring.imageRef
-
-|Parameter|Description|Default value|Data type|
-|:-|:-|:-|:-|
-|`repository`|Custom image repository|-|string|
-|`tag`|Indicates a tag of the image to use|-|string|
 
 ### .spec.oneAgent.cloudNativeFullStack
 
@@ -152,6 +140,13 @@
 |`namespaceSelector`|Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.<br/>For more information, see Configure monitoring for namespaces and pods (<https://www.dynatrace.|-|object|
 |`useCSIDriver`|Set if you want to use the CSIDriver. Don't enable it if you do not have access to Kubernetes nodes or if you lack privileges.|False|boolean|
 |`version`|The OneAgent version to be used.|-|string|
+
+### .spec.templates.logMonitoring.imageRef
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`repository`|Custom image repository|-|string|
+|`tag`|Indicates a tag of the image to use|-|string|
 
 ### .spec.templates.openTelemetryCollector
 

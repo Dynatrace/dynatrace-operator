@@ -67,6 +67,9 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+          envFrom:
+            - configMapRef:
+                name: install-config
           ports:
             - containerPort: 10080
               name: livez
