@@ -29,7 +29,7 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 
 	versionRegex = `^\d+.\d+.\d+.\d{8}-\d{6}$`
 
-	versionInvalidMessage = "Only versions in the form of major.minor.patch.timestamp (e.g. 1.0.0.20240101-000000) are allowed"
+	versionInvalidMessage = "The OneAgent's version is only valid in the format 'major.minor.patch.timestamp', e.g. 1.0.0.20240101-000000"
 )
 
 func conflictingOneAgentConfiguration(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
