@@ -10,7 +10,7 @@ const (
 	errorKSPMMissingKubemon = `For the KSPM feature, the "kubernetes-monitoring" capability also needs to be enabled on the ActiveGate. `
 )
 
-func missingKSPMDependecy(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func missingKSPMDependency(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	if dk.KSPM().IsEnabled() &&
 		!dk.ActiveGate().IsKubernetesMonitoringEnabled() {
 		return errorKSPMMissingKubemon

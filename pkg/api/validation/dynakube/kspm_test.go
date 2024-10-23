@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
 )
 
-func TestMissingKSPMDependecy(t *testing.T) {
+func TestMissingKSPMDependency(t *testing.T) {
 	t.Run("both kspm and kubemon enabled", func(t *testing.T) {
 		assertAllowed(t,
 			&dynakube.DynaKube{
@@ -27,7 +27,7 @@ func TestMissingKSPMDependecy(t *testing.T) {
 			})
 	})
 
-	t.Run(`missing kubemon but kspm enabled`, func(t *testing.T) {
+	t.Run("missing kubemon but kspm enabled", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorKSPMMissingKubemon},
 			&dynakube.DynaKube{
