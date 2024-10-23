@@ -27,6 +27,7 @@ var (
 		isExtensionsModuleDisabled,
 		isLogMonitoringModuleDisabled,
 		isOneAgentModuleDisabled,
+		isOneAgentVersionValid,
 		NoApiUrl,
 		IsInvalidApiUrl,
 		IsThirdGenAPIUrl,

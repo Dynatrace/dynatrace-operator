@@ -477,3 +477,51 @@ func createDynakubeWithHostGroup(args []string, hostGroup string) *dynakube.Dyna
 		},
 	}
 }
+
+func TestIsOneAgentVersionValid(t *testing.T) {
+	dk := dynakube.DynaKube{
+		ObjectMeta: defaultDynakubeObjectMeta,
+		Spec: dynakube.DynaKubeSpec{
+			APIURL: testApiUrl,
+			OneAgent: dynakube.OneAgentSpec{
+				ClassicFullStack: &dynakube.HostInjectSpec{},
+			},
+		},
+	}
+
+	validVersions := []string{"", "1.0.0.20240101-000000"}
+	invalidVersions := []string{
+		"latest",
+		"raw",
+		"1.200.1-raw",
+		"v1.200.1-raw",
+		"1.200.1+build",
+		"v1.200.1+build",
+		"1.200.1-raw+build",
+		"v1.200.1-raw+build",
+		"1.200",
+		"1.200.0",
+		"1.200.0.0",
+		"1.200.0.0-0",
+		"v1.200",
+		"1",
+		"v1",
+		"1.0",
+		"v1.0",
+		"v1.200.0",
+	}
+
+	for _, validVersion := range validVersions {
+		dk.Spec.OneAgent.ClassicFullStack.Version = validVersion
+		t.Run(fmt.Sprintf("OneAgent custom version %s is allowed", validVersion), func(t *testing.T) {
+			assertAllowed(t, &dk)
+		})
+	}
+
+	for _, invalidVersion := range invalidVersions {
+		dk.Spec.OneAgent.ClassicFullStack.Version = invalidVersion
+		t.Run(fmt.Sprintf("OneAgent custom version %s is not allowed", invalidVersion), func(t *testing.T) {
+			assertDenied(t, []string{versionInvalidMessage}, &dk)
+		})
+	}
+}
