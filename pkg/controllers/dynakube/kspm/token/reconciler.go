@@ -56,7 +56,7 @@ func ensureKSPMSecret(ctx context.Context, client client.Client, apiReader clien
 			return err
 		}
 
-		tokenHas, err := hasher.GenerateHash(secretConfig.Data)
+		tokenHash, err := hasher.GenerateHash(secretConfig.Data)
 		if err != nil {
 			conditions.SetSecretGenFailed(dk.Conditions(), kspmConditionType, err)
 
@@ -71,7 +71,7 @@ func ensureKSPMSecret(ctx context.Context, client client.Client, apiReader clien
 			return err
 		}
 
-		dk.KSPM().TokenSecretHash = tokenHas
+		dk.KSPM().TokenSecretHash = tokenHash
 		conditions.SetSecretCreated(dk.Conditions(), kspmConditionType, dk.KSPM().GetTokenSecretName())
 	}
 
