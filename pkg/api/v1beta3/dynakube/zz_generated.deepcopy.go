@@ -210,6 +210,7 @@ func (in *DynaKubeStatus) DeepCopyInto(out *DynaKubeStatus) {
 	in.ActiveGate.DeepCopyInto(&out.ActiveGate)
 	in.CodeModules.DeepCopyInto(&out.CodeModules)
 	in.MetadataEnrichment.DeepCopyInto(&out.MetadataEnrichment)
+	out.Kspm = in.Kspm
 	in.UpdatedTimestamp.DeepCopyInto(&out.UpdatedTimestamp)
 	in.DynatraceApi.DeepCopyInto(&out.DynatraceApi)
 	if in.Conditions != nil {

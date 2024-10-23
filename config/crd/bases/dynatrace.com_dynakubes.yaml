@@ -7520,6 +7520,15 @@ spec:
                     format: date-time
                     type: string
                 type: object
+              kspm:
+                description: Observed state of Kspm
+                properties:
+                  tokenSecretHash:
+                    description: |-
+                      TokenSecretHash contains the hash of the token that is passed to both the ActiveGate and Node-Configuration-Collector.
+                      Meant to keep the two in sync.
+                    type: string
+                type: object
               kubeSystemUUID:
                 description: KubeSystemUUID contains the UUID of the current Kubernetes
                   cluster
