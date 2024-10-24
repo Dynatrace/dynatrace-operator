@@ -23,3 +23,12 @@ func (lm *LogMonitoring) GetDaemonSetName() string {
 func (lm *LogMonitoring) IsStandalone() bool {
 	return lm.IsEnabled() && !lm.enabledDependencies.hostAgents
 }
+
+// Template is a nil-safe way to access the underlying TemplateSpec
+func (lm *LogMonitoring) Template() TemplateSpec {
+	if lm.TemplateSpec == nil {
+		return TemplateSpec{}
+	}
+
+	return *lm.TemplateSpec
+}

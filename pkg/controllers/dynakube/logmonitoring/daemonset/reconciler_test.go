@@ -69,8 +69,8 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
-		oldTransitionTime := condition.LastTransitionTime
 		require.NotNil(t, condition)
+		oldTransitionTime := condition.LastTransitionTime
 		require.NotEmpty(t, oldTransitionTime)
 		assert.Equal(t, conditions.DaemonSetSetCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
@@ -178,7 +178,9 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		dk := createDynakube(true)
-		dk.Spec.Templates.LogMonitoring.Labels = customLabels
+		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
+			Labels: customLabels,
+		}
 
 		reconciler := NewReconciler(nil,
 			nil, dk)
@@ -195,7 +197,9 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		dk := createDynakube(true)
-		dk.Spec.Templates.LogMonitoring.Annotations = customAnnotations
+		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
+			Annotations: customAnnotations,
+		}
 
 		reconciler := NewReconciler(nil,
 			nil, dk)
@@ -210,7 +214,9 @@ func TestGenerateDaemonSet(t *testing.T) {
 		customPolicy := corev1.DNSClusterFirst
 
 		dk := createDynakube(true)
-		dk.Spec.Templates.LogMonitoring.DNSPolicy = customPolicy
+		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
+			DNSPolicy: customPolicy,
+		}
 
 		reconciler := NewReconciler(nil,
 			nil, dk)
@@ -225,7 +231,9 @@ func TestGenerateDaemonSet(t *testing.T) {
 		customClass := "custom-class"
 
 		dk := createDynakube(true)
-		dk.Spec.Templates.LogMonitoring.PriorityClassName = customClass
+		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
+			PriorityClassName: customClass,
+		}
 
 		reconciler := NewReconciler(nil,
 			nil, dk)
@@ -261,7 +269,9 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		dk := createDynakube(true)
-		dk.Spec.Templates.LogMonitoring.Tolerations = customTolerations
+		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
+			Tolerations: customTolerations,
+		}
 		reconciler := NewReconciler(nil,
 			nil, dk)
 		daemonset, err := reconciler.generateDaemonSet()

@@ -583,7 +583,11 @@ func (in *TemplatesSpec) DeepCopyInto(out *TemplatesSpec) {
 	*out = *in
 	in.KspmNodeConfigurationCollector.DeepCopyInto(&out.KspmNodeConfigurationCollector)
 	in.ExtensionExecutionController.DeepCopyInto(&out.ExtensionExecutionController)
-	in.LogMonitoring.DeepCopyInto(&out.LogMonitoring)
+	if in.LogMonitoring != nil {
+		in, out := &in.LogMonitoring, &out.LogMonitoring
+		*out = new(logmonitoring.TemplateSpec)
+		(*in).DeepCopyInto(*out)
+	}
 	in.OpenTelemetryCollector.DeepCopyInto(&out.OpenTelemetryCollector)
 }
 
