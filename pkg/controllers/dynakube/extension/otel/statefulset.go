@@ -7,7 +7,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/hash"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/servicename"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/tls"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/utils"
@@ -96,7 +95,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		return err
 	}
 
-	if err := hash.SetHash(sts); err != nil {
+	if err := hasher.AddAnnotation(sts); err != nil {
 		conditions.SetKubeApiError(r.dk.Conditions(), otelControllerStatefulSetConditionType, err)
 
 		return err

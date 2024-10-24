@@ -12,6 +12,7 @@ const (
 
 type Kspm struct {
 	*Spec
+	*Status
 	*NodeConfigurationCollectorSpec
 
 	name string
@@ -21,6 +22,13 @@ type Kspm struct {
 
 type Spec struct {
 	Enabled bool `json:"enabled"`
+}
+
+// +kubebuilder:object:generate=true
+type Status struct {
+	// TokenSecretHash contains the hash of the token that is passed to both the ActiveGate and Node-Configuration-Collector.
+	// Meant to keep the two in sync.
+	TokenSecretHash string `json:"tokenSecretHash,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
