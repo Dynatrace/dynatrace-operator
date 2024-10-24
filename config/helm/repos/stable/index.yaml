@@ -24,6 +24,50 @@ entries:
     - https://github.com/Dynatrace/dynatrace-operator/releases/download/v1.3.2/dynatrace-operator-1.3.2.tgz
     version: 1.3.2
   - apiVersion: v2
+    appVersion: 1.3.1
+    created: '2024-10-14T06:47:34.922235129Z'
+    description: The Dynatrace Operator Helm chart for Kubernetes and OpenShift
+    digest: 3cfb2e75151a07ef484fb5b431e8d0337b9468be0803c5bfea8ba091ffdded59
+    home: https://www.dynatrace.com/
+    icon: https://assets.dynatrace.com/global/resources/Signet_Logo_RGB_CP_512x512px.png
+    kubeVersion: '>=1.19.0-0'
+    maintainers:
+    - email: marcell.sevcsik@dynatrace.com
+      name: 0sewa0
+    - email: christoph.muellner@dynatrace.com
+      name: chrismuellner
+    - email: lukas.hinterreiter@dynatrace.com
+      name: luhi-DT
+    name: dynatrace-operator
+    sources:
+    - https://github.com/Dynatrace/dynatrace-operator
+    type: application
+    urls:
+    - https://github.com/Dynatrace/dynatrace-operator/releases/download/v1.3.1/dynatrace-operator-1.3.1.tgz
+    version: 1.3.1
+  - apiVersion: v2
+    appVersion: 1.3.0
+    created: '2024-09-23T13:14:16.373659553Z'
+    description: The Dynatrace Operator Helm chart for Kubernetes and OpenShift
+    digest: b4e29af761babcb8fb12737d4ffca1875b45abc682085b379666a3657acc97b1
+    home: https://www.dynatrace.com/
+    icon: https://assets.dynatrace.com/global/resources/Signet_Logo_RGB_CP_512x512px.png
+    kubeVersion: '>=1.19.0-0'
+    maintainers:
+    - email: marcell.sevcsik@dynatrace.com
+      name: 0sewa0
+    - email: christoph.muellner@dynatrace.com
+      name: chrismuellner
+    - email: lukas.hinterreiter@dynatrace.com
+      name: luhi-DT
+    name: dynatrace-operator
+    sources:
+    - https://github.com/Dynatrace/dynatrace-operator
+    type: application
+    urls:
+    - https://github.com/Dynatrace/dynatrace-operator/releases/download/v1.3.0/dynatrace-operator-1.3.0.tgz
+    version: 1.3.0  
+  - apiVersion: v2
     appVersion: 1.2.2
     created: '2024-08-08T11:38:53.628185919Z'
     description: The Dynatrace Operator Helm chart for Kubernetes and OpenShift
