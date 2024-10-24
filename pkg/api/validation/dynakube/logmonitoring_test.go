@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestIgnoredLogMonitoringTemplates(t *testing.T) {
+func TestIgnoredLogMonitoringTemplate(t *testing.T) {
 	t.Run("no warning if logMonitoring template section is empty", func(t *testing.T) {
 		dk := createStandaloneLogMonitoringDynakube(testName, "")
 		dk.Spec.OneAgent.CloudNativeFullStack = &dynakube.CloudNativeFullStackSpec{}

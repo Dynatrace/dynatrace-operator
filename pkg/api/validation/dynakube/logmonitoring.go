@@ -7,10 +7,10 @@ import (
 )
 
 const (
-	warningLogMonitoringIgnoredTemplate = "The DynaKube's specification tries to configure LogMonitoring Template section and OneAgent at the same time, in which case the LogMonitoring Template section is ignored"
+	warningLogMonitoringIgnoredTemplate = "The Dynakube's `spec.templates.logMonitoring` section is skipped as the `spec.oneagent` section is also configured."
 )
 
-func ignoredLogMonitoringTemplates(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+func ignoredLogMonitoringTemplate(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
 	if dk.LogMonitoring().IsStandalone() {
 		return ""
 	}

@@ -216,4 +216,3 @@ func createK8sClientWithConfigSecret() client.Client {
 
 	return mockK8sClient
 }
-

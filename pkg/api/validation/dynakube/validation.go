@@ -54,7 +54,7 @@ var (
 		unsupportedOneAgentImage,
 		conflictingHostGroupSettings,
 		deprecatedFeatureFlag,
-		ignoredLogMonitoringTemplates,
+		ignoredLogMonitoringTemplate,
 	}
 )
 
