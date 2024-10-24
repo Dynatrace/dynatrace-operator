@@ -32,6 +32,8 @@ rules:
   - apiGroups:
       - dynatrace.com
     resources:
+      - dynakubes/finalizers
+      - edgeconnects/finalizers
       - dynakubes/status
       - edgeconnects/status
     verbs:
