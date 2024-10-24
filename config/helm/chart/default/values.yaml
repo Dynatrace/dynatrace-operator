@@ -213,3 +213,4 @@ rbac:
   nodeConfigCollector:
     create: true
     annotations: {}
+  supportability: true

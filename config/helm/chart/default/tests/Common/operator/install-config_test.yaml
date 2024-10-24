@@ -21,7 +21,8 @@ tests:
                   "oneAgent": true,
                   "extensions": true,
                   "logMonitoring": true,
-                  "edgeConnect": true
+                  "edgeConnect": true,
+                  "supportability": true
                 }
   - it: ConfigMap should respect the set values
     set:
@@ -30,6 +31,7 @@ tests:
       rbac.edgeConnect.create: false
       rbac.activeGate.create: false
       rbac.extensions.create: false
+      rbac.supportability: false
     asserts:
       - equal:
           path: metadata.name
@@ -48,5 +50,6 @@ tests:
                   "oneAgent": false,
                   "extensions": false,
                   "logMonitoring": false,
-                  "edgeConnect": false
+                  "edgeConnect": false,
+                  "supportability": false
                 }

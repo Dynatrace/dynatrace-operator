@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/config"
+	"github.com/Dynatrace/dynatrace-operator/cmd/remote_command"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
@@ -174,6 +175,7 @@ func (builder CommandBuilder) runCollectors(log logd.Logger, supportArchive arch
 	collectors := []collector{
 		newOperatorVersionCollector(log, supportArchive),
 		newLogCollector(ctx, log, supportArchive, pods, appName, collectManagedLogsFlagValue),
+		newFsLogCollector(ctx, kubeConfig, &remote_command.DefaultExecutor{}, log, supportArchive, pods, appName, collectManagedLogsFlagValue),
 		newK8sObjectCollector(ctx, log, supportArchive, namespaceFlagValue, appName, apiReader, discoveryClient),
 		newTroubleshootCollector(ctx, log, supportArchive, namespaceFlagValue, apiReader, *kubeConfig),
 		newLoadSimCollector(ctx, log, supportArchive, fileSize, loadsimFilesFlagValue, clientSet.CoreV1().Pods(namespaceFlagValue)),
