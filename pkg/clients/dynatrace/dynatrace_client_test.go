@@ -9,9 +9,28 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+)
+
+var (
+	flavorUri = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
+		OsUnix, InstallerTypeDefault, arch.FlavorDefault+"a", arch.Arch)
+	flavourUriResponse = `{"error":{"code":400,"message":"Constraints violated.","constraintViolations":[{"path":"flavor","message":"'defaulta' must be any of [default, multidistro, musl]","parameterLocation":"QUERY","location":null}]}}`
+
+	archUri = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
+		OsUnix, InstallerTypeDefault, arch.FlavorDefault, arch.Arch+"a")
+	archUriResponse = `{"error":{"code":400,"message":"Constraints violated.","constraintViolations":[{"path":"arch","message":"'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]","parameterLocation":"QUERY","location":null}]}}`
+
+	flavorArchUri = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
+		OsUnix, InstallerTypeDefault, arch.FlavorDefault+"a", arch.Arch+"a")
+	flavourArchUriResponse = `{"error":{"code":400,"message":"Constraints violated.","constraintViolations":[{"path":"flavor","message":"'defaulta' must be any of [default, multidistro, musl]","parameterLocation":"QUERY","location":null},{"path":"arch","message":"'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]","parameterLocation":"QUERY","location":null}]}}`
+
+	oaLatestMetainfoUri = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
+		"aix", InstallerTypeDefault, arch.FlavorDefault, arch.Arch)
+	oaLatestMetainfoUriResponse = `{"error":{"code":404,"message":"non supported architecture <OS_ARCHITECTURE_X86> on OS <OS_TYPE_AIX>"}}`
 )
 
 func TestMakeRequest(t *testing.T) {
@@ -144,6 +163,8 @@ func TestDynatraceClientWithServer(t *testing.T) {
 	testCommunicationHostsGetCommunicationHosts(t, dtc)
 	testSendEvent(t, dtc)
 	testGetTokenScopes(t, dtc)
+
+	testServerErrors(t)
 }
 
 func dynatraceServerHandler() http.HandlerFunc {
@@ -266,4 +287,74 @@ func createTestDynatraceClientWithFunc(t *testing.T, handler http.HandlerFunc) (
 	require.NotNil(t, dynatraceClient)
 
 	return dynatraceServer, dynatraceClient
+}
+
+func testServerErrors(t *testing.T) {
+	dynatraceServer := httptest.NewServer(dynatraceServerErrorsHandler())
+	defer dynatraceServer.Close()
+
+	skipCert := SkipCertificateValidation(true)
+	dtcI, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert)
+	require.NoError(t, err)
+
+	dtc := dtcI.(*dynatraceClient)
+
+	t.Run("GetLatestAgentVersion - invalid query", func(t *testing.T) {
+		response := struct {
+			LatestAgentVersion string `json:"latestAgentVersion"`
+		}{}
+
+		err := dtc.makeRequestAndUnmarshal(context.Background(), dtc.url+flavorUri, dynatracePaaSToken, &response)
+		assert.Equal(t, "dynatrace server error 400: Constraints violated.\n\t- flavor: 'defaulta' must be any of [default, multidistro, musl]", err.Error())
+
+		err = dtc.makeRequestAndUnmarshal(context.Background(), dtc.url+archUri, dynatracePaaSToken, &response)
+		assert.Equal(t, "dynatrace server error 400: Constraints violated.\n\t- arch: 'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]", err.Error())
+
+		err = dtc.makeRequestAndUnmarshal(context.Background(), dtc.url+flavorArchUri, dynatracePaaSToken, &response)
+		assert.Equal(t, "dynatrace server error 400: Constraints violated.\n\t- flavor: 'defaulta' must be any of [default, multidistro, musl]\n\t- arch: 'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]", err.Error())
+	})
+
+	t.Run("GetLatestAgentVersion - invalid architecture", func(t *testing.T) {
+		_, err = dtc.GetLatestAgentVersion(context.Background(), "aix", InstallerTypeDefault)
+		assert.Equal(t, "dynatrace server error 404: non supported architecture <OS_ARCHITECTURE_X86> on OS <OS_TYPE_AIX>", err.Error())
+	})
+}
+
+func dynatraceServerErrorsHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		if r.FormValue("Api-Token") == "" && r.Header.Get("Authorization") == "" {
+			writeServerErrorResponse(w, http.StatusUnauthorized, `
+				{
+				  "error": {
+					"code": 401,
+					"message": "Missing authorization parameter."
+				  }
+				}
+			`)
+		} else {
+			handleInvalidRequest(r, w)
+		}
+	}
+}
+
+func handleInvalidRequest(request *http.Request, writer http.ResponseWriter) {
+	switch request.URL.RequestURI() {
+	case flavorUri:
+		writeServerErrorResponse(writer, http.StatusBadRequest, flavourUriResponse)
+	case archUri:
+		writeServerErrorResponse(writer, http.StatusBadRequest, archUriResponse)
+	case flavorArchUri:
+		writeServerErrorResponse(writer, http.StatusBadRequest, flavourArchUriResponse)
+	case oaLatestMetainfoUri:
+		writeServerErrorResponse(writer, http.StatusNotFound, oaLatestMetainfoUriResponse)
+	default:
+		writeServerErrorResponse(writer, http.StatusNotFound, `{"error":{"code":404,"message":"HTTP 404 Not Found"}}`)
+	}
+}
+
+func writeServerErrorResponse(w http.ResponseWriter, status int, srvErrResp string) {
+	w.WriteHeader(status)
+	_, _ = w.Write([]byte(srvErrResp))
 }

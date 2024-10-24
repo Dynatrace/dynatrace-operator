@@ -31,23 +31,6 @@ type postSettingsResponse struct {
 	ObjectId string `json:"objectId"`
 }
 
-type getSettingsErrorResponse struct {
-	ErrorMessage getSettingsError `json:"error"`
-}
-
-type getSettingsError struct {
-	Message              string
-	ConstraintViolations constraintViolations `json:"constraintViolations,omitempty"`
-	Code                 int
-}
-
-type constraintViolations []struct {
-	ParameterLocation string
-	Location          string
-	Message           string
-	Path              string
-}
-
 const (
 	pageSizeQueryParam = "pageSize"
 	entitiesPageSize   = "500"
@@ -151,14 +134,14 @@ func (dtc *dynatraceClient) unmarshalToJson(res *http.Response, resDataJson any)
 
 func handleErrorArrayResponseFromAPI(response []byte, statusCode int) error {
 	if statusCode == http.StatusForbidden || statusCode == http.StatusUnauthorized {
-		var se getSettingsErrorResponse
+		var se serverErrorResponse
 		if err := json.Unmarshal(response, &se); err != nil {
 			return fmt.Errorf("response error: %d, can't unmarshal json response", statusCode)
 		}
 
 		return fmt.Errorf("response error: %d, %s", statusCode, se.ErrorMessage.Message)
 	} else {
-		var se []getSettingsErrorResponse
+		var se []serverErrorResponse
 		if err := json.Unmarshal(response, &se); err != nil {
 			return fmt.Errorf("response error: %d, can't unmarshal json response", statusCode)
 		}
