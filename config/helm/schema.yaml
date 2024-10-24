@@ -15,12 +15,15 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: 1.3.1
+  publishedVersion: 1.3.2
   publishedVersionMetadata:
     releaseNote: "<!-- Release notes generated using configuration in .github/release.yml\
-      \ at v1.3.1 -->\n\n## What's Changed\n### Bugfixes \U0001FAB2\n* Don't update\
-      \ k8s-settings object, if already present by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/3886\n\
-      \n\n**Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v1.3.0...v1.3.1"
+      \ at v1.3.2 -->\n\n## What's Changed\n### Bugfixes \U0001FAB2\n* Fix proxy content\
+      \ logged in init-container logs by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/3947\n\
+      * [v1.3] Cherry pick 'Remove semver validator for custom OneAgent version' by\
+      \ @albertogdd in https://github.com/Dynatrace/dynatrace-operator/pull/3958\n\
+      * [release-1.3] Add OneAgent version validator by @albertogdd in https://github.com/Dynatrace/dynatrace-operator/pull/3967\n\
+      \n\n**Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v1.3.1...v1.3.2"
     releaseTypes:
     - Feature
     recommended: true
