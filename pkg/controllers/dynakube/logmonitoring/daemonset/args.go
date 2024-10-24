@@ -21,5 +21,5 @@ func getInitArgs(dk dynakube.DynaKube) []string {
 		fmt.Sprintf("-c k8s_cluster_id $(%s)", clusterUIDEnv),
 	}
 
-	return append(baseArgs, dk.LogMonitoring().Args...)
+	return append(baseArgs, dk.LogMonitoring().Template().Args...)
 }
