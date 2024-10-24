@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -30,15 +31,16 @@ func TestTokenCreation(t *testing.T) {
 
 		var secret corev1.Secret
 		err = clt.Get(ctx, types.NamespacedName{Name: dk.KSPM().GetTokenSecretName(), Namespace: dk.Namespace}, &secret)
-
-		require.NotNil(t, meta.FindStatusCondition(*dk.Conditions(), kspmConditionType))
-		require.Equal(t, conditions.SecretCreatedReason, meta.FindStatusCondition(*dk.Conditions(), kspmConditionType).Reason)
-		require.NotEmpty(t, secret)
 		require.NoError(t, err)
+		assert.NotEmpty(t, secret)
+		require.NotNil(t, meta.FindStatusCondition(*dk.Conditions(), kspmConditionType))
+		assert.Equal(t, conditions.SecretCreatedReason, meta.FindStatusCondition(*dk.Conditions(), kspmConditionType).Reason)
+		assert.NotEmpty(t, dk.KSPM().TokenSecretHash)
 	})
 
 	t.Run("removes secret if exists", func(t *testing.T) {
 		dk := createDynaKube(false)
+		dk.KSPM().TokenSecretHash = "something"
 		conditions.SetSecretCreated(dk.Conditions(), kspmConditionType, dk.KSPM().GetTokenSecretName())
 
 		objs := []client.Object{
@@ -63,8 +65,9 @@ func TestTokenCreation(t *testing.T) {
 		var secret corev1.Secret
 		err = clt.Get(ctx, types.NamespacedName{Name: dk.KSPM().GetTokenSecretName(), Namespace: dk.Namespace}, &secret)
 
-		require.Empty(t, secret)
 		require.Error(t, err)
+		assert.Empty(t, secret)
+		assert.Empty(t, dk.KSPM().TokenSecretHash)
 	})
 }
 

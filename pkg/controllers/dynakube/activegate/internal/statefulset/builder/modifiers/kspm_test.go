@@ -46,6 +46,7 @@ func TestKspmEnabled(t *testing.T) {
 func TestKspmModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
 		dk := getBaseDynakube()
+		dk.KSPM().TokenSecretHash = "some-hash"
 		enableKubeMonCapability(&dk)
 		setKSPMUsage(&dk, true)
 		mod := NewKspmModifier(dk)
@@ -56,5 +57,8 @@ func TestKspmModify(t *testing.T) {
 		require.NotEmpty(t, sts)
 		isSubset(t, mod.getVolumes(), sts.Spec.Template.Spec.Volumes)
 		isSubset(t, mod.getVolumeMounts(), sts.Spec.Template.Spec.Containers[0].VolumeMounts)
+
+		require.NotEmpty(t, sts.Spec.Template.Annotations)
+		assert.Equal(t, dk.KSPM().TokenSecretHash, sts.Spec.Template.Annotations[kspmTokenSecretHashAnnotation])
 	})
 }

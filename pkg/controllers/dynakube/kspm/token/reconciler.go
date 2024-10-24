@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -55,6 +56,13 @@ func ensureKSPMSecret(ctx context.Context, client client.Client, apiReader clien
 			return err
 		}
 
+		tokenHash, err := hasher.GenerateHash(secretConfig.Data)
+		if err != nil {
+			conditions.SetSecretGenFailed(dk.Conditions(), kspmConditionType, err)
+
+			return err
+		}
+
 		err = query.Create(ctx, secretConfig)
 		if err != nil {
 			log.Info("could not create secret for kspm token", "name", secretConfig.Name)
@@ -63,6 +71,7 @@ func ensureKSPMSecret(ctx context.Context, client client.Client, apiReader clien
 			return err
 		}
 
+		dk.KSPM().TokenSecretHash = tokenHash
 		conditions.SetSecretCreated(dk.Conditions(), kspmConditionType, dk.KSPM().GetTokenSecretName())
 	}
 
@@ -83,6 +92,7 @@ func removeKSPMSecret(ctx context.Context, client client.Client, apiReader clien
 		return err
 	}
 
+	dk.KSPM().TokenSecretHash = ""
 	meta.RemoveStatusCondition(dk.Conditions(), kspmConditionType)
 
 	return nil
