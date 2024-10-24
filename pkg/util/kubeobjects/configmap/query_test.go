@@ -38,15 +38,17 @@ func createDeployment() *appsv1.Deployment {
 }
 
 func TestConfigMapQuery(t *testing.T) {
-	t.Run(`Get configMap`, testGetConfigMap)
-	t.Run(`Create configMap`, testCreateConfigMap)
-	t.Run(`Update configMap`, testUpdateConfigMap)
-	t.Run(`Create or update configMap`, testCreateOrUpdateConfigMap)
-	t.Run(`Identical configMap is not updated`, testIdenticalConfigMapIsNotUpdated)
-	t.Run(`Update configMap when data has changed`, testUpdateConfigMapWhenDataChanged)
-	t.Run(`Update configMap when labels have changed`, testUpdateConfigMapWhenLabelsChanged)
-	t.Run(`Create configMap in target namespace`, testCreateConfigMapInTargetNamespace)
-	t.Run(`Delete configMap in target namespace`, testDeleteConfigMap)
+	t.Run("Get configMap", testGetConfigMap)
+	t.Run("Create configMap", testCreateConfigMap)
+	t.Run("Update configMap", testUpdateConfigMap)
+	t.Run("Create or update configMap", testCreateOrUpdateConfigMap)
+	t.Run("Identical configMap is not updated", testIdenticalConfigMapIsNotUpdated)
+	t.Run("Update configMap when data has changed", testUpdateConfigMapWhenDataChanged)
+	t.Run("Update configMap when labels have changed", testUpdateConfigMapWhenLabelsChanged)
+	t.Run("Create configMap in target namespace", testCreateConfigMapInTargetNamespace)
+	t.Run("Delete configMap in target namespace", testDeleteConfigMap)
+	t.Run("Hash annotation is there after create", testHashAnnotationAfterCreate)
+	t.Run("Hash annotation is there after update", testHashAnnotationAfterCreate)
 }
 
 func testGetConfigMap(t *testing.T) {
