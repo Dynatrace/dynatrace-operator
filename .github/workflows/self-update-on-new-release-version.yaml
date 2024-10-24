@@ -32,7 +32,7 @@ jobs:
       - name: Update renovate file
         run: |
           source local/.venv/bin/activate
-          python3 hack/build/ci/update-renovate-json5.py release-branches.txt .github/renovate.json5
+          python3 hack/build/ci/update-renovate-json5.py
       - name: Update e2e-tests-ondemand.yaml file
         run: |
           source local/.venv/bin/activate
