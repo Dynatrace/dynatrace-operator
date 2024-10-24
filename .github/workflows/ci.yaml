@@ -61,12 +61,12 @@ jobs:
         id: depdownload
         run: |
           hack/build/ci/install-cgo-dependencies.sh
-      - name: Run Unit tests and Integration tests
+      - name: Run unit tests and integration tests
         id: unittest
         run: |
           make go/test
           make go/integration_test
-      - name: check test coverage
+      - name: Check test coverage
         id: check-code-coverage
         run: |
           make go/check-coverage
@@ -93,7 +93,7 @@ jobs:
         id: depdownload
         run: |
           hack/build/ci/install-cgo-dependencies.sh
-      - name: golangci-lint
+      - name: Run golangci-lint
         uses: golangci/golangci-lint-action@971e284b6050e8a5849b72094c50ab08da042db8 # v6.1.1
         with:
           # renovate depName=github.com/golangci/golangci-lint
