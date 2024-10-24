@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/stretchr/testify/assert"
@@ -23,6 +24,7 @@ const (
 	testValue1         = "test-value"
 	testKey1           = "test-key"
 	testNamespace      = "test-namespace"
+	annotationHash     = api.InternalFlagPrefix + "template-hash"
 )
 
 var configMapLog = logd.Get().WithName("test-configMap")
@@ -284,6 +286,67 @@ func testDeleteConfigMap(t *testing.T) {
 	var deletedConfigMap corev1.ConfigMap
 	err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testConfigMapName, Namespace: testNamespace}, &deletedConfigMap)
 	require.Error(t, err)
+}
+
+func testHashAnnotationAfterCreate(t *testing.T) {
+	fakeClient := fake.NewClient()
+	configMapQuery := Query(fakeClient, fakeClient, configMapLog)
+	configMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testConfigMapName,
+			Namespace: testNamespace,
+		},
+		Data: map[string]string{testKey1: testConfigMapValue},
+	}
+
+	err := configMapQuery.Create(context.Background(), configMap)
+
+	require.NoError(t, err)
+
+	var actualConfigMap corev1.ConfigMap
+	err = fakeClient.Get(context.Background(), client.ObjectKey{Name: testConfigMapName, Namespace: testNamespace}, &actualConfigMap)
+
+	require.NoError(t, err)
+	assert.True(t, isEqual(configMap, &actualConfigMap))
+
+	assert.NotEmpty(t, configMap.Annotations)
+	assert.NotEmpty(t, configMap.Annotations[annotationHash])
+	assert.NotEmpty(t, actualConfigMap.Annotations)
+	assert.NotEmpty(t, actualConfigMap.Annotations[annotationHash])
+
+	assert.Equal(t, configMap.Annotations[annotationHash], actualConfigMap.Annotations[annotationHash])
+}
+
+func testHashAnnotationAfterUpdate(t *testing.T) {
+	data := map[string]string{testKey1: testValue1}
+	labels := map[string]string{
+		"label": "test",
+	}
+	fakeClient := fake.NewClient()
+	configMap := createTestConfigMap(labels, data)
+	configMapQuery := Query(fakeClient, fakeClient, configMapLog)
+
+	err := configMapQuery.Create(context.Background(), configMap)
+	require.NoError(t, err)
+
+	assert.NotEmpty(t, configMap.Annotations)
+	assert.NotEmpty(t, configMap.Annotations[annotationHash])
+
+	oldHash := configMap.Annotations[annotationHash]
+
+	err = configMapQuery.Update(context.Background(), configMap)
+	require.NoError(t, err)
+
+	assert.NotEmpty(t, configMap.Annotations)
+	assert.NotEmpty(t, configMap.Annotations[annotationHash])
+	require.NotEqual(t, oldHash, configMap.Annotations[annotationHash])
+
+	updatedHash := configMap.Annotations[annotationHash]
+
+	assert.NotEmpty(t, configMap.Annotations)
+	assert.NotEmpty(t, configMap.Annotations[annotationHash])
+	require.NotEqual(t, oldHash, updatedHash)
+	require.Equal(t, updatedHash, configMap.Annotations[annotationHash])
 }
 
 func createTestConfigMap(labels map[string]string, data map[string]string) *corev1.ConfigMap {

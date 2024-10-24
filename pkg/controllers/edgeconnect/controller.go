@@ -379,15 +379,6 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 
 	desiredDeployment.Spec.Template.Annotations = map[string]string{consts.EdgeConnectAnnotationSecretHash: secretHash}
 
-	ddHash, err := hasher.GenerateHash(desiredDeployment)
-	if err != nil {
-		_log.Debug("Unable to generate hash for EdgeConnect deployment")
-
-		return err
-	}
-
-	desiredDeployment.Annotations[hasher.AnnotationHash] = ddHash
-
 	_, err = k8sdeployment.Query(controller.client, controller.apiReader, log).WithOwner(ec).CreateOrUpdate(ctx, desiredDeployment)
 	if err != nil {
 		_log.Info("could not create or update deployment for EdgeConnect")
@@ -691,15 +682,6 @@ func (controller *Controller) createOrUpdateEdgeConnectDeploymentAndSettings(ctx
 
 		return errors.WithStack(err)
 	}
-
-	ddHash, err := hasher.GenerateHash(desiredDeployment)
-	if err != nil {
-		_log.Debug("EdgeConnect hash generation failed")
-
-		return err
-	}
-
-	desiredDeployment.Annotations[hasher.AnnotationHash] = ddHash
 
 	_, err = k8sdeployment.Query(controller.client, controller.apiReader, _log).WithOwner(ec).CreateOrUpdate(ctx, desiredDeployment)
 	if err != nil {
