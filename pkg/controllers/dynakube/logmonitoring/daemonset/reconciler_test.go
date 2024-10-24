@@ -32,6 +32,32 @@ const (
 func TestReconcile(t *testing.T) {
 	ctx := context.Background()
 
+	t.Run("Only clean up if not standalone", func(t *testing.T) {
+		dk := createDynakube(true)
+		dk.Spec.OneAgent.CloudNativeFullStack = &dynakube.CloudNativeFullStackSpec{}
+		conditions.SetDaemonSetCreated(dk.Conditions(), conditionType, "testing")
+
+		previousDaemonSet := appsv1.DaemonSet{}
+		previousDaemonSet.Name = dk.LogMonitoring().GetDaemonSetName()
+		previousDaemonSet.Namespace = dk.Namespace
+		mockK8sClient := fake.NewClient(&previousDaemonSet)
+
+		reconciler := NewReconciler(mockK8sClient,
+			mockK8sClient, dk)
+		err := reconciler.Reconcile(ctx)
+		require.NoError(t, err)
+
+		var daemonset appsv1.DaemonSet
+		err = mockK8sClient.Get(ctx, types.NamespacedName{
+			Name:      dk.LogMonitoring().GetDaemonSetName(),
+			Namespace: dk.Namespace,
+		}, &daemonset)
+		require.True(t, k8serrors.IsNotFound(err))
+
+		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
+		require.Nil(t, condition)
+	})
+
 	t.Run("Create and update works with minimal setup", func(t *testing.T) {
 		dk := createDynakube(true)
 

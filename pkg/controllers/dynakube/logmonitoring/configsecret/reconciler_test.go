@@ -33,6 +33,26 @@ const (
 func TestReconcile(t *testing.T) {
 	ctx := context.Background()
 
+	t.Run("Only clean up if not standalone", func(t *testing.T) {
+		dk := createDynakube(true)
+		dk.Spec.OneAgent.CloudNativeFullStack = &dynakube.CloudNativeFullStackSpec{}
+		conditions.SetSecretCreated(dk.Conditions(), lmcConditionType, "testing")
+
+		mockK8sClient := createK8sClientWithConfigSecret()
+
+		reconciler := NewReconciler(mockK8sClient,
+			mockK8sClient, dk)
+		err := reconciler.Reconcile(ctx)
+		require.NoError(t, err)
+
+		var secret corev1.Secret
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: GetSecretName((dk.Name)), Namespace: dk.Namespace}, &secret)
+		require.True(t, k8serrors.IsNotFound(err))
+
+		condition := meta.FindStatusCondition(*dk.Conditions(), lmcConditionType)
+		require.Nil(t, condition)
+	})
+
 	t.Run("Create and update works with minimal setup", func(t *testing.T) {
 		dk := createDynakube(true)
 
@@ -46,8 +66,8 @@ func TestReconcile(t *testing.T) {
 		checkSecretForValue(t, mockK8sClient, dk)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), lmcConditionType)
-		oldTransitionTime := condition.LastTransitionTime
 		require.NotNil(t, condition)
+		oldTransitionTime := condition.LastTransitionTime
 		require.NotEmpty(t, oldTransitionTime)
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
@@ -182,3 +202,18 @@ func createK8sClientWithOneAgentTenantSecret(dk *dynakube.DynaKube, token string
 
 	return mockK8sClient
 }
+
+func createK8sClientWithConfigSecret() client.Client {
+	mockK8sClient := fake.NewClient()
+	_ = mockK8sClient.Create(context.Background(),
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      GetSecretName(dkName),
+				Namespace: dkNamespace,
+			},
+		},
+	)
+
+	return mockK8sClient
+}
+

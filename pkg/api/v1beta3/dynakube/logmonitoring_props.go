@@ -10,6 +10,7 @@ func (dk *DynaKube) LogMonitoring() *logmonitoring.LogMonitoring {
 		TemplateSpec: &dk.Spec.Templates.LogMonitoring,
 	}
 	lm.SetName(dk.Name)
+	lm.SetHostAgentDependency(dk.NeedsOneAgent())
 
 	return lm
 }

@@ -1,17 +1,25 @@
 package logmonitoring
 
 const (
-	logMonitoringDaemonSetSuffix = "-logmonitoring"
+	daemonSetSuffix = "-logmonitoring"
 )
 
-func (logMonitoring *LogMonitoring) SetName(name string) {
-	logMonitoring.name = name
+func (lm *LogMonitoring) SetName(name string) {
+	lm.name = name
 }
 
-func (logMonitoring *LogMonitoring) IsEnabled() bool {
-	return logMonitoring.Spec != nil
+func (lm *LogMonitoring) SetHostAgentDependency(isEnabled bool) {
+	lm.enabledDependencies.hostAgents = isEnabled
 }
 
-func (logMonitoring *LogMonitoring) GetDaemonSetName() string {
-	return logMonitoring.name + logMonitoringDaemonSetSuffix
+func (lm *LogMonitoring) IsEnabled() bool {
+	return lm.Spec != nil
+}
+
+func (lm *LogMonitoring) GetDaemonSetName() string {
+	return lm.name + daemonSetSuffix
+}
+
+func (lm *LogMonitoring) IsStandalone() bool {
+	return lm.IsEnabled() && !lm.enabledDependencies.hostAgents
 }
