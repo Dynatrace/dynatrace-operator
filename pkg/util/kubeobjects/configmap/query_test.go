@@ -48,7 +48,7 @@ func TestConfigMapQuery(t *testing.T) {
 	t.Run("Create configMap in target namespace", testCreateConfigMapInTargetNamespace)
 	t.Run("Delete configMap in target namespace", testDeleteConfigMap)
 	t.Run("Hash annotation is there after create", testHashAnnotationAfterCreate)
-	t.Run("Hash annotation is there after update", testHashAnnotationAfterCreate)
+	t.Run("Hash annotation is there after update", testHashAnnotationAfterUpdate)
 }
 
 func testGetConfigMap(t *testing.T) {
