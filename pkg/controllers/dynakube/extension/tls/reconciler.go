@@ -130,6 +130,8 @@ func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
 		return err
 	}
 
+	conditions.SetSecretCreated(r.dk.Conditions(), extensionsTLSSecretConditionType, secret.Name)
+
 	return nil
 }
 
