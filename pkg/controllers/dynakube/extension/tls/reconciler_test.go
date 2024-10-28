@@ -66,7 +66,7 @@ func TestReconcile(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotEmpty(t, secret)
-		assert.NotEmpty(t, dk.Conditions())
+		require.NotEmpty(t, dk.Conditions())
 		assert.Equal(t, extensionsTLSSecretConditionType, (*dk.Conditions())[0].Type)
 		assert.Equal(t, metav1.ConditionTrue, (*dk.Conditions())[0].Status)
 		assert.Equal(t, conditions.SecretCreatedReason, (*dk.Conditions())[0].Reason)
