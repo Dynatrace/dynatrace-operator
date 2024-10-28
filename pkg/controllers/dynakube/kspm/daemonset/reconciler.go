@@ -120,6 +120,7 @@ func (r *Reconciler) getUpdateStrategy() appsv1.DaemonSetUpdateStrategy {
 		updateStrategy = appsv1.DaemonSetUpdateStrategy{
 			RollingUpdate: &appsv1.RollingUpdateDaemonSet{
 				MaxUnavailable: getDefaultMaxUnavailable(),
+				MaxSurge:       getDefaultMaxSurge(),
 			},
 		}
 	}
@@ -131,4 +132,10 @@ func getDefaultMaxUnavailable() *intstr.IntOrString {
 	defaultMaxUnavailable := "25%"
 
 	return &intstr.IntOrString{StrVal: defaultMaxUnavailable}
+}
+
+func getDefaultMaxSurge() *intstr.IntOrString {
+	defaultMaxSurge := 1
+
+	return &intstr.IntOrString{IntVal: int32(defaultMaxSurge)}
 }
