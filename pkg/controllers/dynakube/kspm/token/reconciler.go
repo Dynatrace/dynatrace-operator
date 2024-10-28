@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
+	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -109,6 +110,7 @@ func generateKSPMTokenSecret(name string, dk *dynakube.DynaKube) (secret *corev1
 	secretConfig, err := k8ssecret.Build(dk,
 		name,
 		secretData,
+		k8ssecret.SetLabels(k8slabels.NewCoreLabels(dk.Name, k8slabels.KSPMComponentLabel).BuildLabels()),
 	)
 
 	if err != nil {

@@ -16,6 +16,7 @@ const (
 
 	OneAgentComponentLabel      = "oneagent"
 	LogMonitoringComponentLabel = "logmonitoring"
+	KSPMComponentLabel          = "kspm"
 	ActiveGateComponentLabel    = "activegate"
 	WebhookComponentLabel       = "webhook"
 	EdgeConnectComponentLabel   = "edgeconnect"

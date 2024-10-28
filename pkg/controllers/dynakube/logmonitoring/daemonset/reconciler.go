@@ -18,7 +18,6 @@ import (
 )
 
 const (
-	nameSuffix         = "-logmonitoring"
 	serviceAccountName = "dynatrace-logmonitoring"
 )
 
