@@ -11,10 +11,10 @@ import (
 )
 
 type Reconciler struct {
-	client          client.Client
-	apiReader       client.Reader
-	dk              *dynakube.DynaKube
-	tokenReconciler controllers.Reconciler
+	client              client.Client
+	apiReader           client.Reader
+	dk                  *dynakube.DynaKube
+	tokenReconciler     controllers.Reconciler
 	daemonSetReconciler controllers.Reconciler
 }
 
@@ -22,10 +22,10 @@ type ReconcilerBuilder func(client client.Client, apiReader client.Reader, dk *d
 
 func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler { //nolint
 	return &Reconciler{
-		client:          client,
-		apiReader:       apiReader,
-		dk:              dk,
-		tokenReconciler: token.NewReconciler(client, apiReader, dk),
+		client:              client,
+		apiReader:           apiReader,
+		dk:                  dk,
+		tokenReconciler:     token.NewReconciler(client, apiReader, dk),
 		daemonSetReconciler: daemonset.NewReconciler(client, apiReader, dk),
 	}
 }
