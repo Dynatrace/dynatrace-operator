@@ -64,6 +64,18 @@ func SetPullSecret(secretRef ...corev1.LocalObjectReference) builder.Option[*app
 	}
 }
 
+func SetAutomountServiceAccountToken(isEnabled bool) builder.Option[*appsv1.DaemonSet] {
+	return func(s *appsv1.DaemonSet) {
+		s.Spec.Template.Spec.AutomountServiceAccountToken = &isEnabled
+	}
+}
+
+func SetHostPID(isEnabled bool) builder.Option[*appsv1.DaemonSet] {
+	return func(s *appsv1.DaemonSet) {
+		s.Spec.Template.Spec.HostPID = isEnabled
+	}
+}
+
 func SetAllLabels(labels, matchLabels, templateLabels, customLabels map[string]string) builder.Option[*appsv1.DaemonSet] {
 	return func(s *appsv1.DaemonSet) {
 		s.ObjectMeta.Labels = labels
