@@ -152,7 +152,7 @@ func prepareVolumeMounts(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.Vol
 	}
 
 	if instance.Spec.CaCertsRef != "" {
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{MountPath: consts.EdgeConnectMountPath, Name: consts.EdgeConnectCustomCertificateName})
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{MountPath: consts.EdgeConnectMountPath, Name: consts.EdgeConnectCustomCAVolumeName})
 	}
 
 	return volumeMounts
