@@ -114,7 +114,7 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run("self-signed tls secret is deleted if spec.extensions.enabled is false", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Extensions.Enabled = false
+		dk.Spec.Extensions = nil
 		conditions.SetSecretCreated(dk.Conditions(), conditionType, "dynakube-extensions-controller-tls")
 
 		fakeClient := fake.NewClient()
@@ -161,9 +161,7 @@ func getTestDynakube() *dynakube.DynaKube {
 			Annotations: map[string]string{},
 		},
 		Spec: dynakube.DynaKubeSpec{
-			Extensions: dynakube.ExtensionsSpec{
-				Enabled: true,
-			},
+			Extensions: &dynakube.ExtensionsSpec{},
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
 					ImageRef: image.Ref{

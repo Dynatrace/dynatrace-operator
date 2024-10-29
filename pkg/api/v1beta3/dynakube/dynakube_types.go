@@ -76,6 +76,9 @@ type DynaKubeSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	Kspm *kspm.Spec `json:"kspm,omitempty"`
 
+	// +kubebuilder:validation:Optional
+	Extensions *ExtensionsSpec `json:"extensions,omitempty"`
+
 	// General configuration about OneAgent instances.
 	// You can't enable more than one module (classicFullStack, cloudNativeFullStack, hostMonitoring, or applicationMonitoring).
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
@@ -142,9 +145,6 @@ type DynaKubeSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Istio automatic management",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	EnableIstio bool `json:"enableIstio,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	Extensions ExtensionsSpec `json:"extensions,omitempty"`
 }
 
 type TemplatesSpec struct {

@@ -244,9 +244,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{}},
-				Extensions: dynakube.ExtensionsSpec{
-					Enabled: false,
-				},
+				Extensions: nil,
 			},
 		}
 
@@ -275,9 +273,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				Extensions: dynakube.ExtensionsSpec{
-					Enabled: true,
-				},
+				Extensions: &dynakube.ExtensionsSpec{},
 			},
 		}
 
@@ -308,9 +304,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{}},
-				Extensions: dynakube.ExtensionsSpec{
-					Enabled: true,
-				},
+				Extensions: &dynakube.ExtensionsSpec{},
 			},
 		}
 
@@ -341,9 +335,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
-				Extensions: dynakube.ExtensionsSpec{
-					Enabled: true,
-				},
+				Extensions: &dynakube.ExtensionsSpec{},
 			},
 		}
 
@@ -374,9 +366,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
-				Extensions: dynakube.ExtensionsSpec{
-					Enabled: true,
-				},
+				Extensions: &dynakube.ExtensionsSpec{},
 			},
 		}
 
@@ -416,7 +406,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		require.NoError(t, err)
 
 		// disable extensions
-		r.dk.Spec.Extensions.Enabled = false
+		r.dk.Spec.Extensions = nil
 		r.connectionReconciler = createGenericReconcilerMock(t)
 		r.versionReconciler = createVersionReconcilerMock(t)
 		r.pullSecretReconciler = createGenericReconcilerMock(t)

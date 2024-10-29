@@ -84,7 +84,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run("Extension secret is generated when Prometheus is enabled", func(t *testing.T) {
 		dk := createDynakube()
-		dk.Spec.Extensions.Enabled = true
+		dk.Spec.Extensions = &dynakube.ExtensionsSpec{}
 
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dk)
@@ -108,7 +108,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run(`Extension SecretCreated failure condition is set when error`, func(t *testing.T) {
 		dk := createDynakube()
-		dk.Spec.Extensions.Enabled = true
+		dk.Spec.Extensions = &dynakube.ExtensionsSpec{}
 
 		misconfiguredReader, _ := client.New(&rest.Config{}, client.Options{})
 		r := NewReconciler(fake.NewClient(), misconfiguredReader, dk)
@@ -126,7 +126,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 	t.Run("Create service when extensions are enabled with minimal setup", func(t *testing.T) {
 		dk := createDynakube()
-		dk.Spec.Extensions.Enabled = true
+		dk.Spec.Extensions = &dynakube.ExtensionsSpec{}
 
 		mockK8sClient := fake.NewClient(dk)
 
@@ -151,7 +151,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 	t.Run("Don't create service when extensions are disabled with minimal setup", func(t *testing.T) {
 		dk := createDynakube()
-		dk.Spec.Extensions.Enabled = false
+		dk.Spec.Extensions = nil
 
 		mockK8sClient := fake.NewClient(dk)
 

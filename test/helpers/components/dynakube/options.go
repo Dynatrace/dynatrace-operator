@@ -156,7 +156,11 @@ func WithApplicationMonitoringSpec(applicationMonitoringSpec *dynakube.Applicati
 
 func WithExtensionsEnabledSpec(promEnabled bool) Option {
 	return func(dk *dynakube.DynaKube) {
-		dk.Spec.Extensions.Enabled = promEnabled
+		if promEnabled {
+			dk.Spec.Extensions = &dynakube.ExtensionsSpec{}
+		} else {
+			dk.Spec.Extensions = nil
+		}
 	}
 }
 

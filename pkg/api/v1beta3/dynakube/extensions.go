@@ -6,8 +6,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// +kubebuilder:validation:Optional
 type ExtensionsSpec struct {
-	// +kubebuilder:validation:Optional
 	Enabled bool `json:"enabled,omitempty"`
 }
 

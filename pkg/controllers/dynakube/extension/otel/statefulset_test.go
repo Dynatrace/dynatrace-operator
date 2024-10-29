@@ -38,10 +38,8 @@ func getTestDynakube() *dynakube.DynaKube {
 			Annotations: map[string]string{},
 		},
 		Spec: dynakube.DynaKubeSpec{
-			Extensions: dynakube.ExtensionsSpec{
-				Enabled: true,
-			},
-			Templates: dynakube.TemplatesSpec{OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{}},
+			Extensions: &dynakube.ExtensionsSpec{},
+			Templates:  dynakube.TemplatesSpec{OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{}},
 		},
 	}
 }
@@ -85,7 +83,7 @@ func getTLSSecret(name string, namespace string, crt string, key string) corev1.
 func TestConditions(t *testing.T) {
 	t.Run("extensions are disabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Extensions.Enabled = false
+		dk.Spec.Extensions = nil
 		conditions.SetStatefulSetCreated(dk.Conditions(), otelControllerStatefulSetConditionType, dk.ExtensionsCollectorStatefulsetName())
 
 		mockK8sClient := fake.NewClient(dk)
