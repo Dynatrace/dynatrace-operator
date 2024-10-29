@@ -2,7 +2,6 @@ package dynakube
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -11,6 +10,9 @@ type ExtensionsSpec struct {
 }
 
 type ExtensionExecutionControllerSpec struct {
+	// Selects EmptyDir volume to be storage device
+	// +kubebuilder:validation:Optional
+	UseEphemeralVolume *bool `json:"useEphemeralVolume,omitempty"`
 
 	// Defines storage device
 	// +kubebuilder:validation:Optional
@@ -22,10 +24,6 @@ type ExtensionExecutionControllerSpec struct {
 
 	// Adds additional annotations to the ExtensionExecutionController pods
 	Annotations map[string]string `json:"annotations,omitempty"`
-
-	// Determines retention policy
-	// +kubebuilder:validation:Optional
-	PersistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
 
 	// Overrides the default image
 	// +kubebuilder:validation:Optional
