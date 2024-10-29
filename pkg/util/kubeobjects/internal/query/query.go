@@ -44,16 +44,16 @@ func (c Generic[T, L]) Get(ctx context.Context, objectKey client.ObjectKey) (T, 
 func (c Generic[T, L]) Create(ctx context.Context, object T) error {
 	c.log(object).Info("creating")
 
+	err := hasher.AddAnnotation(object)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
 	if c.Owner != nil {
 		err := controllerutil.SetControllerReference(c.Owner, object, scheme.Scheme)
 		if err != nil {
 			return errors.WithStack(err)
 		}
-	}
-
-	err := hasher.AddAnnotation(object)
-	if err != nil {
-		return errors.WithStack(err)
 	}
 
 	return errors.WithStack(c.KubeClient.Create(ctx, object))
@@ -62,16 +62,16 @@ func (c Generic[T, L]) Create(ctx context.Context, object T) error {
 func (c Generic[T, L]) Update(ctx context.Context, object T) error {
 	c.log(object).Info("updating")
 
+	err := hasher.AddAnnotation(object)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
 	if c.Owner != nil {
 		err := controllerutil.SetControllerReference(c.Owner, object, scheme.Scheme)
 		if err != nil {
 			return errors.WithStack(err)
 		}
-	}
-
-	err := hasher.AddAnnotation(object)
-	if err != nil {
-		return errors.WithStack(err)
 	}
 
 	return errors.WithStack(c.KubeClient.Update(ctx, object))
@@ -97,6 +97,11 @@ func (c Generic[T, L]) CreateOrUpdate(ctx context.Context, newObject T) (bool, e
 		return true, nil
 	} else if err != nil {
 		return false, err
+	}
+
+	err = hasher.AddAnnotation(newObject)
+	if err != nil {
+		return false, errors.WithStack(err)
 	}
 
 	if c.IsEqual(currentObject, newObject) {

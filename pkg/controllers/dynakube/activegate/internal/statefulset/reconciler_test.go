@@ -229,6 +229,8 @@ func TestManageStatefulSet(t *testing.T) {
 		err = r.client.Update(ctx, actualStatefulSet)
 
 		require.NoError(t, err)
+		err = r.manageStatefulSet(ctx)
+		require.NoError(t, err)
 
 		actualStatefulSet, err = statefulset.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKeyFromObject(desiredStatefulSet))
 		require.NoError(t, err)
@@ -251,6 +253,9 @@ func TestManageStatefulSet(t *testing.T) {
 		actualStatefulSet.Spec.Selector.MatchLabels["activegate"] = testValue
 		err = r.client.Update(ctx, actualStatefulSet)
 
+		require.NoError(t, err)
+
+		err = r.manageStatefulSet(ctx)
 		require.NoError(t, err)
 
 		actualStatefulSet, err = statefulset.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKeyFromObject(desiredStatefulSet))

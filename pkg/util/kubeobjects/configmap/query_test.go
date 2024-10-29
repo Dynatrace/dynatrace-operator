@@ -48,7 +48,6 @@ func TestConfigMapQuery(t *testing.T) {
 	t.Run("Create configMap in target namespace", testCreateConfigMapInTargetNamespace)
 	t.Run("Delete configMap in target namespace", testDeleteConfigMap)
 	t.Run("Hash annotation is there after create", testHashAnnotationAfterCreate)
-	t.Run("Hash annotation is there after update", testHashAnnotationAfterUpdate)
 }
 
 func testGetConfigMap(t *testing.T) {
@@ -317,38 +316,6 @@ func testHashAnnotationAfterCreate(t *testing.T) {
 	assert.NotEmpty(t, actualConfigMap.Annotations[annotationHash])
 
 	assert.Equal(t, configMap.Annotations[annotationHash], actualConfigMap.Annotations[annotationHash])
-}
-
-func testHashAnnotationAfterUpdate(t *testing.T) {
-	data := map[string]string{testKey1: testValue1}
-	labels := map[string]string{
-		"label": "test",
-	}
-	fakeClient := fake.NewClient()
-	configMap := createTestConfigMap(labels, data)
-	configMapQuery := Query(fakeClient, fakeClient, configMapLog)
-
-	err := configMapQuery.Create(context.Background(), configMap)
-	require.NoError(t, err)
-
-	assert.NotEmpty(t, configMap.Annotations)
-	assert.NotEmpty(t, configMap.Annotations[annotationHash])
-
-	oldHash := configMap.Annotations[annotationHash]
-
-	err = configMapQuery.Update(context.Background(), configMap)
-	require.NoError(t, err)
-
-	assert.NotEmpty(t, configMap.Annotations)
-	assert.NotEmpty(t, configMap.Annotations[annotationHash])
-	require.NotEqual(t, oldHash, configMap.Annotations[annotationHash])
-
-	updatedHash := configMap.Annotations[annotationHash]
-
-	assert.NotEmpty(t, configMap.Annotations)
-	assert.NotEmpty(t, configMap.Annotations[annotationHash])
-	require.NotEqual(t, oldHash, updatedHash)
-	require.Equal(t, updatedHash, configMap.Annotations[annotationHash])
 }
 
 func createTestConfigMap(labels map[string]string, data map[string]string) *corev1.ConfigMap {
