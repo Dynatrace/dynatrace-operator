@@ -22,7 +22,7 @@ func getVolumes(dk dynakube.DynaKube) []corev1.Volume {
 		getTokenVolume(dk),
 	}
 
-	if needsCerts(dk) {
+	if dk.ActiveGate().HasCaCert() {
 		volumes = append(volumes, getCertVolume(dk))
 	}
 
@@ -35,7 +35,7 @@ func getMounts(dk dynakube.DynaKube) []corev1.VolumeMount {
 		getTokenVolumeMount(),
 	}
 
-	if needsCerts(dk) {
+	if dk.ActiveGate().HasCaCert() {
 		mounts = append(mounts, getCertMount())
 	}
 

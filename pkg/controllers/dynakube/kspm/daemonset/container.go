@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	defaultImageRepo = "public.ecr.aws/dynatrace/node-config-collector"
+	defaultImageRepo = "public.ecr.aws/dynatrace/dynatrace-k8s-node-config-collector"
 	defaultImageTag  = "latest"
 
 	containerName       = "node-config-collector"
@@ -46,8 +46,13 @@ func getSecurityContext() corev1.SecurityContext {
 }
 
 func getResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
-	limits := resources.NewResourceList("100m", "128Mi")
-	requests := resources.NewResourceList("100m", "128Mi")
+	const (
+		defaultCPU = "100m"
+		defaultMemory = "128Mi"
+	)
+
+	limits := resources.NewResourceList(defaultCPU, defaultMemory)
+	requests := resources.NewResourceList(defaultCPU, defaultMemory)
 
 	if dk.KSPM().Resources.Limits != nil {
 		limits = dk.KSPM().Resources.Limits

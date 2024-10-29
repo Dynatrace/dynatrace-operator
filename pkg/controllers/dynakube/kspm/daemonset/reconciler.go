@@ -43,14 +43,14 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return nil // no condition == nothing is there to clean up
 		}
 
+		defer meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
+
 		query := daemonset.Query(r.client, r.apiReader, log)
 		err := query.Delete(ctx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: r.dk.KSPM().GetDaemonSetName(), Namespace: r.dk.Namespace}})
 
 		if err != nil {
 			log.Error(err, "failed to clean-up KSPM config-secret")
 		}
-
-		meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
 
 		return nil // clean-up shouldn't cause a failure
 	}
@@ -112,20 +112,17 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 func (r *Reconciler) getUpdateStrategy() appsv1.DaemonSetUpdateStrategy {
 	updateStrategy := r.dk.KSPM().UpdateStrategy
 
-	if updateStrategy.Type == "" {
-		updateStrategy.Type = appsv1.RollingUpdateDaemonSetStrategyType
+	if updateStrategy != nil {
+		return *updateStrategy
 	}
 
-	if updateStrategy.Type == appsv1.RollingUpdateDaemonSetStrategyType && updateStrategy.RollingUpdate == nil {
-		updateStrategy = appsv1.DaemonSetUpdateStrategy{
-			RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-				MaxUnavailable: getDefaultMaxUnavailable(),
-				MaxSurge:       getDefaultMaxSurge(),
-			},
-		}
+	return appsv1.DaemonSetUpdateStrategy{
+		Type: appsv1.RollingUpdateDaemonSetStrategyType,
+		RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+			MaxUnavailable: getDefaultMaxUnavailable(),
+			MaxSurge:       getDefaultMaxSurge(),
+		},
 	}
-
-	return updateStrategy
 }
 
 func getDefaultMaxUnavailable() *intstr.IntOrString {

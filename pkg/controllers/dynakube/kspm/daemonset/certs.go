@@ -14,10 +14,6 @@ const (
 	certFileEnv    = "DT_CA_CERTIFICATE_FILE"
 )
 
-func needsCerts(dk dynakube.DynaKube) bool {
-	return dk.ActiveGate().TlsSecretName != ""
-}
-
 func getCertVolume(dk dynakube.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name: certVolumeName,

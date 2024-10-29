@@ -8,7 +8,7 @@ import (
 
 const (
 	TokenSecretKey          = "kspm-token"
-	NodeCollectorNameSuffix = "-node-config-collector"
+	NodeCollectorNameSuffix = "node-config-collector"
 )
 
 type Kspm struct {
@@ -38,7 +38,7 @@ type NodeConfigurationCollectorSpec struct {
 
 	// Define the NodeConfigurationCollector daemonSet updateStrategy
 	// +kubebuilder:validation:Optional
-	UpdateStrategy appsv1.DaemonSetUpdateStrategy `json:"updateStrategy,omitempty"`
+	UpdateStrategy *appsv1.DaemonSetUpdateStrategy `json:"updateStrategy,omitempty"`
 	// Adds additional labels for the NodeConfigurationCollector pods
 	// +kubebuilder:validation:Optional
 	Labels map[string]string `json:"labels,omitempty"`
