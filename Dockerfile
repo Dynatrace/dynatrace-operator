@@ -1,5 +1,5 @@
 # setup build image
-FROM golang:1.22.6@sha256:2bd56f00ff47baf33e64eae7996b65846c7cb5e0a46e0a882ef179fd89654afa AS operator-build
+FROM golang:1.23.2@sha256:adee809c2d0009a4199a11a1b2618990b244c6515149fe609e2788ddf164bd10 AS operator-build
 
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && apt-get install -y libbtrfs-dev libdevmapper-dev
@@ -41,8 +41,8 @@ COPY --from=dependency /tmp/rootfs-dependency /
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
 
 # csi binaries
-COPY --from=registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.11.1@sha256:e01facb9fb9cffaf52d0053bdb979fbd8c505c8e411939a6e026dd061a6b4fbe /csi-node-driver-registrar /usr/local/bin
-COPY --from=registry.k8s.io/sig-storage/livenessprobe:v2.13.1@sha256:d2a9027a4876e039185e9bef7c61a0142c8ea14e7440860285c34ac73fee4ffb /livenessprobe /usr/local/bin
+COPY --from=registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.12.0@sha256:0d23a6fd60c421054deec5e6d0405dc3498095a5a597e175236c0692f4adee0f /csi-node-driver-registrar /usr/local/bin
+COPY --from=registry.k8s.io/sig-storage/livenessprobe:v2.14.0@sha256:33692aed26aaf105b4d6e66280cceca9e0463f500c81b5d8c955428a75438f32 /livenessprobe /usr/local/bin
 
 COPY ./third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
 COPY LICENSE /licenses/
