@@ -42,10 +42,10 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return r.reconcileSelfSignedTLSSecret(ctx)
 	}
 
-	if meta.FindStatusCondition(*r.dk.Conditions(), extensionsTLSSecretConditionType) == nil {
+	if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
 		return nil
 	}
-	defer meta.RemoveStatusCondition(r.dk.Conditions(), extensionsTLSSecretConditionType)
+	defer meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
 
 	return r.deleteSelfSignedTLSSecret(ctx)
 }
@@ -63,7 +63,7 @@ func (r *reconciler) reconcileSelfSignedTLSSecret(ctx context.Context) error {
 	}
 
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), extensionsTLSSecretConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), conditionType, err)
 
 		return err
 	}
@@ -85,7 +85,7 @@ func (r *reconciler) deleteSelfSignedTLSSecret(ctx context.Context) error {
 func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
 	cert, err := certificates.New(r.timeProvider)
 	if err != nil {
-		conditions.SetSecretGenFailed(r.dk.Conditions(), extensionsTLSSecretConditionType, err)
+		conditions.SetSecretGenFailed(r.dk.Conditions(), conditionType, err)
 
 		return err
 	}
@@ -97,14 +97,14 @@ func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
 
 	err = cert.SelfSign()
 	if err != nil {
-		conditions.SetSecretGenFailed(r.dk.Conditions(), extensionsTLSSecretConditionType, err)
+		conditions.SetSecretGenFailed(r.dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
 	pemCert, pemPk, err := cert.ToPEM()
 	if err != nil {
-		conditions.SetSecretGenFailed(r.dk.Conditions(), extensionsTLSSecretConditionType, err)
+		conditions.SetSecretGenFailed(r.dk.Conditions(), conditionType, err)
 
 		return err
 	}
@@ -114,7 +114,7 @@ func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
 
 	secret, err := k8ssecret.Build(r.dk, getSelfSignedTLSSecretName(r.dk.Name), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
-		conditions.SetSecretGenFailed(r.dk.Conditions(), extensionsTLSSecretConditionType, err)
+		conditions.SetSecretGenFailed(r.dk.Conditions(), conditionType, err)
 
 		return err
 	}
@@ -125,12 +125,12 @@ func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
 
 	err = query.Create(ctx, secret)
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), extensionsTLSSecretConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
-	conditions.SetSecretCreated(r.dk.Conditions(), extensionsTLSSecretConditionType, secret.Name)
+	conditions.SetSecretCreated(r.dk.Conditions(), conditionType, secret.Name)
 
 	return nil
 }

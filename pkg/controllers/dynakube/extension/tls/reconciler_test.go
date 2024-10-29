@@ -67,7 +67,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotEmpty(t, secret)
 		require.NotEmpty(t, dk.Conditions())
-		assert.Equal(t, extensionsTLSSecretConditionType, (*dk.Conditions())[0].Type)
+		assert.Equal(t, conditionType, (*dk.Conditions())[0].Type)
 		assert.Equal(t, metav1.ConditionTrue, (*dk.Conditions())[0].Status)
 		assert.Equal(t, conditions.SecretCreatedReason, (*dk.Conditions())[0].Reason)
 		assert.Equal(t, "dynakube-extensions-controller-tls created", (*dk.Conditions())[0].Message)
@@ -75,7 +75,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("do not renew self-signed tls secret if it exists", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = ""
-		conditions.SetSecretCreated(dk.Conditions(), extensionsTLSSecretConditionType, "dynakube-extensions-controller-tls")
+		conditions.SetSecretCreated(dk.Conditions(), conditionType, "dynakube-extensions-controller-tls")
 
 		fakeClient := fake.NewClient()
 		fakeClient = mockSelfSignedTLSSecret(t, fakeClient, dk)
@@ -95,7 +95,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("self-signed tls secret is deleted", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "dummy-value"
-		conditions.SetSecretCreated(dk.Conditions(), extensionsTLSSecretConditionType, "dynakube-extensions-controller-tls")
+		conditions.SetSecretCreated(dk.Conditions(), conditionType, "dynakube-extensions-controller-tls")
 
 		fakeClient := fake.NewClient()
 		fakeClient = mockSelfSignedTLSSecret(t, fakeClient, dk)
@@ -115,7 +115,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("self-signed tls secret is deleted if spec.extensions.enabled is false", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Extensions.Enabled = false
-		conditions.SetSecretCreated(dk.Conditions(), extensionsTLSSecretConditionType, "dynakube-extensions-controller-tls")
+		conditions.SetSecretCreated(dk.Conditions(), conditionType, "dynakube-extensions-controller-tls")
 
 		fakeClient := fake.NewClient()
 		fakeClient = mockSelfSignedTLSSecret(t, fakeClient, dk)
