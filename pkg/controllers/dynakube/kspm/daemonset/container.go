@@ -47,7 +47,7 @@ func getSecurityContext() corev1.SecurityContext {
 
 func getResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
 	const (
-		defaultCPU = "100m"
+		defaultCPU    = "100m"
 		defaultMemory = "128Mi"
 	)
 

@@ -16,4 +16,3 @@ func getDynaKubeWithCerts(t *testing.T) dynakube.DynaKube {
 
 	return dk
 }
-
