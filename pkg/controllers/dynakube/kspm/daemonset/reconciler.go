@@ -2,6 +2,7 @@ package daemonset
 
 import (
 	"context"
+	"maps"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -49,7 +50,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		err := query.Delete(ctx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: r.dk.KSPM().GetDaemonSetName(), Namespace: r.dk.Namespace}})
 
 		if err != nil {
-			log.Error(err, "failed to clean-up KSPM config-secret")
+			log.Error(err, "failed to clean-up KSPM daemonset")
 		}
 
 		return nil // clean-up shouldn't cause a failure
@@ -82,10 +83,12 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 	}
 
 	labels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.KSPMComponentLabel)
+	templateAnnotations := map[string]string{tokenSecretHashAnnotation: r.dk.KSPM().TokenSecretHash}
+	maps.Copy(templateAnnotations, r.dk.KSPM().Annotations)
 
 	ds, err := daemonset.Build(r.dk, r.dk.KSPM().GetDaemonSetName(), getContainer(*r.dk, tenantUUID),
 		daemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.KSPM().Labels),
-		daemonset.SetAllAnnotations(map[string]string{tokenSecretHashAnnotation: r.dk.KSPM().TokenSecretHash}, r.dk.KSPM().Annotations),
+		daemonset.SetAllAnnotations(r.dk.KSPM().Annotations, templateAnnotations),
 		daemonset.SetServiceAccount(serviceAccountName),
 		daemonset.SetAffinity(node.Affinity()),
 		daemonset.SetPriorityClass(r.dk.KSPM().PriorityClassName),
