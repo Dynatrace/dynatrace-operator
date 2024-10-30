@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	corev1 "k8s.io/api/core/v1"
@@ -34,17 +33,6 @@ func getEnvs(dk dynakube.DynaKube, tenantUUID string) []corev1.EnvVar {
 		{
 			Name:  activeGateEndpointEnv,
 			Value: getActiveGateEndpointTemplate(dk, tenantUUID),
-		},
-		{
-			Name: tokenEnv, // TODO: Remove once reading from file is supported
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: dk.KSPM().GetTokenSecretName(),
-					},
-					Key: kspm.TokenSecretKey,
-				},
-			},
 		},
 	}
 

@@ -46,7 +46,7 @@ func getTokenVolumeMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
 		Name:      tokenVolumeName,
 		MountPath: tokenMountPath,
-		SubPath:   kspm.TokenSecretKey, // TODO: is this correct?
+		SubPath:   kspm.TokenSecretKey,
 	}
 }
 

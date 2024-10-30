@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	expectedBaseEnvLen = 4
+	expectedBaseEnvLen = 3
 )
 
 func TestGetEnvs(t *testing.T) {
