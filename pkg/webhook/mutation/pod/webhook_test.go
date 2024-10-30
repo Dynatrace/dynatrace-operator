@@ -9,6 +9,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/metadata"
+	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
 	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -129,6 +131,83 @@ func TestMutator(t *testing.T) {
 			test.expectedResult(t, &response, test.mutators)
 		})
 	}
+}
+
+// TestDoubleInjection is special test case for making sure that we do not inject the init-container 2 times incase 1 of the mutators are skipped.
+// The mutators are intentionally NOT mocked, as to mock them properly for this scenario you would need to basically reimplement them in the mock.
+// This test is necessary as the current interface is not ready to handle the scenario properly.
+// Scenario: OneAgent mutation is Enabled however needs to be skipped due to not meeting the requirements, so it needs to annotate but not fully inject
+func TestDoubleInjection(t *testing.T) {
+	noCommunicationHostDK := getTestDynakube()
+	fakeClient := fake.NewClient(noCommunicationHostDK, getTestNamespace())
+	podWebhook := &webhook{
+		apiReader:        fakeClient,
+		decoder:          admission.NewDecoder(scheme.Scheme),
+		recorder:         eventRecorder{recorder: record.NewFakeRecorder(10), pod: &corev1.Pod{}, dk: noCommunicationHostDK},
+		webhookImage:     testImage,
+		webhookNamespace: testNamespaceName,
+		clusterID:        testClusterID,
+		apmExists:        false,
+		mutators: []dtwebhook.PodMutator{
+			oamutation.NewMutator(
+				testImage,
+				testClusterID,
+				testNamespaceName,
+				fakeClient,
+				fakeClient,
+			),
+			metadata.NewMutator(
+				testNamespaceName,
+				fakeClient,
+				fakeClient,
+				fakeClient,
+			),
+		},
+	}
+
+	pod := getTestPod()
+
+	request := createTestAdmissionRequest(pod)
+
+	response := podWebhook.Handle(context.Background(), *request)
+	require.NotNil(t, response)
+	assert.True(t, response.Allowed)
+	assert.Nil(t, response.Result)
+	require.Len(t, response.Patches, 2)
+
+	allowedPatchPaths := []string{
+		"/spec/initContainers/1",
+		"/metadata/annotations",
+	}
+	alreadySeenPaths := []string{}
+
+	for _, patch := range response.Patches {
+		path := patch.Path
+		assert.NotContains(t, alreadySeenPaths, path)
+		assert.Contains(t, allowedPatchPaths, path)
+		alreadySeenPaths = append(alreadySeenPaths, path)
+	}
+
+	// simulate initial mutation, annotations + init-container <== skip in case on communication hosts
+	pod.Annotations = map[string]string{
+		dtwebhook.AnnotationOneAgentInjected: "false",
+		dtwebhook.AnnotationOneAgentReason:   dtwebhook.EmptyConnectionInfoReason,
+	}
+	pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{Name: dtwebhook.InstallContainerName})
+
+	// adding communicationHost to the dynakube to make the scenario more complicated
+	// it shouldn't try to mutate the pod because now it could be enabled, that is just asking for trouble.
+	communicationHostDK := getTestDynakube()
+	communicationHostDK.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynatracev1beta2.CommunicationHostStatus{{Host: "test"}}
+	fakeClient = fake.NewClient(communicationHostDK, getTestNamespace())
+	podWebhook.apiReader = fakeClient
+
+	// simulate a Reinvocation
+	request = createTestAdmissionRequest(pod)
+	response = podWebhook.Handle(context.Background(), *request)
+
+	require.NotNil(t, response)
+	assert.Equal(t, admission.Patched(""), response)
 }
 
 func TestHandlePodMutation(t *testing.T) {
