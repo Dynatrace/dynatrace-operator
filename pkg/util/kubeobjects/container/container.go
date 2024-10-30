@@ -27,3 +27,14 @@ func FindContainerInPodSpec(podSpec *corev1.PodSpec, containerName string) *core
 
 	return nil
 }
+
+func FindInitContainerInPodSpec(podSpec *corev1.PodSpec, containerName string) *corev1.Container {
+	for i := range podSpec.InitContainers {
+		container := &podSpec.InitContainers[i]
+		if container.Name == containerName {
+			return container
+		}
+	}
+
+	return nil
+}
