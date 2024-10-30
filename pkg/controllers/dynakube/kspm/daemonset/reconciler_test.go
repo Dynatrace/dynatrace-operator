@@ -120,7 +120,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		assert.NotEmpty(t, daemonset.Spec.Template.Labels)
 		assert.NotEmpty(t, daemonset.Spec.Template.Spec.Affinity)
 		assert.Subset(t, daemonset.Spec.Template.Labels, daemonset.Spec.Selector.MatchLabels)
-		require.Len(t, daemonset.Annotations, 2)
+		require.Len(t, daemonset.Spec.Template.Annotations, 1)
 		assert.Contains(t, daemonset.Annotations, hasher.AnnotationHash)
 		assert.Contains(t, daemonset.Annotations, tokenSecretHashAnnotation)
 		assert.Equal(t, serviceAccountName, daemonset.Spec.Template.Spec.ServiceAccountName)
@@ -166,6 +166,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
+		assert.Subset(t, daemonset.Annotations, customAnnotations)
 		assert.Subset(t, daemonset.Spec.Template.Annotations, customAnnotations)
 	})
 
