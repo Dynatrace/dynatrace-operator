@@ -8,11 +8,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,6 +42,11 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return r.reconcileSelfSignedTLSSecret(ctx)
 	}
 
+	if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
+		return nil
+	}
+	defer meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
+
 	return r.deleteSelfSignedTLSSecret(ctx)
 }
 
@@ -55,7 +62,13 @@ func (r *reconciler) reconcileSelfSignedTLSSecret(ctx context.Context) error {
 		return r.createSelfSignedTLSSecret(ctx)
 	}
 
-	return err
+	if err != nil {
+		conditions.SetKubeApiError(r.dk.Conditions(), conditionType, err)
+
+		return err
+	}
+
+	return nil
 }
 
 func (r *reconciler) deleteSelfSignedTLSSecret(ctx context.Context) error {
@@ -72,6 +85,8 @@ func (r *reconciler) deleteSelfSignedTLSSecret(ctx context.Context) error {
 func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
 	cert, err := certificates.New(r.timeProvider)
 	if err != nil {
+		conditions.SetSecretGenFailed(r.dk.Conditions(), conditionType, err)
+
 		return err
 	}
 
@@ -82,11 +97,15 @@ func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
 
 	err = cert.SelfSign()
 	if err != nil {
+		conditions.SetSecretGenFailed(r.dk.Conditions(), conditionType, err)
+
 		return err
 	}
 
 	pemCert, pemPk, err := cert.ToPEM()
 	if err != nil {
+		conditions.SetSecretGenFailed(r.dk.Conditions(), conditionType, err)
+
 		return err
 	}
 
@@ -95,6 +114,8 @@ func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
 
 	secret, err := k8ssecret.Build(r.dk, getSelfSignedTLSSecretName(r.dk.Name), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
+		conditions.SetSecretGenFailed(r.dk.Conditions(), conditionType, err)
+
 		return err
 	}
 
@@ -104,8 +125,12 @@ func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
 
 	err = query.Create(ctx, secret)
 	if err != nil {
+		conditions.SetKubeApiError(r.dk.Conditions(), conditionType, err)
+
 		return err
 	}
+
+	conditions.SetSecretCreated(r.dk.Conditions(), conditionType, secret.Name)
 
 	return nil
 }

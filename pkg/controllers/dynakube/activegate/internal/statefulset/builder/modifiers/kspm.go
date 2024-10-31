@@ -1,6 +1,7 @@
 package modifiers
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
@@ -15,8 +16,9 @@ var _ volumeMountModifier = KspmModifier{}
 var _ builder.Modifier = KspmModifier{}
 
 const (
-	kspmTokenVolumeName = "kspm-token"
-	kspmTokenMountPath  = "/var/lib/dynatrace/secrets/tokens/kspm/node-configuration-collector"
+	kspmTokenVolumeName           = "kspm-token"
+	kspmTokenMountPath            = "/var/lib/dynatrace/secrets/tokens/kspm/node-configuration-collector"
+	kspmTokenSecretHashAnnotation = api.InternalFlagPrefix + "kspm-token-secret-hash"
 )
 
 func NewKspmModifier(dk dynakube.DynaKube) KspmModifier {
@@ -34,6 +36,11 @@ func (mod KspmModifier) Enabled() bool {
 }
 
 func (mod KspmModifier) Modify(sts *appsv1.StatefulSet) error {
+	if sts.Spec.Template.Annotations == nil {
+		sts.Spec.Template.Annotations = map[string]string{}
+	}
+
+	sts.Spec.Template.Annotations[kspmTokenSecretHashAnnotation] = mod.dk.KSPM().TokenSecretHash
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 	baseContainer := container.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)

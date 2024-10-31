@@ -2,8 +2,8 @@ import json5
 import sys
 
 # version file contains a list of strings
-versionFile = sys.argv[1]
-renovateFile = sys.argv[2]
+versionFile = "release-branches.txt"
+renovateFile = ".github/renovate.json5"
 
 # read versions to list
 versions = ["$default"]

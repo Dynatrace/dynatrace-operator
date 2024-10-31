@@ -286,22 +286,3 @@ func (dtc *dynatraceClient) extractHostInfoResponse(response []byte) ([]hostInfo
 
 	return hostInfoResponses, nil
 }
-
-type serverErrorResponse struct {
-	ErrorMessage ServerError `json:"error"`
-}
-
-// ServerError represents an error returned from the server (e.g. authentication failure).
-type ServerError struct {
-	Message string
-	Code    int
-}
-
-// Error formats the server error code and message.
-func (e ServerError) Error() string {
-	if len(e.Message) == 0 && e.Code == 0 {
-		return "unknown server error"
-	}
-
-	return fmt.Sprintf("dynatrace server error %d: %s", int64(e.Code), e.Message)
-}

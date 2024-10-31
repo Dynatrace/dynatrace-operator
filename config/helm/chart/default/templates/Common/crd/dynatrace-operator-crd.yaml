@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.4
+    controller-gen.kubebuilder.io/version: v0.16.5
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -7532,6 +7532,15 @@ spec:
                     format: date-time
                     type: string
                 type: object
+              kspm:
+                description: Observed state of Kspm
+                properties:
+                  tokenSecretHash:
+                    description: |-
+                      TokenSecretHash contains the hash of the token that is passed to both the ActiveGate and Node-Configuration-Collector.
+                      Meant to keep the two in sync.
+                    type: string
+                type: object
               kubeSystemUUID:
                 description: KubeSystemUUID contains the UUID of the current Kubernetes
                   cluster
@@ -7654,7 +7663,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.4
+    controller-gen.kubebuilder.io/version: v0.16.5
   name: edgeconnects.dynatrace.com
 spec:
   conversion:
