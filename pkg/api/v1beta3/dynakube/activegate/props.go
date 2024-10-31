@@ -27,6 +27,11 @@ func (ag *Spec) SetExtensionsDependency(isEnabled bool) {
 	ag.enabledDependencies.extensions = isEnabled
 }
 
+func (ag *Spec) SetKSPMDependency(isEnabled bool) {
+	ag.enabledDependencies.kspm = isEnabled
+}
+
+
 func (ag *Spec) apiUrlHost() string {
 	parsedUrl, err := url.Parse(ag.apiUrl)
 	if err != nil {
@@ -83,7 +88,8 @@ func (ag *Spec) NeedsService() bool {
 	return ag.IsRoutingEnabled() ||
 		ag.IsApiEnabled() ||
 		ag.IsMetricsIngestEnabled() ||
-		ag.enabledDependencies.extensions
+		ag.enabledDependencies.extensions ||
+		ag.enabledDependencies.kspm
 }
 
 func (ag *Spec) HasCaCert() bool {

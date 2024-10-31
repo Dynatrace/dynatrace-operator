@@ -60,6 +60,7 @@ type ActiveGate struct {
 // dependencies is a collection of possible other feature/components that need an ActiveGate, but is not directly configured in the ActiveGate section.
 type dependencies struct {
 	extensions bool
+	kspm       bool
 }
 
 func (d dependencies) Any() bool {
