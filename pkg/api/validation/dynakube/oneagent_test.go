@@ -169,7 +169,7 @@ func TestConflictingNodeSelector(t *testing.T) {
 					APIURL:        testApiUrl,
 					LogMonitoring: &logmonitoring.Spec{},
 					Templates: dynakube.TemplatesSpec{
-						LogMonitoring: logmonitoring.TemplateSpec{
+						LogMonitoring: &logmonitoring.TemplateSpec{
 							NodeSelector: map[string]string{"node": "12"},
 						},
 					},
@@ -255,42 +255,27 @@ func TestConflictingNodeSelector(t *testing.T) {
 			&defaultCSIDaemonSet)
 	})
 	t.Run(`invalid dynakube specs with existing log module`, func(t *testing.T) {
-		assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, testName)},
-			newCloudNativeDynakube("dk1", map[string]string{}, "1"),
-			&dynakube.DynaKube{
-				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynakube.DynaKubeSpec{
-					APIURL:        testApiUrl,
-					LogMonitoring: &logmonitoring.Spec{},
-				},
-			}, &defaultCSIDaemonSet)
+		assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, "dk-lm")},
+			newCloudNativeDynakube("dk-cm", map[string]string{}, "1"),
+			createStandaloneLogMonitoringDynakube("dk-lm", "1"), &defaultCSIDaemonSet)
 
-		assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, ""), testName, "dk2"},
-			newCloudNativeDynakube("dk1", map[string]string{}, "1"),
-			&dynakube.DynaKube{
-				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynakube.DynaKubeSpec{
-					APIURL:        testApiUrl,
-					LogMonitoring: &logmonitoring.Spec{},
-				},
-			},
-			newCloudNativeDynakube("dk2", map[string]string{}, "1"),
+		assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, ""), "dk-lm", "dk-cm2"},
+			newCloudNativeDynakube("dk-cm1", map[string]string{}, "1"),
+			createStandaloneLogMonitoringDynakube("dk-lm", ""),
+			newCloudNativeDynakube("dk-cm2", map[string]string{}, "1"),
 			&defaultCSIDaemonSet)
 
-		assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, testName)},
-			newCloudNativeDynakube("dk1", map[string]string{}, "1"),
-			&dynakube.DynaKube{
-				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynakube.DynaKubeSpec{
-					APIURL:        testApiUrl,
-					LogMonitoring: &logmonitoring.Spec{},
-					Templates: dynakube.TemplatesSpec{
-						LogMonitoring: logmonitoring.TemplateSpec{
-							NodeSelector: map[string]string{"node": "1"},
-						},
-					},
-				},
-			}, &defaultCSIDaemonSet)
+		assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, "dk-lm")},
+			newCloudNativeDynakube("dk-cn", map[string]string{}, "1"),
+			createStandaloneLogMonitoringDynakube("dk-lm", "1"), &defaultCSIDaemonSet)
+		assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, "dk-cn")},
+			createStandaloneLogMonitoringDynakube("dk-lm", "1"),
+			newCloudNativeDynakube("dk-cn", map[string]string{}, "1"),
+			&defaultCSIDaemonSet)
+		assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, "dk-lm2")},
+			createStandaloneLogMonitoringDynakube("dk-lm1", "1"),
+			createStandaloneLogMonitoringDynakube("dk-lm2", "1"),
+			&defaultCSIDaemonSet)
 	})
 }
 
