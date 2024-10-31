@@ -137,6 +137,8 @@ func (dk *DynaKube) OneAgentNodeSelector() map[string]string {
 		return dk.Spec.OneAgent.HostMonitoring.NodeSelector
 	case dk.CloudNativeFullstackMode():
 		return dk.Spec.OneAgent.CloudNativeFullStack.NodeSelector
+	case dk.LogMonitoring().IsStandalone():
+		return dk.LogMonitoring().Template().NodeSelector
 	}
 
 	return nil
