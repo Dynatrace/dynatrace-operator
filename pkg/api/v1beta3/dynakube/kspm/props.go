@@ -11,3 +11,7 @@ func (kspm *Kspm) IsEnabled() bool {
 func (kspm *Kspm) GetTokenSecretName() string {
 	return kspm.name + "-" + TokenSecretKey
 }
+
+func (kspm *Kspm) GetDaemonSetName() string {
+	return kspm.name + "-" + NodeCollectorNameSuffix
+}
