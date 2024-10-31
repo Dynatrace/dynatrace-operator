@@ -39,7 +39,6 @@ var (
 		conflictingOneAgentConfiguration,
 		conflictingOneAgentNodeSelector,
 		conflictingNamespaceSelector,
-		conflictingLogMonitoringNodeSelector,
 		noResourcesAvailable,
 		imageFieldSetWithoutCSIFlag,
 		conflictingOneAgentVolumeStorageSettings,
@@ -55,6 +54,7 @@ var (
 		unsupportedOneAgentImage,
 		conflictingHostGroupSettings,
 		deprecatedFeatureFlag,
+		ignoredLogMonitoringTemplate,
 	}
 )
 

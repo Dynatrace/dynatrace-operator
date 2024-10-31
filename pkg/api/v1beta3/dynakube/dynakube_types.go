@@ -155,7 +155,7 @@ type TemplatesSpec struct {
 	ExtensionExecutionController ExtensionExecutionControllerSpec `json:"extensionExecutionController,omitempty"`
 	// Low-level configuration options for the LogMonitoring feature.
 	// +kubebuilder:validation:Optional
-	LogMonitoring logmonitoring.TemplateSpec `json:"logMonitoring,omitempty"`
+	LogMonitoring *logmonitoring.TemplateSpec `json:"logMonitoring,omitempty"`
 	// +kubebuilder:validation:Optional
 	OpenTelemetryCollector OpenTelemetryCollectorSpec `json:"openTelemetryCollector,omitempty"`
 }

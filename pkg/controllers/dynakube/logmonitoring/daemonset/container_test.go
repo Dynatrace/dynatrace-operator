@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,9 +31,11 @@ func TestGetContainer(t *testing.T) {
 		expectedRepo := "my-test-repo"
 		expectedTag := "my-test-tag"
 		dk := dynakube.DynaKube{}
-		dk.Spec.Templates.LogMonitoring.ImageRef = image.Ref{
-			Repository: expectedRepo,
-			Tag:        expectedTag,
+		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
+			ImageRef: image.Ref{
+				Repository: expectedRepo,
+				Tag:        expectedTag,
+			},
 		}
 		mainContainer := getContainer(dk)
 
@@ -66,9 +69,11 @@ func TestGetInitContainer(t *testing.T) {
 		expectedRepo := "my-test-repo"
 		expectedTag := "my-test-tag"
 		dk := dynakube.DynaKube{}
-		dk.Spec.Templates.LogMonitoring.ImageRef = image.Ref{
-			Repository: expectedRepo,
-			Tag:        expectedTag,
+		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
+			ImageRef: image.Ref{
+				Repository: expectedRepo,
+				Tag:        expectedTag,
+			},
 		}
 		initContainer := getContainer(dk)
 
@@ -100,7 +105,7 @@ func TestSecurityContext(t *testing.T) {
 	t.Run("set seccomp is present", func(t *testing.T) {
 		expectedSeccomp := "test-seccomp"
 		dk := dynakube.DynaKube{}
-		dk.Spec.Templates.LogMonitoring.SecCompProfile = expectedSeccomp
+		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{SecCompProfile: expectedSeccomp}
 		sc := getBaseSecurityContext(dk)
 
 		require.NotNil(t, sc)
