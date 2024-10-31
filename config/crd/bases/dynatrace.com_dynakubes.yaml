@@ -4870,11 +4870,6 @@ spec:
                 type: object
               kspm:
                 description: General configuration about the KSPM feature.
-                properties:
-                  enabled:
-                    type: boolean
-                required:
-                - enabled
                 type: object
               logMonitoring:
                 description: General configuration about the LogMonitoring feature.
