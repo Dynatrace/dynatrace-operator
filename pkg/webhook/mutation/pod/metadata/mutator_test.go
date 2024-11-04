@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
@@ -43,7 +44,7 @@ func TestEnabled(t *testing.T) {
 	t.Run("off by feature flag", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, false)
-		request.DynaKube.Spec.MetadataEnrichment.Enabled = true
+		request.DynaKube.Spec.MetadataEnrichment.Enabled = address.Of(true)
 		request.DynaKube.Annotations = map[string]string{dynakube.AnnotationFeatureAutomaticInjection: "false"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
@@ -54,7 +55,7 @@ func TestEnabled(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				MetadataEnrichment: dynakube.MetadataEnrichment{Enabled: true},
+				MetadataEnrichment: dynakube.MetadataEnrichment{Enabled: address.Of(true)},
 			},
 		}
 		request := createTestMutationRequest(&dk, nil, false)
@@ -69,7 +70,7 @@ func TestEnabled(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				MetadataEnrichment: dynakube.MetadataEnrichment{
-					Enabled: true,
+					Enabled: address.Of(true),
 					NamespaceSelector: metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							testLabelKeyMatching: testLabelValue,
@@ -90,7 +91,7 @@ func TestEnabled(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				MetadataEnrichment: dynakube.MetadataEnrichment{
-					Enabled: true,
+					Enabled: address.Of(true),
 					NamespaceSelector: metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							testLabelKeyNotMatching: testLabelValue,

@@ -170,6 +170,6 @@ func fromAppInjectSpec(src v1beta3.AppInjectionSpec) *AppInjectionSpec {
 }
 
 func (dst *DynaKube) fromMetadataEnrichment(src *v1beta3.DynaKube) {
-	dst.Spec.MetadataEnrichment.Enabled = src.Spec.MetadataEnrichment.Enabled
+	dst.Spec.MetadataEnrichment.Enabled = src.MetadataEnrichmentEnabled()
 	dst.Spec.MetadataEnrichment.NamespaceSelector = src.Spec.MetadataEnrichment.NamespaceSelector
 }

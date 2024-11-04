@@ -5,7 +5,7 @@ import (
 )
 
 func (dk *DynaKube) MetadataEnrichmentEnabled() bool {
-	return dk.Spec.MetadataEnrichment.Enabled
+	return dk.Spec.MetadataEnrichment.Enabled != nil && *dk.Spec.MetadataEnrichment.Enabled
 }
 
 func (dk *DynaKube) MetadataEnrichmentNamespaceSelector() *metav1.LabelSelector {

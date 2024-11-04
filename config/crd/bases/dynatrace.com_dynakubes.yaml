@@ -4876,7 +4876,6 @@ spec:
                 description: Configuration for Metadata Enrichment.
                 properties:
                   enabled:
-                    default: false
                     description: Enables MetadataEnrichment, `false` by default.
                     type: boolean
                   namespaceSelector:

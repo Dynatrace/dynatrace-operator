@@ -105,10 +105,10 @@ func (src *DynaKube) toActiveGateSpec(dst *dynakube.DynaKube) {
 func (src *DynaKube) toMovedFields(dst *dynakube.DynaKube) error {
 	if src.Annotations[AnnotationFeatureMetadataEnrichment] == "false" ||
 		!src.NeedAppInjection() {
-		dst.Spec.MetadataEnrichment = dynakube.MetadataEnrichment{Enabled: false}
+		dst.Spec.MetadataEnrichment = dynakube.MetadataEnrichment{Enabled: address.Of(false)}
 		delete(dst.Annotations, AnnotationFeatureMetadataEnrichment)
 	} else {
-		dst.Spec.MetadataEnrichment = dynakube.MetadataEnrichment{Enabled: true}
+		dst.Spec.MetadataEnrichment = dynakube.MetadataEnrichment{Enabled: address.Of(true)}
 		delete(dst.Annotations, AnnotationFeatureMetadataEnrichment)
 	}
 
