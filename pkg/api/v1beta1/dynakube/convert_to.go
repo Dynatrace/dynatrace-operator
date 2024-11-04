@@ -68,9 +68,7 @@ func (src *DynaKube) toOneAgentSpec(dst *dynakube.DynaKube) {
 		dst.Spec.OneAgent.ApplicationMonitoring.Version = src.Spec.OneAgent.ApplicationMonitoring.Version
 
 		if src.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver != nil {
-			dst.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver = *src.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver
-		} else {
-			dst.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver = false
+			dst.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver = src.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver
 		}
 	}
 }

@@ -175,7 +175,7 @@ func compareCloudNativeSpec(t *testing.T, oldSpec CloudNativeFullStackSpec, newS
 
 func compareApplicationMonitoringSpec(t *testing.T, oldSpec ApplicationMonitoringSpec, newSpec dynakube.ApplicationMonitoringSpec) {
 	compareAppInjectionSpec(t, oldSpec.AppInjectionSpec, newSpec.AppInjectionSpec)
-	assert.Equal(t, *oldSpec.UseCSIDriver, newSpec.UseCSIDriver)
+	assert.Equal(t, *oldSpec.UseCSIDriver, *newSpec.UseCSIDriver)
 	assert.Equal(t, oldSpec.Version, newSpec.Version)
 }
 
@@ -343,7 +343,7 @@ func getNewCloudNativeSpec() dynakube.CloudNativeFullStackSpec {
 func getNewApplicationMonitoringSpec() dynakube.ApplicationMonitoringSpec {
 	return dynakube.ApplicationMonitoringSpec{
 		AppInjectionSpec: getNewAppInjectionSpec(),
-		UseCSIDriver:     true,
+		UseCSIDriver:     address.Of(true),
 		Version:          "app-monitoring-version",
 	}
 }

@@ -5058,7 +5058,6 @@ spec:
                         type: object
                         x-kubernetes-map-type: atomic
                       useCSIDriver:
-                        default: false
                         description: Set if you want to use the CSIDriver. Don't enable
                           it if you do not have access to Kubernetes nodes or if you
                           lack privileges.
@@ -7143,7 +7142,6 @@ spec:
                           pods
                         type: object
                       replicas:
-                        default: 1
                         description: Number of replicas for your OtelCollector
                         format: int32
                         type: integer

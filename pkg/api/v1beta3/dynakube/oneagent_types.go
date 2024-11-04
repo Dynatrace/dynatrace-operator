@@ -115,17 +115,16 @@ type HostInjectSpec struct {
 }
 
 type ApplicationMonitoringSpec struct {
+
+	// Set if you want to use the CSIDriver. Don't enable it if you do not have access to Kubernetes nodes or if you lack privileges.
+	// +kubebuilder:validation:Optional
+	UseCSIDriver *bool `json:"useCSIDriver,omitempty"`
 	// The OneAgent version to be used.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent version",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Version string `json:"version,omitempty"`
 
 	AppInjectionSpec `json:",inline"`
-
-	// Set if you want to use the CSIDriver. Don't enable it if you do not have access to Kubernetes nodes or if you lack privileges.
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=false
-	UseCSIDriver bool `json:"useCSIDriver,omitempty"`
 }
 
 type AppInjectionSpec struct {
