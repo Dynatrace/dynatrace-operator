@@ -72,9 +72,9 @@ type DynaKubeSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	LogMonitoring *logmonitoring.Spec `json:"logMonitoring,omitempty"`
 
-	// General configuration about the KSPM feature.
-	// +kubebuilder:validation:Optional
-	Kspm *kspm.Spec `json:"kspm,omitempty"`
+	// General configuration about ActiveGate instances.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="ActiveGate",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	ActiveGate activegate.Spec `json:"activeGate,omitempty"`
 
 	// When an (empty) ExtensionsSpec is provided, the extensions related components (extensions controller and extensions collector)
 	// are deployed by the operator.
@@ -124,10 +124,6 @@ type DynaKubeSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Metadata Enrichment",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	MetadataEnrichment MetadataEnrichment `json:"metadataEnrichment,omitempty"`
-
-	// General configuration about ActiveGate instances.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="ActiveGate",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	ActiveGate activegate.Spec `json:"activeGate,omitempty"`
 
 	// Configuration for thresholding Dynatrace API requests.
 	// +kubebuilder:validation:Optional

@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -192,7 +193,7 @@ func compareActiveGateSpec(t *testing.T, oldSpec ActiveGateSpec, newSpec activeg
 	assert.Equal(t, oldSpec.TlsSecretName, newSpec.TlsSecretName)
 	assert.Equal(t, oldSpec.TopologySpreadConstraints, newSpec.TopologySpreadConstraints)
 	assert.Equal(t, oldSpec.Group, newSpec.Group)
-	assert.Equal(t, *oldSpec.Replicas, newSpec.Replicas)
+	assert.Equal(t, *oldSpec.Replicas, *newSpec.Replicas)
 
 	if oldSpec.CustomProperties != nil || newSpec.CustomProperties != nil { // necessary so we don't explode with nil pointer when not set
 		require.NotNil(t, oldSpec.CustomProperties)
@@ -380,7 +381,7 @@ func getNewActiveGateSpec() activegate.Spec {
 				"activegate-node-selector-key": "activegate-node-selector-value",
 			},
 			Image:    "activegate-image",
-			Replicas: 42,
+			Replicas: address.Of(int32(42)),
 			Group:    "activegate-group",
 			CustomProperties: &value.Source{
 				Value:     "activegate-cp-value",

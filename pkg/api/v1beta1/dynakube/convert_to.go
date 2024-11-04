@@ -100,9 +100,7 @@ func (src *DynaKube) toActiveGateSpec(dst *dynakube.DynaKube) {
 		}
 	}
 
-	if src.Spec.ActiveGate.Replicas != nil {
-		dst.Spec.ActiveGate.Replicas = *src.Spec.ActiveGate.Replicas
-	}
+	dst.Spec.ActiveGate.Replicas = src.Spec.ActiveGate.Replicas
 }
 
 func (src *DynaKube) toMovedFields(dst *dynakube.DynaKube) error {

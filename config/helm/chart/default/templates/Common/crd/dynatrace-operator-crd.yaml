@@ -4620,7 +4620,6 @@ spec:
                       name. If not specified the setting will be removed from the StatefulSet.
                     type: string
                   replicas:
-                    default: 1
                     description: Amount of replicas for your ActiveGates
                     format: int32
                     type: integer
