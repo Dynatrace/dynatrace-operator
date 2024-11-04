@@ -4853,7 +4853,6 @@ spec:
                   (https://www.dynatrace.
                 type: string
               dynatraceApiRequestThreshold:
-                default: 15
                 description: Configuration for thresholding Dynatrace API requests.
                 type: integer
               enableIstio:

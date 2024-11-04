@@ -64,7 +64,6 @@ func createDynaKube() dynakube.DynaKube {
 			Name: "test-dk",
 		},
 		Spec: dynakube.DynaKubeSpec{
-			DynatraceApiRequestThreshold: dynakube.DefaultMinRequestThresholdMinutes,
 			MetadataEnrichment: dynakube.MetadataEnrichment{
 				Enabled: true,
 			},

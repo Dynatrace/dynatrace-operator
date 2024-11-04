@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
@@ -492,7 +493,7 @@ func createTestDynaKube() *dynakube.DynaKube {
 			OneAgent: dynakube.OneAgentSpec{
 				CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 			},
-			DynatraceApiRequestThreshold: 15,
+			DynatraceApiRequestThreshold: address.Of(15),
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: dynakube.OneAgentStatus{

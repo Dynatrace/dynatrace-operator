@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -177,7 +178,7 @@ func TestIsTokenScopeVerificationAllowed(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			dk.Spec.DynatraceApiRequestThreshold = test.threshold
+			dk.Spec.DynatraceApiRequestThreshold = address.Of(test.threshold)
 
 			lastRequestTime := timeProvider.Now().Add(time.Duration(test.lastRequestTimeDeltaMinutes) * time.Minute)
 			dk.Status.DynatraceApi.LastTokenScopeRequest.Time = lastRequestTime

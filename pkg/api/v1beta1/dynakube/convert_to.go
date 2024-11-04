@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
@@ -119,10 +120,7 @@ func (src *DynaKube) toMovedFields(dst *dynakube.DynaKube) error {
 			return err
 		}
 
-		dst.Spec.DynatraceApiRequestThreshold = int(duration)
-		delete(dst.Annotations, AnnotationFeatureApiRequestThreshold)
-	} else {
-		dst.Spec.DynatraceApiRequestThreshold = DefaultMinRequestThresholdMinutes
+		dst.Spec.DynatraceApiRequestThreshold = address.Of(int(duration))
 		delete(dst.Annotations, AnnotationFeatureApiRequestThreshold)
 	}
 

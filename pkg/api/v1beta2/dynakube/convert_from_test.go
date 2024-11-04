@@ -117,7 +117,7 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 	assert.Equal(t, oldDk.Spec.EnableIstio, newDk.Spec.EnableIstio)
 	assert.Equal(t, oldDk.Spec.SkipCertCheck, newDk.Spec.SkipCertCheck)
 	assert.Equal(t, oldDk.Spec.TrustedCAs, newDk.Spec.TrustedCAs)
-	assert.Equal(t, oldDk.Spec.DynatraceApiRequestThreshold, newDk.Spec.DynatraceApiRequestThreshold)
+	assert.Equal(t, oldDk.Spec.DynatraceApiRequestThreshold, *newDk.Spec.DynatraceApiRequestThreshold)
 
 	if newDk.NeedAppInjection() {
 		assert.Equal(t, oldDk.OneAgentNamespaceSelector(), newDk.OneAgentNamespaceSelector())
@@ -261,7 +261,7 @@ func getNewDynakubeBase() dynakube.DynaKube {
 			},
 			TrustedCAs:                   "trusted-ca",
 			NetworkZone:                  "network-zone",
-			DynatraceApiRequestThreshold: 42,
+			DynatraceApiRequestThreshold: address.Of(42),
 			MetadataEnrichment: dynakube.MetadataEnrichment{
 				Enabled:           true,
 				NamespaceSelector: getTestNamespaceSelector(),

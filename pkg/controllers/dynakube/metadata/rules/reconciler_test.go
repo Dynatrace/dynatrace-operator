@@ -125,7 +125,6 @@ func createDynaKube() dynakube.DynaKube {
 			Name: "rules-dk",
 		},
 		Spec: dynakube.DynaKubeSpec{
-			DynatraceApiRequestThreshold: dynakube.DefaultMinRequestThresholdMinutes,
 			MetadataEnrichment: dynakube.MetadataEnrichment{
 				Enabled: true,
 			},

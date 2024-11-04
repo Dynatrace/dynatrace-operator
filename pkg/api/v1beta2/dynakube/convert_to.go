@@ -39,7 +39,7 @@ func (src *DynaKube) toBase(dst *dynakube.DynaKube) {
 	dst.Spec.TrustedCAs = src.Spec.TrustedCAs
 	dst.Spec.NetworkZone = src.Spec.NetworkZone
 	dst.Spec.EnableIstio = src.Spec.EnableIstio
-	dst.Spec.DynatraceApiRequestThreshold = src.Spec.DynatraceApiRequestThreshold
+	dst.Spec.DynatraceApiRequestThreshold = &src.Spec.DynatraceApiRequestThreshold
 }
 
 func (src *DynaKube) convertMaxMountAttempts(dst *dynakube.DynaKube) {
