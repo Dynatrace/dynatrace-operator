@@ -48,7 +48,7 @@ func (dst *EdgeConnect) fromSpec(src *edgeconnect.EdgeConnect) {
 	dst.Spec.HostRestrictions = strings.Join(src.Spec.HostRestrictions, ",")
 	dst.Spec.CustomPullSecret = src.Spec.CustomPullSecret
 	dst.Spec.CaCertsRef = src.Spec.CaCertsRef
-	dst.Spec.ServiceAccountName = src.Spec.ServiceAccountName
+	dst.Spec.ServiceAccountName = src.GetServiceAccountName()
 	dst.Spec.OAuth.Resource = src.Spec.OAuth.Resource
 	dst.Spec.OAuth.ClientSecret = src.Spec.OAuth.ClientSecret
 	dst.Spec.OAuth.Endpoint = src.Spec.OAuth.Endpoint
@@ -58,7 +58,7 @@ func (dst *EdgeConnect) fromSpec(src *edgeconnect.EdgeConnect) {
 	dst.Spec.Tolerations = src.Spec.Tolerations
 	dst.Spec.TopologySpreadConstraints = src.Spec.TopologySpreadConstraints
 	dst.Spec.HostPatterns = src.Spec.HostPatterns
-	dst.Spec.AutoUpdate = src.Spec.AutoUpdate
+	dst.Spec.AutoUpdate = src.IsAutoUpdateEnabled()
 }
 
 func (dst *EdgeConnect) fromStatus(src *edgeconnect.EdgeConnect) {

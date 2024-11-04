@@ -9,13 +9,23 @@ import (
 )
 
 func TestServiceAccountName(t *testing.T) {
-	t.Run("empty name", func(t *testing.T) {
+	t.Run("intentionally empty name", func(t *testing.T) {
+		empty := ""
 		ec := &edgeconnect.EdgeConnect{
 			Spec: edgeconnect.EdgeConnectSpec{
-				ServiceAccountName: "",
+				ServiceAccountName: &empty,
 			},
 		}
 		assertDenied(t, []string{errorInvalidServiceName}, ec)
+	})
+
+	t.Run("not set", func(t *testing.T) {
+		ec := &edgeconnect.EdgeConnect{
+			Spec: edgeconnect.EdgeConnectSpec{
+				ApiServer: "tenant.apps.dynatrace.com",
+			},
+		}
+		assertAllowed(t, ec)
 	})
 }
 

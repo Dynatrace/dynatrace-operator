@@ -24,7 +24,6 @@ type EdgeConnectSpec struct { //nolint:revive
 	Labels map[string]string `json:"labels,omitempty"`
 
 	// Amount of replicas for your EdgeConnect (the default value is: 1)
-	// +kubebuilder:default:=1
 	Replicas *int32 `json:"replicas"`
 
 	// Node selector to control the selection of nodes for the EdgeConnect pods
@@ -37,16 +36,18 @@ type EdgeConnectSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	Proxy *proxy.Spec `json:"proxy,omitempty"`
 
+	// ServiceAccountName that allows EdgeConnect to access the Kubernetes API
+	ServiceAccountName *string `json:"serviceAccountName,omitempty"`
+
+	// Enables automatic restarts of EdgeConnect pods in case a new version is available (the default value is: true)
+	AutoUpdate *bool `json:"autoUpdate"`
+
 	// Overrides the default image
 	ImageRef image.Ref `json:"imageRef,omitempty"`
 
 	// Location of the Dynatrace API to connect to, including your specific environment UUID
 	// +kubebuilder:validation:Required
 	ApiServer string `json:"apiServer"`
-
-	// Restrict outgoing HTTP requests to your internal resources to specified hosts
-	// +kubebuilder:example:="internal.example.org,*.dev.example.org"
-	HostRestrictions []string `json:"hostRestrictions,omitempty"`
 
 	// Pull secret for your private registry
 	CustomPullSecret string `json:"customPullSecret,omitempty"`
@@ -55,16 +56,16 @@ type EdgeConnectSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	CaCertsRef string `json:"caCertsRef,omitempty"`
 
-	// ServiceAccountName that allows EdgeConnect to access the Kubernetes API
-	// +kubebuilder:default:=dynatrace-edgeconnect
-	ServiceAccountName string `json:"serviceAccountName,omitempty"`
-
 	// EdgeConnect uses the OAuth client to authenticate itself with the Dynatrace platform.
 	// +kubebuilder:validation:Required
 	OAuth OAuthSpec `json:"oauth"`
 
 	// Defines resources requests and limits for single pods
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Restrict outgoing HTTP requests to your internal resources to specified hosts
+	// +kubebuilder:example:="internal.example.org,*.dev.example.org"
+	HostRestrictions []string `json:"hostRestrictions,omitempty"`
 
 	// Adds additional environment variables to the EdgeConnect pods
 	Env []corev1.EnvVar `json:"env,omitempty"`
@@ -78,10 +79,6 @@ type EdgeConnectSpec struct { //nolint:revive
 	// Host patterns to be set in the tenant, only considered when provisioning is enabled.
 	// +kubebuilder:validation:Optional
 	HostPatterns []string `json:"hostPatterns,omitempty"`
-
-	// Enables automatic restarts of EdgeConnect pods in case a new version is available (the default value is: true)
-	// +kubebuilder:default:=true
-	AutoUpdate bool `json:"autoUpdate"`
 }
 
 type OAuthSpec struct {
@@ -142,11 +139,11 @@ func (dk *EdgeConnectStatus) SetPhase(phase status.DeploymentPhase) bool {
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:storageversion
 type EdgeConnect struct {
+	Spec              EdgeConnectSpec `json:"spec,omitempty"`
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Status EdgeConnectStatus `json:"status,omitempty"`
-	Spec   EdgeConnectSpec   `json:"spec,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

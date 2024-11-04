@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -91,7 +92,7 @@ func getCurrentSpec() edgeconnect.EdgeConnectSpec {
 		},
 		CustomPullSecret:   "m",
 		CaCertsRef:         "n",
-		ServiceAccountName: "o",
+		ServiceAccountName: address.Of("o"),
 		OAuth: edgeconnect.OAuthSpec{
 			ClientSecret: "p",
 			Endpoint:     "q",
@@ -137,7 +138,7 @@ func getCurrentSpec() edgeconnect.EdgeConnectSpec {
 		HostPatterns: []string{
 			"y",
 		},
-		AutoUpdate: true,
+		AutoUpdate: address.Of(true),
 	}
 }
 
@@ -199,7 +200,7 @@ func fromAreSpecsEqual(t *testing.T, src *edgeconnect.EdgeConnectSpec, dst *Edge
 
 	assert.True(t, reflect.DeepEqual(src.CustomPullSecret, dst.CustomPullSecret), "CustomPullSecret")
 
-	assert.True(t, reflect.DeepEqual(src.ServiceAccountName, dst.ServiceAccountName), "ServiceAccountName")
+	assert.True(t, reflect.DeepEqual(*src.ServiceAccountName, dst.ServiceAccountName), "ServiceAccountName")
 
 	assert.True(t, reflect.DeepEqual(src.OAuth.Provisioner, dst.OAuth.Provisioner), "OAuth.Provisioner")
 
@@ -219,7 +220,7 @@ func fromAreSpecsEqual(t *testing.T, src *edgeconnect.EdgeConnectSpec, dst *Edge
 
 	assert.True(t, reflect.DeepEqual(src.HostPatterns, dst.HostPatterns), "HostPatterns")
 
-	assert.True(t, reflect.DeepEqual(src.AutoUpdate, dst.AutoUpdate), "AutoUpdate")
+	assert.True(t, reflect.DeepEqual(*src.AutoUpdate, dst.AutoUpdate), "AutoUpdate")
 }
 
 func fromAreStatusesEqual(t *testing.T, src *edgeconnect.EdgeConnectStatus, dst *EdgeConnectStatus) {

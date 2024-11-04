@@ -199,7 +199,7 @@ func toAreSpecsEqual(t *testing.T, src *EdgeConnectSpec, dst *edgeconnect.EdgeCo
 
 	assert.True(t, reflect.DeepEqual(src.CustomPullSecret, dst.CustomPullSecret), "CustomPullSecret")
 
-	assert.True(t, reflect.DeepEqual(src.ServiceAccountName, dst.ServiceAccountName), "ServiceAccountName")
+	assert.True(t, reflect.DeepEqual(src.ServiceAccountName, *dst.ServiceAccountName), "ServiceAccountName")
 
 	assert.True(t, reflect.DeepEqual(src.OAuth.Provisioner, dst.OAuth.Provisioner), "OAuth.Provisioner")
 
@@ -219,7 +219,7 @@ func toAreSpecsEqual(t *testing.T, src *EdgeConnectSpec, dst *edgeconnect.EdgeCo
 
 	assert.True(t, reflect.DeepEqual(src.HostPatterns, dst.HostPatterns), "HostPatterns")
 
-	assert.True(t, reflect.DeepEqual(src.AutoUpdate, dst.AutoUpdate), "Autoupdate")
+	assert.True(t, reflect.DeepEqual(src.AutoUpdate, *dst.AutoUpdate), "Autoupdate")
 }
 
 func toAreStatusesEqual(t *testing.T, src *EdgeConnectStatus, dst *edgeconnect.EdgeConnectStatus) {
