@@ -142,7 +142,7 @@ func (dst *DynaKube) fromActiveGateStatus(src v1beta3.DynaKube) {
 
 func fromHostInjectSpec(src v1beta3.HostInjectSpec) *HostInjectSpec {
 	dst := &HostInjectSpec{}
-	dst.AutoUpdate = src.AutoUpdate
+	dst.AutoUpdate = src.AutoUpdate == nil || *src.AutoUpdate
 	dst.OneAgentResources = src.OneAgentResources
 	dst.Args = src.Args
 	dst.Version = src.Version

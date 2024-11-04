@@ -151,7 +151,7 @@ func compareMovedFields(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 func compareHostInjectSpec(t *testing.T, oldSpec HostInjectSpec, newSpec dynakube.HostInjectSpec) {
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
 	assert.Equal(t, oldSpec.Args, newSpec.Args)
-	assert.Equal(t, *oldSpec.AutoUpdate, newSpec.AutoUpdate)
+	assert.Equal(t, *oldSpec.AutoUpdate, *newSpec.AutoUpdate)
 	assert.Equal(t, oldSpec.DNSPolicy, newSpec.DNSPolicy)
 	assert.Equal(t, oldSpec.Env, newSpec.Env)
 	assert.Equal(t, oldSpec.Image, newSpec.Image)
@@ -286,7 +286,7 @@ func getNewHostInjectSpec() dynakube.HostInjectSpec {
 		Tolerations: []corev1.Toleration{
 			{Key: "host-inject-toleration-key", Operator: "In", Value: "host-inject-toleration-value"},
 		},
-		AutoUpdate: false,
+		AutoUpdate: address.Of(false),
 		DNSPolicy:  corev1.DNSClusterFirstWithHostNet,
 		Annotations: map[string]string{
 			"host-inject-annotation-key": "host-inject-annotation-value",

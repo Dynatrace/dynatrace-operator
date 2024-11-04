@@ -58,11 +58,11 @@ func (dk *DynaKube) NeedsOneAgentProbe() bool {
 func (dk *DynaKube) ShouldAutoUpdateOneAgent() bool {
 	switch {
 	case dk.CloudNativeFullstackMode():
-		return dk.Spec.OneAgent.CloudNativeFullStack.AutoUpdate
+		return dk.Spec.OneAgent.CloudNativeFullStack.AutoUpdate == nil || *dk.Spec.OneAgent.CloudNativeFullStack.AutoUpdate
 	case dk.HostMonitoringMode():
-		return dk.Spec.OneAgent.HostMonitoring.AutoUpdate
+		return dk.Spec.OneAgent.HostMonitoring.AutoUpdate == nil || *dk.Spec.OneAgent.HostMonitoring.AutoUpdate
 	case dk.ClassicFullStackMode():
-		return dk.Spec.OneAgent.ClassicFullStack.AutoUpdate
+		return dk.Spec.OneAgent.ClassicFullStack.AutoUpdate == nil || *dk.Spec.OneAgent.ClassicFullStack.AutoUpdate
 	default:
 		return false
 	}

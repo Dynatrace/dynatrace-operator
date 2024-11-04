@@ -155,7 +155,7 @@ func (src *DynaKube) toActiveGateStatus(dst *dynakube.DynaKube) {
 
 func toHostInjectSpec(src HostInjectSpec) *dynakube.HostInjectSpec {
 	dst := &dynakube.HostInjectSpec{}
-	dst.AutoUpdate = src.AutoUpdate
+	dst.AutoUpdate = &src.AutoUpdate
 
 	dst.OneAgentResources = src.OneAgentResources
 	dst.Args = src.Args
