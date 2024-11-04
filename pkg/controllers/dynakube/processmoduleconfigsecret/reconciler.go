@@ -30,7 +30,6 @@ type Reconciler struct {
 	dtClient     dtclient.Client
 	dk           *dynakube.DynaKube
 	timeProvider *timeprovider.Provider
-	secretQuery  k8ssecret.QueryObject
 }
 
 func NewReconciler(clt client.Client,
@@ -45,7 +44,6 @@ func NewReconciler(clt client.Client,
 		dk:           dk,
 		timeProvider: timeProvider,
 	}
-	r.secretQuery = k8ssecret.Query(clt, apiReader, log)
 
 	return r
 }
@@ -74,7 +72,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	err := r.reconcileSecret(ctx)
 	if err != nil {
-		return errors.WithMessage(err, "failed to create processModuleConfig secret")
+		return errors.WithMessage(err, "failed to create or update processModuleConfig secret")
 	}
 
 	return nil
@@ -97,11 +95,11 @@ func (r *Reconciler) reconcileSecret(ctx context.Context) error {
 }
 
 func (r *Reconciler) createOrUpdateSecret(ctx context.Context, secret *corev1.Secret) error {
-	_, err := r.secretQuery.WithOwner(r.dk).CreateOrUpdate(ctx, secret)
+	_, err := k8ssecret.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, secret)
 	if err != nil {
 		conditions.SetKubeApiError(r.dk.Conditions(), pmcConditionType, err)
 
-		return errors.Errorf("failed to create secret '%s': %v", secret.Name, err)
+		return errors.Errorf("failed to create or update secret '%s': %v", secret.Name, err)
 	}
 
 	conditions.SetSecretCreatedOrUpdated(r.dk.Conditions(), pmcConditionType, secret.Name)
@@ -110,7 +108,7 @@ func (r *Reconciler) createOrUpdateSecret(ctx context.Context, secret *corev1.Se
 }
 
 func (r *Reconciler) deleteSecret(ctx context.Context, secret *corev1.Secret) error {
-	if err := r.secretQuery.Delete(ctx, secret); err != nil {
+	if err := k8ssecret.Query(r.client, r.apiReader, log).Delete(ctx, secret); err != nil {
 		conditions.SetKubeApiError(r.dk.Conditions(), pmcConditionType, err)
 
 		return err
