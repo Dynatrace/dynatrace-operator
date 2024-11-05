@@ -15,9 +15,7 @@ func TestMissingKSPMDependency(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					Kspm: kspm.Spec{
-						Enabled: true,
-					},
+					Kspm:   &kspm.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
@@ -33,10 +31,8 @@ func TestMissingKSPMDependency(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
-					Kspm: kspm.Spec{
-						Enabled: true,
-					},
+					APIURL:     testApiUrl,
+					Kspm:       &kspm.Spec{},
 					ActiveGate: activegate.Spec{},
 				},
 			})

@@ -21,9 +21,7 @@ type Kspm struct {
 
 // +kubebuilder:object:generate=true
 
-type Spec struct {
-	Enabled bool `json:"enabled"`
-}
+type Spec struct{}
 
 // +kubebuilder:object:generate=true
 type Status struct {

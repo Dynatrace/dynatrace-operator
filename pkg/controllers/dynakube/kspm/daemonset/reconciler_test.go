@@ -223,9 +223,9 @@ func TestGenerateDaemonSet(t *testing.T) {
 }
 
 func createDynakube(isEnabled bool) *dynakube.DynaKube {
-	var kspmSpec kspm.Spec
+	var kspmSpec *kspm.Spec
 	if isEnabled {
-		kspmSpec.Enabled = true
+		kspmSpec = &kspm.Spec{}
 	}
 
 	return &dynakube.DynaKube{
