@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.4
+    controller-gen.kubebuilder.io/version: v0.16.5
   name: dynakubes.dynatrace.com
 spec:
   group: dynatrace.com
@@ -4870,11 +4870,6 @@ spec:
                 type: object
               kspm:
                 description: General configuration about the KSPM feature.
-                properties:
-                  enabled:
-                    type: boolean
-                required:
-                - enabled
                 type: object
               logMonitoring:
                 description: General configuration about the LogMonitoring feature.

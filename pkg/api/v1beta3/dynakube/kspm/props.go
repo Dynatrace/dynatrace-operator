@@ -5,9 +5,13 @@ func (kspm *Kspm) SetName(name string) {
 }
 
 func (kspm *Kspm) IsEnabled() bool {
-	return kspm.Enabled
+	return kspm.Spec != nil
 }
 
 func (kspm *Kspm) GetTokenSecretName() string {
 	return kspm.name + "-" + TokenSecretKey
+}
+
+func (kspm *Kspm) GetDaemonSetName() string {
+	return kspm.name + "-" + NodeCollectorNameSuffix
 }

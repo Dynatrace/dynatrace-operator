@@ -5,11 +5,16 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+type dependencies struct {
+	hostAgents bool
+}
+
 type LogMonitoring struct {
 	*Spec
 	*TemplateSpec
 
-	name string
+	name                string
+	enabledDependencies dependencies
 }
 
 // +kubebuilder:object:generate=true

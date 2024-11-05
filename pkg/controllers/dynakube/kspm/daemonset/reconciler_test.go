@@ -7,7 +7,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/pkg/errors"
@@ -19,7 +20,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -32,32 +32,6 @@ const (
 func TestReconcile(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run("Only clean up if not standalone", func(t *testing.T) {
-		dk := createDynakube(true)
-		dk.Spec.OneAgent.CloudNativeFullStack = &dynakube.CloudNativeFullStackSpec{}
-		conditions.SetDaemonSetCreated(dk.Conditions(), conditionType, "testing")
-
-		previousDaemonSet := appsv1.DaemonSet{}
-		previousDaemonSet.Name = dk.LogMonitoring().GetDaemonSetName()
-		previousDaemonSet.Namespace = dk.Namespace
-		mockK8sClient := fake.NewClient(&previousDaemonSet)
-
-		reconciler := NewReconciler(mockK8sClient,
-			mockK8sClient, dk)
-		err := reconciler.Reconcile(ctx)
-		require.NoError(t, err)
-
-		var daemonset appsv1.DaemonSet
-		err = mockK8sClient.Get(ctx, types.NamespacedName{
-			Name:      dk.LogMonitoring().GetDaemonSetName(),
-			Namespace: dk.Namespace,
-		}, &daemonset)
-		require.True(t, k8serrors.IsNotFound(err))
-
-		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
-		require.Nil(t, condition)
-	})
-
 	t.Run("Create and update works with minimal setup", func(t *testing.T) {
 		dk := createDynakube(true)
 
@@ -69,8 +43,8 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
-		require.NotNil(t, condition)
 		oldTransitionTime := condition.LastTransitionTime
+		require.NotNil(t, condition)
 		require.NotEmpty(t, oldTransitionTime)
 		assert.Equal(t, conditions.DaemonSetSetCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
@@ -80,17 +54,17 @@ func TestReconcile(t *testing.T) {
 
 		var daemonset appsv1.DaemonSet
 		err = mockK8sClient.Get(ctx, types.NamespacedName{
-			Name:      dk.LogMonitoring().GetDaemonSetName(),
+			Name:      dk.KSPM().GetDaemonSetName(),
 			Namespace: dk.Namespace,
 		}, &daemonset)
 		require.False(t, k8serrors.IsNotFound(err))
 		assert.NotEmpty(t, daemonset)
 	})
-	t.Run("Only runs when required, and cleans up condition + secret", func(t *testing.T) {
+	t.Run("Only runs when required, and cleans up condition + daemonset", func(t *testing.T) {
 		dk := createDynakube(false)
 
 		previousDaemonSet := appsv1.DaemonSet{}
-		previousDaemonSet.Name = dk.LogMonitoring().GetDaemonSetName()
+		previousDaemonSet.Name = dk.KSPM().GetDaemonSetName()
 		previousDaemonSet.Namespace = dk.Namespace
 		mockK8sClient := fake.NewClient(&previousDaemonSet)
 
@@ -104,7 +78,7 @@ func TestReconcile(t *testing.T) {
 
 		var daemonset appsv1.DaemonSet
 		err = mockK8sClient.Get(ctx, types.NamespacedName{
-			Name:      dk.LogMonitoring().GetDaemonSetName(),
+			Name:      dk.KSPM().GetDaemonSetName(),
 			Namespace: dk.Namespace,
 		}, &daemonset)
 		require.True(t, k8serrors.IsNotFound(err))
@@ -126,20 +100,6 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, conditions.KubeApiErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
-
-	t.Run("returns an error if no clusterMEID set", func(t *testing.T) {
-		dk := createDynakube(true)
-		dk.Status.KubernetesClusterMEID = ""
-
-		mockK8sClient := fake.NewClient()
-
-		reconciler := NewReconciler(mockK8sClient,
-			mockK8sClient, dk)
-
-		err := reconciler.Reconcile(context.Background())
-
-		require.Error(t, err)
-	})
 }
 
 func TestGenerateDaemonSet(t *testing.T) {
@@ -152,10 +112,9 @@ func TestGenerateDaemonSet(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
-		assert.Len(t, daemonset.Spec.Template.Spec.InitContainers, 1)
 		assert.Len(t, daemonset.Spec.Template.Spec.Containers, 1)
 		assert.NotEmpty(t, daemonset.Spec.Template.Spec.Volumes)
-		assert.Equal(t, dk.LogMonitoring().GetDaemonSetName(), daemonset.Name)
+		assert.Equal(t, dk.KSPM().GetDaemonSetName(), daemonset.Name)
 		assert.Equal(t, dk.Namespace, daemonset.Namespace)
 		assert.NotEmpty(t, daemonset.Labels)
 		assert.NotEmpty(t, daemonset.Spec.Template.Labels)
@@ -163,13 +122,18 @@ func TestGenerateDaemonSet(t *testing.T) {
 		assert.Subset(t, daemonset.Spec.Template.Labels, daemonset.Spec.Selector.MatchLabels)
 		require.Len(t, daemonset.Annotations, 1)
 		assert.Contains(t, daemonset.Annotations, hasher.AnnotationHash)
+		require.Len(t, daemonset.Spec.Template.Annotations, 1)
+		assert.Contains(t, daemonset.Spec.Template.Annotations, tokenSecretHashAnnotation)
 		assert.Equal(t, serviceAccountName, daemonset.Spec.Template.Spec.ServiceAccountName)
 		assert.Empty(t, daemonset.Spec.Template.Spec.DNSPolicy)
 		assert.Empty(t, daemonset.Spec.Template.Spec.PriorityClassName)
 		assert.Empty(t, daemonset.Spec.Template.Spec.Tolerations)
 		assert.Len(t, daemonset.Spec.Template.Spec.ImagePullSecrets, 1)
 		require.NotNil(t, daemonset.Spec.UpdateStrategy.RollingUpdate)
-		assert.Equal(t, intstr.FromInt(dk.FeatureOneAgentMaxUnavailable()), *daemonset.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable)
+		assert.Equal(t, *getDefaultMaxUnavailable(), *daemonset.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable)
+		assert.True(t, daemonset.Spec.Template.Spec.HostPID)
+		require.NotNil(t, daemonset.Spec.Template.Spec.AutomountServiceAccountToken)
+		assert.False(t, *daemonset.Spec.Template.Spec.AutomountServiceAccountToken)
 	})
 
 	t.Run("respect custom labels", func(t *testing.T) {
@@ -178,9 +142,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		dk := createDynakube(true)
-		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
-			Labels: customLabels,
-		}
+		dk.KSPM().Labels = customLabels
 
 		reconciler := NewReconciler(nil,
 			nil, dk)
@@ -197,9 +159,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		dk := createDynakube(true)
-		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
-			Annotations: customAnnotations,
-		}
+		dk.KSPM().Annotations = customAnnotations
 
 		reconciler := NewReconciler(nil,
 			nil, dk)
@@ -207,33 +167,15 @@ func TestGenerateDaemonSet(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
+		assert.Subset(t, daemonset.Annotations, customAnnotations)
 		assert.Subset(t, daemonset.Spec.Template.Annotations, customAnnotations)
-	})
-
-	t.Run("respect dns policy", func(t *testing.T) {
-		customPolicy := corev1.DNSClusterFirst
-
-		dk := createDynakube(true)
-		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
-			DNSPolicy: customPolicy,
-		}
-
-		reconciler := NewReconciler(nil,
-			nil, dk)
-		daemonset, err := reconciler.generateDaemonSet()
-		require.NoError(t, err)
-		require.NotNil(t, daemonset)
-
-		assert.Equal(t, customPolicy, daemonset.Spec.Template.Spec.DNSPolicy)
 	})
 
 	t.Run("respect priority class", func(t *testing.T) {
 		customClass := "custom-class"
 
 		dk := createDynakube(true)
-		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
-			PriorityClassName: customClass,
-		}
+		dk.KSPM().PriorityClassName = customClass
 
 		reconciler := NewReconciler(nil,
 			nil, dk)
@@ -269,9 +211,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		dk := createDynakube(true)
-		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
-			Tolerations: customTolerations,
-		}
+		dk.KSPM().Tolerations = customTolerations
 		reconciler := NewReconciler(nil,
 			nil, dk)
 		daemonset, err := reconciler.generateDaemonSet()
@@ -283,9 +223,9 @@ func TestGenerateDaemonSet(t *testing.T) {
 }
 
 func createDynakube(isEnabled bool) *dynakube.DynaKube {
-	var logMonitoring *logmonitoring.Spec
+	var kspmSpec *kspm.Spec
 	if isEnabled {
-		logMonitoring = &logmonitoring.Spec{}
+		kspmSpec = &kspm.Spec{}
 	}
 
 	return &dynakube.DynaKube{
@@ -294,19 +234,23 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 			Name:      dkName,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL:        "test-url",
-			LogMonitoring: logMonitoring,
-		},
-		Status: dynakube.DynaKubeStatus{
-			OneAgent: dynakube.OneAgentStatus{
-				ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
-					ConnectionInfo: communication.ConnectionInfo{
-						TenantUUID: "test-uuid",
-					},
+			APIURL: "test-url",
+			Kspm:   kspmSpec,
+			ActiveGate: activegate.Spec{
+				Capabilities: []activegate.CapabilityDisplayName{
+					activegate.KubeMonCapability.DisplayName,
 				},
 			},
-			KubernetesClusterMEID: "test-cluster-me-id",
-			KubernetesClusterName: "test-cluster-name",
+		},
+		Status: dynakube.DynaKubeStatus{
+			ActiveGate: activegate.Status{
+				ConnectionInfo: communication.ConnectionInfo{
+					TenantUUID: "test-tenant",
+				},
+			},
+			Kspm: kspm.Status{
+				TokenSecretHash: "some-hash",
+			},
 		},
 	}
 }

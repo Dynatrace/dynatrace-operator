@@ -18,7 +18,6 @@ import (
 )
 
 const (
-	nameSuffix         = "-logmonitoring"
 	serviceAccountName = "dynatrace-logmonitoring"
 )
 
@@ -39,7 +38,7 @@ func NewReconciler(clt client.Client,
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.LogMonitoring().IsEnabled() {
+	if !r.dk.LogMonitoring().IsStandalone() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}
@@ -92,13 +91,13 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 
 	ds, err := daemonset.Build(r.dk, r.dk.LogMonitoring().GetDaemonSetName(), getContainer(*r.dk),
 		daemonset.SetInitContainer(getInitContainer(*r.dk)),
-		daemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.LogMonitoring().Labels),
-		daemonset.SetAllAnnotations(nil, r.dk.LogMonitoring().Annotations),
+		daemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.LogMonitoring().Template().Labels),
+		daemonset.SetAllAnnotations(nil, r.dk.LogMonitoring().Template().Annotations),
 		daemonset.SetServiceAccount(serviceAccountName),
-		daemonset.SetDNSPolicy(r.dk.LogMonitoring().DNSPolicy),
+		daemonset.SetDNSPolicy(r.dk.LogMonitoring().Template().DNSPolicy),
 		daemonset.SetAffinity(node.Affinity()),
-		daemonset.SetPriorityClass(r.dk.LogMonitoring().PriorityClassName),
-		daemonset.SetTolerations(r.dk.LogMonitoring().Tolerations),
+		daemonset.SetPriorityClass(r.dk.LogMonitoring().Template().PriorityClassName),
+		daemonset.SetTolerations(r.dk.LogMonitoring().Template().Tolerations),
 		daemonset.SetPullSecret(r.dk.ImagePullSecretReferences()...),
 		daemonset.SetUpdateStrategy(appsv1.DaemonSetUpdateStrategy{
 			RollingUpdate: &appsv1.RollingUpdateDaemonSet{
