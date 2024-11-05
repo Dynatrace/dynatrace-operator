@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/stretchr/testify/assert"
@@ -23,6 +24,7 @@ const (
 	testValue1         = "test-value"
 	testKey1           = "test-key"
 	testNamespace      = "test-namespace"
+	annotationHash     = api.InternalFlagPrefix + "template-hash"
 )
 
 var configMapLog = logd.Get().WithName("test-configMap")
@@ -36,15 +38,16 @@ func createDeployment() *appsv1.Deployment {
 }
 
 func TestConfigMapQuery(t *testing.T) {
-	t.Run(`Get configMap`, testGetConfigMap)
-	t.Run(`Create configMap`, testCreateConfigMap)
-	t.Run(`Update configMap`, testUpdateConfigMap)
-	t.Run(`Create or update configMap`, testCreateOrUpdateConfigMap)
-	t.Run(`Identical configMap is not updated`, testIdenticalConfigMapIsNotUpdated)
-	t.Run(`Update configMap when data has changed`, testUpdateConfigMapWhenDataChanged)
-	t.Run(`Update configMap when labels have changed`, testUpdateConfigMapWhenLabelsChanged)
-	t.Run(`Create configMap in target namespace`, testCreateConfigMapInTargetNamespace)
-	t.Run(`Delete configMap in target namespace`, testDeleteConfigMap)
+	t.Run("Get configMap", testGetConfigMap)
+	t.Run("Create configMap", testCreateConfigMap)
+	t.Run("Update configMap", testUpdateConfigMap)
+	t.Run("Create or update configMap", testCreateOrUpdateConfigMap)
+	t.Run("Identical configMap is not updated", testIdenticalConfigMapIsNotUpdated)
+	t.Run("Update configMap when data has changed", testUpdateConfigMapWhenDataChanged)
+	t.Run("Update configMap when labels have changed", testUpdateConfigMapWhenLabelsChanged)
+	t.Run("Create configMap in target namespace", testCreateConfigMapInTargetNamespace)
+	t.Run("Delete configMap in target namespace", testDeleteConfigMap)
+	t.Run("Hash annotation is there after create", testHashAnnotationAfterCreate)
 }
 
 func testGetConfigMap(t *testing.T) {
@@ -284,6 +287,35 @@ func testDeleteConfigMap(t *testing.T) {
 	var deletedConfigMap corev1.ConfigMap
 	err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testConfigMapName, Namespace: testNamespace}, &deletedConfigMap)
 	require.Error(t, err)
+}
+
+func testHashAnnotationAfterCreate(t *testing.T) {
+	fakeClient := fake.NewClient()
+	configMapQuery := Query(fakeClient, fakeClient, configMapLog)
+	configMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testConfigMapName,
+			Namespace: testNamespace,
+		},
+		Data: map[string]string{testKey1: testConfigMapValue},
+	}
+
+	err := configMapQuery.Create(context.Background(), configMap)
+
+	require.NoError(t, err)
+
+	var actualConfigMap corev1.ConfigMap
+	err = fakeClient.Get(context.Background(), client.ObjectKey{Name: testConfigMapName, Namespace: testNamespace}, &actualConfigMap)
+
+	require.NoError(t, err)
+	assert.True(t, isEqual(configMap, &actualConfigMap))
+
+	assert.NotEmpty(t, configMap.Annotations)
+	assert.NotEmpty(t, configMap.Annotations[annotationHash])
+	assert.NotEmpty(t, actualConfigMap.Annotations)
+	assert.NotEmpty(t, actualConfigMap.Annotations[annotationHash])
+
+	assert.Equal(t, configMap.Annotations[annotationHash], actualConfigMap.Annotations[annotationHash])
 }
 
 func createTestConfigMap(labels map[string]string, data map[string]string) *corev1.ConfigMap {
