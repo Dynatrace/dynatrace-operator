@@ -270,7 +270,7 @@ func getNewDynakubeBase() dynakube.DynaKube {
 			},
 			TrustedCAs:                   "trusted-ca",
 			NetworkZone:                  "network-zone",
-			DynatraceApiRequestThreshold: address.Of(42),
+			DynatraceApiRequestThreshold: address.Of(uint16(42)),
 			MetadataEnrichment: dynakube.MetadataEnrichment{
 				Enabled:           address.Of(true),
 				NamespaceSelector: getTestNamespaceSelector(),

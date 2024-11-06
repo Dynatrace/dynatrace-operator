@@ -120,8 +120,8 @@ func (dk *DynaKube) TenantUUIDFromConnectionInfoStatus() (string, error) {
 	return "", errors.New("tenant UUID not available")
 }
 
-func (dk *DynaKube) GetDynatraceApiRequestThreshold() int {
-	if dk.Spec.DynatraceApiRequestThreshold == nil || *dk.Spec.DynatraceApiRequestThreshold < 0 {
+func (dk *DynaKube) GetDynatraceApiRequestThreshold() uint16 {
+	if dk.Spec.DynatraceApiRequestThreshold == nil {
 		return DefaultMinRequestThresholdMinutes
 	}
 

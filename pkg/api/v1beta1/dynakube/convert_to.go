@@ -1,6 +1,7 @@
 package dynakube
 
 import (
+	"math"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
@@ -114,15 +115,7 @@ func (src *DynaKube) toMovedFields(dst *dynakube.DynaKube) error {
 
 	src.convertMaxMountAttempts(dst)
 
-	if src.Annotations[AnnotationFeatureApiRequestThreshold] != "" {
-		duration, err := strconv.ParseInt(src.Annotations[AnnotationFeatureApiRequestThreshold], 10, 32)
-		if err != nil {
-			return err
-		}
-
-		dst.Spec.DynatraceApiRequestThreshold = address.Of(int(duration))
-		delete(dst.Annotations, AnnotationFeatureApiRequestThreshold)
-	}
+	src.convertDynatraceApiRequestThreshold(dst)
 
 	if src.Annotations[AnnotationFeatureOneAgentSecCompProfile] != "" {
 		secCompProfile := src.Annotations[AnnotationFeatureOneAgentSecCompProfile]
@@ -146,6 +139,28 @@ func (src *DynaKube) toMovedFields(dst *dynakube.DynaKube) error {
 		}
 
 		dst.Spec.MetadataEnrichment.NamespaceSelector = src.Spec.NamespaceSelector
+	}
+
+	return nil
+}
+
+func (src *DynaKube) convertDynatraceApiRequestThreshold(dst *dynakube.DynaKube) error {
+	if src.Annotations[AnnotationFeatureApiRequestThreshold] != "" {
+		duration, err := strconv.ParseInt(src.Annotations[AnnotationFeatureApiRequestThreshold], 10, 32)
+		if err != nil {
+			return err
+		}
+
+		if duration >= 0 {
+			if math.MaxUint16 < duration {
+				dst.Spec.DynatraceApiRequestThreshold = address.Of(uint16(math.MaxUint16))
+			} else {
+				// linting disabled, handled in if
+				dst.Spec.DynatraceApiRequestThreshold = address.Of(uint16(duration)) //nolint:gosec
+			}
+		}
+
+		delete(dst.Annotations, AnnotationFeatureApiRequestThreshold)
 	}
 
 	return nil

@@ -195,7 +195,7 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 
 	if in.DynatraceApiRequestThreshold != nil {
 		in, out := &in.DynatraceApiRequestThreshold, &out.DynatraceApiRequestThreshold
-		*out = new(int)
+		*out = new(uint16)
 		**out = **in
 	}
 	in.OneAgent.DeepCopyInto(&out.OneAgent)

@@ -493,7 +493,7 @@ func createTestDynaKube() *dynakube.DynaKube {
 			OneAgent: dynakube.OneAgentSpec{
 				CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 			},
-			DynatraceApiRequestThreshold: address.Of(15),
+			DynatraceApiRequestThreshold: address.Of(uint16(15)),
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: dynakube.OneAgentStatus{

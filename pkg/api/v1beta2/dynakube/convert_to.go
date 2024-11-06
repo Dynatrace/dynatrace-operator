@@ -1,10 +1,13 @@
 package dynakube
 
 import (
+	"math"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
@@ -30,6 +33,7 @@ func (src *DynaKube) toBase(dst *dynakube.DynaKube) {
 	}
 
 	src.convertMaxMountAttempts(dst)
+	src.convertDynatraceApiRequestThreshold(dst)
 
 	dst.Spec.APIURL = src.Spec.APIURL
 	dst.Spec.Tokens = src.Spec.Tokens
@@ -39,7 +43,17 @@ func (src *DynaKube) toBase(dst *dynakube.DynaKube) {
 	dst.Spec.TrustedCAs = src.Spec.TrustedCAs
 	dst.Spec.NetworkZone = src.Spec.NetworkZone
 	dst.Spec.EnableIstio = src.Spec.EnableIstio
-	dst.Spec.DynatraceApiRequestThreshold = &src.Spec.DynatraceApiRequestThreshold
+}
+
+func (src *DynaKube) convertDynatraceApiRequestThreshold(dst *dynakube.DynaKube) {
+	if src.Spec.DynatraceApiRequestThreshold >= 0 {
+		if math.MaxUint16 < src.Spec.DynatraceApiRequestThreshold {
+			dst.Spec.DynatraceApiRequestThreshold = address.Of(uint16(math.MaxUint16))
+		} else {
+			// linting disabled, handled in if
+			dst.Spec.DynatraceApiRequestThreshold = address.Of(uint16(src.Spec.DynatraceApiRequestThreshold)) //nolint:gosec
+		}
+	}
 }
 
 func (src *DynaKube) convertMaxMountAttempts(dst *dynakube.DynaKube) {
