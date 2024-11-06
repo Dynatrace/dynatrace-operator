@@ -76,6 +76,8 @@ type DynaKubeSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	Kspm *kspm.Spec `json:"kspm,omitempty"`
 
+	// When an (empty) ExtensionsSpec is provided, the extensions related components (extensions controller and extensions collector)
+	// are deployed by the operator.
 	// +kubebuilder:validation:Optional
 	Extensions *ExtensionsSpec `json:"extensions,omitempty"`
 

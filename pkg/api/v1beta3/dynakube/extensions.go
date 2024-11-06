@@ -8,7 +8,6 @@ import (
 
 // +kubebuilder:validation:Optional
 type ExtensionsSpec struct {
-	Enabled bool `json:"enabled,omitempty"`
 }
 
 type ExtensionExecutionControllerSpec struct {
