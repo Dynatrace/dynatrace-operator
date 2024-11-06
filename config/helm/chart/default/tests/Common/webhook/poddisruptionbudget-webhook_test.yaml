@@ -1,8 +1,8 @@
-suite: test podDisruptionBudget
+suite: test PodDisruptionBudget
 templates:
   - Common/webhook/poddisruptionbudget-webhook.yaml
 tests:
-  - it: should not exist
+  - it: should exist if highAvailability is set to true
     set:
       webhook.highAvailability: true
     asserts:
@@ -14,7 +14,7 @@ tests:
       - equal:
           path: metadata.namespace
           value: NAMESPACE
-  - it: shouldn't exist if turned off
+  - it: shouldn't exist if highAvailability is set to false
     set:
       webhook.highAvailability: false
     asserts:
