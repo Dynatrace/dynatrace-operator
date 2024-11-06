@@ -72,12 +72,18 @@ func TestTokenCreation(t *testing.T) {
 }
 
 func createDynaKube(kspmEnabled bool) dynakube.DynaKube {
-	return dynakube.DynaKube{
+	dk := dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-dk",
 		},
-		Spec: dynakube.DynaKubeSpec{
-			Kspm: kspm.Spec{Enabled: kspmEnabled},
-		},
+		Spec: dynakube.DynaKubeSpec{},
 	}
+
+	if kspmEnabled {
+		dk.KSPM().Spec = &kspm.Spec{}
+	} else {
+		dk.KSPM().Spec = nil
+	}
+
+	return dk
 }
