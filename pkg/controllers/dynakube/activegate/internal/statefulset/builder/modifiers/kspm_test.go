@@ -4,12 +4,17 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func setKSPMUsage(dk *dynakube.DynaKube, isUsed bool) {
-	dk.Spec.Kspm.Enabled = isUsed
+	if isUsed {
+		dk.Spec.Kspm = &kspm.Spec{}
+	} else {
+		dk.Spec.Kspm = nil
+	}
 }
 
 func TestKspmEnabled(t *testing.T) {

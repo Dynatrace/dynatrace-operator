@@ -6,10 +6,11 @@ import (
 )
 
 const (
-	SecretCreatedReason    = "SecretCreated"
-	SecretUpdatedReason    = "SecretUpdated"
-	SecretOutdatedReason   = "SecretOutdated"
-	SecretGenerationFailed = "SecretGenerationFailed"
+	SecretCreatedReason          = "SecretCreated"
+	SecretUpdatedReason          = "SecretUpdated"
+	SecretCreatedOrUpdatedReason = "SecretCreatedOrUpdated"
+	SecretOutdatedReason         = "SecretOutdated"
+	SecretGenerationFailed       = "SecretGenerationFailed"
 )
 
 func SetSecretCreated(conditions *[]metav1.Condition, conditionType, name string) {
@@ -28,6 +29,16 @@ func SetSecretUpdated(conditions *[]metav1.Condition, conditionType, name string
 		Status:  metav1.ConditionTrue,
 		Reason:  SecretUpdatedReason,
 		Message: appendUpdatedSuffix(name),
+	}
+	_ = meta.SetStatusCondition(conditions, condition)
+}
+
+func SetSecretCreatedOrUpdated(conditions *[]metav1.Condition, conditionType, name string) {
+	condition := metav1.Condition{
+		Type:    conditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  SecretCreatedOrUpdatedReason,
+		Message: appendCreatedOrUpdatedSuffix(name),
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }

@@ -4,7 +4,7 @@ import "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
 
 func (dk *DynaKube) KSPM() *kspm.Kspm {
 	_kspm := &kspm.Kspm{
-		Spec:                           &dk.Spec.Kspm,
+		Spec:                           dk.Spec.Kspm,
 		Status:                         &dk.Status.Kspm,
 		NodeConfigurationCollectorSpec: &dk.Spec.Templates.KspmNodeConfigurationCollector,
 	}
