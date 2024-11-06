@@ -117,7 +117,7 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 	assert.Equal(t, oldDk.Spec.EnableIstio, newDk.Spec.EnableIstio)
 	assert.Equal(t, oldDk.Spec.SkipCertCheck, newDk.Spec.SkipCertCheck)
 	assert.Equal(t, oldDk.Spec.TrustedCAs, newDk.Spec.TrustedCAs)
-	assert.Equal(t, oldDk.Spec.DynatraceApiRequestThreshold, *newDk.Spec.DynatraceApiRequestThreshold)
+	assert.Equal(t, uint16(oldDk.Spec.DynatraceApiRequestThreshold), *newDk.Spec.DynatraceApiRequestThreshold) //nolint:gosec
 
 	if newDk.NeedAppInjection() {
 		assert.Equal(t, oldDk.OneAgentNamespaceSelector(), newDk.OneAgentNamespaceSelector())
