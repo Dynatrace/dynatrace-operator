@@ -106,3 +106,5 @@ test/testdata/secrets/*
 local/
 
 permissions.md
+
+hack/data/github.yaml
