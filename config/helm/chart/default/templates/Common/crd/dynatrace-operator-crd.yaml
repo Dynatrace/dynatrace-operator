@@ -4874,9 +4874,9 @@ spec:
                   Disabled by default.
                 type: boolean
               extensions:
-                properties:
-                  enabled:
-                    type: boolean
+                description: |-
+                  When an (empty) ExtensionsSpec is provided, the extensions related components (extensions controller and extensions collector)
+                  are deployed by the operator.
                 type: object
               kspm:
                 description: General configuration about the KSPM feature.

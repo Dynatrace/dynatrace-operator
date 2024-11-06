@@ -77,6 +77,10 @@ type DynaKubeSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	LogMonitoring *logmonitoring.Spec `json:"logMonitoring,omitempty"`
 
+	// General configuration about the KSPM feature.
+	// +kubebuilder:validation:Optional
+	Kspm *kspm.Spec `json:"kspm,omitempty"`
+
 	// Configuration for thresholding Dynatrace API requests.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Dynatrace API Request Threshold",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
