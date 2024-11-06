@@ -361,7 +361,7 @@ jobs:
           mkdir -p tmp
           echo ${COSIGN_PUBLIC_KEY} | base64 -d > tmp/cosign.pub
       - name: Create pre-release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@e7a8f85e1c67a31e6ed99a94b41bd0b71bbee6b8 # v2.0.9
         if: ${{ contains(github.ref, '-rc.') }}
         with:
           body_path: ./CHANGELOG.md
@@ -377,7 +377,7 @@ jobs:
           draft: true
           fail_on_unmatched_files: true
       - name: Create release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@e7a8f85e1c67a31e6ed99a94b41bd0b71bbee6b8 # v2.0.9
         if: ${{ !contains(github.ref, '-rc.') }}
         with:
           body_path: ./CHANGELOG.md
@@ -395,6 +395,17 @@ jobs:
           prerelease: false
           draft: true
           fail_on_unmatched_files: true
+      - name: Checkout index.yaml from main branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: main
+          sparse-checkout: config/helm/repos/stable/index.yaml
+          sparse-checkout-cone-mode: false
+          path: origin/main
+      - name: Copy index.yaml file
+        run: |
+          set -x
+          cp "origin/main/config/helm/repos/stable/index.yaml" "config/helm/repos/stable/index.yaml"
       - name: Update index helm file
         if: ${{ !contains(github.ref, '-rc.') }}
         env:
@@ -404,7 +415,7 @@ jobs:
           hack/build/ci/generate-new-helm-index-yaml.sh "helm-pkg" ${{ needs.prepare.outputs.version_without_prefix }}
       - name: Create pull request for adding helm index to main branch
         if: ${{ !contains(github.ref, '-rc.') }}
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@5e914681df9dc83aa4e4905692ca88beb2f9e91f # v7.0.5
         with:
           base: main
           delete-branch: true
