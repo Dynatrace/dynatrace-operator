@@ -1,0 +1,22 @@
+suite: test PodDisruptionBudget
+templates:
+  - Common/webhook/poddisruptionbudget-webhook.yaml
+tests:
+  - it: should exist if highAvailability is set to true
+    set:
+      webhook.highAvailability: true
+    asserts:
+      - isKind:
+          of: PodDisruptionBudget
+      - equal:
+          path: metadata.name
+          value: dynatrace-webhook
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+  - it: shouldn't exist if highAvailability is set to false
+    set:
+      webhook.highAvailability: false
+    asserts:
+      - hasDocuments:
+        count: 0
