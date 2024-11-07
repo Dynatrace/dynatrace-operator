@@ -178,7 +178,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run(`Reconciliation only runs every 15 min`, func(t *testing.T) {
 		dk := createTestDynakube()
-		dk.Spec.DynatraceApiRequestThreshold = dynakube.DefaultMinRequestThresholdMinutes
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dk, token.Tokens{
 			dtclient.ApiToken: &token.Token{Value: testValue},

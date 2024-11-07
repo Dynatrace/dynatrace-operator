@@ -85,6 +85,6 @@ func WithHostPattern(hostPattern string) Option {
 
 func WithServiceAccount(serviceAccountName string) Option {
 	return func(ec *edgeconnect.EdgeConnect) {
-		ec.Spec.ServiceAccountName = serviceAccountName
+		ec.Spec.ServiceAccountName = &serviceAccountName
 	}
 }

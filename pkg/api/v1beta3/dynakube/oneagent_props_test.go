@@ -44,7 +44,7 @@ func TestNeedsCSIDriver(t *testing.T) {
 			Spec: DynaKubeSpec{
 				OneAgent: OneAgentSpec{
 					ApplicationMonitoring: &ApplicationMonitoringSpec{
-						UseCSIDriver: useCSIDriver,
+						UseCSIDriver: &useCSIDriver,
 					},
 				},
 			},

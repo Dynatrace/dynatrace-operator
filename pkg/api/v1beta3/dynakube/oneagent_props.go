@@ -58,11 +58,11 @@ func (dk *DynaKube) NeedsOneAgentProbe() bool {
 func (dk *DynaKube) ShouldAutoUpdateOneAgent() bool {
 	switch {
 	case dk.CloudNativeFullstackMode():
-		return dk.Spec.OneAgent.CloudNativeFullStack.AutoUpdate
+		return dk.Spec.OneAgent.CloudNativeFullStack.AutoUpdate == nil || *dk.Spec.OneAgent.CloudNativeFullStack.AutoUpdate
 	case dk.HostMonitoringMode():
-		return dk.Spec.OneAgent.HostMonitoring.AutoUpdate
+		return dk.Spec.OneAgent.HostMonitoring.AutoUpdate == nil || *dk.Spec.OneAgent.HostMonitoring.AutoUpdate
 	case dk.ClassicFullStackMode():
-		return dk.Spec.OneAgent.ClassicFullStack.AutoUpdate
+		return dk.Spec.OneAgent.ClassicFullStack.AutoUpdate == nil || *dk.Spec.OneAgent.ClassicFullStack.AutoUpdate
 	default:
 		return false
 	}
@@ -82,9 +82,21 @@ func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {
 		dk.FeatureReadOnlyOneAgent()
 }
 
+func (dk *DynaKube) IsAppMonitoringWithCSI() bool {
+	if !dk.ApplicationMonitoringMode() {
+		return false
+	}
+
+	defaultUseCSIDriver := false
+	if dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver == nil {
+		return defaultUseCSIDriver
+	}
+
+	return *dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver
+}
+
 func (dk *DynaKube) NeedsCSIDriver() bool {
-	isAppMonitoringWithCSI := dk.ApplicationMonitoringMode() &&
-		dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver
+	isAppMonitoringWithCSI := dk.IsAppMonitoringWithCSI()
 
 	isHostMonitoringWithCSI := dk.HostMonitoringMode() && dk.FeatureReadOnlyOneAgent()
 

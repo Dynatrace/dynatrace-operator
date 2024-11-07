@@ -16,7 +16,7 @@ func createBaseDynakube(name string, appInjection bool, metadataEnrichment bool)
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "dynatrace"},
 		Spec: dynakube.DynaKubeSpec{
 			MetadataEnrichment: dynakube.MetadataEnrichment{
-				Enabled: metadataEnrichment,
+				Enabled: &metadataEnrichment,
 			},
 		},
 	}

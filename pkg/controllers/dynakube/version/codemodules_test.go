@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
@@ -28,7 +29,7 @@ func TestCodeModulesUpdater(t *testing.T) {
 				OneAgent: dynakube.OneAgentSpec{
 					ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
 						Version:      testImage.Tag,
-						UseCSIDriver: true,
+						UseCSIDriver: address.Of(true),
 						AppInjectionSpec: dynakube.AppInjectionSpec{
 							CodeModulesImage: testImage.String(),
 						},

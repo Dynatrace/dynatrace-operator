@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
@@ -81,7 +82,7 @@ func InstallFromImage(t *testing.T) features.Feature {
 		dynakubeComponents.WithName("app-codemodules"),
 		dynakubeComponents.WithApplicationMonitoringSpec(&dynakube.ApplicationMonitoringSpec{
 			AppInjectionSpec: *codeModulesAppInjectSpec(t),
-			UseCSIDriver:     true,
+			UseCSIDriver:     address.Of(true),
 		}),
 		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
 		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),

@@ -81,7 +81,7 @@ func (statefulSetBuilder Builder) getBaseObjectMeta() metav1.ObjectMeta {
 
 func (statefulSetBuilder Builder) getBaseSpec() appsv1.StatefulSetSpec {
 	return appsv1.StatefulSetSpec{
-		Replicas:            &statefulSetBuilder.capability.Properties().Replicas,
+		Replicas:            statefulSetBuilder.capability.Properties().Replicas,
 		PodManagementPolicy: appsv1.ParallelPodManagement,
 		Template: corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{

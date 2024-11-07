@@ -33,7 +33,7 @@ func (dst *DynaKube) fromBase(src *v1beta3.DynaKube) {
 	dst.Spec.TrustedCAs = src.Spec.TrustedCAs
 	dst.Spec.NetworkZone = src.Spec.NetworkZone
 	dst.Spec.EnableIstio = src.Spec.EnableIstio
-	dst.Spec.DynatraceApiRequestThreshold = src.Spec.DynatraceApiRequestThreshold
+	dst.Spec.DynatraceApiRequestThreshold = int(src.GetDynatraceApiRequestThreshold())
 }
 
 func (dst *DynaKube) fromOneAgentSpec(src *v1beta3.DynaKube) {
@@ -52,7 +52,7 @@ func (dst *DynaKube) fromOneAgentSpec(src *v1beta3.DynaKube) {
 		dst.Spec.OneAgent.ApplicationMonitoring = &ApplicationMonitoringSpec{}
 		dst.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec = *fromAppInjectSpec(src.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec)
 		dst.Spec.OneAgent.ApplicationMonitoring.Version = src.Spec.OneAgent.ApplicationMonitoring.Version
-		dst.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver = src.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver
+		dst.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver = src.IsAppMonitoringWithCSI()
 	}
 }
 
@@ -69,7 +69,7 @@ func (dst *DynaKube) fromActiveGateSpec(src *v1beta3.DynaKube) {
 	dst.Spec.ActiveGate.DNSPolicy = src.Spec.ActiveGate.DNSPolicy
 	dst.Spec.ActiveGate.TopologySpreadConstraints = src.Spec.ActiveGate.TopologySpreadConstraints
 	dst.Spec.ActiveGate.Resources = src.Spec.ActiveGate.Resources
-	dst.Spec.ActiveGate.Replicas = src.Spec.ActiveGate.Replicas
+	dst.Spec.ActiveGate.Replicas = src.Spec.ActiveGate.GetReplicas()
 	dst.Spec.ActiveGate.Capabilities = []CapabilityDisplayName{}
 
 	for _, capability := range src.Spec.ActiveGate.Capabilities {
@@ -142,7 +142,7 @@ func (dst *DynaKube) fromActiveGateStatus(src v1beta3.DynaKube) {
 
 func fromHostInjectSpec(src v1beta3.HostInjectSpec) *HostInjectSpec {
 	dst := &HostInjectSpec{}
-	dst.AutoUpdate = src.AutoUpdate
+	dst.AutoUpdate = src.AutoUpdate == nil || *src.AutoUpdate
 	dst.OneAgentResources = src.OneAgentResources
 	dst.Args = src.Args
 	dst.Version = src.Version
@@ -170,6 +170,6 @@ func fromAppInjectSpec(src v1beta3.AppInjectionSpec) *AppInjectionSpec {
 }
 
 func (dst *DynaKube) fromMetadataEnrichment(src *v1beta3.DynaKube) {
-	dst.Spec.MetadataEnrichment.Enabled = src.Spec.MetadataEnrichment.Enabled
+	dst.Spec.MetadataEnrichment.Enabled = src.MetadataEnrichmentEnabled()
 	dst.Spec.MetadataEnrichment.NamespaceSelector = src.Spec.MetadataEnrichment.NamespaceSelector
 }

@@ -57,7 +57,7 @@ func (dst *DynaKube) fromOneAgentSpec(src *dynakube.DynaKube) {
 		dst.Spec.OneAgent.ApplicationMonitoring = &ApplicationMonitoringSpec{}
 		dst.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec = *fromAppInjectSpec(src.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec)
 		dst.Spec.OneAgent.ApplicationMonitoring.Version = src.Spec.OneAgent.ApplicationMonitoring.Version
-		dst.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver = address.Of(src.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver)
+		dst.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver = src.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver
 	}
 }
 
@@ -74,7 +74,7 @@ func (dst *DynaKube) fromActiveGateSpec(src *dynakube.DynaKube) {
 	dst.Spec.ActiveGate.DNSPolicy = src.Spec.ActiveGate.DNSPolicy
 	dst.Spec.ActiveGate.TopologySpreadConstraints = src.Spec.ActiveGate.TopologySpreadConstraints
 	dst.Spec.ActiveGate.Resources = src.Spec.ActiveGate.Resources
-	dst.Spec.ActiveGate.Replicas = address.Of(src.Spec.ActiveGate.Replicas)
+	dst.Spec.ActiveGate.Replicas = address.Of(src.Spec.ActiveGate.GetReplicas())
 
 	for _, capability := range src.Spec.ActiveGate.Capabilities {
 		dst.Spec.ActiveGate.Capabilities = append(dst.Spec.ActiveGate.Capabilities, CapabilityDisplayName(capability))
@@ -89,8 +89,8 @@ func (dst *DynaKube) fromActiveGateSpec(src *dynakube.DynaKube) {
 }
 
 func (dst *DynaKube) fromMovedFields(src *dynakube.DynaKube) error {
-	dst.Annotations[AnnotationFeatureMetadataEnrichment] = strconv.FormatBool(src.Spec.MetadataEnrichment.Enabled)
-	dst.Annotations[AnnotationFeatureApiRequestThreshold] = strconv.FormatInt(int64(src.Spec.DynatraceApiRequestThreshold), 10)
+	dst.Annotations[AnnotationFeatureMetadataEnrichment] = strconv.FormatBool(src.MetadataEnrichmentEnabled())
+	dst.Annotations[AnnotationFeatureApiRequestThreshold] = strconv.FormatInt(int64(src.GetDynatraceApiRequestThreshold()), 10)
 	dst.Annotations[AnnotationFeatureOneAgentSecCompProfile] = src.OneAgentSecCompProfile()
 
 	if selector := src.OneAgentNamespaceSelector(); selector != nil {
@@ -159,7 +159,7 @@ func (dst *DynaKube) fromActiveGateStatus(src dynakube.DynaKube) {
 
 func fromHostInjectSpec(src dynakube.HostInjectSpec) *HostInjectSpec {
 	dst := &HostInjectSpec{}
-	dst.AutoUpdate = &src.AutoUpdate
+	dst.AutoUpdate = src.AutoUpdate
 	dst.OneAgentResources = src.OneAgentResources
 	dst.Args = src.Args
 	dst.Version = src.Version

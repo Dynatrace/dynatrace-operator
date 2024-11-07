@@ -36,6 +36,19 @@ func (edgeConnect *EdgeConnect) IsCustomImage() bool {
 	return edgeConnect.Spec.ImageRef.Repository != ""
 }
 
+func (edgeConnect *EdgeConnect) IsAutoUpdateEnabled() bool {
+	return edgeConnect.Spec.AutoUpdate == nil || *edgeConnect.Spec.AutoUpdate
+}
+
+func (edgeConnect *EdgeConnect) GetServiceAccountName() string {
+	defaultServiceAccount := "dynatrace-edgeconnect"
+	if edgeConnect.Spec.ServiceAccountName == nil {
+		return defaultServiceAccount
+	}
+
+	return *edgeConnect.Spec.ServiceAccountName
+}
+
 func (edgeConnect *EdgeConnect) IsProvisionerModeEnabled() bool {
 	return edgeConnect.Spec.OAuth.Provisioner
 }

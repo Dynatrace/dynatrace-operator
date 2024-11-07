@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/codemodules"
@@ -34,7 +35,7 @@ func ReadOnlyCSIVolume(t *testing.T) features.Feature {
 		dynakubeComponents.WithAnnotations(readOnlyInjection),
 		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
 		dynakubeComponents.WithApplicationMonitoringSpec(&dynakube.ApplicationMonitoringSpec{
-			UseCSIDriver: true,
+			UseCSIDriver: address.Of(true),
 		}),
 	)
 	sampleDeployment := sample.NewApp(t, &testDynakube, sample.AsDeployment())
