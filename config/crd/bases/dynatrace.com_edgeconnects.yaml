@@ -654,7 +654,6 @@ spec:
                   your specific environment UUID
                 type: string
               autoUpdate:
-                default: true
                 description: 'Enables automatic restarts of EdgeConnect pods in case
                   a new version is available (the default value is: true)'
                 type: boolean
@@ -870,7 +869,6 @@ spec:
                     type: integer
                 type: object
               replicas:
-                default: 1
                 description: 'Amount of replicas for your EdgeConnect (the default
                   value is: 1)'
                 format: int32
@@ -935,7 +933,6 @@ spec:
                     type: object
                 type: object
               serviceAccountName:
-                default: dynatrace-edgeconnect
                 description: ServiceAccountName that allows EdgeConnect to access
                   the Kubernetes API
                 type: string

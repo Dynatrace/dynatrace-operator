@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
@@ -103,7 +104,7 @@ func LabelVersionDetection(t *testing.T) features.Feature {
 		dynakubeComponents.WithName("dynakube-components-default"),
 		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
 		dynakubeComponents.WithApplicationMonitoringSpec(&dynakube.ApplicationMonitoringSpec{
-			UseCSIDriver: false,
+			UseCSIDriver: address.Of(false),
 		}),
 		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
 	)
@@ -113,7 +114,7 @@ func LabelVersionDetection(t *testing.T) features.Feature {
 		dynakubeComponents.WithAnnotations(map[string]string{dynakube.AnnotationFeatureLabelVersionDetection: "true"}),
 		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
 		dynakubeComponents.WithApplicationMonitoringSpec(&dynakube.ApplicationMonitoringSpec{
-			UseCSIDriver: false,
+			UseCSIDriver: address.Of(false),
 		}),
 		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
 	)

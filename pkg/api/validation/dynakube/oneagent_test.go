@@ -292,7 +292,7 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 						AppInjectionSpec: dynakube.AppInjectionSpec{
 							CodeModulesImage: testImage,
 						},
-						UseCSIDriver: useCSIDriver,
+						UseCSIDriver: &useCSIDriver,
 					},
 				},
 			},
@@ -311,7 +311,7 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 						AppInjectionSpec: dynakube.AppInjectionSpec{
 							CodeModulesImage: testImage,
 						},
-						UseCSIDriver: useCSIDriver,
+						UseCSIDriver: &useCSIDriver,
 					},
 				},
 			},

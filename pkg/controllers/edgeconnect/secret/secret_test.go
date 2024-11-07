@@ -78,8 +78,7 @@ root_certificate_paths:
 					Resource:     "urn:dtenvironment:test12345",
 					ClientSecret: "test-secret",
 				},
-				CaCertsRef:         "certs",
-				ServiceAccountName: "test",
+				CaCertsRef: "certs",
 				Proxy: &proxy.Spec{
 					Host:    "proxy.com",
 					NoProxy: "*.internal.com",
@@ -134,7 +133,6 @@ proxy:
 				KubernetesAutomation: &edgeconnect.KubernetesAutomationSpec{
 					Enabled: true,
 				},
-				ServiceAccountName: "test",
 			},
 		}
 		testSecretName := "test-secret"

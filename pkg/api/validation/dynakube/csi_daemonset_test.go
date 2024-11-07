@@ -39,7 +39,7 @@ func TestMissingCSIDaemonSet(t *testing.T) {
 				APIURL: testApiUrl,
 				OneAgent: dynakube.OneAgentSpec{
 					ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
-						UseCSIDriver: useCSIDriver,
+						UseCSIDriver: &useCSIDriver,
 					},
 				},
 			},
@@ -99,7 +99,7 @@ func TestMissingCSIDaemonSet(t *testing.T) {
 					APIURL: testApiUrl,
 					OneAgent: dynakube.OneAgentSpec{
 						ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
-							UseCSIDriver: useCSIDriver,
+							UseCSIDriver: &useCSIDriver,
 						},
 					},
 				},
@@ -135,7 +135,7 @@ func TestDisabledCSIForReadonlyCSIVolume(t *testing.T) {
 					APIURL: testApiUrl,
 					OneAgent: dynakube.OneAgentSpec{
 						ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
-							UseCSIDriver: useCSIDriver,
+							UseCSIDriver: &useCSIDriver,
 						},
 					},
 				},
