@@ -29,6 +29,11 @@ var capabilities = []activegate.CapabilityDisplayName{
 }
 
 func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtensions bool) *dynakube.DynaKube {
+	extensionsSpec := &dynakube.ExtensionsSpec{}
+	if !enableExtensions {
+		extensionsSpec = nil
+	}
+
 	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace, Name: testName,
@@ -38,9 +43,7 @@ func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtens
 			ActiveGate: activegate.Spec{
 				Capabilities: capabilities,
 			},
-			Extensions: dynakube.ExtensionsSpec{
-				Enabled: enableExtensions,
-			},
+			Extensions: extensionsSpec,
 		},
 	}
 }

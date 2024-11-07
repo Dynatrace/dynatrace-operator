@@ -13,10 +13,8 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
-					Extensions: dynakube.ExtensionsSpec{
-						Enabled: true,
-					},
+					APIURL:     testApiUrl,
+					Extensions: &dynakube.ExtensionsSpec{},
 					Templates: dynakube.TemplatesSpec{
 						ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
 							ImageRef: image.Ref{
@@ -35,10 +33,8 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
-					Extensions: dynakube.ExtensionsSpec{
-						Enabled: true,
-					},
+					APIURL:     testApiUrl,
+					Extensions: &dynakube.ExtensionsSpec{},
 					Templates: dynakube.TemplatesSpec{
 						ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
 							ImageRef: image.Ref{
@@ -56,10 +52,8 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
-					Extensions: dynakube.ExtensionsSpec{
-						Enabled: true,
-					},
+					APIURL:     testApiUrl,
+					Extensions: &dynakube.ExtensionsSpec{},
 					Templates: dynakube.TemplatesSpec{
 						ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
 							ImageRef: image.Ref{
@@ -77,10 +71,8 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
-					Extensions: dynakube.ExtensionsSpec{
-						Enabled: true,
-					},
+					APIURL:     testApiUrl,
+					Extensions: &dynakube.ExtensionsSpec{},
 				},
 			})
 	})

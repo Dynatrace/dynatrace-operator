@@ -163,9 +163,7 @@ func TestExtensionsExecutionControllerPhaseChanges(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			Extensions: dynakube.ExtensionsSpec{
-				Enabled: true,
-			},
+			Extensions: &dynakube.ExtensionsSpec{},
 		},
 	}
 
@@ -216,9 +214,7 @@ func TestExtensionsCollectorPhaseChanges(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			Extensions: dynakube.ExtensionsSpec{
-				Enabled: true,
-			},
+			Extensions: &dynakube.ExtensionsSpec{},
 		},
 	}
 
@@ -273,9 +269,7 @@ func TestDynakubePhaseChanges(t *testing.T) {
 				ClassicFullStack: &dynakube.HostInjectSpec{},
 			},
 
-			Extensions: dynakube.ExtensionsSpec{
-				Enabled: true,
-			},
+			Extensions: &dynakube.ExtensionsSpec{},
 		},
 	}
 

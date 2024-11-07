@@ -46,9 +46,7 @@ func getTestDynakube() *dynakube.DynaKube {
 			Annotations: map[string]string{},
 		},
 		Spec: dynakube.DynaKubeSpec{
-			Extensions: dynakube.ExtensionsSpec{
-				Enabled: true,
-			},
+			Extensions: &dynakube.ExtensionsSpec{},
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
 					ImageRef: image.Ref{
@@ -142,7 +140,7 @@ func TestConditions(t *testing.T) {
 
 	t.Run("extensions are disabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Extensions.Enabled = false
+		dk.Spec.Extensions = nil
 		conditions.SetStatefulSetCreated(dk.Conditions(), extensionsControllerStatefulSetConditionType, dk.ExtensionsExecutionControllerStatefulsetName())
 
 		mockK8sClient := fake.NewClient(dk)
