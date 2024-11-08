@@ -25,23 +25,45 @@ func TestIsModuleDisabled(t *testing.T) {
 
 	testCases := []testCase{
 		{
+			title:           "csi module disabled but also configured in dk => error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: dynakube.OneAgentSpec{CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}}}},
+			modules:         installconfig.Modules{OneAgent: true, CSIDriver: false},
+			moduleFunc:      isCSIModuleDisabled,
+			expectedMessage: errorCSIModuleDisabled,
+		},
+		{
+			title:           "csi module disabled but not configured => no error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: dynakube.OneAgentSpec{CloudNativeFullStack: nil}}},
+			modules:         installconfig.Modules{OneAgent: true, CSIDriver: false},
+			moduleFunc:      isCSIModuleDisabled,
+			expectedMessage: "",
+		},
+		{
+			title:           "csi module enabled and also configured => no error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: dynakube.OneAgentSpec{CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}}}},
+			modules:         installconfig.Modules{OneAgent: true, CSIDriver: true},
+			moduleFunc:      isCSIModuleDisabled,
+			expectedMessage: "",
+		},
+
+		{
 			title:           "oa module disabled but also configured in dk => error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: dynakube.OneAgentSpec{CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}}}},
-			modules:         installconfig.Modules{OneAgent: false},
+			modules:         installconfig.Modules{OneAgent: false, CSIDriver: true},
 			moduleFunc:      isOneAgentModuleDisabled,
 			expectedMessage: errorOneAgentModuleDisabled,
 		},
 		{
 			title:           "oa module disabled but not configured => no error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: dynakube.OneAgentSpec{CloudNativeFullStack: nil}}},
-			modules:         installconfig.Modules{OneAgent: false},
+			modules:         installconfig.Modules{OneAgent: false, CSIDriver: true},
 			moduleFunc:      isOneAgentModuleDisabled,
 			expectedMessage: "",
 		},
 		{
 			title:           "oa module enabled and also configured => no error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: dynakube.OneAgentSpec{CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}}}},
-			modules:         installconfig.Modules{OneAgent: true},
+			modules:         installconfig.Modules{OneAgent: true, CSIDriver: true},
 			moduleFunc:      isOneAgentModuleDisabled,
 			expectedMessage: "",
 		},

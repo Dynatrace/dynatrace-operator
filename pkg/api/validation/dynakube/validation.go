@@ -23,6 +23,7 @@ type Validator struct {
 
 var (
 	validatorErrorFuncs = []validatorFunc{
+		isCSIModuleDisabled,
 		isActiveGateModuleDisabled,
 		isExtensionsModuleDisabled,
 		isLogMonitoringModuleDisabled,

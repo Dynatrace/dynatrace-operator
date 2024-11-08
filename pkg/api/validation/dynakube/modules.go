@@ -8,12 +8,21 @@ import (
 )
 
 var (
+	errorCSIModuleDisabled           = installconfig.GetCSIValidationErrorMessage()
 	errorOneAgentModuleDisabled      = installconfig.GetModuleValidationErrorMessage("OneAgent")
 	errorActiveGateModuleDisabled    = installconfig.GetModuleValidationErrorMessage("ActiveGate")
 	errorExtensionsModuleDisabled    = installconfig.GetModuleValidationErrorMessage("Extensions")
 	errorLogMonitoringModuleDisabled = installconfig.GetModuleValidationErrorMessage("LogMonitoring")
 	errorKSPMDisabled                = installconfig.GetModuleValidationErrorMessage("KSPM")
 )
+
+func isCSIModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
+	if dk.NeedsCSIDriver() && !v.modules.CSIDriver {
+		return errorCSIModuleDisabled
+	}
+
+	return ""
+}
 
 func isOneAgentModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
 	if dk.NeedsOneAgent() && !v.modules.OneAgent {

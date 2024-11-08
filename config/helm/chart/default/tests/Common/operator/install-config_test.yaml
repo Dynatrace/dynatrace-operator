@@ -17,6 +17,7 @@ tests:
           value:
             modules.json: |
                 {
+                  "csidriver": true,
                   "activeGate": true,
                   "oneAgent": true,
                   "extensions": true,
@@ -27,6 +28,7 @@ tests:
                 }
   - it: ConfigMap should respect the set values
     set:
+      csidriver.enabled: false
       rbac.oneAgent.create: false
       rbac.logMonitoring.create: false
       rbac.edgeConnect.create: false
@@ -48,6 +50,7 @@ tests:
           value:
             modules.json: |
                 {
+                  "csidriver": false,
                   "activeGate": false,
                   "oneAgent": false,
                   "extensions": false,

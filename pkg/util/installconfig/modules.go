@@ -34,6 +34,7 @@ var (
 )
 
 type Modules struct {
+	CSIDriver      bool `json:"csidriver"`
 	ActiveGate     bool `json:"activeGate"`
 	OneAgent       bool `json:"oneAgent"`
 	Extensions     bool `json:"extensions"`
@@ -67,4 +68,8 @@ func GetModules() Modules {
 
 func GetModuleValidationErrorMessage(moduleName string) string {
 	return fmt.Sprintf(validationErrorTemplate, moduleName, moduleName)
+}
+
+func GetCSIValidationErrorMessage() string {
+	return fmt.Sprintf(validationErrorTemplate, "csi-driver", "CloudNative")
 }

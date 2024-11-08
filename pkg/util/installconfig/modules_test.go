@@ -29,6 +29,7 @@ func TestGet(t *testing.T) {
 	t.Run("correct env -> set correctly", func(t *testing.T) {
 		jsonValue := `
 		{
+			"csidriver": false,
 			"activeGate": true,
 			"oneAgent": false,
 			"extensions": true,
@@ -38,6 +39,7 @@ func TestGet(t *testing.T) {
 			"kspm": true
 		}`
 		expected := Modules{
+			CSIDriver:      false,
 			ActiveGate:     true,
 			OneAgent:       false,
 			Extensions:     true,
@@ -58,6 +60,7 @@ func TestGet(t *testing.T) {
 	t.Run("run only once", func(t *testing.T) {
 		jsonValue := `
 		{
+			"csidriver": false,
 			"activeGate": true,
 			"oneAgent": false,
 			"extensions": true,
@@ -67,6 +70,7 @@ func TestGet(t *testing.T) {
 			"kspm": true
 		}`
 		expected := Modules{
+			CSIDriver:      false,
 			ActiveGate:     true,
 			OneAgent:       false,
 			Extensions:     true,
