@@ -27,7 +27,7 @@ require (
 	google.golang.org/grpc v1.67.1
 	gopkg.in/yaml.v3 v3.0.1
 	istio.io/api v1.24.0
-	istio.io/client-go v1.23.3
+	istio.io/client-go v1.24.0
 	k8s.io/api v0.31.2
 	k8s.io/apiextensions-apiserver v0.31.2
 	k8s.io/apimachinery v0.31.2
