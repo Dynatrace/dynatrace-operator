@@ -55,7 +55,7 @@ const (
 	WebhookContainerName = "webhook"
 
 	// InstallContainerName is the name used for the install container
-	InstallContainerName = "install-oneagent"
+	InstallContainerName = "dynatrace-operator"
 
 	// AnnotationWorkloadKind is added to any injected pods when the metadata-enrichment feature is enabled
 	AnnotationWorkloadKind = "metadata.dynatrace.com/k8s.workload.kind"
