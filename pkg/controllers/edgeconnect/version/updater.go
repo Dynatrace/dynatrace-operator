@@ -116,5 +116,5 @@ func (u updater) Target() *status.VersionStatus {
 }
 
 func (u updater) IsAutoUpdateEnabled() bool {
-	return u.edgeConnect.Spec.AutoUpdate
+	return u.edgeConnect.IsAutoUpdateEnabled()
 }

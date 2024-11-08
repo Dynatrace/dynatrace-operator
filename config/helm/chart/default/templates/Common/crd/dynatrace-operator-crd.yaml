@@ -4620,7 +4620,6 @@ spec:
                       name. If not specified the setting will be removed from the StatefulSet.
                     type: string
                   replicas:
-                    default: 1
                     description: Amount of replicas for your ActiveGates
                     format: int32
                     type: integer
@@ -4866,7 +4865,6 @@ spec:
                   (https://www.dynatrace.
                 type: string
               dynatraceApiRequestThreshold:
-                default: 15
                 description: Configuration for thresholding Dynatrace API requests.
                 type: integer
               enableIstio:
@@ -4876,17 +4874,12 @@ spec:
                   Disabled by default.
                 type: boolean
               extensions:
-                properties:
-                  enabled:
-                    type: boolean
+                description: |-
+                  When an (empty) ExtensionsSpec is provided, the extensions related components (extensions controller and extensions collector)
+                  are deployed by the operator.
                 type: object
               kspm:
                 description: General configuration about the KSPM feature.
-                properties:
-                  enabled:
-                    type: boolean
-                required:
-                - enabled
                 type: object
               logMonitoring:
                 description: General configuration about the LogMonitoring feature.
@@ -4895,7 +4888,6 @@ spec:
                 description: Configuration for Metadata Enrichment.
                 properties:
                   enabled:
-                    default: false
                     description: Enables MetadataEnrichment, `false` by default.
                     type: boolean
                   namespaceSelector:
@@ -5076,7 +5068,6 @@ spec:
                         type: object
                         x-kubernetes-map-type: atomic
                       useCSIDriver:
-                        default: false
                         description: Set if you want to use the CSIDriver. Don't enable
                           it if you do not have access to Kubernetes nodes or if you
                           lack privileges.
@@ -5106,7 +5097,6 @@ spec:
                         type: array
                         x-kubernetes-list-type: set
                       autoUpdate:
-                        default: true
                         description: |-
                           Disables automatic restarts of OneAgent pods in case a new version is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
                           Enabled by default.
@@ -5384,7 +5374,6 @@ spec:
                         type: array
                         x-kubernetes-list-type: set
                       autoUpdate:
-                        default: true
                         description: |-
                           Disables automatic restarts of OneAgent pods in case a new version is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
                           Enabled by default.
@@ -5777,7 +5766,6 @@ spec:
                         type: array
                         x-kubernetes-list-type: set
                       autoUpdate:
-                        default: true
                         description: |-
                           Disables automatic restarts of OneAgent pods in case a new version is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
                           Enabled by default.
@@ -7161,7 +7149,6 @@ spec:
                           pods
                         type: object
                       replicas:
-                        default: 1
                         description: Number of replicas for your OtelCollector
                         format: int32
                         type: integer
@@ -8326,7 +8313,6 @@ spec:
                   your specific environment UUID
                 type: string
               autoUpdate:
-                default: true
                 description: 'Enables automatic restarts of EdgeConnect pods in case
                   a new version is available (the default value is: true)'
                 type: boolean
@@ -8542,7 +8528,6 @@ spec:
                     type: integer
                 type: object
               replicas:
-                default: 1
                 description: 'Amount of replicas for your EdgeConnect (the default
                   value is: 1)'
                 format: int32
@@ -8607,7 +8592,6 @@ spec:
                     type: object
                 type: object
               serviceAccountName:
-                default: dynatrace-edgeconnect
                 description: ServiceAccountName that allows EdgeConnect to access
                   the Kubernetes API
                 type: string

@@ -15,6 +15,7 @@ import (
 	versions "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
@@ -96,7 +97,7 @@ func TestReconciler(t *testing.T) {
 					},
 				},
 				MetadataEnrichment: dynakube.MetadataEnrichment{
-					Enabled: true,
+					Enabled: address.Of(true),
 					NamespaceSelector: metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							testNamespaceSelectorLabel: testDynakube,
@@ -388,7 +389,7 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 		})
 		rec.enrichmentRulesReconciler = createGenericReconcilerMock(t)
 		rec.monitoredEntitiesReconciler = createGenericReconcilerMock(t)
-		rec.dk.Spec.MetadataEnrichment.Enabled = false
+		rec.dk.Spec.MetadataEnrichment.Enabled = address.Of(false)
 
 		err := rec.setupEnrichmentInjection(context.Background())
 		require.NoError(t, err)
@@ -404,7 +405,7 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 		})
 		rec.enrichmentRulesReconciler = createGenericReconcilerMock(t)
 		rec.monitoredEntitiesReconciler = createGenericReconcilerMock(t)
-		rec.dk.Spec.MetadataEnrichment.Enabled = true
+		rec.dk.Spec.MetadataEnrichment.Enabled = address.Of(true)
 
 		err := rec.setupEnrichmentInjection(context.Background())
 		require.NoError(t, err)

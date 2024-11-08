@@ -10,12 +10,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
-	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,10 +51,6 @@ func (statefulSetBuilder Builder) CreateStatefulSet(mods []builder.Modifier) (*a
 
 	sts, _ := activeGateBuilder.AddModifier(mods...).Build()
 
-	if err := setHash(&sts); err != nil {
-		return nil, err
-	}
-
 	return &sts, nil
 }
 
@@ -87,7 +81,7 @@ func (statefulSetBuilder Builder) getBaseObjectMeta() metav1.ObjectMeta {
 
 func (statefulSetBuilder Builder) getBaseSpec() appsv1.StatefulSetSpec {
 	return appsv1.StatefulSetSpec{
-		Replicas:            &statefulSetBuilder.capability.Properties().Replicas,
+		Replicas:            statefulSetBuilder.capability.Properties().Replicas,
 		PodManagementPolicy: appsv1.ParallelPodManagement,
 		Template: corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
@@ -240,15 +234,4 @@ func nodeAffinity() *corev1.Affinity {
 			},
 		},
 	}
-}
-
-func setHash(sts *appsv1.StatefulSet) error {
-	hash, err := hasher.GenerateHash(sts)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	sts.ObjectMeta.Annotations[hasher.AnnotationHash] = hash
-
-	return nil
 }

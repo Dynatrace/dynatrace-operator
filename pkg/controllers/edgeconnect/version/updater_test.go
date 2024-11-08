@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	registrymock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/oci/registry"
 	"github.com/stretchr/testify/assert"
@@ -121,7 +122,7 @@ func TestReconcileRequired(t *testing.T) {
 
 		edgeConnectTime := metav1.Now()
 		edgeConnect.Status.Version.LastProbeTimestamp = &edgeConnectTime
-		edgeConnect.Spec.AutoUpdate = true
+		edgeConnect.Spec.AutoUpdate = address.Of(true)
 		edgeConnect.Status.Version.ImageID = edgeConnect.Image()
 
 		assert.False(t, updater.RequiresReconcile())
@@ -133,7 +134,7 @@ func TestReconcileRequired(t *testing.T) {
 
 		edgeConnectTime := metav1.NewTime(currentTime.Now().Add(-time.Hour))
 		edgeConnect.Status.Version.LastProbeTimestamp = &edgeConnectTime
-		edgeConnect.Spec.AutoUpdate = true
+		edgeConnect.Spec.AutoUpdate = address.Of(true)
 		edgeConnect.Status.Version.ImageID = edgeConnect.Image()
 
 		assert.True(t, updater.RequiresReconcile())

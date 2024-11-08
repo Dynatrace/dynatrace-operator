@@ -53,8 +53,8 @@ func create(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 				Spec: corev1.PodSpec{
 					Containers:                    []corev1.Container{edgeConnectContainer(ec)},
 					ImagePullSecrets:              prepareImagePullSecrets(ec),
-					ServiceAccountName:            ec.Spec.ServiceAccountName,
-					DeprecatedServiceAccount:      ec.Spec.ServiceAccountName,
+					ServiceAccountName:            ec.GetServiceAccountName(),
+					DeprecatedServiceAccount:      ec.GetServiceAccountName(),
 					TerminationGracePeriodSeconds: address.Of(int64(30)),
 					Volumes:                       prepareVolumes(ec),
 					NodeSelector:                  ec.Spec.NodeSelector,

@@ -1,10 +1,13 @@
 package dynakube
 
 import (
+	"math"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
@@ -30,6 +33,7 @@ func (src *DynaKube) toBase(dst *dynakube.DynaKube) {
 	}
 
 	src.convertMaxMountAttempts(dst)
+	src.convertDynatraceApiRequestThreshold(dst)
 
 	dst.Spec.APIURL = src.Spec.APIURL
 	dst.Spec.Tokens = src.Spec.Tokens
@@ -39,7 +43,17 @@ func (src *DynaKube) toBase(dst *dynakube.DynaKube) {
 	dst.Spec.TrustedCAs = src.Spec.TrustedCAs
 	dst.Spec.NetworkZone = src.Spec.NetworkZone
 	dst.Spec.EnableIstio = src.Spec.EnableIstio
-	dst.Spec.DynatraceApiRequestThreshold = src.Spec.DynatraceApiRequestThreshold
+}
+
+func (src *DynaKube) convertDynatraceApiRequestThreshold(dst *dynakube.DynaKube) {
+	if src.Spec.DynatraceApiRequestThreshold >= 0 {
+		if math.MaxUint16 < src.Spec.DynatraceApiRequestThreshold {
+			dst.Spec.DynatraceApiRequestThreshold = address.Of(uint16(math.MaxUint16))
+		} else {
+			// linting disabled, handled in if
+			dst.Spec.DynatraceApiRequestThreshold = address.Of(uint16(src.Spec.DynatraceApiRequestThreshold)) //nolint:gosec
+		}
+	}
 }
 
 func (src *DynaKube) convertMaxMountAttempts(dst *dynakube.DynaKube) {
@@ -65,7 +79,7 @@ func (src *DynaKube) toOneAgentSpec(dst *dynakube.DynaKube) {
 		dst.Spec.OneAgent.ApplicationMonitoring = &dynakube.ApplicationMonitoringSpec{}
 		dst.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec = *toAppInjectSpec(src.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec)
 		dst.Spec.OneAgent.ApplicationMonitoring.Version = src.Spec.OneAgent.ApplicationMonitoring.Version
-		dst.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver = src.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver
+		dst.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver = &src.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver
 	}
 }
 
@@ -82,7 +96,7 @@ func (src *DynaKube) toActiveGateSpec(dst *dynakube.DynaKube) {
 	dst.Spec.ActiveGate.DNSPolicy = src.Spec.ActiveGate.DNSPolicy
 	dst.Spec.ActiveGate.TopologySpreadConstraints = src.Spec.ActiveGate.TopologySpreadConstraints
 	dst.Spec.ActiveGate.Resources = src.Spec.ActiveGate.Resources
-	dst.Spec.ActiveGate.Replicas = src.Spec.ActiveGate.Replicas
+	dst.Spec.ActiveGate.Replicas = &src.Spec.ActiveGate.Replicas
 	dst.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{}
 
 	for _, capability := range src.Spec.ActiveGate.Capabilities {
@@ -155,7 +169,7 @@ func (src *DynaKube) toActiveGateStatus(dst *dynakube.DynaKube) {
 
 func toHostInjectSpec(src HostInjectSpec) *dynakube.HostInjectSpec {
 	dst := &dynakube.HostInjectSpec{}
-	dst.AutoUpdate = src.AutoUpdate
+	dst.AutoUpdate = &src.AutoUpdate
 
 	dst.OneAgentResources = src.OneAgentResources
 	dst.Args = src.Args
@@ -184,6 +198,6 @@ func toAppInjectSpec(src AppInjectionSpec) *dynakube.AppInjectionSpec {
 }
 
 func (src *DynaKube) toMetadataEnrichment(dst *dynakube.DynaKube) {
-	dst.Spec.MetadataEnrichment.Enabled = src.Spec.MetadataEnrichment.Enabled
+	dst.Spec.MetadataEnrichment.Enabled = &src.Spec.MetadataEnrichment.Enabled
 	dst.Spec.MetadataEnrichment.NamespaceSelector = src.Spec.MetadataEnrichment.NamespaceSelector
 }

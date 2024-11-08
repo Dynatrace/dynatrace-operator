@@ -67,7 +67,7 @@ func TestIsModuleDisabled(t *testing.T) {
 		},
 		{
 			title:           "ecc module disabled but also configured in dk => error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Extensions: dynakube.ExtensionsSpec{Enabled: true}}},
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Extensions: &dynakube.ExtensionsSpec{}}},
 			modules:         installconfig.Modules{Extensions: false},
 			moduleFunc:      isExtensionsModuleDisabled,
 			expectedMessage: errorExtensionsModuleDisabled,
@@ -81,7 +81,7 @@ func TestIsModuleDisabled(t *testing.T) {
 		},
 		{
 			title:           "ecc module enabled and also configured => no error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Extensions: dynakube.ExtensionsSpec{Enabled: true}}},
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Extensions: &dynakube.ExtensionsSpec{}}},
 			modules:         installconfig.Modules{Extensions: true},
 			moduleFunc:      isExtensionsModuleDisabled,
 			expectedMessage: "",

@@ -6,9 +6,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// +kubebuilder:validation:Optional
 type ExtensionsSpec struct {
-	// +kubebuilder:validation:Optional
-	Enabled bool `json:"enabled,omitempty"`
 }
 
 type ExtensionExecutionControllerSpec struct {
@@ -68,7 +67,6 @@ type OpenTelemetryCollectorSpec struct {
 
 	// Number of replicas for your OtelCollector
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=1
 	Replicas *int32 `json:"replicas"`
 
 	// Overrides the default image

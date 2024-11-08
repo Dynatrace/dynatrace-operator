@@ -120,12 +120,16 @@ func (dk *DynaKube) TenantUUIDFromConnectionInfoStatus() (string, error) {
 	return "", errors.New("tenant UUID not available")
 }
 
-func (dk *DynaKube) ApiRequestThreshold() time.Duration {
-	if dk.Spec.DynatraceApiRequestThreshold < 0 {
-		dk.Spec.DynatraceApiRequestThreshold = DefaultMinRequestThresholdMinutes
+func (dk *DynaKube) GetDynatraceApiRequestThreshold() uint16 {
+	if dk.Spec.DynatraceApiRequestThreshold == nil {
+		return DefaultMinRequestThresholdMinutes
 	}
 
-	return time.Duration(dk.Spec.DynatraceApiRequestThreshold) * time.Minute
+	return *dk.Spec.DynatraceApiRequestThreshold
+}
+
+func (dk *DynaKube) ApiRequestThreshold() time.Duration {
+	return time.Duration(dk.GetDynatraceApiRequestThreshold()) * time.Minute
 }
 
 func (dk *DynaKube) IsTokenScopeVerificationAllowed(timeProvider *timeprovider.Provider) bool {

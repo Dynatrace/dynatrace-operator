@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -150,7 +151,7 @@ func compareMovedFields(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 func compareHostInjectSpec(t *testing.T, oldSpec HostInjectSpec, newSpec dynakube.HostInjectSpec) {
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
 	assert.Equal(t, oldSpec.Args, newSpec.Args)
-	assert.Equal(t, *oldSpec.AutoUpdate, newSpec.AutoUpdate)
+	assert.Equal(t, *oldSpec.AutoUpdate, *newSpec.AutoUpdate)
 	assert.Equal(t, oldSpec.DNSPolicy, newSpec.DNSPolicy)
 	assert.Equal(t, oldSpec.Env, newSpec.Env)
 	assert.Equal(t, oldSpec.Image, newSpec.Image)
@@ -174,7 +175,7 @@ func compareCloudNativeSpec(t *testing.T, oldSpec CloudNativeFullStackSpec, newS
 
 func compareApplicationMonitoringSpec(t *testing.T, oldSpec ApplicationMonitoringSpec, newSpec dynakube.ApplicationMonitoringSpec) {
 	compareAppInjectionSpec(t, oldSpec.AppInjectionSpec, newSpec.AppInjectionSpec)
-	assert.Equal(t, *oldSpec.UseCSIDriver, newSpec.UseCSIDriver)
+	assert.Equal(t, *oldSpec.UseCSIDriver, *newSpec.UseCSIDriver)
 	assert.Equal(t, oldSpec.Version, newSpec.Version)
 }
 
@@ -192,7 +193,7 @@ func compareActiveGateSpec(t *testing.T, oldSpec ActiveGateSpec, newSpec activeg
 	assert.Equal(t, oldSpec.TlsSecretName, newSpec.TlsSecretName)
 	assert.Equal(t, oldSpec.TopologySpreadConstraints, newSpec.TopologySpreadConstraints)
 	assert.Equal(t, oldSpec.Group, newSpec.Group)
-	assert.Equal(t, *oldSpec.Replicas, newSpec.Replicas)
+	assert.Equal(t, *oldSpec.Replicas, *newSpec.Replicas)
 
 	if oldSpec.CustomProperties != nil || newSpec.CustomProperties != nil { // necessary so we don't explode with nil pointer when not set
 		require.NotNil(t, oldSpec.CustomProperties)
@@ -269,9 +270,9 @@ func getNewDynakubeBase() dynakube.DynaKube {
 			},
 			TrustedCAs:                   "trusted-ca",
 			NetworkZone:                  "network-zone",
-			DynatraceApiRequestThreshold: 42,
+			DynatraceApiRequestThreshold: address.Of(uint16(42)),
 			MetadataEnrichment: dynakube.MetadataEnrichment{
-				Enabled:           true,
+				Enabled:           address.Of(true),
 				NamespaceSelector: getTestNamespaceSelector(),
 			},
 		},
@@ -285,7 +286,7 @@ func getNewHostInjectSpec() dynakube.HostInjectSpec {
 		Tolerations: []corev1.Toleration{
 			{Key: "host-inject-toleration-key", Operator: "In", Value: "host-inject-toleration-value"},
 		},
-		AutoUpdate: false,
+		AutoUpdate: address.Of(false),
 		DNSPolicy:  corev1.DNSClusterFirstWithHostNet,
 		Annotations: map[string]string{
 			"host-inject-annotation-key": "host-inject-annotation-value",
@@ -342,7 +343,7 @@ func getNewCloudNativeSpec() dynakube.CloudNativeFullStackSpec {
 func getNewApplicationMonitoringSpec() dynakube.ApplicationMonitoringSpec {
 	return dynakube.ApplicationMonitoringSpec{
 		AppInjectionSpec: getNewAppInjectionSpec(),
-		UseCSIDriver:     true,
+		UseCSIDriver:     address.Of(true),
 		Version:          "app-monitoring-version",
 	}
 }
@@ -380,7 +381,7 @@ func getNewActiveGateSpec() activegate.Spec {
 				"activegate-node-selector-key": "activegate-node-selector-value",
 			},
 			Image:    "activegate-image",
-			Replicas: 42,
+			Replicas: address.Of(int32(42)),
 			Group:    "activegate-group",
 			CustomProperties: &value.Source{
 				Value:     "activegate-cp-value",

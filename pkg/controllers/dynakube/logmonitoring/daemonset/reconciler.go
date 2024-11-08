@@ -56,7 +56,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if !r.isMEConfigured() {
-		return errors.New("the status of the DynaKube is missing information about the kubernetes monitored-entity, skipping logmodule deployment")
+		return errors.New("the status of the DynaKube is missing information about the kubernetes monitored-entity, skipping LogMonitoring deployment")
 	}
 
 	ds, err := r.generateDaemonSet()
