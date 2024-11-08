@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
@@ -78,7 +79,7 @@ func checkInjection(deployment *sample.App) features.Func {
 
 		for _, item := range samplePods.Items {
 			require.NotNil(t, item.Spec.InitContainers)
-			require.Equal(t, "dynatrace-operator", item.Spec.InitContainers[0].Name)
+			require.Equal(t, webhook.InstallContainerName, item.Spec.InitContainers[0].Name)
 		}
 
 		return ctx
