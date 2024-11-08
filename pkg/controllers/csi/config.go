@@ -37,7 +37,7 @@ const (
 	UnixUmask = 0000
 )
 
-var MetadataAccessPath = filepath.Join(DataPath, "csi.db")
+var MetadataAccessPath = filepath.Join(DataPath, "csi.db?_journal=WAL")
 
 type CSIOptions struct {
 	NodeId   string

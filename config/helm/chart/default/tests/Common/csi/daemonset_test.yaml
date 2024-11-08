@@ -161,7 +161,7 @@ tests:
                 image: image-name
                 imagePullPolicy: Always
                 livenessProbe:
-                  failureThreshold: 3
+                  failureThreshold: 5
                   httpGet:
                     path: "/livez"
                     port: livez
@@ -169,7 +169,7 @@ tests:
                   initialDelaySeconds: 5
                   periodSeconds: 5
                   successThreshold: 1
-                  timeoutSeconds: 1
+                  timeoutSeconds: 4
                 name: server
                 ports:
                   - containerPort: 10080
@@ -301,6 +301,7 @@ tests:
               - args:
                   - "--csi-address=/csi/csi.sock"
                   - "--health-port=9898"
+                  - "--probe-timeout=4s"
                 command:
                   - livenessprobe
                 image: image-name

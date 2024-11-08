@@ -93,7 +93,7 @@ spec:
               apiVersion: v1
               fieldPath: spec.nodeName
         livenessProbe:
-          failureThreshold: 3
+          failureThreshold: 5
           httpGet:
             path: /livez
             port: livez
@@ -101,7 +101,7 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 5
           successThreshold: 1
-          timeoutSeconds: 1
+          timeoutSeconds: 4
         ports:
         - containerPort: 10080
           name: livez
@@ -209,6 +209,7 @@ spec:
         args:
         - --csi-address=/csi/csi.sock
         - --health-port=9898
+        - --probe-timeout=4s
         command:
         - livenessprobe
         resources:
