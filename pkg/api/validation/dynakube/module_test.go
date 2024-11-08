@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
@@ -105,6 +106,27 @@ func TestIsModuleDisabled(t *testing.T) {
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{LogMonitoring: &logmonitoring.Spec{}}},
 			modules:         installconfig.Modules{LogMonitoring: true},
 			moduleFunc:      isLogMonitoringModuleDisabled,
+			expectedMessage: "",
+		},
+		{
+			title:           "kspm module disabled but also configured in dk => error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Kspm: &kspm.Spec{}}},
+			modules:         installconfig.Modules{KSPM: false},
+			moduleFunc:      isKSPMDisabled,
+			expectedMessage: errorKSPMDisabled,
+		},
+		{
+			title:           "kspm module disabled but not configured => no error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{}},
+			modules:         installconfig.Modules{KSPM: false},
+			moduleFunc:      isKSPMDisabled,
+			expectedMessage: "",
+		},
+		{
+			title:           "kspm module enabled and also configured => no error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Kspm: &kspm.Spec{}}},
+			modules:         installconfig.Modules{KSPM: true},
+			moduleFunc:      isKSPMDisabled,
 			expectedMessage: "",
 		},
 	}

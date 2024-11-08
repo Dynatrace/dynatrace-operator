@@ -34,7 +34,8 @@ func TestGet(t *testing.T) {
 			"extensions": true,
 			"logMonitoring": false,
 			"edgeConnect": true,
-			"supportability": false
+			"supportability": false,
+			"kspm": true
 		}`
 		expected := Modules{
 			ActiveGate:     true,
@@ -43,6 +44,7 @@ func TestGet(t *testing.T) {
 			LogMonitoring:  false,
 			EdgeConnect:    true,
 			Supportability: false,
+			KSPM:           true,
 		}
 
 		t.Setenv(modulesJsonEnv, jsonValue)
@@ -61,7 +63,8 @@ func TestGet(t *testing.T) {
 			"extensions": true,
 			"logMonitoring": false,
 			"edgeConnect": true,
-			"supportability": false
+			"supportability": false,
+			"kspm": true
 		}`
 		expected := Modules{
 			ActiveGate:     true,
@@ -70,6 +73,7 @@ func TestGet(t *testing.T) {
 			LogMonitoring:  false,
 			EdgeConnect:    true,
 			Supportability: false,
+			KSPM:           true,
 		}
 
 		t.Setenv(modulesJsonEnv, jsonValue)

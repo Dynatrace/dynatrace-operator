@@ -12,6 +12,7 @@ var (
 	errorActiveGateModuleDisabled    = installconfig.GetModuleValidationErrorMessage("ActiveGate")
 	errorExtensionsModuleDisabled    = installconfig.GetModuleValidationErrorMessage("Extensions")
 	errorLogMonitoringModuleDisabled = installconfig.GetModuleValidationErrorMessage("LogMonitoring")
+	errorKSPMDisabled                = installconfig.GetModuleValidationErrorMessage("KSPM")
 )
 
 func isOneAgentModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
@@ -41,6 +42,14 @@ func isExtensionsModuleDisabled(_ context.Context, v *Validator, dk *dynakube.Dy
 func isLogMonitoringModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
 	if dk.LogMonitoring().IsEnabled() && !v.modules.LogMonitoring {
 		return errorLogMonitoringModuleDisabled
+	}
+
+	return ""
+}
+
+func isKSPMDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
+	if dk.KSPM().IsEnabled() && !v.modules.KSPM {
+		return errorKSPMDisabled
 	}
 
 	return ""
