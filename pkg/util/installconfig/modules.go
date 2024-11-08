@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	modulesJsonEnv = "modules.json"
+	ModulesJsonEnv = "modules.json"
 
 	validationErrorTemplate = "%s has been disabled during Operator install. The necessary resources for %s to work are not present on the cluster. Redeploy the Operator via Helm with all the necessary resources enabled."
 )
@@ -21,6 +21,7 @@ var (
 	modules Modules
 
 	fallbackModules = Modules{
+		CSIDriver:      true,
 		ActiveGate:     true,
 		OneAgent:       true,
 		Extensions:     true,
@@ -46,21 +47,21 @@ type Modules struct {
 
 func GetModules() Modules {
 	once.Do(func() {
-		modulesJson := os.Getenv(modulesJsonEnv)
+		modulesJson := os.Getenv(ModulesJsonEnv)
 		if modulesJson == "" {
-			log.Info("envvar not set, using default", "envvar", modulesJsonEnv)
+			log.Info("envvar not set, using default", "envvar", ModulesJsonEnv)
 
 			modules = fallbackModules
 		}
 
 		err := json.Unmarshal([]byte(modulesJson), &modules)
 		if err != nil {
-			log.Info("problem unmarshalling envvar content, using default", "envvar", modulesJsonEnv, "err", err)
+			log.Info("problem unmarshalling envvar content, using default", "envvar", ModulesJsonEnv, "err", err)
 
 			modules = fallbackModules
 		}
 
-		log.Info("envvar content read and set", "envvar", modulesJsonEnv, "value", modulesJson)
+		log.Info("envvar content read and set", "envvar", ModulesJsonEnv, "value", modulesJson)
 	})
 
 	return modules
