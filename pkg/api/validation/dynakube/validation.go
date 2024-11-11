@@ -26,6 +26,7 @@ var (
 		isActiveGateModuleDisabled,
 		isExtensionsModuleDisabled,
 		isLogMonitoringModuleDisabled,
+		isKSPMDisabled,
 		isOneAgentModuleDisabled,
 		isOneAgentVersionValid,
 		NoApiUrl,
