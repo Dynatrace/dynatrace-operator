@@ -395,17 +395,10 @@ jobs:
           prerelease: false
           draft: true
           fail_on_unmatched_files: true
-      - name: Checkout index.yaml from main branch
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          ref: main
-          sparse-checkout: config/helm/repos/stable/index.yaml
-          sparse-checkout-cone-mode: false
-          path: origin/main
-      - name: Copy index.yaml file
+      - name: Get index.yaml from main branch
         run: |
-          set -x
-          cp "origin/main/config/helm/repos/stable/index.yaml" "config/helm/repos/stable/index.yaml"
+          git fetch origin main
+          git restore --source origin/main -- config/helm/repos/stable/index.yaml
       - name: Update index helm file
         if: ${{ !contains(github.ref, '-rc.') }}
         env:
