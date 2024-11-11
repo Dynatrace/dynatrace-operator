@@ -3,7 +3,6 @@ package version
 import (
 	"context"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -49,7 +48,7 @@ func TestUpdate(t *testing.T) {
 		require.NoError(t, err)
 
 		// digest should not have been updated due to probe timestamp
-		require.True(t, strings.Contains(edgeConnect.Status.Version.ImageID, fakeDigest))
+		require.Contains(t, edgeConnect.Status.Version.ImageID, fakeDigest)
 	})
 
 	t.Run("custom tag used => registry still used", func(t *testing.T) {

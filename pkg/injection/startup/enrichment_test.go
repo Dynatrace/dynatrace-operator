@@ -47,7 +47,7 @@ func TestCreateEnrichmentFiles(t *testing.T) {
 			require.NoError(t, err)
 			content, err := io.ReadAll(jsonFile)
 			require.NoError(t, err)
-			assert.Equal(t, expectedJson, string(content))
+			assert.JSONEq(t, expectedJson, string(content))
 
 			expectedProps := map[string]string{}
 			err = json.Unmarshal(content, &expectedProps)
@@ -145,7 +145,7 @@ func TestCreateEnrichmentFiles(t *testing.T) {
 			require.NoError(t, err)
 			content, err := io.ReadAll(jsonFile)
 			require.NoError(t, err)
-			assert.Equal(t, expectedJson, string(content))
+			assert.JSONEq(t, expectedJson, string(content))
 
 			expectedProps := map[string]string{}
 			err = json.Unmarshal(content, &expectedProps)

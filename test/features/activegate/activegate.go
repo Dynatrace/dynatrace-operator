@@ -163,7 +163,6 @@ func assertMountPointsExist(ctx context.Context, t *testing.T, resources *resour
 	assert.Empty(t, stdErr)
 
 	for _, mountPoint := range mountPoints {
-		assert.True(t, strings.Contains(stdOut, mountPoint), "mount point not found: '"+mountPoint+"'")
 		assert.Contains(t, stdOut, mountPoint, "mount point not found: '"+mountPoint+"'")
 	}
 }
@@ -212,13 +211,13 @@ func assertExpectedModulesAreActive(t *testing.T, log string) {
 		Warning: modules are printed in random order.
 	*/
 	for _, module := range expectedModules {
-		assert.True(t, strings.Contains(tail[0], module), "ActiveGate module is not active: '"+module+"'")
+		assert.Contains(t, tail[0], module, "ActiveGate module is not active: '"+module+"'")
 	}
 }
 
 func assertProxyUsed(t *testing.T, log, proxyUrl string) {
 	expectedLog := fmt.Sprintf("[HttpClientServiceImpl] Setup proxy server at: %s", proxyUrl)
-	assert.True(t, strings.Contains(log, expectedLog), "ActiveGate doesn't use proxy")
+	assert.Contains(t, log, expectedLog, "ActiveGate doesn't use proxy")
 }
 
 func markExistingContainers(containers *map[string]bool, podContainers []corev1.Container) {
