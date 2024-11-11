@@ -63,12 +63,12 @@ type HostInjectSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Automatically update Agent",order=13,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	AutoUpdate *bool `json:"autoUpdate"`
 
-	// The OneAgent version to be used.
+	// Use a specific OneAgent version. Defaults to the latest version from the Dynatrace cluster.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent version",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Version string `json:"version,omitempty"`
 
-	// Use a custom OneAgent Docker image. Defaults to the image from the Dynatrace cluster.
+	// Use a custom OneAgent image. Defaults to the latest image from the Dynatrace cluster.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image",order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Image string `json:"image,omitempty"`
@@ -133,7 +133,7 @@ type AppInjectionSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=15,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
 	InitResources *corev1.ResourceRequirements `json:"initResources,omitempty"`
 
-	// The OneAgent image that is used to inject into Pods.
+	// Use a custom OneAgent image to download binaries
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="CodeModulesImage",order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	CodeModulesImage string `json:"codeModulesImage,omitempty"`
