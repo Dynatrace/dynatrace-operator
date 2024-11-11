@@ -2,8 +2,11 @@ package dynakube
 
 import (
 	v1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
+
+var isEnabledModules = installconfig.GetModules()
 
 // ConvertFrom converts from the Hub version (v1beta3) to this version (v1beta3).
 func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
@@ -52,7 +55,7 @@ func (dst *DynaKube) fromOneAgentSpec(src *v1beta3.DynaKube) {
 		dst.Spec.OneAgent.ApplicationMonitoring = &ApplicationMonitoringSpec{}
 		dst.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec = *fromAppInjectSpec(src.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec)
 		dst.Spec.OneAgent.ApplicationMonitoring.Version = src.Spec.OneAgent.ApplicationMonitoring.Version
-		dst.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver = src.IsAppMonitoringWithCSI()
+		dst.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver = isEnabledModules.CSIDriver
 	}
 }
 

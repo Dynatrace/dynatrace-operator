@@ -104,7 +104,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{}, err
 	}
 
-	if !dk.NeedsCSIDriver() {
+	if !dk.UseCSIDriver() {
 		log.Info("CSI driver provisioner not needed")
 
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.db.DeleteDynakube(ctx, request.Name)

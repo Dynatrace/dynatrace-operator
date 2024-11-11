@@ -45,7 +45,20 @@ func TestIsModuleDisabled(t *testing.T) {
 			moduleFunc:      isCSIModuleDisabled,
 			expectedMessage: "",
 		},
-
+		{
+			title:           "csi module disabled and app-monitoring configured => no error, as it's optional for app-monitoring",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: dynakube.OneAgentSpec{ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{}}}},
+			modules:         installconfig.Modules{OneAgent: true, CSIDriver: false},
+			moduleFunc:      isCSIModuleDisabled,
+			expectedMessage: "",
+		},
+		{
+			title:           "csi module disabled and host-monitoring configured => no error, as it's optional for host-monitoring",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: dynakube.OneAgentSpec{HostMonitoring: &dynakube.HostInjectSpec{}}}},
+			modules:         installconfig.Modules{OneAgent: true, CSIDriver: true},
+			moduleFunc:      isCSIModuleDisabled,
+			expectedMessage: "",
+		},
 		{
 			title:           "oa module disabled but also configured in dk => error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: dynakube.OneAgentSpec{CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}}}},

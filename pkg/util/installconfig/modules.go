@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
@@ -19,6 +20,9 @@ var (
 	once sync.Once
 
 	modules Modules
+
+	// needed for testing
+	override *Modules
 
 	fallbackModules = Modules{
 		CSIDriver:      true,
@@ -46,6 +50,10 @@ type Modules struct {
 }
 
 func GetModules() Modules {
+	if override != nil {
+		return *override
+	}
+
 	once.Do(func() {
 		modulesJson := os.Getenv(ModulesJsonEnv)
 		if modulesJson == "" {
@@ -65,6 +73,17 @@ func GetModules() Modules {
 	})
 
 	return modules
+}
+
+// SetModulesOverride is a testing function, so you can easily unittest function using the GetModules() func
+func SetModulesOverride(t *testing.T, modules Modules) {
+	t.Helper()
+
+	override = &modules
+
+	t.Cleanup(func() {
+		override = nil
+	})
 }
 
 func GetModuleValidationErrorMessage(moduleName string) string {

@@ -25,9 +25,7 @@ func WithoutCSI(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	appOnlyDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
-		dynakubeComponents.WithApplicationMonitoringSpec(&dynakube.ApplicationMonitoringSpec{
-			UseCSIDriver: address.Of(false),
-		}),
+		dynakubeComponents.WithApplicationMonitoringSpec(&dynakube.ApplicationMonitoringSpec{}),
 	)
 
 	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, appOnlyDynakube)
