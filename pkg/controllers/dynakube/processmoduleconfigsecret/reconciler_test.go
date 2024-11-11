@@ -167,7 +167,7 @@ func checkSecretForValue(t *testing.T, k8sClient client.Client, shouldContain st
 
 	processModuleConfig, ok := secret.Data[SecretKeyProcessModuleConfig]
 	require.True(t, ok)
-	require.True(t, strings.Contains(string(processModuleConfig), shouldContain))
+	require.Contains(t, string(processModuleConfig), shouldContain)
 }
 
 func createDynakube(oneAgentSpec dynakube.OneAgentSpec) *dynakube.DynaKube {

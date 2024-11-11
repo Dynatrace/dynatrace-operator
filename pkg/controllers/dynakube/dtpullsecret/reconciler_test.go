@@ -134,7 +134,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.NotEmpty(t, pullSecret.Data)
 		assert.Contains(t, pullSecret.Data, ".dockerconfigjson")
 		assert.NotEmpty(t, pullSecret.Data[".dockerconfigjson"])
-		assert.Equal(t, expectedJSON, string(pullSecret.Data[".dockerconfigjson"]))
+		assert.JSONEq(t, expectedJSON, string(pullSecret.Data[".dockerconfigjson"]))
 	})
 	t.Run(`Create update secret if data changed`, func(t *testing.T) {
 		expectedJSON := `{"auths":{"test-api-url":{"username":"test-tenant","password":"test-value","auth":"dGVzdC10ZW5hbnQ6dGVzdC12YWx1ZQ=="}}}`
@@ -174,7 +174,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.NotEmpty(t, pullSecret.Data)
 		assert.Contains(t, pullSecret.Data, ".dockerconfigjson")
 		assert.NotEmpty(t, pullSecret.Data[".dockerconfigjson"])
-		assert.Equal(t, expectedJSON, string(pullSecret.Data[".dockerconfigjson"]))
+		assert.JSONEq(t, expectedJSON, string(pullSecret.Data[".dockerconfigjson"]))
 	})
 	t.Run(`Reconciliation only runs every 15 min`, func(t *testing.T) {
 		dk := createTestDynakube()
