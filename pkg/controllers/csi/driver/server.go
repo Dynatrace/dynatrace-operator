@@ -20,9 +20,9 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/url"
 	"os"
 	"runtime"
-	"strings"
 	"time"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
@@ -73,12 +73,14 @@ func (svr *Server) SetupWithManager(mgr ctrl.Manager) error {
 func (svr *Server) Start(ctx context.Context) error {
 	defer metadata.LogAccessOverview(svr.db)
 
-	proto, addr, err := parseEndpoint(svr.opts.Endpoint)
+	endpoint, err := url.Parse(svr.opts.Endpoint)
+	addr := endpoint.Host + endpoint.Path
+
 	if err != nil {
 		return fmt.Errorf("failed to parse endpoint '%s': %w", svr.opts.Endpoint, err)
 	}
 
-	if proto == "unix" {
+	if endpoint.Scheme == "unix" {
 		if err := svr.fs.Remove(addr); err != nil && !os.IsNotExist(err) {
 			return fmt.Errorf("failed to remove old endpoint on '%s': %w", addr, err)
 		}
@@ -89,9 +91,9 @@ func (svr *Server) Start(ctx context.Context) error {
 		hostvolumes.Mode: hostvolumes.NewHostVolumePublisher(svr.fs, svr.mounter, svr.db, svr.path),
 	}
 
-	log.Info("starting listener", "protocol", proto, "address", addr)
+	log.Info("starting listener", "scheme", endpoint.Scheme, "address", addr)
 
-	listener, err := net.Listen(proto, addr)
+	listener, err := net.Listen(endpoint.Scheme, addr)
 	if err != nil {
 		return fmt.Errorf("failed to start server: %w", err)
 	}
@@ -256,15 +258,4 @@ func logGRPC() grpc.UnaryServerInterceptor {
 
 		return resp, err
 	}
-}
-
-func parseEndpoint(ep string) (string, string, error) {
-	if strings.HasPrefix(strings.ToLower(ep), "unix://") || strings.HasPrefix(strings.ToLower(ep), "tcp://") {
-		s := strings.SplitN(ep, "://", 2)
-		if s[1] != "" {
-			return s[0], s[1], nil
-		}
-	}
-
-	return "", "", fmt.Errorf("invalid endpoint: %v", ep)
 }

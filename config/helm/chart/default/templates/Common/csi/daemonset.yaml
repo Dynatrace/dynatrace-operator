@@ -94,7 +94,7 @@ spec:
         {{- end }}
         args:
         - csi-server
-        - --endpoint=unix://csi/csi.sock
+        - --endpoint=unix:/csi/csi.sock
         - --node-id=$(KUBE_NODE_NAME)
         env:
         - name: POD_NAMESPACE
