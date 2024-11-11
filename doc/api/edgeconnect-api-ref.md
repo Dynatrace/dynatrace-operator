@@ -6,7 +6,7 @@
 |:-|:-|:-|:-|
 |`annotations`|Adds additional annotations to the EdgeConnect pods|-|object|
 |`apiServer`|Location of the Dynatrace API to connect to, including your specific environment UUID|-|string|
-|`autoUpdate`|Enables automatic restarts of EdgeConnect pods in case a new version is available (the default value is: true)|True|boolean|
+|`autoUpdate`|Enables automatic restarts of EdgeConnect pods in case a new version is available (the default value is: true)|-|boolean|
 |`caCertsRef`|Adds custom root certificate from a configmap. Put the certificate under certs within your configmap.|-|string|
 |`customPullSecret`|Pull secret for your private registry|-|string|
 |`env`|Adds additional environment variables to the EdgeConnect pods|-|array|
@@ -14,9 +14,9 @@
 |`hostRestrictions`|Restrict outgoing HTTP requests to your internal resources to specified hosts|-|array|
 |`labels`|Adds additional labels to the EdgeConnect pods|-|object|
 |`nodeSelector`|Node selector to control the selection of nodes for the EdgeConnect pods|-|object|
-|`replicas`|Amount of replicas for your EdgeConnect (the default value is: 1)|1|integer|
+|`replicas`|Amount of replicas for your EdgeConnect (the default value is: 1)|-|integer|
 |`resources`|Defines resources requests and limits for single pods|-|object|
-|`serviceAccountName`|ServiceAccountName that allows EdgeConnect to access the Kubernetes API|dynatrace-edgeconnect|string|
+|`serviceAccountName`|ServiceAccountName that allows EdgeConnect to access the Kubernetes API|-|string|
 |`tolerations`|Sets tolerations for the EdgeConnect pods|-|array|
 |`topologySpreadConstraints`|Sets topology spread constraints for the EdgeConnect pods|-|array|
 
