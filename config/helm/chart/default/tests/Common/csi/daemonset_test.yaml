@@ -236,6 +236,9 @@ tests:
                       fieldRef:
                         apiVersion: v1
                         fieldPath: metadata.namespace
+                envFrom:
+                  - configMapRef:
+                      name: install-config
                 image: image-name
                 imagePullPolicy: Always
                 startupProbe:
