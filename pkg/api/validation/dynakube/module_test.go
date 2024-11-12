@@ -173,3 +173,32 @@ func TestIsModuleDisabled(t *testing.T) {
 		})
 	}
 }
+
+func TestIsCSIDriverRequired(t *testing.T) {
+	t.Run("DynaKube with cloud native", func(t *testing.T) {
+		dk := dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: dynakube.OneAgentSpec{CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}}}}
+		assert.True(t, isCSIRequired(&dk))
+	})
+
+	t.Run("DynaKube with host monitoring", func(t *testing.T) {
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					HostMonitoring: &dynakube.HostInjectSpec{},
+				},
+			},
+		}
+		assert.False(t, isCSIRequired(&dk))
+	})
+
+	t.Run("DynaKube with application monitoring", func(t *testing.T) {
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: dynakube.OneAgentSpec{
+					ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{},
+				},
+			},
+		}
+		assert.False(t, isCSIRequired(&dk))
+	})
+}

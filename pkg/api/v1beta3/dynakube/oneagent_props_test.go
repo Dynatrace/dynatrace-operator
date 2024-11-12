@@ -27,92 +27,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestNeedsCSIDriver(t *testing.T) {
-	t.Run("DynaKube with cloud native", func(t *testing.T) {
-		dk := DynaKube{Spec: DynaKubeSpec{OneAgent: OneAgentSpec{CloudNativeFullStack: &CloudNativeFullStackSpec{}}}}
-		assert.True(t, dk.NeedsCSIDriver())
-	})
-
-	t.Run("DynaKube with host monitoring", func(t *testing.T) {
-		dk := DynaKube{
-			Spec: DynaKubeSpec{
-				OneAgent: OneAgentSpec{
-					HostMonitoring: &HostInjectSpec{},
-				},
-			},
-		}
-		assert.False(t, dk.NeedsCSIDriver())
-		assert.True(t, dk.CanUseCSIDriver())
-	})
-
-	t.Run("DynaKube with application monitoring", func(t *testing.T) {
-		dk := DynaKube{
-			Spec: DynaKubeSpec{
-				OneAgent: OneAgentSpec{
-					ApplicationMonitoring: &ApplicationMonitoringSpec{},
-				},
-			},
-		}
-		assert.False(t, dk.NeedsCSIDriver())
-		assert.True(t, dk.CanUseCSIDriver())
-	})
-}
-
-func TestUseCSIDriver(t *testing.T) {
-	t.Run("DynaKube with application monitoring if csi is present", func(t *testing.T) {
-		dk := DynaKube{
-			Spec: DynaKubeSpec{
-				OneAgent: OneAgentSpec{
-					ApplicationMonitoring: &ApplicationMonitoringSpec{},
-				},
-			},
-		}
-		assert.True(t, dk.UseCSIDriver())
-	})
-
-	t.Run("DynaKube with application monitoring if csi is missing", func(t *testing.T) {
-		setupDisabledCSIEnv(t)
-
-		dk := DynaKube{
-			Spec: DynaKubeSpec{
-				OneAgent: OneAgentSpec{
-					ApplicationMonitoring: &ApplicationMonitoringSpec{},
-				},
-			},
-		}
-		assert.False(t, dk.UseCSIDriver())
-	})
-
-	t.Run("DynaKube with cloud native", func(t *testing.T) {
-		dk := DynaKube{Spec: DynaKubeSpec{OneAgent: OneAgentSpec{CloudNativeFullStack: &CloudNativeFullStackSpec{}}}}
-		assert.True(t, dk.UseCSIDriver())
-	})
-
-	t.Run("DynaKube with host monitoring if csi is present", func(t *testing.T) {
-		dk := DynaKube{
-			Spec: DynaKubeSpec{
-				OneAgent: OneAgentSpec{
-					HostMonitoring: &HostInjectSpec{},
-				},
-			},
-		}
-		assert.True(t, dk.UseCSIDriver())
-	})
-
-	t.Run("DynaKube with host monitoring if csi is missing", func(t *testing.T) {
-		setupDisabledCSIEnv(t)
-
-		dk := DynaKube{
-			Spec: DynaKubeSpec{
-				OneAgent: OneAgentSpec{
-					HostMonitoring: &HostInjectSpec{},
-				},
-			},
-		}
-		assert.False(t, dk.UseCSIDriver())
-	})
-}
-
 func TestNeedsReadonlyOneagent(t *testing.T) {
 	t.Run("cloud native fullstack always use readonly host agent", func(t *testing.T) {
 		dk := DynaKube{
@@ -122,7 +36,7 @@ func TestNeedsReadonlyOneagent(t *testing.T) {
 				},
 			},
 		}
-		assert.True(t, dk.NeedsReadOnlyOneAgents())
+		assert.True(t, dk.UseReadOnlyOneAgents())
 	})
 
 	t.Run("host monitoring with readonly host agent", func(t *testing.T) {
@@ -133,7 +47,7 @@ func TestNeedsReadonlyOneagent(t *testing.T) {
 				},
 			},
 		}
-		assert.True(t, dk.NeedsReadOnlyOneAgents())
+		assert.True(t, dk.UseReadOnlyOneAgents())
 	})
 
 	t.Run("host monitoring without readonly host agent", func(t *testing.T) {
@@ -146,7 +60,7 @@ func TestNeedsReadonlyOneagent(t *testing.T) {
 				},
 			},
 		}
-		assert.False(t, dk.NeedsReadOnlyOneAgents())
+		assert.False(t, dk.UseReadOnlyOneAgents())
 	})
 }
 

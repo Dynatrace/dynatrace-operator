@@ -17,7 +17,7 @@ tests:
           value:
             modules.json: |
                 {
-                  "csidriver": true,
+                  "csiDriver": true,
                   "activeGate": true,
                   "oneAgent": true,
                   "extensions": true,
@@ -50,7 +50,7 @@ tests:
           value:
             modules.json: |
                 {
-                  "csidriver": false,
+                  "csiDriver": false,
                   "activeGate": false,
                   "oneAgent": false,
                   "extensions": false,

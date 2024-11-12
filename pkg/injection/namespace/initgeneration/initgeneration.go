@@ -181,7 +181,7 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dk *d
 		InitialConnectRetry: dk.FeatureAgentInitialConnectRetry(),
 		EnforcementMode:     dk.FeatureEnforcementMode(),
 		ReadOnlyCSIDriver:   dk.FeatureReadOnlyCsiVolume(),
-		CSIMode:             dk.UseCSIDriver(),
+		CSIMode:             dk.IsCSIAvailable(),
 	}, nil
 }
 

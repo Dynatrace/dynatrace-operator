@@ -39,7 +39,7 @@ var (
 )
 
 type Modules struct {
-	CSIDriver      bool `json:"csidriver"`
+	CSIDriver      bool `json:"csiDriver"`
 	ActiveGate     bool `json:"activeGate"`
 	OneAgent       bool `json:"oneAgent"`
 	Extensions     bool `json:"extensions"`

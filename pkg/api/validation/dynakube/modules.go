@@ -16,14 +16,6 @@ var (
 	errorKSPMDisabled                = installconfig.GetModuleValidationErrorMessage("KSPM")
 )
 
-func isCSIModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if dk.NeedsCSIDriver() && !v.modules.CSIDriver {
-		return errorCSIModuleDisabled
-	}
-
-	return ""
-}
-
 func isOneAgentModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
 	if dk.NeedsOneAgent() && !v.modules.OneAgent {
 		return errorOneAgentModuleDisabled
@@ -62,4 +54,17 @@ func isKSPMDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) stri
 	}
 
 	return ""
+}
+
+func isCSIModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
+	if isCSIRequired(dk) && !v.modules.CSIDriver {
+		return errorCSIModuleDisabled
+	}
+
+	return ""
+}
+
+// isCSIRequired checks if the provided a DynaKube strictly needs the csi-driver, and no fallbacks exist to provide the same functionality.
+func isCSIRequired(dk *dynakube.DynaKube) bool {
+	return dk.CloudNativeFullstackMode()
 }

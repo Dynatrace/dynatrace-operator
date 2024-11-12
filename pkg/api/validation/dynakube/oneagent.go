@@ -154,7 +154,7 @@ func unsupportedOneAgentImage(_ context.Context, _ *Validator, dk *dynakube.Dyna
 
 func conflictingOneAgentVolumeStorageSettings(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	volumeStorageEnabled, volumeStorageSet := hasOneAgentVolumeStorageEnabled(dk)
-	if dk.NeedsReadOnlyOneAgents() && volumeStorageSet && !volumeStorageEnabled {
+	if dk.UseReadOnlyOneAgents() && volumeStorageSet && !volumeStorageEnabled {
 		return errorVolumeStorageReadOnlyModeConflict
 	}
 

@@ -8,7 +8,7 @@ metadata:
 data:
   modules.json: |
     {
-      "csidriver": {{ .Values.csidriver.enabled }},
+      "csiDriver": {{ .Values.csidriver.enabled }},
       "activeGate": {{ .Values.rbac.activeGate.create }},
       "oneAgent": {{ .Values.rbac.oneAgent.create }},
       "extensions": {{ .Values.rbac.extensions.create }},
