@@ -20,11 +20,17 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func AssessSampleInitContainers(builder *features.FeatureBuilder, sampleApp *sample.App) {
-	builder.Assess("sample apps have working init containers", checkInitContainers(sampleApp))
+// AssessSampleInitContainersOldDk checks old init container name, we need it for an upgrade scenario.
+// more details about rename https://github.com/Dynatrace/dynatrace-operator/pull/4025
+func AssessSampleInitContainersOldDk(builder *features.FeatureBuilder, sampleApp *sample.App) {
+	builder.Assess("sample apps have working init containers", checkInitContainers(sampleApp, "install-oneagent"))
 }
 
-func checkInitContainers(sampleApp *sample.App) features.Func {
+func AssessSampleInitContainers(builder *features.FeatureBuilder, sampleApp *sample.App) {
+	builder.Assess("sample apps have working init containers", checkInitContainers(sampleApp, webhook.InstallContainerName))
+}
+
+func checkInitContainers(sampleApp *sample.App, initContainerName string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
@@ -46,18 +52,18 @@ func checkInitContainers(sampleApp *sample.App) features.Func {
 			var oneAgentInstallContainer *corev1.Container
 
 			for _, initContainer := range podItem.Spec.InitContainers {
-				if initContainer.Name == webhook.InstallContainerName {
+				if initContainer.Name == initContainerName {
 					oneAgentInstallContainer = &initContainer // loop breaks after assignment, memory aliasing is not a problem
 
 					break
 				}
 			}
-			require.NotNil(t, oneAgentInstallContainer, "'%s' pod - '%s' container not found", podItem.Name, webhook.InstallContainerName)
+			require.NotNil(t, oneAgentInstallContainer, "'%s' pod - '%s' container not found", podItem.Name, initContainerName)
 
-			assert.Equal(t, webhook.InstallContainerName, oneAgentInstallContainer.Name)
+			assert.Equal(t, initContainerName, oneAgentInstallContainer.Name)
 
 			logStream, err := clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &corev1.PodLogOptions{
-				Container: webhook.InstallContainerName,
+				Container: initContainerName,
 			}).Stream(ctx)
 
 			require.NoError(t, err)
