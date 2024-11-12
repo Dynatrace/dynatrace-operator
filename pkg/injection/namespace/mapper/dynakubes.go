@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -59,7 +61,20 @@ func (dm DynakubeMapper) UnmapFromDynaKube(namespaces []corev1.Namespace) error 
 		}
 	}
 
-	return nil
+	return dm.cleanup(namespaces)
+}
+func (dm DynakubeMapper) cleanup(namespaces []corev1.Namespace) error {
+	nsList := make([]string, 0, len(namespaces))
+	for _, ns := range namespaces {
+		nsList = append(nsList, ns.Name)
+	}
+
+	err := k8ssecret.Query(dm.client, dm.apiReader, log).DeleteForNamespaces(dm.ctx, consts.AgentInitSecretName, nsList)
+	if err != nil {
+		return err
+	}
+
+	return k8ssecret.Query(dm.client, dm.apiReader, log).DeleteForNamespaces(dm.ctx, consts.EnrichmentEndpointSecretName, nsList)
 }
 
 func (dm DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *dynakube.DynaKubeList) ([]*corev1.Namespace, error) {
