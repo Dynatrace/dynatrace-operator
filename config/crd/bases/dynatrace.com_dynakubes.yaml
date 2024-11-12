@@ -4943,7 +4943,8 @@ spec:
                     nullable: true
                     properties:
                       codeModulesImage:
-                        description: Use a custom OneAgent image to download binaries
+                        description: Use a custom OneAgent CodeModule image to download
+                          binaries.
                         type: string
                       initResources:
                         description: |-
@@ -5060,7 +5061,8 @@ spec:
                           lack privileges.
                         type: boolean
                       version:
-                        description: The OneAgent version to be used.
+                        description: Use a specific OneAgent CodeModule version. Defaults
+                          to the latest version from the Dynatrace cluster.
                         type: string
                     type: object
                   classicFullStack:
@@ -5367,7 +5369,8 @@ spec:
                           Enabled by default.
                         type: boolean
                       codeModulesImage:
-                        description: Use a custom OneAgent image to download binaries
+                        description: Use a custom OneAgent CodeModule image to download
+                          binaries.
                         type: string
                       dnsPolicy:
                         description: Set the DNS Policy for OneAgent pods. For details,
