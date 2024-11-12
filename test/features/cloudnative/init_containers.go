@@ -58,7 +58,7 @@ func checkInitContainers(sampleApp *sample.App) features.Func {
 					break
 				}
 			}
-			require.NotNil(t, oneAgentInstallContainer, "'%s' pod - '%s' container not found", podItem.Name)
+			require.NotNil(t, oneAgentInstallContainer, "'%s' pod - '%s' container not found", podItem.Name, initContainerName)
 
 			assert.Equal(t, initContainerName, oneAgentInstallContainer.Name)
 
