@@ -39,5 +39,5 @@ func extensionControllerPVCStorageDevice(_ context.Context, _ *Validator, dk *dy
 }
 
 func extensionControllerMutuallyExclusivePVCSettings(dk *dynakube.DynaKube) bool {
-	return dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume != nil && *dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume && dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim != nil
+	return dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume && dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim != nil
 }

@@ -5,7 +5,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -94,7 +93,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 								Repository: "a",
 								Tag:        "b",
 							},
-							UseEphemeralVolume:    address.Of(false),
+							UseEphemeralVolume:    false,
 							PersistentVolumeClaim: &corev1.PersistentVolumeClaimSpec{},
 						},
 					},
@@ -114,7 +113,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 								Repository: "a",
 								Tag:        "b",
 							},
-							UseEphemeralVolume: address.Of(true),
+							UseEphemeralVolume: true,
 						},
 					},
 				},
@@ -134,7 +133,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 								Repository: "a",
 								Tag:        "b",
 							},
-							UseEphemeralVolume:    address.Of(true),
+							UseEphemeralVolume:    true,
 							PersistentVolumeClaim: &corev1.PersistentVolumeClaimSpec{},
 						},
 					},

@@ -14,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/persistentvolumeclaimspec"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
 	"golang.org/x/net/context"
@@ -366,7 +365,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 			},
 		}
 
-		if shouldEphemeralVolumeBeUsed(dk) {
+		if dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume {
 			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
 				Name: runtimeVolumeName,
 				VolumeSource: corev1.VolumeSource{
@@ -422,29 +421,25 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 
 func setPersistentVolumeClaim(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	return func(o *appsv1.StatefulSet) {
-		if !shouldEphemeralVolumeBeUsed(dk) {
-			pVCSpec := corev1.PersistentVolumeClaimSpec{
-				AccessModes: []corev1.PersistentVolumeAccessMode{
-					corev1.ReadWriteOnce,
-				},
-				Resources: corev1.VolumeResourceRequirements{
-					Requests: corev1.ResourceList{
-						corev1.ResourceStorage: resource.MustParse("1Gi"),
+		if !dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume {
+			if dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim == nil {
+				o.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: runtimeVolumeName,
+						},
+						Spec: defaultPVCSpec(),
 					},
-				},
-			}
-
-			if !persistentvolumeclaimspec.IsEmpty(dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim) {
-				pVCSpec = *dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim
-			}
-
-			o.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: runtimeVolumeName,
+				}
+			} else {
+				o.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: runtimeVolumeName,
+						},
+						Spec: *dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim,
 					},
-					Spec: pVCSpec,
-				},
+				}
 			}
 
 			o.Spec.PersistentVolumeClaimRetentionPolicy = &appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy{
@@ -455,6 +450,15 @@ func setPersistentVolumeClaim(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet)
 	}
 }
 
-func shouldEphemeralVolumeBeUsed(dk *dynakube.DynaKube) bool {
-	return dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume != nil && *dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume
+func defaultPVCSpec() corev1.PersistentVolumeClaimSpec {
+	return corev1.PersistentVolumeClaimSpec{
+		AccessModes: []corev1.PersistentVolumeAccessMode{
+			corev1.ReadWriteOnce,
+		},
+		Resources: corev1.VolumeResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceStorage: resource.MustParse("1Gi"),
+			},
+		},
+	}
 }

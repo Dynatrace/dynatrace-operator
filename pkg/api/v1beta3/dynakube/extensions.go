@@ -10,9 +10,6 @@ type ExtensionsSpec struct {
 }
 
 type ExtensionExecutionControllerSpec struct {
-	// Selects EmptyDir volume to be storage device
-	// +kubebuilder:validation:Optional
-	UseEphemeralVolume *bool `json:"useEphemeralVolume,omitempty"`
 
 	// Defines storage device
 	// +kubebuilder:validation:Optional
@@ -51,6 +48,9 @@ type ExtensionExecutionControllerSpec struct {
 	// Adds TopologySpreadConstraints for the ExtensionExecutionController pods
 	// +kubebuilder:validation:Optional
 	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+	// Selects EmptyDir volume to be storage device
+	// +kubebuilder:validation:Optional
+	UseEphemeralVolume bool `json:"useEphemeralVolume,omitempty"`
 }
 
 type OpenTelemetryCollectorSpec struct {
