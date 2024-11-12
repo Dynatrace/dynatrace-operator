@@ -20,17 +20,15 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-// AssessSampleInitContainersOldDk checks old init container name, we need it for an upgrade scenario.
+// old init container name, we need it for an upgrade scenario.
 // more details about rename https://github.com/Dynatrace/dynatrace-operator/pull/4025
-func AssessSampleInitContainersOldDk(builder *features.FeatureBuilder, sampleApp *sample.App) {
-	builder.Assess("sample apps have working init containers", checkInitContainers(sampleApp, "install-oneagent"))
-}
+const oldInstallContainerName = "install-oneagent"
 
 func AssessSampleInitContainers(builder *features.FeatureBuilder, sampleApp *sample.App) {
-	builder.Assess("sample apps have working init containers", checkInitContainers(sampleApp, webhook.InstallContainerName))
+	builder.Assess("sample apps have working init containers", checkInitContainers(sampleApp))
 }
 
-func checkInitContainers(sampleApp *sample.App, initContainerName string) features.Func {
+func checkInitContainers(sampleApp *sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
@@ -51,14 +49,16 @@ func checkInitContainers(sampleApp *sample.App, initContainerName string) featur
 
 			var oneAgentInstallContainer *corev1.Container
 
+			var initContainerName string
 			for _, initContainer := range podItem.Spec.InitContainers {
-				if initContainer.Name == initContainerName {
+				if initContainer.Name == oldInstallContainerName || initContainer.Name == webhook.InstallContainerName {
 					oneAgentInstallContainer = &initContainer // loop breaks after assignment, memory aliasing is not a problem
+					initContainerName = initContainer.Name
 
 					break
 				}
 			}
-			require.NotNil(t, oneAgentInstallContainer, "'%s' pod - '%s' container not found", podItem.Name, initContainerName)
+			require.NotNil(t, oneAgentInstallContainer, "'%s' pod - '%s' container not found", podItem.Name)
 
 			assert.Equal(t, initContainerName, oneAgentInstallContainer.Name)
 

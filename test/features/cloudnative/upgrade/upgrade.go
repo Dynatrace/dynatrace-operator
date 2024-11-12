@@ -37,7 +37,7 @@ func Feature(t *testing.T) features.Feature {
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
-	cloudnative.AssessSampleInitContainersOldDk(builder, sampleApp)
+	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 
 	// update to snapshot
 	builder.Assess("upgrade operator", helpers.ToFeatureFunc(operator.InstallViaMake(testDynakube.NeedsCSIDriver()), true))
