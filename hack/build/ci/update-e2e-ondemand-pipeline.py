@@ -3,8 +3,8 @@ import sys
 from ruamel.yaml import YAML
 
 # version file contains a list of strings
-version_file = sys.argv[1]
-ondemand_file = sys.argv[2]
+version_file = "release-branches.txt"
+ondemand_file = ".github/workflows/e2e-tests-ondemand.yaml"
 
 version = ""
 # read versions to list

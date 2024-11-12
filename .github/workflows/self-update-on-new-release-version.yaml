@@ -36,7 +36,7 @@ jobs:
       - name: Update e2e-tests-ondemand.yaml file
         run: |
           source local/.venv/bin/activate
-          python3 hack/build/ci/update-e2e-ondemand-pipeline.py release-branches.txt .github/workflows/e2e-tests-ondemand.yaml
+          python3 hack/build/ci/update-e2e-ondemand-pipeline.py
       - name: Create pull request for updating all files
         uses: peter-evans/create-pull-request@v7
         with:
