@@ -6,20 +6,16 @@
 |:-|:-|:-|:-|
 |`apiUrl`|Dynatrace apiUrl, including the /api path at the end. For SaaS, set YOUR_ENVIRONMENT_ID to your environment ID. For Managed, change the apiUrl address.<br/>For instructions on how to determine the environment ID and how to configure the apiUrl address, see Environment ID (<https://www.dynatrace.|-|string|
 |`customPullSecret`|Defines a custom pull secret in case you use a private registry when pulling images from the Dynatrace environment.<br/>To define a custom pull secret and learn about the expected behavior, see Configure customPullSecret<br/>(<https://www.dynatrace.|-|string|
-|`dynatraceApiRequestThreshold`|Configuration for thresholding Dynatrace API requests.|15|integer|
+|`dynatraceApiRequestThreshold`|Configuration for thresholding Dynatrace API requests.|-|integer|
 |`enableIstio`|When enabled, and if Istio is installed on the Kubernetes environment, Dynatrace Operator will create the corresponding<br/>VirtualService and ServiceEntry objects to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate.<br/>Disabled by default.|-|boolean|
+|`extensions`|When an (empty) ExtensionsSpec is provided, the extensions related components (extensions controller and extensions collector)<br/>are deployed by the operator.|-|object|
+|`kspm`|General configuration about the KSPM feature.|-|object|
 |`logMonitoring`|General configuration about the LogMonitoring feature.|-|object|
 |`networkZone`|Sets a network zone for the OneAgent and ActiveGate pods.|-|string|
 |`proxy`|Set custom proxy settings either directly or from a secret with the field proxy.<br/>Note: Applies to Dynatrace Operator, ActiveGate, and OneAgents.|-|object|
 |`skipCertCheck`|Disable certificate check for the connection between Dynatrace Operator and the Dynatrace Cluster.<br/>Set to true if you want to skip certification validation checks.|-|boolean|
 |`tokens`|Name of the secret holding the tokens used for connecting to Dynatrace.|-|string|
 |`trustedCAs`|Adds custom RootCAs from a configmap. Put the certificate under certs within your configmap.<br/>Note: Applies to Dynatrace Operator, OneAgent and ActiveGate.|-|string|
-
-### .spec.kspm
-
-|Parameter|Description|Default value|Data type|
-|:-|:-|:-|:-|
-|`enabled`||-|boolean|
 
 ### .spec.oneAgent
 
@@ -41,23 +37,17 @@
 |`labels`|Adds additional labels for the ActiveGate pods|-|object|
 |`nodeSelector`|Node selector to control the selection of nodes|-|object|
 |`priorityClassName`|If specified, indicates the pod's priority. Name must be defined by creating a PriorityClass object with that<br/>name. If not specified the setting will be removed from the StatefulSet.|-|string|
-|`replicas`|Amount of replicas for your ActiveGates|1|integer|
+|`replicas`|Amount of replicas for your ActiveGates|-|integer|
 |`resources`|Define resources requests and limits for single ActiveGate pods|-|object|
 |`tlsSecretName`|The name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.<br/>server.p12: certificate+key pair in pkcs12 format<br/>password: passphrase to read server.p12|-|string|
 |`tolerations`|Set tolerations for the ActiveGate pods|-|array|
 |`topologySpreadConstraints`|Adds TopologySpreadConstraints for the ActiveGate pods|-|array|
 
-### .spec.extensions
-
-|Parameter|Description|Default value|Data type|
-|:-|:-|:-|:-|
-|`enabled`||-|boolean|
-
 ### .spec.metadataEnrichment
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
-|`enabled`|Enables MetadataEnrichment, `false` by default.|False|boolean|
+|`enabled`|Enables MetadataEnrichment, `false` by default.|-|boolean|
 |`namespaceSelector`|The namespaces where you want Dynatrace Operator to inject enrichment.|-|object|
 
 ### .spec.oneAgent.hostMonitoring
@@ -66,7 +56,7 @@
 |:-|:-|:-|:-|
 |`annotations`|Add custom OneAgent annotations.|-|object|
 |`args`|Set additional arguments to the OneAgent installer.<br/>For available options, see Linux custom installation (<https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux>).<br/>For the list of limitations, see Limitations (<https://www.dynatrace.|-|array|
-|`autoUpdate`|Disables automatic restarts of OneAgent pods in case a new version is available (<https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto>).<br/>Enabled by default.|True|boolean|
+|`autoUpdate`|Disables automatic restarts of OneAgent pods in case a new version is available (<https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto>).<br/>Enabled by default.|-|boolean|
 |`dnsPolicy`|Set the DNS Policy for OneAgent pods. For details, see Pods DNS Policy (<https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy>).|-|string|
 |`env`|Set additional environment variables for the OneAgent pods.|-|array|
 |`image`|Use a custom OneAgent Docker image. Defaults to the image from the Dynatrace cluster.|-|string|
@@ -98,7 +88,7 @@
 |:-|:-|:-|:-|
 |`annotations`|Add custom OneAgent annotations.|-|object|
 |`args`|Set additional arguments to the OneAgent installer.<br/>For available options, see Linux custom installation (<https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux>).<br/>For the list of limitations, see Limitations (<https://www.dynatrace.|-|array|
-|`autoUpdate`|Disables automatic restarts of OneAgent pods in case a new version is available (<https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto>).<br/>Enabled by default.|True|boolean|
+|`autoUpdate`|Disables automatic restarts of OneAgent pods in case a new version is available (<https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto>).<br/>Enabled by default.|-|boolean|
 |`dnsPolicy`|Set the DNS Policy for OneAgent pods. For details, see Pods DNS Policy (<https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy>).|-|string|
 |`env`|Set additional environment variables for the OneAgent pods.|-|array|
 |`image`|Use a custom OneAgent Docker image. Defaults to the image from the Dynatrace cluster.|-|string|
@@ -116,7 +106,7 @@
 |:-|:-|:-|:-|
 |`annotations`|Add custom OneAgent annotations.|-|object|
 |`args`|Set additional arguments to the OneAgent installer.<br/>For available options, see Linux custom installation (<https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux>).<br/>For the list of limitations, see Limitations (<https://www.dynatrace.|-|array|
-|`autoUpdate`|Disables automatic restarts of OneAgent pods in case a new version is available (<https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto>).<br/>Enabled by default.|True|boolean|
+|`autoUpdate`|Disables automatic restarts of OneAgent pods in case a new version is available (<https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto>).<br/>Enabled by default.|-|boolean|
 |`codeModulesImage`|The OneAgent image that is used to inject into Pods.|-|string|
 |`dnsPolicy`|Set the DNS Policy for OneAgent pods. For details, see Pods DNS Policy (<https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy>).|-|string|
 |`env`|Set additional environment variables for the OneAgent pods.|-|array|
@@ -138,7 +128,7 @@
 |`codeModulesImage`|The OneAgent image that is used to inject into Pods.|-|string|
 |`initResources`|Define resources requests and limits for the initContainer. For details, see Managing resources for containers<br/>(<https://kubernetes.io/docs/concepts/configuration/manage-resources-containers>).|-|object|
 |`namespaceSelector`|Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.<br/>For more information, see Configure monitoring for namespaces and pods (<https://www.dynatrace.|-|object|
-|`useCSIDriver`|Set if you want to use the CSIDriver. Don't enable it if you do not have access to Kubernetes nodes or if you lack privileges.|False|boolean|
+|`useCSIDriver`|Set if you want to use the CSIDriver. Don't enable it if you do not have access to Kubernetes nodes or if you lack privileges.|-|boolean|
 |`version`|The OneAgent version to be used.|-|string|
 
 ### .spec.templates.logMonitoring.imageRef
@@ -154,7 +144,7 @@
 |:-|:-|:-|:-|
 |`annotations`|Adds additional annotations to the OtelCollector pods|-|object|
 |`labels`|Adds additional labels for the OtelCollector pods|-|object|
-|`replicas`|Number of replicas for your OtelCollector|1|integer|
+|`replicas`|Number of replicas for your OtelCollector|-|integer|
 |`resources`|Define resources' requests and limits for single OtelCollector pod|-|object|
 |`tlsRefName`||-|string|
 |`tolerations`|Set tolerations for the OtelCollector pods|-|array|

@@ -4925,8 +4925,6 @@ spec:
                         type: object
                     type: object
                     x-kubernetes-map-type: atomic
-                required:
-                - enabled
                 type: object
               networkZone:
                 description: Sets a network zone for the OneAgent and ActiveGate pods.
