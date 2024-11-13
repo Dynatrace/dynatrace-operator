@@ -4883,6 +4883,18 @@ spec:
                 type: object
               logMonitoring:
                 description: General configuration about the LogMonitoring feature.
+                properties:
+                  ingestRuleMatchers:
+                    items:
+                      properties:
+                        attribute:
+                          type: string
+                        values:
+                          items:
+                            type: string
+                          type: array
+                      type: object
+                    type: array
                 type: object
               metadataEnrichment:
                 description: Configuration for Metadata Enrichment.

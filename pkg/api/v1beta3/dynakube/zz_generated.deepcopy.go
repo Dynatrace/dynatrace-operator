@@ -190,7 +190,7 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 	if in.LogMonitoring != nil {
 		in, out := &in.LogMonitoring, &out.LogMonitoring
 		*out = new(logmonitoring.Spec)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Kspm != nil {
 		in, out := &in.Kspm, &out.Kspm
