@@ -7,6 +7,9 @@ import (
 	io "io"
 
 	dynatrace "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+
+	logmonitoring "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -21,6 +24,66 @@ type Client_Expecter struct {
 
 func (_m *Client) EXPECT() *Client_Expecter {
 	return &Client_Expecter{mock: &_m.Mock}
+}
+
+// CreateLogMonitoringSetting provides a mock function with given fields: ctx, schemaID, scope, clusterName, ingestRuleMatchers
+func (_m *Client) CreateLogMonitoringSetting(ctx context.Context, schemaID string, scope string, clusterName string, ingestRuleMatchers []logmonitoring.IngestRuleMatchers) (string, error) {
+	ret := _m.Called(ctx, schemaID, scope, clusterName, ingestRuleMatchers)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateLogMonitoringSetting")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, []logmonitoring.IngestRuleMatchers) (string, error)); ok {
+		return rf(ctx, schemaID, scope, clusterName, ingestRuleMatchers)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, []logmonitoring.IngestRuleMatchers) string); ok {
+		r0 = rf(ctx, schemaID, scope, clusterName, ingestRuleMatchers)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, []logmonitoring.IngestRuleMatchers) error); ok {
+		r1 = rf(ctx, schemaID, scope, clusterName, ingestRuleMatchers)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Client_CreateLogMonitoringSetting_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateLogMonitoringSetting'
+type Client_CreateLogMonitoringSetting_Call struct {
+	*mock.Call
+}
+
+// CreateLogMonitoringSetting is a helper method to define mock.On call
+//   - ctx context.Context
+//   - schemaID string
+//   - scope string
+//   - clusterName string
+//   - ingestRuleMatchers []logmonitoring.IngestRuleMatchers
+func (_e *Client_Expecter) CreateLogMonitoringSetting(ctx interface{}, schemaID interface{}, scope interface{}, clusterName interface{}, ingestRuleMatchers interface{}) *Client_CreateLogMonitoringSetting_Call {
+	return &Client_CreateLogMonitoringSetting_Call{Call: _e.mock.On("CreateLogMonitoringSetting", ctx, schemaID, scope, clusterName, ingestRuleMatchers)}
+}
+
+func (_c *Client_CreateLogMonitoringSetting_Call) Run(run func(ctx context.Context, schemaID string, scope string, clusterName string, ingestRuleMatchers []logmonitoring.IngestRuleMatchers)) *Client_CreateLogMonitoringSetting_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string), args[4].([]logmonitoring.IngestRuleMatchers))
+	})
+	return _c
+}
+
+func (_c *Client_CreateLogMonitoringSetting_Call) Return(_a0 string, _a1 error) *Client_CreateLogMonitoringSetting_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Client_CreateLogMonitoringSetting_Call) RunAndReturn(run func(context.Context, string, string, string, []logmonitoring.IngestRuleMatchers) (string, error)) *Client_CreateLogMonitoringSetting_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // CreateOrUpdateKubernetesAppSetting provides a mock function with given fields: ctx, scope
@@ -1100,6 +1163,64 @@ func (_c *Client_GetRulesSettings_Call) Return(_a0 dynatrace.GetRulesSettingsRes
 }
 
 func (_c *Client_GetRulesSettings_Call) RunAndReturn(run func(context.Context, string, string) (dynatrace.GetRulesSettingsResponse, error)) *Client_GetRulesSettings_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetSettingsForLogModule provides a mock function with given fields: ctx, monitoredEntity, schemaId
+func (_m *Client) GetSettingsForLogModule(ctx context.Context, monitoredEntity string, schemaId string) (dynatrace.GetLogMonSettingsResponse, error) {
+	ret := _m.Called(ctx, monitoredEntity, schemaId)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetSettingsForLogModule")
+	}
+
+	var r0 dynatrace.GetLogMonSettingsResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (dynatrace.GetLogMonSettingsResponse, error)); ok {
+		return rf(ctx, monitoredEntity, schemaId)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) dynatrace.GetLogMonSettingsResponse); ok {
+		r0 = rf(ctx, monitoredEntity, schemaId)
+	} else {
+		r0 = ret.Get(0).(dynatrace.GetLogMonSettingsResponse)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, monitoredEntity, schemaId)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Client_GetSettingsForLogModule_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetSettingsForLogModule'
+type Client_GetSettingsForLogModule_Call struct {
+	*mock.Call
+}
+
+// GetSettingsForLogModule is a helper method to define mock.On call
+//   - ctx context.Context
+//   - monitoredEntity string
+//   - schemaId string
+func (_e *Client_Expecter) GetSettingsForLogModule(ctx interface{}, monitoredEntity interface{}, schemaId interface{}) *Client_GetSettingsForLogModule_Call {
+	return &Client_GetSettingsForLogModule_Call{Call: _e.mock.On("GetSettingsForLogModule", ctx, monitoredEntity, schemaId)}
+}
+
+func (_c *Client_GetSettingsForLogModule_Call) Run(run func(ctx context.Context, monitoredEntity string, schemaId string)) *Client_GetSettingsForLogModule_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *Client_GetSettingsForLogModule_Call) Return(_a0 dynatrace.GetLogMonSettingsResponse, _a1 error) *Client_GetSettingsForLogModule_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Client_GetSettingsForLogModule_Call) RunAndReturn(run func(context.Context, string, string) (dynatrace.GetLogMonSettingsResponse, error)) *Client_GetSettingsForLogModule_Call {
 	_c.Call.Return(run)
 	return _c
 }
