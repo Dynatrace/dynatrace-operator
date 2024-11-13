@@ -41,7 +41,7 @@ const (
 	LogMonitoringSettingsSchemaId = "builtin:logmonitoring.log-storage-settings"
 )
 
-func (dtc *dynatraceClient) performCreateLogMonSetting(ctx context.Context, body []posLogMonSettingsBody) (string, error) {
+func (dtc *dynatraceClient) performCreateLogMonSetting(ctx context.Context, body []posLogMonSettingsBody) (string, error) { //nolint:dupl
 	bodyData, err := json.Marshal(body)
 	if err != nil {
 		return "", err
