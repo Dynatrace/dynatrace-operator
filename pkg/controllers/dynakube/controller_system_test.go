@@ -384,6 +384,7 @@ func createDTMockClient(t *testing.T, paasTokenScopes, apiTokenScopes dtclient.T
 		Return(dtclient.GetLogMonSettingsResponse{}, nil).Maybe()
 	mockClient.On("CreateLogMonitoringSetting", mock.AnythingOfType("context.backgroundCtx"), "builtin:logmonitoring.log-storage-settings", "KUBERNETES_CLUSTER-0E30FE4BF2007587", "operator test entity 1", []logmonitoring.IngestRuleMatchers{}).
 		Return(testObjectID, nil).Maybe()
+
 	return mockClient
 }
 

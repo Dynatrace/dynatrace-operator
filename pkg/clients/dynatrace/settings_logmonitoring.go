@@ -19,10 +19,10 @@ type IngestRuleMatchers struct {
 }
 
 type Value struct {
-	Enabled  bool                 `json:"enabled,omitempty"`
 	Title    string               `json:"config-item-title,omitempty"`
-	Storage  bool                 `json:"send-to-storage,omitempty"`
 	Matchers []IngestRuleMatchers `json:"matchers,omitempty"`
+	Enabled  bool                 `json:"enabled,omitempty"`
+	Storage  bool                 `json:"send-to-storage,omitempty"`
 }
 
 type Item struct {
@@ -31,10 +31,10 @@ type Item struct {
 }
 
 type posLogMonSettingsBody struct {
-	Value         Value  `json:"value"`
 	SchemaId      string `json:"schemaId"`
 	SchemaVersion string `json:"schemaVersion"`
 	Scope         string `json:"scope,omitempty"`
+	Value         Value  `json:"value"`
 }
 
 const (
@@ -85,6 +85,7 @@ func (dtc *dynatraceClient) performCreateLogMonSetting(ctx context.Context, body
 
 func createBaseLogMonSettings(clusterName, schemaId string, schemaVersion string, scope string, ingestRuleMatchers []logmonitoring.IngestRuleMatchers) posLogMonSettingsBody {
 	matchers := []IngestRuleMatchers{}
+
 	if len(ingestRuleMatchers) > 0 {
 		for _, ingestRuleMatcher := range ingestRuleMatchers {
 			matcher := IngestRuleMatchers{

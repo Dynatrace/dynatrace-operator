@@ -28,8 +28,8 @@ type GetSettingsResponse struct {
 }
 
 type GetLogMonSettingsResponse struct {
-	TotalCount int    `json:"totalCount"`
 	Items      []Item `json:"items"`
+	TotalCount int    `json:"totalCount"`
 }
 
 type postSettingsResponse struct {

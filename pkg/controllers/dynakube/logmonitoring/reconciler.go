@@ -84,6 +84,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		if len(r.dk.LogMonitoring().IngestRuleMatchers) > 0 {
 			matchers = r.dk.LogMonitoring().IngestRuleMatchers
 		}
+
 		objectId, err := r.dtc.CreateLogMonitoringSetting(ctx, dtclient.LogMonitoringSettingsSchemaId, r.dk.Status.KubernetesClusterMEID, r.dk.Status.KubernetesClusterName, matchers)
 
 		if err != nil {

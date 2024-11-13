@@ -22,6 +22,7 @@ func TestDynatraceClient_CreateLogMonitoringSetting(t *testing.T) {
 				LogMonitoring: &logmonitoring.Spec{},
 			},
 		}
+
 		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createKubernetesSettingsMockParams(1, testObjectID, http.StatusOK)))
 		defer dynatraceServer.Close()
 
@@ -55,6 +56,7 @@ func TestDynatraceClient_CreateLogMonitoringSetting(t *testing.T) {
 				},
 			},
 		}
+
 		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createKubernetesSettingsMockParams(1, testObjectID, http.StatusOK)))
 		defer dynatraceServer.Close()
 
