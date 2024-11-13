@@ -4953,8 +4953,8 @@ spec:
                     nullable: true
                     properties:
                       codeModulesImage:
-                        description: The OneAgent image that is used to inject into
-                          Pods.
+                        description: Use a custom OneAgent CodeModule image to download
+                          binaries.
                         type: string
                       initResources:
                         description: |-
@@ -5071,7 +5071,8 @@ spec:
                           lack privileges.
                         type: boolean
                       version:
-                        description: The OneAgent version to be used.
+                        description: Use a specific OneAgent CodeModule version. Defaults
+                          to the latest version from the Dynatrace cluster.
                         type: string
                     type: object
                   classicFullStack:
@@ -5221,8 +5222,8 @@ spec:
                           type: object
                         type: array
                       image:
-                        description: Use a custom OneAgent Docker image. Defaults
-                          to the image from the Dynatrace cluster.
+                        description: Use a custom OneAgent image. Defaults to the
+                          latest image from the Dynatrace cluster.
                         type: string
                       labels:
                         additionalProperties:
@@ -5347,7 +5348,8 @@ spec:
                           type: object
                         type: array
                       version:
-                        description: The OneAgent version to be used.
+                        description: Use a specific OneAgent version. Defaults to
+                          the latest version from the Dynatrace cluster.
                         type: string
                     type: object
                   cloudNativeFullStack:
@@ -5377,8 +5379,8 @@ spec:
                           Enabled by default.
                         type: boolean
                       codeModulesImage:
-                        description: The OneAgent image that is used to inject into
-                          Pods.
+                        description: Use a custom OneAgent CodeModule image to download
+                          binaries.
                         type: string
                       dnsPolicy:
                         description: Set the DNS Policy for OneAgent pods. For details,
@@ -5502,8 +5504,8 @@ spec:
                           type: object
                         type: array
                       image:
-                        description: Use a custom OneAgent Docker image. Defaults
-                          to the image from the Dynatrace cluster.
+                        description: Use a custom OneAgent image. Defaults to the
+                          latest image from the Dynatrace cluster.
                         type: string
                       initResources:
                         description: |-
@@ -5737,7 +5739,8 @@ spec:
                           type: object
                         type: array
                       version:
-                        description: The OneAgent version to be used.
+                        description: Use a specific OneAgent version. Defaults to
+                          the latest version from the Dynatrace cluster.
                         type: string
                     type: object
                   hostGroup:
@@ -5890,8 +5893,8 @@ spec:
                           type: object
                         type: array
                       image:
-                        description: Use a custom OneAgent Docker image. Defaults
-                          to the image from the Dynatrace cluster.
+                        description: Use a custom OneAgent image. Defaults to the
+                          latest image from the Dynatrace cluster.
                         type: string
                       labels:
                         additionalProperties:
@@ -6016,7 +6019,8 @@ spec:
                           type: object
                         type: array
                       version:
-                        description: The OneAgent version to be used.
+                        description: Use a specific OneAgent version. Defaults to
+                          the latest version from the Dynatrace cluster.
                         type: string
                     type: object
                 type: object
