@@ -27,6 +27,11 @@ type GetSettingsResponse struct {
 	TotalCount int `json:"totalCount"`
 }
 
+type GetLogMonSettingsResponse struct {
+	TotalCount int    `json:"totalCount"`
+	Items      []Item `json:"items"`
+}
+
 type postSettingsResponse struct {
 	ObjectId string `json:"objectId"`
 }
@@ -113,6 +118,40 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(ctx context.Context,
 	err = dtc.unmarshalToJson(res, &resDataJson)
 	if err != nil {
 		return GetSettingsResponse{}, fmt.Errorf("error parsing response body: %w", err)
+	}
+
+	return resDataJson, nil
+}
+
+func (dtc *dynatraceClient) GetSettingsForLogModule(ctx context.Context, monitoredEntity, schemaId string) (GetLogMonSettingsResponse, error) {
+	if len(monitoredEntity) < 1 {
+		return GetLogMonSettingsResponse{TotalCount: 0}, nil
+	}
+
+	req, err := createBaseRequest(ctx, dtc.getSettingsUrl(true), http.MethodGet, dtc.apiToken, nil)
+	if err != nil {
+		return GetLogMonSettingsResponse{}, err
+	}
+
+	q := req.URL.Query()
+	q.Add(schemaIDsQueryParam, schemaId)
+	q.Add(scopesQueryParam, monitoredEntity)
+	req.URL.RawQuery = q.Encode()
+
+	res, err := dtc.httpClient.Do(req)
+	defer utils.CloseBodyAfterRequest(res)
+
+	if err != nil {
+		log.Info("failed to retrieve logmonitoring settings")
+
+		return GetLogMonSettingsResponse{}, err
+	}
+
+	var resDataJson GetLogMonSettingsResponse
+
+	err = dtc.unmarshalToJson(res, &resDataJson)
+	if err != nil {
+		return GetLogMonSettingsResponse{}, fmt.Errorf("error parsing response body: %w", err)
 	}
 
 	return resDataJson, nil
