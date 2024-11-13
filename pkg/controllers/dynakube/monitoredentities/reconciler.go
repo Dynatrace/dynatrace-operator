@@ -68,7 +68,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 func findLatestEntity(monitoredEntities []dynatrace.MonitoredEntity) dynatrace.MonitoredEntity {
 	latest := monitoredEntities[0]
 	for _, entity := range monitoredEntities {
-		if entity.LastSeenTms < latest.LastSeenTms {
+		if entity.LastSeenTms > latest.LastSeenTms {
 			latest = entity
 		}
 	}
