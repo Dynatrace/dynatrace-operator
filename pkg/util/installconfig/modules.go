@@ -89,7 +89,3 @@ func SetModulesOverride(t *testing.T, modules Modules) {
 func GetModuleValidationErrorMessage(moduleName string) string {
 	return fmt.Sprintf(validationErrorTemplate, moduleName, moduleName)
 }
-
-func GetCSIValidationErrorMessage() string {
-	return fmt.Sprintf(validationErrorTemplate, "csi-driver", "CloudNative")
-}

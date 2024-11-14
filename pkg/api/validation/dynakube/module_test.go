@@ -29,7 +29,7 @@ func TestIsModuleDisabled(t *testing.T) {
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: dynakube.OneAgentSpec{CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}}}},
 			modules:         installconfig.Modules{OneAgent: true, CSIDriver: false},
 			moduleFunc:      isCSIModuleDisabled,
-			expectedMessage: errorCSIModuleDisabled,
+			expectedMessage: errorCSIModuleRequired,
 		},
 		{
 			title:           "csi module disabled but not configured => no error",

@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	errorCSIModuleDisabled           = installconfig.GetCSIValidationErrorMessage()
+	errorCSIModuleRequired           = "CSI Driver was disabled during Operator install. It is a necessary resource for Cloud Native Fullstack to work. Redeploy the Operator via Helm with the CSI-driver enabled."
 	errorOneAgentModuleDisabled      = installconfig.GetModuleValidationErrorMessage("OneAgent")
 	errorActiveGateModuleDisabled    = installconfig.GetModuleValidationErrorMessage("ActiveGate")
 	errorExtensionsModuleDisabled    = installconfig.GetModuleValidationErrorMessage("Extensions")
@@ -58,7 +58,7 @@ func isKSPMDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) stri
 
 func isCSIModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
 	if isCSIRequired(dk) && !v.modules.CSIDriver {
-		return errorCSIModuleDisabled
+		return errorCSIModuleRequired
 	}
 
 	return ""
