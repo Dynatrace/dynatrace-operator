@@ -59,22 +59,19 @@ func (dm DynakubeMapper) UnmapFromDynaKube(namespaces []corev1.Namespace) error 
 		if err := dm.client.Update(dm.ctx, &namespaces[i]); err != nil {
 			return errors.WithMessagef(err, "failed to remove label %s from namespace %s", dtwebhook.InjectionInstanceLabel, ns.Name)
 		}
+
+		err := k8ssecret.Query(dm.client, dm.apiReader, log).DeleteForNamespace(dm.ctx, consts.AgentInitSecretName, ns.Name)
+		if err != nil {
+			return err
+		}
+
+		err = k8ssecret.Query(dm.client, dm.apiReader, log).DeleteForNamespace(dm.ctx, consts.EnrichmentEndpointSecretName, ns.Name)
+		if err != nil {
+			return err
+		}
 	}
 
-	return dm.cleanup(namespaces)
-}
-func (dm DynakubeMapper) cleanup(namespaces []corev1.Namespace) error {
-	nsList := make([]string, 0, len(namespaces))
-	for _, ns := range namespaces {
-		nsList = append(nsList, ns.Name)
-	}
-
-	err := k8ssecret.Query(dm.client, dm.apiReader, log).DeleteForNamespaces(dm.ctx, consts.AgentInitSecretName, nsList)
-	if err != nil {
-		return err
-	}
-
-	return k8ssecret.Query(dm.client, dm.apiReader, log).DeleteForNamespaces(dm.ctx, consts.EnrichmentEndpointSecretName, nsList)
+	return nil
 }
 
 func (dm DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *dynakube.DynaKubeList) ([]*corev1.Namespace, error) {

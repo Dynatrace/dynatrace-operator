@@ -218,16 +218,22 @@ func (c Generic[T, L]) createOrUpdateForNamespaces(ctx context.Context, object T
 	return goerrors.Join(errs...)
 }
 
+func (c Generic[T, L]) DeleteForNamespace(ctx context.Context, objectName string, namespace string) error {
+	c.Log.Info("deleting object from namespaces", "name", objectName, "namespaces", namespace)
+
+	c.Target.SetName(objectName)
+	c.Target.SetNamespace(namespace)
+
+	return c.Delete(ctx, c.Target)
+}
+
 func (c Generic[T, L]) DeleteForNamespaces(ctx context.Context, objectName string, namespaces []string) error {
 	c.Log.Info("deleting objects from multiple namespaces", "name", objectName, "len(namespaces)", len(namespaces))
 
 	errs := make([]error, 0, len(namespaces))
 
 	for _, namespace := range namespaces {
-		c.Target.SetName(objectName)
-		c.Target.SetNamespace(namespace)
-
-		err := c.Delete(ctx, c.Target)
+		err := c.DeleteForNamespace(ctx, objectName, namespace)
 		if err != nil {
 			errs = append(errs, err)
 		}
