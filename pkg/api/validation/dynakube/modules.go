@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	errorCSIModuleRequired           = "CSI Driver was disabled during Operator install. It is a necessary resource for Cloud Native Fullstack to work. Redeploy the Operator via Helm with the CSI-driver enabled."
+	errorCSIModuleRequired           = "CSI Driver was disabled during Operator install. It is a necessary resource for Cloud Native Fullstack to work. Redeploy the Operator via Helm with the CSI Driver enabled."
 	errorOneAgentModuleDisabled      = installconfig.GetModuleValidationErrorMessage("OneAgent")
 	errorActiveGateModuleDisabled    = installconfig.GetModuleValidationErrorMessage("ActiveGate")
 	errorExtensionsModuleDisabled    = installconfig.GetModuleValidationErrorMessage("Extensions")
