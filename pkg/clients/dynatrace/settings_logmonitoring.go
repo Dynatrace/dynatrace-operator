@@ -18,23 +18,23 @@ type IngestRuleMatchers struct {
 	Values    []string `json:"values,omitempty"`
 }
 
-type Value struct {
-	Title    string               `json:"config-item-title,omitempty"`
-	Matchers []IngestRuleMatchers `json:"matchers,omitempty"`
-	Enabled  bool                 `json:"enabled,omitempty"`
-	Storage  bool                 `json:"send-to-storage,omitempty"`
+type logMonitoringValue struct {
+	ConfigItemTitle string               `json:"config-item-title,omitempty"`
+	Matchers        []IngestRuleMatchers `json:"matchers,omitempty"`
+	Enabled         bool                 `json:"enabled,omitempty"`
+	SendToStorage   bool                 `json:"send-to-storage,omitempty"`
 }
 
-type Item struct {
-	ObjectID string `json:"objectId,omitempty"`
-	Val      Value  `json:"value,omitempty"`
+type logMonitoringItem struct {
+	ObjectID           string             `json:"objectId,omitempty"`
+	LogMonitoringValue logMonitoringValue `json:"value,omitempty"`
 }
 
 type posLogMonSettingsBody struct {
-	SchemaId      string `json:"schemaId"`
-	SchemaVersion string `json:"schemaVersion"`
-	Scope         string `json:"scope,omitempty"`
-	Value         Value  `json:"value"`
+	SchemaId      string             `json:"schemaId"`
+	SchemaVersion string             `json:"schemaVersion"`
+	Scope         string             `json:"scope,omitempty"`
+	Value         logMonitoringValue `json:"value"`
 }
 
 const (
@@ -100,11 +100,11 @@ func createBaseLogMonSettings(clusterName, schemaId string, schemaVersion string
 	base := posLogMonSettingsBody{
 		SchemaId:      schemaId,
 		SchemaVersion: schemaVersion,
-		Value: Value{
-			Storage:  true,
-			Enabled:  true,
-			Title:    clusterName,
-			Matchers: matchers,
+		Value: logMonitoringValue{
+			SendToStorage:   true,
+			Enabled:         true,
+			ConfigItemTitle: clusterName,
+			Matchers:        matchers,
 		},
 	}
 
