@@ -77,7 +77,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) checkLogMonitoringSettings(ctx context.Context) error {
-	logMonitoringSettings, err := r.dtc.GetSettingsForLogModule(ctx, r.dk.Status.KubernetesClusterMEID, dtclient.LogMonitoringSettingsSchemaId)
+	logMonitoringSettings, err := r.dtc.GetSettingsForLogModule(ctx, r.dk.Status.KubernetesClusterMEID)
 	if err != nil {
 		return errors.WithMessage(err, "error trying to check if setting exists")
 	}
@@ -94,7 +94,7 @@ func (r *Reconciler) checkLogMonitoringSettings(ctx context.Context) error {
 			matchers = r.dk.LogMonitoring().IngestRuleMatchers
 		}
 
-		objectId, err := r.dtc.CreateLogMonitoringSetting(ctx, dtclient.LogMonitoringSettingsSchemaId, r.dk.Status.KubernetesClusterMEID, r.dk.Status.KubernetesClusterName, matchers)
+		objectId, err := r.dtc.CreateLogMonitoringSetting(ctx, r.dk.Status.KubernetesClusterMEID, r.dk.Status.KubernetesClusterName, matchers)
 
 		if err != nil {
 			return errors.WithMessage(err, "error when creating log monitoring setting")

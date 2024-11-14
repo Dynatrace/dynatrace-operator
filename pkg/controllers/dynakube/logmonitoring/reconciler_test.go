@@ -64,9 +64,9 @@ func TestReconcile(t *testing.T) {
 			},
 		}
 		mockClient := dtclientmock.NewClient(t)
-		mockClient.On("GetSettingsForLogModule", mock.AnythingOfType("context.backgroundCtx"), "meid", mock.AnythingOfType("string")).
+		mockClient.On("GetSettingsForLogModule", mock.AnythingOfType("context.backgroundCtx"), "meid").
 			Return(dtclient.GetLogMonSettingsResponse{}, nil).Maybe()
-		mockClient.On("CreateLogMonitoringSetting", mock.AnythingOfType("context.backgroundCtx"), "builtin:logmonitoring.log-storage-settings", "meid", "cluster-name", []logmonitoring.IngestRuleMatchers{}).
+		mockClient.On("CreateLogMonitoringSetting", mock.AnythingOfType("context.backgroundCtx"), "meid", "cluster-name", []logmonitoring.IngestRuleMatchers{}).
 			Return("test-object-id", nil).Maybe()
 
 		passMonitoredEntity := createPassingMonitoredEntityReconciler(t, dk)

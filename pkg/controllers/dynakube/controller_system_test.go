@@ -380,9 +380,9 @@ func createDTMockClient(t *testing.T, paasTokenScopes, apiTokenScopes dtclient.T
 		}, nil).Maybe()
 	mockClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).
 		Return(&dtclient.ProcessModuleConfig{}, nil).Maybe()
-	mockClient.On("GetSettingsForLogModule", mock.AnythingOfType("context.backgroundCtx"), "KUBERNETES_CLUSTER-0E30FE4BF2007587", mock.AnythingOfType("string")).
+	mockClient.On("GetSettingsForLogModule", mock.AnythingOfType("context.backgroundCtx"), "KUBERNETES_CLUSTER-0E30FE4BF2007587").
 		Return(dtclient.GetLogMonSettingsResponse{}, nil).Maybe()
-	mockClient.On("CreateLogMonitoringSetting", mock.AnythingOfType("context.backgroundCtx"), "builtin:logmonitoring.log-storage-settings", "KUBERNETES_CLUSTER-0E30FE4BF2007587", "operator test entity 1", []logmonitoring.IngestRuleMatchers{}).
+	mockClient.On("CreateLogMonitoringSetting", mock.AnythingOfType("context.backgroundCtx"), "KUBERNETES_CLUSTER-0E30FE4BF2007587", "operator test entity 1", []logmonitoring.IngestRuleMatchers{}).
 		Return(testObjectID, nil).Maybe()
 
 	return mockClient

@@ -26,9 +26,9 @@ func (_m *Client) EXPECT() *Client_Expecter {
 	return &Client_Expecter{mock: &_m.Mock}
 }
 
-// CreateLogMonitoringSetting provides a mock function with given fields: ctx, schemaID, scope, clusterName, ingestRuleMatchers
-func (_m *Client) CreateLogMonitoringSetting(ctx context.Context, schemaID string, scope string, clusterName string, ingestRuleMatchers []logmonitoring.IngestRuleMatchers) (string, error) {
-	ret := _m.Called(ctx, schemaID, scope, clusterName, ingestRuleMatchers)
+// CreateLogMonitoringSetting provides a mock function with given fields: ctx, scope, clusterName, ingestRuleMatchers
+func (_m *Client) CreateLogMonitoringSetting(ctx context.Context, scope string, clusterName string, ingestRuleMatchers []logmonitoring.IngestRuleMatchers) (string, error) {
+	ret := _m.Called(ctx, scope, clusterName, ingestRuleMatchers)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateLogMonitoringSetting")
@@ -36,17 +36,17 @@ func (_m *Client) CreateLogMonitoringSetting(ctx context.Context, schemaID strin
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, []logmonitoring.IngestRuleMatchers) (string, error)); ok {
-		return rf(ctx, schemaID, scope, clusterName, ingestRuleMatchers)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, []logmonitoring.IngestRuleMatchers) (string, error)); ok {
+		return rf(ctx, scope, clusterName, ingestRuleMatchers)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, []logmonitoring.IngestRuleMatchers) string); ok {
-		r0 = rf(ctx, schemaID, scope, clusterName, ingestRuleMatchers)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, []logmonitoring.IngestRuleMatchers) string); ok {
+		r0 = rf(ctx, scope, clusterName, ingestRuleMatchers)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, []logmonitoring.IngestRuleMatchers) error); ok {
-		r1 = rf(ctx, schemaID, scope, clusterName, ingestRuleMatchers)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, []logmonitoring.IngestRuleMatchers) error); ok {
+		r1 = rf(ctx, scope, clusterName, ingestRuleMatchers)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -61,17 +61,16 @@ type Client_CreateLogMonitoringSetting_Call struct {
 
 // CreateLogMonitoringSetting is a helper method to define mock.On call
 //   - ctx context.Context
-//   - schemaID string
 //   - scope string
 //   - clusterName string
 //   - ingestRuleMatchers []logmonitoring.IngestRuleMatchers
-func (_e *Client_Expecter) CreateLogMonitoringSetting(ctx interface{}, schemaID interface{}, scope interface{}, clusterName interface{}, ingestRuleMatchers interface{}) *Client_CreateLogMonitoringSetting_Call {
-	return &Client_CreateLogMonitoringSetting_Call{Call: _e.mock.On("CreateLogMonitoringSetting", ctx, schemaID, scope, clusterName, ingestRuleMatchers)}
+func (_e *Client_Expecter) CreateLogMonitoringSetting(ctx interface{}, scope interface{}, clusterName interface{}, ingestRuleMatchers interface{}) *Client_CreateLogMonitoringSetting_Call {
+	return &Client_CreateLogMonitoringSetting_Call{Call: _e.mock.On("CreateLogMonitoringSetting", ctx, scope, clusterName, ingestRuleMatchers)}
 }
 
-func (_c *Client_CreateLogMonitoringSetting_Call) Run(run func(ctx context.Context, schemaID string, scope string, clusterName string, ingestRuleMatchers []logmonitoring.IngestRuleMatchers)) *Client_CreateLogMonitoringSetting_Call {
+func (_c *Client_CreateLogMonitoringSetting_Call) Run(run func(ctx context.Context, scope string, clusterName string, ingestRuleMatchers []logmonitoring.IngestRuleMatchers)) *Client_CreateLogMonitoringSetting_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string), args[4].([]logmonitoring.IngestRuleMatchers))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].([]logmonitoring.IngestRuleMatchers))
 	})
 	return _c
 }
@@ -81,7 +80,7 @@ func (_c *Client_CreateLogMonitoringSetting_Call) Return(_a0 string, _a1 error) 
 	return _c
 }
 
-func (_c *Client_CreateLogMonitoringSetting_Call) RunAndReturn(run func(context.Context, string, string, string, []logmonitoring.IngestRuleMatchers) (string, error)) *Client_CreateLogMonitoringSetting_Call {
+func (_c *Client_CreateLogMonitoringSetting_Call) RunAndReturn(run func(context.Context, string, string, []logmonitoring.IngestRuleMatchers) (string, error)) *Client_CreateLogMonitoringSetting_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1167,9 +1166,9 @@ func (_c *Client_GetRulesSettings_Call) RunAndReturn(run func(context.Context, s
 	return _c
 }
 
-// GetSettingsForLogModule provides a mock function with given fields: ctx, monitoredEntity, schemaId
-func (_m *Client) GetSettingsForLogModule(ctx context.Context, monitoredEntity string, schemaId string) (dynatrace.GetLogMonSettingsResponse, error) {
-	ret := _m.Called(ctx, monitoredEntity, schemaId)
+// GetSettingsForLogModule provides a mock function with given fields: ctx, monitoredEntity
+func (_m *Client) GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (dynatrace.GetLogMonSettingsResponse, error) {
+	ret := _m.Called(ctx, monitoredEntity)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetSettingsForLogModule")
@@ -1177,17 +1176,17 @@ func (_m *Client) GetSettingsForLogModule(ctx context.Context, monitoredEntity s
 
 	var r0 dynatrace.GetLogMonSettingsResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (dynatrace.GetLogMonSettingsResponse, error)); ok {
-		return rf(ctx, monitoredEntity, schemaId)
+	if rf, ok := ret.Get(0).(func(context.Context, string) (dynatrace.GetLogMonSettingsResponse, error)); ok {
+		return rf(ctx, monitoredEntity)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) dynatrace.GetLogMonSettingsResponse); ok {
-		r0 = rf(ctx, monitoredEntity, schemaId)
+	if rf, ok := ret.Get(0).(func(context.Context, string) dynatrace.GetLogMonSettingsResponse); ok {
+		r0 = rf(ctx, monitoredEntity)
 	} else {
 		r0 = ret.Get(0).(dynatrace.GetLogMonSettingsResponse)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, monitoredEntity, schemaId)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, monitoredEntity)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1203,14 +1202,13 @@ type Client_GetSettingsForLogModule_Call struct {
 // GetSettingsForLogModule is a helper method to define mock.On call
 //   - ctx context.Context
 //   - monitoredEntity string
-//   - schemaId string
-func (_e *Client_Expecter) GetSettingsForLogModule(ctx interface{}, monitoredEntity interface{}, schemaId interface{}) *Client_GetSettingsForLogModule_Call {
-	return &Client_GetSettingsForLogModule_Call{Call: _e.mock.On("GetSettingsForLogModule", ctx, monitoredEntity, schemaId)}
+func (_e *Client_Expecter) GetSettingsForLogModule(ctx interface{}, monitoredEntity interface{}) *Client_GetSettingsForLogModule_Call {
+	return &Client_GetSettingsForLogModule_Call{Call: _e.mock.On("GetSettingsForLogModule", ctx, monitoredEntity)}
 }
 
-func (_c *Client_GetSettingsForLogModule_Call) Run(run func(ctx context.Context, monitoredEntity string, schemaId string)) *Client_GetSettingsForLogModule_Call {
+func (_c *Client_GetSettingsForLogModule_Call) Run(run func(ctx context.Context, monitoredEntity string)) *Client_GetSettingsForLogModule_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(string))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -1220,7 +1218,7 @@ func (_c *Client_GetSettingsForLogModule_Call) Return(_a0 dynatrace.GetLogMonSet
 	return _c
 }
 
-func (_c *Client_GetSettingsForLogModule_Call) RunAndReturn(run func(context.Context, string, string) (dynatrace.GetLogMonSettingsResponse, error)) *Client_GetSettingsForLogModule_Call {
+func (_c *Client_GetSettingsForLogModule_Call) RunAndReturn(run func(context.Context, string) (dynatrace.GetLogMonSettingsResponse, error)) *Client_GetSettingsForLogModule_Call {
 	_c.Call.Return(run)
 	return _c
 }

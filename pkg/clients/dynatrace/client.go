@@ -70,7 +70,7 @@ type Client interface {
 	CreateOrUpdateKubernetesSetting(ctx context.Context, name, kubeSystemUUID, scope string) (string, error)
 
 	// CreateLogMonitoringSetting returns the object id of the created logmonitoring settings if successful, or an api error otherwise
-	CreateLogMonitoringSetting(ctx context.Context, schemaID, scope, clusterName string, ingestRuleMatchers []logmonitoring.IngestRuleMatchers) (string, error)
+	CreateLogMonitoringSetting(ctx context.Context, scope, clusterName string, ingestRuleMatchers []logmonitoring.IngestRuleMatchers) (string, error)
 
 	// CreateOrUpdateKubernetesAppSetting returns the object id of the created k8s app settings if successful, or an api error otherwise
 	CreateOrUpdateKubernetesAppSetting(ctx context.Context, scope string) (string, error)
@@ -85,7 +85,7 @@ type Client interface {
 
 	// GetSettingsForLogModule returns the settings response with the number of settings objects,
 	// or an api error otherwise
-	GetSettingsForLogModule(ctx context.Context, monitoredEntity, schemaId string) (GetLogMonSettingsResponse, error)
+	GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (GetLogMonSettingsResponse, error)
 
 	GetRulesSettings(ctx context.Context, kubeSystemUUID string, entityID string) (GetRulesSettingsResponse, error)
 

@@ -32,7 +32,7 @@ func TestDynatraceClient_CreateLogMonitoringSetting(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.CreateLogMonitoringSetting(ctx, LogMonitoringSettingsSchemaId, testScope, testName, dynakube.LogMonitoring().IngestRuleMatchers)
+		actual, err := dtc.CreateLogMonitoringSetting(ctx, testScope, testName, dynakube.LogMonitoring().IngestRuleMatchers)
 
 		// assert
 		require.NotNil(t, actual)
@@ -66,7 +66,7 @@ func TestDynatraceClient_CreateLogMonitoringSetting(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.CreateLogMonitoringSetting(ctx, LogMonitoringSettingsSchemaId, testScope, testName, dynakube.LogMonitoring().IngestRuleMatchers)
+		actual, err := dtc.CreateLogMonitoringSetting(ctx, testScope, testName, dynakube.LogMonitoring().IngestRuleMatchers)
 
 		// assert
 		require.NotNil(t, actual)
