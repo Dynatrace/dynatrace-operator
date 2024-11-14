@@ -28,8 +28,8 @@ type GetSettingsResponse struct {
 }
 
 type GetLogMonSettingsResponse struct {
-	Items      []logMonitoringItem `json:"items"`
-	TotalCount int                 `json:"totalCount"`
+	Items      []logMonSettingsItem `json:"items"`
+	TotalCount int                  `json:"totalCount"`
 }
 
 type postSettingsResponse struct {
@@ -123,7 +123,7 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(ctx context.Context,
 	return resDataJson, nil
 }
 
-func (dtc *dynatraceClient) GetSettingsForLogModule(ctx context.Context, monitoredEntity, schemaId string) (GetLogMonSettingsResponse, error) {
+func (dtc *dynatraceClient) GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (GetLogMonSettingsResponse, error) {
 	if len(monitoredEntity) < 1 {
 		return GetLogMonSettingsResponse{TotalCount: 0}, nil
 	}
@@ -134,7 +134,7 @@ func (dtc *dynatraceClient) GetSettingsForLogModule(ctx context.Context, monitor
 	}
 
 	q := req.URL.Query()
-	q.Add(schemaIDsQueryParam, schemaId)
+	q.Add(schemaIDsQueryParam, logMonitoringSettingsSchemaId)
 	q.Add(scopesQueryParam, monitoredEntity)
 	req.URL.RawQuery = q.Encode()
 

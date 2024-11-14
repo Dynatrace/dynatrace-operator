@@ -18,27 +18,27 @@ type IngestRuleMatchers struct {
 	Values    []string `json:"values,omitempty"`
 }
 
-type logMonitoringValue struct {
+type logMonSettingsValue struct {
 	ConfigItemTitle string               `json:"config-item-title,omitempty"`
 	Matchers        []IngestRuleMatchers `json:"matchers,omitempty"`
 	Enabled         bool                 `json:"enabled,omitempty"`
 	SendToStorage   bool                 `json:"send-to-storage,omitempty"`
 }
 
-type logMonitoringItem struct {
-	ObjectID           string             `json:"objectId,omitempty"`
-	LogMonitoringValue logMonitoringValue `json:"value,omitempty"`
+type logMonSettingsItem struct {
+	ObjectID           string              `json:"objectId,omitempty"`
+	LogMonitoringValue logMonSettingsValue `json:"value,omitempty"`
 }
 
 type posLogMonSettingsBody struct {
-	SchemaId      string             `json:"schemaId"`
-	SchemaVersion string             `json:"schemaVersion"`
-	Scope         string             `json:"scope,omitempty"`
-	Value         logMonitoringValue `json:"value"`
+	SchemaId      string              `json:"schemaId"`
+	SchemaVersion string              `json:"schemaVersion"`
+	Scope         string              `json:"scope,omitempty"`
+	Value         logMonSettingsValue `json:"value"`
 }
 
 const (
-	LogMonitoringSettingsSchemaId = "builtin:logmonitoring.log-storage-settings"
+	logMonitoringSettingsSchemaId = "builtin:logmonitoring.log-storage-settings"
 )
 
 func (dtc *dynatraceClient) performCreateLogMonSetting(ctx context.Context, body []posLogMonSettingsBody) (string, error) { //nolint:dupl
@@ -100,7 +100,7 @@ func createBaseLogMonSettings(clusterName, schemaId string, schemaVersion string
 	base := posLogMonSettingsBody{
 		SchemaId:      schemaId,
 		SchemaVersion: schemaVersion,
-		Value: logMonitoringValue{
+		Value: logMonSettingsValue{
 			SendToStorage:   true,
 			Enabled:         true,
 			ConfigItemTitle: clusterName,
@@ -115,8 +115,8 @@ func createBaseLogMonSettings(clusterName, schemaId string, schemaVersion string
 	return base
 }
 
-func (dtc *dynatraceClient) CreateLogMonitoringSetting(ctx context.Context, schemaID, scope, clusterName string, matchers []logmonitoring.IngestRuleMatchers) (string, error) {
-	settings := createBaseLogMonSettings(clusterName, schemaID, "1.0.0", scope, matchers)
+func (dtc *dynatraceClient) CreateLogMonitoringSetting(ctx context.Context, scope, clusterName string, matchers []logmonitoring.IngestRuleMatchers) (string, error) {
+	settings := createBaseLogMonSettings(clusterName, logMonitoringSettingsSchemaId, "1.0.0", scope, matchers)
 
 	objectId, err := dtc.performCreateLogMonSetting(ctx, []posLogMonSettingsBody{settings})
 	if err != nil {
