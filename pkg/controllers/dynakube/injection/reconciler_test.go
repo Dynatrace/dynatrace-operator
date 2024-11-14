@@ -45,8 +45,8 @@ const (
 
 	testHost = "test-host"
 
-	testDynakube   = "test-name"
-	testDynakube2  = "test-name2"
+	testDynakube   = "test-dynakube"
+	testDynakube2  = "test-dynakube2"
 	testNamespace  = "test-namespace"
 	testNamespace2 = "test-namespace2"
 
