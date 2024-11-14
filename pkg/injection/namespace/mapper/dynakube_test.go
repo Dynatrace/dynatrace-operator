@@ -194,9 +194,9 @@ func TestUnmapFromDynaKube(t *testing.T) {
 		require.NoError(t, err)
 
 		var secret corev1.Secret
-		err = clt.Get(ctx, types.NamespacedName{Name: consts.AgentInitSecretName}, &secret)
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.AgentInitSecretName, Namespace: namespace.Name}, &secret)
 		assert.True(t, k8serrors.IsNotFound(err))
-		err = clt.Get(ctx, types.NamespacedName{Name: consts.EnrichmentEndpointSecretName}, &secret)
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.EnrichmentEndpointSecretName, Namespace: namespace.Name}, &secret)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 }
