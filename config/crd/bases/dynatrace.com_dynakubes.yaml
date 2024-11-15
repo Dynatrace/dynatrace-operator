@@ -996,7 +996,7 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.
+                          For the list of limitations, see Limitations (https://www.
                         items:
                           type: string
                         type: array
@@ -1269,7 +1269,7 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.
+                          For the list of limitations, see Limitations (https://www.
                         items:
                           type: string
                         type: array
@@ -1609,7 +1609,7 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.
+                          For the list of limitations, see Limitations (https://www.
                         items:
                           type: string
                         type: array
@@ -3175,7 +3175,7 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.
+                          For the list of limitations, see Limitations (https://www.
                         items:
                           type: string
                         type: array
@@ -3456,7 +3456,7 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.
+                          For the list of limitations, see Limitations (https://www.
                         items:
                           type: string
                         type: array
@@ -3855,7 +3855,7 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.
+                          For the list of limitations, see Limitations (https://www.
                         items:
                           type: string
                         type: array
@@ -5078,7 +5078,7 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.
+                          For the list of limitations, see Limitations (https://www.
                         items:
                           type: string
                         type: array
@@ -5356,7 +5356,7 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.
+                          For the list of limitations, see Limitations (https://www.
                         items:
                           type: string
                         type: array
@@ -5749,7 +5749,7 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.
+                          For the list of limitations, see Limitations (https://www.
                         items:
                           type: string
                         type: array

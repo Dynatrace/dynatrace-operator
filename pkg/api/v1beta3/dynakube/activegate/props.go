@@ -27,6 +27,10 @@ func (ag *Spec) SetExtensionsDependency(isEnabled bool) {
 	ag.enabledDependencies.extensions = isEnabled
 }
 
+func (ag *Spec) SetOTLPIngestDependency(isEnabled bool) {
+	ag.enabledDependencies.otlpIngest = isEnabled
+}
+
 func (ag *Spec) SetKSPMDependency(isEnabled bool) {
 	ag.enabledDependencies.kspm = isEnabled
 }
@@ -97,7 +101,8 @@ func (ag *Spec) NeedsService() bool {
 		ag.IsApiEnabled() ||
 		ag.IsMetricsIngestEnabled() ||
 		ag.enabledDependencies.extensions ||
-		ag.enabledDependencies.kspm
+		ag.enabledDependencies.kspm ||
+		ag.enabledDependencies.otlpIngest
 }
 
 func (ag *Spec) HasCaCert() bool {
