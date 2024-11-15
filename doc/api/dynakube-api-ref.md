@@ -59,14 +59,14 @@
 |`autoUpdate`|Disables automatic restarts of OneAgent pods in case a new version is available (<https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto>).<br/>Enabled by default.|-|boolean|
 |`dnsPolicy`|Set the DNS Policy for OneAgent pods. For details, see Pods DNS Policy (<https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy>).|-|string|
 |`env`|Set additional environment variables for the OneAgent pods.|-|array|
-|`image`|Use a custom OneAgent Docker image. Defaults to the image from the Dynatrace cluster.|-|string|
+|`image`|Use a custom OneAgent image. Defaults to the latest image from the Dynatrace cluster.|-|string|
 |`labels`|Your defined labels for OneAgent pods in order to structure workloads as desired.|-|object|
 |`nodeSelector`|Specify the node selector that controls on which nodes OneAgent will be deployed.|-|object|
 |`oneAgentResources`|Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.<br/>Note: resource.requests shows the values needed to run; resource.limits shows the maximum limits for the pod.|-|object|
 |`priorityClassName`|Assign a priority class to the OneAgent pods. By default, no class is set.<br/>For details, see Pod Priority and Preemption (<https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/>).|-|string|
 |`secCompProfile`|The SecComp Profile that will be configured in order to run in secure computing mode.|-|string|
 |`tolerations`|Tolerations to include with the OneAgent DaemonSet. For details, see Taints and Tolerations (<https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/>).|-|array|
-|`version`|The OneAgent version to be used.|-|string|
+|`version`|Use a specific OneAgent version. Defaults to the latest version from the Dynatrace cluster.|-|string|
 
 ### .spec.templates.logMonitoring
 
@@ -91,14 +91,14 @@
 |`autoUpdate`|Disables automatic restarts of OneAgent pods in case a new version is available (<https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto>).<br/>Enabled by default.|-|boolean|
 |`dnsPolicy`|Set the DNS Policy for OneAgent pods. For details, see Pods DNS Policy (<https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy>).|-|string|
 |`env`|Set additional environment variables for the OneAgent pods.|-|array|
-|`image`|Use a custom OneAgent Docker image. Defaults to the image from the Dynatrace cluster.|-|string|
+|`image`|Use a custom OneAgent image. Defaults to the latest image from the Dynatrace cluster.|-|string|
 |`labels`|Your defined labels for OneAgent pods in order to structure workloads as desired.|-|object|
 |`nodeSelector`|Specify the node selector that controls on which nodes OneAgent will be deployed.|-|object|
 |`oneAgentResources`|Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.<br/>Note: resource.requests shows the values needed to run; resource.limits shows the maximum limits for the pod.|-|object|
 |`priorityClassName`|Assign a priority class to the OneAgent pods. By default, no class is set.<br/>For details, see Pod Priority and Preemption (<https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/>).|-|string|
 |`secCompProfile`|The SecComp Profile that will be configured in order to run in secure computing mode.|-|string|
 |`tolerations`|Tolerations to include with the OneAgent DaemonSet. For details, see Taints and Tolerations (<https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/>).|-|array|
-|`version`|The OneAgent version to be used.|-|string|
+|`version`|Use a specific OneAgent version. Defaults to the latest version from the Dynatrace cluster.|-|string|
 
 ### .spec.oneAgent.cloudNativeFullStack
 
@@ -107,10 +107,10 @@
 |`annotations`|Add custom OneAgent annotations.|-|object|
 |`args`|Set additional arguments to the OneAgent installer.<br/>For available options, see Linux custom installation (<https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux>).<br/>For the list of limitations, see Limitations (<https://www.dynatrace.|-|array|
 |`autoUpdate`|Disables automatic restarts of OneAgent pods in case a new version is available (<https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto>).<br/>Enabled by default.|-|boolean|
-|`codeModulesImage`|The OneAgent image that is used to inject into Pods.|-|string|
+|`codeModulesImage`|Use a custom OneAgent CodeModule image to download binaries.|-|string|
 |`dnsPolicy`|Set the DNS Policy for OneAgent pods. For details, see Pods DNS Policy (<https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy>).|-|string|
 |`env`|Set additional environment variables for the OneAgent pods.|-|array|
-|`image`|Use a custom OneAgent Docker image. Defaults to the image from the Dynatrace cluster.|-|string|
+|`image`|Use a custom OneAgent image. Defaults to the latest image from the Dynatrace cluster.|-|string|
 |`initResources`|Define resources requests and limits for the initContainer. For details, see Managing resources for containers<br/>(<https://kubernetes.io/docs/concepts/configuration/manage-resources-containers>).|-|object|
 |`labels`|Your defined labels for OneAgent pods in order to structure workloads as desired.|-|object|
 |`namespaceSelector`|Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.<br/>For more information, see Configure monitoring for namespaces and pods (<https://www.dynatrace.|-|object|
@@ -119,17 +119,17 @@
 |`priorityClassName`|Assign a priority class to the OneAgent pods. By default, no class is set.<br/>For details, see Pod Priority and Preemption (<https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/>).|-|string|
 |`secCompProfile`|The SecComp Profile that will be configured in order to run in secure computing mode.|-|string|
 |`tolerations`|Tolerations to include with the OneAgent DaemonSet. For details, see Taints and Tolerations (<https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/>).|-|array|
-|`version`|The OneAgent version to be used.|-|string|
+|`version`|Use a specific OneAgent version. Defaults to the latest version from the Dynatrace cluster.|-|string|
 
 ### .spec.oneAgent.applicationMonitoring
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
-|`codeModulesImage`|The OneAgent image that is used to inject into Pods.|-|string|
+|`codeModulesImage`|Use a custom OneAgent CodeModule image to download binaries.|-|string|
 |`initResources`|Define resources requests and limits for the initContainer. For details, see Managing resources for containers<br/>(<https://kubernetes.io/docs/concepts/configuration/manage-resources-containers>).|-|object|
 |`namespaceSelector`|Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.<br/>For more information, see Configure monitoring for namespaces and pods (<https://www.dynatrace.|-|object|
 |`useCSIDriver`|Set if you want to use the CSIDriver. Don't enable it if you do not have access to Kubernetes nodes or if you lack privileges.|-|boolean|
-|`version`|The OneAgent version to be used.|-|string|
+|`version`|Use a specific OneAgent CodeModule version. Defaults to the latest version from the Dynatrace cluster.|-|string|
 
 ### .spec.templates.logMonitoring.imageRef
 
