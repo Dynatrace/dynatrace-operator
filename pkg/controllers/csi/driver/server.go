@@ -23,6 +23,7 @@ import (
 	"net/url"
 	"os"
 	"runtime"
+	"strconv"
 	"sync/atomic"
 	"time"
 
@@ -103,7 +104,12 @@ func (svr *Server) Start(ctx context.Context) error {
 		return fmt.Errorf("failed to start server: %w", err)
 	}
 
-	server := grpc.NewServer(grpc.UnaryInterceptor(grpcLimiter()))
+	maxGrpcRequests, err := strconv.Atoi(os.Getenv("GRPC_MAX_REQUESTS_LIMIT"))
+	if err != nil {
+		maxGrpcRequests = MaxGrpcRequests
+	}
+
+	server := grpc.NewServer(grpc.UnaryInterceptor(grpcLimiter(int32(maxGrpcRequests)))) //nolint:gosec
 
 	go func() {
 		ticker := time.NewTicker(memoryMetricTick)
@@ -238,7 +244,7 @@ func (svr *Server) NodeExpandVolume(context.Context, *csi.NodeExpandVolumeReques
 	return nil, status.Error(codes.Unimplemented, "")
 }
 
-func grpcLimiter() grpc.UnaryServerInterceptor {
+func grpcLimiter(maxGrpcRequests int32) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		var methodName string
 
@@ -263,7 +269,7 @@ func grpcLimiter() grpc.UnaryServerInterceptor {
 		counter.Add(1)
 		defer counter.Add(-1)
 
-		if counter.Load() > MaxGrpcRequests {
+		if counter.Load() > maxGrpcRequests {
 			return nil, status.Error(codes.ResourceExhausted, fmt.Sprintf("rate limit exceeded, current value %d more than max %d", counter.Load(), MaxGrpcRequests))
 		}
 

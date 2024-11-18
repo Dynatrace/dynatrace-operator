@@ -19,6 +19,7 @@ import (
 	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -364,7 +365,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 			},
 		}
 
-		if dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim == nil {
+		if dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume {
 			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
 				Name: runtimeVolumeName,
 				VolumeSource: corev1.VolumeSource{
@@ -420,19 +421,44 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 
 func setPersistentVolumeClaim(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	return func(o *appsv1.StatefulSet) {
-		if dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim != nil {
-			o.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: runtimeVolumeName,
+		if !dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume {
+			if dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim == nil {
+				o.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: runtimeVolumeName,
+						},
+						Spec: defaultPVCSpec(),
 					},
-					Spec: *dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim,
-				},
+				}
+			} else {
+				o.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: runtimeVolumeName,
+						},
+						Spec: *dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim,
+					},
+				}
+			}
+
+			o.Spec.PersistentVolumeClaimRetentionPolicy = &appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy{
+				WhenDeleted: appsv1.DeletePersistentVolumeClaimRetentionPolicyType,
+				WhenScaled:  appsv1.DeletePersistentVolumeClaimRetentionPolicyType,
 			}
 		}
+	}
+}
 
-		if dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaimRetentionPolicy != nil {
-			o.Spec.PersistentVolumeClaimRetentionPolicy = dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaimRetentionPolicy
-		}
+func defaultPVCSpec() corev1.PersistentVolumeClaimSpec {
+	return corev1.PersistentVolumeClaimSpec{
+		AccessModes: []corev1.PersistentVolumeAccessMode{
+			corev1.ReadWriteOnce,
+		},
+		Resources: corev1.VolumeResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceStorage: resource.MustParse("1Gi"),
+			},
+		},
 	}
 }

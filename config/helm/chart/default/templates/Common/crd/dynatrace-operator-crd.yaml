@@ -6175,23 +6175,6 @@ spec:
                               PersistentVolume backing this claim.
                             type: string
                         type: object
-                      persistentVolumeClaimRetentionPolicy:
-                        description: Determines retention policy
-                        properties:
-                          whenDeleted:
-                            description: |-
-                              WhenDeleted specifies what happens to PVCs created from StatefulSet
-                              VolumeClaimTemplates when the StatefulSet is deleted. The default policy
-                              of `Retain` causes PVCs to not be affected by StatefulSet deletion. The
-                              `Delete` policy causes those PVCs to be deleted.
-                            type: string
-                          whenScaled:
-                            description: |-
-                              WhenScaled specifies what happens to PVCs created from StatefulSet
-                              VolumeClaimTemplates when the StatefulSet is scaled down. The default
-                              policy of `Retain` causes PVCs to not be affected by a scaledown.
-                            type: string
-                        type: object
                       resources:
                         description: Define resources' requests and limits for single
                           ExtensionExecutionController pod
@@ -6405,6 +6388,9 @@ spec:
                           - whenUnsatisfiable
                           type: object
                         type: array
+                      useEphemeralVolume:
+                        description: Selects EmptyDir volume to be storage device
+                        type: boolean
                     type: object
                   kspmNodeConfigurationCollector:
                     properties:
