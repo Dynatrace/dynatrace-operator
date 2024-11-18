@@ -102,6 +102,8 @@ type Spec struct {
 	// Activegate capabilities enabled (routing, kubernetes-monitoring, metrics-ingest, dynatrace-api)
 	Capabilities []CapabilityDisplayName `json:"capabilities,omitempty"`
 
+	UseEphemeralVolume bool
+
 	enabledDependencies dependencies
 }
 
