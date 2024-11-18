@@ -9,7 +9,7 @@ doc/api-ref: manifests prerequisites/python
 
 ## Create a table containing permissions needed by Operator components
 doc/permissions: manifests prerequisites/python
-	source local/.venv/bin/activate && python3 ./hack/doc/role-permissions2md.py ./config/deploy/openshift/openshift-all.yaml > permissions.md
+	source local/.venv/bin/activate && python3 ./hack/doc/role-permissions2md.py ./config/deploy/openshift/openshift-csi.yaml > permissions.md
 
 ## Run scripts that generate markdown documentation using gomarkdoc (./hack/doc)
 doc/gen-gomarkdoc: prerequisites/gomarkdoc prerequisites/markdownlint
