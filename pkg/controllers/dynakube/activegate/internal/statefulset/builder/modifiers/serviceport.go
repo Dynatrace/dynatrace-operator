@@ -48,12 +48,10 @@ func (mod ServicePortModifier) getPorts() []corev1.ContainerPort {
 			Name:          consts.HttpsServicePortName,
 			ContainerPort: consts.HttpsContainerPort,
 		},
-	}
-	if mod.dk.ActiveGate().IsMetricsIngestEnabled() {
-		ports = append(ports, corev1.ContainerPort{
+		{
 			Name:          consts.HttpServicePortName,
 			ContainerPort: consts.HttpContainerPort,
-		})
+		},
 	}
 
 	return ports

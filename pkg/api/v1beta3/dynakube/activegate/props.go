@@ -93,9 +93,7 @@ func (ag *Spec) IsMetricsIngestEnabled() bool {
 }
 
 func (ag *Spec) NeedsService() bool {
-	return ag.IsRoutingEnabled() ||
-		ag.IsApiEnabled() ||
-		ag.IsMetricsIngestEnabled() ||
+	return len(ag.Capabilities) > 0 ||
 		ag.enabledDependencies.extensions ||
 		ag.enabledDependencies.kspm
 }
