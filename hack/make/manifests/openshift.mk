@@ -1,35 +1,25 @@
-## Generates a manifest for Openshift solely for a CSI driver deployment
-manifests/openshift/csi:
-	# Generate openshift-csi.yaml
-	helm template dynatrace-operator config/helm/chart/default \
-		--show-only templates/Common/csi/*.yaml \
-		--namespace dynatrace \
-		--set platform="openshift" \
-		--set manifests=true \
-		--set olm="${OLM}" \
-		--set image="$(IMAGE_URI)" > "$(OPENSHIFT_CSIDRIVER_YAML)"
-
-## Generates an OpenShift manifest with a CRD
-manifests/openshift/core: manifests/crd/helm
-	helm template dynatrace-operator config/helm/chart/default \
-		  --namespace dynatrace \
-		  --set csidriver.enabled=false \
-		  --set installCRD=true \
-		  --set platform="openshift" \
-		  --set manifests=true \
-		  --set olm="${OLM}" \
-		  --set image="$(IMAGE_URI)" > "$(OPENSHIFT_CORE_YAML)"
-
-## Generates a manifest for OpenShift including a CRD and a CSI driver deployment
-manifests/openshift: manifests/openshift/core manifests/openshift/csi
-	cat "$(OPENSHIFT_CORE_YAML)" "$(OPENSHIFT_CSIDRIVER_YAML)" > "$(OPENSHIFT_ALL_YAML)"
-
-## Generates an OpenShift manifest with a CRD
-manifests/openshift/olm: manifests/crd/helm
+define generate_manifest
 	helm template dynatrace-operator config/helm/chart/default \
 		--namespace dynatrace \
+		--set csidriver.enabled=$(1) \
 		--set installCRD=true \
 		--set platform="openshift" \
 		--set manifests=true \
 		--set olm="${OLM}" \
-		--set image="$(IMAGE_URI)" > "$(OPENSHIFT_OLM_YAML)"
+		--set image="$(IMAGE_URI)" > $(2)
+endef
+
+## Generates an Openshift manifest including CRD and CSI driver
+manifests/openshift/csi: manifests/crd/helm
+	$(call generate_manifest,true,$(OPENSHIFT_CSIDRIVER_YAML))
+
+## Generates a Openshift manifest including CRD without CSI driver
+manifests/openshift/core: manifests/crd/helm
+	$(call generate_manifest,false,$(OPENSHIFT_CORE_YAML))
+
+## Generates an Openshift manifest including CRD and CSI driver with OLM set to true
+manifests/openshift/olm: manifests/crd/helm
+	OLM=true $(call generate_manifest,true,$(OPENSHIFT_OLM_YAML))
+
+## Generates a manifest for OpenShift including a CRD and a CSI driver deployment
+manifests/openshift: manifests/openshift/core manifests/openshift/csi

@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -56,6 +58,16 @@ func (dm DynakubeMapper) UnmapFromDynaKube(namespaces []corev1.Namespace) error 
 
 		if err := dm.client.Update(dm.ctx, &namespaces[i]); err != nil {
 			return errors.WithMessagef(err, "failed to remove label %s from namespace %s", dtwebhook.InjectionInstanceLabel, ns.Name)
+		}
+
+		err := k8ssecret.Query(dm.client, dm.apiReader, log).DeleteForNamespace(dm.ctx, consts.AgentInitSecretName, ns.Name)
+		if err != nil {
+			return err
+		}
+
+		err = k8ssecret.Query(dm.client, dm.apiReader, log).DeleteForNamespace(dm.ctx, consts.EnrichmentEndpointSecretName, ns.Name)
+		if err != nil {
+			return err
 		}
 	}
 

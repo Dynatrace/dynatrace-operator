@@ -53,11 +53,11 @@ spec:
 
   # Configuration for Metadata Enrichment.
   #
-  metadataEnrichment:
-    # Optional: Enables or disables metadata enrichment
-    # Defaults to "true"
-    #
-    enabled: true
+  # metadataEnrichment:
+  #   Optional: Enables or disables metadata enrichment
+  #   Defaults to "false"
+
+  #   enabled: true
 
     # The namespaces in which metadata enrichment should be injected into
     # If unset, all namespace will be injected into
