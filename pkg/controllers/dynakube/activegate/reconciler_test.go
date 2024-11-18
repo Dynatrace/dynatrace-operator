@@ -435,19 +435,24 @@ func TestServiceCreation(t *testing.T) {
 		},
 	}
 
-	t.Run("service exposes correct ports for single capabilities", func(t *testing.T) {
+	t.Run("service exposes all ports for every capabilities", func(t *testing.T) {
 		expectedCapabilityPorts := map[activegate.CapabilityDisplayName][]string{
 			activegate.RoutingCapability.DisplayName: {
+				consts.HttpServicePortName,
 				consts.HttpsServicePortName,
 			},
 			activegate.MetricsIngestCapability.DisplayName: {
-				consts.HttpsServicePortName,
 				consts.HttpServicePortName,
+				consts.HttpsServicePortName,
 			},
 			activegate.DynatraceApiCapability.DisplayName: {
+				consts.HttpServicePortName,
 				consts.HttpsServicePortName,
 			},
-			activegate.KubeMonCapability.DisplayName: {},
+			activegate.KubeMonCapability.DisplayName: {
+				consts.HttpServicePortName,
+				consts.HttpsServicePortName,
+			},
 		}
 
 		for capName, expectedPorts := range expectedCapabilityPorts {
@@ -478,7 +483,7 @@ func TestServiceCreation(t *testing.T) {
 		}
 	})
 
-	t.Run("service exposes correct ports for multiple capabilities", func(t *testing.T) {
+	t.Run("service exposes all ports for all capabilities", func(t *testing.T) {
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 
 		reconciler := NewReconciler(fakeClient, fakeClient, dk, dynatraceClient, nil, nil).(*Reconciler)
@@ -490,6 +495,7 @@ func TestServiceCreation(t *testing.T) {
 			activegate.RoutingCapability.DisplayName,
 		}
 		expectedPorts := []string{
+			consts.HttpServicePortName,
 			consts.HttpsServicePortName,
 		}
 
