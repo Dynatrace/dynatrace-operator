@@ -11,7 +11,7 @@ Pre-requisites:
 
 ## Usage
 
-It's best to use the `openshift-all.yaml` manifest to cover all our needs. OpenShift needs the most permissions.
+It's best to use the `openshift-csi.yaml` manifest to cover all our needs. OpenShift needs the most permissions.
 
 ```sh
 # local dev repo - direct call
@@ -22,7 +22,7 @@ source venv/bin/activate
 pip install pyyaml
 
 make manifests
-python3 <operator-repo>/hack/doc/role-permissions2md.py <operator-repo>/config/deploy/openshift/openshift-all.yaml
+python3 <operator-repo>/hack/doc/role-permissions2md.py <operator-repo>/config/deploy/openshift/openshift-csi.yaml
 
 # local dev repo - using make, result will be locally in permissions.md
 make doc/permissions
