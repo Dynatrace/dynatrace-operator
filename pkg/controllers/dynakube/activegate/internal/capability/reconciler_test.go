@@ -182,7 +182,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.NotEmpty(t, service)
-		assert.Equal(t, 2, len(service.Spec.Ports))
+		assert.Len(t, service.Spec.Ports, 2)
 	})
 }
 
