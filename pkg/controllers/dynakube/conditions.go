@@ -17,11 +17,17 @@ func (controller *Controller) setConditionTokenError(dk *dynakube.DynaKube, err 
 	controller.setAndLogCondition(dk, tokenErrorCondition)
 }
 
-func (controller *Controller) setConditionTokenReady(dk *dynakube.DynaKube) {
+func (controller *Controller) setConditionTokenReady(dk *dynakube.DynaKube, dataIngestTokenProvided bool) {
+	msg := "Token ready, DataIngest token not provided"
+	if dataIngestTokenProvided {
+		msg = "Token ready"
+	}
+
 	tokenErrorCondition := metav1.Condition{
-		Type:   dynakube.TokenConditionType,
-		Status: metav1.ConditionTrue,
-		Reason: dynakube.ReasonTokenReady,
+		Type:    dynakube.TokenConditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  dynakube.ReasonTokenReady,
+		Message: msg,
 	}
 
 	controller.setAndLogCondition(dk, tokenErrorCondition)

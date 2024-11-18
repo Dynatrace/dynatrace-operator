@@ -306,7 +306,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 		return nil, err
 	}
 
-	controller.setConditionTokenReady(dk)
+	controller.setConditionTokenReady(dk, token.CheckForDataIngestToken(tokens))
 
 	return dynatraceClient, nil
 }
