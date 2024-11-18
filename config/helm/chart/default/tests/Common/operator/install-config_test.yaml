@@ -22,7 +22,8 @@ tests:
                   "extensions": true,
                   "logMonitoring": true,
                   "edgeConnect": true,
-                  "supportability": true
+                  "supportability": true,
+                  "kspm": true
                 }
   - it: ConfigMap should respect the set values
     set:
@@ -32,6 +33,7 @@ tests:
       rbac.activeGate.create: false
       rbac.extensions.create: false
       rbac.supportability: false
+      rbac.kspm.create: false
     asserts:
       - equal:
           path: metadata.name
@@ -51,5 +53,6 @@ tests:
                   "extensions": false,
                   "logMonitoring": false,
                   "edgeConnect": false,
-                  "supportability": false
+                  "supportability": false,
+                  "kspm": false
                 }

@@ -26,6 +26,7 @@ var (
 		isActiveGateModuleDisabled,
 		isExtensionsModuleDisabled,
 		isLogMonitoringModuleDisabled,
+		isKSPMDisabled,
 		isOneAgentModuleDisabled,
 		isOneAgentVersionValid,
 		NoApiUrl,
@@ -47,6 +48,7 @@ var (
 		namespaceSelectorViolateLabelSpec,
 		imageFieldHasTenantImage,
 		extensionControllerImage,
+		extensionControllerPVCStorageDevice,
 		missingKSPMDependency,
 	}
 	validatorWarningFuncs = []validatorFunc{

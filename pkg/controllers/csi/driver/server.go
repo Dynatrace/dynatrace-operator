@@ -23,6 +23,8 @@ import (
 	"net/url"
 	"os"
 	"runtime"
+	"strconv"
+	"sync/atomic"
 	"time"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
@@ -39,6 +41,10 @@ import (
 	mount "k8s.io/mount-utils"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
+
+const MaxGrpcRequests = 20
+
+var counter atomic.Int32
 
 type Server struct {
 	csi.UnimplementedIdentityServer
@@ -98,7 +104,12 @@ func (svr *Server) Start(ctx context.Context) error {
 		return fmt.Errorf("failed to start server: %w", err)
 	}
 
-	server := grpc.NewServer(grpc.UnaryInterceptor(logGRPC()))
+	maxGrpcRequests, err := strconv.Atoi(os.Getenv("GRPC_MAX_REQUESTS_LIMIT"))
+	if err != nil {
+		maxGrpcRequests = MaxGrpcRequests
+	}
+
+	server := grpc.NewServer(grpc.UnaryInterceptor(grpcLimiter(int32(maxGrpcRequests)))) //nolint:gosec
 
 	go func() {
 		ticker := time.NewTicker(memoryMetricTick)
@@ -233,27 +244,39 @@ func (svr *Server) NodeExpandVolume(context.Context, *csi.NodeExpandVolumeReques
 	return nil, status.Error(codes.Unimplemented, "")
 }
 
-func logGRPC() grpc.UnaryServerInterceptor {
+func grpcLimiter(maxGrpcRequests int32) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		if info.FullMethod == "/csi.v1.Identity/Probe" || info.FullMethod == "/csi.v1.Node/NodeGetCapabilities" {
-			return handler(ctx, req)
-		}
+		var methodName string
 
-		methodName := ""
-
-		if info.FullMethod == "/csi.v1.Node/NodePublishVolume" {
+		switch {
+		case info.FullMethod == "/csi.v1.Node/NodePublishVolume":
 			req := req.(*csi.NodePublishVolumeRequest)
 			methodName = "NodePublishVolume"
 			log.Info("GRPC call", "method", methodName, "volume-id", req.GetVolumeId())
-		} else if info.FullMethod == "/csi.v1.Node/NodeUnpublishVolume" {
+		case info.FullMethod == "/csi.v1.Node/NodeUnpublishVolume":
 			req := req.(*csi.NodeUnpublishVolumeRequest)
 			methodName = "NodeUnpublishVolume"
 			log.Info("GRPC call", "method", methodName, "volume-id", req.GetVolumeId())
+		default:
+			resp, err := handler(ctx, req)
+			if err != nil {
+				log.Error(err, "GRPC failed", "full_method", info.FullMethod)
+			}
+
+			return resp, err
+		}
+
+		counter.Add(1)
+		defer counter.Add(-1)
+
+		if counter.Load() > maxGrpcRequests {
+			return nil, status.Error(codes.ResourceExhausted, fmt.Sprintf("rate limit exceeded, current value %d more than max %d", counter.Load(), MaxGrpcRequests))
 		}
 
 		resp, err := handler(ctx, req)
+
 		if err != nil {
-			log.Error(err, "GRPC call failed", "method", methodName)
+			log.Error(err, "GRPC call failed", "method", methodName, "full_method", info.FullMethod)
 		}
 
 		return resp, err

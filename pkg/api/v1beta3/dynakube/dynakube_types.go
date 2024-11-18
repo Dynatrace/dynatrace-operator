@@ -149,15 +149,15 @@ type DynaKubeSpec struct { //nolint:revive
 }
 
 type TemplatesSpec struct {
-	// +kubebuilder:validation:Optional
-	KspmNodeConfigurationCollector kspm.NodeConfigurationCollectorSpec `json:"kspmNodeConfigurationCollector,omitempty"`
-	// +kubebuilder:validation:Optional
-	ExtensionExecutionController ExtensionExecutionControllerSpec `json:"extensionExecutionController,omitempty"`
 	// Low-level configuration options for the LogMonitoring feature.
 	// +kubebuilder:validation:Optional
 	LogMonitoring *logmonitoring.TemplateSpec `json:"logMonitoring,omitempty"`
 	// +kubebuilder:validation:Optional
+	KspmNodeConfigurationCollector kspm.NodeConfigurationCollectorSpec `json:"kspmNodeConfigurationCollector,omitempty"`
+	// +kubebuilder:validation:Optional
 	OpenTelemetryCollector OpenTelemetryCollectorSpec `json:"openTelemetryCollector,omitempty"`
+	// +kubebuilder:validation:Optional
+	ExtensionExecutionController ExtensionExecutionControllerSpec `json:"extensionExecutionController,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

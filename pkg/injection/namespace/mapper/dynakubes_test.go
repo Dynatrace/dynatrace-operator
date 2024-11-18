@@ -6,10 +6,12 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -176,5 +178,25 @@ func TestUnmapFromDynaKube(t *testing.T) {
 		require.NoError(t, err)
 		assert.Empty(t, ns.Labels)
 		assert.Len(t, ns.Annotations, 1)
+	})
+	t.Run("Remove "+consts.AgentInitSecretName+" and "+consts.EnrichmentEndpointSecretName+" secrets", func(t *testing.T) {
+		clt := fake.NewClient(namespace, namespace2)
+		ctx := context.Background()
+
+		namespaces, err := GetNamespacesForDynakube(ctx, clt, dk.Name)
+		require.NoError(t, err)
+
+		clt.Create(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: consts.AgentInitSecretName, Namespace: namespace.Name}})
+		clt.Create(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: consts.EnrichmentEndpointSecretName, Namespace: namespace.Name}})
+
+		dm := NewDynakubeMapper(ctx, clt, clt, "dynatrace", dk)
+		err = dm.UnmapFromDynaKube(namespaces)
+		require.NoError(t, err)
+
+		var secret corev1.Secret
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.AgentInitSecretName, Namespace: namespace.Name}, &secret)
+		assert.True(t, k8serrors.IsNotFound(err))
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.EnrichmentEndpointSecretName, Namespace: namespace.Name}, &secret)
+		assert.True(t, k8serrors.IsNotFound(err))
 	})
 }
