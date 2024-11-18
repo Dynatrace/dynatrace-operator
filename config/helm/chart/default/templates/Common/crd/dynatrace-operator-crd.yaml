@@ -7392,7 +7392,6 @@ spec:
             description: DynaKubeStatus defines the observed state of DynaKube
             properties:
               activeGate:
-                description: Observed state of ActiveGate
                 properties:
                   connectionInfoStatus:
                     description: Information about Active Gate's connections
@@ -7434,7 +7433,6 @@ spec:
                     type: string
                 type: object
               codeModules:
-                description: Observed state of Code Modules
                 properties:
                   imageID:
                     description: Image ID
@@ -7522,7 +7520,6 @@ spec:
                     type: string
                 type: object
               kspm:
-                description: Observed state of Kspm
                 properties:
                   tokenSecretHash:
                     description: |-
@@ -7543,8 +7540,11 @@ spec:
                   know as label) of the monitored entity that points to the Kubernetes
                   cluster
                 type: string
+              mappedNamespaces:
+                items:
+                  type: string
+                type: array
               metadataEnrichment:
-                description: Observed state of Metadata-Enrichment
                 properties:
                   rules:
                     items:
@@ -7561,7 +7561,6 @@ spec:
                     type: array
                 type: object
               oneAgent:
-                description: Observed state of OneAgent
                 properties:
                   connectionInfoStatus:
                     description: Information about OneAgent's connections

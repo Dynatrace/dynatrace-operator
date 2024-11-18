@@ -2,6 +2,7 @@ package mapper
 
 import (
 	"context"
+	"slices"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -9,6 +10,7 @@ import (
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -113,6 +115,26 @@ func (dm DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *d
 }
 
 func (dm DynakubeMapper) updateNamespaces(modifiedNs []*corev1.Namespace) error {
+	log.Info("!!! updateNamespaces")
+
+	previousMappedNamespaces := dm.dk.Status.MappedNamespaces
+	currentMappedNamespaces := make([]string, len(modifiedNs))
+
+	for i, ns := range modifiedNs {
+		log.Info("!!! adding modifiedNs", ns.Name)
+		currentMappedNamespaces[i] = ns.Name
+	}
+
+	if len(previousMappedNamespaces) != 0 {
+		// ns selector update cleanup
+		for _, previousNs := range previousMappedNamespaces {
+			if !slices.Contains(currentMappedNamespaces, previousNs) {
+				log.Info("!!! cleaning", "previousNs", previousNs)
+				dm.UnmapFromDynaKube([]corev1.Namespace{{ObjectMeta: metav1.ObjectMeta{Name: previousNs}}})
+			}
+		}
+	}
+
 	for _, ns := range modifiedNs {
 		setUpdatedViaDynakubeAnnotation(ns)
 
@@ -120,6 +142,10 @@ func (dm DynakubeMapper) updateNamespaces(modifiedNs []*corev1.Namespace) error 
 			return err
 		}
 	}
+
+	log.Info("!!! updating MappedNamespaces", "currentMappedNamespaces", currentMappedNamespaces)
+	dm.dk.Status.MappedNamespaces = currentMappedNamespaces
+	dm.dk.UpdateStatus(dm.ctx, dm.client)
 
 	return nil
 }

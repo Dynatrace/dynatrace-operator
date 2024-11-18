@@ -20,19 +20,16 @@ import (
 // +k8s:openapi-gen=true
 type DynaKubeStatus struct { //nolint:revive
 
-	// Observed state of OneAgent
 	OneAgent OneAgentStatus `json:"oneAgent,omitempty"`
 
-	// Observed state of ActiveGate
 	ActiveGate activegate.Status `json:"activeGate,omitempty"`
 
-	// Observed state of Code Modules
 	CodeModules CodeModulesStatus `json:"codeModules,omitempty"`
 
-	// Observed state of Metadata-Enrichment
+	MappedNamespaces []string `json:"mappedNamespaces,omitempty"`
+
 	MetadataEnrichment MetadataEnrichmentStatus `json:"metadataEnrichment,omitempty"`
 
-	// Observed state of Kspm
 	Kspm kspm.Status `json:"kspm,omitempty"`
 
 	// UpdatedTimestamp indicates when the instance was last updated
