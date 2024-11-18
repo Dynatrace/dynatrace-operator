@@ -159,6 +159,8 @@ func (g *SecretGenerator) PrepareFields(ctx context.Context, dk *dynakube.DynaKu
 	if dk.MetadataEnrichmentEnabled() { // TODO: why check here and not at the very beginning?
 		if token, ok := tokens.Data[dtclient.DataIngestToken]; ok {
 			fields[MetricsTokenSecretField] = string(token)
+		} else {
+			log.Info("data ingest token not found in secret", "dk", dk.Name)
 		}
 
 		if ingestUrl, err := ingestUrlFor(dk); err != nil {
