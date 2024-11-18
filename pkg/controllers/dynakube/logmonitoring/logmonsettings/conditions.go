@@ -1,4 +1,4 @@
-package conditions
+package logmonsettings
 
 import (
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -6,14 +6,16 @@ import (
 )
 
 const (
-	SettingsExistReason = "LogMonSettingsExist"
+	settingsExistReason = "LogMonSettingsExist"
+
+	conditionType = "LogMonitoringSettings"
 )
 
-func SetLogMonitoringSettingExists(conditions *[]metav1.Condition, conditionType string) {
+func setLogMonitoringSettingExists(conditions *[]metav1.Condition, conditionType string) {
 	condition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionTrue,
-		Reason:  SettingsExistReason,
+		Reason:  settingsExistReason,
 		Message: "LogMonitoring settings already exist, will not create new ones.",
 	}
 	_ = meta.SetStatusCondition(conditions, condition)

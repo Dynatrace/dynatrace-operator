@@ -58,6 +58,7 @@ func TestReconcile(t *testing.T) {
 		passOAConnectionInfo := createPassingReconciler(t)
 		passConfigSecret := createPassingReconciler(t)
 		passDaemonSet := createPassingReconciler(t)
+		passLogMonSetting := createPassingReconciler(t)
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				LogMonitoring: &logmonitoring.Spec{},
@@ -76,6 +77,7 @@ func TestReconcile(t *testing.T) {
 			oneAgentConnectionInfoReconciler: passOAConnectionInfo,
 			configSecretReconciler:           passConfigSecret,
 			daemonsetReconciler:              passDaemonSet,
+			logmonsettingsReconciler:         passLogMonSetting,
 			dtc:                              mockClient,
 		}
 
