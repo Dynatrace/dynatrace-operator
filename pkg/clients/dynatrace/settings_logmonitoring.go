@@ -19,15 +19,15 @@ type IngestRuleMatchers struct {
 }
 
 type logMonSettingsValue struct {
-	ConfigItemTitle string               `json:"config-item-title,omitempty"`
-	Matchers        []IngestRuleMatchers `json:"matchers,omitempty"`
-	Enabled         bool                 `json:"enabled,omitempty"`
-	SendToStorage   bool                 `json:"send-to-storage,omitempty"`
+	ConfigItemTitle string               `json:"config-item-title"`
+	Matchers        []IngestRuleMatchers `json:"matchers"`
+	Enabled         bool                 `json:"enabled"`
+	SendToStorage   bool                 `json:"send-to-storage"`
 }
 
 type logMonSettingsItem struct {
-	ObjectID           string              `json:"objectId,omitempty"`
-	LogMonitoringValue logMonSettingsValue `json:"value,omitempty"`
+	ObjectID           string              `json:"objectId"`
+	LogMonitoringValue logMonSettingsValue `json:"value"`
 }
 
 type posLogMonSettingsBody struct {

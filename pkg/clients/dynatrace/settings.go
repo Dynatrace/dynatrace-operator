@@ -124,7 +124,7 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntity(ctx context.Context, m
 }
 
 func (dtc *dynatraceClient) GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (GetLogMonSettingsResponse, error) {
-	if len(monitoredEntity) < 1 {
+	if monitoredEntity == "" {
 		return GetLogMonSettingsResponse{TotalCount: 0}, nil
 	}
 
