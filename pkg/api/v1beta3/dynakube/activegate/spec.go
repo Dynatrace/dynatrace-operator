@@ -102,7 +102,12 @@ type Spec struct {
 	// Activegate capabilities enabled (routing, kubernetes-monitoring, metrics-ingest, dynatrace-api)
 	Capabilities []CapabilityDisplayName `json:"capabilities,omitempty"`
 
-	UseEphemeralVolume bool
+	// UseEphemeralVolume
+	UseEphemeralVolume bool `json:"useEphemeralVolume,omitempty"`
+
+	// Defines storage device
+	// +kubebuilder:validation:Optional
+	PersistentVolumeClaim *corev1.PersistentVolumeClaimSpec `json:"persistentVolumeClaim,omitempty"`
 
 	enabledDependencies dependencies
 }
