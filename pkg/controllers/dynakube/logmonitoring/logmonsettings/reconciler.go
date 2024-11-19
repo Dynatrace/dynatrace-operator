@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 )
 
 type reconciler struct {
@@ -36,6 +37,10 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
+	if !r.dk.LogMonitoring().IsEnabled() {
+		meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
+	}
+
 	err := r.checkLogMonitoringSettings(ctx)
 	if err != nil {
 		return err
@@ -58,20 +63,20 @@ func (r *reconciler) checkLogMonitoringSettings(ctx context.Context) error {
 		setLogMonitoringSettingExists(r.dk.Conditions(), conditionType)
 
 		return nil
-	} else if logMonitoringSettings.TotalCount == 0 {
-		matchers := []logmonitoring.IngestRuleMatchers{}
-		if len(r.dk.LogMonitoring().IngestRuleMatchers) > 0 {
-			matchers = r.dk.LogMonitoring().IngestRuleMatchers
-		}
-
-		objectId, err := r.dtc.CreateLogMonitoringSetting(ctx, r.dk.Status.KubernetesClusterMEID, r.dk.Status.KubernetesClusterName, matchers)
-
-		if err != nil {
-			return errors.WithMessage(err, "error when creating log monitoring setting")
-		}
-
-		log.Info("logmonitoring setting created", "settings", objectId)
 	}
+
+	matchers := []logmonitoring.IngestRuleMatchers{}
+	if len(r.dk.LogMonitoring().IngestRuleMatchers) > 0 {
+		matchers = r.dk.LogMonitoring().IngestRuleMatchers
+	}
+
+	objectId, err := r.dtc.CreateLogMonitoringSetting(ctx, r.dk.Status.KubernetesClusterMEID, r.dk.Status.KubernetesClusterName, matchers)
+
+	if err != nil {
+		return errors.WithMessage(err, "error when creating log monitoring setting")
+	}
+
+	log.Info("logmonitoring setting created", "settings", objectId)
 
 	return nil
 }
