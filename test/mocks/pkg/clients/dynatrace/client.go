@@ -1223,27 +1223,27 @@ func (_c *Client_GetSettingsForLogModule_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
-// GetSettingsForMonitoredEntities provides a mock function with given fields: ctx, monitoredEntities, schemaId
-func (_m *Client) GetSettingsForMonitoredEntities(ctx context.Context, monitoredEntities []dynatrace.MonitoredEntity, schemaId string) (dynatrace.GetSettingsResponse, error) {
-	ret := _m.Called(ctx, monitoredEntities, schemaId)
+// GetSettingsForMonitoredEntity provides a mock function with given fields: ctx, monitoredEntity, schemaId
+func (_m *Client) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity *dynatrace.MonitoredEntity, schemaId string) (dynatrace.GetSettingsResponse, error) {
+	ret := _m.Called(ctx, monitoredEntity, schemaId)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetSettingsForMonitoredEntities")
+		panic("no return value specified for GetSettingsForMonitoredEntity")
 	}
 
 	var r0 dynatrace.GetSettingsResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []dynatrace.MonitoredEntity, string) (dynatrace.GetSettingsResponse, error)); ok {
-		return rf(ctx, monitoredEntities, schemaId)
+	if rf, ok := ret.Get(0).(func(context.Context, *dynatrace.MonitoredEntity, string) (dynatrace.GetSettingsResponse, error)); ok {
+		return rf(ctx, monitoredEntity, schemaId)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, []dynatrace.MonitoredEntity, string) dynatrace.GetSettingsResponse); ok {
-		r0 = rf(ctx, monitoredEntities, schemaId)
+	if rf, ok := ret.Get(0).(func(context.Context, *dynatrace.MonitoredEntity, string) dynatrace.GetSettingsResponse); ok {
+		r0 = rf(ctx, monitoredEntity, schemaId)
 	} else {
 		r0 = ret.Get(0).(dynatrace.GetSettingsResponse)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, []dynatrace.MonitoredEntity, string) error); ok {
-		r1 = rf(ctx, monitoredEntities, schemaId)
+	if rf, ok := ret.Get(1).(func(context.Context, *dynatrace.MonitoredEntity, string) error); ok {
+		r1 = rf(ctx, monitoredEntity, schemaId)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1251,32 +1251,32 @@ func (_m *Client) GetSettingsForMonitoredEntities(ctx context.Context, monitored
 	return r0, r1
 }
 
-// Client_GetSettingsForMonitoredEntities_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetSettingsForMonitoredEntities'
-type Client_GetSettingsForMonitoredEntities_Call struct {
+// Client_GetSettingsForMonitoredEntity_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetSettingsForMonitoredEntity'
+type Client_GetSettingsForMonitoredEntity_Call struct {
 	*mock.Call
 }
 
-// GetSettingsForMonitoredEntities is a helper method to define mock.On call
+// GetSettingsForMonitoredEntity is a helper method to define mock.On call
 //   - ctx context.Context
-//   - monitoredEntities []dynatrace.MonitoredEntity
+//   - monitoredEntity *dynatrace.MonitoredEntity
 //   - schemaId string
-func (_e *Client_Expecter) GetSettingsForMonitoredEntities(ctx interface{}, monitoredEntities interface{}, schemaId interface{}) *Client_GetSettingsForMonitoredEntities_Call {
-	return &Client_GetSettingsForMonitoredEntities_Call{Call: _e.mock.On("GetSettingsForMonitoredEntities", ctx, monitoredEntities, schemaId)}
+func (_e *Client_Expecter) GetSettingsForMonitoredEntity(ctx interface{}, monitoredEntity interface{}, schemaId interface{}) *Client_GetSettingsForMonitoredEntity_Call {
+	return &Client_GetSettingsForMonitoredEntity_Call{Call: _e.mock.On("GetSettingsForMonitoredEntity", ctx, monitoredEntity, schemaId)}
 }
 
-func (_c *Client_GetSettingsForMonitoredEntities_Call) Run(run func(ctx context.Context, monitoredEntities []dynatrace.MonitoredEntity, schemaId string)) *Client_GetSettingsForMonitoredEntities_Call {
+func (_c *Client_GetSettingsForMonitoredEntity_Call) Run(run func(ctx context.Context, monitoredEntity *dynatrace.MonitoredEntity, schemaId string)) *Client_GetSettingsForMonitoredEntity_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([]dynatrace.MonitoredEntity), args[2].(string))
+		run(args[0].(context.Context), args[1].(*dynatrace.MonitoredEntity), args[2].(string))
 	})
 	return _c
 }
 
-func (_c *Client_GetSettingsForMonitoredEntities_Call) Return(_a0 dynatrace.GetSettingsResponse, _a1 error) *Client_GetSettingsForMonitoredEntities_Call {
+func (_c *Client_GetSettingsForMonitoredEntity_Call) Return(_a0 dynatrace.GetSettingsResponse, _a1 error) *Client_GetSettingsForMonitoredEntity_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Client_GetSettingsForMonitoredEntities_Call) RunAndReturn(run func(context.Context, []dynatrace.MonitoredEntity, string) (dynatrace.GetSettingsResponse, error)) *Client_GetSettingsForMonitoredEntities_Call {
+func (_c *Client_GetSettingsForMonitoredEntity_Call) RunAndReturn(run func(context.Context, *dynatrace.MonitoredEntity, string) (dynatrace.GetSettingsResponse, error)) *Client_GetSettingsForMonitoredEntity_Call {
 	_c.Call.Return(run)
 	return _c
 }
