@@ -32,6 +32,7 @@ var (
 		NoApiUrl,
 		IsInvalidApiUrl,
 		IsThirdGenAPIUrl,
+		IsMutatedApiUrl,
 		missingCSIDaemonSet,
 		disabledCSIForReadonlyCSIVolume,
 		invalidActiveGateCapabilities,
