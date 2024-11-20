@@ -100,6 +100,11 @@ func (in *Spec) DeepCopyInto(out *Spec) {
 		*out = make([]CapabilityDisplayName, len(*in))
 		copy(*out, *in)
 	}
+	if in.PersistentVolumeClaim != nil {
+		in, out := &in.PersistentVolumeClaim, &out.PersistentVolumeClaim
+		*out = new(v1.PersistentVolumeClaimSpec)
+		(*in).DeepCopyInto(*out)
+	}
 	out.enabledDependencies = in.enabledDependencies
 }
 

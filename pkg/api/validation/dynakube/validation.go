@@ -36,6 +36,7 @@ var (
 		disabledCSIForReadonlyCSIVolume,
 		invalidActiveGateCapabilities,
 		duplicateActiveGateCapabilities,
+		mutualExclusiveActiveGatePVsettings,
 		invalidActiveGateProxyUrl,
 		conflictingOneAgentConfiguration,
 		conflictingOneAgentNodeSelector,
