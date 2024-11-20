@@ -22,6 +22,14 @@ func TestMissingKSPMDependency(t *testing.T) {
 							activegate.KubeMonCapability.DisplayName,
 						},
 					},
+					Templates: dynakube.TemplatesSpec{
+						KspmNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+							ImageRef: image.Ref{
+								Repository: "repo/image",
+								Tag:        "version",
+							},
+						},
+					},
 				},
 			})
 	})
