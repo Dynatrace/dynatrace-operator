@@ -48,6 +48,7 @@ var (
 		namespaceSelectorViolateLabelSpec,
 		imageFieldHasTenantImage,
 		extensionControllerImage,
+		extensionControllerPVCStorageDevice,
 		missingKSPMDependency,
 	}
 	validatorWarningFuncs = []validatorFunc{

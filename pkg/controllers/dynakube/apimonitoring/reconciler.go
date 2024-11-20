@@ -52,18 +52,16 @@ func (r *Reconciler) createObjectIdIfNotExists(ctx context.Context) (string, err
 		return "", err
 	}
 
-	var monitoredEntity []dtclient.MonitoredEntity
+	var monitoredEntity *dtclient.MonitoredEntity
 
 	if r.dk.Status.KubernetesClusterMEID != "" {
-		monitoredEntity = []dtclient.MonitoredEntity{
-			{
-				EntityId: r.dk.Status.KubernetesClusterMEID,
-			},
+		monitoredEntity = &dtclient.MonitoredEntity{
+			EntityId: r.dk.Status.KubernetesClusterMEID,
 		}
 	}
 
 	// check if Setting for ME exists
-	settings, err := r.dtc.GetSettingsForMonitoredEntities(ctx, monitoredEntity, dtclient.KubernetesSettingsSchemaId)
+	settings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, monitoredEntity, dtclient.KubernetesSettingsSchemaId)
 	if err != nil {
 		return "", errors.WithMessage(err, "error trying to check if setting exists")
 	}
@@ -94,15 +92,15 @@ func (r *Reconciler) createObjectIdIfNotExists(ctx context.Context) (string, err
 	return objectID, nil
 }
 
-func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, monitoredEntities []dtclient.MonitoredEntity) (string, error) {
+func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, monitoredEntity *dtclient.MonitoredEntity) (string, error) {
 	if r.dk.FeatureEnableK8sAppEnabled() {
-		appSettings, err := r.dtc.GetSettingsForMonitoredEntities(ctx, monitoredEntities, dtclient.AppTransitionSchemaId)
+		appSettings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, monitoredEntity, dtclient.AppTransitionSchemaId)
 		if err != nil {
 			return "", errors.WithMessage(err, "error trying to check if app setting exists")
 		}
 
 		if appSettings.TotalCount == 0 {
-			meID := determineNewestMonitoredEntity(monitoredEntities)
+			meID := monitoredEntity.EntityId
 			if meID != "" {
 				transitionSchemaObjectID, err := r.dtc.CreateOrUpdateKubernetesAppSetting(ctx, meID)
 				if err != nil {
@@ -119,20 +117,4 @@ func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, monitoredEn
 	}
 
 	return "", nil
-}
-
-// determineNewestMonitoredEntity returns the UUID of the newest entities; or empty string if the slice of entities is empty
-func determineNewestMonitoredEntity(entities []dtclient.MonitoredEntity) string {
-	if len(entities) == 0 {
-		return ""
-	}
-
-	var newestMe dtclient.MonitoredEntity
-	for _, entity := range entities {
-		if entity.LastSeenTms > newestMe.LastSeenTms {
-			newestMe = entity
-		}
-	}
-
-	return newestMe.EntityId
 }

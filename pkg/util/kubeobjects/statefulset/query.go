@@ -1,6 +1,8 @@
 package statefulset
 
 import (
+	"reflect"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/internal/query"
@@ -35,5 +37,5 @@ func isEqual(current, desired *appsv1.StatefulSet) bool {
 }
 
 func mustRecreate(current, desired *appsv1.StatefulSet) bool {
-	return labels.NotEqual(current.Spec.Selector.MatchLabels, desired.Spec.Selector.MatchLabels)
+	return labels.NotEqual(current.Spec.Selector.MatchLabels, desired.Spec.Selector.MatchLabels) || !reflect.DeepEqual(current.Spec.VolumeClaimTemplates, desired.Spec.VolumeClaimTemplates)
 }

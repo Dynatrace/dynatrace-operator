@@ -75,9 +75,9 @@ type Client interface {
 	// or an api error otherwise
 	GetMonitoredEntitiesForKubeSystemUUID(ctx context.Context, kubeSystemUUID string) ([]MonitoredEntity, error)
 
-	// GetSettingsForMonitoredEntities returns the settings response with the number of settings objects,
+	// GetSettingsForMonitoredEntity returns the settings response with the number of settings objects,
 	// or an api error otherwise
-	GetSettingsForMonitoredEntities(ctx context.Context, monitoredEntities []MonitoredEntity, schemaId string) (GetSettingsResponse, error)
+	GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity *MonitoredEntity, schemaId string) (GetSettingsResponse, error)
 
 	GetRulesSettings(ctx context.Context, kubeSystemUUID string, entityID string) (GetRulesSettingsResponse, error)
 

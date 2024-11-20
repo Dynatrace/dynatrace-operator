@@ -22,19 +22,19 @@ spec:
 
   # Configuration for Metadata Enrichment.
   #
-  metadataEnrichment:
-    # Optional: Enables or disables metadata enrichment
-    # Defaults to "true"
-    #
-    enabled: true
+  # metadataEnrichment:
+  #   Optional: Enables or disables metadata enrichment
+  #   Defaults to "false"
+  #
+  #   enabled: true
 
     # The namespaces in which metadata enrichment should be injected into
     # If unset, all namespace will be injected into
     # For examples regarding namespaceSelectors, see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements
     #
-    namespaceSelector:
-      matchLabels:
-        monitor: metadataEnrichment
+    # namespaceSelector:
+    #   matchLabels:
+    #     monitor: metadataEnrichment
 
   # Configuration for OneAgent instances
   #
@@ -102,19 +102,19 @@ spec:
 
   # Configuration for Metadata Enrichment.
   #
-  metadataEnrichment:
-    # Optional: Enables or disables metadata enrichment
-    # Defaults to "true"
-    #
-    enabled: true
+  # metadataEnrichment:
+  #   # Optional: Enables or disables metadata enrichment
+  #   # Defaults to "false"
+  #   #
+  #   enabled: true
 
     # The namespaces in which metadata enrichment should be injected into
     # If unset, all namespace will be injected into
     # For examples regarding namespaceSelectors, see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements
     #
-    namespaceSelector:
-      matchLabels:
-        monitor: cloudNativeFullStack
+    # namespaceSelector:
+    #   matchLabels:
+    #     monitor: cloudNativeFullStack
 
   # Configuration for OneAgent instances
   #
