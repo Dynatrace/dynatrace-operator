@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -40,4 +41,75 @@ func createStandaloneLogMonitoringDynakube(name, nodeSelector string) *dynakube.
 	}
 
 	return dk
+}
+
+func TestMissingLogMonitoringImage(t *testing.T) {
+	t.Run("both standalone log monitoring and image ref set", func(t *testing.T) {
+		assertAllowed(t,
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:        testApiUrl,
+					LogMonitoring: &logmonitoring.Spec{},
+					Templates: dynakube.TemplatesSpec{
+						LogMonitoring: &logmonitoring.TemplateSpec{
+							ImageRef: image.Ref{
+								Repository: "repo/image",
+								Tag:        "version",
+							},
+						},
+					},
+				},
+			})
+	})
+
+	t.Run("standalone log monitoring but missing image", func(t *testing.T) {
+		assertDenied(t,
+			[]string{errorLogMonitoringMissingImage},
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:        testApiUrl,
+					LogMonitoring: &logmonitoring.Spec{},
+				},
+			})
+	})
+
+	t.Run("standalone log monitoring and only image repository set", func(t *testing.T) {
+		assertDenied(t,
+			[]string{errorLogMonitoringMissingImage},
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:        testApiUrl,
+					LogMonitoring: &logmonitoring.Spec{},
+					Templates: dynakube.TemplatesSpec{
+						LogMonitoring: &logmonitoring.TemplateSpec{
+							ImageRef: image.Ref{
+								Repository: "repo/image",
+							},
+						},
+					},
+				},
+			})
+	})
+
+	t.Run("kspm enabled and only image repository tag", func(t *testing.T) {
+		assertDenied(t,
+			[]string{errorLogMonitoringMissingImage},
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:        testApiUrl,
+					LogMonitoring: &logmonitoring.Spec{},
+					Templates: dynakube.TemplatesSpec{
+						LogMonitoring: &logmonitoring.TemplateSpec{
+							ImageRef: image.Ref{
+								Tag: "version",
+							},
+						},
+					},
+				},
+			})
+	})
 }
