@@ -55,7 +55,6 @@ const (
 	// Deprecated: AnnotationFeatureOneAgentIgnoreProxy use AnnotationFeatureNoProxy instead.
 	AnnotationFeatureOneAgentIgnoreProxy = AnnotationFeaturePrefix + "oneagent-ignore-proxy"
 
-	AnnotationFeatureMultipleOsAgentsOnNode         = AnnotationFeaturePrefix + "multiple-osagents-on-node"
 	AnnotationFeatureOneAgentMaxUnavailable         = AnnotationFeaturePrefix + "oneagent-max-unavailable"
 	AnnotationFeatureOneAgentInitialConnectRetry    = AnnotationFeaturePrefix + "oneagent-initial-connect-retry-ms"
 	AnnotationFeatureRunOneAgentContainerPrivileged = AnnotationFeaturePrefix + "oneagent-privileged"
@@ -198,11 +197,6 @@ func (dk *DynaKube) FeatureAutomaticInjection() bool {
 // Not compatible with Classic Fullstack.
 func (dk *DynaKube) FeatureReadOnlyOneAgent() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureReadOnlyOneAgent) != falsePhrase
-}
-
-// FeatureEnableMultipleOsAgentsOnNode is a feature flag to enable multiple osagents running on the same host.
-func (dk *DynaKube) FeatureEnableMultipleOsAgentsOnNode() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureMultipleOsAgentsOnNode) == truePhrase
 }
 
 // FeatureActiveGateAppArmor is a feature flag to enable AppArmor in ActiveGate container.
