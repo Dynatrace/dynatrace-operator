@@ -71,7 +71,7 @@ jobs:
         run: |
           make go/check-coverage
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@05f5a9cfad807516dbbef9929c4a42df3eb78766 # v5.0.3
+        uses: codecov/codecov-action@985343d70564a82044c1b7fcb84c2fa05405c1a2 # v5.0.4
         with:
           fail_ci_if_error: true
           verbose: true
