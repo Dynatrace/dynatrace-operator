@@ -84,8 +84,8 @@ func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(ctx context.Co
 	return resDataJson.Entities, nil
 }
 
-func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(ctx context.Context, monitoredEntities []MonitoredEntity, schemaId string) (GetSettingsResponse, error) {
-	if len(monitoredEntities) < 1 {
+func (dtc *dynatraceClient) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity *MonitoredEntity, schemaId string) (GetSettingsResponse, error) {
+	if monitoredEntity == nil {
 		return GetSettingsResponse{TotalCount: 0}, nil
 	}
 
@@ -96,7 +96,7 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(ctx context.Context,
 
 	q := req.URL.Query()
 	q.Add(schemaIDsQueryParam, schemaId)
-	q.Add(scopesQueryParam, createScopes(monitoredEntities))
+	q.Add(scopesQueryParam, monitoredEntity.EntityId)
 	req.URL.RawQuery = q.Encode()
 
 	res, err := dtc.httpClient.Do(req)
@@ -162,13 +162,4 @@ func handleErrorArrayResponseFromAPI(response []byte, statusCode int) error {
 
 		return errors.New(sb.String())
 	}
-}
-
-func createScopes(monitoredEntities []MonitoredEntity) string {
-	scopes := make([]string, 0, len(monitoredEntities))
-	for _, entity := range monitoredEntities {
-		scopes = append(scopes, entity.EntityId)
-	}
-
-	return strings.Join(scopes, ",")
 }

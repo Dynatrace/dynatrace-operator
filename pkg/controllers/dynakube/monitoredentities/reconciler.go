@@ -56,8 +56,9 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	r.dk.Status.KubernetesClusterMEID = findLatestEntity(monitoredEntities).EntityId
-	r.dk.Status.KubernetesClusterName = findLatestEntity(monitoredEntities).DisplayName
+	newestEntity := findLatestEntity(monitoredEntities)
+	r.dk.Status.KubernetesClusterMEID = newestEntity.EntityId
+	r.dk.Status.KubernetesClusterName = newestEntity.DisplayName
 	conditions.SetStatusUpdated(r.dk.Conditions(), MEIDConditionType, "Kubernetes Cluster MEID is up to date")
 
 	log.Info("kubernetesClusterMEID set in dynakube status, done reconciling", "kubernetesClusterMEID", r.dk.Status.KubernetesClusterMEID)
@@ -68,7 +69,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 func findLatestEntity(monitoredEntities []dynatrace.MonitoredEntity) dynatrace.MonitoredEntity {
 	latest := monitoredEntities[0]
 	for _, entity := range monitoredEntities {
-		if entity.LastSeenTms < latest.LastSeenTms {
+		if entity.LastSeenTms > latest.LastSeenTms {
 			latest = entity
 		}
 	}
