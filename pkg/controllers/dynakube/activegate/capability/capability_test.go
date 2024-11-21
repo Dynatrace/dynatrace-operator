@@ -20,9 +20,9 @@ const (
 	expectedArgName                            = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface"
 	expectedArgNameWithExtensions              = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,extension_controller"
 	expectedArgNameWithExtensionsOnly          = "extension_controller"
-	expectedArgNameWithOtlpIngest              = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,log_analytics_collector,generic_ingest_enabled,otlp_ingest"
-	expectedArgNameWithOtlpIngestOnly          = "log_analytics_collector,generic_ingest_enabled,otlp_ingest"
-	expectedArgNameWithExtensionsAndOtlpIngest = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,extension_controller,log_analytics_collector,generic_ingest_enabled,otlp_ingest"
+	expectedArgNameWithOTLPingest              = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,log_analytics_collector,generic_ingest_enabled,otlp_ingest"
+	expectedArgNameWithOTLPingestOnly          = "log_analytics_collector,generic_ingest_enabled,otlp_ingest"
+	expectedArgNameWithExtensionsAndOTLPingest = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,extension_controller,log_analytics_collector,generic_ingest_enabled,otlp_ingest"
 )
 
 var capabilities = []activegate.CapabilityDisplayName{
@@ -32,7 +32,7 @@ var capabilities = []activegate.CapabilityDisplayName{
 	activegate.DynatraceApiCapability.DisplayName,
 }
 
-func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtensions bool, enableOtlpIngest bool) *dynakube.DynaKube {
+func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtensions bool, enableOTLPingest bool) *dynakube.DynaKube {
 	extensionsSpec := &dynakube.ExtensionsSpec{}
 	if !enableExtensions {
 		extensionsSpec = nil
@@ -48,7 +48,7 @@ func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtens
 				Capabilities: capabilities,
 			},
 			Extensions:       extensionsSpec,
-			EnableOtlpIngest: enableOtlpIngest,
+			EnableOTLPingest: enableOTLPingest,
 		},
 	}
 }
@@ -121,34 +121,34 @@ func TestNewMultiCapabilityWithExtensions(t *testing.T) {
 	})
 }
 
-func TestNewMultiCapabilityWithOtlpIngest(t *testing.T) {
-	t.Run(`creates new multicapability with OtlpIngest enabled`, func(t *testing.T) {
+func TestNewMultiCapabilityWithOTLPingest(t *testing.T) {
+	t.Run(`creates new multicapability with OTLPingest enabled`, func(t *testing.T) {
 		dk := buildDynakube(capabilities, false, true)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
 		assert.Equal(t, expectedShortName, mc.ShortName())
-		assert.Equal(t, expectedArgNameWithOtlpIngest, mc.ArgName())
+		assert.Equal(t, expectedArgNameWithOTLPingest, mc.ArgName())
 	})
-	t.Run(`creates new multicapability without capabilities set in dynakube and OtlpIngest enabled`, func(t *testing.T) {
+	t.Run(`creates new multicapability without capabilities set in dynakube and OTLPingest enabled`, func(t *testing.T) {
 		var emptyCapabilites []activegate.CapabilityDisplayName
 		dk := buildDynakube(emptyCapabilites, false, true)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
 		assert.Equal(t, expectedShortName, mc.ShortName())
-		assert.Equal(t, expectedArgNameWithOtlpIngestOnly, mc.ArgName())
+		assert.Equal(t, expectedArgNameWithOTLPingestOnly, mc.ArgName())
 	})
 }
 
-func TestNewMultiCapabilityWithExtensionsAndOtlpIngest(t *testing.T) {
-	t.Run(`creates new multicapability with Extensions and OtlpIngest enabled`, func(t *testing.T) {
+func TestNewMultiCapabilityWithExtensionsAndOTLPingest(t *testing.T) {
+	t.Run(`creates new multicapability with Extensions and OTLPingest enabled`, func(t *testing.T) {
 		dk := buildDynakube(capabilities, true, true)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
 		assert.Equal(t, expectedShortName, mc.ShortName())
-		assert.Equal(t, expectedArgNameWithExtensionsAndOtlpIngest, mc.ArgName())
+		assert.Equal(t, expectedArgNameWithExtensionsAndOTLPingest, mc.ArgName())
 	})
 }
 
@@ -365,10 +365,10 @@ func TestActiveGateService(t *testing.T) {
 		}
 		assert.True(t, dk.ActiveGate().NeedsService())
 	})
-	t.Run(`creates dynakube with OtlpIngest enabled`, func(t *testing.T) {
+	t.Run(`creates dynakube with OTLPingest enabled`, func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				EnableOtlpIngest: true,
+				EnableOTLPingest: true,
 			},
 		}
 		assert.True(t, dk.ActiveGate().NeedsService())

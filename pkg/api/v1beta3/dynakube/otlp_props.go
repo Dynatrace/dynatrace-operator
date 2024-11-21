@@ -1,5 +1,5 @@
 package dynakube
 
-func (dk *DynaKube) IsOtlpIngestEnabled() bool {
-	return dk.Spec.EnableOtlpIngest
+func (dk *DynaKube) IsOTLPingestEnabled() bool {
+	return dk.Spec.EnableOTLPingest
 }
