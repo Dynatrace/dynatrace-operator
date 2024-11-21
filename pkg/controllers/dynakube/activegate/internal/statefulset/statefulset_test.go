@@ -23,6 +23,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -452,5 +453,86 @@ func TestSecurityContexts(t *testing.T) {
 
 		require.NotEmpty(t, sts)
 		require.Truef(t, reflect.DeepEqual(sts.Spec.Template.Spec.InitContainers[0].SecurityContext, sts.Spec.Template.Spec.Containers[0].SecurityContext), "InitContainer and Container have different SecurityContexts")
+	})
+}
+
+func TestVolumes(t *testing.T) {
+	t.Run("empty dir volume exists when PersistentVolumeClaim = nil", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.ActiveGate.PersistentVolumeClaim = nil
+		multiCapability := capability.NewMultiCapability(&dk)
+		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		sts, _ := statefulsetBuilder.CreateStatefulSet([]builder.Modifier{
+			modifiers.NewKubernetesMonitoringModifier(dk, multiCapability),
+			modifiers.NewReadOnlyModifier(dk),
+		})
+
+		require.NotEmpty(t, sts)
+
+		expectedVolume := corev1.Volume{
+			Name: defaultOTLPingestName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		}
+		require.Contains(t, sts.Spec.Template.Spec.Volumes, expectedVolume)
+	})
+}
+
+func TestVolumeMounts(t *testing.T) {
+	t.Run("default OTLP ingest volume mount is presented in Container volumeMount list", func(t *testing.T) {
+		dk := getTestDynakube()
+		multiCapability := capability.NewMultiCapability(&dk)
+		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		sts, _ := statefulsetBuilder.CreateStatefulSet([]builder.Modifier{
+			modifiers.NewKubernetesMonitoringModifier(dk, multiCapability),
+			modifiers.NewReadOnlyModifier(dk),
+		})
+
+		require.NotEmpty(t, sts)
+
+		expectedVolumeMount := corev1.VolumeMount{
+			Name:      defaultOTLPingestName,
+			MountPath: defaultOTLPmountPath,
+		}
+		require.Contains(t, sts.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
+	})
+}
+
+func TestPVC(t *testing.T) {
+	t.Run("if PVC has been defined in the Dynakube, use it", func(t *testing.T) {
+		dk := getTestDynakube()
+		multiCapability := capability.NewMultiCapability(&dk)
+		myPVCspec := corev1.PersistentVolumeClaimSpec{
+			StorageClassName: ptr.To("test"),
+			VolumeName:       "foo-pv",
+		}
+		dk.Spec.ActiveGate.PersistentVolumeClaim = &myPVCspec
+		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		sts, _ := statefulsetBuilder.CreateStatefulSet([]builder.Modifier{
+			modifiers.NewKubernetesMonitoringModifier(dk, multiCapability),
+			modifiers.NewReadOnlyModifier(dk),
+		})
+
+		require.NotEmpty(t, sts)
+
+		require.Equal(t, myPVCspec, sts.Spec.VolumeClaimTemplates[0].Spec)
+		require.Equal(t, defaultOTLPingestName, sts.Spec.VolumeClaimTemplates[0].Name)
+		require.Equal(t, defaultPVCRetentionPolicy(), sts.Spec.PersistentVolumeClaimRetentionPolicy)
+	})
+	t.Run("if no PVC has been defined in the Dynakube, default PVC shall be added.", func(t *testing.T) {
+		dk := getTestDynakube()
+		multiCapability := capability.NewMultiCapability(&dk)
+		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		sts, _ := statefulsetBuilder.CreateStatefulSet([]builder.Modifier{
+			modifiers.NewKubernetesMonitoringModifier(dk, multiCapability),
+			modifiers.NewReadOnlyModifier(dk),
+		})
+
+		require.NotEmpty(t, sts)
+
+		require.Equal(t, defaultPVCSpec(), sts.Spec.VolumeClaimTemplates[0].Spec)
+		require.Equal(t, defaultOTLPingestName, sts.Spec.VolumeClaimTemplates[0].Name)
+		require.Equal(t, defaultPVCRetentionPolicy(), sts.Spec.PersistentVolumeClaimRetentionPolicy)
 	})
 }
