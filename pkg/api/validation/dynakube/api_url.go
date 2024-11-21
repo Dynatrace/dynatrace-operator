@@ -23,7 +23,7 @@ const (
 	errorThirdGenApiUrl = `The DynaKube's specification has an 3rd gen API URL. Make sure to remove the 'apps' part
 	out of it. Example: ` + ExampleApiUrl
 
-	errorMutatedApiUrl = "The DynaKube's specification has mutated APIURL, APIURL is immutable, please delete the CR and then apply new one"
+	errorMutatedApiUrl = `The DynaKube's specification mutated the API URL although it is immutable. Please delete the CR and then apply a new one`
 )
 
 func NoApiUrl(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
