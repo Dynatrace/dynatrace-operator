@@ -86,15 +86,13 @@ func (dtc *dynatraceClient) performCreateLogMonSetting(ctx context.Context, body
 func createBaseLogMonSettings(clusterName, schemaId string, schemaVersion string, scope string, ingestRuleMatchers []logmonitoring.IngestRuleMatchers) posLogMonSettingsBody {
 	matchers := []IngestRuleMatchers{}
 
-	if len(ingestRuleMatchers) > 0 {
-		for _, ingestRuleMatcher := range ingestRuleMatchers {
-			matcher := IngestRuleMatchers{
-				Attribute: ingestRuleMatcher.Attribute,
-				Operator:  "MATCHES",
-				Values:    ingestRuleMatcher.Values,
-			}
-			matchers = append(matchers, matcher)
+	for _, ingestRuleMatcher := range ingestRuleMatchers {
+		matcher := IngestRuleMatchers{
+			Attribute: ingestRuleMatcher.Attribute,
+			Operator:  "MATCHES",
+			Values:    ingestRuleMatcher.Values,
 		}
+		matchers = append(matchers, matcher)
 	}
 
 	base := posLogMonSettingsBody{
