@@ -90,8 +90,7 @@ spec:
                         Variable references $(VAR_NAME) are expanded
                         using the previously defined environment variables in the container and
                         any service environment variables. If a variable cannot be resolved,
-                        the reference in the input string will be unchanged. Double $$ are reduced
-                        to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                        the reference in the input string will be unchanged.
                       type: string
                     valueFrom:
                       description: Source for the environment variable's value. Cannot
@@ -339,7 +338,7 @@ spec:
                       Requests describes the minimum amount of compute resources required.
                       If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                       otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                      More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                      More info: https://kubernetes.
                     type: object
                 type: object
               serviceAccountName:
@@ -445,10 +444,7 @@ spec:
                     matchLabelKeys:
                       description: |-
                         MatchLabelKeys is a set of pod label keys to select the pods over which
-                        spreading will be calculated. The keys are used to lookup values from the
-                        incoming pod labels, those key-value labels are ANDed with labelSelector
-                        to select the group of existing pods over which spreading will be calculated
-                        for the incoming pod.
+                        spreading will be calculated.
                       items:
                         type: string
                       type: array
@@ -472,7 +468,7 @@ spec:
                         NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector
                         when calculating pod topology spread skew. Options are:
                         - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
-                        - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
+                        - Ignore: nodeAffinity/nodeSelector are ignored.
                       type: string
                     nodeTaintsPolicy:
                       description: |-
@@ -545,7 +541,6 @@ spec:
                         Producers of specific condition types may define expected values and meanings for this field,
                         and whether the values are considered a guaranteed API.
                         The value should be a CamelCase string.
-                        This field may not be empty.
                       maxLength: 1024
                       minLength: 1
                       pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
@@ -679,8 +674,7 @@ spec:
                         Variable references $(VAR_NAME) are expanded
                         using the previously defined environment variables in the container and
                         any service environment variables. If a variable cannot be resolved,
-                        the reference in the input string will be unchanged. Double $$ are reduced
-                        to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                        the reference in the input string will be unchanged.
                       type: string
                     valueFrom:
                       description: Source for the environment variable's value. Cannot
@@ -929,7 +923,7 @@ spec:
                       Requests describes the minimum amount of compute resources required.
                       If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                       otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                      More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                      More info: https://kubernetes.
                     type: object
                 type: object
               serviceAccountName:
@@ -1034,10 +1028,7 @@ spec:
                     matchLabelKeys:
                       description: |-
                         MatchLabelKeys is a set of pod label keys to select the pods over which
-                        spreading will be calculated. The keys are used to lookup values from the
-                        incoming pod labels, those key-value labels are ANDed with labelSelector
-                        to select the group of existing pods over which spreading will be calculated
-                        for the incoming pod.
+                        spreading will be calculated.
                       items:
                         type: string
                       type: array
@@ -1061,7 +1052,7 @@ spec:
                         NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector
                         when calculating pod topology spread skew. Options are:
                         - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
-                        - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
+                        - Ignore: nodeAffinity/nodeSelector are ignored.
                       type: string
                     nodeTaintsPolicy:
                       description: |-
@@ -1134,7 +1125,6 @@ spec:
                         Producers of specific condition types may define expected values and meanings for this field,
                         and whether the values are considered a guaranteed API.
                         The value should be a CamelCase string.
-                        This field may not be empty.
                       maxLength: 1024
                       minLength: 1
                       pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
