@@ -39,6 +39,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 
 	if !r.dk.LogMonitoring().IsEnabled() {
 		meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
+		return nil
 	}
 
 	err := r.checkLogMonitoringSettings(ctx)
