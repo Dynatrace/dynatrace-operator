@@ -61,10 +61,11 @@ type ActiveGate struct {
 type dependencies struct {
 	extensions bool
 	kspm       bool
+	otlpIngest bool
 }
 
 func (d dependencies) Any() bool {
-	return d.extensions
+	return d.extensions || d.otlpIngest
 }
 
 // +kubebuilder:object:generate=true
