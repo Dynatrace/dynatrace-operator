@@ -64,7 +64,7 @@ type dependencies struct {
 }
 
 func (d dependencies) Any() bool {
-	return d.extensions
+	return d.extensions // kspm is a dependency too, but blocked by validation webhook to not run standalone
 }
 
 // +kubebuilder:object:generate=true
