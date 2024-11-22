@@ -561,7 +561,27 @@ func TestTokenConditions(t *testing.T) {
 		_, err := controller.setupTokensAndClient(ctx, dk)
 
 		require.NoError(t, err)
-		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionTrue, dynakube.ReasonTokenReady, "")
+		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionTrue, dynakube.ReasonTokenReady, TokenWithoutDataIngestConditionMessage)
+
+		fakeClient = fake.NewClient(&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Data: map[string][]byte{
+				dtclient.ApiToken:        []byte(testAPIToken),
+				dtclient.DataIngestToken: []byte(testAPIToken),
+			},
+		})
+		controller = &Controller{
+			client:                 fakeClient,
+			apiReader:              fakeClient,
+			dynatraceClientBuilder: mockDtcBuilder,
+		}
+		_, err = controller.setupTokensAndClient(ctx, dk)
+
+		require.NoError(t, err)
+		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionTrue, dynakube.ReasonTokenReady, TokenReadyConditionMessage)
 	})
 }
 

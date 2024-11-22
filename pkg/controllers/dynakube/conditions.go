@@ -6,6 +6,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	TokenReadyConditionMessage             = "Token ready"
+	TokenWithoutDataIngestConditionMessage = "Token ready, DataIngest token not provided"
+)
+
 func (controller *Controller) setConditionTokenError(dk *dynakube.DynaKube, err error) {
 	tokenErrorCondition := metav1.Condition{
 		Type:    dynakube.TokenConditionType,
@@ -18,9 +23,9 @@ func (controller *Controller) setConditionTokenError(dk *dynakube.DynaKube, err 
 }
 
 func (controller *Controller) setConditionTokenReady(dk *dynakube.DynaKube, dataIngestTokenProvided bool) {
-	msg := "Token ready, DataIngest token not provided"
+	msg := TokenWithoutDataIngestConditionMessage
 	if dataIngestTokenProvided {
-		msg = "Token ready"
+		msg = TokenReadyConditionMessage
 	}
 
 	tokenErrorCondition := metav1.Condition{
