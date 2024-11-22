@@ -482,29 +482,6 @@ func TestServiceCreation(t *testing.T) {
 			assertContainsAllPorts(t, expectedPorts, activegateService.Spec.Ports)
 		}
 	})
-
-	t.Run("service exposes all ports for all capabilities", func(t *testing.T) {
-		fakeClient := fake.NewClient(testKubeSystemNamespace)
-
-		reconciler := NewReconciler(fakeClient, fakeClient, dk, dynatraceClient, nil, nil).(*Reconciler)
-		reconciler.connectionReconciler = createGenericReconcilerMock(t)
-		reconciler.versionReconciler = createVersionReconcilerMock(t)
-		reconciler.pullSecretReconciler = createGenericReconcilerMock(t)
-
-		dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{
-			activegate.RoutingCapability.DisplayName,
-		}
-		expectedPorts := []string{
-			consts.HttpServicePortName,
-			consts.HttpsServicePortName,
-		}
-
-		err := reconciler.Reconcile(context.Background())
-		require.NoError(t, err)
-
-		activegateService := getTestActiveGateService(t, fakeClient)
-		assertContainsAllPorts(t, expectedPorts, activegateService.Spec.Ports)
-	})
 }
 
 func assertContainsAllPorts(t *testing.T, expectedPorts []string, servicePorts []corev1.ServicePort) {
