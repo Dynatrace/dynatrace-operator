@@ -27,6 +27,10 @@ func (ag *Spec) SetExtensionsDependency(isEnabled bool) {
 	ag.enabledDependencies.extensions = isEnabled
 }
 
+func (ag *Spec) SetOTLPingestDependency(isEnabled bool) {
+	ag.enabledDependencies.otlpIngest = isEnabled
+}
+
 func (ag *Spec) apiUrlHost() string {
 	parsedUrl, err := url.Parse(ag.apiUrl)
 	if err != nil {
@@ -86,6 +90,14 @@ func (ag *Spec) IsApiEnabled() bool {
 
 func (ag *Spec) IsMetricsIngestEnabled() bool {
 	return ag.IsMode(MetricsIngestCapability.DisplayName)
+}
+
+func (ag *Spec) NeedsService() bool {
+	return ag.IsRoutingEnabled() ||
+		ag.IsApiEnabled() ||
+		ag.IsMetricsIngestEnabled() ||
+		ag.enabledDependencies.extensions ||
+		ag.enabledDependencies.otlpIngest
 }
 
 func (ag *Spec) HasCaCert() bool {
