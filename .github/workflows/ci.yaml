@@ -71,7 +71,7 @@ jobs:
         run: |
           make go/check-coverage
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@968872560f81e7bdde9272853e65f2507c0eca7c # v5.0.0
+        uses: codecov/codecov-action@015f24e6818733317a2da2edd6290ab26238649a # v5.0.7
         with:
           fail_ci_if_error: true
           verbose: true
@@ -175,7 +175,7 @@ jobs:
         run: |
           hack/build/ci/prepare-build-variables.sh
       - name: Docker metadata
-        uses: docker/metadata-action@8e5442c4ef9f78752691e2d8f8d19755c6f78e81 # v5.5.1
+        uses: docker/metadata-action@369eb591f429131d6889c46b94e711f089e6ca96 # v5.6.1
         id: meta
         with:
           images: dynatrace/dynatrace-operator
