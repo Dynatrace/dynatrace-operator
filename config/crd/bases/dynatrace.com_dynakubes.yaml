@@ -100,8 +100,7 @@ spec:
                             Variable references $(VAR_NAME) are expanded
                             using the previously defined environment variables in the container and
                             any service environment variables. If a variable cannot be resolved,
-                            the reference in the input string will be unchanged. Double $$ are reduced
-                            to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                            the reference in the input string will be unchanged.
                           type: string
                         valueFrom:
                           description: Source for the environment variable's value.
@@ -284,7 +283,7 @@ spec:
                           Requests describes the minimum amount of compute resources required.
                           If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                           otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                          More info: https://kubernetes.
                         type: object
                     type: object
                   tlsSecretName:
@@ -391,10 +390,7 @@ spec:
                         matchLabelKeys:
                           description: |-
                             MatchLabelKeys is a set of pod label keys to select the pods over which
-                            spreading will be calculated. The keys are used to lookup values from the
-                            incoming pod labels, those key-value labels are ANDed with labelSelector
-                            to select the group of existing pods over which spreading will be calculated
-                            for the incoming pod.
+                            spreading will be calculated.
                           items:
                             type: string
                           type: array
@@ -418,7 +414,7 @@ spec:
                             NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector
                             when calculating pod topology spread skew. Options are:
                             - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
-                            - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
+                            - Ignore: nodeAffinity/nodeSelector are ignored.
                           type: string
                         nodeTaintsPolicy:
                           description: |-
@@ -504,8 +500,7 @@ spec:
                             Variable references $(VAR_NAME) are expanded
                             using the previously defined environment variables in the container and
                             any service environment variables. If a variable cannot be resolved,
-                            the reference in the input string will be unchanged. Double $$ are reduced
-                            to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                            the reference in the input string will be unchanged.
                           type: string
                         valueFrom:
                           description: Source for the environment variable's value.
@@ -683,7 +678,7 @@ spec:
                           Requests describes the minimum amount of compute resources required.
                           If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                           otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                          More info: https://kubernetes.
                         type: object
                     type: object
                   tolerations:
@@ -784,10 +779,7 @@ spec:
                         matchLabelKeys:
                           description: |-
                             MatchLabelKeys is a set of pod label keys to select the pods over which
-                            spreading will be calculated. The keys are used to lookup values from the
-                            incoming pod labels, those key-value labels are ANDed with labelSelector
-                            to select the group of existing pods over which spreading will be calculated
-                            for the incoming pod.
+                            spreading will be calculated.
                           items:
                             type: string
                           type: array
@@ -811,7 +803,7 @@ spec:
                             NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector
                             when calculating pod topology spread skew. Options are:
                             - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
-                            - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
+                            - Ignore: nodeAffinity/nodeSelector are ignored.
                           type: string
                         nodeTaintsPolicy:
                           description: |-
@@ -969,7 +961,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       useCSIDriver:
@@ -996,7 +988,6 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.
                         items:
                           type: string
                         type: array
@@ -1026,8 +1017,7 @@ spec:
                                 Variable references $(VAR_NAME) are expanded
                                 using the previously defined environment variables in the container and
                                 any service environment variables. If a variable cannot be resolved,
-                                the reference in the input string will be unchanged. Double $$ are reduced
-                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                the reference in the input string will be unchanged.
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -1201,7 +1191,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       priorityClassName:
@@ -1269,7 +1259,6 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.
                         items:
                           type: string
                         type: array
@@ -1303,8 +1292,7 @@ spec:
                                 Variable references $(VAR_NAME) are expanded
                                 using the previously defined environment variables in the container and
                                 any service environment variables. If a variable cannot be resolved,
-                                the reference in the input string will be unchanged. Double $$ are reduced
-                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                the reference in the input string will be unchanged.
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -1466,7 +1454,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       labels:
@@ -1539,7 +1527,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       priorityClassName:
@@ -1609,7 +1597,6 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.
                         items:
                           type: string
                         type: array
@@ -1639,8 +1626,7 @@ spec:
                                 Variable references $(VAR_NAME) are expanded
                                 using the previously defined environment variables in the container and
                                 any service environment variables. If a variable cannot be resolved,
-                                the reference in the input string will be unchanged. Double $$ are reduced
-                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                the reference in the input string will be unchanged.
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -1814,7 +1800,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       priorityClassName:
@@ -1916,8 +1902,7 @@ spec:
                             Variable references $(VAR_NAME) are expanded
                             using the previously defined environment variables in the container and
                             any service environment variables. If a variable cannot be resolved,
-                            the reference in the input string will be unchanged. Double $$ are reduced
-                            to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                            the reference in the input string will be unchanged.
                           type: string
                         valueFrom:
                           description: Source for the environment variable's value.
@@ -2095,7 +2080,7 @@ spec:
                           Requests describes the minimum amount of compute resources required.
                           If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                           otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                          More info: https://kubernetes.
                         type: object
                     type: object
                   tolerations:
@@ -2196,10 +2181,7 @@ spec:
                         matchLabelKeys:
                           description: |-
                             MatchLabelKeys is a set of pod label keys to select the pods over which
-                            spreading will be calculated. The keys are used to lookup values from the
-                            incoming pod labels, those key-value labels are ANDed with labelSelector
-                            to select the group of existing pods over which spreading will be calculated
-                            for the incoming pod.
+                            spreading will be calculated.
                           items:
                             type: string
                           type: array
@@ -2223,7 +2205,7 @@ spec:
                             NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector
                             when calculating pod topology spread skew. Options are:
                             - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
-                            - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
+                            - Ignore: nodeAffinity/nodeSelector are ignored.
                           type: string
                         nodeTaintsPolicy:
                           description: |-
@@ -2374,7 +2356,6 @@ spec:
                         Producers of specific condition types may define expected values and meanings for this field,
                         and whether the values are considered a guaranteed API.
                         The value should be a CamelCase string.
-                        This field may not be empty.
                       maxLength: 1024
                       minLength: 1
                       pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
@@ -2551,8 +2532,7 @@ spec:
                       values:\n\t- `routing` enables OneAgent routing.\n\t- `kubernetes-monitoring`
                       enables Kubernetes API monitoring.\n\t- `metrics-ingest` opens
                       the metrics ingest endpoint on the DynaKube ActiveGate and redirects
-                      all pods to it.\n\t- `dynatrace-api` enables calling the Dynatrace
-                      API via ActiveGate."
+                      all pods to it."
                     items:
                       type: string
                     type: array
@@ -2588,8 +2568,7 @@ spec:
                             Variable references $(VAR_NAME) are expanded
                             using the previously defined environment variables in the container and
                             any service environment variables. If a variable cannot be resolved,
-                            the reference in the input string will be unchanged. Double $$ are reduced
-                            to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                            the reference in the input string will be unchanged.
                           type: string
                         valueFrom:
                           description: Source for the environment variable's value.
@@ -2776,7 +2755,7 @@ spec:
                           Requests describes the minimum amount of compute resources required.
                           If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                           otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                          More info: https://kubernetes.
                         type: object
                     type: object
                   tlsSecretName:
@@ -2883,10 +2862,7 @@ spec:
                         matchLabelKeys:
                           description: |-
                             MatchLabelKeys is a set of pod label keys to select the pods over which
-                            spreading will be calculated. The keys are used to lookup values from the
-                            incoming pod labels, those key-value labels are ANDed with labelSelector
-                            to select the group of existing pods over which spreading will be calculated
-                            for the incoming pod.
+                            spreading will be calculated.
                           items:
                             type: string
                           type: array
@@ -2910,7 +2886,7 @@ spec:
                             NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector
                             when calculating pod topology spread skew. Options are:
                             - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
-                            - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
+                            - Ignore: nodeAffinity/nodeSelector are ignored.
                           type: string
                         nodeTaintsPolicy:
                           description: |-
@@ -3099,7 +3075,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       namespaceSelector:
@@ -3175,7 +3151,6 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.
                         items:
                           type: string
                         type: array
@@ -3206,8 +3181,7 @@ spec:
                                 Variable references $(VAR_NAME) are expanded
                                 using the previously defined environment variables in the container and
                                 any service environment variables. If a variable cannot be resolved,
-                                the reference in the input string will be unchanged. Double $$ are reduced
-                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                the reference in the input string will be unchanged.
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -3382,7 +3356,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       priorityClassName:
@@ -3456,7 +3430,6 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.
                         items:
                           type: string
                         type: array
@@ -3491,8 +3464,7 @@ spec:
                                 Variable references $(VAR_NAME) are expanded
                                 using the previously defined environment variables in the container and
                                 any service environment variables. If a variable cannot be resolved,
-                                the reference in the input string will be unchanged. Double $$ are reduced
-                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                the reference in the input string will be unchanged.
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -3654,7 +3626,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       labels:
@@ -3776,7 +3748,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       priorityClassName:
@@ -3855,7 +3827,6 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.
                         items:
                           type: string
                         type: array
@@ -3886,8 +3857,7 @@ spec:
                                 Variable references $(VAR_NAME) are expanded
                                 using the previously defined environment variables in the container and
                                 any service environment variables. If a variable cannot be resolved,
-                                the reference in the input string will be unchanged. Double $$ are reduced
-                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                the reference in the input string will be unchanged.
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -4062,7 +4032,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       priorityClassName:
@@ -4253,7 +4223,6 @@ spec:
                         Producers of specific condition types may define expected values and meanings for this field,
                         and whether the values are considered a guaranteed API.
                         The value should be a CamelCase string.
-                        This field may not be empty.
                       maxLength: 1024
                       minLength: 1
                       pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
@@ -4484,8 +4453,7 @@ spec:
                             Variable references $(VAR_NAME) are expanded
                             using the previously defined environment variables in the container and
                             any service environment variables. If a variable cannot be resolved,
-                            the reference in the input string will be unchanged. Double $$ are reduced
-                            to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                            the reference in the input string will be unchanged.
                           type: string
                         valueFrom:
                           description: Source for the environment variable's value.
@@ -4616,10 +4584,7 @@ spec:
                       dataSource:
                         description: |-
                           dataSource field can be used to specify either:
-                          * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
-                          * An existing PVC (PersistentVolumeClaim)
-                          If the provisioner or an external controller can support the specified data source,
-                          it will create a new volume based on the contents of the specified data source.
+                          * An existing VolumeSnapshot object (snapshot.storage.k8s.
                         properties:
                           apiGroup:
                             description: |-
@@ -4671,7 +4636,6 @@ spec:
                           If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
                           that are lower than previous value but must still be higher than capacity recorded in the
                           status field of the claim.
-                          More info: https://kubernetes.
                         properties:
                           limits:
                             additionalProperties:
@@ -4695,7 +4659,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       selector:
@@ -4754,8 +4718,7 @@ spec:
                         description: |-
                           volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
                           If specified, the CSI driver will create or update the volume with the attributes defined
-                          in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
-                          it can be changed after the claim is created.
+                          in the corresponding VolumeAttributesClass.
                         type: string
                       volumeMode:
                         description: |-
@@ -4833,7 +4796,7 @@ spec:
                           Requests describes the minimum amount of compute resources required.
                           If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                           otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                          More info: https://kubernetes.
                         type: object
                     type: object
                   tlsSecretName:
@@ -4940,10 +4903,7 @@ spec:
                         matchLabelKeys:
                           description: |-
                             MatchLabelKeys is a set of pod label keys to select the pods over which
-                            spreading will be calculated. The keys are used to lookup values from the
-                            incoming pod labels, those key-value labels are ANDed with labelSelector
-                            to select the group of existing pods over which spreading will be calculated
-                            for the incoming pod.
+                            spreading will be calculated.
                           items:
                             type: string
                           type: array
@@ -4967,7 +4927,7 @@ spec:
                             NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector
                             when calculating pod topology spread skew. Options are:
                             - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
-                            - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
+                            - Ignore: nodeAffinity/nodeSelector are ignored.
                           type: string
                         nodeTaintsPolicy:
                           description: |-
@@ -5170,7 +5130,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       namespaceSelector:
@@ -5246,7 +5206,6 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.
                         items:
                           type: string
                         type: array
@@ -5276,8 +5235,7 @@ spec:
                                 Variable references $(VAR_NAME) are expanded
                                 using the previously defined environment variables in the container and
                                 any service environment variables. If a variable cannot be resolved,
-                                the reference in the input string will be unchanged. Double $$ are reduced
-                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                the reference in the input string will be unchanged.
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -5451,7 +5409,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       priorityClassName:
@@ -5524,7 +5482,6 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.
                         items:
                           type: string
                         type: array
@@ -5558,8 +5515,7 @@ spec:
                                 Variable references $(VAR_NAME) are expanded
                                 using the previously defined environment variables in the container and
                                 any service environment variables. If a variable cannot be resolved,
-                                the reference in the input string will be unchanged. Double $$ are reduced
-                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                the reference in the input string will be unchanged.
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -5721,7 +5677,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       labels:
@@ -5842,7 +5798,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       priorityClassName:
@@ -5917,7 +5873,6 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.
                         items:
                           type: string
                         type: array
@@ -5947,8 +5902,7 @@ spec:
                                 Variable references $(VAR_NAME) are expanded
                                 using the previously defined environment variables in the container and
                                 any service environment variables. If a variable cannot be resolved,
-                                the reference in the input string will be unchanged. Double $$ are reduced
-                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                the reference in the input string will be unchanged.
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -6122,7 +6076,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       priorityClassName:
@@ -6248,10 +6202,7 @@ spec:
                           dataSource:
                             description: |-
                               dataSource field can be used to specify either:
-                              * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
-                              * An existing PVC (PersistentVolumeClaim)
-                              If the provisioner or an external controller can support the specified data source,
-                              it will create a new volume based on the contents of the specified data source.
+                              * An existing VolumeSnapshot object (snapshot.storage.k8s.
                             properties:
                               apiGroup:
                                 description: |-
@@ -6303,7 +6254,6 @@ spec:
                               If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
                               that are lower than previous value but must still be higher than capacity recorded in the
                               status field of the claim.
-                              More info: https://kubernetes.
                             properties:
                               limits:
                                 additionalProperties:
@@ -6327,7 +6277,7 @@ spec:
                                   Requests describes the minimum amount of compute resources required.
                                   If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                                   otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                                  More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                                  More info: https://kubernetes.
                                 type: object
                             type: object
                           selector:
@@ -6386,8 +6336,7 @@ spec:
                             description: |-
                               volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
                               If specified, the CSI driver will create or update the volume with the attributes defined
-                              in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
-                              it can be changed after the claim is created.
+                              in the corresponding VolumeAttributesClass.
                             type: string
                           volumeMode:
                             description: |-
@@ -6456,7 +6405,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       tlsRefName:
@@ -6560,10 +6509,7 @@ spec:
                             matchLabelKeys:
                               description: |-
                                 MatchLabelKeys is a set of pod label keys to select the pods over which
-                                spreading will be calculated. The keys are used to lookup values from the
-                                incoming pod labels, those key-value labels are ANDed with labelSelector
-                                to select the group of existing pods over which spreading will be calculated
-                                for the incoming pod.
+                                spreading will be calculated.
                               items:
                                 type: string
                               type: array
@@ -6587,7 +6533,7 @@ spec:
                                 NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector
                                 when calculating pod topology spread skew. Options are:
                                 - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
-                                - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
+                                - Ignore: nodeAffinity/nodeSelector are ignored.
                               type: string
                             nodeTaintsPolicy:
                               description: |-
@@ -6654,8 +6600,7 @@ spec:
                                 Variable references $(VAR_NAME) are expanded
                                 using the previously defined environment variables in the container and
                                 any service environment variables. If a variable cannot be resolved,
-                                the reference in the input string will be unchanged. Double $$ are reduced
-                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                the reference in the input string will be unchanged.
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -6814,7 +6759,6 @@ spec:
                                               the values array must be non-empty. If the operator is Exists or DoesNotExist,
                                               the values array must be empty. If the operator is Gt or Lt, the values
                                               array must have a single element, which will be interpreted as an integer.
-                                              This array is replaced during a strategic merge patch.
                                             items:
                                               type: string
                                             type: array
@@ -6848,7 +6792,6 @@ spec:
                                               the values array must be non-empty. If the operator is Exists or DoesNotExist,
                                               the values array must be empty. If the operator is Gt or Lt, the values
                                               array must have a single element, which will be interpreted as an integer.
-                                              This array is replaced during a strategic merge patch.
                                             items:
                                               type: string
                                             type: array
@@ -6877,8 +6820,7 @@ spec:
                               If the affinity requirements specified by this field are not met at
                               scheduling time, the pod will not be scheduled onto the node.
                               If the affinity requirements specified by this field cease to be met
-                              at some point during pod execution (e.g. due to an update), the system
-                              may or may not try to eventually evict the pod from its node.
+                              at some point during pod execution (e.g.
                             properties:
                               nodeSelectorTerms:
                                 description: Required. A list of node selector terms.
@@ -6912,7 +6854,6 @@ spec:
                                               the values array must be non-empty. If the operator is Exists or DoesNotExist,
                                               the values array must be empty. If the operator is Gt or Lt, the values
                                               array must have a single element, which will be interpreted as an integer.
-                                              This array is replaced during a strategic merge patch.
                                             items:
                                               type: string
                                             type: array
@@ -6946,7 +6887,6 @@ spec:
                                               the values array must be non-empty. If the operator is Exists or DoesNotExist,
                                               the values array must be empty. If the operator is Gt or Lt, the values
                                               array must have a single element, which will be interpreted as an integer.
-                                              This array is replaced during a strategic merge patch.
                                             items:
                                               type: string
                                             type: array
@@ -7034,7 +6974,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       tolerations:
@@ -7094,7 +7034,6 @@ spec:
                                   can have an updated DaemonSet pod during during an update.
                                   Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%).
                                   This can not be 0 if MaxUnavailable is 0.
-                                  Absolute number is calculated from percentage by rounding up to a minimum of 1.
                                 x-kubernetes-int-or-string: true
                               maxUnavailable:
                                 anyOf:
@@ -7105,8 +7044,6 @@ spec:
                                   update. Value can be an absolute number (ex: 5) or a percentage of total
                                   number of DaemonSet pods at the start of the update (ex: 10%). Absolute
                                   number is calculated from percentage by rounding up.
-                                  This cannot be 0 if MaxSurge is 0
-                                  Default value is 1.
                                 x-kubernetes-int-or-string: true
                             type: object
                           type:
@@ -7217,7 +7154,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       secCompProfile:
@@ -7351,7 +7288,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       tlsRefName:
@@ -7454,10 +7391,7 @@ spec:
                             matchLabelKeys:
                               description: |-
                                 MatchLabelKeys is a set of pod label keys to select the pods over which
-                                spreading will be calculated. The keys are used to lookup values from the
-                                incoming pod labels, those key-value labels are ANDed with labelSelector
-                                to select the group of existing pods over which spreading will be calculated
-                                for the incoming pod.
+                                spreading will be calculated.
                               items:
                                 type: string
                               type: array
@@ -7481,7 +7415,7 @@ spec:
                                 NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector
                                 when calculating pod topology spread skew. Options are:
                                 - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
-                                - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
+                                - Ignore: nodeAffinity/nodeSelector are ignored.
                               type: string
                             nodeTaintsPolicy:
                               description: |-
@@ -7628,7 +7562,6 @@ spec:
                         Producers of specific condition types may define expected values and meanings for this field,
                         and whether the values are considered a guaranteed API.
                         The value should be a CamelCase string.
-                        This field may not be empty.
                       maxLength: 1024
                       minLength: 1
                       pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
