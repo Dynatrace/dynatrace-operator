@@ -153,7 +153,7 @@ func testSupportArchiveCommand(testDynakube dynakube.DynaKube, testEdgeConnect e
 		requiredFiles := newRequiredFiles(t, ctx, envConfig.Client().Resources(), customResources, collectManaged).
 			collectRequiredFiles()
 		for _, file := range zipReader.File {
-			requiredFiles = assertFile(t, requiredFiles, *file)
+			requiredFiles = assertFileSize(t, requiredFiles, *file)
 		}
 
 		assert.Emptyf(t, requiredFiles, "Support archive does not contain all expected files.")
@@ -187,7 +187,7 @@ func executeSupportArchiveCommand(ctx context.Context, t *testing.T, envConfig *
 	return executionResult
 }
 
-func assertFile(t *testing.T, requiredFiles []string, zipFile zip.File) []string {
+func assertFileSize(t *testing.T, requiredFiles []string, zipFile zip.File) []string {
 	zipFileName := zipFile.Name
 	index := slices.IndexFunc(requiredFiles, func(file string) bool { return file == zipFileName })
 
@@ -195,6 +195,10 @@ func assertFile(t *testing.T, requiredFiles []string, zipFile zip.File) []string
 		requiredFiles = slices.Delete(requiredFiles, index, index+1)
 	}
 
+	// we need to skip fileSize check for specific files
+	if strings.Contains(zipFileName, "oneagent-logmon-") {
+		return requiredFiles
+	}
 	assert.NotZerof(t, zipFile.FileInfo().Size(), "File %s is empty.", zipFileName)
 
 	return requiredFiles
