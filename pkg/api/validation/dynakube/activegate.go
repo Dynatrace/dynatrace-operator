@@ -17,7 +17,7 @@ Make sure you correctly specify the ActiveGate capabilities in your custom resou
 	errorDuplicateActiveGateCapability = `The DynaKube's specification tries to specify duplicate capabilities in the ActiveGate section, duplicate capability=%s.
 Make sure you don't duplicate an Activegate capability in your custom resource.
 `
-	errorActiveGateInvalidPVCConfiguration = `You provided a PVC and demanded to use an ephemeral volume at the same time for ActiveGate. These settings are mutual exclusive, please choose only one.`
+	errorActiveGateInvalidPVCConfiguration = ` DynaKube specifies a PVC for the ActiveGate while ephemeral volume is also enabled. These settings are mutually exclusive, please choose only one.`
 
 	warningMissingActiveGateMemoryLimit = `ActiveGate specification missing memory limits. Can cause excess memory usage.`
 )
