@@ -73,7 +73,7 @@ func activeGateMutuallyExclusivePVCSettings(dk *dynakube.DynaKube) bool {
 	return dk.Spec.ActiveGate.UseEphemeralVolume && dk.Spec.ActiveGate.PersistentVolumeClaim != nil
 }
 
-func mutualExclusiveActiveGatePVsettings(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func mutuallyExclusiveActiveGatePVsettings(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	if activeGateMutuallyExclusivePVCSettings(dk) {
 		log.Info("requested dynakube specifies mutually exclusive PersistentVolumeClaim settings for ActiveGate.", "name", dk.Name, "namespace", dk.Namespace)
 
