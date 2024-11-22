@@ -23,10 +23,8 @@ import (
 )
 
 const (
-	defaultEnvPriority    = prioritymap.DefaultPriority
-	customEnvPriority     = prioritymap.HighPriority
-	defaultOTLPingestName = "otlp-ingest-storage"
-	defaultOTLPmountPath  = "/var/tmp/dynatrace/gateway"
+	defaultEnvPriority = prioritymap.DefaultPriority
+	customEnvPriority  = prioritymap.HighPriority
 )
 
 type Builder struct {
@@ -125,6 +123,7 @@ func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
 		Affinity:           nodeAffinity(),
 		Tolerations:        statefulSetBuilder.capability.Properties().Tolerations,
 		SecurityContext: &corev1.PodSecurityContext{
+			FSGroup: address.Of(consts.DockerImageGroup),
 			SeccompProfile: &corev1.SeccompProfile{
 				Type: corev1.SeccompProfileTypeRuntimeDefault,
 			},
@@ -149,9 +148,9 @@ func (statefulSetBuilder Builder) buildTopologySpreadConstraints(capability capa
 
 func (statefulSetBuilder Builder) buildVolumes() []corev1.Volume {
 	volumes := []corev1.Volume{}
-	if statefulSetBuilder.dynakube.Spec.ActiveGate.PersistentVolumeClaim == nil {
+	if statefulSetBuilder.dynakube.Spec.ActiveGate.UseEphemeralVolume {
 		volumes = append(volumes, corev1.Volume{
-			Name: defaultOTLPingestName,
+			Name: consts.GatewayTmpVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
@@ -165,8 +164,8 @@ func (statefulSetBuilder Builder) buildVolumeMounts() []corev1.VolumeMount {
 	var volumeMounts []corev1.VolumeMount
 
 	volumeMounts = append(volumeMounts, corev1.VolumeMount{
-		Name:      defaultOTLPingestName,
-		MountPath: defaultOTLPmountPath,
+		Name:      consts.GatewayTmpVolumeName,
+		MountPath: consts.GatewayTmpMountPoint,
 	})
 
 	return volumeMounts
@@ -275,7 +274,7 @@ func (statefulSetBuilder Builder) addPersistentVolumeClaim(sts *appsv1.StatefulS
 			sts.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: defaultOTLPingestName,
+						Name: consts.GatewayTmpVolumeName,
 					},
 					Spec: defaultPVCSpec(),
 				},
@@ -284,7 +283,7 @@ func (statefulSetBuilder Builder) addPersistentVolumeClaim(sts *appsv1.StatefulS
 			sts.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: defaultOTLPingestName,
+						Name: consts.GatewayTmpVolumeName,
 					},
 					Spec: *statefulSetBuilder.dynakube.Spec.ActiveGate.PersistentVolumeClaim,
 				},

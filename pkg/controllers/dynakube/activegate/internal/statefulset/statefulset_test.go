@@ -23,7 +23,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -457,9 +456,10 @@ func TestSecurityContexts(t *testing.T) {
 }
 
 func TestVolumes(t *testing.T) {
-	t.Run("empty dir volume exists when PersistentVolumeClaim = nil", func(t *testing.T) {
+	t.Run("empty dir volume exists when PersistentVolumeClaim = nil and UseEphemeralVolume = true", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.ActiveGate.PersistentVolumeClaim = nil
+		dk.Spec.ActiveGate.UseEphemeralVolume = true
 		multiCapability := capability.NewMultiCapability(&dk)
 		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts, _ := statefulsetBuilder.CreateStatefulSet([]builder.Modifier{
@@ -470,7 +470,7 @@ func TestVolumes(t *testing.T) {
 		require.NotEmpty(t, sts)
 
 		expectedVolume := corev1.Volume{
-			Name: defaultOTLPingestName,
+			Name: consts.GatewayTmpVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
@@ -492,8 +492,8 @@ func TestVolumeMounts(t *testing.T) {
 		require.NotEmpty(t, sts)
 
 		expectedVolumeMount := corev1.VolumeMount{
-			Name:      defaultOTLPingestName,
-			MountPath: defaultOTLPmountPath,
+			Name:      consts.GatewayTmpVolumeName,
+			MountPath: consts.GatewayTmpMountPoint,
 		}
 		require.Contains(t, sts.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
 	})
@@ -504,7 +504,7 @@ func TestPVC(t *testing.T) {
 		dk := getTestDynakube()
 		multiCapability := capability.NewMultiCapability(&dk)
 		myPVCspec := corev1.PersistentVolumeClaimSpec{
-			StorageClassName: ptr.To("test"),
+			StorageClassName: address.Of("test"),
 			VolumeName:       "foo-pv",
 		}
 		dk.Spec.ActiveGate.PersistentVolumeClaim = &myPVCspec
@@ -517,7 +517,7 @@ func TestPVC(t *testing.T) {
 		require.NotEmpty(t, sts)
 
 		require.Equal(t, myPVCspec, sts.Spec.VolumeClaimTemplates[0].Spec)
-		require.Equal(t, defaultOTLPingestName, sts.Spec.VolumeClaimTemplates[0].Name)
+		require.Equal(t, consts.GatewayTmpVolumeName, sts.Spec.VolumeClaimTemplates[0].Name)
 		require.Equal(t, defaultPVCRetentionPolicy(), sts.Spec.PersistentVolumeClaimRetentionPolicy)
 	})
 	t.Run("if no PVC has been defined in the Dynakube, default PVC shall be added.", func(t *testing.T) {
@@ -532,7 +532,7 @@ func TestPVC(t *testing.T) {
 		require.NotEmpty(t, sts)
 
 		require.Equal(t, defaultPVCSpec(), sts.Spec.VolumeClaimTemplates[0].Spec)
-		require.Equal(t, defaultOTLPingestName, sts.Spec.VolumeClaimTemplates[0].Name)
+		require.Equal(t, consts.GatewayTmpVolumeName, sts.Spec.VolumeClaimTemplates[0].Name)
 		require.Equal(t, defaultPVCRetentionPolicy(), sts.Spec.PersistentVolumeClaimRetentionPolicy)
 	})
 }
