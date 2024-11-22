@@ -72,10 +72,8 @@ const (
 
 	// misc
 	logVolumeName = "log"
-)
 
-var (
-	userGroupId = int64(1001)
+	userGroupId int64 = 1001
 )
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
@@ -221,8 +219,8 @@ func buildSecurityContext() *corev1.SecurityContext {
 			},
 		},
 		Privileged:               address.Of(false),
-		RunAsUser:                &userGroupId,
-		RunAsGroup:               &userGroupId,
+		RunAsUser:                address.Of(userGroupId),
+		RunAsGroup:               address.Of(userGroupId),
 		RunAsNonRoot:             address.Of(true),
 		ReadOnlyRootFilesystem:   address.Of(true),
 		AllowPrivilegeEscalation: address.Of(false),
@@ -240,7 +238,7 @@ func buildPodSecurityContext(dk *dynakube.DynaKube) *corev1.PodSecurityContext {
 	}
 
 	if !dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume {
-		podSecurityContext.FSGroup = &userGroupId
+		podSecurityContext.FSGroup = address.Of(userGroupId)
 	}
 
 	return podSecurityContext
