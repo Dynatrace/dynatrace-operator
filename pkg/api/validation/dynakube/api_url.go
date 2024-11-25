@@ -6,8 +6,6 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -82,19 +80,8 @@ func IsThirdGenAPIUrl(_ context.Context, _ *Validator, dk *dynakube.DynaKube) st
 	return ""
 }
 
-func IsMutatedApiUrl(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
-	oldDk := &dynakube.DynaKube{}
-	if err := dv.apiReader.Get(ctx, client.ObjectKey{Name: dk.Name, Namespace: dk.Namespace}, oldDk); err != nil {
-		if k8serrors.IsNotFound(err) {
-			return ""
-		}
-
-		log.Info("error occurred while getting dynakube", "err", err.Error())
-
-		return ""
-	}
-
-	if oldDk.Spec.APIURL != dk.Spec.APIURL {
+func IsMutatedApiUrl(_ context.Context, _ *Validator, oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube) string {
+	if oldDk.Spec.APIURL != newDk.Spec.APIURL {
 		return errorMutatedApiUrl
 	}
 
