@@ -3,7 +3,7 @@ module github.com/Dynatrace/dynatrace-operator
 go 1.23.3
 
 require (
-	github.com/container-storage-interface/spec v1.10.0
+	github.com/container-storage-interface/spec v1.11.0
 	github.com/docker/cli v27.3.1+incompatible
 	github.com/evanphx/json-patch v5.9.0+incompatible
 	github.com/go-logr/logr v1.4.2
@@ -17,7 +17,7 @@ require (
 	github.com/prometheus/client_model v0.6.1
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 	golang.org/x/mod v0.22.0
@@ -34,7 +34,7 @@ require (
 	k8s.io/client-go v0.31.3
 	k8s.io/mount-utils v0.31.3
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
-	sigs.k8s.io/controller-runtime v0.19.1
+	sigs.k8s.io/controller-runtime v0.19.2
 	sigs.k8s.io/e2e-framework v0.3.0
 	sigs.k8s.io/yaml v1.4.0
 )
