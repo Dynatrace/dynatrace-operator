@@ -47,5 +47,5 @@ jobs:
           webhook-type: webhook-trigger
           payload-templated: true
           payload: |
-            "message": ":x: E2E ondemand tests failed on ${{ env.branch }}"
+            "message": "tests ${{needs.run-in-k8s.result == 'success' && 'passed :green_heavy_check_mark:' || 'failed :red_circle:'}} on kubernetes :kubernetes:\ntests ${{needs.run-in-ocp.result == 'success' && 'passed :green_heavy_check_mark:' || 'failed :red_circle:'}} on openshift :openshift:\n using ${{ github.event.inputs.target || 'main' }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
             "run_id": "${{ github.run_id }}"
