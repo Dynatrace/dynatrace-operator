@@ -159,6 +159,7 @@ func WithExtensionsEnabledSpec(promEnabled bool) Option {
 	return func(dk *dynakube.DynaKube) {
 		if promEnabled {
 			dk.Spec.Extensions = &dynakube.ExtensionsSpec{}
+			dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
 		} else {
 			dk.Spec.Extensions = nil
 		}
