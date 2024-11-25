@@ -52,7 +52,7 @@ const (
 	appTransitionSchemaVersion                  = "1.0.1"
 )
 
-func (dtc *dynatraceClient) performCreateOrUpdateKubernetesSetting(ctx context.Context, body []postKubernetesSettingsBody) (string, error) {
+func (dtc *dynatraceClient) performCreateOrUpdateKubernetesSetting(ctx context.Context, body []postKubernetesSettingsBody) (string, error) { //nolint:dupl
 	bodyData, err := json.Marshal(body)
 	if err != nil {
 		return "", err

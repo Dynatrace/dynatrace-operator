@@ -332,8 +332,6 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		componentErrors = append(componentErrors, err)
 	}
 
-	log.Info("start reconciling app injection")
-
 	log.Info("start reconciling LogMonitoring")
 
 	logMonitoringReconciler := controller.logMonitoringReconcilerBuilder(controller.client, controller.apiReader, dynatraceClient, dk)
@@ -352,6 +350,8 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 		componentErrors = append(componentErrors, err)
 	}
+
+	log.Info("start reconciling app injection")
 
 	err = controller.injectionReconcilerBuilder(controller.client,
 		controller.apiReader,
