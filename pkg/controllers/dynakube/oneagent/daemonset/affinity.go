@@ -13,5 +13,6 @@ func (b *builder) affinity() *corev1.Affinity {
 	} else {
 		affinity = node.Affinity()
 	}
+
 	return &affinity
 }

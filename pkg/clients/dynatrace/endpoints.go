@@ -39,7 +39,6 @@ func (dtc *dynatraceClient) getAgentVersionsUrl(os, installerType, flavor, arch 
 
 	return fmt.Sprintf("%s/v1/deployment/installer/agent/versions/%s/%s?flavor=%s",
 		dtc.url, os, installerType, flavor)
-
 }
 
 func (dtc *dynatraceClient) getOneAgentConnectionInfoUrl() string {

@@ -90,10 +90,14 @@ func (dtc *dynatraceClient) GetAgentVersions(ctx context.Context, os, installerT
 		return nil, errors.New("os or installerType is empty")
 	}
 
-	flavor = determineFlavor(installerType)
+	_flavor := determineFlavor(installerType)
+	if flavor != "" {
+		_flavor = flavor
+	}
+
 	_arch := determineArch(installerType)
 
-	url := dtc.getAgentVersionsUrl(os, installerType, flavor, _arch)
+	url := dtc.getAgentVersionsUrl(os, installerType, _flavor, _arch)
 	err := dtc.makeRequestAndUnmarshal(ctx, url, dynatracePaaSToken, &response)
 
 	return response.AvailableVersions, errors.WithStack(err)

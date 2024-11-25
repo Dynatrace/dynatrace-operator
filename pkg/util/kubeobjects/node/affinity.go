@@ -15,7 +15,7 @@ func Affinity() corev1.Affinity {
 }
 
 // AMDOnlyAffinity provides an affinity that will only allow deployment on AMD64 nodes.
-// This if manly needed for the Dynatrace tenant-registry as it only has AMD64 images.
+// This is manly needed for the Dynatrace tenant-registry as it only has AMD64 images.
 func AMDOnlyAffinity() corev1.Affinity {
 	return AffinityForArches(arch.AMDImage)
 }
