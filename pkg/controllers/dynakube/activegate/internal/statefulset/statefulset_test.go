@@ -503,7 +503,7 @@ func TestVolumes(t *testing.T) {
 }
 
 func TestVolumeMounts(t *testing.T) {
-	t.Run("default OTLP ingest volume mount is presented in Container volumeMount list", func(t *testing.T) {
+	t.Run("volume mount is presented in Container volumeMount list", func(t *testing.T) {
 		dk := getTestDynakube()
 		multiCapability := capability.NewMultiCapability(&dk)
 		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
