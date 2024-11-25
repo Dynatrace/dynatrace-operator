@@ -6,6 +6,6 @@ const (
 	AgCertificateAndPrivateKeyField = "server.p12"
 	AgSecretName                    = "ag-ca"
 	DevRegistryPullSecretName       = "devregistry"
-	EecImageRepo                    = "extk8sregistry.azurecr.io/eec/dynatrace-eec"
+	EecImageRepo                    = "478983378254.dkr.ecr.us-east-1.amazonaws.com/dynatrace/dynatrace-eec"
 	EecImageTag                     = "1.303.0.20240930-183404"
 )

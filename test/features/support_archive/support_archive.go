@@ -195,10 +195,6 @@ func assertFileSize(t *testing.T, requiredFiles []string, zipFile zip.File) []st
 		requiredFiles = slices.Delete(requiredFiles, index, index+1)
 	}
 
-	//// we need to skip fileSize check for specific files
-	//if strings.Contains(zipFileName, "oneagent-logmon-") {
-	//	return requiredFiles
-	//}
 	assert.NotZerof(t, zipFile.FileInfo().Size(), "File %s is empty.", zipFileName)
 
 	return requiredFiles
