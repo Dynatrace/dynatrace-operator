@@ -256,3 +256,29 @@ func TestConcatErrors(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckForDataIngestToken(t *testing.T) {
+	t.Run("data ingest token is present, but empty", func(t *testing.T) {
+		tokens := Tokens{
+			dtclient.DataIngestToken: &Token{},
+		}
+
+		assert.False(t, CheckForDataIngestToken(tokens))
+	})
+
+	t.Run("data ingest token is present and not empty", func(t *testing.T) {
+		tokens := Tokens{
+			dtclient.DataIngestToken: &Token{
+				Value: "token",
+			},
+		}
+
+		assert.True(t, CheckForDataIngestToken(tokens))
+	})
+
+	t.Run("data ingest token is not present", func(t *testing.T) {
+		tokens := Tokens{}
+
+		assert.False(t, CheckForDataIngestToken(tokens))
+	})
+}
