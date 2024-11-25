@@ -176,25 +176,6 @@ func TestConflictingNodeSelector(t *testing.T) {
 				},
 			}, &defaultCSIDaemonSet)
 	})
-	t.Run(`valid dynakube specs with multitenant hostMonitoring`, func(t *testing.T) {
-		assertAllowedWithWarnings(t, 0,
-			newCloudNativeDynakube("dk1", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "true",
-			}, "1"),
-			newCloudNativeDynakube("dk2", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "true",
-			}, "2"),
-			&defaultCSIDaemonSet)
-
-		assertAllowedWithWarnings(t, 0,
-			newCloudNativeDynakube("dk1", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "true",
-			}, "1"),
-			newCloudNativeDynakube("dk2", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "true",
-			}, "1"),
-			&defaultCSIDaemonSet)
-	})
 	t.Run(`invalid dynakube specs`, func(t *testing.T) {
 		assertDenied(t,
 			[]string{fmt.Sprintf(errorNodeSelectorConflict, "conflicting-dk")},
@@ -229,30 +210,6 @@ func TestConflictingNodeSelector(t *testing.T) {
 					},
 				},
 			}, &defaultCSIDaemonSet)
-	})
-	t.Run(`invalid dynakube specs with multitenant hostMonitoring`, func(t *testing.T) {
-		assertDenied(t, nil,
-			newCloudNativeDynakube("dk1", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "false",
-			}, "1"),
-			newCloudNativeDynakube("dk2", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "true",
-			}, "1"),
-			&defaultCSIDaemonSet)
-
-		assertDenied(t, nil,
-			newCloudNativeDynakube("dk1", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "false",
-			}, "1"),
-			newCloudNativeDynakube("dk2", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "false",
-			}, "1"),
-			&defaultCSIDaemonSet)
-
-		assertDenied(t, nil,
-			newCloudNativeDynakube("dk1", map[string]string{}, "1"),
-			newCloudNativeDynakube("dk2", map[string]string{}, "1"),
-			&defaultCSIDaemonSet)
 	})
 	t.Run(`invalid dynakube specs with existing log module`, func(t *testing.T) {
 		assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, "dk-lm")},

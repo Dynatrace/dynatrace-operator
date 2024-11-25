@@ -21,7 +21,7 @@ jobs:
         run: |
           hack/build/ci/prepare-build-variables.sh
       - name: Docker metadata
-        uses: docker/metadata-action@8e5442c4ef9f78752691e2d8f8d19755c6f78e81 # v5.5.1
+        uses: docker/metadata-action@369eb591f429131d6889c46b94e711f089e6ca96 # v5.6.1
         id: meta
         with:
           images: dynatrace/dynatrace-operator
@@ -232,7 +232,7 @@ jobs:
           registry-type: public
       - name: Create sbom for ${{matrix.registry}}
         id: sbom
-        uses: aquasecurity/trivy-action@915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2 # 0.28.0
+        uses: aquasecurity/trivy-action@18f2510ee396bbf400402947b394f2dd8c87dbb0 # 0.29.0
         with:
           image-ref: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.manifest.outputs.digest }}
           format: 'cyclonedx'
