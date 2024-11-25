@@ -100,8 +100,7 @@ spec:
                             Variable references $(VAR_NAME) are expanded
                             using the previously defined environment variables in the container and
                             any service environment variables. If a variable cannot be resolved,
-                            the reference in the input string will be unchanged. Double $$ are reduced
-                            to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                            the reference in the input string will be unchanged.
                           type: string
                         valueFrom:
                           description: Source for the environment variable's value.
@@ -284,7 +283,7 @@ spec:
                           Requests describes the minimum amount of compute resources required.
                           If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                           otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                          More info: https://kubernetes.
                         type: object
                     type: object
                   tlsSecretName:
@@ -321,8 +320,7 @@ spec:
                           description: |-
                             TolerationSeconds represents the period of time the toleration (which must be
                             of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
-                            it is not set, which means tolerate the taint forever (do not evict). Zero and
-                            negative values will be treated as 0 (evict immediately) by the system.
+                            it is not set, which means tolerate the taint forever (do not evict).
                           format: int64
                           type: integer
                         value:
@@ -391,10 +389,7 @@ spec:
                         matchLabelKeys:
                           description: |-
                             MatchLabelKeys is a set of pod label keys to select the pods over which
-                            spreading will be calculated. The keys are used to lookup values from the
-                            incoming pod labels, those key-value labels are ANDed with labelSelector
-                            to select the group of existing pods over which spreading will be calculated
-                            for the incoming pod.
+                            spreading will be calculated.
                           items:
                             type: string
                           type: array
@@ -418,7 +413,7 @@ spec:
                             NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector
                             when calculating pod topology spread skew. Options are:
                             - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
-                            - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
+                            - Ignore: nodeAffinity/nodeSelector are ignored.
                           type: string
                         nodeTaintsPolicy:
                           description: |-
@@ -434,16 +429,12 @@ spec:
                             and identical values are considered to be in the same topology.
                             We consider each <key, value> as a "bucket", and try to put balanced number
                             of pods into each bucket.
-                            We define a domain as a particular instance of a topology.
                           type: string
                         whenUnsatisfiable:
                           description: |-
                             WhenUnsatisfiable indicates how to deal with a pod if it doesn't satisfy
                             the spread constraint.
                             - DoNotSchedule (default) tells the scheduler not to schedule it.
-                            - ScheduleAnyway tells the scheduler to schedule the pod in any location,
-                              but giving higher precedence to topologies that would help reduce the
-                              skew.
                           type: string
                       required:
                       - maxSkew
@@ -504,8 +495,7 @@ spec:
                             Variable references $(VAR_NAME) are expanded
                             using the previously defined environment variables in the container and
                             any service environment variables. If a variable cannot be resolved,
-                            the reference in the input string will be unchanged. Double $$ are reduced
-                            to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                            the reference in the input string will be unchanged.
                           type: string
                         valueFrom:
                           description: Source for the environment variable's value.
@@ -683,7 +673,7 @@ spec:
                           Requests describes the minimum amount of compute resources required.
                           If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                           otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                          More info: https://kubernetes.
                         type: object
                     type: object
                   tolerations:
@@ -714,8 +704,7 @@ spec:
                           description: |-
                             TolerationSeconds represents the period of time the toleration (which must be
                             of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
-                            it is not set, which means tolerate the taint forever (do not evict). Zero and
-                            negative values will be treated as 0 (evict immediately) by the system.
+                            it is not set, which means tolerate the taint forever (do not evict).
                           format: int64
                           type: integer
                         value:
@@ -784,10 +773,7 @@ spec:
                         matchLabelKeys:
                           description: |-
                             MatchLabelKeys is a set of pod label keys to select the pods over which
-                            spreading will be calculated. The keys are used to lookup values from the
-                            incoming pod labels, those key-value labels are ANDed with labelSelector
-                            to select the group of existing pods over which spreading will be calculated
-                            for the incoming pod.
+                            spreading will be calculated.
                           items:
                             type: string
                           type: array
@@ -811,7 +797,7 @@ spec:
                             NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector
                             when calculating pod topology spread skew. Options are:
                             - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
-                            - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
+                            - Ignore: nodeAffinity/nodeSelector are ignored.
                           type: string
                         nodeTaintsPolicy:
                           description: |-
@@ -827,16 +813,12 @@ spec:
                             and identical values are considered to be in the same topology.
                             We consider each <key, value> as a "bucket", and try to put balanced number
                             of pods into each bucket.
-                            We define a domain as a particular instance of a topology.
                           type: string
                         whenUnsatisfiable:
                           description: |-
                             WhenUnsatisfiable indicates how to deal with a pod if it doesn't satisfy
                             the spread constraint.
                             - DoNotSchedule (default) tells the scheduler not to schedule it.
-                            - ScheduleAnyway tells the scheduler to schedule the pod in any location,
-                              but giving higher precedence to topologies that would help reduce the
-                              skew.
                           type: string
                       required:
                       - maxSkew
@@ -969,7 +951,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       useCSIDriver:
@@ -996,7 +978,6 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.
                         items:
                           type: string
                         type: array
@@ -1026,8 +1007,7 @@ spec:
                                 Variable references $(VAR_NAME) are expanded
                                 using the previously defined environment variables in the container and
                                 any service environment variables. If a variable cannot be resolved,
-                                the reference in the input string will be unchanged. Double $$ are reduced
-                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                the reference in the input string will be unchanged.
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -1201,7 +1181,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       priorityClassName:
@@ -1238,8 +1218,7 @@ spec:
                               description: |-
                                 TolerationSeconds represents the period of time the toleration (which must be
                                 of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
-                                it is not set, which means tolerate the taint forever (do not evict). Zero and
-                                negative values will be treated as 0 (evict immediately) by the system.
+                                it is not set, which means tolerate the taint forever (do not evict).
                               format: int64
                               type: integer
                             value:
@@ -1269,7 +1248,6 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.
                         items:
                           type: string
                         type: array
@@ -1303,8 +1281,7 @@ spec:
                                 Variable references $(VAR_NAME) are expanded
                                 using the previously defined environment variables in the container and
                                 any service environment variables. If a variable cannot be resolved,
-                                the reference in the input string will be unchanged. Double $$ are reduced
-                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                the reference in the input string will be unchanged.
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -1466,7 +1443,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       labels:
@@ -1539,7 +1516,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       priorityClassName:
@@ -1576,8 +1553,7 @@ spec:
                               description: |-
                                 TolerationSeconds represents the period of time the toleration (which must be
                                 of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
-                                it is not set, which means tolerate the taint forever (do not evict). Zero and
-                                negative values will be treated as 0 (evict immediately) by the system.
+                                it is not set, which means tolerate the taint forever (do not evict).
                               format: int64
                               type: integer
                             value:
@@ -1609,7 +1585,6 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.
                         items:
                           type: string
                         type: array
@@ -1639,8 +1614,7 @@ spec:
                                 Variable references $(VAR_NAME) are expanded
                                 using the previously defined environment variables in the container and
                                 any service environment variables. If a variable cannot be resolved,
-                                the reference in the input string will be unchanged. Double $$ are reduced
-                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                the reference in the input string will be unchanged.
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -1814,7 +1788,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       priorityClassName:
@@ -1851,8 +1825,7 @@ spec:
                               description: |-
                                 TolerationSeconds represents the period of time the toleration (which must be
                                 of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
-                                it is not set, which means tolerate the taint forever (do not evict). Zero and
-                                negative values will be treated as 0 (evict immediately) by the system.
+                                it is not set, which means tolerate the taint forever (do not evict).
                               format: int64
                               type: integer
                             value:
@@ -1916,8 +1889,7 @@ spec:
                             Variable references $(VAR_NAME) are expanded
                             using the previously defined environment variables in the container and
                             any service environment variables. If a variable cannot be resolved,
-                            the reference in the input string will be unchanged. Double $$ are reduced
-                            to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                            the reference in the input string will be unchanged.
                           type: string
                         valueFrom:
                           description: Source for the environment variable's value.
@@ -2095,7 +2067,7 @@ spec:
                           Requests describes the minimum amount of compute resources required.
                           If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                           otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                          More info: https://kubernetes.
                         type: object
                     type: object
                   tolerations:
@@ -2126,8 +2098,7 @@ spec:
                           description: |-
                             TolerationSeconds represents the period of time the toleration (which must be
                             of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
-                            it is not set, which means tolerate the taint forever (do not evict). Zero and
-                            negative values will be treated as 0 (evict immediately) by the system.
+                            it is not set, which means tolerate the taint forever (do not evict).
                           format: int64
                           type: integer
                         value:
@@ -2196,10 +2167,7 @@ spec:
                         matchLabelKeys:
                           description: |-
                             MatchLabelKeys is a set of pod label keys to select the pods over which
-                            spreading will be calculated. The keys are used to lookup values from the
-                            incoming pod labels, those key-value labels are ANDed with labelSelector
-                            to select the group of existing pods over which spreading will be calculated
-                            for the incoming pod.
+                            spreading will be calculated.
                           items:
                             type: string
                           type: array
@@ -2223,7 +2191,7 @@ spec:
                             NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector
                             when calculating pod topology spread skew. Options are:
                             - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
-                            - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
+                            - Ignore: nodeAffinity/nodeSelector are ignored.
                           type: string
                         nodeTaintsPolicy:
                           description: |-
@@ -2239,16 +2207,12 @@ spec:
                             and identical values are considered to be in the same topology.
                             We consider each <key, value> as a "bucket", and try to put balanced number
                             of pods into each bucket.
-                            We define a domain as a particular instance of a topology.
                           type: string
                         whenUnsatisfiable:
                           description: |-
                             WhenUnsatisfiable indicates how to deal with a pod if it doesn't satisfy
                             the spread constraint.
                             - DoNotSchedule (default) tells the scheduler not to schedule it.
-                            - ScheduleAnyway tells the scheduler to schedule the pod in any location,
-                              but giving higher precedence to topologies that would help reduce the
-                              skew.
                           type: string
                       required:
                       - maxSkew
@@ -2374,7 +2338,6 @@ spec:
                         Producers of specific condition types may define expected values and meanings for this field,
                         and whether the values are considered a guaranteed API.
                         The value should be a CamelCase string.
-                        This field may not be empty.
                       maxLength: 1024
                       minLength: 1
                       pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
@@ -2551,8 +2514,7 @@ spec:
                       values:\n\t- `routing` enables OneAgent routing.\n\t- `kubernetes-monitoring`
                       enables Kubernetes API monitoring.\n\t- `metrics-ingest` opens
                       the metrics ingest endpoint on the DynaKube ActiveGate and redirects
-                      all pods to it.\n\t- `dynatrace-api` enables calling the Dynatrace
-                      API via ActiveGate."
+                      all pods to it."
                     items:
                       type: string
                     type: array
@@ -2588,8 +2550,7 @@ spec:
                             Variable references $(VAR_NAME) are expanded
                             using the previously defined environment variables in the container and
                             any service environment variables. If a variable cannot be resolved,
-                            the reference in the input string will be unchanged. Double $$ are reduced
-                            to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                            the reference in the input string will be unchanged.
                           type: string
                         valueFrom:
                           description: Source for the environment variable's value.
@@ -2776,7 +2737,7 @@ spec:
                           Requests describes the minimum amount of compute resources required.
                           If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                           otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                          More info: https://kubernetes.
                         type: object
                     type: object
                   tlsSecretName:
@@ -2813,8 +2774,7 @@ spec:
                           description: |-
                             TolerationSeconds represents the period of time the toleration (which must be
                             of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
-                            it is not set, which means tolerate the taint forever (do not evict). Zero and
-                            negative values will be treated as 0 (evict immediately) by the system.
+                            it is not set, which means tolerate the taint forever (do not evict).
                           format: int64
                           type: integer
                         value:
@@ -2883,10 +2843,7 @@ spec:
                         matchLabelKeys:
                           description: |-
                             MatchLabelKeys is a set of pod label keys to select the pods over which
-                            spreading will be calculated. The keys are used to lookup values from the
-                            incoming pod labels, those key-value labels are ANDed with labelSelector
-                            to select the group of existing pods over which spreading will be calculated
-                            for the incoming pod.
+                            spreading will be calculated.
                           items:
                             type: string
                           type: array
@@ -2910,7 +2867,7 @@ spec:
                             NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector
                             when calculating pod topology spread skew. Options are:
                             - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
-                            - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
+                            - Ignore: nodeAffinity/nodeSelector are ignored.
                           type: string
                         nodeTaintsPolicy:
                           description: |-
@@ -2926,16 +2883,12 @@ spec:
                             and identical values are considered to be in the same topology.
                             We consider each <key, value> as a "bucket", and try to put balanced number
                             of pods into each bucket.
-                            We define a domain as a particular instance of a topology.
                           type: string
                         whenUnsatisfiable:
                           description: |-
                             WhenUnsatisfiable indicates how to deal with a pod if it doesn't satisfy
                             the spread constraint.
                             - DoNotSchedule (default) tells the scheduler not to schedule it.
-                            - ScheduleAnyway tells the scheduler to schedule the pod in any location,
-                              but giving higher precedence to topologies that would help reduce the
-                              skew.
                           type: string
                       required:
                       - maxSkew
@@ -2949,7 +2902,7 @@ spec:
                   Dynatrace `apiUrl`, including the `/api` path at the end.
                   - For SaaS, set `YOUR_ENVIRONMENT_ID` to your environment ID.
                   - For Managed, change the `apiUrl` address.
-                  For instructions on how to determine the environment ID and how to configure the apiUrl address, see Environment ID (https://www.dynatrace.
+                  For instructions on how to determine the environment ID and how to configure the apiUrl address, see Environment ID (https://www.
                 type: string
               customPullSecret:
                 description: |-
@@ -3099,7 +3052,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       namespaceSelector:
@@ -3175,7 +3128,6 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.
                         items:
                           type: string
                         type: array
@@ -3206,8 +3158,7 @@ spec:
                                 Variable references $(VAR_NAME) are expanded
                                 using the previously defined environment variables in the container and
                                 any service environment variables. If a variable cannot be resolved,
-                                the reference in the input string will be unchanged. Double $$ are reduced
-                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                the reference in the input string will be unchanged.
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -3382,7 +3333,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       priorityClassName:
@@ -3423,8 +3374,7 @@ spec:
                               description: |-
                                 TolerationSeconds represents the period of time the toleration (which must be
                                 of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
-                                it is not set, which means tolerate the taint forever (do not evict). Zero and
-                                negative values will be treated as 0 (evict immediately) by the system.
+                                it is not set, which means tolerate the taint forever (do not evict).
                               format: int64
                               type: integer
                             value:
@@ -3456,7 +3406,6 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.
                         items:
                           type: string
                         type: array
@@ -3491,8 +3440,7 @@ spec:
                                 Variable references $(VAR_NAME) are expanded
                                 using the previously defined environment variables in the container and
                                 any service environment variables. If a variable cannot be resolved,
-                                the reference in the input string will be unchanged. Double $$ are reduced
-                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                the reference in the input string will be unchanged.
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -3654,7 +3602,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       labels:
@@ -3776,7 +3724,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       priorityClassName:
@@ -3817,8 +3765,7 @@ spec:
                               description: |-
                                 TolerationSeconds represents the period of time the toleration (which must be
                                 of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
-                                it is not set, which means tolerate the taint forever (do not evict). Zero and
-                                negative values will be treated as 0 (evict immediately) by the system.
+                                it is not set, which means tolerate the taint forever (do not evict).
                               format: int64
                               type: integer
                             value:
@@ -3855,7 +3802,6 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.
                         items:
                           type: string
                         type: array
@@ -3886,8 +3832,7 @@ spec:
                                 Variable references $(VAR_NAME) are expanded
                                 using the previously defined environment variables in the container and
                                 any service environment variables. If a variable cannot be resolved,
-                                the reference in the input string will be unchanged. Double $$ are reduced
-                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                the reference in the input string will be unchanged.
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -4062,7 +4007,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       priorityClassName:
@@ -4103,8 +4048,7 @@ spec:
                               description: |-
                                 TolerationSeconds represents the period of time the toleration (which must be
                                 of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
-                                it is not set, which means tolerate the taint forever (do not evict). Zero and
-                                negative values will be treated as 0 (evict immediately) by the system.
+                                it is not set, which means tolerate the taint forever (do not evict).
                               format: int64
                               type: integer
                             value:
@@ -4253,7 +4197,6 @@ spec:
                         Producers of specific condition types may define expected values and meanings for this field,
                         and whether the values are considered a guaranteed API.
                         The value should be a CamelCase string.
-                        This field may not be empty.
                       maxLength: 1024
                       minLength: 1
                       pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
@@ -4484,8 +4427,7 @@ spec:
                             Variable references $(VAR_NAME) are expanded
                             using the previously defined environment variables in the container and
                             any service environment variables. If a variable cannot be resolved,
-                            the reference in the input string will be unchanged. Double $$ are reduced
-                            to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                            the reference in the input string will be unchanged.
                           type: string
                         valueFrom:
                           description: Source for the environment variable's value.
@@ -4668,7 +4610,7 @@ spec:
                           Requests describes the minimum amount of compute resources required.
                           If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                           otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                          More info: https://kubernetes.
                         type: object
                     type: object
                   tlsSecretName:
@@ -4705,8 +4647,7 @@ spec:
                           description: |-
                             TolerationSeconds represents the period of time the toleration (which must be
                             of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
-                            it is not set, which means tolerate the taint forever (do not evict). Zero and
-                            negative values will be treated as 0 (evict immediately) by the system.
+                            it is not set, which means tolerate the taint forever (do not evict).
                           format: int64
                           type: integer
                         value:
@@ -4775,10 +4716,7 @@ spec:
                         matchLabelKeys:
                           description: |-
                             MatchLabelKeys is a set of pod label keys to select the pods over which
-                            spreading will be calculated. The keys are used to lookup values from the
-                            incoming pod labels, those key-value labels are ANDed with labelSelector
-                            to select the group of existing pods over which spreading will be calculated
-                            for the incoming pod.
+                            spreading will be calculated.
                           items:
                             type: string
                           type: array
@@ -4802,7 +4740,7 @@ spec:
                             NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector
                             when calculating pod topology spread skew. Options are:
                             - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
-                            - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
+                            - Ignore: nodeAffinity/nodeSelector are ignored.
                           type: string
                         nodeTaintsPolicy:
                           description: |-
@@ -4818,16 +4756,12 @@ spec:
                             and identical values are considered to be in the same topology.
                             We consider each <key, value> as a "bucket", and try to put balanced number
                             of pods into each bucket.
-                            We define a domain as a particular instance of a topology.
                           type: string
                         whenUnsatisfiable:
                           description: |-
                             WhenUnsatisfiable indicates how to deal with a pod if it doesn't satisfy
                             the spread constraint.
                             - DoNotSchedule (default) tells the scheduler not to schedule it.
-                            - ScheduleAnyway tells the scheduler to schedule the pod in any location,
-                              but giving higher precedence to topologies that would help reduce the
-                              skew.
                           type: string
                       required:
                       - maxSkew
@@ -4842,10 +4776,6 @@ spec:
                   For instructions on how to determine the environment ID and how to configure the apiUrl address, see Environment ID (https://www.dynatrace.
                 maxLength: 128
                 type: string
-                x-kubernetes-validations:
-                - message: APIURL is immutable, please delete the CR and then apply
-                    new one
-                  rule: self == oldSelf
               customPullSecret:
                 description: |-
                   Defines a custom pull secret in case you use a private registry when pulling images from the Dynatrace environment.
@@ -4871,6 +4801,18 @@ spec:
                 type: object
               logMonitoring:
                 description: General configuration about the LogMonitoring feature.
+                properties:
+                  ingestRuleMatchers:
+                    items:
+                      properties:
+                        attribute:
+                          type: string
+                        values:
+                          items:
+                            type: string
+                          type: array
+                      type: object
+                    type: array
                 type: object
               metadataEnrichment:
                 description: Configuration for Metadata Enrichment.
@@ -5002,7 +4944,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       namespaceSelector:
@@ -5073,7 +5015,6 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.
                         items:
                           type: string
                         type: array
@@ -5103,8 +5044,7 @@ spec:
                                 Variable references $(VAR_NAME) are expanded
                                 using the previously defined environment variables in the container and
                                 any service environment variables. If a variable cannot be resolved,
-                                the reference in the input string will be unchanged. Double $$ are reduced
-                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                the reference in the input string will be unchanged.
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -5278,7 +5218,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       priorityClassName:
@@ -5319,8 +5259,7 @@ spec:
                               description: |-
                                 TolerationSeconds represents the period of time the toleration (which must be
                                 of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
-                                it is not set, which means tolerate the taint forever (do not evict). Zero and
-                                negative values will be treated as 0 (evict immediately) by the system.
+                                it is not set, which means tolerate the taint forever (do not evict).
                               format: int64
                               type: integer
                             value:
@@ -5351,7 +5290,6 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.
                         items:
                           type: string
                         type: array
@@ -5385,8 +5323,7 @@ spec:
                                 Variable references $(VAR_NAME) are expanded
                                 using the previously defined environment variables in the container and
                                 any service environment variables. If a variable cannot be resolved,
-                                the reference in the input string will be unchanged. Double $$ are reduced
-                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                the reference in the input string will be unchanged.
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -5548,7 +5485,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       labels:
@@ -5669,7 +5606,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       priorityClassName:
@@ -5710,8 +5647,7 @@ spec:
                               description: |-
                                 TolerationSeconds represents the period of time the toleration (which must be
                                 of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
-                                it is not set, which means tolerate the taint forever (do not evict). Zero and
-                                negative values will be treated as 0 (evict immediately) by the system.
+                                it is not set, which means tolerate the taint forever (do not evict).
                               format: int64
                               type: integer
                             value:
@@ -5744,7 +5680,6 @@ spec:
                         description: |-
                           Set additional arguments to the OneAgent installer.
                           For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-                          For the list of limitations, see Limitations (https://www.dynatrace.
                         items:
                           type: string
                         type: array
@@ -5774,8 +5709,7 @@ spec:
                                 Variable references $(VAR_NAME) are expanded
                                 using the previously defined environment variables in the container and
                                 any service environment variables. If a variable cannot be resolved,
-                                the reference in the input string will be unchanged. Double $$ are reduced
-                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                the reference in the input string will be unchanged.
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -5949,7 +5883,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       priorityClassName:
@@ -5990,8 +5924,7 @@ spec:
                               description: |-
                                 TolerationSeconds represents the period of time the toleration (which must be
                                 of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
-                                it is not set, which means tolerate the taint forever (do not evict). Zero and
-                                negative values will be treated as 0 (evict immediately) by the system.
+                                it is not set, which means tolerate the taint forever (do not evict).
                               format: int64
                               type: integer
                             value:
@@ -6075,10 +6008,7 @@ spec:
                           dataSource:
                             description: |-
                               dataSource field can be used to specify either:
-                              * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
-                              * An existing PVC (PersistentVolumeClaim)
-                              If the provisioner or an external controller can support the specified data source,
-                              it will create a new volume based on the contents of the specified data source.
+                              * An existing VolumeSnapshot object (snapshot.storage.k8s.
                             properties:
                               apiGroup:
                                 description: |-
@@ -6130,7 +6060,6 @@ spec:
                               If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
                               that are lower than previous value but must still be higher than capacity recorded in the
                               status field of the claim.
-                              More info: https://kubernetes.
                             properties:
                               limits:
                                 additionalProperties:
@@ -6154,7 +6083,7 @@ spec:
                                   Requests describes the minimum amount of compute resources required.
                                   If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                                   otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                                  More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                                  More info: https://kubernetes.
                                 type: object
                             type: object
                           selector:
@@ -6213,8 +6142,7 @@ spec:
                             description: |-
                               volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
                               If specified, the CSI driver will create or update the volume with the attributes defined
-                              in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
-                              it can be changed after the claim is created.
+                              in the corresponding VolumeAttributesClass.
                             type: string
                           volumeMode:
                             description: |-
@@ -6283,7 +6211,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       tlsRefName:
@@ -6317,8 +6245,7 @@ spec:
                               description: |-
                                 TolerationSeconds represents the period of time the toleration (which must be
                                 of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
-                                it is not set, which means tolerate the taint forever (do not evict). Zero and
-                                negative values will be treated as 0 (evict immediately) by the system.
+                                it is not set, which means tolerate the taint forever (do not evict).
                               format: int64
                               type: integer
                             value:
@@ -6387,10 +6314,7 @@ spec:
                             matchLabelKeys:
                               description: |-
                                 MatchLabelKeys is a set of pod label keys to select the pods over which
-                                spreading will be calculated. The keys are used to lookup values from the
-                                incoming pod labels, those key-value labels are ANDed with labelSelector
-                                to select the group of existing pods over which spreading will be calculated
-                                for the incoming pod.
+                                spreading will be calculated.
                               items:
                                 type: string
                               type: array
@@ -6414,7 +6338,7 @@ spec:
                                 NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector
                                 when calculating pod topology spread skew. Options are:
                                 - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
-                                - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
+                                - Ignore: nodeAffinity/nodeSelector are ignored.
                               type: string
                             nodeTaintsPolicy:
                               description: |-
@@ -6430,16 +6354,12 @@ spec:
                                 and identical values are considered to be in the same topology.
                                 We consider each <key, value> as a "bucket", and try to put balanced number
                                 of pods into each bucket.
-                                We define a domain as a particular instance of a topology.
                               type: string
                             whenUnsatisfiable:
                               description: |-
                                 WhenUnsatisfiable indicates how to deal with a pod if it doesn't satisfy
                                 the spread constraint.
                                 - DoNotSchedule (default) tells the scheduler not to schedule it.
-                                - ScheduleAnyway tells the scheduler to schedule the pod in any location,
-                                  but giving higher precedence to topologies that would help reduce the
-                                  skew.
                               type: string
                           required:
                           - maxSkew
@@ -6481,8 +6401,7 @@ spec:
                                 Variable references $(VAR_NAME) are expanded
                                 using the previously defined environment variables in the container and
                                 any service environment variables. If a variable cannot be resolved,
-                                the reference in the input string will be unchanged. Double $$ are reduced
-                                to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                the reference in the input string will be unchanged.
                               type: string
                             valueFrom:
                               description: Source for the environment variable's value.
@@ -6641,7 +6560,6 @@ spec:
                                               the values array must be non-empty. If the operator is Exists or DoesNotExist,
                                               the values array must be empty. If the operator is Gt or Lt, the values
                                               array must have a single element, which will be interpreted as an integer.
-                                              This array is replaced during a strategic merge patch.
                                             items:
                                               type: string
                                             type: array
@@ -6675,7 +6593,6 @@ spec:
                                               the values array must be non-empty. If the operator is Exists or DoesNotExist,
                                               the values array must be empty. If the operator is Gt or Lt, the values
                                               array must have a single element, which will be interpreted as an integer.
-                                              This array is replaced during a strategic merge patch.
                                             items:
                                               type: string
                                             type: array
@@ -6704,8 +6621,7 @@ spec:
                               If the affinity requirements specified by this field are not met at
                               scheduling time, the pod will not be scheduled onto the node.
                               If the affinity requirements specified by this field cease to be met
-                              at some point during pod execution (e.g. due to an update), the system
-                              may or may not try to eventually evict the pod from its node.
+                              at some point during pod execution (e.g.
                             properties:
                               nodeSelectorTerms:
                                 description: Required. A list of node selector terms.
@@ -6739,7 +6655,6 @@ spec:
                                               the values array must be non-empty. If the operator is Exists or DoesNotExist,
                                               the values array must be empty. If the operator is Gt or Lt, the values
                                               array must have a single element, which will be interpreted as an integer.
-                                              This array is replaced during a strategic merge patch.
                                             items:
                                               type: string
                                             type: array
@@ -6773,7 +6688,6 @@ spec:
                                               the values array must be non-empty. If the operator is Exists or DoesNotExist,
                                               the values array must be empty. If the operator is Gt or Lt, the values
                                               array must have a single element, which will be interpreted as an integer.
-                                              This array is replaced during a strategic merge patch.
                                             items:
                                               type: string
                                             type: array
@@ -6861,7 +6775,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       tolerations:
@@ -6893,8 +6807,7 @@ spec:
                               description: |-
                                 TolerationSeconds represents the period of time the toleration (which must be
                                 of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
-                                it is not set, which means tolerate the taint forever (do not evict). Zero and
-                                negative values will be treated as 0 (evict immediately) by the system.
+                                it is not set, which means tolerate the taint forever (do not evict).
                               format: int64
                               type: integer
                             value:
@@ -6921,7 +6834,6 @@ spec:
                                   can have an updated DaemonSet pod during during an update.
                                   Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%).
                                   This can not be 0 if MaxUnavailable is 0.
-                                  Absolute number is calculated from percentage by rounding up to a minimum of 1.
                                 x-kubernetes-int-or-string: true
                               maxUnavailable:
                                 anyOf:
@@ -6932,8 +6844,6 @@ spec:
                                   update. Value can be an absolute number (ex: 5) or a percentage of total
                                   number of DaemonSet pods at the start of the update (ex: 10%). Absolute
                                   number is calculated from percentage by rounding up.
-                                  This cannot be 0 if MaxSurge is 0
-                                  Default value is 1.
                                 x-kubernetes-int-or-string: true
                             type: object
                           type:
@@ -7044,7 +6954,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       secCompProfile:
@@ -7080,8 +6990,7 @@ spec:
                               description: |-
                                 TolerationSeconds represents the period of time the toleration (which must be
                                 of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
-                                it is not set, which means tolerate the taint forever (do not evict). Zero and
-                                negative values will be treated as 0 (evict immediately) by the system.
+                                it is not set, which means tolerate the taint forever (do not evict).
                               format: int64
                               type: integer
                             value:
@@ -7178,7 +7087,7 @@ spec:
                               Requests describes the minimum amount of compute resources required.
                               If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
                               otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              More info: https://kubernetes.
                             type: object
                         type: object
                       tlsRefName:
@@ -7211,8 +7120,7 @@ spec:
                               description: |-
                                 TolerationSeconds represents the period of time the toleration (which must be
                                 of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
-                                it is not set, which means tolerate the taint forever (do not evict). Zero and
-                                negative values will be treated as 0 (evict immediately) by the system.
+                                it is not set, which means tolerate the taint forever (do not evict).
                               format: int64
                               type: integer
                             value:
@@ -7281,10 +7189,7 @@ spec:
                             matchLabelKeys:
                               description: |-
                                 MatchLabelKeys is a set of pod label keys to select the pods over which
-                                spreading will be calculated. The keys are used to lookup values from the
-                                incoming pod labels, those key-value labels are ANDed with labelSelector
-                                to select the group of existing pods over which spreading will be calculated
-                                for the incoming pod.
+                                spreading will be calculated.
                               items:
                                 type: string
                               type: array
@@ -7308,7 +7213,7 @@ spec:
                                 NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector
                                 when calculating pod topology spread skew. Options are:
                                 - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
-                                - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
+                                - Ignore: nodeAffinity/nodeSelector are ignored.
                               type: string
                             nodeTaintsPolicy:
                               description: |-
@@ -7324,16 +7229,12 @@ spec:
                                 and identical values are considered to be in the same topology.
                                 We consider each <key, value> as a "bucket", and try to put balanced number
                                 of pods into each bucket.
-                                We define a domain as a particular instance of a topology.
                               type: string
                             whenUnsatisfiable:
                               description: |-
                                 WhenUnsatisfiable indicates how to deal with a pod if it doesn't satisfy
                                 the spread constraint.
                                 - DoNotSchedule (default) tells the scheduler not to schedule it.
-                                - ScheduleAnyway tells the scheduler to schedule the pod in any location,
-                                  but giving higher precedence to topologies that would help reduce the
-                                  skew.
                               type: string
                           required:
                           - maxSkew
@@ -7455,7 +7356,6 @@ spec:
                         Producers of specific condition types may define expected values and meanings for this field,
                         and whether the values are considered a guaranteed API.
                         The value should be a CamelCase string.
-                        This field may not be empty.
                       maxLength: 1024
                       minLength: 1
                       pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$

@@ -6,6 +6,9 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -55,7 +58,18 @@ func TestReconcile(t *testing.T) {
 		passOAConnectionInfo := createPassingReconciler(t)
 		passConfigSecret := createPassingReconciler(t)
 		passDaemonSet := createPassingReconciler(t)
-		dk := &dynakube.DynaKube{}
+		passLogMonSetting := createPassingReconciler(t)
+		dk := &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				LogMonitoring: &logmonitoring.Spec{},
+			},
+		}
+		mockClient := dtclientmock.NewClient(t)
+		mockClient.On("GetSettingsForLogModule", mock.AnythingOfType("context.backgroundCtx"), "meid").
+			Return(dtclient.GetLogMonSettingsResponse{}, nil).Maybe()
+		mockClient.On("CreateLogMonitoringSetting", mock.AnythingOfType("context.backgroundCtx"), "meid", "cluster-name", []logmonitoring.IngestRuleMatchers{}).
+			Return("test-object-id", nil).Maybe()
+
 		passMonitoredEntity := createPassingMonitoredEntityReconciler(t, dk)
 		r := Reconciler{
 			dk:                               dk,
@@ -63,6 +77,8 @@ func TestReconcile(t *testing.T) {
 			oneAgentConnectionInfoReconciler: passOAConnectionInfo,
 			configSecretReconciler:           passConfigSecret,
 			daemonsetReconciler:              passDaemonSet,
+			logmonsettingsReconciler:         passLogMonSetting,
+			dtc:                              mockClient,
 		}
 
 		err := r.Reconcile(ctx)
