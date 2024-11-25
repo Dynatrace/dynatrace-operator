@@ -477,6 +477,27 @@ func TestVolumes(t *testing.T) {
 		}
 		require.Contains(t, sts.Spec.Template.Spec.Volumes, expectedVolume)
 	})
+
+	t.Run("empty dir volume doesn't exists when UseEphemeralVolume = false", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.ActiveGate.UseEphemeralVolume = false
+		multiCapability := capability.NewMultiCapability(&dk)
+		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		sts, _ := statefulsetBuilder.CreateStatefulSet([]builder.Modifier{
+			modifiers.NewKubernetesMonitoringModifier(dk, multiCapability),
+			modifiers.NewReadOnlyModifier(dk),
+		})
+
+		require.NotEmpty(t, sts)
+
+		expectedVolume := corev1.Volume{
+			Name: consts.GatewayTmpVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		}
+		require.NotContains(t, sts.Spec.Template.Spec.Volumes, expectedVolume)
+	})
 }
 
 func TestVolumeMounts(t *testing.T) {
