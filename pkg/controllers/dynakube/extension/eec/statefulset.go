@@ -72,6 +72,8 @@ const (
 
 	// misc
 	logVolumeName = "log"
+
+	userGroupId int64 = 1001
 )
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
@@ -91,7 +93,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		statefulset.SetTolerations(r.dk.Spec.Templates.ExtensionExecutionController.Tolerations),
 		statefulset.SetTopologySpreadConstraints(utils.BuildTopologySpreadConstraints(r.dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints, appLabels)),
 		statefulset.SetServiceAccount(serviceAccountName),
-		statefulset.SetSecurityContext(buildPodSecurityContext()),
+		statefulset.SetSecurityContext(buildPodSecurityContext(r.dk)),
 		statefulset.SetUpdateStrategy(utils.BuildUpdateStrategy()),
 		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
 		setVolumes(r.dk),
@@ -210,8 +212,6 @@ func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 }
 
 func buildSecurityContext() *corev1.SecurityContext {
-	userGroupId := int64(1001)
-
 	return &corev1.SecurityContext{
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
@@ -219,8 +219,8 @@ func buildSecurityContext() *corev1.SecurityContext {
 			},
 		},
 		Privileged:               address.Of(false),
-		RunAsUser:                &userGroupId,
-		RunAsGroup:               &userGroupId,
+		RunAsUser:                address.Of(userGroupId),
+		RunAsGroup:               address.Of(userGroupId),
 		RunAsNonRoot:             address.Of(true),
 		ReadOnlyRootFilesystem:   address.Of(true),
 		AllowPrivilegeEscalation: address.Of(false),
@@ -230,12 +230,18 @@ func buildSecurityContext() *corev1.SecurityContext {
 	}
 }
 
-func buildPodSecurityContext() *corev1.PodSecurityContext {
-	return &corev1.PodSecurityContext{
+func buildPodSecurityContext(dk *dynakube.DynaKube) *corev1.PodSecurityContext {
+	podSecurityContext := &corev1.PodSecurityContext{
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
 	}
+
+	if !dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume {
+		podSecurityContext.FSGroup = address.Of(userGroupId)
+	}
+
+	return podSecurityContext
 }
 
 func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
