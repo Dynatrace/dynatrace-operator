@@ -116,23 +116,13 @@ func (statefulSetBuilder Builder) addUserAnnotations(sts *appsv1.StatefulSet) {
 }
 
 func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
-	sc := corev1.PodSecurityContext{
-		SeccompProfile: &corev1.SeccompProfile{
-			Type: corev1.SeccompProfileTypeRuntimeDefault,
-		},
-	}
-
-	if !statefulSetBuilder.dynakube.Spec.ActiveGate.UseEphemeralVolume {
-		sc.FSGroup = address.Of(consts.DockerImageGroup)
-	}
-
 	podSpec := corev1.PodSpec{
 		Containers:         statefulSetBuilder.buildBaseContainer(),
 		NodeSelector:       statefulSetBuilder.capability.Properties().NodeSelector,
 		ServiceAccountName: statefulSetBuilder.dynakube.ActiveGate().GetServiceAccountName(),
 		Affinity:           nodeAffinity(),
 		Tolerations:        statefulSetBuilder.capability.Properties().Tolerations,
-		SecurityContext:    &sc,
+		SecurityContext:    statefulSetBuilder.buildPodSecurityContext(),
 		ImagePullSecrets:   statefulSetBuilder.dynakube.ImagePullSecretReferences(),
 		PriorityClassName:  statefulSetBuilder.dynakube.Spec.ActiveGate.PriorityClassName,
 		DNSPolicy:          statefulSetBuilder.dynakube.Spec.ActiveGate.DNSPolicy,
@@ -174,6 +164,20 @@ func (statefulSetBuilder Builder) buildVolumeMounts() []corev1.VolumeMount {
 	})
 
 	return volumeMounts
+}
+
+func (statefulSetBuilder Builder) buildPodSecurityContext() *corev1.PodSecurityContext {
+	sc := corev1.PodSecurityContext{
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
+	}
+
+	if !statefulSetBuilder.dynakube.Spec.ActiveGate.UseEphemeralVolume {
+		sc.FSGroup = address.Of(consts.DockerImageGroup)
+	}
+
+	return &sc
 }
 
 func (statefulSetBuilder Builder) defaultTopologyConstraints() []corev1.TopologySpreadConstraint {
