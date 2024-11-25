@@ -4776,10 +4776,6 @@ spec:
                   For instructions on how to determine the environment ID and how to configure the apiUrl address, see Environment ID (https://www.dynatrace.
                 maxLength: 128
                 type: string
-                x-kubernetes-validations:
-                - message: APIURL is immutable, please delete the CR and then apply
-                    new one
-                  rule: self == oldSelf
               customPullSecret:
                 description: |-
                   Defines a custom pull secret in case you use a private registry when pulling images from the Dynatrace environment.
