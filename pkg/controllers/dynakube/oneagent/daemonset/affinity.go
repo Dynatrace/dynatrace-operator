@@ -9,7 +9,7 @@ import (
 func (b *builder) affinity() *corev1.Affinity {
 	var affinity corev1.Affinity
 	if b.dk.Status.OneAgent.VersionStatus.Source == status.TenantRegistryVersionSource {
-		affinity = node.TenantRegistryAffinity()
+		affinity = node.AMDOnlyAffinity()
 	} else {
 		affinity = node.Affinity()
 	}
