@@ -77,4 +77,33 @@ func TestHasApiUrl(t *testing.T) {
 			},
 		})
 	})
+	t.Run(`unmutated API URL`, func(t *testing.T) {
+		assertUpdateAllowedWithoutWarnings(t,
+			&dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: "https://tenant.live.dynatrace.com/api",
+				},
+			},
+			&dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: "https://tenant.live.dynatrace.com/api",
+				},
+			},
+		)
+	})
+	t.Run(`mutated API URL`, func(t *testing.T) {
+		assertUpdateDenied(t,
+			[]string{errorMutatedApiUrl},
+			&dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: "https://tenant.live.dynatrace.com/api",
+				},
+			},
+			&dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: "https://newtenant.live.dynatrace.com/api",
+				},
+			},
+		)
+	})
 }
