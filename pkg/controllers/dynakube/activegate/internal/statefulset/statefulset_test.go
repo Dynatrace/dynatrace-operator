@@ -458,6 +458,7 @@ func TestSecurityContexts(t *testing.T) {
 func TestVolumes(t *testing.T) {
 	t.Run("empty dir volume exists when PersistentVolumeClaim = nil and UseEphemeralVolume = true", func(t *testing.T) {
 		dk := getTestDynakube()
+		dk.Spec.EnableOTLPingest = true
 		dk.Spec.ActiveGate.PersistentVolumeClaim = nil
 		dk.Spec.ActiveGate.UseEphemeralVolume = true
 		multiCapability := capability.NewMultiCapability(&dk)
@@ -480,6 +481,7 @@ func TestVolumes(t *testing.T) {
 
 	t.Run("empty dir volume doesn't exists when UseEphemeralVolume = false", func(t *testing.T) {
 		dk := getTestDynakube()
+		dk.Spec.EnableOTLPingest = true
 		dk.Spec.ActiveGate.UseEphemeralVolume = false
 		multiCapability := capability.NewMultiCapability(&dk)
 		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
@@ -528,6 +530,7 @@ func TestPVC(t *testing.T) {
 			StorageClassName: address.Of("test"),
 			VolumeName:       "foo-pv",
 		}
+		dk.Spec.EnableOTLPingest = true
 		dk.Spec.ActiveGate.PersistentVolumeClaim = &myPVCspec
 		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts, _ := statefulsetBuilder.CreateStatefulSet([]builder.Modifier{
@@ -543,6 +546,7 @@ func TestPVC(t *testing.T) {
 	})
 	t.Run("if no PVC has been defined in the Dynakube, default PVC shall be added.", func(t *testing.T) {
 		dk := getTestDynakube()
+		dk.Spec.EnableOTLPingest = true
 		multiCapability := capability.NewMultiCapability(&dk)
 		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts, _ := statefulsetBuilder.CreateStatefulSet([]builder.Modifier{

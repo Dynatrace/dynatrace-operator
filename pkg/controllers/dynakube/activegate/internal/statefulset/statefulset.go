@@ -153,7 +153,7 @@ func (statefulSetBuilder Builder) buildTopologySpreadConstraints(capability capa
 
 func (statefulSetBuilder Builder) buildVolumes() []corev1.Volume {
 	volumes := []corev1.Volume{}
-	if statefulSetBuilder.dynakube.Spec.ActiveGate.UseEphemeralVolume {
+	if !statefulSetBuilder.dynakube.IsOTLPingestEnabled() || statefulSetBuilder.dynakube.Spec.ActiveGate.UseEphemeralVolume {
 		volumes = append(volumes, corev1.Volume{
 			Name: consts.GatewayTmpVolumeName,
 			VolumeSource: corev1.VolumeSource{
@@ -274,7 +274,7 @@ func nodeAffinity() *corev1.Affinity {
 }
 
 func (statefulSetBuilder Builder) addPersistentVolumeClaim(sts *appsv1.StatefulSet) {
-	if !statefulSetBuilder.dynakube.Spec.ActiveGate.UseEphemeralVolume {
+	if statefulSetBuilder.dynakube.IsOTLPingestEnabled() && !statefulSetBuilder.dynakube.Spec.ActiveGate.UseEphemeralVolume {
 		if statefulSetBuilder.dynakube.Spec.ActiveGate.PersistentVolumeClaim == nil {
 			sts.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 				{
