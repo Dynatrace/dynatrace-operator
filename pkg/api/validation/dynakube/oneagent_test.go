@@ -177,24 +177,7 @@ func TestConflictingNodeSelector(t *testing.T) {
 				},
 			})
 	})
-	t.Run("valid dynakube specs with multitenant hostMonitoring", func(t *testing.T) {
-		assertAllowedWithWarnings(t, 0,
-			newCloudNativeDynakube("dk1", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "true",
-			}, "1"),
-			newCloudNativeDynakube("dk2", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "true",
-			}, "2"))
-
-		assertAllowedWithWarnings(t, 0,
-			newCloudNativeDynakube("dk1", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "true",
-			}, "1"),
-			newCloudNativeDynakube("dk2", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "true",
-			}, "1"))
-	})
-	t.Run("invalid dynakube specs", func(t *testing.T) {
+	t.Run(`invalid dynakube specs`, func(t *testing.T) {
 		assertDenied(t,
 			[]string{fmt.Sprintf(errorNodeSelectorConflict, "conflicting-dk")},
 			&dynakube.DynaKube{
@@ -229,28 +212,7 @@ func TestConflictingNodeSelector(t *testing.T) {
 				},
 			})
 	})
-	t.Run("invalid dynakube specs with multitenant hostMonitoring", func(t *testing.T) {
-		assertDenied(t, nil,
-			newCloudNativeDynakube("dk1", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "false",
-			}, "1"),
-			newCloudNativeDynakube("dk2", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "true",
-			}, "1"))
-
-		assertDenied(t, nil,
-			newCloudNativeDynakube("dk1", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "false",
-			}, "1"),
-			newCloudNativeDynakube("dk2", map[string]string{
-				dynakube.AnnotationFeatureMultipleOsAgentsOnNode: "false",
-			}, "1"))
-
-		assertDenied(t, nil,
-			newCloudNativeDynakube("dk1", map[string]string{}, "1"),
-			newCloudNativeDynakube("dk2", map[string]string{}, "1"))
-	})
-	t.Run("invalid dynakube specs with existing log module", func(t *testing.T) {
+	t.Run(`invalid dynakube specs with existing log module`, func(t *testing.T) {
 		assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, "dk-lm")},
 			newCloudNativeDynakube("dk-cm", map[string]string{}, "1"),
 			createStandaloneLogMonitoringDynakube("dk-lm", "1"))

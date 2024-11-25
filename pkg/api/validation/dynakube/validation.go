@@ -50,6 +50,8 @@ var (
 		extensionControllerImage,
 		extensionControllerPVCStorageDevice,
 		missingKSPMDependency,
+		missingKSPMImage,
+		missingLogMonitoringImage,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,

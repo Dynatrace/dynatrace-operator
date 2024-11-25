@@ -60,7 +60,7 @@ func conflictingOneAgentConfiguration(_ context.Context, _ *Validator, dk *dynak
 }
 
 func conflictingOneAgentNodeSelector(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
-	if (!dk.LogMonitoring().IsStandalone() && !dk.NeedsOneAgent()) || dk.FeatureEnableMultipleOsAgentsOnNode() {
+	if !dk.LogMonitoring().IsStandalone() && !dk.NeedsOneAgent() {
 		return ""
 	}
 
