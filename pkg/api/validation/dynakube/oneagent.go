@@ -112,9 +112,9 @@ func mapKeysToString(m map[string]bool, sep string) string {
 	return strings.Join(keys, sep)
 }
 
-func imageFieldSetWithoutCSIFlag(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func imageFieldSetWithoutCSIFlag(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
 	if dk.ApplicationMonitoringMode() {
-		if !dk.NeedsCSIDriver() && len(dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) > 0 {
+		if len(dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) > 0 && !v.modules.CSIDriver {
 			return errorImageFieldSetWithoutCSIFlag
 		}
 	}
@@ -154,7 +154,7 @@ func unsupportedOneAgentImage(_ context.Context, _ *Validator, dk *dynakube.Dyna
 
 func conflictingOneAgentVolumeStorageSettings(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	volumeStorageEnabled, volumeStorageSet := hasOneAgentVolumeStorageEnabled(dk)
-	if dk.NeedsReadOnlyOneAgents() && volumeStorageSet && !volumeStorageEnabled {
+	if dk.UseReadOnlyOneAgents() && volumeStorageSet && !volumeStorageEnabled {
 		return errorVolumeStorageReadOnlyModeConflict
 	}
 

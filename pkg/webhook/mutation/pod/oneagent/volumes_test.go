@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -138,6 +139,8 @@ func TestAddOneAgentVolumes(t *testing.T) {
 	})
 
 	t.Run("should add oneagent volumes, without csi", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
 		pod := &corev1.Pod{}
 		dk := getTestDynakube()
 

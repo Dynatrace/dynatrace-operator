@@ -6,12 +6,13 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestConflictingOneAgentConfiguration(t *testing.T) {
-	t.Run(`valid dynakube specs`, func(t *testing.T) {
+	t.Run("valid dynakube specs", func(t *testing.T) {
 		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
@@ -43,9 +44,9 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 					HostMonitoring:   &dynakube.HostInjectSpec{},
 				},
 			},
-		}, &defaultCSIDaemonSet)
+		})
 	})
-	t.Run(`conflicting dynakube specs`, func(t *testing.T) {
+	t.Run("conflicting dynakube specs", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorConflictingOneagentMode},
 			&dynakube.DynaKube{
@@ -57,7 +58,7 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 						HostMonitoring:   &dynakube.HostInjectSpec{},
 					},
 				},
-			}, &defaultCSIDaemonSet)
+			})
 
 		assertDenied(t,
 			[]string{errorConflictingOneagentMode},
@@ -70,7 +71,7 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 						HostMonitoring:        &dynakube.HostInjectSpec{},
 					},
 				},
-			}, &defaultCSIDaemonSet)
+			})
 	})
 }
 
@@ -97,7 +98,7 @@ func TestConflictingNodeSelector(t *testing.T) {
 		}
 	}
 
-	t.Run(`valid dynakube specs`, func(t *testing.T) {
+	t.Run("valid dynakube specs", func(t *testing.T) {
 		assertAllowedWithoutWarnings(t,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
@@ -127,7 +128,7 @@ func TestConflictingNodeSelector(t *testing.T) {
 						},
 					},
 				},
-			}, &defaultCSIDaemonSet)
+			})
 
 		assertAllowedWithoutWarnings(t,
 			&dynakube.DynaKube{
@@ -160,7 +161,7 @@ func TestConflictingNodeSelector(t *testing.T) {
 						},
 					},
 				},
-			}, &defaultCSIDaemonSet)
+			})
 
 		assertAllowedWithoutWarnings(t, newCloudNativeDynakube("dk1", map[string]string{}, "1"),
 			&dynakube.DynaKube{
@@ -174,7 +175,7 @@ func TestConflictingNodeSelector(t *testing.T) {
 						},
 					},
 				},
-			}, &defaultCSIDaemonSet)
+			})
 	})
 	t.Run(`invalid dynakube specs`, func(t *testing.T) {
 		assertDenied(t,
@@ -209,36 +210,45 @@ func TestConflictingNodeSelector(t *testing.T) {
 						},
 					},
 				},
-			}, &defaultCSIDaemonSet)
+			})
 	})
 	t.Run(`invalid dynakube specs with existing log module`, func(t *testing.T) {
 		assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, "dk-lm")},
 			newCloudNativeDynakube("dk-cm", map[string]string{}, "1"),
-			createStandaloneLogMonitoringDynakube("dk-lm", "1"), &defaultCSIDaemonSet)
+			createStandaloneLogMonitoringDynakube("dk-lm", "1"))
 
 		assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, ""), "dk-lm", "dk-cm2"},
 			newCloudNativeDynakube("dk-cm1", map[string]string{}, "1"),
 			createStandaloneLogMonitoringDynakube("dk-lm", ""),
-			newCloudNativeDynakube("dk-cm2", map[string]string{}, "1"),
-			&defaultCSIDaemonSet)
+			newCloudNativeDynakube("dk-cm2", map[string]string{}, "1"))
 
 		assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, "dk-lm")},
 			newCloudNativeDynakube("dk-cn", map[string]string{}, "1"),
-			createStandaloneLogMonitoringDynakube("dk-lm", "1"), &defaultCSIDaemonSet)
+			createStandaloneLogMonitoringDynakube("dk-lm", "1"))
 		assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, "dk-cn")},
 			createStandaloneLogMonitoringDynakube("dk-lm", "1"),
-			newCloudNativeDynakube("dk-cn", map[string]string{}, "1"),
-			&defaultCSIDaemonSet)
+			newCloudNativeDynakube("dk-cn", map[string]string{}, "1"))
 		assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, "dk-lm2")},
 			createStandaloneLogMonitoringDynakube("dk-lm1", "1"),
-			createStandaloneLogMonitoringDynakube("dk-lm2", "1"),
-			&defaultCSIDaemonSet)
+			createStandaloneLogMonitoringDynakube("dk-lm2", "1"))
+	})
+}
+
+func setupDisabledCSIEnv(t *testing.T) {
+	t.Helper()
+	installconfig.SetModulesOverride(t, installconfig.Modules{
+		CSIDriver:      false,
+		ActiveGate:     true,
+		OneAgent:       true,
+		Extensions:     true,
+		LogMonitoring:  true,
+		EdgeConnect:    true,
+		Supportability: true,
 	})
 }
 
 func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
-	t.Run(`spec with appMon enabled and image name`, func(t *testing.T) {
-		useCSIDriver := true
+	t.Run("spec with appMon enabled and image name", func(t *testing.T) {
 		testImage := "testImage"
 		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
@@ -249,15 +259,15 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 						AppInjectionSpec: dynakube.AppInjectionSpec{
 							CodeModulesImage: testImage,
 						},
-						UseCSIDriver: &useCSIDriver,
 					},
 				},
 			},
-		}, &defaultCSIDaemonSet)
+		})
 	})
 
-	t.Run(`spec with appMon enabled, useCSIDriver not enabled but image set`, func(t *testing.T) {
-		useCSIDriver := false
+	t.Run("spec with appMon enabled, useCSIDriver not enabled but image set", func(t *testing.T) {
+		setupDisabledCSIEnv(t)
+
 		testImage := "testImage"
 		assertDenied(t, []string{errorImageFieldSetWithoutCSIFlag}, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
@@ -268,11 +278,10 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 						AppInjectionSpec: dynakube.AppInjectionSpec{
 							CodeModulesImage: testImage,
 						},
-						UseCSIDriver: &useCSIDriver,
 					},
 				},
 			},
-		}, &defaultCSIDaemonSet)
+		})
 	})
 }
 
@@ -337,37 +346,31 @@ func TestUnsupportedOneAgentImage(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			assertAllowedWithWarnings(t,
 				tc.allowedWarnings,
-				createDynakube(tc.envVars...),
-				&defaultCSIDaemonSet)
+				createDynakube(tc.envVars...))
 		})
 	}
 }
 
 func TestOneAgentHostGroup(t *testing.T) {
-	t.Run(`valid dynakube specs`, func(t *testing.T) {
+	t.Run("valid dynakube specs", func(t *testing.T) {
 		assertAllowedWithoutWarnings(t,
-			createDynakubeWithHostGroup([]string{}, ""),
-			&defaultCSIDaemonSet)
+			createDynakubeWithHostGroup([]string{}, ""))
 
 		assertAllowedWithoutWarnings(t,
-			createDynakubeWithHostGroup([]string{"--other-param=1"}, ""),
-			&defaultCSIDaemonSet)
+			createDynakubeWithHostGroup([]string{"--other-param=1"}, ""))
 
 		assertAllowedWithoutWarnings(t,
-			createDynakubeWithHostGroup([]string{}, "field"),
-			&defaultCSIDaemonSet)
+			createDynakubeWithHostGroup([]string{}, "field"))
 	})
 
-	t.Run(`obsolete settings`, func(t *testing.T) {
+	t.Run("obsolete settings", func(t *testing.T) {
 		assertAllowedWithWarnings(t,
 			1,
-			createDynakubeWithHostGroup([]string{"--set-host-group=arg"}, ""),
-			&defaultCSIDaemonSet)
+			createDynakubeWithHostGroup([]string{"--set-host-group=arg"}, ""))
 
 		assertAllowedWithWarnings(t,
 			1,
-			createDynakubeWithHostGroup([]string{"--set-host-group=arg"}, "field"),
-			&defaultCSIDaemonSet)
+			createDynakubeWithHostGroup([]string{"--set-host-group=arg"}, "field"))
 
 		assertAllowedWithWarnings(t,
 			1,
@@ -382,8 +385,7 @@ func TestOneAgentHostGroup(t *testing.T) {
 						HostGroup: "",
 					},
 				},
-			},
-			&defaultCSIDaemonSet)
+			})
 
 		assertAllowedWithWarnings(t,
 			1,
@@ -398,8 +400,7 @@ func TestOneAgentHostGroup(t *testing.T) {
 						HostGroup: "",
 					},
 				},
-			},
-			&defaultCSIDaemonSet)
+			})
 	})
 }
 

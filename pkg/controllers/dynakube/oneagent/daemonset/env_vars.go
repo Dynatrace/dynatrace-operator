@@ -120,7 +120,7 @@ func (b *builder) addProxyEnv(envVarMap *prioritymap.Map) {
 }
 
 func (b *builder) addReadOnlyEnv(envVarMap *prioritymap.Map) {
-	if b.dk != nil && b.dk.NeedsReadOnlyOneAgents() {
+	if b.dk != nil && b.dk.UseReadOnlyOneAgents() {
 		addDefaultValue(envVarMap, oneagentReadOnlyMode, "true")
 	}
 }

@@ -23,6 +23,7 @@ type Validator struct {
 
 var (
 	validatorErrorFuncs = []validatorFunc{
+		isCSIModuleDisabled,
 		isActiveGateModuleDisabled,
 		isExtensionsModuleDisabled,
 		isLogMonitoringModuleDisabled,
@@ -32,7 +33,6 @@ var (
 		NoApiUrl,
 		IsInvalidApiUrl,
 		IsThirdGenAPIUrl,
-		missingCSIDaemonSet,
 		disabledCSIForReadonlyCSIVolume,
 		invalidActiveGateCapabilities,
 		duplicateActiveGateCapabilities,

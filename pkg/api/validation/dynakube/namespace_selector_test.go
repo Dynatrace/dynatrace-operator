@@ -75,7 +75,7 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 						},
 					},
 				},
-			}, &defaultCSIDaemonSet, &dummyNamespace)
+			}, &dummyNamespace)
 	})
 	t.Run("validate namespaceSelector to be a valid label according to spec", func(t *testing.T) {
 		testsValidLabels := []string{

@@ -40,7 +40,8 @@ func Feature(t *testing.T) features.Feature {
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 
 	// update to snapshot
-	builder.Assess("upgrade operator", helpers.ToFeatureFunc(operator.InstallViaMake(testDynakube.NeedsCSIDriver()), true))
+	withCSI := true
+	builder.Assess("upgrade operator", helpers.ToFeatureFunc(operator.InstallViaMake(withCSI), true))
 	builder.Assess("restart half of sample apps", sampleApp.Restart())
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 

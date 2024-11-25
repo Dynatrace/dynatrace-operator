@@ -161,7 +161,7 @@ func addVolumesForReadOnlyCSI(pod *corev1.Pod) {
 
 func getInstallerVolumeSource(dk dynakube.DynaKube) corev1.VolumeSource {
 	volumeSource := corev1.VolumeSource{}
-	if dk.NeedsCSIDriver() {
+	if dk.IsCSIAvailable() {
 		volumeSource.CSI = &corev1.CSIVolumeSource{
 			Driver:   dtcsi.DriverName,
 			ReadOnly: address.Of(dk.FeatureReadOnlyCsiVolume()),

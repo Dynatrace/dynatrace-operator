@@ -13,12 +13,12 @@ func TestIgnoredLogMonitoringTemplate(t *testing.T) {
 	t.Run("no warning if logMonitoring template section is empty", func(t *testing.T) {
 		dk := createStandaloneLogMonitoringDynakube(testName, "")
 		dk.Spec.OneAgent.CloudNativeFullStack = &dynakube.CloudNativeFullStackSpec{}
-		assertAllowedWithoutWarnings(t, dk, &defaultCSIDaemonSet)
+		assertAllowedWithoutWarnings(t, dk)
 	})
 	t.Run("warning if logMonitoring template section is not empty", func(t *testing.T) {
 		dk := createStandaloneLogMonitoringDynakube(testName, "something")
 		dk.Spec.OneAgent.CloudNativeFullStack = &dynakube.CloudNativeFullStackSpec{}
-		assertAllowedWithWarnings(t, 1, dk, &defaultCSIDaemonSet)
+		assertAllowedWithWarnings(t, 1, dk)
 	})
 }
 

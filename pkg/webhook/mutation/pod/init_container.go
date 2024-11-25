@@ -44,7 +44,7 @@ func initContainerResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
 		return *customInitResources
 	}
 
-	if !dk.NeedsCSIDriver() {
+	if !dk.IsCSIAvailable() {
 		return corev1.ResourceRequirements{}
 	}
 
