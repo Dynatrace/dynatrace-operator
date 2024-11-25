@@ -153,7 +153,7 @@ func testSupportArchiveCommand(testDynakube dynakube.DynaKube, testEdgeConnect e
 		requiredFiles := newRequiredFiles(t, ctx, envConfig.Client().Resources(), customResources, collectManaged).
 			collectRequiredFiles()
 		for _, file := range zipReader.File {
-			requiredFiles = assertFileSize(t, requiredFiles, *file)
+			requiredFiles = assertFile(t, requiredFiles, *file)
 		}
 
 		assert.Emptyf(t, requiredFiles, "Support archive does not contain all expected files.")
@@ -187,7 +187,7 @@ func executeSupportArchiveCommand(ctx context.Context, t *testing.T, envConfig *
 	return executionResult
 }
 
-func assertFileSize(t *testing.T, requiredFiles []string, zipFile zip.File) []string {
+func assertFile(t *testing.T, requiredFiles []string, zipFile zip.File) []string {
 	zipFileName := zipFile.Name
 	index := slices.IndexFunc(requiredFiles, func(file string) bool { return file == zipFileName })
 
