@@ -60,7 +60,7 @@ func conflictingOneAgentConfiguration(_ context.Context, _ *Validator, dk *dynak
 }
 
 func conflictingOneAgentNodeSelector(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
-	if !dk.LogMonitoring().IsStandalone() && !dk.NeedsOneAgent() {
+	if !dk.NeedsOneAgent() {
 		return ""
 	}
 
@@ -82,14 +82,6 @@ func conflictingOneAgentNodeSelector(ctx context.Context, dv *Validator, dk *dyn
 		if item.NeedsOneAgent() {
 			if hasConflictingMatchLabels(oneAgentNodeSelector, item.OneAgentNodeSelector()) {
 				log.Info("requested dynakube has conflicting OneAgent nodeSelector", "name", dk.Name, "namespace", dk.Namespace)
-
-				conflictingDynakubes[item.Name] = true
-			}
-		}
-
-		if item.LogMonitoring().IsStandalone() {
-			if hasConflictingMatchLabels(oneAgentNodeSelector, item.OneAgentNodeSelector()) {
-				log.Info("requested dynakube has conflicting LogMonitoring nodeSelector", "name", dk.Name, "namespace", dk.Namespace)
 
 				conflictingDynakubes[item.Name] = true
 			}
