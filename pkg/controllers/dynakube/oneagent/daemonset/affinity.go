@@ -8,7 +8,7 @@ import (
 
 func (b *builder) affinity() *corev1.Affinity {
 	var affinity corev1.Affinity
-	if b.dk.Status.OneAgent.VersionStatus.Source == status.TenantRegistryVersionSource {
+	if b.dk.Status.OneAgent.VersionStatus.Source == status.TenantRegistryVersionSource || b.dk.Status.OneAgent.VersionStatus.Source == status.CustomVersionVersionSource {
 		affinity = node.AMDOnlyAffinity()
 	} else {
 		affinity = node.Affinity()

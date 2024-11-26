@@ -225,7 +225,7 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 
 func (statefulSetBuilder Builder) nodeAffinity() *corev1.Affinity {
 	var affinity corev1.Affinity
-	if statefulSetBuilder.dynakube.Status.ActiveGate.Source == status.TenantRegistryVersionSource {
+	if statefulSetBuilder.dynakube.Status.ActiveGate.Source == status.TenantRegistryVersionSource || statefulSetBuilder.dynakube.Status.ActiveGate.Source == status.CustomVersionVersionSource {
 		affinity = node.AMDOnlyAffinity()
 	} else {
 		affinity = node.Affinity()
