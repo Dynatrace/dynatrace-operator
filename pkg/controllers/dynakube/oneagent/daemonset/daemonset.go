@@ -4,7 +4,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -15,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -221,7 +221,7 @@ func (b *builder) podSpec() (corev1.PodSpec, error) {
 		DNSPolicy:                     dnsPolicy,
 		Volumes:                       volumes,
 		Affinity:                      affinity,
-		TerminationGracePeriodSeconds: address.Of(defaultTerminationGracePeriod),
+		TerminationGracePeriodSeconds: ptr.To(defaultTerminationGracePeriod),
 	}
 
 	if b.dk.NeedsOneAgentProbe() {
@@ -313,16 +313,16 @@ func (b *builder) imagePullSecrets() []corev1.LocalObjectReference {
 func (b *builder) securityContext() *corev1.SecurityContext {
 	var securityContext corev1.SecurityContext
 	if b.dk != nil && b.dk.UseReadOnlyOneAgents() {
-		securityContext.RunAsNonRoot = address.Of(true)
-		securityContext.RunAsUser = address.Of(int64(1000))
-		securityContext.RunAsGroup = address.Of(int64(1000))
-		securityContext.ReadOnlyRootFilesystem = address.Of(b.isRootFsReadonly())
+		securityContext.RunAsNonRoot = ptr.To(true)
+		securityContext.RunAsUser = ptr.To(int64(1000))
+		securityContext.RunAsGroup = ptr.To(int64(1000))
+		securityContext.ReadOnlyRootFilesystem = ptr.To(b.isRootFsReadonly())
 	} else {
-		securityContext.ReadOnlyRootFilesystem = address.Of(false)
+		securityContext.ReadOnlyRootFilesystem = ptr.To(false)
 	}
 
 	if b.dk != nil && b.dk.NeedsOneAgentPrivileged() {
-		securityContext.Privileged = address.Of(true)
+		securityContext.Privileged = ptr.To(true)
 	} else {
 		securityContext.Capabilities = defaultSecurityContextCapabilities()
 

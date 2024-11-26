@@ -20,11 +20,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 const testAPIURL = "http://test-endpoint/api"
@@ -142,37 +142,37 @@ func TestIsTokenScopeVerificationAllowed(t *testing.T) {
 		"Do not update after 3 minutes using 5m interval": {
 			lastRequestTimeDeltaMinutes: -3,
 			updateExpected:              false,
-			threshold:                   address.Of(uint16(5)),
+			threshold:                   ptr.To(uint16(5)),
 		},
 		"Do update after 7 minutes using 5m interval": {
 			lastRequestTimeDeltaMinutes: -7,
 			updateExpected:              true,
-			threshold:                   address.Of(uint16(5)),
+			threshold:                   ptr.To(uint16(5)),
 		},
 		"Do not update after 17 minutes using 20m interval": {
 			lastRequestTimeDeltaMinutes: -17,
 			updateExpected:              false,
-			threshold:                   address.Of(uint16(20)),
+			threshold:                   ptr.To(uint16(20)),
 		},
 		"Do update after 22 minutes using 20m interval": {
 			lastRequestTimeDeltaMinutes: -22,
 			updateExpected:              true,
-			threshold:                   address.Of(uint16(20)),
+			threshold:                   ptr.To(uint16(20)),
 		},
 		"Do update immediately using 0m interval": {
 			lastRequestTimeDeltaMinutes: 0,
 			updateExpected:              true,
-			threshold:                   address.Of(uint16(0)),
+			threshold:                   ptr.To(uint16(0)),
 		},
 		"Do update after 1 minute using 0m interval": {
 			lastRequestTimeDeltaMinutes: -1,
 			updateExpected:              true,
-			threshold:                   address.Of(uint16(0)),
+			threshold:                   ptr.To(uint16(0)),
 		},
 		"Do update after 20 minutes using 0m interval": {
 			lastRequestTimeDeltaMinutes: -20,
 			updateExpected:              true,
-			threshold:                   address.Of(uint16(0)),
+			threshold:                   ptr.To(uint16(0)),
 		},
 	}
 

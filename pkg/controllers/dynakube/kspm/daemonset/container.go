@@ -2,9 +2,9 @@ package daemonset
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -33,12 +33,12 @@ func getContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
 
 func getSecurityContext() corev1.SecurityContext {
 	securityContext := corev1.SecurityContext{
-		Privileged:               address.Of(false),
-		AllowPrivilegeEscalation: address.Of(false),
-		RunAsUser:                address.Of(runAs),
-		RunAsGroup:               address.Of(runAs),
-		RunAsNonRoot:             address.Of(false),
-		ReadOnlyRootFilesystem:   address.Of(true),
+		Privileged:               ptr.To(false),
+		AllowPrivilegeEscalation: ptr.To(false),
+		RunAsUser:                ptr.To(runAs),
+		RunAsGroup:               ptr.To(runAs),
+		RunAsNonRoot:             ptr.To(false),
+		ReadOnlyRootFilesystem:   ptr.To(true),
 		Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
 	}
 
