@@ -18,7 +18,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
-	reconcilermock "github.com/Dynatrace/dynatrace-operator/test/mocks/sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -60,11 +59,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	dynakubeName := "test-dk"
 
 	t.Run("no dynakube instance", func(t *testing.T) {
-		gc := reconcilermock.NewReconciler(t)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(),
 			db:        metadata.FakeMemoryDB(),
-			gc:        gc,
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{})
 
@@ -73,14 +70,12 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.Equal(t, reconcile.Result{}, result)
 	})
 	t.Run("dynakube deleted", func(t *testing.T) {
-		gc := reconcilermock.NewReconciler(t)
 		db := metadata.FakeMemoryDB()
 		metadataDk := metadata.Dynakube{TenantUUID: tenantUUID, LatestVersion: agentVersion, Name: dkName}
 		_ = db.InsertDynakube(ctx, &metadataDk)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(),
 			db:        db,
-			gc:        gc,
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: metadataDk.Name}})
 
@@ -93,7 +88,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.Nil(t, ten)
 	})
 	t.Run("application monitoring disabled", func(t *testing.T) {
-		gc := reconcilermock.NewReconciler(t)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynakube.DynaKube{
@@ -106,7 +100,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				},
 			),
 			db: metadata.FakeMemoryDB(),
-			gc: gc,
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
 
@@ -115,7 +108,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
 	})
 	t.Run("csi driver not enabled", func(t *testing.T) {
-		gc := reconcilermock.NewReconciler(t)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynakube.DynaKube{
@@ -132,7 +124,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				},
 			),
 			db: metadata.FakeMemoryDB(),
-			gc: gc,
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
 
@@ -141,7 +132,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
 	})
 	t.Run("csi driver disabled", func(t *testing.T) {
-		gc := reconcilermock.NewReconciler(t)
 		db := metadata.FakeMemoryDB()
 		_ = db.InsertDynakube(ctx, &metadata.Dynakube{Name: dynakubeName})
 		provisioner := &OneAgentProvisioner{
@@ -160,7 +150,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				},
 			),
 			db: db,
-			gc: gc,
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
 
@@ -198,7 +187,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		)
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 
-		gc := reconcilermock.NewReconciler(t)
 		db := metadata.FakeMemoryDB()
 
 		provisioner := &OneAgentProvisioner{
@@ -206,7 +194,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			client:                 fakeClient,
 			fs:                     afero.NewMemMapFs(),
 			db:                     db,
-			gc:                     gc,
 			path:                   metadata.PathResolver{},
 			dynatraceClientBuilder: mockDtcBuilder,
 		}
@@ -221,7 +208,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.Len(t, dynakubeMetadatas, 1)
 	})
 	t.Run("no tokens", func(t *testing.T) {
-		gc := reconcilermock.NewReconciler(t)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				addFakeTenantUUID(
@@ -245,7 +231,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					},
 				),
 			),
-			gc: gc,
 			db: metadata.FakeMemoryDB(),
 			fs: afero.NewMemMapFs(),
 		}
@@ -255,7 +240,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.NotNil(t, result)
 	})
 	t.Run("error when creating dynatrace client", func(t *testing.T) {
-		gc := reconcilermock.NewReconciler(t)
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 		mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
@@ -294,7 +278,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				},
 			),
 			dynatraceClientBuilder: mockDtcBuilder,
-			gc:                     gc,
 			db:                     metadata.FakeMemoryDB(),
 			fs:                     afero.NewMemMapFs(),
 		}
@@ -304,7 +287,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.NotNil(t, result)
 	})
 	t.Run("error creating directories", func(t *testing.T) {
-		gc := reconcilermock.NewReconciler(t)
 		errorfs := &mkDirAllErrorFs{
 			Fs: afero.NewMemMapFs(),
 		}
@@ -335,7 +317,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			dynatraceClientBuilder: mockDtcBuilder,
 			fs:                     errorfs,
 			db:                     metadata.FakeMemoryDB(),
-			gc:                     gc,
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
@@ -347,7 +328,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		log.Info("")
 	})
 	t.Run("error getting latest agent version", func(t *testing.T) {
-		gc := reconcilermock.NewReconciler(t)
 		memFs := afero.NewMemMapFs()
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 		dynakube := &dynakube.DynaKube{
@@ -387,7 +367,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			fs:                     memFs,
 			db:                     metadata.FakeMemoryDB(),
 			recorder:               &record.FakeRecorder{},
-			gc:                     gc,
 			urlInstallerBuilder:    mockUrlInstallerBuilder(installerMock),
 		}
 
@@ -406,7 +385,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.True(t, exists)
 	})
 	t.Run("error getting dynakube from db", func(t *testing.T) {
-		gc := reconcilermock.NewReconciler(t)
 		memFs := afero.NewMemMapFs()
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 
@@ -439,7 +417,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			dynatraceClientBuilder: mockDtcBuilder,
 			fs:                     memFs,
 			db:                     &metadata.FakeFailDB{},
-			gc:                     gc,
 		}
 
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
@@ -448,7 +425,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.Empty(t, result)
 	})
 	t.Run("correct directories are created", func(t *testing.T) {
-		gc := reconcilermock.NewReconciler(t)
 		memFs := afero.NewMemMapFs()
 		memDB := metadata.FakeMemoryDB()
 		dynakube := &dynakube.DynaKube{
@@ -467,7 +443,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			apiReader: fake.NewClient(dynakube),
 			fs:        memFs,
 			db:        memDB,
-			gc:        gc,
 		}
 
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
