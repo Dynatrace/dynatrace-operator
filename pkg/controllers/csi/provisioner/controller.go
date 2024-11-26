@@ -24,7 +24,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
-	csigc "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/gc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
@@ -59,7 +58,6 @@ type OneAgentProvisioner struct {
 	fs        afero.Fs
 	recorder  record.EventRecorder
 	db        metadata.Access
-	gc        reconcile.Reconciler
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	urlInstallerBuilder    urlInstallerBuilder
@@ -78,7 +76,6 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metad
 		recorder:               mgr.GetEventRecorderFor("OneAgentProvisioner"),
 		db:                     db,
 		path:                   metadata.PathResolver{RootDir: opts.RootDir},
-		gc:                     csigc.NewCSIGarbageCollector(mgr.GetAPIReader(), opts, db),
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
 		urlInstallerBuilder:    url.NewUrlInstaller,
 		imageInstallerBuilder:  image.NewImageInstaller,
@@ -137,11 +134,6 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{}, err
 	}
 
-	err = provisioner.collectGarbage(ctx, request)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
 	return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
 }
 
@@ -166,12 +158,6 @@ func (provisioner *OneAgentProvisioner) setupDynakubeMetadata(ctx context.Contex
 	// Create/update the dynakubeMetadata entry while `LatestVersion` is not necessarily set
 	// so the host oneagent-storages can be mounted before the standalone agent binaries are ready to be mounted
 	return dynakubeMetadata, provisioner.createOrUpdateDynakubeMetadata(ctx, oldDynakubeMetadata, dynakubeMetadata)
-}
-
-func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, request reconcile.Request) error {
-	_, err := provisioner.gc.Reconcile(ctx, request)
-
-	return err
 }
 
 func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context, dk *dynakube.DynaKube, dynakubeMetadata *metadata.Dynakube) error {
