@@ -40,10 +40,9 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 		}
 	}()
 
-	customImage := updater.CustomImage()
-	if customImage != "" {
+	if currentSource == status.CustomImageVersionSource {
 		log.Info("updating version status according to custom image", "updater", updater.Name())
-		setImageIDToCustomImage(updater.Target(), customImage)
+		setImageIDToCustomImage(updater.Target(), updater.CustomImage())
 
 		return nil
 	}

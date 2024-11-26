@@ -163,10 +163,6 @@ func (dk *DynaKube) CustomCodeModulesImage() string {
 
 // CustomCodeModulesVersion provides the version for the CodeModules provided in the Spec.
 func (dk *DynaKube) CustomCodeModulesVersion() string {
-	if !dk.ApplicationMonitoringMode() {
-		return ""
-	}
-
 	return dk.CustomOneAgentVersion()
 }
 
