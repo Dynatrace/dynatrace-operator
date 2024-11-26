@@ -9,7 +9,7 @@ ondemand_file = ".github/workflows/e2e-tests-ondemand.yaml"
 version = ""
 # read versions to list
 with open(version_file, "r") as f:
-    version = f.readline().strip().replace("origin/", "")
+    version = [v.strip().replace("origin/", "") for v in f.readlines()][-1]
 
 yaml = YAML()
 yaml.width = 4096
