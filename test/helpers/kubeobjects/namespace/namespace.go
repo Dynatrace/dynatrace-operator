@@ -7,12 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/env"
@@ -65,7 +65,7 @@ func Delete(namespaceName string) features.Func {
 		}
 
 		err := envConfig.Client().Resources().Delete(ctx, &namespace, func(options *metav1.DeleteOptions) {
-			options.GracePeriodSeconds = address.Of[int64](0)
+			options.GracePeriodSeconds = ptr.To[int64](0)
 		})
 
 		if err != nil {

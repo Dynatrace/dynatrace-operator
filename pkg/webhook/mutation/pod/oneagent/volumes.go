@@ -9,8 +9,8 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
 	appvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes/app"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 )
 
 func (mut *Mutator) addVolumes(pod *corev1.Pod, dk dynakube.DynaKube) {
@@ -164,7 +164,7 @@ func getInstallerVolumeSource(dk dynakube.DynaKube) corev1.VolumeSource {
 	if dk.IsCSIAvailable() {
 		volumeSource.CSI = &corev1.CSIVolumeSource{
 			Driver:   dtcsi.DriverName,
-			ReadOnly: address.Of(dk.FeatureReadOnlyCsiVolume()),
+			ReadOnly: ptr.To(dk.FeatureReadOnlyCsiVolume()),
 			VolumeAttributes: map[string]string{
 				csivolumes.CSIVolumeAttributeModeField:     appvolumes.Mode,
 				csivolumes.CSIVolumeAttributeDynakubeField: dk.Name,
