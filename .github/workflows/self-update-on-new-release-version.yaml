@@ -46,6 +46,7 @@ jobs:
           branch-suffix: short-commit-hash
           add-paths: |
             .github/renovate.json5
+            .github/workflows/e2e-tests-ondemand.yaml
           title: '[Automatic] Update because new branch created ${{ github.ref_name }}'
           labels: 'ci'
           commit-message: self update on new release ${{ github.ref_name }}
