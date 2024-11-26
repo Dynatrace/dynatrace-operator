@@ -8,13 +8,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func TestOneAgentUpdater(t *testing.T) {
@@ -29,7 +29,7 @@ func TestOneAgentUpdater(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: dynakube.OneAgentSpec{
 					ClassicFullStack: &dynakube.HostInjectSpec{
-						AutoUpdate: address.Of(false),
+						AutoUpdate: ptr.To(false),
 						Image:      testImage.String(),
 						Version:    testImage.Tag,
 					},

@@ -6,11 +6,11 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func TestReconcile(t *testing.T) {
@@ -21,7 +21,7 @@ func TestReconcile(t *testing.T) {
 		clt.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("context.backgroundCtx"), "kube-system-uuid").Return([]dtclient.MonitoredEntity{{EntityId: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "operator test entity 1", LastSeenTms: 1639483869085}}, nil)
 
 		dk := createDynaKube()
-		dk.Spec.MetadataEnrichment.Enabled = address.Of(false)
+		dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
 
 		reconciler := NewReconciler(clt, &dk)
 
@@ -66,7 +66,7 @@ func createDynaKube() dynakube.DynaKube {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			MetadataEnrichment: dynakube.MetadataEnrichment{
-				Enabled: address.Of(true),
+				Enabled: ptr.To(true),
 			},
 		},
 		Status: dynakube.DynaKubeStatus{

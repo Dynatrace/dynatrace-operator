@@ -1,12 +1,12 @@
 package statefulset
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/internal/builder"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 var (
@@ -31,7 +31,7 @@ func Build(owner metav1.Object, name string, container corev1.Container, options
 
 func SetReplicas(replicas int32) builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
-		s.Spec.Replicas = address.Of(replicas)
+		s.Spec.Replicas = ptr.To(replicas)
 	}
 }
 
