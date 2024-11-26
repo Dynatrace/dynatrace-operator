@@ -28,7 +28,7 @@ func (dtc *dynatraceClient) GetEntityIDForIP(ctx context.Context, ip string) (st
 }
 
 // GetLatestAgent gets the latest agent package for the given OS and installer type.
-func (dtc *dynatraceClient) GetLatestAgent(ctx context.Context, os, installerType, flavor, arch string, technologies []string, skipMetadata bool, writer io.Writer) error { // TODO: does flavor/arch needed?
+func (dtc *dynatraceClient) GetLatestAgent(ctx context.Context, os, installerType, flavor, arch string, technologies []string, skipMetadata bool, writer io.Writer) error {
 	if len(os) == 0 || len(installerType) == 0 {
 		return errors.New("os or installerType is empty")
 	}
@@ -53,10 +53,7 @@ func (dtc *dynatraceClient) GetLatestAgentVersion(ctx context.Context, os, insta
 		return "", errors.New("os or installerType is empty")
 	}
 
-	flavor := determineFlavor(installerType)
-	_arch := determineArch(installerType)
-
-	url := dtc.getLatestAgentVersionUrl(os, installerType, flavor, _arch)
+	url := dtc.getLatestAgentVersionUrl(os, installerType, determineFlavor(installerType), determineArch(installerType))
 	err := dtc.makeRequestAndUnmarshal(ctx, url, dynatracePaaSToken, &response)
 
 	return response.LatestAgentVersion, errors.WithStack(err)
@@ -81,7 +78,7 @@ func determineFlavor(installerType string) string {
 }
 
 // GetAgentVersions gets available agent versions for the given OS and installer type.
-func (dtc *dynatraceClient) GetAgentVersions(ctx context.Context, os, installerType, flavor string) ([]string, error) { // TODO: does flavor needed?
+func (dtc *dynatraceClient) GetAgentVersions(ctx context.Context, os, installerType, flavor string) ([]string, error) {
 	response := struct {
 		AvailableVersions []string `json:"availableVersions"`
 	}{}
@@ -90,20 +87,13 @@ func (dtc *dynatraceClient) GetAgentVersions(ctx context.Context, os, installerT
 		return nil, errors.New("os or installerType is empty")
 	}
 
-	_flavor := determineFlavor(installerType)
-	if flavor != "" {
-		_flavor = flavor
-	}
-
-	_arch := determineArch(installerType)
-
-	url := dtc.getAgentVersionsUrl(os, installerType, _flavor, _arch)
+	url := dtc.getAgentVersionsUrl(os, installerType, flavor, determineArch(installerType))
 	err := dtc.makeRequestAndUnmarshal(ctx, url, dynatracePaaSToken, &response)
 
 	return response.AvailableVersions, errors.WithStack(err)
 }
 
-func (dtc *dynatraceClient) GetAgent(ctx context.Context, os, installerType, flavor, arch, version string, technologies []string, skipMetadata bool, writer io.Writer) error { // TODO: does flavor/arch needed?
+func (dtc *dynatraceClient) GetAgent(ctx context.Context, os, installerType, flavor, arch, version string, technologies []string, skipMetadata bool, writer io.Writer) error {
 	if len(os) == 0 || len(installerType) == 0 {
 		return errors.New("os or installerType is empty")
 	}
