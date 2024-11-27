@@ -30,6 +30,7 @@ const (
 	OverlayVarDirPath    = "var"
 	OverlayWorkDirPath   = "work"
 	SharedAgentBinDir    = "codemodules"
+	SharedAppMountsDir   = "appmounts"
 	SharedAgentConfigDir = "config"
 
 	DaemonSetName = "dynatrace-oneagent-csi-driver"
