@@ -5,7 +5,6 @@ import (
 	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csidriver "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
@@ -128,12 +127,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		access, err := metadata.NewAccess(signalHandler, dtcsi.MetadataAccessPath)
-		if err != nil {
-			return err
-		}
-
-		err = csidriver.NewServer(builder.getCsiOptions(), access).SetupWithManager(csiManager)
+		err = csidriver.NewServer(builder.getCsiOptions()).SetupWithManager(csiManager)
 		if err != nil {
 			return err
 		}

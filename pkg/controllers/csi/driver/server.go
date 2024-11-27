@@ -46,7 +46,6 @@ type Server struct {
 
 	fs      afero.Afero
 	mounter mount.Interface
-	db      metadata.Access
 
 	publishers map[string]csivolumes.Publisher
 	opts       dtcsi.CSIOptions
@@ -56,12 +55,11 @@ type Server struct {
 var _ csi.IdentityServer = &Server{}
 var _ csi.NodeServer = &Server{}
 
-func NewServer(opts dtcsi.CSIOptions, db metadata.Access) *Server {
+func NewServer(opts dtcsi.CSIOptions) *Server {
 	return &Server{
 		opts:    opts,
 		fs:      afero.Afero{Fs: afero.NewOsFs()},
 		mounter: mount.New(""),
-		db:      db,
 		path:    metadata.PathResolver{RootDir: opts.RootDir},
 	}
 }
@@ -71,8 +69,6 @@ func (svr *Server) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (svr *Server) Start(ctx context.Context) error {
-	defer metadata.LogAccessOverview(svr.db)
-
 	proto, addr, err := parseEndpoint(svr.opts.Endpoint)
 	if err != nil {
 		return fmt.Errorf("failed to parse endpoint '%s': %w", svr.opts.Endpoint, err)
@@ -85,8 +81,8 @@ func (svr *Server) Start(ctx context.Context) error {
 	}
 
 	svr.publishers = map[string]csivolumes.Publisher{
-		appvolumes.Mode:  appvolumes.NewAppVolumePublisher(svr.fs, svr.mounter, svr.db, svr.path),
-		hostvolumes.Mode: hostvolumes.NewHostVolumePublisher(svr.fs, svr.mounter, svr.db, svr.path),
+		appvolumes.Mode:  appvolumes.NewAppVolumePublisher(svr.fs, svr.mounter, svr.path),
+		hostvolumes.Mode: hostvolumes.NewHostVolumePublisher(svr.fs, svr.mounter, svr.path),
 	}
 
 	log.Info("starting listener", "protocol", proto, "address", addr)
@@ -178,32 +174,29 @@ func (svr *Server) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpubli
 		return nil, err
 	}
 
-	for _, publisher := range svr.publishers {
-		canUnpublish, err := publisher.CanUnpublishVolume(ctx, volumeInfo)
-		if err != nil {
-			log.Error(err, "couldn't determine if volume can be unpublished", "publisher", publisher)
-		}
-
-		if canUnpublish {
-			response, err := publisher.UnpublishVolume(ctx, volumeInfo)
-			if err != nil {
-				return nil, err
-			}
-
-			return response, nil
-		}
-	}
-
-	svr.unmountUnknownVolume(*volumeInfo)
+	svr.unmount(*volumeInfo)
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
-func (svr *Server) unmountUnknownVolume(volumeInfo csivolumes.VolumeInfo) {
-	log.Info("VolumeID not present in the database", "volumeID", volumeInfo.VolumeID, "targetPath", volumeInfo.TargetPath)
-
+func (svr *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
+	// targetPath always needs to be unmounted
 	if err := svr.mounter.Unmount(volumeInfo.TargetPath); err != nil {
-		log.Error(err, "Tried to unmount unknown volume", "volumeID", volumeInfo.VolumeID)
+		log.Error(err, "Unmount failed", "path", volumeInfo.TargetPath)
+	}
+
+	mappedDir := svr.path.AppMountMappedDir(volumeInfo.VolumeID)
+	if err := svr.mounter.Unmount(mappedDir); err != nil {
+		// Just try to unmount, nothing really can go wrong, just have to handle errors
+		// TODO: add some extra check for the error, so we don't have scary logs
+		log.Error(err, "Unmount failed", "path", mappedDir)
+	} else {
+		appMountDir := svr.path.AppMountForID(volumeInfo.VolumeID)
+		err := svr.fs.RemoveAll(appMountDir) // you see correctly, we don't keep the logs of the app mounts, will keep them when they will have a use
+
+		if err != nil {
+			log.Error(err, "failed to clean up unmounted volume dir", "path", appMountDir)
+		}
 	}
 }
 
