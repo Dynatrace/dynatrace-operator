@@ -70,12 +70,15 @@ func (d dependencies) Any() bool {
 // +kubebuilder:object:generate=true
 
 type Spec struct {
-	CapabilityProperties `json:",inline"`
 
 	// Adds additional annotations to the ActiveGate pods
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Annotations",order=27,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Annotations map[string]string `json:"annotations,omitempty"`
+
+	// Defines storage device
+	// +kubebuilder:validation:Optional
+	PersistentVolumeClaim *corev1.PersistentVolumeClaimSpec `json:"persistentVolumeClaim,omitempty"`
 
 	name   string
 	apiUrl string
@@ -98,10 +101,15 @@ type Spec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Priority Class name",order=23,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:PriorityClass"}
 	PriorityClassName string `json:"priorityClassName,omitempty"`
 
+	CapabilityProperties `json:",inline"`
+
 	// Activegate capabilities enabled (routing, kubernetes-monitoring, metrics-ingest, dynatrace-api)
 	Capabilities []CapabilityDisplayName `json:"capabilities,omitempty"`
 
 	enabledDependencies dependencies
+
+	// UseEphemeralVolume
+	UseEphemeralVolume bool `json:"useEphemeralVolume,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
