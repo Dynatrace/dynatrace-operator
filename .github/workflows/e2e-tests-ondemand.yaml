@@ -78,8 +78,9 @@ jobs:
       - name: Notify failure in Slack
         uses: slackapi/slack-github-action@485a9d42d3a73031f12ec201c457e2162c45d02d # v2.0.0
         with:
-          payload: |
-            message: ":x: E2E ondemand tests failed on ${{ env.branch }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})",
-            run_id: "${{ github.run_id }}"
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: webhook-trigger
+          payload-templated: true
+          payload: |
+            "message": ":red_circle: E2E ondemand tests failed on ${{ env.branch }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+            "run_id": "${{ github.run_id }}"
