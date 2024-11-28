@@ -5,10 +5,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 )
 
 var _ volumeModifier = KubernetesMonitoringModifier{}
@@ -123,11 +123,11 @@ func (mod KubernetesMonitoringModifier) getReadOnlyInitVolumeMounts() []corev1.V
 
 func GetSecurityContext(readOnlyRootFileSystem bool) *corev1.SecurityContext {
 	securityContext := corev1.SecurityContext{
-		Privileged:               address.Of(false),
-		AllowPrivilegeEscalation: address.Of(false),
-		RunAsNonRoot:             address.Of(true),
-		RunAsUser:                address.Of(consts.DockerImageUser),
-		RunAsGroup:               address.Of(consts.DockerImageGroup),
+		Privileged:               ptr.To(false),
+		AllowPrivilegeEscalation: ptr.To(false),
+		RunAsNonRoot:             ptr.To(true),
+		RunAsUser:                ptr.To(consts.DockerImageUser),
+		RunAsGroup:               ptr.To(consts.DockerImageGroup),
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				"ALL",
@@ -136,7 +136,7 @@ func GetSecurityContext(readOnlyRootFileSystem bool) *corev1.SecurityContext {
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
-		ReadOnlyRootFilesystem: address.Of(readOnlyRootFileSystem),
+		ReadOnlyRootFilesystem: ptr.To(readOnlyRootFileSystem),
 	}
 
 	return &securityContext

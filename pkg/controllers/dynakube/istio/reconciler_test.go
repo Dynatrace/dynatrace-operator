@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
@@ -19,6 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	fakediscovery "k8s.io/client-go/discovery/fake"
+	"k8s.io/utils/ptr"
 )
 
 func TestSplitCommunicationHost(t *testing.T) {
@@ -493,7 +493,7 @@ func createTestDynaKube() *dynakube.DynaKube {
 			OneAgent: dynakube.OneAgentSpec{
 				CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 			},
-			DynatraceApiRequestThreshold: address.Of(uint16(15)),
+			DynatraceApiRequestThreshold: ptr.To(uint16(15)),
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: dynakube.OneAgentStatus{

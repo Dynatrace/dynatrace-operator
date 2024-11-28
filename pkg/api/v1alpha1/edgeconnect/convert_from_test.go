@@ -10,11 +10,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func TestConvertFrom(t *testing.T) {
@@ -92,7 +92,7 @@ func getCurrentSpec() edgeconnect.EdgeConnectSpec {
 		},
 		CustomPullSecret:   "m",
 		CaCertsRef:         "n",
-		ServiceAccountName: address.Of("o"),
+		ServiceAccountName: ptr.To("o"),
 		OAuth: edgeconnect.OAuthSpec{
 			ClientSecret: "p",
 			Endpoint:     "q",
@@ -138,7 +138,7 @@ func getCurrentSpec() edgeconnect.EdgeConnectSpec {
 		HostPatterns: []string{
 			"y",
 		},
-		AutoUpdate: address.Of(true),
+		AutoUpdate: ptr.To(true),
 	}
 }
 
