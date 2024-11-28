@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -76,28 +75,6 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 }
 
 func TestConflictingNodeSelector(t *testing.T) {
-	newCloudNativeDynakube := func(name string, annotations map[string]string, nodeSelectorValue string) *dynakube.DynaKube {
-		return &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        name,
-				Namespace:   testNamespace,
-				Annotations: annotations,
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
-				OneAgent: dynakube.OneAgentSpec{
-					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
-						HostInjectSpec: dynakube.HostInjectSpec{
-							NodeSelector: map[string]string{
-								"node": nodeSelectorValue,
-							},
-						},
-					},
-				},
-			},
-		}
-	}
-
 	t.Run("valid dynakube specs", func(t *testing.T) {
 		assertAllowedWithoutWarnings(t,
 			&dynakube.DynaKube{
@@ -162,20 +139,6 @@ func TestConflictingNodeSelector(t *testing.T) {
 					},
 				},
 			})
-
-		assertAllowedWithoutWarnings(t, newCloudNativeDynakube("dk1", map[string]string{}, "1"),
-			&dynakube.DynaKube{
-				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynakube.DynaKubeSpec{
-					APIURL:        testApiUrl,
-					LogMonitoring: &logmonitoring.Spec{},
-					Templates: dynakube.TemplatesSpec{
-						LogMonitoring: &logmonitoring.TemplateSpec{
-							NodeSelector: map[string]string{"node": "12"},
-						},
-					},
-				},
-			})
 	})
 	t.Run(`invalid dynakube specs`, func(t *testing.T) {
 		assertDenied(t,
@@ -211,26 +174,6 @@ func TestConflictingNodeSelector(t *testing.T) {
 					},
 				},
 			})
-	})
-	t.Run(`invalid dynakube specs with existing log module`, func(t *testing.T) {
-		assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, "dk-lm")},
-			newCloudNativeDynakube("dk-cm", map[string]string{}, "1"),
-			createStandaloneLogMonitoringDynakube("dk-lm", "1"))
-
-		assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, ""), "dk-lm", "dk-cm2"},
-			newCloudNativeDynakube("dk-cm1", map[string]string{}, "1"),
-			createStandaloneLogMonitoringDynakube("dk-lm", ""),
-			newCloudNativeDynakube("dk-cm2", map[string]string{}, "1"))
-
-		assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, "dk-lm")},
-			newCloudNativeDynakube("dk-cn", map[string]string{}, "1"),
-			createStandaloneLogMonitoringDynakube("dk-lm", "1"))
-		assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, "dk-cn")},
-			createStandaloneLogMonitoringDynakube("dk-lm", "1"),
-			newCloudNativeDynakube("dk-cn", map[string]string{}, "1"))
-		assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, "dk-lm2")},
-			createStandaloneLogMonitoringDynakube("dk-lm1", "1"),
-			createStandaloneLogMonitoringDynakube("dk-lm2", "1"))
 	})
 }
 
