@@ -185,15 +185,24 @@ func (svr *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
 		log.Error(err, "Unmount failed", "path", volumeInfo.TargetPath)
 	}
 
+	appMountDir := svr.path.AppMountForID(volumeInfo.VolumeID)
 	mappedDir := svr.path.AppMountMappedDir(volumeInfo.VolumeID)
+
+	_, err := svr.fs.Stat(mappedDir)
+	if os.IsNotExist(err) {
+		_ = svr.fs.RemoveAll(appMountDir)
+
+		return
+	} else if err != nil {
+		log.Error(err, "unexpected error when checking for app mount folder, trying to unmount just to be sure")
+	}
+
 	if err := svr.mounter.Unmount(mappedDir); err != nil {
 		// Just try to unmount, nothing really can go wrong, just have to handle errors
 		// TODO: add some extra check for the error, so we don't have scary logs
 		log.Error(err, "Unmount failed", "path", mappedDir)
 	} else {
-		appMountDir := svr.path.AppMountForID(volumeInfo.VolumeID)
 		err := svr.fs.RemoveAll(appMountDir) // you see correctly, we don't keep the logs of the app mounts, will keep them when they will have a use
-
 		if err != nil {
 			log.Error(err, "failed to clean up unmounted volume dir", "path", appMountDir)
 		}
