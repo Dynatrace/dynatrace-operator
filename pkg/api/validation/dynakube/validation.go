@@ -59,7 +59,7 @@ var (
 		conflictingHostGroupSettings,
 		deprecatedFeatureFlag,
 		ignoredLogMonitoringTemplate,
-		warnIfmultiplyDKwithExtensionsEnabled,
+		conflictingApiUrlForExtensions,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedApiUrl,

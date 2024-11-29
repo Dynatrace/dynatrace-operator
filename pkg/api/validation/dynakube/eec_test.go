@@ -215,7 +215,7 @@ func TestWarnIfmultiplyDKwithExtensionsEnabled(t *testing.T) {
 		warnings, err := assertAllowed(t, dk1, dk2)
 		require.NoError(t, err)
 		require.Len(t, warnings, 1)
-		assert.Equal(t, warningIfmultiplyDKwithExtensionsEnabled, warnings[0])
+		assert.Equal(t, warningConflictingApiUrlForExtensions, warnings[0])
 	})
 
 	t.Run("no warning same ApiUrls and for second dk: extensions feature is disabled", func(t *testing.T) {
