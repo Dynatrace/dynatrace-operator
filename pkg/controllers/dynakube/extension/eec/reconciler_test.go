@@ -462,19 +462,8 @@ func TestAffinity(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		expectedAffinity := &corev1.Affinity{
-			NodeAffinity: &corev1.NodeAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-					NodeSelectorTerms: []corev1.NodeSelectorTerm{
-						{
-							MatchExpressions: node.AffinityNodeRequirementForSupportedArches(),
-						},
-					},
-				},
-			},
-		}
-
-		assert.Equal(t, expectedAffinity, statefulSet.Spec.Template.Spec.Affinity)
+		expectedAffinity := node.Affinity()
+		assert.Equal(t, expectedAffinity, *statefulSet.Spec.Template.Spec.Affinity)
 	})
 }
 
