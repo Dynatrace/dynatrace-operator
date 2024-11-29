@@ -10,13 +10,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -44,7 +44,7 @@ func TestEnabled(t *testing.T) {
 	t.Run("off by feature flag", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, false)
-		request.DynaKube.Spec.MetadataEnrichment.Enabled = address.Of(true)
+		request.DynaKube.Spec.MetadataEnrichment.Enabled = ptr.To(true)
 		request.DynaKube.Annotations = map[string]string{dynakube.AnnotationFeatureAutomaticInjection: "false"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
@@ -55,7 +55,7 @@ func TestEnabled(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				MetadataEnrichment: dynakube.MetadataEnrichment{Enabled: address.Of(true)},
+				MetadataEnrichment: dynakube.MetadataEnrichment{Enabled: ptr.To(true)},
 			},
 		}
 		request := createTestMutationRequest(&dk, nil, false)
@@ -70,7 +70,7 @@ func TestEnabled(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				MetadataEnrichment: dynakube.MetadataEnrichment{
-					Enabled: address.Of(true),
+					Enabled: ptr.To(true),
 					NamespaceSelector: metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							testLabelKeyMatching: testLabelValue,
@@ -91,7 +91,7 @@ func TestEnabled(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				MetadataEnrichment: dynakube.MetadataEnrichment{
-					Enabled: address.Of(true),
+					Enabled: ptr.To(true),
 					NamespaceSelector: metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							testLabelKeyNotMatching: testLabelValue,

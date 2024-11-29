@@ -199,10 +199,6 @@ func (r *Reconciler) deleteCapability(ctx context.Context, agCapability capabili
 }
 
 func (r *Reconciler) deleteService(ctx context.Context, agCapability capability.Capability) error {
-	if r.dk.ActiveGate().NeedsService() {
-		return nil
-	}
-
 	svc := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      capability.BuildServiceName(r.dk.Name, agCapability.ShortName()),

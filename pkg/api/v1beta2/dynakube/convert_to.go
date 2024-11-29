@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
@@ -48,10 +48,10 @@ func (src *DynaKube) toBase(dst *dynakube.DynaKube) {
 func (src *DynaKube) convertDynatraceApiRequestThreshold(dst *dynakube.DynaKube) {
 	if src.Spec.DynatraceApiRequestThreshold >= 0 {
 		if math.MaxUint16 < src.Spec.DynatraceApiRequestThreshold {
-			dst.Spec.DynatraceApiRequestThreshold = address.Of(uint16(math.MaxUint16))
+			dst.Spec.DynatraceApiRequestThreshold = ptr.To(uint16(math.MaxUint16))
 		} else {
 			// linting disabled, handled in if
-			dst.Spec.DynatraceApiRequestThreshold = address.Of(uint16(src.Spec.DynatraceApiRequestThreshold)) //nolint:gosec
+			dst.Spec.DynatraceApiRequestThreshold = ptr.To(uint16(src.Spec.DynatraceApiRequestThreshold)) //nolint:gosec
 		}
 	}
 }

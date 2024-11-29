@@ -161,7 +161,7 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, service)
 		require.NoError(t, err)
 	})
-	t.Run(`service does not get created when missing capabilities`, func(t *testing.T) {
+	t.Run(`service is created even though capability does not need it`, func(t *testing.T) {
 		clt := createClient()
 		dk := buildDynakube(capabilitiesWithoutService)
 		mockStatefulSetReconciler := getMockReconciler(t, nil)
@@ -179,8 +179,10 @@ func TestReconcile(t *testing.T) {
 		service := corev1.Service{}
 		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.Name + "-" + r.capability.ShortName(), Namespace: r.dk.Namespace}, &service)
 
-		assert.Empty(t, service)
-		require.Error(t, err)
+		require.NoError(t, err)
+
+		assert.NotEmpty(t, service)
+		assert.Len(t, service.Spec.Ports, 2)
 	})
 }
 

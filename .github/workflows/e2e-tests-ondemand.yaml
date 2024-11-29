@@ -6,7 +6,7 @@ on:
     - cron: 0 3 * * 1,3,5
 
 env:
-  branch: 'release-1.3'
+  branch: release-1.4
 
 permissions:
   checks: write
@@ -33,6 +33,8 @@ jobs:
             platform: k8s
           - version: 1-29
             platform: k8s
+          - version: 1-30
+            platform: k8s
           - version: 4-10
             platform: ocp
           - version: 4-11
@@ -44,6 +46,8 @@ jobs:
           - version: 4-14
             platform: ocp
           - version: 4-15
+            platform: ocp
+          - version: 4-16
             platform: ocp
     environment: E2E
     runs-on:

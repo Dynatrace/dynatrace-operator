@@ -7,8 +7,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"k8s.io/utils/net"
+	"k8s.io/utils/ptr"
 )
 
 type baseFunc func() *capabilityBase
@@ -80,7 +80,7 @@ func NewMultiCapability(dk *dynakube.DynaKube) Capability {
 	mc.properties = &dk.Spec.ActiveGate.CapabilityProperties
 
 	if len(dk.Spec.ActiveGate.Capabilities) == 0 && dk.IsExtensionsEnabled() {
-		mc.properties.Replicas = address.Of(int32(1))
+		mc.properties.Replicas = ptr.To(int32(1))
 	}
 
 	capabilityNames := []string{}

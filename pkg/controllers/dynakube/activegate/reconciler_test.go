@@ -435,19 +435,24 @@ func TestServiceCreation(t *testing.T) {
 		},
 	}
 
-	t.Run("service exposes correct ports for single capabilities", func(t *testing.T) {
+	t.Run("service exposes all ports for every capabilities", func(t *testing.T) {
 		expectedCapabilityPorts := map[activegate.CapabilityDisplayName][]string{
 			activegate.RoutingCapability.DisplayName: {
+				consts.HttpServicePortName,
 				consts.HttpsServicePortName,
 			},
 			activegate.MetricsIngestCapability.DisplayName: {
-				consts.HttpsServicePortName,
 				consts.HttpServicePortName,
+				consts.HttpsServicePortName,
 			},
 			activegate.DynatraceApiCapability.DisplayName: {
+				consts.HttpServicePortName,
 				consts.HttpsServicePortName,
 			},
-			activegate.KubeMonCapability.DisplayName: {},
+			activegate.KubeMonCapability.DisplayName: {
+				consts.HttpServicePortName,
+				consts.HttpsServicePortName,
+			},
 		}
 
 		for capName, expectedPorts := range expectedCapabilityPorts {
@@ -476,28 +481,6 @@ func TestServiceCreation(t *testing.T) {
 			activegateService := getTestActiveGateService(t, fakeClient)
 			assertContainsAllPorts(t, expectedPorts, activegateService.Spec.Ports)
 		}
-	})
-
-	t.Run("service exposes correct ports for multiple capabilities", func(t *testing.T) {
-		fakeClient := fake.NewClient(testKubeSystemNamespace)
-
-		reconciler := NewReconciler(fakeClient, fakeClient, dk, dynatraceClient, nil, nil).(*Reconciler)
-		reconciler.connectionReconciler = createGenericReconcilerMock(t)
-		reconciler.versionReconciler = createVersionReconcilerMock(t)
-		reconciler.pullSecretReconciler = createGenericReconcilerMock(t)
-
-		dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{
-			activegate.RoutingCapability.DisplayName,
-		}
-		expectedPorts := []string{
-			consts.HttpsServicePortName,
-		}
-
-		err := reconciler.Reconcile(context.Background())
-		require.NoError(t, err)
-
-		activegateService := getTestActiveGateService(t, fakeClient)
-		assertContainsAllPorts(t, expectedPorts, activegateService.Spec.Ports)
 	})
 }
 

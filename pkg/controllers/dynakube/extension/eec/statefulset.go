@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/servicename"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/tls"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/utils"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -23,6 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -208,12 +208,12 @@ func buildSecurityContext() *corev1.SecurityContext {
 				"ALL",
 			},
 		},
-		Privileged:               address.Of(false),
-		RunAsUser:                address.Of(userGroupId),
-		RunAsGroup:               address.Of(userGroupId),
-		RunAsNonRoot:             address.Of(true),
-		ReadOnlyRootFilesystem:   address.Of(true),
-		AllowPrivilegeEscalation: address.Of(false),
+		Privileged:               ptr.To(false),
+		RunAsUser:                ptr.To(userGroupId),
+		RunAsGroup:               ptr.To(userGroupId),
+		RunAsNonRoot:             ptr.To(true),
+		ReadOnlyRootFilesystem:   ptr.To(true),
+		AllowPrivilegeEscalation: ptr.To(false),
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
@@ -228,7 +228,7 @@ func buildPodSecurityContext(dk *dynakube.DynaKube) *corev1.PodSecurityContext {
 	}
 
 	if !dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume {
-		podSecurityContext.FSGroup = address.Of(userGroupId)
+		podSecurityContext.FSGroup = ptr.To(userGroupId)
 	}
 
 	return podSecurityContext
