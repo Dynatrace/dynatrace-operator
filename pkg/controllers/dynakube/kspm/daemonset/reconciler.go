@@ -18,7 +18,6 @@ import (
 )
 
 const (
-	nameSuffix         = "-node-config-collector"
 	serviceAccountName = "dynatrace-node-config-collector"
 )
 
