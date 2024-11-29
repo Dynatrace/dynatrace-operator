@@ -25,7 +25,7 @@ func isOneAgentModuleDisabled(_ context.Context, v *Validator, dk *dynakube.Dyna
 }
 
 func isActiveGateModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if dk.ActiveGate().IsEnabled() && !v.modules.ActiveGate {
+	if dk.ActiveGate().IsEnabled() && !v.modules.ActiveGate && !v.modules.KSPM {
 		return errorActiveGateModuleDisabled
 	}
 
