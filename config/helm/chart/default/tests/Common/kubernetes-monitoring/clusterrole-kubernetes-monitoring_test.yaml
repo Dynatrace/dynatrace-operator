@@ -149,9 +149,17 @@ tests:
             kind: ServiceAccount
             name: dynatrace-kubernetes-monitoring
             namespace: NAMESPACE
+  - it: should exist if only kspm is turned on
+    set:
+      rbac.activeGate.create: false
+      rbac.kspm.create: true
+    asserts:
+      - hasDocuments:
+          count: 2
   - it: shouldn't exist if turned off
     set:
       rbac.activeGate.create: false
+      rbac.kspm.create: false
     asserts:
       - hasDocuments:
-        count: 0
+          count: 0
