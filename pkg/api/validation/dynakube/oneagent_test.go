@@ -75,7 +75,28 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 }
 
 func TestConflictingNodeSelector(t *testing.T) {
-	t.Run("valid dynakube specs", func(t *testing.T) {
+	newCloudNativeDynakube := func(name, apiUrl, nodeSelectorValue string) *dynakube.DynaKube {
+		return &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: testNamespace,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: apiUrl,
+				OneAgent: dynakube.OneAgentSpec{
+					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
+						HostInjectSpec: dynakube.HostInjectSpec{
+							NodeSelector: map[string]string{
+								"node": nodeSelectorValue,
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	t.Run("valid dynakube specs - 2 host-monitoring DK, different nodes", func(t *testing.T) {
 		assertAllowedWithoutWarnings(t,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
@@ -106,7 +127,8 @@ func TestConflictingNodeSelector(t *testing.T) {
 					},
 				},
 			})
-
+	})
+	t.Run("valid dynakube specs - 1 cloud-native + 1 host-monitoring DK, different nodes", func(t *testing.T) {
 		assertAllowedWithoutWarnings(t,
 			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
@@ -140,13 +162,37 @@ func TestConflictingNodeSelector(t *testing.T) {
 				},
 			})
 	})
-	t.Run(`invalid dynakube specs`, func(t *testing.T) {
+
+	t.Run("valid dynakube specs - 1 cloud-native + 1 log-monitoring DK, same tenant, different nodes", func(t *testing.T) {
+		api1 := "https://f1.q.d.n/api"
+
+		assertAllowedWithoutWarnings(t, newCloudNativeDynakube("dk1", api1, "1"),
+			createStandaloneLogMonitoringDynakube("dk-lm", api1, "12"))
+	})
+
+	t.Run("valid dynakube specs - 1 cloud-native + 1 log-monitoring DK, different tenant, same nodes", func(t *testing.T) {
+		api1 := "https://f1.q.d.n/api"
+		api2 := "https://f2.q.d.n/api"
+		assertAllowedWithoutWarnings(t, newCloudNativeDynakube("dk1", api1, "1"),
+			createStandaloneLogMonitoringDynakube("dk-lm", api2, "1"))
+	})
+
+	t.Run("valid dynakube specs - 2 log-monitoring DK, different tenant, same nodes", func(t *testing.T) {
+		api1 := "https://f1.q.d.n/api"
+		api2 := "https://f2.q.d.n/api"
+		assertAllowedWithoutWarnings(t, createStandaloneLogMonitoringDynakube("dk1", api1, "1"),
+			createStandaloneLogMonitoringDynakube("dk-lm", api2, "1"))
+	})
+
+	t.Run("invalid dynakube specs - 1 cloud-native + 1 host-monitoring DK, SAME nodes, different tenant", func(t *testing.T) {
+		api1 := "https://f1.q.d.n/api"
+		api2 := "https://f2.q.d.n/api"
 		assertDenied(t,
 			[]string{fmt.Sprintf(errorNodeSelectorConflict, "conflicting-dk")},
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: api1,
 					OneAgent: dynakube.OneAgentSpec{
 						CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
 							HostInjectSpec: dynakube.HostInjectSpec{
@@ -164,7 +210,7 @@ func TestConflictingNodeSelector(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: api2,
 					OneAgent: dynakube.OneAgentSpec{
 						HostMonitoring: &dynakube.HostInjectSpec{
 							NodeSelector: map[string]string{
@@ -174,6 +220,39 @@ func TestConflictingNodeSelector(t *testing.T) {
 					},
 				},
 			})
+		t.Run("invalid dynakube specs - 1 cloud-native + 1 log-monitoring DK, same tenant, same nodes", func(t *testing.T) {
+			api1 := "https://f1.q.d.n/api"
+
+			assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, "dk-lm")},
+				newCloudNativeDynakube("dk-cm", api1, "1"),
+				createStandaloneLogMonitoringDynakube("dk-lm", api1, "1"))
+		})
+		t.Run("multiple invalid dynakube specs - 2 cloud-native + 1 log-monitoring DK, same tenant, same nodes", func(t *testing.T) {
+			api1 := "https://f1.q.d.n/api"
+
+			assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, ""), "dk-lm", "dk-cm2"},
+				newCloudNativeDynakube("dk-cm1", api1, "1"),
+				createStandaloneLogMonitoringDynakube("dk-lm", api1, ""),
+				newCloudNativeDynakube("dk-cm2", api1, "1"))
+		})
+
+		t.Run("invalid dynakube specs - 1 log-monitoring DK + 1 cloud-native, same tenant, same nodes", func(t *testing.T) {
+			api1 := "https://f1.q.d.n/api"
+
+			assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, "dk-cn")},
+				createStandaloneLogMonitoringDynakube("dk-lm", api1, "1"),
+				newCloudNativeDynakube("dk-cn", api1, "1"))
+		})
+
+		t.Run("some invalid dynakube specs - 2 log-monitoring DK + 1 cloud-native, 2 tenants, same nodes", func(t *testing.T) {
+			api1 := "https://f1.q.d.n/api"
+			api2 := "https://f2.q.d.n/api"
+
+			assertDenied(t, []string{fmt.Sprintf(errorNodeSelectorConflict, "dk-lm2")},
+				createStandaloneLogMonitoringDynakube("dk-lm1", api1, "1"),
+				newCloudNativeDynakube("dk-cm1", api2, "1"),
+				createStandaloneLogMonitoringDynakube("dk-lm2", api1, "1"))
+		})
 	})
 }
 
