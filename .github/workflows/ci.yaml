@@ -123,6 +123,12 @@ jobs:
         run: |
           make doc
           git diff --exit-code
+      - name: Mockery
+        id: mockery
+        run: |
+          make prerequisites/mockery
+          make go/gen_mocks
+          git diff --exit-code
 
   security:
     name: Code security scanning alerts
