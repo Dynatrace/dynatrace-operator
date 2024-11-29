@@ -245,17 +245,7 @@ func buildAppLabels(dkName string) *labels.AppLabels {
 func buildAffinity() corev1.Affinity {
 	// TODO: implement new attributes in CR dk.Spec.Templates.OpenTelemetryCollector.Affinity
 	// otherwise to use defaults ones
-	return corev1.Affinity{
-		NodeAffinity: &corev1.NodeAffinity{
-			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-				NodeSelectorTerms: []corev1.NodeSelectorTerm{
-					{
-						MatchExpressions: node.AffinityNodeRequirementForSupportedArches(),
-					},
-				},
-			},
-		},
-	}
+	return node.Affinity()
 }
 
 func setImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) func(o *appsv1.StatefulSet) {

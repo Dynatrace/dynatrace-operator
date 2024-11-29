@@ -268,19 +268,9 @@ func TestAffinity(t *testing.T) {
 		dk := getTestDynakube()
 		statefulSet := getStatefulset(t, dk)
 
-		expectedAffinity := &corev1.Affinity{
-			NodeAffinity: &corev1.NodeAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-					NodeSelectorTerms: []corev1.NodeSelectorTerm{
-						{
-							MatchExpressions: node.AffinityNodeRequirementForSupportedArches(),
-						},
-					},
-				},
-			},
-		}
+		expectedAffinity := node.Affinity()
 
-		assert.Equal(t, expectedAffinity, statefulSet.Spec.Template.Spec.Affinity)
+		assert.Equal(t, expectedAffinity, *statefulSet.Spec.Template.Spec.Affinity)
 	})
 }
 
