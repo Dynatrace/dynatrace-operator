@@ -118,6 +118,11 @@ jobs:
         run: |
           make manifests/deepcopy
           git diff --exit-code
+      - name: Check doc
+        id: doc
+        run: |
+          make doc
+          git diff --exit-code
 
   security:
     name: Code security scanning alerts

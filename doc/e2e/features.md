@@ -135,7 +135,7 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/applicationmonitor
 
 <a name="LabelVersionDetection"></a>
 
-## func [LabelVersionDetection](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/applicationmonitoring/label_version_detection.go#L99>)
+## func [LabelVersionDetection](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/applicationmonitoring/label_version_detection.go#L98>)
 
 ```go
 func LabelVersionDetection(t *testing.T) features.Feature
@@ -147,7 +147,7 @@ Verification that build labels are created and set accordingly. The test checks:
 
 <a name="MetadataEnrichment"></a>
 
-## func [MetadataEnrichment](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/applicationmonitoring/metadata_enrichment.go#L45>)
+## func [MetadataEnrichment](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/applicationmonitoring/metadata_enrichment.go#L44>)
 
 ```go
 func MetadataEnrichment(t *testing.T) features.Feature
@@ -157,7 +157,7 @@ Verification of the metadata enrichment part of the operator. The test checks th
 
 <a name="ReadOnlyCSIVolume"></a>
 
-## func [ReadOnlyCSIVolume](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/applicationmonitoring/read_only_csi_volume.go#L31>)
+## func [ReadOnlyCSIVolume](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/applicationmonitoring/read_only_csi_volume.go#L30>)
 
 ```go
 func ReadOnlyCSIVolume(t *testing.T) features.Feature
@@ -346,7 +346,7 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/codemo
 
 <a name="InstallFromImage"></a>
 
-## func [InstallFromImage](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L67>)
+## func [InstallFromImage](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L66>)
 
 ```go
 func InstallFromImage(t *testing.T) features.Feature
@@ -356,7 +356,7 @@ Verification that the storage in the CSI driver directory does not increase when
 
 <a name="WithProxy"></a>
 
-## func [WithProxy](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L139>)
+## func [WithProxy](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L135>)
 
 ```go
 func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature
@@ -372,7 +372,7 @@ Connectivity in the dynatrace namespace and sample application namespace is rest
 
 <a name="WithProxyAndAGCert"></a>
 
-## func [WithProxyAndAGCert](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L254>)
+## func [WithProxyAndAGCert](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L250>)
 
 ```go
 func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature
@@ -380,7 +380,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature
 
 <a name="WithProxyCA"></a>
 
-## func [WithProxyCA](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L193>)
+## func [WithProxyCA](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L189>)
 
 ```go
 func WithProxyCA(t *testing.T, proxySpec *value.Source) features.Feature
@@ -388,7 +388,7 @@ func WithProxyCA(t *testing.T, proxySpec *value.Source) features.Feature
 
 <a name="WithProxyCAAndAGCert"></a>
 
-## func [WithProxyCAAndAGCert](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L319>)
+## func [WithProxyCAAndAGCert](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L315>)
 
 ```go
 func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature

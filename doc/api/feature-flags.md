@@ -50,7 +50,6 @@ const (
     AnnotationInjectionFailurePolicy       = AnnotationFeaturePrefix + "injection-failure-policy"
     AnnotationFeatureInitContainerSeccomp  = AnnotationFeaturePrefix + "init-container-seccomp-profile"
     AnnotationFeatureEnforcementMode       = AnnotationFeaturePrefix + "enforcement-mode"
-    AnnotationFeatureReadOnlyOneAgent      = AnnotationFeaturePrefix + "oneagent-readonly-host-fs"
 
     // CSI.
     AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
@@ -72,7 +71,7 @@ const (
 
 <a name="MountAttemptsToTimeout"></a>
 
-## func [MountAttemptsToTimeout](<https://github.com/Dynatrace/dynatrace-operator/blob/main/pkg/api/v1beta3/dynakube/tmp/feature_flags.go#L262>)
+## func [MountAttemptsToTimeout](<https://github.com/Dynatrace/dynatrace-operator/blob/main/pkg/api/v1beta3/dynakube/tmp/feature_flags.go#L254>)
 
 ```go
 func MountAttemptsToTimeout(maxAttempts int) string
