@@ -86,7 +86,34 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		require.NotEmpty(t, sts.Spec.Template.Labels)
 		assert.Equal(t, expectedTemplateAnnotations, sts.Spec.Template.Annotations)
 	})
-	t.Run("has default node affinity", func(t *testing.T) {
+	t.Run("has default(tenant-registry) node affinity", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Status.ActiveGate.VersionStatus.Source = status.TenantRegistryVersionSource
+		multiCapability := capability.NewMultiCapability(&dk)
+		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		sts, _ := builder.CreateStatefulSet(nil)
+		expectedNodeSelectorTerms := []corev1.NodeSelectorTerm{
+			{
+				MatchExpressions: []corev1.NodeSelectorRequirement{
+					{
+						Key:      "kubernetes.io/arch",
+						Operator: corev1.NodeSelectorOpIn,
+						Values:   []string{"amd64"},
+					},
+					{
+						Key:      "kubernetes.io/os",
+						Operator: corev1.NodeSelectorOpIn,
+						Values:   []string{"linux"},
+					},
+				},
+			}}
+
+		require.NotEmpty(t, sts.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms)
+		assert.Contains(t, sts.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, expectedNodeSelectorTerms[0])
+	})
+	t.Run("has none tenant-registry node affinity", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Status.ActiveGate.VersionStatus.Source = status.CustomImageVersionSource
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts, _ := builder.CreateStatefulSet(nil)

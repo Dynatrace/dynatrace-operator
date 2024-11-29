@@ -214,7 +214,7 @@ func TestDynatraceClient_GetAgentVersions(t *testing.T) {
 		dynatraceServer, dtc := createTestDynatraceClientWithFunc(t, versionsRequestHandler)
 		defer dynatraceServer.Close()
 
-		availableVersions, err := dtc.GetAgentVersions(ctx, OsUnix, InstallerTypePaaS, "", "")
+		availableVersions, err := dtc.GetAgentVersions(ctx, OsUnix, InstallerTypePaaS, "")
 
 		require.NoError(t, err)
 		assert.Len(t, availableVersions, 4)
@@ -227,7 +227,7 @@ func TestDynatraceClient_GetAgentVersions(t *testing.T) {
 		dynatraceServer, dtc := createTestDynatraceClientWithFunc(t, errorHandler)
 		defer dynatraceServer.Close()
 
-		availableVersions, err := dtc.GetAgentVersions(ctx, OsUnix, InstallerTypePaaS, "", "")
+		availableVersions, err := dtc.GetAgentVersions(ctx, OsUnix, InstallerTypePaaS, "")
 
 		require.EqualError(t, err, "dynatrace server error 400: test-error")
 		assert.Empty(t, availableVersions)
