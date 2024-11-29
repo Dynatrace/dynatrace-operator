@@ -81,8 +81,8 @@ func (svr *Server) Start(ctx context.Context) error {
 	}
 
 	svr.publishers = map[string]csivolumes.Publisher{
-		appvolumes.Mode:  appvolumes.NewAppVolumePublisher(svr.fs, svr.mounter, svr.path),
-		hostvolumes.Mode: hostvolumes.NewHostVolumePublisher(svr.fs, svr.mounter, svr.path),
+		appvolumes.Mode:  appvolumes.NewPublisher(svr.fs, svr.mounter, svr.path),
+		hostvolumes.Mode: hostvolumes.NewPublisher(svr.fs, svr.mounter, svr.path),
 	}
 
 	log.Info("starting listener", "protocol", proto, "address", addr)
@@ -199,7 +199,6 @@ func (svr *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
 
 	if err := svr.mounter.Unmount(mappedDir); err != nil {
 		// Just try to unmount, nothing really can go wrong, just have to handle errors
-		// TODO: add some extra check for the error, so we don't have scary logs
 		log.Error(err, "Unmount failed", "path", mappedDir)
 	} else {
 		err := svr.fs.RemoveAll(appMountDir) // you see correctly, we don't keep the logs of the app mounts, will keep them when they will have a use

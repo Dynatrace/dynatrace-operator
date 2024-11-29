@@ -29,40 +29,40 @@ import (
 	"k8s.io/mount-utils"
 )
 
-func NewHostVolumePublisher(fs afero.Afero, mounter mount.Interface, path metadata.PathResolver) csivolumes.Publisher {
-	return &HostVolumePublisher{
+func NewPublisher(fs afero.Afero, mounter mount.Interface, path metadata.PathResolver) csivolumes.Publisher {
+	return &Publisher{
 		fs:      fs,
 		mounter: mounter,
 		path:    path,
 	}
 }
 
-type HostVolumePublisher struct {
+type Publisher struct {
 	fs      afero.Afero
 	mounter mount.Interface
 	path    metadata.PathResolver
 }
 
-func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
-	if err := publisher.mountOneAgent(volumeCfg); err != nil {
+func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
+	if err := pub.mountOneAgent(volumeCfg); err != nil {
 		return nil, status.Error(codes.Internal, "failed to mount osagent volume: "+err.Error())
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
-func (publisher *HostVolumePublisher) mountOneAgent(volumeCfg *csivolumes.VolumeConfig) error {
-	hostDir := publisher.path.OsAgentDir(volumeCfg.DynakubeName)
-	_ = publisher.fs.MkdirAll(hostDir, os.ModePerm)
+func (pub *Publisher) mountOneAgent(volumeCfg *csivolumes.VolumeConfig) error {
+	hostDir := pub.path.OsAgentDir(volumeCfg.DynakubeName)
+	_ = pub.fs.MkdirAll(hostDir, os.ModePerm)
 
-	if err := publisher.fs.MkdirAll(volumeCfg.TargetPath, os.ModePerm); err != nil {
+	if err := pub.fs.MkdirAll(volumeCfg.TargetPath, os.ModePerm); err != nil {
 		log.Info("failed to create directory for host mount", "directory", hostDir)
 
 		return err
 	}
 
-	if err := publisher.mounter.Mount(hostDir, volumeCfg.TargetPath, "", []string{"bind"}); err != nil {
-		_ = publisher.mounter.Unmount(hostDir)
+	if err := pub.mounter.Mount(hostDir, volumeCfg.TargetPath, "", []string{"bind"}); err != nil {
+		_ = pub.mounter.Unmount(hostDir)
 
 		log.Info("failed to mount directory for host mount", "directory", hostDir)
 

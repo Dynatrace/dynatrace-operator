@@ -26,6 +26,7 @@ import (
 
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -34,35 +35,37 @@ import (
 	mount "k8s.io/mount-utils"
 )
 
-func NewAppVolumePublisher(fs afero.Afero, mounter mount.Interface, path metadata.PathResolver) csivolumes.Publisher {
-	return &AppVolumePublisher{
+func NewPublisher(fs afero.Afero, mounter mount.Interface, path metadata.PathResolver) csivolumes.Publisher {
+	return &Publisher{
 		fs:      fs,
 		mounter: mounter,
 		path:    path,
+		time:    timeprovider.New(),
 	}
 }
 
-type AppVolumePublisher struct {
+type Publisher struct {
 	fs      afero.Afero
 	mounter mount.Interface
+	time    *timeprovider.Provider
 	path    metadata.PathResolver
 }
 
-func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
-	if publisher.hasRetryLimitReached(volumeCfg) {
+func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
+	if pub.hasRetryLimitReached(volumeCfg) {
 		log.Info("reached max mount attempts for pod, attaching dummy volume, monitoring disabled", "pod", volumeCfg.PodName)
 
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
 
-	if !publisher.isArchiveAvailable(volumeCfg) {
+	if !pub.isArchiveAvailable(volumeCfg) {
 		return nil, status.Error(
 			codes.Unavailable,
 			"version or digest is not yet set, csi-provisioner hasn't finished setup yet for DynaKube: "+volumeCfg.DynakubeName,
 		)
 	}
 
-	if err := publisher.mountOneAgent(volumeCfg); err != nil {
+	if err := pub.mountOneAgent(volumeCfg); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err))
 	}
 
@@ -71,13 +74,13 @@ func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCf
 
 // hasRetryLimitReached creates the base dir for a given app mount if it doesn't exist yet, checks the creation timestamp against the threshold
 // if any of the FS calls fail in an unexpected way, then it is considered that the limit was reached.
-func (publisher *AppVolumePublisher) hasRetryLimitReached(volumeCfg *csivolumes.VolumeConfig) bool {
-	appDir := publisher.path.AppMountForID(volumeCfg.VolumeID)
+func (pub *Publisher) hasRetryLimitReached(volumeCfg *csivolumes.VolumeConfig) bool {
+	appDir := pub.path.AppMountForID(volumeCfg.VolumeID)
 
-	stat, err := publisher.fs.Stat(appDir)
+	stat, err := pub.fs.Stat(appDir)
 	if errors.Is(err, os.ErrNotExist) {
 		// First run, create folder, to keep track of time
-		err := publisher.fs.MkdirAll(appDir, os.ModePerm)
+		err := pub.fs.MkdirAll(appDir, os.ModePerm)
 		if err != nil {
 			log.Error(err, "failed to create base dir for app mount, skipping injection", "dir", appDir)
 
@@ -94,14 +97,14 @@ func (publisher *AppVolumePublisher) hasRetryLimitReached(volumeCfg *csivolumes.
 	limit := stat.ModTime().Add(volumeCfg.RetryTimeout)
 	log.Info("not first attempt, time remaining before skipping injection", "time", time.Until(limit).String())
 
-	return time.Now().After(limit) // TODO: User timeprovider for testing
+	return pub.time.Now().After(limit)
 }
 
 // isArchiveAvailable checks if the LatestAgentBinaryForDynaKube folder exists or not
-func (publisher *AppVolumePublisher) isArchiveAvailable(volumeCfg *csivolumes.VolumeConfig) bool {
-	binDir := publisher.path.LatestAgentBinaryForDynaKube(volumeCfg.DynakubeName)
+func (pub *Publisher) isArchiveAvailable(volumeCfg *csivolumes.VolumeConfig) bool {
+	binDir := pub.path.LatestAgentBinaryForDynaKube(volumeCfg.DynakubeName)
 
-	stat, err := publisher.fs.Stat(binDir)
+	stat, err := pub.fs.Stat(binDir)
 	if errors.Is(err, os.ErrNotExist) {
 		log.Info("no OneAgent binary is available to mount yet, will retry later", "dynakube", volumeCfg.DynakubeName)
 
@@ -115,21 +118,21 @@ func (publisher *AppVolumePublisher) isArchiveAvailable(volumeCfg *csivolumes.Vo
 	return stat.IsDir()
 }
 
-func (publisher *AppVolumePublisher) mountOneAgent(volumeCfg *csivolumes.VolumeConfig) error {
-	mappedDir := publisher.path.AppMountMappedDir(volumeCfg.VolumeID)
-	_ = publisher.fs.MkdirAll(mappedDir, os.ModePerm)
+func (pub *Publisher) mountOneAgent(volumeCfg *csivolumes.VolumeConfig) error {
+	mappedDir := pub.path.AppMountMappedDir(volumeCfg.VolumeID)
+	_ = pub.fs.MkdirAll(mappedDir, os.ModePerm)
 
-	upperDir, err := publisher.prepareUpperDir(volumeCfg)
+	upperDir, err := pub.prepareUpperDir(volumeCfg)
 	if err != nil {
 		return err
 	}
 
-	workDir := publisher.path.AppMountWorkDir(volumeCfg.VolumeID)
-	_ = publisher.fs.MkdirAll(workDir, os.ModePerm)
+	workDir := pub.path.AppMountWorkDir(volumeCfg.VolumeID)
+	_ = pub.fs.MkdirAll(workDir, os.ModePerm)
 
-	lowerDir := publisher.path.LatestAgentBinaryForDynaKube(volumeCfg.DynakubeName)
+	lowerDir := pub.path.LatestAgentBinaryForDynaKube(volumeCfg.DynakubeName)
 
-	linker, ok := publisher.fs.Fs.(afero.LinkReader)
+	linker, ok := pub.fs.Fs.(afero.LinkReader)
 	if ok { // will only be !ok during unit testing
 		lowerDir, err = linker.ReadlinkIfPossible(lowerDir)
 		if err != nil {
@@ -145,16 +148,16 @@ func (publisher *AppVolumePublisher) mountOneAgent(volumeCfg *csivolumes.VolumeC
 		"workdir=" + workDir,
 	}
 
-	if err := publisher.fs.MkdirAll(volumeCfg.TargetPath, os.ModePerm); err != nil {
+	if err := pub.fs.MkdirAll(volumeCfg.TargetPath, os.ModePerm); err != nil {
 		return err
 	}
 
-	if err := publisher.mounter.Mount("overlay", mappedDir, "overlay", overlayOptions); err != nil {
+	if err := pub.mounter.Mount("overlay", mappedDir, "overlay", overlayOptions); err != nil {
 		return err
 	}
 
-	if err := publisher.mounter.Mount(mappedDir, volumeCfg.TargetPath, "", []string{"bind"}); err != nil {
-		_ = publisher.mounter.Unmount(mappedDir)
+	if err := pub.mounter.Mount(mappedDir, volumeCfg.TargetPath, "", []string{"bind"}); err != nil {
+		_ = pub.mounter.Unmount(mappedDir)
 
 		return err
 	}
@@ -162,23 +165,23 @@ func (publisher *AppVolumePublisher) mountOneAgent(volumeCfg *csivolumes.VolumeC
 	return nil
 }
 
-func (publisher *AppVolumePublisher) prepareUpperDir(volumeCfg *csivolumes.VolumeConfig) (string, error) {
-	upperDir := publisher.path.AppMountVarDir(volumeCfg.VolumeID)
-	err := publisher.fs.MkdirAll(upperDir, os.ModePerm)
+func (pub *Publisher) prepareUpperDir(volumeCfg *csivolumes.VolumeConfig) (string, error) {
+	upperDir := pub.path.AppMountVarDir(volumeCfg.VolumeID)
+	err := pub.fs.MkdirAll(upperDir, os.ModePerm)
 
 	if err != nil {
 		return "", errors.WithMessagef(err, "failed create overlay upper directory structure, path: %s", upperDir)
 	}
 
-	destAgentConfPath := publisher.path.OverlayVarRuxitAgentProcConf(volumeCfg.VolumeID)
+	destAgentConfPath := pub.path.OverlayVarRuxitAgentProcConf(volumeCfg.VolumeID)
 
-	err = publisher.fs.MkdirAll(filepath.Dir(destAgentConfPath), os.ModePerm)
+	err = pub.fs.MkdirAll(filepath.Dir(destAgentConfPath), os.ModePerm)
 	if err != nil {
 		return "", errors.WithMessagef(err, "failed create overlay upper directory agent config directory structure, path: %s", upperDir)
 	}
 
-	srcAgentConfPath := publisher.path.AgentSharedRuxitAgentProcConf(volumeCfg.DynakubeName)
-	srcFile, err := publisher.fs.Open(srcAgentConfPath)
+	srcAgentConfPath := pub.path.AgentSharedRuxitAgentProcConf(volumeCfg.DynakubeName)
+	srcFile, err := pub.fs.Open(srcAgentConfPath)
 
 	if err != nil {
 		return "", errors.WithMessagef(err, "failed to open ruxitagentproc.conf file, path: %s", srcAgentConfPath)
@@ -191,7 +194,7 @@ func (publisher *AppVolumePublisher) prepareUpperDir(volumeCfg *csivolumes.Volum
 		return "", errors.WithMessage(err, "failed to get source ruxitagentproc.conf file info")
 	}
 
-	destFile, err := publisher.fs.OpenFile(destAgentConfPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, srcStat.Mode())
+	destFile, err := pub.fs.OpenFile(destAgentConfPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, srcStat.Mode())
 	if err != nil {
 		return "", errors.WithMessagef(err, "failed to open destination ruxitagentproc.conf file, path: %s", destAgentConfPath)
 	}
