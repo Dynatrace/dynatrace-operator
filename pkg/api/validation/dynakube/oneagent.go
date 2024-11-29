@@ -60,7 +60,7 @@ func conflictingOneAgentConfiguration(_ context.Context, _ *Validator, dk *dynak
 }
 
 func conflictingOneAgentNodeSelector(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
-	if !dk.LogMonitoring().IsStandalone() && !dk.NeedsOneAgent() {
+	if !dk.NeedsOneAgent() && !dk.LogMonitoring().IsStandalone() {
 		return ""
 	}
 
@@ -79,17 +79,9 @@ func conflictingOneAgentNodeSelector(ctx context.Context, dv *Validator, dk *dyn
 			continue
 		}
 
-		if item.NeedsOneAgent() {
+		if hasLogMonitoringSelectorConflict(dk, &item) || hasOneAgentSelectorConflict(dk, &item) {
 			if hasConflictingMatchLabels(oneAgentNodeSelector, item.OneAgentNodeSelector()) {
 				log.Info("requested dynakube has conflicting OneAgent nodeSelector", "name", dk.Name, "namespace", dk.Namespace)
-
-				conflictingDynakubes[item.Name] = true
-			}
-		}
-
-		if item.LogMonitoring().IsStandalone() {
-			if hasConflictingMatchLabels(oneAgentNodeSelector, item.OneAgentNodeSelector()) {
-				log.Info("requested dynakube has conflicting LogMonitoring nodeSelector", "name", dk.Name, "namespace", dk.Namespace)
 
 				conflictingDynakubes[item.Name] = true
 			}
@@ -101,6 +93,18 @@ func conflictingOneAgentNodeSelector(ctx context.Context, dv *Validator, dk *dyn
 	}
 
 	return ""
+}
+
+func hasLogMonitoringSelectorConflict(dk1, dk2 *dynakube.DynaKube) bool {
+	return dk1.LogMonitoring().IsStandalone() && dk1.ApiUrl() == dk2.ApiUrl() &&
+		(dk2.NeedsOneAgent() || dk2.LogMonitoring().IsStandalone()) &&
+		hasConflictingMatchLabels(dk1.OneAgentNodeSelector(), dk2.OneAgentNodeSelector())
+}
+
+func hasOneAgentSelectorConflict(dk1, dk2 *dynakube.DynaKube) bool {
+	return dk1.NeedsOneAgent() &&
+		(dk2.NeedsOneAgent() || dk2.LogMonitoring().IsStandalone() && dk1.ApiUrl() == dk2.ApiUrl()) &&
+		hasConflictingMatchLabels(dk1.OneAgentNodeSelector(), dk2.OneAgentNodeSelector())
 }
 
 func mapKeysToString(m map[string]bool, sep string) string {
