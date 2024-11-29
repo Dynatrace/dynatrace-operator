@@ -9,7 +9,6 @@ import (
 	dynatrace "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 
 	logmonitoring "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
-
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -370,9 +369,9 @@ func (_c *Client_GetAgent_Call) RunAndReturn(run func(context.Context, string, s
 	return _c
 }
 
-// GetAgentVersions provides a mock function with given fields: ctx, os, installerType, flavor, arch
-func (_m *Client) GetAgentVersions(ctx context.Context, os string, installerType string, flavor string, arch string) ([]string, error) {
-	ret := _m.Called(ctx, os, installerType, flavor, arch)
+// GetAgentVersions provides a mock function with given fields: ctx, os, installerType, flavor
+func (_m *Client) GetAgentVersions(ctx context.Context, os string, installerType string, flavor string) ([]string, error) {
+	ret := _m.Called(ctx, os, installerType, flavor)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAgentVersions")
@@ -380,19 +379,19 @@ func (_m *Client) GetAgentVersions(ctx context.Context, os string, installerType
 
 	var r0 []string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) ([]string, error)); ok {
-		return rf(ctx, os, installerType, flavor, arch)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) ([]string, error)); ok {
+		return rf(ctx, os, installerType, flavor)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) []string); ok {
-		r0 = rf(ctx, os, installerType, flavor, arch)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) []string); ok {
+		r0 = rf(ctx, os, installerType, flavor)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]string)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string) error); ok {
-		r1 = rf(ctx, os, installerType, flavor, arch)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, os, installerType, flavor)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -410,14 +409,13 @@ type Client_GetAgentVersions_Call struct {
 //   - os string
 //   - installerType string
 //   - flavor string
-//   - arch string
-func (_e *Client_Expecter) GetAgentVersions(ctx interface{}, os interface{}, installerType interface{}, flavor interface{}, arch interface{}) *Client_GetAgentVersions_Call {
-	return &Client_GetAgentVersions_Call{Call: _e.mock.On("GetAgentVersions", ctx, os, installerType, flavor, arch)}
+func (_e *Client_Expecter) GetAgentVersions(ctx interface{}, os interface{}, installerType interface{}, flavor interface{}) *Client_GetAgentVersions_Call {
+	return &Client_GetAgentVersions_Call{Call: _e.mock.On("GetAgentVersions", ctx, os, installerType, flavor)}
 }
 
-func (_c *Client_GetAgentVersions_Call) Run(run func(ctx context.Context, os string, installerType string, flavor string, arch string)) *Client_GetAgentVersions_Call {
+func (_c *Client_GetAgentVersions_Call) Run(run func(ctx context.Context, os string, installerType string, flavor string)) *Client_GetAgentVersions_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string), args[4].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string))
 	})
 	return _c
 }
@@ -427,7 +425,7 @@ func (_c *Client_GetAgentVersions_Call) Return(_a0 []string, _a1 error) *Client_
 	return _c
 }
 
-func (_c *Client_GetAgentVersions_Call) RunAndReturn(run func(context.Context, string, string, string, string) ([]string, error)) *Client_GetAgentVersions_Call {
+func (_c *Client_GetAgentVersions_Call) RunAndReturn(run func(context.Context, string, string, string) ([]string, error)) *Client_GetAgentVersions_Call {
 	_c.Call.Return(run)
 	return _c
 }

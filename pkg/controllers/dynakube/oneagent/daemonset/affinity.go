@@ -1,30 +1,18 @@
 package daemonset
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
 	corev1 "k8s.io/api/core/v1"
 )
 
 func (b *builder) affinity() *corev1.Affinity {
-	return &corev1.Affinity{
-		NodeAffinity: &corev1.NodeAffinity{
-			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-				NodeSelectorTerms: b.affinityNodeSelectorTerms(),
-			},
-		},
-	}
-}
-
-func (b *builder) affinityNodeSelectorTerms() []corev1.NodeSelectorTerm {
-	nodeSelectorTerms := []corev1.NodeSelectorTerm{
-		kubernetesArchOsSelectorTerm(),
+	var affinity corev1.Affinity
+	if b.dk.Status.OneAgent.VersionStatus.Source == status.TenantRegistryVersionSource || b.dk.Status.OneAgent.VersionStatus.Source == status.CustomVersionVersionSource {
+		affinity = node.AMDOnlyAffinity()
+	} else {
+		affinity = node.Affinity()
 	}
 
-	return nodeSelectorTerms
-}
-
-func kubernetesArchOsSelectorTerm() corev1.NodeSelectorTerm {
-	return corev1.NodeSelectorTerm{
-		MatchExpressions: node.AffinityNodeRequirementForSupportedArches(),
-	}
+	return &affinity
 }

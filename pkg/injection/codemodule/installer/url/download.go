@@ -58,7 +58,6 @@ func (installer Installer) downloadOneAgentWithVersion(ctx context.Context, tmpF
 			installer.props.Os,
 			installer.props.Type,
 			installer.props.Flavor,
-			installer.props.Arch,
 		)
 		if getVersionsError != nil {
 			log.Info("failed to get available versions", "err", getVersionsError)
