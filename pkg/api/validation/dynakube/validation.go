@@ -49,6 +49,7 @@ var (
 		imageFieldHasTenantImage,
 		extensionControllerImage,
 		extensionControllerPVCStorageDevice,
+		tooManyAGReplicas,
 		missingKSPMDependency,
 		missingKSPMImage,
 		missingLogMonitoringImage,
@@ -59,6 +60,7 @@ var (
 		conflictingHostGroupSettings,
 		deprecatedFeatureFlag,
 		ignoredLogMonitoringTemplate,
+		conflictingApiUrlForExtensions,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedApiUrl,
