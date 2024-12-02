@@ -17,18 +17,28 @@ func (dtc *dynatraceClient) getLatestAgentUrl(os, installerType, flavor, arch st
 }
 
 func (dtc *dynatraceClient) getLatestAgentVersionUrl(os, installerType, flavor, arch string) string {
-	return fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
-		dtc.url, os, installerType, flavor, arch)
+	if arch != "" {
+		return fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
+			dtc.url, os, installerType, flavor, arch)
+	}
+
+	return fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s",
+		dtc.url, os, installerType, flavor)
 }
 
-func (dtc *dynatraceClient) getLatestActiveGateVersionUrl(os, arch string) string {
-	return fmt.Sprintf("%s/v1/deployment/installer/gateway/%s/latest/metainfo?arch=%s",
-		dtc.url, os, arch)
+func (dtc *dynatraceClient) getLatestActiveGateVersionUrl(os string) string {
+	return fmt.Sprintf("%s/v1/deployment/installer/gateway/%s/latest/metainfo",
+		dtc.url, os)
 }
 
 func (dtc *dynatraceClient) getAgentVersionsUrl(os, installerType, flavor, arch string) string {
-	return fmt.Sprintf("%s/v1/deployment/installer/agent/versions/%s/%s?flavor=%s&arch=%s",
-		dtc.url, os, installerType, flavor, arch)
+	if arch != "" {
+		return fmt.Sprintf("%s/v1/deployment/installer/agent/versions/%s/%s?flavor=%s&arch=%s",
+			dtc.url, os, installerType, flavor, arch)
+	}
+
+	return fmt.Sprintf("%s/v1/deployment/installer/agent/versions/%s/%s?flavor=%s",
+		dtc.url, os, installerType, flavor)
 }
 
 func (dtc *dynatraceClient) getOneAgentConnectionInfoUrl() string {

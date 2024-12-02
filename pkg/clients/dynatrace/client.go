@@ -44,7 +44,7 @@ type Client interface {
 
 	// GetAgentVersions on success returns an array of versions that can be used with GetAgent to
 	// download a specific agent version
-	GetAgentVersions(ctx context.Context, os, installerType, flavor, arch string) ([]string, error)
+	GetAgentVersions(ctx context.Context, os, installerType, flavor string) ([]string, error)
 
 	GetOneAgentConnectionInfo(ctx context.Context) (OneAgentConnectionInfo, error)
 
