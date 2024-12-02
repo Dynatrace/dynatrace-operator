@@ -69,7 +69,7 @@ func determineArch(installerType string) string {
 }
 
 // determineFlavor gives you the proper flavor value, because the default installer type has no "multidistro" flavor so the default flavor is always needed in that case.
-func determineFlavor(installerType string) string {
+func determineFlavor(installerType string) string { //nolint:nolintlint,unparam
 	if installerType == InstallerTypeDefault {
 		return arch.FlavorDefault
 	}

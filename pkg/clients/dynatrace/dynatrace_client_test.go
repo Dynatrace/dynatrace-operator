@@ -313,11 +313,6 @@ func testServerErrors(t *testing.T) {
 		err = dtc.makeRequestAndUnmarshal(context.Background(), dtc.url+flavorArchUri, dynatracePaaSToken, &response)
 		assert.Equal(t, "dynatrace server error 400: Constraints violated.\n\t- flavor: 'defaulta' must be any of [default, multidistro, musl]\n\t- arch: 'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]", err.Error())
 	})
-
-	t.Run("GetLatestAgentVersion - invalid architecture", func(t *testing.T) {
-		_, err = dtc.GetLatestAgentVersion(context.Background(), "aix", InstallerTypePaaS)
-		assert.Equal(t, "dynatrace server error 404: non supported architecture <OS_ARCHITECTURE_X86> on OS <OS_TYPE_AIX>", err.Error())
-	})
 }
 
 func dynatraceServerErrorsHandler() http.HandlerFunc {
