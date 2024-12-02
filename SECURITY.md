@@ -1,14 +1,6 @@
 # Security Policy
 
-## Supported Versions
+Security related information can be found in the official docs:
 
-The dynatrace-operator has not been released yet.
-No version exists to be supported.
-
-| Version | Supported          |
-| ------- | ------------------ |
-
-## Reporting a Vulnerability
-
-This project is not yet released.
-Currently no reporting policy exists.
+- Network-traffic: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/security
+- Permissions/Security-Benchmarks: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/network
