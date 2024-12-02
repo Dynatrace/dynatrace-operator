@@ -2,6 +2,7 @@ package validation
 
 import (
 	"fmt"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"golang.org/x/net/context"
 	"sigs.k8s.io/controller-runtime/pkg/client"

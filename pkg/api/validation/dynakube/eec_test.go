@@ -216,6 +216,7 @@ func TestWarnIfmultiplyDKwithExtensionsEnabled(t *testing.T) {
 		warnings, err := assertAllowed(t, dk1, dk2)
 		require.NoError(t, err)
 		require.Len(t, warnings, 1)
+
 		expected := fmt.Sprintf(warningConflictingApiUrlForExtensions, dk2.Name)
 		assert.Equal(t, expected, warnings[0])
 	})
