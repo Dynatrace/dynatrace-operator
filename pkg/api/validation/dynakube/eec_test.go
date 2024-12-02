@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
@@ -215,7 +216,8 @@ func TestWarnIfmultiplyDKwithExtensionsEnabled(t *testing.T) {
 		warnings, err := assertAllowed(t, dk1, dk2)
 		require.NoError(t, err)
 		require.Len(t, warnings, 1)
-		assert.Equal(t, warningConflictingApiUrlForExtensions, warnings[0])
+		expected := fmt.Sprintf(warningConflictingApiUrlForExtensions, dk2.Name)
+		assert.Equal(t, expected, warnings[0])
 	})
 
 	t.Run("no warning same ApiUrls and for second dk: extensions feature is disabled", func(t *testing.T) {
