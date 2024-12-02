@@ -4,7 +4,6 @@ import "github.com/Dynatrace/dynatrace-operator/pkg/api"
 
 const (
 	ExtensionsAnnotationSecretHash = api.InternalFlagPrefix + "secret-hash"
-	ExtensionsAnnotationPVCHash    = api.InternalFlagPrefix + "dynakube-pvc-hash"
 
 	// secret
 	EecTokenSecretKey         = "eec.token"

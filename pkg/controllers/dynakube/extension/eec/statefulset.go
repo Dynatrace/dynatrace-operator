@@ -106,21 +106,13 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		return err
 	}
 
-	r.buildAnnotationForPVC(desiredSts)
-
-	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, err)
-
-		return err
-	}
-
 	if err := hasher.AddAnnotation(desiredSts); err != nil {
 		conditions.SetKubeApiError(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, err)
 
 		return err
 	}
 
-	_, err = statefulset.RecreateQuery(r.client, r.apiReader, log, mustRecreate).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
+	_, err = statefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
 	if err != nil {
 		log.Info("failed to create/update " + r.dk.ExtensionsExecutionControllerStatefulsetName() + " statefulset")
 		conditions.SetKubeApiError(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, err)
@@ -131,13 +123,6 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	conditions.SetStatefulSetCreated(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, desiredSts.Name)
 
 	return nil
-}
-
-func mustRecreate(current, desired *appsv1.StatefulSet) bool {
-	currentHash := current.Annotations[consts.ExtensionsAnnotationPVCHash]
-	desiredHash := desired.Annotations[consts.ExtensionsAnnotationPVCHash]
-
-	return currentHash != desiredHash
 }
 
 func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]string, error) {
@@ -165,24 +150,6 @@ func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 	templateAnnotations[consts.ExtensionsAnnotationSecretHash] = tlsSecretHash
 
 	return templateAnnotations, nil
-}
-
-func (r *reconciler) buildAnnotationForPVC(desiredSts *appsv1.StatefulSet) error {
-	if !r.dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume && desiredSts.Spec.VolumeClaimTemplates != nil {
-		// desiredSts.Spec.VolumeClaimTemplates should be set to the default value or user defined value from dynakube by now
-		pvcHash, err := hasher.GenerateHash(desiredSts.Spec.VolumeClaimTemplates)
-		if err != nil {
-			return err
-		}
-
-		if desiredSts.ObjectMeta.Annotations == nil {
-			desiredSts.ObjectMeta.Annotations = map[string]string{}
-		}
-
-		desiredSts.ObjectMeta.Annotations[consts.ExtensionsAnnotationPVCHash] = pvcHash
-	}
-
-	return nil
 }
 
 func buildAppLabels(dynakubeName string) *labels.AppLabels {
