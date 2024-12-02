@@ -295,10 +295,10 @@ func assertReadOnlyEnv(t *testing.T, envs []corev1.EnvVar) {
 }
 
 func assertLogMonitoringEnv(t *testing.T, envs []corev1.EnvVar) {
-	env := k8senv.FindEnvVar(envs, logmonitoringds.ApiIPAddressEnv)
+	env := k8senv.FindEnvVar(envs, logmonitoringds.KubeletIPAddressEnv)
 	require.NotNil(t, env)
 	assert.NotEmpty(t, env.ValueFrom)
-	env = k8senv.FindEnvVar(envs, logmonitoringds.ApiNodeNameEnv)
+	env = k8senv.FindEnvVar(envs, logmonitoringds.KubeletNodeNameEnv)
 	require.NotNil(t, env)
 	assert.NotEmpty(t, env.ValueFrom)
 }

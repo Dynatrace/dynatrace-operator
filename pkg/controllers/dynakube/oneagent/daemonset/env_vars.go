@@ -129,7 +129,7 @@ func (b *builder) addReadOnlyEnv(envVarMap *prioritymap.Map) {
 
 func (b *builder) addLogMonitoringEnv(envVarMap *prioritymap.Map) {
 	if b.dk != nil && b.dk.LogMonitoring().IsEnabled() {
-		for _, env := range logmonitoring.GetAPIEnvs() {
+		for _, env := range logmonitoring.GetKubeletEnvs() {
 			prioritymap.Append(envVarMap, env)
 		}
 	}

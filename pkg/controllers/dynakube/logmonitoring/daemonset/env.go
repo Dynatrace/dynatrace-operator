@@ -17,10 +17,10 @@ const (
 	entityEnv        = "DT_ENTITY_KUBERNETES_CLUSTER"
 
 	// main container envs
-	ApiNodeNameEnv  = "KUBELET_API_NODENAME"
-	ApiIPAddressEnv = "KUBELET_API_ADDRESS"
-	dtStorageEnv    = "DT_STORAGE"
-	ruxitConfigEnv  = "APMNG_PA_CONFIG_PATH"
+	KubeletNodeNameEnv  = "KUBELET_API_NODENAME"
+	KubeletIPAddressEnv = "KUBELET_API_ADDRESS"
+	dtStorageEnv        = "DT_STORAGE"
+	ruxitConfigEnv      = "APMNG_PA_CONFIG_PATH"
 
 	dtStoragePath   = "/var/lib/dynatrace/oneagent"
 	ruxitConfigPath = "/var/lib/dynatrace/oneagent/agent/config/ruxitagentproc.conf"
@@ -75,10 +75,10 @@ func getInitEnvs(dk dynakube.DynaKube) []corev1.EnvVar {
 	}
 }
 
-func GetAPIEnvs() []corev1.EnvVar {
+func GetKubeletEnvs() []corev1.EnvVar {
 	return []corev1.EnvVar{
 		{
-			Name: ApiNodeNameEnv,
+			Name: KubeletNodeNameEnv,
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "spec.nodeName",
@@ -86,7 +86,7 @@ func GetAPIEnvs() []corev1.EnvVar {
 			},
 		},
 		{
-			Name: ApiIPAddressEnv,
+			Name: KubeletIPAddressEnv,
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "status.hostIP",
@@ -97,7 +97,7 @@ func GetAPIEnvs() []corev1.EnvVar {
 }
 
 func getEnvs() []corev1.EnvVar {
-	apiEnvs := GetAPIEnvs()
+	apiEnvs := GetKubeletEnvs()
 	standaloneEnvs := []corev1.EnvVar{
 		{
 			Name:  dtStorageEnv,
@@ -108,5 +108,6 @@ func getEnvs() []corev1.EnvVar {
 			Value: ruxitConfigPath,
 		},
 	}
+
 	return append(apiEnvs, standaloneEnvs...)
 }
