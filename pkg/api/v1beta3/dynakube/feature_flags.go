@@ -58,6 +58,7 @@ const (
 	AnnotationFeatureOneAgentMaxUnavailable         = AnnotationFeaturePrefix + "oneagent-max-unavailable"
 	AnnotationFeatureOneAgentInitialConnectRetry    = AnnotationFeaturePrefix + "oneagent-initial-connect-retry-ms"
 	AnnotationFeatureRunOneAgentContainerPrivileged = AnnotationFeaturePrefix + "oneagent-privileged"
+	AnnotationFeatureOneAgentSkipLivenessProbe      = AnnotationFeaturePrefix + "oneagnet-skip-liveness-probe"
 
 	AnnotationFeatureIgnoreUnknownState    = AnnotationFeaturePrefix + "ignore-unknown-state"
 	AnnotationFeatureIgnoredNamespaces     = AnnotationFeaturePrefix + "ignored-namespaces"
@@ -226,6 +227,10 @@ func (dk *DynaKube) FeatureAgentInitialConnectRetry() int {
 
 func (dk *DynaKube) FeatureOneAgentPrivileged() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureRunOneAgentContainerPrivileged) == truePhrase
+}
+
+func (dk *DynaKube) FeatureOneAgentSkipLivenessProbe() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureOneAgentSkipLivenessProbe) == truePhrase
 }
 
 func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
