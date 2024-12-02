@@ -7,9 +7,18 @@ import (
 )
 
 const (
+	errorTooManyAGReplicas  = `The Dynakube's specification specifies KSPM, but has more than one ActiveGate replica. Only one ActiveGate replica is allowed in combination with KSPM.`
 	errorKSPMMissingKubemon = `The Dynakube's specification specifies KSPM, but "kubernetes-monitoring" is not enabled on the Activegate.`
 	errorKSPMMissingImage   = `The Dynakube's specification specifies KSPM, but no image repository/tag is configured.`
 )
+
+func tooManyAGReplicas(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if dk.KSPM().IsEnabled() && dk.ActiveGate().GetReplicas() > 1 {
+		return errorTooManyAGReplicas
+	}
+
+	return ""
+}
 
 func missingKSPMDependency(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	if dk.KSPM().IsEnabled() &&
