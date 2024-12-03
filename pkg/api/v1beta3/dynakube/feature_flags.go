@@ -58,7 +58,7 @@ const (
 	AnnotationFeatureOneAgentMaxUnavailable         = AnnotationFeaturePrefix + "oneagent-max-unavailable"
 	AnnotationFeatureOneAgentInitialConnectRetry    = AnnotationFeaturePrefix + "oneagent-initial-connect-retry-ms"
 	AnnotationFeatureRunOneAgentContainerPrivileged = AnnotationFeaturePrefix + "oneagent-privileged"
-	AnnotationFeatureOneAgentSkipLivenessProbe      = AnnotationFeaturePrefix + "oneagnet-skip-liveness-probe"
+	AnnotationFeatureOneAgentSkipLivenessProbe      = AnnotationFeaturePrefix + "oneagent-skip-liveness-probe"
 
 	AnnotationFeatureIgnoreUnknownState    = AnnotationFeaturePrefix + "ignore-unknown-state"
 	AnnotationFeatureIgnoredNamespaces     = AnnotationFeaturePrefix + "ignored-namespaces"
