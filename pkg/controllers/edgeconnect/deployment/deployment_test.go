@@ -66,6 +66,88 @@ func Test_buildAppLabels(t *testing.T) {
 	})
 }
 
+func TestLabels(t *testing.T) {
+	testLabelKey := "test-label-key"
+	testLabelValue := "test-label-value"
+
+	t.Run("Check empty custom labels", func(t *testing.T) {
+		ec := &edgeconnect.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: edgeconnect.EdgeConnectSpec{},
+		}
+
+		deployment := New(ec)
+
+		assert.Len(t, deployment.Spec.Template.Labels, 5)
+	})
+
+	t.Run("Check custom label set correctly", func(t *testing.T) {
+		ec := &edgeconnect.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: edgeconnect.EdgeConnectSpec{
+				Labels: map[string]string{
+					testLabelKey: testLabelValue,
+				},
+			},
+		}
+
+		deployment := New(ec)
+
+		assert.Len(t, deployment.Spec.Template.Labels, 6)
+		assert.Contains(t, deployment.Spec.Template.ObjectMeta.Labels, testLabelKey)
+		assert.Equal(t, testLabelValue, deployment.Spec.Template.ObjectMeta.Labels[testLabelKey])
+
+		assert.NotContains(t, deployment.ObjectMeta.Labels, testLabelKey)
+	})
+}
+
+func TestAnnotations(t *testing.T) {
+	testAnnotationKey := "test-annotation-key"
+	testAnnotationValue := "test-annotation-value"
+
+	t.Run("Check empty annotations", func(t *testing.T) {
+		ec := &edgeconnect.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: edgeconnect.EdgeConnectSpec{},
+		}
+
+		deployment := New(ec)
+
+		assert.Nil(t, deployment.Spec.Template.ObjectMeta.Annotations)
+	})
+
+	t.Run("Check custom annotations set correctly", func(t *testing.T) {
+		ec := &edgeconnect.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: edgeconnect.EdgeConnectSpec{
+				Annotations: map[string]string{
+					testAnnotationKey: testAnnotationValue,
+				},
+			},
+		}
+
+		deployment := New(ec)
+
+		assert.Len(t, deployment.Spec.Template.Annotations, 1)
+		assert.Contains(t, deployment.Spec.Template.ObjectMeta.Annotations, testAnnotationKey)
+		assert.Equal(t, testAnnotationValue, deployment.Spec.Template.ObjectMeta.Annotations[testAnnotationKey])
+
+		assert.NotContains(t, deployment.ObjectMeta.Annotations, testAnnotationKey)
+	})
+}
+
 func Test_prepareResourceRequirements(t *testing.T) {
 	ec := &edgeconnect.EdgeConnect{
 		ObjectMeta: metav1.ObjectMeta{

@@ -6,7 +6,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -15,10 +14,8 @@ import (
 )
 
 const (
-	customEnvPriority  = prioritymap.HighPriority
-	defaultEnvPriority = prioritymap.DefaultPriority
-	unprivilegedUser   = int64(1000)
-	unprivilegedGroup  = int64(1000)
+	unprivilegedUser  = int64(1000)
+	unprivilegedGroup = int64(1000)
 )
 
 func New(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
@@ -27,18 +24,20 @@ func New(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 
 func create(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 	appLabels := buildAppLabels(ec)
-	labels := maputils.MergeMap(
-		ec.Labels,
-		appLabels.BuildLabels(),
+	buildLabels := appLabels.BuildLabels()
+
+	customPodLabels := maputils.MergeMap(
+		ec.Spec.Labels,
+		buildLabels, // higher priority
 	)
 
-	log.Debug("EdgeConnect deployment app labels", "labels", labels)
+	log.Debug("EdgeConnect deployment app labels", "labels", buildLabels)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        ec.Name,
 			Namespace:   ec.Namespace,
-			Labels:      labels,
+			Labels:      buildLabels,
 			Annotations: buildAnnotations(ec),
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -48,7 +47,8 @@ func create(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
+					Annotations: ec.Spec.Annotations,
+					Labels:      customPodLabels,
 				},
 				Spec: corev1.PodSpec{
 					Containers:                    []corev1.Container{edgeConnectContainer(ec)},

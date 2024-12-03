@@ -674,7 +674,11 @@ func (controller *Controller) createOrUpdateEdgeConnectDeploymentAndSettings(ctx
 
 	desiredDeployment := deployment.New(ec)
 
-	desiredDeployment.Spec.Template.Annotations = map[string]string{consts.EdgeConnectAnnotationSecretHash: secretHash}
+	if desiredDeployment.Spec.Template.Annotations == nil {
+		desiredDeployment.Spec.Template.Annotations = map[string]string{}
+	}
+
+	desiredDeployment.Spec.Template.Annotations[consts.EdgeConnectAnnotationSecretHash] = secretHash
 	_log = _log.WithValues("deploymentName", desiredDeployment.Name)
 
 	if err := controllerutil.SetControllerReference(ec, desiredDeployment, scheme.Scheme); err != nil {
