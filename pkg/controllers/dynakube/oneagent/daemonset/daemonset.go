@@ -224,8 +224,11 @@ func (b *builder) podSpec() (corev1.PodSpec, error) {
 		TerminationGracePeriodSeconds: ptr.To(defaultTerminationGracePeriod),
 	}
 
-	if b.dk.NeedsOneAgentProbe() {
+	if b.dk.NeedsOneAgentReadinessProbe() {
 		podSpec.Containers[0].ReadinessProbe = b.getReadinessProbe()
+	}
+
+	if b.dk.NeedsOneAgentLivenessProbe() {
 		podSpec.Containers[0].LivenessProbe = b.getDefaultProbeFromStatus()
 	}
 
