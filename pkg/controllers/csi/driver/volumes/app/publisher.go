@@ -95,7 +95,7 @@ func (pub *Publisher) hasRetryLimitReached(volumeCfg *csivolumes.VolumeConfig) b
 	}
 
 	limit := stat.ModTime().Add(volumeCfg.RetryTimeout)
-	log.Info("not first attempt, time remaining before skipping injection", "time", time.Until(limit).String())
+	log.Info("not first attempt, time remaining before skipping injection", "remaining time", time.Until(limit).String())
 
 	return pub.time.Now().After(limit)
 }
