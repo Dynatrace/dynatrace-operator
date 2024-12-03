@@ -58,14 +58,14 @@ func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.V
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
 
-	if !pub.isArchiveAvailable(volumeCfg) {
+	if !pub.isCodeModuleAvailable(volumeCfg) {
 		return nil, status.Error(
 			codes.Unavailable,
 			"version or digest is not yet set, csi-provisioner hasn't finished setup yet for DynaKube: "+volumeCfg.DynakubeName,
 		)
 	}
 
-	if err := pub.mountOneAgent(volumeCfg); err != nil {
+	if err := pub.mountCodeModule(volumeCfg); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err))
 	}
 
@@ -100,17 +100,17 @@ func (pub *Publisher) hasRetryLimitReached(volumeCfg *csivolumes.VolumeConfig) b
 	return pub.time.Now().After(limit)
 }
 
-// isArchiveAvailable checks if the LatestAgentBinaryForDynaKube folder exists or not
-func (pub *Publisher) isArchiveAvailable(volumeCfg *csivolumes.VolumeConfig) bool {
+// isCodeModuleAvailable checks if the LatestAgentBinaryForDynaKube folder exists or not
+func (pub *Publisher) isCodeModuleAvailable(volumeCfg *csivolumes.VolumeConfig) bool {
 	binDir := pub.path.LatestAgentBinaryForDynaKube(volumeCfg.DynakubeName)
 
 	stat, err := pub.fs.Stat(binDir)
 	if errors.Is(err, os.ErrNotExist) {
-		log.Info("no OneAgent binary is available to mount yet, will retry later", "dynakube", volumeCfg.DynakubeName)
+		log.Info("no CodeModule is available to mount yet, will retry later", "dynakube", volumeCfg.DynakubeName)
 
 		return false
 	} else if err != nil {
-		log.Error(err, "unexpected failure while checking for the latest OneAgent binary", "dynakube", volumeCfg.DynakubeName)
+		log.Error(err, "unexpected failure while checking for the latest available CodeModule", "dynakube", volumeCfg.DynakubeName)
 
 		return false
 	}
@@ -118,9 +118,13 @@ func (pub *Publisher) isArchiveAvailable(volumeCfg *csivolumes.VolumeConfig) boo
 	return stat.IsDir()
 }
 
-func (pub *Publisher) mountOneAgent(volumeCfg *csivolumes.VolumeConfig) error {
+func (pub *Publisher) mountCodeModule(volumeCfg *csivolumes.VolumeConfig) error {
 	mappedDir := pub.path.AppMountMappedDir(volumeCfg.VolumeID)
-	_ = pub.fs.MkdirAll(mappedDir, os.ModePerm)
+
+	err := pub.fs.MkdirAll(mappedDir, os.ModePerm)
+	if err != nil {
+		return err
+	}
 
 	upperDir, err := pub.prepareUpperDir(volumeCfg)
 	if err != nil {
@@ -128,7 +132,11 @@ func (pub *Publisher) mountOneAgent(volumeCfg *csivolumes.VolumeConfig) error {
 	}
 
 	workDir := pub.path.AppMountWorkDir(volumeCfg.VolumeID)
-	_ = pub.fs.MkdirAll(workDir, os.ModePerm)
+
+	err = pub.fs.MkdirAll(workDir, os.ModePerm)
+	if err != nil {
+		return err
+	}
 
 	lowerDir := pub.path.LatestAgentBinaryForDynaKube(volumeCfg.DynakubeName)
 
@@ -136,7 +144,7 @@ func (pub *Publisher) mountOneAgent(volumeCfg *csivolumes.VolumeConfig) error {
 	if ok { // will only be !ok during unit testing
 		lowerDir, err = linker.ReadlinkIfPossible(lowerDir)
 		if err != nil {
-			log.Info("failed to read symlink for latest binary", "symlink", lowerDir)
+			log.Info("failed to read symlink for latest CodeModule", "symlink", lowerDir)
 
 			return err
 		}
@@ -167,8 +175,8 @@ func (pub *Publisher) mountOneAgent(volumeCfg *csivolumes.VolumeConfig) error {
 
 func (pub *Publisher) prepareUpperDir(volumeCfg *csivolumes.VolumeConfig) (string, error) {
 	upperDir := pub.path.AppMountVarDir(volumeCfg.VolumeID)
-	err := pub.fs.MkdirAll(upperDir, os.ModePerm)
 
+	err := pub.fs.MkdirAll(upperDir, os.ModePerm)
 	if err != nil {
 		return "", errors.WithMessagef(err, "failed create overlay upper directory structure, path: %s", upperDir)
 	}

@@ -44,27 +44,31 @@ type Publisher struct {
 }
 
 func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
-	if err := pub.mountOneAgent(volumeCfg); err != nil {
+	if err := pub.mountStorageVolume(volumeCfg); err != nil {
 		return nil, status.Error(codes.Internal, "failed to mount osagent volume: "+err.Error())
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
-func (pub *Publisher) mountOneAgent(volumeCfg *csivolumes.VolumeConfig) error {
-	hostDir := pub.path.OsAgentDir(volumeCfg.DynakubeName)
-	_ = pub.fs.MkdirAll(hostDir, os.ModePerm)
+func (pub *Publisher) mountStorageVolume(volumeCfg *csivolumes.VolumeConfig) error {
+	oaStorageDir := pub.path.OsAgentDir(volumeCfg.DynakubeName)
+
+	err := pub.fs.MkdirAll(oaStorageDir, os.ModePerm)
+	if err != nil && !os.IsExist(err) {
+		return err
+	}
 
 	if err := pub.fs.MkdirAll(volumeCfg.TargetPath, os.ModePerm); err != nil {
-		log.Info("failed to create directory for host mount", "directory", hostDir)
+		log.Info("failed to create directory for osagent-storage mount", "directory", oaStorageDir)
 
 		return err
 	}
 
-	if err := pub.mounter.Mount(hostDir, volumeCfg.TargetPath, "", []string{"bind"}); err != nil {
-		_ = pub.mounter.Unmount(hostDir)
+	if err := pub.mounter.Mount(oaStorageDir, volumeCfg.TargetPath, "", []string{"bind"}); err != nil {
+		_ = pub.mounter.Unmount(oaStorageDir)
 
-		log.Info("failed to mount directory for host mount", "directory", hostDir)
+		log.Info("failed to mount directory for osagent-storage mount", "directory", oaStorageDir)
 
 		return err
 	}
