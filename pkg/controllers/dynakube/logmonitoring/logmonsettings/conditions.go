@@ -27,7 +27,7 @@ func setLogMonitoringSettingError(conditions *[]metav1.Condition, conditionType,
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  settingsErrorReason,
-		Message: "There was an error regarding LogMonitoring settings: " + message,
+		Message: "LogMonitoring settings could not be created: " + message,
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
