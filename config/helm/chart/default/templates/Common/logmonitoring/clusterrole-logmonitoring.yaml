@@ -1,4 +1,4 @@
-{{- if and .Values.rbac.logMonitoring.create (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+{{- if .Values.rbac.logMonitoring.create }}
 # Copyright 2021 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -48,4 +48,21 @@ subjects:
 - kind: ServiceAccount
   name: dynatrace-logmonitoring
   namespace: {{ .Release.Namespace }}
+{{ if .Values.rbac.oneAgent.create }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dynatrace-logmonitoring-fullstack
+  labels:
+    {{- include "dynatrace-operator.logMonitoringLabels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dynatrace-logmonitoring
+subjects:
+- kind: ServiceAccount
+  name: dynatrace-dynakube-oneagent
+  namespace: {{ .Release.Namespace }}
+{{ end }}
 {{ end }}
