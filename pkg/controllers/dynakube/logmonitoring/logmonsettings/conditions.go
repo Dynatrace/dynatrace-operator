@@ -7,6 +7,7 @@ import (
 
 const (
 	settingsExistReason = "LogMonSettingsExist"
+	settingsErrorReason = "LogMonSettingsError"
 
 	conditionType = "LogMonitoringSettings"
 )
@@ -17,6 +18,16 @@ func setLogMonitoringSettingExists(conditions *[]metav1.Condition, conditionType
 		Status:  metav1.ConditionTrue,
 		Reason:  settingsExistReason,
 		Message: "LogMonitoring settings already exist, will not create new ones.",
+	}
+	_ = meta.SetStatusCondition(conditions, condition)
+}
+
+func setLogMonitoringSettingError(conditions *[]metav1.Condition, conditionType, message string) {
+	condition := metav1.Condition{
+		Type:    conditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  settingsErrorReason,
+		Message: "There was an error regarding LogMonitoring settings: " + message,
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
