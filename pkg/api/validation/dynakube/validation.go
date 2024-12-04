@@ -49,6 +49,7 @@ var (
 		imageFieldHasTenantImage,
 		extensionControllerImage,
 		extensionControllerPVCStorageDevice,
+		tooManyAGReplicas,
 		missingKSPMDependency,
 		missingKSPMImage,
 		missingLogMonitoringImage,

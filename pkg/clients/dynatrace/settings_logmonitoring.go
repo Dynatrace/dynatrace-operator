@@ -39,6 +39,7 @@ type posLogMonSettingsBody struct {
 
 const (
 	logMonitoringSettingsSchemaId = "builtin:logmonitoring.log-storage-settings"
+	schemaVersion                 = "1.0.16"
 )
 
 func (dtc *dynatraceClient) performCreateLogMonSetting(ctx context.Context, body []posLogMonSettingsBody) (string, error) { //nolint:dupl
@@ -114,7 +115,7 @@ func createBaseLogMonSettings(clusterName, schemaId string, schemaVersion string
 }
 
 func (dtc *dynatraceClient) CreateLogMonitoringSetting(ctx context.Context, scope, clusterName string, matchers []logmonitoring.IngestRuleMatchers) (string, error) {
-	settings := createBaseLogMonSettings(clusterName, logMonitoringSettingsSchemaId, "1.0.0", scope, matchers)
+	settings := createBaseLogMonSettings(clusterName, logMonitoringSettingsSchemaId, schemaVersion, scope, matchers)
 
 	objectId, err := dtc.performCreateLogMonSetting(ctx, []posLogMonSettingsBody{settings})
 	if err != nil {
