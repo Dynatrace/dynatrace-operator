@@ -8,7 +8,7 @@ spec:
 
   # Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters#tabgroup--apiversions--v1beta2
 
-# This feature is still experimental, for more context please refer to: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
+  # This feature is still experimental, for more context please refer to: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
   logMonitoring: {}
 
   templates: {}
