@@ -1,0 +1,178 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    internal.operator.dynatrace.com/template-hash: "2504850466"
+  creationTimestamp: "2024-12-03T19:53:33Z"
+  generation: 2
+  labels:
+    app.kubernetes.io/component: dynatrace-extensions-collector
+    app.kubernetes.io/created-by: dynakube
+    app.kubernetes.io/managed-by: dynatrace-operator
+    app.kubernetes.io/name: dynatrace-extensions-collector
+    app.kubernetes.io/version: 0.0.0
+  name: dynakube-extensions-collector
+  namespace: dynatrace
+  ownerReferences:
+    - apiVersion: dynatrace.com/v1beta3
+      blockOwnerDeletion: true
+      controller: true
+      kind: DynaKube
+      name: dynakube
+      uid: 2f2dbf36-0e8c-4cdb-b0e6-db87b4033930
+  resourceVersion: "214813"
+  uid: f3650a0b-145e-469c-97c3-89d4bb96177e
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/created-by: dynakube
+      app.kubernetes.io/managed-by: dynatrace-operator
+      app.kubernetes.io/name: dynatrace-extensions-collector
+  serviceName: ""
+  template:
+    metadata:
+      annotations:
+        internal.operator.dynatrace.com/secret-hash: "2877726072"
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/component: dynatrace-extensions-collector
+        app.kubernetes.io/created-by: dynakube
+        app.kubernetes.io/managed-by: dynatrace-operator
+        app.kubernetes.io/name: dynatrace-extensions-collector
+        app.kubernetes.io/version: 0.0.0
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+                      - arm64
+                      - ppc64le
+                      - s390x
+                  - key: kubernetes.io/os
+                    operator: In
+                    values:
+                      - linux
+      containers:
+        - args:
+            - --config=eec://dynakube-extensions-controller.dynatrace:14599/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=/secrets/tokens/otelc.token
+          env:
+            - name: SHARDS
+              value: "1"
+            - name: POD_NAME_PREFIX
+              value: dynakube-extensions-collector
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.labels['statefulset.kubernetes.io/pod-name']
+            - name: SHARD_ID
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
+            - name: OTLP_GRPC_PORT
+              value: "10001"
+            - name: OTLP_HTTP_PORT
+              value: "10002"
+            - name: OTLP_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  key: otelc.token
+                  name: dynakube-extensions-token
+            - name: EEC_DS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  key: otelc.token
+                  name: dynakube-extensions-token
+            - name: SSL_CERT_DIR
+              value: /tls/custom/eec
+            - name: K8S_CLUSTER_NAME
+              value: dynakube
+            - name: K8S_CLUSTER_UID
+              value: 50b56f76-9f0a-40fa-8e3d-a6cc0a452a40
+            - name: DT_ENTITY_KUBERNETES_CLUSTER
+            - name: EXTENSIONS_CONTROLLER_TLS
+              value: /tls/custom/eec/tls.crt
+          image: public.ecr.aws/dynatrace/dynatrace-otel-collector:latest
+          imagePullPolicy: Always
+          name: collector
+          resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /secrets/tokens
+              name: tokens
+              readOnly: true
+            - mountPath: /tls/custom/eec
+              name: dynakube-extensions-controller-tls
+              readOnly: true
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: dynakube-pull-secret
+        - name: devregistry
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: dynatrace-extensions-collector
+      serviceAccountName: dynatrace-extensions-collector
+      terminationGracePeriodSeconds: 30
+      topologySpreadConstraints:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/created-by: dynakube
+              app.kubernetes.io/managed-by: dynatrace-operator
+              app.kubernetes.io/name: dynatrace-extensions-collector
+          maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/created-by: dynakube
+              app.kubernetes.io/managed-by: dynatrace-operator
+              app.kubernetes.io/name: dynatrace-extensions-collector
+          maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+      volumes:
+        - name: tokens
+          secret:
+            defaultMode: 420
+            items:
+              - key: otelc.token
+                path: otelc.token
+            secretName: dynakube-extensions-token
+        - name: dynakube-extensions-controller-tls
+          secret:
+            defaultMode: 420
+            items:
+              - key: tls.crt
+                path: tls.crt
+            secretName: dynakube-extensions-controller-tls
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+    type: RollingUpdate
+status:
+  availableReplicas: 0
+  collisionCount: 0
+  currentRevision: dynakube-extensions-collector-5977d479d4
+  observedGeneration: 2
+  replicas: 0
+  updateRevision: dynakube-extensions-collector-5977d479d4
