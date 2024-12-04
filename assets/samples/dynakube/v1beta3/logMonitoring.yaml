@@ -1,0 +1,21 @@
+apiVersion: dynatrace.com/v1beta3
+kind: DynaKube
+metadata:
+  name: dynakube
+  namespace: dynatrace
+spec:
+  apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
+
+  # Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters#tabgroup--apiversions--v1beta2
+
+# This feature is still experimental, for more context please refer to: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
+  logMonitoring: {}
+
+  templates: {}
+    # Required in combination with logMonitoring enabled.
+    # As there is no image available in public registry yet, this field is required if you want to run logMonitoring.
+    #
+    # logMonitoring:
+    #   imageRef:
+    #     repository: <image-repo>
+    #     tag: <image-tag>
