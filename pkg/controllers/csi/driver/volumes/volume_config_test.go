@@ -10,9 +10,10 @@ import (
 )
 
 const (
-	testVolumeId   = "a-volume-id"
-	testTargetPath = "a-target-path"
-	testPodUID     = "a-pod-uid"
+	testVolumeId     = "a-volume-id"
+	testTargetPath   = "a-target-path"
+	testPodUID       = "a-pod-uid"
+	testDynakubeName = "a-dynakube"
 )
 
 func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
