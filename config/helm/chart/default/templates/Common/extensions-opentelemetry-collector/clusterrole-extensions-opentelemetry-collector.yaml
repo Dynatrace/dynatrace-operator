@@ -44,6 +44,16 @@ rules:
       - get
       - list
       - watch
+  {{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - privileged
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+  {{ end }}
   - nonResourceURLs:
       - /metrics
       - /metrics/cadvisor
