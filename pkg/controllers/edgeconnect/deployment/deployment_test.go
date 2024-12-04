@@ -6,8 +6,10 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -81,7 +83,12 @@ func TestLabels(t *testing.T) {
 
 		deployment := New(ec)
 
-		assert.Len(t, deployment.Spec.Template.Labels, 5)
+		require.Len(t, deployment.Spec.Template.Labels, 5)
+		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppNameLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppCreatedByLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppManagedByLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppVersionLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppComponentLabel)
 	})
 
 	t.Run("Check custom label set correctly", func(t *testing.T) {
@@ -100,6 +107,12 @@ func TestLabels(t *testing.T) {
 		deployment := New(ec)
 
 		assert.Len(t, deployment.Spec.Template.Labels, 6)
+		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppNameLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppCreatedByLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppManagedByLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppVersionLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppComponentLabel)
+
 		assert.Contains(t, deployment.Spec.Template.ObjectMeta.Labels, testLabelKey)
 		assert.Equal(t, testLabelValue, deployment.Spec.Template.ObjectMeta.Labels[testLabelKey])
 

@@ -24,20 +24,20 @@ func New(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 
 func create(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 	appLabels := buildAppLabels(ec)
-	buildLabels := appLabels.BuildLabels()
+	labels := appLabels.BuildLabels()
 
 	customPodLabels := maputils.MergeMap(
 		ec.Spec.Labels,
-		buildLabels, // higher priority
+		labels, // higher priority
 	)
 
-	log.Debug("EdgeConnect deployment app labels", "labels", buildLabels)
+	log.Debug("EdgeConnect deployment app labels", "labels", labels)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        ec.Name,
 			Namespace:   ec.Namespace,
-			Labels:      buildLabels,
+			Labels:      labels,
 			Annotations: buildAnnotations(ec),
 		},
 		Spec: appsv1.DeploymentSpec{
