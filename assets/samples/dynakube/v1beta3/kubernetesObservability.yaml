@@ -1,0 +1,129 @@
+apiVersion: dynatrace.com/v1beta3
+kind: DynaKube
+metadata:
+  name: dynakube
+  namespace: dynatrace
+  # annotations:
+    # feature.dynatrace.com/k8s-app-enabled: "true"
+spec:
+  apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
+
+  # tokens: ""
+
+  # customPullSecret: "custom-pull-secret"
+
+  # skipCertCheck: false
+
+  # proxy:
+  #   value: my-proxy-url.com
+  #   valueFrom: name-of-my-proxy-secret
+
+  # trustedCAs: name-of-my-ca-configmap
+
+  # networkZone: name-of-my-network-zone
+
+  # enableIstio: false
+
+  # dynatraceApiRequestThreshold: 15
+
+  # Configuration for Metadata Enrichment.
+  #
+  # metadataEnrichment:
+  #   enabled: true
+
+    # namespaceSelector:
+    #   matchLabels:
+    #     app: my-app
+    #   matchExpressions:
+    #    - key: app
+    #      operator: In
+    #      values: [my-frontend, my-backend, my-database]
+
+# KSPM needs a running ActiveGate with kubernetes-monitoring capability enabled. Example configuration is below.
+# kspm: {}
+
+# activeGate:
+#   tlsSecretName: <ag-tls-name>
+
+#   capabilities:
+#     - kubernetes-monitoring
+
+#   customProperties:
+#      value: |
+#        [kubernetes_monitoring]
+#        kubernetes_configuration_dataset_pipeline_enabled = true
+#        kubernetes_configuration_dataset_pipeline_include_node_config = true
+
+# This feature is still experimental, for more context please refer to: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
+#  logMonitoring: {}
+    # ingestRuleMatchers:
+    # - attribute: [k8s.namespace.name, k8s.container.name, k8s.workload.name, k8s.workload.kind, k8s.pod.label, k8s.pod.annotation] 
+    # - values:
+    #   - "<value>"
+
+#  templates: {}
+    # Required in combination with kspm enabled.
+    # As there is no image available in public registry yet, this field is required if you want to run kspm.
+    #
+    # kspmNodeConfigurationCollector:
+    #   imageRef:
+    #     repository: <image-repo>
+    #     tag: <image-tag>
+
+    # Required in combination with logMonitoring enabled.
+    # As there is no image available in public registry yet, this field is required if you want to run logMonitoring.
+    #
+    # logMonitoring:
+    #   imageRef:
+    #     repository: <image-repo>
+    #     tag: <image-tag>
+
+  # Configuration for ActiveGate instances
+  #
+  activeGate:
+    capabilities:
+      - kubernetes-monitoring
+
+
+    # image: ""
+
+    # replicas: 1
+
+    # tolerations:
+    # - effect: NoSchedule
+    #   key: node-role.kubernetes.io/master
+    #   operator: Exists
+
+    # nodeSelector: {}
+
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1.5Gi
+
+    # labels:
+    #   custom: label
+
+    # env: []
+
+    # group: ""
+
+    # customProperties:
+    #   value: |
+    #     [connectivity]
+    #     networkZone=
+    #   valueFrom: myCustomPropertiesSecret
+
+    # tlsSecretName: "my-tls-secret"
+
+    # dnsPolicy: "Default"
+
+    # priorityClassName: priority-class
+
+    # annotations:
+    #   custom: annotation
+
+    # topologySpreadConstraints: []
