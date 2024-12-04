@@ -185,7 +185,7 @@ func (pub *Publisher) prepareUpperDir(volumeCfg *csivolumes.VolumeConfig) (strin
 
 	err = pub.fs.MkdirAll(filepath.Dir(destAgentConfPath), os.ModePerm)
 	if err != nil {
-		return "", errors.WithMessagef(err, "failed create overlay upper directory agent config directory structure, path: %s", upperDir)
+		return "", errors.WithMessagef(err, "failed to create overlay upper directory agent config directory structure, path: %s", upperDir)
 	}
 
 	srcAgentConfPath := pub.path.AgentSharedRuxitAgentProcConf(volumeCfg.DynakubeName)
