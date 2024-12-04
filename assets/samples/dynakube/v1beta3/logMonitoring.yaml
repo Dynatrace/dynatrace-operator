@@ -19,3 +19,4 @@ spec:
     #   imageRef:
     #     repository: <image-repo>
     #     tag: <image-tag>
+    
