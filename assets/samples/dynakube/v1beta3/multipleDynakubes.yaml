@@ -5,44 +5,18 @@ metadata:
   namespace: dynatrace
 spec:
   apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
+  
+  # Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters#tabgroup--apiversions--v1beta2
 
-  # tokens: "my-secret"
-
-  # dynatraceApiRequestThreshold: 15
-
-  # Configuration for Metadata Enrichment.
-  #
-  # metadataEnrichment:
-  #   enabled: true
-
-    # namespaceSelector:
-    #   matchLabels:
-    #     monitor: metadataEnrichment
-
-  # Configuration for OneAgent instances
-  #
   oneAgent:
     applicationMonitoring:
       namespaceSelector:
         matchLabels:
           monitor: applicationMonitoring
 
-      useCSIDriver: true
-
-  # Configuration for ActiveGate instances.
-  #
   activeGate:
     capabilities:
       - kubernetes-monitoring
-
-    resources:
-      requests:
-        cpu: 500m
-        memory: 512Mi
-      limits:
-        cpu: 1000m
-        memory: 1.5Gi
-
 ---
 
 apiVersion: dynatrace.com/v1beta3
@@ -53,60 +27,8 @@ metadata:
 spec:
   apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
 
-  # tokens: "my-secret"
+  # Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters#tabgroup--apiversions--v1beta2
 
-  # dynatraceApiRequestThreshold: 15
-
-  # Configuration for Metadata Enrichment.
-  #
-  # metadataEnrichment:
-  #   enabled: true
-
-    # namespaceSelector:
-    #   matchLabels:
-    #     monitor: cloudNativeFullStack
-
-# KSPM needs a running ActiveGate with kubernetes-monitoring capability enabled. Example configuration is below.
-# kspm: {}
-
-# activeGate:
-#   tlsSecretName: <ag-tls-name>
-
-#   capabilities:
-#     - kubernetes-monitoring
-
-#   customProperties:
-#      value: |
-#        [kubernetes_monitoring]
-#        kubernetes_configuration_dataset_pipeline_enabled = true
-#        kubernetes_configuration_dataset_pipeline_include_node_config = true
-
-# This feature is still experimental, for more context please refer to: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
-#  logMonitoring: {}
-    # ingestRuleMatchers:
-    # - attribute: [k8s.namespace.name, k8s.container.name, k8s.workload.name, k8s.workload.kind, k8s.pod.label, k8s.pod.annotation] 
-    # - values:
-    #   - "<value>"
-
-#  templates: {}
-    # Required in combination with kspm enabled.
-    # As there is no image available in public registry yet, this field is required if you want to run kspm.
-    #
-    # kspmNodeConfigurationCollector:
-    #   imageRef:
-    #     repository: <image-repo>
-    #     tag: <image-tag>
-
-    # Required in combination with logMonitoring enabled.
-    # As there is no image available in public registry yet, this field is required if you want to run logMonitoring.
-    #
-    # logMonitoring:
-    #   imageRef:
-    #     repository: <image-repo>
-    #     tag: <image-tag>
-
-  # Configuration for OneAgent instances
-  #
   oneAgent:
     cloudNativeFullStack:
       namespaceSelector:
@@ -121,17 +43,7 @@ spec:
           key: node-role.kubernetes.io/control-plane
           operator: Exists
 
-  # Configuration for ActiveGate instances.
-  #
   activeGate:
     capabilities:
       - routing
       - dynatrace-api
-
-    resources:
-      requests:
-        cpu: 500m
-        memory: 512Mi
-      limits:
-        cpu: 1000m
-        memory: 1.5Gi
