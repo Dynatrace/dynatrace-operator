@@ -5,8 +5,8 @@ metadata:
   namespace: dynatrace
 spec:
   apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
-  
-  # Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters#tabgroup--apiversions--v1beta2
+
+  # Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
 
   oneAgent:
     hostMonitoring: {}
