@@ -178,7 +178,7 @@ func (pub *Publisher) prepareUpperDir(volumeCfg *csivolumes.VolumeConfig) (strin
 
 	err := pub.fs.MkdirAll(upperDir, os.ModePerm)
 	if err != nil {
-		return "", errors.WithMessagef(err, "failed create overlay upper directory structure, path: %s", upperDir)
+		return "", errors.WithMessagef(err, "failed to create overlay upper directory structure, path: %s", upperDir)
 	}
 
 	destAgentConfPath := pub.path.OverlayVarRuxitAgentProcConf(volumeCfg.VolumeID)
