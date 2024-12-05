@@ -38,7 +38,7 @@ func create(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 			Name:        ec.Name,
 			Namespace:   ec.Namespace,
 			Labels:      labels,
-			Annotations: buildAnnotations(ec),
+			Annotations: buildAnnotations(),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ec.Spec.Replicas,
@@ -92,14 +92,11 @@ func buildAppLabels(ec *edgeconnect.EdgeConnect) *labels.AppLabels {
 		ec.Status.Version.Version)
 }
 
-func buildAnnotations(ec *edgeconnect.EdgeConnect) map[string]string {
-	annotations := map[string]string{
+func buildAnnotations() map[string]string {
+	return map[string]string{
 		consts.AnnotationEdgeConnectContainerAppArmor: "runtime/default",
 		webhook.AnnotationDynatraceInject:             "false",
 	}
-	annotations = maputils.MergeMap(ec.Annotations, annotations)
-
-	return annotations
 }
 
 func edgeConnectContainer(ec *edgeconnect.EdgeConnect) corev1.Container {

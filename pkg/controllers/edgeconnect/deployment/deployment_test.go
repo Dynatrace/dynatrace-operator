@@ -69,6 +69,9 @@ func Test_buildAppLabels(t *testing.T) {
 }
 
 func TestLabels(t *testing.T) {
+	testObjectMetaLabelKey := "test-om-label-key"
+	testObjectMetaValue := "test-om-label-value"
+
 	testLabelKey := "test-label-key"
 	testLabelValue := "test-label-value"
 
@@ -77,6 +80,9 @@ func TestLabels(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
+				Labels: map[string]string{
+					testObjectMetaLabelKey: testObjectMetaValue,
+				},
 			},
 			Spec: edgeconnect.EdgeConnectSpec{},
 		}
@@ -89,6 +95,13 @@ func TestLabels(t *testing.T) {
 		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppManagedByLabel)
 		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppVersionLabel)
 		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppComponentLabel)
+
+		require.Len(t, deployment.ObjectMeta.Labels, 5)
+		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppNameLabel)
+		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppCreatedByLabel)
+		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppManagedByLabel)
+		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppVersionLabel)
+		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppComponentLabel)
 	})
 
 	t.Run("Check custom label set correctly", func(t *testing.T) {
@@ -96,6 +109,9 @@ func TestLabels(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
+				Labels: map[string]string{
+					testObjectMetaLabelKey: testObjectMetaValue,
+				},
 			},
 			Spec: edgeconnect.EdgeConnectSpec{
 				Labels: map[string]string{
@@ -116,11 +132,19 @@ func TestLabels(t *testing.T) {
 		assert.Contains(t, deployment.Spec.Template.ObjectMeta.Labels, testLabelKey)
 		assert.Equal(t, testLabelValue, deployment.Spec.Template.ObjectMeta.Labels[testLabelKey])
 
-		assert.NotContains(t, deployment.ObjectMeta.Labels, testLabelKey)
+		require.Len(t, deployment.ObjectMeta.Labels, 5)
+		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppNameLabel)
+		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppCreatedByLabel)
+		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppManagedByLabel)
+		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppVersionLabel)
+		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppComponentLabel)
 	})
 }
 
 func TestAnnotations(t *testing.T) {
+	testObjectMetaAnnotationKey := "test-om-annotation-key"
+	testObjectMetaAnnotationValue := "test-om-annotation-value"
+
 	testAnnotationKey := "test-annotation-key"
 	testAnnotationValue := "test-annotation-value"
 
@@ -129,6 +153,9 @@ func TestAnnotations(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
+				Annotations: map[string]string{
+					testObjectMetaAnnotationKey: testObjectMetaAnnotationValue,
+				},
 			},
 			Spec: edgeconnect.EdgeConnectSpec{},
 		}
@@ -136,6 +163,8 @@ func TestAnnotations(t *testing.T) {
 		deployment := New(ec)
 
 		assert.Nil(t, deployment.Spec.Template.ObjectMeta.Annotations)
+
+		assert.NotContains(t, deployment.ObjectMeta.Annotations, testObjectMetaAnnotationKey)
 	})
 
 	t.Run("Check custom annotations set correctly", func(t *testing.T) {
@@ -143,6 +172,9 @@ func TestAnnotations(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
+				Annotations: map[string]string{
+					testObjectMetaAnnotationKey: testObjectMetaAnnotationValue,
+				},
 			},
 			Spec: edgeconnect.EdgeConnectSpec{
 				Annotations: map[string]string{
@@ -158,6 +190,7 @@ func TestAnnotations(t *testing.T) {
 		assert.Equal(t, testAnnotationValue, deployment.Spec.Template.ObjectMeta.Annotations[testAnnotationKey])
 
 		assert.NotContains(t, deployment.ObjectMeta.Annotations, testAnnotationKey)
+		assert.NotContains(t, deployment.ObjectMeta.Annotations, testObjectMetaAnnotationKey)
 	})
 }
 
