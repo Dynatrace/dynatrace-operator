@@ -7,7 +7,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -15,10 +14,8 @@ import (
 )
 
 const (
-	customEnvPriority  = prioritymap.HighPriority
-	defaultEnvPriority = prioritymap.DefaultPriority
-	unprivilegedUser   = int64(1000)
-	unprivilegedGroup  = int64(1000)
+	unprivilegedUser  = int64(1000)
+	unprivilegedGroup = int64(1000)
 )
 
 func New(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
@@ -27,9 +24,11 @@ func New(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 
 func create(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 	appLabels := buildAppLabels(ec)
-	labels := maputils.MergeMap(
-		ec.Labels,
-		appLabels.BuildLabels(),
+	labels := appLabels.BuildLabels()
+
+	customPodLabels := maputils.MergeMap(
+		ec.Spec.Labels,
+		labels, // higher priority
 	)
 
 	log.Debug("EdgeConnect deployment app labels", "labels", labels)
@@ -39,7 +38,7 @@ func create(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 			Name:        ec.Name,
 			Namespace:   ec.Namespace,
 			Labels:      labels,
-			Annotations: buildAnnotations(ec),
+			Annotations: buildAnnotations(),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ec.Spec.Replicas,
@@ -48,7 +47,8 @@ func create(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
+					Annotations: ec.Spec.Annotations,
+					Labels:      customPodLabels,
 				},
 				Spec: corev1.PodSpec{
 					Containers:                    []corev1.Container{edgeConnectContainer(ec)},
@@ -92,14 +92,11 @@ func buildAppLabels(ec *edgeconnect.EdgeConnect) *labels.AppLabels {
 		ec.Status.Version.Version)
 }
 
-func buildAnnotations(ec *edgeconnect.EdgeConnect) map[string]string {
-	annotations := map[string]string{
+func buildAnnotations() map[string]string {
+	return map[string]string{
 		consts.AnnotationEdgeConnectContainerAppArmor: "runtime/default",
 		webhook.AnnotationDynatraceInject:             "false",
 	}
-	annotations = maputils.MergeMap(ec.Annotations, annotations)
-
-	return annotations
 }
 
 func edgeConnectContainer(ec *edgeconnect.EdgeConnect) corev1.Container {
