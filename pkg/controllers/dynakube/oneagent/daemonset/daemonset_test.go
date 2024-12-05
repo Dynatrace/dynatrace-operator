@@ -576,6 +576,26 @@ func TestPodSpecProbes(t *testing.T) {
 		assert.Nil(t, podSpec.Containers[0].ReadinessProbe)
 		assert.Nil(t, podSpec.Containers[0].LivenessProbe)
 	})
+	t.Run("no livenessProbe when skip featureFlag is set", func(t *testing.T) {
+		builder := builder{
+			dk: &dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						dynakube.AnnotationFeatureOneAgentSkipLivenessProbe: "true",
+					},
+				},
+				Status: dynakube.DynaKubeStatus{
+					OneAgent: dynakube.OneAgentStatus{
+						Healthcheck: &expectedHealthcheck,
+					},
+				},
+			},
+		}
+		podSpec, _ := builder.podSpec()
+
+		assert.NotNil(t, podSpec.Containers[0].ReadinessProbe)
+		assert.Nil(t, podSpec.Containers[0].LivenessProbe)
+	})
 }
 
 func TestOneAgentResources(t *testing.T) {
