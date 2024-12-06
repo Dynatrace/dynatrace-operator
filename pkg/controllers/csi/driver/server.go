@@ -186,10 +186,11 @@ func (svr *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
 	}
 
 	appMountDir := svr.path.AppMountForID(volumeInfo.VolumeID)
-	mappedDir := svr.path.AppMountMappedDir(volumeInfo.VolumeID)
+
+	mappedDir := svr.path.AppMountMappedDir(volumeInfo.VolumeID) // Unmount follows symlinks, so no need to check for them here
 
 	_, err := svr.fs.Stat(mappedDir)
-	if os.IsNotExist(err) {
+	if os.IsNotExist(err) { // case for timed out mounts
 		_ = svr.fs.RemoveAll(appMountDir)
 
 		return
@@ -201,10 +202,20 @@ func (svr *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
 		// Just try to unmount, nothing really can go wrong, just have to handle errors
 		log.Error(err, "Unmount failed", "path", mappedDir)
 	} else {
-		err := svr.fs.RemoveAll(appMountDir) // you see correctly, we don't keep the logs of the app mounts, will keep them when they will have a use
-		if err != nil {
-			log.Error(err, "failed to clean up unmounted volume dir", "path", appMountDir)
+		// special handling is needed, because after upgrade/restart the mappedDir will be still busy
+		needsCleanUp := []string{
+			svr.path.AppMountVarDir(volumeInfo.VolumeID),
+			svr.path.AppMountWorkDir(volumeInfo.VolumeID),
 		}
+
+		for _, path := range needsCleanUp {
+			err := svr.fs.RemoveAll(path) // you see correctly, we don't keep the logs of the app mounts, will keep them when they will have a use
+			if err != nil {
+				log.Error(err, "failed to clean up unmounted volume dir", "path", path)
+			}
+		}
+
+		_ = svr.fs.RemoveAll(appMountDir) // try to cleanup fully, but lets not spam the logs with errors
 	}
 }
 
