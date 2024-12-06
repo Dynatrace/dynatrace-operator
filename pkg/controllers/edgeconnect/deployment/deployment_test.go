@@ -6,8 +6,10 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -63,6 +65,132 @@ func Test_buildAppLabels(t *testing.T) {
 	t.Run("Check version label set correctly", func(t *testing.T) {
 		labels := buildAppLabels(ec)
 		assert.Equal(t, "", labels.Version)
+	})
+}
+
+func TestLabels(t *testing.T) {
+	testObjectMetaLabelKey := "test-om-label-key"
+	testObjectMetaValue := "test-om-label-value"
+
+	testLabelKey := "test-label-key"
+	testLabelValue := "test-label-value"
+
+	t.Run("Check empty custom labels", func(t *testing.T) {
+		ec := &edgeconnect.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+				Labels: map[string]string{
+					testObjectMetaLabelKey: testObjectMetaValue,
+				},
+			},
+			Spec: edgeconnect.EdgeConnectSpec{},
+		}
+
+		deployment := New(ec)
+
+		require.Len(t, deployment.Spec.Template.Labels, 5)
+		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppNameLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppCreatedByLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppManagedByLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppVersionLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppComponentLabel)
+
+		require.Len(t, deployment.ObjectMeta.Labels, 5)
+		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppNameLabel)
+		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppCreatedByLabel)
+		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppManagedByLabel)
+		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppVersionLabel)
+		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppComponentLabel)
+	})
+
+	t.Run("Check custom label set correctly", func(t *testing.T) {
+		ec := &edgeconnect.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+				Labels: map[string]string{
+					testObjectMetaLabelKey: testObjectMetaValue,
+				},
+			},
+			Spec: edgeconnect.EdgeConnectSpec{
+				Labels: map[string]string{
+					testLabelKey: testLabelValue,
+				},
+			},
+		}
+
+		deployment := New(ec)
+
+		assert.Len(t, deployment.Spec.Template.Labels, 6)
+		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppNameLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppCreatedByLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppManagedByLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppVersionLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppComponentLabel)
+
+		assert.Contains(t, deployment.Spec.Template.ObjectMeta.Labels, testLabelKey)
+		assert.Equal(t, testLabelValue, deployment.Spec.Template.ObjectMeta.Labels[testLabelKey])
+
+		require.Len(t, deployment.ObjectMeta.Labels, 5)
+		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppNameLabel)
+		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppCreatedByLabel)
+		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppManagedByLabel)
+		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppVersionLabel)
+		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppComponentLabel)
+	})
+}
+
+func TestAnnotations(t *testing.T) {
+	testObjectMetaAnnotationKey := "test-om-annotation-key"
+	testObjectMetaAnnotationValue := "test-om-annotation-value"
+
+	testAnnotationKey := "test-annotation-key"
+	testAnnotationValue := "test-annotation-value"
+
+	t.Run("Check empty annotations", func(t *testing.T) {
+		ec := &edgeconnect.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					testObjectMetaAnnotationKey: testObjectMetaAnnotationValue,
+				},
+			},
+			Spec: edgeconnect.EdgeConnectSpec{},
+		}
+
+		deployment := New(ec)
+
+		assert.Nil(t, deployment.Spec.Template.ObjectMeta.Annotations)
+
+		assert.NotContains(t, deployment.ObjectMeta.Annotations, testObjectMetaAnnotationKey)
+	})
+
+	t.Run("Check custom annotations set correctly", func(t *testing.T) {
+		ec := &edgeconnect.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					testObjectMetaAnnotationKey: testObjectMetaAnnotationValue,
+				},
+			},
+			Spec: edgeconnect.EdgeConnectSpec{
+				Annotations: map[string]string{
+					testAnnotationKey: testAnnotationValue,
+				},
+			},
+		}
+
+		deployment := New(ec)
+
+		assert.Len(t, deployment.Spec.Template.Annotations, 1)
+		assert.Contains(t, deployment.Spec.Template.ObjectMeta.Annotations, testAnnotationKey)
+		assert.Equal(t, testAnnotationValue, deployment.Spec.Template.ObjectMeta.Annotations[testAnnotationKey])
+
+		assert.NotContains(t, deployment.ObjectMeta.Annotations, testAnnotationKey)
+		assert.NotContains(t, deployment.ObjectMeta.Annotations, testObjectMetaAnnotationKey)
 	})
 }
 

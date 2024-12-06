@@ -57,7 +57,29 @@ tests:
               - /metrics/cadvisor
             verbs:
               - get
-
+  - it: ClusterRole should exist with extra permissions for openshift
+    documentIndex: 0
+    set:
+      platform: openshift
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-extensions-prometheus
+      - isNotEmpty:
+          path: metadata.labels
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - security.openshift.io
+            resourceNames:
+              - privileged
+            resources:
+              - securitycontextconstraints
+            verbs:
+              - use
   - it: ClusterRoleBinding exists
     documentIndex: 1
     asserts:
