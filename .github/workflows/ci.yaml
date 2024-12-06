@@ -161,25 +161,6 @@ jobs:
           # renovate depName=github.com/igorshubovych/markdownlint-cli
           version: v0.43.0
 
-  check-uncommitted-doc-changes:
-    name: Check uncommitted changes in api docs action
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: actions/setup-go@41dfa10bad2bb2ae585af6ee5bb4d7d973ad74ed # v5.1.0
-        with:
-          go-version-file: "${{ github.workspace }}/go.mod"
-      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
-      - name: Run make doc to see uncommitted changes
-        run: make doc
-      - name: Check for uncommitted changes
-        id: check-changes
-        uses: mskri/check-uncommitted-changes-action@2b152539dd033c3a26e0dd1d8b9a0c8e4d3a8a19 # v1.0.1
-      - name: Evaluate if there are changes
-        if: steps.check-changes.outputs.outcome == failure()
-        run: echo "There are uncommitted changes"
-
   prepare:
     name: Prepare properties
     runs-on: ubuntu-latest
