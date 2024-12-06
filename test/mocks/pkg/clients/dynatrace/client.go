@@ -479,7 +479,7 @@ func (_c *Client_GetAgentViaInstallerUrl_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
-// GetCommunicationHostForClient provides a mock function with given fields:
+// GetCommunicationHostForClient provides a mock function with no fields
 func (_m *Client) GetCommunicationHostForClient() (dynatrace.CommunicationHost, error) {
 	ret := _m.Called()
 

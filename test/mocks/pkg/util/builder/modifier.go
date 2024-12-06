@@ -17,7 +17,7 @@ func (_m *Modifier[T]) EXPECT() *Modifier_Expecter[T] {
 	return &Modifier_Expecter[T]{mock: &_m.Mock}
 }
 
-// Enabled provides a mock function with given fields:
+// Enabled provides a mock function with no fields
 func (_m *Modifier[T]) Enabled() bool {
 	ret := _m.Called()
 
