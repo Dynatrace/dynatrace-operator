@@ -10,7 +10,7 @@ output=""
 mkdir ${doc_dir}/tmp
 cp ${doc_dir}/feature_flags.go ${doc_dir}/tmp
 
-output="${output}$(gomarkdoc ${doc_dir}/tmp | sed 's/\\//g')"
+output="${output}$(gomarkdoc --repository.url "https://github.com/Dynatrace/dynatrace-operator" --repository.path "/" --repository.default-branch "main" ${doc_dir}/tmp | sed 's/\\//g')"
 
 # remove gomarkdoc footer
 output=$(echo "${output}" | sed '$d')

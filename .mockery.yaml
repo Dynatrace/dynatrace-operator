@@ -1,6 +1,7 @@
 quiet: False
 disable-version-string: True
 with-expecter: True
+issue-845-fix: True
 mockname: "{{.InterfaceName}}"
 filename: "{{.InterfaceName | snakecase}}.go"
 outpkg: mocks

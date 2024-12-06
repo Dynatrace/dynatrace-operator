@@ -28,7 +28,7 @@ func (_m *Builder) EXPECT() *Builder_Expecter {
 	return &Builder_Expecter{mock: &_m.Mock}
 }
 
-// Build provides a mock function with given fields:
+// Build provides a mock function with no fields
 func (_m *Builder) Build() (dynatrace.Client, error) {
 	ret := _m.Called()
 
