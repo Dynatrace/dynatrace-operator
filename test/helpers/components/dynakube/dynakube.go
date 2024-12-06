@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	prevDynakube "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube" //nolint:staticcheck
+	prevDynakube "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube" //nolint:staticcheck
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -63,7 +63,7 @@ func CreatePreviousVersion(builder *features.FeatureBuilder, level features.Leve
 
 func VerifyStartupPreviousVersion(builder *features.FeatureBuilder, level features.Level, prevDk prevDynakube.DynaKube) {
 	if prevDk.NeedsOneAgent() {
-		builder.WithStep("oneagent started", level, oneagent.WaitFromDaemonSetPrevDk(prevDk))
+		builder.WithStep("oneagent started", level, oneagent.WaitForDaemonset(prevDk.OneAgentDaemonsetName(), prevDk.Namespace))
 	}
 	builder.WithStep(
 		fmt.Sprintf("'%s' dynakube phase changes to 'Running'", prevDk.Name),
@@ -74,7 +74,7 @@ func VerifyStartupPreviousVersion(builder *features.FeatureBuilder, level featur
 func Delete(builder *features.FeatureBuilder, level features.Level, dk dynakube.DynaKube) {
 	builder.WithStep("dynakube deleted", level, remove(dk))
 	if dk.NeedsOneAgent() {
-		builder.WithStep("oneagent pods stopped", level, oneagent.WaitForDaemonSetPodsDeletion(dk))
+		builder.WithStep("oneagent pods stopped", level, oneagent.WaitForDaemonSetPodsDeletion(dk.OneAgentDaemonsetName(), dk.Namespace))
 	}
 	if dk.ClassicFullStackMode() {
 		oneagent.RunClassicUninstall(builder, level, dk)
@@ -83,7 +83,7 @@ func Delete(builder *features.FeatureBuilder, level features.Level, dk dynakube.
 
 func VerifyStartup(builder *features.FeatureBuilder, level features.Level, dk dynakube.DynaKube) {
 	if dk.NeedsOneAgent() {
-		builder.WithStep("oneagent started", level, oneagent.WaitForDaemonset(dk))
+		builder.WithStep("oneagent started", level, oneagent.WaitForDaemonset(dk.OneAgentDaemonsetName(), dk.Namespace))
 	}
 	builder.WithStep(
 		fmt.Sprintf("'%s' dynakube phase changes to 'Running'", dk.Name),
