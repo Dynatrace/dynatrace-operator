@@ -305,7 +305,7 @@ func (provisioner *OneAgentProvisioner) createCSIDirectories(dynakubeName string
 		return fmt.Errorf("failed to create directory %s: %w", dynakubeDir, err)
 	}
 
-	agentBinaryDir := provisioner.path.AgentBinaryDir(dynakubeName)
+	agentBinaryDir := provisioner.path.AgentSharedBinaryDirBase()
 	if err := provisioner.fs.MkdirAll(agentBinaryDir, 0755); err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", agentBinaryDir, err)
 	}
