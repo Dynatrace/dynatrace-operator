@@ -41,7 +41,7 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.WORKFLOW_REPO_TOKEN }}
-          base: main
+          base: implement-workflow-token
           delete-branch: true
           branch: create-pull-request/update-renovate-json5
           branch-suffix: short-commit-hash
