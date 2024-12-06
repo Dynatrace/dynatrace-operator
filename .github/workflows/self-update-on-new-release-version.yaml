@@ -26,6 +26,7 @@ jobs:
         run: |
           git fetch --prune --tags
           git branch -r --list 'origin/release-*' | sort --version-sort | tail -n 3 | tr -d ' ' > release-branches.txt
+          echo 'origin/release-1.5' >>  release-branches.txt
 
           echo latest branches:
           cat release-branches.txt
@@ -41,7 +42,7 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.WORKFLOW_REPO_TOKEN }}
-          base: implement-workflow-token
+          base: main
           delete-branch: true
           branch: create-pull-request/update-renovate-json5
           branch-suffix: short-commit-hash
