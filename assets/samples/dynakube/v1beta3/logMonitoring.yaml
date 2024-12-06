@@ -8,7 +8,10 @@ spec:
 
   # Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
 
-  # For more context to logMonitoring please refer to: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
+  # The `logMonitoring` section is used to configure log collection via the OneAgent Log module.
+  # it can be used with any other DynaKube mode, e.g. applicationMonitoring.
+  # Available with Dynatrace version 1.306+ and OneAgent 1.305+
+
   logMonitoring: {}
 
   templates: {}
