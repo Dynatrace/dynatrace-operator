@@ -74,7 +74,7 @@ func Remove(fs afero.Fs, symlinkPath string) error {
 	if info, _ := fs.Stat(symlinkPath); info != nil {
 		log.Info("symlink to codemodule directory exists, removing it due to the possibility of the agent being installed again")
 
-		if err := fs.RemoveAll(symlinkPath); err != nil {
+		if err := fs.Remove(symlinkPath); err != nil {
 			return err
 		}
 	}
