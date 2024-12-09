@@ -34,7 +34,7 @@ func TestUpdateProcessModuleConfigInPlace(t *testing.T) {
 	t.Run("no processModuleConfig", func(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 
-		err := UpdateProcessModuleConfigInPlace(memFs, "", nil)
+		err := UpdateInPlace(memFs, "", nil)
 		require.NoError(t, err)
 	})
 	t.Run("update file", func(t *testing.T) {
@@ -49,7 +49,7 @@ key value
 test test3
 `
 
-		err := UpdateProcessModuleConfigInPlace(memFs, "", &testProcessModuleConfig)
+		err := UpdateInPlace(memFs, "", &testProcessModuleConfig)
 		require.NoError(t, err)
 		assertTestConf(t, memFs, RuxitAgentProcPath, expectedUsed)
 		assertTestConf(t, memFs, sourceRuxitAgentProcPath, testRuxitConf)
@@ -60,7 +60,7 @@ func TestCreateAgentConfigDir(t *testing.T) {
 	t.Run("no processModuleConfig", func(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 
-		err := CreateAgentConfigDir(memFs, "", "", nil)
+		err := UpdateFromDir(memFs, "", "", nil)
 		require.NoError(t, err)
 	})
 
@@ -78,7 +78,7 @@ key value
 test test3
 `
 
-		err := CreateAgentConfigDir(memFs, targetDir, sourceDir, &testProcessModuleConfig)
+		err := UpdateFromDir(memFs, targetDir, sourceDir, &testProcessModuleConfig)
 		require.NoError(t, err)
 		assertTestConf(t, memFs, filepath.Join(targetDir, RuxitAgentProcPath), expectedUsed)
 		assertTestConf(t, memFs, filepath.Join(sourceDir, RuxitAgentProcPath), testRuxitConf)

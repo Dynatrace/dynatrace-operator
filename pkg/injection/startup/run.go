@@ -173,7 +173,7 @@ func (runner *Runner) installOneAgent(ctx context.Context) error {
 		return err
 	}
 
-	err = processmoduleconfig.UpdateProcessModuleConfigInPlace(runner.fs, consts.AgentBinDirMount, processModuleConfig)
+	err = processmoduleconfig.UpdateInPlace(runner.fs, consts.AgentBinDirMount, processModuleConfig)
 	if err != nil {
 		return err
 	}
