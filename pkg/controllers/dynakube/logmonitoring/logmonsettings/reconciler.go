@@ -40,6 +40,10 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	if !r.dk.LogMonitoring().IsEnabled() {
 		meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
 
+		if r.dk.Status.KubernetesClusterMEID == "" {
+			log.Info("KubernetesClusterMEID is empty, log monitoring settings can not be created.")
+		}
+
 		return nil
 	}
 
@@ -78,15 +82,6 @@ func (r *reconciler) checkLogMonitoringSettings(ctx context.Context) error {
 
 	if err != nil {
 		setLogMonitoringSettingError(r.dk.Conditions(), conditionType, err.Error())
-
-		if !r.dk.ActiveGate().IsKubernetesMonitoringEnabled() && r.dk.Status.KubernetesClusterMEID == "" {
-			message := "scope error: KubernetesClusterMEID is empty, log monitoring settings can not be created."
-			setLogMonitoringSettingError(r.dk.Conditions(), conditionType, message)
-
-			log.Info(message)
-
-			return nil
-		}
 
 		return err
 	}
