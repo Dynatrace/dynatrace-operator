@@ -10,7 +10,6 @@
 |`enableIstio`|When enabled, and if Istio is installed on the Kubernetes environment, Dynatrace Operator will create the corresponding<br/>VirtualService and ServiceEntry objects to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate.<br/>Disabled by default.|-|boolean|
 |`extensions`|When an (empty) ExtensionsSpec is provided, the extensions related components (extensions controller and extensions collector)<br/>are deployed by the operator.|-|object|
 |`kspm`|General configuration about the KSPM feature.|-|object|
-|`logMonitoring`|General configuration about the LogMonitoring feature.|-|object|
 |`networkZone`|Sets a network zone for the OneAgent and ActiveGate pods.|-|string|
 |`proxy`|Set custom proxy settings either directly or from a secret with the field proxy.<br/>Note: Applies to Dynatrace Operator, ActiveGate, and OneAgents.|-|object|
 |`skipCertCheck`|Disable certificate check for the connection between Dynatrace Operator and the Dynatrace Cluster.<br/>Set to true if you want to skip certification validation checks.|-|boolean|
@@ -43,6 +42,12 @@
 |`tolerations`|Set tolerations for the ActiveGate pods|-|array|
 |`topologySpreadConstraints`|Adds TopologySpreadConstraints for the ActiveGate pods|-|array|
 
+### .spec.logMonitoring
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`ingestRuleMatchers`||-|array|
+
 ### .spec.metadataEnrichment
 
 |Parameter|Description|Default value|Data type|
@@ -55,7 +60,7 @@
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
 |`annotations`|Add custom OneAgent annotations.|-|object|
-|`args`|Set additional arguments to the OneAgent installer.<br/>For available options, see Linux custom installation (<https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux>).<br/>For the list of limitations, see Limitations (<https://www.dynatrace.|-|array|
+|`args`|Set additional arguments to the OneAgent installer.<br/>For available options, see Linux custom installation (<https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux>).|-|array|
 |`autoUpdate`|Disables automatic restarts of OneAgent pods in case a new version is available (<https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto>).<br/>Enabled by default.|-|boolean|
 |`dnsPolicy`|Set the DNS Policy for OneAgent pods. For details, see Pods DNS Policy (<https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy>).|-|string|
 |`env`|Set additional environment variables for the OneAgent pods.|-|array|
@@ -87,7 +92,7 @@
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
 |`annotations`|Add custom OneAgent annotations.|-|object|
-|`args`|Set additional arguments to the OneAgent installer.<br/>For available options, see Linux custom installation (<https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux>).<br/>For the list of limitations, see Limitations (<https://www.dynatrace.|-|array|
+|`args`|Set additional arguments to the OneAgent installer.<br/>For available options, see Linux custom installation (<https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux>).|-|array|
 |`autoUpdate`|Disables automatic restarts of OneAgent pods in case a new version is available (<https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto>).<br/>Enabled by default.|-|boolean|
 |`dnsPolicy`|Set the DNS Policy for OneAgent pods. For details, see Pods DNS Policy (<https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy>).|-|string|
 |`env`|Set additional environment variables for the OneAgent pods.|-|array|
@@ -105,7 +110,7 @@
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
 |`annotations`|Add custom OneAgent annotations.|-|object|
-|`args`|Set additional arguments to the OneAgent installer.<br/>For available options, see Linux custom installation (<https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux>).<br/>For the list of limitations, see Limitations (<https://www.dynatrace.|-|array|
+|`args`|Set additional arguments to the OneAgent installer.<br/>For available options, see Linux custom installation (<https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux>).|-|array|
 |`autoUpdate`|Disables automatic restarts of OneAgent pods in case a new version is available (<https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto>).<br/>Enabled by default.|-|boolean|
 |`codeModulesImage`|Use a custom OneAgent CodeModule image to download binaries.|-|string|
 |`dnsPolicy`|Set the DNS Policy for OneAgent pods. For details, see Pods DNS Policy (<https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy>).|-|string|
@@ -128,7 +133,6 @@
 |`codeModulesImage`|Use a custom OneAgent CodeModule image to download binaries.|-|string|
 |`initResources`|Define resources requests and limits for the initContainer. For details, see Managing resources for containers<br/>(<https://kubernetes.io/docs/concepts/configuration/manage-resources-containers>).|-|object|
 |`namespaceSelector`|Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.<br/>For more information, see Configure monitoring for namespaces and pods (<https://www.dynatrace.|-|object|
-|`useCSIDriver`|Set if you want to use the CSIDriver. Don't enable it if you do not have access to Kubernetes nodes or if you lack privileges.|-|boolean|
 |`version`|Use a specific OneAgent CodeModule version. Defaults to the latest version from the Dynatrace cluster.|-|string|
 
 ### .spec.templates.logMonitoring.imageRef
@@ -203,7 +207,7 @@
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
 |`preferredDuringSchedulingIgnoredDuringExecution`|The scheduler will prefer to schedule pods to nodes that satisfy<br/>the affinity expressions specified by this field, but it may choose<br/>a node that violates one or more of the expressions. The node that is<br/>most preferred is the one with the greatest sum of weights, i.e.|-|array|
-|`requiredDuringSchedulingIgnoredDuringExecution`|If the affinity requirements specified by this field are not met at<br/>scheduling time, the pod will not be scheduled onto the node.<br/>If the affinity requirements specified by this field cease to be met<br/>at some point during pod execution (e.g. due to an update), the system<br/>may or may not try to eventually evict the pod from its node.|-|object|
+|`requiredDuringSchedulingIgnoredDuringExecution`|If the affinity requirements specified by this field are not met at<br/>scheduling time, the pod will not be scheduled onto the node.<br/>If the affinity requirements specified by this field cease to be met<br/>at some point during pod execution (e.g.|-|object|
 
 ### .spec.templates.kspmNodeConfigurationCollector.updateStrategy
 
@@ -216,11 +220,11 @@
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
 |`accessModes`|accessModes contains the desired access modes the volume should have.<br/>More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1|-|array|
-|`dataSource`|dataSource field can be used to specify either:<br/>* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)<br/>* An existing PVC (PersistentVolumeClaim)<br/>If the provisioner or an external controller can support the specified data source,<br/>it will create a new volume based on the contents of the specified data source.|-|object|
-|`resources`|resources represents the minimum resources the volume should have.<br/>If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements<br/>that are lower than previous value but must still be higher than capacity recorded in the<br/>status field of the claim.<br/>More info: https://kubernetes.|-|object|
+|`dataSource`|dataSource field can be used to specify either:<br/>* An existing VolumeSnapshot object (snapshot.storage.k8s.|-|object|
+|`resources`|resources represents the minimum resources the volume should have.<br/>If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements<br/>that are lower than previous value but must still be higher than capacity recorded in the<br/>status field of the claim.|-|object|
 |`selector`|selector is a label query over volumes to consider for binding.|-|object|
 |`storageClassName`|storageClassName is the name of the StorageClass required by the claim.<br/>More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1|-|string|
-|`volumeAttributesClassName`|volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.<br/>If specified, the CSI driver will create or update the volume with the attributes defined<br/>in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,<br/>it can be changed after the claim is created.|-|string|
+|`volumeAttributesClassName`|volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.<br/>If specified, the CSI driver will create or update the volume with the attributes defined<br/>in the corresponding VolumeAttributesClass.|-|string|
 |`volumeMode`|volumeMode defines what type of volume is required by the claim.<br/>Value of Filesystem is implied when not included in claim spec.|-|string|
 |`volumeName`|volumeName is the binding reference to the PersistentVolume backing this claim.|-|string|
 
@@ -228,8 +232,8 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
-|`maxSurge`|The maximum number of nodes with an existing available DaemonSet pod that<br/>can have an updated DaemonSet pod during during an update.<br/>Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%).<br/>This can not be 0 if MaxUnavailable is 0.<br/>Absolute number is calculated from percentage by rounding up to a minimum of 1.|-|integer or string|
-|`maxUnavailable`|The maximum number of DaemonSet pods that can be unavailable during the<br/>update. Value can be an absolute number (ex: 5) or a percentage of total<br/>number of DaemonSet pods at the start of the update (ex: 10%). Absolute<br/>number is calculated from percentage by rounding up.<br/>This cannot be 0 if MaxSurge is 0<br/>Default value is 1.|-|integer or string|
+|`maxSurge`|The maximum number of nodes with an existing available DaemonSet pod that<br/>can have an updated DaemonSet pod during during an update.<br/>Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%).<br/>This can not be 0 if MaxUnavailable is 0.|-|integer or string|
+|`maxUnavailable`|The maximum number of DaemonSet pods that can be unavailable during the<br/>update. Value can be an absolute number (ex: 5) or a percentage of total<br/>number of DaemonSet pods at the start of the update (ex: 10%). Absolute<br/>number is calculated from percentage by rounding up.|-|integer or string|
 
 ### .spec.templates.extensionExecutionController.persistentVolumeClaim.dataSourceRef
 

@@ -80,7 +80,7 @@ func (_c *StatusUpdater_CheckForDowngrade_Call) RunAndReturn(run func(string) (b
 	return _c
 }
 
-// CustomImage provides a mock function with given fields:
+// CustomImage provides a mock function with no fields
 func (_m *StatusUpdater) CustomImage() string {
 	ret := _m.Called()
 
@@ -125,7 +125,7 @@ func (_c *StatusUpdater_CustomImage_Call) RunAndReturn(run func() string) *Statu
 	return _c
 }
 
-// CustomVersion provides a mock function with given fields:
+// CustomVersion provides a mock function with no fields
 func (_m *StatusUpdater) CustomVersion() string {
 	ret := _m.Called()
 
@@ -170,7 +170,7 @@ func (_c *StatusUpdater_CustomVersion_Call) RunAndReturn(run func() string) *Sta
 	return _c
 }
 
-// IsAutoUpdateEnabled provides a mock function with given fields:
+// IsAutoUpdateEnabled provides a mock function with no fields
 func (_m *StatusUpdater) IsAutoUpdateEnabled() bool {
 	ret := _m.Called()
 
@@ -215,7 +215,7 @@ func (_c *StatusUpdater_IsAutoUpdateEnabled_Call) RunAndReturn(run func() bool) 
 	return _c
 }
 
-// IsEnabled provides a mock function with given fields:
+// IsEnabled provides a mock function with no fields
 func (_m *StatusUpdater) IsEnabled() bool {
 	ret := _m.Called()
 
@@ -260,7 +260,7 @@ func (_c *StatusUpdater_IsEnabled_Call) RunAndReturn(run func() bool) *StatusUpd
 	return _c
 }
 
-// IsPublicRegistryEnabled provides a mock function with given fields:
+// IsPublicRegistryEnabled provides a mock function with no fields
 func (_m *StatusUpdater) IsPublicRegistryEnabled() bool {
 	ret := _m.Called()
 
@@ -363,7 +363,7 @@ func (_c *StatusUpdater_LatestImageInfo_Call) RunAndReturn(run func(context.Cont
 	return _c
 }
 
-// Name provides a mock function with given fields:
+// Name provides a mock function with no fields
 func (_m *StatusUpdater) Name() string {
 	ret := _m.Called()
 
@@ -408,7 +408,7 @@ func (_c *StatusUpdater_Name_Call) RunAndReturn(run func() string) *StatusUpdate
 	return _c
 }
 
-// Target provides a mock function with given fields:
+// Target provides a mock function with no fields
 func (_m *StatusUpdater) Target() *status.VersionStatus {
 	ret := _m.Called()
 
@@ -501,7 +501,7 @@ func (_c *StatusUpdater_UseTenantRegistry_Call) RunAndReturn(run func(context.Co
 	return _c
 }
 
-// ValidateStatus provides a mock function with given fields:
+// ValidateStatus provides a mock function with no fields
 func (_m *StatusUpdater) ValidateStatus() error {
 	ret := _m.Called()
 
