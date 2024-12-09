@@ -118,17 +118,17 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
-      - name: Check deepcopy files
+      - name: Check deepcopy files are up-to-date
         id: deepcopy
         run: |
           make manifests/deepcopy
           git diff --exit-code
-      - name: Check doc
+      - name: Check automatic generated docs are up-to-date
         id: doc
         run: |
           make doc
           git diff --exit-code
-      - name: Mockery
+      - name: Check mocks are up-to-date
         id: mockery
         run: |
           make prerequisites/mockery
