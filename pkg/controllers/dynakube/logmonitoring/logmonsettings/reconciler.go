@@ -79,7 +79,16 @@ func (r *reconciler) checkLogMonitoringSettings(ctx context.Context) error {
 	if err != nil {
 		setLogMonitoringSettingError(r.dk.Conditions(), conditionType, err.Error())
 
-		return errors.WithMessage(err, "error when creating log monitoring setting")
+		if !r.dk.ActiveGate().IsKubernetesMonitoringEnabled() && r.dk.Status.KubernetesClusterMEID == "" {
+			message := "scope error: KubernetesClusterMEID is empty, log monitoring settings can not be created."
+			setLogMonitoringSettingError(r.dk.Conditions(), conditionType, message)
+
+			log.Info(message)
+
+			return nil
+		}
+
+		return err
 	}
 
 	log.Info("logmonitoring setting created", "settings", objectId)
