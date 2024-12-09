@@ -37,7 +37,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	if !r.dk.LogMonitoring().IsEnabled() {
+	if !r.dk.LogMonitoring().IsEnabled() || r.dk.Status.KubernetesClusterMEID == "" {
 		meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
 
 		if r.dk.Status.KubernetesClusterMEID == "" {
