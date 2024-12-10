@@ -5,13 +5,6 @@ import (
 	"database/sql"
 )
 
-func emptyMemoryDB() *SqliteAccess {
-	db := SqliteAccess{}
-	_ = db.connect(sqliteDriverName, ":memory:")
-
-	return &db
-}
-
 func FakeMemoryDB() *SqliteAccess {
 	db := SqliteAccess{}
 	ctx := context.Background()
@@ -19,32 +12,6 @@ func FakeMemoryDB() *SqliteAccess {
 	_ = db.createTables(ctx)
 
 	return &db
-}
-
-func checkIfTablesExist(db *SqliteAccess) bool {
-	var volumesTable string
-
-	row := db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", volumesTableName)
-
-	err := row.Scan(&volumesTable)
-	if err != nil {
-		return false
-	}
-
-	var tenantsTable string
-
-	row = db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", dynakubesTableName)
-
-	err = row.Scan(&tenantsTable)
-	if err != nil {
-		return false
-	}
-
-	if tenantsTable != dynakubesTableName || volumesTable != volumesTableName {
-		return false
-	}
-
-	return true
 }
 
 type FakeFailDB struct{}
