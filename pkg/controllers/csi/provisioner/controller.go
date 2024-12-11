@@ -96,12 +96,6 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{}, err
 	}
 
-	if !dk.NeedsCSIDriver() {
-		log.Info("CSI driver provisioner not needed")
-
-		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil // TODO: Call GC here
-	}
-
 	if !dk.NeedAppInjection() {
 		log.Info("app injection not necessary, skip agent codemodule download", "dynakube", dk.Name)
 
@@ -114,7 +108,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 	}
 
-	err = provisioner.provisionCodeModules(ctx, dk)
+	err = provisioner.installAgent(ctx, dk)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -131,21 +125,6 @@ func (provisioner *OneAgentProvisioner) setupFileSystem(dk dynakube.DynaKube) er
 	agentBinaryDir := provisioner.path.AgentSharedBinaryDirBase()
 	if err := provisioner.fs.MkdirAll(agentBinaryDir, 0755); err != nil {
 		return errors.WithMessagef(err, "failed to create directory %s", agentBinaryDir)
-	}
-
-	return nil
-}
-
-func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context, dk dynakube.DynaKube) error {
-	// creates a dt client and checks tokens exist for the given dynakube
-	dtc, err := buildDtc(provisioner, ctx, dk)
-	if err != nil {
-		return err
-	}
-
-	err = provisioner.installAgent(ctx, dk, dtc)
-	if err != nil {
-		return err
 	}
 
 	return nil

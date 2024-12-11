@@ -16,8 +16,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
 )
 
-func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, dk dynakube.DynaKube, dtc dtclient.Client) error {
-	agentInstaller, err := provisioner.getInstaller(ctx, dk, dtc)
+func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, dk dynakube.DynaKube) error {
+	agentInstaller, err := provisioner.getInstaller(ctx, dk)
 	if err != nil {
 		log.Info("failed to create CodeModule installer", "dk", dk.GetName())
 
@@ -39,9 +39,14 @@ func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, dk dyn
 	return provisioner.setupAgentConfigDir(ctx, dk, targetDir)
 }
 
-func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dynakube.DynaKube, dtc dtclient.Client) (installer.Installer, error) {
+func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dynakube.DynaKube) (installer.Installer, error) {
 	switch {
 	case dk.CodeModulesVersion() != "":
+		dtc, err := buildDtc(provisioner, ctx, dk)
+		if err != nil {
+			return nil, err
+		}
+
 		props := &url.Properties{
 			Os:            dtclient.OsUnix,
 			Type:          dtclient.InstallerTypePaaS,
