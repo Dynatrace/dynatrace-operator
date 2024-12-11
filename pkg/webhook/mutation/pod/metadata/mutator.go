@@ -2,6 +2,7 @@ package metadata
 
 import (
 	"context"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
