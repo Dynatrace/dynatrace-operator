@@ -53,7 +53,7 @@ func Remove(fs afero.Fs, symlinkPath string) error {
 	if info, _ := fs.Stat(symlinkPath); info != nil {
 		log.Info("symlink to directory exists, removing it to ensure proper reinstallation or reconfiguration", "directory", symlinkPath)
 
-		if err := fs.RemoveAll(symlinkPath); err != nil {
+		if err := fs.Remove(symlinkPath); err != nil {
 			return err
 		}
 	}
