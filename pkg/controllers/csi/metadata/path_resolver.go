@@ -110,16 +110,6 @@ func (pr PathResolver) OverlayWorkDir(dynakubeName string, volumeId string) stri
 	return filepath.Join(pr.AgentRunDirForVolume(dynakubeName, volumeId), dtcsi.OverlayWorkDirPath)
 }
 
-// Deprecated
-func (pr PathResolver) AgentBinaryDir(tenantUUID string) string {
-	return filepath.Join(pr.DynaKubeDir(tenantUUID), dtcsi.AgentBinaryDir)
-}
-
-// Deprecated
-func (pr PathResolver) AgentBinaryDirForVersion(tenantUUID string, version string) string {
-	return filepath.Join(pr.AgentBinaryDir(tenantUUID), version)
-}
-
 // Deprecated kept for future migration/cleanup
 func (pr PathResolver) OldAgentConfigDir(tenantUUID string, dynakubeName string) string {
 	return filepath.Join(pr.DynaKubeDir(tenantUUID), dynakubeName, dtcsi.SharedAgentConfigDir)
