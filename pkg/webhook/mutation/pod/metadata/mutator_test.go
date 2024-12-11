@@ -223,7 +223,12 @@ func TestWorkloadAnnotations(t *testing.T) {
 	})
 	t.Run("should lower case kind annotation", func(t *testing.T) {
 		request := createTestMutationRequest(nil, nil, false)
-		setWorkloadAnnotations(request.Pod, &workloadInfo{name: testWorkloadInfoName, kind: "SuperWorkload"})
+		objectMeta := &metav1.PartialObjectMetadata{
+			ObjectMeta: metav1.ObjectMeta{Name: testWorkloadInfoName},
+			TypeMeta:   metav1.TypeMeta{Kind: "SuperWorkload"},
+		}
+
+		setWorkloadAnnotations(request.Pod, newWorkloadInfo(objectMeta))
 		assert.Contains(t, request.Pod.Annotations, dtwebhook.AnnotationWorkloadKind)
 		assert.Equal(t, "superworkload", request.Pod.Annotations[dtwebhook.AnnotationWorkloadKind])
 	})

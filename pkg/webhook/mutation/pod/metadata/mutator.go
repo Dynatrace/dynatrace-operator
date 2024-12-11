@@ -2,8 +2,6 @@ package metadata
 
 import (
 	"context"
-	"strings"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -127,9 +125,7 @@ func setWorkloadAnnotations(pod *corev1.Pod, workload *workloadInfo) {
 		pod.Annotations = make(map[string]string)
 	}
 
-	// workload kind annotation in lower case according to dt semantic-dictionary
-	// https://bitbucket.lab.dynatrace.org/projects/DEUS/repos/semantic-dictionary/browse/source/fields/k8s.yaml
-	pod.Annotations[dtwebhook.AnnotationWorkloadKind] = strings.ToLower(workload.kind)
+	pod.Annotations[dtwebhook.AnnotationWorkloadKind] = workload.kind
 	pod.Annotations[dtwebhook.AnnotationWorkloadName] = workload.name
 }
 
