@@ -19,7 +19,7 @@ ARG GO_BUILD_TAGS
 
 COPY pkg ./pkg
 COPY cmd ./cmd
-RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" \
+RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLED=0 \
     go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./cmd/
 
