@@ -41,7 +41,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
 
 		if r.dk.Status.KubernetesClusterMEID == "" {
-			log.Info("KubernetesClusterMEID is empty, log monitoring settings can not be created.")
+			return errors.New("the status of the DynaKube is missing information about the kubernetes monitored-entity, skipping LogMonitoring deployment")
 		}
 
 		return nil
