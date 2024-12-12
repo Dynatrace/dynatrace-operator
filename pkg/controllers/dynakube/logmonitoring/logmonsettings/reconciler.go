@@ -37,8 +37,12 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	if !r.dk.LogMonitoring().IsEnabled() {
+	if !r.dk.LogMonitoring().IsEnabled() || r.dk.Status.KubernetesClusterMEID == "" {
 		meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
+
+		if r.dk.Status.KubernetesClusterMEID == "" {
+			return errors.New("the status of the DynaKube is missing information about the kubernetes monitored-entity, skipping LogMonitoring deployment")
+		}
 
 		return nil
 	}
@@ -79,7 +83,7 @@ func (r *reconciler) checkLogMonitoringSettings(ctx context.Context) error {
 	if err != nil {
 		setLogMonitoringSettingError(r.dk.Conditions(), conditionType, err.Error())
 
-		return errors.WithMessage(err, "error when creating log monitoring setting")
+		return err
 	}
 
 	log.Info("logmonitoring setting created", "settings", objectId)
