@@ -76,7 +76,7 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dyn
 
 		return imageInstaller, nil
 	default:
-		return nil, errors.New("not enough information to download CodeModule")
+		return nil, errors.New("missing version/image information to download CodeModule")
 	}
 }
 
@@ -85,7 +85,7 @@ func (provisioner *OneAgentProvisioner) getTargetDir(dk dynakube.DynaKube) strin
 
 	switch {
 	case dk.CodeModulesImage() != "":
-		// An image URI often contains one or several /-s, which is problematic when trying to use it as a folder name.
+		// An image URI often contains one or several slashes, which is problematic when trying to use it as a folder name.
 		// Easiest to just base64 encode it
 		dirName = base64.StdEncoding.EncodeToString([]byte(dk.CodeModulesImage()))
 	case dk.CodeModulesVersion() != "":
