@@ -10,4 +10,4 @@ annotations:
   operators.operatorframework.io.metrics.project_layout: go.kubebuilder.io/v3
   operators.operatorframework.io.bundle.channel.default.v1: alpha
 
-  com.redhat.openshift.versions: v4.9-
+  com.redhat.openshift.versions: v4.10
