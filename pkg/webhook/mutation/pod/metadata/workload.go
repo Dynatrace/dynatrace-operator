@@ -2,6 +2,7 @@ package metadata
 
 import (
 	"context"
+	"strings"
 
 	kubeobjects "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -19,7 +20,10 @@ type workloadInfo struct {
 func newWorkloadInfo(partialObjectMetadata *metav1.PartialObjectMetadata) *workloadInfo {
 	return &workloadInfo{
 		name: partialObjectMetadata.ObjectMeta.Name,
-		kind: partialObjectMetadata.Kind,
+
+		// workload kind in lower case according to dt semantic-dictionary
+		// https://docs.dynatrace.com/docs/discover-dynatrace/references/semantic-dictionary/fields#kubernetes
+		kind: strings.ToLower(partialObjectMetadata.Kind),
 	}
 }
 

@@ -74,7 +74,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
 		require.NoError(t, err)
 		assert.Equal(t, resourceName, workloadInfo.name)
-		assert.Equal(t, "DaemonSet", workloadInfo.kind)
+		assert.Equal(t, "daemonset", workloadInfo.kind)
 	})
 
 	t.Run("should return Pod if owner references are empty", func(t *testing.T) {
@@ -91,7 +91,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
 		require.NoError(t, err)
 		assert.Equal(t, resourceName, workloadInfo.name)
-		assert.Equal(t, "Pod", workloadInfo.kind)
+		assert.Equal(t, "pod", workloadInfo.kind)
 	})
 
 	t.Run("should be pod if owner is not well known", func(t *testing.T) {
@@ -121,7 +121,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
 		require.NoError(t, err)
 		assert.Equal(t, resourceName, workloadInfo.name)
-		assert.Equal(t, "Pod", workloadInfo.kind)
+		assert.Equal(t, "pod", workloadInfo.kind)
 	})
 
 	t.Run("should be pod if no controller is the owner", func(t *testing.T) {
@@ -146,7 +146,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
 		require.NoError(t, err)
 		assert.Equal(t, namespaceName, workloadInfo.name)
-		assert.Equal(t, "Pod", workloadInfo.kind)
+		assert.Equal(t, "pod", workloadInfo.kind)
 	})
 	t.Run("should find the root owner of the pod if the root owner is unknown", func(t *testing.T) {
 		pod := corev1.Pod{
@@ -204,7 +204,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
 		require.NoError(t, err)
 		assert.Equal(t, resourceName, workloadInfo.name)
-		assert.Equal(t, "Deployment", workloadInfo.kind)
+		assert.Equal(t, "deployment", workloadInfo.kind)
 	})
 	t.Run("should not make an api-call if workload is not well known", func(t *testing.T) {
 		pod := corev1.Pod{
