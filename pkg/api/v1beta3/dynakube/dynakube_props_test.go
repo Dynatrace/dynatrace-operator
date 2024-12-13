@@ -27,8 +27,6 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-const testAPIURL = "http://test-endpoint/api"
-
 func TestTokens(t *testing.T) {
 	testName := "test-name"
 	testValue := "test-value"

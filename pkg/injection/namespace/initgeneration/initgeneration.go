@@ -175,13 +175,13 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dk *d
 		OneAgentNoProxy:     strings.Join(oneAgentNoProxyValues, ","),
 		NetworkZone:         dk.Spec.NetworkZone,
 		SkipCertCheck:       dk.Spec.SkipCertCheck,
-		HasHost:             dk.CloudNativeFullstackMode(),
+		HasHost:             dk.OneAgent().CloudNativeFullstackMode(),
 		MonitoringNodes:     hostMonitoringNodes,
-		HostGroup:           dk.HostGroup(),
+		HostGroup:           dk.OneAgent().GetHostGroup(),
 		InitialConnectRetry: dk.FeatureAgentInitialConnectRetry(),
 		EnforcementMode:     dk.FeatureEnforcementMode(),
 		ReadOnlyCSIDriver:   dk.FeatureReadOnlyCsiVolume(),
-		CSIMode:             dk.IsCSIAvailable(),
+		CSIMode:             dk.OneAgent().IsCSIAvailable(),
 	}, nil
 }
 
@@ -208,7 +208,7 @@ func (g *InitGenerator) getHostMonitoringNodes(dk *dynakube.DynaKube) (map[strin
 	tenantUUID := dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID
 
 	imNodes := map[string]string{}
-	if !dk.CloudNativeFullstackMode() {
+	if !dk.OneAgent().CloudNativeFullstackMode() {
 		return imNodes, nil
 	}
 
@@ -232,7 +232,7 @@ func (g *InitGenerator) calculateImNodes(dk *dynakube.DynaKube, tenantUUID strin
 		return nil, err
 	}
 
-	nodeSelector := labels.SelectorFromSet(dk.OneAgentNodeSelector())
+	nodeSelector := labels.SelectorFromSet(dk.OneAgent().OneAgentNodeSelector(nil))
 	updateNodeInfImNodes(dk, nodeInf, nodeSelector, tenantUUID)
 
 	return nodeInf.imNodes, nil

@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -99,8 +100,8 @@ func TestOneAgentPhaseChanges(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			OneAgent: dynakube.OneAgentSpec{
-				ClassicFullStack: &dynakube.HostInjectSpec{},
+			OneAgent: oneagent.Spec{
+				ClassicFullStack: &oneagent.HostInjectSpec{},
 			},
 		},
 	}
@@ -265,8 +266,8 @@ func TestDynakubePhaseChanges(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			OneAgent: dynakube.OneAgentSpec{
-				ClassicFullStack: &dynakube.HostInjectSpec{},
+			OneAgent: oneagent.Spec{
+				ClassicFullStack: &oneagent.HostInjectSpec{},
 			},
 
 			Extensions: &dynakube.ExtensionsSpec{},

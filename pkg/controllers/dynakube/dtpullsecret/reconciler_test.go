@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/stretchr/testify/assert"
@@ -75,7 +76,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}},
+				OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}},
 			},
 		}
 		fakeClient := errorClient{}
@@ -230,7 +231,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		require.NoError(t, err)
 
-		dk.Spec.OneAgent = dynakube.OneAgentSpec{}
+		dk.Spec.OneAgent = oneagent.Spec{}
 		err = r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -251,7 +252,7 @@ func createTestDynakube() *dynakube.DynaKube {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:   testApiUrl,
-			OneAgent: dynakube.OneAgentSpec{CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}},
+			OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}},
 		},
 	})
 }

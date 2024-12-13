@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/stretchr/testify/assert"
@@ -22,9 +23,9 @@ func TestInjection(t *testing.T) {
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: "codeModules-1", Namespace: "dynatrace"},
 		Spec: dynakube.DynaKubeSpec{
-			OneAgent: dynakube.OneAgentSpec{
-				ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
-					AppInjectionSpec: dynakube.AppInjectionSpec{
+			OneAgent: oneagent.Spec{
+				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+					AppInjectionSpec: oneagent.AppInjectionSpec{
 						NamespaceSelector: metav1.LabelSelector{
 							MatchLabels: map[string]string{
 								"inject": "true",

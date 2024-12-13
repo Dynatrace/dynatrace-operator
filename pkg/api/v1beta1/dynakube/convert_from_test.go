@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -135,7 +136,7 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 
 func compareMovedFields(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 	assert.Equal(t, oldDk.FeatureApiRequestThreshold(), newDk.ApiRequestThreshold())
-	assert.Equal(t, oldDk.FeatureOneAgentSecCompProfile(), newDk.OneAgentSecCompProfile())
+	assert.Equal(t, oldDk.FeatureOneAgentSecCompProfile(), newDk.OneAgent().OneAgentSecCompProfile())
 	assert.Equal(t, !oldDk.FeatureDisableMetadataEnrichment(), newDk.MetadataEnrichmentEnabled())
 	assert.Equal(t, *oldDk.NamespaceSelector(), newDk.Spec.MetadataEnrichment.NamespaceSelector)
 
@@ -143,12 +144,12 @@ func compareMovedFields(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 		assert.Equal(t, dynakube.MountAttemptsToTimeout(oldDk.FeatureMaxFailedCsiMountAttempts()), newDk.FeatureMaxCSIRetryTimeout().String())
 	}
 
-	if newDk.NeedAppInjection() {
-		assert.Equal(t, oldDk.NamespaceSelector(), newDk.OneAgentNamespaceSelector())
+	if newDk.OneAgent().NeedAppInjection() {
+		assert.Equal(t, oldDk.NamespaceSelector(), newDk.OneAgent().OneAgentNamespaceSelector())
 	}
 }
 
-func compareHostInjectSpec(t *testing.T, oldSpec HostInjectSpec, newSpec dynakube.HostInjectSpec) {
+func compareHostInjectSpec(t *testing.T, oldSpec HostInjectSpec, newSpec oneagent.HostInjectSpec) {
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
 	assert.Equal(t, oldSpec.Args, newSpec.Args)
 	assert.Equal(t, *oldSpec.AutoUpdate, *newSpec.AutoUpdate)
@@ -163,17 +164,17 @@ func compareHostInjectSpec(t *testing.T, oldSpec HostInjectSpec, newSpec dynakub
 	assert.Equal(t, oldSpec.Version, newSpec.Version)
 }
 
-func compareAppInjectionSpec(t *testing.T, oldSpec AppInjectionSpec, newSpec dynakube.AppInjectionSpec) {
+func compareAppInjectionSpec(t *testing.T, oldSpec AppInjectionSpec, newSpec oneagent.AppInjectionSpec) {
 	assert.Equal(t, oldSpec.CodeModulesImage, newSpec.CodeModulesImage)
 	assert.Equal(t, oldSpec.InitResources, newSpec.InitResources)
 }
 
-func compareCloudNativeSpec(t *testing.T, oldSpec CloudNativeFullStackSpec, newSpec dynakube.CloudNativeFullStackSpec) {
+func compareCloudNativeSpec(t *testing.T, oldSpec CloudNativeFullStackSpec, newSpec oneagent.CloudNativeFullStackSpec) {
 	compareAppInjectionSpec(t, oldSpec.AppInjectionSpec, newSpec.AppInjectionSpec)
 	compareHostInjectSpec(t, oldSpec.HostInjectSpec, newSpec.HostInjectSpec)
 }
 
-func compareApplicationMonitoringSpec(t *testing.T, oldSpec ApplicationMonitoringSpec, newSpec dynakube.ApplicationMonitoringSpec) {
+func compareApplicationMonitoringSpec(t *testing.T, oldSpec ApplicationMonitoringSpec, newSpec oneagent.ApplicationMonitoringSpec) {
 	compareAppInjectionSpec(t, oldSpec.AppInjectionSpec, newSpec.AppInjectionSpec)
 	assert.Equal(t, *oldSpec.UseCSIDriver, isEnabledModules.CSIDriver)
 	assert.Equal(t, oldSpec.Version, newSpec.Version)
@@ -279,8 +280,8 @@ func getNewDynakubeBase() dynakube.DynaKube {
 	}
 }
 
-func getNewHostInjectSpec() dynakube.HostInjectSpec {
-	return dynakube.HostInjectSpec{
+func getNewHostInjectSpec() oneagent.HostInjectSpec {
+	return oneagent.HostInjectSpec{
 		Version: "host-inject-version",
 		Image:   "host-inject-image",
 		Tolerations: []corev1.Toleration{
@@ -322,8 +323,8 @@ func getNewHostInjectSpec() dynakube.HostInjectSpec {
 	}
 }
 
-func getNewAppInjectionSpec() dynakube.AppInjectionSpec {
-	return dynakube.AppInjectionSpec{
+func getNewAppInjectionSpec() oneagent.AppInjectionSpec {
+	return oneagent.AppInjectionSpec{
 		InitResources: &corev1.ResourceRequirements{
 			Limits: corev1.ResourceList{
 				corev1.ResourceCPU: *resource.NewScaledQuantity(2, 1)},
@@ -333,15 +334,15 @@ func getNewAppInjectionSpec() dynakube.AppInjectionSpec {
 	}
 }
 
-func getNewCloudNativeSpec() dynakube.CloudNativeFullStackSpec {
-	return dynakube.CloudNativeFullStackSpec{
+func getNewCloudNativeSpec() oneagent.CloudNativeFullStackSpec {
+	return oneagent.CloudNativeFullStackSpec{
 		AppInjectionSpec: getNewAppInjectionSpec(),
 		HostInjectSpec:   getNewHostInjectSpec(),
 	}
 }
 
-func getNewApplicationMonitoringSpec() dynakube.ApplicationMonitoringSpec {
-	return dynakube.ApplicationMonitoringSpec{
+func getNewApplicationMonitoringSpec() oneagent.ApplicationMonitoringSpec {
+	return oneagent.ApplicationMonitoringSpec{
 		AppInjectionSpec: getNewAppInjectionSpec(),
 		Version:          "app-monitoring-version",
 	}
@@ -402,7 +403,7 @@ func getNewActiveGateSpec() activegate.Spec {
 
 func getNewStatus() dynakube.DynaKubeStatus {
 	return dynakube.DynaKubeStatus{
-		OneAgent: dynakube.OneAgentStatus{
+		OneAgent: oneagent.Status{
 			VersionStatus: status.VersionStatus{
 				ImageID:            "oa-image-id",
 				Version:            "oa-version",
@@ -410,7 +411,7 @@ func getNewStatus() dynakube.DynaKubeStatus {
 				Source:             status.CustomImageVersionSource,
 				LastProbeTimestamp: &testTime,
 			},
-			Instances: map[string]dynakube.OneAgentInstance{
+			Instances: map[string]oneagent.Instance{
 				"oa-instance-key-1": {
 					PodName:   "oa-instance-pod-1",
 					IPAddress: "oa-instance-ip-1",
@@ -424,13 +425,13 @@ func getNewStatus() dynakube.DynaKubeStatus {
 			Healthcheck: &registryv1.HealthConfig{
 				Test: []string{"oa-health-check-test"},
 			},
-			ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
+			ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
 				ConnectionInfo: communication.ConnectionInfo{
 					LastRequest: testTime,
 					TenantUUID:  "oa-tenant-uuid",
 					Endpoints:   "oa-endpoints",
 				},
-				CommunicationHosts: []dynakube.CommunicationHostStatus{
+				CommunicationHosts: []oneagent.CommunicationHostStatus{
 					{
 						Protocol: "oa-protocol-1",
 						Host:     "oa-host-1",
@@ -453,7 +454,7 @@ func getNewStatus() dynakube.DynaKubeStatus {
 				LastProbeTimestamp: &testTime,
 			},
 		},
-		CodeModules: dynakube.CodeModulesStatus{
+		CodeModules: oneagent.CodeModulesStatus{
 			VersionStatus: status.VersionStatus{
 				ImageID:            "cm-image-id",
 				Version:            "cm-version",

@@ -93,7 +93,7 @@ func (controller *Controller) determinePrometheusStatefulsetPhase(dk *dynakube.D
 }
 
 func (controller *Controller) determineOneAgentPhase(dk *dynakube.DynaKube) status.DeploymentPhase {
-	if dk.CloudNativeFullstackMode() || dk.ClassicFullStackMode() || dk.HostMonitoringMode() {
+	if dk.OneAgent().CloudNativeFullstackMode() || dk.OneAgent().ClassicFullStackMode() || dk.OneAgent().HostMonitoringMode() {
 		oneAgentPods, err := controller.numberOfMissingOneagentPods(dk)
 		if k8serrors.IsNotFound(err) {
 			log.Info("oneagent daemonset not yet available", "dynakube", dk.Name)
@@ -119,7 +119,7 @@ func (controller *Controller) determineOneAgentPhase(dk *dynakube.DynaKube) stat
 
 func (controller *Controller) numberOfMissingOneagentPods(dk *dynakube.DynaKube) (int32, error) {
 	oneAgentDaemonSet := &appsv1.DaemonSet{}
-	instanceName := dk.OneAgentDaemonsetName()
+	instanceName := dk.OneAgent().OneAgentDaemonsetName()
 
 	err := controller.client.Get(context.Background(), types.NamespacedName{Name: instanceName, Namespace: dk.Namespace}, oneAgentDaemonSet)
 	if err != nil {

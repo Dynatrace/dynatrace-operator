@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -300,7 +301,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		require.Equal(t, "IstioForCodeModuleChanged", statusCondition.Reason)
 
 		dk.Spec.OneAgent.CloudNativeFullStack = nil
-		dk.Spec.OneAgent.HostMonitoring = &dynakube.HostInjectSpec{}
+		dk.Spec.OneAgent.HostMonitoring = &oneagent.HostInjectSpec{}
 
 		err = r.ReconcileCodeModuleCommunicationHosts(ctx, dk)
 		require.NoError(t, err)
@@ -490,15 +491,15 @@ func createTestDynaKube() *dynakube.DynaKube {
 					activegate.RoutingCapability.DisplayName,
 				},
 			},
-			OneAgent: dynakube.OneAgentSpec{
-				CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
+			OneAgent: oneagent.Spec{
+				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 			},
 			DynatraceApiRequestThreshold: ptr.To(uint16(15)),
 		},
 		Status: dynakube.DynaKubeStatus{
-			OneAgent: dynakube.OneAgentStatus{
-				ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
-					CommunicationHosts: []dynakube.CommunicationHostStatus{
+			OneAgent: oneagent.Status{
+				ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
+					CommunicationHosts: []oneagent.CommunicationHostStatus{
 						{
 							Protocol: fqdnHost.Protocol,
 							Host:     fqdnHost.Host,

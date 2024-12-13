@@ -289,3 +289,33 @@ func TestAgentInitialConnectRetry(t *testing.T) {
 		require.Equal(t, 5, initialRetry)
 	})
 }
+
+func TestIsOneAgentPrivileged(t *testing.T) {
+	t.Run("is false by default", func(t *testing.T) {
+		dk := DynaKube{}
+
+		assert.False(t, dk.FeatureOneAgentPrivileged())
+	})
+	t.Run("is true when annotation is set to true", func(t *testing.T) {
+		dk := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+				},
+			},
+		}
+
+		assert.True(t, dk.FeatureOneAgentPrivileged())
+	})
+	t.Run("is false when annotation is set to false", func(t *testing.T) {
+		dk := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					AnnotationFeatureRunOneAgentContainerPrivileged: "false",
+				},
+			},
+		}
+
+		assert.False(t, dk.FeatureOneAgentPrivileged())
+	})
+}

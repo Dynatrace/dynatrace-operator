@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	maputil "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -47,7 +47,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 	testDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
 		dynakubeComponents.WithMetadataEnrichment(),
-		dynakubeComponents.WithApplicationMonitoringSpec(&dynakube.ApplicationMonitoringSpec{}),
+		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
 		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),
 		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
 	)
@@ -59,7 +59,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 	}
 
 	injectEverythingLabels := maputil.MergeMap(
-		testDynakube.OneAgentNamespaceSelector().MatchLabels,
+		testDynakube.OneAgent().OneAgentNamespaceSelector().MatchLabels,
 		testDynakube.MetadataEnrichmentNamespaceSelector().MatchLabels,
 	)
 
@@ -119,7 +119,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 			name: "control oneagent-injection with namespace-selector - pod",
 			app: sample.NewApp(t, &testDynakube,
 				sample.WithName("pod-oa-label"),
-				sample.WithNamespaceLabels(testDynakube.OneAgentNamespaceSelector().MatchLabels),
+				sample.WithNamespaceLabels(testDynakube.OneAgent().OneAgentNamespaceSelector().MatchLabels),
 			),
 			assess: podHasOnlyOneAgentInitContainer,
 		},

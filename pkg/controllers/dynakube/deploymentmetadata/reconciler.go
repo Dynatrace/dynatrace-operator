@@ -40,7 +40,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) addOneAgentDeploymentMetadata(configMapData map[string]string) {
-	if !r.dk.NeedsOneAgent() {
+	if !r.dk.OneAgent().NeedsOneAgent() {
 		return
 	}
 
@@ -56,7 +56,7 @@ func (r *Reconciler) addActiveGateDeploymentMetadata(configMapData map[string]st
 }
 
 func (r *Reconciler) addOperatorVersionInfo(configMapData map[string]string) {
-	if !r.dk.NeedsOneAgent() { // Currently only used for oneAgent args
+	if !r.dk.OneAgent().NeedsOneAgent() { // Currently only used for oneAgent args
 		return
 	}
 

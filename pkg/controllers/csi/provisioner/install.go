@@ -27,7 +27,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(
 		return "", err
 	}
 
-	targetImage := dk.CodeModulesImage()
+	targetImage := dk.OneAgent().CodeModulesImage()
 	// An image URI often contains one or several /-s, which is problematic when trying to use it as a folder name.
 	// Easiest to just base64 encode it
 	base64Image := base64.StdEncoding.EncodeToString([]byte(targetImage))
@@ -66,7 +66,7 @@ func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dk 
 		return "", err
 	}
 
-	targetVersion := dk.CodeModulesVersion()
+	targetVersion := dk.OneAgent().CodeModulesVersion()
 	urlInstaller := provisioner.urlInstallerBuilder(provisioner.fs, dtc, getUrlProperties(targetVersion, provisioner.path))
 
 	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(targetVersion)

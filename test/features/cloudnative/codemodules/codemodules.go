@@ -15,6 +15,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -79,13 +80,13 @@ func InstallFromImage(t *testing.T) features.Feature {
 
 	appDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithName("app-codemodules"),
-		dynakubeComponents.WithApplicationMonitoringSpec(&dynakube.ApplicationMonitoringSpec{AppInjectionSpec: *codeModulesAppInjectSpec(t)}),
+		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{AppInjectionSpec: *codeModulesAppInjectSpec(t)}),
 		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
 		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),
 		dynakubeComponents.WithApiUrl(secretConfigs[1].ApiUrl),
 	)
 
-	labels := cloudNativeDynakube.OneAgentNamespaceSelector().MatchLabels
+	labels := cloudNativeDynakube.OneAgent().OneAgentNamespaceSelector().MatchLabels
 	sampleNamespace := *namespace.New("codemodules-sample", namespace.WithLabels(labels))
 
 	sampleApp := sample.NewApp(t, &cloudNativeDynakube,
@@ -385,14 +386,14 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Featur
 	return builder.Feature()
 }
 
-func codeModulesCloudNativeSpec(t *testing.T) *dynakube.CloudNativeFullStackSpec {
-	return &dynakube.CloudNativeFullStackSpec{
+func codeModulesCloudNativeSpec(t *testing.T) *oneagent.CloudNativeFullStackSpec {
+	return &oneagent.CloudNativeFullStackSpec{
 		AppInjectionSpec: *codeModulesAppInjectSpec(t),
 	}
 }
 
-func codeModulesAppInjectSpec(t *testing.T) *dynakube.AppInjectionSpec {
-	return &dynakube.AppInjectionSpec{
+func codeModulesAppInjectSpec(t *testing.T) *oneagent.AppInjectionSpec {
+	return &oneagent.AppInjectionSpec{
 		CodeModulesImage: registry.GetLatestCodeModulesImageURI(t),
 	}
 }
@@ -414,7 +415,7 @@ func imageHasBeenDownloaded(dk dynakube.DynaKube) features.Func {
 				require.NoError(t, err)
 				buffer := new(bytes.Buffer)
 				_, err = io.Copy(buffer, logStream)
-				isNew := strings.Contains(buffer.String(), "Installed agent version: "+dk.CustomCodeModulesImage())
+				isNew := strings.Contains(buffer.String(), "Installed agent version: "+dk.OneAgent().CustomCodeModulesImage())
 				isOld := strings.Contains(buffer.String(), "agent already installed")
 				t.Logf("wait for Installed agent version in %s", podItem.Name)
 
@@ -548,13 +549,13 @@ func checkOneAgentEnvVars(dk dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 		err := daemonset.NewQuery(ctx, resources, client.ObjectKey{
-			Name:      dk.OneAgentDaemonsetName(),
+			Name:      dk.OneAgent().OneAgentDaemonsetName(),
 			Namespace: dk.Namespace,
 		}).ForEachPod(func(podItem corev1.Pod) {
 			require.NotNil(t, podItem)
 			require.NotNil(t, podItem.Spec)
 
-			checkEnvVarsInContainer(t, podItem, dk.OneAgentDaemonsetName(), httpsProxy)
+			checkEnvVarsInContainer(t, podItem, dk.OneAgent().OneAgentDaemonsetName(), httpsProxy)
 		})
 
 		require.NoError(t, err)

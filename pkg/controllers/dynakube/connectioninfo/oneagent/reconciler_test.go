@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -38,7 +39,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("cleanup when oneagent is not needed", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Status.OneAgent.ConnectionInfoStatus = dynakube.OneAgentConnectionInfoStatus{
+		dk.Status.OneAgent.ConnectionInfoStatus = oneagent.ConnectionInfoStatus{
 			ConnectionInfo: communication.ConnectionInfo{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
@@ -48,7 +49,7 @@ func TestReconcile(t *testing.T) {
 
 		dk.Spec = dynakube.DynaKubeSpec{}
 
-		fakeClient := fake.NewClient(&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.OneagentTenantSecret(), Namespace: dk.Namespace}})
+		fakeClient := fake.NewClient(&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.OneAgent().OneagentTenantSecret(), Namespace: dk.Namespace}})
 		dtc := dtclientmock.NewClient(t)
 
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
@@ -60,21 +61,21 @@ func TestReconcile(t *testing.T) {
 		require.Nil(t, condition)
 
 		var actualSecret corev1.Secret
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 
 	t.Run("does not cleanup when only host oneagent is needed", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Status.OneAgent.ConnectionInfoStatus = dynakube.OneAgentConnectionInfoStatus{
+		dk.Status.OneAgent.ConnectionInfoStatus = oneagent.ConnectionInfoStatus{
 			ConnectionInfo: communication.ConnectionInfo{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
 			},
 		}
 		dk.Spec = dynakube.DynaKubeSpec{}
-		dk.Spec.OneAgent.ClassicFullStack = &dynakube.HostInjectSpec{}
+		dk.Spec.OneAgent.ClassicFullStack = &oneagent.HostInjectSpec{}
 
 		conditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
 
@@ -135,7 +136,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, getTestCommunicationHosts(), dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts)
 
 		var actualSecret corev1.Secret
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 
@@ -150,7 +151,7 @@ func TestReconcile(t *testing.T) {
 		dtc := dtclientmock.NewClient(t)
 		dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestOneAgentConnectionInfo(), nil)
 
-		dk.Status.OneAgent.ConnectionInfoStatus = dynakube.OneAgentConnectionInfoStatus{
+		dk.Status.OneAgent.ConnectionInfoStatus = oneagent.ConnectionInfoStatus{
 			ConnectionInfo: communication.ConnectionInfo{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
@@ -169,7 +170,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, testTenantEndpoints, dk.Status.OneAgent.ConnectionInfoStatus.Endpoints)
 
 		var actualSecret corev1.Secret
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 
@@ -184,7 +185,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient(dk, buildOneAgentTenantSecret(dk, testOutdated))
 		dtc := dtclientmock.NewClient(t)
 
-		dk.Status.OneAgent.ConnectionInfoStatus = dynakube.OneAgentConnectionInfoStatus{
+		dk.Status.OneAgent.ConnectionInfoStatus = oneagent.ConnectionInfoStatus{
 			ConnectionInfo: communication.ConnectionInfo{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
@@ -200,7 +201,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, testOutdated, dk.Status.OneAgent.ConnectionInfoStatus.Endpoints)
 
 		var actualSecret corev1.Secret
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testOutdated), actualSecret.Data[connectioninfo.TenantTokenKey])
 
@@ -216,7 +217,7 @@ func TestReconcile(t *testing.T) {
 		dtc := dtclientmock.NewClient(t)
 		dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestOneAgentConnectionInfo(), nil)
 
-		dk.Status.OneAgent.ConnectionInfoStatus = dynakube.OneAgentConnectionInfoStatus{
+		dk.Status.OneAgent.ConnectionInfoStatus = oneagent.ConnectionInfoStatus{
 			ConnectionInfo: communication.ConnectionInfo{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
@@ -232,7 +233,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, testTenantEndpoints, dk.Status.OneAgent.ConnectionInfoStatus.Endpoints)
 
 		var actualSecret corev1.Secret
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 
@@ -249,7 +250,7 @@ func TestReconcile(t *testing.T) {
 		dtc := dtclientmock.NewClient(t)
 		dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestOneAgentConnectionInfo(), nil)
 
-		dk.Status.OneAgent.ConnectionInfoStatus = dynakube.OneAgentConnectionInfoStatus{
+		dk.Status.OneAgent.ConnectionInfoStatus = oneagent.ConnectionInfoStatus{
 			ConnectionInfo: communication.ConnectionInfo{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
@@ -265,7 +266,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, testTenantEndpoints, dk.Status.OneAgent.ConnectionInfoStatus.Endpoints)
 
 		var actualSecret corev1.Secret
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 
@@ -284,8 +285,8 @@ func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 			Name:      testName,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			OneAgent: dynakube.OneAgentSpec{
-				CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
+			OneAgent: oneagent.Spec{
+				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 			},
 		},
 	}
@@ -323,8 +324,8 @@ func getTestDynakube() *dynakube.DynaKube {
 			Name:      testName,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			OneAgent: dynakube.OneAgentSpec{
-				CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
+			OneAgent: oneagent.Spec{
+				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 			},
 		},
 	}
@@ -333,7 +334,7 @@ func getTestDynakube() *dynakube.DynaKube {
 func buildOneAgentTenantSecret(dk *dynakube.DynaKube, token string) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.OneagentTenantSecret(),
+			Name:      dk.OneAgent().OneagentTenantSecret(),
 			Namespace: testNamespace,
 		},
 		Data: map[string][]byte{
@@ -342,8 +343,8 @@ func buildOneAgentTenantSecret(dk *dynakube.DynaKube, token string) *corev1.Secr
 	}
 }
 
-func getTestCommunicationHosts() []dynakube.CommunicationHostStatus {
-	return []dynakube.CommunicationHostStatus{
+func getTestCommunicationHosts() []oneagent.CommunicationHostStatus {
+	return []oneagent.CommunicationHostStatus{
 		{
 			Protocol: "http",
 			Host:     "dummyhost",

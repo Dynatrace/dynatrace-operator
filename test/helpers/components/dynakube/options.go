@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -95,9 +96,9 @@ func WithNameBasedOneAgentNamespaceSelector() Option {
 			},
 		}
 		switch {
-		case dk.CloudNativeFullstackMode():
+		case dk.OneAgent().CloudNativeFullstackMode():
 			dk.Spec.OneAgent.CloudNativeFullStack.NamespaceSelector = namespaceSelector
-		case dk.ApplicationMonitoringMode():
+		case dk.OneAgent().ApplicationMonitoringMode():
 			dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = namespaceSelector
 		}
 	}
@@ -117,9 +118,9 @@ func WithNameBasedMetadataEnrichmentNamespaceSelector() Option {
 func WithOneAgentNamespaceSelector(selector metav1.LabelSelector) Option {
 	return func(dk *dynakube.DynaKube) {
 		switch {
-		case dk.CloudNativeFullstackMode():
+		case dk.OneAgent().CloudNativeFullstackMode():
 			dk.Spec.OneAgent.CloudNativeFullStack.NamespaceSelector = selector
-		case dk.ApplicationMonitoringMode():
+		case dk.OneAgent().ApplicationMonitoringMode():
 			dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = selector
 		}
 	}
@@ -137,19 +138,19 @@ func WithIstioIntegration() Option {
 	}
 }
 
-func WithClassicFullstackSpec(classicFullStackSpec *dynakube.HostInjectSpec) Option {
+func WithClassicFullstackSpec(classicFullStackSpec *oneagent.HostInjectSpec) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.OneAgent.ClassicFullStack = classicFullStackSpec
 	}
 }
 
-func WithCloudNativeSpec(cloudNativeFullStackSpec *dynakube.CloudNativeFullStackSpec) Option {
+func WithCloudNativeSpec(cloudNativeFullStackSpec *oneagent.CloudNativeFullStackSpec) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.OneAgent.CloudNativeFullStack = cloudNativeFullStackSpec
 	}
 }
 
-func WithApplicationMonitoringSpec(applicationMonitoringSpec *dynakube.ApplicationMonitoringSpec) Option {
+func WithApplicationMonitoringSpec(applicationMonitoringSpec *oneagent.ApplicationMonitoringSpec) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.OneAgent.ApplicationMonitoring = applicationMonitoringSpec
 	}

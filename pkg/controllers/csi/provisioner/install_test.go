@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
@@ -41,7 +42,7 @@ func TestUpdateAgent(t *testing.T) {
 	t.Run("zip install", func(t *testing.T) {
 		dk := createTestDynaKubeWithZip(testVersion)
 		provisioner := createTestProvisioner()
-		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(dk.CodeModulesVersion())
+		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(dk.OneAgent().CodeModulesVersion())
 
 		var revision uint = 3
 		processModule := createTestProcessModuleConfig(revision)
@@ -68,14 +69,14 @@ func TestUpdateAgent(t *testing.T) {
 	t.Run("zip update", func(t *testing.T) {
 		dk := createTestDynaKubeWithZip(testVersion)
 		provisioner := createTestProvisioner()
-		previousTargetDir := provisioner.path.AgentSharedBinaryDirForAgent(dk.CodeModulesVersion())
+		previousTargetDir := provisioner.path.AgentSharedBinaryDirForAgent(dk.OneAgent().CodeModulesVersion())
 		previousSourceConfigPath := filepath.Join(previousTargetDir, processmoduleconfig.RuxitAgentProcPath)
 		_ = provisioner.fs.MkdirAll(previousTargetDir, 0755)
 		_, _ = provisioner.fs.Create(previousSourceConfigPath)
 
 		newVersion := "new"
 		dk.Status.CodeModules.Version = newVersion
-		newTargetDir := provisioner.path.AgentSharedBinaryDirForAgent(dk.CodeModulesVersion())
+		newTargetDir := provisioner.path.AgentSharedBinaryDirForAgent(dk.OneAgent().CodeModulesVersion())
 
 		var revision uint = 3
 		processModule := createTestProcessModuleConfig(revision)
@@ -93,7 +94,7 @@ func TestUpdateAgent(t *testing.T) {
 	t.Run("only process module config update", func(t *testing.T) {
 		dk := createTestDynaKubeWithZip(testVersion)
 		provisioner := createTestProvisioner()
-		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(dk.CodeModulesVersion())
+		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(dk.OneAgent().CodeModulesVersion())
 		sourceConfigPath := filepath.Join(targetDir, processmoduleconfig.RuxitAgentProcPath)
 		_ = provisioner.fs.MkdirAll(targetDir, 0755)
 		_, _ = provisioner.fs.Create(sourceConfigPath)
@@ -280,7 +281,7 @@ func createTestDynaKubeWithImage(image string) dynakube.DynaKube {
 			APIURL: "https://" + testTenantUUID + ".dynatrace.com",
 		},
 		Status: dynakube.DynaKubeStatus{
-			CodeModules: dynakube.CodeModulesStatus{
+			CodeModules: oneagent.CodeModulesStatus{
 				VersionStatus: status.VersionStatus{
 					ImageID: image,
 				},
@@ -299,7 +300,7 @@ func createTestDynaKubeWithZip(version string) dynakube.DynaKube {
 			APIURL: "https://" + testTenantUUID + ".dynatrace.com",
 		},
 		Status: dynakube.DynaKubeStatus{
-			CodeModules: dynakube.CodeModulesStatus{
+			CodeModules: oneagent.CodeModulesStatus{
 				VersionStatus: status.VersionStatus{
 					Version: version,
 				},

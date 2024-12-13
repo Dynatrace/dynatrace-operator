@@ -26,7 +26,7 @@ func imageFieldHasTenantImage(_ context.Context, _ *Validator, dk *dynakube.Dyna
 		},
 		{
 			section: "OneAgent",
-			value:   dk.CustomOneAgentImage(),
+			value:   dk.OneAgent().CustomOneAgentImage(),
 		},
 	}
 

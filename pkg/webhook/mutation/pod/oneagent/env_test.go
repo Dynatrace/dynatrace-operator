@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/stretchr/testify/assert"
@@ -107,8 +108,8 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 		container := &corev1.Container{}
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
 			},
 		}
@@ -122,8 +123,8 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 		container := &corev1.Container{}
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{},
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 				},
 			},
 		}

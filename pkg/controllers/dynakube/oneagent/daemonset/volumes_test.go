@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -21,8 +22,8 @@ func TestPrepareVolumes(t *testing.T) {
 	t.Run(`has root volume`, func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					HostMonitoring: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
 				},
 			},
 		}
@@ -45,8 +46,8 @@ func TestPrepareVolumes(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				TrustedCAs: testName,
-				OneAgent: dynakube.OneAgentSpec{
-					HostMonitoring: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
 				},
 			},
 		}
@@ -77,8 +78,8 @@ func TestPrepareVolumes(t *testing.T) {
 					},
 					TlsSecretName: "testing",
 				},
-				OneAgent: dynakube.OneAgentSpec{
-					HostMonitoring: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
 				},
 			},
 		}
@@ -88,8 +89,8 @@ func TestPrepareVolumes(t *testing.T) {
 	t.Run(`csi volume not supported on classicFullStack`, func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					ClassicFullStack: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{},
 				},
 			},
 		}
@@ -100,8 +101,8 @@ func TestPrepareVolumes(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				TrustedCAs: testName,
-				OneAgent: dynakube.OneAgentSpec{
-					HostMonitoring: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
 				},
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
@@ -139,8 +140,8 @@ func TestPrepareVolumeMounts(t *testing.T) {
 	t.Run(`has root volume mount`, func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					HostMonitoring: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
 				},
 			},
 		}
@@ -152,8 +153,8 @@ func TestPrepareVolumeMounts(t *testing.T) {
 	t.Run(`has cluster certificate volume mount`, func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					HostMonitoring: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
 				},
 				TrustedCAs: testName,
 			},
@@ -167,8 +168,8 @@ func TestPrepareVolumeMounts(t *testing.T) {
 	t.Run(`has ActiveGate CA volume mount`, func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					HostMonitoring: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
 				},
 				TrustedCAs: testName,
 				ActiveGate: activegate.Spec{
@@ -188,8 +189,8 @@ func TestPrepareVolumeMounts(t *testing.T) {
 	t.Run(`readonly volume not supported on classicFullStack`, func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					ClassicFullStack: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{},
 				},
 			},
 		}
@@ -202,8 +203,8 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				TrustedCAs: testName,
-				OneAgent: dynakube.OneAgentSpec{
-					HostMonitoring: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
 				},
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
@@ -240,8 +241,8 @@ func TestPrepareVolumeMounts(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				Proxy: &value.Source{ValueFrom: proxy.BuildSecretName("Dynakube")},
-				OneAgent: dynakube.OneAgentSpec{
-					HostMonitoring: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
 				},
 			},
 		}

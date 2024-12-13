@@ -2,6 +2,7 @@ package oaconnectioninfo
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -43,20 +44,20 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dtc dtclient.Clie
 var NoOneAgentCommunicationHostsError = errors.New("no communication hosts for OneAgent are available")
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.NeedAppInjection() && !r.dk.NeedsOneAgent() && !r.dk.LogMonitoring().IsEnabled() {
+	if !r.dk.OneAgent().NeedAppInjection() && !r.dk.OneAgent().NeedsOneAgent() && !r.dk.LogMonitoring().IsEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), oaConnectionInfoConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}
 
 		query := k8ssecret.Query(r.client, r.apiReader, log)
-		err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.OneagentTenantSecret(), Namespace: r.dk.Namespace}})
+		err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.OneAgent().OneagentTenantSecret(), Namespace: r.dk.Namespace}})
 
 		if err != nil {
 			log.Error(err, "failed to clean-up OneAgent tenant-secret")
 		}
 
 		meta.RemoveStatusCondition(r.dk.Conditions(), oaConnectionInfoConditionType)
-		r.dk.Status.OneAgent.ConnectionInfoStatus = dynakube.OneAgentConnectionInfoStatus{}
+		r.dk.Status.OneAgent.ConnectionInfoStatus = oneagent.ConnectionInfoStatus{}
 
 		return nil // clean-up shouldn't cause a failure
 	}
@@ -79,7 +80,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
-	secretNamespacedName := types.NamespacedName{Name: r.dk.OneagentTenantSecret(), Namespace: r.dk.Namespace}
+	secretNamespacedName := types.NamespacedName{Name: r.dk.OneAgent().OneagentTenantSecret(), Namespace: r.dk.Namespace}
 
 	if !conditions.IsOutdated(r.timeProvider, r.dk, oaConnectionInfoConditionType) {
 		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.apiReader, secretNamespacedName, log)
@@ -122,7 +123,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 		return NoOneAgentCommunicationHostsError
 	}
 
-	err = r.createTenantTokenSecret(ctx, r.dk.OneagentTenantSecret(), connectionInfo.ConnectionInfo)
+	err = r.createTenantTokenSecret(ctx, r.dk.OneAgent().OneagentTenantSecret(), connectionInfo.ConnectionInfo)
 	if err != nil {
 		return err
 	}
@@ -138,10 +139,10 @@ func (r *reconciler) setDynakubeStatus(connectionInfo dtclient.OneAgentConnectio
 	copyCommunicationHosts(&r.dk.Status.OneAgent.ConnectionInfoStatus, connectionInfo.CommunicationHosts)
 }
 
-func copyCommunicationHosts(dest *dynakube.OneAgentConnectionInfoStatus, src []dtclient.CommunicationHost) {
-	dest.CommunicationHosts = make([]dynakube.CommunicationHostStatus, 0, len(src))
+func copyCommunicationHosts(dest *oneagent.ConnectionInfoStatus, src []dtclient.CommunicationHost) {
+	dest.CommunicationHosts = make([]oneagent.CommunicationHostStatus, 0, len(src))
 	for _, host := range src {
-		dest.CommunicationHosts = append(dest.CommunicationHosts, dynakube.CommunicationHostStatus{
+		dest.CommunicationHosts = append(dest.CommunicationHosts, oneagent.CommunicationHostStatus{
 			Protocol: host.Protocol,
 			Host:     host.Host,
 			Port:     host.Port,

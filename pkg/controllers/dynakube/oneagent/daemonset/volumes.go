@@ -15,7 +15,7 @@ func prepareVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 
 	volumeMounts = append(volumeMounts, getOneAgentSecretVolumeMount())
 
-	if dk != nil && dk.UseReadOnlyOneAgents() {
+	if dk != nil && dk.OneAgent().UseReadOnlyOneAgents() {
 		volumeMounts = append(volumeMounts, getReadOnlyRootMount())
 		volumeMounts = append(volumeMounts, getCSIStorageMount())
 	} else {
@@ -94,7 +94,7 @@ func prepareVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 
 	volumes = append(volumes, getOneAgentSecretVolume(dk))
 
-	if dk.UseReadOnlyOneAgents() {
+	if dk.OneAgent().UseReadOnlyOneAgents() {
 		volumes = append(volumes, getCSIStorageVolume(dk))
 	}
 
@@ -181,7 +181,7 @@ func getOneAgentSecretVolume(dk *dynakube.DynaKube) corev1.Volume {
 		Name: connectioninfo.TenantSecretVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: dk.OneagentTenantSecret(),
+				SecretName: dk.OneAgent().OneagentTenantSecret(),
 			},
 		},
 	}

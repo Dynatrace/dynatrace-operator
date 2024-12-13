@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
@@ -72,11 +73,11 @@ func (src *DynaKube) toOneAgentSpec(dst *dynakube.DynaKube) {
 	case src.ClassicFullStackMode():
 		dst.Spec.OneAgent.ClassicFullStack = toHostInjectSpec(*src.Spec.OneAgent.ClassicFullStack)
 	case src.CloudNativeFullstackMode():
-		dst.Spec.OneAgent.CloudNativeFullStack = &dynakube.CloudNativeFullStackSpec{}
+		dst.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 		dst.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec = *toHostInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec)
 		dst.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec = *toAppInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec)
 	case src.ApplicationMonitoringMode():
-		dst.Spec.OneAgent.ApplicationMonitoring = &dynakube.ApplicationMonitoringSpec{}
+		dst.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 		dst.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec = *toAppInjectSpec(src.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec)
 		dst.Spec.OneAgent.ApplicationMonitoring.Version = src.Spec.OneAgent.ApplicationMonitoring.Version
 	}
@@ -113,7 +114,7 @@ func (src *DynaKube) toActiveGateSpec(dst *dynakube.DynaKube) {
 func (src *DynaKube) toStatus(dst *dynakube.DynaKube) {
 	src.toOneAgentStatus(dst)
 	src.toActiveGateStatus(dst)
-	dst.Status.CodeModules = dynakube.CodeModulesStatus{
+	dst.Status.CodeModules = oneagent.CodeModulesStatus{
 		VersionStatus: src.Status.CodeModules.VersionStatus,
 	}
 
@@ -130,11 +131,11 @@ func (src *DynaKube) toStatus(dst *dynakube.DynaKube) {
 }
 
 func (src *DynaKube) toOneAgentStatus(dst *dynakube.DynaKube) {
-	dst.Status.OneAgent.Instances = map[string]dynakube.OneAgentInstance{}
+	dst.Status.OneAgent.Instances = map[string]oneagent.Instance{}
 
 	// Instance
 	for key, instance := range src.Status.OneAgent.Instances {
-		tmp := dynakube.OneAgentInstance{
+		tmp := oneagent.Instance{
 			PodName:   instance.PodName,
 			IPAddress: instance.IPAddress,
 		}
@@ -147,7 +148,7 @@ func (src *DynaKube) toOneAgentStatus(dst *dynakube.DynaKube) {
 	dst.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo = (communication.ConnectionInfo)(src.Status.OneAgent.ConnectionInfoStatus.ConnectionInfoStatus)
 
 	for _, host := range src.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts {
-		tmp := dynakube.CommunicationHostStatus{
+		tmp := oneagent.CommunicationHostStatus{
 			Host:     host.Host,
 			Port:     host.Port,
 			Protocol: host.Protocol,
@@ -166,8 +167,8 @@ func (src *DynaKube) toActiveGateStatus(dst *dynakube.DynaKube) {
 	dst.Status.ActiveGate.VersionStatus = src.Status.ActiveGate.VersionStatus
 }
 
-func toHostInjectSpec(src HostInjectSpec) *dynakube.HostInjectSpec {
-	dst := &dynakube.HostInjectSpec{}
+func toHostInjectSpec(src HostInjectSpec) *oneagent.HostInjectSpec {
+	dst := &oneagent.HostInjectSpec{}
 	dst.AutoUpdate = &src.AutoUpdate
 
 	dst.OneAgentResources = src.OneAgentResources
@@ -186,8 +187,8 @@ func toHostInjectSpec(src HostInjectSpec) *dynakube.HostInjectSpec {
 	return dst
 }
 
-func toAppInjectSpec(src AppInjectionSpec) *dynakube.AppInjectionSpec {
-	dst := &dynakube.AppInjectionSpec{}
+func toAppInjectSpec(src AppInjectionSpec) *oneagent.AppInjectionSpec {
+	dst := &oneagent.AppInjectionSpec{}
 
 	dst.CodeModulesImage = src.CodeModulesImage
 	dst.InitResources = src.InitResources

@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -295,24 +296,24 @@ func (builder *testDynaKubeBuilder) withActiveGateCustomImage(image string) *tes
 }
 
 func (builder *testDynaKubeBuilder) withCloudNativeFullStack() *testDynaKubeBuilder {
-	builder.dynakube.Spec.OneAgent.CloudNativeFullStack = &dynakube.CloudNativeFullStackSpec{
-		HostInjectSpec: dynakube.HostInjectSpec{},
+	builder.dynakube.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{
+		HostInjectSpec: oneagent.HostInjectSpec{},
 	}
-	builder.dynakube.Status.OneAgent.ImageID = builder.dynakube.DefaultOneAgentImage(testVersion)
+	builder.dynakube.Status.OneAgent.ImageID = builder.dynakube.OneAgent().DefaultOneAgentImage(testVersion)
 
 	return builder
 }
 
 func (builder *testDynaKubeBuilder) withClassicFullStack() *testDynaKubeBuilder {
-	builder.dynakube.Spec.OneAgent.ClassicFullStack = &dynakube.HostInjectSpec{}
-	builder.dynakube.Status.OneAgent.ImageID = builder.dynakube.DefaultOneAgentImage(testVersion)
+	builder.dynakube.Spec.OneAgent.ClassicFullStack = &oneagent.HostInjectSpec{}
+	builder.dynakube.Status.OneAgent.ImageID = builder.dynakube.OneAgent().DefaultOneAgentImage(testVersion)
 
 	return builder
 }
 
 func (builder *testDynaKubeBuilder) withHostMonitoring() *testDynaKubeBuilder {
-	builder.dynakube.Spec.OneAgent.HostMonitoring = &dynakube.HostInjectSpec{}
-	builder.dynakube.Status.OneAgent.ImageID = builder.dynakube.DefaultOneAgentImage(testVersion)
+	builder.dynakube.Spec.OneAgent.HostMonitoring = &oneagent.HostInjectSpec{}
+	builder.dynakube.Status.OneAgent.ImageID = builder.dynakube.OneAgent().DefaultOneAgentImage(testVersion)
 
 	return builder
 }
@@ -321,7 +322,7 @@ func (builder *testDynaKubeBuilder) withClassicFullStackCustomImage(image string
 	if builder.dynakube.Spec.OneAgent.ClassicFullStack != nil {
 		builder.dynakube.Spec.OneAgent.ClassicFullStack.Image = image
 	} else {
-		builder.dynakube.Spec.OneAgent.ClassicFullStack = &dynakube.HostInjectSpec{
+		builder.dynakube.Spec.OneAgent.ClassicFullStack = &oneagent.HostInjectSpec{
 			Image: image,
 		}
 	}
@@ -334,8 +335,8 @@ func (builder *testDynaKubeBuilder) withCloudNativeFullStackCustomImage(image st
 	if builder.dynakube.Spec.OneAgent.CloudNativeFullStack != nil {
 		builder.dynakube.Spec.OneAgent.CloudNativeFullStack.Image = image
 	} else {
-		builder.dynakube.Spec.OneAgent.CloudNativeFullStack = &dynakube.CloudNativeFullStackSpec{
-			HostInjectSpec: dynakube.HostInjectSpec{
+		builder.dynakube.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{
+			HostInjectSpec: oneagent.HostInjectSpec{
 				Image: image,
 			},
 		}
@@ -349,7 +350,7 @@ func (builder *testDynaKubeBuilder) withHostMonitoringCustomImage(image string) 
 	if builder.dynakube.Spec.OneAgent.HostMonitoring != nil {
 		builder.dynakube.Spec.OneAgent.HostMonitoring.Image = image
 	} else {
-		builder.dynakube.Spec.OneAgent.HostMonitoring = &dynakube.HostInjectSpec{
+		builder.dynakube.Spec.OneAgent.HostMonitoring = &oneagent.HostInjectSpec{
 			Image: image,
 		}
 	}
@@ -362,8 +363,8 @@ func (builder *testDynaKubeBuilder) withCloudNativeCodeModulesImage(image string
 	if builder.dynakube.Spec.OneAgent.CloudNativeFullStack != nil {
 		builder.dynakube.Spec.OneAgent.CloudNativeFullStack.CodeModulesImage = image
 	} else {
-		builder.dynakube.Spec.OneAgent.CloudNativeFullStack = &dynakube.CloudNativeFullStackSpec{
-			AppInjectionSpec: dynakube.AppInjectionSpec{
+		builder.dynakube.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{
+			AppInjectionSpec: oneagent.AppInjectionSpec{
 				InitResources:    &corev1.ResourceRequirements{},
 				CodeModulesImage: image,
 			},
@@ -378,8 +379,8 @@ func (builder *testDynaKubeBuilder) withApplicationMonitoringCodeModulesImage(im
 	if builder.dynakube.Spec.OneAgent.ApplicationMonitoring != nil {
 		builder.dynakube.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage = image
 	} else {
-		builder.dynakube.Spec.OneAgent.ApplicationMonitoring = &dynakube.ApplicationMonitoringSpec{
-			AppInjectionSpec: dynakube.AppInjectionSpec{
+		builder.dynakube.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{
+			AppInjectionSpec: oneagent.AppInjectionSpec{
 				InitResources:    &corev1.ResourceRequirements{},
 				CodeModulesImage: image,
 			},

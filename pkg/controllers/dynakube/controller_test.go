@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	ag "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
@@ -22,7 +23,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
+	oneagentcontroller "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -327,7 +328,7 @@ func TestReconcileComponents(t *testing.T) {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:     "this-is-an-api-url",
-			OneAgent:   dynakube.OneAgentSpec{CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}},
+			OneAgent:   oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}},
 			ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 		},
 	}
@@ -420,7 +421,7 @@ func createActivegateReconcilerBuilder(reconciler controllers.Reconciler) ag.Rec
 	}
 }
 
-func createOneAgentReconcilerBuilder(reconciler controllers.Reconciler) oneagent.ReconcilerBuilder {
+func createOneAgentReconcilerBuilder(reconciler controllers.Reconciler) oneagentcontroller.ReconcilerBuilder {
 	return func(_ client.Client, _ client.Reader, _ dtclient.Client, _ *dynakube.DynaKube, _ token.Tokens, _ string) controllers.Reconciler {
 		return reconciler
 	}
@@ -472,8 +473,8 @@ func TestGetDynakube(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
 			},
 		})
@@ -689,13 +690,13 @@ func getTestDynkubeStatus() *dynakube.DynaKubeStatus {
 				Endpoints:  "endpoint",
 			},
 		},
-		OneAgent: dynakube.OneAgentStatus{
-			ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
+		OneAgent: oneagent.Status{
+			ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
 				ConnectionInfo: communication.ConnectionInfo{
 					TenantUUID: testUUID,
 					Endpoints:  "endpoint",
 				},
-				CommunicationHosts: []dynakube.CommunicationHostStatus{
+				CommunicationHosts: []oneagent.CommunicationHostStatus{
 					{
 						Protocol: "http",
 						Host:     "localhost",
@@ -712,7 +713,7 @@ func createTenantSecrets(dk *dynakube.DynaKube) []client.Object {
 	return []client.Object{
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      dk.OneagentTenantSecret(),
+				Name:      dk.OneAgent().OneagentTenantSecret(),
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
