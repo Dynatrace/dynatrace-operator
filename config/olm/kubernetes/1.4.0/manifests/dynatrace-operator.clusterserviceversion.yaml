@@ -26,7 +26,7 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/Dynatrace/dynatrace-operator
     support: Dynatrace
-    createdAt: '2024-12-10T08:51:19.260572'
+    createdAt: '2024-12-13T08:21:17.995566'
     olm.skipRange: <1.4.0
   labels:
     operatorframework.io/arch.amd64: supported
