@@ -91,13 +91,13 @@ spec:
             - name: WEBHOOK_PORT
               value: "{{ .Values.webhook.serverPort }}"
             {{- end }}
-            {{- if .Values.webhook.healthProbeBindAddress }}
+            {{- if .Values.webhook.livezPort }}
             - name: HEALTH_PROBE_BIND_ADDRESS
-              value: "{{ .Values.webhook.healthProbeBindAddress }}"
+              value: ":{{ .Values.webhook.livezPort }}"
             {{- end }}
-            {{- if .Values.webhook.metricsBindAddress }}
+            {{- if .Values.webhook.metricsPort }}
             - name: METRICS_BIND_ADDRESS
-              value: "{{ .Values.webhook.metricsBindAddress }}"
+              value: ":{{ .Values.webhook.metricsPort }}"
             {{- end }}
           envFrom:
             - configMapRef:
@@ -120,9 +120,9 @@ spec:
             - name: server-port
               containerPort: {{ .Values.webhook.serverPort | default 8443 }}
             - name: livez
-              containerPort: {{ .Values.webhook.healthProbeBindAddress | default ":10080" }}
+              containerPort: {{ .Values.webhook.livezPort | default 10080 }}
             - name: metrics
-              containerPort: {{ .Values.webhook.metricsBindAddress | default ":8383" }}
+              containerPort: {{ .Values.webhook.metricsPort | default 8383 }}
           resources:
             requests:
               {{- toYaml (.Values.webhook).requests | nindent 14 }}
