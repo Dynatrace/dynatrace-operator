@@ -18,7 +18,9 @@ import (
 	"os"
 
 	csiInit "github.com/Dynatrace/dynatrace-operator/cmd/csi/init"
+	"github.com/Dynatrace/dynatrace-operator/cmd/csi/livenessprobe"
 	csiProvisioner "github.com/Dynatrace/dynatrace-operator/cmd/csi/provisioner"
+	"github.com/Dynatrace/dynatrace-operator/cmd/csi/registrar"
 	csiServer "github.com/Dynatrace/dynatrace-operator/cmd/csi/server"
 	"github.com/Dynatrace/dynatrace-operator/cmd/operator"
 	"github.com/Dynatrace/dynatrace-operator/cmd/standalone"
@@ -64,6 +66,8 @@ func main() {
 		csiInit.New(),
 		csiProvisioner.New(),
 		csiServer.New(),
+		livenessprobe.New(),
+		registrar.New(),
 	)
 
 	err := cmd.Execute()
