@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	corev1mock "github.com/Dynatrace/dynatrace-operator/pkg/util/testing/mocks/k8s.io/client-go/kubernetes/typed/core/v1"
+	corev1mock "github.com/Dynatrace/dynatrace-operator/test/mocks/k8s.io/client-go/kubernetes/typed/core/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -97,7 +97,6 @@ func testLogCollection(t *testing.T, collectManagedLogs bool) {
 	}
 }
 
-//go:generate mockery --case=snake --srcpkg=k8s.io/client-go/kubernetes/typed/core/v1 --with-expecter --name=PodInterface --output ../../mocks/k8s.io/client-go/kubernetes/typed/core/v1
 func TestLogCollectorPodListError(t *testing.T) {
 	ctx := context.Background()
 	logBuffer := bytes.Buffer{}
