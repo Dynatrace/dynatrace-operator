@@ -91,6 +91,14 @@ spec:
             - name: WEBHOOK_PORT
               value: "{{ .Values.webhook.serverPort }}"
             {{- end }}
+            {{- if .Values.webhook.healthProbeBindAddress }}
+            - name: HEALTH_PROBE_BIND_ADDRESS
+              value: "{{ .Values.webhook.healthProbeBindAddress }}"
+            {{- end }}
+            {{- if .Values.webhook.metricsBindAddress }}
+            - name: METRICS_BIND_ADDRESS
+              value: "{{ .Values.webhook.metricsBindAddress }}"
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: install-config
@@ -112,9 +120,9 @@ spec:
             - name: server-port
               containerPort: {{ .Values.webhook.serverPort | default 8443 }}
             - name: livez
-              containerPort: {{ .Values.webhook.livezPort | default 10080 }} # Currently only 10080 is supported
+              containerPort: {{ .Values.webhook.livezPort | default ":10080" }}
             - name: metrics
-              containerPort: {{ .Values.webhook.metricsPort | default 8080 }} # Currently only 8080 is supported
+              containerPort: {{ .Values.webhook.metricsPort | default ":8383" }}
           resources:
             requests:
               {{- toYaml (.Values.webhook).requests | nindent 14 }}
