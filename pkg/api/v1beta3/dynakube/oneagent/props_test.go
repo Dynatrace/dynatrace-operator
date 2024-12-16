@@ -36,7 +36,7 @@ func TestNeedsReadonlyOneagent(t *testing.T) {
 				CloudNativeFullStack: &CloudNativeFullStackSpec{},
 			},
 		}
-		assert.True(t, oneagent.UseReadOnlyOneAgents())
+		assert.True(t, oneagent.IsReadOnlyOneAgentsMode())
 	})
 
 	t.Run("host monitoring with readonly host agent", func(t *testing.T) {
@@ -45,7 +45,7 @@ func TestNeedsReadonlyOneagent(t *testing.T) {
 				HostMonitoring: &HostInjectSpec{},
 			},
 		}
-		assert.True(t, oneAgent.UseReadOnlyOneAgents())
+		assert.True(t, oneAgent.IsReadOnlyOneAgentsMode())
 	})
 
 	t.Run("host monitoring without readonly host agent", func(t *testing.T) {
@@ -56,26 +56,26 @@ func TestNeedsReadonlyOneagent(t *testing.T) {
 				HostMonitoring: &HostInjectSpec{},
 			},
 		}
-		assert.False(t, oneAgent.UseReadOnlyOneAgents())
+		assert.False(t, oneAgent.IsReadOnlyOneAgentsMode())
 	})
 }
 
 func TestDefaultOneAgentImage(t *testing.T) {
 	t.Run("OneAgentImage with no API URL", func(t *testing.T) {
 		oneAgent := OneAgent{}
-		assert.Equal(t, "", oneAgent.DefaultOneAgentImage(""))
+		assert.Equal(t, "", oneAgent.GetDefaultImage(""))
 	})
 
 	t.Run("OneAgentImage adds raw postfix", func(t *testing.T) {
 		hostUrl, _ := url.Parse(testAPIURL)
 		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostUrl.Host, false, false)
-		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5-raw", oneAgent.DefaultOneAgentImage("1.234.5"))
+		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5-raw", oneAgent.GetDefaultImage("1.234.5"))
 	})
 
 	t.Run("OneAgentImage doesn't add 'raw' postfix if present", func(t *testing.T) {
 		hostUrl, _ := url.Parse(testAPIURL)
 		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostUrl.Host, false, false)
-		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5-raw", oneAgent.DefaultOneAgentImage("1.234.5-raw"))
+		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5-raw", oneAgent.GetDefaultImage("1.234.5-raw"))
 	})
 
 	t.Run("OneAgentImage with custom version truncates build date", func(t *testing.T) {
@@ -83,7 +83,7 @@ func TestDefaultOneAgentImage(t *testing.T) {
 		expectedImage := "test-endpoint/linux/oneagent:1.239.14-raw"
 		hostUrl, _ := url.Parse(testAPIURL)
 		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostUrl.Host, false, false)
-		assert.Equal(t, expectedImage, oneAgent.DefaultOneAgentImage(version))
+		assert.Equal(t, expectedImage, oneAgent.GetDefaultImage(version))
 	})
 }
 
@@ -91,18 +91,18 @@ func TestCustomOneAgentImage(t *testing.T) {
 	t.Run("OneAgentImage with custom image", func(t *testing.T) {
 		customImg := "registry/my/oneagent:latest"
 		oneAgent := OneAgent{Spec: &Spec{ClassicFullStack: &HostInjectSpec{Image: customImg}}}
-		assert.Equal(t, customImg, oneAgent.CustomOneAgentImage())
+		assert.Equal(t, customImg, oneAgent.GetCustomImage())
 	})
 
 	t.Run("OneAgentImage with no custom image", func(t *testing.T) {
 		oneAgent := OneAgent{Spec: &Spec{ClassicFullStack: &HostInjectSpec{}}}
-		assert.Equal(t, "", oneAgent.CustomOneAgentImage())
+		assert.Equal(t, "", oneAgent.GetCustomImage())
 	})
 }
 
 func TestOneAgentDaemonsetName(t *testing.T) {
 	oneAgent := OneAgent{name: "test-name"}
-	assert.Equal(t, "test-name-oneagent", oneAgent.OneAgentDaemonsetName())
+	assert.Equal(t, "test-name-oneagent", oneAgent.GetDaemonsetName())
 }
 
 func TestCodeModulesVersion(t *testing.T) {
@@ -111,7 +111,7 @@ func TestCodeModulesVersion(t *testing.T) {
 	t.Run("use status", func(t *testing.T) {
 		codeModulesStatus := &CodeModulesStatus{VersionStatus: status.VersionStatus{Version: testVersion}}
 		oneAgent := NewOneAgent(&Spec{}, &Status{}, codeModulesStatus, "", "", false, false)
-		version := oneAgent.CodeModulesVersion()
+		version := oneAgent.GetCodeModulesVersion()
 		assert.Equal(t, testVersion, version)
 	})
 	t.Run("use version ", func(t *testing.T) {
@@ -119,7 +119,7 @@ func TestCodeModulesVersion(t *testing.T) {
 		oneAgent := NewOneAgent(&Spec{
 			ApplicationMonitoring: &ApplicationMonitoringSpec{Version: testVersion},
 		}, &Status{}, codeModulesStatus, "", "", false, false)
-		version := oneAgent.CustomCodeModulesVersion()
+		version := oneAgent.GetCustomCodeModulesVersion()
 
 		assert.Equal(t, testVersion, version)
 	})
@@ -139,7 +139,7 @@ func TestGetOneAgentEnvironment(t *testing.T) {
 				},
 			},
 		}
-		env := oneAgent.GetOneAgentEnvironment()
+		env := oneAgent.GetEnvironment()
 
 		require.Len(t, env, 1)
 		assert.Equal(t, "classicFullstack", env[0].Name)
@@ -158,7 +158,7 @@ func TestGetOneAgentEnvironment(t *testing.T) {
 				},
 			},
 		}
-		env := oneAgent.GetOneAgentEnvironment()
+		env := oneAgent.GetEnvironment()
 
 		require.Len(t, env, 1)
 		assert.Equal(t, "hostMonitoring", env[0].Name)
@@ -179,7 +179,7 @@ func TestGetOneAgentEnvironment(t *testing.T) {
 				},
 			},
 		}
-		env := oneAgent.GetOneAgentEnvironment()
+		env := oneAgent.GetEnvironment()
 
 		require.Len(t, env, 1)
 		assert.Equal(t, "cloudNative", env[0].Name)
@@ -189,7 +189,7 @@ func TestGetOneAgentEnvironment(t *testing.T) {
 		oneAgent := OneAgent{Spec: &Spec{
 			ApplicationMonitoring: &ApplicationMonitoringSpec{},
 		}}
-		env := oneAgent.GetOneAgentEnvironment()
+		env := oneAgent.GetEnvironment()
 
 		require.NotNil(t, env)
 		assert.Empty(t, env)
@@ -197,7 +197,7 @@ func TestGetOneAgentEnvironment(t *testing.T) {
 
 	t.Run("get environment from unconfigured dynakube", func(t *testing.T) {
 		oneAgent := OneAgent{Spec: &Spec{}}
-		env := oneAgent.GetOneAgentEnvironment()
+		env := oneAgent.GetEnvironment()
 
 		require.NotNil(t, env)
 		assert.Empty(t, env)

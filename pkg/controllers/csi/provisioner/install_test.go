@@ -42,7 +42,7 @@ func TestUpdateAgent(t *testing.T) {
 	t.Run("zip install", func(t *testing.T) {
 		dk := createTestDynaKubeWithZip(testVersion)
 		provisioner := createTestProvisioner()
-		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(dk.OneAgent().CodeModulesVersion())
+		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(dk.OneAgent().GetCodeModulesVersion())
 
 		var revision uint = 3
 		processModule := createTestProcessModuleConfig(revision)
@@ -69,14 +69,14 @@ func TestUpdateAgent(t *testing.T) {
 	t.Run("zip update", func(t *testing.T) {
 		dk := createTestDynaKubeWithZip(testVersion)
 		provisioner := createTestProvisioner()
-		previousTargetDir := provisioner.path.AgentSharedBinaryDirForAgent(dk.OneAgent().CodeModulesVersion())
+		previousTargetDir := provisioner.path.AgentSharedBinaryDirForAgent(dk.OneAgent().GetCodeModulesVersion())
 		previousSourceConfigPath := filepath.Join(previousTargetDir, processmoduleconfig.RuxitAgentProcPath)
 		_ = provisioner.fs.MkdirAll(previousTargetDir, 0755)
 		_, _ = provisioner.fs.Create(previousSourceConfigPath)
 
 		newVersion := "new"
 		dk.Status.CodeModules.Version = newVersion
-		newTargetDir := provisioner.path.AgentSharedBinaryDirForAgent(dk.OneAgent().CodeModulesVersion())
+		newTargetDir := provisioner.path.AgentSharedBinaryDirForAgent(dk.OneAgent().GetCodeModulesVersion())
 
 		var revision uint = 3
 		processModule := createTestProcessModuleConfig(revision)
@@ -94,7 +94,7 @@ func TestUpdateAgent(t *testing.T) {
 	t.Run("only process module config update", func(t *testing.T) {
 		dk := createTestDynaKubeWithZip(testVersion)
 		provisioner := createTestProvisioner()
-		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(dk.OneAgent().CodeModulesVersion())
+		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(dk.OneAgent().GetCodeModulesVersion())
 		sourceConfigPath := filepath.Join(targetDir, processmoduleconfig.RuxitAgentProcPath)
 		_ = provisioner.fs.MkdirAll(targetDir, 0755)
 		_, _ = provisioner.fs.Create(sourceConfigPath)

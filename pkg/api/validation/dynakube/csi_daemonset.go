@@ -24,5 +24,5 @@ func disabledCSIForReadonlyCSIVolume(_ context.Context, _ *Validator, dk *dynaku
 
 // IsCSIDriverOptional checks if the DynaKube may use the csi-driver if available, otherwise fallbacks exist to provide similar functionality.
 func isCSIOptional(dk *dynakube.DynaKube) bool {
-	return dk.OneAgent().HostMonitoringMode() || dk.OneAgent().ApplicationMonitoringMode()
+	return dk.OneAgent().IsHostMonitoringMode() || dk.OneAgent().IsApplicationMonitoringMode()
 }

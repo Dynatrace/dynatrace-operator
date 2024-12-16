@@ -86,7 +86,7 @@ func InstallFromImage(t *testing.T) features.Feature {
 		dynakubeComponents.WithApiUrl(secretConfigs[1].ApiUrl),
 	)
 
-	labels := cloudNativeDynakube.OneAgent().OneAgentNamespaceSelector().MatchLabels
+	labels := cloudNativeDynakube.OneAgent().GetNamespaceSelector().MatchLabels
 	sampleNamespace := *namespace.New("codemodules-sample", namespace.WithLabels(labels))
 
 	sampleApp := sample.NewApp(t, &cloudNativeDynakube,
@@ -415,7 +415,7 @@ func imageHasBeenDownloaded(dk dynakube.DynaKube) features.Func {
 				require.NoError(t, err)
 				buffer := new(bytes.Buffer)
 				_, err = io.Copy(buffer, logStream)
-				isNew := strings.Contains(buffer.String(), "Installed agent version: "+dk.OneAgent().CustomCodeModulesImage())
+				isNew := strings.Contains(buffer.String(), "Installed agent version: "+dk.OneAgent().GetCustomCodeModulesImage())
 				isOld := strings.Contains(buffer.String(), "agent already installed")
 				t.Logf("wait for Installed agent version in %s", podItem.Name)
 
@@ -549,13 +549,13 @@ func checkOneAgentEnvVars(dk dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 		err := daemonset.NewQuery(ctx, resources, client.ObjectKey{
-			Name:      dk.OneAgent().OneAgentDaemonsetName(),
+			Name:      dk.OneAgent().GetDaemonsetName(),
 			Namespace: dk.Namespace,
 		}).ForEachPod(func(podItem corev1.Pod) {
 			require.NotNil(t, podItem)
 			require.NotNil(t, podItem.Spec)
 
-			checkEnvVarsInContainer(t, podItem, dk.OneAgent().OneAgentDaemonsetName(), httpsProxy)
+			checkEnvVarsInContainer(t, podItem, dk.OneAgent().GetDaemonsetName(), httpsProxy)
 		})
 
 		require.NoError(t, err)

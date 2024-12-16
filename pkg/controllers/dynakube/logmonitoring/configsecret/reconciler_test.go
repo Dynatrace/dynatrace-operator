@@ -195,7 +195,7 @@ func createK8sClientWithOneAgentTenantSecret(dk *dynakube.DynaKube, token string
 		&corev1.Secret{
 			Data: map[string][]byte{connectioninfo.TenantTokenKey: []byte(token)},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      dk.OneAgent().OneagentTenantSecret(),
+				Name:      dk.OneAgent().GetTenantSecret(),
 				Namespace: dkNamespace,
 			},
 		},

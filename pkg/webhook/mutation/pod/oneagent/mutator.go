@@ -40,12 +40,12 @@ func NewMutator(image, clusterID, webhookNamespace string, client client.Client,
 
 func (mut *Mutator) Enabled(request *dtwebhook.BaseRequest) bool {
 	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOneAgentInject, request.DynaKube.FeatureAutomaticInjection())
-	enabledOnDynakube := request.DynaKube.OneAgent().OneAgentNamespaceSelector() != nil
+	enabledOnDynakube := request.DynaKube.OneAgent().GetNamespaceSelector() != nil
 
 	matchesNamespaceSelector := true // if no namespace selector is configured, we just pass set this to true
 
-	if request.DynaKube.OneAgent().OneAgentNamespaceSelector().Size() > 0 {
-		selector, _ := metav1.LabelSelectorAsSelector(request.DynaKube.OneAgent().OneAgentNamespaceSelector())
+	if request.DynaKube.OneAgent().GetNamespaceSelector().Size() > 0 {
+		selector, _ := metav1.LabelSelectorAsSelector(request.DynaKube.OneAgent().GetNamespaceSelector())
 
 		matchesNamespaceSelector = selector.Matches(labels.Set(request.Namespace.Labels))
 	}
@@ -126,13 +126,13 @@ func (mut *Mutator) isInjectionPossible(request *dtwebhook.MutationRequest) (boo
 		reasons = append(reasons, EmptyTenantUUIDReason)
 	}
 
-	if !dk.OneAgent().IsOneAgentCommunicationRouteClear() {
+	if !dk.OneAgent().IsCommunicationRouteClear() {
 		log.Info("OneAgent communication route is not clear, OneAgent cannot be injected", "pod", request.PodName())
 
 		reasons = append(reasons, EmptyConnectionInfoReason)
 	}
 
-	if dk.OneAgent().CodeModulesVersion() == "" && dk.OneAgent().CodeModulesImage() == "" {
+	if dk.OneAgent().GetCodeModulesVersion() == "" && dk.OneAgent().GetCodeModulesImage() == "" {
 		log.Info("information about the codemodules (version or image) is not available, OneAgent cannot be injected", "pod", request.PodName())
 
 		reasons = append(reasons, UnknownCodeModuleReason)

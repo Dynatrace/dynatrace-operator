@@ -67,7 +67,7 @@ func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, 
 		return errors.New("can't reconcile oneagent communication hosts of nil dynakube")
 	}
 
-	if !dk.OneAgent().NeedAppInjection() {
+	if !dk.OneAgent().IsAppInjectionNeeded() {
 		if isIstioConfigured(dk, CodeModuleComponent) {
 			log.Info("appinjection disabled, cleaning up")
 

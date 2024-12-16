@@ -49,7 +49,7 @@ func NewReconciler(clt client.Client,
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !(r.dk.OneAgent().CloudNativeFullstackMode() || r.dk.OneAgent().ApplicationMonitoringMode()) {
+	if !(r.dk.OneAgent().IsCloudNativeFullstackMode() || r.dk.OneAgent().IsApplicationMonitoringMode()) {
 		if meta.FindStatusCondition(*r.dk.Conditions(), pmcConditionType) == nil {
 			return nil
 		}
@@ -126,7 +126,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 	}
 
 	tenantToken, err := k8ssecret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{
-		Name:      r.dk.OneAgent().OneagentTenantSecret(),
+		Name:      r.dk.OneAgent().GetTenantSecret(),
 		Namespace: r.dk.Namespace,
 	}, connectioninfo.TenantTokenKey, log)
 	if err != nil {

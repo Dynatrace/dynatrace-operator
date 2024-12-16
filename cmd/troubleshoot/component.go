@@ -37,13 +37,13 @@ func (c component) getImage(dk *dynakube.DynaKube) (string, bool) {
 
 	switch c {
 	case componentOneAgent:
-		if dk.OneAgent().CustomOneAgentImage() != "" {
-			return dk.OneAgent().CustomOneAgentImage(), true
+		if dk.OneAgent().GetCustomImage() != "" {
+			return dk.OneAgent().GetCustomImage(), true
 		}
 
-		return dk.OneAgent().OneAgentImage(), false
+		return dk.OneAgent().GetImage(), false
 	case componentCodeModules:
-		return dk.OneAgent().CustomCodeModulesImage(), true
+		return dk.OneAgent().GetCustomCodeModulesImage(), true
 	case componentActiveGate:
 		if dk.ActiveGate().GetCustomImage() != "" {
 			return dk.ActiveGate().GetCustomImage(), true

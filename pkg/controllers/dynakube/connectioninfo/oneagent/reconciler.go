@@ -44,13 +44,13 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dtc dtclient.Clie
 var NoOneAgentCommunicationHostsError = errors.New("no communication hosts for OneAgent are available")
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.OneAgent().NeedAppInjection() && !r.dk.OneAgent().NeedsOneAgent() && !r.dk.LogMonitoring().IsEnabled() {
+	if !r.dk.OneAgent().IsAppInjectionNeeded() && !r.dk.OneAgent().IsDaemonsetRequired() && !r.dk.LogMonitoring().IsEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), oaConnectionInfoConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}
 
 		query := k8ssecret.Query(r.client, r.apiReader, log)
-		err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.OneAgent().OneagentTenantSecret(), Namespace: r.dk.Namespace}})
+		err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.OneAgent().GetTenantSecret(), Namespace: r.dk.Namespace}})
 
 		if err != nil {
 			log.Error(err, "failed to clean-up OneAgent tenant-secret")
@@ -80,7 +80,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
-	secretNamespacedName := types.NamespacedName{Name: r.dk.OneAgent().OneagentTenantSecret(), Namespace: r.dk.Namespace}
+	secretNamespacedName := types.NamespacedName{Name: r.dk.OneAgent().GetTenantSecret(), Namespace: r.dk.Namespace}
 
 	if !conditions.IsOutdated(r.timeProvider, r.dk, oaConnectionInfoConditionType) {
 		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.apiReader, secretNamespacedName, log)
@@ -123,7 +123,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 		return NoOneAgentCommunicationHostsError
 	}
 
-	err = r.createTenantTokenSecret(ctx, r.dk.OneAgent().OneagentTenantSecret(), connectionInfo.ConnectionInfo)
+	err = r.createTenantTokenSecret(ctx, r.dk.OneAgent().GetTenantSecret(), connectionInfo.ConnectionInfo)
 	if err != nil {
 		return err
 	}

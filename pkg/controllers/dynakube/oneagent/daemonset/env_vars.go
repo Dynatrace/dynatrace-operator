@@ -45,7 +45,7 @@ func (b *builder) environmentVariables() ([]corev1.EnvVar, error) {
 	b.addReadOnlyEnv(envMap)
 	b.addLogMonitoringEnv(envMap)
 
-	isProxyAsEnvDeprecated, err := isProxyAsEnvVarDeprecated(b.dk.OneAgent().OneAgentVersion())
+	isProxyAsEnvDeprecated, err := isProxyAsEnvVarDeprecated(b.dk.OneAgent().GetVersion())
 	if err != nil {
 		return []corev1.EnvVar{}, err
 	}
@@ -89,14 +89,14 @@ func (b *builder) addOperatorVersionInfoEnv(envVarMap *prioritymap.Map) {
 func (b *builder) addConnectionInfoEnvs(envVarMap *prioritymap.Map) {
 	addDefaultValueSource(envVarMap, connectioninfo.EnvDtTenant, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 		LocalObjectReference: corev1.LocalObjectReference{
-			Name: b.dk.OneAgent().OneAgentConnectionInfoConfigMapName(),
+			Name: b.dk.OneAgent().GetConnectionInfoConfigMapName(),
 		},
 		Key:      connectioninfo.TenantUUIDKey,
 		Optional: ptr.To(false),
 	}})
 	addDefaultValueSource(envVarMap, connectioninfo.EnvDtServer, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 		LocalObjectReference: corev1.LocalObjectReference{
-			Name: b.dk.OneAgent().OneAgentConnectionInfoConfigMapName(),
+			Name: b.dk.OneAgent().GetConnectionInfoConfigMapName(),
 		},
 		Key:      connectioninfo.CommunicationEndpointsKey,
 		Optional: ptr.To(false),
@@ -122,7 +122,7 @@ func (b *builder) addProxyEnv(envVarMap *prioritymap.Map) {
 }
 
 func (b *builder) addReadOnlyEnv(envVarMap *prioritymap.Map) {
-	if b.dk != nil && b.dk.OneAgent().UseReadOnlyOneAgents() {
+	if b.dk != nil && b.dk.OneAgent().IsReadOnlyOneAgentsMode() {
 		addDefaultValue(envVarMap, oneagentReadOnlyMode, "true")
 	}
 }

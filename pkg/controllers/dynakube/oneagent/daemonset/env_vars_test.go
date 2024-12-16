@@ -177,7 +177,7 @@ func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dk *dynakube.Dy
 	env := k8senv.FindEnvVar(envs, connectioninfo.EnvDtTenant)
 	assert.Equal(t, connectioninfo.EnvDtTenant, env.Name)
 	assert.Equal(t,
-		dk.OneAgent().OneAgentConnectionInfoConfigMapName(),
+		dk.OneAgent().GetConnectionInfoConfigMapName(),
 		env.ValueFrom.ConfigMapKeyRef.Name,
 	)
 	assert.Equal(t,
@@ -188,7 +188,7 @@ func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dk *dynakube.Dy
 	env = k8senv.FindEnvVar(envs, connectioninfo.EnvDtServer)
 	assert.Equal(t, connectioninfo.EnvDtServer, env.Name)
 	assert.Equal(t,
-		dk.OneAgent().OneAgentConnectionInfoConfigMapName(),
+		dk.OneAgent().GetConnectionInfoConfigMapName(),
 		env.ValueFrom.ConfigMapKeyRef.Name,
 	)
 	assert.Equal(t,

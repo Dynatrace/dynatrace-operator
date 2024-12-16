@@ -18,7 +18,7 @@ type ConflictChecker struct {
 }
 
 func (c *ConflictChecker) check(dk *dynakube.DynaKube) error {
-	if !dk.OneAgent().NeedAppInjection() && !dk.MetadataEnrichmentEnabled() {
+	if !dk.OneAgent().IsAppInjectionNeeded() && !dk.MetadataEnrichmentEnabled() {
 		return nil
 	}
 
@@ -82,13 +82,13 @@ func match(dk *dynakube.DynaKube, namespace *corev1.Namespace) (bool, error) {
 // matchOneAgent uses the namespace selector in the dynakube to check if it matches a given namespace
 // if the namespace selector is not set on the dynakube its an automatic match
 func matchOneAgent(dk *dynakube.DynaKube, namespace *corev1.Namespace) (bool, error) {
-	if !dk.OneAgent().NeedAppInjection() {
+	if !dk.OneAgent().IsAppInjectionNeeded() {
 		return false, nil
-	} else if dk.OneAgent().OneAgentNamespaceSelector() == nil {
+	} else if dk.OneAgent().GetNamespaceSelector() == nil {
 		return true, nil
 	}
 
-	selector, err := metav1.LabelSelectorAsSelector(dk.OneAgent().OneAgentNamespaceSelector())
+	selector, err := metav1.LabelSelectorAsSelector(dk.OneAgent().GetNamespaceSelector())
 	if err != nil {
 		return false, errors.WithStack(err)
 	}

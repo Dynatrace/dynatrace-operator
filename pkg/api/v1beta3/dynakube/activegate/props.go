@@ -106,7 +106,7 @@ func (ag *Spec) GetConnectionInfoConfigMapName() string {
 	return ag.name + ConnectionInfoConfigMapSuffix
 }
 
-// DefaultImage provides the image reference for the ActiveGate from tenant registry.
+// GetDefaultImage provides the image reference for the ActiveGate from tenant registry.
 // Format: repo:tag.
 func (ag *Spec) GetDefaultImage(version string) string {
 	apiUrlHost := ag.apiUrlHost()

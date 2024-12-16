@@ -222,7 +222,7 @@ func assertValue(ctx context.Context, t *testing.T, resource *resources.Resource
 }
 
 func buildDisabledBuildLabelNamespace(dk dynakube.DynaKube) corev1.Namespace {
-	return *namespace.New(disabledBuildLabelsNamespace, namespace.WithLabels(dk.OneAgent().OneAgentNamespaceSelector().MatchLabels))
+	return *namespace.New(disabledBuildLabelsNamespace, namespace.WithLabels(dk.OneAgent().GetNamespaceSelector().MatchLabels))
 }
 
 func buildDisabledBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *sample.App {
@@ -230,7 +230,7 @@ func buildDisabledBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *sampl
 }
 
 func buildDefaultBuildLabelNamespace(dk dynakube.DynaKube) corev1.Namespace {
-	return *namespace.New(defaultBuildLabelsNamespace, namespace.WithLabels(dk.OneAgent().OneAgentNamespaceSelector().MatchLabels))
+	return *namespace.New(defaultBuildLabelsNamespace, namespace.WithLabels(dk.OneAgent().GetNamespaceSelector().MatchLabels))
 }
 
 func buildDefaultBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *sample.App {
@@ -253,7 +253,7 @@ func buildDefaultBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *sample
 func buildCustomBuildLabelNamespace(dk dynakube.DynaKube) corev1.Namespace {
 	return *namespace.New(
 		customBuildLabelsNamespace,
-		namespace.WithLabels(dk.OneAgent().OneAgentNamespaceSelector().MatchLabels),
+		namespace.WithLabels(dk.OneAgent().GetNamespaceSelector().MatchLabels),
 		namespace.WithAnnotation(map[string]string{
 			"mapping.release.dynatrace.com/version":       "metadata.labels['my.domain/version']",
 			"mapping.release.dynatrace.com/product":       "metadata.labels['my.domain/product']",
@@ -283,7 +283,7 @@ func buildCustomBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *sample.
 func buildPreservedBuildLabelNamespace(dk dynakube.DynaKube) corev1.Namespace {
 	return *namespace.New(
 		preservedBuildLabelsNamespace,
-		namespace.WithLabels(dk.OneAgent().OneAgentNamespaceSelector().MatchLabels),
+		namespace.WithLabels(dk.OneAgent().GetNamespaceSelector().MatchLabels),
 		namespace.WithAnnotation(map[string]string{
 			"mapping.release.dynatrace.com/version":       "metadata.labels['my.domain/version']",
 			"mapping.release.dynatrace.com/product":       "metadata.labels['my.domain/product']",
@@ -351,7 +351,7 @@ func buildPreservedBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *samp
 func buildInvalidBuildLabelNamespace(dk dynakube.DynaKube) corev1.Namespace {
 	return *namespace.New(
 		invalidBuildLabelsNamespace,
-		namespace.WithLabels(dk.OneAgent().OneAgentNamespaceSelector().MatchLabels),
+		namespace.WithLabels(dk.OneAgent().GetNamespaceSelector().MatchLabels),
 		namespace.WithAnnotation(map[string]string{
 			"mapping.release.dynatrace.com/stage":         "metadata.labels['my.domain/invalid-stage']",
 			"mapping.release.dynatrace.com/build-version": "metadata.labels['my.domain/invalid-build-version']",

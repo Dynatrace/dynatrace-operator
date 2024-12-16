@@ -753,7 +753,7 @@ func TestImmutableOneAgentImage(t *testing.T) {
 		}
 		image := dsBuilder.immutableOneAgentImage()
 
-		assert.Equal(t, dsBuilder.dk.OneAgent().OneAgentImage(), image)
+		assert.Equal(t, dsBuilder.dk.OneAgent().GetImage(), image)
 	})
 }
 

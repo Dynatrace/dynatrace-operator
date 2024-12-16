@@ -96,9 +96,9 @@ func WithNameBasedOneAgentNamespaceSelector() Option {
 			},
 		}
 		switch {
-		case dk.OneAgent().CloudNativeFullstackMode():
+		case dk.OneAgent().IsCloudNativeFullstackMode():
 			dk.Spec.OneAgent.CloudNativeFullStack.NamespaceSelector = namespaceSelector
-		case dk.OneAgent().ApplicationMonitoringMode():
+		case dk.OneAgent().IsApplicationMonitoringMode():
 			dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = namespaceSelector
 		}
 	}
@@ -118,9 +118,9 @@ func WithNameBasedMetadataEnrichmentNamespaceSelector() Option {
 func WithOneAgentNamespaceSelector(selector metav1.LabelSelector) Option {
 	return func(dk *dynakube.DynaKube) {
 		switch {
-		case dk.OneAgent().CloudNativeFullstackMode():
+		case dk.OneAgent().IsCloudNativeFullstackMode():
 			dk.Spec.OneAgent.CloudNativeFullStack.NamespaceSelector = selector
-		case dk.OneAgent().ApplicationMonitoringMode():
+		case dk.OneAgent().IsApplicationMonitoringMode():
 			dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = selector
 		}
 	}

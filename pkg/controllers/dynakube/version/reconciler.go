@@ -79,7 +79,7 @@ func (r *reconciler) updateVersionStatuses(ctx context.Context, updater StatusUp
 
 	_, ok := updater.(*oneAgentUpdater)
 	if ok {
-		healthConfig, err := getOneAgentHealthConfig(dk.OneAgent().OneAgentVersion())
+		healthConfig, err := getOneAgentHealthConfig(dk.OneAgent().GetVersion())
 		if err != nil {
 			log.Error(err, "could not set OneAgent healthcheck")
 		} else {

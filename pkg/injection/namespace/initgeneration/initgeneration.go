@@ -175,7 +175,7 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dk *d
 		OneAgentNoProxy:     strings.Join(oneAgentNoProxyValues, ","),
 		NetworkZone:         dk.Spec.NetworkZone,
 		SkipCertCheck:       dk.Spec.SkipCertCheck,
-		HasHost:             dk.OneAgent().CloudNativeFullstackMode(),
+		HasHost:             dk.OneAgent().IsCloudNativeFullstackMode(),
 		MonitoringNodes:     hostMonitoringNodes,
 		HostGroup:           dk.OneAgent().GetHostGroup(),
 		InitialConnectRetry: dk.FeatureAgentInitialConnectRetry(),
@@ -208,7 +208,7 @@ func (g *InitGenerator) getHostMonitoringNodes(dk *dynakube.DynaKube) (map[strin
 	tenantUUID := dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID
 
 	imNodes := map[string]string{}
-	if !dk.OneAgent().CloudNativeFullstackMode() {
+	if !dk.OneAgent().IsCloudNativeFullstackMode() {
 		return imNodes, nil
 	}
 
@@ -232,7 +232,7 @@ func (g *InitGenerator) calculateImNodes(dk *dynakube.DynaKube, tenantUUID strin
 		return nil, err
 	}
 
-	nodeSelector := labels.SelectorFromSet(dk.OneAgent().OneAgentNodeSelector(nil))
+	nodeSelector := labels.SelectorFromSet(dk.OneAgent().GetNodeSelector(nil))
 	updateNodeInfImNodes(dk, nodeInf, nodeSelector, tenantUUID)
 
 	return nodeInf.imNodes, nil

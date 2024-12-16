@@ -299,21 +299,21 @@ func (builder *testDynaKubeBuilder) withCloudNativeFullStack() *testDynaKubeBuil
 	builder.dynakube.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{
 		HostInjectSpec: oneagent.HostInjectSpec{},
 	}
-	builder.dynakube.Status.OneAgent.ImageID = builder.dynakube.OneAgent().DefaultOneAgentImage(testVersion)
+	builder.dynakube.Status.OneAgent.ImageID = builder.dynakube.OneAgent().GetDefaultImage(testVersion)
 
 	return builder
 }
 
 func (builder *testDynaKubeBuilder) withClassicFullStack() *testDynaKubeBuilder {
 	builder.dynakube.Spec.OneAgent.ClassicFullStack = &oneagent.HostInjectSpec{}
-	builder.dynakube.Status.OneAgent.ImageID = builder.dynakube.OneAgent().DefaultOneAgentImage(testVersion)
+	builder.dynakube.Status.OneAgent.ImageID = builder.dynakube.OneAgent().GetDefaultImage(testVersion)
 
 	return builder
 }
 
 func (builder *testDynaKubeBuilder) withHostMonitoring() *testDynaKubeBuilder {
 	builder.dynakube.Spec.OneAgent.HostMonitoring = &oneagent.HostInjectSpec{}
-	builder.dynakube.Status.OneAgent.ImageID = builder.dynakube.OneAgent().DefaultOneAgentImage(testVersion)
+	builder.dynakube.Status.OneAgent.ImageID = builder.dynakube.OneAgent().GetDefaultImage(testVersion)
 
 	return builder
 }

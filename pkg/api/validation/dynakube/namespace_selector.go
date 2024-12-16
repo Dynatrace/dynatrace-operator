@@ -18,7 +18,7 @@ Make sure the namespaceSelector doesn't conflict with other Dynakubes namespaceS
 )
 
 func conflictingNamespaceSelector(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
-	if !dk.OneAgent().NeedAppInjection() && !dk.MetadataEnrichmentEnabled() {
+	if !dk.OneAgent().IsAppInjectionNeeded() && !dk.MetadataEnrichmentEnabled() {
 		return ""
 	}
 
@@ -35,7 +35,7 @@ func conflictingNamespaceSelector(ctx context.Context, dv *Validator, dk *dynaku
 }
 
 func namespaceSelectorViolateLabelSpec(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	errs := validation.ValidateLabelSelector(dk.OneAgent().OneAgentNamespaceSelector(), validation.LabelSelectorValidationOptions{AllowInvalidLabelValueInSelector: false}, field.NewPath("spec", "namespaceSelector"))
+	errs := validation.ValidateLabelSelector(dk.OneAgent().GetNamespaceSelector(), validation.LabelSelectorValidationOptions{AllowInvalidLabelValueInSelector: false}, field.NewPath("spec", "namespaceSelector"))
 	if len(errs) == 0 {
 		return ""
 	}

@@ -70,10 +70,10 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		dsActual := &appsv1.DaemonSet{}
-		err = fakeClient.Get(ctx, types.NamespacedName{Name: dk.OneAgent().OneAgentDaemonsetName(), Namespace: namespace}, dsActual)
+		err = fakeClient.Get(ctx, types.NamespacedName{Name: dk.OneAgent().GetDaemonsetName(), Namespace: namespace}, dsActual)
 		require.NoError(t, err, "failed to get DaemonSet")
 		assert.Equal(t, namespace, dsActual.Namespace, "wrong namespace")
-		assert.Equal(t, dk.OneAgent().OneAgentDaemonsetName(), dsActual.GetObjectMeta().GetName(), "wrong name")
+		assert.Equal(t, dk.OneAgent().GetDaemonsetName(), dsActual.GetObjectMeta().GetName(), "wrong name")
 
 		assert.NotNil(t, dsActual.Spec.Template.Spec.Affinity)
 	})
@@ -81,7 +81,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("remove DaemonSet in case OneAgent is not needed + remove condition", func(t *testing.T) {
 		dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace}}
 		setDaemonSetCreatedCondition(dk.Conditions())
-		fakeClient := fake.NewClient(dk, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dk.OneAgent().OneAgentDaemonsetName(), Namespace: dk.Namespace}})
+		fakeClient := fake.NewClient(dk, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dk.OneAgent().GetDaemonsetName(), Namespace: dk.Namespace}})
 
 		reconciler := &Reconciler{
 			client:                   fakeClient,
@@ -95,7 +95,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		dsActual := &appsv1.DaemonSet{}
-		err = fakeClient.Get(ctx, types.NamespacedName{Name: dk.OneAgent().OneAgentDaemonsetName(), Namespace: namespace}, dsActual)
+		err = fakeClient.Get(ctx, types.NamespacedName{Name: dk.OneAgent().GetDaemonsetName(), Namespace: namespace}, dsActual)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 
@@ -226,10 +226,10 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 	require.NoError(t, err)
 
 	dsActual := &appsv1.DaemonSet{}
-	err = fakeClient.Get(ctx, types.NamespacedName{Name: dk.OneAgent().OneAgentDaemonsetName(), Namespace: namespace}, dsActual)
+	err = fakeClient.Get(ctx, types.NamespacedName{Name: dk.OneAgent().GetDaemonsetName(), Namespace: namespace}, dsActual)
 	require.NoError(t, err, "failed to get DaemonSet")
 	assert.Equal(t, namespace, dsActual.Namespace, "wrong namespace")
-	assert.Equal(t, dk.OneAgent().OneAgentDaemonsetName(), dsActual.GetObjectMeta().GetName(), "wrong name")
+	assert.Equal(t, dk.OneAgent().GetDaemonsetName(), dsActual.GetObjectMeta().GetName(), "wrong name")
 	assert.Equal(t, corev1.DNSClusterFirstWithHostNet, dsActual.Spec.Template.Spec.DNSPolicy, "wrong policy")
 	mock.AssertExpectationsForObjects(t, dtClient)
 
@@ -758,7 +758,7 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 		require.NoError(t, err)
 
 		var actual corev1.ConfigMap
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().OneAgentConnectionInfoConfigMapName(), Namespace: dk.Namespace}, &actual)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().GetConnectionInfoConfigMapName(), Namespace: dk.Namespace}, &actual)
 		require.NoError(t, err)
 		assert.Equal(t, testTenantUUID, actual.Data[connectioninfo.TenantUUIDKey])
 		assert.Equal(t, testTenantEndpoints, actual.Data[connectioninfo.CommunicationEndpointsKey])

@@ -38,184 +38,168 @@ func (oa *OneAgent) IsCSIAvailable() bool {
 	return installconfig.GetModules().CSIDriver
 }
 
-// ApplicationMonitoringMode returns true when application only section is used.
-func (oa *OneAgent) ApplicationMonitoringMode() bool {
+// IsApplicationMonitoringMode returns true when application only section is used.
+func (oa *OneAgent) IsApplicationMonitoringMode() bool {
 	return oa.ApplicationMonitoring != nil
 }
 
-// CloudNativeFullstackMode returns true when cloud native fullstack section is used.
-func (oa *OneAgent) CloudNativeFullstackMode() bool {
+// IsCloudNativeFullstackMode returns true when cloud native fullstack section is used.
+func (oa *OneAgent) IsCloudNativeFullstackMode() bool {
 	return oa.CloudNativeFullStack != nil
 }
 
-// HostMonitoringMode returns true when host monitoring section is used.
-func (oa *OneAgent) HostMonitoringMode() bool {
+// IsHostMonitoringMode returns true when host monitoring section is used.
+func (oa *OneAgent) IsHostMonitoringMode() bool {
 	return oa.HostMonitoring != nil
 }
 
-// ClassicFullStackMode returns true when classic fullstack section is used.
-func (oa *OneAgent) ClassicFullStackMode() bool {
+// IsClassicFullStackMode returns true when classic fullstack section is used.
+func (oa *OneAgent) IsClassicFullStackMode() bool {
 	return oa.ClassicFullStack != nil
 }
 
-// NeedsOneAgent returns true when a feature requires OneAgent instances.
-func (oa *OneAgent) NeedsOneAgent() bool {
-	return oa.ClassicFullStackMode() || oa.CloudNativeFullstackMode() || oa.HostMonitoringMode()
+// IsDaemonsetRequired returns true when a feature requires OneAgent instances.
+func (oa *OneAgent) IsDaemonsetRequired() bool {
+	return oa.IsClassicFullStackMode() || oa.IsCloudNativeFullstackMode() || oa.IsHostMonitoringMode()
 }
 
-func (oa *OneAgent) OneAgentDaemonsetName() string {
+func (oa *OneAgent) GetDaemonsetName() string {
 	return fmt.Sprintf("%s-%s", oa.name, PodNameOsAgent)
 }
 
-func (oa *OneAgent) NeedsOneAgentPrivileged() bool {
+func (oa *OneAgent) IsPrivilegedNeeded() bool {
 	return oa.featureOneAgentPrivileged
 }
 
-func (oa *OneAgent) NeedsOneAgentReadinessProbe() bool {
+func (oa *OneAgent) IsReadinessProbeNeeded() bool {
 	return oa.Healthcheck != nil
 }
 
-func (oa *OneAgent) NeedsOneAgentLivenessProbe() bool {
+func (oa *OneAgent) IsLivenessProbeNeeded() bool {
 	return oa.Healthcheck != nil && !oa.featureOneAgentSkipLivenessProbe
 }
 
-// ShouldAutoUpdateOneAgent returns true if the Operator should update OneAgent instances automatically.
-func (oa *OneAgent) ShouldAutoUpdateOneAgent() bool {
+// IsAutoUpdateEnabled returns true if the Operator should update OneAgent instances automatically.
+func (oa *OneAgent) IsAutoUpdateEnabled() bool {
 	switch {
-	case oa.CloudNativeFullstackMode():
+	case oa.IsCloudNativeFullstackMode():
 		return oa.CloudNativeFullStack.AutoUpdate == nil || *oa.CloudNativeFullStack.AutoUpdate
-	case oa.HostMonitoringMode():
+	case oa.IsHostMonitoringMode():
 		return oa.HostMonitoring.AutoUpdate == nil || *oa.HostMonitoring.AutoUpdate
-	case oa.ClassicFullStackMode():
+	case oa.IsClassicFullStackMode():
 		return oa.ClassicFullStack.AutoUpdate == nil || *oa.ClassicFullStack.AutoUpdate
 	default:
 		return false
 	}
 }
 
-// OneagentTenantSecret returns the name of the secret containing the token for the OneAgent.
-func (oa *OneAgent) OneagentTenantSecret() string {
+// GetTenantSecret returns the name of the secret containing the token for the OneAgent.
+func (oa *OneAgent) GetTenantSecret() string {
 	return oa.name + OneAgentTenantSecretSuffix
 }
 
-func (oa *OneAgent) OneAgentConnectionInfoConfigMapName() string {
+func (oa *OneAgent) GetConnectionInfoConfigMapName() string {
 	return oa.name + OneAgentConnectionInfoConfigMapSuffix
 }
 
-func (oa *OneAgent) UseReadOnlyOneAgents() bool {
-	return oa.CloudNativeFullstackMode() || (oa.HostMonitoringMode() && oa.IsCSIAvailable())
+func (oa *OneAgent) IsReadOnlyOneAgentsMode() bool {
+	return oa.IsCloudNativeFullstackMode() || (oa.IsHostMonitoringMode() && oa.IsCSIAvailable())
 }
 
-func (oa *OneAgent) NeedAppInjection() bool {
-	return oa.CloudNativeFullstackMode() || oa.ApplicationMonitoringMode()
+func (oa *OneAgent) IsAppInjectionNeeded() bool {
+	return oa.IsCloudNativeFullstackMode() || oa.IsApplicationMonitoringMode()
 }
 
-func (oa *OneAgent) InitResources() *corev1.ResourceRequirements {
-	if oa.ApplicationMonitoringMode() {
+func (oa *OneAgent) GetInitResources() *corev1.ResourceRequirements {
+	if oa.IsApplicationMonitoringMode() {
 		return oa.ApplicationMonitoring.InitResources
-	} else if oa.CloudNativeFullstackMode() {
+	} else if oa.IsCloudNativeFullstackMode() {
 		return oa.CloudNativeFullStack.InitResources
 	}
 
 	return nil
 }
 
-func (oa *OneAgent) OneAgentNamespaceSelector() *metav1.LabelSelector {
+func (oa *OneAgent) GetNamespaceSelector() *metav1.LabelSelector {
 	switch {
-	case oa.CloudNativeFullstackMode():
+	case oa.IsCloudNativeFullstackMode():
 		return &oa.CloudNativeFullStack.NamespaceSelector
-	case oa.ApplicationMonitoringMode():
+	case oa.IsApplicationMonitoringMode():
 		return &oa.ApplicationMonitoring.NamespaceSelector
 	}
 
 	return nil
 }
 
-func (oa *OneAgent) OneAgentSecCompProfile() string {
+func (oa *OneAgent) GetSecCompProfile() string {
 	switch {
-	case oa.CloudNativeFullstackMode():
+	case oa.IsCloudNativeFullstackMode():
 		return oa.CloudNativeFullStack.SecCompProfile
-	case oa.HostMonitoringMode():
+	case oa.IsHostMonitoringMode():
 		return oa.HostMonitoring.SecCompProfile
-	case oa.ClassicFullStackMode():
+	case oa.IsClassicFullStackMode():
 		return oa.ClassicFullStack.SecCompProfile
 	default:
 		return ""
 	}
 }
 
-func (oa *OneAgent) OneAgentNodeSelector(fallbackNodeSelector map[string]string) map[string]string {
+func (oa *OneAgent) GetNodeSelector(fallbackNodeSelector map[string]string) map[string]string {
 	switch {
-	case oa.ClassicFullStackMode():
+	case oa.IsClassicFullStackMode():
 		return oa.ClassicFullStack.NodeSelector
-	case oa.HostMonitoringMode():
+	case oa.IsHostMonitoringMode():
 		return oa.HostMonitoring.NodeSelector
-	case oa.CloudNativeFullstackMode():
+	case oa.IsCloudNativeFullstackMode():
 		return oa.CloudNativeFullStack.NodeSelector
 	}
 
 	return fallbackNodeSelector
 }
 
-// CustomCodeModulesImage provides the image reference for the CodeModules provided in the Spec.
-func (oa *OneAgent) CustomCodeModulesImage() string {
-	if oa.CloudNativeFullstackMode() {
-		return oa.CloudNativeFullStack.CodeModulesImage
-	} else if oa.ApplicationMonitoringMode() && oa.IsCSIAvailable() {
-		return oa.ApplicationMonitoring.CodeModulesImage
-	}
-
-	return ""
-}
-
-// CustomCodeModulesVersion provides the version for the CodeModules provided in the Spec.
-func (oa *OneAgent) CustomCodeModulesVersion() string {
-	return oa.CustomOneAgentVersion()
-}
-
-// OneAgentImage provides the image reference set in Status for the OneAgent.
+// GetImage provides the image reference set in Status for the OneAgent.
 // Format: repo@sha256:digest.
-func (oa *OneAgent) OneAgentImage() string {
+func (oa *OneAgent) GetImage() string {
 	return oa.Status.ImageID
 }
 
-// OneAgentVersion provides version set in Status for the OneAgent.
-func (oa *OneAgent) OneAgentVersion() string {
+// GetVersion provides version set in Status for the OneAgent.
+func (oa *OneAgent) GetVersion() string {
 	return oa.Status.Version
 }
 
-// CustomOneAgentVersion provides the version for the OneAgent provided in the Spec.
-func (oa *OneAgent) CustomOneAgentVersion() string {
+// GetCustomVersion provides the version for the OneAgent provided in the Spec.
+func (oa *OneAgent) GetCustomVersion() string {
 	switch {
-	case oa.ClassicFullStackMode():
+	case oa.IsClassicFullStackMode():
 		return oa.ClassicFullStack.Version
-	case oa.CloudNativeFullstackMode():
+	case oa.IsCloudNativeFullstackMode():
 		return oa.CloudNativeFullStack.Version
-	case oa.ApplicationMonitoringMode():
+	case oa.IsApplicationMonitoringMode():
 		return oa.ApplicationMonitoring.Version
-	case oa.HostMonitoringMode():
+	case oa.IsHostMonitoringMode():
 		return oa.HostMonitoring.Version
 	}
 
 	return ""
 }
 
-// CustomOneAgentImage provides the image reference for the OneAgent provided in the Spec.
-func (oa *OneAgent) CustomOneAgentImage() string {
+// GetCustomImage provides the image reference for the OneAgent provided in the Spec.
+func (oa *OneAgent) GetCustomImage() string {
 	switch {
-	case oa.ClassicFullStackMode():
+	case oa.IsClassicFullStackMode():
 		return oa.ClassicFullStack.Image
-	case oa.HostMonitoringMode():
+	case oa.IsHostMonitoringMode():
 		return oa.HostMonitoring.Image
-	case oa.CloudNativeFullstackMode():
+	case oa.IsCloudNativeFullstackMode():
 		return oa.CloudNativeFullStack.Image
 	}
 
 	return ""
 }
 
-// DefaultOneAgentImage provides the image reference for the OneAgent from tenant registry.
-func (oa *OneAgent) DefaultOneAgentImage(version string) string {
+// GetDefaultImage provides the image reference for the OneAgent from tenant registry.
+func (oa *OneAgent) GetDefaultImage(version string) string {
 	if oa.apiUrlHost == "" {
 		return ""
 	}
@@ -235,20 +219,20 @@ func (oa *OneAgent) GetHostGroup() string {
 		return oa.HostGroup
 	}
 
-	return oa.HostGroupAsParam()
+	return oa.GetHostGroupAsParam()
 }
 
-func (oa *OneAgent) HostGroupAsParam() string {
+func (oa *OneAgent) GetHostGroupAsParam() string {
 	var hostGroup string
 
 	var args []string
 
 	switch {
-	case oa.CloudNativeFullstackMode() && oa.CloudNativeFullStack.Args != nil:
+	case oa.IsCloudNativeFullstackMode() && oa.CloudNativeFullStack.Args != nil:
 		args = oa.CloudNativeFullStack.Args
-	case oa.ClassicFullStackMode() && oa.ClassicFullStack.Args != nil:
+	case oa.IsClassicFullStackMode() && oa.ClassicFullStack.Args != nil:
 		args = oa.ClassicFullStack.Args
-	case oa.HostMonitoringMode() && oa.HostMonitoring.Args != nil:
+	case oa.IsHostMonitoringMode() && oa.HostMonitoring.Args != nil:
 		args = oa.HostMonitoring.Args
 	}
 
@@ -279,34 +263,50 @@ func splitArg(arg string) (key, value string) {
 	return
 }
 
-func (oa *OneAgent) IsOneAgentCommunicationRouteClear() bool {
+func (oa *OneAgent) IsCommunicationRouteClear() bool {
 	return len(oa.ConnectionInfoStatus.CommunicationHosts) > 0
 }
 
-func (oa *OneAgent) GetOneAgentEnvironment() []corev1.EnvVar {
+func (oa *OneAgent) GetEnvironment() []corev1.EnvVar {
 	switch {
-	case oa.CloudNativeFullstackMode():
+	case oa.IsCloudNativeFullstackMode():
 		return oa.CloudNativeFullStack.Env
-	case oa.ClassicFullStackMode():
+	case oa.IsClassicFullStackMode():
 		return oa.ClassicFullStack.Env
-	case oa.HostMonitoringMode():
+	case oa.IsHostMonitoringMode():
 		return oa.HostMonitoring.Env
 	}
 
 	return []corev1.EnvVar{}
 }
 
-func (oa *OneAgent) OneAgentEndpoints() string {
+func (oa *OneAgent) GetEndpoints() string {
 	return oa.ConnectionInfoStatus.Endpoints
 }
 
-// CodeModulesVersion provides version set in Status for the CodeModules.
-func (oa *OneAgent) CodeModulesVersion() string {
+// GetCustomCodeModulesImage provides the image reference for the CodeModules provided in the Spec.
+func (oa *OneAgent) GetCustomCodeModulesImage() string {
+	if oa.IsCloudNativeFullstackMode() {
+		return oa.CloudNativeFullStack.CodeModulesImage
+	} else if oa.IsApplicationMonitoringMode() && oa.IsCSIAvailable() {
+		return oa.ApplicationMonitoring.CodeModulesImage
+	}
+
+	return ""
+}
+
+// GetCustomCodeModulesVersion provides the version for the CodeModules provided in the Spec.
+func (oa *OneAgent) GetCustomCodeModulesVersion() string {
+	return oa.GetCustomVersion()
+}
+
+// GetCodeModulesVersion provides version set in Status for the CodeModules.
+func (oa *OneAgent) GetCodeModulesVersion() string {
 	return oa.CodeModulesStatus.Version
 }
 
-// CodeModulesImage provides the image reference set in Status for the CodeModules.
+// GetCodeModulesImage provides the image reference set in Status for the CodeModules.
 // Format: repo@sha256:digest.
-func (oa *OneAgent) CodeModulesImage() string {
+func (oa *OneAgent) GetCodeModulesImage() string {
 	return oa.CodeModulesStatus.ImageID
 }

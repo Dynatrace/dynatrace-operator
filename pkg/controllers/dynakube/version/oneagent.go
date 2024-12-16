@@ -39,7 +39,7 @@ func (updater oneAgentUpdater) Name() string {
 }
 
 func (updater oneAgentUpdater) IsEnabled() bool {
-	if updater.dk.OneAgent().NeedsOneAgent() {
+	if updater.dk.OneAgent().IsDaemonsetRequired() {
 		return true
 	}
 
@@ -47,7 +47,7 @@ func (updater oneAgentUpdater) IsEnabled() bool {
 	updater.dk.Status.OneAgent.Healthcheck = nil
 	_ = meta.RemoveStatusCondition(updater.dk.Conditions(), oaConditionType)
 
-	return updater.dk.OneAgent().NeedsOneAgent()
+	return updater.dk.OneAgent().IsDaemonsetRequired()
 }
 
 func (updater *oneAgentUpdater) Target() *status.VersionStatus {
@@ -55,7 +55,7 @@ func (updater *oneAgentUpdater) Target() *status.VersionStatus {
 }
 
 func (updater oneAgentUpdater) CustomImage() string {
-	customImage := updater.dk.OneAgent().CustomOneAgentImage()
+	customImage := updater.dk.OneAgent().GetCustomImage()
 	if customImage != "" {
 		setVerificationSkippedReasonCondition(updater.dk.Conditions(), oaConditionType)
 	}
@@ -64,15 +64,15 @@ func (updater oneAgentUpdater) CustomImage() string {
 }
 
 func (updater oneAgentUpdater) CustomVersion() string {
-	return updater.dk.OneAgent().CustomOneAgentVersion()
+	return updater.dk.OneAgent().GetCustomVersion()
 }
 
 func (updater oneAgentUpdater) IsAutoUpdateEnabled() bool {
-	return updater.dk.OneAgent().ShouldAutoUpdateOneAgent()
+	return updater.dk.OneAgent().IsAutoUpdateEnabled()
 }
 
 func (updater oneAgentUpdater) IsPublicRegistryEnabled() bool {
-	isPublicRegistry := updater.dk.FeaturePublicRegistry() && !updater.dk.OneAgent().ClassicFullStackMode()
+	isPublicRegistry := updater.dk.FeaturePublicRegistry() && !updater.dk.OneAgent().IsClassicFullStackMode()
 	if isPublicRegistry {
 		setVerifiedCondition(updater.dk.Conditions(), oaConditionType) // Bit hacky, as things can still go wrong, but if so we will just overwrite this is LatestImageInfo.
 	}
@@ -110,7 +110,7 @@ func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 		return err
 	}
 
-	defaultImage := updater.dk.OneAgent().DefaultOneAgentImage(latestVersion)
+	defaultImage := updater.dk.OneAgent().GetDefaultImage(latestVersion)
 
 	err = updateVersionStatusForTenantRegistry(updater.Target(), defaultImage, latestVersion)
 	if err != nil {
@@ -165,7 +165,7 @@ func (updater oneAgentUpdater) ValidateStatus() error {
 	}
 
 	if imageType == status.ImmutableImageType {
-		if updater.dk.OneAgent().ClassicFullStackMode() {
+		if updater.dk.OneAgent().IsClassicFullStackMode() {
 			return errors.New("immutable OneAgent image in combination with classicFullStack mode is not possible")
 		}
 	}

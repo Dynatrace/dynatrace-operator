@@ -58,7 +58,7 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 		return defaultReconcileResult, nil
 	}
 
-	if !dynakube.OneAgent().NeedAppInjection() {
+	if !dynakube.OneAgent().IsAppInjectionNeeded() {
 		log.Info("app injection not enabled, skip garbage collection", "dynakube", dynakube.Name)
 
 		return defaultReconcileResult, nil

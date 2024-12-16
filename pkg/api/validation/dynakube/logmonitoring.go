@@ -16,7 +16,7 @@ func ignoredLogMonitoringTemplate(ctx context.Context, dv *Validator, dk *dynaku
 		return ""
 	}
 
-	if dk.OneAgent().NeedsOneAgent() && dk.LogMonitoring().TemplateSpec != nil {
+	if dk.OneAgent().IsDaemonsetRequired() && dk.LogMonitoring().TemplateSpec != nil {
 		return warningLogMonitoringIgnoredTemplate
 	}
 

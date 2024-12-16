@@ -49,15 +49,15 @@ func (dst *DynaKube) fromOneAgentSpec(src *dynakube.DynaKube) {
 	dst.Spec.OneAgent.HostGroup = src.Spec.OneAgent.HostGroup
 
 	switch {
-	case src.OneAgent().HostMonitoringMode():
+	case src.OneAgent().IsHostMonitoringMode():
 		dst.Spec.OneAgent.HostMonitoring = fromHostInjectSpec(*src.Spec.OneAgent.HostMonitoring)
-	case src.OneAgent().ClassicFullStackMode():
+	case src.OneAgent().IsClassicFullStackMode():
 		dst.Spec.OneAgent.ClassicFullStack = fromHostInjectSpec(*src.Spec.OneAgent.ClassicFullStack)
-	case src.OneAgent().CloudNativeFullstackMode():
+	case src.OneAgent().IsCloudNativeFullstackMode():
 		dst.Spec.OneAgent.CloudNativeFullStack = &CloudNativeFullStackSpec{}
 		dst.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec = *fromHostInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec)
 		dst.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec = *fromAppInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec)
-	case src.OneAgent().ApplicationMonitoringMode():
+	case src.OneAgent().IsApplicationMonitoringMode():
 		dst.Spec.OneAgent.ApplicationMonitoring = &ApplicationMonitoringSpec{}
 		dst.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec = *fromAppInjectSpec(src.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec)
 		dst.Spec.OneAgent.ApplicationMonitoring.Version = src.Spec.OneAgent.ApplicationMonitoring.Version
@@ -95,9 +95,9 @@ func (dst *DynaKube) fromActiveGateSpec(src *dynakube.DynaKube) {
 func (dst *DynaKube) fromMovedFields(src *dynakube.DynaKube) error {
 	dst.Annotations[AnnotationFeatureMetadataEnrichment] = strconv.FormatBool(src.MetadataEnrichmentEnabled())
 	dst.Annotations[AnnotationFeatureApiRequestThreshold] = strconv.FormatInt(int64(src.GetDynatraceApiRequestThreshold()), 10)
-	dst.Annotations[AnnotationFeatureOneAgentSecCompProfile] = src.OneAgent().OneAgentSecCompProfile()
+	dst.Annotations[AnnotationFeatureOneAgentSecCompProfile] = src.OneAgent().GetSecCompProfile()
 
-	if selector := src.OneAgent().OneAgentNamespaceSelector(); selector != nil {
+	if selector := src.OneAgent().GetNamespaceSelector(); selector != nil {
 		dst.Spec.NamespaceSelector = *selector
 	} else {
 		dst.Spec.NamespaceSelector = src.Spec.MetadataEnrichment.NamespaceSelector

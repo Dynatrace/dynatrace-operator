@@ -131,7 +131,7 @@ func TestReconciler(t *testing.T) {
 		err := rec.Reconcile(context.Background())
 		require.NoError(t, err)
 
-		assertSecretFound(t, clt, dk.OneAgent().OneagentTenantSecret(), dk.Namespace)
+		assertSecretFound(t, clt, dk.OneAgent().GetTenantSecret(), dk.Namespace)
 		assertSecretFound(t, clt, consts.AgentInitSecretName, testNamespace)
 		assertSecretNotFound(t, clt, consts.AgentInitSecretName, testNamespace2)
 		assertSecretFound(t, clt, consts.EnrichmentEndpointSecretName, testNamespace)

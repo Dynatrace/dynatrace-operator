@@ -101,7 +101,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, "Version verified for component.", condition.Message)
 
 		assertStatusBasedOnTenantRegistry(t, dk.ActiveGate().GetDefaultImage(testActiveGateImage.Tag), testActiveGateImage.Tag, dkStatus.ActiveGate.VersionStatus)
-		assertStatusBasedOnTenantRegistry(t, dk.OneAgent().DefaultOneAgentImage(testOneAgentImage.Tag), testOneAgentImage.Tag, dkStatus.OneAgent.VersionStatus)
+		assertStatusBasedOnTenantRegistry(t, dk.OneAgent().GetDefaultImage(testOneAgentImage.Tag), testOneAgentImage.Tag, dkStatus.OneAgent.VersionStatus)
 		assert.Equal(t, latestAgentVersion, dkStatus.CodeModules.VersionStatus.Version)
 
 		// no change if probe not old enough

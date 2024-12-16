@@ -39,7 +39,7 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 }
 
 func initContainerResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
-	customInitResources := dk.OneAgent().InitResources()
+	customInitResources := dk.OneAgent().GetInitResources()
 	if customInitResources != nil {
 		return *customInitResources
 	}

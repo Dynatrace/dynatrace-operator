@@ -49,7 +49,7 @@ func TestReconcile(t *testing.T) {
 
 		dk.Spec = dynakube.DynaKubeSpec{}
 
-		fakeClient := fake.NewClient(&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.OneAgent().OneagentTenantSecret(), Namespace: dk.Namespace}})
+		fakeClient := fake.NewClient(&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.OneAgent().GetTenantSecret(), Namespace: dk.Namespace}})
 		dtc := dtclientmock.NewClient(t)
 
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
@@ -61,7 +61,7 @@ func TestReconcile(t *testing.T) {
 		require.Nil(t, condition)
 
 		var actualSecret corev1.Secret
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().GetTenantSecret(), Namespace: testNamespace}, &actualSecret)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
@@ -136,7 +136,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, getTestCommunicationHosts(), dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts)
 
 		var actualSecret corev1.Secret
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().GetTenantSecret(), Namespace: testNamespace}, &actualSecret)
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 
@@ -170,7 +170,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, testTenantEndpoints, dk.Status.OneAgent.ConnectionInfoStatus.Endpoints)
 
 		var actualSecret corev1.Secret
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().GetTenantSecret(), Namespace: testNamespace}, &actualSecret)
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 
@@ -201,7 +201,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, testOutdated, dk.Status.OneAgent.ConnectionInfoStatus.Endpoints)
 
 		var actualSecret corev1.Secret
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().GetTenantSecret(), Namespace: testNamespace}, &actualSecret)
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testOutdated), actualSecret.Data[connectioninfo.TenantTokenKey])
 
@@ -233,7 +233,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, testTenantEndpoints, dk.Status.OneAgent.ConnectionInfoStatus.Endpoints)
 
 		var actualSecret corev1.Secret
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().GetTenantSecret(), Namespace: testNamespace}, &actualSecret)
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 
@@ -266,7 +266,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, testTenantEndpoints, dk.Status.OneAgent.ConnectionInfoStatus.Endpoints)
 
 		var actualSecret corev1.Secret
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().GetTenantSecret(), Namespace: testNamespace}, &actualSecret)
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 
@@ -334,7 +334,7 @@ func getTestDynakube() *dynakube.DynaKube {
 func buildOneAgentTenantSecret(dk *dynakube.DynaKube, token string) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.OneAgent().OneagentTenantSecret(),
+			Name:      dk.OneAgent().GetTenantSecret(),
 			Namespace: testNamespace,
 		},
 		Data: map[string][]byte{

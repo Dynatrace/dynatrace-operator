@@ -324,7 +324,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				},
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: dynakube.OneAgent().OneagentTenantSecret(),
+						Name: dynakube.OneAgent().GetTenantSecret(),
 					},
 					Data: map[string][]byte{
 						connectioninfo.TenantTokenKey: []byte("tenant-token"),
@@ -510,7 +510,7 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		require.NoError(t, err)
 
 		path := metadata.PathResolver{RootDir: "test"}
-		base64Image := base64.StdEncoding.EncodeToString([]byte(dynakube.OneAgent().CodeModulesImage()))
+		base64Image := base64.StdEncoding.EncodeToString([]byte(dynakube.OneAgent().GetCodeModulesImage()))
 		targetDir := path.AgentSharedBinaryDirForAgent(base64Image)
 
 		mockK8sClient := createMockK8sClient(ctx, dynakube)
@@ -556,7 +556,7 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		require.NoError(t, err)
 
 		path := metadata.PathResolver{RootDir: "test"}
-		base64Image := base64.StdEncoding.EncodeToString([]byte(dynakube.OneAgent().CodeModulesImage()))
+		base64Image := base64.StdEncoding.EncodeToString([]byte(dynakube.OneAgent().GetCodeModulesImage()))
 		targetDir := path.AgentSharedBinaryDirForAgent(base64Image)
 
 		mockK8sClient := createMockK8sClient(ctx, dynakube)

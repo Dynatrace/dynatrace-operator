@@ -59,7 +59,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 	}
 
 	injectEverythingLabels := maputil.MergeMap(
-		testDynakube.OneAgent().OneAgentNamespaceSelector().MatchLabels,
+		testDynakube.OneAgent().GetNamespaceSelector().MatchLabels,
 		testDynakube.MetadataEnrichmentNamespaceSelector().MatchLabels,
 	)
 
@@ -119,7 +119,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 			name: "control oneagent-injection with namespace-selector - pod",
 			app: sample.NewApp(t, &testDynakube,
 				sample.WithName("pod-oa-label"),
-				sample.WithNamespaceLabels(testDynakube.OneAgent().OneAgentNamespaceSelector().MatchLabels),
+				sample.WithNamespaceLabels(testDynakube.OneAgent().GetNamespaceSelector().MatchLabels),
 			),
 			assess: podHasOnlyOneAgentInitContainer,
 		},

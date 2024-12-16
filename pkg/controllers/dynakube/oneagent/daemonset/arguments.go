@@ -21,7 +21,7 @@ func (b *builder) arguments() ([]string, error) {
 		prioritymap.WithAllowDuplicates(),
 	)
 
-	isProxyAsEnvDeprecated, err := isProxyAsEnvVarDeprecated(b.dk.OneAgent().OneAgentVersion())
+	isProxyAsEnvDeprecated, err := isProxyAsEnvVarDeprecated(b.dk.OneAgent().GetVersion())
 	if err != nil {
 		return []string{}, err
 	}
@@ -38,9 +38,9 @@ func (b *builder) arguments() ([]string, error) {
 	appendOperatorVersionArg(argMap)
 	appendImmutableImageArgs(argMap)
 
-	if b.dk.OneAgent().ClassicFullStackMode() {
+	if b.dk.OneAgent().IsClassicFullStackMode() {
 		argMap.Append(argumentPrefix+"set-host-id-source", classicHostIdSource)
-	} else if b.dk.OneAgent().HostMonitoringMode() || b.dk.OneAgent().CloudNativeFullstackMode() {
+	} else if b.dk.OneAgent().IsHostMonitoringMode() || b.dk.OneAgent().IsCloudNativeFullstackMode() {
 		argMap.Append(argumentPrefix+"set-host-id-source", inframonHostIdSource)
 	}
 

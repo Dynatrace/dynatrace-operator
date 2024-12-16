@@ -32,7 +32,7 @@ func (updater codeModulesUpdater) Name() string {
 }
 
 func (updater codeModulesUpdater) IsEnabled() bool {
-	if updater.dk.OneAgent().NeedAppInjection() {
+	if updater.dk.OneAgent().IsAppInjectionNeeded() {
 		return true
 	}
 
@@ -47,7 +47,7 @@ func (updater *codeModulesUpdater) Target() *status.VersionStatus {
 }
 
 func (updater codeModulesUpdater) CustomImage() string {
-	customImage := updater.dk.OneAgent().CustomCodeModulesImage()
+	customImage := updater.dk.OneAgent().GetCustomCodeModulesImage()
 	if customImage != "" {
 		setVerificationSkippedReasonCondition(updater.dk.Conditions(), cmConditionType)
 	}
@@ -56,7 +56,7 @@ func (updater codeModulesUpdater) CustomImage() string {
 }
 
 func (updater codeModulesUpdater) CustomVersion() string {
-	return updater.dk.OneAgent().CustomCodeModulesVersion()
+	return updater.dk.OneAgent().GetCustomCodeModulesVersion()
 }
 
 func (updater codeModulesUpdater) IsAutoUpdateEnabled() bool {

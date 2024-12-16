@@ -111,7 +111,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if !r.dk.OneAgent().NeedsOneAgent() {
+	if !r.dk.OneAgent().IsDaemonsetRequired() {
 		return r.cleanUp(ctx)
 	}
 
@@ -195,7 +195,7 @@ func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 	configMapData := extractPublicData(r.dk)
 
 	configMap, err := configmap.Build(r.dk,
-		r.dk.OneAgent().OneAgentConnectionInfoConfigMapName(),
+		r.dk.OneAgent().GetConnectionInfoConfigMapName(),
 		configMapData,
 	)
 	if err != nil {
@@ -217,7 +217,7 @@ func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 
 func (r *Reconciler) deleteOneAgentTenantConnectionInfoConfigMap(ctx context.Context) error {
 	cm, _ := configmap.Build(r.dk,
-		r.dk.OneAgent().OneAgentConnectionInfoConfigMapName(),
+		r.dk.OneAgent().GetConnectionInfoConfigMapName(),
 		nil,
 	)
 	query := configmap.Query(r.client, r.apiReader, log)
@@ -289,7 +289,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context) error {
 }
 
 func (r *Reconciler) getOneagentPods(ctx context.Context, dk *dynakube.DynaKube, feature string) ([]corev1.Pod, []client.ListOption, error) {
-	agentVersion := dk.OneAgent().OneAgentVersion()
+	agentVersion := dk.OneAgent().GetVersion()
 	appLabels := labels.NewAppLabels(labels.OneAgentComponentLabel, dk.Name,
 		feature, agentVersion)
 	podList := &corev1.PodList{}
@@ -308,11 +308,11 @@ func (r *Reconciler) buildDesiredDaemonSet(dk *dynakube.DynaKube) (*appsv1.Daemo
 	var err error
 
 	switch {
-	case dk.OneAgent().ClassicFullStackMode():
+	case dk.OneAgent().IsClassicFullStackMode():
 		ds, err = daemonset.NewClassicFullStack(dk, r.clusterID).BuildDaemonSet()
-	case dk.OneAgent().HostMonitoringMode():
+	case dk.OneAgent().IsHostMonitoringMode():
 		ds, err = daemonset.NewHostMonitoring(dk, r.clusterID).BuildDaemonSet()
-	case dk.OneAgent().CloudNativeFullstackMode():
+	case dk.OneAgent().IsCloudNativeFullstackMode():
 		ds, err = daemonset.NewCloudNativeFullStack(dk, r.clusterID).BuildDaemonSet()
 	}
 
@@ -353,7 +353,7 @@ func (r *Reconciler) reconcileInstanceStatuses(ctx context.Context, dk *dynakube
 }
 
 func (r *Reconciler) removeOneAgentDaemonSet(ctx context.Context, dk *dynakube.DynaKube) error {
-	oneAgentDaemonSet := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dk.OneAgent().OneAgentDaemonsetName(), Namespace: dk.Namespace}}
+	oneAgentDaemonSet := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dk.OneAgent().GetDaemonsetName(), Namespace: dk.Namespace}}
 
 	return client.IgnoreNotFound(r.client.Delete(ctx, &oneAgentDaemonSet))
 }

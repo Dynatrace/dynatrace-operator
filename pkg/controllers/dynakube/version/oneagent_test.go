@@ -149,7 +149,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 				},
 			},
 		}
-		expectedImage := dk.OneAgent().DefaultOneAgentImage(testVersion)
+		expectedImage := dk.OneAgent().GetDefaultImage(testVersion)
 
 		mockClient := dtclientmock.NewClient(t)
 
@@ -172,7 +172,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 				},
 			},
 		}
-		expectedImage := dk.OneAgent().DefaultOneAgentImage(testVersion)
+		expectedImage := dk.OneAgent().GetDefaultImage(testVersion)
 
 		mockClient := dtclientmock.NewClient(t)
 		mockLatestAgentVersion(mockClient, testVersion)

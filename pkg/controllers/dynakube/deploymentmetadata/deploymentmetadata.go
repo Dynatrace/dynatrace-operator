@@ -15,13 +15,13 @@ type DeploymentMetadata struct {
 
 func GetOneAgentDeploymentType(dk dynakube.DynaKube) string {
 	switch {
-	case dk.OneAgent().HostMonitoringMode():
+	case dk.OneAgent().IsHostMonitoringMode():
 		return HostMonitoringDeploymentType
-	case dk.OneAgent().CloudNativeFullstackMode():
+	case dk.OneAgent().IsCloudNativeFullstackMode():
 		return CloudNativeDeploymentType
-	case dk.OneAgent().ClassicFullStackMode():
+	case dk.OneAgent().IsClassicFullStackMode():
 		return ClassicFullStackDeploymentType
-	case dk.OneAgent().ApplicationMonitoringMode():
+	case dk.OneAgent().IsApplicationMonitoringMode():
 		return ApplicationMonitoringDeploymentType
 	}
 

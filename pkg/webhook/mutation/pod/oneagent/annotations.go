@@ -40,6 +40,6 @@ func getInstallerInfo(pod *corev1.Pod, dk dynakube.DynaKube) installerInfo {
 		technologies: url.QueryEscape(maputils.GetField(pod.Annotations, dtwebhook.AnnotationTechnologies, "all")),
 		installPath:  maputils.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath),
 		installerURL: maputils.GetField(pod.Annotations, dtwebhook.AnnotationInstallerUrl, ""),
-		version:      dk.OneAgent().CodeModulesVersion(),
+		version:      dk.OneAgent().GetCodeModulesVersion(),
 	}
 }

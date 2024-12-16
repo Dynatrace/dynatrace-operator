@@ -73,17 +73,17 @@ func VerifyStartupPreviousVersion(builder *features.FeatureBuilder, level featur
 
 func Delete(builder *features.FeatureBuilder, level features.Level, dk dynakube.DynaKube) {
 	builder.WithStep("dynakube deleted", level, remove(dk))
-	if dk.OneAgent().NeedsOneAgent() {
-		builder.WithStep("oneagent pods stopped", level, oneagent.WaitForDaemonSetPodsDeletion(dk.OneAgent().OneAgentDaemonsetName(), dk.Namespace))
+	if dk.OneAgent().IsDaemonsetRequired() {
+		builder.WithStep("oneagent pods stopped", level, oneagent.WaitForDaemonSetPodsDeletion(dk.OneAgent().GetDaemonsetName(), dk.Namespace))
 	}
-	if dk.OneAgent().ClassicFullStackMode() {
+	if dk.OneAgent().IsClassicFullStackMode() {
 		oneagent.RunClassicUninstall(builder, level, dk)
 	}
 }
 
 func VerifyStartup(builder *features.FeatureBuilder, level features.Level, dk dynakube.DynaKube) {
-	if dk.OneAgent().NeedsOneAgent() {
-		builder.WithStep("oneagent started", level, oneagent.WaitForDaemonset(dk.OneAgent().OneAgentDaemonsetName(), dk.Namespace))
+	if dk.OneAgent().IsDaemonsetRequired() {
+		builder.WithStep("oneagent started", level, oneagent.WaitForDaemonset(dk.OneAgent().GetDaemonsetName(), dk.Namespace))
 	}
 	builder.WithStep(
 		fmt.Sprintf("'%s' dynakube phase changes to 'Running'", dk.Name),

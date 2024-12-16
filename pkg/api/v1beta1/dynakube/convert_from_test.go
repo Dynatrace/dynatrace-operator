@@ -136,7 +136,7 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 
 func compareMovedFields(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 	assert.Equal(t, oldDk.FeatureApiRequestThreshold(), newDk.ApiRequestThreshold())
-	assert.Equal(t, oldDk.FeatureOneAgentSecCompProfile(), newDk.OneAgent().OneAgentSecCompProfile())
+	assert.Equal(t, oldDk.FeatureOneAgentSecCompProfile(), newDk.OneAgent().GetSecCompProfile())
 	assert.Equal(t, !oldDk.FeatureDisableMetadataEnrichment(), newDk.MetadataEnrichmentEnabled())
 	assert.Equal(t, *oldDk.NamespaceSelector(), newDk.Spec.MetadataEnrichment.NamespaceSelector)
 
@@ -144,8 +144,8 @@ func compareMovedFields(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 		assert.Equal(t, dynakube.MountAttemptsToTimeout(oldDk.FeatureMaxFailedCsiMountAttempts()), newDk.FeatureMaxCSIRetryTimeout().String())
 	}
 
-	if newDk.OneAgent().NeedAppInjection() {
-		assert.Equal(t, oldDk.NamespaceSelector(), newDk.OneAgent().OneAgentNamespaceSelector())
+	if newDk.OneAgent().IsAppInjectionNeeded() {
+		assert.Equal(t, oldDk.NamespaceSelector(), newDk.OneAgent().GetNamespaceSelector())
 	}
 }
 
