@@ -181,6 +181,7 @@ csidriver:
       limits:
         cpu: 20m
         memory: 30Mi
+    operatorcmd: true
   livenessprobe:
     securityContext:
       runAsUser: 0
@@ -197,6 +198,7 @@ csidriver:
       limits:
         cpu: 20m
         memory: 30Mi
+    operatorcmd: true
 
 rbac:
   activeGate:

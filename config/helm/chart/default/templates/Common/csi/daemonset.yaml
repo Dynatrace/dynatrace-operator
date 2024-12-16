@@ -223,10 +223,15 @@ spec:
         - name: DRIVER_REG_SOCK_PATH
           value: {{ include "dynatrace-operator.CSISocketPath" . }}
         args:
+        {{- if .Values.csidriver.registrar.operatorcmd }}
+        - csi-registrar
+        {{- end }}
         - --csi-address=/csi/csi.sock
         - --kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)
+        {{- if not .Values.csidriver.registrar.operatorcmd }}
         command:
         - csi-node-driver-registrar
+        {{- end }}
         resources:
           {{- if .Values.csidriver.registrar.resources }}
           {{- toYaml .Values.csidriver.registrar.resources | nindent 10 }}
@@ -248,11 +253,16 @@ spec:
         image: {{ include "dynatrace-operator.image" . }}
         imagePullPolicy: Always
         args:
+        {{- if .Values.csidriver.livenessprobe.operatorcmd }}
+        - csi-livenessprobe
+        {{- end }}
         - --csi-address=/csi/csi.sock
         - --health-port=9808
         - --probe-timeout=9s
+        {{- if not .Values.csidriver.livenessprobe.operatorcmd }}
         command:
         - livenessprobe
+        {{- end }}
         resources:
           {{- if .Values.csidriver.livenessprobe.resources }}
           {{- toYaml .Values.csidriver.livenessprobe.resources | nindent 10 }}
