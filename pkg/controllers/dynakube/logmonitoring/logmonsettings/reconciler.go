@@ -40,11 +40,9 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	if !r.dk.LogMonitoring().IsEnabled() {
 		meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
 
-		if r.dk.Status.KubernetesClusterMEID == "" {
-			return errors.New("the status of the DynaKube is missing information about the kubernetes monitored-entity, skipping LogMonitoring deployment")
-		}
-
 		return nil
+	} else if r.dk.Status.KubernetesClusterMEID == "" {
+		return errors.New("the status of the DynaKube is missing information about the kubernetes monitored-entity, skipping LogMonitoring deployment")
 	}
 
 	err := r.checkLogMonitoringSettings(ctx)
