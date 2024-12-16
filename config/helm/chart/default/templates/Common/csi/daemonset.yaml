@@ -107,6 +107,8 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
+        - name: LOG_LEVEL
+          value: "debug"
         {{- if not .Values.debug }}
         livenessProbe:
           failureThreshold: 5
@@ -215,10 +217,11 @@ spec:
         - name: DRIVER_REG_SOCK_PATH
           value: {{ include "dynatrace-operator.CSISocketPath" . }}
         args:
+        - csi-registrar
         - --csi-address=/csi/csi.sock
         - --kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)
-        command:
-        - csi-node-driver-registrar
+        # command:
+        # - csi-node-driver-registrar
         resources:
           {{- if .Values.csidriver.registrar.resources }}
           {{- toYaml .Values.csidriver.registrar.resources | nindent 10 }}
@@ -240,11 +243,12 @@ spec:
         image: {{ include "dynatrace-operator.image" . }}
         imagePullPolicy: Always
         args:
+        - csi-livenessprobe
         - --csi-address=/csi/csi.sock
         - --health-port=9808
         - --probe-timeout=4s
-        command:
-        - livenessprobe
+        # command:
+        # - livenessprobe
         resources:
           {{- if .Values.csidriver.livenessprobe.resources }}
           {{- toYaml .Values.csidriver.livenessprobe.resources | nindent 10 }}

@@ -19,7 +19,9 @@ import (
 
 	cmdConfig "github.com/Dynatrace/dynatrace-operator/cmd/config"
 	csiInit "github.com/Dynatrace/dynatrace-operator/cmd/csi/init"
+	csiLivenessprobe "github.com/Dynatrace/dynatrace-operator/cmd/csi/livenessprobe"
 	csiProvisioner "github.com/Dynatrace/dynatrace-operator/cmd/csi/provisioner"
+	csiRegistrar "github.com/Dynatrace/dynatrace-operator/cmd/csi/registrar"
 	csiServer "github.com/Dynatrace/dynatrace-operator/cmd/csi/server"
 	"github.com/Dynatrace/dynatrace-operator/cmd/operator"
 	"github.com/Dynatrace/dynatrace-operator/cmd/standalone"
@@ -93,6 +95,14 @@ func createStartupProbe() startup_probe.CommandBuilder {
 	return startup_probe.NewCommandBuilder()
 }
 
+func createCsiLivenessprobeBuilder() csiLivenessprobe.CommandBuilder {
+	return csiLivenessprobe.NewCsiLivenessprobeCommandBuilder()
+}
+
+func createCsiRegistrarBuilder() csiRegistrar.CommandBuilder {
+	return csiRegistrar.NewCsiRegistrarCommandBuilder()
+}
+
 func rootCommand(_ *cobra.Command, _ []string) error {
 	return errors.New("operator binary must be called with one of the subcommands")
 }
@@ -112,6 +122,8 @@ func main() {
 		createSupportArchiveCommandBuilder().Build(),
 		createStartupProbe().Build(),
 		createCsiInitCommandBuilder().Build(),
+		createCsiLivenessprobeBuilder().Build(),
+		createCsiRegistrarBuilder().Build(),
 	)
 
 	err := cmd.Execute()

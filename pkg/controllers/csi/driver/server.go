@@ -144,10 +144,12 @@ func (svr *Server) Start(ctx context.Context) error {
 }
 
 func (svr *Server) GetPluginInfo(context.Context, *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
+	log.Debug("received GetPluginInfo")
 	return &csi.GetPluginInfoResponse{Name: dtcsi.DriverName, VendorVersion: version.Version}, nil
 }
 
 func (svr *Server) Probe(context.Context, *csi.ProbeRequest) (*csi.ProbeResponse, error) {
+	log.Debug("received Probe")
 	return &csi.ProbeResponse{}, nil
 }
 
