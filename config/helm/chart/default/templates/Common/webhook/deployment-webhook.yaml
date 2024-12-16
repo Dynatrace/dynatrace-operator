@@ -87,6 +87,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            {{- if .Values.webhook.serverPort }}
+            - name: WEBHOOK_PORT
+              value: "{{ .Values.webhook.serverPort }}"
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: install-config
@@ -106,11 +110,11 @@ spec:
             periodSeconds: 10
           ports:
             - name: server-port
-              containerPort: 8443
+              containerPort: {{ .Values.webhook.serverPort | default 8443 }}
             - name: livez
-              containerPort: 10080
+              containerPort: {{ .Values.webhook.livezPort | default 10080 }} # Currently only 10080 is supported
             - name: metrics
-              containerPort: 8080
+              containerPort: {{ .Values.webhook.metricsPort | default 8080 }} # Currently only 8080 is supported
           resources:
             requests:
               {{- toYaml (.Values.webhook).requests | nindent 14 }}
