@@ -91,9 +91,9 @@ spec:
             - name: WEBHOOK_PORT
               value: "{{ .Values.webhook.serverPort }}"
             {{- end }}
-            {{- if .Values.webhook.livezPort }}
+            {{- if .Values.webhook.healthProbePort }}
             - name: HEALTH_PROBE_BIND_ADDRESS
-              value: ":{{ .Values.webhook.livezPort }}"
+              value: ":{{ .Values.webhook.healthProbePort }}"
             {{- end }}
             {{- if .Values.webhook.metricsPort }}
             - name: METRICS_BIND_ADDRESS
@@ -120,7 +120,7 @@ spec:
             - name: server-port
               containerPort: {{ .Values.webhook.serverPort | default 8443 }}
             - name: livez
-              containerPort: {{ .Values.webhook.livezPort | default 10080 }}
+              containerPort: {{ .Values.webhook.healthProbePort | default 10080 }}
             - name: metrics
               containerPort: {{ .Values.webhook.metricsPort | default 8383 }}
           resources:
