@@ -5,85 +5,49 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
-func CreateForCurrentVersionIfNotExists(fs afero.Fs, targetDir string) error {
-	var relativeSymlinkPath string
+type Config struct {
+	ContextForLog       string
+	IsCurrentVerSymlink bool
+}
+
+func Create(fs afero.Fs, targetDir, symlinkDir string, symlinkConfig Config) error {
+	// MemMapFs (used for testing) doesn't comply with the Linker interface
+	linker, ok := fs.(afero.Linker)
+	if !ok {
+		log.Info("symlinking not possible", "targetDir", targetDir, "fs", fs)
+
+		return nil
+	}
+
+	var sourceDir string
 
 	var err error
 
-	targetBindDir := filepath.Join(targetDir, binDir)
+	if symlinkConfig.IsCurrentVerSymlink {
+		sourceDir, err = findVersionFromFileSystem(fs, targetDir)
+		if err != nil {
+			log.Info("failed to get the version from the filesystem", "targetDir", targetDir)
 
-	// MemMapFs (used for testing) doesn't comply with the Linker interface
-	linker, ok := fs.(afero.Linker)
-	if !ok {
-		log.Info("symlinking not possible", "targetDir", targetDir, "fs", fs)
+			return err
+		}
+	} else {
+		sourceDir = targetDir
+	}
 
+	// Check if the symlink already exists
+	if fileInfo, _ := fs.Stat(symlinkDir); fileInfo != nil {
+		log.Info("symlink already exists", "location", symlinkDir)
 		return nil
 	}
 
-	relativeSymlinkPath, err = findVersionFromFileSystem(fs, targetBindDir)
-	if err != nil {
-		log.Info("failed to get the version from the filesystem", "targetDir", targetDir)
+	log.Info("creating symlink", "points-to(relative)", sourceDir, "location", symlinkDir, "context", symlinkConfig.ContextForLog)
 
-		return err
-	}
-
-	symlinkTargetPath := filepath.Join(targetBindDir, "current")
-	if fileInfo, _ := fs.Stat(symlinkTargetPath); fileInfo != nil {
-		log.Info("symlink already exists", "location", symlinkTargetPath)
-
-		return nil
-	}
-
-	log.Info("creating symlink", "points-to(relative)", relativeSymlinkPath, "location", symlinkTargetPath)
-
-	if err := linker.SymlinkIfPossible(relativeSymlinkPath, symlinkTargetPath); err != nil {
-		log.Info("symlinking failed", "version", relativeSymlinkPath)
-
-		return errors.WithStack(err)
-	}
-
-	return nil
-}
-
-func CreateForLatestVersion(fs afero.Fs, dk dynakube.DynaKube, latestVersionDir, symlinkDir string) error {
-	// MemMapFs (used for testing) doesn't comply with the Linker interface
-	linker, ok := fs.(afero.Linker)
-	if !ok {
-		log.Info("symlinking not possible", "targetDir", latestVersionDir, "fs", fs)
-
-		return nil
-	}
-
-	log.Info("creating symlink", "points-to(relative)", latestVersionDir, "location", symlinkDir)
-
-	if err := linker.SymlinkIfPossible(latestVersionDir, symlinkDir); err != nil {
-		log.Info("symlinking failed", "codemodules-version", latestVersionDir)
-
-		return errors.WithStack(err)
-	}
-
-	return nil
-}
-
-func CreateForPodInfoDir(fs afero.Fs, targetDir, symlinkDir string) error {
-	// MemMapFs (used for testing) doesn't comply with the Linker interface
-	linker, ok := fs.(afero.Linker)
-	if !ok {
-		log.Info("symlinking not possible", "targetDir", targetDir, "fs", fs)
-
-		return nil
-	}
-
-	log.Info("creating symlink based on pod info", "points-to(relative)", targetDir, "location", symlinkDir)
-
-	if err := linker.SymlinkIfPossible(targetDir, symlinkDir); err != nil {
-		log.Info("symlinking failed", "podinfodir", targetDir)
-
+	if err := linker.SymlinkIfPossible(sourceDir, symlinkDir); err != nil {
+		log.Info("symlinking failed", "context", symlinkConfig.ContextForLog, "source", sourceDir)
 		return errors.WithStack(err)
 	}
 

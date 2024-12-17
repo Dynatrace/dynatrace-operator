@@ -98,7 +98,12 @@ func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, agentI
 		return err
 	}
 
-	err = symlink.CreateForLatestVersion(provisioner.fs, dk, targetDir, symlinkPath)
+	symlinkConfig := symlink.Config{
+		ContextForLog:       "latest codemodules version symlink",
+		IsCurrentVerSymlink: false,
+	}
+
+	err = symlink.Create(provisioner.fs, targetDir, symlinkPath, symlinkConfig)
 	if err != nil {
 		return err
 	}
