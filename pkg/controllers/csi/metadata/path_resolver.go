@@ -56,12 +56,12 @@ func (pr PathResolver) AppMountsBaseDir() string {
 	return filepath.Join(pr.RootDir, dtcsi.SharedAppMountsDir)
 }
 
-// AppMountForID replaces AgentRunDirForVolume, the directory where a given app-mount volume
+// AppMountForID replaces AgentRunDirForVolume, the directory where a given app-mount volume is stored
 func (pr PathResolver) AppMountForID(volumeID string) string {
 	return filepath.Join(pr.AppMountsBaseDir(), volumeID)
 }
 
-// AppMountForID replaces AgentRunDirForVolume, the directory where a given app-mount volume
+// AppMountForDK is a directory where a given app-mount volume is stored under a certain dynakube
 func (pr PathResolver) AppMountForDK(dkName string) string {
 	return filepath.Join(pr.RootDir, dkName, dtcsi.SharedAppMountsDir)
 }
