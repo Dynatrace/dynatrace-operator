@@ -4,17 +4,18 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/tls"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/utils"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/topology"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -84,7 +85,7 @@ func getStatefulset(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
 }
 
 func mockTLSSecret(t *testing.T, client client.Client, dk *dynakube.DynaKube) client.Client {
-	tlsSecret := getTLSSecret(tls.GetTLSSecretName(dk), dk.Namespace, "super-cert", "super-key")
+	tlsSecret := getTLSSecret(dk.ExtensionsTLSSecretName(), dk.Namespace, "super-cert", "super-key")
 
 	err := client.Create(context.Background(), &tlsSecret)
 	require.NoError(t, err)
@@ -179,7 +180,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 		statefulSet := getStatefulset(t, dk)
 
 		require.Len(t, statefulSet.Spec.Template.Annotations, 1)
-		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[consts.ExtensionsAnnotationSecretHash])
+		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[api.AnnotationSecretHash])
 	})
 	t.Run("annotation is set with tlsRefName", func(t *testing.T) {
 		dk := getTestDynakube()
@@ -187,7 +188,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 		statefulSet := getStatefulset(t, dk)
 
 		require.Len(t, statefulSet.Spec.Template.Annotations, 1)
-		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[consts.ExtensionsAnnotationSecretHash])
+		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[api.AnnotationSecretHash])
 	})
 	t.Run("annotation is updated when TLS Secret gets updated", func(t *testing.T) {
 		statefulSet := &appsv1.StatefulSet{}
@@ -204,10 +205,10 @@ func TestSecretHashAnnotation(t *testing.T) {
 		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
 
-		originalSecretHash := statefulSet.Spec.Template.Annotations[consts.ExtensionsAnnotationSecretHash]
+		originalSecretHash := statefulSet.Spec.Template.Annotations[api.AnnotationSecretHash]
 
 		// then update the TLS Secret and call reconcile again
-		updatedTLSSecret := getTLSSecret(tls.GetTLSSecretName(dk), dk.Namespace, "updated-cert", "updated-key")
+		updatedTLSSecret := getTLSSecret(dk.ExtensionsTLSSecretName(), dk.Namespace, "updated-cert", "updated-key")
 		err = mockK8sClient.Update(context.Background(), &updatedTLSSecret)
 		require.NoError(t, err)
 
@@ -216,7 +217,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
 
-		resultingSecretHash := statefulSet.Spec.Template.Annotations[consts.ExtensionsAnnotationSecretHash]
+		resultingSecretHash := statefulSet.Spec.Template.Annotations[api.AnnotationSecretHash]
 
 		// original hash and resulting hash should be different, value got updated on reconcile
 		assert.NotEqual(t, originalSecretHash, resultingSecretHash)
@@ -228,7 +229,7 @@ func TestTopologySpreadConstraints(t *testing.T) {
 		dk := getTestDynakube()
 		statefulSet := getStatefulset(t, dk)
 		appLabels := buildAppLabels(dk.Name)
-		assert.Equal(t, utils.BuildTopologySpreadConstraints(dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints, appLabels), statefulSet.Spec.Template.Spec.TopologySpreadConstraints)
+		assert.Equal(t, topology.SpreadConstraints(dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints, appLabels), statefulSet.Spec.Template.Spec.TopologySpreadConstraints)
 	})
 
 	t.Run("custom TopologySpreadConstraints", func(t *testing.T) {
@@ -263,12 +264,12 @@ func TestEnvironmentVariables(t *testing.T) {
 
 		assert.Equal(t, corev1.EnvVar{Name: envTenantId, Value: dk.Status.ActiveGate.ConnectionInfo.TenantUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
 		assert.Equal(t, corev1.EnvVar{Name: envServerUrl, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ".svc.cluster.local:443"}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
-		assert.Equal(t, corev1.EnvVar{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + consts.EecTokenSecretKey}, statefulSet.Spec.Template.Spec.Containers[0].Env[2])
+		assert.Equal(t, corev1.EnvVar{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + eecConsts.TokenSecretKey}, statefulSet.Spec.Template.Spec.Containers[0].Env[2])
 		assert.Equal(t, corev1.EnvVar{Name: envEecIngestPort, Value: strconv.Itoa(int(collectorPort))}, statefulSet.Spec.Template.Spec.Containers[0].Env[3])
 		assert.Equal(t, corev1.EnvVar{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
 		assert.Equal(t, corev1.EnvVar{Name: envDsInstallDirName, Value: envDsInstallDir}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
 		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sExtServiceUrl, Value: "https://" + dk.Name + consts.ExtensionsControllerSuffix + "." + dk.Namespace}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sExtServiceUrl, Value: "https://" + dk.Name + eecConsts.ExtensionsControllerSuffix + "." + dk.Namespace}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
 		assert.Equal(t, corev1.EnvVar{Name: envDSTokenPath, Value: eecTokenMountPath + "/" + consts.OtelcTokenSecretKey}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
 		assert.Equal(t, corev1.EnvVar{Name: envHttpsCertPathPem, Value: envEecHttpsCertPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
 		assert.Equal(t, corev1.EnvVar{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
@@ -547,7 +548,7 @@ func TestAnnotations(t *testing.T) {
 
 		assert.Len(t, statefulSet.ObjectMeta.Annotations, 2)
 		require.Len(t, statefulSet.Spec.Template.ObjectMeta.Annotations, 1)
-		assert.NotEmpty(t, statefulSet.Spec.Template.ObjectMeta.Annotations[consts.ExtensionsAnnotationSecretHash])
+		assert.NotEmpty(t, statefulSet.Spec.Template.ObjectMeta.Annotations[api.AnnotationSecretHash])
 	})
 
 	t.Run("custom annotations", func(t *testing.T) {
@@ -563,7 +564,7 @@ func TestAnnotations(t *testing.T) {
 		assert.Empty(t, statefulSet.ObjectMeta.Annotations["a"])
 		require.Len(t, statefulSet.Spec.Template.ObjectMeta.Annotations, 2)
 		assert.Equal(t, "b", statefulSet.Spec.Template.ObjectMeta.Annotations["a"])
-		assert.NotEmpty(t, statefulSet.Spec.Template.ObjectMeta.Annotations[consts.ExtensionsAnnotationSecretHash])
+		assert.NotEmpty(t, statefulSet.Spec.Template.ObjectMeta.Annotations[api.AnnotationSecretHash])
 	})
 }
 

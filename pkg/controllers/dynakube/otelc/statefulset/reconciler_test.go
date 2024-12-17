@@ -1,25 +1,27 @@
-package otel
+package statefulset
 
 import (
 	"context"
 	"fmt"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/tls"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/utils"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/topology"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -27,77 +29,65 @@ import (
 const (
 	testDynakubeName   = "dynakube"
 	testNamespaceName  = "dynatrace"
-	testOtelPullSecret = "otel-pull-secret"
+	testOtelPullSecret = "otelc-pull-secret"
 )
 
-func getTestDynakube() *dynakube.DynaKube {
-	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        testDynakubeName,
-			Namespace:   testNamespaceName,
-			Annotations: map[string]string{},
-		},
-		Spec: dynakube.DynaKubeSpec{
-			Extensions: &dynakube.ExtensionsSpec{},
-			Templates:  dynakube.TemplatesSpec{OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{}},
-		},
-	}
-}
+func TestReconcile(t *testing.T) {
+	ctx := context.Background()
 
-func getStatefulset(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
-	mockK8sClient := fake.NewClient(dk)
-	mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
-
-	err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
-	require.NoError(t, err)
-
-	statefulSet := &appsv1.StatefulSet{}
-	err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
-	require.NoError(t, err)
-
-	return statefulSet
-}
-
-func mockTLSSecret(t *testing.T, client client.Client, dk *dynakube.DynaKube) client.Client {
-	tlsSecret := getTLSSecret(tls.GetTLSSecretName(dk), dk.Namespace, "super-cert", "super-key")
-
-	err := client.Create(context.Background(), &tlsSecret)
-	require.NoError(t, err)
-
-	return client
-}
-
-func getTLSSecret(name string, namespace string, crt string, key string) corev1.Secret {
-	return corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Data: map[string][]byte{
-			consts.TLSCrtDataName: []byte(crt),
-			consts.TLSKeyDataName: []byte(key),
-		},
-	}
-}
-
-func TestConditions(t *testing.T) {
-	t.Run("extensions are disabled", func(t *testing.T) {
+	t.Run("Create and update works with minimal setup", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Extensions = nil
-		conditions.SetStatefulSetCreated(dk.Conditions(), otelControllerStatefulSetConditionType, dk.ExtensionsCollectorStatefulsetName())
 
-		mockK8sClient := fake.NewClient(dk)
+		mockK8sClient := fake.NewClient()
+		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
-		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
+		reconciler := NewReconciler(mockK8sClient,
+			mockK8sClient, dk)
+		err := reconciler.Reconcile(ctx)
 		require.NoError(t, err)
 
-		statefulSet := &appsv1.StatefulSet{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
-		require.Error(t, err)
+		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
+		oldTransitionTime := condition.LastTransitionTime
+		require.NotNil(t, condition)
+		require.NotEmpty(t, oldTransitionTime)
+		assert.Equal(t, conditions.StatefulSetCreatedReason, condition.Reason)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 
-		assert.True(t, errors.IsNotFound(err))
+		err = reconciler.Reconcile(context.Background())
+		require.NoError(t, err)
 
-		assert.Empty(t, dk.Conditions())
+		var sts appsv1.StatefulSet
+		err = mockK8sClient.Get(ctx, types.NamespacedName{
+			Name:      dk.ExtensionsCollectorStatefulsetName(),
+			Namespace: dk.Namespace,
+		}, &sts)
+		require.False(t, k8serrors.IsNotFound(err))
+		assert.NotEmpty(t, sts)
+	})
+	t.Run("Only runs when required, and cleans up condition + statefulset", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Extensions = nil
+
+		previousSts := appsv1.StatefulSet{}
+		previousSts.Name = dk.ExtensionsCollectorStatefulsetName()
+		previousSts.Namespace = dk.Namespace
+		mockK8sClient := fake.NewClient(&previousSts)
+		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
+
+		conditions.SetStatefulSetCreated(dk.Conditions(), conditionType, "this is a test")
+
+		reconciler := NewReconciler(mockK8sClient, mockK8sClient, dk)
+		err := reconciler.Reconcile(ctx)
+
+		require.NoError(t, err)
+		assert.Empty(t, *dk.Conditions())
+
+		var sts appsv1.StatefulSet
+		err = mockK8sClient.Get(ctx, types.NamespacedName{
+			Name:      dk.ExtensionsCollectorStatefulsetName(),
+			Namespace: dk.Namespace,
+		}, &sts)
+		require.True(t, k8serrors.IsNotFound(err))
 	})
 }
 
@@ -108,7 +98,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 		statefulSet := getStatefulset(t, dk)
 
 		require.Len(t, statefulSet.Spec.Template.Annotations, 1)
-		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[consts.ExtensionsAnnotationSecretHash])
+		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[api.AnnotationSecretHash])
 	})
 	t.Run("annotation is set with tlsRefName", func(t *testing.T) {
 		dk := getTestDynakube()
@@ -116,7 +106,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 		statefulSet := getStatefulset(t, dk)
 
 		require.Len(t, statefulSet.Spec.Template.Annotations, 1)
-		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[consts.ExtensionsAnnotationSecretHash])
+		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[api.AnnotationSecretHash])
 	})
 	t.Run("annotation is updated when TLS Secret gets updated", func(t *testing.T) {
 		statefulSet := &appsv1.StatefulSet{}
@@ -133,10 +123,10 @@ func TestSecretHashAnnotation(t *testing.T) {
 		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
 
-		originalSecretHash := statefulSet.Spec.Template.Annotations[consts.ExtensionsAnnotationSecretHash]
+		originalSecretHash := statefulSet.Spec.Template.Annotations[api.AnnotationSecretHash]
 
 		// then update the TLS Secret and call reconcile again
-		updatedTLSSecret := getTLSSecret(tls.GetTLSSecretName(dk), dk.Namespace, "updated-cert", "updated-key")
+		updatedTLSSecret := getTLSSecret(dk.ExtensionsTLSSecretName(), dk.Namespace, "updated-cert", "updated-key")
 		err = mockK8sClient.Update(context.Background(), &updatedTLSSecret)
 		require.NoError(t, err)
 
@@ -145,7 +135,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
 
-		resultingSecretHash := statefulSet.Spec.Template.Annotations[consts.ExtensionsAnnotationSecretHash]
+		resultingSecretHash := statefulSet.Spec.Template.Annotations[api.AnnotationSecretHash]
 
 		// original hash and resulting hash should be different, value got updated on reconcile
 		assert.NotEqual(t, originalSecretHash, resultingSecretHash)
@@ -180,7 +170,7 @@ func TestTopologySpreadConstraints(t *testing.T) {
 		dk := getTestDynakube()
 		statefulSet := getStatefulset(t, dk)
 		appLabels := buildAppLabels(dk.Name)
-		assert.Equal(t, utils.BuildTopologySpreadConstraints(dk.Spec.Templates.OpenTelemetryCollector.TopologySpreadConstraints, appLabels), statefulSet.Spec.Template.Spec.TopologySpreadConstraints)
+		assert.Equal(t, topology.SpreadConstraints(dk.Spec.Templates.OpenTelemetryCollector.TopologySpreadConstraints, appLabels), statefulSet.Spec.Template.Spec.TopologySpreadConstraints)
 	})
 
 	t.Run("custom TopologySpreadConstraints", func(t *testing.T) {
@@ -352,7 +342,7 @@ func TestAnnotations(t *testing.T) {
 
 		assert.Len(t, statefulSet.ObjectMeta.Annotations, 1)
 		require.Len(t, statefulSet.Spec.Template.ObjectMeta.Annotations, 1)
-		assert.NotEmpty(t, statefulSet.Spec.Template.ObjectMeta.Annotations[consts.ExtensionsAnnotationSecretHash])
+		assert.NotEmpty(t, statefulSet.Spec.Template.ObjectMeta.Annotations[api.AnnotationSecretHash])
 	})
 
 	t.Run("custom annotations", func(t *testing.T) {
@@ -368,7 +358,7 @@ func TestAnnotations(t *testing.T) {
 		assert.Empty(t, statefulSet.ObjectMeta.Annotations["a"])
 		require.Len(t, statefulSet.Spec.Template.ObjectMeta.Annotations, 2)
 		assert.Equal(t, "b", statefulSet.Spec.Template.ObjectMeta.Annotations["a"])
-		assert.NotEmpty(t, statefulSet.Spec.Template.ObjectMeta.Annotations[consts.ExtensionsAnnotationSecretHash])
+		assert.NotEmpty(t, statefulSet.Spec.Template.ObjectMeta.Annotations[api.AnnotationSecretHash])
 	})
 }
 
@@ -491,7 +481,7 @@ func TestVolumes(t *testing.T) {
 		}
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
 	})
-	t.Run("volumes with otel token", func(t *testing.T) {
+	t.Run("volumes with otelc token", func(t *testing.T) {
 		dk := getTestDynakube()
 		statefulSet := getStatefulset(t, dk)
 
@@ -513,4 +503,54 @@ func TestVolumes(t *testing.T) {
 
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
 	})
+}
+
+func getTestDynakube() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        testDynakubeName,
+			Namespace:   testNamespaceName,
+			Annotations: map[string]string{},
+		},
+		Spec: dynakube.DynaKubeSpec{
+			Extensions: &dynakube.ExtensionsSpec{},
+			Templates:  dynakube.TemplatesSpec{OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{}},
+		},
+	}
+}
+
+func getStatefulset(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
+	mockK8sClient := fake.NewClient(dk)
+	mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
+
+	err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
+	require.NoError(t, err)
+
+	statefulSet := &appsv1.StatefulSet{}
+	err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+	require.NoError(t, err)
+
+	return statefulSet
+}
+
+func mockTLSSecret(t *testing.T, client client.Client, dk *dynakube.DynaKube) client.Client {
+	tlsSecret := getTLSSecret(dk.ExtensionsTLSSecretName(), dk.Namespace, "super-cert", "super-key")
+
+	err := client.Create(context.Background(), &tlsSecret)
+	require.NoError(t, err)
+
+	return client
+}
+
+func getTLSSecret(name string, namespace string, crt string, key string) corev1.Secret {
+	return corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Data: map[string][]byte{
+			consts.TLSCrtDataName: []byte(crt),
+			consts.TLSKeyDataName: []byte(key),
+		},
+	}
 }

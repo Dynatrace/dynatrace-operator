@@ -21,6 +21,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
@@ -77,6 +78,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, co
 		injectionReconcilerBuilder:          injection.NewReconciler,
 		istioReconcilerBuilder:              istio.NewReconciler,
 		extensionReconcilerBuilder:          extension.NewReconciler,
+		otelcReconcilerBuilder:              otelc.NewReconciler,
 		logMonitoringReconcilerBuilder:      logmonitoring.NewReconciler,
 		proxyReconcilerBuilder:              proxy.NewReconciler,
 		kspmReconcilerBuilder:               kspm.NewReconciler,
@@ -113,6 +115,7 @@ type Controller struct {
 	injectionReconcilerBuilder          injection.ReconcilerBuilder
 	istioReconcilerBuilder              istio.ReconcilerBuilder
 	extensionReconcilerBuilder          extension.ReconcilerBuilder
+	otelcReconcilerBuilder              otelc.ReconcilerBuilder
 	logMonitoringReconcilerBuilder      logmonitoring.ReconcilerBuilder
 	proxyReconcilerBuilder              proxy.ReconcilerBuilder
 	kspmReconcilerBuilder               kspm.ReconcilerBuilder
@@ -328,6 +331,17 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 	err = extensionReconciler.Reconcile(ctx)
 	if err != nil {
 		log.Info("could not reconcile Extensions")
+
+		componentErrors = append(componentErrors, err)
+	}
+
+	log.Info("start reconciling app otelc")
+
+	otelcReconciler := controller.otelcReconcilerBuilder(controller.client, controller.apiReader, dk)
+
+	err = otelcReconciler.Reconcile(ctx)
+	if err != nil {
+		log.Info("could not reconcile otelc")
 
 		componentErrors = append(componentErrors, err)
 	}

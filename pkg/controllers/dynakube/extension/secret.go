@@ -3,7 +3,8 @@ package extension
 import (
 	"context"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
@@ -16,10 +17,10 @@ import (
 
 func (r *reconciler) reconcileSecret(ctx context.Context) error {
 	if !r.dk.IsExtensionsEnabled() {
-		if meta.FindStatusCondition(*r.dk.Conditions(), consts.ExtensionsSecretConditionType) == nil {
+		if meta.FindStatusCondition(*r.dk.Conditions(), eecConsts.SecretConditionType) == nil {
 			return nil
 		}
-		defer meta.RemoveStatusCondition(r.dk.Conditions(), consts.ExtensionsSecretConditionType)
+		defer meta.RemoveStatusCondition(r.dk.Conditions(), eecConsts.SecretConditionType)
 
 		secret, err := r.buildSecret(dttoken.Token{}, dttoken.Token{})
 		if err != nil {
@@ -41,16 +42,16 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 	_, err := k8ssecret.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKey{Name: r.getSecretName(), Namespace: r.dk.Namespace})
 	if err != nil && !k8serrors.IsNotFound(err) {
 		log.Info("failed to check existence of extension secret")
-		conditions.SetKubeApiError(r.dk.Conditions(), consts.ExtensionsSecretConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), eecConsts.SecretConditionType, err)
 
 		return err
 	}
 
 	if k8serrors.IsNotFound(err) {
-		newEecToken, err := dttoken.New(consts.EecTokenSecretValuePrefix)
+		newEecToken, err := dttoken.New(eecConsts.TokenSecretValuePrefix)
 		if err != nil {
 			log.Info("failed to generate eec token")
-			conditions.SetSecretGenFailed(r.dk.Conditions(), consts.ExtensionsSecretConditionType, errors.Wrap(err, "error generating eec token"))
+			conditions.SetSecretGenFailed(r.dk.Conditions(), eecConsts.SecretConditionType, errors.Wrap(err, "error generating eec token"))
 
 			return err
 		}
@@ -58,7 +59,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 		newOtelcToken, err := dttoken.New(consts.OtelcTokenSecretValuePrefix)
 		if err != nil {
 			log.Info("failed to generate otelc token")
-			conditions.SetSecretGenFailed(r.dk.Conditions(), consts.ExtensionsSecretConditionType, errors.Wrap(err, "error generating otelc token"))
+			conditions.SetSecretGenFailed(r.dk.Conditions(), eecConsts.SecretConditionType, errors.Wrap(err, "error generating otelc token"))
 
 			return err
 		}
@@ -66,7 +67,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 		newSecret, err := r.buildSecret(*newEecToken, *newOtelcToken)
 		if err != nil {
 			log.Info("failed to generate extension secret")
-			conditions.SetSecretGenFailed(r.dk.Conditions(), consts.ExtensionsSecretConditionType, err)
+			conditions.SetSecretGenFailed(r.dk.Conditions(), eecConsts.SecretConditionType, err)
 
 			return err
 		}
@@ -74,20 +75,20 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 		_, err = k8ssecret.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newSecret)
 		if err != nil {
 			log.Info("failed to create/update extension secret")
-			conditions.SetKubeApiError(r.dk.Conditions(), consts.ExtensionsSecretConditionType, err)
+			conditions.SetKubeApiError(r.dk.Conditions(), eecConsts.SecretConditionType, err)
 
 			return err
 		}
 	}
 
-	conditions.SetSecretCreated(r.dk.Conditions(), consts.ExtensionsSecretConditionType, r.getSecretName())
+	conditions.SetSecretCreated(r.dk.Conditions(), eecConsts.SecretConditionType, r.getSecretName())
 
 	return nil
 }
 
 func (r *reconciler) buildSecret(eecToken dttoken.Token, otelcToken dttoken.Token) (*corev1.Secret, error) {
 	secretData := map[string][]byte{
-		consts.EecTokenSecretKey:   []byte(eecToken.String()),
+		eecConsts.TokenSecretKey:   []byte(eecToken.String()),
 		consts.OtelcTokenSecretKey: []byte(otelcToken.String()),
 	}
 

@@ -8,8 +8,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/servicename"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
@@ -50,12 +50,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk := createDynakube()
 
 		// mock SecretCreated condition
-		conditions.SetSecretCreated(dk.Conditions(), consts.ExtensionsSecretConditionType, dk.ExtensionsTokenSecretName())
+		conditions.SetSecretCreated(dk.Conditions(), eecConsts.SecretConditionType, dk.ExtensionsTokenSecretName())
 
 		// mock secret
-		secretToken, _ := dttoken.New(consts.EecTokenSecretValuePrefix)
+		secretToken, _ := dttoken.New(eecConsts.TokenSecretValuePrefix)
 		secretData := map[string][]byte{
-			consts.EecTokenSecretKey: []byte(secretToken.String()),
+			eecConsts.TokenSecretKey: []byte(secretToken.String()),
 		}
 		secretMock, _ := k8ssecret.Build(dk, testName+"-extensions-token", secretData)
 
@@ -95,13 +95,13 @@ func TestReconciler_Reconcile(t *testing.T) {
 		var secretFound corev1.Secret
 		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
 		require.NoError(t, err)
-		require.NotEmpty(t, secretFound.Data[consts.EecTokenSecretKey])
+		require.NotEmpty(t, secretFound.Data[eecConsts.TokenSecretKey])
 		require.NotEmpty(t, secretFound.Data[consts.OtelcTokenSecretKey])
 
 		// assert extensions token condition is added
 		require.NotEmpty(t, dk.Conditions())
 
-		condition := meta.FindStatusCondition(*dk.Conditions(), consts.ExtensionsSecretConditionType)
+		condition := meta.FindStatusCondition(*dk.Conditions(), eecConsts.SecretConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 		assert.Equal(t, dk.ExtensionsTokenSecretName()+" created", condition.Message)
@@ -118,7 +118,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		// assert extensions token condition is added
 		require.NotEmpty(t, dk.Conditions())
 
-		condition := meta.FindStatusCondition(*dk.Conditions(), consts.ExtensionsSecretConditionType)
+		condition := meta.FindStatusCondition(*dk.Conditions(), eecConsts.SecretConditionType)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 		assert.Equal(t, conditions.KubeApiErrorReason, condition.Reason)
 		assert.Contains(t, condition.Message, "A problem occurred when using the Kubernetes API")
@@ -136,17 +136,17 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var svc corev1.Service
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: servicename.Build(r.dk), Namespace: testNamespace}, &svc)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsServiceName(), Namespace: testNamespace}, &svc)
 		require.NoError(t, err)
 		assert.NotNil(t, svc)
 
 		// assert extensions token condition is added
 		require.NotEmpty(t, dk.Conditions())
 
-		condition := meta.FindStatusCondition(*dk.Conditions(), consts.ExtensionsServiceConditionType)
+		condition := meta.FindStatusCondition(*dk.Conditions(), eecConsts.ServiceConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, conditions.ServiceCreatedReason, condition.Reason)
-		assert.Equal(t, dk.Name+consts.ExtensionsControllerSuffix+" created", condition.Message)
+		assert.Equal(t, dk.Name+eecConsts.ExtensionsControllerSuffix+" created", condition.Message)
 	})
 
 	t.Run("Don't create service when extensions are disabled with minimal setup", func(t *testing.T) {
@@ -161,7 +161,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var svc corev1.Service
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: servicename.Build(r.dk), Namespace: testNamespace}, &svc)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsServiceName(), Namespace: testNamespace}, &svc)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
