@@ -26,6 +26,7 @@ import (
 
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/pkg/errors"
@@ -167,6 +168,22 @@ func (pub *Publisher) mountCodeModule(volumeCfg *csivolumes.VolumeConfig) error 
 	if err := pub.mounter.Mount(mappedDir, volumeCfg.TargetPath, "", []string{"bind"}); err != nil {
 		_ = pub.mounter.Unmount(mappedDir)
 
+		return err
+	}
+
+	appMountPodInfoDir := pub.path.AppMountPodInfoDir(volumeCfg.DynakubeName, volumeCfg.PodNamespace, volumeCfg.PodName)
+	if err := pub.fs.MkdirAll(appMountPodInfoDir, os.ModePerm); err != nil {
+		return err
+	}
+
+	targetDir := pub.path.AppMountForID(volumeCfg.VolumeID)
+
+	if err := symlink.Remove(pub.fs.Fs, appMountPodInfoDir); err != nil {
+		return err
+	}
+
+	err = symlink.CreateForPodInfoDir(pub.fs.Fs, targetDir, appMountPodInfoDir)
+	if err != nil {
 		return err
 	}
 

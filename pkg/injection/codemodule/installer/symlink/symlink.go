@@ -70,9 +70,29 @@ func CreateForLatestVersion(fs afero.Fs, dk dynakube.DynaKube, latestVersionDir,
 	return nil
 }
 
+func CreateForPodInfoDir(fs afero.Fs, targetDir, symlinkDir string) error {
+	// MemMapFs (used for testing) doesn't comply with the Linker interface
+	linker, ok := fs.(afero.Linker)
+	if !ok {
+		log.Info("symlinking not possible", "targetDir", targetDir, "fs", fs)
+
+		return nil
+	}
+
+	log.Info("creating symlink based on pod info", "points-to(relative)", targetDir, "location", symlinkDir)
+
+	if err := linker.SymlinkIfPossible(targetDir, symlinkDir); err != nil {
+		log.Info("symlinking failed", "podinfodir", targetDir)
+
+		return errors.WithStack(err)
+	}
+
+	return nil
+}
+
 func Remove(fs afero.Fs, symlinkPath string) error {
 	if info, _ := fs.Stat(symlinkPath); info != nil {
-		log.Info("symlink to codemodule directory exists, removing it due to the possibility of the agent being installed again")
+		log.Info("symlink to directory exists, removing it to ensure proper reinstallation or reconfiguration", "directory", symlinkPath)
 
 		if err := fs.RemoveAll(symlinkPath); err != nil {
 			return err
