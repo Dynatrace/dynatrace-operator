@@ -7,19 +7,7 @@
 
 ### Installation
 
-There are automatic builds from the master branch. The latest development build can be installed as follows:
-
-#### Kubernetes
-
-```sh
-make deploy/kubernetes
-```
-
-#### OpenShift
-
-```sh
-make deploy/openshift
-```
+There are automatic builds from the master branch. The latest development build can be installed using `make deploy`.
 
 #### Tests
 
