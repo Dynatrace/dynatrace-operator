@@ -42,18 +42,26 @@ objects like permissions, custom resources and corresponding StatefulSets.
 > For install instructions on Openshift, head to the
 > [official help page](https://www.dynatrace.com/support/help/shortlink/full-stack-dto-k8)
 
-To create the namespace and apply the operator run the following commands
+First, create the namespace
 
 ```sh
 kubectl create namespace dynatrace
+```
+
+Then install the operator with **one** of the following commands.
+If you are using `cloudNativeFullStack` or `applicationMonitoring` the CSI Driver is required.
+
+Use this commmand to install the operator **without** CSI driver
+```sh
 kubectl apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/kubernetes.yaml
 ```
 
-If using `cloudNativeFullStack` or `applicationMonitoring` with CSI driver, the following command is required as well:
-
+Use this command to install the operator **with CSI driver**.
 ```sh
 kubectl apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/kubernetes-csi.yaml
 ```
+**Do not use both commands together**. If you need to add CSI driver later, it is required to first uninstall the operator and then
+reinstall it with the CSI driver.
 
 A secret holding tokens for authenticating to the Dynatrace cluster needs to be created upfront. Create access tokens of
 type *Dynatrace API* and use its values in the following commands respectively. For
