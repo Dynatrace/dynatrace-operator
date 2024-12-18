@@ -7,7 +7,7 @@
 
 ### Installation
 
-There are automatic builds from the master branch. The latest development build can be installed using `make deploy`.
+There are automatic builds from the main branch. The latest development build can be installed using `make deploy`.
 
 #### Tests
 
