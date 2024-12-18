@@ -53,6 +53,7 @@ var (
 		missingKSPMDependency,
 		missingKSPMImage,
 		missingLogMonitoringImage,
+		telemetryServiceProtocols,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,

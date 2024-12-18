@@ -5971,6 +5971,20 @@ spec:
                   Disable certificate check for the connection between Dynatrace Operator and the Dynatrace Cluster.
                   Set to true if you want to skip certification validation checks.
                 type: boolean
+              telemetryService:
+                description: |-
+                  When an (empty) TelemetryServiceSpec is provided, the OpenSignal related components (OpenSignal collector)
+                  is deployed by the operator.
+                properties:
+                  protocols:
+                    items:
+                      type: string
+                    type: array
+                  serviceName:
+                    type: string
+                  tlsRefName:
+                    type: string
+                type: object
               templates:
                 properties:
                   extensionExecutionController:

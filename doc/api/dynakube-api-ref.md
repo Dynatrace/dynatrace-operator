@@ -48,6 +48,14 @@
 |:-|:-|:-|:-|
 |`ingestRuleMatchers`||-|array|
 
+### .spec.telemetryService
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`protocols`||-|array|
+|`serviceName`||-|string|
+|`tlsRefName`||-|string|
+
 ### .spec.metadataEnrichment
 
 |Parameter|Description|Default value|Data type|
