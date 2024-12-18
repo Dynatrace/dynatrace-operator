@@ -284,7 +284,10 @@ func createPMCSecret(t *testing.T, dk *dynakube.DynaKube) *corev1.Secret {
 func createPMCSourceFile(t *testing.T, prov OneAgentProvisioner, dk *dynakube.DynaKube) {
 	t.Helper()
 
-	pmcPath := filepath.Join(prov.getTargetDir(*dk), processmoduleconfig.RuxitAgentProcPath)
+	targetDir, err := prov.getTargetDir(*dk)
+	require.NoError(t, err)
+
+	pmcPath := filepath.Join(targetDir, processmoduleconfig.RuxitAgentProcPath)
 	pmcDir := filepath.Dir(pmcPath)
 	require.NoError(t, prov.fs.MkdirAll(pmcDir, os.ModePerm))
 

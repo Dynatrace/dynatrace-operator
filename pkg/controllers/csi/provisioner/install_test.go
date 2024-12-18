@@ -12,8 +12,8 @@ func TestGetTargetDir(t *testing.T) {
 		prov := createProvisioner(t)
 		dk := createDynaKubeWithVersion(t)
 
-		targetDir := prov.getTargetDir(*dk)
-
+		targetDir, err := prov.getTargetDir(*dk)
+		require.NoError(t, err)
 		require.Contains(t, targetDir, dk.CodeModulesVersion())
 	})
 
@@ -22,17 +22,17 @@ func TestGetTargetDir(t *testing.T) {
 		dk := createDynaKubeWithImage(t)
 
 		expectedDir := base64.StdEncoding.EncodeToString([]byte(dk.CodeModulesImage()))
-		targetDir := prov.getTargetDir(*dk)
-
+		targetDir, err := prov.getTargetDir(*dk)
+		require.NoError(t, err)
 		require.Contains(t, targetDir, expectedDir)
 	})
 
-	t.Run("nothing set => folder is called `unknown` (shouldn't be possible in real life)", func(t *testing.T) {
+	t.Run("nothing set => error (shouldn't be possible in real life)", func(t *testing.T) {
 		prov := createProvisioner(t)
 		dk := createDynaKubeBase(t)
 
-		targetDir := prov.getTargetDir(*dk)
-
-		require.Contains(t, targetDir, "unknown")
+		targetDir, err := prov.getTargetDir(*dk)
+		require.Error(t, err)
+		require.Empty(t, targetDir)
 	})
 }

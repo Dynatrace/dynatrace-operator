@@ -24,7 +24,10 @@ func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, dk dyn
 		return err
 	}
 
-	targetDir := provisioner.getTargetDir(dk)
+	targetDir, err := provisioner.getTargetDir(dk)
+	if err != nil {
+		return err
+	}
 
 	_, err = agentInstaller.InstallAgent(ctx, targetDir)
 	if err != nil {
@@ -80,7 +83,7 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dyn
 	}
 }
 
-func (provisioner *OneAgentProvisioner) getTargetDir(dk dynakube.DynaKube) string {
+func (provisioner *OneAgentProvisioner) getTargetDir(dk dynakube.DynaKube) (string, error) {
 	var dirName string
 
 	switch {
@@ -91,10 +94,10 @@ func (provisioner *OneAgentProvisioner) getTargetDir(dk dynakube.DynaKube) strin
 	case dk.CodeModulesVersion() != "":
 		dirName = dk.CodeModulesVersion()
 	default:
-		dirName = "unknown"
+		return "", errors.New("failed to determine the target directory for the CodeModule download")
 	}
 
-	return provisioner.path.AgentSharedBinaryDirForAgent(dirName)
+	return provisioner.path.AgentSharedBinaryDirForAgent(dirName), nil
 }
 
 func (provisioner *OneAgentProvisioner) createLatestVersionSymlink(dk dynakube.DynaKube, targetDir string) error {
