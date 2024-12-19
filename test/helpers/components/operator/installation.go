@@ -25,7 +25,7 @@ const (
 func InstallViaMake(withCSI bool) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		rootDir := project.RootDir()
-		err := execMakeCommand(rootDir, "deploy/helm", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
+		err := execMakeCommand(rootDir, "deploy", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
 		if err != nil {
 			return ctx, err
 		}
@@ -56,7 +56,7 @@ func UninstallViaMake(withCSI bool) env.Func {
 			}
 		}
 
-		return ctx, execMakeCommand(rootDir, "undeploy/helm", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
+		return ctx, execMakeCommand(rootDir, "undeploy", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
 	}
 }
 
