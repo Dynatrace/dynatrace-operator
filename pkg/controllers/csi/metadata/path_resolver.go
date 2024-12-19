@@ -56,9 +56,14 @@ func (pr PathResolver) AppMountsBaseDir() string {
 	return filepath.Join(pr.RootDir, dtcsi.SharedAppMountsDir)
 }
 
-// AppMountForID replaces AgentRunDirForVolume, the directory where a given app-mount volume
+// AppMountForID replaces AgentRunDirForVolume, the directory where a given app-mount volume is stored
 func (pr PathResolver) AppMountForID(volumeID string) string {
 	return filepath.Join(pr.AppMountsBaseDir(), volumeID)
+}
+
+// AppMountForDK is a directory where a given app-mount volume is stored under a certain dynakube
+func (pr PathResolver) AppMountForDK(dkName string) string {
+	return filepath.Join(pr.RootDir, dkName, dtcsi.SharedAppMountsDir)
 }
 
 // AppMountMappedDir replaces OverlayMappedDir, the directory where the overlay layers combine into
@@ -74,6 +79,10 @@ func (pr PathResolver) AppMountVarDir(volumeID string) string {
 // AppMountWorkDir replaces OverlayWorkDir, the directory that is necessary for overlayFS to work
 func (pr PathResolver) AppMountWorkDir(volumeID string) string {
 	return filepath.Join(pr.AppMountForID(volumeID), dtcsi.OverlayWorkDirPath)
+}
+
+func (pr PathResolver) AppMountPodInfoDir(dkName, podNamespace, podName string) string {
+	return filepath.Join(pr.AppMountForDK(dkName), podNamespace, podName)
 }
 
 // Deprecated kept for future migration/cleanup
