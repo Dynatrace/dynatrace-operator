@@ -87,9 +87,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-          envFrom:
-            - configMapRef:
-                name: install-config
+            {{ include "dynatrace-operator.modules-json-env" . | nindent 12 }}
           readinessProbe:
             httpGet:
               path: /readyz
