@@ -58,6 +58,7 @@ const (
 	AnnotationFeatureOneAgentMaxUnavailable         = AnnotationFeaturePrefix + "oneagent-max-unavailable"
 	AnnotationFeatureOneAgentInitialConnectRetry    = AnnotationFeaturePrefix + "oneagent-initial-connect-retry-ms"
 	AnnotationFeatureRunOneAgentContainerPrivileged = AnnotationFeaturePrefix + "oneagent-privileged"
+	AnnotationFeatureOneAgentSkipLivenessProbe      = AnnotationFeaturePrefix + "oneagent-skip-liveness-probe"
 
 	AnnotationFeatureIgnoreUnknownState    = AnnotationFeaturePrefix + "ignore-unknown-state"
 	AnnotationFeatureIgnoredNamespaces     = AnnotationFeaturePrefix + "ignored-namespaces"
@@ -66,7 +67,6 @@ const (
 	AnnotationInjectionFailurePolicy       = AnnotationFeaturePrefix + "injection-failure-policy"
 	AnnotationFeatureInitContainerSeccomp  = AnnotationFeaturePrefix + "init-container-seccomp-profile"
 	AnnotationFeatureEnforcementMode       = AnnotationFeaturePrefix + "enforcement-mode"
-	AnnotationFeatureReadOnlyOneAgent      = AnnotationFeaturePrefix + "oneagent-readonly-host-fs"
 
 	// CSI.
 	AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
@@ -192,13 +192,6 @@ func (dk *DynaKube) FeatureAutomaticInjection() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticInjection) != falsePhrase
 }
 
-// FeatureReadOnlyOneAgent controls whether the host agent is run in readonly mode.
-// In Host Monitoring disabling readonly mode, also disables the use of a CSI volume.
-// Not compatible with Classic Fullstack.
-func (dk *DynaKube) FeatureReadOnlyOneAgent() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureReadOnlyOneAgent) != falsePhrase
-}
-
 // FeatureActiveGateAppArmor is a feature flag to enable AppArmor in ActiveGate container.
 func (dk *DynaKube) FeatureActiveGateAppArmor() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAppArmor) == truePhrase
@@ -234,6 +227,10 @@ func (dk *DynaKube) FeatureAgentInitialConnectRetry() int {
 
 func (dk *DynaKube) FeatureOneAgentPrivileged() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureRunOneAgentContainerPrivileged) == truePhrase
+}
+
+func (dk *DynaKube) FeatureOneAgentSkipLivenessProbe() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureOneAgentSkipLivenessProbe) == truePhrase
 }
 
 func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {

@@ -53,23 +53,32 @@ func (dtc *dynatraceClient) GetLatestAgentVersion(ctx context.Context, os, insta
 		return "", errors.New("os or installerType is empty")
 	}
 
-	var flavor string
-	// Default installer type has no "multidistro" flavor
-	// so the default flavor is always needed in that case
-	if installerType == InstallerTypeDefault {
-		flavor = arch.FlavorDefault
-	} else {
-		flavor = arch.Flavor
-	}
-
-	url := dtc.getLatestAgentVersionUrl(os, installerType, flavor, arch.Arch)
+	url := dtc.getLatestAgentVersionUrl(os, installerType, determineFlavor(installerType), determineArch(installerType))
 	err := dtc.makeRequestAndUnmarshal(ctx, url, dynatracePaaSToken, &response)
 
 	return response.LatestAgentVersion, errors.WithStack(err)
 }
 
+// determineArch gives you the proper arch value, because the OSAgent and ActiveGate images on the tenant-image-registry only have AMD images.
+func determineArch(installerType string) string {
+	if installerType == InstallerTypeDefault {
+		return ""
+	}
+
+	return arch.Arch
+}
+
+// determineFlavor gives you the proper flavor value, because the default installer type has no "multidistro" flavor so the default flavor is always needed in that case.
+func determineFlavor(installerType string) string { //nolint:nolintlint,unparam
+	if installerType == InstallerTypeDefault {
+		return arch.FlavorDefault
+	}
+
+	return arch.Flavor
+}
+
 // GetAgentVersions gets available agent versions for the given OS and installer type.
-func (dtc *dynatraceClient) GetAgentVersions(ctx context.Context, os, installerType, flavor, arch string) ([]string, error) {
+func (dtc *dynatraceClient) GetAgentVersions(ctx context.Context, os, installerType, flavor string) ([]string, error) {
 	response := struct {
 		AvailableVersions []string `json:"availableVersions"`
 	}{}
@@ -78,7 +87,7 @@ func (dtc *dynatraceClient) GetAgentVersions(ctx context.Context, os, installerT
 		return nil, errors.New("os or installerType is empty")
 	}
 
-	url := dtc.getAgentVersionsUrl(os, installerType, flavor, arch)
+	url := dtc.getAgentVersionsUrl(os, installerType, flavor, determineArch(installerType))
 	err := dtc.makeRequestAndUnmarshal(ctx, url, dynatracePaaSToken, &response)
 
 	return response.AvailableVersions, errors.WithStack(err)

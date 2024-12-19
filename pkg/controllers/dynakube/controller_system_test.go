@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	ag "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
@@ -18,8 +19,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring"
+	logmon "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
@@ -60,7 +62,8 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL:        testApiUrl,
+				LogMonitoring: &logmonitoring.Spec{},
 			},
 		}
 		controller := createFakeClientAndReconciler(t, mockClient, dk, testPaasToken, testAPIToken)
@@ -88,7 +91,8 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 					Value:     "https://proxy:1234",
 					ValueFrom: "",
 				},
-				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
+				LogMonitoring: &logmonitoring.Spec{},
+				ActiveGate:    activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 			},
 
 			Status: *getTestDynkubeStatus(),
@@ -131,6 +135,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 						activegate.KubeMonCapability.DisplayName,
 					},
 				},
+				LogMonitoring: &logmonitoring.Spec{},
 			},
 			Status: *getTestDynkubeStatus(),
 		}
@@ -170,7 +175,8 @@ func TestReconcileOnlyOneTokenProvided_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL:        testApiUrl,
+				LogMonitoring: &logmonitoring.Spec{},
 			}}
 		controller := createFakeClientAndReconciler(t, mockClient, dk, "", testAPIToken)
 
@@ -214,6 +220,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 					activegate.RoutingCapability.DisplayName,
 				},
 			},
+			LogMonitoring: &logmonitoring.Spec{},
 		},
 	}
 
@@ -290,6 +297,7 @@ func TestAPIError(t *testing.T) {
 					activegate.KubeMonCapability.DisplayName,
 				},
 			},
+			LogMonitoring: &logmonitoring.Spec{},
 		},
 		Status: *getTestDynkubeStatus(),
 	}
@@ -373,6 +381,10 @@ func createDTMockClient(t *testing.T, paasTokenScopes, apiTokenScopes dtclient.T
 		}, nil).Maybe()
 	mockClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).
 		Return(&dtclient.ProcessModuleConfig{}, nil).Maybe()
+	mockClient.On("GetSettingsForLogModule", mock.AnythingOfType("context.backgroundCtx"), "KUBERNETES_CLUSTER-0E30FE4BF2007587").
+		Return(dtclient.GetLogMonSettingsResponse{}, nil).Maybe()
+	mockClient.On("CreateLogMonitoringSetting", mock.AnythingOfType("context.backgroundCtx"), "KUBERNETES_CLUSTER-0E30FE4BF2007587", "operator test entity 1", []logmonitoring.IngestRuleMatchers{}).
+		Return(testObjectID, nil).Maybe()
 
 	return mockClient
 }
@@ -422,9 +434,10 @@ func createFakeClientAndReconciler(t *testing.T, mockClient dtclient.Client, dk 
 		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
 		injectionReconcilerBuilder:          injection.NewReconciler,
 		oneAgentReconcilerBuilder:           oneagent.NewReconciler,
-		logMonitoringReconcilerBuilder:      logmonitoring.NewReconciler,
+		logMonitoringReconcilerBuilder:      logmon.NewReconciler,
 		proxyReconcilerBuilder:              proxy.NewReconciler,
 		extensionReconcilerBuilder:          extension.NewReconciler,
+		otelcReconcilerBuilder:              otelc.NewReconciler,
 		kspmReconcilerBuilder:               kspm.NewReconciler,
 		clusterID:                           testUID,
 	}

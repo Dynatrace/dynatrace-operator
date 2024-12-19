@@ -104,7 +104,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{}, err
 	}
 
-	if !dk.NeedsCSIDriver() {
+	if !isProvisionerNeeded(dk) {
 		log.Info("CSI driver provisioner not needed")
 
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.db.DeleteDynakube(ctx, request.Name)
@@ -143,6 +143,12 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	}
 
 	return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
+}
+
+func isProvisionerNeeded(dk *dynakube.DynaKube) bool {
+	return dk.CloudNativeFullstackMode() ||
+		dk.ApplicationMonitoringMode() ||
+		dk.HostMonitoringMode()
 }
 
 func (provisioner *OneAgentProvisioner) setupFileSystem(dk *dynakube.DynaKube) error {

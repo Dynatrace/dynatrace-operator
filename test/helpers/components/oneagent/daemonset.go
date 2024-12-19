@@ -5,7 +5,6 @@ package oneagent
 import (
 	"context"
 
-	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube" //nolint
 	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
@@ -16,16 +15,12 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func WaitForDaemonset(dk dynakubev1beta3.DynaKube) features.Func {
-	return helpers.ToFeatureFunc(daemonset.WaitFor(dk.OneAgentDaemonsetName(), dk.Namespace), true)
+func WaitForDaemonset(dsName, namespace string) features.Func {
+	return helpers.ToFeatureFunc(daemonset.WaitFor(dsName, namespace), true)
 }
 
-func WaitFromDaemonSetPrevDk(prevDk dynakubev1beta1.DynaKube) features.Func {
-	return helpers.ToFeatureFunc(daemonset.WaitFor(prevDk.OneAgentDaemonsetName(), prevDk.Namespace), true)
-}
-
-func WaitForDaemonSetPodsDeletion(dk dynakubev1beta3.DynaKube) features.Func {
-	return pod.WaitForPodsDeletionWithOwner(dk.OneAgentDaemonsetName(), dk.Namespace)
+func WaitForDaemonSetPodsDeletion(dsName, namespace string) features.Func {
+	return pod.WaitForPodsDeletionWithOwner(dsName, namespace)
 }
 
 func Get(ctx context.Context, resource *resources.Resources, dk dynakubev1beta3.DynaKube) (appsv1.DaemonSet, error) {

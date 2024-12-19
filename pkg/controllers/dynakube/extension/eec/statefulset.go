@@ -3,19 +3,18 @@ package eec
 import (
 	"strconv"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/servicename"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/tls"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/utils"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
+	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/topology"
 	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -23,6 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -72,6 +72,8 @@ const (
 
 	// misc
 	logVolumeName = "log"
+
+	userGroupId int64 = 1001
 )
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
@@ -82,6 +84,11 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		return err
 	}
 
+	topologySpreadConstraints := topology.MaxOnePerNode(appLabels)
+	if len(r.dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints) > 0 {
+		topologySpreadConstraints = r.dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints
+	}
+
 	desiredSts, err := statefulset.Build(r.dk, r.dk.ExtensionsExecutionControllerStatefulsetName(), buildContainer(r.dk),
 		statefulset.SetReplicas(1),
 		statefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
@@ -89,10 +96,10 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		statefulset.SetAllAnnotations(nil, templateAnnotations),
 		statefulset.SetAffinity(buildAffinity()),
 		statefulset.SetTolerations(r.dk.Spec.Templates.ExtensionExecutionController.Tolerations),
-		statefulset.SetTopologySpreadConstraints(utils.BuildTopologySpreadConstraints(r.dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints, appLabels)),
+		statefulset.SetTopologySpreadConstraints(topologySpreadConstraints),
 		statefulset.SetServiceAccount(serviceAccountName),
-		statefulset.SetSecurityContext(buildPodSecurityContext()),
-		statefulset.SetUpdateStrategy(utils.BuildUpdateStrategy()),
+		statefulset.SetSecurityContext(buildPodSecurityContext(r.dk)),
+		statefulset.SetRollingUpdateStrategyType(),
 		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
 		setVolumes(r.dk),
 		setPersistentVolumeClaim(r.dk),
@@ -133,7 +140,7 @@ func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 	query := k8ssecret.Query(r.client, r.client, log)
 
 	tlsSecret, err := query.Get(ctx, types.NamespacedName{
-		Name:      tls.GetTLSSecretName(r.dk),
+		Name:      r.dk.ExtensionsTLSSecretName(),
 		Namespace: r.dk.Namespace,
 	})
 	if err != nil {
@@ -145,7 +152,7 @@ func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 		return nil, err
 	}
 
-	templateAnnotations[consts.ExtensionsAnnotationSecretHash] = tlsSecretHash
+	templateAnnotations[api.AnnotationSecretHash] = tlsSecretHash
 
 	return templateAnnotations, nil
 }
@@ -158,17 +165,7 @@ func buildAppLabels(dynakubeName string) *labels.AppLabels {
 }
 
 func buildAffinity() corev1.Affinity {
-	return corev1.Affinity{
-		NodeAffinity: &corev1.NodeAffinity{
-			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-				NodeSelectorTerms: []corev1.NodeSelectorTerm{
-					{
-						MatchExpressions: node.AffinityNodeRequirementForSupportedArches(),
-					},
-				},
-			},
-		},
-	}
+	return node.Affinity()
 }
 
 func setImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) func(o *appsv1.StatefulSet) {
@@ -210,44 +207,48 @@ func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 }
 
 func buildSecurityContext() *corev1.SecurityContext {
-	userGroupId := int64(1001)
-
 	return &corev1.SecurityContext{
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				"ALL",
 			},
 		},
-		Privileged:               address.Of(false),
-		RunAsUser:                &userGroupId,
-		RunAsGroup:               &userGroupId,
-		RunAsNonRoot:             address.Of(true),
-		ReadOnlyRootFilesystem:   address.Of(true),
-		AllowPrivilegeEscalation: address.Of(false),
+		Privileged:               ptr.To(false),
+		RunAsUser:                ptr.To(userGroupId),
+		RunAsGroup:               ptr.To(userGroupId),
+		RunAsNonRoot:             ptr.To(true),
+		ReadOnlyRootFilesystem:   ptr.To(true),
+		AllowPrivilegeEscalation: ptr.To(false),
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
 	}
 }
 
-func buildPodSecurityContext() *corev1.PodSecurityContext {
-	return &corev1.PodSecurityContext{
+func buildPodSecurityContext(dk *dynakube.DynaKube) *corev1.PodSecurityContext {
+	podSecurityContext := &corev1.PodSecurityContext{
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
 	}
+
+	if !dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume {
+		podSecurityContext.FSGroup = ptr.To(userGroupId)
+	}
+
+	return podSecurityContext
 }
 
 func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	containerEnvs := []corev1.EnvVar{
 		{Name: envTenantId, Value: dk.Status.ActiveGate.ConnectionInfo.TenantUUID},
 		{Name: envServerUrl, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ".svc.cluster.local:443"},
-		{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + consts.EecTokenSecretKey},
+		{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + eecConsts.TokenSecretKey},
 		{Name: envEecIngestPort, Value: strconv.Itoa(int(collectorPort))},
 		{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath},
 		{Name: envDsInstallDirName, Value: envDsInstallDir},
 		{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID},
-		{Name: envK8sExtServiceUrl, Value: serviceUrlScheme + servicename.BuildFQDN(dk)},
+		{Name: envK8sExtServiceUrl, Value: serviceUrlScheme + dk.ExtensionsServiceNameFQDN()},
 		{Name: envDSTokenPath, Value: eecTokenMountPath + "/" + consts.OtelcTokenSecretKey},
 		{Name: envHttpsCertPathPem, Value: envEecHttpsCertPathPem},
 		{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem},

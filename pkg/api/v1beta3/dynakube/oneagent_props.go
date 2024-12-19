@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -16,6 +17,10 @@ const (
 	PodNameOsAgent                        = "oneagent"
 	DefaultOneAgentImageRegistrySubPath   = "/linux/oneagent"
 )
+
+func (dk *DynaKube) IsCSIAvailable() bool {
+	return installconfig.GetModules().CSIDriver
+}
 
 // ApplicationMonitoringMode returns true when application only section is used.
 func (dk *DynaKube) ApplicationMonitoringMode() bool {
@@ -50,8 +55,12 @@ func (dk *DynaKube) NeedsOneAgentPrivileged() bool {
 	return dk.FeatureOneAgentPrivileged()
 }
 
-func (dk *DynaKube) NeedsOneAgentProbe() bool {
+func (dk *DynaKube) NeedsOneAgentReadinessProbe() bool {
 	return dk.Status.OneAgent.Healthcheck != nil
+}
+
+func (dk *DynaKube) NeedsOneAgentLivenessProbe() bool {
+	return dk.Status.OneAgent.Healthcheck != nil && !dk.FeatureOneAgentSkipLivenessProbe()
 }
 
 // ShouldAutoUpdateOneAgent returns true if the Operator should update OneAgent instances automatically.
@@ -77,30 +86,8 @@ func (dk *DynaKube) OneAgentConnectionInfoConfigMapName() string {
 	return dk.Name + OneAgentConnectionInfoConfigMapSuffix
 }
 
-func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {
-	return (dk.HostMonitoringMode() || dk.CloudNativeFullstackMode()) &&
-		dk.FeatureReadOnlyOneAgent()
-}
-
-func (dk *DynaKube) IsAppMonitoringWithCSI() bool {
-	if !dk.ApplicationMonitoringMode() {
-		return false
-	}
-
-	defaultUseCSIDriver := false
-	if dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver == nil {
-		return defaultUseCSIDriver
-	}
-
-	return *dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver
-}
-
-func (dk *DynaKube) NeedsCSIDriver() bool {
-	isAppMonitoringWithCSI := dk.IsAppMonitoringWithCSI()
-
-	isHostMonitoringWithCSI := dk.HostMonitoringMode() && dk.FeatureReadOnlyOneAgent()
-
-	return dk.CloudNativeFullstackMode() || isAppMonitoringWithCSI || isHostMonitoringWithCSI
+func (dk *DynaKube) UseReadOnlyOneAgents() bool {
+	return dk.CloudNativeFullstackMode() || (dk.HostMonitoringMode() && dk.IsCSIAvailable())
 }
 
 func (dk *DynaKube) NeedAppInjection() bool {
@@ -171,7 +158,7 @@ func (dk *DynaKube) CodeModulesImage() string {
 func (dk *DynaKube) CustomCodeModulesImage() string {
 	if dk.CloudNativeFullstackMode() {
 		return dk.Spec.OneAgent.CloudNativeFullStack.CodeModulesImage
-	} else if dk.ApplicationMonitoringMode() && dk.NeedsCSIDriver() {
+	} else if dk.ApplicationMonitoringMode() && dk.IsCSIAvailable() {
 		return dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage
 	}
 
@@ -180,10 +167,6 @@ func (dk *DynaKube) CustomCodeModulesImage() string {
 
 // CustomCodeModulesVersion provides the version for the CodeModules provided in the Spec.
 func (dk *DynaKube) CustomCodeModulesVersion() string {
-	if !dk.ApplicationMonitoringMode() {
-		return ""
-	}
-
 	return dk.CustomOneAgentVersion()
 }
 

@@ -374,8 +374,7 @@ spec:
                       description: |-
                         TolerationSeconds represents the period of time the toleration (which must be
                         of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
-                        it is not set, which means tolerate the taint forever (do not evict). Zero and
-                        negative values will be treated as 0 (evict immediately) by the system.
+                        it is not set, which means tolerate the taint forever (do not evict).
                       format: int64
                       type: integer
                     value:
@@ -484,16 +483,12 @@ spec:
                         and identical values are considered to be in the same topology.
                         We consider each <key, value> as a "bucket", and try to put balanced number
                         of pods into each bucket.
-                        We define a domain as a particular instance of a topology.
                       type: string
                     whenUnsatisfiable:
                       description: |-
                         WhenUnsatisfiable indicates how to deal with a pod if it doesn't satisfy
                         the spread constraint.
                         - DoNotSchedule (default) tells the scheduler not to schedule it.
-                        - ScheduleAnyway tells the scheduler to schedule the pod in any location,
-                          but giving higher precedence to topologies that would help reduce the
-                          skew.
                       type: string
                   required:
                   - maxSkew
@@ -958,8 +953,7 @@ spec:
                       description: |-
                         TolerationSeconds represents the period of time the toleration (which must be
                         of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
-                        it is not set, which means tolerate the taint forever (do not evict). Zero and
-                        negative values will be treated as 0 (evict immediately) by the system.
+                        it is not set, which means tolerate the taint forever (do not evict).
                       format: int64
                       type: integer
                     value:
@@ -1068,16 +1062,12 @@ spec:
                         and identical values are considered to be in the same topology.
                         We consider each <key, value> as a "bucket", and try to put balanced number
                         of pods into each bucket.
-                        We define a domain as a particular instance of a topology.
                       type: string
                     whenUnsatisfiable:
                       description: |-
                         WhenUnsatisfiable indicates how to deal with a pod if it doesn't satisfy
                         the spread constraint.
                         - DoNotSchedule (default) tells the scheduler not to schedule it.
-                        - ScheduleAnyway tells the scheduler to schedule the pod in any location,
-                          but giving higher precedence to topologies that would help reduce the
-                          skew.
                       type: string
                   required:
                   - maxSkew

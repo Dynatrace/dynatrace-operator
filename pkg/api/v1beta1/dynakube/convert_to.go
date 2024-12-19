@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
@@ -68,10 +68,6 @@ func (src *DynaKube) toOneAgentSpec(dst *dynakube.DynaKube) {
 		dst.Spec.OneAgent.ApplicationMonitoring = &dynakube.ApplicationMonitoringSpec{}
 		dst.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec = *toAppInjectSpec(src.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec)
 		dst.Spec.OneAgent.ApplicationMonitoring.Version = src.Spec.OneAgent.ApplicationMonitoring.Version
-
-		if src.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver != nil {
-			dst.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver = src.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver
-		}
 	}
 }
 
@@ -106,10 +102,10 @@ func (src *DynaKube) toActiveGateSpec(dst *dynakube.DynaKube) {
 func (src *DynaKube) toMovedFields(dst *dynakube.DynaKube) error {
 	if src.Annotations[AnnotationFeatureMetadataEnrichment] == "false" ||
 		!src.NeedAppInjection() {
-		dst.Spec.MetadataEnrichment = dynakube.MetadataEnrichment{Enabled: address.Of(false)}
+		dst.Spec.MetadataEnrichment = dynakube.MetadataEnrichment{Enabled: ptr.To(false)}
 		delete(dst.Annotations, AnnotationFeatureMetadataEnrichment)
 	} else {
-		dst.Spec.MetadataEnrichment = dynakube.MetadataEnrichment{Enabled: address.Of(true)}
+		dst.Spec.MetadataEnrichment = dynakube.MetadataEnrichment{Enabled: ptr.To(true)}
 		delete(dst.Annotations, AnnotationFeatureMetadataEnrichment)
 	}
 
@@ -153,10 +149,10 @@ func (src *DynaKube) convertDynatraceApiRequestThreshold(dst *dynakube.DynaKube)
 
 		if duration >= 0 {
 			if math.MaxUint16 < duration {
-				dst.Spec.DynatraceApiRequestThreshold = address.Of(uint16(math.MaxUint16))
+				dst.Spec.DynatraceApiRequestThreshold = ptr.To(uint16(math.MaxUint16))
 			} else {
 				// linting disabled, handled in if
-				dst.Spec.DynatraceApiRequestThreshold = address.Of(uint16(duration)) //nolint:gosec
+				dst.Spec.DynatraceApiRequestThreshold = ptr.To(uint16(duration)) //nolint:gosec
 			}
 		}
 

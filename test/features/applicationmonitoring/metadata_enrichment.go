@@ -10,7 +10,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	maputil "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -48,9 +47,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 	testDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
 		dynakubeComponents.WithMetadataEnrichment(),
-		dynakubeComponents.WithApplicationMonitoringSpec(&dynakube.ApplicationMonitoringSpec{
-			UseCSIDriver: address.Of(false),
-		}),
+		dynakubeComponents.WithApplicationMonitoringSpec(&dynakube.ApplicationMonitoringSpec{}),
 		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),
 		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
 	)
@@ -165,7 +162,7 @@ func podHasOnlyMetadataEnrichmentInitContainer(samplePod *sample.App) features.F
 func assessPodHasMetadataEnrichmentFile(ctx context.Context, t *testing.T, resource *resources.Resources, testPod corev1.Pod) {
 	enrichmentMetadata := getMetadataEnrichmentMetadataFromPod(ctx, t, resource, testPod)
 
-	assert.Equal(t, "Pod", enrichmentMetadata.WorkloadKind)
+	assert.Equal(t, "pod", enrichmentMetadata.WorkloadKind)
 	assert.Equal(t, testPod.Name, enrichmentMetadata.WorkloadName)
 }
 
@@ -238,7 +235,7 @@ func assessDeploymentHasMetadataEnrichmentFile(ctx context.Context, t *testing.T
 	return func(pod corev1.Pod) {
 		enrichmentMetadata := getMetadataEnrichmentMetadataFromPod(ctx, t, resource, pod)
 
-		assert.Equal(t, "Deployment", enrichmentMetadata.WorkloadKind)
+		assert.Equal(t, "deployment", enrichmentMetadata.WorkloadKind)
 		assert.Equal(t, deploymentName, enrichmentMetadata.WorkloadName)
 	}
 }

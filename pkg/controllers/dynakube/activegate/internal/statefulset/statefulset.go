@@ -3,13 +3,13 @@ package statefulset
 import (
 	"strconv"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -20,6 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -120,7 +121,7 @@ func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
 		Containers:         statefulSetBuilder.buildBaseContainer(),
 		NodeSelector:       statefulSetBuilder.capability.Properties().NodeSelector,
 		ServiceAccountName: statefulSetBuilder.dynakube.ActiveGate().GetServiceAccountName(),
-		Affinity:           nodeAffinity(),
+		Affinity:           statefulSetBuilder.nodeAffinity(),
 		Tolerations:        statefulSetBuilder.capability.Properties().Tolerations,
 		SecurityContext:    statefulSetBuilder.buildPodSecurityContext(),
 		ImagePullSecrets:   statefulSetBuilder.dynakube.ImagePullSecretReferences(),
@@ -241,7 +242,7 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 					Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(statefulSetBuilder.dynakube.Name),
 				},
 				Key:      deploymentmetadata.ActiveGateMetadataKey,
-				Optional: address.Of(false),
+				Optional: ptr.To(false),
 			},
 		}},
 	})
@@ -263,18 +264,15 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 	return statefulSetBuilder.envMap.AsEnvVars()
 }
 
-func nodeAffinity() *corev1.Affinity {
-	return &corev1.Affinity{
-		NodeAffinity: &corev1.NodeAffinity{
-			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-				NodeSelectorTerms: []corev1.NodeSelectorTerm{
-					{
-						MatchExpressions: node.AffinityNodeRequirementForSupportedArches(),
-					},
-				},
-			},
-		},
+func (statefulSetBuilder Builder) nodeAffinity() *corev1.Affinity {
+	var affinity corev1.Affinity
+	if statefulSetBuilder.dynakube.Status.ActiveGate.Source == status.TenantRegistryVersionSource || statefulSetBuilder.dynakube.Status.ActiveGate.Source == status.CustomVersionVersionSource {
+		affinity = node.AMDOnlyAffinity()
+	} else {
+		affinity = node.Affinity()
 	}
+
+	return &affinity
 }
 
 func (statefulSetBuilder Builder) addPersistentVolumeClaim(sts *appsv1.StatefulSet) {

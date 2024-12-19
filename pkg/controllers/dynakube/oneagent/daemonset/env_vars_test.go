@@ -6,8 +6,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
+	logmonitoringds "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
 	k8senv "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	"github.com/stretchr/testify/assert"
@@ -39,6 +41,7 @@ func TestEnvironmentVariables(t *testing.T) {
 				OneAgent: dynakube.OneAgentSpec{
 					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 				},
+				LogMonitoring: &logmonitoring.Spec{},
 			},
 		}
 		dsBuilder := builder{
@@ -53,6 +56,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		assertDeploymentMetadataEnv(t, envVars, dk.Name)
 
 		assertReadOnlyEnv(t, envVars)
+		assertLogMonitoringEnv(t, envVars)
 	})
 	t.Run("when injected envvars are provided then they will not be overridden", func(t *testing.T) {
 		potentiallyOverriddenEnvVars := []corev1.EnvVar{
@@ -288,6 +292,15 @@ func assertReadOnlyEnv(t *testing.T, envs []corev1.EnvVar) {
 	env := k8senv.FindEnvVar(envs, oneagentReadOnlyMode)
 	assert.Equal(t, oneagentReadOnlyMode, env.Name)
 	assert.Equal(t, "true", env.Value)
+}
+
+func assertLogMonitoringEnv(t *testing.T, envs []corev1.EnvVar) {
+	env := k8senv.FindEnvVar(envs, logmonitoringds.KubeletIPAddressEnv)
+	require.NotNil(t, env)
+	assert.NotEmpty(t, env.ValueFrom)
+	env = k8senv.FindEnvVar(envs, logmonitoringds.KubeletNodeNameEnv)
+	require.NotNil(t, env)
+	assert.NotEmpty(t, env.ValueFrom)
 }
 
 func TestIsProxyAsEnvVarDeprecated(t *testing.T) {

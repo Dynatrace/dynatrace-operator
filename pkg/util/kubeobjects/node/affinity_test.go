@@ -5,12 +5,33 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func TestAffinityNodeRequirement(t *testing.T) {
-	assert.Equal(t, AffinityNodeRequirementForSupportedArches(), affinityNodeRequirementsForArches(arch.AMDImage, arch.ARMImage, arch.PPCLEImage, arch.S390Image))
-	assert.Contains(t, AffinityNodeRequirementForSupportedArches(), linuxRequirement())
+func TestAffinity(t *testing.T) {
+	affinity := Affinity()
+
+	require.NotNil(t, affinity)
+	require.NotNil(t, affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution)
+	require.Len(t, affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, 1)
+
+	matchExpression := affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions
+	assert.Equal(t, matchExpression, affinityNodeRequirementsForArches(arch.AMDImage, arch.ARMImage, arch.PPCLEImage, arch.S390Image))
+	assert.Contains(t, matchExpression, linuxRequirement())
+}
+
+func TestAffinityForArches(t *testing.T) {
+	expectedArches := []string{"arch1", "arch2", "arch3"}
+	affinity := AffinityForArches(expectedArches...)
+
+	require.NotNil(t, affinity)
+	require.NotNil(t, affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution)
+	require.Len(t, affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, 1)
+
+	matchExpression := affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions
+	assert.Equal(t, matchExpression, affinityNodeRequirementsForArches(expectedArches...))
+	assert.Contains(t, matchExpression, linuxRequirement())
 }
 
 func linuxRequirement() corev1.NodeSelectorRequirement {

@@ -9,7 +9,7 @@ import (
 
 func TestGet(t *testing.T) {
 	t.Run("empty env -> use fallback", func(t *testing.T) {
-		t.Setenv(modulesJsonEnv, "")
+		t.Setenv(ModulesJsonEnv, "")
 
 		m := GetModules()
 		assert.Equal(t, fallbackModules, m)
@@ -18,7 +18,7 @@ func TestGet(t *testing.T) {
 	})
 
 	t.Run("messy env -> use fallback", func(t *testing.T) {
-		t.Setenv(modulesJsonEnv, "this is not json :(")
+		t.Setenv(ModulesJsonEnv, "this is not json :(")
 
 		m := GetModules()
 		assert.Equal(t, fallbackModules, m)
@@ -29,6 +29,7 @@ func TestGet(t *testing.T) {
 	t.Run("correct env -> set correctly", func(t *testing.T) {
 		jsonValue := `
 		{
+			"csidriver": false,
 			"activeGate": true,
 			"oneAgent": false,
 			"extensions": true,
@@ -38,6 +39,7 @@ func TestGet(t *testing.T) {
 			"kspm": true
 		}`
 		expected := Modules{
+			CSIDriver:      false,
 			ActiveGate:     true,
 			OneAgent:       false,
 			Extensions:     true,
@@ -47,7 +49,7 @@ func TestGet(t *testing.T) {
 			KSPM:           true,
 		}
 
-		t.Setenv(modulesJsonEnv, jsonValue)
+		t.Setenv(ModulesJsonEnv, jsonValue)
 
 		m := GetModules()
 		assert.Equal(t, expected, m)
@@ -58,6 +60,7 @@ func TestGet(t *testing.T) {
 	t.Run("run only once", func(t *testing.T) {
 		jsonValue := `
 		{
+			"csidriver": false,
 			"activeGate": true,
 			"oneAgent": false,
 			"extensions": true,
@@ -67,6 +70,7 @@ func TestGet(t *testing.T) {
 			"kspm": true
 		}`
 		expected := Modules{
+			CSIDriver:      false,
 			ActiveGate:     true,
 			OneAgent:       false,
 			Extensions:     true,
@@ -76,13 +80,13 @@ func TestGet(t *testing.T) {
 			KSPM:           true,
 		}
 
-		t.Setenv(modulesJsonEnv, jsonValue)
+		t.Setenv(ModulesJsonEnv, jsonValue)
 
 		m := GetModules()
 
 		assert.Equal(t, expected, m)
 
-		t.Setenv(modulesJsonEnv, "boom")
+		t.Setenv(ModulesJsonEnv, "boom")
 
 		m = GetModules()
 

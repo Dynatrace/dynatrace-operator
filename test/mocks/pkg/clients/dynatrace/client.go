@@ -7,6 +7,9 @@ import (
 	io "io"
 
 	dynatrace "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+
+	logmonitoring "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -21,6 +24,65 @@ type Client_Expecter struct {
 
 func (_m *Client) EXPECT() *Client_Expecter {
 	return &Client_Expecter{mock: &_m.Mock}
+}
+
+// CreateLogMonitoringSetting provides a mock function with given fields: ctx, scope, clusterName, ingestRuleMatchers
+func (_m *Client) CreateLogMonitoringSetting(ctx context.Context, scope string, clusterName string, ingestRuleMatchers []logmonitoring.IngestRuleMatchers) (string, error) {
+	ret := _m.Called(ctx, scope, clusterName, ingestRuleMatchers)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateLogMonitoringSetting")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, []logmonitoring.IngestRuleMatchers) (string, error)); ok {
+		return rf(ctx, scope, clusterName, ingestRuleMatchers)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, []logmonitoring.IngestRuleMatchers) string); ok {
+		r0 = rf(ctx, scope, clusterName, ingestRuleMatchers)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, []logmonitoring.IngestRuleMatchers) error); ok {
+		r1 = rf(ctx, scope, clusterName, ingestRuleMatchers)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Client_CreateLogMonitoringSetting_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateLogMonitoringSetting'
+type Client_CreateLogMonitoringSetting_Call struct {
+	*mock.Call
+}
+
+// CreateLogMonitoringSetting is a helper method to define mock.On call
+//   - ctx context.Context
+//   - scope string
+//   - clusterName string
+//   - ingestRuleMatchers []logmonitoring.IngestRuleMatchers
+func (_e *Client_Expecter) CreateLogMonitoringSetting(ctx interface{}, scope interface{}, clusterName interface{}, ingestRuleMatchers interface{}) *Client_CreateLogMonitoringSetting_Call {
+	return &Client_CreateLogMonitoringSetting_Call{Call: _e.mock.On("CreateLogMonitoringSetting", ctx, scope, clusterName, ingestRuleMatchers)}
+}
+
+func (_c *Client_CreateLogMonitoringSetting_Call) Run(run func(ctx context.Context, scope string, clusterName string, ingestRuleMatchers []logmonitoring.IngestRuleMatchers)) *Client_CreateLogMonitoringSetting_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].([]logmonitoring.IngestRuleMatchers))
+	})
+	return _c
+}
+
+func (_c *Client_CreateLogMonitoringSetting_Call) Return(_a0 string, _a1 error) *Client_CreateLogMonitoringSetting_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Client_CreateLogMonitoringSetting_Call) RunAndReturn(run func(context.Context, string, string, []logmonitoring.IngestRuleMatchers) (string, error)) *Client_CreateLogMonitoringSetting_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // CreateOrUpdateKubernetesAppSetting provides a mock function with given fields: ctx, scope
@@ -308,9 +370,9 @@ func (_c *Client_GetAgent_Call) RunAndReturn(run func(context.Context, string, s
 	return _c
 }
 
-// GetAgentVersions provides a mock function with given fields: ctx, os, installerType, flavor, arch
-func (_m *Client) GetAgentVersions(ctx context.Context, os string, installerType string, flavor string, arch string) ([]string, error) {
-	ret := _m.Called(ctx, os, installerType, flavor, arch)
+// GetAgentVersions provides a mock function with given fields: ctx, os, installerType, flavor
+func (_m *Client) GetAgentVersions(ctx context.Context, os string, installerType string, flavor string) ([]string, error) {
+	ret := _m.Called(ctx, os, installerType, flavor)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAgentVersions")
@@ -318,19 +380,19 @@ func (_m *Client) GetAgentVersions(ctx context.Context, os string, installerType
 
 	var r0 []string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) ([]string, error)); ok {
-		return rf(ctx, os, installerType, flavor, arch)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) ([]string, error)); ok {
+		return rf(ctx, os, installerType, flavor)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) []string); ok {
-		r0 = rf(ctx, os, installerType, flavor, arch)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) []string); ok {
+		r0 = rf(ctx, os, installerType, flavor)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]string)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string) error); ok {
-		r1 = rf(ctx, os, installerType, flavor, arch)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, os, installerType, flavor)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -348,14 +410,13 @@ type Client_GetAgentVersions_Call struct {
 //   - os string
 //   - installerType string
 //   - flavor string
-//   - arch string
-func (_e *Client_Expecter) GetAgentVersions(ctx interface{}, os interface{}, installerType interface{}, flavor interface{}, arch interface{}) *Client_GetAgentVersions_Call {
-	return &Client_GetAgentVersions_Call{Call: _e.mock.On("GetAgentVersions", ctx, os, installerType, flavor, arch)}
+func (_e *Client_Expecter) GetAgentVersions(ctx interface{}, os interface{}, installerType interface{}, flavor interface{}) *Client_GetAgentVersions_Call {
+	return &Client_GetAgentVersions_Call{Call: _e.mock.On("GetAgentVersions", ctx, os, installerType, flavor)}
 }
 
-func (_c *Client_GetAgentVersions_Call) Run(run func(ctx context.Context, os string, installerType string, flavor string, arch string)) *Client_GetAgentVersions_Call {
+func (_c *Client_GetAgentVersions_Call) Run(run func(ctx context.Context, os string, installerType string, flavor string)) *Client_GetAgentVersions_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string), args[4].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string))
 	})
 	return _c
 }
@@ -365,7 +426,7 @@ func (_c *Client_GetAgentVersions_Call) Return(_a0 []string, _a1 error) *Client_
 	return _c
 }
 
-func (_c *Client_GetAgentVersions_Call) RunAndReturn(run func(context.Context, string, string, string, string) ([]string, error)) *Client_GetAgentVersions_Call {
+func (_c *Client_GetAgentVersions_Call) RunAndReturn(run func(context.Context, string, string, string) ([]string, error)) *Client_GetAgentVersions_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -418,7 +479,7 @@ func (_c *Client_GetAgentViaInstallerUrl_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
-// GetCommunicationHostForClient provides a mock function with given fields:
+// GetCommunicationHostForClient provides a mock function with no fields
 func (_m *Client) GetCommunicationHostForClient() (dynatrace.CommunicationHost, error) {
 	ret := _m.Called()
 
@@ -1100,6 +1161,63 @@ func (_c *Client_GetRulesSettings_Call) Return(_a0 dynatrace.GetRulesSettingsRes
 }
 
 func (_c *Client_GetRulesSettings_Call) RunAndReturn(run func(context.Context, string, string) (dynatrace.GetRulesSettingsResponse, error)) *Client_GetRulesSettings_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetSettingsForLogModule provides a mock function with given fields: ctx, monitoredEntity
+func (_m *Client) GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (dynatrace.GetLogMonSettingsResponse, error) {
+	ret := _m.Called(ctx, monitoredEntity)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetSettingsForLogModule")
+	}
+
+	var r0 dynatrace.GetLogMonSettingsResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (dynatrace.GetLogMonSettingsResponse, error)); ok {
+		return rf(ctx, monitoredEntity)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) dynatrace.GetLogMonSettingsResponse); ok {
+		r0 = rf(ctx, monitoredEntity)
+	} else {
+		r0 = ret.Get(0).(dynatrace.GetLogMonSettingsResponse)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, monitoredEntity)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Client_GetSettingsForLogModule_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetSettingsForLogModule'
+type Client_GetSettingsForLogModule_Call struct {
+	*mock.Call
+}
+
+// GetSettingsForLogModule is a helper method to define mock.On call
+//   - ctx context.Context
+//   - monitoredEntity string
+func (_e *Client_Expecter) GetSettingsForLogModule(ctx interface{}, monitoredEntity interface{}) *Client_GetSettingsForLogModule_Call {
+	return &Client_GetSettingsForLogModule_Call{Call: _e.mock.On("GetSettingsForLogModule", ctx, monitoredEntity)}
+}
+
+func (_c *Client_GetSettingsForLogModule_Call) Run(run func(ctx context.Context, monitoredEntity string)) *Client_GetSettingsForLogModule_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Client_GetSettingsForLogModule_Call) Return(_a0 dynatrace.GetLogMonSettingsResponse, _a1 error) *Client_GetSettingsForLogModule_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Client_GetSettingsForLogModule_Call) RunAndReturn(run func(context.Context, string) (dynatrace.GetLogMonSettingsResponse, error)) *Client_GetSettingsForLogModule_Call {
 	_c.Call.Return(run)
 	return _c
 }

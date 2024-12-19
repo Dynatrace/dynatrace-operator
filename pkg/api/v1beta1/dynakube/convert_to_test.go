@@ -5,12 +5,12 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 var testTime = metav1.Now()
@@ -172,7 +172,7 @@ func getOldHostInjectSpec() HostInjectSpec {
 		Tolerations: []corev1.Toleration{
 			{Key: "host-inject-toleration-key", Operator: "In", Value: "host-inject-toleration-value"},
 		},
-		AutoUpdate: address.Of(false),
+		AutoUpdate: ptr.To(false),
 		DNSPolicy:  corev1.DNSClusterFirstWithHostNet,
 		Annotations: map[string]string{
 			"host-inject-annotation-key": "host-inject-annotation-value",
@@ -227,7 +227,7 @@ func getOldCloudNativeSpec() CloudNativeFullStackSpec {
 func getOldApplicationMonitoringSpec() ApplicationMonitoringSpec {
 	return ApplicationMonitoringSpec{
 		AppInjectionSpec: getOldAppInjectionSpec(),
-		UseCSIDriver:     address.Of(true),
+		UseCSIDriver:     ptr.To(true),
 		Version:          "app-monitoring-version",
 	}
 }
@@ -265,7 +265,7 @@ func getOldActiveGateSpec() ActiveGateSpec {
 				"activegate-node-selector-key": "activegate-node-selector-value",
 			},
 			Image:    "activegate-image",
-			Replicas: address.Of(int32(42)),
+			Replicas: ptr.To(int32(42)),
 			Group:    "activegate-group",
 			CustomProperties: &DynaKubeValueSource{
 				Value:     "activegate-cp-value",

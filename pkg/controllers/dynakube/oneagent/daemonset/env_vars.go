@@ -5,11 +5,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
+	logmonitoring "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -42,6 +43,7 @@ func (b *builder) environmentVariables() ([]corev1.EnvVar, error) {
 	b.addOperatorVersionInfoEnv(envMap)
 	b.addConnectionInfoEnvs(envMap)
 	b.addReadOnlyEnv(envMap)
+	b.addLogMonitoringEnv(envMap)
 
 	isProxyAsEnvDeprecated, err := isProxyAsEnvVarDeprecated(b.dk.OneAgentVersion())
 	if err != nil {
@@ -70,7 +72,7 @@ func (b *builder) addDeploymentMetadataEnv(envVarMap *prioritymap.Map) {
 			Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(b.dk.Name),
 		},
 		Key:      deploymentmetadata.OneAgentMetadataKey,
-		Optional: address.Of(false),
+		Optional: ptr.To(false),
 	}})
 }
 
@@ -80,7 +82,7 @@ func (b *builder) addOperatorVersionInfoEnv(envVarMap *prioritymap.Map) {
 			Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(b.dk.Name),
 		},
 		Key:      deploymentmetadata.OperatorVersionKey,
-		Optional: address.Of(false),
+		Optional: ptr.To(false),
 	}})
 }
 
@@ -90,14 +92,14 @@ func (b *builder) addConnectionInfoEnvs(envVarMap *prioritymap.Map) {
 			Name: b.dk.OneAgentConnectionInfoConfigMapName(),
 		},
 		Key:      connectioninfo.TenantUUIDKey,
-		Optional: address.Of(false),
+		Optional: ptr.To(false),
 	}})
 	addDefaultValueSource(envVarMap, connectioninfo.EnvDtServer, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 		LocalObjectReference: corev1.LocalObjectReference{
 			Name: b.dk.OneAgentConnectionInfoConfigMapName(),
 		},
 		Key:      connectioninfo.CommunicationEndpointsKey,
-		Optional: address.Of(false),
+		Optional: ptr.To(false),
 	}})
 }
 
@@ -120,8 +122,16 @@ func (b *builder) addProxyEnv(envVarMap *prioritymap.Map) {
 }
 
 func (b *builder) addReadOnlyEnv(envVarMap *prioritymap.Map) {
-	if b.dk != nil && b.dk.NeedsReadOnlyOneAgents() {
+	if b.dk != nil && b.dk.UseReadOnlyOneAgents() {
 		addDefaultValue(envVarMap, oneagentReadOnlyMode, "true")
+	}
+}
+
+func (b *builder) addLogMonitoringEnv(envVarMap *prioritymap.Map) {
+	if b.dk != nil && b.dk.LogMonitoring().IsEnabled() {
+		for _, env := range logmonitoring.GetKubeletEnvs() {
+			prioritymap.Append(envVarMap, env)
+		}
 	}
 }
 

@@ -3,22 +3,19 @@ package deployment
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 const (
-	customEnvPriority  = prioritymap.HighPriority
-	defaultEnvPriority = prioritymap.DefaultPriority
-	unprivilegedUser   = int64(1000)
-	unprivilegedGroup  = int64(1000)
+	unprivilegedUser  = int64(1000)
+	unprivilegedGroup = int64(1000)
 )
 
 func New(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
@@ -27,9 +24,11 @@ func New(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 
 func create(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 	appLabels := buildAppLabels(ec)
-	labels := maputils.MergeMap(
-		ec.Labels,
-		appLabels.BuildLabels(),
+	labels := appLabels.BuildLabels()
+
+	customPodLabels := maputils.MergeMap(
+		ec.Spec.Labels,
+		labels, // higher priority
 	)
 
 	log.Debug("EdgeConnect deployment app labels", "labels", labels)
@@ -39,7 +38,7 @@ func create(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 			Name:        ec.Name,
 			Namespace:   ec.Namespace,
 			Labels:      labels,
-			Annotations: buildAnnotations(ec),
+			Annotations: buildAnnotations(),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ec.Spec.Replicas,
@@ -48,14 +47,15 @@ func create(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
+					Annotations: ec.Spec.Annotations,
+					Labels:      customPodLabels,
 				},
 				Spec: corev1.PodSpec{
 					Containers:                    []corev1.Container{edgeConnectContainer(ec)},
 					ImagePullSecrets:              prepareImagePullSecrets(ec),
 					ServiceAccountName:            ec.GetServiceAccountName(),
 					DeprecatedServiceAccount:      ec.GetServiceAccountName(),
-					TerminationGracePeriodSeconds: address.Of(int64(30)),
+					TerminationGracePeriodSeconds: ptr.To(int64(30)),
 					Volumes:                       prepareVolumes(ec),
 					NodeSelector:                  ec.Spec.NodeSelector,
 					Tolerations:                   ec.Spec.Tolerations,
@@ -92,14 +92,11 @@ func buildAppLabels(ec *edgeconnect.EdgeConnect) *labels.AppLabels {
 		ec.Status.Version.Version)
 }
 
-func buildAnnotations(ec *edgeconnect.EdgeConnect) map[string]string {
-	annotations := map[string]string{
+func buildAnnotations() map[string]string {
+	return map[string]string{
 		consts.AnnotationEdgeConnectContainerAppArmor: "runtime/default",
 		webhook.AnnotationDynatraceInject:             "false",
 	}
-	annotations = maputils.MergeMap(ec.Annotations, annotations)
-
-	return annotations
 }
 
 func edgeConnectContainer(ec *edgeconnect.EdgeConnect) corev1.Container {
@@ -110,12 +107,12 @@ func edgeConnectContainer(ec *edgeconnect.EdgeConnect) corev1.Container {
 		Env:             ec.Spec.Env,
 		Resources:       prepareResourceRequirements(ec),
 		SecurityContext: &corev1.SecurityContext{
-			AllowPrivilegeEscalation: address.Of(false),
-			Privileged:               address.Of(false),
-			ReadOnlyRootFilesystem:   address.Of(true),
-			RunAsGroup:               address.Of(unprivilegedGroup),
-			RunAsUser:                address.Of(unprivilegedUser),
-			RunAsNonRoot:             address.Of(true),
+			AllowPrivilegeEscalation: ptr.To(false),
+			Privileged:               ptr.To(false),
+			ReadOnlyRootFilesystem:   ptr.To(true),
+			RunAsGroup:               ptr.To(unprivilegedGroup),
+			RunAsUser:                ptr.To(unprivilegedUser),
+			RunAsNonRoot:             ptr.To(true),
 		},
 		VolumeMounts: prepareVolumeMounts(ec),
 	}

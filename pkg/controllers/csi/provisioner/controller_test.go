@@ -16,7 +16,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 	reconcilermock "github.com/Dynatrace/dynatrace-operator/test/mocks/sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -93,29 +92,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 		require.Nil(t, ten)
 	})
-	t.Run("application monitoring disabled", func(t *testing.T) {
-		gc := reconcilermock.NewReconciler(t)
-		provisioner := &OneAgentProvisioner{
-			apiReader: fake.NewClient(
-				&dynakube.DynaKube{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: dynakubeName,
-					},
-					Spec: dynakube.DynaKubeSpec{
-						OneAgent: dynakube.OneAgentSpec{},
-					},
-				},
-			),
-			db: metadata.FakeMemoryDB(),
-			gc: gc,
-		}
-		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
-
-		require.NoError(t, err)
-		require.NotNil(t, result)
-		require.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
-	})
-	t.Run("csi driver not enabled", func(t *testing.T) {
+	t.Run("csi driver not used (classicFullstack)", func(t *testing.T) {
 		gc := reconcilermock.NewReconciler(t)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
@@ -125,9 +102,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					},
 					Spec: dynakube.DynaKubeSpec{
 						OneAgent: dynakube.OneAgentSpec{
-							ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
-								AppInjectionSpec: dynakube.AppInjectionSpec{},
-							},
+							ClassicFullStack: &dynakube.HostInjectSpec{},
 						},
 					},
 				},
@@ -140,38 +115,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
-	})
-	t.Run("csi driver disabled", func(t *testing.T) {
-		gc := reconcilermock.NewReconciler(t)
-		db := metadata.FakeMemoryDB()
-		_ = db.InsertDynakube(ctx, &metadata.Dynakube{Name: dynakubeName})
-		provisioner := &OneAgentProvisioner{
-			apiReader: fake.NewClient(
-				&dynakube.DynaKube{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: dynakubeName,
-					},
-					Spec: dynakube.DynaKubeSpec{
-						OneAgent: dynakube.OneAgentSpec{
-							ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
-								AppInjectionSpec: dynakube.AppInjectionSpec{},
-							},
-						},
-					},
-				},
-			),
-			db: db,
-			gc: gc,
-		}
-		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
-
-		require.NoError(t, err)
-		require.NotNil(t, result)
-		require.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
-
-		dynakubeMetadatas, err := db.GetAllDynakubes(ctx)
-		require.NoError(t, err)
-		require.Empty(t, dynakubeMetadatas)
 	})
 	t.Run("host monitoring used", func(t *testing.T) {
 		fakeClient := fake.NewClient(
@@ -493,50 +436,8 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	})
 }
 
-func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
-	t.Run("default DynaKube object returns false", func(t *testing.T) {
-		dk := &dynakube.DynaKube{}
-
-		isEnabled := dk.NeedsCSIDriver()
-
-		require.False(t, isEnabled)
-	})
-
-	t.Run("application monitoring enabled", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
-				},
-			},
-		}
-
-		isEnabled := dk.NeedsCSIDriver()
-
-		require.True(t, isEnabled)
-	})
-
-	t.Run("application monitoring enabled without csi driver", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
-						AppInjectionSpec: dynakube.AppInjectionSpec{},
-					},
-				},
-			},
-		}
-
-		isEnabled := dk.NeedsCSIDriver()
-
-		require.False(t, isEnabled)
-	})
-}
-
 func buildValidApplicationMonitoringSpec(_ *testing.T) *dynakube.ApplicationMonitoringSpec {
-	return &dynakube.ApplicationMonitoringSpec{
-		UseCSIDriver: address.Of(true),
-	}
+	return &dynakube.ApplicationMonitoringSpec{}
 }
 
 func TestProvisioner_CreateDynakube(t *testing.T) {

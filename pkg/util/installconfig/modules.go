@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 const (
-	modulesJsonEnv = "modules.json"
+	ModulesJsonEnv = "modules.json"
 
 	validationErrorTemplate = "%s has been disabled during Operator install. The necessary resources for %s to work are not present on the cluster. Redeploy the Operator via Helm with all the necessary resources enabled."
 )
@@ -20,7 +21,11 @@ var (
 
 	modules Modules
 
+	// needed for testing
+	override *Modules
+
 	fallbackModules = Modules{
+		CSIDriver:      true,
 		ActiveGate:     true,
 		OneAgent:       true,
 		Extensions:     true,
@@ -34,6 +39,7 @@ var (
 )
 
 type Modules struct {
+	CSIDriver      bool `json:"csiDriver"`
 	ActiveGate     bool `json:"activeGate"`
 	OneAgent       bool `json:"oneAgent"`
 	Extensions     bool `json:"extensions"`
@@ -44,25 +50,40 @@ type Modules struct {
 }
 
 func GetModules() Modules {
+	if override != nil {
+		return *override
+	}
+
 	once.Do(func() {
-		modulesJson := os.Getenv(modulesJsonEnv)
+		modulesJson := os.Getenv(ModulesJsonEnv)
 		if modulesJson == "" {
-			log.Info("envvar not set, using default", "envvar", modulesJsonEnv)
+			log.Info("envvar not set, using default", "envvar", ModulesJsonEnv)
 
 			modules = fallbackModules
 		}
 
 		err := json.Unmarshal([]byte(modulesJson), &modules)
 		if err != nil {
-			log.Info("problem unmarshalling envvar content, using default", "envvar", modulesJsonEnv, "err", err)
+			log.Info("problem unmarshalling envvar content, using default", "envvar", ModulesJsonEnv, "err", err)
 
 			modules = fallbackModules
 		}
 
-		log.Info("envvar content read and set", "envvar", modulesJsonEnv, "value", modulesJson)
+		log.Info("envvar content read and set", "envvar", ModulesJsonEnv, "value", modulesJson)
 	})
 
 	return modules
+}
+
+// SetModulesOverride is a testing function, so you can easily unittest function using the GetModules() func
+func SetModulesOverride(t *testing.T, modules Modules) {
+	t.Helper()
+
+	override = &modules
+
+	t.Cleanup(func() {
+		override = nil
+	})
 }
 
 func GetModuleValidationErrorMessage(moduleName string) string {

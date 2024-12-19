@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	errorCSIModuleRequired           = "CSI Driver was disabled during Operator install. It is a necessary resource for Cloud Native Fullstack to work. Redeploy the Operator via Helm with the CSI Driver enabled."
 	errorOneAgentModuleDisabled      = installconfig.GetModuleValidationErrorMessage("OneAgent")
 	errorActiveGateModuleDisabled    = installconfig.GetModuleValidationErrorMessage("ActiveGate")
 	errorExtensionsModuleDisabled    = installconfig.GetModuleValidationErrorMessage("Extensions")
@@ -24,7 +25,7 @@ func isOneAgentModuleDisabled(_ context.Context, v *Validator, dk *dynakube.Dyna
 }
 
 func isActiveGateModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if dk.ActiveGate().IsEnabled() && !v.modules.ActiveGate {
+	if dk.ActiveGate().IsEnabled() && !v.modules.ActiveGate && !v.modules.KSPM {
 		return errorActiveGateModuleDisabled
 	}
 
@@ -53,4 +54,17 @@ func isKSPMDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) stri
 	}
 
 	return ""
+}
+
+func isCSIModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
+	if isCSIRequired(dk) && !v.modules.CSIDriver {
+		return errorCSIModuleRequired
+	}
+
+	return ""
+}
+
+// isCSIRequired checks if the provided a DynaKube strictly needs the csi-driver, and no fallbacks exist to provide the same functionality.
+func isCSIRequired(dk *dynakube.DynaKube) bool {
+	return dk.CloudNativeFullstackMode()
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,8 +31,6 @@ const (
 	testCustomConfigConfigMapName = "eec-custom-config"
 )
 
-var SelfSignedTLSSecretObjectKey = client.ObjectKey{Name: getSelfSignedTLSSecretName(testDynakubeName), Namespace: testNamespaceName}
-
 func TestReconcile(t *testing.T) {
 	t.Run("self-signed tls secret is not generated", func(t *testing.T) {
 		dk := getTestDynakube()
@@ -45,7 +43,9 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var secret corev1.Secret
-		err = fakeClient.Get(context.Background(), SelfSignedTLSSecretObjectKey, &secret)
+
+		key := client.ObjectKey{Name: dk.ExtensionsSelfSignedTLSSecretName(), Namespace: testNamespaceName}
+		err = fakeClient.Get(context.Background(), key, &secret)
 
 		require.True(t, k8serrors.IsNotFound(err))
 		assert.Equal(t, corev1.Secret{}, secret)
@@ -62,7 +62,9 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var secret corev1.Secret
-		err = fakeClient.Get(context.Background(), SelfSignedTLSSecretObjectKey, &secret)
+
+		key := client.ObjectKey{Name: dk.ExtensionsSelfSignedTLSSecretName(), Namespace: testNamespaceName}
+		err = fakeClient.Get(context.Background(), key, &secret)
 
 		require.NoError(t, err)
 		assert.NotEmpty(t, secret)
@@ -86,7 +88,9 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var secret corev1.Secret
-		err = fakeClient.Get(context.Background(), SelfSignedTLSSecretObjectKey, &secret)
+
+		key := client.ObjectKey{Name: dk.ExtensionsSelfSignedTLSSecretName(), Namespace: testNamespaceName}
+		err = fakeClient.Get(context.Background(), key, &secret)
 
 		require.NoError(t, err)
 		require.NotEmpty(t, secret)
@@ -106,7 +110,9 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var secret corev1.Secret
-		err = fakeClient.Get(context.Background(), SelfSignedTLSSecretObjectKey, &secret)
+
+		key := client.ObjectKey{Name: dk.ExtensionsSelfSignedTLSSecretName(), Namespace: testNamespaceName}
+		err = fakeClient.Get(context.Background(), key, &secret)
 
 		require.True(t, k8serrors.IsNotFound(err))
 		assert.Empty(t, secret)
@@ -126,7 +132,9 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var secret corev1.Secret
-		err = fakeClient.Get(context.Background(), SelfSignedTLSSecretObjectKey, &secret)
+
+		key := client.ObjectKey{Name: dk.ExtensionsSelfSignedTLSSecretName(), Namespace: testNamespaceName}
+		err = fakeClient.Get(context.Background(), key, &secret)
 
 		require.True(t, k8serrors.IsNotFound(err))
 		assert.Equal(t, corev1.Secret{}, secret)
@@ -139,16 +147,14 @@ func TestGetTLSSecretName(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = ""
 
-		secretName := GetTLSSecretName(dk)
-
-		assert.Equal(t, getSelfSignedTLSSecretName(dk.Name), secretName)
+		secretName := dk.ExtensionsTLSSecretName()
+		assert.Equal(t, dk.ExtensionsSelfSignedTLSSecretName(), secretName)
 	})
 	t.Run("tlsRefName secret", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "dummy-value"
 
-		secretName := GetTLSSecretName(dk)
-
+		secretName := dk.ExtensionsTLSSecretName()
 		assert.Equal(t, "dummy-value", secretName)
 	})
 }
@@ -196,7 +202,7 @@ func mockSelfSignedTLSSecret(t *testing.T, client client.Client, dk *dynakube.Dy
 func getSelfSignedTLSSecret(dk *dynakube.DynaKube) corev1.Secret {
 	return corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      getSelfSignedTLSSecretName(dk.Name),
+			Name:      dk.ExtensionsTLSSecretName(),
 			Namespace: dk.Namespace,
 		},
 		Data: map[string][]byte{

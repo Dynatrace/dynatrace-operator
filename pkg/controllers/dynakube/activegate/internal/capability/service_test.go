@@ -81,7 +81,7 @@ func TestCreateService(t *testing.T) {
 		ports := service.Spec.Ports
 
 		assert.Contains(t, ports, agHttpsPort)
-		assert.NotContains(t, ports, agHttpPort)
+		assert.Contains(t, ports, agHttpPort)
 	})
 	t.Run("check AG service if metrics-ingest enabled", func(t *testing.T) {
 		dk := createTestDynaKube()

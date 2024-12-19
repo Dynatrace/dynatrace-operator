@@ -54,7 +54,7 @@ func (mod EecModifier) getVolumes() []corev1.Volume {
 					DefaultMode: &mode,
 					Items: []corev1.KeyToPath{
 						{
-							Key:  eecconsts.EecTokenSecretKey,
+							Key:  eecconsts.TokenSecretKey,
 							Path: eecFile,
 							Mode: &mode,
 						},

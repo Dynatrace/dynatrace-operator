@@ -8,7 +8,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
@@ -16,6 +15,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func TestReconcile(t *testing.T) {
@@ -23,7 +23,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("no error if not enabled", func(t *testing.T) {
 		dk := createDynaKube()
-		dk.Spec.MetadataEnrichment.Enabled = address.Of(false)
+		dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
 
 		reconciler := NewReconciler(nil, &dk)
 
@@ -34,7 +34,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("clean-up if previously enabled", func(t *testing.T) {
 		dk := createDynaKube()
-		dk.Spec.MetadataEnrichment.Enabled = address.Of(false)
+		dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
 		dk.Status.MetadataEnrichment.Rules = createRules()
 		conditions.SetStatusUpdated(dk.Conditions(), conditionType, "TESTING")
 
@@ -127,7 +127,7 @@ func createDynaKube() dynakube.DynaKube {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			MetadataEnrichment: dynakube.MetadataEnrichment{
-				Enabled: address.Of(true),
+				Enabled: ptr.To(true),
 			},
 		},
 		Status: dynakube.DynaKubeStatus{

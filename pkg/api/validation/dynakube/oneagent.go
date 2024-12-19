@@ -60,7 +60,7 @@ func conflictingOneAgentConfiguration(_ context.Context, _ *Validator, dk *dynak
 }
 
 func conflictingOneAgentNodeSelector(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
-	if !dk.LogMonitoring().IsStandalone() && !dk.NeedsOneAgent() {
+	if !dk.NeedsOneAgent() && !dk.LogMonitoring().IsStandalone() {
 		return ""
 	}
 
@@ -79,17 +79,9 @@ func conflictingOneAgentNodeSelector(ctx context.Context, dv *Validator, dk *dyn
 			continue
 		}
 
-		if item.NeedsOneAgent() {
+		if hasLogMonitoringSelectorConflict(dk, &item) || hasOneAgentSelectorConflict(dk, &item) {
 			if hasConflictingMatchLabels(oneAgentNodeSelector, item.OneAgentNodeSelector()) {
 				log.Info("requested dynakube has conflicting OneAgent nodeSelector", "name", dk.Name, "namespace", dk.Namespace)
-
-				conflictingDynakubes[item.Name] = true
-			}
-		}
-
-		if item.LogMonitoring().IsStandalone() {
-			if hasConflictingMatchLabels(oneAgentNodeSelector, item.OneAgentNodeSelector()) {
-				log.Info("requested dynakube has conflicting LogMonitoring nodeSelector", "name", dk.Name, "namespace", dk.Namespace)
 
 				conflictingDynakubes[item.Name] = true
 			}
@@ -103,6 +95,18 @@ func conflictingOneAgentNodeSelector(ctx context.Context, dv *Validator, dk *dyn
 	return ""
 }
 
+func hasLogMonitoringSelectorConflict(dk1, dk2 *dynakube.DynaKube) bool {
+	return dk1.LogMonitoring().IsStandalone() && dk1.ApiUrl() == dk2.ApiUrl() &&
+		(dk2.NeedsOneAgent() || dk2.LogMonitoring().IsStandalone()) &&
+		hasConflictingMatchLabels(dk1.OneAgentNodeSelector(), dk2.OneAgentNodeSelector())
+}
+
+func hasOneAgentSelectorConflict(dk1, dk2 *dynakube.DynaKube) bool {
+	return dk1.NeedsOneAgent() &&
+		(dk2.NeedsOneAgent() || dk2.LogMonitoring().IsStandalone() && dk1.ApiUrl() == dk2.ApiUrl()) &&
+		hasConflictingMatchLabels(dk1.OneAgentNodeSelector(), dk2.OneAgentNodeSelector())
+}
+
 func mapKeysToString(m map[string]bool, sep string) string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
@@ -112,9 +116,9 @@ func mapKeysToString(m map[string]bool, sep string) string {
 	return strings.Join(keys, sep)
 }
 
-func imageFieldSetWithoutCSIFlag(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func imageFieldSetWithoutCSIFlag(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
 	if dk.ApplicationMonitoringMode() {
-		if !dk.NeedsCSIDriver() && len(dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) > 0 {
+		if len(dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) > 0 && !v.modules.CSIDriver {
 			return errorImageFieldSetWithoutCSIFlag
 		}
 	}
@@ -154,7 +158,7 @@ func unsupportedOneAgentImage(_ context.Context, _ *Validator, dk *dynakube.Dyna
 
 func conflictingOneAgentVolumeStorageSettings(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	volumeStorageEnabled, volumeStorageSet := hasOneAgentVolumeStorageEnabled(dk)
-	if dk.NeedsReadOnlyOneAgents() && volumeStorageSet && !volumeStorageEnabled {
+	if dk.UseReadOnlyOneAgents() && volumeStorageSet && !volumeStorageEnabled {
 		return errorVolumeStorageReadOnlyModeConflict
 	}
 

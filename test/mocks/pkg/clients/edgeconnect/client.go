@@ -214,7 +214,7 @@ func (_c *Client_DeleteEdgeConnect_Call) RunAndReturn(run func(string) error) *C
 	return _c
 }
 
-// GetConnectionSettings provides a mock function with given fields:
+// GetConnectionSettings provides a mock function with no fields
 func (_m *Client) GetConnectionSettings() ([]edgeconnect.EnvironmentSetting, error) {
 	ret := _m.Called()
 

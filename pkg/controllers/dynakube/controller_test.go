@@ -23,6 +23,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
@@ -350,6 +351,9 @@ func TestReconcileComponents(t *testing.T) {
 		mockExtensionReconciler := controllermock.NewReconciler(t)
 		mockExtensionReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
+		mockOtelcReconciler := controllermock.NewReconciler(t)
+		mockOtelcReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
+
 		mockKSPMReconciler := controllermock.NewReconciler(t)
 		mockKSPMReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
@@ -363,6 +367,7 @@ func TestReconcileComponents(t *testing.T) {
 			oneAgentReconcilerBuilder:      createOneAgentReconcilerBuilder(mockOneAgentReconciler),
 			logMonitoringReconcilerBuilder: createLogMonitoringReconcilerBuilder(mockLogMonitoringReconciler),
 			extensionReconcilerBuilder:     createExtensionReconcilerBuilder(mockExtensionReconciler),
+			otelcReconcilerBuilder:         createOtelcReconcilerBuilder(mockOtelcReconciler),
 			kspmReconcilerBuilder:          createKSPMReconcilerBuilder(mockKSPMReconciler),
 		}
 		mockedDtc := dtclientmock.NewClient(t)
@@ -371,7 +376,7 @@ func TestReconcileComponents(t *testing.T) {
 
 		require.Error(t, err)
 		// goerrors.Join concats errors with \n
-		assert.Len(t, strings.Split(err.Error(), "\n"), 6) // ActiveGate, Extension, OneAgent LogMonitoring, and Injection reconcilers
+		assert.Len(t, strings.Split(err.Error(), "\n"), 7) // ActiveGate, Extension, OtelC, OneAgent LogMonitoring, and Injection reconcilers
 	})
 
 	t.Run("exit early in case of no oneagent conncection info", func(t *testing.T) {
@@ -384,6 +389,9 @@ func TestReconcileComponents(t *testing.T) {
 		mockExtensionReconciler := controllermock.NewReconciler(t)
 		mockExtensionReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
+		mockOtelcReconciler := controllermock.NewReconciler(t)
+		mockOtelcReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
+
 		mockLogMonitoringReconciler := injectionmock.NewReconciler(t)
 		mockLogMonitoringReconciler.On("Reconcile", mock.Anything).Return(oaconnectioninfo.NoOneAgentCommunicationHostsError)
 
@@ -394,6 +402,7 @@ func TestReconcileComponents(t *testing.T) {
 			activeGateReconcilerBuilder:    createActivegateReconcilerBuilder(mockActiveGateReconciler),
 			logMonitoringReconcilerBuilder: createLogMonitoringReconcilerBuilder(mockLogMonitoringReconciler),
 			extensionReconcilerBuilder:     createExtensionReconcilerBuilder(mockExtensionReconciler),
+			otelcReconcilerBuilder:         createOtelcReconcilerBuilder(mockOtelcReconciler),
 		}
 		mockedDtc := dtclientmock.NewClient(t)
 
@@ -401,7 +410,7 @@ func TestReconcileComponents(t *testing.T) {
 
 		require.Error(t, err)
 		// goerrors.Join concats errors with \n
-		assert.Len(t, strings.Split(err.Error(), "\n"), 2) // ActiveGate, Extension, no OneAgent connection info is not an error
+		assert.Len(t, strings.Split(err.Error(), "\n"), 3) // ActiveGate, Extension, OtelC, no OneAgent connection info is not an error
 	})
 }
 
@@ -424,6 +433,12 @@ func createLogMonitoringReconcilerBuilder(reconciler controllers.Reconciler) log
 }
 
 func createExtensionReconcilerBuilder(reconciler controllers.Reconciler) extension.ReconcilerBuilder {
+	return func(_ client.Client, _ client.Reader, _ *dynakube.DynaKube) controllers.Reconciler {
+		return reconciler
+	}
+}
+
+func createOtelcReconcilerBuilder(reconciler controllers.Reconciler) otelc.ReconcilerBuilder {
 	return func(_ client.Client, _ client.Reader, _ *dynakube.DynaKube) controllers.Reconciler {
 		return reconciler
 	}
@@ -561,7 +576,27 @@ func TestTokenConditions(t *testing.T) {
 		_, err := controller.setupTokensAndClient(ctx, dk)
 
 		require.NoError(t, err)
-		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionTrue, dynakube.ReasonTokenReady, "")
+		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionTrue, dynakube.ReasonTokenReady, TokenWithoutDataIngestConditionMessage)
+
+		fakeClient = fake.NewClient(&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Data: map[string][]byte{
+				dtclient.ApiToken:        []byte(testAPIToken),
+				dtclient.DataIngestToken: []byte(testAPIToken),
+			},
+		})
+		controller = &Controller{
+			client:                 fakeClient,
+			apiReader:              fakeClient,
+			dynatraceClientBuilder: mockDtcBuilder,
+		}
+		_, err = controller.setupTokensAndClient(ctx, dk)
+
+		require.NoError(t, err)
+		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionTrue, dynakube.ReasonTokenReady, TokenReadyConditionMessage)
 	})
 }
 

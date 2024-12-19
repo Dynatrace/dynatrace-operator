@@ -9,6 +9,61 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
 )
 
+func TestTooManyAGReplicas(t *testing.T) {
+	t.Run("activegate with 1 (per default) replica and kspm enabled", func(t *testing.T) {
+		assertAllowed(t,
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testApiUrl,
+					Kspm:   &kspm.Spec{},
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.KubeMonCapability.DisplayName,
+						},
+					},
+					Templates: dynakube.TemplatesSpec{
+						KspmNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+							ImageRef: image.Ref{
+								Repository: "repo/image",
+								Tag:        "version",
+							},
+						},
+					},
+				},
+			})
+	})
+
+	t.Run("activegate with more than 1 replica and kspm enabled", func(t *testing.T) {
+		activeGate := activegate.Spec{
+			Capabilities: []activegate.CapabilityDisplayName{
+				activegate.KubeMonCapability.DisplayName,
+			},
+		}
+		replicas := int32(3)
+
+		activeGate.Replicas = &replicas
+		assertDenied(t,
+			[]string{errorTooManyAGReplicas},
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:     testApiUrl,
+					Kspm:       &kspm.Spec{},
+					ActiveGate: activeGate,
+					Templates: dynakube.TemplatesSpec{
+						KspmNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+							ImageRef: image.Ref{
+								Repository: "repo/image",
+								Tag:        "version",
+							},
+						},
+					},
+				},
+			})
+	})
+}
+
 func TestMissingKSPMDependency(t *testing.T) {
 	t.Run("both kspm and kubemon enabled", func(t *testing.T) {
 		assertAllowed(t,

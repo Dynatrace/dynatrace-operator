@@ -86,8 +86,8 @@ func (_c *Executor_Exec_Call) Run(run func(ctx context.Context, config *rest.Con
 	return _c
 }
 
-func (_c *Executor_Exec_Call) Return(_a0 *bytes.Buffer, _a1 *bytes.Buffer, _a2 error) *Executor_Exec_Call {
-	_c.Call.Return(_a0, _a1, _a2)
+func (_c *Executor_Exec_Call) Return(stdOut *bytes.Buffer, stdErr *bytes.Buffer, err error) *Executor_Exec_Call {
+	_c.Call.Return(stdOut, stdErr, err)
 	return _c
 }
 

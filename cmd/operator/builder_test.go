@@ -6,7 +6,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	dtfake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	configmock "github.com/Dynatrace/dynatrace-operator/test/mocks/cmd/config"
 	providermock "github.com/Dynatrace/dynatrace-operator/test/mocks/cmd/manager"
 	managermock "github.com/Dynatrace/dynatrace-operator/test/mocks/sigs.k8s.io/controller-runtime/pkg/manager"
@@ -19,6 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/config"
@@ -166,7 +166,7 @@ func TestOperatorCommand(t *testing.T) {
 		mockMgr.On("GetScheme").Return(scheme.Scheme)
 		mockMgr.On("GetClient").Return(clt)
 		mockMgr.On("GetAPIReader").Return(clt)
-		mockMgr.On("GetControllerOptions").Return(config.Controller{SkipNameValidation: address.Of(true)})
+		mockMgr.On("GetControllerOptions").Return(config.Controller{SkipNameValidation: ptr.To(true)})
 		mockMgr.On("GetLogger").Return(logr.Logger{})
 		mockMgr.On("Add", mock.AnythingOfType("*controller.Controller[sigs.k8s.io/controller-runtime/pkg/reconcile.Request]")).Return(nil)
 		mockMgr.On("GetCache").Return(nil)

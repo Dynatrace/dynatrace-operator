@@ -17,19 +17,19 @@ import (
 
 var (
 	flavorUri = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
-		OsUnix, InstallerTypeDefault, arch.FlavorDefault+"a", arch.Arch)
+		OsUnix, InstallerTypePaaS, arch.FlavorMultidistro+"a", arch.Arch)
 	flavourUriResponse = `{"error":{"code":400,"message":"Constraints violated.","constraintViolations":[{"path":"flavor","message":"'defaulta' must be any of [default, multidistro, musl]","parameterLocation":"QUERY","location":null}]}}`
 
 	archUri = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
-		OsUnix, InstallerTypeDefault, arch.FlavorDefault, arch.Arch+"a")
+		OsUnix, InstallerTypePaaS, arch.FlavorMultidistro, arch.Arch+"a")
 	archUriResponse = `{"error":{"code":400,"message":"Constraints violated.","constraintViolations":[{"path":"arch","message":"'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]","parameterLocation":"QUERY","location":null}]}}`
 
 	flavorArchUri = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
-		OsUnix, InstallerTypeDefault, arch.FlavorDefault+"a", arch.Arch+"a")
+		OsUnix, InstallerTypePaaS, arch.FlavorMultidistro+"a", arch.Arch+"a")
 	flavourArchUriResponse = `{"error":{"code":400,"message":"Constraints violated.","constraintViolations":[{"path":"flavor","message":"'defaulta' must be any of [default, multidistro, musl]","parameterLocation":"QUERY","location":null},{"path":"arch","message":"'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]","parameterLocation":"QUERY","location":null}]}}`
 
 	oaLatestMetainfoUri = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
-		"aix", InstallerTypeDefault, arch.FlavorDefault, arch.Arch)
+		"aix", InstallerTypePaaS, arch.FlavorMultidistro, arch.Arch)
 	oaLatestMetainfoUriResponse = `{"error":{"code":404,"message":"non supported architecture <OS_ARCHITECTURE_X86> on OS <OS_TYPE_AIX>"}}`
 )
 
@@ -312,11 +312,6 @@ func testServerErrors(t *testing.T) {
 
 		err = dtc.makeRequestAndUnmarshal(context.Background(), dtc.url+flavorArchUri, dynatracePaaSToken, &response)
 		assert.Equal(t, "dynatrace server error 400: Constraints violated.\n\t- flavor: 'defaulta' must be any of [default, multidistro, musl]\n\t- arch: 'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]", err.Error())
-	})
-
-	t.Run("GetLatestAgentVersion - invalid architecture", func(t *testing.T) {
-		_, err = dtc.GetLatestAgentVersion(context.Background(), "aix", InstallerTypeDefault)
-		assert.Equal(t, "dynatrace server error 404: non supported architecture <OS_ARCHITECTURE_X86> on OS <OS_TYPE_AIX>", err.Error())
 	})
 }
 

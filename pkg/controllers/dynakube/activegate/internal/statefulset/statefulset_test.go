@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	agutil "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -23,6 +22,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -49,7 +49,7 @@ func getTestDynakube() dynakube.DynaKube {
 					activegate.RoutingCapability.DisplayName,
 				},
 				CapabilityProperties: activegate.CapabilityProperties{
-					Replicas: address.Of(testReplicas),
+					Replicas: ptr.To(testReplicas),
 				},
 			},
 		},
@@ -86,7 +86,34 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		require.NotEmpty(t, sts.Spec.Template.Labels)
 		assert.Equal(t, expectedTemplateAnnotations, sts.Spec.Template.Annotations)
 	})
-	t.Run("has default node affinity", func(t *testing.T) {
+	t.Run("has default(tenant-registry) node affinity", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Status.ActiveGate.VersionStatus.Source = status.TenantRegistryVersionSource
+		multiCapability := capability.NewMultiCapability(&dk)
+		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		sts, _ := builder.CreateStatefulSet(nil)
+		expectedNodeSelectorTerms := []corev1.NodeSelectorTerm{
+			{
+				MatchExpressions: []corev1.NodeSelectorRequirement{
+					{
+						Key:      "kubernetes.io/arch",
+						Operator: corev1.NodeSelectorOpIn,
+						Values:   []string{"amd64"},
+					},
+					{
+						Key:      "kubernetes.io/os",
+						Operator: corev1.NodeSelectorOpIn,
+						Values:   []string{"linux"},
+					},
+				},
+			}}
+
+		require.NotEmpty(t, sts.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms)
+		assert.Contains(t, sts.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, expectedNodeSelectorTerms[0])
+	})
+	t.Run("has none tenant-registry node affinity", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Status.ActiveGate.VersionStatus.Source = status.CustomImageVersionSource
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts, _ := builder.CreateStatefulSet(nil)

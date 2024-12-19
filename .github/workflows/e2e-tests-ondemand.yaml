@@ -6,7 +6,7 @@ on:
     - cron: 0 3 * * 1,3,5
 
 env:
-  branch: 'release-1.3'
+  branch: release-1.4
 
 permissions:
   checks: write
@@ -33,6 +33,8 @@ jobs:
             platform: k8s
           - version: 1-29
             platform: k8s
+          - version: 1-30
+            platform: k8s
           - version: 4-10
             platform: ocp
           - version: 4-11
@@ -44,6 +46,8 @@ jobs:
           - version: 4-14
             platform: ocp
           - version: 4-15
+            platform: ocp
+          - version: 4-16
             platform: ocp
     environment: E2E
     runs-on:
@@ -78,8 +82,9 @@ jobs:
       - name: Notify failure in Slack
         uses: slackapi/slack-github-action@485a9d42d3a73031f12ec201c457e2162c45d02d # v2.0.0
         with:
-          payload: |
-            message: ":x: E2E ondemand tests failed on ${{ env.branch }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})",
-            run_id: "${{ github.run_id }}"
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: webhook-trigger
+          payload-templated: true
+          payload: |
+            "message": ":red_circle: E2E ondemand tests failed on ${{ env.branch }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+            "run_id": "${{ github.run_id }}"

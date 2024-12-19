@@ -29,12 +29,12 @@ runs:
       RHCC_APITOKEN: ${{ inputs.pyxis-api-token }}
       RHCC_PROJECT_ID: ${{ inputs.redhat-project-id }}
       # renovate depName=redhat-openshift-ecosystem/openshift-preflight
-      PREFLIGHT_VERSION: 1.10.2
+      PREFLIGHT_VERSION: 1.11.1
       IMAGE_URI: ${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.version }}
     run: |
       hack/build/ci/preflight.sh "${{ env.PREFLIGHT_VERSION }}" "${{ env.IMAGE_URI}}" "${{ inputs.report-name }}"
   - name: Upload report
-    uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+    uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4.5.0
     with:
       name: preflight-report
       path: ${{ inputs.report-name }}

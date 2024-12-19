@@ -8,11 +8,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
-	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
@@ -29,10 +27,6 @@ const (
 var defaultDynakubeObjectMeta = metav1.ObjectMeta{
 	Name:      testName,
 	Namespace: testNamespace,
-}
-
-var defaultCSIDaemonSet = appsv1.DaemonSet{
-	ObjectMeta: metav1.ObjectMeta{Name: dtcsi.DaemonSetName, Namespace: testNamespace},
 }
 
 var dummyLabels = map[string]string{
@@ -58,7 +52,7 @@ var dummyNamespace2 = corev1.Namespace{
 }
 
 func TestDynakubeValidator_Handle(t *testing.T) {
-	t.Run(`valid dynakube specs`, func(t *testing.T) {
+	t.Run("valid dynakube specs", func(t *testing.T) {
 		assertAllowedWithWarnings(t, 1, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
@@ -105,12 +99,13 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 						},
 					},
 				},
-			}, &dummyNamespace, &dummyNamespace2, &defaultCSIDaemonSet)
+			}, &dummyNamespace, &dummyNamespace2)
 	})
-	t.Run(`conflicting dynakube specs`, func(t *testing.T) {
+	t.Run("conflicting dynakube specs", func(t *testing.T) {
+		setupDisabledCSIEnv(t)
 		assertDenied(t,
 			[]string{
-				errorCSIRequired,
+				errorCSIModuleRequired,
 				errorNoApiUrl,
 				errorConflictingNamespaceSelector,
 				fmt.Sprintf(errorDuplicateActiveGateCapability, activegate.KubeMonCapability.DisplayName),
@@ -183,6 +178,15 @@ func assertDenied(t *testing.T, errMessages []string, dk *dynakube.DynaKube, oth
 	}
 }
 
+func assertUpdateDenied(t *testing.T, errMessages []string, oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube, other ...client.Object) {
+	_, err := runUpdateValidators(oldDk, newDk, other...)
+	require.Error(t, err)
+
+	for _, errMsg := range errMessages {
+		assert.Contains(t, err.Error(), errMsg)
+	}
+}
+
 func assertAllowedWithoutWarnings(t *testing.T, dk *dynakube.DynaKube, other ...client.Object) {
 	warnings, _ := assertAllowed(t, dk, other...)
 	assert.Empty(t, warnings)
@@ -200,6 +204,18 @@ func assertAllowed(t *testing.T, dk *dynakube.DynaKube, other ...client.Object) 
 	return warnings, err
 }
 
+func assertUpdateAllowed(t *testing.T, oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube, other ...client.Object) (admission.Warnings, error) {
+	warnings, err := runUpdateValidators(oldDk, newDk, other...)
+	assert.NoError(t, err)
+
+	return warnings, err
+}
+
+func assertUpdateAllowedWithoutWarnings(t *testing.T, oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube, other ...client.Object) {
+	warnings, _ := assertUpdateAllowed(t, oldDk, newDk, other...)
+	assert.Empty(t, warnings)
+}
+
 func runValidators(dk *dynakube.DynaKube, other ...client.Object) (admission.Warnings, error) {
 	clt := fake.NewClient()
 	if other != nil {
@@ -213,4 +229,19 @@ func runValidators(dk *dynakube.DynaKube, other ...client.Object) (admission.War
 	}
 
 	return validator.ValidateCreate(context.Background(), dk)
+}
+
+func runUpdateValidators(oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube, other ...client.Object) (admission.Warnings, error) {
+	clt := fake.NewClient()
+	if other != nil {
+		clt = fake.NewClient(other...)
+	}
+
+	validator := &Validator{
+		apiReader: clt,
+		cfg:       &rest.Config{},
+		modules:   installconfig.GetModules(),
+	}
+
+	return validator.ValidateUpdate(context.Background(), oldDk, newDk)
 }
