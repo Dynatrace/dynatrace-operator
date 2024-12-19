@@ -120,13 +120,13 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{}, err
 	}
 
-	if !dk.NeedAppInjection() {
+	if !dk.OneAgent().IsAppInjectionNeeded() {
 		log.Info("app injection not necessary, skip agent codemodule download", "dynakube", dk.Name)
 
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
 	}
 
-	if dk.CodeModulesImage() == "" && dk.CodeModulesVersion() == "" {
+	if dk.OneAgent().GetCodeModulesImage() == "" && dk.OneAgent().GetCodeModulesVersion() == "" {
 		log.Info("dynakube status is not yet ready, requeuing", "dynakube", dk.Name)
 
 		return reconcile.Result{RequeueAfter: shortRequeueDuration}, err
@@ -146,9 +146,9 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 }
 
 func isProvisionerNeeded(dk *dynakube.DynaKube) bool {
-	return dk.CloudNativeFullstackMode() ||
-		dk.ApplicationMonitoringMode() ||
-		dk.HostMonitoringMode()
+	return dk.OneAgent().IsCloudNativeFullstackMode() ||
+		dk.OneAgent().IsApplicationMonitoringMode() ||
+		dk.OneAgent().IsHostMonitoringMode()
 }
 
 func (provisioner *OneAgentProvisioner) setupFileSystem(dk *dynakube.DynaKube) error {
@@ -220,7 +220,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(
 		return false, err
 	}
 
-	if dk.CodeModulesImage() != "" {
+	if dk.OneAgent().GetCodeModulesImage() != "" {
 		updatedDigest, err := provisioner.installAgentImage(ctx, *dk, latestProcessModuleConfig)
 		if err != nil {
 			log.Info("error when updating agent from image", "error", err.Error())

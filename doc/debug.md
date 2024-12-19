@@ -40,7 +40,7 @@ As the operator only sends requests to the Kubernetes API, but never receives an
 1. Deploy the operator as usual:
 
 ```shell
-make deploy/helm
+make deploy
 ```
 
 2. Scale down the cluster operator:
@@ -106,7 +106,7 @@ make debug/telepresence/uninstall
 2. Deploy without debugging changes:
 
 ```shell
-make deploy/helm
+make deploy
 ```
 
 ### CSI-Driver Server
@@ -161,7 +161,7 @@ make debug/tunnel/stop
 2. Deploy without debugging changes:
 
 ```shell
-make deploy/helm
+make deploy
 ```
 
 ### CSI-Driver Provisioner

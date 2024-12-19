@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -34,8 +35,8 @@ const (
 
 func TestReconcile(t *testing.T) {
 	t.Run("Create and update works with minimal setup", func(t *testing.T) {
-		dk := createDynakube(dynakube.OneAgentSpec{
-			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}})
+		dk := createDynakube(oneagent.Spec{
+			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}})
 
 		mockK8sClient := createK8sClientWithOneAgentTenantSecret(testTokenValue)
 
@@ -80,8 +81,8 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 	})
 	t.Run("Only runs when required, and cleans up condition and pmc secret", func(t *testing.T) {
-		dk := createDynakube(dynakube.OneAgentSpec{
-			ClassicFullStack: &dynakube.HostInjectSpec{}})
+		dk := createDynakube(oneagent.Spec{
+			ClassicFullStack: &oneagent.HostInjectSpec{}})
 		conditions.SetSecretCreated(dk.Conditions(), pmcConditionType, "this is a test")
 
 		secret := &corev1.Secret{
@@ -101,8 +102,8 @@ func TestReconcile(t *testing.T) {
 		assert.Error(t, mockK8sClient.Get(context.Background(), client.ObjectKey{Name: extendWithSuffix(testName), Namespace: testNamespace}, &corev1.Secret{}))
 	})
 	t.Run("No proxy is set when proxy enabled and custom no proxy set", func(t *testing.T) {
-		dk := createDynakube(dynakube.OneAgentSpec{
-			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}})
+		dk := createDynakube(oneagent.Spec{
+			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}})
 		dk.Spec.Proxy = &value.Source{
 			Value: "myproxy.at",
 		}
@@ -119,8 +120,8 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("problem with k8s request => visible in conditions", func(t *testing.T) {
-		dk := createDynakube(dynakube.OneAgentSpec{
-			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}})
+		dk := createDynakube(oneagent.Spec{
+			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}})
 
 		boomClient := createBOOMK8sClient()
 
@@ -139,8 +140,8 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("problem with dynatrace request => visible in conditions", func(t *testing.T) {
-		dk := createDynakube(dynakube.OneAgentSpec{
-			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}})
+		dk := createDynakube(oneagent.Spec{
+			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}})
 
 		mockK8sClient := fake.NewClient(dk)
 		_ = createK8sClientWithOneAgentTenantSecret(testTokenValue)
@@ -170,7 +171,7 @@ func checkSecretForValue(t *testing.T, k8sClient client.Client, shouldContain st
 	require.Contains(t, string(processModuleConfig), shouldContain)
 }
 
-func createDynakube(oneAgentSpec dynakube.OneAgentSpec) *dynakube.DynaKube {
+func createDynakube(oneAgentSpec oneagent.Spec) *dynakube.DynaKube {
 	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
@@ -235,8 +236,8 @@ func createK8sClientWithOneAgentTenantSecret(token string) client.Client {
 func TestGetSecretData(t *testing.T) {
 	t.Run("unmarshal secret data into struct", func(t *testing.T) {
 		// use Reconcile to automatically create the secret to test
-		dk := createDynakube(dynakube.OneAgentSpec{
-			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}})
+		dk := createDynakube(oneagent.Spec{
+			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}})
 		mockK8sClient := createK8sClientWithOneAgentTenantSecret(testTokenValue)
 
 		mockTime := timeprovider.New().Freeze()

@@ -19,7 +19,7 @@ debug/build:
 
 ## Install image with necessary changes to deployments.
 debug/deploy:
-	DEBUG=true make deploy/helm
+	DEBUG=true make deploy
 
 ## Install and setup Telepresence to intercept requests to the webhook
 debug/telepresence/install:

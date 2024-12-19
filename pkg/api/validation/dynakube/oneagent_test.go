@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,7 +17,7 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynakube.OneAgentSpec{
+				OneAgent: oneagent.Spec{
 					ClassicFullStack: nil,
 					HostMonitoring:   nil,
 				},
@@ -27,8 +28,8 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynakube.OneAgentSpec{
-					ClassicFullStack: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{},
 					HostMonitoring:   nil,
 				},
 			},
@@ -38,9 +39,9 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynakube.OneAgentSpec{
+				OneAgent: oneagent.Spec{
 					ClassicFullStack: nil,
-					HostMonitoring:   &dynakube.HostInjectSpec{},
+					HostMonitoring:   &oneagent.HostInjectSpec{},
 				},
 			},
 		})
@@ -52,9 +53,9 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynakube.OneAgentSpec{
-						ClassicFullStack: &dynakube.HostInjectSpec{},
-						HostMonitoring:   &dynakube.HostInjectSpec{},
+					OneAgent: oneagent.Spec{
+						ClassicFullStack: &oneagent.HostInjectSpec{},
+						HostMonitoring:   &oneagent.HostInjectSpec{},
 					},
 				},
 			})
@@ -65,9 +66,9 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynakube.OneAgentSpec{
-						ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{},
-						HostMonitoring:        &dynakube.HostInjectSpec{},
+					OneAgent: oneagent.Spec{
+						ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+						HostMonitoring:        &oneagent.HostInjectSpec{},
 					},
 				},
 			})
@@ -83,9 +84,9 @@ func TestConflictingNodeSelector(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: apiUrl,
-				OneAgent: dynakube.OneAgentSpec{
-					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
-						HostInjectSpec: dynakube.HostInjectSpec{
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+						HostInjectSpec: oneagent.HostInjectSpec{
 							NodeSelector: map[string]string{
 								"node": nodeSelectorValue,
 							},
@@ -102,8 +103,8 @@ func TestConflictingNodeSelector(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynakube.OneAgentSpec{
-						HostMonitoring: &dynakube.HostInjectSpec{
+					OneAgent: oneagent.Spec{
+						HostMonitoring: &oneagent.HostInjectSpec{
 							NodeSelector: map[string]string{
 								"node": "1",
 							},
@@ -118,8 +119,8 @@ func TestConflictingNodeSelector(t *testing.T) {
 				},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynakube.OneAgentSpec{
-						HostMonitoring: &dynakube.HostInjectSpec{
+					OneAgent: oneagent.Spec{
+						HostMonitoring: &oneagent.HostInjectSpec{
 							NodeSelector: map[string]string{
 								"node": "2",
 							},
@@ -137,9 +138,9 @@ func TestConflictingNodeSelector(t *testing.T) {
 				},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynakube.OneAgentSpec{
-						CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
-							HostInjectSpec: dynakube.HostInjectSpec{
+					OneAgent: oneagent.Spec{
+						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+							HostInjectSpec: oneagent.HostInjectSpec{
 								NodeSelector: map[string]string{
 									"node": "1",
 								},
@@ -152,8 +153,8 @@ func TestConflictingNodeSelector(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynakube.OneAgentSpec{
-						HostMonitoring: &dynakube.HostInjectSpec{
+					OneAgent: oneagent.Spec{
+						HostMonitoring: &oneagent.HostInjectSpec{
 							NodeSelector: map[string]string{
 								"node": "2",
 							},
@@ -193,9 +194,9 @@ func TestConflictingNodeSelector(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: api1,
-					OneAgent: dynakube.OneAgentSpec{
-						CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
-							HostInjectSpec: dynakube.HostInjectSpec{
+					OneAgent: oneagent.Spec{
+						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+							HostInjectSpec: oneagent.HostInjectSpec{
 								NodeSelector: map[string]string{
 									"node": "1",
 								},
@@ -211,8 +212,8 @@ func TestConflictingNodeSelector(t *testing.T) {
 				},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: api2,
-					OneAgent: dynakube.OneAgentSpec{
-						HostMonitoring: &dynakube.HostInjectSpec{
+					OneAgent: oneagent.Spec{
+						HostMonitoring: &oneagent.HostInjectSpec{
 							NodeSelector: map[string]string{
 								"node": "1",
 							},
@@ -276,9 +277,9 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynakube.OneAgentSpec{
-					ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
-						AppInjectionSpec: dynakube.AppInjectionSpec{
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+						AppInjectionSpec: oneagent.AppInjectionSpec{
 							CodeModulesImage: testImage,
 						},
 					},
@@ -295,9 +296,9 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynakube.OneAgentSpec{
-					ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
-						AppInjectionSpec: dynakube.AppInjectionSpec{
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+						AppInjectionSpec: oneagent.AppInjectionSpec{
 							CodeModulesImage: testImage,
 						},
 					},
@@ -323,9 +324,9 @@ func createDynakube(oaEnvVar ...string) *dynakube.DynaKube {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testApiUrl,
-			OneAgent: dynakube.OneAgentSpec{
-				CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
-					HostInjectSpec: dynakube.HostInjectSpec{
+			OneAgent: oneagent.Spec{
+				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+					HostInjectSpec: oneagent.HostInjectSpec{
 						Env: envVars,
 					},
 				},
@@ -400,8 +401,8 @@ func TestOneAgentHostGroup(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynakube.OneAgentSpec{
-						ClassicFullStack: &dynakube.HostInjectSpec{
+					OneAgent: oneagent.Spec{
+						ClassicFullStack: &oneagent.HostInjectSpec{
 							Args: []string{"--set-host-group=arg"},
 						},
 						HostGroup: "",
@@ -415,8 +416,8 @@ func TestOneAgentHostGroup(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynakube.OneAgentSpec{
-						HostMonitoring: &dynakube.HostInjectSpec{
+					OneAgent: oneagent.Spec{
+						HostMonitoring: &oneagent.HostInjectSpec{
 							Args: []string{"--set-host-group=arg"},
 						},
 						HostGroup: "",
@@ -431,9 +432,9 @@ func createDynakubeWithHostGroup(args []string, hostGroup string) *dynakube.Dyna
 		ObjectMeta: defaultDynakubeObjectMeta,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testApiUrl,
-			OneAgent: dynakube.OneAgentSpec{
-				CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
-					HostInjectSpec: dynakube.HostInjectSpec{
+			OneAgent: oneagent.Spec{
+				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+					HostInjectSpec: oneagent.HostInjectSpec{
 						Args: args,
 					},
 				},
@@ -448,8 +449,8 @@ func TestIsOneAgentVersionValid(t *testing.T) {
 		ObjectMeta: defaultDynakubeObjectMeta,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testApiUrl,
-			OneAgent: dynakube.OneAgentSpec{
-				ClassicFullStack: &dynakube.HostInjectSpec{},
+			OneAgent: oneagent.Spec{
+				ClassicFullStack: &oneagent.HostInjectSpec{},
 			},
 		},
 	}

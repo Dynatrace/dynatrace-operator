@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,8 +29,8 @@ func TestProxy(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				Proxy:  &value.Source{Value: proxyRawURL},
 				APIURL: "https://testApiUrl.dev.dynatracelabs.com/api",
-				OneAgent: dynakube.OneAgentSpec{
-					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
 			},
 		}
@@ -57,8 +58,8 @@ func TestSkipCertCheck(t *testing.T) {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://testApiUrl.dev.dynatracelabs.com/api",
-			OneAgent: dynakube.OneAgentSpec{
-				CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
+			OneAgent: oneagent.Spec{
+				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 			},
 		},
 	}

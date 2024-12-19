@@ -7,6 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
@@ -30,12 +31,12 @@ func TestUseImmutableImage(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynakube.OneAgentSpec{
-					ClassicFullStack: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{},
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
-				OneAgent: dynakube.OneAgentStatus{
+				OneAgent: oneagent.Status{
 					VersionStatus: status.VersionStatus{
 						ImageID: imageID,
 					},
@@ -59,12 +60,12 @@ func TestLabels(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynakube.OneAgentSpec{
-					ClassicFullStack: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{},
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
-				OneAgent: dynakube.OneAgentStatus{
+				OneAgent: oneagent.Status{
 					VersionStatus: status.VersionStatus{
 						Version: testImageTag,
 					},
@@ -97,8 +98,8 @@ func TestLabels(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynakube.OneAgentSpec{
-					ClassicFullStack: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{},
 				},
 			},
 		}
@@ -135,8 +136,8 @@ func TestCustomPullSecret(t *testing.T) {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testURL,
-			OneAgent: dynakube.OneAgentSpec{
-				ClassicFullStack: &dynakube.HostInjectSpec{},
+			OneAgent: oneagent.Spec{
+				ClassicFullStack: &oneagent.HostInjectSpec{},
 			},
 			CustomPullSecret: testName,
 		},
@@ -157,8 +158,8 @@ func TestResources(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynakube.OneAgentSpec{
-					ClassicFullStack: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{},
 				},
 			},
 		}
@@ -182,8 +183,8 @@ func TestResources(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynakube.OneAgentSpec{
-					ClassicFullStack: &dynakube.HostInjectSpec{
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{
 						OneAgentResources: corev1.ResourceRequirements{
 							Requests: corev1.ResourceList{
 								corev1.ResourceCPU:    *cpuRequest,
@@ -256,8 +257,8 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynakube.OneAgentSpec{
-					HostMonitoring: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
 				},
 			},
 		}
@@ -283,12 +284,12 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynakube.OneAgentSpec{
-					HostMonitoring: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
-				OneAgent: dynakube.OneAgentStatus{
+				OneAgent: oneagent.Status{
 					VersionStatus: status.VersionStatus{
 						Version: "1.290.18.20240520-124108",
 					},
@@ -312,12 +313,12 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynakube.OneAgentSpec{
-					HostMonitoring: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
-				OneAgent: dynakube.OneAgentStatus{
+				OneAgent: oneagent.Status{
 					VersionStatus: status.VersionStatus{
 						Version: "1.291.18.20240520-124108",
 					},
@@ -346,8 +347,8 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynakube.OneAgentSpec{
-					HostMonitoring: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
 				},
 			},
 		}
@@ -377,8 +378,8 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynakube.OneAgentSpec{
-					ClassicFullStack: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{},
 				},
 			},
 		}
@@ -405,8 +406,8 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynakube.OneAgentSpec{
-					ClassicFullStack: &dynakube.HostInjectSpec{
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{
 						SecCompProfile: customSecCompProfile,
 					},
 				},
@@ -440,8 +441,8 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynakube.OneAgentSpec{
-					ClassicFullStack: &dynakube.HostInjectSpec{
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{
 						SecCompProfile: customSecCompProfile,
 					},
 				},
@@ -518,7 +519,7 @@ func TestPodSpecProbes(t *testing.T) {
 		builder := builder{
 			dk: &dynakube.DynaKube{
 				Status: dynakube.DynaKubeStatus{
-					OneAgent: dynakube.OneAgentStatus{
+					OneAgent: oneagent.Status{
 						Healthcheck: &expectedHealthcheck,
 					},
 				},
@@ -551,7 +552,7 @@ func TestPodSpecProbes(t *testing.T) {
 		builder := builder{
 			dk: &dynakube.DynaKube{
 				Status: dynakube.DynaKubeStatus{
-					OneAgent: dynakube.OneAgentStatus{
+					OneAgent: oneagent.Status{
 						Healthcheck: updatedHealthCheck,
 					},
 				},
@@ -585,7 +586,7 @@ func TestPodSpecProbes(t *testing.T) {
 					},
 				},
 				Status: dynakube.DynaKubeStatus{
-					OneAgent: dynakube.OneAgentStatus{
+					OneAgent: oneagent.Status{
 						Healthcheck: &expectedHealthcheck,
 					},
 				},
@@ -607,7 +608,7 @@ func TestOneAgentResources(t *testing.T) {
 	})
 	t.Run("get resources if hostInjection spec is set", func(t *testing.T) {
 		builder := builder{
-			hostInjectSpec: &dynakube.HostInjectSpec{
+			hostInjectSpec: &oneagent.HostInjectSpec{
 				OneAgentResources: corev1.ResourceRequirements{
 					Requests: map[corev1.ResourceName]resource.Quantity{
 						corev1.ResourceCPU: *resource.NewScaledQuantity(2, 1),
@@ -643,7 +644,7 @@ func TestNodeSelector(t *testing.T) {
 	})
 	t.Run("returns nodeselector", func(t *testing.T) {
 		dsBuilder := builder{
-			hostInjectSpec: &dynakube.HostInjectSpec{
+			hostInjectSpec: &oneagent.HostInjectSpec{
 				NodeSelector: map[string]string{testKey: testValue},
 			},
 		}
@@ -662,7 +663,7 @@ func TestPriorityClass(t *testing.T) {
 	})
 	t.Run("returns nodeselector", func(t *testing.T) {
 		dsBuilder := builder{
-			hostInjectSpec: &dynakube.HostInjectSpec{
+			hostInjectSpec: &oneagent.HostInjectSpec{
 				PriorityClassName: testName,
 			},
 		}
@@ -681,7 +682,7 @@ func TestTolerations(t *testing.T) {
 	})
 	t.Run("returns tolerations", func(t *testing.T) {
 		dsBuilder := builder{
-			hostInjectSpec: &dynakube.HostInjectSpec{
+			hostInjectSpec: &oneagent.HostInjectSpec{
 				Tolerations: []corev1.Toleration{
 					{
 						Key:   testKey,
@@ -752,7 +753,7 @@ func TestImmutableOneAgentImage(t *testing.T) {
 		}
 		image := dsBuilder.immutableOneAgentImage()
 
-		assert.Equal(t, dsBuilder.dk.OneAgentImage(), image)
+		assert.Equal(t, dsBuilder.dk.OneAgent().GetImage(), image)
 	})
 }
 
@@ -760,9 +761,9 @@ func TestAnnotations(t *testing.T) {
 	t.Run("cloud native has apparmor annotation by default", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
-						HostInjectSpec: dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+						HostInjectSpec: oneagent.HostInjectSpec{},
 					},
 				},
 			},
@@ -782,8 +783,8 @@ func TestAnnotations(t *testing.T) {
 	t.Run("host monitoring has apparmor annotation by default", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					HostMonitoring: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
 				},
 			},
 		}
@@ -802,8 +803,8 @@ func TestAnnotations(t *testing.T) {
 	t.Run("classic fullstack has apparmor annotation by default", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					ClassicFullStack: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{},
 				},
 			},
 		}
@@ -822,9 +823,9 @@ func TestAnnotations(t *testing.T) {
 	t.Run("annotations are added with cloud native", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
-						HostInjectSpec: dynakube.HostInjectSpec{
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+						HostInjectSpec: oneagent.HostInjectSpec{
 							Annotations: map[string]string{
 								testKey: testName,
 							},
@@ -849,8 +850,8 @@ func TestAnnotations(t *testing.T) {
 	t.Run("annotations are added with host monitoring", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					HostMonitoring: &dynakube.HostInjectSpec{
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{
 						Annotations: map[string]string{
 							testKey: testName,
 						},
@@ -874,8 +875,8 @@ func TestAnnotations(t *testing.T) {
 	t.Run("annotations are added with classic fullstack", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					ClassicFullStack: &dynakube.HostInjectSpec{
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{
 						Annotations: map[string]string{
 							testKey: testName,
 						},
@@ -902,9 +903,9 @@ func TestOneAgentHostGroup(t *testing.T) {
 	t.Run("cloud native - host group settings", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
-						HostInjectSpec: dynakube.HostInjectSpec{
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+						HostInjectSpec: oneagent.HostInjectSpec{
 							Args: []string{
 								"--set-host-group=oldgroup",
 							},
@@ -935,12 +936,12 @@ func TestDefaultArguments(t *testing.T) {
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 			Tokens: name,
-			OneAgent: dynakube.OneAgentSpec{
-				ClassicFullStack: &dynakube.HostInjectSpec{},
+			OneAgent: oneagent.Spec{
+				ClassicFullStack: &oneagent.HostInjectSpec{},
 			},
 		},
 	}
-	base.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynakube.CommunicationHostStatus{
+	base.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []oneagent.CommunicationHostStatus{
 		{
 			Protocol: "http",
 			Host:     "dummyhost",

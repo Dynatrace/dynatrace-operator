@@ -76,7 +76,7 @@ func (dynatraceClientBuilder builder) Build() (dtclient.Client, error) {
 	opts := newOptions(dynatraceClientBuilder.context())
 	opts.appendCertCheck(dynatraceClientBuilder.dk.Spec.SkipCertCheck)
 	opts.appendNetworkZone(dynatraceClientBuilder.dk.Spec.NetworkZone)
-	opts.appendHostGroup(dynatraceClientBuilder.dk.HostGroup())
+	opts.appendHostGroup(dynatraceClientBuilder.dk.OneAgent().GetHostGroup())
 
 	err := opts.appendProxySettings(apiReader, &dynatraceClientBuilder.dk)
 	if err != nil {

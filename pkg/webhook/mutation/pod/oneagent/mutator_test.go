@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
@@ -42,7 +43,7 @@ func TestEnabled(t *testing.T) {
 	t.Run("on by default", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, getTestNamespace(nil))
-		request.DynaKube.Spec.OneAgent.ApplicationMonitoring = &dynakube.ApplicationMonitoringSpec{}
+		request.DynaKube.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -60,7 +61,7 @@ func TestEnabled(t *testing.T) {
 	t.Run("on with feature flag", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, getTestNamespace(nil))
-		request.DynaKube.Spec.OneAgent.ApplicationMonitoring = &dynakube.ApplicationMonitoringSpec{}
+		request.DynaKube.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 		request.DynaKube.Annotations = map[string]string{dynakube.AnnotationFeatureAutomaticInjection: "true"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
@@ -332,7 +333,7 @@ func injectionNotPossibleWithoutTenantUUID(t *testing.T) {
 func injectionNotPossibleWithoutCommunicationRoute(t *testing.T) {
 	mutator := createTestPodMutator(nil)
 	dk := getTestDynakube()
-	dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynakube.CommunicationHostStatus{}
+	dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []oneagent.CommunicationHostStatus{}
 	request := createTestMutationRequest(dk, nil, getTestNamespace(nil))
 
 	ok, reason := mutator.isInjectionPossible(request)
@@ -357,7 +358,7 @@ func injectionNotPossibleWithMultipleIssues(t *testing.T) {
 	mutator := createTestPodMutator(nil)
 	dk := getTestDynakube()
 	dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID = ""
-	dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynakube.CommunicationHostStatus{}
+	dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []oneagent.CommunicationHostStatus{}
 	dk.Status.CodeModules.VersionStatus.Version = ""
 	request := createTestMutationRequest(dk, nil, getTestNamespace(nil))
 
@@ -389,7 +390,7 @@ func getTestInitSecret() *corev1.Secret {
 }
 
 func addNamespaceSelector(dk *dynakube.DynaKube) *dynakube.DynaKube {
-	dk.Spec.OneAgent.ApplicationMonitoring = &dynakube.ApplicationMonitoringSpec{}
+	dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 
 	dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = metav1.LabelSelector{
 		MatchLabels: map[string]string{
@@ -427,8 +428,8 @@ func getTestCSIDynakube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
 		ObjectMeta: getTestDynakubeMeta(),
 		Spec: dynakube.DynaKubeSpec{
-			OneAgent: dynakube.OneAgentSpec{
-				CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
+			OneAgent: oneagent.Spec{
+				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 			},
 		},
 		Status: getTestDynakubeStatus(),
@@ -444,7 +445,7 @@ func getTestReadOnlyCSIDynakube() *dynakube.DynaKube {
 
 func getTestNoInjectionDynakube() *dynakube.DynaKube {
 	dk := getTestCSIDynakube()
-	dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynakube.CommunicationHostStatus{}
+	dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []oneagent.CommunicationHostStatus{}
 	dk.Status.CodeModules.VersionStatus.Version = ""
 	dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID = ""
 
@@ -455,8 +456,8 @@ func getTestDynakube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
 		ObjectMeta: getTestDynakubeMeta(),
 		Spec: dynakube.DynaKubeSpec{
-			OneAgent: dynakube.OneAgentSpec{
-				ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{},
+			OneAgent: oneagent.Spec{
+				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 			},
 		},
 		Status: getTestDynakubeStatus(),
@@ -467,8 +468,8 @@ func getTestDynakubeWithContainerExclusion() *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
 		ObjectMeta: getTestDynakubeMeta(),
 		Spec: dynakube.DynaKubeSpec{
-			OneAgent: dynakube.OneAgentSpec{
-				ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{},
+			OneAgent: oneagent.Spec{
+				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 			},
 		},
 		Status: getTestDynakubeStatus(),
@@ -480,12 +481,12 @@ func getTestDynakubeWithContainerExclusion() *dynakube.DynaKube {
 
 func getTestDynakubeStatus() dynakube.DynaKubeStatus {
 	return dynakube.DynaKubeStatus{
-		OneAgent: dynakube.OneAgentStatus{
-			ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
+		OneAgent: oneagent.Status{
+			ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
 				ConnectionInfo: communication.ConnectionInfo{
 					TenantUUID: "test-tenant-uuid",
 				},
-				CommunicationHosts: []dynakube.CommunicationHostStatus{
+				CommunicationHosts: []oneagent.CommunicationHostStatus{
 					{
 						Protocol: "http",
 						Host:     "dummyhost",
@@ -494,7 +495,7 @@ func getTestDynakubeStatus() dynakube.DynaKubeStatus {
 				},
 			},
 		},
-		CodeModules: dynakube.CodeModulesStatus{
+		CodeModules: oneagent.CodeModulesStatus{
 			VersionStatus: status.VersionStatus{
 				Version: "test-version",
 			},
