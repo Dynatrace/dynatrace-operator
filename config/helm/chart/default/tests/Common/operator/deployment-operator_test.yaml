@@ -86,9 +86,18 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
-                envFrom:
-                  - configMapRef:
-                      name: install-config
+                  - name: modules.json
+                    value: |
+                      {
+                        "csiDriver": true,
+                        "activeGate": true,
+                        "oneAgent": true,
+                        "extensions": true,
+                        "logMonitoring": true,
+                        "edgeConnect": true,
+                        "supportability": true,
+                        "kspm": true
+                      }
                 ports:
                   - containerPort: 10080
                     name: livez
@@ -264,9 +273,18 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
-                envFrom:
-                  - configMapRef:
-                      name: install-config
+                  - name: modules.json
+                    value: |
+                      {
+                        "csiDriver": true,
+                        "activeGate": true,
+                        "oneAgent": true,
+                        "extensions": true,
+                        "logMonitoring": true,
+                        "edgeConnect": true,
+                        "supportability": true,
+                        "kspm": true
+                      }
                 ports:
                   - containerPort: 10080
                     name: livez
