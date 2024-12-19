@@ -86,6 +86,11 @@ type DynaKubeSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	Extensions *ExtensionsSpec `json:"extensions,omitempty"`
 
+	// When an (empty) TelemetryServiceSpec is provided, the OpenSignal related components (OpenSignal collector)
+	// is deployed by the operator.
+	// +kubebuilder:validation:Optional
+	TelemetryService *TelemetryServiceSpec `json:"telemetryService,omitempty"`
+
 	// General configuration about OneAgent instances.
 	// You can't enable more than one module (classicFullStack, cloudNativeFullStack, hostMonitoring, or applicationMonitoring).
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
@@ -121,13 +126,13 @@ type DynaKubeSpec struct { //nolint:revive
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom PullSecret",order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Secret"}
 	CustomPullSecret string `json:"customPullSecret,omitempty"`
 
-	// +kubebuilder:validation:Optional
-	Templates TemplatesSpec `json:"templates,omitempty"`
-
 	// Configuration for Metadata Enrichment.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Metadata Enrichment",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	MetadataEnrichment MetadataEnrichment `json:"metadataEnrichment,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Templates TemplatesSpec `json:"templates,omitempty"`
 
 	// General configuration about ActiveGate instances.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="ActiveGate",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
