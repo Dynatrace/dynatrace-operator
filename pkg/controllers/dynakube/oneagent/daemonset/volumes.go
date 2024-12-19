@@ -141,7 +141,6 @@ func getCSIStorageVolume(dk *dynakube.DynaKube) corev1.Volume {
 				VolumeAttributes: map[string]string{
 					csivolumes.CSIVolumeAttributeModeField:     hostvolumes.Mode,
 					csivolumes.CSIVolumeAttributeDynakubeField: dk.Name,
-					csivolumes.CSIVolumeAttributeRetryTimeout:  dk.FeatureMaxCSIRetryTimeout().String(),
 				},
 			},
 		},
