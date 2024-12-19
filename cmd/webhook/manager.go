@@ -17,13 +17,13 @@ import (
 )
 
 const (
-	metricsBindAddress     = ":8383"
-	healthProbeBindAddress = ":10080"
-	defaultPort            = 8443
-	livezEndpointName      = "livez"
-	livenessEndpointName   = "/" + livezEndpointName
-	readyzEndpointName     = "readyz"
-	readinessEndpointName  = "/" + readyzEndpointName
+	defaultMetricsBindAddress     = ":8383"
+	defaultHealthProbeBindAddress = ":10080"
+	defaultPort                   = 8443
+	livezEndpointName             = "livez"
+	livenessEndpointName          = "/" + livezEndpointName
+	readyzEndpointName            = "readyz"
+	readinessEndpointName         = "/" + readyzEndpointName
 )
 
 type Provider struct {
@@ -65,6 +65,18 @@ func (provider Provider) createOptions(namespace string) ctrl.Options {
 
 	if parsedWebhookPort, err := strconv.Atoi(webhookPortEnv); err == nil {
 		port = parsedWebhookPort
+	}
+
+	metricsBindAddress := defaultMetricsBindAddress
+	metricsBindAddressEnv := os.Getenv("METRICS_BIND_ADDRESS")
+	if metricsBindAddressEnv != "" {
+		metricsBindAddress = metricsBindAddressEnv
+	}
+
+	healthProbeBindAddress := defaultHealthProbeBindAddress
+	healthProbeBindAddressEnv := os.Getenv("HEALTH_PROBE_BIND_ADDRESS")
+	if healthProbeBindAddressEnv != "" {
+		healthProbeBindAddress = healthProbeBindAddressEnv
 	}
 
 	return ctrl.Options{
