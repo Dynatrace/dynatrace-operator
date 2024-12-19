@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logd.Get().WithName("otelc")
+	log = logd.Get().WithName("otel-collector")
 )

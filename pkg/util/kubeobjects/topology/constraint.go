@@ -6,23 +6,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func SpreadConstraints(topologySpreadConstraints []corev1.TopologySpreadConstraint, appLabels *labels.AppLabels) []corev1.TopologySpreadConstraint {
-	if len(topologySpreadConstraints) > 0 {
-		return topologySpreadConstraints
-	} else {
-		return []corev1.TopologySpreadConstraint{
-			{
-				MaxSkew:           1,
-				TopologyKey:       "topology.kubernetes.io/zone",
-				WhenUnsatisfiable: "ScheduleAnyway",
-				LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
-			},
-			{
-				MaxSkew:           1,
-				TopologyKey:       "kubernetes.io/hostname",
-				WhenUnsatisfiable: "DoNotSchedule",
-				LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
-			},
-		}
+func MaxOnePerNode(appLabels *labels.AppLabels) []corev1.TopologySpreadConstraint {
+	return []corev1.TopologySpreadConstraint{
+		{
+			MaxSkew:           1,
+			TopologyKey:       "topology.kubernetes.io/zone",
+			WhenUnsatisfiable: "ScheduleAnyway",
+			LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
+		},
+		{
+			MaxSkew:           1,
+			TopologyKey:       "kubernetes.io/hostname",
+			WhenUnsatisfiable: "DoNotSchedule",
+			LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
+		},
 	}
 }

@@ -84,6 +84,11 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		return err
 	}
 
+	topologySpreadConstraints := topology.MaxOnePerNode(appLabels)
+	if len(r.dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints) > 0 {
+		topologySpreadConstraints = r.dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints
+	}
+
 	desiredSts, err := statefulset.Build(r.dk, r.dk.ExtensionsExecutionControllerStatefulsetName(), buildContainer(r.dk),
 		statefulset.SetReplicas(1),
 		statefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
@@ -91,7 +96,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		statefulset.SetAllAnnotations(nil, templateAnnotations),
 		statefulset.SetAffinity(buildAffinity()),
 		statefulset.SetTolerations(r.dk.Spec.Templates.ExtensionExecutionController.Tolerations),
-		statefulset.SetTopologySpreadConstraints(topology.SpreadConstraints(r.dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints, appLabels)),
+		statefulset.SetTopologySpreadConstraints(topologySpreadConstraints),
 		statefulset.SetServiceAccount(serviceAccountName),
 		statefulset.SetSecurityContext(buildPodSecurityContext(r.dk)),
 		statefulset.SetRollingUpdateStrategyType(),

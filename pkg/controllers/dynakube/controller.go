@@ -335,7 +335,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		componentErrors = append(componentErrors, err)
 	}
 
-	log.Info("start reconciling app otelc")
+	log.Info("start reconciling otel-collector")
 
 	otelcReconciler := controller.otelcReconcilerBuilder(controller.client, controller.apiReader, dk)
 

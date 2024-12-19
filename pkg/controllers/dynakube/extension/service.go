@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/service"
@@ -15,10 +14,10 @@ import (
 
 func (r *reconciler) reconcileService(ctx context.Context) error {
 	if !r.dk.IsExtensionsEnabled() {
-		if meta.FindStatusCondition(*r.dk.Conditions(), eecConsts.ServiceConditionType) == nil {
+		if meta.FindStatusCondition(*r.dk.Conditions(), serviceConditionType) == nil {
 			return nil
 		}
-		defer meta.RemoveStatusCondition(r.dk.Conditions(), eecConsts.ServiceConditionType)
+		defer meta.RemoveStatusCondition(r.dk.Conditions(), serviceConditionType)
 
 		svc, err := r.buildService()
 		if err != nil {
@@ -44,7 +43,7 @@ func (r *reconciler) reconcileService(ctx context.Context) error {
 func (r *reconciler) createOrUpdateService(ctx context.Context) error {
 	newService, err := r.buildService()
 	if err != nil {
-		conditions.SetServiceGenFailed(r.dk.Conditions(), eecConsts.ServiceConditionType, err)
+		conditions.SetServiceGenFailed(r.dk.Conditions(), serviceConditionType, err)
 
 		return err
 	}
@@ -52,12 +51,12 @@ func (r *reconciler) createOrUpdateService(ctx context.Context) error {
 	_, err = service.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newService)
 	if err != nil {
 		log.Info("failed to create/update extension service")
-		conditions.SetKubeApiError(r.dk.Conditions(), eecConsts.ServiceConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), serviceConditionType, err)
 
 		return err
 	}
 
-	conditions.SetServiceCreated(r.dk.Conditions(), eecConsts.ServiceConditionType, r.dk.ExtensionsServiceName())
+	conditions.SetServiceCreated(r.dk.Conditions(), serviceConditionType, r.dk.ExtensionsServiceName())
 
 	return nil
 }

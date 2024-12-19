@@ -50,7 +50,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk := createDynakube()
 
 		// mock SecretCreated condition
-		conditions.SetSecretCreated(dk.Conditions(), eecConsts.SecretConditionType, dk.ExtensionsTokenSecretName())
+		conditions.SetSecretCreated(dk.Conditions(), secretConditionType, dk.ExtensionsTokenSecretName())
 
 		// mock secret
 		secretToken, _ := dttoken.New(eecConsts.TokenSecretValuePrefix)
@@ -101,7 +101,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		// assert extensions token condition is added
 		require.NotEmpty(t, dk.Conditions())
 
-		condition := meta.FindStatusCondition(*dk.Conditions(), eecConsts.SecretConditionType)
+		condition := meta.FindStatusCondition(*dk.Conditions(), secretConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 		assert.Equal(t, dk.ExtensionsTokenSecretName()+" created", condition.Message)
@@ -118,7 +118,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		// assert extensions token condition is added
 		require.NotEmpty(t, dk.Conditions())
 
-		condition := meta.FindStatusCondition(*dk.Conditions(), eecConsts.SecretConditionType)
+		condition := meta.FindStatusCondition(*dk.Conditions(), secretConditionType)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 		assert.Equal(t, conditions.KubeApiErrorReason, condition.Reason)
 		assert.Contains(t, condition.Message, "A problem occurred when using the Kubernetes API")
@@ -143,7 +143,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		// assert extensions token condition is added
 		require.NotEmpty(t, dk.Conditions())
 
-		condition := meta.FindStatusCondition(*dk.Conditions(), eecConsts.ServiceConditionType)
+		condition := meta.FindStatusCondition(*dk.Conditions(), serviceConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, conditions.ServiceCreatedReason, condition.Reason)
 		assert.Equal(t, dk.Name+eecConsts.ExtensionsControllerSuffix+" created", condition.Message)

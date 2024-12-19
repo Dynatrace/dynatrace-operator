@@ -25,7 +25,7 @@ const (
 	envEECDStoken         = "EEC_DS_TOKEN"
 	envTrustedCAs         = "TRUSTED_CAS"
 	envK8sClusterName     = "K8S_CLUSTER_NAME"
-	envK8sClusterUuid     = "K8S_CLUSTER_UID"
+	envK8sClusterUid      = "K8S_CLUSTER_UID"
 	envDTentityK8sCluster = "DT_ENTITY_KUBERNETES_CLUSTER"
 	// certDirEnv is the environment variable that identifies which directory
 	// to check for SSL certificate files. If set, this overrides the system default.
@@ -75,7 +75,7 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		},
 		{Name: envCertDir, Value: customEecTLSCertificatePath},
 		{Name: envK8sClusterName, Value: dk.Name},
-		{Name: envK8sClusterUuid, Value: dk.Status.KubeSystemUUID},
+		{Name: envK8sClusterUid, Value: dk.Status.KubeSystemUUID},
 		{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID},
 	}
 	if dk.Spec.TrustedCAs != "" {

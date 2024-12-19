@@ -75,6 +75,11 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		return err
 	}
 
+	topologySpreadConstraints := topology.MaxOnePerNode(appLabels)
+	if len(r.dk.Spec.Templates.OpenTelemetryCollector.TopologySpreadConstraints) > 0 {
+		topologySpreadConstraints = r.dk.Spec.Templates.OpenTelemetryCollector.TopologySpreadConstraints
+	}
+
 	sts, err := statefulset.Build(r.dk, r.dk.ExtensionsCollectorStatefulsetName(), getContainer(r.dk),
 		statefulset.SetReplicas(getReplicas(r.dk)),
 		statefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
@@ -83,7 +88,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		statefulset.SetAffinity(buildAffinity()),
 		statefulset.SetServiceAccount(serviceAccountName),
 		statefulset.SetTolerations(r.dk.Spec.Templates.OpenTelemetryCollector.Tolerations),
-		statefulset.SetTopologySpreadConstraints(topology.SpreadConstraints(r.dk.Spec.Templates.OpenTelemetryCollector.TopologySpreadConstraints, appLabels)),
+		statefulset.SetTopologySpreadConstraints(topologySpreadConstraints),
 		statefulset.SetSecurityContext(buildPodSecurityContext()),
 		statefulset.SetRollingUpdateStrategyType(),
 		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
@@ -174,8 +179,6 @@ func buildAppLabels(dkName string) *labels.AppLabels {
 }
 
 func buildAffinity() corev1.Affinity {
-	// TODO: implement new attributes in CR dk.Spec.Templates.OpenTelemetryCollector.Affinity
-	// otherwise to use defaults ones
 	return node.Affinity()
 }
 

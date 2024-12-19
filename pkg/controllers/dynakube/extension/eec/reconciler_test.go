@@ -229,7 +229,7 @@ func TestTopologySpreadConstraints(t *testing.T) {
 		dk := getTestDynakube()
 		statefulSet := getStatefulset(t, dk)
 		appLabels := buildAppLabels(dk.Name)
-		assert.Equal(t, topology.SpreadConstraints(dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints, appLabels), statefulSet.Spec.Template.Spec.TopologySpreadConstraints)
+		assert.Equal(t, topology.MaxOnePerNode(appLabels), statefulSet.Spec.Template.Spec.TopologySpreadConstraints)
 	})
 
 	t.Run("custom TopologySpreadConstraints", func(t *testing.T) {
