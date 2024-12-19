@@ -21,6 +21,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm"
 	logmon "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
@@ -436,6 +437,7 @@ func createFakeClientAndReconciler(t *testing.T, mockClient dtclient.Client, dk 
 		logMonitoringReconcilerBuilder:      logmon.NewReconciler,
 		proxyReconcilerBuilder:              proxy.NewReconciler,
 		extensionReconcilerBuilder:          extension.NewReconciler,
+		otelcReconcilerBuilder:              otelc.NewReconciler,
 		kspmReconcilerBuilder:               kspm.NewReconciler,
 		clusterID:                           testUID,
 	}

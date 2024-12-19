@@ -4,7 +4,7 @@ go 1.23.3
 
 require (
 	github.com/container-storage-interface/spec v1.11.0
-	github.com/docker/cli v27.4.0+incompatible
+	github.com/docker/cli v27.4.1+incompatible
 	github.com/evanphx/json-patch v5.9.0+incompatible
 	github.com/go-logr/logr v1.4.2
 	github.com/google/go-containerregistry v0.20.2
@@ -21,13 +21,13 @@ require (
 	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 	golang.org/x/mod v0.22.0
-	golang.org/x/net v0.32.0
+	golang.org/x/net v0.33.0
 	golang.org/x/oauth2 v0.24.0
 	golang.org/x/sys v0.28.0
-	google.golang.org/grpc v1.69.0
+	google.golang.org/grpc v1.69.2
 	gopkg.in/yaml.v3 v3.0.1
-	istio.io/api v1.24.1
-	istio.io/client-go v1.24.1
+	istio.io/api v1.24.2
+	istio.io/client-go v1.24.2
 	k8s.io/api v0.32.0
 	k8s.io/apiextensions-apiserver v0.32.0
 	k8s.io/apimachinery v0.32.0
