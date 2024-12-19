@@ -170,9 +170,7 @@ spec:
           - name: MAX_UNMOUNTED_VOLUME_AGE
             value: "{{ .Values.csidriver.maxUnmountedVolumeAge}}"
           {{- end }}
-        envFrom:
-          - configMapRef:
-              name: install-config
+          {{ include "dynatrace-operator.modules-json-env" . | nindent 10 }}
         {{- include "dynatrace-operator.startupProbe" . | nindent 8 }}
         {{- if not .Values.debug }}
         livenessProbe:

@@ -236,9 +236,18 @@ tests:
                       fieldRef:
                         apiVersion: v1
                         fieldPath: metadata.namespace
-                envFrom:
-                  - configMapRef:
-                      name: install-config
+                  - name: modules.json
+                    value: |
+                      {
+                        "csiDriver": true,
+                        "activeGate": true,
+                        "oneAgent": true,
+                        "extensions": true,
+                        "logMonitoring": true,
+                        "edgeConnect": true,
+                        "supportability": true,
+                        "kspm": true
+                      }
                 image: image-name
                 imagePullPolicy: Always
                 startupProbe:
