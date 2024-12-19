@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
@@ -324,8 +325,8 @@ func newDynaKube() *dynakube.DynaKube {
 			},
 		},
 		Spec: dynakube.DynaKubeSpec{
-			OneAgent: dynakube.OneAgentSpec{
-				HostMonitoring: &dynakube.HostInjectSpec{},
+			OneAgent: oneagent.Spec{
+				HostMonitoring: &oneagent.HostInjectSpec{},
 			},
 		},
 		Status: dynakube.DynaKubeStatus{

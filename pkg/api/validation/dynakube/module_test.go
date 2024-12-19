@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
 )
@@ -26,56 +27,56 @@ func TestIsModuleDisabled(t *testing.T) {
 	testCases := []testCase{
 		{
 			title:           "csi module disabled but also configured in dk => error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: dynakube.OneAgentSpec{CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}}}},
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}}}},
 			modules:         installconfig.Modules{OneAgent: true, CSIDriver: false},
 			moduleFunc:      isCSIModuleDisabled,
 			expectedMessage: errorCSIModuleRequired,
 		},
 		{
 			title:           "csi module disabled but not configured => no error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: dynakube.OneAgentSpec{CloudNativeFullStack: nil}}},
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{CloudNativeFullStack: nil}}},
 			modules:         installconfig.Modules{OneAgent: true, CSIDriver: false},
 			moduleFunc:      isCSIModuleDisabled,
 			expectedMessage: "",
 		},
 		{
 			title:           "csi module enabled and also configured => no error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: dynakube.OneAgentSpec{CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}}}},
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}}}},
 			modules:         installconfig.Modules{OneAgent: true, CSIDriver: true},
 			moduleFunc:      isCSIModuleDisabled,
 			expectedMessage: "",
 		},
 		{
 			title:           "csi module disabled and app-monitoring configured => no error, as it's optional for app-monitoring",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: dynakube.OneAgentSpec{ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{}}}},
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}}}},
 			modules:         installconfig.Modules{OneAgent: true, CSIDriver: false},
 			moduleFunc:      isCSIModuleDisabled,
 			expectedMessage: "",
 		},
 		{
 			title:           "csi module disabled and host-monitoring configured => no error, as it's optional for host-monitoring",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: dynakube.OneAgentSpec{HostMonitoring: &dynakube.HostInjectSpec{}}}},
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{}}}},
 			modules:         installconfig.Modules{OneAgent: true, CSIDriver: true},
 			moduleFunc:      isCSIModuleDisabled,
 			expectedMessage: "",
 		},
 		{
 			title:           "oa module disabled but also configured in dk => error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: dynakube.OneAgentSpec{CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}}}},
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}}}},
 			modules:         installconfig.Modules{OneAgent: false, CSIDriver: true},
 			moduleFunc:      isOneAgentModuleDisabled,
 			expectedMessage: errorOneAgentModuleDisabled,
 		},
 		{
 			title:           "oa module disabled but not configured => no error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: dynakube.OneAgentSpec{CloudNativeFullStack: nil}}},
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{CloudNativeFullStack: nil}}},
 			modules:         installconfig.Modules{OneAgent: false, CSIDriver: true},
 			moduleFunc:      isOneAgentModuleDisabled,
 			expectedMessage: "",
 		},
 		{
 			title:           "oa module enabled and also configured => no error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: dynakube.OneAgentSpec{CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}}}},
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}}}},
 			modules:         installconfig.Modules{OneAgent: true, CSIDriver: true},
 			moduleFunc:      isOneAgentModuleDisabled,
 			expectedMessage: "",
@@ -176,15 +177,15 @@ func TestIsModuleDisabled(t *testing.T) {
 
 func TestIsCSIDriverRequired(t *testing.T) {
 	t.Run("DynaKube with cloud native", func(t *testing.T) {
-		dk := dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: dynakube.OneAgentSpec{CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}}}}
+		dk := dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}}}}
 		assert.True(t, isCSIRequired(&dk))
 	})
 
 	t.Run("DynaKube with host monitoring", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					HostMonitoring: &dynakube.HostInjectSpec{},
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
 				},
 			},
 		}
@@ -194,8 +195,8 @@ func TestIsCSIDriverRequired(t *testing.T) {
 	t.Run("DynaKube with application monitoring", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{},
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 				},
 			},
 		}

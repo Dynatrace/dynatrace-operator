@@ -14,6 +14,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/functional"
 	"github.com/Dynatrace/dynatrace-operator/test/features/consts"
@@ -66,7 +67,7 @@ func Feature(t *testing.T) features.Feature {
 			MatchLabels: injectLabels,
 		}),
 		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
-		dynakubeComponents.WithCloudNativeSpec(&dynakube.CloudNativeFullStackSpec{}),
+		dynakubeComponents.WithCloudNativeSpec(&oneagent.CloudNativeFullStackSpec{}),
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithActiveGateTLSSecret(consts.AgSecretName),
 		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),

@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -101,8 +102,8 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						Name: dynakubeName,
 					},
 					Spec: dynakube.DynaKubeSpec{
-						OneAgent: dynakube.OneAgentSpec{
-							ClassicFullStack: &dynakube.HostInjectSpec{},
+						OneAgent: oneagent.Spec{
+							ClassicFullStack: &oneagent.HostInjectSpec{},
 						},
 					},
 				},
@@ -125,8 +126,8 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					},
 					Spec: dynakube.DynaKubeSpec{
 						APIURL: testAPIURL,
-						OneAgent: dynakube.OneAgentSpec{
-							HostMonitoring: &dynakube.HostInjectSpec{},
+						OneAgent: oneagent.Spec{
+							HostMonitoring: &oneagent.HostInjectSpec{},
 						},
 					},
 				},
@@ -175,12 +176,12 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						},
 						Spec: dynakube.DynaKubeSpec{
 							APIURL: testAPIURL,
-							OneAgent: dynakube.OneAgentSpec{
+							OneAgent: oneagent.Spec{
 								ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 							},
 						},
 						Status: dynakube.DynaKubeStatus{
-							CodeModules: dynakube.CodeModulesStatus{
+							CodeModules: oneagent.CodeModulesStatus{
 								VersionStatus: status.VersionStatus{
 									Version: "1.2.3",
 								},
@@ -215,12 +216,12 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						},
 						Spec: dynakube.DynaKubeSpec{
 							APIURL: testAPIURL,
-							OneAgent: dynakube.OneAgentSpec{
+							OneAgent: oneagent.Spec{
 								ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 							},
 						},
 						Status: dynakube.DynaKubeStatus{
-							CodeModules: dynakube.CodeModulesStatus{
+							CodeModules: oneagent.CodeModulesStatus{
 								VersionStatus: status.VersionStatus{
 									Version: "1.2.3",
 								},
@@ -262,7 +263,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						},
 						Spec: dynakube.DynaKubeSpec{
 							APIURL: testAPIURL,
-							OneAgent: dynakube.OneAgentSpec{
+							OneAgent: oneagent.Spec{
 								ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 							},
 						},
@@ -302,7 +303,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					OneAgent: dynakube.OneAgentSpec{
+					OneAgent: oneagent.Spec{
 						ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 					},
 				},
@@ -323,7 +324,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				},
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: dynakube.OneagentTenantSecret(),
+						Name: dynakube.OneAgent().GetTenantSecret(),
 					},
 					Data: map[string][]byte{
 						connectioninfo.TenantTokenKey: []byte("tenant-token"),
@@ -365,12 +366,12 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					},
 					Spec: dynakube.DynaKubeSpec{
 						APIURL: testAPIURL,
-						OneAgent: dynakube.OneAgentSpec{
+						OneAgent: oneagent.Spec{
 							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 						},
 					},
 					Status: dynakube.DynaKubeStatus{
-						CodeModules: dynakube.CodeModulesStatus{
+						CodeModules: oneagent.CodeModulesStatus{
 							VersionStatus: status.VersionStatus{
 								Version: "1.2.3",
 							},
@@ -405,8 +406,8 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					OneAgent: dynakube.OneAgentSpec{
-						HostMonitoring: &dynakube.HostInjectSpec{},
+					OneAgent: oneagent.Spec{
+						HostMonitoring: &oneagent.HostInjectSpec{},
 					},
 				},
 			},
@@ -436,8 +437,8 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	})
 }
 
-func buildValidApplicationMonitoringSpec(_ *testing.T) *dynakube.ApplicationMonitoringSpec {
-	return &dynakube.ApplicationMonitoringSpec{}
+func buildValidApplicationMonitoringSpec(_ *testing.T) *oneagent.ApplicationMonitoringSpec {
+	return &oneagent.ApplicationMonitoringSpec{}
 }
 
 func TestProvisioner_CreateDynakube(t *testing.T) {
@@ -509,7 +510,7 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		require.NoError(t, err)
 
 		path := metadata.PathResolver{RootDir: "test"}
-		base64Image := base64.StdEncoding.EncodeToString([]byte(dynakube.CodeModulesImage()))
+		base64Image := base64.StdEncoding.EncodeToString([]byte(dynakube.OneAgent().GetCodeModulesImage()))
 		targetDir := path.AgentSharedBinaryDirForAgent(base64Image)
 
 		mockK8sClient := createMockK8sClient(ctx, dynakube)
@@ -555,7 +556,7 @@ func TestUpdateAgentInstallation(t *testing.T) {
 		require.NoError(t, err)
 
 		path := metadata.PathResolver{RootDir: "test"}
-		base64Image := base64.StdEncoding.EncodeToString([]byte(dynakube.CodeModulesImage()))
+		base64Image := base64.StdEncoding.EncodeToString([]byte(dynakube.OneAgent().GetCodeModulesImage()))
 		targetDir := path.AgentSharedBinaryDirForAgent(base64Image)
 
 		mockK8sClient := createMockK8sClient(ctx, dynakube)
@@ -684,13 +685,13 @@ func getDynakube() *dynakube.DynaKube {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:   testAPIURL,
-			OneAgent: dynakube.OneAgentSpec{},
+			OneAgent: oneagent.Spec{},
 		},
 	})
 }
 
 func enableCodeModules(dk *dynakube.DynaKube) {
-	dk.Status.CodeModules = dynakube.CodeModulesStatus{
+	dk.Status.CodeModules = oneagent.CodeModulesStatus{
 		VersionStatus: status.VersionStatus{
 			Version: testVersion,
 			ImageID: testImageID,

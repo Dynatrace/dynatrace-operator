@@ -5,12 +5,12 @@ package switch_modes
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
+	oneagenthelper "github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -32,7 +32,7 @@ func Feature(t *testing.T) features.Feature {
 	}
 
 	dynakubeClassicFullStack := *dynakubeComponents.New(
-		append(commonOptions, dynakubeComponents.WithClassicFullstackSpec(&dynakube.HostInjectSpec{}))...,
+		append(commonOptions, dynakubeComponents.WithClassicFullstackSpec(&oneagent.HostInjectSpec{}))...,
 	)
 
 	sampleAppClassic := sample.NewApp(t, &dynakubeClassicFullStack,
@@ -48,7 +48,7 @@ func Feature(t *testing.T) features.Feature {
 	)
 
 	dynakubeComponents.Delete(builder, helpers.LevelAssess, dynakubeClassicFullStack)
-	oneagent.RunClassicUninstall(builder, helpers.LevelAssess, dynakubeClassicFullStack)
+	oneagenthelper.RunClassicUninstall(builder, helpers.LevelAssess, dynakubeClassicFullStack)
 	sampleAppCloudNative := sample.NewApp(t, &dynakubeCloudNative,
 		sample.AsDeployment(),
 		sample.WithName(sampleAppsCloudNativeName),

@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -57,14 +58,14 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynakube.OneAgentSpec{
-					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
-						HostInjectSpec: dynakube.HostInjectSpec{
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+						HostInjectSpec: oneagent.HostInjectSpec{
 							NodeSelector: map[string]string{
 								"node": "1",
 							},
 						},
-						AppInjectionSpec: dynakube.AppInjectionSpec{
+						AppInjectionSpec: oneagent.AppInjectionSpec{
 							NamespaceSelector: metav1.LabelSelector{
 								MatchLabels: dummyLabels,
 							},
@@ -84,14 +85,14 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynakube.OneAgentSpec{
-						CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
-							HostInjectSpec: dynakube.HostInjectSpec{
+					OneAgent: oneagent.Spec{
+						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+							HostInjectSpec: oneagent.HostInjectSpec{
 								NodeSelector: map[string]string{
 									"node": "2",
 								},
 							},
-							AppInjectionSpec: dynakube.AppInjectionSpec{
+							AppInjectionSpec: oneagent.AppInjectionSpec{
 								NamespaceSelector: metav1.LabelSelector{
 									MatchLabels: dummyLabels2,
 								},
@@ -118,9 +119,9 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 				},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: "",
-					OneAgent: dynakube.OneAgentSpec{
-						CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
-							AppInjectionSpec: dynakube.AppInjectionSpec{
+					OneAgent: oneagent.Spec{
+						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+							AppInjectionSpec: oneagent.AppInjectionSpec{
 								NamespaceSelector: metav1.LabelSelector{
 									MatchLabels: dummyLabels,
 								},
@@ -143,9 +144,9 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 				},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynakube.OneAgentSpec{
-						ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
-							AppInjectionSpec: dynakube.AppInjectionSpec{
+					OneAgent: oneagent.Spec{
+						ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+							AppInjectionSpec: oneagent.AppInjectionSpec{
 								NamespaceSelector: metav1.LabelSelector{
 									MatchLabels: dummyLabels,
 								},
@@ -161,8 +162,8 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 				},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynakube.OneAgentSpec{
-						HostMonitoring: &dynakube.HostInjectSpec{},
+					OneAgent: oneagent.Spec{
+						HostMonitoring: &oneagent.HostInjectSpec{},
 					},
 				},
 			}, &dummyNamespace, &dummyNamespace2)

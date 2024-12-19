@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	logmonitoringds "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
@@ -38,8 +39,8 @@ func TestEnvironmentVariables(t *testing.T) {
 				Proxy: &value.Source{
 					Value: "test",
 				},
-				OneAgent: dynakube.OneAgentSpec{
-					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
 				LogMonitoring: &logmonitoring.Spec{},
 			},
@@ -70,7 +71,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		}
 		builder := builder{
 			dk:             &dynakube.DynaKube{},
-			hostInjectSpec: &dynakube.HostInjectSpec{Env: potentiallyOverriddenEnvVars},
+			hostInjectSpec: &oneagent.HostInjectSpec{Env: potentiallyOverriddenEnvVars},
 		}
 		envVars, _ := builder.environmentVariables()
 
@@ -176,7 +177,7 @@ func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dk *dynakube.Dy
 	env := k8senv.FindEnvVar(envs, connectioninfo.EnvDtTenant)
 	assert.Equal(t, connectioninfo.EnvDtTenant, env.Name)
 	assert.Equal(t,
-		dk.OneAgentConnectionInfoConfigMapName(),
+		dk.OneAgent().GetConnectionInfoConfigMapName(),
 		env.ValueFrom.ConfigMapKeyRef.Name,
 	)
 	assert.Equal(t,
@@ -187,7 +188,7 @@ func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dk *dynakube.Dy
 	env = k8senv.FindEnvVar(envs, connectioninfo.EnvDtServer)
 	assert.Equal(t, connectioninfo.EnvDtServer, env.Name)
 	assert.Equal(t,
-		dk.OneAgentConnectionInfoConfigMapName(),
+		dk.OneAgent().GetConnectionInfoConfigMapName(),
 		env.ValueFrom.ConfigMapKeyRef.Name,
 	)
 	assert.Equal(t,
@@ -258,8 +259,8 @@ func TestAddReadOnlyEnv(t *testing.T) {
 				Name: "test",
 			},
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
 			},
 		}

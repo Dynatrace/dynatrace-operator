@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 )
 
 func TestDisabledCSIForReadonlyCSIVolume(t *testing.T) {
@@ -17,8 +18,8 @@ func TestDisabledCSIForReadonlyCSIVolume(t *testing.T) {
 			ObjectMeta: *objectMeta,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynakube.OneAgentSpec{
-					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
 			},
 		})
@@ -31,8 +32,8 @@ func TestDisabledCSIForReadonlyCSIVolume(t *testing.T) {
 				ObjectMeta: *objectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynakube.OneAgentSpec{
-						ClassicFullStack: &dynakube.HostInjectSpec{},
+					OneAgent: oneagent.Spec{
+						ClassicFullStack: &oneagent.HostInjectSpec{},
 					},
 				},
 			})

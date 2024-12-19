@@ -71,7 +71,7 @@ func (updater activeGateUpdater) IsAutoUpdateEnabled() bool {
 }
 
 func (updater activeGateUpdater) IsPublicRegistryEnabled() bool {
-	isPublicRegistry := updater.dk.FeaturePublicRegistry() && !updater.dk.ClassicFullStackMode()
+	isPublicRegistry := updater.dk.FeaturePublicRegistry() && !updater.dk.OneAgent().IsClassicFullStackMode()
 	if isPublicRegistry {
 		setVerifiedCondition(updater.dk.Conditions(), activeGateVersionConditionType) // Bit hacky, as things can still go wrong, but if so we will just overwrite this is LatestImageInfo.
 	}
