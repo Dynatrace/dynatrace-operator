@@ -553,7 +553,7 @@ func TestPVC(t *testing.T) {
 		dk := getTestDynakube()
 		multiCapability := capability.NewMultiCapability(&dk)
 		myPVCspec := corev1.PersistentVolumeClaimSpec{
-			StorageClassName: address.Of("test"),
+			StorageClassName: ptr.To("test"),
 			VolumeName:       "foo-pv",
 		}
 		dk.Spec.EnableOTLPingest = true
