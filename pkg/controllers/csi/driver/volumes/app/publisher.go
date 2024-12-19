@@ -182,12 +182,7 @@ func (pub *Publisher) mountCodeModule(volumeCfg *csivolumes.VolumeConfig) error 
 		return err
 	}
 
-	symlinkConfig := symlink.Config{
-		ContextForLog:       "pod info based symlink",
-		IsCurrentVerSymlink: false,
-	}
-
-	err = symlink.Create(pub.fs.Fs, targetDir, appMountPodInfoDir, symlinkConfig)
+	err = symlink.Create(pub.fs.Fs, targetDir, appMountPodInfoDir)
 	if err != nil {
 		return err
 	}

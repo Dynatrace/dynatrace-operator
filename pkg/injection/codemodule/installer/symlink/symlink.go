@@ -9,12 +9,22 @@ import (
 	"github.com/spf13/afero"
 )
 
-type Config struct {
-	ContextForLog       string
-	IsCurrentVerSymlink bool
+func CreateForCurrentVersionIfNotExists(fs afero.Fs, targetDir string) error {
+	var err error
+
+	targetBinDir := filepath.Join(targetDir, binDir)
+
+	relativeSymlinkPath, err := findVersionFromFileSystem(fs, targetBinDir)
+	if err != nil {
+		log.Info("failed to get the version from the filesystem", "targetDir", targetDir)
+
+		return err
+	}
+
+	return Create(fs, relativeSymlinkPath, filepath.Join(targetBinDir, "current"))
 }
 
-func Create(fs afero.Fs, targetDir, symlinkDir string, symlinkConfig Config) error {
+func Create(fs afero.Fs, targetDir, symlinkDir string) error {
 	// MemMapFs (used for testing) doesn't comply with the Linker interface
 	linker, ok := fs.(afero.Linker)
 	if !ok {
@@ -23,31 +33,16 @@ func Create(fs afero.Fs, targetDir, symlinkDir string, symlinkConfig Config) err
 		return nil
 	}
 
-	var sourceDir string
-
-	var err error
-
-	if symlinkConfig.IsCurrentVerSymlink {
-		sourceDir, err = findVersionFromFileSystem(fs, targetDir)
-		if err != nil {
-			log.Info("failed to get the version from the filesystem", "targetDir", targetDir)
-
-			return err
-		}
-	} else {
-		sourceDir = targetDir
-	}
-
 	// Check if the symlink already exists
 	if fileInfo, _ := fs.Stat(symlinkDir); fileInfo != nil {
 		log.Info("symlink already exists", "location", symlinkDir)
 		return nil
 	}
 
-	log.Info("creating symlink", "points-to(relative)", sourceDir, "location", symlinkDir, "context", symlinkConfig.ContextForLog)
+	log.Info("creating symlink", "points-to(relative)", targetDir, "location", symlinkDir)
 
-	if err := linker.SymlinkIfPossible(sourceDir, symlinkDir); err != nil {
-		log.Info("symlinking failed", "context", symlinkConfig.ContextForLog, "source", sourceDir)
+	if err := linker.SymlinkIfPossible(targetDir, symlinkDir); err != nil {
+		log.Info("symlinking failed", "source", targetDir)
 		return errors.WithStack(err)
 	}
 

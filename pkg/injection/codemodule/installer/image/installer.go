@@ -85,14 +85,7 @@ func (installer *Installer) InstallAgent(_ context.Context, targetDir string) (b
 		return false, errors.WithStack(err)
 	}
 
-	symlinkConfig := symlink.Config{
-		ContextForLog:       "current version symlink",
-		IsCurrentVerSymlink: true,
-	}
-
-	symlinkPath := filepath.Join(filepath.Join(targetDir, "/agent/bin"), "current")
-
-	if err := symlink.Create(installer.fs, targetDir, symlinkPath, symlinkConfig); err != nil {
+	if err := symlink.CreateForCurrentVersionIfNotExists(installer.fs, targetDir); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
 
 		log.Info("failed to create symlink for agent installation", "err", err)
