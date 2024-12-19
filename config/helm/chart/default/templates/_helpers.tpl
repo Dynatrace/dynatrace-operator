@@ -69,3 +69,18 @@ startupProbe:
   timeoutSeconds: 5
   failureThreshold: 1
 {{- end -}}
+
+{{- define "dynatrace-operator.modules-json-env" -}}
+- name: modules.json
+  value: |
+    {
+      "csiDriver": {{ .Values.csidriver.enabled }},
+      "activeGate": {{ .Values.rbac.activeGate.create }},
+      "oneAgent": {{ .Values.rbac.oneAgent.create }},
+      "extensions": {{ .Values.rbac.extensions.create }},
+      "logMonitoring": {{ .Values.rbac.logMonitoring.create }},
+      "edgeConnect": {{ .Values.rbac.edgeConnect.create }},
+      "supportability": {{ .Values.rbac.supportability }},
+      "kspm": {{ .Values.rbac.kspm.create }}
+    }
+{{- end -}}
