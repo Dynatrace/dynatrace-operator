@@ -24,7 +24,7 @@ func (lm *LogMonitoring) IsStandalone() bool {
 	return lm.IsEnabled() && !lm.enabledDependencies.hostAgents
 }
 
-func (lm *LogMonitoring) GetStandaloneNodeSelector() map[string]string {
+func (lm *LogMonitoring) GetNodeSelector() map[string]string {
 	if lm.IsStandalone() && lm.TemplateSpec != nil {
 		return lm.TemplateSpec.NodeSelector
 	}

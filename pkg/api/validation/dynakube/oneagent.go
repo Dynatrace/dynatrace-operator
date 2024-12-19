@@ -71,7 +71,7 @@ func conflictingOneAgentNodeSelector(ctx context.Context, dv *Validator, dk *dyn
 		return ""
 	}
 
-	oneAgentNodeSelector := dk.OneAgent().GetNodeSelector(dk.LogMonitoring().GetStandaloneNodeSelector())
+	oneAgentNodeSelector := dk.OneAgent().GetNodeSelector(dk.LogMonitoring().GetNodeSelector())
 	conflictingDynakubes := make(map[string]bool)
 
 	for _, item := range validDynakubes.Items {
@@ -80,7 +80,7 @@ func conflictingOneAgentNodeSelector(ctx context.Context, dv *Validator, dk *dyn
 		}
 
 		if hasLogMonitoringSelectorConflict(dk, &item) || hasOneAgentSelectorConflict(dk, &item) {
-			if hasConflictingMatchLabels(oneAgentNodeSelector, item.OneAgent().GetNodeSelector(dk.LogMonitoring().GetStandaloneNodeSelector())) {
+			if hasConflictingMatchLabels(oneAgentNodeSelector, item.OneAgent().GetNodeSelector(dk.LogMonitoring().GetNodeSelector())) {
 				log.Info("requested dynakube has conflicting OneAgent nodeSelector", "name", dk.Name, "namespace", dk.Namespace)
 
 				conflictingDynakubes[item.Name] = true
@@ -98,15 +98,15 @@ func conflictingOneAgentNodeSelector(ctx context.Context, dv *Validator, dk *dyn
 func hasLogMonitoringSelectorConflict(dk1, dk2 *dynakube.DynaKube) bool {
 	return dk1.LogMonitoring().IsStandalone() && dk1.ApiUrl() == dk2.ApiUrl() &&
 		(dk2.OneAgent().IsDaemonsetRequired() || dk2.LogMonitoring().IsStandalone()) &&
-		hasConflictingMatchLabels(dk1.OneAgent().GetNodeSelector(dk1.LogMonitoring().GetStandaloneNodeSelector()),
-			dk2.OneAgent().GetNodeSelector(dk2.LogMonitoring().GetStandaloneNodeSelector()))
+		hasConflictingMatchLabels(dk1.OneAgent().GetNodeSelector(dk1.LogMonitoring().GetNodeSelector()),
+			dk2.OneAgent().GetNodeSelector(dk2.LogMonitoring().GetNodeSelector()))
 }
 
 func hasOneAgentSelectorConflict(dk1, dk2 *dynakube.DynaKube) bool {
 	return dk1.OneAgent().IsDaemonsetRequired() &&
 		(dk2.OneAgent().IsDaemonsetRequired() || dk2.LogMonitoring().IsStandalone() && dk1.ApiUrl() == dk2.ApiUrl()) &&
-		hasConflictingMatchLabels(dk1.OneAgent().GetNodeSelector(dk1.LogMonitoring().GetStandaloneNodeSelector()),
-			dk2.OneAgent().GetNodeSelector(dk2.LogMonitoring().GetStandaloneNodeSelector()))
+		hasConflictingMatchLabels(dk1.OneAgent().GetNodeSelector(dk1.LogMonitoring().GetNodeSelector()),
+			dk2.OneAgent().GetNodeSelector(dk2.LogMonitoring().GetNodeSelector()))
 }
 
 func mapKeysToString(m map[string]bool, sep string) string {
