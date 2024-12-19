@@ -41,6 +41,7 @@
 |`tlsSecretName`|The name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.<br/>server.p12: certificate+key pair in pkcs12 format<br/>password: passphrase to read server.p12|-|string|
 |`tolerations`|Set tolerations for the ActiveGate pods|-|array|
 |`topologySpreadConstraints`|Adds TopologySpreadConstraints for the ActiveGate pods|-|array|
+|`useEphemeralVolume`|UseEphemeralVolume|-|boolean|
 
 ### .spec.logMonitoring
 
@@ -135,6 +136,19 @@
 |`namespaceSelector`|Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.<br/>For more information, see Configure monitoring for namespaces and pods (<https://www.dynatrace.|-|object|
 |`version`|Use a specific OneAgent CodeModule version. Defaults to the latest version from the Dynatrace cluster.|-|string|
 
+### .spec.activeGate.persistentVolumeClaim
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`accessModes`|accessModes contains the desired access modes the volume should have.<br/>More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1|-|array|
+|`dataSource`|dataSource field can be used to specify either:<br/>* An existing VolumeSnapshot object (snapshot.storage.k8s.|-|object|
+|`resources`|resources represents the minimum resources the volume should have.<br/>If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements<br/>that are lower than previous value but must still be higher than capacity recorded in the<br/>status field of the claim.|-|object|
+|`selector`|selector is a label query over volumes to consider for binding.|-|object|
+|`storageClassName`|storageClassName is the name of the StorageClass required by the claim.<br/>More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1|-|string|
+|`volumeAttributesClassName`|volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.<br/>If specified, the CSI driver will create or update the volume with the attributes defined<br/>in the corresponding VolumeAttributesClass.|-|string|
+|`volumeMode`|volumeMode defines what type of volume is required by the claim.<br/>Value of Filesystem is implied when not included in claim spec.|-|string|
+|`volumeName`|volumeName is the binding reference to the PersistentVolume backing this claim.|-|string|
+
 ### .spec.templates.logMonitoring.imageRef
 
 |Parameter|Description|Default value|Data type|
@@ -187,6 +201,15 @@
 |:-|:-|:-|:-|
 |`repository`|Custom image repository|-|string|
 |`tag`|Indicates a tag of the image to use|-|string|
+
+### .spec.activeGate.persistentVolumeClaim.dataSourceRef
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`apiGroup`|APIGroup is the group for the resource being referenced.<br/>If APIGroup is not specified, the specified Kind must be in the core API group.<br/>For any other third-party types, APIGroup is required.|-|string|
+|`kind`|Kind is the type of resource being referenced|-|string|
+|`name`|Name is the name of resource being referenced|-|string|
+|`namespace`|Namespace is the namespace of resource being referenced<br/>Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details.|-|string|
 
 ### .spec.templates.extensionExecutionController.imageRef
 
