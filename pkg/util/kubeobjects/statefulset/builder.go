@@ -114,9 +114,14 @@ func SetSecurityContext(securityContext *corev1.PodSecurityContext) builder.Opti
 	}
 }
 
-func SetUpdateStrategy(updateStartegy appsv1.StatefulSetUpdateStrategy) builder.Option[*appsv1.StatefulSet] {
+func SetRollingUpdateStrategyType() builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
-		s.Spec.UpdateStrategy = updateStartegy
+		s.Spec.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{
+			RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{
+				Partition: ptr.To(int32(0)),
+			},
+			Type: appsv1.RollingUpdateStatefulSetStrategyType,
+		}
 	}
 }
 
