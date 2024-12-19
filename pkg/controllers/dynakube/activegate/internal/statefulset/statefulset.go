@@ -175,7 +175,7 @@ func (statefulSetBuilder Builder) buildPodSecurityContext() *corev1.PodSecurityC
 	}
 
 	if !statefulSetBuilder.dynakube.Spec.ActiveGate.UseEphemeralVolume {
-		sc.FSGroup = address.Of(consts.DockerImageGroup)
+		sc.FSGroup = ptr.To(consts.DockerImageGroup)
 	}
 
 	return &sc

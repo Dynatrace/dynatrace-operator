@@ -80,7 +80,7 @@ func NewMultiCapability(dk *dynakube.DynaKube) Capability {
 	mc.properties = &dk.Spec.ActiveGate.CapabilityProperties
 
 	if len(dk.Spec.ActiveGate.Capabilities) == 0 && (dk.IsExtensionsEnabled() || dk.IsOTLPingestEnabled()) {
-		mc.properties.Replicas = address.Of(int32(1))
+		mc.properties.Replicas = ptr.To(int32(1))
 	}
 
 	capabilityNames := []string{}
