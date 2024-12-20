@@ -1,13 +1,14 @@
 package otelcgen
 
 import (
-	"fmt"
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/config/configgrpc"
+	"go.opentelemetry.io/collector/config/confignet"
+	"go.opentelemetry.io/collector/config/configtls"
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/otelcol"
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
-	"go.opentelemetry.io/otel/exporters/jaeger"
-	"gopkg.in/yaml.v3"
+	"sigs.k8s.io/yaml"
 )
 
 type Protocol string
@@ -21,10 +22,26 @@ const (
 	StatsdProtocol Protocol = "statsd"
 )
 
-type Option func(c *otelcol.Config)
+type Config struct {
+	cfg *otelcol.Config
+}
 
-func NewConfig(options ...Option) (*otelcol.Config, error) {
-	c := otelcol.Config{}
+func (c Config) Marshal() ([]byte, error) {
+	conf := confmap.New()
+	err := conf.Marshal(c.cfg)
+	if err != nil {
+		return nil, err
+	}
+	m := conf.ToStringMap()
+	return yaml.Marshal(m)
+}
+
+type Option func(c *Config)
+
+func NewConfig(options ...Option) (*Config, error) {
+	c := Config{
+		cfg: &otelcol.Config{},
+	}
 
 	for _, opt := range options {
 		opt(&c)
@@ -40,31 +57,30 @@ func WithProtocols(protocols ...string) Option {
 	}
 
 	// TODO: dynamically and conditionally create all maps in a loop
-	jagerID := component.MustNewID(string(JagerProtocol))
+	//jagerID := component.MustNewID(string(JagerProtocol))
+	otlpID := component.MustNewID(string(OtlpProtocol))
 
-	jagerExporter, _ := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint("http://localhost:14268/api/traces")))
-	exporters := map[component.ID]component.Config{
-		jagerID: jagerExporter,
-	}
+	//jagerExporter, _ := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint("http://localhost:14268/api/traces")))
+	//exporters := map[component.ID]component.Config{}
 
 	receivers := map[component.ID]component.Config{
-		jagerID: otlpreceiver.Config{Protocols: otlpreceiver.Protocols{}},
+		otlpID: otlpreceiver.Protocols{
+			GRPC: &configgrpc.ServerConfig{
+				NetAddr: confignet.AddrConfig{
+					Endpoint: "test",
+				},
+				TLSSetting: &configtls.ServerConfig{
+					Config: configtls.Config{
+						CAFile:  "/run/opensignals/tls/tls.crt",
+						KeyFile: "/run/opensignals/tls/tls.key",
+					},
+				},
+			},
+			HTTP: nil,
+		},
 	}
-	return func(c *otelcol.Config) {
-		c.Exporters = exporters
-		c.Receivers = receivers
+
+	return func(c *Config) {
+		c.cfg.Receivers = receivers
 	}
 }
-
-func usage() {
-	c, _ := NewConfig(WithProtocols())
-	conf := confmap.New()
-	_ = conf.Marshal(c)
-	by, _ := yaml.Marshal(conf.ToStringMap())
-	fmt.Println(string(by))
-}
-
-// Usage:
-// c := &otelcgen.NewConfig(otelcgen.WithProtocols("jager", "zipkin"), otelcgen.WithService(), otelcgen.WithCustomTLS(""))
-// conf := confmap.New()
-// by, _ := yaml.Marshal(conf.ToStringMap())
