@@ -1,9 +1,9 @@
 package cleanup
 
 import (
-	"path/filepath"
 	"strings"
 
+	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/spf13/afero"
 	"golang.org/x/exp/maps"
@@ -45,7 +45,9 @@ func (c Cleaner) run() error {
 	var relevantBinDirs []string
 
 	for _, fileInfo := range rootSubDirs {
-		if !fileInfo.IsDir() || fileInfo.Name() == filepath.Base(c.path.AppMountsBaseDir()) {
+		if !fileInfo.IsDir() ||
+			fileInfo.Name() == dtcsi.SharedAppMountsDir ||
+			fileInfo.Name() == dtcsi.SharedAgentBinDir {
 			continue
 		}
 
