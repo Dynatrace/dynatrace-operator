@@ -130,7 +130,7 @@ type HostInjectSpec struct {
 
 	// Define the nodeAffinity for the DaemonSet of the NodeConfigurationCollector
 	// +kubebuilder:validation:Optional
-	NodeAffinity corev1.NodeAffinity `json:"nodeAffinity,omitempty"`
+	NodeAffinity *corev1.NodeAffinity `json:"nodeAffinity,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
