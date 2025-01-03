@@ -51,3 +51,43 @@ func (c Cleaner) Run(ctx context.Context) error {
 			continue
 		}
 	}
+	c.removeDeprecatedMounts(tenantDirsWithDeprecatedFolders)
+	return nil
+}
+
+func (c Cleaner) removeDeprecatedMounts(tenantNames []string) {
+	for _, tenant := range tenantNames {
+		runDir := c.path.AgentRunDir(tenant)
+
+		volumeDirs, err := c.fs.ReadDir(runDir)
+		if err != nil {
+			log.Info("couldn't list volume dirs", "path", runDir)
+
+			continue
+		}
+
+		for _, volumeDir := range volumeDirs {
+			mappedDir := c.path.OverlayMappedDir(tenant, volumeDir.Name())
+
+			isEmpty, _ := c.fs.IsEmpty(mappedDir)
+			if isEmpty {
+				volumeDirPath := c.path.AgentRunDirForVolume(tenant, volumeDir.Name())
+
+				err := c.fs.RemoveAll(volumeDirPath)
+				if err == nil {
+					log.Info("removed unused volume", "path", volumeDirPath)
+				}
+			}
+		}
+
+		tenantDir := c.path.DynaKubeDir(tenant)
+
+		isEmpty, _ := c.fs.IsEmpty(tenantDir)
+		if isEmpty {
+			err := c.fs.RemoveAll(tenantDir)
+			if err == nil {
+				log.Info("removed empty old tenant folder", "path", tenantDir)
+			}
+		}
+	}
+}
