@@ -14,5 +14,27 @@ func (b *builder) affinity() *corev1.Affinity {
 		affinity = node.Affinity()
 	}
 
+	var nodeAffinitySpec corev1.NodeAffinity
+	if b.dk.OneAgent.classicFullStack.nodeAffinity {
+		nodeAffinitySpec = b.dk.OneAgent.classicFullStack.nodeAffinity
+	} else if b.dk.OneAgent.hostMonitoring.nodeAffinity {
+		nodeAffinitySpec = b.dk.OneAgent.hostMonitoring.nodeAffinity
+	}
+
+	if nodeAffinitySpec {
+		if nodeAffinitySpec.RequiredDuringSchedulingIgnoredDuringExecution {
+			append(
+				affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution,
+				nodeAffinitySpec.RequiredDuringSchedulingIgnoredDuringExecution...,
+			)
+		}
+		if nodeAffinitySpec.PreferredDuringSchedulingIgnoredDuringExecution {
+			append(
+				affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution,
+				nodeAffinitySpec.PreferredDuringSchedulingIgnoredDuringExecution...,
+			)
+		}
+	}
+
 	return &affinity
 }

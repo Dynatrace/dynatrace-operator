@@ -127,6 +127,10 @@ type HostInjectSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent installer arguments",order=21,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
 	// +listType=set
 	Args []string `json:"args,omitempty"`
+
+	// Define the nodeAffinity for the DaemonSet of the NodeConfigurationCollector
+	// +kubebuilder:validation:Optional
+	NodeAffinity corev1.NodeAffinity `json:"nodeAffinity,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
