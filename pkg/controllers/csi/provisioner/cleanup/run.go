@@ -24,12 +24,20 @@ func New(fs afero.Afero, path metadata.PathResolver) *Cleaner {
 	}
 }
 
+// Run will only execute the cleanup logic if enough time has passed from the previous run, to not overload the IO of the node
 func (c Cleaner) Run() error {
 	tickerResetFunc := checkTicker()
 	if tickerResetFunc == nil {
 		return nil
 	}
 	defer tickerResetFunc()
+
+	return c.run()
+}
+
+// InstantRun will always execute the cleanup logic ignoring the time passed from previous run
+func (c Cleaner) InstantRun() error {
+	defer resetTickerAfterDelete()
 
 	return c.run()
 }
@@ -113,6 +121,7 @@ func (c Cleaner) removeDeprecatedMounts(tenantNames []string) {
 			}
 		}
 
+		// TODO: Improve this part, so we don't have to do the deletion in the provisioner, but do it safely in this package
 		tenantDir := c.path.DynaKubeDir(tenant)
 
 		isEmpty, _ := c.fs.IsEmpty(tenantDir)

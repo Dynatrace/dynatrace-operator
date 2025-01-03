@@ -16,6 +16,7 @@ var (
 	ticker        *time.Ticker
 )
 
+// checkTicker will initialize (if needed) and check the a ticker if enough time has passed since the last cleanup
 func checkTicker() func() {
 	setupCleanUpPeriod()
 
@@ -56,4 +57,19 @@ func setupCleanUpPeriod() {
 
 		cleanupPeriod = duration
 	})()
+}
+
+// resetTickerAfterDelete is for the specific scenario of dynakube deletion
+// its purpose is to reset the ticker safely, but not check it, so the cleanup will always run after a DynaKube deletion
+// meant to be called via defer
+func resetTickerAfterDelete() {
+	setupCleanUpPeriod()
+
+	if ticker == nil {
+		log.Info("initial run of CSI filesystem cleanup")
+
+		ticker = time.NewTicker(cleanupPeriod)
+	} else {
+		ticker.Reset(cleanupPeriod)
+	}
 }

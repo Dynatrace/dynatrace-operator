@@ -91,7 +91,15 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	err := provisioner.apiReader.Get(ctx, request.NamespacedName, &dk)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			_ = provisioner.cleaner.Run()
+			err := provisioner.fs.RemoveAll(provisioner.path.DynaKubeDir(request.Name)) // TODO: Possible problem, if tenantUUID == dynakube.Name, and there are still apps running that were mounted before the rework at time of deletion
+			if err != nil {
+				log.Error(err, "failed to remove dynakube specific directory")
+			}
+
+			err = provisioner.cleaner.InstantRun()
+			if err != nil {
+				log.Error(err, "failed to run clean-up after dynakube deletion")
+			}
 
 			return reconcile.Result{}, nil
 		}
