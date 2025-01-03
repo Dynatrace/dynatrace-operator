@@ -39,6 +39,8 @@ func (c Cleaner) Run(ctx context.Context) error {
 
 	var tenantDirsWithDeprecatedFolders []string
 
+	var relevantBinDirs []string
+
 	for _, fileInfo := range rootSubDirs {
 		if !fileInfo.IsDir() || fileInfo.Name() == filepath.Base(c.path.AppMountsBaseDir()) {
 			continue
@@ -50,8 +52,34 @@ func (c Cleaner) Run(ctx context.Context) error {
 
 			continue
 		}
+
+		latestBinDir := c.path.LatestAgentBinaryForDynaKube(fileInfo.Name())
+
+		_, err = c.fs.Stat(latestBinDir)
+		if err == nil {
+			continue
+		}
+
+		linker, ok := c.fs.Fs.(afero.LinkReader)
+		if ok {
+			actualPath, err := linker.ReadlinkIfPossible(latestBinDir)
+			if err != nil {
+				log.Error(err, "failed to follow symlink", "path", latestBinDir)
+
+				continue
+			}
+
+			relevantBinDirs = append(relevantBinDirs, actualPath)
+		}
 	}
+
 	c.removeDeprecatedMounts(tenantDirsWithDeprecatedFolders)
+
+	err = c.removeUnusedBinaries(relevantBinDirs)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -90,4 +118,51 @@ func (c Cleaner) removeDeprecatedMounts(tenantNames []string) {
 			}
 		}
 	}
+}
+
+func (c Cleaner) removeUnusedBinaries(latestBins []string) error {
+	overlays, err := metadata.GetRelevantOverlayMounts(c.mounter, c.path.RootDir)
+	if err != nil {
+		log.Info("failed to list active overlay mounts, skipping unused binaries cleanup")
+
+		return err
+	}
+
+	keptBins := map[string]bool{}
+	for _, overlay := range overlays {
+		keptBins[overlay.LowerDir] = true
+	}
+
+	log.Info("binaries to keep because they are still mounted", "paths", strings.Join(maps.Keys(keptBins), ","))
+
+	for _, latest := range latestBins {
+		keptBins[latest] = true
+	}
+
+	log.Info("binaries to keep because they are the latest", "paths", strings.Join(latestBins, ","))
+
+	sharedBins, err := c.fs.ReadDir(c.path.AgentSharedBinaryDirBase())
+	if err != nil {
+		log.Info("failed to list the shared binaries directory, skipping unused binaries cleanup")
+
+		return err
+	}
+
+	for _, dir := range sharedBins {
+		sharedBinPath := c.path.AgentSharedBinaryDirForAgent(dir.Name())
+
+		_, ok := keptBins[sharedBinPath]
+		if !ok {
+			err := c.fs.RemoveAll(sharedBinPath)
+			if err != nil {
+				log.Error(err, "failed to remove shared binary", "path", sharedBinPath)
+
+				continue
+			}
+
+			log.Info("removed old shared binary", "path", sharedBinPath)
+		}
+	}
+
+	return nil
 }
