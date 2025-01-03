@@ -5161,8 +5161,7 @@ spec:
                           nodes OneAgent will be deployed.
                         type: object
                       nodeAffinity:
-                        description: Define the nodeAffinity for the DaemonSet of
-                          the NodeConfigurationCollector
+                        description: Define the nodeAffinity for the oneagent DaemonSet
                         properties:
                           preferredDuringSchedulingIgnoredDuringExecution:
                             description: |-
@@ -5738,8 +5737,7 @@ spec:
                           nodes OneAgent will be deployed.
                         type: object
                       nodeAffinity:
-                        description: Define the nodeAffinity for the DaemonSet of
-                          the NodeConfigurationCollector
+                        description: Define the nodeAffinity for the oneagent DaemonSet
                         properties:
                           preferredDuringSchedulingIgnoredDuringExecution:
                             description: |-
@@ -6204,8 +6202,7 @@ spec:
                           nodes OneAgent will be deployed.
                         type: object
                       nodeAffinity:
-                        description: Define the nodeAffinity for the DaemonSet of
-                          the NodeConfigurationCollector
+                        description: Define the nodeAffinity for the oneagent DaemonSet
                         properties:
                           preferredDuringSchedulingIgnoredDuringExecution:
                             description: |-

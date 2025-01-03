@@ -67,6 +67,7 @@
 |`image`|Use a custom OneAgent image. Defaults to the latest image from the Dynatrace cluster.|-|string|
 |`labels`|Your defined labels for OneAgent pods in order to structure workloads as desired.|-|object|
 |`nodeSelector`|Specify the node selector that controls on which nodes OneAgent will be deployed.|-|object|
+|`nodeAffinity`|Define the nodeAffinity for the OneAgent DaemonSet.|-|object|
 |`oneAgentResources`|Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.<br/>Note: resource.requests shows the values needed to run; resource.limits shows the maximum limits for the pod.|-|object|
 |`priorityClassName`|Assign a priority class to the OneAgent pods. By default, no class is set.<br/>For details, see Pod Priority and Preemption (<https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/>).|-|string|
 |`secCompProfile`|The SecComp Profile that will be configured in order to run in secure computing mode.|-|string|
@@ -99,6 +100,7 @@
 |`image`|Use a custom OneAgent image. Defaults to the latest image from the Dynatrace cluster.|-|string|
 |`labels`|Your defined labels for OneAgent pods in order to structure workloads as desired.|-|object|
 |`nodeSelector`|Specify the node selector that controls on which nodes OneAgent will be deployed.|-|object|
+|`nodeAffinity`|Define the nodeAffinity for the OneAgent DaemonSet.|-|object|
 |`oneAgentResources`|Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.<br/>Note: resource.requests shows the values needed to run; resource.limits shows the maximum limits for the pod.|-|object|
 |`priorityClassName`|Assign a priority class to the OneAgent pods. By default, no class is set.<br/>For details, see Pod Priority and Preemption (<https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/>).|-|string|
 |`secCompProfile`|The SecComp Profile that will be configured in order to run in secure computing mode.|-|string|
@@ -120,6 +122,7 @@
 |`labels`|Your defined labels for OneAgent pods in order to structure workloads as desired.|-|object|
 |`namespaceSelector`|Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.<br/>For more information, see Configure monitoring for namespaces and pods (<https://www.dynatrace.|-|object|
 |`nodeSelector`|Specify the node selector that controls on which nodes OneAgent will be deployed.|-|object|
+|`nodeAffinity`|Define the nodeAffinity for the OneAgent DaemonSet.|-|object|
 |`oneAgentResources`|Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.<br/>Note: resource.requests shows the values needed to run; resource.limits shows the maximum limits for the pod.|-|object|
 |`priorityClassName`|Assign a priority class to the OneAgent pods. By default, no class is set.<br/>For details, see Pod Priority and Preemption (<https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/>).|-|string|
 |`secCompProfile`|The SecComp Profile that will be configured in order to run in secure computing mode.|-|string|
