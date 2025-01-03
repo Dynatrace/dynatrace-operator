@@ -91,7 +91,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	err := provisioner.apiReader.Get(ctx, request.NamespacedName, &dk)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			_ = provisioner.cleaner.Run(ctx)
+			_ = provisioner.cleaner.Run()
 
 			return reconcile.Result{}, nil
 		}
@@ -107,7 +107,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	if !dk.NeedAppInjection() {
 		log.Info("app injection not necessary, skip agent codemodule download", "dynakube", dk.Name)
 
-		_ = provisioner.cleaner.Run(ctx)
+		_ = provisioner.cleaner.Run()
 
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
 	}
@@ -123,7 +123,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{}, err
 	}
 
-	_ = provisioner.cleaner.Run(ctx)
+	_ = provisioner.cleaner.Run()
 
 	return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
 }

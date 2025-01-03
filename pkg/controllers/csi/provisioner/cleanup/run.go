@@ -1,7 +1,6 @@
 package cleanup
 
 import (
-	"context"
 	"path/filepath"
 	"strings"
 
@@ -25,13 +24,17 @@ func New(fs afero.Afero, path metadata.PathResolver) *Cleaner {
 	}
 }
 
-func (c Cleaner) Run(ctx context.Context) error {
+func (c Cleaner) Run() error {
 	tickerResetFunc := checkTicker()
 	if tickerResetFunc == nil {
 		return nil
 	}
 	defer tickerResetFunc()
 
+	return c.run()
+}
+
+func (c Cleaner) run() error {
 	rootSubDirs, err := c.fs.ReadDir(c.path.RootDir)
 	if err != nil {
 		return err
