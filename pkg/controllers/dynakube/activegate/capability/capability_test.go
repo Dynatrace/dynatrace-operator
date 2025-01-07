@@ -23,6 +23,7 @@ const (
 	expectedArgNameWithOTLPingest              = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,log_analytics_collector,generic_ingest_enabled,otlp_ingest"
 	expectedArgNameWithOTLPingestOnly          = "log_analytics_collector,generic_ingest_enabled,otlp_ingest"
 	expectedArgNameWithExtensionsAndOTLPingest = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,extension_controller,log_analytics_collector,generic_ingest_enabled,otlp_ingest"
+	expectedArgNameWithTelemetryService        = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,log_analytics_collector,generic_ingest_enabled,otlp_ingest"
 )
 
 var capabilities = []activegate.CapabilityDisplayName{
@@ -32,10 +33,15 @@ var capabilities = []activegate.CapabilityDisplayName{
 	activegate.DynatraceApiCapability.DisplayName,
 }
 
-func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtensions bool, enableOTLPingest bool) *dynakube.DynaKube {
+func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtensions bool, enableOTLPingest bool, enableTelemetryService bool) *dynakube.DynaKube {
 	extensionsSpec := &dynakube.ExtensionsSpec{}
 	if !enableExtensions {
 		extensionsSpec = nil
+	}
+
+	telemetryServiceSpec := &dynakube.TelemetryServiceSpec{}
+	if !enableTelemetryService {
+		telemetryServiceSpec = nil
 	}
 
 	return &dynakube.DynaKube{
@@ -49,6 +55,7 @@ func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtens
 			},
 			Extensions:       extensionsSpec,
 			EnableOTLPingest: enableOTLPingest,
+			TelemetryService: telemetryServiceSpec,
 		},
 	}
 }
@@ -73,7 +80,7 @@ func TestBuildServiceName(t *testing.T) {
 
 func TestNewMultiCapability(t *testing.T) {
 	t.Run(`creates new multicapability`, func(t *testing.T) {
-		dk := buildDynakube(capabilities, false, false)
+		dk := buildDynakube(capabilities, false, false, false)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
@@ -82,7 +89,7 @@ func TestNewMultiCapability(t *testing.T) {
 	})
 	t.Run(`creates new multicapability without capabilities set in dynakube`, func(t *testing.T) {
 		var emptyCapabilites []activegate.CapabilityDisplayName
-		dk := buildDynakube(emptyCapabilites, false, false)
+		dk := buildDynakube(emptyCapabilites, false, false, false)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.False(t, mc.Enabled())
@@ -103,7 +110,7 @@ func TestNewMultiCapability(t *testing.T) {
 
 func TestNewMultiCapabilityWithExtensions(t *testing.T) {
 	t.Run(`creates new multicapability with Extensions enabled`, func(t *testing.T) {
-		dk := buildDynakube(capabilities, true, false)
+		dk := buildDynakube(capabilities, true, false, false)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
@@ -112,7 +119,7 @@ func TestNewMultiCapabilityWithExtensions(t *testing.T) {
 	})
 	t.Run(`creates new multicapability without capabilities set in dynakube and Extensions enabled`, func(t *testing.T) {
 		var emptyCapabilites []activegate.CapabilityDisplayName
-		dk := buildDynakube(emptyCapabilites, true, false)
+		dk := buildDynakube(emptyCapabilites, true, false, false)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
@@ -123,7 +130,7 @@ func TestNewMultiCapabilityWithExtensions(t *testing.T) {
 
 func TestNewMultiCapabilityWithOTLPingest(t *testing.T) {
 	t.Run(`creates new multicapability with OTLPingest enabled`, func(t *testing.T) {
-		dk := buildDynakube(capabilities, false, true)
+		dk := buildDynakube(capabilities, false, true, false)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
@@ -132,7 +139,7 @@ func TestNewMultiCapabilityWithOTLPingest(t *testing.T) {
 	})
 	t.Run(`creates new multicapability without capabilities set in dynakube and OTLPingest enabled`, func(t *testing.T) {
 		var emptyCapabilites []activegate.CapabilityDisplayName
-		dk := buildDynakube(emptyCapabilites, false, true)
+		dk := buildDynakube(emptyCapabilites, false, true, false)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
@@ -143,12 +150,44 @@ func TestNewMultiCapabilityWithOTLPingest(t *testing.T) {
 
 func TestNewMultiCapabilityWithExtensionsAndOTLPingest(t *testing.T) {
 	t.Run(`creates new multicapability with Extensions and OTLPingest enabled`, func(t *testing.T) {
-		dk := buildDynakube(capabilities, true, true)
+		dk := buildDynakube(capabilities, true, true, false)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
 		assert.Equal(t, expectedShortName, mc.ShortName())
 		assert.Equal(t, expectedArgNameWithExtensionsAndOTLPingest, mc.ArgName())
+	})
+}
+
+func TestNewMultiCapabilityWithTelemetryService(t *testing.T) {
+	t.Run(`creates new multicapability with TelemetryService enabled`, func(t *testing.T) {
+		dk := buildDynakube(capabilities, false, false, true)
+		mc := NewMultiCapability(dk)
+		require.NotNil(t, mc)
+		assert.True(t, mc.Enabled())
+		assert.Equal(t, expectedShortName, mc.ShortName())
+		assert.Equal(t, expectedArgNameWithTelemetryService, mc.ArgName())
+	})
+	t.Run(`creates new multicapability without capabilities set in dynakube and TelemetryService enabled`, func(t *testing.T) {
+		var emptyCapabilites []activegate.CapabilityDisplayName
+		dk := buildDynakube(emptyCapabilites, false, false, true)
+		mc := NewMultiCapability(dk)
+		require.NotNil(t, mc)
+		assert.False(t, mc.Enabled())
+		assert.Equal(t, expectedShortName, mc.ShortName())
+		assert.Empty(t, mc.ArgName())
+	})
+}
+
+func TestNewMultiCapabilityWithOTLPingestAndTelemetryService(t *testing.T) {
+	t.Run(`creates new multicapability without capabilities set in dynakube and with OTLPingest and TelemetryService enabled`, func(t *testing.T) {
+		var emptyCapabilites []activegate.CapabilityDisplayName
+		dk := buildDynakube(emptyCapabilites, false, true, true)
+		mc := NewMultiCapability(dk)
+		require.NotNil(t, mc)
+		assert.True(t, mc.Enabled())
+		assert.Equal(t, expectedShortName, mc.ShortName())
+		assert.Equal(t, expectedArgNameWithOTLPingestOnly, mc.ArgName())
 	})
 }
 

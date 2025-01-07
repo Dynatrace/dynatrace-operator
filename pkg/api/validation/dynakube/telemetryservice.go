@@ -37,12 +37,12 @@ func unknownTelemetryServiceProtocols(_ context.Context, _ *Validator, dk *dynak
 
 	for _, protocol := range dk.TelemetryServiceProtocols() {
 		if !slices.Contains(dynakube.TelemetryServiceKnownProtocols(), protocol) {
-			unknownProtocols = append(unknownProtocols, protocol)
+			unknownProtocols = append(unknownProtocols, string(protocol))
 		}
 	}
 
 	if len(unknownProtocols) > 0 {
-		log.Info("requested dynakube specify unknown or duplicated TelemetryService protocol(s)", "unknown protocols", strings.Join(unknownProtocols, ","))
+		log.Info("requested dynakube specify unknown TelemetryService protocol(s)", "protocols", strings.Join(unknownProtocols, ","))
 
 		return errorTelemetryServiceUnknownProtocols
 	}
@@ -55,7 +55,7 @@ func duplicatedTelemetryServiceProtocols(_ context.Context, _ *Validator, dk *dy
 		return ""
 	}
 
-	protocolsOccurrences := map[string]int{}
+	protocolsOccurrences := map[dynakube.TelemetryServiceProtocol]int{}
 
 	for _, protocol := range dk.TelemetryServiceProtocols() {
 		if _, ok := protocolsOccurrences[protocol]; !ok {
@@ -69,12 +69,12 @@ func duplicatedTelemetryServiceProtocols(_ context.Context, _ *Validator, dk *dy
 
 	for protocol, count := range protocolsOccurrences {
 		if count > 1 {
-			duplicatedProtocols = append(duplicatedProtocols, protocol)
+			duplicatedProtocols = append(duplicatedProtocols, string(protocol))
 		}
 	}
 
 	if len(duplicatedProtocols) > 0 {
-		log.Info("requested dynakube specify duplicated TelemetryService protocol(s)", "duplicated protocols", strings.Join(duplicatedProtocols, ","))
+		log.Info("requested dynakube specify duplicated TelemetryService protocol(s)", "protocols", strings.Join(duplicatedProtocols, ","))
 
 		return errorTelemetryServiceDuplicatedProtocols
 	}

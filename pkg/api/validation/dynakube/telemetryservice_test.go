@@ -41,7 +41,11 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
 					TelemetryService: &dynakube.TelemetryServiceSpec{
-						Protocols: []string{dynakube.TelemetryServiceZipkinProtocol, dynakube.TelemetryServiceOtlpProtocol, "unknown"},
+						Protocols: []string{
+							string(dynakube.TelemetryServiceZipkinProtocol),
+							string(dynakube.TelemetryServiceOtlpProtocol),
+							"unknown",
+						},
 					},
 				},
 			})
@@ -55,7 +59,12 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
 					TelemetryService: &dynakube.TelemetryServiceSpec{
-						Protocols: []string{dynakube.TelemetryServiceZipkinProtocol, dynakube.TelemetryServiceOtlpProtocol, "unknown1", "unknown2"},
+						Protocols: []string{
+							string(dynakube.TelemetryServiceZipkinProtocol),
+							string(dynakube.TelemetryServiceOtlpProtocol),
+							"unknown1",
+							"unknown2",
+						},
 					},
 				},
 			})
@@ -69,7 +78,11 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
 					TelemetryService: &dynakube.TelemetryServiceSpec{
-						Protocols: []string{dynakube.TelemetryServiceZipkinProtocol, dynakube.TelemetryServiceOtlpProtocol, dynakube.TelemetryServiceOtlpProtocol},
+						Protocols: []string{
+							string(dynakube.TelemetryServiceZipkinProtocol),
+							string(dynakube.TelemetryServiceOtlpProtocol),
+							string(dynakube.TelemetryServiceOtlpProtocol),
+						},
 					},
 				},
 			})
@@ -83,7 +96,13 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
 					TelemetryService: &dynakube.TelemetryServiceSpec{
-						Protocols: []string{dynakube.TelemetryServiceZipkinProtocol, dynakube.TelemetryServiceZipkinProtocol, dynakube.TelemetryServiceOtlpProtocol, dynakube.TelemetryServiceOtlpProtocol, dynakube.TelemetryServiceJaegerProtocol},
+						Protocols: []string{
+							string(dynakube.TelemetryServiceZipkinProtocol),
+							string(dynakube.TelemetryServiceZipkinProtocol),
+							string(dynakube.TelemetryServiceOtlpProtocol),
+							string(dynakube.TelemetryServiceOtlpProtocol),
+							string(dynakube.TelemetryServiceJaegerProtocol),
+						},
 					},
 				},
 			})

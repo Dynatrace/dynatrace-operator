@@ -1,14 +1,16 @@
 package dynakube
 
+type TelemetryServiceProtocol string
+
 const (
-	TelemetryServiceOtlpProtocol   = "otlp"
-	TelemetryServiceZipkinProtocol = "zipkin"
-	TelemetryServiceJaegerProtocol = "jaeger"
-	TelemetryServiceStatsdProtocol = "statsd"
+	TelemetryServiceOtlpProtocol   TelemetryServiceProtocol = "otlp"
+	TelemetryServiceZipkinProtocol TelemetryServiceProtocol = "zipkin"
+	TelemetryServiceJaegerProtocol TelemetryServiceProtocol = "jaeger"
+	TelemetryServiceStatsdProtocol TelemetryServiceProtocol = "statsd"
 )
 
-func TelemetryServiceKnownProtocols() []string {
-	return []string{
+func TelemetryServiceKnownProtocols() []TelemetryServiceProtocol {
+	return []TelemetryServiceProtocol{
 		TelemetryServiceOtlpProtocol,
 		TelemetryServiceZipkinProtocol,
 		TelemetryServiceJaegerProtocol,
@@ -16,16 +18,20 @@ func TelemetryServiceKnownProtocols() []string {
 	}
 }
 
-func (dk *DynaKube) TelemetryServiceProtocols() []string {
+func (dk *DynaKube) TelemetryServiceProtocols() []TelemetryServiceProtocol {
 	if dk.Spec.TelemetryService == nil {
-		return []string{}
+		return []TelemetryServiceProtocol{}
 	}
 
 	if len(dk.Spec.TelemetryService.Protocols) == 0 {
 		return TelemetryServiceKnownProtocols()
 	}
 
-	return dk.Spec.TelemetryService.Protocols
+	var protocols []TelemetryServiceProtocol
+	for _, proto := range dk.Spec.TelemetryService.Protocols {
+		protocols = append(protocols, TelemetryServiceProtocol(proto))
+	}
+	return protocols
 }
 
 func (dk *DynaKube) IsTelemetryServiceEnabled() bool {
