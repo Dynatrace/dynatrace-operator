@@ -9,6 +9,7 @@ import (
 	dynatrace "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 
 	logmonitoring "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -478,7 +479,7 @@ func (_c *Client_GetAgentViaInstallerUrl_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
-// GetCommunicationHostForClient provides a mock function with given fields:
+// GetCommunicationHostForClient provides a mock function with no fields
 func (_m *Client) GetCommunicationHostForClient() (dynatrace.CommunicationHost, error) {
 	ret := _m.Called()
 
