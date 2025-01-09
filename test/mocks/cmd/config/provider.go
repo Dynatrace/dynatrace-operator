@@ -20,7 +20,7 @@ func (_m *Provider) EXPECT() *Provider_Expecter {
 	return &Provider_Expecter{mock: &_m.Mock}
 }
 
-// GetConfig provides a mock function with given fields:
+// GetConfig provides a mock function with no fields
 func (_m *Provider) GetConfig() (*rest.Config, error) {
 	ret := _m.Called()
 

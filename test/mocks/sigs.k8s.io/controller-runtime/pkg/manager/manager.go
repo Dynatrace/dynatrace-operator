@@ -231,7 +231,7 @@ func (_c *Manager_AddReadyzCheck_Call) RunAndReturn(run func(string, healthz.Che
 	return _c
 }
 
-// Elected provides a mock function with given fields:
+// Elected provides a mock function with no fields
 func (_m *Manager) Elected() <-chan struct{} {
 	ret := _m.Called()
 
@@ -278,7 +278,7 @@ func (_c *Manager_Elected_Call) RunAndReturn(run func() <-chan struct{}) *Manage
 	return _c
 }
 
-// GetAPIReader provides a mock function with given fields:
+// GetAPIReader provides a mock function with no fields
 func (_m *Manager) GetAPIReader() client.Reader {
 	ret := _m.Called()
 
@@ -325,7 +325,7 @@ func (_c *Manager_GetAPIReader_Call) RunAndReturn(run func() client.Reader) *Man
 	return _c
 }
 
-// GetCache provides a mock function with given fields:
+// GetCache provides a mock function with no fields
 func (_m *Manager) GetCache() cache.Cache {
 	ret := _m.Called()
 
@@ -372,7 +372,7 @@ func (_c *Manager_GetCache_Call) RunAndReturn(run func() cache.Cache) *Manager_G
 	return _c
 }
 
-// GetClient provides a mock function with given fields:
+// GetClient provides a mock function with no fields
 func (_m *Manager) GetClient() client.Client {
 	ret := _m.Called()
 
@@ -419,7 +419,7 @@ func (_c *Manager_GetClient_Call) RunAndReturn(run func() client.Client) *Manage
 	return _c
 }
 
-// GetConfig provides a mock function with given fields:
+// GetConfig provides a mock function with no fields
 func (_m *Manager) GetConfig() *rest.Config {
 	ret := _m.Called()
 
@@ -466,7 +466,7 @@ func (_c *Manager_GetConfig_Call) RunAndReturn(run func() *rest.Config) *Manager
 	return _c
 }
 
-// GetControllerOptions provides a mock function with given fields:
+// GetControllerOptions provides a mock function with no fields
 func (_m *Manager) GetControllerOptions() config.Controller {
 	ret := _m.Called()
 
@@ -559,7 +559,7 @@ func (_c *Manager_GetEventRecorderFor_Call) RunAndReturn(run func(string) record
 	return _c
 }
 
-// GetFieldIndexer provides a mock function with given fields:
+// GetFieldIndexer provides a mock function with no fields
 func (_m *Manager) GetFieldIndexer() client.FieldIndexer {
 	ret := _m.Called()
 
@@ -606,7 +606,7 @@ func (_c *Manager_GetFieldIndexer_Call) RunAndReturn(run func() client.FieldInde
 	return _c
 }
 
-// GetHTTPClient provides a mock function with given fields:
+// GetHTTPClient provides a mock function with no fields
 func (_m *Manager) GetHTTPClient() *http.Client {
 	ret := _m.Called()
 
@@ -653,7 +653,7 @@ func (_c *Manager_GetHTTPClient_Call) RunAndReturn(run func() *http.Client) *Man
 	return _c
 }
 
-// GetLogger provides a mock function with given fields:
+// GetLogger provides a mock function with no fields
 func (_m *Manager) GetLogger() logr.Logger {
 	ret := _m.Called()
 
@@ -698,7 +698,7 @@ func (_c *Manager_GetLogger_Call) RunAndReturn(run func() logr.Logger) *Manager_
 	return _c
 }
 
-// GetRESTMapper provides a mock function with given fields:
+// GetRESTMapper provides a mock function with no fields
 func (_m *Manager) GetRESTMapper() meta.RESTMapper {
 	ret := _m.Called()
 
@@ -745,7 +745,7 @@ func (_c *Manager_GetRESTMapper_Call) RunAndReturn(run func() meta.RESTMapper) *
 	return _c
 }
 
-// GetScheme provides a mock function with given fields:
+// GetScheme provides a mock function with no fields
 func (_m *Manager) GetScheme() *runtime.Scheme {
 	ret := _m.Called()
 
@@ -792,7 +792,7 @@ func (_c *Manager_GetScheme_Call) RunAndReturn(run func() *runtime.Scheme) *Mana
 	return _c
 }
 
-// GetWebhookServer provides a mock function with given fields:
+// GetWebhookServer provides a mock function with no fields
 func (_m *Manager) GetWebhookServer() webhook.Server {
 	ret := _m.Called()
 
