@@ -1,17 +1,29 @@
 package otelcgen
 
 import (
-	"github.com/stretchr/testify/require"
-	"gotest.tools/v3/assert"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewConfig(t *testing.T) {
-	cfg, err := NewConfig(WithProtocols())
-	require.NoError(t, err)
+	t.Run("with statsd protocol only", func(t *testing.T) {
 
-	c, err := cfg.Marshal()
-	require.NoError(t, err)
+		cfg, err := NewConfig(WithProtocols("statsd"))
+		require.NoError(t, err)
+		c, err := cfg.Marshal()
+		require.NoError(t, err)
 
-	assert.Equal(t, "{}", string(c))
+		expectedOutput, err := os.ReadFile(filepath.Join("testdata", "receivers_statsd.yaml"))
+		require.NoError(t, err)
+
+		expected := strings.ReplaceAll(strings.ReplaceAll(string(expectedOutput), "\n", ""), "\r", "")
+		actual := strings.ReplaceAll(strings.ReplaceAll(string(c), "\n", ""), "\r", "")
+		assert.Equal(t, expected, actual)
+	})
+
 }
