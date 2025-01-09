@@ -57,9 +57,10 @@ operator:
 
 webhook:
   hostNetwork: false
-  serverPort: 8443
-  metricsPort: 8383
-  healthProbePort: 10080
+  ports:
+    server: 8443
+    metrics: 8383
+    healthProbe: 10080
   nodeSelector: {}
   tolerations: []
   labels: {}

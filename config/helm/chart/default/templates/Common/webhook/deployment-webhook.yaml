@@ -87,18 +87,12 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            {{- if .Values.webhook.serverPort }}
             - name: WEBHOOK_PORT
-              value: "{{ .Values.webhook.serverPort }}"
-            {{- end }}
-            {{- if .Values.webhook.healthProbePort }}
+              value: "{{ .Values.webhook.ports.server | default "8443" }}"
             - name: HEALTH_PROBE_BIND_ADDRESS
-              value: ":{{ .Values.webhook.healthProbePort }}"
-            {{- end }}
-            {{- if .Values.webhook.metricsPort }}
+              value: ":{{ .Values.webhook.ports.healthProbe | default "10080" }}"
             - name: METRICS_BIND_ADDRESS
-              value: ":{{ .Values.webhook.metricsPort }}"
-            {{- end }}
+              value: ":{{ .Values.webhook.ports.metrics | default "8383" }}"
           envFrom:
             - configMapRef:
                 name: install-config
@@ -118,11 +112,11 @@ spec:
             periodSeconds: 10
           ports:
             - name: server-port
-              containerPort: {{ .Values.webhook.serverPort | default 8443 }}
+              containerPort: {{ .Values.webhook.ports.server | default 8443 }}
             - name: livez
-              containerPort: {{ .Values.webhook.healthProbePort | default 10080 }}
+              containerPort: {{ .Values.webhook.ports.healthProbe | default 10080 }}
             - name: metrics
-              containerPort: {{ .Values.webhook.metricsPort | default 8383 }}
+              containerPort: {{ .Values.webhook.ports.metrics | default 8383 }}
           resources:
             requests:
               {{- toYaml (.Values.webhook).requests | nindent 14 }}

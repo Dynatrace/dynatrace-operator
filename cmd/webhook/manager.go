@@ -68,12 +68,14 @@ func (provider Provider) createOptions(namespace string) ctrl.Options {
 	}
 
 	metricsBindAddress := defaultMetricsBindAddress
+
 	metricsBindAddressEnv := os.Getenv("METRICS_BIND_ADDRESS")
 	if metricsBindAddressEnv != "" {
 		metricsBindAddress = metricsBindAddressEnv
 	}
 
 	healthProbeBindAddress := defaultHealthProbeBindAddress
+
 	healthProbeBindAddressEnv := os.Getenv("HEALTH_PROBE_BIND_ADDRESS")
 	if healthProbeBindAddressEnv != "" {
 		healthProbeBindAddress = healthProbeBindAddressEnv
