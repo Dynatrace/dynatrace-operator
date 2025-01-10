@@ -118,7 +118,7 @@ func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, erro
 		return nil, err
 	}
 
-	tenantUUID, err := r.dk.TenantUUIDFromConnectionInfoStatus()
+	tenantUUID, err := r.dk.TenantUUID()
 	if err != nil {
 		conditions.SetSecretGenFailed(r.dk.Conditions(), lmcConditionType, err)
 
