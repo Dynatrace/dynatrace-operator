@@ -75,7 +75,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	// because the 2 injection type we have share the label that the webhook is listening to, we can only clean that label up if both are disabled
 	// but we should only clean-up the labels after everything else is cleaned up because the clean-up for the secrets depend on the label still being there
 	// but we have to do the mapping before everything when its necessary
-	if !r.dk.NeedAppInjection() && !r.dk.MetadataEnrichmentEnabled() {
+	if !r.dk.OneAgent().IsAppInjectionNeeded() && !r.dk.MetadataEnrichmentEnabled() {
 		defer r.unmapDynakube(ctx)
 	} else {
 		dkMapper := r.createDynakubeMapper(ctx)
@@ -145,7 +145,7 @@ func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
 		}
 	}
 
-	if !r.dk.NeedAppInjection() {
+	if !r.dk.OneAgent().IsAppInjectionNeeded() {
 		r.cleanupOneAgentInjection(ctx)
 
 		return nil
@@ -160,7 +160,7 @@ func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
 		return err
 	}
 
-	if r.dk.ApplicationMonitoringMode() {
+	if r.dk.OneAgent().IsApplicationMonitoringMode() {
 		r.dk.Status.SetPhase(status.Running)
 	}
 

@@ -6,7 +6,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/eec"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/otel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/tls"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -52,11 +51,6 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	err = eec.NewReconciler(r.client, r.apiReader, r.dk).Reconcile(ctx)
-	if err != nil {
-		return err
-	}
-
-	err = otel.NewReconciler(r.client, r.apiReader, r.dk).Reconcile(ctx)
 	if err != nil {
 		return err
 	}

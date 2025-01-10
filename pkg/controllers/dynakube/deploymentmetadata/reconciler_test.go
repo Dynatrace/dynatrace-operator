@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -71,8 +72,8 @@ func TestReconcile(t *testing.T) {
 	t.Run(`create configmap with 1 key, if only oneagent is needed`, func(t *testing.T) {
 		dk := createTestDynakube(
 			&dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
 			})
 
@@ -112,8 +113,8 @@ func TestReconcile(t *testing.T) {
 	t.Run(`create configmap with 2 keys, if both oneagent and activegate is needed`, func(t *testing.T) {
 		dk := createTestDynakube(
 			&dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{

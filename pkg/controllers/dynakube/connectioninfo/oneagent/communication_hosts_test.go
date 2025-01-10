@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,8 +18,8 @@ func TestGetCommunicationHosts(t *testing.T) {
 			Name:      testName,
 		},
 		Status: dynakube.DynaKubeStatus{
-			OneAgent: dynakube.OneAgentStatus{
-				ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
+			OneAgent: oneagent.Status{
+				ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
 					ConnectionInfo: communication.ConnectionInfo{},
 				},
 			},
@@ -39,7 +40,7 @@ func TestGetCommunicationHosts(t *testing.T) {
 	})
 
 	t.Run(`communication-hosts field found`, func(t *testing.T) {
-		dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynakube.CommunicationHostStatus{
+		dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []oneagent.CommunicationHostStatus{
 			{
 				Protocol: "protocol",
 				Host:     "host",

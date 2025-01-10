@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -31,7 +32,7 @@ func (updater codeModulesUpdater) Name() string {
 }
 
 func (updater codeModulesUpdater) IsEnabled() bool {
-	if updater.dk.NeedAppInjection() {
+	if updater.dk.OneAgent().IsAppInjectionNeeded() {
 		return true
 	}
 
@@ -46,7 +47,7 @@ func (updater *codeModulesUpdater) Target() *status.VersionStatus {
 }
 
 func (updater codeModulesUpdater) CustomImage() string {
-	customImage := updater.dk.CustomCodeModulesImage()
+	customImage := updater.dk.OneAgent().GetCustomCodeModulesImage()
 	if customImage != "" {
 		setVerificationSkippedReasonCondition(updater.dk.Conditions(), cmConditionType)
 	}
@@ -55,7 +56,7 @@ func (updater codeModulesUpdater) CustomImage() string {
 }
 
 func (updater codeModulesUpdater) CustomVersion() string {
-	return updater.dk.CustomCodeModulesVersion()
+	return updater.dk.OneAgent().GetCustomCodeModulesVersion()
 }
 
 func (updater codeModulesUpdater) IsAutoUpdateEnabled() bool {
@@ -87,7 +88,7 @@ func (updater *codeModulesUpdater) CheckForDowngrade(_ string) (bool, error) {
 func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error {
 	customVersion := updater.CustomVersion()
 	if customVersion != "" {
-		updater.dk.Status.CodeModules = dynakube.CodeModulesStatus{
+		updater.dk.Status.CodeModules = oneagent.CodeModulesStatus{
 			VersionStatus: status.VersionStatus{
 				Version: customVersion,
 			},
@@ -106,7 +107,7 @@ func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error 
 		return err
 	}
 
-	updater.dk.Status.CodeModules = dynakube.CodeModulesStatus{
+	updater.dk.Status.CodeModules = oneagent.CodeModulesStatus{
 		VersionStatus: status.VersionStatus{
 			Version: latestAgentVersionUnixPaas,
 		},

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -46,13 +47,13 @@ func TestFormatKeyValue(t *testing.T) {
 
 func TestGetOneAgentDeploymentType(t *testing.T) {
 	tests := []struct {
-		oneAgentSpec           dynakube.OneAgentSpec
+		oneAgentSpec           oneagent.Spec
 		expectedDeploymentType string
 	}{
-		{dynakube.OneAgentSpec{HostMonitoring: &dynakube.HostInjectSpec{}}, HostMonitoringDeploymentType},
-		{dynakube.OneAgentSpec{ClassicFullStack: &dynakube.HostInjectSpec{}}, ClassicFullStackDeploymentType},
-		{dynakube.OneAgentSpec{CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{}}, CloudNativeDeploymentType},
-		{dynakube.OneAgentSpec{ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{}}, ApplicationMonitoringDeploymentType},
+		{oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{}}, HostMonitoringDeploymentType},
+		{oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{}}, ClassicFullStackDeploymentType},
+		{oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}}, CloudNativeDeploymentType},
+		{oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}}, ApplicationMonitoringDeploymentType},
 	}
 
 	for _, test := range tests {

@@ -3,6 +3,7 @@ package daemonset
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -59,7 +60,7 @@ type classicFullStack struct {
 
 type builder struct {
 	dk             *dynakube.DynaKube
-	hostInjectSpec *dynakube.HostInjectSpec
+	hostInjectSpec *oneagent.HostInjectSpec
 	clusterID      string
 	deploymentType string
 }
@@ -107,7 +108,7 @@ func (hm *hostMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		return nil, err
 	}
 
-	daemonSet.Name = hm.dk.OneAgentDaemonsetName()
+	daemonSet.Name = hm.dk.OneAgent().GetDaemonsetName()
 
 	if len(daemonSet.Spec.Template.Spec.Containers) > 0 {
 		hm.appendInfraMonEnvVars(daemonSet)
@@ -122,7 +123,7 @@ func (classic *classicFullStack) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		return nil, err
 	}
 
-	result.Name = classic.dk.OneAgentDaemonsetName()
+	result.Name = classic.dk.OneAgent().GetDaemonsetName()
 
 	return result, nil
 }
@@ -135,7 +136,7 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		return nil, err
 	}
 
-	versionLabelValue := dk.OneAgentVersion()
+	versionLabelValue := dk.OneAgent().GetVersion()
 
 	appLabels := labels.NewAppLabels(labels.OneAgentComponentLabel, dk.Name,
 		b.deploymentType, versionLabelValue)
@@ -224,11 +225,11 @@ func (b *builder) podSpec() (corev1.PodSpec, error) {
 		TerminationGracePeriodSeconds: ptr.To(defaultTerminationGracePeriod),
 	}
 
-	if b.dk.NeedsOneAgentReadinessProbe() {
+	if b.dk.OneAgent().IsReadinessProbeNeeded() {
 		podSpec.Containers[0].ReadinessProbe = b.getReadinessProbe()
 	}
 
-	if b.dk.NeedsOneAgentLivenessProbe() {
+	if b.dk.OneAgent().IsLivenessProbeNeeded() {
 		podSpec.Containers[0].LivenessProbe = b.getDefaultProbeFromStatus()
 	}
 
@@ -240,7 +241,7 @@ func (b *builder) immutableOneAgentImage() string {
 		return ""
 	}
 
-	return b.dk.OneAgentImage()
+	return b.dk.OneAgent().GetImage()
 }
 
 func (b *builder) tolerations() []corev1.Toleration {
@@ -315,7 +316,7 @@ func (b *builder) imagePullSecrets() []corev1.LocalObjectReference {
 
 func (b *builder) securityContext() *corev1.SecurityContext {
 	var securityContext corev1.SecurityContext
-	if b.dk != nil && b.dk.UseReadOnlyOneAgents() {
+	if b.dk != nil && b.dk.OneAgent().IsReadOnlyOneAgentsMode() {
 		securityContext.RunAsNonRoot = ptr.To(true)
 		securityContext.RunAsUser = ptr.To(int64(1000))
 		securityContext.RunAsGroup = ptr.To(int64(1000))
@@ -324,26 +325,26 @@ func (b *builder) securityContext() *corev1.SecurityContext {
 		securityContext.ReadOnlyRootFilesystem = ptr.To(false)
 	}
 
-	if b.dk != nil && b.dk.NeedsOneAgentPrivileged() {
+	if b.dk != nil && b.dk.OneAgent().IsPrivilegedNeeded() {
 		securityContext.Privileged = ptr.To(true)
 	} else {
 		securityContext.Capabilities = defaultSecurityContextCapabilities()
 
 		if b.dk != nil {
 			switch {
-			case b.dk.HostMonitoringMode() && b.dk.Spec.OneAgent.HostMonitoring.SecCompProfile != "":
+			case b.dk.OneAgent().IsHostMonitoringMode() && b.dk.Spec.OneAgent.HostMonitoring.SecCompProfile != "":
 				secCompName := b.dk.Spec.OneAgent.HostMonitoring.SecCompProfile
 				securityContext.SeccompProfile = &corev1.SeccompProfile{
 					Type:             corev1.SeccompProfileTypeLocalhost,
 					LocalhostProfile: &secCompName,
 				}
-			case b.dk.ClassicFullStackMode() && b.dk.Spec.OneAgent.ClassicFullStack.SecCompProfile != "":
+			case b.dk.OneAgent().IsClassicFullStackMode() && b.dk.Spec.OneAgent.ClassicFullStack.SecCompProfile != "":
 				secCompName := b.dk.Spec.OneAgent.ClassicFullStack.SecCompProfile
 				securityContext.SeccompProfile = &corev1.SeccompProfile{
 					Type:             corev1.SeccompProfileTypeLocalhost,
 					LocalhostProfile: &secCompName,
 				}
-			case b.dk.CloudNativeFullstackMode() && b.dk.Spec.OneAgent.CloudNativeFullStack.SecCompProfile != "":
+			case b.dk.OneAgent().IsCloudNativeFullstackMode() && b.dk.Spec.OneAgent.CloudNativeFullStack.SecCompProfile != "":
 				secCompName := b.dk.Spec.OneAgent.CloudNativeFullStack.SecCompProfile
 				securityContext.SeccompProfile = &corev1.SeccompProfile{
 					Type:             corev1.SeccompProfileTypeLocalhost,
@@ -411,12 +412,12 @@ func (b *builder) getReadinessProbe() *corev1.Probe {
 // if the version is not set, ie.: unknown, we  consider the OneAgent to support `ReadOnlyRootFilesystem`.
 func (b *builder) isRootFsReadonly() bool {
 	if b.dk != nil &&
-		b.dk.UseReadOnlyOneAgents() &&
-		b.dk.OneAgentVersion() != "" &&
-		b.dk.OneAgentVersion() != string(status.CustomImageVersionSource) {
-		agentSemver, err := dtversion.ToSemver(b.dk.OneAgentVersion())
+		b.dk.OneAgent().IsReadOnlyOneAgentsMode() &&
+		b.dk.OneAgent().GetVersion() != "" &&
+		b.dk.OneAgent().GetVersion() != string(status.CustomImageVersionSource) {
+		agentSemver, err := dtversion.ToSemver(b.dk.OneAgent().GetVersion())
 		if err != nil {
-			log.Debug("Unable to determine OneAgent version to enable readonly pod filesystem, skipping", "version", b.dk.OneAgentVersion(), "error", err.Error())
+			log.Debug("Unable to determine OneAgent version to enable readonly pod filesystem, skipping", "version", b.dk.OneAgent().GetVersion(), "error", err.Error())
 
 			return true
 		}

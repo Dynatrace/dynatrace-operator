@@ -3,7 +3,6 @@ package validation
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -11,14 +10,10 @@ import (
 )
 
 const (
-	errorUsingTenantImageAsCustom = `Custom %s image must not reference the Dynatrace Environment directly.`
-
 	errorUnparsableImageRef = `Custom %s image can't be parsed, make sure it's a valid image reference.`
 )
 
 func imageFieldHasTenantImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	tenantHost := dk.ApiUrlHost()
-
 	type imageField struct {
 		value   string
 		section string
@@ -31,14 +26,14 @@ func imageFieldHasTenantImage(_ context.Context, _ *Validator, dk *dynakube.Dyna
 		},
 		{
 			section: "OneAgent",
-			value:   dk.CustomOneAgentImage(),
+			value:   dk.OneAgent().GetCustomImage(),
 		},
 	}
 
 	messages := []string{}
 
 	for _, field := range imageFields {
-		message := checkImageField(field.value, field.section, tenantHost)
+		message := checkImageField(field.value, field.section)
 		if message != "" {
 			messages = append(messages, message)
 		}
@@ -47,17 +42,11 @@ func imageFieldHasTenantImage(_ context.Context, _ *Validator, dk *dynakube.Dyna
 	return strings.Join(messages, ";")
 }
 
-func checkImageField(image, section, disallowedHost string) (errorMsg string) {
+func checkImageField(image, section string) (errorMsg string) {
 	if image != "" {
-		ref, err := name.ParseReference(image)
+		_, err := name.ParseReference(image)
 		if err != nil {
 			return fmt.Sprintf(errorUnparsableImageRef, section)
-		}
-
-		refUrl, _ := url.Parse(ref.Name())
-
-		if refUrl.Host == disallowedHost {
-			return fmt.Sprintf(errorUsingTenantImageAsCustom, section)
 		}
 	}
 
