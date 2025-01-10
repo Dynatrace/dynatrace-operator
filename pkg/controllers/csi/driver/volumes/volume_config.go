@@ -36,18 +36,13 @@ type VolumeConfig struct {
 
 // Transforms the NodePublishVolumeRequest into a VolumeConfig
 func ParseNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*VolumeConfig, error) {
+	volumeInfo, err := newVolumeInfo(req)
+	if err != nil {
+		return nil, err
+	}
+
 	if req.GetVolumeCapability() == nil {
 		return nil, status.Error(codes.InvalidArgument, "Volume capability missing in request")
-	}
-
-	volID := req.GetVolumeId()
-	if volID == "" {
-		return nil, status.Error(codes.InvalidArgument, "Volume ID missing in request")
-	}
-
-	targetPath := req.GetTargetPath()
-	if targetPath == "" {
-		return nil, status.Error(codes.InvalidArgument, "Target path missing in request")
 	}
 
 	if req.GetVolumeCapability().GetBlock() != nil {
@@ -94,10 +89,7 @@ func ParseNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*VolumeCo
 	}
 
 	return &VolumeConfig{
-		VolumeInfo: VolumeInfo{
-			VolumeID:   volID,
-			TargetPath: targetPath,
-		},
+		VolumeInfo:   *volumeInfo,
 		PodName:      podName,
 		PodNamespace: podNamespace,
 		Mode:         mode,
@@ -108,6 +100,15 @@ func ParseNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*VolumeCo
 
 // Transforms the NodeUnpublishVolumeRequest into a VolumeInfo
 func ParseNodeUnpublishVolumeRequest(req *csi.NodeUnpublishVolumeRequest) (*VolumeInfo, error) {
+	return newVolumeInfo(req)
+}
+
+type baseRequest interface {
+	GetVolumeId() string
+	GetTargetPath() string
+}
+
+func newVolumeInfo(req baseRequest) (*VolumeInfo, error) {
 	volumeID := req.GetVolumeId()
 	if volumeID == "" {
 		return nil, status.Error(codes.InvalidArgument, "Volume ID missing in request")
