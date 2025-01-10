@@ -217,6 +217,26 @@ func (svr *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
 
 		_ = svr.fs.RemoveAll(appMountDir) // try to cleanup fully, but lets not spam the logs with errors
 	}
+
+	podInfoSymlinkPath := svr.findPodInfoSymlink(volumeInfo) // cleaning up the pod-info symlink here is far more efficient instead of having to walk the whole fs during cleanup
+	if podInfoSymlinkPath != "" {
+		_ = svr.fs.Remove(podInfoSymlinkPath)
+	}
+}
+
+func (svr *Server) findPodInfoSymlink(volumeInfo csivolumes.VolumeInfo) string {
+	podInfoPath := svr.path.OverlayVarPodInfo(volumeInfo.VolumeID)
+
+	podInfoBytes, err := svr.fs.ReadFile(svr.path.OverlayVarPodInfo(volumeInfo.VolumeID))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return ""
+		}
+
+		log.Error(err, "failed to read pod-info file", "path", podInfoPath)
+	}
+
+	return string(podInfoBytes)
 }
 
 func (svr *Server) NodeStageVolume(context.Context, *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {

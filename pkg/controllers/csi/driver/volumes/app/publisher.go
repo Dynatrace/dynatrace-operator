@@ -171,6 +171,15 @@ func (pub *Publisher) mountCodeModule(volumeCfg *csivolumes.VolumeConfig) error 
 		return err
 	}
 
+	err = pub.addPodInfoSymlink(volumeCfg)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (pub *Publisher) addPodInfoSymlink(volumeCfg *csivolumes.VolumeConfig) error {
 	appMountPodInfoDir := pub.path.AppMountPodInfoDir(volumeCfg.DynakubeName, volumeCfg.PodNamespace, volumeCfg.PodName)
 	if err := pub.fs.MkdirAll(appMountPodInfoDir, os.ModePerm); err != nil {
 		return err
@@ -182,7 +191,7 @@ func (pub *Publisher) mountCodeModule(volumeCfg *csivolumes.VolumeConfig) error 
 		return err
 	}
 
-	err = symlink.Create(pub.fs.Fs, targetDir, appMountPodInfoDir)
+	err := symlink.Create(pub.fs.Fs, targetDir, appMountPodInfoDir)
 	if err != nil {
 		return err
 	}
@@ -193,43 +202,69 @@ func (pub *Publisher) mountCodeModule(volumeCfg *csivolumes.VolumeConfig) error 
 func (pub *Publisher) prepareUpperDir(volumeCfg *csivolumes.VolumeConfig) (string, error) {
 	upperDir := pub.path.AppMountVarDir(volumeCfg.VolumeID)
 
-	err := pub.fs.MkdirAll(upperDir, os.ModePerm)
+	err := pub.prepareAgentConfigInUpperDir(volumeCfg)
 	if err != nil {
-		return "", errors.WithMessagef(err, "failed to create overlay upper directory structure, path: %s", upperDir)
+		return "", err
 	}
 
+	err = pub.preparePodInfoUpperDir(volumeCfg)
+	if err != nil {
+		return "", err
+	}
+
+	return upperDir, nil
+}
+
+func (pub *Publisher) prepareAgentConfigInUpperDir(volumeCfg *csivolumes.VolumeConfig) error {
 	destAgentConfPath := pub.path.OverlayVarRuxitAgentProcConf(volumeCfg.VolumeID)
 
-	err = pub.fs.MkdirAll(filepath.Dir(destAgentConfPath), os.ModePerm)
+	err := pub.fs.MkdirAll(filepath.Dir(destAgentConfPath), os.ModePerm)
 	if err != nil {
-		return "", errors.WithMessagef(err, "failed to create overlay upper directory agent config directory structure, path: %s", upperDir)
+		return errors.WithMessagef(err, "failed to create overlay upper directory agent config directory structure, path: %s", destAgentConfPath)
 	}
 
 	srcAgentConfPath := pub.path.AgentSharedRuxitAgentProcConf(volumeCfg.DynakubeName)
 	srcFile, err := pub.fs.Open(srcAgentConfPath)
 
 	if err != nil {
-		return "", errors.WithMessagef(err, "failed to open ruxitagentproc.conf file, path: %s", srcAgentConfPath)
+		return errors.WithMessagef(err, "failed to open ruxitagentproc.conf file, path: %s", srcAgentConfPath)
 	}
 
 	defer func() { _ = srcFile.Close() }()
 
 	srcStat, err := srcFile.Stat()
 	if err != nil {
-		return "", errors.WithMessage(err, "failed to get source ruxitagentproc.conf file info")
+		return errors.WithMessage(err, "failed to get source ruxitagentproc.conf file info")
 	}
 
 	destFile, err := pub.fs.OpenFile(destAgentConfPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, srcStat.Mode())
 	if err != nil {
-		return "", errors.WithMessagef(err, "failed to open destination ruxitagentproc.conf file, path: %s", destAgentConfPath)
+		return errors.WithMessagef(err, "failed to open destination ruxitagentproc.conf file, path: %s", destAgentConfPath)
 	}
 
 	defer func() { _ = destFile.Close() }()
 
 	_, err = io.Copy(destFile, srcFile)
 	if err != nil {
-		return "", errors.WithMessagef(err, "failed to copy ruxitagentproc.conf file to overlay, from->to: %s -> %s", srcAgentConfPath, destAgentConfPath)
+		return errors.WithMessagef(err, "failed to copy ruxitagentproc.conf file to overlay, from->to: %s -> %s", srcAgentConfPath, destAgentConfPath)
 	}
 
-	return upperDir, nil
+	return err
+}
+
+func (pub *Publisher) preparePodInfoUpperDir(volumeCfg *csivolumes.VolumeConfig) error {
+	content := pub.path.AppMountPodInfoDir(volumeCfg.DynakubeName, volumeCfg.PodNamespace, volumeCfg.PodName)
+	destPath := pub.path.OverlayVarPodInfo(volumeCfg.VolumeID)
+
+	destFile, err := pub.fs.OpenFile(destPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to open destination pod-info file, path: %s", destPath)
+	}
+
+	_, err = destFile.WriteString(content)
+	if err != nil {
+		return errors.WithMessagef(err, "failed write into pod-info file, path: %s", destPath)
+	}
+
+	return nil
 }

@@ -51,6 +51,10 @@ func (pr PathResolver) OverlayVarRuxitAgentProcConf(volumeID string) string {
 	return filepath.Join(pr.AppMountVarDir(volumeID), processmoduleconfig.RuxitAgentProcPath)
 }
 
+func (pr PathResolver) OverlayVarPodInfo(volumeID string) string {
+	return filepath.Join(pr.AppMountVarDir(volumeID), "pod-info")
+}
+
 // AppMountsBaseDir replaces the AgentRunDir, the base directory where all the volumes for the app-mounts are stored
 func (pr PathResolver) AppMountsBaseDir() string {
 	return filepath.Join(pr.RootDir, dtcsi.SharedAppMountsDir)
