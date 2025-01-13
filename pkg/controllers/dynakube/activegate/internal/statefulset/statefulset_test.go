@@ -1,6 +1,7 @@
 package statefulset
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
 	"reflect"
 	"strconv"
 	"testing"
@@ -582,7 +583,7 @@ func TestPVC(t *testing.T) {
 			StorageClassName: ptr.To("test"),
 			VolumeName:       "foo-pv",
 		}
-		dk.Spec.TelemetryService = &dynakube.TelemetryServiceSpec{}
+		dk.Spec.TelemetryService = &telemetryservice.Spec{}
 		dk.Spec.ActiveGate.PersistentVolumeClaim = &myPVCspec
 
 		test(dk, multiCapability, myPVCspec)
@@ -596,7 +597,7 @@ func TestPVC(t *testing.T) {
 	})
 	t.Run("use default PVC with TelemetryService", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.TelemetryService = &dynakube.TelemetryServiceSpec{}
+		dk.Spec.TelemetryService = &telemetryservice.Spec{}
 		multiCapability := capability.NewMultiCapability(&dk)
 
 		test(dk, multiCapability, defaultPVCSpec())

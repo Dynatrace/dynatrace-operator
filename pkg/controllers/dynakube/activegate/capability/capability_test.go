@@ -1,6 +1,7 @@
 package capability
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -39,7 +40,7 @@ func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtens
 		extensionsSpec = nil
 	}
 
-	telemetryServiceSpec := &dynakube.TelemetryServiceSpec{}
+	telemetryServiceSpec := &telemetryservice.Spec{}
 	if !enableTelemetryService {
 		telemetryServiceSpec = nil
 	}

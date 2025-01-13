@@ -2,6 +2,7 @@ package validation
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
 	"slices"
 	"strings"
 
@@ -36,7 +37,7 @@ func unknownTelemetryServiceProtocols(_ context.Context, _ *Validator, dk *dynak
 	var unknownProtocols []string
 
 	for _, protocol := range dk.TelemetryServiceProtocols() {
-		if !slices.Contains(dynakube.TelemetryServiceKnownProtocols(), protocol) {
+		if !slices.Contains(telemetryservice.KnownProtocols(), protocol) {
 			unknownProtocols = append(unknownProtocols, string(protocol))
 		}
 	}
@@ -55,7 +56,7 @@ func duplicatedTelemetryServiceProtocols(_ context.Context, _ *Validator, dk *dy
 		return ""
 	}
 
-	protocolsOccurrences := map[dynakube.TelemetryServiceProtocol]int{}
+	protocolsOccurrences := map[telemetryservice.Protocol]int{}
 
 	for _, protocol := range dk.TelemetryServiceProtocols() {
 		if _, ok := protocolsOccurrences[protocol]; !ok {

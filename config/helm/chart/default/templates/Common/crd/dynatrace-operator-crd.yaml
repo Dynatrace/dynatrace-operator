@@ -6135,8 +6135,7 @@ spec:
                   Set to true if you want to skip certification validation checks.
                 type: boolean
               telemetryService:
-                description: |-
-                  When an (empty) TelemetryServiceSpec is provided, the OpenSignal related components (OpenSignal collector)
+                description: When a TelemetryServiceSpec is provided, the OTEL collector
                   is deployed by the operator.
                 properties:
                   protocols:

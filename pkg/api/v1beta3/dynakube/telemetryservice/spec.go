@@ -1,6 +1,8 @@
-package dynakube
+package telemetryservice
 
-type TelemetryServiceSpec struct {
+// +kubebuilder:object:generate=true
+
+type Spec struct {
 	// +kubebuilder:validation:Optional
 	ServiceName string `json:"serviceName,omitempty"`
 

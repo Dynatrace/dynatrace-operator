@@ -1,35 +1,19 @@
 package dynakube
 
-type TelemetryServiceProtocol string
+import "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
 
-const (
-	TelemetryServiceOtlpProtocol   TelemetryServiceProtocol = "otlp"
-	TelemetryServiceZipkinProtocol TelemetryServiceProtocol = "zipkin"
-	TelemetryServiceJaegerProtocol TelemetryServiceProtocol = "jaeger"
-	TelemetryServiceStatsdProtocol TelemetryServiceProtocol = "statsd"
-)
-
-func TelemetryServiceKnownProtocols() []TelemetryServiceProtocol {
-	return []TelemetryServiceProtocol{
-		TelemetryServiceOtlpProtocol,
-		TelemetryServiceZipkinProtocol,
-		TelemetryServiceJaegerProtocol,
-		TelemetryServiceStatsdProtocol,
-	}
-}
-
-func (dk *DynaKube) TelemetryServiceProtocols() []TelemetryServiceProtocol {
+func (dk *DynaKube) TelemetryServiceProtocols() []telemetryservice.Protocol {
 	if dk.Spec.TelemetryService == nil {
-		return []TelemetryServiceProtocol{}
+		return []telemetryservice.Protocol{}
 	}
 
 	if len(dk.Spec.TelemetryService.Protocols) == 0 {
-		return TelemetryServiceKnownProtocols()
+		return telemetryservice.KnownProtocols()
 	}
 
-	var protocols []TelemetryServiceProtocol
+	var protocols []telemetryservice.Protocol
 	for _, proto := range dk.Spec.TelemetryService.Protocols {
-		protocols = append(protocols, TelemetryServiceProtocol(proto))
+		protocols = append(protocols, telemetryservice.Protocol(proto))
 	}
 	return protocols
 }

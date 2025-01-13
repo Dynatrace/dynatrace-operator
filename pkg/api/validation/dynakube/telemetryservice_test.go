@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -13,7 +14,7 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					TelemetryService: &dynakube.TelemetryServiceSpec{
+					TelemetryService: &telemetryservice.Spec{
 						Protocols: nil,
 					},
 				},
@@ -26,7 +27,7 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					TelemetryService: &dynakube.TelemetryServiceSpec{
+					TelemetryService: &telemetryservice.Spec{
 						Protocols: []string{},
 					},
 				},
@@ -40,10 +41,10 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					TelemetryService: &dynakube.TelemetryServiceSpec{
+					TelemetryService: &telemetryservice.Spec{
 						Protocols: []string{
-							string(dynakube.TelemetryServiceZipkinProtocol),
-							string(dynakube.TelemetryServiceOtlpProtocol),
+							string(telemetryservice.ZipkinProtocol),
+							string(telemetryservice.OtlpProtocol),
 							"unknown",
 						},
 					},
@@ -58,10 +59,10 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					TelemetryService: &dynakube.TelemetryServiceSpec{
+					TelemetryService: &telemetryservice.Spec{
 						Protocols: []string{
-							string(dynakube.TelemetryServiceZipkinProtocol),
-							string(dynakube.TelemetryServiceOtlpProtocol),
+							string(telemetryservice.ZipkinProtocol),
+							string(telemetryservice.OtlpProtocol),
 							"unknown1",
 							"unknown2",
 						},
@@ -77,11 +78,11 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					TelemetryService: &dynakube.TelemetryServiceSpec{
+					TelemetryService: &telemetryservice.Spec{
 						Protocols: []string{
-							string(dynakube.TelemetryServiceZipkinProtocol),
-							string(dynakube.TelemetryServiceOtlpProtocol),
-							string(dynakube.TelemetryServiceOtlpProtocol),
+							string(telemetryservice.ZipkinProtocol),
+							string(telemetryservice.OtlpProtocol),
+							string(telemetryservice.OtlpProtocol),
 						},
 					},
 				},
@@ -95,13 +96,13 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					TelemetryService: &dynakube.TelemetryServiceSpec{
+					TelemetryService: &telemetryservice.Spec{
 						Protocols: []string{
-							string(dynakube.TelemetryServiceZipkinProtocol),
-							string(dynakube.TelemetryServiceZipkinProtocol),
-							string(dynakube.TelemetryServiceOtlpProtocol),
-							string(dynakube.TelemetryServiceOtlpProtocol),
-							string(dynakube.TelemetryServiceJaegerProtocol),
+							string(telemetryservice.ZipkinProtocol),
+							string(telemetryservice.ZipkinProtocol),
+							string(telemetryservice.OtlpProtocol),
+							string(telemetryservice.OtlpProtocol),
+							string(telemetryservice.JaegerProtocol),
 						},
 					},
 				},
@@ -114,7 +115,7 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:           testApiUrl,
-					TelemetryService: &dynakube.TelemetryServiceSpec{},
+					TelemetryService: &telemetryservice.Spec{},
 				},
 			})
 	})
