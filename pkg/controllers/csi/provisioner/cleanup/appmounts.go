@@ -1,6 +1,6 @@
 package cleanup
 
-func (c Cleaner) removeDeprecatedMounts(fsState fsState) {
+func (c *Cleaner) removeDeprecatedMounts(fsState fsState) {
 	stillMountedCounter := 0
 
 	for _, depDir := range fsState.deprecatedDks {

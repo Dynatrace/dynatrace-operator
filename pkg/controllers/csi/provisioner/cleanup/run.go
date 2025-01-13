@@ -38,7 +38,7 @@ func New(fs afero.Afero, apiReader client.Reader, path metadata.PathResolver) *C
 }
 
 // Run will only execute the cleanup logic if enough time has passed from the previous run, to not overload the IO of the node
-func (c Cleaner) Run(ctx context.Context) error {
+func (c *Cleaner) Run(ctx context.Context) error {
 	tickerResetFunc := checkTicker()
 	if tickerResetFunc == nil {
 		return nil
@@ -49,13 +49,13 @@ func (c Cleaner) Run(ctx context.Context) error {
 }
 
 // InstantRun will always execute the cleanup logic ignoring the time passed from previous run
-func (c Cleaner) InstantRun(ctx context.Context) error {
+func (c *Cleaner) InstantRun(ctx context.Context) error {
 	defer resetTickerAfterDelete()
 
 	return c.run(ctx)
 }
 
-func (c Cleaner) run(ctx context.Context) error {
+func (c *Cleaner) run(ctx context.Context) error {
 	fsState, err := c.getStateOfFilesystem()
 	if err != nil {
 		return err
@@ -80,7 +80,7 @@ func (c Cleaner) run(ctx context.Context) error {
 	return nil
 }
 
-func (c Cleaner) getStateOfFilesystem() (fsState fsState, err error) { //nolint:revive
+func (c *Cleaner) getStateOfFilesystem() (fsState fsState, err error) { //nolint:revive
 	rootSubDirs, err := c.fs.ReadDir(c.path.RootDir)
 	if err != nil {
 		log.Info("failed to list the contents of the root directory of the csi-provisioner", "rootDir", c.path.RootDir)
@@ -129,7 +129,7 @@ func (c Cleaner) getStateOfFilesystem() (fsState fsState, err error) { //nolint:
 // It checks for the existence of the path and verifies if it is a symlink.
 // Trying to follow a path that is not a symlink will case an error.
 // Should be used for paths that are "maybe" symlinks, more expensive then its addRelevantPath.
-func (c Cleaner) safeAddRelevantPath(path string, relevantPaths map[string]bool) {
+func (c *Cleaner) safeAddRelevantPath(path string, relevantPaths map[string]bool) {
 	fInfo, err := c.fs.Stat(path)
 	if err != nil {
 		if !os.IsNotExist(err) {
@@ -151,7 +151,7 @@ func (c Cleaner) safeAddRelevantPath(path string, relevantPaths map[string]bool)
 // addRelevantPath follows the symlink that is provided in the `path` param and adds the actual path to the provided map
 // does no checking for the existence of the path and does not verify if it is a symlink.
 // Should be used for paths that are 100% to be symlinks to save on IO.
-func (c Cleaner) addRelevantPath(path string, relevantPaths map[string]bool) {
+func (c *Cleaner) addRelevantPath(path string, relevantPaths map[string]bool) {
 	linker, ok := c.fs.Fs.(afero.LinkReader)
 	if ok {
 		actualPath, err := linker.ReadlinkIfPossible(path)
@@ -162,5 +162,9 @@ func (c Cleaner) addRelevantPath(path string, relevantPaths map[string]bool) {
 		}
 
 		relevantPaths[actualPath] = true
+	} else { // only should happen during tests
+		log.Info("following symlinks not possible, unexpected behavior")
+
+		relevantPaths[path] = true
 	}
 }

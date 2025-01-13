@@ -8,7 +8,7 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-func (c Cleaner) removeUnusedBinaries(dks []dynakube.DynaKube, fsState fsState) error {
+func (c *Cleaner) removeUnusedBinaries(dks []dynakube.DynaKube, fsState fsState) error {
 	c.removeOldBinarySymlinks(dks, fsState)
 
 	keptBins, err := c.collectStillMountedBins()
@@ -22,6 +22,10 @@ func (c Cleaner) removeUnusedBinaries(dks []dynakube.DynaKube, fsState fsState) 
 		keptBins[k] = v
 	}
 
+	return c.removeOldSharedBinaries(keptBins)
+}
+
+func (c *Cleaner) removeOldSharedBinaries(keptBins map[string]bool) error {
 	sharedBins, err := c.fs.ReadDir(c.path.AgentSharedBinaryDirBase())
 	if err != nil {
 		log.Info("failed to list the shared binaries directory, skipping unused binaries cleanup")
@@ -48,7 +52,7 @@ func (c Cleaner) removeUnusedBinaries(dks []dynakube.DynaKube, fsState fsState) 
 	return nil
 }
 
-func (c Cleaner) removeOldBinarySymlinks(dks []dynakube.DynaKube, fsState fsState) {
+func (c *Cleaner) removeOldBinarySymlinks(dks []dynakube.DynaKube, fsState fsState) {
 	shouldBePresent := map[string]bool{}
 	for _, dk := range dks {
 		shouldBePresent[dk.Name] = true
@@ -64,14 +68,16 @@ func (c Cleaner) removeOldBinarySymlinks(dks []dynakube.DynaKube, fsState fsStat
 	}
 
 	for _, depDir := range fsState.deprecatedDks {
-		latest := c.path.LatestAgentBinaryForDynaKube(depDir)
-		if err := c.fs.Remove(latest); err == nil {
-			log.Info("removed old deprecated latest bin symlink", "path", latest)
+		if _, ok := shouldBePresent[depDir]; !ok { // for the rare case where dk.Name == tenantUUID
+			latest := c.path.LatestAgentBinaryForDynaKube(depDir)
+			if err := c.fs.Remove(latest); err == nil {
+				log.Info("removed old deprecated latest bin symlink", "path", latest)
+			}
 		}
 	}
 }
 
-func (c Cleaner) collectStillMountedBins() (map[string]bool, error) {
+func (c *Cleaner) collectStillMountedBins() (map[string]bool, error) {
 	mountedBins := map[string]bool{}
 
 	overlays, err := metadata.GetRelevantOverlayMounts(c.mounter, c.path.RootDir)
@@ -92,7 +98,7 @@ func (c Cleaner) collectStillMountedBins() (map[string]bool, error) {
 	return mountedBins, nil
 }
 
-func (c Cleaner) collectRelevantLatestBins(dks []dynakube.DynaKube) map[string]bool {
+func (c *Cleaner) collectRelevantLatestBins(dks []dynakube.DynaKube) map[string]bool {
 	latestBins := map[string]bool{}
 
 	for _, dk := range dks {

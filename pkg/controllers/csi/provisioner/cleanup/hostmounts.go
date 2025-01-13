@@ -6,15 +6,31 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"golang.org/x/exp/maps"
+	"k8s.io/mount-utils"
 )
 
-func (c Cleaner) removeHostMounts(dks []dynakube.DynaKube, fsState fsState) {
+func (c *Cleaner) isMountPoint(file string) (bool, error) {
+	fakeMounter, ok := c.mounter.(*mount.FakeMounter)
+	if ok {
+		// you can't use the fake mounter IsLikelyNotMountPoint, as it will still use the os package
+		err, ok := fakeMounter.MountCheckErrors[file]
+		if ok && err == nil {
+			return true, nil
+		} else if !ok {
+			return false, nil
+		}
+	}
+
+	return c.mounter.IsMountPoint(file)
+}
+
+func (c *Cleaner) removeHostMounts(dks []dynakube.DynaKube, fsState fsState) {
 	relevantHostDirs := c.collectRelevantHostDirs(dks)
 
 	for _, hostDk := range fsState.hostDks {
 		hostDir := c.path.OsAgentDir(hostDk)
 
-		isMountPoint, err := c.mounter.IsMountPoint(hostDir)
+		isMountPoint, err := c.isMountPoint(hostDir)
 		if err == nil && !isMountPoint && !relevantHostDirs[hostDir] {
 			err := c.fs.RemoveAll(hostDir)
 			if err == nil {
@@ -24,7 +40,7 @@ func (c Cleaner) removeHostMounts(dks []dynakube.DynaKube, fsState fsState) {
 	}
 }
 
-func (c Cleaner) collectRelevantHostDirs(dks []dynakube.DynaKube) map[string]bool {
+func (c *Cleaner) collectRelevantHostDirs(dks []dynakube.DynaKube) map[string]bool {
 	hostDirs := map[string]bool{}
 
 	for _, dk := range dks {

@@ -81,3 +81,10 @@ func TestMigrateAppMounts(t *testing.T) {
 	// however the afero.MemMapFs does not support symlinking.
 	t.SkipNow()
 }
+
+func TestMigrateHostMounts(t *testing.T) {
+	// Unfortunately, this is not unit-testable.
+	// Its output would be a bunch of symlinks,
+	// however the afero.MemMapFs does not support symlinking.
+	t.SkipNow()
+}
