@@ -56,7 +56,7 @@ func (c *Cleaner) InstantRun(ctx context.Context) error {
 }
 
 func (c *Cleaner) run(ctx context.Context) error {
-	fsState, err := c.getStateOfFilesystem()
+	fsState, err := c.getFilesystemState()
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func (c *Cleaner) run(ctx context.Context) error {
 	return nil
 }
 
-func (c *Cleaner) getStateOfFilesystem() (fsState fsState, err error) { //nolint:revive
+func (c *Cleaner) getFilesystemState() (fsState fsState, err error) { //nolint:revive
 	rootSubDirs, err := c.fs.ReadDir(c.path.RootDir)
 	if err != nil {
 		log.Info("failed to list the contents of the root directory of the csi-provisioner", "rootDir", c.path.RootDir)

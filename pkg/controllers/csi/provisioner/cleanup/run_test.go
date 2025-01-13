@@ -12,11 +12,11 @@ import (
 	"k8s.io/mount-utils"
 )
 
-func TestGetStateOfFilesystem(t *testing.T) {
+func TestGetFilesystemState(t *testing.T) {
 	t.Run("no error on empty FS", func(t *testing.T) {
 		cleaner := createCleaner(t)
 
-		fsState, err := cleaner.getStateOfFilesystem()
+		fsState, err := cleaner.getFilesystemState()
 
 		require.NoError(t, err)
 		assert.Empty(t, fsState)
@@ -31,7 +31,7 @@ func TestGetStateOfFilesystem(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, files, 2)
 
-		fsState, err := cleaner.getStateOfFilesystem()
+		fsState, err := cleaner.getFilesystemState()
 
 		require.NoError(t, err)
 		assert.Empty(t, fsState)
@@ -50,7 +50,7 @@ func TestGetStateOfFilesystem(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, files, 2)
 
-		fsState, err := cleaner.getStateOfFilesystem()
+		fsState, err := cleaner.getFilesystemState()
 
 		require.NoError(t, err)
 		assert.Empty(t, fsState)
@@ -69,7 +69,7 @@ func TestGetStateOfFilesystem(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, files, 2)
 
-		fsState, err := cleaner.getStateOfFilesystem()
+		fsState, err := cleaner.getFilesystemState()
 
 		require.NoError(t, err)
 		assert.Empty(t, fsState)
@@ -94,7 +94,7 @@ func TestGetStateOfFilesystem(t *testing.T) {
 		cleaner.createHostDirs(t, dkName2)
 		cleaner.createHostDirs(t, dkName3)
 
-		fsState, err := cleaner.getStateOfFilesystem()
+		fsState, err := cleaner.getFilesystemState()
 		require.NoError(t, err)
 
 		assert.Len(t, fsState.deprecatedDks, 1)
