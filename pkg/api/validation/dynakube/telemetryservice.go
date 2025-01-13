@@ -2,11 +2,10 @@ package validation
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
 	"slices"
 	"strings"
-
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 )
 
 const (
@@ -16,11 +15,11 @@ const (
 )
 
 func emptyTelemetryServiceProtocolsList(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if !dk.IsTelemetryServiceEnabled() {
+	if !dk.TelemetryService().IsEnabled() {
 		return ""
 	}
 
-	if len(dk.TelemetryServiceProtocols()) == 0 {
+	if len(dk.TelemetryService().GetProtocols()) == 0 {
 		log.Info("requested dynakube specify empty list of Protocols")
 
 		return errorTelemetryServiceNotEnoughProtocols
@@ -30,13 +29,13 @@ func emptyTelemetryServiceProtocolsList(_ context.Context, _ *Validator, dk *dyn
 }
 
 func unknownTelemetryServiceProtocols(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if !dk.IsTelemetryServiceEnabled() {
+	if !dk.TelemetryService().IsEnabled() {
 		return ""
 	}
 
 	var unknownProtocols []string
 
-	for _, protocol := range dk.TelemetryServiceProtocols() {
+	for _, protocol := range dk.TelemetryService().GetProtocols() {
 		if !slices.Contains(telemetryservice.KnownProtocols(), protocol) {
 			unknownProtocols = append(unknownProtocols, string(protocol))
 		}
@@ -52,13 +51,13 @@ func unknownTelemetryServiceProtocols(_ context.Context, _ *Validator, dk *dynak
 }
 
 func duplicatedTelemetryServiceProtocols(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if !dk.IsTelemetryServiceEnabled() {
+	if !dk.TelemetryService().IsEnabled() {
 		return ""
 	}
 
 	protocolsOccurrences := map[telemetryservice.Protocol]int{}
 
-	for _, protocol := range dk.TelemetryServiceProtocols() {
+	for _, protocol := range dk.TelemetryService().GetProtocols() {
 		if _, ok := protocolsOccurrences[protocol]; !ok {
 			protocolsOccurrences[protocol] = 1
 		} else {

@@ -17,3 +17,23 @@ func KnownProtocols() []Protocol {
 		StatsdProtocol,
 	}
 }
+
+func (spec *Spec) GetProtocols() []Protocol {
+	if spec == nil {
+		return []Protocol{}
+	}
+
+	if len(spec.Protocols) == 0 {
+		return KnownProtocols()
+	}
+
+	var protocols []Protocol
+	for _, proto := range spec.Protocols {
+		protocols = append(protocols, Protocol(proto))
+	}
+	return protocols
+}
+
+func (spec *Spec) IsEnabled() bool {
+	return spec != nil
+}

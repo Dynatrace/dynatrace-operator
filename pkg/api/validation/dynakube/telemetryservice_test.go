@@ -119,4 +119,14 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 				},
 			})
 	})
+
+	t.Run(`no telemetry service`, func(t *testing.T) {
+		assertAllowed(t,
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testApiUrl,
+				},
+			})
+	})
 }
