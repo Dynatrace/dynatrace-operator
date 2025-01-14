@@ -238,4 +238,23 @@ func TestInitContainerResources(t *testing.T) {
 
 		require.Empty(t, initResources)
 	})
+
+	t.Run("should have default if metadata enrichment is enabled", func(t *testing.T) {
+		dk := getTestDynakubeDefaultAppMon()
+		dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
+
+		initResources := initContainerResources(*dk)
+
+		assert.Equal(t, defaultInitContainerResources(), initResources)
+	})
+	t.Run("should have default if metadata enrichment is enabled and csi is disabled", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
+		dk := getTestDynakubeDefaultAppMon()
+		dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
+
+		initResources := initContainerResources(*dk)
+
+		assert.Equal(t, defaultInitContainerResources(), initResources)
+	})
 }
