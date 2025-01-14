@@ -7,8 +7,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"k8s.io/client-go/kubernetes"
 	"os"
 	"path"
+	"sigs.k8s.io/e2e-framework/klient/wait"
 	"strings"
 	"testing"
 
@@ -113,8 +116,14 @@ func Feature(t *testing.T) features.Feature {
 
 	// check if components are running
 	builder.Assess("active gate pod is running", statefulset.WaitFor(testDynakube.Name+"-"+agconsts.MultiActiveGateName, testDynakube.Namespace))
+
+	builder.Assess("ActiveGate started according to log RUNNING", logMessage(testDynakube, testDynakube.Name+"-"+"activegate"+"-0", "activegate", "[CollectorStateController] Collector Operation State = 'RUNNING'"))
+	builder.Assess("ActiveGate started according to log CONFIG", logMessage(testDynakube, testDynakube.Name+"-"+"activegate"+"-0", "activegate", "[KubernetesApiAccessAdapter] Configuration added: KubernetesEndpointConfigurationInClusterImpl"))
+
 	builder.Assess("extensions execution controller started", statefulset.WaitFor(testDynakube.ExtensionsExecutionControllerStatefulsetName(), testDynakube.Namespace))
 	builder.Assess("extension collector started", statefulset.WaitFor(testDynakube.ExtensionsCollectorStatefulsetName(), testDynakube.Namespace))
+
+	builder.Assess("extensions execution controller started according to log", logMessage(testDynakube, testDynakube.ExtensionsExecutionControllerStatefulsetName()+"-0", "extensions-controller", "Data Sources statuses"))
 
 	// Register actual test
 	builder.Assess("support archive subcommand can be executed correctly with managed logs", testSupportArchiveCommand(testDynakube, testEdgeConnect, true))
@@ -207,5 +216,44 @@ func logMissingFiles(t *testing.T, requiredFiles []string) {
 			missingFilesLog = fmt.Sprintf("%s\n%s", missingFilesLog, file)
 		}
 		t.Log(missingFilesLog)
+	}
+}
+
+func logMessage(dk dynakube.DynaKube, podName string, containerName string, message string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resource := envConfig.Client().Resources()
+		clientset, err := kubernetes.NewForConfig(resource.GetConfig())
+		require.NoError(t, err)
+
+		err = wait.For(func(ctx context.Context) (done bool, err error) {
+
+			logStream, err := clientset.CoreV1().Pods(dk.Namespace).GetLogs(podName, &corev1.PodLogOptions{
+				Container: containerName,
+			}).Stream(ctx)
+			if err != nil {
+				return false, err
+			}
+
+			buffer := new(bytes.Buffer)
+			copied, err := io.Copy(buffer, logStream)
+			if err != nil {
+				return false, err
+			}
+			if int64(buffer.Len()) != copied {
+				return false, fmt.Errorf("incorrect number of bytes copied (%d vs %d)", buffer.Len(), copied)
+			}
+
+			if strings.Contains(buffer.String(), message) {
+				t.Log("found")
+				return true, nil
+			}
+
+			t.Log("not found", buffer.String())
+
+			return false, nil
+		})
+		require.NoError(t, err)
+
+		return ctx
 	}
 }
