@@ -21,37 +21,16 @@ const use = "csi-init"
 
 var nodeId, endpoint string
 
-type CommandBuilder struct {
-	configProvider config.Provider
-	namespace      string
-}
-
-func NewCsiInitCommandBuilder() CommandBuilder {
-	return CommandBuilder{}
-}
-
-func (builder CommandBuilder) SetConfigProvider(provider config.Provider) CommandBuilder {
-	builder.configProvider = provider
-
-	return builder
-}
-
-func (builder CommandBuilder) SetNamespace(namespace string) CommandBuilder {
-	builder.namespace = namespace
-
-	return builder
-}
-
-func (builder CommandBuilder) Build() *cobra.Command {
+func New() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  use,
-		RunE: builder.buildRun(),
+		RunE: run(),
 	}
 
 	return cmd
 }
 
-func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
+func run() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		unix.Umask(dtcsi.UnixUmask)
 		version.LogVersion()
