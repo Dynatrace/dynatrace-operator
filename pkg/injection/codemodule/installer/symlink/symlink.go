@@ -12,6 +12,13 @@ import (
 func CreateForCurrentVersionIfNotExists(fs afero.Fs, targetDir string) error {
 	var err error
 
+	_, ok := fs.(afero.Linker)
+	if !ok {
+		log.Info("symlinking not possible", "targetDir", targetDir, "fs", fs)
+
+		return nil
+	}
+
 	targetBinDir := filepath.Join(targetDir, binDir)
 
 	relativeSymlinkPath, err := findVersionFromFileSystem(fs, targetBinDir)

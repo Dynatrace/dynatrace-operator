@@ -14,8 +14,12 @@ func (c *Cleaner) isMountPoint(file string) (bool, error) {
 	if ok {
 		// you can't use the fake mounter IsLikelyNotMountPoint, as it will still use the os package
 		err, ok := fakeMounter.MountCheckErrors[file]
-		if ok && err == nil {
-			return true, nil
+		if ok {
+			if err == nil {
+				return true, nil
+			}
+
+			return false, err
 		} else if !ok {
 			return false, nil
 		}

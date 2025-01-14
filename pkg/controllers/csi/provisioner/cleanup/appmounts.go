@@ -37,16 +37,16 @@ func (c *Cleaner) removeDeprecatedMounts(fsState fsState) {
 		}
 
 		err = c.fs.RemoveAll(runDir)
-		if err != nil {
+		if err == nil {
 			log.Info("removed empty deprecated run dir", "path", runDir)
-
+		} else {
 			continue
 		}
 
 		tenantDir := c.path.DynaKubeDir(depDir)
 
 		err = c.fs.RemoveAll(c.path.DynaKubeDir(tenantDir))
-		if err != nil {
+		if err == nil {
 			log.Info("removed empty deprecated dir", "path", tenantDir)
 		}
 	}

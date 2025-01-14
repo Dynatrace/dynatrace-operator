@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner/cleanup"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
@@ -149,10 +150,15 @@ func areFsDirsCreated(t *testing.T, prov OneAgentProvisioner, dk *dynakube.DynaK
 func createProvisioner(t *testing.T, objs ...client.Object) OneAgentProvisioner {
 	t.Helper()
 
+	fs := afero.NewMemMapFs()
+	path := metadata.PathResolver{}
+	apiReader := fake.NewClient(objs...)
+
 	return OneAgentProvisioner{
-		fs:        afero.NewMemMapFs(),
-		path:      metadata.PathResolver{},
-		apiReader: fake.NewClient(objs...),
+		fs:        fs,
+		path:      path,
+		apiReader: apiReader,
+		cleaner:   cleanup.New(afero.Afero{Fs: fs}, apiReader, path),
 	}
 }
 
