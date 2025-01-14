@@ -371,15 +371,14 @@ func TestBuildCommonEnvs(t *testing.T) {
 		require.NotNil(t, idEnv)
 		assert.Equal(t, testKubeUID, idEnv.Value)
 
+		dtHttpPortEnv := env.FindEnvVar(envs, consts.EnvDtHttpPort)
+		require.NotNil(t, dtHttpPortEnv)
+
 		metadataEnv := env.FindEnvVar(envs, deploymentmetadata.EnvDtDeploymentMetadata)
 		require.NotNil(t, metadataEnv)
 		assert.NotEmpty(t, metadataEnv.ValueFrom.ConfigMapKeyRef)
 		assert.Equal(t, deploymentmetadata.ActiveGateMetadataKey, metadataEnv.ValueFrom.ConfigMapKeyRef.Key)
 		assert.Equal(t, deploymentmetadata.GetDeploymentMetadataConfigMapName(dk.Name), metadataEnv.ValueFrom.ConfigMapKeyRef.Name)
-
-		// metrics-ingest disabled -> HTTP port disabled
-		dtHttpPortEnv := env.FindEnvVar(envs, consts.EnvDtHttpPort)
-		require.Nil(t, dtHttpPortEnv)
 	})
 
 	t.Run("adds extra envs with overrides", func(t *testing.T) {
