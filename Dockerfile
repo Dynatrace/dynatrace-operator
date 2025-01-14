@@ -1,5 +1,5 @@
 # setup build image
-FROM golang:1.23.2@sha256:adee809c2d0009a4199a11a1b2618990b244c6515149fe609e2788ddf164bd10 AS operator-build
+FROM --platform=$BUILDPLATFORM golang:1.23.2@sha256:adee809c2d0009a4199a11a1b2618990b244c6515149fe609e2788ddf164bd10 AS operator-build
 
 WORKDIR /app
 
@@ -11,17 +11,22 @@ RUN if [ "$DEBUG_TOOLS" = "true" ]; then \
 COPY go.mod go.sum ./
 RUN go mod download -x
 
-ARG GO_LINKER_ARGS
-ARG GO_BUILD_TAGS
-
 COPY pkg ./pkg
 COPY cmd ./cmd
-RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLED=0 \
+
+ARG GO_LINKER_ARGS
+ARG GO_BUILD_TAGS
+ARG TARGETARCH
+ARG TARGETOS
+
+RUN --mount=type=cache,target="/root/.cache/go-build" \
+    --mount=type=cache,target="/go/pkg" \
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
     go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./cmd/
 
-FROM registry.access.redhat.com/ubi9-micro:9.4-15@sha256:7f376b75faf8ea546f28f8529c37d24adcde33dca4103f4897ae19a43d58192b AS base
-FROM registry.access.redhat.com/ubi9:9.4-1214.1726694543@sha256:b00d5990a00937bd1ef7f44547af6c7fd36e3fd410e2c89b5d2dfc1aff69fe99 AS dependency
+FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9-micro:9.4-15@sha256:7f376b75faf8ea546f28f8529c37d24adcde33dca4103f4897ae19a43d58192b AS base
+FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9:9.4-1214.1726694543@sha256:b00d5990a00937bd1ef7f44547af6c7fd36e3fd410e2c89b5d2dfc1aff69fe99 AS dependency
 RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
 RUN dnf install --installroot /tmp/rootfs-dependency \
@@ -35,7 +40,8 @@ RUN dnf install --installroot /tmp/rootfs-dependency \
       /tmp/rootfs-dependency/var/log/dnf* \
       /tmp/rootfs-dependency/var/log/yum.*
 
-FROM base
+# platform is required, otherwise the copy command will copy the wrong architecture files
+FROM --platform=$TARGETPLATFORM base
 
 COPY --from=dependency /tmp/rootfs-dependency /
 
