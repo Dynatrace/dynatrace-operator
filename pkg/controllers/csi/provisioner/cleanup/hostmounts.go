@@ -20,7 +20,7 @@ func (c *Cleaner) isMountPoint(file string) (bool, error) {
 			}
 
 			return false, err
-		} else if !ok {
+		} else {
 			return false, nil
 		}
 	}
