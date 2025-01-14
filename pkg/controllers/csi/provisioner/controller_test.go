@@ -61,7 +61,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	dynakubeName := "test-dk"
 
 	t.Run("no dynakube instance", func(t *testing.T) {
-		gc := reconcilermock.NewReconciler(t)
+		gc := reconcilermock.NewReconciler[reconcile.Request](t)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(),
 			db:        metadata.FakeMemoryDB(),
@@ -74,7 +74,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.Equal(t, reconcile.Result{}, result)
 	})
 	t.Run("dynakube deleted", func(t *testing.T) {
-		gc := reconcilermock.NewReconciler(t)
+		gc := reconcilermock.NewReconciler[reconcile.Request](t)
 		db := metadata.FakeMemoryDB()
 		metadataDk := metadata.Dynakube{TenantUUID: tenantUUID, LatestVersion: agentVersion, Name: dkName}
 		_ = db.InsertDynakube(ctx, &metadataDk)
@@ -94,7 +94,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.Nil(t, ten)
 	})
 	t.Run("csi driver not used (classicFullstack)", func(t *testing.T) {
-		gc := reconcilermock.NewReconciler(t)
+		gc := reconcilermock.NewReconciler[reconcile.Request](t)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynakube.DynaKube{
@@ -143,7 +143,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		)
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 
-		gc := reconcilermock.NewReconciler(t)
+		gc := reconcilermock.NewReconciler[reconcile.Request](t)
 		db := metadata.FakeMemoryDB()
 
 		provisioner := &OneAgentProvisioner{
@@ -166,7 +166,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.Len(t, dynakubeMetadatas, 1)
 	})
 	t.Run("no tokens", func(t *testing.T) {
-		gc := reconcilermock.NewReconciler(t)
+		gc := reconcilermock.NewReconciler[reconcile.Request](t)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				addFakeTenantUUID(
@@ -200,7 +200,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.NotNil(t, result)
 	})
 	t.Run("error when creating dynatrace client", func(t *testing.T) {
-		gc := reconcilermock.NewReconciler(t)
+		gc := reconcilermock.NewReconciler[reconcile.Request](t)
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 		mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
@@ -249,7 +249,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.NotNil(t, result)
 	})
 	t.Run("error creating directories", func(t *testing.T) {
-		gc := reconcilermock.NewReconciler(t)
+		gc := reconcilermock.NewReconciler[reconcile.Request](t)
 		errorfs := &mkDirAllErrorFs{
 			Fs: afero.NewMemMapFs(),
 		}
@@ -293,7 +293,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		log.Info("")
 	})
 	t.Run("error getting latest agent version", func(t *testing.T) {
-		gc := reconcilermock.NewReconciler(t)
+		gc := reconcilermock.NewReconciler[reconcile.Request](t)
 		memFs := afero.NewMemMapFs()
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 		dynakube := addFakeTenantUUID(
@@ -354,7 +354,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.True(t, exists)
 	})
 	t.Run("error getting dynakube from db", func(t *testing.T) {
-		gc := reconcilermock.NewReconciler(t)
+		gc := reconcilermock.NewReconciler[reconcile.Request](t)
 		memFs := afero.NewMemMapFs()
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 
@@ -396,7 +396,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.Empty(t, result)
 	})
 	t.Run("correct directories are created", func(t *testing.T) {
-		gc := reconcilermock.NewReconciler(t)
+		gc := reconcilermock.NewReconciler[reconcile.Request](t)
 		memFs := afero.NewMemMapFs()
 		memDB := metadata.FakeMemoryDB()
 		dynakube := addFakeTenantUUID(
