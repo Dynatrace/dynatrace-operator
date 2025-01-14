@@ -8,10 +8,8 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"k8s.io/client-go/kubernetes"
 	"os"
 	"path"
-	"sigs.k8s.io/e2e-framework/klient/wait"
 	"strings"
 	"testing"
 
@@ -36,6 +34,8 @@ import (
 	"golang.org/x/exp/slices"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -117,13 +117,13 @@ func Feature(t *testing.T) features.Feature {
 	// check if components are running
 	builder.Assess("active gate pod is running", statefulset.WaitFor(testDynakube.Name+"-"+agconsts.MultiActiveGateName, testDynakube.Namespace))
 
-	builder.Assess("ActiveGate started according to log RUNNING", logMessage(testDynakube, testDynakube.Name+"-"+"activegate"+"-0", "activegate", "[CollectorStateController] Collector Operation State = 'RUNNING'"))
-	builder.Assess("ActiveGate started according to log CONFIG", logMessage(testDynakube, testDynakube.Name+"-"+"activegate"+"-0", "activegate", "[KubernetesApiAccessAdapter] Configuration added: KubernetesEndpointConfigurationInClusterImpl"))
+	builder.Assess("ActiveGate started according to log RUNNING", checkLogMessage(testDynakube, testDynakube.Name+"-"+"activegate"+"-0", "activegate", "[CollectorStateController] Collector Operation State = 'RUNNING'"))
+	builder.Assess("ActiveGate started according to log CONFIG", checkLogMessage(testDynakube, testDynakube.Name+"-"+"activegate"+"-0", "activegate", "[KubernetesApiAccessAdapter] Configuration added: KubernetesEndpointConfigurationInClusterImpl"))
 
 	builder.Assess("extensions execution controller started", statefulset.WaitFor(testDynakube.ExtensionsExecutionControllerStatefulsetName(), testDynakube.Namespace))
 	builder.Assess("extension collector started", statefulset.WaitFor(testDynakube.ExtensionsCollectorStatefulsetName(), testDynakube.Namespace))
 
-	builder.Assess("extensions execution controller started according to log", logMessage(testDynakube, testDynakube.ExtensionsExecutionControllerStatefulsetName()+"-0", "extensions-controller", "Data Sources statuses"))
+	builder.Assess("extensions execution controller started according to log", checkLogMessage(testDynakube, testDynakube.ExtensionsExecutionControllerStatefulsetName()+"-0", "extensions-controller", "Data Sources statuses"))
 
 	// Register actual test
 	builder.Assess("support archive subcommand can be executed correctly with managed logs", testSupportArchiveCommand(testDynakube, testEdgeConnect, true))
@@ -219,14 +219,13 @@ func logMissingFiles(t *testing.T, requiredFiles []string) {
 	}
 }
 
-func logMessage(dk dynakube.DynaKube, podName string, containerName string, message string) features.Func {
+func checkLogMessage(dk dynakube.DynaKube, podName string, containerName string, message string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
 		clientset, err := kubernetes.NewForConfig(resource.GetConfig())
 		require.NoError(t, err)
 
 		err = wait.For(func(ctx context.Context) (done bool, err error) {
-
 			logStream, err := clientset.CoreV1().Pods(dk.Namespace).GetLogs(podName, &corev1.PodLogOptions{
 				Container: containerName,
 			}).Stream(ctx)
@@ -244,11 +243,12 @@ func logMessage(dk dynakube.DynaKube, podName string, containerName string, mess
 			}
 
 			if strings.Contains(buffer.String(), message) {
-				t.Log("found")
+				t.Log("message found:", message)
+
 				return true, nil
 			}
 
-			t.Log("not found", buffer.String())
+			t.Log("message not found:", message, "\n", buffer.String())
 
 			return false, nil
 		})
