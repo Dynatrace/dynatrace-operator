@@ -102,7 +102,7 @@ func checkSecretForValue(t *testing.T, k8sClient client.Client, dk *dynakube.Dyn
 	deploymentConfig, ok := secret.Data[DeploymentConfigFilename]
 	require.True(t, ok)
 
-	tenantUUID, err := dk.TenantUUIDFromConnectionInfoStatus()
+	tenantUUID, err := dk.TenantUUID()
 	require.NoError(t, err)
 
 	expectedLines := []string{

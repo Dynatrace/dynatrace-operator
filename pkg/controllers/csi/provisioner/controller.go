@@ -24,6 +24,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner/cleanup"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
@@ -55,18 +56,23 @@ type OneAgentProvisioner struct {
 	dynatraceClientBuilder dynatraceclient.Builder
 	urlInstallerBuilder    urlInstallerBuilder
 	imageInstallerBuilder  imageInstallerBuilder
+	cleaner                *cleanup.Cleaner
 	path                   metadata.PathResolver
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
 func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgentProvisioner {
+	fs := afero.NewOsFs()
+	path := metadata.PathResolver{RootDir: opts.RootDir}
+
 	return &OneAgentProvisioner{
 		apiReader:              mgr.GetAPIReader(),
-		fs:                     afero.NewOsFs(),
-		path:                   metadata.PathResolver{RootDir: opts.RootDir},
+		fs:                     fs,
+		path:                   path,
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
 		urlInstallerBuilder:    url.NewUrlInstaller,
 		imageInstallerBuilder:  image.NewImageInstaller,
+		cleaner:                cleanup.New(afero.Afero{Fs: fs}, mgr.GetAPIReader(), path),
 	}
 }
 
@@ -85,7 +91,12 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	err := provisioner.apiReader.Get(ctx, request.NamespacedName, &dk)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			return reconcile.Result{}, nil // TODO: Call GC here
+			err = provisioner.cleaner.InstantRun(ctx)
+			if err != nil {
+				log.Error(err, "failed to run clean-up after dynakube deletion")
+			}
+
+			return reconcile.Result{}, nil
 		}
 
 		return reconcile.Result{}, err
@@ -99,7 +110,9 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	if !dk.NeedAppInjection() {
 		log.Info("app injection not necessary, skip agent codemodule download", "dynakube", dk.Name)
 
-		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil // TODO: Call GC here
+		_ = provisioner.cleaner.Run(ctx)
+
+		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
 	}
 
 	if dk.CodeModulesImage() == "" && dk.CodeModulesVersion() == "" {
@@ -112,6 +125,8 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+
+	_ = provisioner.cleaner.Run(ctx)
 
 	return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
 }

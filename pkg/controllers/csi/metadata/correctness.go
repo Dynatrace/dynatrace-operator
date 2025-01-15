@@ -6,15 +6,20 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/spf13/afero"
 	"k8s.io/mount-utils"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type CorrectnessChecker struct {
-	fs      afero.Fs
-	mounter mount.Interface
-	path    PathResolver
+	fs        afero.Afero
+	apiReader client.Reader
+	mounter   mount.Interface
+	path      PathResolver
 }
 
 type OverlayMount struct {
@@ -24,11 +29,12 @@ type OverlayMount struct {
 	WorkDir  string
 }
 
-func NewCorrectnessChecker(opts dtcsi.CSIOptions) *CorrectnessChecker {
+func NewCorrectnessChecker(apiReader client.Reader, opts dtcsi.CSIOptions) *CorrectnessChecker {
 	return &CorrectnessChecker{
-		fs:      afero.NewOsFs(),
-		mounter: mount.New(""),
-		path:    PathResolver{RootDir: opts.RootDir},
+		apiReader: apiReader,
+		fs:        afero.Afero{Fs: afero.NewOsFs()},
+		mounter:   mount.New(""),
+		path:      PathResolver{RootDir: opts.RootDir},
 	}
 }
 
@@ -37,6 +43,7 @@ func NewCorrectnessChecker(opts dtcsi.CSIOptions) *CorrectnessChecker {
 // "Moves" agent bins from deprecated location. (just creates a symlink)
 func (checker *CorrectnessChecker) CorrectCSI(ctx context.Context) error {
 	checker.migrateAppMounts()
+	checker.migrateHostMounts(ctx)
 
 	return nil
 }
@@ -64,29 +71,88 @@ func (checker *CorrectnessChecker) migrateAppMounts() {
 		volumeID := filepath.Base(oldPath)
 		newPath := checker.path.AppMountForID(volumeID)
 
-		if folderExists(checker.fs, newPath) {
+		exists, _ := checker.fs.DirExists(newPath)
+		if exists {
 			continue
 		}
 
-		linker, ok := checker.fs.(afero.Linker)
-		if ok { // will only be !ok during unit testing
-			err := linker.SymlinkIfPossible(oldPath, newPath)
-			if err != nil {
-				log.Error(err, "failed to symlink old app mount to new location", "old-path", oldPath, "new-path", newPath)
-			} else {
-				log.Info("migrated old app mount to new location", "old-path", oldPath, "new-path", newPath)
-			}
+		err := symlink.Create(checker.fs.Fs, oldPath, newPath)
+		if err != nil {
+			log.Error(err, "failed to symlink old app mount to new location", "old-path", oldPath, "new-path", newPath)
+		} else {
+			log.Info("migrated old app mount to new location", "old-path", oldPath, "new-path", newPath)
 		}
 	}
 }
 
-func folderExists(fs afero.Fs, filename string) bool {
-	info, err := fs.Stat(filename)
-	if os.IsNotExist(err) {
-		return false
+func (checker *CorrectnessChecker) migrateHostMounts(ctx context.Context) {
+	dks, err := GetRelevantDynaKubes(ctx, checker.apiReader)
+	if err != nil {
+		log.Error(err, "failed to list the available dynakubes, skipping host mount migration")
+
+		return
 	}
 
-	return info.IsDir()
+	for _, dk := range dks {
+		if !dk.NeedsOneAgent() {
+			continue
+		}
+
+		checker.fs.MkdirAll(checker.path.DynaKubeDir(dk.Name), os.ModePerm)
+
+		newPath := checker.path.OsAgentDir(dk.Name)
+
+		newExists, _ := checker.fs.DirExists(newPath)
+		if newExists {
+			continue
+		}
+
+		tenantUUID, err := TenantUUIDFromApiUrl(dk.ApiUrl())
+		if err != nil {
+			log.Error(err, "malformed ApiUrl for dynakube, skipping host dir migration for it", "dk", dk.Name, "apiUrl", dk.ApiUrl())
+
+			continue
+		}
+
+		oldPath := checker.path.OsAgentDir(tenantUUID)
+
+		oldExists, err := checker.fs.DirExists(oldPath)
+		if err != nil {
+			log.Error(err, "failed to check deprecated host dir existence, skipping host dir migration for it", "dk", dk.Name, "apiUrl", dk.ApiUrl())
+
+			continue
+		}
+
+		if !oldExists {
+			continue
+		}
+
+		err = symlink.Create(checker.fs.Fs, oldPath, newPath)
+		if err != nil {
+			log.Error(err, "failed to symlink old host mount to new location", "old-path", oldPath, "new-path", newPath)
+		} else {
+			log.Info("migrated old host mount to new location", "old-path", oldPath, "new-path", newPath)
+		}
+	}
+}
+
+func GetRelevantDynaKubes(ctx context.Context, apiReader client.Reader) ([]dynakube.DynaKube, error) {
+	var dkList dynakube.DynaKubeList
+
+	err := apiReader.List(ctx, &dkList, client.InNamespace(env.DefaultNamespace()))
+	if err != nil {
+		return nil, err
+	}
+
+	var relevantDks []dynakube.DynaKube
+
+	for _, dk := range dkList.Items {
+		if dk.NeedsCSIDriver() {
+			relevantDks = append(relevantDks, dk)
+		}
+	}
+
+	return relevantDks, nil
 }
 
 func GetRelevantOverlayMounts(mounter mount.Interface, baseFolder string) ([]OverlayMount, error) {

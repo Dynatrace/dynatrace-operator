@@ -96,7 +96,7 @@ csidriver:
   kubeletPath: "/var/lib/kubelet"
   existingPriorityClassName: "" # if defined, use this priorityclass instead of creating a new one
   priorityClassValue: "1000000"
-  maxUnmountedVolumeAge: "" # defined in days, must be a plain number
+  cleanupPeriod: "" # defined in the Golang time.Duration format, like "30m" == 30 minutes
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/master
