@@ -31,7 +31,7 @@ runs:
       run: |
         hack/build/ci/third-party-licenses.sh
     - name: Build target
-      uses: docker/build-push-action@b32b51a8eda65d6793cd0494a773d4f6bcef32dc # v6.11.0
+      uses: docker/build-push-action@67a2d409c0a876cbe6b11854e3e25193efe4e62d # v6.12.0
       with:
         builder: ${{ steps.buildx.outputs.name }}
         build-args: |
