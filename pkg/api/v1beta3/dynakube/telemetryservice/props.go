@@ -1,5 +1,7 @@
 package telemetryservice
 
+import "github.com/Dynatrace/dynatrace-operator/pkg/consts"
+
 type Protocol string
 
 const (
@@ -33,6 +35,10 @@ func (spec *Spec) GetProtocols() []Protocol {
 	}
 
 	return protocols
+}
+
+func (ts *TelemetryService) DefaultName(dynakubeName string) string {
+	return dynakubeName + consts.TelemetryControllerSuffix
 }
 
 func (ts *TelemetryService) IsEnabled() bool {

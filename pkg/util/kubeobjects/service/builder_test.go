@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -35,7 +34,7 @@ func TestServiceBuilder(t *testing.T) {
 		service, err := Build(createDeployment(),
 			testServiceName,
 			labels,
-			corev1.ServicePort{},
+			nil,
 			setNamespace(testNamespace))
 		require.NoError(t, err)
 		require.Len(t, service.OwnerReferences, 1)
@@ -47,7 +46,7 @@ func TestServiceBuilder(t *testing.T) {
 		secret, err := Build(createDeployment(),
 			testServiceName,
 			labels,
-			corev1.ServicePort{},
+			nil,
 			SetLabels(labels),
 			setNamespace(testNamespace),
 		)

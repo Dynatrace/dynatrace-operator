@@ -15,7 +15,7 @@ var (
 	SetLabels = builder.SetLabels[*corev1.Service]
 )
 
-func Build(owner metav1.Object, name string, selectorLabels map[string]string, svcPort corev1.ServicePort, options ...builder.Option[*corev1.Service]) (*corev1.Service, error) {
+func Build(owner metav1.Object, name string, selectorLabels map[string]string, svcPort []corev1.ServicePort, options ...builder.Option[*corev1.Service]) (*corev1.Service, error) {
 	neededOpts := []builder.Option[*corev1.Service]{
 		setName(name),
 		setPorts(svcPort),
@@ -27,25 +27,9 @@ func Build(owner metav1.Object, name string, selectorLabels map[string]string, s
 	return builder.Build(owner, &corev1.Service{}, neededOpts...)
 }
 
-func setPorts(svcPort corev1.ServicePort) builder.Option[*corev1.Service] {
+func setPorts(svcPorts []corev1.ServicePort) builder.Option[*corev1.Service] {
 	return func(s *corev1.Service) {
-		targetIndex := 0
-		for index := range s.Spec.Ports {
-			if s.Spec.Ports[targetIndex].Name == svcPort.Name {
-				targetIndex = index
-
-				break
-			}
-		}
-
-		if targetIndex == 0 {
-			s.Spec.Ports = make([]corev1.ServicePort, 1)
-		}
-
-		s.Spec.Ports[targetIndex].Name = svcPort.Name
-		s.Spec.Ports[targetIndex].Port = svcPort.Port
-		s.Spec.Ports[targetIndex].Protocol = svcPort.Protocol
-		s.Spec.Ports[targetIndex].TargetPort = svcPort.TargetPort
+		s.Spec.Ports = svcPorts
 	}
 }
 
