@@ -12,7 +12,6 @@ import (
 
 func TestNewConfig(t *testing.T) {
 	t.Run("with statsd protocol only", func(t *testing.T) {
-
 		cfg, err := NewConfig(WithProtocols("statsd"))
 		require.NoError(t, err)
 		c, err := cfg.Marshal()
@@ -26,4 +25,21 @@ func TestNewConfig(t *testing.T) {
 		assert.Equal(t, expected, actual)
 	})
 
+	t.Run("with zipkin protocol only with tls key and tls cert", func(t *testing.T) {
+		cfg, err := NewConfig(
+			WithTLSCert("/run/opensignals/tls/tls.crt"),
+			WithTLSKey("/run/opensignals/tls/tls.key"),
+			WithProtocols("zipkin"),
+		)
+		require.NoError(t, err)
+		c, err := cfg.Marshal()
+		require.NoError(t, err)
+
+		expectedOutput, err := os.ReadFile(filepath.Join("testdata", "receivers_zipkin_only.yaml"))
+		require.NoError(t, err)
+
+		expected := strings.ReplaceAll(strings.ReplaceAll(string(expectedOutput), "\n", ""), "\r", "")
+		actual := strings.ReplaceAll(strings.ReplaceAll(string(c), "\n", ""), "\r", "")
+		assert.Equal(t, expected, actual)
+	})
 }
