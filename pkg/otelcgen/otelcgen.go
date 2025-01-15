@@ -29,8 +29,8 @@ type TLSSetting struct {
 // "go.opentelemetry.io/collector/config/confighttp.ServerConfig" with reduced number of attributes
 // to reduce the number of dependencies.
 type ServerConfig struct {
-	Endpoint   string      `mapstructure:"endpoint"`
 	TLSSetting *TLSSetting `mapstructure:"tls,omitempty"`
+	Endpoint   string      `mapstructure:"endpoint"`
 }
 
 type Protocol string
@@ -55,18 +55,9 @@ var (
 )
 
 type Config struct {
-	cfg *otelcol.Config
-}
-
-func (c Config) Marshal() ([]byte, error) {
-	conf := confmap.New()
-	err := conf.Marshal(c.cfg)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return yaml.Marshal(conf.ToStringMap())
+	cfg     *otelcol.Config
+	tlsKey  string
+	tlsCert string
 }
 
 type Option func(c *Config)
@@ -83,25 +74,44 @@ func NewConfig(options ...Option) (*Config, error) {
 	return &c, nil
 }
 
+func (c *Config) Marshal() ([]byte, error) {
+	conf := confmap.New()
+	err := conf.Marshal(c.cfg)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return yaml.Marshal(conf.ToStringMap())
+}
+
+func (c *Config) buildTLSSetting() *TLSSetting {
+	tls := &TLSSetting{}
+	if c.tlsCert != "" {
+		tls.CertFile = c.tlsCert
+	}
+
+	if c.tlsKey != "" {
+		tls.KeyFile = c.tlsKey
+	}
+
+	return tls
+}
+
 // func
 // receivers
-func buildReceiverComponent(componentID component.ID) component.Config {
+func (c *Config) buildReceiverComponent(componentID component.ID) component.Config {
 	switch componentID {
 	case JagerID:
 		return map[string]any{"protocols": map[string]any{"grpc": &ServerConfig{
-			Endpoint: "test",
-			TLSSetting: &TLSSetting{
-				KeyFile:  "/run/opensignals/tls/tls.key",
-				CertFile: " /run/opensignals/tls/tls.crt",
-			},
-		}, "http": &ServerConfig{
-			Endpoint: "test",
-			TLSSetting: &TLSSetting{
-				KeyFile:  "/run/opensignals/tls/tls.key",
-				CertFile: " /run/opensignals/tls/tls.crt",
-			},
-		},
-		}}
+			Endpoint:   "test",
+			TLSSetting: c.buildTLSSetting(),
+		}}}
+	case ZipkinID:
+		return &ServerConfig{
+			Endpoint:   "test",
+			TLSSetting: c.buildTLSSetting(),
+		}
 	case StatsdID:
 		return map[string]any{
 			"endpoint": "test",
@@ -114,17 +124,44 @@ func buildReceiverComponent(componentID component.ID) component.Config {
 	return nil
 }
 
-func WithProtocols(protocols ...string) Option {
+func (c *Config) buildReceivers(protocols []string) map[component.ID]component.Config {
 	if len(protocols) == 0 {
 		// means all protocols
-		protocols = []string{string(JagerProtocol)}
+		protocols = []string{string(StatsdProtocol), string(ZipkinProtocol), string(JagerProtocol), string(OtlpProtocol)}
 	}
 
-	receivers := map[component.ID]component.Config{
-		StatsdID: buildReceiverComponent(StatsdID),
+	receivers := make(map[component.ID]component.Config)
+
+	for _, p := range protocols {
+		switch Protocol(p) {
+		case StatsdProtocol:
+			receivers[StatsdID] = c.buildReceiverComponent(StatsdID)
+		case ZipkinProtocol:
+			receivers[ZipkinID] = c.buildReceiverComponent(ZipkinID)
+		case JagerProtocol:
+			receivers[JagerID] = c.buildReceiverComponent(JagerID)
+		case OtlpProtocol:
+			receivers[OtlpID] = c.buildReceiverComponent(OtlpID)
+		}
 	}
 
+	return receivers
+}
+
+func WithProtocols(protocols ...string) Option {
 	return func(c *Config) {
-		c.cfg.Receivers = receivers
+		c.cfg.Receivers = c.buildReceivers(protocols)
+	}
+}
+
+func WithTLSKey(tlsKey string) Option {
+	return func(c *Config) {
+		c.tlsKey = tlsKey
+	}
+}
+
+func WithTLSCert(tlsCert string) Option {
+	return func(c *Config) {
+		c.tlsCert = tlsCert
 	}
 }
