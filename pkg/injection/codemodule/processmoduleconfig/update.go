@@ -15,7 +15,7 @@ var (
 	sourceRuxitAgentProcPath = filepath.Join("agent", "conf", "_ruxitagentproc.conf")
 )
 
-func UpdateProcessModuleConfigInPlace(fs afero.Fs, targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
+func UpdateInPlace(fs afero.Fs, targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
 	if processModuleConfig != nil {
 		log.Info("updating ruxitagentproc.conf", "targetDir", targetDir)
 		usedProcessModuleConfigPath := filepath.Join(targetDir, RuxitAgentProcPath)
@@ -33,7 +33,7 @@ func UpdateProcessModuleConfigInPlace(fs afero.Fs, targetDir string, processModu
 	return nil
 }
 
-func CreateAgentConfigDir(fs afero.Fs, targetDir, sourceDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
+func UpdateFromDir(fs afero.Fs, targetDir, sourceDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
 	if processModuleConfig != nil {
 		log.Info("updating ruxitagentproc.conf", "targetDir", targetDir, "sourceDir", sourceDir)
 		sourceProcessModuleConfigPath := filepath.Join(sourceDir, RuxitAgentProcPath)

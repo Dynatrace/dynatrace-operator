@@ -80,7 +80,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
-	tenantUUID, err := r.dk.TenantUUIDFromConnectionInfoStatus()
+	tenantUUID, err := r.dk.TenantUUID()
 	if err != nil {
 		return nil, err
 	}
