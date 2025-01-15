@@ -23,16 +23,25 @@ type TimerHistogramMapping struct {
 // "go.opentelemetry.io/collector/config/configtls.TLSSetting"
 // with reduced number of attributes to reduce the number of dependencies.
 type TLSSetting struct {
-	KeyFile  string `mapstructure:"key_file"`
-	CertFile string `mapstructure:"cert_file"`
+	CAFile   string `mapstructure:"ca_file,omitempty"`
+	KeyFile  string `mapstructure:"key_file,omitempty"`
+	CertFile string `mapstructure:"cert_file,omitempty"`
 }
 
 // ServerConfig is based on "go.opentelemetry.io/collector/config/configgrpc.ServerConfig" and
 // "go.opentelemetry.io/collector/config/confighttp.ServerConfig" with reduced number of attributes
 // to reduce the number of dependencies.
 type ServerConfig struct {
+	// TLSSetting struct exposes TLS client configuration.
 	TLSSetting *TLSSetting `mapstructure:"tls,omitempty"`
-	Endpoint   string      `mapstructure:"endpoint"`
+
+	// Additional headers attached to each HTTP request sent by the client.
+	// Existing header values are overwritten if collision happens.
+	// Header values are opaque since they may be sensitive.
+	Headers map[string]string `mapstructure:"headers,omitempty"`
+
+	// The target URL to send data to (e.g.: http://some.url:9411/v1/traces).
+	Endpoint string `mapstructure:"endpoint"`
 }
 
 type Protocol string
@@ -180,6 +189,16 @@ func WithProcessors() Option {
 		processors := c.buildProcessors()
 
 		c.cfg.Processors = processors
+
+		return nil
+	}
+}
+
+func WithExporters() Option {
+	return func(c *Config) error {
+		exporters := c.buildExporters()
+
+		c.cfg.Exporters = exporters
 
 		return nil
 	}
