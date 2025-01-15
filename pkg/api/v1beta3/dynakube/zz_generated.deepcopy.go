@@ -22,6 +22,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
 	pkgv1 "github.com/google/go-containerregistry/pkg/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -200,9 +201,14 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 		*out = new(ExtensionsSpec)
 		**out = **in
 	}
+	if in.TelemetryService != nil {
+		in, out := &in.TelemetryService, &out.TelemetryService
+		*out = new(telemetryservice.Spec)
+		(*in).DeepCopyInto(*out)
+	}
 	in.OneAgent.DeepCopyInto(&out.OneAgent)
-	in.Templates.DeepCopyInto(&out.Templates)
 	in.MetadataEnrichment.DeepCopyInto(&out.MetadataEnrichment)
+	in.Templates.DeepCopyInto(&out.Templates)
 	in.ActiveGate.DeepCopyInto(&out.ActiveGate)
 }
 
