@@ -1,6 +1,8 @@
 package init
 
 import (
+	"os"
+
 	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
@@ -36,7 +38,7 @@ func run() func(*cobra.Command, []string) error {
 		version.LogVersion()
 		logd.LogBaseLoggerSettings()
 
-		err := createCsiDataPath(afero.NewOsFs())
+		err := createCSIDataPath(afero.NewOsFs())
 		if err != nil {
 			return err
 		}
@@ -77,6 +79,6 @@ func run() func(*cobra.Command, []string) error {
 	}
 }
 
-func createCsiDataPath(fs afero.Fs) error {
-	return errors.WithStack(fs.MkdirAll(dtcsi.DataPath, 0770))
+func createCSIDataPath(fs afero.Fs) error {
+	return errors.WithStack(fs.MkdirAll(dtcsi.DataPath, os.ModePerm))
 }

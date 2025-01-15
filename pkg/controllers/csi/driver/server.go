@@ -64,25 +64,25 @@ func NewServer(opts dtcsi.CSIOptions) *Server {
 	}
 }
 
-func (svr *Server) SetupWithManager(mgr ctrl.Manager) error {
-	return mgr.Add(svr)
+func (srv *Server) SetupWithManager(mgr ctrl.Manager) error {
+	return mgr.Add(srv)
 }
 
-func (svr *Server) Start(ctx context.Context) error {
-	proto, addr, err := parseEndpoint(svr.opts.Endpoint)
+func (srv *Server) Start(ctx context.Context) error {
+	proto, addr, err := parseEndpoint(srv.opts.Endpoint)
 	if err != nil {
-		return fmt.Errorf("failed to parse endpoint '%s': %w", svr.opts.Endpoint, err)
+		return fmt.Errorf("failed to parse endpoint '%s': %w", srv.opts.Endpoint, err)
 	}
 
 	if proto == "unix" {
-		if err := svr.fs.Remove(addr); err != nil && !os.IsNotExist(err) {
+		if err := srv.fs.Remove(addr); err != nil && !os.IsNotExist(err) {
 			return fmt.Errorf("failed to remove old endpoint on '%s': %w", addr, err)
 		}
 	}
 
-	svr.publishers = map[string]csivolumes.Publisher{
-		appvolumes.Mode:  appvolumes.NewPublisher(svr.fs, svr.mounter, svr.path),
-		hostvolumes.Mode: hostvolumes.NewPublisher(svr.fs, svr.mounter, svr.path),
+	srv.publishers = map[string]csivolumes.Publisher{
+		appvolumes.Mode:  appvolumes.NewPublisher(srv.fs, srv.mounter, srv.path),
+		hostvolumes.Mode: hostvolumes.NewPublisher(srv.fs, srv.mounter, srv.path),
 	}
 
 	log.Info("starting listener", "protocol", proto, "address", addr)
@@ -115,8 +115,8 @@ func (svr *Server) Start(ctx context.Context) error {
 		}
 	}()
 
-	csi.RegisterIdentityServer(server, svr)
-	csi.RegisterNodeServer(server, svr)
+	csi.RegisterIdentityServer(server, srv)
+	csi.RegisterNodeServer(server, srv)
 
 	log.Info("listening for connections on address", "address", listener.Addr())
 
@@ -126,31 +126,31 @@ func (svr *Server) Start(ctx context.Context) error {
 	return err
 }
 
-func (svr *Server) GetPluginInfo(context.Context, *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
+func (srv *Server) GetPluginInfo(context.Context, *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
 	return &csi.GetPluginInfoResponse{Name: dtcsi.DriverName, VendorVersion: version.Version}, nil
 }
 
-func (svr *Server) Probe(context.Context, *csi.ProbeRequest) (*csi.ProbeResponse, error) {
+func (srv *Server) Probe(context.Context, *csi.ProbeRequest) (*csi.ProbeResponse, error) {
 	return &csi.ProbeResponse{}, nil
 }
 
-func (svr *Server) GetPluginCapabilities(context.Context, *csi.GetPluginCapabilitiesRequest) (*csi.GetPluginCapabilitiesResponse, error) {
+func (srv *Server) GetPluginCapabilities(context.Context, *csi.GetPluginCapabilitiesRequest) (*csi.GetPluginCapabilitiesResponse, error) {
 	return &csi.GetPluginCapabilitiesResponse{}, nil
 }
 
-func (svr *Server) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
+func (srv *Server) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
 	volumeCfg, err := csivolumes.ParseNodePublishVolumeRequest(req)
 	if err != nil {
 		return nil, err
 	}
 
-	if isMounted, err := svr.mounter.IsMountPoint(volumeCfg.TargetPath); err != nil && !os.IsNotExist(err) {
+	if isMounted, err := srv.mounter.IsMountPoint(volumeCfg.TargetPath); err != nil && !os.IsNotExist(err) {
 		return nil, err
 	} else if isMounted {
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
 
-	publisher, ok := svr.publishers[volumeCfg.Mode]
+	publisher, ok := srv.publishers[volumeCfg.Mode]
 	if !ok {
 		return nil, status.Error(codes.Internal, "unknown csi mode provided, mode="+volumeCfg.Mode)
 	}
@@ -168,66 +168,66 @@ func (svr *Server) NodePublishVolume(ctx context.Context, req *csi.NodePublishVo
 	return publisher.PublishVolume(ctx, volumeCfg)
 }
 
-func (svr *Server) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
+func (srv *Server) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
 	volumeInfo, err := csivolumes.ParseNodeUnpublishVolumeRequest(req)
 	if err != nil {
 		return nil, err
 	}
 
-	svr.unmount(*volumeInfo)
+	srv.unmount(*volumeInfo)
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
-func (svr *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
+func (srv *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
 	// targetPath always needs to be unmounted
-	if err := svr.mounter.Unmount(volumeInfo.TargetPath); err != nil {
+	if err := srv.mounter.Unmount(volumeInfo.TargetPath); err != nil {
 		log.Error(err, "Unmount failed", "path", volumeInfo.TargetPath)
 	}
 
-	appMountDir := svr.path.AppMountForID(volumeInfo.VolumeID)
+	appMountDir := srv.path.AppMountForID(volumeInfo.VolumeID)
 
-	mappedDir := svr.path.AppMountMappedDir(volumeInfo.VolumeID) // Unmount follows symlinks, so no need to check for them here
+	mappedDir := srv.path.AppMountMappedDir(volumeInfo.VolumeID) // Unmount follows symlinks, so no need to check for them here
 
-	_, err := svr.fs.Stat(mappedDir)
+	_, err := srv.fs.Stat(mappedDir)
 	if os.IsNotExist(err) { // case for timed out mounts
-		_ = svr.fs.RemoveAll(appMountDir)
+		_ = srv.fs.RemoveAll(appMountDir)
 
 		return
 	} else if err != nil {
 		log.Error(err, "unexpected error when checking for app mount folder, trying to unmount just to be sure")
 	}
 
-	if err := svr.mounter.Unmount(mappedDir); err != nil {
+	if err := srv.mounter.Unmount(mappedDir); err != nil {
 		// Just try to unmount, nothing really can go wrong, just have to handle errors
 		log.Error(err, "Unmount failed", "path", mappedDir)
 	} else {
 		// special handling is needed, because after upgrade/restart the mappedDir will be still busy
 		needsCleanUp := []string{
-			svr.path.AppMountVarDir(volumeInfo.VolumeID),
-			svr.path.AppMountWorkDir(volumeInfo.VolumeID),
+			srv.path.AppMountVarDir(volumeInfo.VolumeID),
+			srv.path.AppMountWorkDir(volumeInfo.VolumeID),
 		}
 
 		for _, path := range needsCleanUp {
-			err := svr.fs.RemoveAll(path) // you see correctly, we don't keep the logs of the app mounts, will keep them when they will have a use
+			err := srv.fs.RemoveAll(path) // you see correctly, we don't keep the logs of the app mounts, will keep them when they will have a use
 			if err != nil {
 				log.Error(err, "failed to clean up unmounted volume dir", "path", path)
 			}
 		}
 
-		_ = svr.fs.RemoveAll(appMountDir) // try to cleanup fully, but lets not spam the logs with errors
+		_ = srv.fs.RemoveAll(appMountDir) // try to cleanup fully, but lets not spam the logs with errors
 	}
 
-	podInfoSymlinkPath := svr.findPodInfoSymlink(volumeInfo) // cleaning up the pod-info symlink here is far more efficient instead of having to walk the whole fs during cleanup
+	podInfoSymlinkPath := srv.findPodInfoSymlink(volumeInfo) // cleaning up the pod-info symlink here is far more efficient instead of having to walk the whole fs during cleanup
 	if podInfoSymlinkPath != "" {
-		_ = svr.fs.Remove(podInfoSymlinkPath)
+		_ = srv.fs.Remove(podInfoSymlinkPath)
 	}
 }
 
-func (svr *Server) findPodInfoSymlink(volumeInfo csivolumes.VolumeInfo) string {
-	podInfoPath := svr.path.OverlayVarPodInfo(volumeInfo.VolumeID)
+func (srv *Server) findPodInfoSymlink(volumeInfo csivolumes.VolumeInfo) string {
+	podInfoPath := srv.path.OverlayVarPodInfo(volumeInfo.VolumeID)
 
-	podInfoBytes, err := svr.fs.ReadFile(svr.path.OverlayVarPodInfo(volumeInfo.VolumeID))
+	podInfoBytes, err := srv.fs.ReadFile(srv.path.OverlayVarPodInfo(volumeInfo.VolumeID))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return ""
@@ -239,27 +239,27 @@ func (svr *Server) findPodInfoSymlink(volumeInfo csivolumes.VolumeInfo) string {
 	return string(podInfoBytes)
 }
 
-func (svr *Server) NodeStageVolume(context.Context, *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
+func (srv *Server) NodeStageVolume(context.Context, *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "")
 }
 
-func (svr *Server) NodeUnstageVolume(context.Context, *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
+func (srv *Server) NodeUnstageVolume(context.Context, *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "")
 }
 
-func (svr *Server) NodeGetInfo(context.Context, *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
-	return &csi.NodeGetInfoResponse{NodeId: svr.opts.NodeId}, nil
+func (srv *Server) NodeGetInfo(context.Context, *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
+	return &csi.NodeGetInfoResponse{NodeId: srv.opts.NodeId}, nil
 }
 
-func (svr *Server) NodeGetCapabilities(context.Context, *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {
+func (srv *Server) NodeGetCapabilities(context.Context, *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {
 	return &csi.NodeGetCapabilitiesResponse{Capabilities: []*csi.NodeServiceCapability{}}, nil
 }
 
-func (svr *Server) NodeGetVolumeStats(context.Context, *csi.NodeGetVolumeStatsRequest) (*csi.NodeGetVolumeStatsResponse, error) {
+func (srv *Server) NodeGetVolumeStats(context.Context, *csi.NodeGetVolumeStatsRequest) (*csi.NodeGetVolumeStatsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "")
 }
 
-func (svr *Server) NodeExpandVolume(context.Context, *csi.NodeExpandVolumeRequest) (*csi.NodeExpandVolumeResponse, error) {
+func (srv *Server) NodeExpandVolume(context.Context, *csi.NodeExpandVolumeRequest) (*csi.NodeExpandVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "")
 }
 
