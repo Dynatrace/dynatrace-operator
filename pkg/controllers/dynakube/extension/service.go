@@ -66,17 +66,19 @@ func (r *reconciler) buildService() (*corev1.Service, error) {
 	// TODO: add proper version later on
 	appLabels := labels.NewAppLabels(labels.ExtensionComponentLabel, r.dk.Name, labels.ExtensionComponentLabel, "")
 
-	svcPort := corev1.ServicePort{
-		Name:       r.dk.ExtensionsPortName(),
-		Port:       consts.OtelCollectorComPort,
-		Protocol:   corev1.ProtocolTCP,
-		TargetPort: intstr.IntOrString{Type: intstr.String, StrVal: consts.ExtensionsCollectorTargetPortName},
+	svcPorts := []corev1.ServicePort{
+		{
+			Name:       r.dk.ExtensionsPortName(),
+			Port:       consts.OtelCollectorComPort,
+			Protocol:   corev1.ProtocolTCP,
+			TargetPort: intstr.IntOrString{Type: intstr.String, StrVal: consts.ExtensionsCollectorTargetPortName},
+		},
 	}
 
 	return service.Build(r.dk,
 		r.dk.ExtensionsServiceName(),
 		appLabels.BuildMatchLabels(),
-		svcPort,
+		svcPorts,
 		service.SetLabels(coreLabels.BuildLabels()),
 		service.SetType(corev1.ServiceTypeClusterIP),
 	)

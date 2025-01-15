@@ -22,6 +22,7 @@ const (
 	EdgeConnectComponentLabel   = "edgeconnect"
 	ExtensionComponentLabel     = "dynatrace-extensions-controller"
 	CollectorComponentLabel     = "dynatrace-extensions-collector"
+	OtelCComponentLabel         = "dynatrace-otelc-controller"
 )
 
 type AppMatchLabels struct {
