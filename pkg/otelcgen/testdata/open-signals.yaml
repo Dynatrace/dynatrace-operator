@@ -111,12 +111,10 @@ processors:
           - delete_key(attributes, "k8s.daemonset.name")
           - delete_key(attributes, "k8s.cronjob.name")
           - delete_key(attributes, "k8s.job.name")
-          # legacy, deprecated
           - set(attributes["dt.kubernetes.workload.name"], attributes["k8s.workload.name"])
           - set(attributes["dt.kubernetes.workload.kind"], attributes["k8s.workload.kind"])
     metric_statements: *dynatrace_transformations
     log_statements: *dynatrace_transformations
-
   batch/traces:
     send_batch_size: 5000
     send_batch_max_size: 5000
@@ -129,7 +127,6 @@ processors:
     send_batch_size: 1800
     send_batch_max_size: 2000
     timeout: 60s
-
   memory_limiter:
     check_interval: 1s
     limit_percentage: 70
