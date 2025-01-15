@@ -1,6 +1,8 @@
 package otelcgen
 
 import (
+	"fmt"
+
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/otelcol"
@@ -38,7 +40,7 @@ type Protocol string
 type Protocols []Protocol
 
 const (
-	JagerProtocol  Protocol = "jager"
+	JaegerProtocol Protocol = "jaeger"
 	ZipkinProtocol Protocol = "zipkin"
 	OtlpProtocol   Protocol = "otlp"
 	StatsdProtocol Protocol = "statsd"
@@ -48,7 +50,7 @@ const (
 )
 
 var (
-	JagerID  = component.MustNewID(string(JagerProtocol))
+	JaegerID = component.MustNewID(string(JaegerProtocol))
 	OtlpID   = component.MustNewID(string(OtlpProtocol))
 	StatsdID = component.MustNewID(string(StatsdProtocol))
 	ZipkinID = component.MustNewID(string(ZipkinProtocol))
@@ -60,7 +62,7 @@ type Config struct {
 	tlsCert string
 }
 
-type Option func(c *Config)
+type Option func(c *Config) error
 
 func NewConfig(options ...Option) (*Config, error) {
 	c := Config{
@@ -68,7 +70,10 @@ func NewConfig(options ...Option) (*Config, error) {
 	}
 
 	for _, opt := range options {
-		opt(&c)
+		err := opt(&c)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &c, nil
@@ -102,11 +107,18 @@ func (c *Config) buildTLSSetting() *TLSSetting {
 // receivers
 func (c *Config) buildReceiverComponent(componentID component.ID) component.Config {
 	switch componentID {
-	case JagerID:
-		return map[string]any{"protocols": map[string]any{"grpc": &ServerConfig{
-			Endpoint:   "test",
-			TLSSetting: c.buildTLSSetting(),
-		}}}
+	case OtlpID:
+		return map[string]any{"protocols": map[string]any{
+			"grpc": &ServerConfig{TLSSetting: c.buildTLSSetting(), Endpoint: "test:4317"},
+			"http": &ServerConfig{TLSSetting: c.buildTLSSetting(), Endpoint: "test:4318"},
+		}}
+	case JaegerID:
+		return map[string]any{"protocols": map[string]any{
+			"grpc":           &ServerConfig{Endpoint: "test", TLSSetting: c.buildTLSSetting()},
+			"thrift_binary":  &ServerConfig{Endpoint: "test:6832"},
+			"thrift_compact": &ServerConfig{Endpoint: "test:6831"},
+			"thrift_http":    &ServerConfig{Endpoint: "test:14268", TLSSetting: c.buildTLSSetting()},
+		}}
 	case ZipkinID:
 		return &ServerConfig{
 			Endpoint:   "test",
@@ -124,10 +136,10 @@ func (c *Config) buildReceiverComponent(componentID component.ID) component.Conf
 	return nil
 }
 
-func (c *Config) buildReceivers(protocols []string) map[component.ID]component.Config {
+func (c *Config) buildReceivers(protocols []string) (map[component.ID]component.Config, error) {
 	if len(protocols) == 0 {
-		// means all protocols
-		protocols = []string{string(StatsdProtocol), string(ZipkinProtocol), string(JagerProtocol), string(OtlpProtocol)}
+		// means all protocols are enabled
+		protocols = []string{string(StatsdProtocol), string(ZipkinProtocol), string(JaegerProtocol), string(OtlpProtocol)}
 	}
 
 	receivers := make(map[component.ID]component.Config)
@@ -138,30 +150,53 @@ func (c *Config) buildReceivers(protocols []string) map[component.ID]component.C
 			receivers[StatsdID] = c.buildReceiverComponent(StatsdID)
 		case ZipkinProtocol:
 			receivers[ZipkinID] = c.buildReceiverComponent(ZipkinID)
-		case JagerProtocol:
-			receivers[JagerID] = c.buildReceiverComponent(JagerID)
+		case JaegerProtocol:
+			receivers[JaegerID] = c.buildReceiverComponent(JaegerID)
 		case OtlpProtocol:
 			receivers[OtlpID] = c.buildReceiverComponent(OtlpID)
+		default:
+			return nil, fmt.Errorf("unknown protocol: %s", p)
 		}
 	}
 
-	return receivers
+	return receivers, nil
 }
 
 func WithProtocols(protocols ...string) Option {
-	return func(c *Config) {
-		c.cfg.Receivers = c.buildReceivers(protocols)
+	return func(c *Config) error {
+		receivers, err := c.buildReceivers(protocols)
+		if err != nil {
+			return err
+		}
+
+		c.cfg.Receivers = receivers
+
+		return nil
+	}
+}
+
+func WithProcessors() Option {
+	return func(c *Config) error {
+		processors := c.buildProcessors()
+
+		c.cfg.Processors = processors
+
+		return nil
 	}
 }
 
 func WithTLSKey(tlsKey string) Option {
-	return func(c *Config) {
+	return func(c *Config) error {
 		c.tlsKey = tlsKey
+
+		return nil
 	}
 }
 
 func WithTLSCert(tlsCert string) Option {
-	return func(c *Config) {
+	return func(c *Config) error {
 		c.tlsCert = tlsCert
+
+		return nil
 	}
 }
