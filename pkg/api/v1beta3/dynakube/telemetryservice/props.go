@@ -34,6 +34,6 @@ func (spec *Spec) GetProtocols() []Protocol {
 	return protocols
 }
 
-func (spec *Spec) IsEnabled() bool {
-	return spec != nil
+func (ts *TelemetryService) IsEnabled() bool {
+	return ts.Spec != nil
 }
