@@ -248,12 +248,12 @@ func TestInitContainerResources(t *testing.T) {
 
 		assert.Equal(t, defaultInitContainerResources(), initResources)
 	})
-	t.Run("should have default if metadata enrichment is enabled and csi is disabled", func(t *testing.T) {
+	t.Run("should have default if only metadata enrichment is enabled and csi is disabled", func(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
 
 		dk := getTestDynakubeDefaultAppMon()
 		dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
-
+		dk.Spec.OneAgent.ApplicationMonitoring = nil
 		initResources := initContainerResources(*dk)
 
 		assert.Equal(t, defaultInitContainerResources(), initResources)
@@ -264,7 +264,7 @@ func TestInitContainerResources(t *testing.T) {
 		dk := getTestDynakubeDefaultAppMon()
 
 		dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
-		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
+		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 
 		initResources := initContainerResources(*dk)
 
