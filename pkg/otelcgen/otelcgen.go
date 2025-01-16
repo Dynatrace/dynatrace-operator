@@ -204,6 +204,16 @@ func WithExporters() Option {
 	}
 }
 
+func WithExtensions() Option {
+	return func(c *Config) error {
+		extensions := c.buildExtensions()
+
+		c.cfg.Extensions = extensions
+
+		return nil
+	}
+}
+
 func WithTLSKey(tlsKey string) Option {
 	return func(c *Config) error {
 		c.tlsKey = tlsKey
