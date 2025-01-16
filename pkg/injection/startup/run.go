@@ -222,11 +222,10 @@ func (runner *Runner) configureInstallation() error {
 }
 
 func (runner *Runner) configureOneAgent() error {
-	log.Info("setting ld.so.preload")
-
 	if err := runner.setLDPreload(); err != nil {
 		return err
 	}
+
 	for _, container := range runner.env.Containers {
 
 		log.Info("creating container configuration files")
@@ -262,12 +261,14 @@ func (runner *Runner) configureOneAgent() error {
 }
 
 func (runner *Runner) setLDPreload() error {
-	return runner.createConfigFile(filepath.Join(consts.SharedDirMount, consts.LdPreloadFilename), filepath.Join(runner.env.InstallPath, consts.LibAgentProcPath), true)
+	log.Info("setting ld.so.preload")
+
+	return runner.createConfigFile(filepath.Join(consts.SharedDirInitPath, consts.LdPreloadFilename), filepath.Join(runner.env.InstallPath, consts.LibAgentProcPath), true)
 }
 
 func (runner *Runner) createContainerConfigurationFiles(container ContainerInfo) error {
 	log.Info("creating conf file for container", "container", container)
-	confFilePath := filepath.Join(consts.SharedDirMount, container.Name, consts.AgentSubDirName, consts.AgentContainerConfSubDir)
+	confFilePath := filepath.Join(consts.SharedDirInitPath, container.Name, consts.AgentSubDirName, consts.AgentContainerConfSubDir)
 	content := runner.getBaseConfContent(container)
 
 	log.Info("adding k8s cluster id")
@@ -290,7 +291,7 @@ func (runner *Runner) createContainerConfigurationFiles(container ContainerInfo)
 }
 
 func (runner *Runner) propagateTLSCert(container ContainerInfo) error {
-	baseDir := filepath.Join(consts.SharedDirMount, container.Name, consts.AgentSubDirName, consts.AgentCustomKeysSubDir)
+	baseDir := filepath.Join(consts.SharedDirInitPath, container.Name, consts.AgentSubDirName, consts.AgentCustomKeysSubDir)
 	if runner.agCerts != "" || runner.trustedCAs != "" {
 		log.Info("propagating tls certificates to agent")
 		if err := runner.createConfigFile(filepath.Join(baseDir, consts.CustomCertsFileName), runner.agCerts+"\n"+runner.trustedCAs, false); err != nil {

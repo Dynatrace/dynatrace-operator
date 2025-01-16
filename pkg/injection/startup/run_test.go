@@ -374,7 +374,7 @@ isCloudNativeFullStack true
 
 		for i, container := range runner.env.Containers {
 			filePath := filepath.Join(
-				consts.SharedDirMount,
+				consts.SharedDirInitPath,
 				fmt.Sprintf(consts.AgentContainerConfFilenameTemplate, container.Name))
 
 			assertIfFileExists(t, runner.fs, filePath)
@@ -405,7 +405,7 @@ isCloudNativeFullStack true
 
 		for i, container := range runner.env.Containers {
 			filePath := filepath.Join(
-				consts.SharedDirMount,
+				consts.SharedDirInitPath,
 				fmt.Sprintf(consts.AgentContainerConfFilenameTemplate, container.Name))
 
 			assertIfFileExists(t, runner.fs, filePath)
@@ -438,7 +438,7 @@ func TestSetLDPreload(t *testing.T) {
 		assertIfFileExists(t,
 			runner.fs,
 			filepath.Join(
-				consts.SharedDirMount,
+				consts.SharedDirInitPath,
 				consts.LdPreloadFilename))
 	})
 }
@@ -476,8 +476,8 @@ func TestPropagateTLSCert(t *testing.T) {
 		err = runner.propagateTLSCert()
 		require.NoError(t, err)
 
-		assertIfFileExists(t, runner.fs, filepath.Join(consts.SharedDirMount, consts.CustomCertsFileName))
-		assertIfFileExists(t, runner.fs, filepath.Join(consts.SharedDirMount, consts.CustomProxyCertsFileName))
+		assertIfFileExists(t, runner.fs, filepath.Join(consts.SharedDirInitPath, consts.CustomCertsFileName))
+		assertIfFileExists(t, runner.fs, filepath.Join(consts.SharedDirInitPath, consts.CustomProxyCertsFileName))
 	})
 	t.Run("create custom.pem only containing AG cert", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
@@ -490,8 +490,8 @@ func TestPropagateTLSCert(t *testing.T) {
 		err = runner.propagateTLSCert()
 		require.NoError(t, err)
 
-		assertIfFileExists(t, runner.fs, filepath.Join(consts.SharedDirMount, consts.CustomCertsFileName))
-		assertIfFileNotExists(t, runner.fs, filepath.Join(consts.SharedDirMount, consts.CustomProxyCertsFileName))
+		assertIfFileExists(t, runner.fs, filepath.Join(consts.SharedDirInitPath, consts.CustomCertsFileName))
+		assertIfFileNotExists(t, runner.fs, filepath.Join(consts.SharedDirInitPath, consts.CustomProxyCertsFileName))
 	})
 	t.Run("propagate trustedCAs certificates to custom.pem and custom_proxy.pem", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
@@ -504,8 +504,8 @@ func TestPropagateTLSCert(t *testing.T) {
 		err = runner.propagateTLSCert()
 		require.NoError(t, err)
 
-		assertIfFileExists(t, runner.fs, filepath.Join(consts.SharedDirMount, consts.CustomCertsFileName))
-		assertIfFileExists(t, runner.fs, filepath.Join(consts.SharedDirMount, consts.CustomProxyCertsFileName))
+		assertIfFileExists(t, runner.fs, filepath.Join(consts.SharedDirInitPath, consts.CustomCertsFileName))
+		assertIfFileExists(t, runner.fs, filepath.Join(consts.SharedDirInitPath, consts.CustomProxyCertsFileName))
 	})
 	t.Run("don't create cert files", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
@@ -519,8 +519,8 @@ func TestPropagateTLSCert(t *testing.T) {
 		err = runner.propagateTLSCert()
 		require.NoError(t, err)
 
-		assertIfFileNotExists(t, runner.fs, filepath.Join(consts.SharedDirMount, consts.CustomCertsFileName))
-		assertIfFileNotExists(t, runner.fs, filepath.Join(consts.SharedDirMount, consts.CustomProxyCertsFileName))
+		assertIfFileNotExists(t, runner.fs, filepath.Join(consts.SharedDirInitPath, consts.CustomCertsFileName))
+		assertIfFileNotExists(t, runner.fs, filepath.Join(consts.SharedDirInitPath, consts.CustomProxyCertsFileName))
 	})
 }
 
@@ -568,13 +568,13 @@ func assertIfAgentFilesExists(t *testing.T, runner Runner) {
 		assertIfFileExists(t,
 			runner.fs,
 			filepath.Join(
-				consts.SharedDirMount,
+				consts.SharedDirInitPath,
 				fmt.Sprintf(consts.AgentContainerConfFilenameTemplate, container.Name)))
 	}
 	// ld.so.preload
 	assertIfFileExists(t,
 		runner.fs,
-		filepath.Join(consts.SharedDirMount, consts.LdPreloadFilename))
+		filepath.Join(consts.SharedDirInitPath, consts.LdPreloadFilename))
 }
 
 func assertIfEnrichmentFilesExists(t *testing.T, runner Runner) {
@@ -598,17 +598,17 @@ func assertIfAgentFilesNotExists(t *testing.T, runner Runner) {
 		assertIfFileNotExists(t,
 			runner.fs,
 			filepath.Join(
-				consts.SharedDirMount,
+				consts.SharedDirInitPath,
 				fmt.Sprintf(consts.AgentContainerConfFilenameTemplate, container.Name)))
 	}
 	// ld.so.preload
 	assertIfFileNotExists(t,
 		runner.fs,
-		filepath.Join(consts.SharedDirMount, consts.LdPreloadFilename))
+		filepath.Join(consts.SharedDirInitPath, consts.LdPreloadFilename))
 	// tls cert
 	assertIfFileNotExists(t,
 		runner.fs,
-		filepath.Join(consts.SharedDirMount, "custom.pem"))
+		filepath.Join(consts.SharedDirInitPath, "custom.pem"))
 }
 
 func assertIfEnrichmentFilesNotExists(t *testing.T, runner Runner) {

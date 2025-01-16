@@ -28,11 +28,10 @@ type enrichmentJson struct {
 	DTWorkloadName string `json:"dt.kubernetes.workload.name"`
 }
 
-
 func (runner *Runner) createEnrichmentFiles() error {
 	for _, container := range runner.env.Containers {
-		enrichmentJsonPath  := filepath.Join(consts.SharedDirMount, container.Name, consts.EnrichmentSubDirName, consts.EnrichmentJsonFilename)
-		enrichmentPropsPath := filepath.Join(consts.SharedDirMount, container.Name, consts.EnrichmentSubDirName, consts.EnrichmentPropertiesFilename)
+		enrichmentJsonPath := filepath.Join(consts.SharedDirInitPath, container.Name, consts.EnrichmentSubDirName, consts.EnrichmentJsonFilename)
+		enrichmentPropsPath := filepath.Join(consts.SharedDirInitPath, container.Name, consts.EnrichmentSubDirName, consts.EnrichmentPropertiesFilename)
 
 		data := enrichmentJson{
 			ContainerName: container.Name,

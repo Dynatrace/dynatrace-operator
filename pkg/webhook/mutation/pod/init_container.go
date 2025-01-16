@@ -19,7 +19,7 @@ import (
 )
 
 func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Container {
-	return &corev1.Container{
+	container := &corev1.Container{
 		Name:            dtwebhook.InstallContainerName,
 		Image:           webhookImage,
 		ImagePullPolicy: corev1.PullIfNotPresent,
@@ -36,6 +36,10 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 		SecurityContext: securityContextForInitContainer(pod, dk),
 		Resources:       initContainerResources(dk),
 	}
+	addInjectionConfigVolumeMount(container)
+	addSharedVolumeInitMount(container)
+
+	return container
 }
 
 func initContainerResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
@@ -60,6 +64,48 @@ func defaultInitContainerResources() corev1.ResourceRequirements {
 		Requests: resources.NewResourceList("30m", "30Mi"),
 		Limits:   resources.NewResourceList("100m", "60Mi"),
 	}
+}
+
+func addInjectionConfigVolume(pod *corev1.Pod) {
+	pod.Spec.Volumes = append(pod.Spec.Volumes,
+		corev1.Volume{
+			Name: consts.SharedConfigVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: consts.AgentInitSecretName,
+				},
+			},
+		},
+	)
+}
+
+func addInjectionConfigVolumeMount(container *corev1.Container) {
+	container.VolumeMounts = append(container.VolumeMounts,
+		corev1.VolumeMount{Name: consts.SharedConfigVolumeName, MountPath: consts.SharedConfigConfigDirMount},
+	)
+}
+
+func addSharedVolume(pod *corev1.Pod) {
+	pod.Spec.Volumes = append(pod.Spec.Volumes,
+		corev1.Volume{
+			Name: consts.SharedVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+	)
+}
+
+func addSharedVolumeInitMount(container *corev1.Container) {
+	container.VolumeMounts = append(container.VolumeMounts,
+		corev1.VolumeMount{Name: consts.SharedVolumeName, MountPath: consts.SharedDirInitPath},
+	)
+}
+
+func addSharedVolumeMount(container *corev1.Container) {
+	container.VolumeMounts = append(container.VolumeMounts,
+		corev1.VolumeMount{Name: consts.SharedVolumeName, MountPath: consts.SharedMountPath, SubPath: container.Name},
+	)
 }
 
 func securityContextForInitContainer(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.SecurityContext {
@@ -144,6 +190,8 @@ func getBasePodName(pod *corev1.Pod) string {
 
 func addInitContainerToPod(pod *corev1.Pod, initContainer *corev1.Container) {
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *initContainer)
+	addInjectionConfigVolume(pod)
+	addSharedVolume(pod)
 }
 
 func addSeccompProfile(ctx *corev1.SecurityContext, dk dynakube.DynaKube) {
@@ -185,6 +233,8 @@ func updateContainerInfo(request *dtwebhook.BaseRequest, installContainer *corev
 			Image: container.Image,
 		}
 		containersEnvValue = append(containersEnvValue, containerInfo)
+
+		addSharedVolumeMount(container)
 	}
 
 	rawEnv, err := json.Marshal(containersEnvValue)

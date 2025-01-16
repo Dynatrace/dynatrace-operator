@@ -74,7 +74,6 @@ func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationReque
 	mut.addVolumes(request.Pod, request.DynaKube)
 	mut.configureInitContainer(request, installerInfo)
 	mut.mutateUserContainers(request)
-	addInjectionConfigVolumeMount(request.InstallContainer)
 	setInjectedAnnotation(request.Pod)
 
 	return nil

@@ -14,7 +14,7 @@ const (
 
 	SharedMountPath            = "/var/lib/dynatrace"
 	SharedVolumeName           = "dt-share"
-	ConfigVolumeName           = "injection-config"
-	SharedDirMount             = "/mnt/share"
+	SharedConfigVolumeName     = "injection-config"
+	SharedDirInitPath          = "/mnt/share"
 	SharedConfigConfigDirMount = "/mnt/config"
 )

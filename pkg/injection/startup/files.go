@@ -10,10 +10,6 @@ import (
 	"github.com/spf13/afero"
 )
 
-const (
-	onlyReadAllFileMode = 0444
-)
-
 var (
 	baseConfContentFormatString = `[container]
 containerName %s
@@ -69,7 +65,7 @@ func (runner *Runner) getCurlOptionsContent() string {
 
 func (runner *Runner) createCurlOptionsFile(container ContainerInfo) error {
 	content := runner.getCurlOptionsContent()
-	path := filepath.Join(consts.SharedDirMount, consts.AgentCurlOptionsFileName)
+	path := filepath.Join(consts.SharedDirInitPath, container.Name, consts.AgentSubDirName, consts.AgentCustomKeysSubDir, consts.AgentCurlOptionsFileName)
 
 	return runner.createConfigFile(path, content, true)
 }
@@ -90,12 +86,12 @@ func (runner *Runner) createConfigFile(path string, content string, verbose bool
 }
 
 func createFile(fs afero.Fs, path string, content string) error {
-	err := fs.MkdirAll(filepath.Dir(path), onlyReadAllFileMode)
+	err := fs.MkdirAll(filepath.Dir(path), os.ModePerm)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	file, err := fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, onlyReadAllFileMode)
+	file, err := fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 	if err != nil {
 		return errors.WithStack(err)
 	}

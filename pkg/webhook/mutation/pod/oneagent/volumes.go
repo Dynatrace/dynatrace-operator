@@ -1,8 +1,6 @@
 package oneagent
 
 import (
-	"path/filepath"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
@@ -13,7 +11,6 @@ import (
 )
 
 func (mut *Mutator) addVolumes(pod *corev1.Pod, dk dynakube.DynaKube) {
-	addInjectionConfigVolume(pod)
 	addOneAgentVolumes(pod, dk)
 
 	if dk.FeatureReadOnlyCsiVolume() {
@@ -24,7 +21,7 @@ func (mut *Mutator) addVolumes(pod *corev1.Pod, dk dynakube.DynaKube) {
 func addOneAgentVolumeMounts(container *corev1.Container, installPath string) {
 	container.VolumeMounts = append(container.VolumeMounts,
 		corev1.VolumeMount{
-			Name:      oneAgentShareVolumeName,
+			Name:      consts.SharedVolumeName,
 			MountPath: preloadPath,
 			SubPath:   consts.LdPreloadFilename,
 		},
@@ -61,25 +58,6 @@ func addInitVolumeMounts(initContainer *corev1.Container, dk dynakube.DynaKube) 
 	}
 
 	initContainer.VolumeMounts = append(initContainer.VolumeMounts, volumeMounts...)
-}
-
-func addInjectionConfigVolume(pod *corev1.Pod) {
-	pod.Spec.Volumes = append(pod.Spec.Volumes,
-		corev1.Volume{
-			Name: injectionConfigVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: consts.AgentInitSecretName,
-				},
-			},
-		},
-	)
-}
-
-func addInjectionConfigVolumeMount(container *corev1.Container) {
-	container.VolumeMounts = append(container.VolumeMounts,
-		corev1.VolumeMount{Name: injectionConfigVolumeName, MountPath: consts.SharedConfigConfigDirMount},
-	)
 }
 
 func addOneAgentVolumes(pod *corev1.Pod, dk dynakube.DynaKube) {
