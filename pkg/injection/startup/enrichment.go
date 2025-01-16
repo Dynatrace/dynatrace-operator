@@ -2,7 +2,6 @@ package startup
 
 import (
 	"encoding/json"
-	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -29,13 +28,12 @@ type enrichmentJson struct {
 	DTWorkloadName string `json:"dt.kubernetes.workload.name"`
 }
 
-var (
-	enrichmentJsonPathTemplate  = filepath.Join(consts.EnrichmentInitPath, consts.EnrichmentInitJsonFilenameTemplate)
-	enrichmentPropsPathTemplate = filepath.Join(consts.EnrichmentInitPath, consts.EnrichmentInitPropertiesFilenameTemplate)
-)
 
 func (runner *Runner) createEnrichmentFiles() error {
 	for _, container := range runner.env.Containers {
+		enrichmentJsonPath  := filepath.Join(consts.SharedDirMount, container.Name, consts.EnrichmentSubDirName, consts.EnrichmentJsonFilename)
+		enrichmentPropsPath := filepath.Join(consts.SharedDirMount, container.Name, consts.EnrichmentSubDirName, consts.EnrichmentPropertiesFilename)
+
 		data := enrichmentJson{
 			ContainerName: container.Name,
 			PodUid:        runner.env.K8PodUID,
@@ -74,7 +72,7 @@ func (runner *Runner) createEnrichmentFiles() error {
 			return err
 		}
 
-		err = runner.createConfigFile(fmt.Sprintf(enrichmentJsonPathTemplate, container.Name), string(jsonContent), true)
+		err = runner.createConfigFile(enrichmentJsonPath, string(jsonContent), true)
 		if err != nil {
 			return err
 		}
@@ -87,7 +85,7 @@ func (runner *Runner) createEnrichmentFiles() error {
 			propsContent.WriteString("\n")
 		}
 
-		err = runner.createConfigFile(fmt.Sprintf(enrichmentPropsPathTemplate, container.Name), propsContent.String(), true)
+		err = runner.createConfigFile(enrichmentPropsPath, propsContent.String(), true)
 		if err != nil {
 			return err
 		}

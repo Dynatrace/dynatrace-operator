@@ -10,10 +10,7 @@ const (
 	EnrichmentClusterNameEnv         = "DT_CLUSTER_NAME"
 
 	EnrichmentMountPath          = "/var/lib/dynatrace/enrichment"
+	EnrichmentSubDirName         = "enrichment"
 	EnrichmentPropertiesFilename = "dt_metadata.properties"
 	EnrichmentJsonFilename       = "dt_metadata.json"
-
-	EnrichmentInitPath                       = "/tmp/enrichment"
-	EnrichmentInitPropertiesFilenameTemplate = "dt_metadata_%s.properties"
-	EnrichmentInitJsonFilenameTemplate       = "dt_metadata_%s.json"
 )

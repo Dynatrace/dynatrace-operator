@@ -54,7 +54,7 @@ func (secret SecretConfig) logContent() {
 }
 
 func newSecretConfigViaFs(fs afero.Fs) (*SecretConfig, error) {
-	file, err := fs.Open(filepath.Join(consts.AgentConfigDirMount, consts.AgentInitSecretConfigField))
+	file, err := fs.Open(filepath.Join(consts.SharedConfigConfigDirMount, consts.AgentInitSecretConfigField))
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -79,7 +79,7 @@ func newSecretConfigViaFs(fs afero.Fs) (*SecretConfig, error) {
 }
 
 func newCertificatesViaFs(fs afero.Fs, filename string) (string, error) {
-	filePem, err := fs.Open(filepath.Join(consts.AgentConfigDirMount, filename))
+	filePem, err := fs.Open(filepath.Join(consts.SharedConfigConfigDirMount, filename))
 	if err != nil {
 		if os.IsNotExist(err) {
 			log.Info("read certificates from filesystem - file not found", "filename", filename)

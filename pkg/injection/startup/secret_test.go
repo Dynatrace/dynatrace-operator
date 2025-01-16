@@ -86,9 +86,9 @@ func TestNewCertificatesViaFs(t *testing.T) {
 
 func prepTestFs(t *testing.T) afero.Fs {
 	fs := afero.NewMemMapFs()
-	require.NoError(t, fs.MkdirAll(consts.AgentConfigDirMount, 0770))
+	require.NoError(t, fs.MkdirAll(consts.SharedConfigConfigDirMount, 0770))
 
-	file, err := fs.OpenFile(filepath.Join(consts.AgentConfigDirMount, consts.AgentInitSecretConfigField), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0770)
+	file, err := fs.OpenFile(filepath.Join(consts.SharedConfigConfigDirMount, consts.AgentInitSecretConfigField), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0770)
 	require.NoError(t, err)
 	require.NotNil(t, file)
 
@@ -101,7 +101,7 @@ func prepTestFs(t *testing.T) afero.Fs {
 	err = file.Close()
 	require.NoError(t, err)
 
-	file, err = fs.OpenFile(filepath.Join(consts.AgentConfigDirMount, consts.CustomCertsFileName), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0770)
+	file, err = fs.OpenFile(filepath.Join(consts.SharedConfigConfigDirMount, consts.CustomCertsFileName), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0770)
 	require.NoError(t, err)
 	require.NotNil(t, file)
 

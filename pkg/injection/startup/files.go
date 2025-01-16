@@ -67,9 +67,9 @@ func (runner *Runner) getCurlOptionsContent() string {
 	return fmt.Sprintf(curlOptionsFormatString, runner.config.InitialConnectRetry)
 }
 
-func (runner *Runner) createCurlOptionsFile() error {
+func (runner *Runner) createCurlOptionsFile(container ContainerInfo) error {
 	content := runner.getCurlOptionsContent()
-	path := filepath.Join(consts.AgentShareDirMount, consts.AgentCurlOptionsFileName)
+	path := filepath.Join(consts.SharedDirMount, consts.AgentCurlOptionsFileName)
 
 	return runner.createConfigFile(path, content, true)
 }

@@ -148,6 +148,5 @@ func (mut *Mutator) isInjectionPossible(request *dtwebhook.MutationRequest) (boo
 func ContainerIsInjected(container corev1.Container) bool {
 	return env.IsIn(container.Env, dynatraceMetadataEnv) &&
 		env.IsIn(container.Env, preloadEnv) &&
-		volumes.IsIn(container.VolumeMounts, OneAgentBinVolumeName) &&
-		volumes.IsIn(container.VolumeMounts, oneAgentShareVolumeName)
+		volumes.IsIn(container.VolumeMounts, OneAgentBinVolumeName)
 }

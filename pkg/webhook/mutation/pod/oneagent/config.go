@@ -22,14 +22,8 @@ const (
 	UnknownCodeModuleReason   = "UnknownCodeModule"
 	EmptyTenantUUIDReason     = "EmptyTenantUUID"
 
-	OneAgentBinVolumeName     = "oneagent-bin"
-	oneAgentShareVolumeName   = "oneagent-share"
-	injectionConfigVolumeName = "injection-config"
-
-	oneAgentCustomKeysPath = "/var/lib/dynatrace/oneagent/agent/customkeys"
-
-	preloadPath       = "/etc/ld.so.preload"
-	containerConfPath = "/var/lib/dynatrace/oneagent/agent/config/container.conf"
+	OneAgentBinVolumeName = "oneagent-bin"
+	preloadPath           = "/etc/ld.so.preload"
 
 	// readonly CSI
 	oneagentConfVolumeName = "oneagent-agent-conf"

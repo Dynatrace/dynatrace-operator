@@ -2,7 +2,6 @@ package startup
 
 import (
 	"context"
-	"fmt"
 	"path"
 	"path/filepath"
 
@@ -214,7 +213,7 @@ func (runner *Runner) configureInstallation() error {
 	if runner.env.MetadataEnrichmentInjected {
 		log.Info("creating enrichment files")
 
-		if err := runner.enrichMetadata(); err != nil {
+		if err := runner.createEnrichmentFiles(); err != nil {
 			return err
 		}
 	}
@@ -228,23 +227,26 @@ func (runner *Runner) configureOneAgent() error {
 	if err := runner.setLDPreload(); err != nil {
 		return err
 	}
+	for _, container := range runner.env.Containers {
 
-	log.Info("creating container configuration files")
+		log.Info("creating container configuration files")
 
-	if err := runner.createContainerConfigurationFiles(); err != nil {
-		return err
-	}
-
-	if err := runner.propagateTLSCert(); err != nil {
-		return err
-	}
-
-	if runner.config.InitialConnectRetry > -1 {
-		log.Info("creating curl options file")
-
-		if err := runner.createCurlOptionsFile(); err != nil {
+		if err := runner.createContainerConfigurationFiles(container); err != nil {
 			return err
 		}
+
+		if err := runner.propagateTLSCert(container); err != nil {
+			return err
+		}
+
+		if runner.config.InitialConnectRetry > -1 {
+			log.Info("creating curl options file")
+
+			if err := runner.createCurlOptionsFile(container); err != nil {
+				return err
+			}
+		}
+
 	}
 
 	if runner.config.ReadOnlyCSIDriver {
@@ -260,48 +262,38 @@ func (runner *Runner) configureOneAgent() error {
 }
 
 func (runner *Runner) setLDPreload() error {
-	return runner.createConfigFile(filepath.Join(consts.AgentShareDirMount, consts.LdPreloadFilename), filepath.Join(runner.env.InstallPath, consts.LibAgentProcPath), true)
+	return runner.createConfigFile(filepath.Join(consts.SharedDirMount, consts.LdPreloadFilename), filepath.Join(runner.env.InstallPath, consts.LibAgentProcPath), true)
 }
 
-func (runner *Runner) createContainerConfigurationFiles() error {
-	for _, container := range runner.env.Containers {
-		log.Info("creating conf file for container", "container", container)
-		confFilePath := filepath.Join(consts.AgentShareDirMount, fmt.Sprintf(consts.AgentContainerConfFilenameTemplate, container.Name))
-		content := runner.getBaseConfContent(container)
+func (runner *Runner) createContainerConfigurationFiles(container ContainerInfo) error {
+	log.Info("creating conf file for container", "container", container)
+	confFilePath := filepath.Join(consts.SharedDirMount, container.Name, consts.AgentSubDirName, consts.AgentContainerConfSubDir)
+	content := runner.getBaseConfContent(container)
 
-		log.Info("adding k8s cluster id")
+	log.Info("adding k8s cluster id")
 
-		content += runner.getK8SClusterID()
+	content += runner.getK8SClusterID()
 
-		if runner.hostTenant != consts.AgentNoHostTenant {
-			if runner.config.TenantUUID == runner.hostTenant {
-				log.Info("adding k8s node name")
+	if runner.hostTenant != consts.AgentNoHostTenant {
+		if runner.config.TenantUUID == runner.hostTenant {
+			log.Info("adding k8s node name")
 
-				content += runner.getK8SHostInfo()
-			}
-		}
-
-		if err := runner.createConfigFile(confFilePath, content, true); err != nil {
-			return err
+			content += runner.getK8SHostInfo()
 		}
 	}
 
-	return nil
-}
-
-func (runner *Runner) enrichMetadata() error {
-	if err := runner.createEnrichmentFiles(); err != nil {
+	if err := runner.createConfigFile(confFilePath, content, true); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (runner *Runner) propagateTLSCert() error {
+func (runner *Runner) propagateTLSCert(container ContainerInfo) error {
+	baseDir := filepath.Join(consts.SharedDirMount, container.Name, consts.AgentSubDirName, consts.AgentCustomKeysSubDir)
 	if runner.agCerts != "" || runner.trustedCAs != "" {
 		log.Info("propagating tls certificates to agent")
-
-		if err := runner.createConfigFile(filepath.Join(consts.AgentShareDirMount, consts.CustomCertsFileName), runner.agCerts+"\n"+runner.trustedCAs, false); err != nil {
+		if err := runner.createConfigFile(filepath.Join(baseDir, consts.CustomCertsFileName), runner.agCerts+"\n"+runner.trustedCAs, false); err != nil {
 			return err
 		}
 	}
@@ -309,7 +301,7 @@ func (runner *Runner) propagateTLSCert() error {
 	if runner.trustedCAs != "" {
 		log.Info("propagating tls certificates to agent proxy configuration")
 
-		if err := runner.createConfigFile(filepath.Join(consts.AgentShareDirMount, consts.CustomProxyCertsFileName), runner.trustedCAs, false); err != nil {
+		if err := runner.createConfigFile(filepath.Join(baseDir, consts.CustomProxyCertsFileName), runner.trustedCAs, false); err != nil {
 			return err
 		}
 	}

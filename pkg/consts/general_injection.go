@@ -11,4 +11,10 @@ const (
 	K8sBasePodNameEnv = "K8S_BASEPODNAME"
 	K8sNamespaceEnv   = "K8S_NAMESPACE"
 	K8sClusterIDEnv   = "K8S_CLUSTER_ID"
+
+	SharedMountPath            = "/var/lib/dynatrace"
+	SharedVolumeName           = "dt-share"
+	ConfigVolumeName           = "injection-config"
+	SharedDirMount             = "/mnt/share"
+	SharedConfigConfigDirMount = "/mnt/config"
 )

@@ -46,12 +46,6 @@ func (mut *Mutator) addOneAgentToContainer(request *dtwebhook.ReinvocationReques
 	addDeploymentMetadataEnv(container, dk, mut.clusterID)
 	addPreloadEnv(container, installPath)
 
-	addCertVolumeMounts(container, dk)
-
-	if dk.FeatureAgentInitialConnectRetry() > 0 {
-		addCurlOptionsVolumeMount(container)
-	}
-
 	if dk.Spec.NetworkZone != "" {
 		addNetworkZoneEnv(container, dk.Spec.NetworkZone)
 	}
