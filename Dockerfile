@@ -40,7 +40,6 @@ RUN dnf install --installroot /tmp/rootfs-dependency \
       /tmp/rootfs-dependency/var/log/dnf* \
       /tmp/rootfs-dependency/var/log/yum.*
 
-# platform is required, otherwise the copy command will copy the wrong architecture files
 FROM base
 
 COPY --from=dependency /tmp/rootfs-dependency /

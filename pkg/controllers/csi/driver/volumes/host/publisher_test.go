@@ -1,4 +1,4 @@
-package hostvolumes
+package host
 
 import (
 	"context"

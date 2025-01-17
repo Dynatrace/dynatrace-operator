@@ -76,11 +76,12 @@ func (srv *Server) SetupWithManager(mgr ctrl.Manager) error {
 
 func (srv *Server) Start(ctx context.Context) error {
 	endpoint, err := url.Parse(srv.opts.Endpoint)
-	addr := endpoint.Host + endpoint.Path
 
 	if err != nil {
 		return fmt.Errorf("failed to parse endpoint '%s': %w", srv.opts.Endpoint, err)
 	}
+
+	addr := endpoint.Host + endpoint.Path
 
 	if endpoint.Scheme == "unix" {
 		if err := srv.fs.Remove(addr); err != nil && !os.IsNotExist(err) {

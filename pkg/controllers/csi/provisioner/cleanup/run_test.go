@@ -168,9 +168,3 @@ func (c *Cleaner) createHostDirs(t *testing.T, name string) {
 	err := c.fs.MkdirAll(hostDir, os.ModePerm)
 	require.NoError(t, err)
 }
-
-// func mockK8sObjects(t *testing.T, cleaner *Cleaner, objects ...client.Object) {
-// 	t.Helper()
-
-// 	cleaner.apiReader = fake.NewClient(objects...)
-// }
