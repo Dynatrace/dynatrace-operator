@@ -9,14 +9,20 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type Histogram struct {
+// HistogramConfig is based on:
+// "go.opentelemetry.io/opentelemetry-collector-contrib/receiver/statsdreceiver/internal/protocol/statsd_parser.go.HistogramConfig"
+// with reduced number of attributes to reduce the number of dependencies.
+type HistogramConfig struct {
 	MaxSize int32 `mapstructure:"max_size"`
 }
 
+// TimerHistogramMapping is based on:
+// "go.opentelemetry.io/opentelemetry-collector-contrib/receiver/statsdreceiver/internal/protocol/statsd_parser.go.TLSSetting"
+// with reduced number of attributes to reduce the number of dependencies.
 type TimerHistogramMapping struct {
-	StatsDType   string    `mapstructure:"statsd_type"`
-	ObserverType string    `mapstructure:"observer_type"`
-	Histogram    Histogram `mapstructure:"histogram"`
+	StatsDType   string          `mapstructure:"statsd_type"`
+	ObserverType string          `mapstructure:"observer_type"`
+	Histogram    HistogramConfig `mapstructure:"histogram"`
 }
 
 // TLSSetting is based on:
@@ -137,7 +143,7 @@ func (c *Config) buildReceiverComponent(componentID component.ID) component.Conf
 		return map[string]any{
 			"endpoint": "test",
 			"timer_histogram_mapping": []TimerHistogramMapping{{
-				StatsDType: "histogram", ObserverType: "histogram", Histogram: Histogram{MaxSize: 10},
+				StatsDType: "histogram", ObserverType: "histogram", Histogram: HistogramConfig{MaxSize: 10},
 			}},
 		}
 	}
