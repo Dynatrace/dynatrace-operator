@@ -220,6 +220,16 @@ func WithExtensions() Option {
 	}
 }
 
+func WithServices() Option {
+	return func(c *Config) error {
+		services := c.buildServices()
+
+		c.cfg.Service = services
+
+		return nil
+	}
+}
+
 func WithTLSKey(tlsKey string) Option {
 	return func(c *Config) error {
 		c.tlsKey = tlsKey
