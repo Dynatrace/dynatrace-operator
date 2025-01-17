@@ -20,6 +20,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring"
+	logmondaemonset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
@@ -355,6 +356,10 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
 			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
 			// this situation will clear itself after AG has been started
+			controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
+
+			return goerrors.Join(componentErrors...)
+		} else if errors.Is(err, logmondaemonset.KubernetesSettingsNotAvailableError) {
 			controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
 
 			return goerrors.Join(componentErrors...)

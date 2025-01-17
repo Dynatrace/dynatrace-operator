@@ -5,10 +5,86 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func TestLogMonitoringWithoutK8SMonitoring(t *testing.T) {
+	t.Run("no error if logMonitoring is enabled with activegate with k8s-monitoring", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				},
+				APIURL:        testApiUrl,
+				LogMonitoring: &logmonitoring.Spec{},
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
+					},
+				},
+			},
+		}
+		assertAllowed(t, dk)
+	})
+	t.Run("no error if logMonitoring is enabled with automatic k8s monitoring feature flag", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dynakube.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				},
+				APIURL:        testApiUrl,
+				LogMonitoring: &logmonitoring.Spec{},
+			},
+		}
+		assertAllowed(t, dk)
+	})
+	t.Run("no error if logMonitoring is enabled without activegate with k8s-monitoring but automatic-kubernetes-monitoring enabled", func(t *testing.T) {
+		assertAllowed(t, &dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL:        testApiUrl,
+				LogMonitoring: &logmonitoring.Spec{},
+				Templates: dynakube.TemplatesSpec{
+					LogMonitoring: &logmonitoring.TemplateSpec{
+						ImageRef: image.Ref{
+							Repository: "repo/image",
+							Tag:        "version",
+						},
+					},
+				},
+			},
+		})
+	})
+	t.Run("error if logMonitoring is enabled without activegate with k8s-monitoring and automatic-kubernetes-monitoring disabled", func(t *testing.T) {
+		assertDenied(t, []string{errorLogMonitoringWithoutK8SMonitoring}, &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dynakube.AnnotationFeatureAutomaticK8sApiMonitoring: "false",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL:        testApiUrl,
+				LogMonitoring: &logmonitoring.Spec{},
+				Templates: dynakube.TemplatesSpec{
+					LogMonitoring: &logmonitoring.TemplateSpec{
+						ImageRef: image.Ref{
+							Repository: "repo/image",
+							Tag:        "version",
+						},
+					},
+				},
+			},
+		})
+	})
+}
 
 func TestIgnoredLogMonitoringTemplate(t *testing.T) {
 	t.Run("no warning if logMonitoring template section is empty", func(t *testing.T) {

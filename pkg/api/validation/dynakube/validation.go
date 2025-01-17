@@ -53,6 +53,7 @@ var (
 		missingKSPMDependency,
 		missingKSPMImage,
 		missingLogMonitoringImage,
+		logMonitoringWithoutK8SMonitoring,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,
