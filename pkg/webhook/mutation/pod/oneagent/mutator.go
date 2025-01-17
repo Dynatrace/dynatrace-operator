@@ -119,7 +119,7 @@ func (mut *Mutator) isInjectionPossible(request *dtwebhook.MutationRequest) (boo
 
 	dk := request.DynaKube
 
-	_, err := dk.TenantUUIDFromConnectionInfoStatus()
+	_, err := dk.TenantUUID()
 	if err != nil {
 		log.Info("tenant UUID is not available, OneAgent cannot be injected", "pod", request.PodName())
 

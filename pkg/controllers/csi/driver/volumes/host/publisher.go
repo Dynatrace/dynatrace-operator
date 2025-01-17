@@ -14,13 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package hostvolumes
+package host
 
 import (
 	"context"
-	"fmt"
 	"os"
-	"time"
 
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
@@ -31,120 +29,49 @@ import (
 	"k8s.io/mount-utils"
 )
 
-const failedToGetOsAgentVolumePrefix = "failed to get osagent volume info from database: "
-
-func NewHostVolumePublisher(fs afero.Afero, mounter mount.Interface, db metadata.Access, path metadata.PathResolver) csivolumes.Publisher {
-	return &HostVolumePublisher{
+func NewPublisher(fs afero.Afero, mounter mount.Interface, path metadata.PathResolver) csivolumes.Publisher {
+	return &Publisher{
 		fs:      fs,
 		mounter: mounter,
-		db:      db,
 		path:    path,
 	}
 }
 
-// necessary for mocking, as the MounterMock will use the os package
-type mountChecker func(mounter mount.Interface, file string) (bool, error)
-
-type HostVolumePublisher struct {
-	fs           afero.Afero
-	mounter      mount.Interface
-	db           metadata.Access
-	isNotMounted mountChecker
-	path         metadata.PathResolver
+type Publisher struct {
+	fs      afero.Afero
+	mounter mount.Interface
+	path    metadata.PathResolver
 }
 
-func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
-	bindCfg, err := csivolumes.NewBindConfig(ctx, publisher.db, volumeCfg)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := publisher.mountOneAgent(bindCfg.TenantUUID, volumeCfg); err != nil {
+func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
+	if err := pub.mountStorageVolume(volumeCfg); err != nil {
 		return nil, status.Error(codes.Internal, "failed to mount osagent volume: "+err.Error())
-	}
-
-	volume, err := publisher.db.GetOsAgentVolumeViaTenantUUID(ctx, bindCfg.TenantUUID)
-	if err != nil {
-		return nil, status.Error(codes.Internal, failedToGetOsAgentVolumePrefix+err.Error())
-	}
-
-	timestamp := time.Now()
-	if volume == nil {
-		storage := metadata.OsAgentVolume{
-			VolumeID:     volumeCfg.VolumeID,
-			TenantUUID:   bindCfg.TenantUUID,
-			Mounted:      true,
-			LastModified: &timestamp,
-		}
-		if err := publisher.db.InsertOsAgentVolume(ctx, &storage); err != nil {
-			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to insert osagent volume info to database. info: %v err: %s", storage, err.Error()))
-		}
-	} else {
-		volume.VolumeID = volumeCfg.VolumeID
-		volume.Mounted = true
-		volume.LastModified = &timestamp
-
-		if err := publisher.db.UpdateOsAgentVolume(ctx, volume); err != nil {
-			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to update osagent volume info to database. info: %v err: %s", volume, err.Error()))
-		}
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
-func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volumeInfo *csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
-	volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(ctx, volumeInfo.VolumeID)
-	if err != nil {
-		return nil, status.Error(codes.Internal, failedToGetOsAgentVolumePrefix+err.Error())
-	}
+func (pub *Publisher) mountStorageVolume(volumeCfg *csivolumes.VolumeConfig) error {
+	oaStorageDir := pub.path.OsAgentDir(volumeCfg.DynakubeName)
 
-	if volume == nil {
-		return &csi.NodeUnpublishVolumeResponse{}, nil
-	}
-
-	publisher.unmountOneAgent(volumeInfo.TargetPath)
-
-	timestamp := time.Now()
-	volume.Mounted = false
-	volume.LastModified = &timestamp
-
-	if err := publisher.db.UpdateOsAgentVolume(ctx, volume); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to update osagent volume info to database. info: %v err: %s", volume, err.Error()))
-	}
-
-	log.Info("osagent volume has been unpublished", "targetPath", volumeInfo.TargetPath)
-
-	return &csi.NodeUnpublishVolumeResponse{}, nil
-}
-
-func (publisher *HostVolumePublisher) CanUnpublishVolume(ctx context.Context, volumeInfo *csivolumes.VolumeInfo) (bool, error) {
-	volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(ctx, volumeInfo.VolumeID)
-	if err != nil {
-		return false, status.Error(codes.Internal, failedToGetOsAgentVolumePrefix+err.Error())
-	}
-
-	return volume != nil, nil
-}
-
-func (publisher *HostVolumePublisher) mountOneAgent(tenantUUID string, volumeCfg *csivolumes.VolumeConfig) error {
-	hostDir := publisher.path.OsAgentDir(tenantUUID)
-	_ = publisher.fs.MkdirAll(hostDir, os.ModePerm)
-
-	if err := publisher.fs.MkdirAll(volumeCfg.TargetPath, os.ModePerm); err != nil {
+	err := pub.fs.MkdirAll(oaStorageDir, os.ModePerm)
+	if err != nil && !os.IsExist(err) {
 		return err
 	}
 
-	if err := publisher.mounter.Mount(hostDir, volumeCfg.TargetPath, "", []string{"bind"}); err != nil {
-		_ = publisher.mounter.Unmount(hostDir)
+	if err := pub.fs.MkdirAll(volumeCfg.TargetPath, os.ModePerm); err != nil {
+		log.Info("failed to create directory for osagent-storage mount", "directory", oaStorageDir)
+
+		return err
+	}
+
+	if err := pub.mounter.Mount(oaStorageDir, volumeCfg.TargetPath, "", []string{"bind"}); err != nil {
+		_ = pub.mounter.Unmount(oaStorageDir)
+
+		log.Info("failed to mount directory for osagent-storage mount", "directory", oaStorageDir)
 
 		return err
 	}
 
 	return nil
-}
-
-func (publisher *HostVolumePublisher) unmountOneAgent(targetPath string) {
-	if err := publisher.mounter.Unmount(targetPath); err != nil {
-		log.Error(err, "Unmount failed", "path", targetPath)
-	}
 }

@@ -1,8 +1,5 @@
 # setup build image
-FROM golang:1.23.5@sha256:51a6466e8dbf3e00e422eb0f7a97ac450b2d57b33617bbe8d2ee0bddcd9d0d37 AS operator-build
-
-RUN --mount=type=cache,target=/var/cache/apt \
-    apt-get update && apt-get install -y libbtrfs-dev libdevmapper-dev
+FROM --platform=$BUILDPLATFORM golang:1.23.5@sha256:51a6466e8dbf3e00e422eb0f7a97ac450b2d57b33617bbe8d2ee0bddcd9d0d37 AS operator-build
 
 WORKDIR /app
 
@@ -14,12 +11,17 @@ RUN if [ "$DEBUG_TOOLS" = "true" ]; then \
 COPY go.mod go.sum ./
 RUN go mod download -x
 
-ARG GO_LINKER_ARGS
-ARG GO_BUILD_TAGS
-
 COPY pkg ./pkg
 COPY cmd ./cmd
-RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" \
+
+ARG GO_LINKER_ARGS
+ARG GO_BUILD_TAGS
+ARG TARGETARCH
+ARG TARGETOS
+
+RUN --mount=type=cache,target="/root/.cache/go-build" \
+    --mount=type=cache,target="/go/pkg" \
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
     go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./cmd/
 

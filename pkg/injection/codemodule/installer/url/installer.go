@@ -77,7 +77,7 @@ func (installer Installer) InstallAgent(ctx context.Context, targetDir string) (
 		return false, err
 	}
 
-	if err := symlink.CreateSymlinkForCurrentVersionIfNotExists(installer.fs, targetDir); err != nil {
+	if err := symlink.CreateForCurrentVersionIfNotExists(installer.fs, targetDir); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
 		log.Info("failed to create symlink for agent installation", "targetDir", targetDir)
 

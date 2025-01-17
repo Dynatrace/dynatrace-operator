@@ -1,4 +1,4 @@
-package appvolumes
+package app
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
