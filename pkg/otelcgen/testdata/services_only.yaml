@@ -1,0 +1,69 @@
+connectors: {}
+exporters: {}
+extensions: {}
+processors: {}
+receivers: {}
+service:
+  extensions:
+    - health_check
+  pipelines:
+    logs:
+      exporters:
+        - otlphttp
+        - debug
+      receivers:
+        - otlp
+        - jaeger
+        - zipkin
+      processors:
+        - memory_limiter
+        - k8sattributes
+        - transform
+        - batch/logs
+    metrics:
+      exporters:
+        - otlphttp
+        - debug
+      receivers:
+        - otlp
+        - jaeger
+        - zipkin
+      processors:
+        - memory_limiter
+        - k8sattributes
+        - transform
+        - batch/metrics
+    traces:
+      exporters:
+        - otlphttp
+        - debug
+      receivers:
+        - otlp
+        - jaeger
+        - zipkin
+      processors:
+        - memory_limiter
+        - k8sattributes
+        - transform
+        - batch/traces
+  telemetry:
+    logs:
+      development: false
+      disable_caller: false
+      disable_stacktrace: false
+      encoding: ""
+      error_output_paths: [ ]
+      initial_fields: { }
+      level: info
+      output_paths: [ ]
+      processors: [ ]
+      sampling: null
+    metrics:
+      address: ""
+      level: Basic
+      readers: [ ]
+    resource: { }
+    traces:
+      level: Basic
+      processors: [ ]
+      propagators: [ ]
