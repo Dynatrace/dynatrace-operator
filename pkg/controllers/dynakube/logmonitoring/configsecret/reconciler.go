@@ -109,7 +109,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 
 func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, error) {
 	tenantToken, err := k8ssecret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{
-		Name:      r.dk.OneagentTenantSecret(),
+		Name:      r.dk.OneAgent().GetTenantSecret(),
 		Namespace: r.dk.Namespace,
 	}, connectioninfo.TenantTokenKey, log)
 	if err != nil {
@@ -118,7 +118,7 @@ func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, erro
 		return nil, err
 	}
 
-	tenantUUID, err := r.dk.TenantUUIDFromConnectionInfoStatus()
+	tenantUUID, err := r.dk.TenantUUID()
 	if err != nil {
 		conditions.SetSecretGenFailed(r.dk.Conditions(), lmcConditionType, err)
 
@@ -126,7 +126,7 @@ func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, erro
 	}
 
 	deploymentConfigContent := map[string]string{
-		serverKey:       fmt.Sprintf("{%s}", r.dk.OneAgentEndpoints()),
+		serverKey:       fmt.Sprintf("{%s}", r.dk.OneAgent().GetEndpoints()),
 		tenantKey:       tenantUUID,
 		tenantTokenKey:  tenantToken,
 		hostIdSourceKey: "k8s-node-name",

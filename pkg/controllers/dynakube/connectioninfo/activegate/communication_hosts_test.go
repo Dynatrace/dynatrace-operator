@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -16,8 +17,8 @@ func TestParseCommunicationHostsFromActiveGateEndpoints(t *testing.T) {
 			Name:      "test-name",
 		},
 		Status: dynakube.DynaKubeStatus{
-			OneAgent: dynakube.OneAgentStatus{
-				ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
+			OneAgent: oneagent.Status{
+				ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
 					ConnectionInfo: communication.ConnectionInfo{},
 				},
 			},

@@ -35,7 +35,7 @@ func verifyAllImagesAvailable(ctx context.Context, baseLog logd.Logger, keychain
 
 	imagePullFunc := CreateImagePullFunc(ctx, keychain, transport)
 
-	if dk.NeedsOneAgent() {
+	if dk.OneAgent().IsDaemonsetRequired() {
 		verifyImageIsAvailable(log, imagePullFunc, dk, componentOneAgent, false)
 		verifyImageIsAvailable(log, imagePullFunc, dk, componentCodeModules, true)
 	}

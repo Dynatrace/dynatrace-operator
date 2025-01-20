@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
@@ -48,15 +49,15 @@ func (dst *DynaKube) fromOneAgentSpec(src *dynakube.DynaKube) {
 	dst.Spec.OneAgent.HostGroup = src.Spec.OneAgent.HostGroup
 
 	switch {
-	case src.HostMonitoringMode():
+	case src.OneAgent().IsHostMonitoringMode():
 		dst.Spec.OneAgent.HostMonitoring = fromHostInjectSpec(*src.Spec.OneAgent.HostMonitoring)
-	case src.ClassicFullStackMode():
+	case src.OneAgent().IsClassicFullStackMode():
 		dst.Spec.OneAgent.ClassicFullStack = fromHostInjectSpec(*src.Spec.OneAgent.ClassicFullStack)
-	case src.CloudNativeFullstackMode():
+	case src.OneAgent().IsCloudNativeFullstackMode():
 		dst.Spec.OneAgent.CloudNativeFullStack = &CloudNativeFullStackSpec{}
 		dst.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec = *fromHostInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec)
 		dst.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec = *fromAppInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec)
-	case src.ApplicationMonitoringMode():
+	case src.OneAgent().IsApplicationMonitoringMode():
 		dst.Spec.OneAgent.ApplicationMonitoring = &ApplicationMonitoringSpec{}
 		dst.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec = *fromAppInjectSpec(src.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec)
 		dst.Spec.OneAgent.ApplicationMonitoring.Version = src.Spec.OneAgent.ApplicationMonitoring.Version
@@ -94,9 +95,9 @@ func (dst *DynaKube) fromActiveGateSpec(src *dynakube.DynaKube) {
 func (dst *DynaKube) fromMovedFields(src *dynakube.DynaKube) error {
 	dst.Annotations[AnnotationFeatureMetadataEnrichment] = strconv.FormatBool(src.MetadataEnrichmentEnabled())
 	dst.Annotations[AnnotationFeatureApiRequestThreshold] = strconv.FormatInt(int64(src.GetDynatraceApiRequestThreshold()), 10)
-	dst.Annotations[AnnotationFeatureOneAgentSecCompProfile] = src.OneAgentSecCompProfile()
+	dst.Annotations[AnnotationFeatureOneAgentSecCompProfile] = src.OneAgent().GetSecCompProfile()
 
-	if selector := src.OneAgentNamespaceSelector(); selector != nil {
+	if selector := src.OneAgent().GetNamespaceSelector(); selector != nil {
 		dst.Spec.NamespaceSelector = *selector
 	} else {
 		dst.Spec.NamespaceSelector = src.Spec.MetadataEnrichment.NamespaceSelector
@@ -160,7 +161,7 @@ func (dst *DynaKube) fromActiveGateStatus(src dynakube.DynaKube) {
 	dst.Status.ActiveGate.VersionStatus = src.Status.ActiveGate.VersionStatus
 }
 
-func fromHostInjectSpec(src dynakube.HostInjectSpec) *HostInjectSpec {
+func fromHostInjectSpec(src oneagent.HostInjectSpec) *HostInjectSpec {
 	dst := &HostInjectSpec{}
 	dst.AutoUpdate = src.AutoUpdate
 	dst.OneAgentResources = src.OneAgentResources
@@ -178,7 +179,7 @@ func fromHostInjectSpec(src dynakube.HostInjectSpec) *HostInjectSpec {
 	return dst
 }
 
-func fromAppInjectSpec(src dynakube.AppInjectionSpec) *AppInjectionSpec {
+func fromAppInjectSpec(src oneagent.AppInjectionSpec) *AppInjectionSpec {
 	dst := &AppInjectionSpec{}
 
 	dst.CodeModulesImage = src.CodeModulesImage

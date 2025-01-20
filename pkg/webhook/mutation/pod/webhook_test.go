@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
@@ -202,7 +203,7 @@ func TestDoubleInjection(t *testing.T) {
 	// adding communicationHost to the dynakube to make the scenario more complicated
 	// it shouldn't try to mutate the pod because now it could be enabled, that is just asking for trouble.
 	communicationHostDK := getTestDynakube()
-	communicationHostDK.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynakube.CommunicationHostStatus{{Host: "test"}}
+	communicationHostDK.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []oneagent.CommunicationHostStatus{{Host: "test"}}
 	fakeClient = fake.NewClient(communicationHostDK, getTestNamespace())
 	podWebhook.apiReader = fakeClient
 
@@ -440,8 +441,8 @@ func getTestDynakubeDefaultAppMon() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
 		ObjectMeta: getTestDynakubeMeta(),
 		Spec: dynakube.DynaKubeSpec{
-			OneAgent: dynakube.OneAgentSpec{
-				ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{},
+			OneAgent: oneagent.Spec{
+				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 			},
 		},
 	}
@@ -454,10 +455,10 @@ func getTestDynakubeMeta() metav1.ObjectMeta {
 	}
 }
 
-func getCloudNativeSpec(initResources *corev1.ResourceRequirements) dynakube.OneAgentSpec {
-	return dynakube.OneAgentSpec{
-		CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
-			AppInjectionSpec: dynakube.AppInjectionSpec{
+func getCloudNativeSpec(initResources *corev1.ResourceRequirements) oneagent.Spec {
+	return oneagent.Spec{
+		CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+			AppInjectionSpec: oneagent.AppInjectionSpec{
 				InitResources: initResources,
 			},
 		},

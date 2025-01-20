@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -467,14 +468,14 @@ func createDynakube() *dynakube.DynaKube {
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://test-url/e/tenant/api",
 			Tokens: "dynakube-test",
-			OneAgent: dynakube.OneAgentSpec{
-				CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
-					HostInjectSpec: dynakube.HostInjectSpec{},
+			OneAgent: oneagent.Spec{
+				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+					HostInjectSpec: oneagent.HostInjectSpec{},
 				}},
 		},
 		Status: dynakube.DynaKubeStatus{
-			OneAgent: dynakube.OneAgentStatus{
-				ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
+			OneAgent: oneagent.Status{
+				ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
 					ConnectionInfo: communication.ConnectionInfo{
 						TenantUUID: "test-tenant",
 						Endpoints:  "beep.com;bop.com",
@@ -522,9 +523,9 @@ func setTlsSecret(dk *dynakube.DynaKube, value string) {
 }
 
 func setNodesToInstances(dk *dynakube.DynaKube, nodeNames ...string) {
-	instances := map[string]dynakube.OneAgentInstance{}
+	instances := map[string]oneagent.Instance{}
 	for _, name := range nodeNames {
-		instances[name] = dynakube.OneAgentInstance{}
+		instances[name] = oneagent.Instance{}
 	}
 
 	dk.Status.OneAgent.Instances = instances

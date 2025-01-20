@@ -2,7 +2,6 @@ package dynakube
 
 import (
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -80,37 +79,7 @@ func (dk *DynaKube) Tokens() string {
 	return dk.Name
 }
 
-func (dk *DynaKube) TenantUUIDFromApiUrl() (string, error) {
-	return tenantUUID(dk.ApiUrl())
-}
-
-func runeIs(wanted rune) func(rune) bool {
-	return func(actual rune) bool {
-		return actual == wanted
-	}
-}
-
-func tenantUUID(apiUrl string) (string, error) {
-	parsedUrl, err := url.Parse(apiUrl)
-	if err != nil {
-		return "", errors.WithMessagef(err, "problem parsing tenant id from url %s", apiUrl)
-	}
-
-	// Path = "/e/<token>/api" -> ["e",  "<tenant>", "api"]
-	subPaths := strings.FieldsFunc(parsedUrl.Path, runeIs('/'))
-	if len(subPaths) >= 3 && subPaths[0] == "e" && subPaths[2] == "api" {
-		return subPaths[1], nil
-	}
-
-	hostnameWithDomains := strings.FieldsFunc(parsedUrl.Hostname(), runeIs('.'))
-	if len(hostnameWithDomains) >= 1 {
-		return hostnameWithDomains[0], nil
-	}
-
-	return "", errors.Errorf("problem getting tenant id from API URL '%s'", apiUrl)
-}
-
-func (dk *DynaKube) TenantUUIDFromConnectionInfoStatus() (string, error) {
+func (dk *DynaKube) TenantUUID() (string, error) {
 	if dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID != "" {
 		return dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID, nil
 	} else if dk.Status.ActiveGate.ConnectionInfo.TenantUUID != "" {

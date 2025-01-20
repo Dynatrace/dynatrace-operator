@@ -41,7 +41,7 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/applicationmonitor
 
 <a name="LabelVersionDetection"></a>
 
-## func [LabelVersionDetection](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/applicationmonitoring/label_version_detection.go#L98>)
+## func [LabelVersionDetection](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/applicationmonitoring/label_version_detection.go#L99>)
 
 ```go
 func LabelVersionDetection(t *testing.T) features.Feature
@@ -63,7 +63,7 @@ Verification of the metadata enrichment part of the operator. The test checks th
 
 <a name="ReadOnlyCSIVolume"></a>
 
-## func [ReadOnlyCSIVolume](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/applicationmonitoring/read_only_csi_volume.go#L30>)
+## func [ReadOnlyCSIVolume](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/applicationmonitoring/read_only_csi_volume.go#L31>)
 
 ```go
 func ReadOnlyCSIVolume(t *testing.T) features.Feature
@@ -131,7 +131,7 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 - [func AssessOneAgentContainer(builder *features.FeatureBuilder, agCrt []byte, trustedCAs []byte)](<#AssessOneAgentContainer>)
 - [func AssessSampleContainer(builder *features.FeatureBuilder, sampleApp *sample.App, agCrt []byte, trustedCAs []byte)](<#AssessSampleContainer>)
 - [func AssessSampleInitContainers(builder *features.FeatureBuilder, sampleApp *sample.App)](<#AssessSampleInitContainers>)
-- [func DefaultCloudNativeSpec() *dynakube.CloudNativeFullStackSpec](<#DefaultCloudNativeSpec>)
+- [func DefaultCloudNativeSpec() *oneagent.CloudNativeFullStackSpec](<#DefaultCloudNativeSpec>)
 
 <a name="AssessActiveGateContainer"></a>
 
@@ -170,7 +170,7 @@ func AssessSampleInitContainers(builder *features.FeatureBuilder, sampleApp *sam
 ## func [DefaultCloudNativeSpec](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/init_containers.go#L84>)
 
 ```go
-func DefaultCloudNativeSpec() *dynakube.CloudNativeFullStackSpec
+func DefaultCloudNativeSpec() *oneagent.CloudNativeFullStackSpec
 ```
 
 # codemodules
@@ -189,7 +189,7 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/codemo
 
 <a name="InstallFromImage"></a>
 
-## func [InstallFromImage](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L66>)
+## func [InstallFromImage](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L67>)
 
 ```go
 func InstallFromImage(t *testing.T) features.Feature
@@ -199,7 +199,7 @@ Verification that the storage in the CSI driver directory does not increase when
 
 <a name="WithProxy"></a>
 
-## func [WithProxy](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L135>)
+## func [WithProxy](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L136>)
 
 ```go
 func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature
@@ -215,7 +215,7 @@ Connectivity in the dynatrace namespace and sample application namespace is rest
 
 <a name="WithProxyAndAGCert"></a>
 
-## func [WithProxyAndAGCert](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L250>)
+## func [WithProxyAndAGCert](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L251>)
 
 ```go
 func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature
@@ -223,7 +223,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature
 
 <a name="WithProxyCA"></a>
 
-## func [WithProxyCA](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L189>)
+## func [WithProxyCA](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L190>)
 
 ```go
 func WithProxyCA(t *testing.T, proxySpec *value.Source) features.Feature
@@ -231,7 +231,7 @@ func WithProxyCA(t *testing.T, proxySpec *value.Source) features.Feature
 
 <a name="WithProxyCAAndAGCert"></a>
 
-## func [WithProxyCAAndAGCert](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L315>)
+## func [WithProxyCAAndAGCert](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L316>)
 
 ```go
 func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature
@@ -478,7 +478,7 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/support_archive"
 
 <a name="Feature"></a>
 
-## func [Feature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/support_archive/support_archive.go#L55>)
+## func [Feature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/support_archive/support_archive.go#L56>)
 
 ```go
 func Feature(t *testing.T) features.Feature
@@ -490,7 +490,7 @@ Verification if support-archive package created by the support-archive command a
 
 <a name="CustomResources"></a>
 
-## type [CustomResources](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/support_archive/support_archive.go#L45-L48>)
+## type [CustomResources](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/support_archive/support_archive.go#L46-L49>)
 
 ```go
 type CustomResources struct {

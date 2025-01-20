@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/pkg/errors"
@@ -35,7 +36,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("Only clean up if not standalone", func(t *testing.T) {
 		dk := createDynakube(true)
-		dk.Spec.OneAgent.CloudNativeFullStack = &dynakube.CloudNativeFullStackSpec{}
+		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 		conditions.SetSecretCreated(dk.Conditions(), lmcConditionType, "testing")
 
 		mockK8sClient := createK8sClientWithConfigSecret()
@@ -123,7 +124,7 @@ func checkSecretForValue(t *testing.T, k8sClient client.Client, dk *dynakube.Dyn
 	deploymentConfig, ok := secret.Data[DeploymentConfigFilename]
 	require.True(t, ok)
 
-	tenantUUID, err := dk.TenantUUIDFromConnectionInfoStatus()
+	tenantUUID, err := dk.TenantUUID()
 	require.NoError(t, err)
 
 	expectedLines := []string{
@@ -157,8 +158,8 @@ func createDynakube(isLogMonitoringEnabled bool) *dynakube.DynaKube {
 			LogMonitoring: logMonitoringSpec,
 		},
 		Status: dynakube.DynaKubeStatus{
-			OneAgent: dynakube.OneAgentStatus{
-				ConnectionInfoStatus: dynakube.OneAgentConnectionInfoStatus{
+			OneAgent: oneagent.Status{
+				ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
 					ConnectionInfo: communication.ConnectionInfo{
 						TenantUUID: "test-uuid",
 						Endpoints:  "https://endpoint1.com;https://endpoint2.com",
@@ -194,7 +195,7 @@ func createK8sClientWithOneAgentTenantSecret(dk *dynakube.DynaKube, token string
 		&corev1.Secret{
 			Data: map[string][]byte{connectioninfo.TenantTokenKey: []byte(token)},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      dk.OneagentTenantSecret(),
+				Name:      dk.OneAgent().GetTenantSecret(),
 				Namespace: dkNamespace,
 			},
 		},

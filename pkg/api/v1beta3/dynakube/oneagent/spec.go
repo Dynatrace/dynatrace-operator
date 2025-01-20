@@ -1,13 +1,27 @@
-package dynakube
+package oneagent
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type OneAgentMode string
+type OneAgent struct {
+	*Spec
+	*Status
+	*CodeModulesStatus
 
-type OneAgentSpec struct {
+	name       string
+	apiUrlHost string
+
+	featureOneAgentPrivileged        bool
+	featureOneAgentSkipLivenessProbe bool
+}
+
+type Mode string
+
+// +kubebuilder:object:generate=true
+type Spec struct {
 	// Has a single OneAgent per node via DaemonSet.
 	// Injection is performed via the same OneAgent DaemonSet.
 	// +nullable
@@ -35,11 +49,13 @@ type OneAgentSpec struct {
 	HostGroup string `json:"hostGroup,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
 type CloudNativeFullStackSpec struct {
 	HostInjectSpec   `json:",inline"`
 	AppInjectionSpec `json:",inline"`
 }
 
+// +kubebuilder:object:generate=true
 type HostInjectSpec struct {
 
 	// Add custom OneAgent annotations.
@@ -113,6 +129,7 @@ type HostInjectSpec struct {
 	Args []string `json:"args,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
 type ApplicationMonitoringSpec struct {
 
 	// Use a specific OneAgent CodeModule version. Defaults to the latest version from the Dynatrace cluster.
@@ -123,6 +140,7 @@ type ApplicationMonitoringSpec struct {
 	AppInjectionSpec `json:",inline"`
 }
 
+// +kubebuilder:object:generate=true
 type AppInjectionSpec struct {
 	// Define resources requests and limits for the initContainer. For details, see Managing resources for containers
 	// (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers).
@@ -139,4 +157,9 @@ type AppInjectionSpec struct {
 	// For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate).
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Namespace Selector",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
 	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type CodeModulesStatus struct {
+	status.VersionStatus `json:",inline"`
 }

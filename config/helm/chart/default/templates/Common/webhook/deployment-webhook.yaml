@@ -87,9 +87,13 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-          envFrom:
-            - configMapRef:
-                name: install-config
+            - name: WEBHOOK_PORT
+              value: "{{ .Values.webhook.ports.server | default "8443" }}"
+            - name: HEALTH_PROBE_BIND_ADDRESS
+              value: ":{{ .Values.webhook.ports.healthProbe | default "10080" }}"
+            - name: METRICS_BIND_ADDRESS
+              value: ":{{ .Values.webhook.ports.metrics | default "8383" }}"
+            {{ include "dynatrace-operator.modules-json-env" . | nindent 12 }}
           readinessProbe:
             httpGet:
               path: /readyz
@@ -106,11 +110,11 @@ spec:
             periodSeconds: 10
           ports:
             - name: server-port
-              containerPort: 8443
+              containerPort: {{ .Values.webhook.ports.server | default 8443 }}
             - name: livez
-              containerPort: 10080
+              containerPort: {{ .Values.webhook.ports.healthProbe | default 10080 }}
             - name: metrics
-              containerPort: 8080
+              containerPort: {{ .Values.webhook.ports.metrics | default 8383 }}
           resources:
             requests:
               {{- toYaml (.Values.webhook).requests | nindent 14 }}

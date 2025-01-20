@@ -1,19 +1,19 @@
 #renovate depName=sigs.k8s.io/kustomize/kustomize/v5
-kustomize_version=v5.5.0
+kustomize_version=v5.6.0
 #renovate depName=sigs.k8s.io/controller-tools/cmd
-controller_gen_version=v0.16.5
+controller_gen_version=v0.17.1
 # renovate depName=github.com/golangci/golangci-lint
-golang_ci_cmd_version=v1.62.2
+golang_ci_cmd_version=v1.63.4
 # renovate depName=github.com/daixiang0/gci
 gci_version=v0.13.5
 # renovate depName=golang.org/x/tools
-golang_tools_version=v0.28.0
+golang_tools_version=v0.29.0
 # renovate depName=github.com/vektra/mockery
-mockery_version=v2.50.0
+mockery_version=v2.51.1
 # renovate depName=github.com/igorshubovych/markdownlint-cli
 markdownlint_cli_version=v0.43.0
 # renovate depName=github.com/helm-unittest/helm-unittest
-helmunittest_version=v0.7.0
+helmunittest_version=v0.7.1
 # renovate depName=github.com/princjef/gomarkdoc
 gomarkdoc_version=v1.1.0
 

@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -39,8 +40,8 @@ func TestReconcile(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testApiUrl,
-			OneAgent: dynakube.OneAgentSpec{
-				CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
+			OneAgent: oneagent.Spec{
+				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 			},
 			ActiveGate: activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{
@@ -100,7 +101,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, "Version verified for component.", condition.Message)
 
 		assertStatusBasedOnTenantRegistry(t, dk.ActiveGate().GetDefaultImage(testActiveGateImage.Tag), testActiveGateImage.Tag, dkStatus.ActiveGate.VersionStatus)
-		assertStatusBasedOnTenantRegistry(t, dk.DefaultOneAgentImage(testOneAgentImage.Tag), testOneAgentImage.Tag, dkStatus.OneAgent.VersionStatus)
+		assertStatusBasedOnTenantRegistry(t, dk.OneAgent().GetDefaultImage(testOneAgentImage.Tag), testOneAgentImage.Tag, dkStatus.OneAgent.VersionStatus)
 		assert.Equal(t, latestAgentVersion, dkStatus.CodeModules.VersionStatus.Version)
 
 		// no change if probe not old enough
@@ -203,12 +204,12 @@ func TestNeedsUpdate(t *testing.T) {
 
 	dk := dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
-			OneAgent: dynakube.OneAgentSpec{
-				ClassicFullStack: &dynakube.HostInjectSpec{},
+			OneAgent: oneagent.Spec{
+				ClassicFullStack: &oneagent.HostInjectSpec{},
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
-			OneAgent: dynakube.OneAgentStatus{
+			OneAgent: oneagent.Status{
 				VersionStatus: status.VersionStatus{
 					Source: status.TenantRegistryVersionSource,
 				},
@@ -282,8 +283,8 @@ func TestNeedsUpdate(t *testing.T) {
 func TestHasCustomFieldChanged(t *testing.T) {
 	dk := dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
-			OneAgent: dynakube.OneAgentSpec{
-				ClassicFullStack: &dynakube.HostInjectSpec{},
+			OneAgent: oneagent.Spec{
+				ClassicFullStack: &oneagent.HostInjectSpec{},
 			},
 		},
 	}

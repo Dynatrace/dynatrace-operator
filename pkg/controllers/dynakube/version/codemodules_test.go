@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
@@ -25,10 +26,10 @@ func TestCodeModulesUpdater(t *testing.T) {
 	t.Run("Getters work as expected", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
 						Version: testImage.Tag,
-						AppInjectionSpec: dynakube.AppInjectionSpec{
+						AppInjectionSpec: oneagent.AppInjectionSpec{
 							CodeModulesImage: testImage.String(),
 						},
 					},
@@ -57,8 +58,8 @@ func TestCodeModulesUseDefault(t *testing.T) {
 	t.Run("Set according to version field, unset previous status", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
 						Version: testVersion,
 					},
 				},
@@ -80,8 +81,8 @@ func TestCodeModulesUseDefault(t *testing.T) {
 	t.Run("Set according to default, unset previous status", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{},
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
@@ -102,8 +103,8 @@ func TestCodeModulesUseDefault(t *testing.T) {
 	t.Run("problem with Dynatrace request => visible in conditions", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: dynakube.OneAgentSpec{
-					ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{},
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
@@ -125,7 +126,7 @@ func TestCodeModulesIsEnabled(t *testing.T) {
 	t.Run("cleans up condition if not enabled", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
-				CodeModules: dynakube.CodeModulesStatus{
+				CodeModules: oneagent.CodeModulesStatus{
 					VersionStatus: status.VersionStatus{
 						Version: "prev",
 					},
@@ -201,15 +202,15 @@ func TestCodeModulesLatestImageInfo(t *testing.T) {
 	})
 }
 
-func oldCodeModulesStatus() dynakube.CodeModulesStatus {
-	return dynakube.CodeModulesStatus{
+func oldCodeModulesStatus() oneagent.CodeModulesStatus {
+	return oneagent.CodeModulesStatus{
 		VersionStatus: status.VersionStatus{
 			ImageID: "prev",
 		},
 	}
 }
 
-func assertDefaultCodeModulesStatus(t *testing.T, expectedVersion string, codeModulesStatus dynakube.CodeModulesStatus) {
+func assertDefaultCodeModulesStatus(t *testing.T, expectedVersion string, codeModulesStatus oneagent.CodeModulesStatus) {
 	assert.Equal(t, expectedVersion, codeModulesStatus.Version)
 	assert.Empty(t, codeModulesStatus.ImageID)
 }
