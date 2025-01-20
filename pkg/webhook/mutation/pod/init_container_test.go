@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -233,6 +234,37 @@ func TestInitContainerResources(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
 
 		dk := getTestDynakubeDefaultAppMon()
+
+		initResources := initContainerResources(*dk)
+
+		require.Empty(t, initResources)
+	})
+
+	t.Run("should have default if metadata enrichment is enabled", func(t *testing.T) {
+		dk := getTestDynakubeDefaultAppMon()
+		dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
+
+		initResources := initContainerResources(*dk)
+
+		assert.Equal(t, defaultInitContainerResources(), initResources)
+	})
+	t.Run("should have default if only metadata enrichment is enabled and csi is disabled", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
+		dk := getTestDynakubeDefaultAppMon()
+		dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
+		dk.Spec.OneAgent.ApplicationMonitoring = nil
+		initResources := initContainerResources(*dk)
+
+		assert.Equal(t, defaultInitContainerResources(), initResources)
+	})
+	t.Run("should have no limit if OA is enabled and csi is disabled", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
+		dk := getTestDynakubeDefaultAppMon()
+
+		dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
+		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 
 		initResources := initContainerResources(*dk)
 
