@@ -42,17 +42,17 @@ tests:
             key: ToBeDeletedByClusterAutoscaler
             operator: Exists
 
-  - it: should set the env maxUnmountedVolumeAge
+  - it: should set the env cleanupPeriod
     set:
       platform: kubernetes
       csidriver.enabled: true
-      csidriver.maxUnmountedVolumeAge: "6"
+      csidriver.cleanupPeriod: "5m"
     asserts:
     - equal:
         path: spec.template.spec.containers[1].env[1] #provisioner
         value:
-          name: MAX_UNMOUNTED_VOLUME_AGE
-          value: "6"
+          name: CLEANUP_PERIOD
+          value: "5m"
 
   - it: should have nodeSelectors if set
     set:
@@ -296,6 +296,9 @@ tests:
                     name: data-dir
                   - mountPath: "/tmp"
                     name: tmp-dir
+                  - mountPath: "/var/lib/kubelet/pods/"
+                    name: mountpoint-dir
+                    readOnly: true
               - args:
                   - "--csi-address=/csi/csi.sock"
                   - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"

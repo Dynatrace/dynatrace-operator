@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	PullSecretSuffix             = "-pmc-secret"
+	SecretSuffix                 = "-pmc-secret"
 	SecretKeyProcessModuleConfig = "ruxitagentproc.conf"
 )
 
@@ -211,5 +211,5 @@ func unmarshal(secret *corev1.Secret) (*dtclient.ProcessModuleConfig, error) {
 }
 
 func extendWithSuffix(name string) string {
-	return name + PullSecretSuffix
+	return name + SecretSuffix
 }

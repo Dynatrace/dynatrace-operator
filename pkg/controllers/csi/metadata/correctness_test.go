@@ -1,163 +1,90 @@
 package metadata
 
 import (
-	"context"
-	"fmt"
-	"strconv"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/mount-utils"
 )
 
-func createTestDynakube(index int) Dynakube {
-	return Dynakube{
-		TenantUUID:             fmt.Sprintf("asc%d", index),
-		LatestVersion:          strconv.Itoa(123 * index),
-		Name:                   fmt.Sprintf("dk%d", index),
-		ImageDigest:            fmt.Sprintf("sha256:%d", 123*index),
-		MaxFailedMountAttempts: index,
-	}
+func TestGetRelevantOverlayMounts(t *testing.T) {
+	t.Run("get only relevant mounts", func(t *testing.T) {
+		baseFolder := "/test/folder"
+		expectedPath := baseFolder + "/some/sub/folder"
+		expectedLowerDir := "/test/lower"
+		expectedUpperDir := "/test/upper"
+		expectedWorkDir := "/test/work"
+
+		relevantMountPoint := mount.MountPoint{
+			Device: "overlay",
+			Path:   expectedPath,
+			Type:   "overlay",
+			Opts: []string{
+				"lowerdir=" + expectedLowerDir,
+				"upperdir=" + expectedUpperDir,
+				"workdir=" + expectedWorkDir,
+			},
+		}
+
+		mounter := mount.NewFakeMounter([]mount.MountPoint{
+			relevantMountPoint,
+			{
+				Device: "not-relevant-mount-type",
+			},
+			{
+				Device: "overlay",
+				Path:   "not-relevant-overlay-mount",
+				Type:   "overlay",
+			},
+		})
+
+		mounts, err := GetRelevantOverlayMounts(mounter, baseFolder)
+		require.NoError(t, err)
+		require.NotNil(t, mounts)
+		require.Len(t, mounts, 1)
+		assert.Equal(t, expectedPath, mounts[0].Path)
+		assert.Equal(t, expectedLowerDir, mounts[0].LowerDir)
+		assert.Equal(t, expectedUpperDir, mounts[0].UpperDir)
+		assert.Equal(t, expectedWorkDir, mounts[0].WorkDir)
+	})
+
+	t.Run("works with no mount points", func(t *testing.T) {
+		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+		mounts, err := GetRelevantOverlayMounts(mounter, "")
+		require.NoError(t, err)
+		require.NotNil(t, mounts)
+		require.Empty(t, mounts)
+	})
+
+	t.Run("ignores irrelevant mounts", func(t *testing.T) {
+		mounter := mount.NewFakeMounter([]mount.MountPoint{
+			{
+				Device: "not-relevant-mount-type",
+			},
+			{
+				Device: "overlay",
+				Path:   "not-relevant-overlay-mount",
+				Type:   "overlay",
+			},
+		})
+		mounts, err := GetRelevantOverlayMounts(mounter, "/test")
+		require.NoError(t, err)
+		require.NotNil(t, mounts)
+		require.Empty(t, mounts)
+	})
 }
 
-func createTestVolume(index int) Volume {
-	return Volume{
-		VolumeID:      fmt.Sprintf("vol-%d", index),
-		PodName:       fmt.Sprintf("pod%d", index),
-		Version:       createTestDynakube(index).LatestVersion,
-		TenantUUID:    createTestDynakube(index).TenantUUID,
-		MountAttempts: index,
-	}
+func TestMigrateAppMounts(t *testing.T) {
+	// Unfortunately, this is not unit-testable.
+	// Its output would be a bunch of symlinks,
+	// however the afero.MemMapFs does not support symlinking.
+	t.SkipNow()
 }
 
-func TestCorrectCSI(t *testing.T) {
-	t.Run("error on no db or missing tables", func(t *testing.T) {
-		db := emptyMemoryDB()
-
-		checker := NewCorrectnessChecker(nil, db, dtcsi.CSIOptions{})
-
-		err := checker.CorrectCSI(context.TODO())
-
-		require.Error(t, err)
-	})
-	t.Run("no error on empty db", func(t *testing.T) {
-		db := FakeMemoryDB()
-
-		checker := NewCorrectnessChecker(nil, db, dtcsi.CSIOptions{})
-
-		err := checker.CorrectCSI(context.TODO())
-
-		require.NoError(t, err)
-	})
-
-	t.Run("no error on nil apiReader, database is not cleaned", func(t *testing.T) {
-		ctx := context.TODO()
-		testVolume1 := createTestVolume(1)
-		testDynakube1 := createTestDynakube(1)
-		db := FakeMemoryDB()
-		db.InsertVolume(ctx, &testVolume1)
-		db.InsertDynakube(ctx, &testDynakube1)
-
-		checker := NewCorrectnessChecker(nil, db, dtcsi.CSIOptions{})
-
-		err := checker.CorrectCSI(context.TODO())
-
-		require.NoError(t, err)
-		vol, err := db.GetVolume(ctx, testVolume1.VolumeID)
-		require.NoError(t, err)
-		assert.Equal(t, &testVolume1, vol)
-
-		require.NoError(t, err)
-		dk, err := db.GetDynakube(ctx, testDynakube1.Name)
-		require.NoError(t, err)
-		assert.Equal(t, &testDynakube1, dk)
-	})
-
-	t.Run("nothing to remove, everything is still correct", func(t *testing.T) {
-		ctx := context.TODO()
-		testVolume1 := createTestVolume(1)
-		testDynakube1 := createTestDynakube(1)
-		db := FakeMemoryDB()
-		db.InsertVolume(ctx, &testVolume1)
-		db.InsertDynakube(ctx, &testDynakube1)
-		client := fake.NewClient(
-			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testVolume1.PodName}},
-			&dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
-		)
-
-		checker := NewCorrectnessChecker(client, db, dtcsi.CSIOptions{})
-
-		err := checker.CorrectCSI(ctx)
-
-		require.NoError(t, err)
-		vol, err := db.GetVolume(ctx, testVolume1.VolumeID)
-		require.NoError(t, err)
-		assert.Equal(t, &testVolume1, vol)
-
-		require.NoError(t, err)
-		dk, err := db.GetDynakube(ctx, testDynakube1.Name)
-		require.NoError(t, err)
-		assert.Equal(t, &testDynakube1, dk)
-	})
-	t.Run("remove unnecessary entries in the filesystem", func(t *testing.T) {
-		ctx := context.TODO()
-		testVolume1 := createTestVolume(1)
-		testVolume2 := createTestVolume(2)
-		testVolume3 := createTestVolume(3)
-
-		testDynakube1 := createTestDynakube(1)
-		testDynakube2 := createTestDynakube(2)
-		testDynakube3 := createTestDynakube(3)
-
-		db := FakeMemoryDB()
-		db.InsertVolume(ctx, &testVolume1)
-		db.InsertVolume(ctx, &testVolume2)
-		db.InsertVolume(ctx, &testVolume3)
-		db.InsertDynakube(ctx, &testDynakube1)
-		db.InsertDynakube(ctx, &testDynakube2)
-		db.InsertDynakube(ctx, &testDynakube3)
-
-		client := fake.NewClient(
-			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testVolume1.PodName}},
-			&dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
-		)
-
-		checker := NewCorrectnessChecker(client, db, dtcsi.CSIOptions{})
-
-		err := checker.CorrectCSI(ctx)
-		require.NoError(t, err)
-
-		vol, err := db.GetVolume(ctx, testVolume1.VolumeID)
-		require.NoError(t, err)
-		assert.Equal(t, &testVolume1, vol)
-
-		ten, err := db.GetDynakube(ctx, testDynakube1.Name)
-		require.NoError(t, err)
-		assert.Equal(t, &testDynakube1, ten)
-
-		// PURGED
-		vol, err = db.GetVolume(ctx, testVolume2.VolumeID)
-		require.NoError(t, err)
-		assert.Nil(t, vol)
-
-		// PURGED
-		vol, err = db.GetVolume(ctx, testVolume3.VolumeID)
-		require.NoError(t, err)
-		assert.Nil(t, vol)
-
-		// PURGED
-		ten, err = db.GetDynakube(ctx, testDynakube2.TenantUUID)
-		require.NoError(t, err)
-		assert.Nil(t, ten)
-
-		// PURGED
-		ten, err = db.GetDynakube(ctx, testDynakube3.TenantUUID)
-		require.NoError(t, err)
-		assert.Nil(t, ten)
-	})
+func TestMigrateHostMounts(t *testing.T) {
+	// Unfortunately, this is not unit-testable.
+	// Its output would be a bunch of symlinks,
+	// however the afero.MemMapFs does not support symlinking.
+	t.SkipNow()
 }
