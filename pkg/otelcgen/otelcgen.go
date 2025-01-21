@@ -34,7 +34,7 @@ type TLSSetting struct {
 	CertFile string `mapstructure:"cert_file,omitempty"`
 }
 
-// ServerConfig is based on "go.opentelemetry.io/collector/config/configgrpc.ServerConfig" and
+// ServerConfig is based on "go.opentelemetry.io/collector/config/confighttp.ServerConfig" and
 // "go.opentelemetry.io/collector/config/confighttp.ServerConfig" with reduced number of attributes
 // to reduce the number of dependencies.
 type ServerConfig struct {
