@@ -27,10 +27,11 @@ func (spec *Spec) GetProtocols() []Protocol {
 		return KnownProtocols()
 	}
 
-	var protocols []Protocol
-	for _, proto := range spec.Protocols {
-		protocols = append(protocols, Protocol(proto))
+	protocols := make([]Protocol, len(spec.Protocols))
+	for i, proto := range spec.Protocols {
+		protocols[i] = Protocol(proto)
 	}
+
 	return protocols
 }
 

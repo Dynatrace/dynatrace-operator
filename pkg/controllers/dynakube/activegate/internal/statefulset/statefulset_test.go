@@ -1,7 +1,6 @@
 package statefulset
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
 	"reflect"
 	"strconv"
 	"testing"
@@ -9,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
@@ -563,6 +563,7 @@ func TestPVC(t *testing.T) {
 		require.Equal(t, consts.GatewayTmpVolumeName, sts.Spec.VolumeClaimTemplates[0].Name)
 		require.Equal(t, defaultPVCRetentionPolicy(), sts.Spec.PersistentVolumeClaimRetentionPolicy)
 	}
+
 	t.Run("use custom PVC with OTLPingest", func(t *testing.T) {
 		dk := getTestDynakube()
 		multiCapability := capability.NewMultiCapability(&dk)
