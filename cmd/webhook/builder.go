@@ -84,8 +84,9 @@ func (builder CommandBuilder) SetPodName(podName string) CommandBuilder {
 
 func (builder CommandBuilder) Build() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  use,
-		RunE: builder.buildRun(),
+		Use:          use,
+		RunE:         builder.buildRun(),
+		SilenceUsage: true,
 	}
 
 	addFlags(cmd)
