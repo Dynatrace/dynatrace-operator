@@ -5,7 +5,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/stretchr/testify/assert"
@@ -96,16 +95,6 @@ func TestNewMultiCapability(t *testing.T) {
 		assert.False(t, mc.Enabled())
 		assert.Equal(t, expectedShortName, mc.ShortName())
 		assert.Equal(t, "", mc.ArgName())
-	})
-	t.Run(`creates new multicapability with KSPM enabled`, func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			Spec: dynakube.DynaKubeSpec{
-				Kspm: &kspm.Spec{},
-			},
-		}
-		mc := NewMultiCapability(dk)
-		require.NotNil(t, mc)
-		assert.False(t, mc.Enabled())
 	})
 }
 
@@ -393,14 +382,6 @@ func TestActiveGateService(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				Extensions: &dynakube.ExtensionsSpec{},
-			},
-		}
-		assert.True(t, dk.ActiveGate().NeedsService())
-	})
-	t.Run(`creates dynakube with Kspm enabled`, func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			Spec: dynakube.DynaKubeSpec{
-				Kspm: &kspm.Spec{},
 			},
 		}
 		assert.True(t, dk.ActiveGate().NeedsService())
