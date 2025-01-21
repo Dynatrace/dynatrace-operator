@@ -14,8 +14,9 @@ const (
 
 func NewStandaloneCommand() *cobra.Command {
 	return &cobra.Command{
-		Use:  use,
-		RunE: startStandAloneInit,
+		Use:          use,
+		RunE:         startStandAloneInit,
+		SilenceUsage: true,
 	}
 }
 
