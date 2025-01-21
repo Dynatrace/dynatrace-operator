@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	expectedBaseInitEnvLen = 7
+	expectedBaseInitEnvLen = 8
 	expectedBaseEnvLen     = 4
 )
 
