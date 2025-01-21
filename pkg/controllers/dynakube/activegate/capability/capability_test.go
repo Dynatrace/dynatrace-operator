@@ -96,6 +96,16 @@ func TestNewMultiCapability(t *testing.T) {
 		assert.Equal(t, expectedShortName, mc.ShortName())
 		assert.Equal(t, "", mc.ArgName())
 	})
+	t.Run(`creates new multicapability with KSPM enabled`, func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				Kspm: &kspm.Spec{},
+			},
+		}
+		mc := NewMultiCapability(dk)
+		require.NotNil(t, mc)
+		assert.False(t, mc.Enabled())
+	})
 }
 
 func TestNewMultiCapabilityWithExtensions(t *testing.T) {

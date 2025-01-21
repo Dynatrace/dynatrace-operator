@@ -122,6 +122,7 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 		(*in).DeepCopyInto(*out)
 	}
 	in.OneAgent.DeepCopyInto(&out.OneAgent)
+	in.MetadataEnrichment.DeepCopyInto(&out.MetadataEnrichment)
 	in.Templates.DeepCopyInto(&out.Templates)
 	in.ActiveGate.DeepCopyInto(&out.ActiveGate)
 }

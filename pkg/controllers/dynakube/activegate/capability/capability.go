@@ -79,7 +79,7 @@ func NewMultiCapability(dk *dynakube.DynaKube) Capability {
 	mc.enabled = true
 	mc.properties = &dk.Spec.ActiveGate.CapabilityProperties
 
-	if len(dk.Spec.ActiveGate.Capabilities) == 0 && dk.IsExtensionsEnabled() {
+	if len(dk.Spec.ActiveGate.Capabilities) == 0 && (dk.IsExtensionsEnabled() || dk.IsOTLPingestEnabled()) {
 		mc.properties.Replicas = ptr.To(int32(1))
 	}
 
