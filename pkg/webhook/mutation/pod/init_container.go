@@ -45,6 +45,10 @@ func initContainerResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
 	}
 
 	if !dk.OneAgent().IsCSIAvailable() {
+		if dk.MetadataEnrichmentEnabled() && !dk.OneAgent().IsAppInjectionNeeded() {
+			return defaultInitContainerResources()
+		}
+
 		return corev1.ResourceRequirements{}
 	}
 
