@@ -12,7 +12,7 @@ const (
 )
 
 func disabledCSIForReadonlyCSIVolume(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	isCSINotUsed := !dk.IsCSIAvailable() || (!isCSIRequired(dk) && !isCSIOptional(dk))
+	isCSINotUsed := !dk.OneAgent().IsCSIAvailable() || (!isCSIRequired(dk) && !isCSIOptional(dk))
 	if dk.FeatureReadOnlyCsiVolume() && isCSINotUsed {
 		log.Info("requested dynakube uses readonly csi volume, but csi driver is not enabled", "name", dk.Name, "namespace", dk.Namespace)
 
@@ -24,5 +24,5 @@ func disabledCSIForReadonlyCSIVolume(_ context.Context, _ *Validator, dk *dynaku
 
 // IsCSIDriverOptional checks if the DynaKube may use the csi-driver if available, otherwise fallbacks exist to provide similar functionality.
 func isCSIOptional(dk *dynakube.DynaKube) bool {
-	return dk.HostMonitoringMode() || dk.ApplicationMonitoringMode()
+	return dk.OneAgent().IsHostMonitoringMode() || dk.OneAgent().IsApplicationMonitoringMode()
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
@@ -85,9 +86,9 @@ func TestReconciler(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynakube.OneAgentSpec{
-					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
-						AppInjectionSpec: dynakube.AppInjectionSpec{
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+						AppInjectionSpec: oneagent.AppInjectionSpec{
 							NamespaceSelector: metav1.LabelSelector{
 								MatchLabels: map[string]string{
 									testNamespaceSelectorLabel: testDynakube,
@@ -130,7 +131,7 @@ func TestReconciler(t *testing.T) {
 		err := rec.Reconcile(context.Background())
 		require.NoError(t, err)
 
-		assertSecretFound(t, clt, dk.OneagentTenantSecret(), dk.Namespace)
+		assertSecretFound(t, clt, dk.OneAgent().GetTenantSecret(), dk.Namespace)
 		assertSecretFound(t, clt, consts.AgentInitSecretName, testNamespace)
 		assertSecretNotFound(t, clt, consts.AgentInitSecretName, testNamespace2)
 		assertSecretFound(t, clt, consts.EnrichmentEndpointSecretName, testNamespace)
@@ -222,9 +223,9 @@ func TestReconciler(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynakube.OneAgentSpec{
-					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{
-						AppInjectionSpec: dynakube.AppInjectionSpec{
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+						AppInjectionSpec: oneagent.AppInjectionSpec{
 							NamespaceSelector: metav1.LabelSelector{
 								MatchLabels: map[string]string{
 									testNamespaceSelectorLabel: testDynakube,
@@ -262,7 +263,7 @@ func TestReconciler(t *testing.T) {
 
 func TestRemoveAppInjection(t *testing.T) {
 	clt := clientRemoveAppInjection()
-	rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynakube.OneAgentSpec{
+	rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, oneagent.Spec{
 		CloudNativeFullStack: nil,
 	})
 	rec.versionReconciler = createVersionReconcilerMock(t)
@@ -296,8 +297,8 @@ func TestRemoveAppInjection(t *testing.T) {
 func TestSetupOneAgentInjection(t *testing.T) {
 	t.Run(`no injection - ClassicFullStack`, func(t *testing.T) {
 		clt := clientNoInjection()
-		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynakube.OneAgentSpec{
-			ClassicFullStack: &dynakube.HostInjectSpec{},
+		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, oneagent.Spec{
+			ClassicFullStack: &oneagent.HostInjectSpec{},
 		})
 		rec.versionReconciler = createVersionReconcilerMock(t)
 		rec.connectionInfoReconciler = createGenericReconcilerMock(t)
@@ -313,8 +314,8 @@ func TestSetupOneAgentInjection(t *testing.T) {
 
 	t.Run(`no injection - HostMonitoring`, func(t *testing.T) {
 		clt := clientNoInjection()
-		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynakube.OneAgentSpec{
-			HostMonitoring: &dynakube.HostInjectSpec{},
+		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, oneagent.Spec{
+			HostMonitoring: &oneagent.HostInjectSpec{},
 		})
 		rec.versionReconciler = createVersionReconcilerMock(t)
 		rec.connectionInfoReconciler = createGenericReconcilerMock(t)
@@ -330,8 +331,8 @@ func TestSetupOneAgentInjection(t *testing.T) {
 
 	t.Run(`injection - ApplicationMonitoring`, func(t *testing.T) {
 		clt := clientOneAgentInjection()
-		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynakube.OneAgentSpec{
-			ApplicationMonitoring: &dynakube.ApplicationMonitoringSpec{},
+		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, oneagent.Spec{
+			ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 		})
 		rec.versionReconciler = createVersionReconcilerMock(t)
 		rec.connectionInfoReconciler = createGenericReconcilerMock(t)
@@ -356,8 +357,8 @@ func TestSetupOneAgentInjection(t *testing.T) {
 
 	t.Run(`injection - CloudNativeFullStack`, func(t *testing.T) {
 		clt := clientOneAgentInjection()
-		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynakube.OneAgentSpec{
-			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
+		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, oneagent.Spec{
+			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 		})
 		rec.versionReconciler = createVersionReconcilerMock(t)
 		rec.connectionInfoReconciler = createGenericReconcilerMock(t)
@@ -384,8 +385,8 @@ func TestSetupOneAgentInjection(t *testing.T) {
 func TestSetupEnrichmentInjection(t *testing.T) {
 	t.Run(`no enrichment injection`, func(t *testing.T) {
 		clt := clientNoInjection()
-		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynakube.OneAgentSpec{
-			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
+		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, oneagent.Spec{
+			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 		})
 		rec.enrichmentRulesReconciler = createGenericReconcilerMock(t)
 		rec.monitoredEntitiesReconciler = createGenericReconcilerMock(t)
@@ -400,8 +401,8 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 
 	t.Run(`enrichment injection`, func(t *testing.T) {
 		clt := clientEnrichmentInjection()
-		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, dynakube.OneAgentSpec{
-			CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
+		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, oneagent.Spec{
+			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 		})
 		rec.enrichmentRulesReconciler = createGenericReconcilerMock(t)
 		rec.monitoredEntitiesReconciler = createGenericReconcilerMock(t)
@@ -422,7 +423,7 @@ func newIstioTestingClient(fakeClient *fakeistio.Clientset, dk *dynakube.DynaKub
 	}
 }
 
-func createReconciler(clt client.Client, dynakubeName string, dynakubeNamespace string, oneAgentSpec dynakube.OneAgentSpec) reconciler {
+func createReconciler(clt client.Client, dynakubeName string, dynakubeNamespace string, oneAgentSpec oneagent.Spec) reconciler {
 	return reconciler{
 		client:    clt,
 		apiReader: clt,

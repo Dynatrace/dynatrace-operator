@@ -61,24 +61,6 @@ func createOperatorCommandBuilder() operator.CommandBuilder {
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
-func createCsiServerCommandBuilder() csiServer.CommandBuilder {
-	return csiServer.NewCsiServerCommandBuilder().
-		SetNamespace(os.Getenv(env.PodNamespace)).
-		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
-}
-
-func createCsiInitCommandBuilder() csiInit.CommandBuilder {
-	return csiInit.NewCsiInitCommandBuilder().
-		SetNamespace(os.Getenv(env.PodNamespace)).
-		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
-}
-
-func createCsiProvisionerCommandBuilder() csiProvisioner.CommandBuilder {
-	return csiProvisioner.NewCsiProvisionerCommandBuilder().
-		SetNamespace(os.Getenv(env.PodNamespace)).
-		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
-}
-
 func createTroubleshootCommandBuilder() troubleshoot.CommandBuilder {
 	return troubleshoot.NewTroubleshootCommandBuilder().
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
@@ -105,13 +87,13 @@ func main() {
 	cmd.AddCommand(
 		createWebhookCommandBuilder().Build(),
 		createOperatorCommandBuilder().Build(),
-		createCsiServerCommandBuilder().Build(),
-		createCsiProvisionerCommandBuilder().Build(),
 		standalone.NewStandaloneCommand(),
 		createTroubleshootCommandBuilder().Build(),
 		createSupportArchiveCommandBuilder().Build(),
 		createStartupProbe().Build(),
-		createCsiInitCommandBuilder().Build(),
+		csiInit.New(),
+		csiProvisioner.New(),
+		csiServer.New(),
 	)
 
 	err := cmd.Execute()

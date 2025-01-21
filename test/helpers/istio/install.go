@@ -104,7 +104,7 @@ func assertIstioInitContainer(t *testing.T, pods corev1.PodList, testDynakube dy
 		require.NotNil(t, podItem)
 		require.NotNil(t, podItem.Spec)
 
-		if strings.HasPrefix(podItem.Name, testDynakube.OneAgentDaemonsetName()) {
+		if strings.HasPrefix(podItem.Name, testDynakube.OneAgent().GetDaemonsetName()) {
 			continue
 		}
 

@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
-	containerv1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,13 +20,13 @@ import (
 type DynaKubeStatus struct { //nolint:revive
 
 	// Observed state of OneAgent
-	OneAgent OneAgentStatus `json:"oneAgent,omitempty"`
+	OneAgent oneagent.Status `json:"oneAgent,omitempty"`
 
 	// Observed state of ActiveGate
 	ActiveGate activegate.Status `json:"activeGate,omitempty"`
 
 	// Observed state of Code Modules
-	CodeModules CodeModulesStatus `json:"codeModules,omitempty"`
+	CodeModules oneagent.CodeModulesStatus `json:"codeModules,omitempty"`
 
 	// Observed state of Metadata-Enrichment
 	MetadataEnrichment MetadataEnrichmentStatus `json:"metadataEnrichment,omitempty"`
@@ -72,56 +71,6 @@ func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time,
 		functionName,
 		int(timeout.Minutes()),
 		int(remaining.Minutes()))
-}
-
-type OneAgentConnectionInfoStatus struct {
-	// Information for communicating with the tenant
-	communication.ConnectionInfo `json:",inline"`
-
-	// List of communication hosts
-	CommunicationHosts []CommunicationHostStatus `json:"communicationHosts,omitempty"`
-}
-
-type CommunicationHostStatus struct {
-	// Connection protocol
-	Protocol string `json:"protocol,omitempty"`
-
-	// Host domain
-	Host string `json:"host,omitempty"`
-
-	// Connection port
-	Port uint32 `json:"port,omitempty"`
-}
-
-type CodeModulesStatus struct {
-	status.VersionStatus `json:",inline"`
-}
-
-type OneAgentStatus struct {
-	status.VersionStatus `json:",inline"`
-
-	// List of deployed OneAgent instances
-	Instances map[string]OneAgentInstance `json:"instances,omitempty"`
-
-	// Time of the last instance status update
-	LastInstanceStatusUpdate *metav1.Time `json:"lastInstanceStatusUpdate,omitempty"`
-
-	// Commands used for OneAgent's readiness probe
-	// +kubebuilder:validation:Type=object
-	// +kubebuilder:validation:Schemaless
-	// +kubebuilder:pruning:PreserveUnknownFields
-	Healthcheck *containerv1.HealthConfig `json:"healthcheck,omitempty"`
-
-	// Information about OneAgent's connections
-	ConnectionInfoStatus OneAgentConnectionInfoStatus `json:"connectionInfoStatus,omitempty"`
-}
-
-type OneAgentInstance struct {
-	// Name of the OneAgent pod
-	PodName string `json:"podName,omitempty"`
-
-	// IP address of the pod
-	IPAddress string `json:"ipAddress,omitempty"`
 }
 
 type EnrichmentRuleType string

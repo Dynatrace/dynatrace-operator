@@ -166,13 +166,11 @@ spec:
               fieldRef:
                 apiVersion: v1
                 fieldPath: metadata.namespace
-          {{- if .Values.csidriver.maxUnmountedVolumeAge }}
-          - name: MAX_UNMOUNTED_VOLUME_AGE
-            value: "{{ .Values.csidriver.maxUnmountedVolumeAge}}"
+          {{- if .Values.csidriver.cleanupPeriod }}
+          - name: CLEANUP_PERIOD
+            value: "{{ .Values.csidriver.cleanupPeriod}}"
           {{- end }}
-        envFrom:
-          - configMapRef:
-              name: install-config
+          {{ include "dynatrace-operator.modules-json-env" . | nindent 10 }}
         {{- include "dynatrace-operator.startupProbe" . | nindent 8 }}
         {{- if not .Values.debug }}
         livenessProbe:
@@ -203,6 +201,9 @@ spec:
             mountPropagation: Bidirectional
           - mountPath: /tmp
             name: tmp-dir
+          - mountPath: {{ include "dynatrace-operator.CSIMountPointDir" . }}
+            name: mountpoint-dir # needed for garbage-collection
+            readOnly: true
 
         # Used to make a gRPC request (GetPluginInfo()) to the driver to get driver name and driver contain
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.

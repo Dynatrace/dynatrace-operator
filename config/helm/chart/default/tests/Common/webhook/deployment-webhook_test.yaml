@@ -116,9 +116,24 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
-                envFrom:
-                  - configMapRef:
-                      name: install-config
+                  - name: WEBHOOK_PORT
+                    value: "8443"
+                  - name: HEALTH_PROBE_BIND_ADDRESS
+                    value: :10080
+                  - name: METRICS_BIND_ADDRESS
+                    value: :8383
+                  - name: modules.json
+                    value: |
+                      {
+                        "csiDriver": true,
+                        "activeGate": true,
+                        "oneAgent": true,
+                        "extensions": true,
+                        "logMonitoring": true,
+                        "edgeConnect": true,
+                        "supportability": true,
+                        "kspm": true
+                      }
                 livenessProbe:
                   httpGet:
                     path: /livez
@@ -131,7 +146,7 @@ tests:
                     name: server-port
                   - containerPort: 10080
                     name: livez
-                  - containerPort: 8080
+                  - containerPort: 8383
                     name: metrics
                 readinessProbe:
                   httpGet:
@@ -297,9 +312,24 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
-                envFrom:
-                  - configMapRef:
-                      name: install-config
+                  - name: WEBHOOK_PORT
+                    value: "8443"
+                  - name: HEALTH_PROBE_BIND_ADDRESS
+                    value: :10080
+                  - name: METRICS_BIND_ADDRESS
+                    value: :8383
+                  - name: modules.json
+                    value: |
+                      {
+                        "csiDriver": true,
+                        "activeGate": true,
+                        "oneAgent": true,
+                        "extensions": true,
+                        "logMonitoring": true,
+                        "edgeConnect": true,
+                        "supportability": true,
+                        "kspm": true
+                      }
                 livenessProbe:
                   httpGet:
                     path: /livez
@@ -312,7 +342,7 @@ tests:
                     name: server-port
                   - containerPort: 10080
                     name: livez
-                  - containerPort: 8080
+                  - containerPort: 8383
                     name: metrics
                 readinessProbe:
                   httpGet:
@@ -443,9 +473,24 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
-                envFrom:
-                  - configMapRef:
-                      name: install-config
+                  - name: WEBHOOK_PORT
+                    value: "8443"
+                  - name: HEALTH_PROBE_BIND_ADDRESS
+                    value: :10080
+                  - name: METRICS_BIND_ADDRESS
+                    value: :8383
+                  - name: modules.json
+                    value: |
+                      {
+                        "csiDriver": true,
+                        "activeGate": true,
+                        "oneAgent": true,
+                        "extensions": true,
+                        "logMonitoring": true,
+                        "edgeConnect": true,
+                        "supportability": true,
+                        "kspm": true
+                      }
                 livenessProbe:
                   httpGet:
                     path: /livez
@@ -458,7 +503,7 @@ tests:
                     name: server-port
                   - containerPort: 10080
                     name: livez
-                  - containerPort: 8080
+                  - containerPort: 8383
                     name: metrics
                 readinessProbe:
                   httpGet:

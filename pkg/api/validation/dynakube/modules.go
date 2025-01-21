@@ -17,7 +17,7 @@ var (
 )
 
 func isOneAgentModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if dk.NeedsOneAgent() && !v.modules.OneAgent {
+	if dk.OneAgent().IsDaemonsetRequired() && !v.modules.OneAgent {
 		return errorOneAgentModuleDisabled
 	}
 
@@ -66,5 +66,5 @@ func isCSIModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube)
 
 // isCSIRequired checks if the provided a DynaKube strictly needs the csi-driver, and no fallbacks exist to provide the same functionality.
 func isCSIRequired(dk *dynakube.DynaKube) bool {
-	return dk.CloudNativeFullstackMode()
+	return dk.OneAgent().IsCloudNativeFullstackMode()
 }

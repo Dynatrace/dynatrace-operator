@@ -245,6 +245,7 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 				Optional: ptr.To(false),
 			},
 		}},
+		{Name: consts.EnvDtHttpPort, Value: strconv.Itoa(consts.HttpContainerPort)},
 	})
 
 	if statefulSetBuilder.capability.Properties().Group != "" {
@@ -253,10 +254,6 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 
 	if statefulSetBuilder.dynakube.Spec.NetworkZone != "" {
 		prioritymap.Append(statefulSetBuilder.envMap, corev1.EnvVar{Name: consts.EnvDtNetworkZone, Value: statefulSetBuilder.dynakube.Spec.NetworkZone})
-	}
-
-	if statefulSetBuilder.dynakube.ActiveGate().IsMetricsIngestEnabled() {
-		prioritymap.Append(statefulSetBuilder.envMap, corev1.EnvVar{Name: consts.EnvDtHttpPort, Value: strconv.Itoa(consts.HttpContainerPort)})
 	}
 
 	prioritymap.Append(statefulSetBuilder.envMap, statefulSetBuilder.capability.Properties().Env, prioritymap.WithPriority(customEnvPriority))

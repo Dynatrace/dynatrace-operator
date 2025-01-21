@@ -9,13 +9,29 @@ import (
 	"github.com/spf13/afero"
 )
 
-func CreateSymlinkForCurrentVersionIfNotExists(fs afero.Fs, targetDir string) error {
-	var relativeSymlinkPath string
-
+func CreateForCurrentVersionIfNotExists(fs afero.Fs, targetDir string) error {
 	var err error
 
-	targetBindDir := filepath.Join(targetDir, binDir)
+	_, ok := fs.(afero.Linker)
+	if !ok {
+		log.Info("symlinking not possible", "targetDir", targetDir, "fs", fs)
 
+		return nil
+	}
+
+	targetBinDir := filepath.Join(targetDir, binDir)
+
+	relativeSymlinkPath, err := findVersionFromFileSystem(fs, targetBinDir)
+	if err != nil {
+		log.Info("failed to get the version from the filesystem", "targetDir", targetDir)
+
+		return err
+	}
+
+	return Create(fs, relativeSymlinkPath, filepath.Join(targetBinDir, "current"))
+}
+
+func Create(fs afero.Fs, targetDir, symlinkDir string) error {
 	// MemMapFs (used for testing) doesn't comply with the Linker interface
 	linker, ok := fs.(afero.Linker)
 	if !ok {
@@ -24,26 +40,31 @@ func CreateSymlinkForCurrentVersionIfNotExists(fs afero.Fs, targetDir string) er
 		return nil
 	}
 
-	relativeSymlinkPath, err = findVersionFromFileSystem(fs, targetBindDir)
-	if err != nil {
-		log.Info("failed to get the version from the filesystem", "targetDir", targetDir)
-
-		return err
-	}
-
-	symlinkTargetPath := filepath.Join(targetBindDir, "current")
-	if fileInfo, _ := fs.Stat(symlinkTargetPath); fileInfo != nil {
-		log.Info("symlink already exists", "location", symlinkTargetPath)
+	// Check if the symlink already exists
+	if fileInfo, _ := fs.Stat(symlinkDir); fileInfo != nil {
+		log.Info("symlink already exists", "location", symlinkDir)
 
 		return nil
 	}
 
-	log.Info("creating symlink", "points-to(relative)", relativeSymlinkPath, "location", symlinkTargetPath)
+	log.Info("creating symlink", "points-to(relative)", targetDir, "location", symlinkDir)
 
-	if err := linker.SymlinkIfPossible(relativeSymlinkPath, symlinkTargetPath); err != nil {
-		log.Info("symlinking failed", "version", relativeSymlinkPath)
+	if err := linker.SymlinkIfPossible(targetDir, symlinkDir); err != nil {
+		log.Info("symlinking failed", "source", targetDir)
 
 		return errors.WithStack(err)
+	}
+
+	return nil
+}
+
+func Remove(fs afero.Fs, symlinkPath string) error {
+	if info, _ := fs.Stat(symlinkPath); info != nil {
+		log.Info("symlink to directory exists, removing it to ensure proper reinstallation or reconfiguration", "directory", symlinkPath)
+
+		if err := fs.Remove(symlinkPath); err != nil {
+			return err
+		}
 	}
 
 	return nil

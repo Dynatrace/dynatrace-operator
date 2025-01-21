@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/dockerkeychain"
@@ -80,7 +81,7 @@ func TestImagePullable(t *testing.T) {
 	dockerServer, secret, server, err := setupDockerMocker(
 		[]string{
 			"/v2/",
-			"/v2" + dynakube.DefaultOneAgentImageRegistrySubPath + "/manifests/" + testVersion + "-raw",
+			"/v2" + oneagent.DefaultOneAgentImageRegistrySubPath + "/manifests/" + testVersion + "-raw",
 			"/v2/" + testCustomOneAgentImage + "/manifests/" + testVersion,
 			"/v2/" + testOneAgentCodeModulesImage + "/manifests/" + testVersion,
 			"/v2" + activegate.DefaultImageRegistrySubPath + "/manifests/" + testVersion + "-raw",
