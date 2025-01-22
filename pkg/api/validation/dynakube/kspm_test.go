@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestTooManyAGReplicas(t *testing.T) {
@@ -94,6 +95,56 @@ func TestMissingKSPMDependency(t *testing.T) {
 			[]string{errorKSPMMissingKubemon},
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:     testApiUrl,
+					Kspm:       &kspm.Spec{},
+					ActiveGate: activegate.Spec{},
+				},
+			})
+	})
+
+	t.Run("both kspm and kubemon enabled, automatic k8s monitoring disabled", func(t *testing.T) {
+		assertDenied(t,
+			[]string{errorKSPMMissingKubemon},
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testName,
+					Namespace: testNamespace,
+					Annotations: map[string]string{
+						dynakube.AnnotationFeatureAutomaticK8sApiMonitoring: "false",
+					},
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testApiUrl,
+					Kspm:   &kspm.Spec{},
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.KubeMonCapability.DisplayName,
+						},
+					},
+					Templates: dynakube.TemplatesSpec{
+						KspmNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+							ImageRef: image.Ref{
+								Repository: "repo/image",
+								Tag:        "version",
+							},
+						},
+					},
+				},
+			})
+	})
+
+	t.Run("missing kubemon, automatic k8s monitoring disabled, but kspm enabled", func(t *testing.T) {
+		assertDenied(t,
+			[]string{errorKSPMMissingKubemon},
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testName,
+					Namespace: testNamespace,
+					Annotations: map[string]string{
+						dynakube.AnnotationFeatureAutomaticK8sApiMonitoring: "false",
+					},
+				},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testApiUrl,
 					Kspm:       &kspm.Spec{},
