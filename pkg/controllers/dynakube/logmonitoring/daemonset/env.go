@@ -14,6 +14,7 @@ const (
 	namespaceNameEnv = "K8S_NAMESPACE_NAME"
 	clusterUIDEnv    = "K8S_CLUSTER_UID"
 	clusterNameEnv   = "K8S_CLUSTER_NAME"
+	basePodNameEnv   = "K8S_BASEPODNAME"
 	entityEnv        = "DT_ENTITY_KUBERNETES_CLUSTER"
 
 	// main container envs
@@ -71,6 +72,10 @@ func getInitEnvs(dk dynakube.DynaKube) []corev1.EnvVar {
 		{
 			Name:  entityEnv,
 			Value: dk.Status.KubernetesClusterMEID,
+		},
+		{
+			Name:  basePodNameEnv,
+			Value: dk.LogMonitoring().GetDaemonSetName(),
 		},
 	}
 }
