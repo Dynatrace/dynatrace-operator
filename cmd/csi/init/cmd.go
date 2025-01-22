@@ -25,8 +25,9 @@ var nodeId, endpoint string
 
 func New() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  use,
-		RunE: run(),
+		Use:          use,
+		RunE:         run(),
+		SilenceUsage: true,
 	}
 
 	return cmd

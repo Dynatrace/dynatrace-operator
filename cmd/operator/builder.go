@@ -104,8 +104,9 @@ func (builder *CommandBuilder) getSignalHandler() context.Context {
 
 func (builder CommandBuilder) Build() *cobra.Command {
 	return &cobra.Command{
-		Use:  use,
-		RunE: builder.buildRun(),
+		Use:          use,
+		RunE:         builder.buildRun(),
+		SilenceUsage: true,
 	}
 }
 
