@@ -15,7 +15,7 @@ func getInitArgs(dk dynakube.DynaKube) []string {
 		fmt.Sprintf("-c k8s_fullpodname $(%s)", podNameEnv),
 		fmt.Sprintf("-c k8s_poduid $(%s)", podUIDEnv),
 		fmt.Sprintf("-c k8s_containername %s", containerName), //nolint:perfsprint
-		fmt.Sprintf("-c k8s_basepodname %s", basePodNameEnv),  //nolint:perfsprint
+		fmt.Sprintf("-c k8s_basepodname $(%s)", basePodNameEnv),
 		fmt.Sprintf("-c k8s_namespace $(%s)", namespaceNameEnv),
 		fmt.Sprintf("-c k8s_node_name $(%s)", nodeNameEnv),
 		fmt.Sprintf("-c k8s_cluster_id $(%s)", clusterUIDEnv),
