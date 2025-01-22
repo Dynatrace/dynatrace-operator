@@ -36,6 +36,7 @@ var (
 		disabledCSIForReadonlyCSIVolume,
 		invalidActiveGateCapabilities,
 		duplicateActiveGateCapabilities,
+		mutuallyExclusiveActiveGatePVsettings,
 		invalidActiveGateProxyUrl,
 		conflictingOneAgentConfiguration,
 		conflictingOneAgentNodeSelector,
@@ -53,6 +54,9 @@ var (
 		missingKSPMDependency,
 		missingKSPMImage,
 		missingLogMonitoringImage,
+		emptyTelemetryServiceProtocolsList,
+		unknownTelemetryServiceProtocols,
+		duplicatedTelemetryServiceProtocols,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,

@@ -16,14 +16,17 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 )
 
-const defaultEnvPriority = prioritymap.DefaultPriority
-const customEnvPriority = prioritymap.HighPriority
+const (
+	defaultEnvPriority = prioritymap.DefaultPriority
+	customEnvPriority  = prioritymap.HighPriority
+)
 
 type Builder struct {
 	capability capability.Capability
@@ -64,6 +67,7 @@ func (statefulSetBuilder Builder) getBase() appsv1.StatefulSet {
 	statefulSetBuilder.addUserAnnotations(&sts)
 	statefulSetBuilder.addLabels(&sts)
 	statefulSetBuilder.addTemplateSpec(&sts)
+	statefulSetBuilder.addPersistentVolumeClaim(&sts)
 
 	if statefulSetBuilder.dynakube.FeatureActiveGateAppArmor() {
 		sts.Spec.Template.ObjectMeta.Annotations[consts.AnnotationActiveGateContainerAppArmor] = "runtime/default"
@@ -119,16 +123,13 @@ func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
 		ServiceAccountName: statefulSetBuilder.dynakube.ActiveGate().GetServiceAccountName(),
 		Affinity:           statefulSetBuilder.nodeAffinity(),
 		Tolerations:        statefulSetBuilder.capability.Properties().Tolerations,
-		SecurityContext: &corev1.PodSecurityContext{
-			SeccompProfile: &corev1.SeccompProfile{
-				Type: corev1.SeccompProfileTypeRuntimeDefault,
-			},
-		},
-		ImagePullSecrets:  statefulSetBuilder.dynakube.ImagePullSecretReferences(),
-		PriorityClassName: statefulSetBuilder.dynakube.Spec.ActiveGate.PriorityClassName,
-		DNSPolicy:         statefulSetBuilder.dynakube.Spec.ActiveGate.DNSPolicy,
+		SecurityContext:    statefulSetBuilder.buildPodSecurityContext(),
+		ImagePullSecrets:   statefulSetBuilder.dynakube.ImagePullSecretReferences(),
+		PriorityClassName:  statefulSetBuilder.dynakube.Spec.ActiveGate.PriorityClassName,
+		DNSPolicy:          statefulSetBuilder.dynakube.Spec.ActiveGate.DNSPolicy,
 
 		TopologySpreadConstraints: statefulSetBuilder.buildTopologySpreadConstraints(statefulSetBuilder.capability),
+		Volumes:                   statefulSetBuilder.buildVolumes(),
 	}
 	sts.Spec.Template.Spec = podSpec
 }
@@ -139,6 +140,45 @@ func (statefulSetBuilder Builder) buildTopologySpreadConstraints(capability capa
 	}
 
 	return statefulSetBuilder.defaultTopologyConstraints()
+}
+
+func (statefulSetBuilder Builder) buildVolumes() []corev1.Volume {
+	volumes := []corev1.Volume{}
+	if !(statefulSetBuilder.dynakube.IsOTLPingestEnabled() || statefulSetBuilder.dynakube.TelemetryService().IsEnabled()) || statefulSetBuilder.dynakube.Spec.ActiveGate.UseEphemeralVolume {
+		volumes = append(volumes, corev1.Volume{
+			Name: consts.GatewayTmpVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		})
+	}
+
+	return volumes
+}
+
+func (statefulSetBuilder Builder) buildVolumeMounts() []corev1.VolumeMount {
+	var volumeMounts []corev1.VolumeMount
+
+	volumeMounts = append(volumeMounts, corev1.VolumeMount{
+		Name:      consts.GatewayTmpVolumeName,
+		MountPath: consts.GatewayTmpMountPoint,
+	})
+
+	return volumeMounts
+}
+
+func (statefulSetBuilder Builder) buildPodSecurityContext() *corev1.PodSecurityContext {
+	sc := corev1.PodSecurityContext{
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
+	}
+
+	if !statefulSetBuilder.dynakube.Spec.ActiveGate.UseEphemeralVolume {
+		sc.FSGroup = ptr.To(consts.DockerImageGroup)
+	}
+
+	return &sc
 }
 
 func (statefulSetBuilder Builder) defaultTopologyConstraints() []corev1.TopologySpreadConstraint {
@@ -181,6 +221,7 @@ func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 			TimeoutSeconds:      2,
 		},
 		SecurityContext: modifiers.GetSecurityContext(false),
+		VolumeMounts:    statefulSetBuilder.buildVolumeMounts(),
 	}
 
 	return []corev1.Container{container}
@@ -229,4 +270,50 @@ func (statefulSetBuilder Builder) nodeAffinity() *corev1.Affinity {
 	}
 
 	return &affinity
+}
+
+func (statefulSetBuilder Builder) addPersistentVolumeClaim(sts *appsv1.StatefulSet) {
+	if (statefulSetBuilder.dynakube.IsOTLPingestEnabled() || statefulSetBuilder.dynakube.TelemetryService().IsEnabled()) && !statefulSetBuilder.dynakube.Spec.ActiveGate.UseEphemeralVolume {
+		if statefulSetBuilder.dynakube.Spec.ActiveGate.PersistentVolumeClaim == nil {
+			sts.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: consts.GatewayTmpVolumeName,
+					},
+					Spec: defaultPVCSpec(),
+				},
+			}
+		} else {
+			sts.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: consts.GatewayTmpVolumeName,
+					},
+					Spec: *statefulSetBuilder.dynakube.Spec.ActiveGate.PersistentVolumeClaim,
+				},
+			}
+		}
+
+		sts.Spec.PersistentVolumeClaimRetentionPolicy = defaultPVCRetentionPolicy()
+	}
+}
+
+func defaultPVCSpec() corev1.PersistentVolumeClaimSpec {
+	return corev1.PersistentVolumeClaimSpec{
+		AccessModes: []corev1.PersistentVolumeAccessMode{
+			corev1.ReadWriteOnce,
+		},
+		Resources: corev1.VolumeResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceStorage: resource.MustParse("1Gi"),
+			},
+		},
+	}
+}
+
+func defaultPVCRetentionPolicy() *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy {
+	return &appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy{
+		WhenDeleted: appsv1.DeletePersistentVolumeClaimRetentionPolicyType,
+		WhenScaled:  appsv1.DeletePersistentVolumeClaimRetentionPolicyType,
+	}
 }
