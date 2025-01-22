@@ -92,14 +92,6 @@ func (ag *Spec) IsMetricsIngestEnabled() bool {
 	return ag.IsMode(MetricsIngestCapability.DisplayName)
 }
 
-func (ag *Spec) NeedsService() bool {
-	return ag.IsRoutingEnabled() ||
-		ag.IsApiEnabled() ||
-		ag.IsMetricsIngestEnabled() ||
-		ag.enabledDependencies.extensions ||
-		ag.enabledDependencies.otlpIngest
-}
-
 func (ag *Spec) HasCaCert() bool {
 	return ag.IsEnabled() && ag.TlsSecretName != ""
 }
