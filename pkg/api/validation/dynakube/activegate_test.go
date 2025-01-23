@@ -87,3 +87,46 @@ func TestMissingActiveGateMemoryLimit(t *testing.T) {
 			})
 	})
 }
+
+func TestActiveGatePVCSettings(t *testing.T) {
+	t.Run(`EphemeralVolume disabled and PVC specified`, func(t *testing.T) {
+		assertAllowed(t,
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testApiUrl,
+					ActiveGate: activegate.Spec{
+						UseEphemeralVolume:    false,
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimSpec{},
+					},
+				},
+			})
+	})
+	t.Run(`EphemeralVolume enabled and no PVC specified`, func(t *testing.T) {
+		assertAllowed(t,
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testApiUrl,
+					ActiveGate: activegate.Spec{
+						UseEphemeralVolume: true,
+					},
+				},
+			})
+	})
+	t.Run(`EphemeralVolume enabled and PVC specified`, func(t *testing.T) {
+		assertDenied(t,
+			[]string{errorActiveGateInvalidPVCConfiguration},
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:     testApiUrl,
+					Extensions: &dynakube.ExtensionsSpec{},
+					ActiveGate: activegate.Spec{
+						UseEphemeralVolume:    true,
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimSpec{},
+					},
+				},
+			})
+	})
+}

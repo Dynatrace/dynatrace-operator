@@ -17,6 +17,8 @@ Make sure you correctly specify the ActiveGate capabilities in your custom resou
 	errorDuplicateActiveGateCapability = `The DynaKube's specification tries to specify duplicate capabilities in the ActiveGate section, duplicate capability=%s.
 Make sure you don't duplicate an Activegate capability in your custom resource.
 `
+	errorActiveGateInvalidPVCConfiguration = ` DynaKube specifies a PVC for the ActiveGate while ephemeral volume is also enabled. These settings are mutually exclusive, please choose only one.`
+
 	warningMissingActiveGateMemoryLimit = `ActiveGate specification missing memory limits. Can cause excess memory usage.`
 )
 
@@ -65,4 +67,18 @@ func missingActiveGateMemoryLimit(_ context.Context, _ *Validator, dk *dynakube.
 
 func memoryLimitSet(resources corev1.ResourceRequirements) bool {
 	return resources.Limits != nil && resources.Limits.Memory() != nil
+}
+
+func activeGateMutuallyExclusivePVCSettings(dk *dynakube.DynaKube) bool {
+	return dk.Spec.ActiveGate.UseEphemeralVolume && dk.Spec.ActiveGate.PersistentVolumeClaim != nil
+}
+
+func mutuallyExclusiveActiveGatePVsettings(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if activeGateMutuallyExclusivePVCSettings(dk) {
+		log.Info("requested dynakube specifies mutually exclusive PersistentVolumeClaim settings for ActiveGate.", "name", dk.Name, "namespace", dk.Namespace)
+
+		return errorActiveGateInvalidPVCConfiguration
+	}
+
+	return ""
 }

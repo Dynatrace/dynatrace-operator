@@ -10,12 +10,12 @@ import (
 const (
 	expectedMountLen     = 6
 	expectedInitMountLen = 2
-	expectedVolumeLen    = 6
 )
 
 func TestGetVolumeMounts(t *testing.T) {
+	tenantUUID := "test-uuid"
 	t.Run("get volume mounts", func(t *testing.T) {
-		mounts := getVolumeMounts()
+		mounts := getVolumeMounts(tenantUUID)
 
 		require.NotEmpty(t, mounts)
 		assert.Len(t, mounts, expectedMountLen)
@@ -29,10 +29,9 @@ func TestGetVolumeMounts(t *testing.T) {
 
 func TestGetVolumes(t *testing.T) {
 	dkName := "test-dk"
-	tenantUUID := "test-uuid"
 
 	t.Run("get volumes", func(t *testing.T) {
-		volumes := getVolumes(dkName, tenantUUID)
+		volumes := getVolumes(dkName)
 
 		require.NotEmpty(t, volumes)
 		assert.Len(t, volumes, expectedMountLen)
