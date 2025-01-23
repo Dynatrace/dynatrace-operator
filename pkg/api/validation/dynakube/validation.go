@@ -57,6 +57,7 @@ var (
 		emptyTelemetryServiceProtocolsList,
 		unknownTelemetryServiceProtocols,
 		duplicatedTelemetryServiceProtocols,
+		extensionsWithoutK8SMonitoring,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,
