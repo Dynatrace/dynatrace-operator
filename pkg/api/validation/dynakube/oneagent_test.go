@@ -180,7 +180,7 @@ func TestConflictingNodeSelector(t *testing.T) {
 	t.Run("valid dynakube specs - 2 log-monitoring DK, different tenant, same nodes", func(t *testing.T) {
 		api1 := "https://f1.q.d.n/api"
 		api2 := "https://f2.q.d.n/api"
-		assertAllowedWithoutWarnings(t, createStandaloneLogMonitoringDynakube("dk1", api1, "1"),
+		assertAllowedWithWarnings(t, 1, createStandaloneLogMonitoringDynakube("dk1", api1, "1"),
 			createStandaloneLogMonitoringDynakube("dk-lm", api2, "1"))
 	})
 

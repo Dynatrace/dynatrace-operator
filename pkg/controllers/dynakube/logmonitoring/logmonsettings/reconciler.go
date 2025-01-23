@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -42,7 +43,9 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 
 		return nil
 	} else if r.dk.Status.KubernetesClusterMEID == "" {
-		return errors.New("the status of the DynaKube is missing information about the kubernetes monitored-entity, skipping LogMonitoring deployment")
+		log.Info("Kubernetes settings are not yet available, which are needed for LogMonitoring, will requeue")
+
+		return daemonset.KubernetesSettingsNotAvailableError
 	}
 
 	err := r.checkLogMonitoringSettings(ctx)

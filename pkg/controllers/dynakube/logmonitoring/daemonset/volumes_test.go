@@ -14,6 +14,7 @@ const (
 
 func TestGetVolumeMounts(t *testing.T) {
 	tenantUUID := "test-uuid"
+
 	t.Run("get volume mounts", func(t *testing.T) {
 		mounts := getVolumeMounts(tenantUUID)
 
