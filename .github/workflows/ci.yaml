@@ -19,7 +19,7 @@ env:
 jobs:
   helm-test:
     name: Run helm unit tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -34,7 +34,7 @@ jobs:
 
   helm-lint:
     name: Run helm linting
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -49,7 +49,7 @@ jobs:
 
   tests:
     name: Run unit tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -82,7 +82,7 @@ jobs:
 
   linting:
     name: Run linting
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -106,7 +106,7 @@ jobs:
 
   generated-files:
     name: Check generated files
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -121,7 +121,7 @@ jobs:
 
   security:
     name: Code security scanning alerts
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -134,7 +134,7 @@ jobs:
 
   markdown-lint:
     name: Lint markdown files
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -147,7 +147,7 @@ jobs:
 
   check-uncommitted-doc-changes:
     name: Check uncommitted changes in api docs action
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -166,7 +166,7 @@ jobs:
 
   prepare:
     name: Prepare properties
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -200,11 +200,11 @@ jobs:
 
   build:
     name: Build images
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: [prepare, tests, linting, generated-files]
     strategy:
       matrix:
-        platform: [amd64, arm64]
+        platform: [amd64, arm64, ppc64le, s390x]
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -218,11 +218,11 @@ jobs:
 
   push:
     name: Push images
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: [prepare, build]
     strategy:
       matrix:
-        platform: [amd64, arm64]
+        platform: [amd64, arm64, ppc64le, s390x]
     if: ${{ !github.event.pull_request.head.repo.fork }}
     steps:
       - name: Checkout
@@ -246,7 +246,7 @@ jobs:
   manifest:
     name: Create manifest
     needs: [prepare, push]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       COMBINED: ${{ github.ref_protected }}
     if: ${{ !github.event.pull_request.head.repo.fork }}
