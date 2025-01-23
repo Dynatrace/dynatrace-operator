@@ -14,8 +14,8 @@ func TestLogMonitoringWithoutK8SMonitoring(t *testing.T) {
 	t.Run("no error if logMonitoring is enabled with activegate with k8s-monitoring", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: oneagent.Spec{
-					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				OneAgent: dynakube.OneAgentSpec{
+					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 				},
 				APIURL:        testApiUrl,
 				LogMonitoring: &logmonitoring.Spec{},
@@ -31,8 +31,8 @@ func TestLogMonitoringWithoutK8SMonitoring(t *testing.T) {
 	t.Run("error if logMonitoring is enabled with automatic k8s monitoring feature flag but no activegate with k8s-monitoring", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: oneagent.Spec{
-					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				OneAgent: dynakube.OneAgentSpec{
+					CloudNativeFullStack: &dynakube.CloudNativeFullStackSpec{},
 				},
 				APIURL:        testApiUrl,
 				LogMonitoring: &logmonitoring.Spec{},
@@ -100,7 +100,7 @@ func TestIgnoredLogMonitoringTemplate(t *testing.T) {
 	t.Run("warning if logMonitoring template section is not empty", func(t *testing.T) {
 		dk := createStandaloneLogMonitoringDynakube(testName, testApiUrl, "something")
 		dk.Spec.OneAgent.CloudNativeFullStack = &dynakube.CloudNativeFullStackSpec{}
-		assertAllowedWithWarnings(t, 1, dk)
+		assertAllowedWithWarnings(t, 2, dk)
 	})
 }
 
