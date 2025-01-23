@@ -32,6 +32,7 @@ rules:
       - ""
     resources:
       - secrets
+      - configmaps
     verbs:
       - get
       - list
@@ -39,11 +40,12 @@ rules:
   - apiGroups:
       - ""
     resources:
-      - configmaps
+      - jobs
     verbs:
       - get
       - list
-      - watch
+      - create
+      - delete
   - apiGroups:
       - ""
     resources:
