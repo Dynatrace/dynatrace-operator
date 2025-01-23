@@ -54,6 +54,7 @@ var (
 		missingKSPMDependency,
 		missingKSPMImage,
 		missingLogMonitoringImage,
+		logMonitoringWithoutK8SMonitoring,
 		emptyTelemetryServiceProtocolsList,
 		unknownTelemetryServiceProtocols,
 		duplicatedTelemetryServiceProtocols,
