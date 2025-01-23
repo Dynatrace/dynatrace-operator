@@ -53,6 +53,10 @@ var (
 		missingKSPMDependency,
 		missingKSPMImage,
 		missingLogMonitoringImage,
+		logMonitoringWithoutK8SMonitoring,
+		emptyTelemetryServiceProtocolsList,
+		unknownTelemetryServiceProtocols,
+		duplicatedTelemetryServiceProtocols,
 		extensionsWithoutK8SMonitoring,
 	}
 	validatorWarningFuncs = []validatorFunc{
