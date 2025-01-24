@@ -1,6 +1,7 @@
 package daemonset
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
@@ -21,6 +22,7 @@ import (
 const (
 	annotationUnprivileged      = "container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"
 	annotationUnprivilegedValue = "unconfined"
+	annotationTenantTokenHash   = api.InternalFlagPrefix + "tenant-token-hash"
 
 	serviceAccountName = "dynatrace-dynakube-oneagent"
 
@@ -59,45 +61,49 @@ type classicFullStack struct {
 }
 
 type builder struct {
-	dk             *dynakube.DynaKube
-	hostInjectSpec *oneagent.HostInjectSpec
-	clusterID      string
-	deploymentType string
+	dk              *dynakube.DynaKube
+	hostInjectSpec  *oneagent.HostInjectSpec
+	clusterID       string
+	deploymentType  string
+	tenantTokenHash string
 }
 
 type Builder interface {
 	BuildDaemonSet() (*appsv1.DaemonSet, error)
 }
 
-func NewHostMonitoring(dk *dynakube.DynaKube, clusterId string) Builder {
+func NewHostMonitoring(dk *dynakube.DynaKube, clusterId, tenantTokenHash string) Builder {
 	return &hostMonitoring{
 		builder{
-			dk:             dk,
-			hostInjectSpec: dk.Spec.OneAgent.HostMonitoring,
-			clusterID:      clusterId,
-			deploymentType: deploymentmetadata.HostMonitoringDeploymentType,
+			dk:              dk,
+			hostInjectSpec:  dk.Spec.OneAgent.HostMonitoring,
+			clusterID:       clusterId,
+			deploymentType:  deploymentmetadata.HostMonitoringDeploymentType,
+			tenantTokenHash: tenantTokenHash,
 		},
 	}
 }
 
-func NewCloudNativeFullStack(dk *dynakube.DynaKube, clusterId string) Builder {
+func NewCloudNativeFullStack(dk *dynakube.DynaKube, clusterId, tenantTokenHash string) Builder {
 	return &hostMonitoring{
 		builder{
-			dk:             dk,
-			hostInjectSpec: &dk.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
-			clusterID:      clusterId,
-			deploymentType: deploymentmetadata.CloudNativeDeploymentType,
+			dk:              dk,
+			hostInjectSpec:  &dk.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
+			clusterID:       clusterId,
+			deploymentType:  deploymentmetadata.CloudNativeDeploymentType,
+			tenantTokenHash: tenantTokenHash,
 		},
 	}
 }
 
-func NewClassicFullStack(dk *dynakube.DynaKube, clusterId string) Builder {
+func NewClassicFullStack(dk *dynakube.DynaKube, clusterId, tenantTokenHash string) Builder {
 	return &classicFullStack{
 		builder{
-			dk:             dk,
-			hostInjectSpec: dk.Spec.OneAgent.ClassicFullStack,
-			clusterID:      clusterId,
-			deploymentType: deploymentmetadata.ClassicFullStackDeploymentType,
+			dk:              dk,
+			hostInjectSpec:  dk.Spec.OneAgent.ClassicFullStack,
+			clusterID:       clusterId,
+			deploymentType:  deploymentmetadata.ClassicFullStackDeploymentType,
+			tenantTokenHash: tenantTokenHash,
 		},
 	}
 }
@@ -148,6 +154,7 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	annotations := map[string]string{
 		annotationUnprivileged:            annotationUnprivilegedValue,
 		webhook.AnnotationDynatraceInject: "false",
+		annotationTenantTokenHash:         b.tenantTokenHash,
 	}
 
 	annotations = maputils.MergeMap(annotations, b.hostInjectSpec.Annotations)
