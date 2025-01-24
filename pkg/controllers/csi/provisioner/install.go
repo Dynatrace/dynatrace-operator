@@ -56,7 +56,7 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dyn
 			Arch:          arch.Arch,
 			Flavor:        arch.Flavor,
 			Technologies:  []string{"all"},
-			TargetVersion: dk.OneAgent().GetCustomCodeModulesVersion(),
+			TargetVersion: dk.OneAgent().GetCodeModulesVersion(),
 			SkipMetadata:  true,
 			PathResolver:  provisioner.path,
 		}
@@ -66,7 +66,7 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dyn
 		return urlInstaller, nil
 	case dk.OneAgent().GetCustomCodeModulesImage() != "":
 		props := &image.Properties{
-			ImageUri:     dk.OneAgent().GetCustomCodeModulesImage(),
+			ImageUri:     dk.OneAgent().GetCodeModulesImage(),
 			ApiReader:    provisioner.apiReader,
 			Dynakube:     &dk,
 			PathResolver: provisioner.path,
