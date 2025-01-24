@@ -34,6 +34,7 @@ func Feature(t *testing.T) features.Feature {
 		componentDynakube.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 		componentDynakube.WithExtensionsEnabledSpec(true),
 		componentDynakube.WithExtensionsEECImageRefSpec(consts.EecImageRepo, consts.EecImageTag),
+		componentDynakube.WithActiveGate(),
 	}
 
 	testDynakube := *componentDynakube.New(options...)
