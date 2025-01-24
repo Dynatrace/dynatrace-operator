@@ -14,5 +14,19 @@ func (b *builder) affinity() *corev1.Affinity {
 		affinity = node.Affinity()
 	}
 
+	if b.hostInjectSpec != nil {
+		if b.hostInjectSpec.NodeAffinity != nil {
+			affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = append(
+				affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms,
+				b.hostInjectSpec.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms...,
+			)
+
+			affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution = append(
+				affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution,
+				b.hostInjectSpec.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution...,
+			)
+		}
+	}
+
 	return &affinity
 }
