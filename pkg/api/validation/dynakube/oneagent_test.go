@@ -533,5 +533,4 @@ func TestPublicImageSetWithReadOnlyMode(t *testing.T) {
 			},
 		})
 	})
-
 }
