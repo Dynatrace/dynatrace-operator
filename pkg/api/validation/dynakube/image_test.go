@@ -49,7 +49,7 @@ func TestImageFieldHasTenantImage(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testTenantUrl + "/api",
 				OneAgent: dynakube.OneAgentSpec{
-					ClassicFullStack: &dynakube.HostInjectSpec{
+					HostMonitoring: &dynakube.HostInjectSpec{
 						Image: testRegistryUrl + "/linux/oneagent:latest",
 					},
 				},
@@ -71,7 +71,7 @@ func TestImageFieldHasTenantImage(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testTenantUrl + "/api",
 				OneAgent: dynakube.OneAgentSpec{
-					ClassicFullStack: &dynakube.HostInjectSpec{
+					HostMonitoring: &dynakube.HostInjectSpec{
 						Image: testRegistryUrl + "/linux/oneagent:latest",
 					},
 				},
@@ -87,7 +87,7 @@ func TestImageFieldHasTenantImage(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testTenantUrl + "/api",
 				OneAgent: dynakube.OneAgentSpec{
-					ClassicFullStack: &dynakube.HostInjectSpec{
+					HostMonitoring: &dynakube.HostInjectSpec{
 						Image: "127.0.0.1:5000/test:tag",
 					},
 				},

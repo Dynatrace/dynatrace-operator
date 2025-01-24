@@ -55,6 +55,7 @@ var (
 		missingLogMonitoringImage,
 		logMonitoringWithoutK8SMonitoring,
 		extensionsWithoutK8SMonitoring,
+		publicImageSetWithoutReadOnlyMode,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,
