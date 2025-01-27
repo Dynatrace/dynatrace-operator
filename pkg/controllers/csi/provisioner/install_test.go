@@ -12,8 +12,7 @@ func TestGetTargetDir(t *testing.T) {
 		prov := createProvisioner(t)
 		dk := createDynaKubeWithVersion(t)
 
-		targetDir, err := prov.getTargetDir(*dk)
-		require.NoError(t, err)
+		targetDir := prov.getTargetDir(*dk)
 		require.Contains(t, targetDir, dk.OneAgent().GetCodeModulesVersion())
 	})
 
@@ -22,17 +21,7 @@ func TestGetTargetDir(t *testing.T) {
 		dk := createDynaKubeWithImage(t)
 
 		expectedDir := base64.StdEncoding.EncodeToString([]byte(dk.OneAgent().GetCodeModulesImage()))
-		targetDir, err := prov.getTargetDir(*dk)
-		require.NoError(t, err)
+		targetDir := prov.getTargetDir(*dk)
 		require.Contains(t, targetDir, expectedDir)
-	})
-
-	t.Run("nothing set => error (shouldn't be possible in real life)", func(t *testing.T) {
-		prov := createProvisioner(t)
-		dk := createDynaKubeBase(t)
-
-		targetDir, err := prov.getTargetDir(*dk)
-		require.Error(t, err)
-		require.Empty(t, targetDir)
 	})
 }
