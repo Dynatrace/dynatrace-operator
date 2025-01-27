@@ -920,7 +920,7 @@ func TestOneAgentHostGroup(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
-		assert.Equal(t, "--set-host-group=newgroup", daemonset.Spec.Template.Spec.Containers[0].Args[1])
+		assert.Equal(t, "--set-host-group=newgroup", daemonset.Spec.Template.Spec.Containers[0].Args[0])
 	})
 }
 
@@ -964,12 +964,10 @@ func TestDefaultArguments(t *testing.T) {
 		expectedDefaultArguments := []string{
 			"--set-app-log-content-access=true",
 			"--set-host-group=APP_LUSTIG_PETER",
-			"--set-host-id-source=auto",
 			"--set-host-id-source=fqdn",
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
 			"--set-no-proxy=",
 			"--set-proxy=",
-			"--set-server={$(DT_SERVER)}",
 			"--set-server=https://hyper.super.com:9999",
 			"--set-tenant=$(DT_TENANT)",
 		}
@@ -995,7 +993,6 @@ func TestDefaultArguments(t *testing.T) {
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
 			"--set-no-proxy=",
 			"--set-proxy=",
-			"--set-server={$(DT_SERVER)}",
 			"--set-server=https://hyper.super.com:9999",
 			"--set-tenant=$(DT_TENANT)",
 		}
