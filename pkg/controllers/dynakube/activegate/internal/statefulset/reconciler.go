@@ -15,7 +15,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
-	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
@@ -126,7 +125,7 @@ func (r *Reconciler) calculateActiveGateConfigurationHash(ctx context.Context) (
 }
 
 func (r *Reconciler) calculateActiveGateTokenHash(ctx context.Context) (string, error) {
-	tenantToken, err := k8ssecret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{
+	tenantToken, err := secret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{
 		Name:      r.dk.ActiveGate().GetTenantSecretName(),
 		Namespace: r.dk.Namespace,
 	}, connectioninfo.TenantTokenKey, log)
