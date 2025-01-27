@@ -87,11 +87,11 @@ func (provisioner *OneAgentProvisioner) getTargetDir(dk dynakube.DynaKube) (stri
 	var dirName string
 
 	switch {
-	case dk.OneAgent().GetCodeModulesImage() != "":
+	case dk.OneAgent().GetCustomCodeModulesVersion() != "":
 		// An image URI often contains one or several slashes, which is problematic when trying to use it as a folder name.
 		// Easiest to just base64 encode it
 		dirName = base64.StdEncoding.EncodeToString([]byte(dk.OneAgent().GetCodeModulesImage()))
-	case dk.OneAgent().GetCodeModulesVersion() != "":
+	case dk.OneAgent().GetCustomCodeModulesImage() != "":
 		dirName = dk.OneAgent().GetCodeModulesVersion()
 	default:
 		return "", errors.New("failed to determine the target directory for the CodeModule download")
