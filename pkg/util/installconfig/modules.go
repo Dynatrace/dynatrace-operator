@@ -50,6 +50,10 @@ type Modules struct {
 }
 
 func GetModules() Modules {
+	return GetModulesToLogger(log)
+}
+
+func GetModulesToLogger(log logd.Logger) Modules {
 	if override != nil {
 		return *override
 	}

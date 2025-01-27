@@ -10,10 +10,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
-var isEnabledModules = installconfig.GetModules()
+var isEnabledModules installconfig.Modules
 
 // ConvertFrom converts v1beta3 to v1beta1.
 func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
+	isEnabledModules = installconfig.GetModules()
+
 	src := srcRaw.(*dynakube.DynaKube)
 	dst.fromBase(src)
 	dst.fromOneAgentSpec(src)

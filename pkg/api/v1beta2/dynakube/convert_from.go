@@ -7,10 +7,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
-var isEnabledModules = installconfig.GetModules()
+var isEnabledModules installconfig.Modules
 
 // ConvertFrom converts from the Hub version (v1beta3) to this version (v1beta3).
 func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
+	isEnabledModules = installconfig.GetModules()
+
 	src := srcRaw.(*dynakube.DynaKube)
 
 	dst.fromBase(src)
