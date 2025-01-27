@@ -47,6 +47,7 @@ tests:
                 - ""
               resources:
                 - secrets
+                - configmaps
               verbs:
                 - get
                 - list
@@ -54,11 +55,12 @@ tests:
             - apiGroups:
                 - ""
               resources:
-                - configmaps
+                - jobs
               verbs:
                 - get
                 - list
-                - watch
+                - create
+                - delete
             - apiGroups:
                 - ""
               resources:

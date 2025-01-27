@@ -37,6 +37,8 @@ func NewReconciler(clt client.Client,
 	}
 }
 
+var KubernetesSettingsNotAvailableError = errors.New("the status of the DynaKube is missing information about the kubernetes monitored-entity, skipping LogMonitoring deployment until it is ready")
+
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if !r.dk.LogMonitoring().IsStandalone() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
@@ -56,7 +58,9 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if !r.isMEConfigured() {
-		return errors.New("the status of the DynaKube is missing information about the kubernetes monitored-entity, skipping LogMonitoring deployment")
+		log.Info("Kubernetes settings are not yet available, which are needed for LogMonitoring, will requeue")
+
+		return KubernetesSettingsNotAvailableError
 	}
 
 	ds, err := r.generateDaemonSet()
@@ -89,8 +93,8 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 
 	maxUnavailable := intstr.FromInt(r.dk.FeatureOneAgentMaxUnavailable())
 
-	ds, err := daemonset.Build(r.dk, r.dk.LogMonitoring().GetDaemonSetName(), getContainer(*r.dk),
-		daemonset.SetInitContainer(getInitContainer(*r.dk)),
+	ds, err := daemonset.Build(r.dk, r.dk.LogMonitoring().GetDaemonSetName(), getContainer(*r.dk, tenantUUID),
+		daemonset.SetInitContainer(getInitContainer(*r.dk, tenantUUID)),
 		daemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.LogMonitoring().Template().Labels),
 		daemonset.SetAllAnnotations(nil, r.dk.LogMonitoring().Template().Annotations),
 		daemonset.SetServiceAccount(serviceAccountName),
@@ -104,7 +108,7 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 				MaxUnavailable: &maxUnavailable,
 			},
 		}),
-		daemonset.SetVolumes(getVolumes(r.dk.Name, tenantUUID)),
+		daemonset.SetVolumes(getVolumes(r.dk.Name)),
 	)
 	if err != nil {
 		return nil, err

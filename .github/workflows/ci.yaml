@@ -67,7 +67,7 @@ jobs:
         run: |
           make go/check-coverage
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@1e68e06f1dbfde0e4cefc87efeba9e4643565303 # v5.1.2
+        uses: codecov/codecov-action@13ce06bfc6bbe3ecf90edbbf1bc32fe5978ca1d3 # v5.3.1
         with:
           fail_ci_if_error: true
           verbose: true
@@ -109,7 +109,7 @@ jobs:
         uses: azure/setup-helm@fe7b79cd5ee1e45176fcad797de68ecaf3ca4814 # v4.2.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+      - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
       - name: Check deepcopy files are up-to-date
         id: deepcopy
         run: |
@@ -151,7 +151,7 @@ jobs:
         with:
           config: .markdownlint.json
           # renovate depName=github.com/igorshubovych/markdownlint-cli
-          version: v0.43.0
+          version: v0.44.0
 
   prepare:
     name: Prepare properties

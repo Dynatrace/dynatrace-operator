@@ -27,6 +27,10 @@ func (ag *Spec) SetExtensionsDependency(isEnabled bool) {
 	ag.enabledDependencies.extensions = isEnabled
 }
 
+func (ag *Spec) SetOTLPingestDependency(isEnabled bool) {
+	ag.enabledDependencies.otlpIngest = isEnabled
+}
+
 func (ag *Spec) apiUrlHost() string {
 	parsedUrl, err := url.Parse(ag.apiUrl)
 	if err != nil {
