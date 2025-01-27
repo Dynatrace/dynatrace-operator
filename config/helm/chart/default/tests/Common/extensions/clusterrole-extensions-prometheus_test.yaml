@@ -66,7 +66,7 @@ tests:
           of: ClusterRole
       - equal:
           path: metadata.name
-          value:  dynatrace-extensions-prometheus
+          value: dynatrace-extensions-prometheus
       - isNotEmpty:
           path: metadata.labels
       - contains:
