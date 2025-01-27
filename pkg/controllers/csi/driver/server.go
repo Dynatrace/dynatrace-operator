@@ -141,14 +141,20 @@ func (srv *Server) Start(ctx context.Context) error {
 }
 
 func (srv *Server) GetPluginInfo(context.Context, *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
+	log.Debug("GetPluginInfo called")
+
 	return &csi.GetPluginInfoResponse{Name: dtcsi.DriverName, VendorVersion: version.Version}, nil
 }
 
 func (srv *Server) Probe(context.Context, *csi.ProbeRequest) (*csi.ProbeResponse, error) {
+	log.Debug("Probe called")
+
 	return &csi.ProbeResponse{}, nil
 }
 
 func (srv *Server) GetPluginCapabilities(context.Context, *csi.GetPluginCapabilitiesRequest) (*csi.GetPluginCapabilitiesResponse, error) {
+	log.Debug("GetPluginCapabilities called")
+
 	return &csi.GetPluginCapabilitiesResponse{}, nil
 }
 
