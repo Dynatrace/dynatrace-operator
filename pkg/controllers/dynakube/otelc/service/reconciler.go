@@ -45,7 +45,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return r.removeServiceOnce(ctx)
 	}
 
-	if r.dk.Spec.TelemetryService.ServiceName != "" {
+	if r.dk.TelemetryService().ServiceName != "" {
 		return r.removeServiceOnce(ctx)
 	}
 
@@ -91,7 +91,7 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
 		return err
 	}
 
-	conditions.SetServiceCreated(r.dk.Conditions(), serviceConditionType, r.dk.TelemetryService().DefaultName(r.dk.Name))
+	conditions.SetServiceCreated(r.dk.Conditions(), serviceConditionType, r.dk.TelemetryService().GetName(r.dk.Name))
 
 	return nil
 }
@@ -107,7 +107,7 @@ func (r *Reconciler) buildService() (*corev1.Service, error) {
 	}
 
 	return service.Build(r.dk,
-		r.dk.TelemetryService().DefaultName(r.dk.Name),
+		r.dk.TelemetryService().GetName(r.dk.Name),
 		appLabels.BuildMatchLabels(),
 		svcPorts,
 		service.SetLabels(coreLabels.BuildLabels()),

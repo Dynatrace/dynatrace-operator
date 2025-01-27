@@ -37,8 +37,8 @@ func (spec *Spec) GetProtocols() []Protocol {
 	return protocols
 }
 
-func (ts *TelemetryService) DefaultName(dynakubeName string) string {
-	return dynakubeName + consts.TelemetryControllerSuffix
+func (ts *TelemetryService) GetName(dynakubeName string) string {
+	return dynakubeName + consts.TelemetryServiceSuffix
 }
 
 func (ts *TelemetryService) IsEnabled() bool {

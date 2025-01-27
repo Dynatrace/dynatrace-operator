@@ -95,7 +95,7 @@ func invalidTelemetryServiceName(_ context.Context, _ *Validator, dk *dynakube.D
 
 	var errs []string
 
-	if dk.Spec.TelemetryService.ServiceName != "" {
+	if dk.TelemetryService().ServiceName != "" {
 		errs = validation.IsDNS1035Label(dk.Spec.TelemetryService.ServiceName)
 	}
 
