@@ -141,20 +141,14 @@ func (srv *Server) Start(ctx context.Context) error {
 }
 
 func (srv *Server) GetPluginInfo(context.Context, *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
-	log.Debug("GetPluginInfo called")
-
 	return &csi.GetPluginInfoResponse{Name: dtcsi.DriverName, VendorVersion: version.Version}, nil
 }
 
 func (srv *Server) Probe(context.Context, *csi.ProbeRequest) (*csi.ProbeResponse, error) {
-	log.Debug("Probe called")
-
 	return &csi.ProbeResponse{}, nil
 }
 
 func (srv *Server) GetPluginCapabilities(context.Context, *csi.GetPluginCapabilitiesRequest) (*csi.GetPluginCapabilitiesResponse, error) {
-	log.Debug("GetPluginCapabilities called")
-
 	return &csi.GetPluginCapabilitiesResponse{}, nil
 }
 
@@ -297,6 +291,8 @@ func grpcLimiter(maxGrpcRequests int32) grpc.UnaryServerInterceptor {
 			methodName = "NodeUnpublishVolume"
 			log.Info("GRPC call", "method", methodName, "volume-id", req.GetVolumeId())
 		default:
+			log.Debug("GRPC call", "full_method", info.FullMethod)
+
 			resp, err := handler(ctx, req)
 			if err != nil {
 				log.Error(err, "GRPC failed", "full_method", info.FullMethod)
