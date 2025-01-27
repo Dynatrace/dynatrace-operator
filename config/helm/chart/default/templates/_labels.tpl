@@ -114,7 +114,7 @@ OpenTelemetry Collector (OTelC) labels
 */}}
 {{- define "dynatrace-operator.openTelemetryCollectorLabels" -}}
 {{ include "dynatrace-operator.commonLabels" . }}
-app.kubernetes.io/component: dynatrace-opentelemetry-collector
+app.kubernetes.io/component: dynatrace-extensions-collector
 {{- end -}}
 
 {{/*
