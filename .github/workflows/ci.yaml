@@ -67,7 +67,7 @@ jobs:
         run: |
           make go/check-coverage
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@0da7aa657d958d32c117fc47e1f977e7524753c7 # v5.3.0
+        uses: codecov/codecov-action@13ce06bfc6bbe3ecf90edbbf1bc32fe5978ca1d3 # v5.3.1
         with:
           fail_ci_if_error: true
           verbose: true
@@ -151,7 +151,7 @@ jobs:
         with:
           config: .markdownlint.json
           # renovate depName=github.com/igorshubovych/markdownlint-cli
-          version: v0.43.0
+          version: v0.44.0
 
   prepare:
     name: Prepare properties
