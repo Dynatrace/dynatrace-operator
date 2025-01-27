@@ -1,10 +1,10 @@
 package telemetryservice
 
-import "github.com/Dynatrace/dynatrace-operator/pkg/consts"
-
 type Protocol string
 
 const (
+	telemetryServiceSuffix = "-telemetry"
+
 	OtlpProtocol   Protocol = "otlp"
 	ZipkinProtocol Protocol = "zipkin"
 	JaegerProtocol Protocol = "jaeger"
@@ -38,7 +38,7 @@ func (spec *Spec) GetProtocols() []Protocol {
 }
 
 func (ts *TelemetryService) GetName(dynakubeName string) string {
-	return dynakubeName + consts.TelemetryServiceSuffix
+	return dynakubeName + telemetryServiceSuffix
 }
 
 func (ts *TelemetryService) IsEnabled() bool {
