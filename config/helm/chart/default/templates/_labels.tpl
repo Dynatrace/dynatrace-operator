@@ -110,9 +110,9 @@ app.kubernetes.io/component: dynatrace-extensions-controller
 {{- end -}}
 
 {{/*
-Extensions OpenTelemetry Collector (OTelC) labels
+OpenTelemetry Collector (OTelC) labels
 */}}
-{{- define "dynatrace-operator.extensionsOpenTelemetryCollectorLabels" -}}
+{{- define "dynatrace-operator.openTelemetryCollectorLabels" -}}
 {{ include "dynatrace-operator.commonLabels" . }}
 app.kubernetes.io/component: dynatrace-extensions-collector
 {{- end -}}
