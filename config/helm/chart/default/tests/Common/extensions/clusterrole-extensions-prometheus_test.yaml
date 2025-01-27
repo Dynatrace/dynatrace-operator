@@ -1,6 +1,6 @@
-suite: test clusterrole for the extensions OpenTelemetry collector
+suite: test clusterrole for the dynatrace OpenTelemetry collector
 templates:
-  - Common/extensions-opentelemetry-collector/clusterrole-extensions-opentelemetry-collector.yaml
+  - Common/extensions/clusterole-extensions-prometheus.yaml
 tests:
   - it: ClusterRole and ClusterRoleBinding exists
     asserts:

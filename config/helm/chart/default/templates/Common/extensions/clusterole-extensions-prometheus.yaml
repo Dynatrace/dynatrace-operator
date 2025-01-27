@@ -18,7 +18,7 @@ metadata:
   name: dynatrace-extensions-prometheus
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "dynatrace-operator.extensionsOpenTelemetryCollectorLabels" . | nindent 4 }}
+    {{- include "dynatrace-operator.openTelemetryCollectorLabels" . | nindent 4 }}
 rules:
   - apiGroups:
       - ""
@@ -66,13 +66,13 @@ metadata:
   name: dynatrace-extensions-prometheus
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "dynatrace-operator.extensionsOpenTelemetryCollectorLabels" . | nindent 4 }}
+    {{- include "dynatrace-operator.openTelemetryCollectorLabels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: dynatrace-extensions-prometheus
 subjects:
   - kind: ServiceAccount
-    name: dynatrace-extensions-collector
+    name: dynatrace-opentelemetry-collector
     namespace: {{ .Release.Namespace }}
 {{ end }}

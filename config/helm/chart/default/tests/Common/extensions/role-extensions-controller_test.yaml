@@ -1,6 +1,6 @@
 suite: test role for the extensions controller
 templates:
-  - Common/extensions-controller/role-extensions-controller.yaml
+  - Common/extensions/role-extensions-controller.yaml
 tests:
   - it: should not exist by default
     asserts:
