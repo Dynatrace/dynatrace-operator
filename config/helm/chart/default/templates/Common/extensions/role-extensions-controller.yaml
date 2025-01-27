@@ -15,7 +15,7 @@
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: dynatrace-extensions
+  name: dynatrace-extensions-controller
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "dynatrace-operator.extensionsControllerLabels" . | nindent 4 }}
@@ -32,13 +32,13 @@ rules:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: dynatrace-extensions
+  name: dynatrace-extensions-controller
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "dynatrace-operator.extensionsControllerLabels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
-    name: dynatrace-extensions
+    name: dynatrace-extensions-controller
 roleRef:
   kind: Role
   name: dynatrace-extensions
