@@ -41,6 +41,6 @@ subjects:
     name: dynatrace-extensions-controller
 roleRef:
   kind: Role
-  name: dynatrace-extensions
+  name: dynatrace-extensions-controller
   apiGroup: rbac.authorization.k8s.io
 {{ end }}
