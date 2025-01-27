@@ -11,8 +11,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
@@ -87,7 +90,12 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context) (*appsv1.State
 		return nil, err
 	}
 
-	statefulSetBuilder := NewStatefulSetBuilder(kubeUID, activeGateConfigurationHash, *r.dk, r.capability)
+	activeGateTokenHash, err := r.calculateActiveGateTokenHash(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	statefulSetBuilder := NewStatefulSetBuilder(kubeUID, activeGateConfigurationHash, activeGateTokenHash, *r.dk, r.capability)
 
 	desiredSts, err := statefulSetBuilder.CreateStatefulSet(r.modifiers)
 
@@ -115,6 +123,19 @@ func (r *Reconciler) calculateActiveGateConfigurationHash(ctx context.Context) (
 	}
 
 	return strconv.FormatUint(uint64(hash.Sum32()), 10), nil
+}
+
+func (r *Reconciler) calculateActiveGateTokenHash(ctx context.Context) (string, error) {
+	tenantToken, err := k8ssecret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{
+		Name:      r.dk.ActiveGate().GetTenantSecretName(),
+		Namespace: r.dk.Namespace,
+	}, connectioninfo.TenantTokenKey, log)
+
+	if err != nil {
+		log.Error(err, "secret for activegate token was not available at StatefulSet build time", "dynakube", r.dk.Name)
+	}
+
+	return hasher.GenerateHash(tenantToken)
 }
 
 func (r *Reconciler) getCustomPropertyValue(ctx context.Context) (string, error) {
