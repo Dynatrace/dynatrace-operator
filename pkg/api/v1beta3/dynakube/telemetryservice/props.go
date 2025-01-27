@@ -3,7 +3,7 @@ package telemetryservice
 type Protocol string
 
 const (
-	telemetryServiceSuffix = "-telemetry"
+	nameSuffix = "-telemetry"
 
 	OtlpProtocol   Protocol = "otlp"
 	ZipkinProtocol Protocol = "zipkin"
@@ -38,7 +38,7 @@ func (spec *Spec) GetProtocols() []Protocol {
 }
 
 func (ts *TelemetryService) GetName(dynakubeName string) string {
-	return dynakubeName + telemetryServiceSuffix
+	return dynakubeName + nameSuffix
 }
 
 func (ts *TelemetryService) IsEnabled() bool {
