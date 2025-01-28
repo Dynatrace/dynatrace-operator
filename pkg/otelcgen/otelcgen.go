@@ -75,6 +75,7 @@ type Config struct {
 	cfg     *otelcol.Config
 	tlsKey  string
 	tlsCert string
+	podIP   string
 }
 
 type Option func(c *Config) error
@@ -241,6 +242,14 @@ func WithTLSKey(tlsKey string) Option {
 func WithTLSCert(tlsCert string) Option {
 	return func(c *Config) error {
 		c.tlsCert = tlsCert
+
+		return nil
+	}
+}
+
+func WithPodIP(podIP string) Option {
+	return func(c *Config) error {
+		c.podIP = podIP
 
 		return nil
 	}
