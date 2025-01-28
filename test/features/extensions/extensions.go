@@ -30,10 +30,11 @@ func Feature(t *testing.T) features.Feature {
 
 	options := []componentDynakube.Option{
 		componentDynakube.WithApiUrl(secretConfig.ApiUrl),
-		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
 		componentDynakube.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 		componentDynakube.WithExtensionsEnabledSpec(true),
 		componentDynakube.WithExtensionsEECImageRefSpec(consts.EecImageRepo, consts.EecImageTag),
+		componentDynakube.WithActiveGate(),
+		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
 	}
 
 	testDynakube := *componentDynakube.New(options...)
