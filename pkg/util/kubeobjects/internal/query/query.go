@@ -77,10 +77,10 @@ func (c Generic[T, L]) Update(ctx context.Context, object T) error {
 	return errors.WithStack(c.KubeClient.Update(ctx, object))
 }
 
-func (c Generic[T, L]) Delete(ctx context.Context, object T) error {
+func (c Generic[T, L]) Delete(ctx context.Context, object T, options ...client.DeleteOption) error {
 	c.log(object).Info("deleting")
 
-	err := c.KubeClient.Delete(ctx, object)
+	err := c.KubeClient.Delete(ctx, object, options...)
 
 	return errors.WithStack(client.IgnoreNotFound(err))
 }

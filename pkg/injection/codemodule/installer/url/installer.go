@@ -57,7 +57,7 @@ func (installer Installer) InstallAgent(ctx context.Context, targetDir string) (
 	if installer.isAlreadyDownloaded(targetDir) {
 		log.Info("agent already installed", "target dir", targetDir)
 
-		return false, nil
+		return true, nil
 	}
 
 	err := installer.fs.MkdirAll(installer.props.PathResolver.AgentSharedBinaryDirBase(), common.MkDirFileMode)
