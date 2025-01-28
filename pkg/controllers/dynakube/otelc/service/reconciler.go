@@ -91,7 +91,7 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
 		return err
 	}
 
-	conditions.SetServiceCreated(r.dk.Conditions(), serviceConditionType, r.dk.TelemetryService().GetName(r.dk.Name))
+	conditions.SetServiceCreated(r.dk.Conditions(), serviceConditionType, r.dk.TelemetryService().GetName())
 
 	return nil
 }
@@ -107,7 +107,7 @@ func (r *Reconciler) buildService() (*corev1.Service, error) {
 	}
 
 	return service.Build(r.dk,
-		r.dk.TelemetryService().GetName(r.dk.Name),
+		r.dk.TelemetryService().GetName(),
 		appLabels.BuildMatchLabels(),
 		svcPorts,
 		service.SetLabels(coreLabels.BuildLabels()),

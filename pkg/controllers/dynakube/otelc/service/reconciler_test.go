@@ -43,7 +43,7 @@ func TestService(t *testing.T) {
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryService().GetName(dk.Name), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryService().GetName(), Namespace: dk.Namespace}, service)
 		require.NoError(t, err)
 
 		require.Len(t, service.Spec.Ports, 8)
@@ -72,7 +72,7 @@ func TestService(t *testing.T) {
 		mockK8sClient := fake.NewFakeClient()
 		err := mockK8sClient.Create(context.Background(), &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      dk.TelemetryService().GetName(dk.Name),
+				Name:      dk.TelemetryService().GetName(),
 				Namespace: dk.Namespace,
 			},
 		})
@@ -82,7 +82,7 @@ func TestService(t *testing.T) {
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryService().GetName(dk.Name), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryService().GetName(), Namespace: dk.Namespace}, service)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 
@@ -100,7 +100,7 @@ func TestService(t *testing.T) {
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryService().GetName(dk.Name), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryService().GetName(), Namespace: dk.Namespace}, service)
 		require.NoError(t, err)
 
 		require.Len(t, service.Spec.Ports, 2)
@@ -134,7 +134,7 @@ func TestService(t *testing.T) {
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryService().GetName(dk.Name), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryService().GetName(), Namespace: dk.Namespace}, service)
 		require.NoError(t, err)
 
 		require.Len(t, dk.Status.Conditions, 1)
@@ -150,7 +150,7 @@ func TestService(t *testing.T) {
 		require.NoError(t, err)
 
 		service = &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryService().GetName(dk.Name), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryService().GetName(), Namespace: dk.Namespace}, service)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 
