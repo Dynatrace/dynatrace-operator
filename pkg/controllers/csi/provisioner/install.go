@@ -3,7 +3,6 @@ package csiprovisioner
 import (
 	"context"
 	"encoding/base64"
-	"errors"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
@@ -24,10 +23,7 @@ func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, dk dyn
 		return err
 	}
 
-	targetDir, err := provisioner.getTargetDir(dk)
-	if err != nil {
-		return err
-	}
+	targetDir := provisioner.getTargetDir(dk)
 
 	_, err = agentInstaller.InstallAgent(ctx, targetDir)
 	if err != nil {
@@ -43,8 +39,21 @@ func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, dk dyn
 }
 
 func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dynakube.DynaKube) (installer.Installer, error) {
-	switch {
-	case dk.OneAgent().GetCodeModulesVersion() != "":
+	if dk.OneAgent().GetCustomCodeModulesImage() != "" {
+		props := &image.Properties{
+			ImageUri:     dk.OneAgent().GetCodeModulesImage(),
+			ApiReader:    provisioner.apiReader,
+			Dynakube:     &dk,
+			PathResolver: provisioner.path,
+		}
+
+		imageInstaller, err := provisioner.imageInstallerBuilder(ctx, provisioner.fs, props)
+		if err != nil {
+			return nil, err
+		}
+
+		return imageInstaller, nil
+	} else {
 		dtc, err := buildDtc(provisioner, ctx, dk)
 		if err != nil {
 			return nil, err
@@ -64,40 +73,21 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dyn
 		urlInstaller := provisioner.urlInstallerBuilder(provisioner.fs, dtc, props)
 
 		return urlInstaller, nil
-	case dk.OneAgent().GetCodeModulesImage() != "":
-		props := &image.Properties{
-			ImageUri:     dk.OneAgent().GetCodeModulesImage(),
-			ApiReader:    provisioner.apiReader,
-			Dynakube:     &dk,
-			PathResolver: provisioner.path,
-		}
-
-		imageInstaller, err := provisioner.imageInstallerBuilder(ctx, provisioner.fs, props)
-		if err != nil {
-			return nil, err
-		}
-
-		return imageInstaller, nil
-	default:
-		return nil, errors.New("missing version/image information to download CodeModule")
 	}
 }
 
-func (provisioner *OneAgentProvisioner) getTargetDir(dk dynakube.DynaKube) (string, error) {
+func (provisioner *OneAgentProvisioner) getTargetDir(dk dynakube.DynaKube) string {
 	var dirName string
 
-	switch {
-	case dk.OneAgent().GetCodeModulesImage() != "":
+	if dk.OneAgent().GetCustomCodeModulesImage() != "" {
 		// An image URI often contains one or several slashes, which is problematic when trying to use it as a folder name.
 		// Easiest to just base64 encode it
 		dirName = base64.StdEncoding.EncodeToString([]byte(dk.OneAgent().GetCodeModulesImage()))
-	case dk.OneAgent().GetCodeModulesVersion() != "":
+	} else {
 		dirName = dk.OneAgent().GetCodeModulesVersion()
-	default:
-		return "", errors.New("failed to determine the target directory for the CodeModule download")
 	}
 
-	return provisioner.path.AgentSharedBinaryDirForAgent(dirName), nil
+	return provisioner.path.AgentSharedBinaryDirForAgent(dirName)
 }
 
 func (provisioner *OneAgentProvisioner) createLatestVersionSymlink(dk dynakube.DynaKube, targetDir string) error {
