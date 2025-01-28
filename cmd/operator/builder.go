@@ -7,6 +7,7 @@ import (
 	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
@@ -125,6 +126,7 @@ func (builder CommandBuilder) setClientFromConfig(kubeCfg *rest.Config) (Command
 
 func (builder CommandBuilder) buildRun() func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
+		installconfig.ReadModules()
 		version.LogVersion()
 		logd.LogBaseLoggerSettings()
 

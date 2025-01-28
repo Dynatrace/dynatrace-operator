@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -167,7 +168,7 @@ func compareCloudNativeSpec(t *testing.T, oldSpec CloudNativeFullStackSpec, newS
 
 func compareApplicationMonitoringSpec(t *testing.T, oldSpec ApplicationMonitoringSpec, newSpec oneagent.ApplicationMonitoringSpec) {
 	compareAppInjectionSpec(t, oldSpec.AppInjectionSpec, newSpec.AppInjectionSpec)
-	assert.Equal(t, oldSpec.UseCSIDriver, isEnabledModules.CSIDriver)
+	assert.Equal(t, oldSpec.UseCSIDriver, installconfig.GetModules().CSIDriver)
 	assert.Equal(t, oldSpec.Version, newSpec.Version)
 }
 

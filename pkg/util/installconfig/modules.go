@@ -54,6 +54,16 @@ func GetModules() Modules {
 		return *override
 	}
 
+	ReadModules()
+
+	return modules
+}
+
+func ReadModules() {
+	ReadModulesToLogger(log)
+}
+
+func ReadModulesToLogger(log logd.Logger) {
 	once.Do(func() {
 		modulesJson := os.Getenv(ModulesJsonEnv)
 		if modulesJson == "" {
@@ -71,8 +81,6 @@ func GetModules() Modules {
 
 		log.Info("envvar content read and set", "envvar", ModulesJsonEnv, "value", modulesJson)
 	})
-
-	return modules
 }
 
 // SetModulesOverride is a testing function, so you can easily unittest function using the GetModules() func
