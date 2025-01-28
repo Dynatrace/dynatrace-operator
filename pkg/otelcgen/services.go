@@ -18,7 +18,6 @@ var (
 
 func (c *Config) buildServices() service.Config {
 	return service.Config{
-		// TODO: remove telemetry
 		Telemetry: telemetry.Config{
 			Logs:     telemetry.LogsConfig{},
 			Metrics:  telemetry.MetricsConfig{},
