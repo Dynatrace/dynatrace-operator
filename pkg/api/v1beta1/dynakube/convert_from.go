@@ -10,12 +10,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
-var isEnabledModules installconfig.Modules
-
 // ConvertFrom converts v1beta3 to v1beta1.
 func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
-	isEnabledModules = installconfig.GetModules()
-
 	src := srcRaw.(*dynakube.DynaKube)
 	dst.fromBase(src)
 	dst.fromOneAgentSpec(src)
@@ -63,7 +59,7 @@ func (dst *DynaKube) fromOneAgentSpec(src *dynakube.DynaKube) {
 		dst.Spec.OneAgent.ApplicationMonitoring = &ApplicationMonitoringSpec{}
 		dst.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec = *fromAppInjectSpec(src.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec)
 		dst.Spec.OneAgent.ApplicationMonitoring.Version = src.Spec.OneAgent.ApplicationMonitoring.Version
-		dst.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver = &isEnabledModules.CSIDriver
+		dst.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver = ptr.To(installconfig.GetModules().CSIDriver)
 	}
 }
 

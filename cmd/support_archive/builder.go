@@ -98,7 +98,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 
 		logBuffer := bytes.Buffer{}
 		log := newSupportArchiveLogger(getLogOutput(archiveToStdoutFlagValue, &logBuffer))
-		installconfig.GetModulesToLogger(log)
+		installconfig.ReadModulesToLogger(log)
 		version.LogVersionToLogger(log)
 
 		archiveTargetFile, err := createZipArchiveTargetFile(archiveToStdoutFlagValue, defaultSupportArchiveTargetDir)

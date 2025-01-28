@@ -122,7 +122,7 @@ func startCertificateWatcher(webhookManager manager.Manager, namespace string, p
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		installconfig.GetModules()
+		installconfig.ReadModules()
 		version.LogVersion()
 		logd.LogBaseLoggerSettings()
 

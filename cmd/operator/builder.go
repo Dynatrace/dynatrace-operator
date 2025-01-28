@@ -126,7 +126,7 @@ func (builder CommandBuilder) setClientFromConfig(kubeCfg *rest.Config) (Command
 
 func (builder CommandBuilder) buildRun() func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		installconfig.GetModules()
+		installconfig.ReadModules()
 		version.LogVersion()
 		logd.LogBaseLoggerSettings()
 

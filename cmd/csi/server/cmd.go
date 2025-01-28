@@ -50,7 +50,7 @@ func addFlags(cmd *cobra.Command) {
 func run() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		unix.Umask(dtcsi.UnixUmask)
-		installconfig.GetModules()
+		installconfig.ReadModules()
 		version.LogVersion()
 		logd.LogBaseLoggerSettings()
 
