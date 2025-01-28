@@ -24,6 +24,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
 	k8sdaemonset "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -31,6 +32,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -238,9 +240,28 @@ func extractPublicData(dk *dynakube.DynaKube) map[string]string {
 	return data
 }
 
+func (r *Reconciler) calculateTenantTokenHash(ctx context.Context) (string, error) {
+	tenantToken, err := k8ssecret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{
+		Name:      r.dk.OneagentTenantSecret(),
+		Namespace: r.dk.Namespace,
+	}, connectioninfo.TenantTokenKey, log)
+
+	if err != nil {
+		log.Error(err, "secret for tenant token was not available at DaemonSet build time", "dynakube", r.dk.Name)
+		conditions.SetKubeApiError(r.dk.Conditions(), oaConditionType, err)
+	}
+
+	return hasher.GenerateHash(tenantToken)
+}
+
 func (r *Reconciler) reconcileRollout(ctx context.Context) error {
+	tenantTokenHash, err := r.calculateTenantTokenHash(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Define a new DaemonSet object
-	dsDesired, err := r.buildDesiredDaemonSet(r.dk)
+	dsDesired, err := r.buildDesiredDaemonSet(r.dk, tenantTokenHash)
 	if err != nil {
 		log.Info("failed to get desired daemonset")
 		setDaemonSetGenerationFailedCondition(r.dk.Conditions(), err)
@@ -301,18 +322,18 @@ func (r *Reconciler) getOneagentPods(ctx context.Context, dk *dynakube.DynaKube,
 	return podList.Items, listOps, err
 }
 
-func (r *Reconciler) buildDesiredDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet, error) {
+func (r *Reconciler) buildDesiredDaemonSet(dk *dynakube.DynaKube, tenantTokenHash string) (*appsv1.DaemonSet, error) {
 	var ds *appsv1.DaemonSet
 
 	var err error
 
 	switch {
 	case dk.ClassicFullStackMode():
-		ds, err = daemonset.NewClassicFullStack(dk, r.clusterID).BuildDaemonSet()
+		ds, err = daemonset.NewClassicFullStack(dk, r.clusterID, tenantTokenHash).BuildDaemonSet()
 	case dk.HostMonitoringMode():
-		ds, err = daemonset.NewHostMonitoring(dk, r.clusterID).BuildDaemonSet()
+		ds, err = daemonset.NewHostMonitoring(dk, r.clusterID, tenantTokenHash).BuildDaemonSet()
 	case dk.CloudNativeFullstackMode():
-		ds, err = daemonset.NewCloudNativeFullStack(dk, r.clusterID).BuildDaemonSet()
+		ds, err = daemonset.NewCloudNativeFullStack(dk, r.clusterID, tenantTokenHash).BuildDaemonSet()
 	}
 
 	if err != nil {
