@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/pkg/errors"
@@ -146,9 +147,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 	t.Run("generate daemonset", func(t *testing.T) {
 		dk := createDynakube(true)
 
-		reconciler := NewReconciler(nil,
-			nil, dk)
-		daemonset, err := reconciler.generateDaemonSet()
+		reconciler := NewReconciler(nil, createClientWithTenantTokenSecret(), dk)
+		daemonset, err := reconciler.generateDaemonSet(context.TODO())
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -163,6 +163,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 		assert.Subset(t, daemonset.Spec.Template.Labels, daemonset.Spec.Selector.MatchLabels)
 		require.Len(t, daemonset.Annotations, 1)
 		assert.Contains(t, daemonset.Annotations, hasher.AnnotationHash)
+		require.Len(t, daemonset.Spec.Template.Annotations, 1)
+		assert.Contains(t, daemonset.Spec.Template.Annotations, annotationTenantTokenHash)
 		assert.Equal(t, serviceAccountName, daemonset.Spec.Template.Spec.ServiceAccountName)
 		assert.Empty(t, daemonset.Spec.Template.Spec.DNSPolicy)
 		assert.Empty(t, daemonset.Spec.Template.Spec.PriorityClassName)
@@ -182,9 +184,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 			Labels: customLabels,
 		}
 
-		reconciler := NewReconciler(nil,
-			nil, dk)
-		daemonset, err := reconciler.generateDaemonSet()
+		reconciler := NewReconciler(nil, createClientWithTenantTokenSecret(), dk)
+		daemonset, err := reconciler.generateDaemonSet(context.TODO())
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -201,9 +202,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 			Annotations: customAnnotations,
 		}
 
-		reconciler := NewReconciler(nil,
-			nil, dk)
-		daemonset, err := reconciler.generateDaemonSet()
+		reconciler := NewReconciler(nil, createClientWithTenantTokenSecret(), dk)
+		daemonset, err := reconciler.generateDaemonSet(context.TODO())
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -218,9 +218,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 			DNSPolicy: customPolicy,
 		}
 
-		reconciler := NewReconciler(nil,
-			nil, dk)
-		daemonset, err := reconciler.generateDaemonSet()
+		reconciler := NewReconciler(nil, createClientWithTenantTokenSecret(), dk)
+		daemonset, err := reconciler.generateDaemonSet(context.TODO())
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -235,9 +234,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 			PriorityClassName: customClass,
 		}
 
-		reconciler := NewReconciler(nil,
-			nil, dk)
-		daemonset, err := reconciler.generateDaemonSet()
+		reconciler := NewReconciler(nil, createClientWithTenantTokenSecret(), dk)
+		daemonset, err := reconciler.generateDaemonSet(context.TODO())
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -250,9 +248,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Spec.CustomPullSecret = customPullSecret
 
-		reconciler := NewReconciler(nil,
-			nil, dk)
-		daemonset, err := reconciler.generateDaemonSet()
+		reconciler := NewReconciler(nil, createClientWithTenantTokenSecret(), dk)
+		daemonset, err := reconciler.generateDaemonSet(context.TODO())
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -272,9 +269,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
 			Tolerations: customTolerations,
 		}
-		reconciler := NewReconciler(nil,
-			nil, dk)
-		daemonset, err := reconciler.generateDaemonSet()
+		reconciler := NewReconciler(nil, createClientWithTenantTokenSecret(), dk)
+		daemonset, err := reconciler.generateDaemonSet(context.TODO())
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -328,4 +324,18 @@ func createBOOMK8sClient() client.Client {
 	})
 
 	return boomClient
+}
+
+func createClientWithTenantTokenSecret() client.Client {
+	return fake.NewClient(
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: dkNamespace,
+				Name:      dkName,
+			},
+			Data: map[string][]byte{
+				connectioninfo.TenantTokenKey: []byte("testkey"),
+			},
+		},
+	)
 }
