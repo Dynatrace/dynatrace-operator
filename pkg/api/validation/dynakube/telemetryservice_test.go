@@ -129,4 +129,32 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 				},
 			})
 	})
+
+	t.Run(`service name too long`, func(t *testing.T) {
+		assertDenied(t,
+			[]string{invalidTelemetryServiceNameErrorMessage()},
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testApiUrl,
+					TelemetryService: &telemetryservice.Spec{
+						ServiceName: "a123456789012345678901234567890123456789012345678901234567890123",
+					},
+				},
+			})
+	})
+
+	t.Run(`service name violates DNS-1035`, func(t *testing.T) {
+		assertDenied(t,
+			[]string{invalidTelemetryServiceNameErrorMessage()},
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testApiUrl,
+					TelemetryService: &telemetryservice.Spec{
+						ServiceName: "0123",
+					},
+				},
+			})
+	})
 }

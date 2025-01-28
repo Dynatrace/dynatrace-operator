@@ -5,7 +5,10 @@ import (
 )
 
 func (dk *DynaKube) TelemetryService() *telemetryservice.TelemetryService {
-	return &telemetryservice.TelemetryService{
+	ts := &telemetryservice.TelemetryService{
 		Spec: dk.Spec.TelemetryService,
 	}
+	ts.SetName(dk.Name)
+
+	return ts
 }

@@ -58,6 +58,7 @@ var (
 		emptyTelemetryServiceProtocolsList,
 		unknownTelemetryServiceProtocols,
 		duplicatedTelemetryServiceProtocols,
+		invalidTelemetryServiceName,
 		extensionsWithoutK8SMonitoring,
 	}
 	validatorWarningFuncs = []validatorFunc{
