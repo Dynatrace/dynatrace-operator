@@ -18,7 +18,9 @@ func (b *builder) arguments() ([]string, error) {
 	argMap := prioritymap.New(
 		prioritymap.WithSeparator(prioritymap.DefaultSeparator),
 		prioritymap.WithPriority(defaultArgumentPriority),
-		prioritymap.WithAllowDuplicates(),
+		prioritymap.WithAvoidDuplicates(),
+		prioritymap.WithAllowDuplicatesFor("--set-host-property"),
+		prioritymap.WithAllowDuplicatesFor("--set-host-tag"),
 	)
 
 	isProxyAsEnvDeprecated, err := isProxyAsEnvVarDeprecated(b.dk.OneAgent().GetVersion())

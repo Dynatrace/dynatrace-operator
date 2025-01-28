@@ -88,16 +88,29 @@ func TestArguments(t *testing.T) {
 		}
 		assert.Equal(t, expectedDefaultArguments, arguments)
 	})
-	t.Run("when injected arguments are provided then they come last", func(t *testing.T) {
-		args := []string{
+	t.Run("when injected arguments are provided then they come last, only allowed duplicates and no duplicate key/value pairs", func(t *testing.T) {
+		custArgs := []string{
 			"--set-app-log-content-access=true",
-			"--set-host-id-source=lustiglustig",
+			"--set-host-id-source=fqdn",
 			"--set-host-group=APP_LUSTIG_PETER",
 			"--set-server=https://hyper.super.com:9999",
+			"--set-host-property=prop1",
+			"--set-host-property=prop1",
+			"--set-host-property=prop1",
+			"--set-host-property=prop2",
+			"--set-host-property=prop2",
+			"--set-host-property=prop3",
+			"--set-host-property=prop3",
+			"--set-host-property=prop3",
+			"--set-host-tag=tag1",
+			"--set-host-tag=tag2",
+			"--set-host-tag=tag2",
+			"--set-host-tag=tag2",
+			"--set-host-tag=tag3",
 		}
 		builder := builder{
-			dk:             &dynakube.DynaKube{},
-			hostInjectSpec: &oneagent.HostInjectSpec{Args: args},
+			dk:             &dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{}}}},
+			hostInjectSpec: &oneagent.HostInjectSpec{Args: custArgs},
 		}
 
 		arguments, _ := builder.arguments()
@@ -105,11 +118,16 @@ func TestArguments(t *testing.T) {
 		expectedDefaultArguments := []string{
 			"--set-app-log-content-access=true",
 			"--set-host-group=APP_LUSTIG_PETER",
-			"--set-host-id-source=lustiglustig",
+			"--set-host-id-source=fqdn",
 			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+			"--set-host-property=prop1",
+			"--set-host-property=prop2",
+			"--set-host-property=prop3",
+			"--set-host-tag=tag1",
+			"--set-host-tag=tag2",
+			"--set-host-tag=tag3",
 			"--set-no-proxy=",
 			"--set-proxy=",
-			"--set-server={$(DT_SERVER)}",
 			"--set-server=https://hyper.super.com:9999",
 			"--set-tenant=$(DT_TENANT)",
 		}
@@ -217,7 +235,6 @@ func TestArguments(t *testing.T) {
 			"--set-host-property=item2=value2",
 			"--set-no-proxy=",
 			"--set-proxy=",
-			"--set-server={$(DT_SERVER)}",
 			"--set-server=https://hyper.super.com:9999",
 			"--set-tenant=$(DT_TENANT)",
 		}
