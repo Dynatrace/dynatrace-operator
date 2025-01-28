@@ -3,6 +3,8 @@ package telemetryservice
 type Protocol string
 
 const (
+	nameSuffix = "-telemetry"
+
 	OtlpProtocol   Protocol = "otlp"
 	ZipkinProtocol Protocol = "zipkin"
 	JaegerProtocol Protocol = "jaeger"
@@ -33,6 +35,14 @@ func (spec *Spec) GetProtocols() []Protocol {
 	}
 
 	return protocols
+}
+
+func (ts *TelemetryService) SetName(name string) {
+	ts.name = name
+}
+
+func (ts *TelemetryService) GetName() string {
+	return ts.name + nameSuffix
 }
 
 func (ts *TelemetryService) IsEnabled() bool {

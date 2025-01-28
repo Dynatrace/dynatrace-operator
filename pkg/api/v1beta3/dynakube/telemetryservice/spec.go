@@ -2,6 +2,8 @@ package telemetryservice
 
 type TelemetryService struct {
 	*Spec
+
+	name string
 }
 
 // +kubebuilder:object:generate=true
