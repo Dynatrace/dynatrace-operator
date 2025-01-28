@@ -30,6 +30,8 @@ var (
 		isKSPMDisabled,
 		isOneAgentModuleDisabled,
 		isOneAgentVersionValid,
+		duplicateOneAgentArguments,
+		forbiddenHostIdSourceArgument,
 		NoApiUrl,
 		IsInvalidApiUrl,
 		IsThirdGenAPIUrl,
