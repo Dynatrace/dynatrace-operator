@@ -36,4 +36,5 @@ func updateInstallContainer(installContainer *corev1.Container, workload *worklo
 	addInjectedEnv(installContainer)
 	addDTClusterEnvs(installContainer, entityID, clusterName)
 	addWorkloadInfoEnvs(installContainer, workload)
+	setupVolumeMountsForUserContainer(installContainer)
 }

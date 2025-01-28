@@ -466,9 +466,9 @@ func TestPropagateTLSCert(t *testing.T) {
 
 	t.Run("propagate combined certificates to custom.pem and custom_proxy.pem", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		fs = prepTestFile(t, fs, consts.SharedConfigConfigDirMount, consts.AgentInitSecretConfigField, string(initSecretData))
-		fs = prepTestFile(t, fs, consts.SharedConfigConfigDirMount, consts.ActiveGateCAsInitSecretField, "not empty")
-		fs = prepTestFile(t, fs, consts.SharedConfigConfigDirMount, consts.TrustedCAsInitSecretField, "not empty")
+		fs = prepTestFile(t, fs, consts.AgentConfigDirMount, consts.AgentInitSecretConfigField, string(initSecretData))
+		fs = prepTestFile(t, fs, consts.AgentConfigDirMount, consts.ActiveGateCAsInitSecretField, "not empty")
+		fs = prepTestFile(t, fs, consts.AgentConfigDirMount, consts.TrustedCAsInitSecretField, "not empty")
 		runner, err := NewRunner(fs)
 		require.NoError(t, err)
 		require.NotNil(t, runner)
@@ -481,8 +481,8 @@ func TestPropagateTLSCert(t *testing.T) {
 	})
 	t.Run("create custom.pem only containing AG cert", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		fs = prepTestFile(t, fs, consts.SharedConfigConfigDirMount, consts.AgentInitSecretConfigField, string(initSecretData))
-		fs = prepTestFile(t, fs, consts.SharedConfigConfigDirMount, consts.ActiveGateCAsInitSecretField, "not empty")
+		fs = prepTestFile(t, fs, consts.AgentConfigDirMount, consts.AgentInitSecretConfigField, string(initSecretData))
+		fs = prepTestFile(t, fs, consts.AgentConfigDirMount, consts.ActiveGateCAsInitSecretField, "not empty")
 		runner, err := NewRunner(fs)
 		require.NoError(t, err)
 		require.NotNil(t, runner)
@@ -495,8 +495,8 @@ func TestPropagateTLSCert(t *testing.T) {
 	})
 	t.Run("propagate trustedCAs certificates to custom.pem and custom_proxy.pem", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		fs = prepTestFile(t, fs, consts.SharedConfigConfigDirMount, consts.AgentInitSecretConfigField, string(initSecretData))
-		fs = prepTestFile(t, fs, consts.SharedConfigConfigDirMount, consts.TrustedCAsInitSecretField, "not empty")
+		fs = prepTestFile(t, fs, consts.AgentConfigDirMount, consts.AgentInitSecretConfigField, string(initSecretData))
+		fs = prepTestFile(t, fs, consts.AgentConfigDirMount, consts.TrustedCAsInitSecretField, "not empty")
 		runner, err := NewRunner(fs)
 		require.NoError(t, err)
 		require.NotNil(t, runner)
@@ -509,9 +509,9 @@ func TestPropagateTLSCert(t *testing.T) {
 	})
 	t.Run("don't create cert files", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		fs = prepTestFile(t, fs, consts.SharedConfigConfigDirMount, consts.AgentInitSecretConfigField, string(initSecretData))
-		fs = prepTestFile(t, fs, consts.SharedConfigConfigDirMount, consts.ActiveGateCAsInitSecretField, "")
-		fs = prepTestFile(t, fs, consts.SharedConfigConfigDirMount, consts.TrustedCAsInitSecretField, "")
+		fs = prepTestFile(t, fs, consts.AgentConfigDirMount, consts.AgentInitSecretConfigField, string(initSecretData))
+		fs = prepTestFile(t, fs, consts.AgentConfigDirMount, consts.ActiveGateCAsInitSecretField, "")
+		fs = prepTestFile(t, fs, consts.AgentConfigDirMount, consts.TrustedCAsInitSecretField, "")
 		runner, err := NewRunner(fs)
 		require.NoError(t, err)
 		require.NotNil(t, runner)

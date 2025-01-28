@@ -12,9 +12,9 @@ const (
 	K8sNamespaceEnv   = "K8S_NAMESPACE"
 	K8sClusterIDEnv   = "K8S_CLUSTER_ID"
 
-	SharedMountPath            = "/var/lib/dynatrace"
-	SharedVolumeName           = "dt-share"
-	SharedConfigVolumeName     = "injection-config"
-	SharedDirInitPath          = "/mnt/share"
-	SharedConfigConfigDirMount = "/mnt/config"
+	SharedMountPath       = "/var/lib/dynatrace"
+	SharedVolumeName      = "dt-share"
+	AgentConfigVolumeName = "injection-config"
+	SharedDirInitPath     = "/mnt/share"
+	AgentConfigDirMount   = "/mnt/config"
 )

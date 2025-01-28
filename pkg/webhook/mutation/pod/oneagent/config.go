@@ -22,8 +22,9 @@ const (
 	UnknownCodeModuleReason   = "UnknownCodeModule"
 	EmptyTenantUUIDReason     = "EmptyTenantUUID"
 
-	OneAgentBinVolumeName = "oneagent-bin"
-	preloadPath           = "/etc/ld.so.preload"
+	injectionConfigVolumeMountName = "injection-config"
+	OneAgentBinVolumeName          = "oneagent-bin"
+	preloadPath                    = "/etc/ld.so.preload"
 
 	// readonly CSI
 	oneagentConfVolumeName = "oneagent-agent-conf"

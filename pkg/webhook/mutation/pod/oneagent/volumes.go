@@ -11,6 +11,7 @@ import (
 )
 
 func (mut *Mutator) addVolumes(pod *corev1.Pod, dk dynakube.DynaKube) {
+	addInjectionConfigVolume(pod)
 	addOneAgentVolumes(pod, dk)
 
 	if dk.FeatureReadOnlyCsiVolume() {
@@ -109,4 +110,23 @@ func getInstallerVolumeSource(dk dynakube.DynaKube) corev1.VolumeSource {
 	}
 
 	return volumeSource
+}
+
+func addInjectionConfigVolume(pod *corev1.Pod) {
+	pod.Spec.Volumes = append(pod.Spec.Volumes,
+		corev1.Volume{
+			Name: consts.AgentConfigVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: consts.AgentInitSecretName,
+				},
+			},
+		},
+	)
+}
+
+func addInjectionConfigVolumeMount(container *corev1.Container) {
+	container.VolumeMounts = append(container.VolumeMounts,
+		corev1.VolumeMount{Name: consts.AgentConfigVolumeName, MountPath: consts.AgentConfigDirMount},
+	)
 }
