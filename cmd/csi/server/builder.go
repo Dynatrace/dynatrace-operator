@@ -7,6 +7,7 @@ import (
 	csidriver "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -108,6 +109,7 @@ func addFlags(cmd *cobra.Command) {
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		unix.Umask(dtcsi.UnixUmask)
+		installconfig.ReadModules()
 		version.LogVersion()
 		logd.LogBaseLoggerSettings()
 

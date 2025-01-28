@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/cmd/remote_command"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
@@ -97,6 +98,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 
 		logBuffer := bytes.Buffer{}
 		log := newSupportArchiveLogger(getLogOutput(archiveToStdoutFlagValue, &logBuffer))
+		installconfig.ReadModulesToLogger(log)
 		version.LogVersionToLogger(log)
 
 		archiveTargetFile, err := createZipArchiveTargetFile(archiveToStdoutFlagValue, defaultSupportArchiveTargetDir)
