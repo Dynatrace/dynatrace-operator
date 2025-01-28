@@ -171,21 +171,21 @@ func TestDuplicateArguments(t *testing.T) {
 		"--set-host-property=prop3",
 	}
 
-	custArgs := []string{
+	customArgs := []string{
 		"--set-host-id-source=fqdn",
 		"--set-server=foobar.com",
-		"--set-host-property=cust-prop1",
-		"--set-host-property=cust-prop2",
-		"--set-host-property=cust-prop3",
-		"--set-host-property=cust-prop3",
-		"--set-host-property=cust-prop3",
+		"--set-host-property=custom-prop1",
+		"--set-host-property=custom-prop2",
+		"--set-host-property=custom-prop3",
+		"--set-host-property=custom-prop3",
+		"--set-host-property=custom-prop3",
 	}
 
 	var tests = []struct {
 		title          string
 		expectedArgs   []string
 		defaultArgPrio int
-		custArgPrio    int
+		customArgsPrio int
 		mapOptions     []Option
 	}{
 		{
@@ -195,14 +195,14 @@ func TestDuplicateArguments(t *testing.T) {
 				"--set-host-property=prop1",
 				"--set-host-property=prop2",
 				"--set-host-property=prop3",
-				"--set-host-property=cust-prop1",
-				"--set-host-property=cust-prop2",
-				"--set-host-property=cust-prop3",
+				"--set-host-property=custom-prop1",
+				"--set-host-property=custom-prop2",
+				"--set-host-property=custom-prop3",
 				"--set-proxy=127.0.0.1",
 				"--set-server=foobar.com",
 			},
 			defaultArgPrio: DefaultPriority,
-			custArgPrio:    HighPriority,
+			customArgsPrio: HighPriority,
 			mapOptions: []Option{
 				WithSeparator("="),
 				WithAllowDuplicates(),
@@ -214,9 +214,9 @@ func TestDuplicateArguments(t *testing.T) {
 			title: "Enter avoided duplicates with lower prio",
 			expectedArgs: []string{
 				"--set-host-id-source=auto",
-				"--set-host-property=cust-prop1",
-				"--set-host-property=cust-prop2",
-				"--set-host-property=cust-prop3",
+				"--set-host-property=custom-prop1",
+				"--set-host-property=custom-prop2",
+				"--set-host-property=custom-prop3",
 				"--set-host-property=prop1",
 				"--set-host-property=prop2",
 				"--set-host-property=prop3",
@@ -224,7 +224,7 @@ func TestDuplicateArguments(t *testing.T) {
 				"--set-server=localhost",
 			},
 			defaultArgPrio: HighPriority,
-			custArgPrio:    DefaultPriority,
+			customArgsPrio: DefaultPriority,
 			mapOptions: []Option{
 				WithSeparator("="),
 				WithAllowDuplicates(),
@@ -239,14 +239,14 @@ func TestDuplicateArguments(t *testing.T) {
 				"--set-host-property=prop1",
 				"--set-host-property=prop2",
 				"--set-host-property=prop3",
-				"--set-host-property=cust-prop1",
-				"--set-host-property=cust-prop2",
-				"--set-host-property=cust-prop3",
+				"--set-host-property=custom-prop1",
+				"--set-host-property=custom-prop2",
+				"--set-host-property=custom-prop3",
 				"--set-proxy=127.0.0.1",
 				"--set-server=foobar.com",
 			},
 			defaultArgPrio: DefaultPriority,
-			custArgPrio:    HighPriority,
+			customArgsPrio: HighPriority,
 			mapOptions: []Option{
 				WithSeparator("="),
 				WithAvoidDuplicates(),
@@ -257,9 +257,9 @@ func TestDuplicateArguments(t *testing.T) {
 			title: "Enter avoided duplicates with lower prio",
 			expectedArgs: []string{
 				"--set-host-id-source=auto",
-				"--set-host-property=cust-prop1",
-				"--set-host-property=cust-prop2",
-				"--set-host-property=cust-prop3",
+				"--set-host-property=custom-prop1",
+				"--set-host-property=custom-prop2",
+				"--set-host-property=custom-prop3",
 				"--set-host-property=prop1",
 				"--set-host-property=prop2",
 				"--set-host-property=prop3",
@@ -267,7 +267,7 @@ func TestDuplicateArguments(t *testing.T) {
 				"--set-server=localhost",
 			},
 			defaultArgPrio: HighPriority,
-			custArgPrio:    DefaultPriority,
+			customArgsPrio: DefaultPriority,
 			mapOptions: []Option{
 				WithSeparator("="),
 				WithAvoidDuplicates(),
@@ -281,7 +281,7 @@ func TestDuplicateArguments(t *testing.T) {
 			argMap := New(tt.mapOptions...)
 
 			Append(argMap, defaultArgs, WithPriority(tt.defaultArgPrio))
-			Append(argMap, custArgs, WithPriority(tt.custArgPrio))
+			Append(argMap, customArgs, WithPriority(tt.customArgsPrio))
 
 			assert.Equal(t, tt.expectedArgs, argMap.AsKeyValueStrings())
 		})
