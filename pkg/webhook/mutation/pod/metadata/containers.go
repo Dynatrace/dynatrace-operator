@@ -1,15 +1,15 @@
 package metadata
 
 import (
-	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	corev1 "k8s.io/api/core/v1"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 )
 
 func mutateUserContainers(request *dtwebhook.BaseRequest) {
 	newContainers := request.NewContainers(ContainerIsInjected)
 	for i := range newContainers {
 		container := newContainers[i]
-		setupVolumeMountsForUserContainer(container)
+		addInjectedEnv(container)
 	}
 }
 
@@ -24,7 +24,7 @@ func reinvokeUserContainers(request *dtwebhook.BaseRequest) bool {
 
 	for i := range newContainers {
 		container := newContainers[i]
-		setupVolumeMountsForUserContainer(container)
+		addInjectedEnv(container)
 
 		updated = true
 	}
@@ -34,7 +34,7 @@ func reinvokeUserContainers(request *dtwebhook.BaseRequest) bool {
 
 func updateInstallContainer(installContainer *corev1.Container, workload *workloadInfo, entityID, clusterName string) {
 	addInjectedEnv(installContainer)
+	addEnrichmentEndpointVolumeMount(installContainer)
 	addDTClusterEnvs(installContainer, entityID, clusterName)
 	addWorkloadInfoEnvs(installContainer, workload)
-	setupVolumeMountsForUserContainer(installContainer)
 }

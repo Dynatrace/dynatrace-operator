@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	corev1 "k8s.io/api/core/v1"
@@ -131,11 +132,5 @@ func setWorkloadAnnotations(pod *corev1.Pod, workload *workloadInfo) {
 }
 
 func ContainerIsInjected(container corev1.Container) bool {
-	for _, volumeMount := range container.VolumeMounts {
-		if volumeMount.Name == workloadEnrichmentVolumeName || volumeMount.Name == ingestEndpointVolumeName {
-			return true
-		}
-	}
-
-	return false
+	return env.IsIn(container.Env, consts.EnrichmentInjectedEnv)
 }

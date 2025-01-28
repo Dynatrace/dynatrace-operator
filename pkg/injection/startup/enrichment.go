@@ -2,6 +2,8 @@ package startup
 
 import (
 	"encoding/json"
+	"io"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -88,7 +90,41 @@ func (runner *Runner) createEnrichmentFiles() error {
 		if err != nil {
 			return err
 		}
+
+		err = runner.copyEndpointFile(container.Name)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
+}
+
+func (runner *Runner) copyEndpointFile(containerName string) error {
+	sourcePath := filepath.Join(consts.EnrichmentEndpointMountPath, consts.EnrichmentEndpointFilename)
+	sourceFile, err := runner.fs.Open(sourcePath)
+	if err != nil {
+		return err
+	}
+
+	defer sourceFile.Close()
+
+	targetPath := filepath.Join(consts.SharedDirInitPath, containerName, consts.EnrichmentSubDirName, consts.EnrichmentEndpointFilePath)
+
+	err = runner.fs.MkdirAll(filepath.Dir(targetPath), os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	targetFile, err := runner.fs.OpenFile(targetPath, os.O_CREATE|os.O_WRONLY, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	defer targetFile.Close()
+
+	_,  err = io.Copy(targetFile, sourceFile)
+
+
+	return err
 }

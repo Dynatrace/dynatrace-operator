@@ -23,7 +23,6 @@ import (
 const (
 	MetricsUrlSecretField   = "DT_METRICS_INGEST_URL"
 	MetricsTokenSecretField = "DT_METRICS_INGEST_API_TOKEN"
-	configFile              = "endpoint.properties"
 )
 
 // SecretGenerator manages the mint endpoint secret generation for the user namespaces.
@@ -142,7 +141,7 @@ func (g *SecretGenerator) prepare(ctx context.Context, dk *dynakube.DynaKube) (m
 	}
 
 	data := map[string][]byte{
-		configFile: bytes.NewBufferString(endpointPropertiesBuilder.String()).Bytes(),
+		consts.EnrichmentEndpointFilename: bytes.NewBufferString(endpointPropertiesBuilder.String()).Bytes(),
 	}
 
 	return data, nil
