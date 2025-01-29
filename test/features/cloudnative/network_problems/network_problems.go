@@ -56,7 +56,7 @@ func ResilienceFeature(t *testing.T) features.Feature {
 		dynakube.WithApiUrl(secretConfig.ApiUrl),
 		dynakube.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
 		dynakube.WithAnnotations(map[string]string{
-			"feature.dynatrace.com/max-csi-mount-attempts": "2",
+			"feature.dynatrace.com/max-csi-mount-timeout": "1m",
 		}),
 	)
 
