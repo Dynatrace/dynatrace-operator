@@ -598,7 +598,7 @@ func TestOneAgentArguments(t *testing.T) {
 				"--set-host-tag=bar",
 				"--set-host-tag=foo",
 			},
-			expectedError: fmt.Sprintf(errorSameHostTagMultipleTimes, "[bar foo]"),
+			expectedError: fmt.Sprintf(errorSameHostTagMultipleTimes, "[foo bar]"),
 		},
 	}
 
