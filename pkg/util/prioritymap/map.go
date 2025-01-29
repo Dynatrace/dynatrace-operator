@@ -1,6 +1,7 @@
 package prioritymap
 
 import (
+	"slices"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -18,6 +19,7 @@ type Map struct {
 
 type entry struct {
 	value           any
+	key             string
 	delimiter       string
 	priority        int
 	allowDuplicates bool
@@ -37,10 +39,31 @@ func WithSeparator(separator string) Option {
 	}
 }
 
-// WithAllowDuplicatesForKey allows to add multiple values for the same key (covers all keys)
 func WithAllowDuplicates() Option {
 	return func(a *entry) {
 		a.allowDuplicates = true
+	}
+}
+
+func WithAvoidDuplicates() Option {
+	return func(a *entry) {
+		a.allowDuplicates = false
+	}
+}
+
+func WithAvoidDuplicatesFor(key string) Option {
+	return func(a *entry) {
+		if a.key == key {
+			a.allowDuplicates = false
+		}
+	}
+}
+
+func WithAllowDuplicatesFor(key string) Option {
+	return func(a *entry) {
+		if a.key == key {
+			a.allowDuplicates = true
+		}
 	}
 }
 
@@ -59,6 +82,7 @@ func (m Map) Append(key string, value any, opts ...Option) {
 	}
 
 	newArg := entry{
+		key:             key,
 		value:           value,
 		priority:        DefaultPriority,
 		allowDuplicates: false,
@@ -79,7 +103,11 @@ func (m Map) Append(key string, value any, opts ...Option) {
 			m.entries[key] = make([]entry, 0)
 		}
 
-		m.entries[key] = append(m.entries[key], newArg)
+		if !slices.ContainsFunc(m.entries[key], func(e entry) bool {
+			return e.value == value
+		}) {
+			m.entries[key] = append(m.entries[key], newArg)
+		}
 	}
 }
 
