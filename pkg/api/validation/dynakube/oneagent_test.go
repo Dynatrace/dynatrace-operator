@@ -491,3 +491,47 @@ func TestIsOneAgentVersionValid(t *testing.T) {
 		})
 	}
 }
+
+func TestPublicImageSetWithReadOnlyMode(t *testing.T) {
+	t.Run("reject dk with hostMon without csi and custom image", func(t *testing.T) {
+		setupDisabledCSIEnv(t)
+		assertDenied(t, []string{errorPublicImageWithWrongConfig},
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testApiUrl,
+					OneAgent: oneagent.Spec{
+						HostMonitoring: &oneagent.HostInjectSpec{
+							Image: "test/image/test-image:some-tag",
+						},
+					},
+				},
+			})
+	})
+	t.Run("allow dk with hostMon without csi and no custom image", func(t *testing.T) {
+		setupDisabledCSIEnv(t)
+		assertAllowed(t,
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testApiUrl,
+					OneAgent: oneagent.Spec{
+						HostMonitoring: &oneagent.HostInjectSpec{},
+					},
+				},
+			})
+	})
+	t.Run("allow dk with hostMon with csi and custom image", func(t *testing.T) {
+		assertAllowed(t, &dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testApiUrl,
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{
+						Image: "test/image/test-image:some-tag",
+					},
+				},
+			},
+		})
+	})
+}
