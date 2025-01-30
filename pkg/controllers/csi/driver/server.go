@@ -145,7 +145,9 @@ func (srv *Server) GetPluginInfo(context.Context, *csi.GetPluginInfoRequest) (*c
 }
 
 func (srv *Server) Probe(context.Context, *csi.ProbeRequest) (*csi.ProbeResponse, error) {
-	return nil,  status.Error(codes.Internal, "BOOM")
+	time.Sleep(10 * time.Minute)
+
+	return nil, status.Error(codes.Internal, "BOOM")
 }
 
 func (srv *Server) GetPluginCapabilities(context.Context, *csi.GetPluginCapabilitiesRequest) (*csi.GetPluginCapabilitiesResponse, error) {
