@@ -18,6 +18,7 @@ package csidriver
 
 import (
 	"context"
+	"math/rand"
 	"fmt"
 	"net"
 	"net/url"
@@ -92,6 +93,11 @@ func (srv *Server) Start(ctx context.Context) error {
 	srv.publishers = map[string]csivolumes.Publisher{
 		appvolumes.Mode:  appvolumes.NewPublisher(srv.fs, srv.mounter, srv.path),
 		hostvolumes.Mode: hostvolumes.NewPublisher(srv.fs, srv.mounter, srv.path),
+	}
+
+	shouldWait := rand.Intn(2)
+	if shouldWait == 0 {
+		time.Sleep(2 * time.Minute)
 	}
 
 	log.Info("starting listener", "scheme", endpoint.Scheme, "address", addr)
