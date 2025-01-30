@@ -132,7 +132,7 @@ func (svr *Server) GetPluginInfo(context.Context, *csi.GetPluginInfoRequest) (*c
 }
 
 func (svr *Server) Probe(context.Context, *csi.ProbeRequest) (*csi.ProbeResponse, error) {
-	return &csi.ProbeResponse{}, nil
+	return nil,  status.Error(codes.Internal, "BOOM")
 }
 
 func (svr *Server) GetPluginCapabilities(context.Context, *csi.GetPluginCapabilitiesRequest) (*csi.GetPluginCapabilitiesResponse, error) {
