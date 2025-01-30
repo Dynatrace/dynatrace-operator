@@ -291,6 +291,8 @@ func grpcLimiter(maxGrpcRequests int32) grpc.UnaryServerInterceptor {
 			methodName = "NodeUnpublishVolume"
 			log.Info("GRPC call", "method", methodName, "volume-id", req.GetVolumeId())
 		default:
+			log.Debug("GRPC call", "full_method", info.FullMethod)
+
 			resp, err := handler(ctx, req)
 			if err != nil {
 				log.Error(err, "GRPC failed", "full_method", info.FullMethod)
