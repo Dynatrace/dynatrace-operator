@@ -534,8 +534,9 @@ func TestPublicImageSetWithReadOnlyMode(t *testing.T) {
 			},
 		})
 	})
+}
 
-  func TestOneAgentArguments(t *testing.T) {
+func TestOneAgentArguments(t *testing.T) {
 	type oneAgentArgumentTest struct {
 		testName      string
 		arguments     []string
