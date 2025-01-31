@@ -132,6 +132,8 @@ func (r *Reconciler) calculateActiveGateTokenHash(ctx context.Context) (string, 
 
 	if err != nil {
 		log.Error(err, "secret for activegate token was not available at StatefulSet build time", "dynakube", r.dk.Name)
+
+		return "", err
 	}
 
 	return hasher.GenerateHash(tenantToken)

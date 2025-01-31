@@ -249,6 +249,8 @@ func (r *Reconciler) calculateTenantTokenHash(ctx context.Context) (string, erro
 	if err != nil {
 		log.Error(err, "secret for tenant token was not available at DaemonSet build time", "dynakube", r.dk.Name)
 		conditions.SetKubeApiError(r.dk.Conditions(), oaConditionType, err)
+
+		return "", err
 	}
 
 	return hasher.GenerateHash(tenantToken)
