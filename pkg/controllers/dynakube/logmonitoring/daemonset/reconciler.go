@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
+	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -63,7 +64,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return KubernetesSettingsNotAvailableError
 	}
 
-	ds, err := r.generateDaemonSet()
+	ds, err := r.generateDaemonSet(ctx)
 	if err != nil {
 		return err
 	}
@@ -83,8 +84,13 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
+func (r *Reconciler) generateDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error) {
 	tenantUUID, err := r.dk.TenantUUIDFromConnectionInfoStatus()
+	if err != nil {
+		return nil, err
+	}
+
+	annotations, err := r.buildAnnotations(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +102,7 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 	ds, err := daemonset.Build(r.dk, r.dk.LogMonitoring().GetDaemonSetName(), getContainer(*r.dk, tenantUUID),
 		daemonset.SetInitContainer(getInitContainer(*r.dk, tenantUUID)),
 		daemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.LogMonitoring().Template().Labels),
-		daemonset.SetAllAnnotations(nil, r.dk.LogMonitoring().Template().Annotations),
+		daemonset.SetAllAnnotations(nil, maputils.MergeMap(r.dk.LogMonitoring().Template().Annotations, annotations)),
 		daemonset.SetServiceAccount(serviceAccountName),
 		daemonset.SetDNSPolicy(r.dk.LogMonitoring().Template().DNSPolicy),
 		daemonset.SetAffinity(node.Affinity()),

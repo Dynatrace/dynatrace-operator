@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
@@ -47,14 +48,23 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 				Name: kubesystem.Namespace,
 				UID:  testUID,
 			},
-		}).
-		WithObjects(&corev1.Secret{
+		}, &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName + activegate.AuthTokenSecretSuffix,
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
-		}).
+		},
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: testNamespace,
+					Name:      testName + activegate.TenantSecretSuffix,
+				},
+				Data: map[string][]byte{
+					connectioninfo.TenantTokenKey: []byte("testkey"),
+				},
+			},
+		).
 		Build()
 	dk := &dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
