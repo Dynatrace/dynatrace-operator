@@ -534,4 +534,184 @@ func TestPublicImageSetWithReadOnlyMode(t *testing.T) {
 			},
 		})
 	})
+
+  func TestOneAgentArguments(t *testing.T) {
+	type oneAgentArgumentTest struct {
+		testName      string
+		arguments     []string
+		expectedError string
+	}
+
+	testcases := []oneAgentArgumentTest{
+		{
+			testName: "duplicate arguments are rejected",
+			arguments: []string{
+				"--set-server=foo",
+				"--set-server=bar",
+			},
+			expectedError: fmt.Sprintf(errorDuplicateOneAgentArgument, "--set-server"),
+		},
+		{
+			testName: "duplicate arguments with same value are rejected",
+			arguments: []string{
+				"--set-server=foo",
+				"--set-server=foo",
+			},
+			expectedError: fmt.Sprintf(errorDuplicateOneAgentArgument, "--set-server"),
+		},
+		{
+			testName: "no duplicate arguments",
+			arguments: []string{
+				"--set-server=foo",
+				"--set-host-source-id=bar",
+			},
+			expectedError: "",
+		},
+		{
+			testName: "duplicate host property",
+			arguments: []string{
+				"--set-server=foo",
+				"--set-host-property=foo",
+				"--set-host-property=bar",
+				"--set-host-property=dow",
+			},
+			expectedError: "",
+		},
+		{
+			testName: "duplicate host tag",
+			arguments: []string{
+				"--set-server=foo",
+				"--set-host-tag=foo",
+				"--set-host-tag=bar",
+				"--set-host-tag=dow",
+			},
+			expectedError: "",
+		},
+		{
+			testName: "duplicate host tag with same value",
+			arguments: []string{
+				"--set-host-tag=foo",
+				"--set-host-tag=bar",
+				"--set-host-tag=foo",
+				"--set-host-tag=bar",
+				"--set-host-tag=doh",
+				"--set-host-tag=bar",
+				"--set-host-tag=foo",
+			},
+			expectedError: fmt.Sprintf(errorSameHostTagMultipleTimes, "[foo bar]"),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.testName, func(t *testing.T) {
+			dk := &dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testApiUrl,
+					OneAgent: oneagent.Spec{
+						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+							HostInjectSpec: oneagent.HostInjectSpec{
+								Args: tc.arguments,
+							},
+						},
+					},
+				},
+			}
+			if tc.expectedError == "" {
+				assertAllowedWithoutWarnings(t, dk)
+			} else {
+				assertDenied(t, []string{tc.expectedError}, dk)
+			}
+		})
+	}
+}
+
+func TestNoHostIdSourceArgument(t *testing.T) {
+	type oneAgentArgumentTest struct {
+		testName      string
+		dk            dynakube.DynaKube
+		expectedError string
+	}
+
+	testcases := []oneAgentArgumentTest{
+		{
+			testName: "host id source argument in cloud native full stack",
+			dk: dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testApiUrl,
+					OneAgent: oneagent.Spec{
+						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+							HostInjectSpec: oneagent.HostInjectSpec{
+								Args: []string{
+									"--set-server=foo",
+									"--set-host-id-source=foo",
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedError: errorHostIdSourceArgumentInCloudNative,
+		},
+		{
+			testName: "no host id source argument in cloud native full stack",
+			dk: dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testApiUrl,
+					OneAgent: oneagent.Spec{
+						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+							HostInjectSpec: oneagent.HostInjectSpec{
+								Args: []string{
+									"--set-server=foo",
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedError: "",
+		},
+		{
+			testName: "host id source argument in host monitoring stack",
+			dk: dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: testNamespace,
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testApiUrl,
+					OneAgent: oneagent.Spec{
+						HostMonitoring: &oneagent.HostInjectSpec{
+							Args: []string{
+								"--set-server=foo",
+								"--set-host-id-source=foo",
+							},
+						},
+					},
+				},
+			},
+			expectedError: "",
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.testName, func(t *testing.T) {
+			if tc.expectedError == "" {
+				assertAllowedWithoutWarnings(t, &tc.dk)
+			} else {
+				assertDenied(t, []string{tc.expectedError}, &tc.dk)
+			}
+		})
+	}
 }
