@@ -23,7 +23,7 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 
 	errorVolumeStorageReadOnlyModeConflict = `The DynaKube specification specifies a read-only host file system while OneAgent has volume storage enabled.`
 
-	errorPublicImageWithWrongConfig = `The DynaKube specification specifies a custom (most likely public) image in combination with a mode that needs write permissions for volume mounts.`
+	errorPublicImageWithWrongConfig = `Custom OneAgent image is only supported when CSI Driver is used.`
 
 	warningOneAgentInstallerEnvVars = `The environment variables ONEAGENT_INSTALLER_SCRIPT_URL and ONEAGENT_INSTALLER_TOKEN are only relevant for an unsupported image type. Please ensure you are using a supported image.`
 
