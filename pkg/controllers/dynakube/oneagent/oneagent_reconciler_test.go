@@ -38,7 +38,6 @@ import (
 
 const (
 	testClusterID = "test-cluster-id"
-	testTokenHash = "test-token-hash"
 )
 
 func TestReconcile(t *testing.T) {
@@ -291,7 +290,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		reconciler.versionReconciler = createVersionReconcilerMock(t)
 		reconciler.tokens = createTokens()
 		dk.Status.OneAgent.Version = oldComponentVersion
-		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID, testTokenHash)
+		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -324,7 +323,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		reconciler.tokens = createTokens()
 		dk.Spec.OneAgent.ClassicFullStack.AutoUpdate = &autoUpdate
 		dk.Status.OneAgent.Version = oldComponentVersion
-		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID, testTokenHash)
+		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -365,7 +364,7 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 		},
 	}
 
-	ds2, err := r.buildDesiredDaemonSet(dk, testTokenHash)
+	ds2, err := r.buildDesiredDaemonSet(dk)
 	require.NoError(t, err)
 	assert.NotEmpty(t, ds2.Annotations[hasher.AnnotationHash])
 
@@ -523,10 +522,10 @@ func TestHasSpecChanged(t *testing.T) {
 				},
 			}
 			test.mod(&oldInstance, &newInstance)
-			ds1, err := r.buildDesiredDaemonSet(&oldInstance, testTokenHash)
+			ds1, err := r.buildDesiredDaemonSet(&oldInstance)
 			require.NoError(t, err)
 
-			ds2, err := r.buildDesiredDaemonSet(&newInstance, testTokenHash)
+			ds2, err := r.buildDesiredDaemonSet(&newInstance)
 			require.NoError(t, err)
 
 			assert.NotEmpty(t, ds1.Annotations[hasher.AnnotationHash])
@@ -541,7 +540,7 @@ func TestNewDaemonset_Affinity(t *testing.T) {
 	t.Run(`adds correct affinities`, func(t *testing.T) {
 		r := Reconciler{}
 		dk := newDynaKube()
-		ds, err := r.buildDesiredDaemonSet(dk, testTokenHash)
+		ds, err := r.buildDesiredDaemonSet(dk)
 
 		require.NoError(t, err)
 		assert.NotNil(t, ds)

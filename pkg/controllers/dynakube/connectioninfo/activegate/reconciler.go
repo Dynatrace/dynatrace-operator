@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -106,6 +107,11 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 	}
 
 	err = r.createTenantTokenSecret(ctx, r.dk.ActiveGate().GetTenantSecretName(), connectionInfo.ConnectionInfo)
+	if err != nil {
+		return err
+	}
+
+	r.dk.Status.ActiveGate.ConnectionInfo.TenantTokenHash, err = hasher.GenerateHash(connectionInfo.ConnectionInfo.TenantToken)
 	if err != nil {
 		return err
 	}

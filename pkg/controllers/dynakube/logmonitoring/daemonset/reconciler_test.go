@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/pkg/errors"
@@ -148,8 +147,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 	t.Run("generate daemonset", func(t *testing.T) {
 		dk := createDynakube(true)
 
-		reconciler := NewReconciler(nil, createClientWithTenantTokenSecret(), dk)
-		daemonset, err := reconciler.generateDaemonSet(context.TODO())
+		reconciler := NewReconciler(nil, fake.NewClient(), dk)
+		daemonset, err := reconciler.generateDaemonSet()
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -185,30 +184,33 @@ func TestGenerateDaemonSet(t *testing.T) {
 			Labels: customLabels,
 		}
 
-		reconciler := NewReconciler(nil, createClientWithTenantTokenSecret(), dk)
-		daemonset, err := reconciler.generateDaemonSet(context.TODO())
+		reconciler := NewReconciler(nil, fake.NewClient(), dk)
+		daemonset, err := reconciler.generateDaemonSet()
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
 		assert.Subset(t, daemonset.Spec.Template.Labels, customLabels)
 	})
 
-	t.Run("respect custom annotations", func(t *testing.T) {
+	t.Run("respect annotations", func(t *testing.T) {
 		customAnnotations := map[string]string{
 			"custom": "annotation",
 		}
+		testTokenHash := "testTokenHash"
 
 		dk := createDynakube(true)
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
 			Annotations: customAnnotations,
 		}
+		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
 
-		reconciler := NewReconciler(nil, createClientWithTenantTokenSecret(), dk)
-		daemonset, err := reconciler.generateDaemonSet(context.TODO())
+		reconciler := NewReconciler(nil, fake.NewClient(), dk)
+		daemonset, err := reconciler.generateDaemonSet()
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
 		assert.Subset(t, daemonset.Spec.Template.Annotations, customAnnotations)
+		assert.Equal(t, testTokenHash, daemonset.Spec.Template.Annotations[annotationTenantTokenHash])
 	})
 
 	t.Run("respect dns policy", func(t *testing.T) {
@@ -219,8 +221,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 			DNSPolicy: customPolicy,
 		}
 
-		reconciler := NewReconciler(nil, createClientWithTenantTokenSecret(), dk)
-		daemonset, err := reconciler.generateDaemonSet(context.TODO())
+		reconciler := NewReconciler(nil, fake.NewClient(), dk)
+		daemonset, err := reconciler.generateDaemonSet()
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -235,8 +237,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 			PriorityClassName: customClass,
 		}
 
-		reconciler := NewReconciler(nil, createClientWithTenantTokenSecret(), dk)
-		daemonset, err := reconciler.generateDaemonSet(context.TODO())
+		reconciler := NewReconciler(nil, fake.NewClient(), dk)
+		daemonset, err := reconciler.generateDaemonSet()
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -249,8 +251,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Spec.CustomPullSecret = customPullSecret
 
-		reconciler := NewReconciler(nil, createClientWithTenantTokenSecret(), dk)
-		daemonset, err := reconciler.generateDaemonSet(context.TODO())
+		reconciler := NewReconciler(nil, fake.NewClient(), dk)
+		daemonset, err := reconciler.generateDaemonSet()
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -270,8 +272,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
 			Tolerations: customTolerations,
 		}
-		reconciler := NewReconciler(nil, createClientWithTenantTokenSecret(), dk)
-		daemonset, err := reconciler.generateDaemonSet(context.TODO())
+		reconciler := NewReconciler(nil, fake.NewClient(), dk)
+		daemonset, err := reconciler.generateDaemonSet()
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -325,18 +327,4 @@ func createBOOMK8sClient() client.Client {
 	})
 
 	return boomClient
-}
-
-func createClientWithTenantTokenSecret() client.Client {
-	return fake.NewClient(
-		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: dkNamespace,
-				Name:      dkName,
-			},
-			Data: map[string][]byte{
-				connectioninfo.TenantTokenKey: []byte("testkey"),
-			},
-		},
-	)
 }

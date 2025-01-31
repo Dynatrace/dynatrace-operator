@@ -64,7 +64,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return KubernetesSettingsNotAvailableError
 	}
 
-	ds, err := r.generateDaemonSet(ctx)
+	ds, err := r.generateDaemonSet()
 	if err != nil {
 		return err
 	}
@@ -84,13 +84,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) generateDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error) {
+func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 	tenantUUID, err := r.dk.TenantUUID()
-	if err != nil {
-		return nil, err
-	}
-
-	annotations, err := r.buildAnnotations(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +97,7 @@ func (r *Reconciler) generateDaemonSet(ctx context.Context) (*appsv1.DaemonSet, 
 	ds, err := daemonset.Build(r.dk, r.dk.LogMonitoring().GetDaemonSetName(), getContainer(*r.dk, tenantUUID),
 		daemonset.SetInitContainer(getInitContainer(*r.dk, tenantUUID)),
 		daemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.LogMonitoring().Template().Labels),
-		daemonset.SetAllAnnotations(nil, maputils.MergeMap(r.dk.LogMonitoring().Template().Annotations, annotations)),
+		daemonset.SetAllAnnotations(nil, maputils.MergeMap(r.dk.LogMonitoring().Template().Annotations, r.buildAnnotations(r.dk))),
 		daemonset.SetServiceAccount(serviceAccountName),
 		daemonset.SetDNSPolicy(r.dk.LogMonitoring().Template().DNSPolicy),
 		daemonset.SetAffinity(node.Affinity()),

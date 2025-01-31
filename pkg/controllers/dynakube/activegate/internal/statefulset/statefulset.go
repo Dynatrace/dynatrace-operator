@@ -33,15 +33,13 @@ type Builder struct {
 	envMap     *prioritymap.Map
 	kubeUID    types.UID
 	configHash string
-	tokenHash  string
 	dynakube   dynakube.DynaKube
 }
 
-func NewStatefulSetBuilder(kubeUID types.UID, configHash string, activeGateTokenHash string, dk dynakube.DynaKube, capability capability.Capability) Builder {
+func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dk dynakube.DynaKube, capability capability.Capability) Builder {
 	return Builder{
 		kubeUID:    kubeUID,
 		configHash: configHash,
-		tokenHash:  activeGateTokenHash,
 		dynakube:   dk,
 		capability: capability,
 		envMap:     prioritymap.New(prioritymap.WithPriority(defaultEnvPriority)),
@@ -94,7 +92,7 @@ func (statefulSetBuilder Builder) getBaseSpec() appsv1.StatefulSetSpec {
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
 					consts.AnnotationActiveGateConfigurationHash: statefulSetBuilder.configHash,
-					consts.AnnotationActiveGateTokenHash:         statefulSetBuilder.tokenHash,
+					consts.AnnotationActiveGateTokenHash:         statefulSetBuilder.dynakube.Status.ActiveGate.ConnectionInfo.TenantTokenHash,
 				},
 			},
 		},
