@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	serviceAccountName = "dynatrace-extensions-collector"
+	serviceAccountName = "dynatrace-opentelemetry-collector"
 )
 
 type Reconciler struct {
