@@ -47,6 +47,15 @@ var (
 			UID:  "01234-5678-9012-3456",
 		},
 	}
+	testTenantTokenSecret = &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: testNamespace,
+			Name:      testName + activegate.TenantSecretSuffix,
+		},
+		Data: map[string][]byte{
+			connectioninfo.TenantTokenKey: []byte("testkey"),
+		},
+	}
 )
 
 func TestReconciler_Reconcile(t *testing.T) {
@@ -105,7 +114,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				},
 			},
 		}
-		fakeClient := fake.NewClient(testKubeSystemNamespace)
+		fakeClient := fake.NewClient(testKubeSystemNamespace, testTenantTokenSecret)
 
 		r := NewReconciler(fakeClient, fakeClient, dk, createMockDtClient(t, true), nil, nil).(*Reconciler)
 		r.connectionReconciler = createGenericReconcilerMock(t)
@@ -211,7 +220,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				},
 			},
 		}
-		fakeClient := fake.NewClient(testKubeSystemNamespace)
+		fakeClient := fake.NewClient(testKubeSystemNamespace, testTenantTokenSecret)
 
 		r := NewReconciler(fakeClient, fakeClient, dk, createMockDtClient(t, true), nil, nil).(*Reconciler)
 		r.connectionReconciler = createGenericReconcilerMock(t)
@@ -277,7 +286,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			},
 		}
 
-		fakeClient := fake.NewClient(testKubeSystemNamespace)
+		fakeClient := fake.NewClient(testKubeSystemNamespace, testTenantTokenSecret)
 
 		r := NewReconciler(fakeClient, fakeClient, instance, createMockDtClient(t, true), nil, nil).(*Reconciler)
 		r.connectionReconciler = createGenericReconcilerMock(t)
@@ -308,7 +317,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			},
 		}
 
-		fakeClient := fake.NewClient(testKubeSystemNamespace)
+		fakeClient := fake.NewClient(testKubeSystemNamespace, testTenantTokenSecret)
 
 		r := NewReconciler(fakeClient, fakeClient, instance, createMockDtClient(t, true), nil, nil).(*Reconciler)
 		r.connectionReconciler = createGenericReconcilerMock(t)
@@ -339,7 +348,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			},
 		}
 
-		fakeClient := fake.NewClient(testKubeSystemNamespace)
+		fakeClient := fake.NewClient(testKubeSystemNamespace, testTenantTokenSecret)
 
 		r := NewReconciler(fakeClient, fakeClient, instance, createMockDtClient(t, true), nil, nil).(*Reconciler)
 		r.connectionReconciler = createGenericReconcilerMock(t)
@@ -370,7 +379,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			},
 		}
 
-		fakeClient := fake.NewClient(testKubeSystemNamespace)
+		fakeClient := fake.NewClient(testKubeSystemNamespace, testTenantTokenSecret)
 
 		r := NewReconciler(fakeClient, fakeClient, instance, createMockDtClient(t, true), nil, nil).(*Reconciler)
 		r.connectionReconciler = createGenericReconcilerMock(t)
@@ -451,7 +460,7 @@ func TestServiceCreation(t *testing.T) {
 		}
 
 		for capName, expectedPorts := range expectedCapabilityPorts {
-			fakeClient := fake.NewClient(testKubeSystemNamespace)
+			fakeClient := fake.NewClient(testKubeSystemNamespace, testTenantTokenSecret)
 
 			reconciler := NewReconciler(fakeClient, fakeClient, dk, dynatraceClient, nil, nil).(*Reconciler)
 			reconciler.connectionReconciler = createGenericReconcilerMock(t)
@@ -479,7 +488,7 @@ func TestServiceCreation(t *testing.T) {
 	})
 
 	t.Run("service exposes correct ports for multiple capabilities", func(t *testing.T) {
-		fakeClient := fake.NewClient(testKubeSystemNamespace)
+		fakeClient := fake.NewClient(testKubeSystemNamespace, testTenantTokenSecret)
 
 		reconciler := NewReconciler(fakeClient, fakeClient, dk, dynatraceClient, nil, nil).(*Reconciler)
 		reconciler.connectionReconciler = createGenericReconcilerMock(t)
