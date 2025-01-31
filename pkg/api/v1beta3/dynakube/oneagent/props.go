@@ -222,19 +222,23 @@ func (oa *OneAgent) GetHostGroup() string {
 	return oa.GetHostGroupAsParam()
 }
 
+func (oa *OneAgent) GetArguments() []string {
+	switch {
+	case oa.IsCloudNativeFullstackMode() && oa.CloudNativeFullStack.Args != nil:
+		return oa.CloudNativeFullStack.Args
+	case oa.IsClassicFullStackMode() && oa.ClassicFullStack.Args != nil:
+		return oa.ClassicFullStack.Args
+	case oa.IsHostMonitoringMode() && oa.HostMonitoring.Args != nil:
+		return oa.HostMonitoring.Args
+	}
+
+	return []string{}
+}
+
 func (oa *OneAgent) GetHostGroupAsParam() string {
 	var hostGroup string
 
-	var args []string
-
-	switch {
-	case oa.IsCloudNativeFullstackMode() && oa.CloudNativeFullStack.Args != nil:
-		args = oa.CloudNativeFullStack.Args
-	case oa.IsClassicFullStackMode() && oa.ClassicFullStack.Args != nil:
-		args = oa.ClassicFullStack.Args
-	case oa.IsHostMonitoringMode() && oa.HostMonitoring.Args != nil:
-		args = oa.HostMonitoring.Args
-	}
+	args := oa.GetArguments()
 
 	for _, arg := range args {
 		key, value := splitArg(arg)
@@ -309,4 +313,21 @@ func (oa *OneAgent) GetCodeModulesVersion() string {
 // Format: repo@sha256:digest.
 func (oa *OneAgent) GetCodeModulesImage() string {
 	return oa.CodeModulesStatus.ImageID
+}
+
+func (oa *OneAgent) GetArgumentsMap() map[string][]string {
+	args := oa.GetArguments()
+
+	argMap := make(map[string][]string)
+
+	for _, arg := range args {
+		key, value := splitArg(arg)
+		if _, exists := argMap[key]; !exists {
+			argMap[key] = []string{value}
+		} else {
+			argMap[key] = append(argMap[key], value)
+		}
+	}
+
+	return argMap
 }
