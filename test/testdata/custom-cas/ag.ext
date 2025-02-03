@@ -1,0 +1,7 @@
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = dynakube-activegate.dynatrace
+DNS.2 = dynakube-activegate.dynatrace.svc
+DNS.3 = dynakube-activegate.dynatrace.svc.cluster.local
