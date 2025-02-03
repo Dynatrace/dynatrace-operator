@@ -21,7 +21,8 @@ import (
 )
 
 const (
-	testImageTag = "1.203.0.0-0"
+	testImageTag  = "1.203.0.0-0"
+	testTokenHash = "test-token-hash"
 )
 
 func TestUseImmutableImage(t *testing.T) {
@@ -42,7 +43,7 @@ func TestUseImmutableImage(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewClassicFullStack(&dk, testClusterID)
+		dsBuilder := NewClassicFullStack(&dk, testClusterID, testTokenHash)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -83,7 +84,7 @@ func TestLabels(t *testing.T) {
 			labels.AppCreatedByLabel: dk.Name,
 			labels.AppManagedByLabel: version.AppName,
 		}
-		dsBuilder := NewClassicFullStack(&dk, testClusterID)
+		dsBuilder := NewClassicFullStack(&dk, testClusterID, testTokenHash)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -116,7 +117,7 @@ func TestLabels(t *testing.T) {
 			labels.AppManagedByLabel: version.AppName,
 		}
 
-		dsBuilder := NewClassicFullStack(&dk, testClusterID)
+		dsBuilder := NewClassicFullStack(&dk, testClusterID, testTokenHash)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -141,7 +142,7 @@ func TestCustomPullSecret(t *testing.T) {
 			CustomPullSecret: testName,
 		},
 	}
-	dsBuilder := NewClassicFullStack(&dk, testClusterID)
+	dsBuilder := NewClassicFullStack(&dk, testClusterID, testTokenHash)
 	ds, err := dsBuilder.BuildDaemonSet()
 	require.NoError(t, err)
 
@@ -162,7 +163,7 @@ func TestResources(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewClassicFullStack(&dk, testClusterID)
+		dsBuilder := NewClassicFullStack(&dk, testClusterID, testTokenHash)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -199,7 +200,7 @@ func TestResources(t *testing.T) {
 			},
 		}
 
-		dsBuilder := NewClassicFullStack(&dk, testClusterID)
+		dsBuilder := NewClassicFullStack(&dk, testClusterID, testTokenHash)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -261,7 +262,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&dk, testClusterID)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID, testTokenHash)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -295,7 +296,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&dk, testClusterID)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID, testTokenHash)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -324,7 +325,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&dk, testClusterID)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID, testTokenHash)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -351,7 +352,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewHostMonitoring(&dk, testClusterID)
+		dsBuilder := NewHostMonitoring(&dk, testClusterID, testTokenHash)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -382,7 +383,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewClassicFullStack(&dk, testClusterID)
+		dsBuilder := NewClassicFullStack(&dk, testClusterID, testTokenHash)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -412,7 +413,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewClassicFullStack(&dk, testClusterID)
+		dsBuilder := NewClassicFullStack(&dk, testClusterID, testTokenHash)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -447,7 +448,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsBuilder := NewClassicFullStack(&dk, testClusterID)
+		dsBuilder := NewClassicFullStack(&dk, testClusterID, testTokenHash)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -770,9 +771,10 @@ func TestAnnotations(t *testing.T) {
 		expectedAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
+			annotationTenantTokenHash:         testTokenHash,
 		}
 
-		builder := NewCloudNativeFullStack(&dk, testClusterID)
+		builder := NewCloudNativeFullStack(&dk, testClusterID, testTokenHash)
 		daemonset, err := builder.BuildDaemonSet()
 
 		require.NoError(t, err)
@@ -790,9 +792,10 @@ func TestAnnotations(t *testing.T) {
 		expectedAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
+			annotationTenantTokenHash:         testTokenHash,
 		}
 
-		builder := NewHostMonitoring(&dk, testClusterID)
+		builder := NewHostMonitoring(&dk, testClusterID, testTokenHash)
 		daemonset, err := builder.BuildDaemonSet()
 
 		require.NoError(t, err)
@@ -810,9 +813,10 @@ func TestAnnotations(t *testing.T) {
 		expectedAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
+			annotationTenantTokenHash:         testTokenHash,
 		}
 
-		builder := NewClassicFullStack(&dk, testClusterID)
+		builder := NewClassicFullStack(&dk, testClusterID, testTokenHash)
 		daemonset, err := builder.BuildDaemonSet()
 
 		require.NoError(t, err)
@@ -837,9 +841,10 @@ func TestAnnotations(t *testing.T) {
 			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			testKey:                           testName,
+			annotationTenantTokenHash:         testTokenHash,
 		}
 
-		builder := NewCloudNativeFullStack(&dk, testClusterID)
+		builder := NewCloudNativeFullStack(&dk, testClusterID, testTokenHash)
 		daemonset, err := builder.BuildDaemonSet()
 
 		require.NoError(t, err)
@@ -862,9 +867,10 @@ func TestAnnotations(t *testing.T) {
 			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			testKey:                           testName,
+			annotationTenantTokenHash:         testTokenHash,
 		}
 
-		builder := NewHostMonitoring(&dk, testClusterID)
+		builder := NewHostMonitoring(&dk, testClusterID, testTokenHash)
 		daemonset, err := builder.BuildDaemonSet()
 
 		require.NoError(t, err)
@@ -887,9 +893,10 @@ func TestAnnotations(t *testing.T) {
 			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			testKey:                           testName,
+			annotationTenantTokenHash:         testTokenHash,
 		}
 
-		builder := NewClassicFullStack(&dk, testClusterID)
+		builder := NewClassicFullStack(&dk, testClusterID, testTokenHash)
 		daemonset, err := builder.BuildDaemonSet()
 
 		require.NoError(t, err)
@@ -915,7 +922,7 @@ func TestOneAgentHostGroup(t *testing.T) {
 			},
 		}
 
-		builder := NewCloudNativeFullStack(&dk, testClusterID)
+		builder := NewCloudNativeFullStack(&dk, testClusterID, testTokenHash)
 		daemonset, err := builder.BuildDaemonSet()
 
 		require.NoError(t, err)
@@ -957,7 +964,7 @@ func TestDefaultArguments(t *testing.T) {
 			"--set-server=https://hyper.super.com:9999",
 		}
 		dk.Spec.OneAgent.ClassicFullStack.Args = args
-		dsBuilder := NewClassicFullStack(dk, testClusterID)
+		dsBuilder := NewClassicFullStack(dk, testClusterID, testTokenHash)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -982,7 +989,7 @@ func TestDefaultArguments(t *testing.T) {
 			"--set-server=https://hyper.super.com:9999",
 		}
 		dk.Spec.OneAgent.ClassicFullStack.Args = args
-		dsBuilder := NewClassicFullStack(dk, testClusterID)
+		dsBuilder := NewClassicFullStack(dk, testClusterID, testTokenHash)
 		ds, err := dsBuilder.BuildDaemonSet()
 		require.NoError(t, err)
 

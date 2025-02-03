@@ -28,6 +28,7 @@ const (
 	EnvDtHttpPort        = "DT_HTTP_PORT"
 
 	AnnotationActiveGateConfigurationHash = api.InternalFlagPrefix + "activegate-configuration-hash"
+	AnnotationActiveGateTokenHash         = api.InternalFlagPrefix + "activegate-token-hash"
 	AnnotationActiveGateContainerAppArmor = "container.apparmor.security.beta.kubernetes.io/" + ActiveGateContainerName
 
 	GatewayConfigVolumeName  = "ag-lib-gateway-config"
