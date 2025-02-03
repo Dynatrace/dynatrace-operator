@@ -3,6 +3,8 @@ package csiprovisioner
 import (
 	"context"
 	"encoding/base64"
+	"errors"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
@@ -10,10 +12,15 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
 )
+
+const notReadyRequeueDuration = 30 * time.Second
+
+var notReady = errors.New("download job is not ready yet")
 
 func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, dk dynakube.DynaKube) error {
 	agentInstaller, err := provisioner.getInstaller(ctx, dk)
@@ -25,9 +32,13 @@ func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, dk dyn
 
 	targetDir := provisioner.getTargetDir(dk)
 
-	_, err = agentInstaller.InstallAgent(ctx, targetDir)
+	ready, err := agentInstaller.InstallAgent(ctx, targetDir)
 	if err != nil {
 		return err
+	}
+
+	if !ready {
+		return notReady
 	}
 
 	err = provisioner.createLatestVersionSymlink(dk, targetDir)
@@ -39,7 +50,10 @@ func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, dk dyn
 }
 
 func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dynakube.DynaKube) (installer.Installer, error) {
-	if dk.OneAgent().GetCustomCodeModulesImage() != "" {
+	switch {
+	case dk.FeatureDownloadViaJob():
+		return provisioner.getJobInstaller(ctx, dk), nil
+	case dk.OneAgent().GetCustomCodeModulesImage() != "":
 		props := &image.Properties{
 			ImageUri:     dk.OneAgent().GetCodeModulesImage(),
 			ApiReader:    provisioner.apiReader,
@@ -53,7 +67,7 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dyn
 		}
 
 		return imageInstaller, nil
-	} else {
+	default:
 		dtc, err := buildDtc(provisioner, ctx, dk)
 		if err != nil {
 			return nil, err
@@ -74,6 +88,24 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dyn
 
 		return urlInstaller, nil
 	}
+}
+
+func (provisioner *OneAgentProvisioner) getJobInstaller(ctx context.Context, dk dynakube.DynaKube) installer.Installer {
+	imageUri := dk.OneAgent().GetCustomCodeModulesImage()
+	if imageUri == "" {
+		imageUri = "public.ecr.aws/dynatrace/dynatrace-codemodules:" + dk.OneAgent().GetCodeModulesVersion()
+	}
+
+	props := &job.Properties{
+		ImageUri:     imageUri,
+		Owner:        &dk,
+		PullSecrets:  dk.PullSecretNames(),
+		ApiReader:    provisioner.apiReader,
+		Client:       provisioner.kubeClient,
+		PathResolver: provisioner.path,
+	}
+
+	return provisioner.jobInstallerBuilder(ctx, provisioner.fs, props)
 }
 
 func (provisioner *OneAgentProvisioner) getTargetDir(dk dynakube.DynaKube) string {

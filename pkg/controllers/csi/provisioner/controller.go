@@ -29,6 +29,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -48,15 +49,18 @@ const (
 
 type urlInstallerBuilder func(afero.Fs, dtclient.Client, *url.Properties) installer.Installer
 type imageInstallerBuilder func(context.Context, afero.Fs, *image.Properties) (installer.Installer, error)
+type jobInstallerBuilder func(context.Context, afero.Fs, *job.Properties) installer.Installer
 
 // OneAgentProvisioner reconciles a DynaKube object
 type OneAgentProvisioner struct {
-	apiReader client.Reader
-	fs        afero.Fs
+	apiReader  client.Reader
+	kubeClient client.Client
+	fs         afero.Fs
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	urlInstallerBuilder    urlInstallerBuilder
 	imageInstallerBuilder  imageInstallerBuilder
+	jobInstallerBuilder    jobInstallerBuilder
 	cleaner                *cleanup.Cleaner
 	path                   metadata.PathResolver
 }
@@ -68,11 +72,13 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgen
 
 	return &OneAgentProvisioner{
 		apiReader:              mgr.GetAPIReader(),
+		kubeClient:             mgr.GetClient(),
 		fs:                     fs,
 		path:                   path,
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
 		urlInstallerBuilder:    url.NewUrlInstaller,
 		imageInstallerBuilder:  image.NewImageInstaller,
+		jobInstallerBuilder:    job.NewInstaller,
 		cleaner:                cleanup.New(afero.Afero{Fs: fs}, mgr.GetAPIReader(), path, mount.New("")),
 	}
 }
@@ -129,7 +135,11 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	}
 
 	err = provisioner.installAgent(ctx, dk)
-	if err != nil {
+	if err != nil && errors.Is(err, notReady) {
+		log.Info(err.Error(), "dynakube", dk.Name)
+
+		return reconcile.Result{RequeueAfter: notReadyRequeueDuration}, nil
+	} else if err != nil {
 		return reconcile.Result{}, err
 	}
 
