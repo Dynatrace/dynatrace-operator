@@ -228,6 +228,35 @@ func (dk *DynaKube) DefaultOneAgentImage(version string) string {
 	return apiUrlHost + DefaultOneAgentImageRegistrySubPath + ":" + tag
 }
 
+func (dk *DynaKube) OneAgentArgumentsMap() map[string][]string {
+	var args []string
+
+	switch {
+	case dk.CloudNativeFullstackMode() && dk.Spec.OneAgent.CloudNativeFullStack.Args != nil:
+		args = dk.Spec.OneAgent.CloudNativeFullStack.Args
+	case dk.ClassicFullStackMode() && dk.Spec.OneAgent.ClassicFullStack.Args != nil:
+		args = dk.Spec.OneAgent.ClassicFullStack.Args
+	case dk.HostMonitoringMode() && dk.Spec.OneAgent.HostMonitoring.Args != nil:
+		args = dk.Spec.OneAgent.HostMonitoring.Args
+
+	default:
+		return nil
+	}
+
+	argMap := make(map[string][]string)
+
+	for _, arg := range args {
+		key, value := splitArg(arg)
+		if _, exists := argMap[key]; !exists {
+			argMap[key] = []string{value}
+		} else {
+			argMap[key] = append(argMap[key], value)
+		}
+	}
+
+	return argMap
+}
+
 func (dk *DynaKube) HostGroup() string {
 	if dk.Spec.OneAgent.HostGroup != "" {
 		return dk.Spec.OneAgent.HostGroup

@@ -30,6 +30,8 @@ var (
 		isKSPMDisabled,
 		isOneAgentModuleDisabled,
 		isOneAgentVersionValid,
+		duplicateOneAgentArguments,
+		forbiddenHostIdSourceArgument,
 		NoApiUrl,
 		IsInvalidApiUrl,
 		IsThirdGenAPIUrl,
@@ -55,6 +57,7 @@ var (
 		missingLogMonitoringImage,
 		logMonitoringWithoutK8SMonitoring,
 		extensionsWithoutK8SMonitoring,
+		publicImageSetWithoutReadOnlyMode,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,
