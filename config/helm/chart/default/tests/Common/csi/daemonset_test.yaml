@@ -193,8 +193,6 @@ tests:
                   timeoutSeconds: 4
                 name: server
                 ports:
-                  - containerPort: 9808
-                    name: healthz
                   - containerPort: 8080
                     name: metrics
                 resources:
@@ -339,6 +337,9 @@ tests:
                   - "--probe-timeout=4s"
                 command:
                   - livenessprobe
+                ports:
+                  - containerPort: 9808
+                    name: healthz
                 image: image-name
                 imagePullPolicy: Always
                 name: liveness-probe
