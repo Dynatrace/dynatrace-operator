@@ -120,6 +120,8 @@ spec:
           timeoutSeconds: 4
         {{- end }}
         ports:
+        - containerPort: 9808
+          name: healthz
         - containerPort: 8080
           name: metrics
         resources:
@@ -244,9 +246,6 @@ spec:
         - --probe-timeout=4s
         command:
         - livenessprobe
-        ports:
-          - name: healthz
-            containerPort: 9808
         resources:
           {{- if .Values.csidriver.livenessprobe.resources }}
           {{- toYaml .Values.csidriver.livenessprobe.resources | nindent 10 }}
