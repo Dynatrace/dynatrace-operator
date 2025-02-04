@@ -23,7 +23,7 @@ RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLED=1 CGO_CFLAGS="
     go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./cmd/
 
-FROM registry.access.redhat.com/ubi9-micro:9.5-1736426761@sha256:f6e0a71b7e0875b54ea559c2e0a6478703268a8d4b8bdcf5d911d0dae76aef51 AS base
+FROM registry.access.redhat.com/ubi9-micro:9.5-1738659858@sha256:a434c4babbc08a8d0a7f227154b46f0df0a4b701af0796716cb5305807b2b2b3 AS base
 FROM registry.access.redhat.com/ubi9:9.5-1738643550@sha256:95356f4377e6ca6b8ad56fe33af8258d48010476aac287031dd572cfafceb285 AS dependency
 RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
