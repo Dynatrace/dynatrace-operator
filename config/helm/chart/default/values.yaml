@@ -208,6 +208,9 @@ rbac:
   extensions:
     create: true
     annotations: {}
+  telemetryService:
+    create: true
+    annotations: {}
   logMonitoring:
     create: true
     annotations: {}
