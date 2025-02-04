@@ -127,24 +127,42 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 		templateAnnotations = r.dk.Spec.Templates.OpenTelemetryCollector.Annotations
 	}
 
-	query := k8ssecret.Query(r.client, r.client, log)
-
-	tlsSecret, err := query.Get(ctx, types.NamespacedName{
-		Name:      r.dk.ExtensionsTLSSecretName(),
-		Namespace: r.dk.Namespace,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	tlsSecretHash, err := hasher.GenerateHash(tlsSecret.Data)
+	tlsSecretHash, err := r.calculateSecretHash(ctx, r.dk.ExtensionsTLSSecretName())
 	if err != nil {
 		return nil, err
 	}
 
 	templateAnnotations[api.AnnotationSecretHash] = tlsSecretHash
 
+	if r.dk.TelemetryService().IsEnabled() && r.dk.TelemetryService().Spec.TlsRefName != "" {
+		tlsSecretHash, err = r.calculateSecretHash(ctx, r.dk.TelemetryService().Spec.TlsRefName)
+		if err != nil {
+			return nil, err
+		}
+
+		templateAnnotations[api.AnnotationTelemetryServiceSecretHash] = tlsSecretHash
+	}
+
 	return templateAnnotations, nil
+}
+
+func (r *Reconciler) calculateSecretHash(ctx context.Context, secretName string) (string, error) {
+	query := k8ssecret.Query(r.client, r.client, log)
+
+	tlsSecret, err := query.Get(ctx, types.NamespacedName{
+		Name:      secretName,
+		Namespace: r.dk.Namespace,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	tlsSecretHash, err := hasher.GenerateHash(tlsSecret.Data)
+	if err != nil {
+		return "", err
+	}
+
+	return tlsSecretHash, nil
 }
 
 func getReplicas(dk *dynakube.DynaKube) int32 {
