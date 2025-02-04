@@ -20,7 +20,7 @@ import (
 
 const notReadyRequeueDuration = 30 * time.Second
 
-var notReady = errors.New("download job is not ready yet")
+var errNotReady = errors.New("download job is not ready yet")
 
 func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, dk dynakube.DynaKube) error {
 	agentInstaller, err := provisioner.getInstaller(ctx, dk)
@@ -38,7 +38,7 @@ func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, dk dyn
 	}
 
 	if !ready {
-		return notReady
+		return errNotReady
 	}
 
 	err = provisioner.createLatestVersionSymlink(dk, targetDir)

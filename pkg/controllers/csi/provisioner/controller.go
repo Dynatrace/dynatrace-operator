@@ -135,7 +135,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	}
 
 	err = provisioner.installAgent(ctx, dk)
-	if err != nil && errors.Is(err, notReady) {
+	if err != nil && errors.Is(err, errNotReady) {
 		log.Info(err.Error(), "dynakube", dk.Name)
 
 		return reconcile.Result{RequeueAfter: notReadyRequeueDuration}, nil
