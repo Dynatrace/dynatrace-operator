@@ -188,9 +188,9 @@ tests:
                     port: healthz
                     scheme: HTTP
                   initialDelaySeconds: 5
-                  periodSeconds: 5
+                  periodSeconds: 10
                   successThreshold: 1
-                  timeoutSeconds: 4
+                  timeoutSeconds: 10
                 name: server
                 ports:
                   - containerPort: 9808
